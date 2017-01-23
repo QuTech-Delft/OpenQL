@@ -1,0 +1,534 @@
+/**
+ * @file   gate.h
+ * @date   11/2016
+ * @author Nader Khammassi
+ * @brief  gates implementation
+ */
+
+#ifndef GATE_H
+#define GATE_H
+
+#include <string>
+#include <sstream>
+#include <map>
+
+#include "matrix.h"
+#include <ql/openql.h>
+
+
+
+typedef std::string instruction_t;
+
+namespace ql
+{
+   
+   typedef std::string qasm_inst_t;
+   typedef std::string ucode_inst_t;
+
+   typedef std::map<qasm_inst_t, ucode_inst_t> instruction_map_t;
+
+   extern instruction_map_t instruction_map;
+
+   // gate types
+   typedef enum __gate_type_t
+   {
+      __identity_gate__,
+      __hadamard_gate__,
+      __pauli_x_gate__ ,
+      __pauli_y_gate__ ,
+      __pauli_z_gate__ ,
+      __phase_gate__   ,
+      __rx90_gate__    ,
+      __mrx90_gate__   ,
+      __rx180_gate__   ,
+      __ry90_gate__    ,
+      __mry90_gate__   ,
+      __ry180_gate__   ,
+      __rz_gate__      ,
+      __prepz_gate__   ,
+      __measure_gate__ ,
+      __display__      ,
+      __display_binary__
+   } gate_type_t; 
+
+   #define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
+   #define rsqrt_2 (0.7071067811865475244008443621048490392848359376884740365883398690f)
+
+   const complex_t identity_c  [] __attribute__((aligned(64))) = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0), 
+                                                                   complex_t(0.0, 0.0) , complex_t(1.0, 0.0)   };     /* I */
+
+   const complex_t pauli_x_c  [] __attribute__((aligned(64))) = { complex_t(0.0, 0.0) , complex_t(1.0, 0.0), 
+                                                                  complex_t(1.0, 0.0) , complex_t(0.0, 0.0)   };      /* X */
+
+   const complex_t pauli_y_c  [] __attribute__((aligned(64))) = { complex_t(0.0, 0.0) , complex_t(0.0,-1.0), 
+                                                                  complex_t(0.0, 1.0) , complex_t(0.0, 0.0)   };      /* Y */
+
+   const complex_t pauli_z_c  [] __attribute__((aligned(64))) = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0), 
+                                                                  complex_t(0.0, 0.0) , complex_t(-1.0,0.0)   };      /* Z */
+
+   const complex_t hadamard_c [] __attribute__((aligned(64)))  = { rsqrt_2,  rsqrt_2, rsqrt_2, -rsqrt_2 };            /* H */
+
+   const complex_t phase_c    [] __attribute__((aligned(64))) = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0), 
+                                                                  complex_t(0.0, 0.0) , complex_t(0.0, 1.0) };        /* S */
+   
+   const complex_t rx90_c  [] __attribute__((aligned(64))) = { complex_t(rsqrt_2, 0.0) , complex_t(0.0, -rsqrt_2), 
+                                                               complex_t(0.0, -rsqrt_2), complex_t(rsqrt_2,  0.0)  };   /* rx90  */
+
+   const complex_t ry90_c  [] __attribute__((aligned(64))) = { complex_t(rsqrt_2, 0.0) , complex_t(-rsqrt_2, 0.0), 
+                                                               complex_t(rsqrt_2, 0.0 ), complex_t( rsqrt_2, 0.0)  };   /* ry90  */
+
+   const complex_t mrx90_c [] __attribute__((aligned(64))) = { complex_t(rsqrt_2, 0.0) , complex_t(0.0,  rsqrt_2), 
+                                                               complex_t(0.0, rsqrt_2) , complex_t(rsqrt_2,  0.0)  };   /* mrx90 */
+
+   const complex_t mry90_c [] __attribute__((aligned(64))) = { complex_t(rsqrt_2, 0.0) , complex_t(rsqrt_2, 0.0), 
+                                                               complex_t(-rsqrt_2, 0.0), complex_t(rsqrt_2, 0.0)   };   /* ry90  */
+
+   const complex_t rx180_c [] __attribute__((aligned(64))) = { complex_t(0.0, 0.0) , complex_t(0.0,-1.0), 
+                                                               complex_t(0.0,-1.0) , complex_t(0.0, 0.0)  };            /* rx180 */
+
+   const complex_t ry180_c [] __attribute__((aligned(64))) = { complex_t(0.0, 0.0) , complex_t(-1.0, 0.0), 
+                                                               complex_t(1.0, 0.0) , complex_t( 0.0, 0.0)  };            /* ry180 */
+
+   /**
+    * gate interface
+    */
+   class gate 
+   {
+      public:
+	virtual instruction_t qasm()       = 0;
+	virtual instruction_t micro_code() = 0;
+	virtual gate_type_t   type()       = 0;
+	virtual cmat_t        mat()        = 0;
+   };
+
+
+   /**
+    * hadamard
+    */
+   class hadamard : public gate
+   {
+      public:
+	 
+	 cmat_t m;
+
+	 hadamard() : m(hadamard_c)
+	 {
+	 }
+
+	 instruction_t qasm()
+	 {
+	    return instruction_t("   h q0");
+	 }
+
+	 instruction_t micro_code()
+	 {
+	    // y90 + x180
+	    return instruction_t("     pulse 1100 0000 1100\n     wait 10\n     pulse 1001 0000 1001\n     wait 10");
+	 }
+
+	 gate_type_t type()
+	 {
+	    return __hadamard_gate__;
+	 }
+
+	 cmat_t mat() { return m; }
+   };
+
+
+
+   /**
+    * phase
+    */
+   class phase : public gate
+   {
+      public:
+	 
+	 cmat_t m;
+
+	 phase() : m(phase_c)
+	 {
+	 }
+
+	 instruction_t qasm()
+	 {
+	    return instruction_t("   s q0");
+	 }
+
+	 instruction_t micro_code()
+	 {
+	    // dummy !
+	    return instruction_t("     pulse 1110 0000 1110\n     wait 10");
+	 }
+
+	 gate_type_t type()
+	 {
+	    return __phase_gate__;
+	 }
+
+	 cmat_t mat() { return m; }
+   };
+
+
+   /**
+    * pauli_x
+    */
+   class pauli_x : public gate
+
+   {
+      public:
+	 
+	 cmat_t m;
+
+	 pauli_x() : m(pauli_x_c)
+	 {
+	 }
+
+	 instruction_t qasm()
+	 {
+	    return instruction_t("   x q0");
+	 }
+
+	 instruction_t micro_code()
+	 {
+	    // x180
+	    return instruction_t("     pulse 1001 0000 1001\n     wait 10");
+	 }
+
+	 gate_type_t type()
+	 {
+	    return __pauli_x_gate__;
+	 }
+
+	 cmat_t mat() { return m; }
+   };
+
+
+   /**
+    * pauli_y
+    */
+   class pauli_y : public gate
+   {
+      public:
+	 
+	 cmat_t m;
+
+	 pauli_y() : m(pauli_y_c)
+	 {
+	 }
+
+	 instruction_t qasm()
+	 {
+	    return instruction_t("   y q0");
+	 }
+
+	 instruction_t micro_code()
+	 {
+	    // y180 
+	    return instruction_t("     pulse 1010 0000 1010\n     wait 10");
+	 }
+
+
+	 gate_type_t type()
+	 {
+	    return __pauli_y_gate__;
+	 }
+
+	 cmat_t mat() { return m; }
+   };
+
+
+   /**
+    * pauli_z
+    */
+   class pauli_z : public gate
+   {
+      public:
+	 
+	 cmat_t m;
+
+	 pauli_z() : m(pauli_z_c)
+	 {
+	 }
+
+	 instruction_t qasm()
+	 {
+	    return instruction_t("   z q0");
+	 }
+
+	 instruction_t micro_code()
+	 {
+	    // x180 + y180
+	    return instruction_t("     pulse 1001 0000 1001\n     wait 10\n     pulse 1010 0000 1010\n     wait 10");
+	 }
+
+	 gate_type_t type()
+	 {
+	    return __pauli_z_gate__;
+	 }
+
+	 cmat_t mat() { return m; }
+   };
+
+
+   /**
+    * rx90
+    */
+   class rx90 : public gate
+   {
+      public:
+	 
+	 cmat_t m;
+
+	 rx90() : m(rx90_c)
+	 {
+	 }
+
+	 instruction_t qasm()
+	 {
+	    return instruction_t("   rx90 q0");
+	 }
+
+	 instruction_t micro_code()
+	 {
+	    // return instruction_t("     pulse 1011 0000 1011\n     wait 10");
+	    return ql::instruction_map["rx90"];
+	 }
+
+	 gate_type_t type()
+	 {
+	    return __rx90_gate__;
+	 }
+
+	 cmat_t mat() { return m; }
+   };
+
+
+   /**
+    * mrx90
+    */
+   class mrx90 : public gate
+   {
+      public:
+	 
+	 cmat_t m;
+
+	 mrx90() : m(mrx90_c)
+	 {
+	 }
+
+	 instruction_t qasm()
+	 {
+	    return instruction_t("   mrx90 q0");
+	 }
+
+	 instruction_t micro_code()
+	 {
+	    // return instruction_t("     pulse 1101 0000 1101\n     wait 10");
+	    return ql::instruction_map["mrx90"];
+	 }
+
+	 gate_type_t type()
+	 {
+	    return __mrx90_gate__;
+	 }
+
+	 cmat_t mat() { return m; }
+   };
+
+   /**
+    * rx180
+    */
+   class rx180 : public gate
+   {
+      public:
+	 
+	 cmat_t m;
+
+	 rx180() : m(rx180_c)
+	 {
+	 }
+
+	 instruction_t qasm()
+	 {
+	    return instruction_t("   rx180 q0");
+	 }
+
+	 instruction_t micro_code()
+	 {
+	    // return instruction_t("     pulse 1001 0000 1001\n     wait 10");
+	    return ql::instruction_map["rx180"];
+	 }
+
+	 gate_type_t type()
+	 {
+	    return __rx180_gate__;
+	 }
+
+	 cmat_t mat() { return m; }
+   };
+
+
+   /**
+    * ry90
+    */
+   class ry90 : public gate
+   {
+      public:
+	 
+	 cmat_t m;
+
+	 ry90() : m(ry90_c)
+	 {
+	 }
+
+	 instruction_t qasm()
+	 {
+	    return instruction_t("   ry90 q0");
+	 }
+
+	 gate_type_t type()
+	 {
+	    return __ry90_gate__;
+	 }
+
+	 instruction_t micro_code()
+	 {
+	    // return instruction_t("     pulse 1100 0000 1100\n     wait 10");
+	    return ql::instruction_map["ry90"];
+	 }
+
+	 cmat_t mat() { return m; }
+   };
+
+
+   /**
+    * mry90
+    */
+   class mry90 : public gate
+   {
+      public:
+	 
+	 cmat_t m;
+
+	 mry90() : m(mry90_c)
+	 {
+	 }
+
+	 instruction_t qasm()
+	 {
+	    return instruction_t("   mry90 q0");
+	 }
+
+	 instruction_t micro_code()
+	 {
+	    // return instruction_t("     pulse 1110 0000 1110\n     wait 10");
+	    return ql::instruction_map["mry90"];
+	 }
+
+	 gate_type_t type()
+	 {
+	    return __mry90_gate__;
+	 }
+
+	 cmat_t mat() { return m; }
+   };
+
+   /**
+    * ry180
+    */
+   class ry180 : public gate
+   {
+      public:
+	 
+	 cmat_t m;
+
+	 ry180() : m(ry180_c)
+	 {
+	 }
+
+	 instruction_t qasm()
+	 {
+	    return instruction_t("   ry180 q0");
+	 }
+
+	 instruction_t micro_code()
+	 {
+	    // return instruction_t("     pulse 1010 0000 1010\n     wait 10");
+	    return ql::instruction_map["ry180"];
+	 }
+
+	 gate_type_t type()
+	 {
+	    return __ry180_gate__;
+	 }
+
+	 cmat_t mat() { return m; }
+   };
+
+
+   /**
+    * measure
+    */
+   class measure : public gate
+   {
+      public:
+	 
+	 cmat_t m;
+
+	 measure() : m(identity_c)
+	 {
+	 }
+
+	 instruction_t qasm()
+	 {
+	    return instruction_t("   measure q0\n   display_binary\n");
+	 }
+
+	 instruction_t micro_code()
+	 {
+	    // return instruction_t("     wait 60\n     pulse 0000 1111 1111\n     wait 50\n     measure\n");
+	    return ql::instruction_map["measure"];
+	 }
+
+	 gate_type_t type()
+	 {
+	    return __measure_gate__;
+	 }
+
+	 cmat_t mat() { return m; }
+   };
+
+   /**
+    * prepz  
+    */
+   class prepz : public gate
+   {
+      public:
+	 
+	 cmat_t m;
+
+	 prepz() : m(identity_c)
+	 {
+	 }
+
+	 instruction_t qasm()
+	 {
+	    return instruction_t("   prepz q0");
+	 }
+
+	 instruction_t micro_code()
+	 {
+	    // return instruction_t("     waitreg r0\n     waitreg r0\n");
+	    return ql::instruction_map["prepz"];
+	 }
+
+	 gate_type_t type()
+	 {
+	    return __prepz_gate__;
+	 }
+
+	 cmat_t mat() { return m; }
+   };
+}
+
+#endif // GATE_H

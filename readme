@@ -1,0 +1,10 @@
+                                 
+				 OpenQL Framework
+
+OpenQL is a C++ framework for high-level quantum programming. The framework provide 
+a compiler for compiling and optimizing quantum code.
+The compiler produce the intermediate quantum assembly language and the compiled micro-code 
+for different ptarget platforms. While the microcode is platform-specific, the quantum assembly 
+code (qasm) is hardware-agnostic and can be simulated on the QX simulator.
+
+

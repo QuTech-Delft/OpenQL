@@ -1,0 +1,27 @@
+digraph G {   
+   start [shape=box]
+   i0 [label="prepz"] 
+   i1 [label="ry90"] 
+   i11 [label="x180"] 
+   i2 [label="rx180"] 
+   i3 [label="y180"] 
+   i4 [label="ry180"] 
+   i41 [label="rx180"] 
+   i5 [label="ry90"] 
+   i51 [label="rx180"] 
+   i6 [label="x180"] 
+   i7 [label="measure"] 
+
+   start -> i0;
+   i0 -> i1;
+   i1 -> i11;
+   i11 -> i2;
+   i2 -> i3;
+   i3 -> i4;
+   i4 -> i41;
+   i41 -> i5;
+   i5 -> i51;
+   i51 -> i6;
+   i6 -> i7;
+   i7 -> start [label="3"];
+}
