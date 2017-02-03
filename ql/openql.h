@@ -2,7 +2,7 @@
  * @file   openql.h
  * @date   11/2016
  * @author Nader Khammassi
- * @brief  main openql header 
+ * @brief  main openql header
  */
 #ifndef OPENQL_H
 #define OPENQL_H
@@ -23,7 +23,7 @@ namespace ql
 
     typedef std::vector<float> sweep_points_t;
     typedef std::stringstream  str_t;
-    
+
     typedef std::string qasm_inst_t;
     typedef std::string ucode_inst_t;
 
@@ -96,7 +96,7 @@ namespace ql
 	  #ifdef __debug__
 	  println("[+] line " << i << " : " << line);
 	  #endif
-	  size_t p = line.find(":"); 
+	  size_t p = line.find(":");
 	  if (line.size() < 3) continue;
 	  if (p == std::string::npos)
 	  {
@@ -117,7 +117,7 @@ namespace ql
 	     println("[+] syntax error at line " << i << " : invalid value format.");
 	     return false;
 	  }
-	  
+
 	  #ifdef __debug__
 	  println(" --> key : " << key);
 	  println(" --> val : " << val);
@@ -130,7 +130,7 @@ namespace ql
 	  println("[ " << (*i).first <<  " --> " << (*i).second << " ]");
        #endif // __debug__
 
-       return true; 
+       return true;
     }
 
 
@@ -153,76 +153,82 @@ namespace ql
 	void hadamard(size_t qubit)
 	{
 	   // qubit not used (default : q0)
-	   c.push_back(new ql::ry90());
-	   c.push_back(new ql::rx180());
+	   c.push_back(new ql::ry90(qubit));
+	   c.push_back(new ql::rx180(qubit));
 	}
 
 	void x(size_t qubit)
 	{
 	   // qubit not used (default : q0)
-	   c.push_back(new ql::rx180());
+	   c.push_back(new ql::rx180(qubit));
 	}
-	
+
 	void y(size_t qubit)
 	{
 	   // qubit not used (default : q0)
-	   c.push_back(new ql::ry180());
+	   c.push_back(new ql::ry180(qubit));
 	}
-	
+
 	void z(size_t qubit)
 	{
 	   // qubit not used (default : q0)
-	   c.push_back(new ql::ry180());
-	   c.push_back(new ql::rx180());
+	   c.push_back(new ql::ry180(qubit));
+	   c.push_back(new ql::rx180(qubit));
 	}
 
 
 	void rx90(size_t qubit)
 	{
 	   // qubit not used (default : q0)
-	   c.push_back(new ql::rx90());
+	   c.push_back(new ql::rx90(qubit));
 	}
-	
+
 	void mrx90(size_t qubit)
 	{
 	   // qubit not used (default : q0)
-	   c.push_back(new ql::mrx90());
+	   c.push_back(new ql::mrx90(qubit));
 	}
-	
+
 	void rx180(size_t qubit)
 	{
 	   // qubit not used (default : q0)
-	   c.push_back(new ql::rx180());
+	   c.push_back(new ql::rx180(qubit));
 	}
 
 	void ry90(size_t qubit)
 	{
 	   // qubit not used (default : q0)
-	   c.push_back(new ql::ry90());
+	   c.push_back(new ql::ry90(qubit));
 	}
 
 	void mry90(size_t qubit)
 	{
 	   // qubit not used (default : q0)
-	   c.push_back(new ql::mry90());
+	   c.push_back(new ql::mry90(qubit));
 	}
 
 	void ry180(size_t qubit)
 	{
 	   // qubit not used (default : q0)
-	   c.push_back(new ql::ry180());
+	   c.push_back(new ql::ry180(qubit));
 	}
 
 	void measure(size_t qubit)
 	{
 	   // qubit not used (default : q0)
-	   c.push_back(new ql::measure());
+	   c.push_back(new ql::measure(qubit));
 	}
-	
+
 	void prepz(size_t qubit)
 	{
 	   // qubit not used (default : q0)
-	   c.push_back(new ql::prepz());
+	   c.push_back(new ql::prepz(qubit));
+	}
+
+    void cnot(size_t qubit1, size_t qubit2)
+	{
+        // qubit1 and qubit2 not used (default : q0, q1)
+	    c.push_back(new ql::cnot(qubit1, qubit2));
 	}
 
 	/**
@@ -232,8 +238,8 @@ namespace ql
 	{
 	   switch (id)
 	   {
-	      case 0 : break;                                  //  ['I']                              
-	      case 1 : ry90(0); rx90(0); break;                //  ['Y90', 'X90']                    
+	      case 0 : break;                                  //  ['I']
+	      case 1 : ry90(0); rx90(0); break;                //  ['Y90', 'X90']
 	      case 2 : mrx90(0); mry90(0); break;              //  ['mX90', 'mY90']
 	      case 3 : rx180(0); break;                        //  ['X180']
 	      case 4 : mry90(0); mrx90(0); break;              //  ['mY90', 'mX90']
@@ -261,7 +267,7 @@ namespace ql
 	}
 
 
-	
+
 	/**
 	 * qasm
 	 */
@@ -269,7 +275,7 @@ namespace ql
 	{
 	   std::stringstream ss;
 	   ss << "." << name;
-	   if (iterations > 1) 
+	   if (iterations > 1)
 	      ss << "(" << iterations << ") \n";
 	   else
 	      ss << "\n";
@@ -280,7 +286,7 @@ namespace ql
 	   }
 	   return ss.str();
 	}
-	
+
 	/**
 	 * micro code
 	 */
@@ -288,7 +294,7 @@ namespace ql
 	{
 	   std::stringstream ss;
 	   // ss << "." << name;
-	   // if (iterations > 1) 
+	   // if (iterations > 1)
 	      // ss << "(" << iterations << ")\n";
 	   // else
 	      // ss << "\n";
@@ -355,16 +361,16 @@ namespace ql
 	   /*
 	   for (int i=0; i<cs.size(); ++i)
 	   {
-	      println(" |-- circuit " << i); 
+	      println(" |-- circuit " << i);
 	      print(*(cs[i]));
 	   }
 	   */
-	   return cs; 
+	   return cs;
 	}
 
 	bool contains_measurements(circuit x)
 	{
-	   for (size_t i=0; i<x.size(); i++) 
+	   for (size_t i=0; i<x.size(); i++)
 	   {
 	      if (x[i]->type() == __measure_gate__)
 		 return true;
@@ -377,7 +383,7 @@ namespace ql
 
 
       protected:
-        
+
 	std::string name;
 	circuit     c;
         size_t      iterations;
@@ -414,8 +420,8 @@ namespace ql
 	std::string qasm()
 	{
 	   std::stringstream ss;
-	   ss << "# this file has been automatically generated by the OpenQL compiler please do not modify it manually.\n"; 
-	   ss << "qubits " << qubits << "\n"; 
+	   ss << "# this file has been automatically generated by the OpenQL compiler please do not modify it manually.\n";
+	   ss << "qubits " << qubits << "\n";
 	   for (size_t k=0; k<kernels.size(); ++k)
 	      ss <<'\n' << kernels[k].qasm();
 	   ss << ".cal0_1\n";
@@ -434,11 +440,11 @@ namespace ql
 	   ss << "   measure q0\n";
 	   return ss.str();
 	}
-	
+
 	std::string microcode()
 	{
 	   std::stringstream ss;
-	   ss << "# this file has been automatically generated by the OpenQL compiler please do not modify it manually.\n"; 
+	   ss << "# this file has been automatically generated by the OpenQL compiler please do not modify it manually.\n";
 	   ss << uc_header();
 	   for (size_t k=0; k<kernels.size(); ++k)
 	      ss <<'\n' << kernels[k].micro_code();
@@ -451,14 +457,14 @@ namespace ql
 	      // measure
 	      ss << "     wait 60 \n";  // wait
 	      ss << "     pulse 0000 1111 1111 \n";  // pulse
-	      ss << "     wait 50\n";  
+	      ss << "     wait 50\n";
 	      ss << "     measure\n";  // measurement discrimination
 	   }
 
 	   // calibration points for |1>
 	   for (size_t i=0; i<2; ++i)
 	   {
-	      // prepz 
+	      // prepz
 	      ss << "     waitreg r0               # prepz q0 (+100us) \n";  // wait for 100us
 	      ss << "     waitreg r0               # prepz q0 (+100us) \n";  // wait for 100us
 	      // X
@@ -467,7 +473,7 @@ namespace ql
 	      // measure
 	      ss << "     wait 60\n";  // wait
 	      ss << "     pulse 0000 1111 1111\n";  // pulse
-	      ss << "     wait 50\n";  
+	      ss << "     wait 50\n";
 	      ss << "     measure\n";  // measurement discrimination
 	   }
 
@@ -496,7 +502,7 @@ namespace ql
 	{
 	   std::ofstream file;
 	   file.open(file_name);
-	   file << content; 
+	   file << content;
 	   file.close();
 	}
 
@@ -519,7 +525,7 @@ namespace ql
 	   std::stringstream ss_qasm;
 	   ss_qasm << output_path << name << ".qasm";
 	   std::string s = qasm();
-	   
+
 	   if (verbose) println("[+] writing qasm to '" << ss_qasm.str() << "' ...");
 	   write_file(ss_qasm.str(),s);
 
@@ -529,13 +535,13 @@ namespace ql
 	   std::stringstream ss_asm;
 	   ss_asm << output_path << name << ".asm";
 	   std::string uc = microcode();
-	   
+
 	   if (verbose) println("[+] writing transmon micro-code to '" << ss_asm.str() << "' ...");
 	   write_file(ss_asm.str(),uc);
 
 	   std::stringstream ss_swpts;
 	   ss_swpts << "{ \"measurement_points\" : [";
-	   for (int i=0; i<sweep_points.size()-1; i++) 
+	   for (int i=0; i<sweep_points.size()-1; i++)
 	      ss_swpts << sweep_points[i] << ", ";
 	   ss_swpts << sweep_points[sweep_points.size()-1] << "] }";
 	   std::string config = ss_swpts.str();
@@ -566,9 +572,9 @@ namespace ql
 	   for (size_t i=0; i<size; ++i)
 	      sweep_points.push_back(swpts[i]);
 	}
-      
+
       protected:
-        
+
 	ql_platform_t               platform;
 	std::vector<quantum_kernel> kernels;
 	std::vector<float>          sweep_points;
@@ -592,15 +598,15 @@ namespace ql
       }
       return ss.str();
    }
-   
+
    namespace utils
    {
       /**
-       * @param str 
+       * @param str
        *    string to be processed
-       * @param seq 
+       * @param seq
        *    string to be replaced
-       * @param rep 
+       * @param rep
        *    string used to replace seq
        * @brief
        *    replace recursively seq by rep in str
@@ -617,7 +623,7 @@ namespace ql
 
       /**
        * string starts with " and end with "
-       * return the content of the string between the commas 
+       * return the content of the string between the commas
        */
       bool format_string(std::string& s)
       {

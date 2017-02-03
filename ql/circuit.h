@@ -17,7 +17,7 @@
 
 namespace ql
 {
-   typedef std::vector<gate*> circuit; 
+   typedef std::vector<gate*> circuit;
 
 
    void print(circuit& c)
