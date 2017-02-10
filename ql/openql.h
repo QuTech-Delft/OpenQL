@@ -11,6 +11,8 @@
 #include "circuit.h"
 #include "platform.h"
 #include "transmon.h"
+#include "dependenceGraph.h"
+
 
 #include <fstream>
 #include <map>
@@ -339,6 +341,18 @@ namespace ql
 
 	}
 
+	void schedule(size_t nqubits)
+	{
+		std::cout << "Scheduling the quantum kernel" << std::endl;
+		DependGraph dg;
+		dg.Init(c,nqubits);
+		dg.Print();
+        dg.PrintMatrix();
+        dg.PrintDot();
+        dg.PrintScheduleASAP();
+        dg.PrintDotScheduleASAP();
+	}
+
 	std::vector<circuit*> split_circuit(circuit x, bool verbose=false)
 	{
 	   if (verbose) println("[+] circuit decomposition in basic blocks ... ");
@@ -564,6 +578,13 @@ namespace ql
 
 
 	   return 0;
+	}
+
+	void schedule()
+	{
+		std::cout << "Scheduling the quantum program" << std::endl;
+		for (auto k : kernels)
+			k.schedule(qubits);
 	}
 
 	void set_sweep_points(float * swpts, size_t size)
