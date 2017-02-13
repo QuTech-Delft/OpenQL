@@ -43,10 +43,8 @@ public:
 
     void Init( ql::circuit& ckt, size_t nqubits)
     {
-        std::cout << "Init()" << std::endl;
-
         size_t nQubits = nqubits;
-        std::cout << "nQubits : " << nQubits << std::endl;
+        // std::cout << "nQubits : " << nQubits << std::endl;
 
         // add dummy source node
         ListDigraph::Node srcNode = graph.addNode();
@@ -135,8 +133,6 @@ public:
                 depType[arc] = RAW; // NA
             }
         }
-
-        std::cout << "Init() Done" << std::endl;
     }
 
     void Print()
@@ -361,7 +357,7 @@ public:
 
     void TopologicalSort(std::vector<ListDigraph::Node> & order)
     {
-        std::cout << "Performing Topological sort." << std::endl;
+        // std::cout << "Performing Topological sort." << std::endl;
         ListDigraph::NodeMap<int> rorder(graph);
         if( !dag(graph) )
             std::cout << "This digraph is not a DAG." << std::endl;
@@ -450,6 +446,45 @@ public:
         PrintDot_(false,true,cycle,order,dotout);
 
         dotout.close();
+    }
+
+    void PrintScheduledQASM()
+    {
+        std::cout << "Printing Scheduled QASM in scheduled.qc" << std::endl;
+        ofstream fout;
+        fout.open( "scheduled.qc", ios::binary);
+        if ( fout.fail() )
+        {
+            std::cout << "Error opening file" << std::endl;
+            return;
+        }
+
+        ListDigraph::NodeMap<size_t> cycle(graph);
+        std::vector<ListDigraph::Node> order;
+        ScheduleASAP(cycle,order);
+
+        typedef std::vector<std::string> insInOneCycle;
+        std::map<size_t,insInOneCycle> insInAllCycles;
+
+        std::vector<ListDigraph::Node>::reverse_iterator it;
+        for ( it = order.rbegin(); it != order.rend(); ++it)
+        {
+            insInAllCycles[ cycle[*it] ].push_back( name[*it] );
+        }
+
+        size_t TotalCycles = insInAllCycles.size();
+        for(size_t c=1; c<TotalCycles-1;  ++c )
+        {
+            for(size_t i=0; i<insInAllCycles[c].size(); ++i )
+            {
+                fout << insInAllCycles[c][i];
+                if( i != insInAllCycles[c].size() - 1 ) // last instruction
+                    fout << " | ";
+            }
+            fout << std::endl;
+        }
+
+        fout.close();
     }
 
 };

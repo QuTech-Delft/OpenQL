@@ -40,7 +40,7 @@ int main(int argc, char ** argv)
 
     prog.add(kernel);
     prog.compile( /*verbose*/ 1 );
-    println(prog.qasm());
+    // println(prog.qasm());
 
     ql::quantum_program sprog = prog;
     sprog.schedule();

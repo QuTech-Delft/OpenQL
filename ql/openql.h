@@ -346,11 +346,12 @@ namespace ql
 		std::cout << "Scheduling the quantum kernel" << std::endl;
 		DependGraph dg;
 		dg.Init(c,nqubits);
-		dg.Print();
-        dg.PrintMatrix();
+		// dg.Print();
+        // dg.PrintMatrix();
         dg.PrintDot();
-        dg.PrintScheduleASAP();
-        dg.PrintDotScheduleASAP();
+        // dg.PrintScheduleASAP();
+        // dg.PrintDotScheduleASAP();
+        dg.PrintScheduledQASM();
 	}
 
 	std::vector<circuit*> split_circuit(circuit x, bool verbose=false)

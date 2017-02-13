@@ -19,4 +19,5 @@ run:
 	./programs/circuit7
 
 clean:
-	rm -f programs/output/* $(examples) *~ *.dot *.dat
+	rm -f 	programs/output/* $(examples) *~ *.dot *.dat \
+			scheduled.qc
