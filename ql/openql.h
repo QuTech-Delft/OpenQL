@@ -348,10 +348,13 @@ namespace ql
 		dg.Init(c,nqubits);
 		// dg.Print();
         // dg.PrintMatrix();
-        dg.PrintDot();
-        // dg.PrintScheduleASAP();
+        // dg.PrintDot();
+
+        dg.PrintScheduleASAP();
         // dg.PrintDotScheduleASAP();
-        dg.PrintScheduledQASM();
+        // dg.PrintQASMScheduledASAP();
+
+        dg.PrintScheduleALAP();
 	}
 
 	std::vector<circuit*> split_circuit(circuit x, bool verbose=false)

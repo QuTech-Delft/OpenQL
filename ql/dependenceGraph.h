@@ -301,60 +301,6 @@ public:
         dotout.close();
     }
 
-    void FindShortestPath()
-    {
-        dijkstra(graph, weight).distMap(dist).path(p).run(s,t);
-
-        std::cout << std::endl << "Printing distances from sources " << std::endl;
-        std::cout << "id   Name     Distance" << std::endl;
-        for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
-        {
-            int nid = graph.id(n);
-            string nodeName = name[n];
-            std::cout  << nid << "    " << nodeName <<"    " << dist[n] << std::endl;
-        }
-
-        std::cout << "Number of nodes in the shortest path = " << p.length() << std::endl;
-        std::cout << "Total distance of shortest path = " << dist[t] << std::endl;
-        std::cout << "Shortest path : ";
-        PathNodeIt< Path<ListDigraph> > nit( graph, p);
-        for ( ; nit != INVALID; ++nit)
-        {
-            if( graph.id(nit)  == graph.id(s) )
-                std::cout  << name[nit];
-            else
-                std::cout  << " -> " << name[nit];
-        }
-        std::cout << std::endl;
-    }
-
-    void FindLongestPath()
-    {
-        dijkstra(graph, weightNeg).distMap(dist).path(p).run(s,t);
-
-        std::cout << std::endl << "Printing distances from sources " << std::endl;
-        std::cout << "id   Name     Distance" << std::endl;
-        for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
-        {
-            int nid = graph.id(n);
-            string nodeName = name[n];
-            std::cout  << nid << "    " << nodeName <<"    " << dist[n] << std::endl;
-        }
-
-        std::cout << "Number of nodes in the longest path = " << p.length() << std::endl;
-        std::cout << "Total distance of longest path = " << dist[t] << std::endl;
-        std::cout << "Longest path : ";
-        PathNodeIt< Path<ListDigraph> > nit( graph, p);
-        for ( ; nit != INVALID; ++nit)
-        {
-            if( graph.id(nit)  == graph.id(s) )
-                std::cout  << name[nit];
-            else
-                std::cout  << " -> " << name[nit];
-        }
-        std::cout << std::endl;
-    }
-
     void TopologicalSort(std::vector<ListDigraph::Node> & order)
     {
         // std::cout << "Performing Topological sort." << std::endl;
@@ -395,22 +341,24 @@ public:
         std::cout << "Performing ASAP Scheduling" << std::endl;
         TopologicalSort(order);
 
-        std::vector<ListDigraph::Node>::reverse_iterator currNode;
-        for ( currNode = order.rbegin(); currNode != order.rend(); ++currNode)
+        std::vector<ListDigraph::Node>::reverse_iterator currNode = order.rbegin();
+        cycle[*currNode]=0; // src dummy in cycle 0
+        ++currNode;
+        while(currNode != order.rend() )
         {
-            //cout << "Scheduling " << name[*currNode] << endl;
+            // std::cout << "Scheduling " << name[*currNode] << std::endl;
             size_t currCycle=0;
-            ArcLookUp<ListDigraph> lookup(graph);
-            std::vector<ListDigraph::Node>::reverse_iterator prevNode;
-            for( prevNode=order.rbegin(); prevNode != currNode; ++prevNode)
+            for( ListDigraph::InArcIt arc(graph,*currNode); arc != INVALID; ++arc )
             {
-                if( lookup(*prevNode, *currNode) != INVALID)
+                ListDigraph::Node srcNode  = graph.source(arc);
+                size_t srcCycle = cycle[srcNode];
+                if(currCycle <= srcCycle)
                 {
-                    if( currCycle <= cycle[*prevNode] )
-                        currCycle = cycle[*prevNode] + 1;
+                    currCycle = srcCycle + 1; // replace 1 with latency
                 }
             }
             cycle[*currNode]=currCycle;
+            ++currNode;
         }
     }
 
@@ -448,7 +396,7 @@ public:
         dotout.close();
     }
 
-    void PrintScheduledQASM()
+    void PrintQASMScheduledASAP()
     {
         std::cout << "Printing Scheduled QASM in scheduled.qc" << std::endl;
         ofstream fout;
@@ -485,6 +433,47 @@ public:
         }
 
         fout.close();
+    }
+
+    void ScheduleALAP(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
+    {
+        std::cout << "Performing ALAP Scheduling" << std::endl;
+        TopologicalSort(order);
+
+        std::vector<ListDigraph::Node>::iterator currNode = order.begin();
+        cycle[*currNode]=1000; // src dummy in cycle 0
+        ++currNode;
+        while(currNode != order.end() )
+        {
+            // std::cout << "Scheduling " << name[*currNode] << std::endl;
+            size_t currCycle=1000;
+            for( ListDigraph::OutArcIt arc(graph,*currNode); arc != INVALID; ++arc )
+            {
+                ListDigraph::Node targetNode  = graph.target(arc);
+                size_t targetCycle = cycle[targetNode];
+                if(currCycle >= targetCycle)
+                {
+                    currCycle = targetCycle - 1; // replace 1 with latency
+                }
+            }
+            cycle[*currNode]=currCycle;
+            ++currNode;
+        }
+    }
+
+    void PrintScheduleALAP()
+    {
+        ListDigraph::NodeMap<size_t> cycle(graph);
+        std::vector<ListDigraph::Node> order;
+        ScheduleALAP(cycle,order);
+
+        std::cout << "\nPrinting ALAP Schedule" << std::endl;
+        std::cout << "Cycle <- Instruction " << std::endl;
+        std::vector<ListDigraph::Node>::reverse_iterator it;
+        for ( it = order.rbegin(); it != order.rend(); ++it)
+        {
+            std::cout << cycle[*it] << "     <- " <<  name[*it] << std::endl;
+        }
     }
 
 };
