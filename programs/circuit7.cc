@@ -14,8 +14,8 @@ int main(int argc, char ** argv)
 {
     srand(0);
 
-    int   num_circuits       = 13;
-    float sweep_points[]     = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };  // sizes of the clifford circuits per randomization
+    float sweep_points[]     = { 2, 4, 8, 16 };  // sizes of the clifford circuits per randomization
+    int   num_circuits       = 4;
 
     ql::init(ql::transmon_platform, "instructions.map");
 
@@ -50,6 +50,18 @@ int main(int argc, char ** argv)
 }
 
 
+// h q0
+// cnot q3,q4
+// cnot q3,q5
+// cnot q2,q3
+// cnot q2,q4
+// cnot q2,q6
+// cnot q1,q3
+// cnot q1,q5
+// cnot q1,q6
+// cnot q0,q3
+// cnot q0,q5
+// cnot q0,q6
 
 
 // kernel.hadamard(0);

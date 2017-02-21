@@ -20,4 +20,4 @@ run:
 
 clean:
 	rm -f 	programs/output/* $(examples) *~ *.dot *.dat \
-			scheduled.qc
+			scheduled*.qc

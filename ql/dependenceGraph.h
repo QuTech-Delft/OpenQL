@@ -1,5 +1,8 @@
-/*
- * Author: Imran Ashraf
+/**
+ * @file   dependenceGraph.h
+ * @date   01/2017
+ * @author Imran Ashraf
+ * @brief  ASAP/AlAP scheduling
  */
 
 #ifndef DEPENDENCEGRAPH_H
@@ -19,6 +22,7 @@ using namespace lemon;
 
 enum DepTypes{RAW,WAW,WAR};
 const string DepTypesNames[] = {"RAW", "WAW", "WAR"};
+auto MAX_CYCLE = std::numeric_limits<std::size_t>::max();
 
 class DependGraph
 {
@@ -48,7 +52,7 @@ public:
 
         // add dummy source node
         ListDigraph::Node srcNode = graph.addNode();
-        instruction[srcNode] = new ql::dummy();
+        instruction[srcNode] = new ql::nop();
         name[srcNode] = instruction[srcNode]->qasm();
         s=srcNode;
 
@@ -117,7 +121,7 @@ public:
 
         // add dummy target node
         ListDigraph::Node targetNode = graph.addNode();
-        instruction[targetNode] = new ql::dummy();;
+        instruction[targetNode] = new ql::nop();;
         name[targetNode] = instruction[targetNode]->qasm();
         t=targetNode;
 
@@ -398,9 +402,8 @@ public:
 
     void PrintQASMScheduledASAP()
     {
-        std::cout << "Printing Scheduled QASM in scheduled.qc" << std::endl;
         ofstream fout;
-        fout.open( "scheduled.qc", ios::binary);
+        fout.open( "scheduledASAP.qc", ios::binary);
         if ( fout.fail() )
         {
             std::cout << "Error opening file" << std::endl;
@@ -410,6 +413,7 @@ public:
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         ScheduleASAP(cycle,order);
+        std::cout << "Printing Scheduled QASM in scheduledASAP.qc" << std::endl;
 
         typedef std::vector<std::string> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
@@ -423,10 +427,11 @@ public:
         size_t TotalCycles = insInAllCycles.size();
         for(size_t c=1; c<TotalCycles-1;  ++c )
         {
-            for(size_t i=0; i<insInAllCycles[c].size(); ++i )
+            auto nInsThisCycle = insInAllCycles[c].size();
+            for(size_t i=0; i<nInsThisCycle; ++i )
             {
                 fout << insInAllCycles[c][i];
-                if( i != insInAllCycles[c].size() - 1 ) // last instruction
+                if( i != nInsThisCycle - 1 ) // last instruction
                     fout << " | ";
             }
             fout << std::endl;
@@ -441,12 +446,12 @@ public:
         TopologicalSort(order);
 
         std::vector<ListDigraph::Node>::iterator currNode = order.begin();
-        cycle[*currNode]=1000; // src dummy in cycle 0
+        cycle[*currNode]=MAX_CYCLE; // src dummy in cycle 0
         ++currNode;
         while(currNode != order.end() )
         {
             // std::cout << "Scheduling " << name[*currNode] << std::endl;
-            size_t currCycle=1000;
+            size_t currCycle=MAX_CYCLE;
             for( ListDigraph::OutArcIt arc(graph,*currNode); arc != INVALID; ++arc )
             {
                 ListDigraph::Node targetNode  = graph.target(arc);
@@ -472,8 +477,47 @@ public:
         std::vector<ListDigraph::Node>::reverse_iterator it;
         for ( it = order.rbegin(); it != order.rend(); ++it)
         {
-            std::cout << cycle[*it] << "     <- " <<  name[*it] << std::endl;
+            std::cout << MAX_CYCLE-cycle[*it] << "     <- " <<  name[*it] << std::endl;
         }
+    }
+
+    void PrintQASMScheduledALAP()
+    {
+        ofstream fout;
+        fout.open( "scheduledALAP.qc", ios::binary);
+        if ( fout.fail() )
+        {
+            std::cout << "Error opening file" << std::endl;
+            return;
+        }
+
+        ListDigraph::NodeMap<size_t> cycle(graph);
+        std::vector<ListDigraph::Node> order;
+        ScheduleALAP(cycle,order);
+        std::cout << "Printing Scheduled QASM in scheduledALAP.qc" << std::endl;
+
+        typedef std::vector<std::string> insInOneCycle;
+        std::map<size_t,insInOneCycle> insInAllCycles;
+
+        std::vector<ListDigraph::Node>::iterator it;
+        for ( it = order.begin(); it != order.end(); ++it)
+        {
+            insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( name[*it] );
+        }
+
+        size_t TotalCycles = insInAllCycles.size();
+        for(size_t c=TotalCycles-2; c>0; --c )
+        {
+            auto nInsThisCycle = insInAllCycles[c].size();
+            for(size_t i=0; i<nInsThisCycle; ++i )
+            {
+                fout << insInAllCycles[c][i];
+                if( i != nInsThisCycle - 1 ) // last instruction
+                    fout << " | ";
+            }
+            fout << std::endl;
+        }
+        fout.close();
     }
 
 };

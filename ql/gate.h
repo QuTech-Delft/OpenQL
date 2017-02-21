@@ -50,7 +50,7 @@ typedef enum __gate_type_t
     __measure_gate__ ,
     __display__      ,
     __display_binary__,
-    __dummy_gate__
+    __nop_gate__
 } gate_type_t;
 
 #define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
@@ -110,7 +110,7 @@ const complex_t cnot_c [] __attribute__((aligned(64))) =
     complex_t(0.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(1.0, 0.0)
 };
 
-const complex_t dummy_c  [] __attribute__((aligned(64))) = { complex_t(0.0, 0.0) , complex_t(0.0, 0.0),
+const complex_t nop_c  [] __attribute__((aligned(64))) = { complex_t(0.0, 0.0) , complex_t(0.0, 0.0),
                                                              complex_t(0.0, 0.0) , complex_t(0.0, 0.0)
                                                            };
 /**
@@ -623,22 +623,22 @@ public:
         return m;
     }
 };
-class dummy : public gate
+class nop : public gate
 {
 public:
     cmat_t m;
-    dummy() : m(dummy_c) {}
+    nop() : m(nop_c) {}
     instruction_t qasm()
     {
-        return instruction_t("   dummy");
+        return instruction_t("   NOP");
     }
     instruction_t micro_code()
     {
-        return ql::instruction_map["dymmy"];
+        return ql::instruction_map["nop"];
     }
     gate_type_t type()
     {
-        return __dummy_gate__;
+        return __nop_gate__;
     }
     cmat_t mat()
     {

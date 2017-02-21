@@ -350,11 +350,12 @@ namespace ql
         // dg.PrintMatrix();
         // dg.PrintDot();
 
-        dg.PrintScheduleASAP();
+        // dg.PrintScheduleASAP();
         // dg.PrintDotScheduleASAP();
-        // dg.PrintQASMScheduledASAP();
+        dg.PrintQASMScheduledASAP();
 
-        dg.PrintScheduleALAP();
+        // dg.PrintScheduleALAP();
+        dg.PrintQASMScheduledALAP();
 	}
 
 	std::vector<circuit*> split_circuit(circuit x, bool verbose=false)
