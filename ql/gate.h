@@ -32,24 +32,26 @@ extern instruction_map_t instruction_map;
 // gate types
 typedef enum __gate_type_t
 {
-    __identity_gate__,
-    __hadamard_gate__,
-    __pauli_x_gate__ ,
-    __pauli_y_gate__ ,
-    __pauli_z_gate__ ,
-    __phase_gate__   ,
-    __rx90_gate__    ,
-    __mrx90_gate__   ,
-    __rx180_gate__   ,
-    __ry90_gate__    ,
-    __mry90_gate__   ,
-    __ry180_gate__   ,
-    __rz_gate__      ,
-    __prepz_gate__   ,
-    __cnot_gate__   ,
-    __measure_gate__ ,
-    __display__      ,
-    __display_binary__,
+    __identity_gate__  ,
+    __hadamard_gate__  ,
+    __pauli_x_gate__   ,
+    __pauli_y_gate__   ,
+    __pauli_z_gate__   ,
+    __phase_gate__     ,
+    __phasedag_gate__  ,
+    __rx90_gate__      ,
+    __mrx90_gate__     ,
+    __rx180_gate__     ,
+    __ry90_gate__      ,
+    __mry90_gate__     ,
+    __ry180_gate__     ,
+    __rz_gate__        ,
+    __prepz_gate__     ,
+    __cnot_gate__      ,
+    __cphase_gate__    ,
+    __measure_gate__   ,
+    __display__        ,
+    __display_binary__ ,
     __nop_gate__
 } gate_type_t;
 
@@ -77,6 +79,10 @@ const complex_t hadamard_c [] __attribute__((aligned(64)))  = { rsqrt_2,  rsqrt_
 const complex_t phase_c    [] __attribute__((aligned(64))) = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0),
                                                                complex_t(0.0, 0.0) , complex_t(0.0, 1.0)
                                                              };        /* S */
+
+const complex_t phasedag_c    [] __attribute__((aligned(64))) = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0),
+                                                            complex_t(0.0, 0.0) , complex_t(0.0, -1.0)
+                                                          };        /* S */
 
 const complex_t rx90_c  [] __attribute__((aligned(64))) = { complex_t(rsqrt_2, 0.0) , complex_t(0.0, -rsqrt_2),
                                                             complex_t(0.0, -rsqrt_2), complex_t(rsqrt_2,  0.0)
@@ -110,6 +116,15 @@ const complex_t cnot_c [] __attribute__((aligned(64))) =
     complex_t(0.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(1.0, 0.0)
 };
 
+// TODO correct it, for now copied from cnot
+const complex_t cphase_c [] __attribute__((aligned(64))) =
+{
+    complex_t(1.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
+    complex_t(0.0, 0.0) , complex_t(1.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
+    complex_t(0.0, 0.0) , complex_t(0.0, 0.0), complex_t(1.0, 0.0), complex_t(0.0, 0.0),
+    complex_t(0.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(1.0, 0.0)
+};
+
 const complex_t nop_c  [] __attribute__((aligned(64))) = { complex_t(0.0, 0.0) , complex_t(0.0, 0.0),
                                                              complex_t(0.0, 0.0) , complex_t(0.0, 0.0)
                                                            };
@@ -120,6 +135,7 @@ class gate
 {
 public:
     std::vector<size_t> operands;
+    size_t latency;
     virtual instruction_t qasm()       = 0;
     virtual instruction_t micro_code() = 0;
     virtual gate_type_t   type()       = 0;
@@ -136,6 +152,7 @@ public:
     cmat_t m;
     hadamard(size_t q) : m(hadamard_c)
     {
+        latency = 2;
         operands.push_back(q);
     }
 
@@ -172,6 +189,7 @@ public:
 
     phase(size_t q) : m(phase_c)
     {
+        latency = 3;
         operands.push_back(q);
     }
 
@@ -197,6 +215,39 @@ public:
     }
 };
 
+class phasedag : public gate
+{
+public:
+    cmat_t m;
+
+    phasedag(size_t q) : m(phasedag_c)
+    {
+        latency = 3;
+        operands.push_back(q);
+    }
+
+    instruction_t qasm()
+    {
+        return instruction_t("   sdag q" + std::to_string(operands[0]) );
+    }
+
+    instruction_t micro_code()
+    {
+        // dummy !
+        return instruction_t("     pulse 1110 0000 1110\n     wait 10");
+    }
+
+    gate_type_t type()
+    {
+        return __phasedag_gate__;
+    }
+
+    cmat_t mat()
+    {
+        return m;
+    }
+};
+
 
 /**
  * pauli_x
@@ -209,6 +260,7 @@ public:
 
     pauli_x(size_t q) : m(pauli_x_c)
     {
+        latency = 1;
         operands.push_back(q);
     }
 
@@ -245,6 +297,7 @@ public:
 
     pauli_y(size_t q) : m(pauli_y_c)
     {
+        latency = 1;
         operands.push_back(q);
     }
 
@@ -282,6 +335,7 @@ public:
 
     pauli_z(size_t q) : m(pauli_z_c)
     {
+        latency = 2;
         operands.push_back(q);
     }
 
@@ -318,6 +372,7 @@ public:
 
     rx90(size_t q) : m(rx90_c)
     {
+        latency = 1;
         operands.push_back(q);
     }
 
@@ -354,6 +409,7 @@ public:
 
     mrx90(size_t q) : m(mrx90_c)
     {
+        latency = 1;
         operands.push_back(q);
     }
 
@@ -389,6 +445,7 @@ public:
 
     rx180(size_t q) : m(rx180_c)
     {
+        latency = 1;
         operands.push_back(q);
     }
 
@@ -425,6 +482,7 @@ public:
 
     ry90(size_t q) : m(ry90_c)
     {
+        latency = 1;
         operands.push_back(q);
     }
 
@@ -461,6 +519,7 @@ public:
 
     mry90(size_t q) : m(mry90_c)
     {
+        latency = 1;
         operands.push_back(q);
     }
 
@@ -496,6 +555,7 @@ public:
 
     ry180(size_t q) : m(ry180_c)
     {
+        latency = 1;
         operands.push_back(q);
     }
 
@@ -532,6 +592,7 @@ public:
 
     measure(size_t q) : m(identity_c)
     {
+        latency = 4;
         operands.push_back(q);
     }
 
@@ -568,6 +629,7 @@ public:
 
     prepz(size_t q) : m(identity_c)
     {
+        latency = 1;
         operands.push_back(q);
     }
 
@@ -600,8 +662,10 @@ class cnot : public gate
 {
 public:
     cmat_t m;
+
     cnot(size_t q1, size_t q2) : m(cnot_c)
     {
+        latency = 4;
         operands.push_back(q1);
         operands.push_back(q2);
     }
@@ -623,11 +687,49 @@ public:
         return m;
     }
 };
+
+/**
+ * cnot
+ */
+class cphase : public gate
+{
+public:
+    cmat_t m;
+
+    cphase(size_t q1, size_t q2) : m(cphase_c)
+    {
+        latency = 4;
+        operands.push_back(q1);
+        operands.push_back(q2);
+    }
+    instruction_t qasm()
+    {
+        return instruction_t("   cz q" + std::to_string(operands[0])
+                             + ", q"  + std::to_string(operands[1]) );
+    }
+    instruction_t micro_code()
+    {
+        return ql::instruction_map["cz"];
+    }
+    gate_type_t type()
+    {
+        return __cphase_gate__;
+    }
+    cmat_t mat()
+    {
+        return m;
+    }
+};
+
 class nop : public gate
 {
 public:
     cmat_t m;
-    nop() : m(nop_c) {}
+
+    nop() : m(nop_c)
+    {
+        latency = 1;
+    }
     instruction_t qasm()
     {
         return instruction_t("   NOP");
@@ -646,6 +748,6 @@ public:
     }
 };
 
-}
+} // end ql namespace
 
 #endif // GATE_H

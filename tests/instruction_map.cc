@@ -21,18 +21,18 @@ typedef std::string ucode_inst_t;
 typedef std::map<qasm_inst_t, ucode_inst_t> instruction_map_t;
 
 /**
- * @param str 
+ * @param str
  *    string to be processed
- * @param seq 
+ * @param seq
  *    string to be replaced
- * @param rep 
+ * @param rep
  *    string used to replace seq
  * @brief
  *    replace recursively seq by rep in str
  */
 inline void replace_all(std::string &str, std::string seq, std::string rep)
 {
-   int index = str.find(seq);
+   size_t index = str.find(seq);
    while (index < str.size())
    {
       str.replace(index, seq.size(), rep);
@@ -42,7 +42,7 @@ inline void replace_all(std::string &str, std::string seq, std::string rep)
 
 /**
  * string starts with " and end with "
- * return the content of the string between the commas 
+ * return the content of the string between the commas
  */
 bool format_string(std::string& s)
 {
@@ -63,16 +63,16 @@ bool format_string(std::string& s)
 bool load_instruction_map(std::string file_name, instruction_map_t& imap)
 {
    std::ifstream file(file_name);
- 
+
    std::string line;
    int i=0;
-   
+
    while (std::getline(file, line))
    {
 #ifdef __debug__
       println("[+] line " << i << " : " << line);
 #endif
-      size_t p = line.find(":"); 
+      size_t p = line.find(":");
       if (line.size() < 3) continue;
       if (p == std::string::npos)
       {
@@ -105,8 +105,8 @@ bool load_instruction_map(std::string file_name, instruction_map_t& imap)
    for (instruction_map_t::iterator i=imap.begin(); i!=imap.end(); i++)
       println("[ " << (*i).first <<  " --> " << (*i).second << " ]");
 #endif // __debug__
-   
-   return true; 
+
+   return true;
 }
 
 

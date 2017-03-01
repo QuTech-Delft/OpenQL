@@ -135,6 +135,8 @@ namespace ql
        return true;
     }
 
+// un-comment it to decompose
+// #define DECOMPOSE
 
    /**
     * quantum_kernel
@@ -155,27 +157,55 @@ namespace ql
 	void hadamard(size_t qubit)
 	{
 	   // qubit not used (default : q0)
+       #ifdef DECOMPOSE
 	   c.push_back(new ql::ry90(qubit));
 	   c.push_back(new ql::rx180(qubit));
+       #else
+       c.push_back(new ql::hadamard(qubit));
+       #endif
+	}
+
+    void s(size_t qubit)
+	{
+	   // qubit not used (default : q0)
+	   c.push_back(new ql::phase(qubit));
+	}
+
+    void sdag(size_t qubit)
+	{
+	   // qubit not used (default : q0)
+	   c.push_back(new ql::phasedag(qubit));
 	}
 
 	void x(size_t qubit)
 	{
 	   // qubit not used (default : q0)
+       #ifdef DECOMPOSE
 	   c.push_back(new ql::rx180(qubit));
+       #else
+       c.push_back(new ql::pauli_x(qubit));
+       #endif
 	}
 
 	void y(size_t qubit)
 	{
 	   // qubit not used (default : q0)
+       #ifdef DECOMPOSE
 	   c.push_back(new ql::ry180(qubit));
+       #else
+       c.push_back(new ql::pauli_y(qubit));
+       #endif
 	}
 
 	void z(size_t qubit)
 	{
 	   // qubit not used (default : q0)
+       #ifdef DECOMPOSE
 	   c.push_back(new ql::ry180(qubit));
 	   c.push_back(new ql::rx180(qubit));
+       #else
+       c.push_back(new ql::pauli_z(qubit));
+       #endif
 	}
 
 
@@ -229,8 +259,12 @@ namespace ql
 
     void cnot(size_t qubit1, size_t qubit2)
 	{
-        // qubit1 and qubit2 not used (default : q0, q1)
 	    c.push_back(new ql::cnot(qubit1, qubit2));
+	}
+
+    void cphase(size_t qubit1, size_t qubit2)
+	{
+	    c.push_back(new ql::cphase(qubit1, qubit2));
 	}
 
 	/**

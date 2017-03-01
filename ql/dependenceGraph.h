@@ -32,7 +32,6 @@ private:
     ListDigraph::NodeMap<ql::gate*> instruction;
     ListDigraph::NodeMap<string> name;
     ListDigraph::ArcMap<int> weight;
-    ListDigraph::ArcMap<int> weightNeg;
     ListDigraph::ArcMap<int> cause;
     ListDigraph::ArcMap<int> depType;
 
@@ -42,7 +41,7 @@ private:
     ListDigraph::Node s, t;
 
 public:
-    DependGraph(): instruction(graph), name(graph), weight(graph), weightNeg(graph),
+    DependGraph(): instruction(graph), name(graph), weight(graph),
         cause(graph), depType(graph), dist(graph) {}
 
     void Init( ql::circuit& ckt, size_t nqubits)
@@ -85,9 +84,8 @@ public:
                 if(prodID == srcID)
                     weight[arc] = 1; // TODO OR 0 as SOURCE is dummy node?
                 else
-                    weight[arc] = 1;
+                    weight[arc] = instruction[prodNode]->latency;
 
-                weightNeg[arc] = 10 - weight[arc];
                 cause[arc] = operand;
                 if( operandNo == operands.size()-1 ) // Last operand is target, well Mostsly! TODO Fix it for other case
                 {
@@ -103,9 +101,8 @@ public:
                         if(prodID == srcID)
                             weight[arc1] = 1; // TODO OR 0 as SOURCE is dummy node?
                         else
-                            weight[arc1] = 1;
+                            weight[arc] = instruction[prodNode]->latency;
 
-                        weightNeg[arc1] = 10 - weight[arc1];
                         cause[arc1] = operand;
                         depType[arc1] = WAR;
                     }
@@ -125,6 +122,7 @@ public:
         name[targetNode] = instruction[targetNode]->qasm();
         t=targetNode;
 
+        // make links to the dummy target node
         OutDegMap<ListDigraph> outDeg(graph);
         for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
         {
@@ -132,7 +130,6 @@ public:
             {
                 ListDigraph::Arc arc = graph.addArc(n,targetNode);
                 weight[arc] = 1; // TODO OR 0?
-                weightNeg[arc] = 10 - weight[arc];
                 cause[arc] = 0; // NA
                 depType[arc] = RAW; // NA
             }
@@ -358,7 +355,7 @@ public:
                 size_t srcCycle = cycle[srcNode];
                 if(currCycle <= srcCycle)
                 {
-                    currCycle = srcCycle + 1; // replace 1 with latency
+                    currCycle = srcCycle + weight[arc];
                 }
             }
             cycle[*currNode]=currCycle;
@@ -428,15 +425,21 @@ public:
         for(size_t c=1; c<TotalCycles-1;  ++c )
         {
             auto nInsThisCycle = insInAllCycles[c].size();
-            for(size_t i=0; i<nInsThisCycle; ++i )
+            if( 0 == nInsThisCycle)
             {
-                fout << insInAllCycles[c][i];
-                if( i != nInsThisCycle - 1 ) // last instruction
-                    fout << " | ";
+                fout << "   nop";
+            }
+            else
+            {
+                for(size_t i=0; i<nInsThisCycle; ++i )
+                {
+                    fout << insInAllCycles[c][i];
+                    if( i != nInsThisCycle - 1 ) // last instruction
+                        fout << " | ";
+                }
             }
             fout << std::endl;
         }
-
         fout.close();
     }
 
@@ -458,7 +461,7 @@ public:
                 size_t targetCycle = cycle[targetNode];
                 if(currCycle >= targetCycle)
                 {
-                    currCycle = targetCycle - 1; // replace 1 with latency
+                    currCycle = targetCycle - + weight[arc];
                 }
             }
             cycle[*currNode]=currCycle;
@@ -509,11 +512,18 @@ public:
         for(size_t c=TotalCycles-2; c>0; --c )
         {
             auto nInsThisCycle = insInAllCycles[c].size();
-            for(size_t i=0; i<nInsThisCycle; ++i )
+            if( 0 == nInsThisCycle)
             {
-                fout << insInAllCycles[c][i];
-                if( i != nInsThisCycle - 1 ) // last instruction
-                    fout << " | ";
+                fout << "   nop";
+            }
+            else
+            {
+                for(size_t i=0; i<nInsThisCycle; ++i )
+                {
+                    fout << insInAllCycles[c][i];
+                    if( i != nInsThisCycle - 1 ) // last instruction
+                        fout << " | ";
+                }
             }
             fout << std::endl;
         }
