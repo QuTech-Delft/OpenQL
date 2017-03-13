@@ -267,6 +267,11 @@ namespace ql
 	    c.push_back(new ql::cphase(qubit1, qubit2));
 	}
 
+    void toffoli(size_t qubit1, size_t qubit2, size_t qubit3)
+	{
+	    c.push_back(new ql::toffoli(qubit1, qubit2, qubit3));
+	}
+
 	/**
 	 * add clifford
 	 */

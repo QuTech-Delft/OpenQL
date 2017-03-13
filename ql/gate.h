@@ -49,6 +49,7 @@ typedef enum __gate_type_t
     __prepz_gate__     ,
     __cnot_gate__      ,
     __cphase_gate__    ,
+    __toffoli_gate__    ,
     __measure_gate__   ,
     __display__        ,
     __display_binary__ ,
@@ -118,6 +119,15 @@ const complex_t cnot_c [] __attribute__((aligned(64))) =
 
 // TODO correct it, for now copied from cnot
 const complex_t cphase_c [] __attribute__((aligned(64))) =
+{
+    complex_t(1.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
+    complex_t(0.0, 0.0) , complex_t(1.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
+    complex_t(0.0, 0.0) , complex_t(0.0, 0.0), complex_t(1.0, 0.0), complex_t(0.0, 0.0),
+    complex_t(0.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(1.0, 0.0)
+};
+
+// TODO correct it, for now copied from toffoli
+const complex_t ctoffoli_c [] __attribute__((aligned(64))) =
 {
     complex_t(1.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
     complex_t(0.0, 0.0) , complex_t(1.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
@@ -689,7 +699,7 @@ public:
 };
 
 /**
- * cnot
+ * cphase
  */
 class cphase : public gate
 {
@@ -714,6 +724,41 @@ public:
     gate_type_t type()
     {
         return __cphase_gate__;
+    }
+    cmat_t mat()
+    {
+        return m;
+    }
+};
+
+/**
+ * cphase
+ */
+class toffoli : public gate
+{
+public:
+    cmat_t m;
+
+    toffoli(size_t q1, size_t q2, size_t q3) : m(ctoffoli_c)
+    {
+        latency = 6;
+        operands.push_back(q1);
+        operands.push_back(q2);
+        operands.push_back(q3);
+    }
+    instruction_t qasm()
+    {
+        return instruction_t("   toffoli q" + std::to_string(operands[0])
+                             + ", q"  + std::to_string(operands[1])
+                             + ", q"  + std::to_string(operands[2]) );
+    }
+    instruction_t micro_code()
+    {
+        return ql::instruction_map["toffoli"];
+    }
+    gate_type_t type()
+    {
+        return __toffoli_gate__;
     }
     cmat_t mat()
     {
