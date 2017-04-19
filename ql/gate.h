@@ -598,7 +598,7 @@ public:
 class measure : public gate
 {
 public:
-    cmat_t m;
+    cmat_t m; 
 
     measure(size_t q) : m(identity_c)
     {
@@ -608,8 +608,8 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("   measure q" + std::to_string(operands[0])
-                             + "\n   display_binary\n");
+        return instruction_t("   measure q" + std::to_string(operands[0]) );
+                             // + "\n   display_binary\n");
     }
 
     instruction_t micro_code()

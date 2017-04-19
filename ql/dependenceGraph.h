@@ -87,7 +87,8 @@ public:
                     weight[arc] = instruction[prodNode]->latency;
 
                 cause[arc] = operand;
-                if( operandNo == operands.size()-1 ) // Last operand is target, well Mostsly! TODO Fix it for other case
+                // Last operand is target, well Mostsly! TODO Fix it for other cases
+                if( operandNo == operands.size()-1 ) 
                 {
                     depType[arc] = WAW;
                     LastWriter[operand] = consID;
@@ -101,7 +102,7 @@ public:
                         if(prodID == srcID)
                             weight[arc1] = 1; // TODO OR 0 as SOURCE is dummy node?
                         else
-                            weight[arc] = instruction[prodNode]->latency;
+                            weight[arc1] = instruction[readerNode]->latency;
 
                         cause[arc1] = operand;
                         depType[arc1] = WAR;
@@ -273,8 +274,8 @@ public:
                 << "\"" << dstID << "\""
                 << "[ label=\""
                 << "q" << cause[arc]
-                //<< " , " << weight[arc]
-                //<< " , " << DepTypesNames[ depType[arc] ]
+                << " , " << weight[arc]
+                << " , " << DepTypesNames[ depType[arc] ]
                 <<"\""
                 << " " << EdgeStyle << " "
                 << "]"
@@ -380,9 +381,9 @@ public:
 
     void PrintDotScheduleASAP()
     {
-        std::cout << "Printing Scheduled Graph in scheduledGraph.dot" << std::endl;
+        std::cout << "Printing Scheduled Graph in scheduledASAP.dot" << std::endl;
         ofstream dotout;
-        dotout.open( "scheduledGraph.dot", ios::binary);
+        dotout.open( "scheduledASAP.dot", ios::binary);
         if ( dotout.fail() )
         {
             std::cout << "Error opening file" << std::endl;
@@ -421,25 +422,32 @@ public:
             insInAllCycles[ cycle[*it] ].push_back( name[*it] );
         }
 
-        size_t TotalCycles = insInAllCycles.size();
-        for(size_t c=1; c<TotalCycles-1;  ++c )
+        size_t TotalCycles = 0;
+        if( ! order.empty() )
         {
-            auto nInsThisCycle = insInAllCycles[c].size();
-            if( 0 == nInsThisCycle)
+            TotalCycles =  cycle[ *( order.begin() ) ];
+        }
+
+        for(size_t currCycle = 1; currCycle<TotalCycles; ++currCycle)
+        {
+            auto it = insInAllCycles.find(currCycle);
+            if( it != insInAllCycles.end() )
             {
-                fout << "   nop";
-            }
-            else
-            {
+                auto nInsThisCycle = insInAllCycles[currCycle].size();
                 for(size_t i=0; i<nInsThisCycle; ++i )
                 {
-                    fout << insInAllCycles[c][i];
+                    fout << insInAllCycles[currCycle][i];
                     if( i != nInsThisCycle - 1 ) // last instruction
                         fout << " | ";
                 }
             }
-            fout << std::endl;
+            else
+            {
+                fout << "   nop";
+            }
+            fout << endl;
         }
+
         fout.close();
     }
 
@@ -508,26 +516,31 @@ public:
             insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( name[*it] );
         }
 
-        size_t TotalCycles = insInAllCycles.size();
-        for(size_t c=TotalCycles-2; c>0; --c )
+        size_t TotalCycles = 0;
+        if( ! order.empty() )
         {
-            auto nInsThisCycle = insInAllCycles[c].size();
-            if( 0 == nInsThisCycle)
+            TotalCycles =  MAX_CYCLE - cycle[ *( order.rbegin() ) ];
+        }
+
+        for(size_t currCycle = TotalCycles-1; currCycle>0; --currCycle)
+        {
+            auto it = insInAllCycles.find(currCycle);
+            if( it != insInAllCycles.end() )
             {
-                fout << "   nop";
-            }
-            else
-            {
+                auto nInsThisCycle = insInAllCycles[currCycle].size();
                 for(size_t i=0; i<nInsThisCycle; ++i )
                 {
-                    fout << insInAllCycles[c][i];
+                    fout << insInAllCycles[currCycle][i];
                     if( i != nInsThisCycle - 1 ) // last instruction
                         fout << " | ";
                 }
             }
-            fout << std::endl;
+            else
+            {
+                fout << "   nop";
+            }
+            fout << endl;
         }
-        fout.close();
     }
 
 };

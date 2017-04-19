@@ -387,7 +387,7 @@ namespace ql
 		dg.Init(c,nqubits);
 		// dg.Print();
         // dg.PrintMatrix();
-        // dg.PrintDot();
+        dg.PrintDot();
 
         // dg.PrintScheduleASAP();
         // dg.PrintDotScheduleASAP();

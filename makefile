@@ -15,14 +15,13 @@ tests=$(patsubst %.cc,%,$(test_programs))
 all: $(examples) $(tests)
 
 # compile examples
-
 %: %.cc
 	$(cc) -o $@ $< $(cflags) $(libs) $(incs) $(opts)
 
-run:
-	./programs/scaffCC/square_root
-	# ./programs/circuit7
-	# ./tests/t_8_32
+run: $(examples) $(tests)
+	@# ./programs/circuit7
+	./tests/toffoliTest
+	@#./programs/scaffCC/square_root
 
 clean:
 	rm -f 	programs/output/* $(examples) $(tests) *~ *.dot *.dat \
