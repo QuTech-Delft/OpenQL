@@ -59,57 +59,57 @@ typedef enum __gate_type_t
 #define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
 #define rsqrt_2 (0.7071067811865475244008443621048490392848359376884740365883398690f)
 
-const complex_t identity_c  [] __attribute__((aligned(64))) = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0),
+const complex_t identity_c  [] /* __attribute__((aligned(64))) */ = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0),
                                                                 complex_t(0.0, 0.0) , complex_t(1.0, 0.0)
                                                               };     /* I */
 
-const complex_t pauli_x_c  [] __attribute__((aligned(64))) = { complex_t(0.0, 0.0) , complex_t(1.0, 0.0),
+const complex_t pauli_x_c  [] /* __attribute__((aligned(64))) */ = { complex_t(0.0, 0.0) , complex_t(1.0, 0.0),
                                                                complex_t(1.0, 0.0) , complex_t(0.0, 0.0)
                                                              };      /* X */
 
-const complex_t pauli_y_c  [] __attribute__((aligned(64))) = { complex_t(0.0, 0.0) , complex_t(0.0,-1.0),
+const complex_t pauli_y_c  [] /* __attribute__((aligned(64))) */ = { complex_t(0.0, 0.0) , complex_t(0.0,-1.0),
                                                                complex_t(0.0, 1.0) , complex_t(0.0, 0.0)
                                                              };      /* Y */
 
-const complex_t pauli_z_c  [] __attribute__((aligned(64))) = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0),
+const complex_t pauli_z_c  [] /* __attribute__((aligned(64))) */ = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0),
                                                                complex_t(0.0, 0.0) , complex_t(-1.0,0.0)
                                                              };      /* Z */
 
-const complex_t hadamard_c [] __attribute__((aligned(64)))  = { rsqrt_2,  rsqrt_2, rsqrt_2, -rsqrt_2 };            /* H */
+const complex_t hadamard_c [] /* __attribute__((aligned(64))) */  = { rsqrt_2,  rsqrt_2, rsqrt_2, -rsqrt_2 };            /* H */
 
-const complex_t phase_c    [] __attribute__((aligned(64))) = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0),
+const complex_t phase_c    [] /* __attribute__((aligned(64))) */ = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0),
                                                                complex_t(0.0, 0.0) , complex_t(0.0, 1.0)
                                                              };        /* S */
 
-const complex_t phasedag_c    [] __attribute__((aligned(64))) = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0),
+const complex_t phasedag_c    [] /* __attribute__((aligned(64))) */ = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0),
                                                             complex_t(0.0, 0.0) , complex_t(0.0, -1.0)
                                                           };        /* S */
 
-const complex_t rx90_c  [] __attribute__((aligned(64))) = { complex_t(rsqrt_2, 0.0) , complex_t(0.0, -rsqrt_2),
+const complex_t rx90_c  [] /* __attribute__((aligned(64))) */ = { complex_t(rsqrt_2, 0.0) , complex_t(0.0, -rsqrt_2),
                                                             complex_t(0.0, -rsqrt_2), complex_t(rsqrt_2,  0.0)
                                                           };   /* rx90  */
 
-const complex_t ry90_c  [] __attribute__((aligned(64))) = { complex_t(rsqrt_2, 0.0) , complex_t(-rsqrt_2, 0.0),
+const complex_t ry90_c  [] /* __attribute__((aligned(64))) */ = { complex_t(rsqrt_2, 0.0) , complex_t(-rsqrt_2, 0.0),
                                                             complex_t(rsqrt_2, 0.0 ), complex_t( rsqrt_2, 0.0)
                                                           };   /* ry90  */
 
-const complex_t mrx90_c [] __attribute__((aligned(64))) = { complex_t(rsqrt_2, 0.0) , complex_t(0.0,  rsqrt_2),
+const complex_t mrx90_c [] /* __attribute__((aligned(64))) */ = { complex_t(rsqrt_2, 0.0) , complex_t(0.0,  rsqrt_2),
                                                             complex_t(0.0, rsqrt_2) , complex_t(rsqrt_2,  0.0)
                                                           };   /* mrx90 */
 
-const complex_t mry90_c [] __attribute__((aligned(64))) = { complex_t(rsqrt_2, 0.0) , complex_t(rsqrt_2, 0.0),
+const complex_t mry90_c [] /* __attribute__((aligned(64))) */ = { complex_t(rsqrt_2, 0.0) , complex_t(rsqrt_2, 0.0),
                                                             complex_t(-rsqrt_2, 0.0), complex_t(rsqrt_2, 0.0)
                                                           };   /* ry90  */
 
-const complex_t rx180_c [] __attribute__((aligned(64))) = { complex_t(0.0, 0.0) , complex_t(0.0,-1.0),
+const complex_t rx180_c [] /* __attribute__((aligned(64))) */ = { complex_t(0.0, 0.0) , complex_t(0.0,-1.0),
                                                             complex_t(0.0,-1.0) , complex_t(0.0, 0.0)
                                                           };            /* rx180 */
 
-const complex_t ry180_c [] __attribute__((aligned(64))) = { complex_t(0.0, 0.0) , complex_t(-1.0, 0.0),
+const complex_t ry180_c [] /* __attribute__((aligned(64))) */ = { complex_t(0.0, 0.0) , complex_t(-1.0, 0.0),
                                                             complex_t(1.0, 0.0) , complex_t( 0.0, 0.0)
                                                           };            /* ry180 */
 
-const complex_t cnot_c [] __attribute__((aligned(64))) =
+const complex_t cnot_c [] /* __attribute__((aligned(64))) */ =
 {
     complex_t(1.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
     complex_t(0.0, 0.0) , complex_t(1.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
@@ -118,7 +118,7 @@ const complex_t cnot_c [] __attribute__((aligned(64))) =
 };
 
 // TODO correct it, for now copied from cnot
-const complex_t cphase_c [] __attribute__((aligned(64))) =
+const complex_t cphase_c [] /* __attribute__((aligned(64))) */ =
 {
     complex_t(1.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
     complex_t(0.0, 0.0) , complex_t(1.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
@@ -127,7 +127,7 @@ const complex_t cphase_c [] __attribute__((aligned(64))) =
 };
 
 // TODO correct it, for now copied from toffoli
-const complex_t ctoffoli_c [] __attribute__((aligned(64))) =
+const complex_t ctoffoli_c [] /* __attribute__((aligned(64))) */ =
 {
     complex_t(1.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
     complex_t(0.0, 0.0) , complex_t(1.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
@@ -135,7 +135,7 @@ const complex_t ctoffoli_c [] __attribute__((aligned(64))) =
     complex_t(0.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(1.0, 0.0)
 };
 
-const complex_t nop_c  [] __attribute__((aligned(64))) = { complex_t(0.0, 0.0) , complex_t(0.0, 0.0),
+const complex_t nop_c  [] /*__attribute__((aligned(64)))*/ = { complex_t(0.0, 0.0) , complex_t(0.0, 0.0),
                                                              complex_t(0.0, 0.0) , complex_t(0.0, 0.0)
                                                            };
 /**

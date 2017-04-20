@@ -15,19 +15,30 @@ QX simulator.
 
 ## Required Packages
 
-* g++ compiler with C++ 11 support
+* g++ compiler with C++ 11 support (Linux)
+* MSVC 2015 (Windows)
 * cmake
 * [Lemon graph library](http://lemon.cs.elte.hu/trac/lemon)
 * graphviz Dot utility to convert graphs from dot to pdf, png etc
 
 ## Setup
 
+# Linux
+
         mkdir build
         cd build
         cmake ..
         make
 
+# Windows
+
+        mkdir build
+        cd build
+        cmake -G "NMake Makefiles" ..
+        nmake
+
 
 ## Usage
 
-coming soon
+Executables will be generated in build/tests and build/programs directory.
+Further details coming soon ...

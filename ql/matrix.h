@@ -23,7 +23,7 @@ namespace ql
 
 	 public:
 
-	    __T m[__N * __N] __attribute__((aligned(16))); 
+	    __T m[__N * __N] /* TODO: properly handle it __attribute__((aligned(16))) */ ; 
 
 	    /**
 	     * default ctor
