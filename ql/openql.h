@@ -390,7 +390,7 @@ namespace ql
         dg.PrintDot();
 
         // dg.PrintScheduleASAP();
-        // dg.PrintDotScheduleASAP();
+        dg.PrintDotScheduleASAP();
         dg.PrintQASMScheduledASAP();
 
         // dg.PrintScheduleALAP();

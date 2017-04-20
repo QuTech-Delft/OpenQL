@@ -1,4 +1,7 @@
+build
+
 *.dot
+*.qc
 *.dat
 *.swp
 *~
