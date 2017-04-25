@@ -3,7 +3,7 @@
  */
 
 #include<iostream>
-#include "api/openql/csrc/api.h"
+#include "openql/api.h"
 
 int main(int argc, char ** argv)
 {

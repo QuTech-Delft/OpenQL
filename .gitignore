@@ -1,4 +1,7 @@
 build
+cbuild
+dist
+openql.egg-info
 
 *.dot
 *.qc

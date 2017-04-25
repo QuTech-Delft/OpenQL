@@ -3,17 +3,16 @@ from cffi import FFI
 from sys import platform
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
-print(rootDir)
-myclibDir = os.path.join(rootDir, "csrc")
+myclibDir = os.path.join(rootDir, ".." , "cbuild", "openql")
 
 if platform == "linux" or platform == "linux2":
-    myclib = os.path.join(myclibDir, "libapi.so")
+    myclib = os.path.join(myclibDir, "libopenql.so")
 
 elif platform == "darwin":
     print('OS X not yet tested!')
 
 elif platform == "win32":
-    myclib = os.path.join(myclibDir, "api.dll")
+    myclib = os.path.join(myclibDir, "openql.dll")
 
 else:
     print('Unknown platform !!!')
@@ -28,7 +27,7 @@ int compile();
 ''')
 
 lib = ffi.dlopen(myclib)
-print('Loaded lib {0}'.format(lib))
+# print('Loaded lib {0}'.format(lib))
 
 def init():
     print('init() via cffi')

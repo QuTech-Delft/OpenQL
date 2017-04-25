@@ -13,8 +13,8 @@ else:
 # All of the modules must be completely imported before we can start importing
 # specific names, due to circular dependencies between the various modules.
 if PY3:
-    from .openql import api
+    from .openql import init, schedule, compile
 else:
-    import api
+    from openql import init, schedule, compile
 
-__all__ = [ api ]
+# __all__ = [ init, schedule, compile ]
