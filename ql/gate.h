@@ -8,149 +8,184 @@
 #ifndef GATE_H
 #define GATE_H
 
+
+#include <fstream>
+#include <iomanip>
+#include <complex>
+#include <ql/json.h>
+
 #include <string>
 #include <sstream>
 #include <map>
 
-#include "matrix.h"
+#include <ql/matrix.h>
+#include <ql/json.h>
+
 #include <ql/openql.h>
 
-
+using json = nlohmann::json;
 
 typedef std::string instruction_t;
 
 namespace ql
 {
 
-typedef std::string qasm_inst_t;
-typedef std::string ucode_inst_t;
+   typedef std::string qasm_inst_t;
+   typedef std::string ucode_inst_t;
 
-typedef std::map<qasm_inst_t, ucode_inst_t> instruction_map_t;
+   typedef std::string string_t;
+   typedef std::vector<std::string> strings_t;
+   typedef std::vector<std::string> ucode_sequence_t;
 
-extern instruction_map_t instruction_map;
+   typedef enum
+   {
+      flux_t,
+      rf_t
+   } instruction_type_t;
 
-// gate types
-typedef enum __gate_type_t
-{
-    __identity_gate__  ,
-    __hadamard_gate__  ,
-    __pauli_x_gate__   ,
-    __pauli_y_gate__   ,
-    __pauli_z_gate__   ,
-    __phase_gate__     ,
-    __phasedag_gate__  ,
-    __rx90_gate__      ,
-    __mrx90_gate__     ,
-    __rx180_gate__     ,
-    __ry90_gate__      ,
-    __mry90_gate__     ,
-    __ry180_gate__     ,
-    __rz_gate__        ,
-    __prepz_gate__     ,
-    __cnot_gate__      ,
-    __cphase_gate__    ,
-    __toffoli_gate__    ,
-    __measure_gate__   ,
-    __display__        ,
-    __display_binary__ ,
-    __nop_gate__
-} gate_type_t;
 
-#define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
-#define rsqrt_2 (0.7071067811865475244008443621048490392848359376884740365883398690f)
 
-const complex_t identity_c  [] /* __attribute__((aligned(64))) */ = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0),
-                                                                complex_t(0.0, 0.0) , complex_t(1.0, 0.0)
-                                                              };     /* I */
+   typedef std::map<qasm_inst_t, ucode_inst_t> instruction_map_t;
 
-const complex_t pauli_x_c  [] /* __attribute__((aligned(64))) */ = { complex_t(0.0, 0.0) , complex_t(1.0, 0.0),
-                                                               complex_t(1.0, 0.0) , complex_t(0.0, 0.0)
-                                                             };      /* X */
+   extern instruction_map_t instruction_map;
 
-const complex_t pauli_y_c  [] /* __attribute__((aligned(64))) */ = { complex_t(0.0, 0.0) , complex_t(0.0,-1.0),
-                                                               complex_t(0.0, 1.0) , complex_t(0.0, 0.0)
-                                                             };      /* Y */
+   // gate types
+   typedef enum __gate_type_t
+   {
+      __identity_gate__  ,
+      __hadamard_gate__  ,
+      __pauli_x_gate__   ,
+      __pauli_y_gate__   ,
+      __pauli_z_gate__   ,
+      __phase_gate__     ,
+      __phasedag_gate__  ,
+      __rx90_gate__      ,
+      __mrx90_gate__     ,
+      __rx180_gate__     ,
+      __ry90_gate__      ,
+      __mry90_gate__     ,
+      __ry180_gate__     ,
+      __rz_gate__        ,
+      __prepz_gate__     ,
+      __cnot_gate__      ,
+      __cphase_gate__    ,
+      __toffoli_gate__   ,
+      __custom_gate__    ,
+      __measure_gate__   ,
+      __display__        ,
+      __display_binary__ ,
+      __nop_gate__
+   } gate_type_t;
 
-const complex_t pauli_z_c  [] /* __attribute__((aligned(64))) */ = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0),
-                                                               complex_t(0.0, 0.0) , complex_t(-1.0,0.0)
-                                                             };      /* Z */
+   #define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
+   #define rsqrt_2 (0.7071067811865475244008443621048490392848359376884740365883398690f)
 
-const complex_t hadamard_c [] /* __attribute__((aligned(64))) */  = { rsqrt_2,  rsqrt_2, rsqrt_2, -rsqrt_2 };            /* H */
+   #define __c(r,i) complex_t(r,i)
 
-const complex_t phase_c    [] /* __attribute__((aligned(64))) */ = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0),
-                                                               complex_t(0.0, 0.0) , complex_t(0.0, 1.0)
-                                                             };        /* S */
+   const complex_t identity_c [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
+                                                                         __c(0.0, 0.0) , __c(1.0, 0.0)
+                                                                      };     /* I */
 
-const complex_t phasedag_c    [] /* __attribute__((aligned(64))) */ = { complex_t(1.0, 0.0) , complex_t(0.0, 0.0),
-                                                            complex_t(0.0, 0.0) , complex_t(0.0, -1.0)
-                                                          };        /* S */
+   const complex_t pauli_x_c  [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) , __c(1.0, 0.0),
+                                                                        __c(1.0, 0.0) , __c(0.0, 0.0)
+                                                                      };      /* X */
 
-const complex_t rx90_c  [] /* __attribute__((aligned(64))) */ = { complex_t(rsqrt_2, 0.0) , complex_t(0.0, -rsqrt_2),
-                                                            complex_t(0.0, -rsqrt_2), complex_t(rsqrt_2,  0.0)
-                                                          };   /* rx90  */
+   const complex_t pauli_y_c  [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) , __c(0.0,-1.0),
+                                                                        __c(0.0, 1.0) , __c(0.0, 0.0)
+                                                                      };      /* Y */
 
-const complex_t ry90_c  [] /* __attribute__((aligned(64))) */ = { complex_t(rsqrt_2, 0.0) , complex_t(-rsqrt_2, 0.0),
-                                                            complex_t(rsqrt_2, 0.0 ), complex_t( rsqrt_2, 0.0)
-                                                          };   /* ry90  */
+   const complex_t pauli_z_c  [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
+                                                                        __c(0.0, 0.0) , __c(-1.0,0.0)
+                                                                      };      /* Z */
 
-const complex_t mrx90_c [] /* __attribute__((aligned(64))) */ = { complex_t(rsqrt_2, 0.0) , complex_t(0.0,  rsqrt_2),
-                                                            complex_t(0.0, rsqrt_2) , complex_t(rsqrt_2,  0.0)
-                                                          };   /* mrx90 */
+   const complex_t hadamard_c [] /* __attribute__((aligned(64))) */  = { rsqrt_2      ,  rsqrt_2, 
+                                                                         rsqrt_2      , -rsqrt_2 
+                                                                       };            /* H */
 
-const complex_t mry90_c [] /* __attribute__((aligned(64))) */ = { complex_t(rsqrt_2, 0.0) , complex_t(rsqrt_2, 0.0),
-                                                            complex_t(-rsqrt_2, 0.0), complex_t(rsqrt_2, 0.0)
-                                                          };   /* ry90  */
+   const complex_t phase_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
+                                                                        __c(0.0, 0.0) , __c(0.0, 1.0)
+                                                                      };        /* S */
 
-const complex_t rx180_c [] /* __attribute__((aligned(64))) */ = { complex_t(0.0, 0.0) , complex_t(0.0,-1.0),
-                                                            complex_t(0.0,-1.0) , complex_t(0.0, 0.0)
-                                                          };            /* rx180 */
+   const complex_t phasedag_c [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
+                                                                        __c(0.0, 0.0) , __c(0.0, -1.0)
+                                                                      };        /* S */
 
-const complex_t ry180_c [] /* __attribute__((aligned(64))) */ = { complex_t(0.0, 0.0) , complex_t(-1.0, 0.0),
-                                                            complex_t(1.0, 0.0) , complex_t( 0.0, 0.0)
-                                                          };            /* ry180 */
+   const complex_t rx90_c  [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(0.0, -rsqrt_2),
+                                                                     __c(0.0, -rsqrt_2), __c(rsqrt_2,  0.0)
+                                                                   };   /* rx90  */
 
-const complex_t cnot_c [] /* __attribute__((aligned(64))) */ =
-{
-    complex_t(1.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
-    complex_t(0.0, 0.0) , complex_t(1.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
-    complex_t(0.0, 0.0) , complex_t(0.0, 0.0), complex_t(1.0, 0.0), complex_t(0.0, 0.0),
-    complex_t(0.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(1.0, 0.0)
-};
+   const complex_t ry90_c  [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(-rsqrt_2, 0.0),
+                                                                     __c(rsqrt_2, 0.0 ), __c( rsqrt_2, 0.0)
+                                                                   };   /* ry90  */
 
-// TODO correct it, for now copied from cnot
-const complex_t cphase_c [] /* __attribute__((aligned(64))) */ =
-{
-    complex_t(1.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
-    complex_t(0.0, 0.0) , complex_t(1.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
-    complex_t(0.0, 0.0) , complex_t(0.0, 0.0), complex_t(1.0, 0.0), complex_t(0.0, 0.0),
-    complex_t(0.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(1.0, 0.0)
-};
+   const complex_t mrx90_c [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(0.0,  rsqrt_2),
+                                                                     __c(0.0, rsqrt_2) , __c(rsqrt_2,  0.0)
+                                                                   };   /* mrx90 */
 
-// TODO correct it, for now copied from toffoli
-const complex_t ctoffoli_c [] /* __attribute__((aligned(64))) */ =
-{
-    complex_t(1.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
-    complex_t(0.0, 0.0) , complex_t(1.0, 0.0), complex_t(0.0, 0.0), complex_t(0.0, 0.0),
-    complex_t(0.0, 0.0) , complex_t(0.0, 0.0), complex_t(1.0, 0.0), complex_t(0.0, 0.0),
-    complex_t(0.0, 0.0) , complex_t(0.0, 0.0), complex_t(0.0, 0.0), complex_t(1.0, 0.0)
-};
+   const complex_t mry90_c [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(rsqrt_2, 0.0),
+                                                                     __c(-rsqrt_2, 0.0), __c(rsqrt_2, 0.0)
+                                                                   };   /* ry90  */
 
-const complex_t nop_c  [] /*__attribute__((aligned(64)))*/ = { complex_t(0.0, 0.0) , complex_t(0.0, 0.0),
-                                                             complex_t(0.0, 0.0) , complex_t(0.0, 0.0)
-                                                           };
-/**
- * gate interface
- */
-class gate
-{
-public:
-    std::vector<size_t> operands;
-    size_t latency;
-    virtual instruction_t qasm()       = 0;
-    virtual instruction_t micro_code() = 0;
-    virtual gate_type_t   type()       = 0;
-    virtual cmat_t        mat()        = 0;
-};
+   const complex_t rx180_c [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) , __c(0.0,-1.0),
+                                                                     __c(0.0,-1.0) , __c(0.0, 0.0)
+                                                                   };   /* rx180 */
+
+   const complex_t ry180_c [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) , __c(-1.0, 0.0),
+                                                                     __c(1.0, 0.0) , __c( 0.0, 0.0)
+                                                                   };   /* ry180 */
+   
+   /**
+    * to do : multi-qubit gates should not be represented by their matrix (the matrix depends on the ctrl/target qubit locations, the simulation using such matrix is inefficient as well...)
+    */
+
+   const complex_t cnot_c [] /* __attribute__((aligned(64))) */ =  {
+                                                                     __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+                                                                     __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+                                                                     __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
+                                                                     __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0)
+                                                                    };  /* cnot  */
+
+   // TODO correct it, for now copied from cnot
+   const complex_t cphase_c [] /* __attribute__((aligned(64))) */ = {
+                                                                      __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+                                                                      __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+                                                                      __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
+                                                                      __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(-1.0, 0.0)
+                                                                    }; /* cz */
+
+   // TODO correct it, for now copied from toffoli
+   const complex_t ctoffoli_c[] /* __attribute__((aligned(64))) */ = {
+                                                                      __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+                                                                      __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+                                                                      __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+                                                                      __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+                                                                      __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+                                                                      __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+                                                                      __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0),
+                                                                      __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0)
+   };
+
+   const complex_t nop_c      [] /*__attribute__((aligned(64)))*/ = { 
+                                                                      __c(1.0, 0.0) , __c(0.0, 0.0),
+                                                                      __c(0.0, 0.0) , __c(1.0, 0.0)
+   };
+
+  #undef __c
+
+
+  /**
+   * gate interface
+   */
+   class gate
+   {
+      public:
+	 std::vector<size_t> operands;
+	 size_t latency;                          // to do change attribute name "latency" to "duration" (latency is used to describe hardware latency) 
+	 virtual instruction_t qasm()       = 0;
+	 virtual instruction_t micro_code() = 0;
+	 virtual gate_type_t   type()       = 0;
+	 virtual cmat_t        mat()        = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
+   };
 
 
 /**
@@ -791,6 +826,90 @@ public:
     {
         return m;
     }
+};
+
+
+/**
+ * custom gate support
+ */
+class custom_gate : public gate
+{
+   public:
+
+    string_t name; 
+    cmat_t   m;
+
+    size_t             parameters;
+    size_t             duration;
+    // size_t             latency;
+
+    ucode_sequence_t   qumis;
+    instruction_type_t operation_type;
+
+    strings_t          used_hardware;
+
+    custom_gate(string_t& name, cmat_t& m, 
+                size_t parameters, size_t latency, size_t duration, 
+		instruction_type_t& operation_type, ucode_sequence_t& qumis, strings_t hardware) : name(name), m(m), 
+		                                                                                   parameters(parameters), duration(duration), 
+												   qumis(qumis), operation_type(operation_type) 
+    {
+       this->latency = latency;
+       for (size_t i=0; i<hardware.size(); i++)
+	  used_hardware.push_back(hardware[i]);
+    }
+
+    custom_gate(string_t& file_name)
+    {
+       std::ifstream f(file_name);
+       if (f.is_open())
+       {
+	  json instr;
+	  f >> instr;
+	  name = instr["name"];       
+	  parameters = instr["parameters"]; 
+	  ucode_sequence_t ucs = instr["qumis"];
+	  qumis.assign(ucs.begin(), ucs.end());      
+	  operation_type = instr["type"];       
+	  duration = instr["duration"];   
+	  latency = instr["latency"];    
+	  strings_t hdw = instr["hardware"];
+	  used_hardware.assign(hdw.begin(), hdw.end()); 
+	  auto mat = instr["matrix"];
+	  m.m[0] = complex_t(mat[0][0], mat[0][1]);
+	  m.m[1] = complex_t(mat[1][0], mat[1][1]);
+	  m.m[2] = complex_t(mat[2][0], mat[2][1]);
+	  m.m[3] = complex_t(mat[3][0], mat[3][1]);
+	  /*
+	  instr["matrix"]     = { { matrix[0].real(), matrix[0].imag() },
+	     { matrix[1].real(), matrix[1].imag() },
+	     { matrix[2].real(), matrix[2].imag() },
+	     { matrix[3].real(), matrix[3].imag() }};
+	   */
+
+       }
+       else std::cout << "[x] error : json file not found !" << std::endl;
+    }
+
+    instruction_t qasm()
+    {
+        return instruction_t("   NOP");
+    }
+    instruction_t micro_code()
+    {
+        return ql::instruction_map["nop"];
+    }
+
+    gate_type_t type()
+    {
+        return __custom_gate__;
+    }
+
+    cmat_t mat()
+    {
+        return m;
+    }
+ 
 };
 
 } // end ql namespace

@@ -5,4 +5,5 @@ build
 *.dat
 *.swp
 *~
+*.log
 
