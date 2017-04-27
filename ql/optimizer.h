@@ -143,7 +143,7 @@ namespace ql
 
 	   // println("[+] removing overlapping windows...");
 	   std::vector<int> pid;
-	   int prev = id_pos[0];
+	   // int prev = id_pos[0];
 	   // println("[+] rotation cancelling...");
 	   int pos = id_pos[0];
 	   int ip  = 0;

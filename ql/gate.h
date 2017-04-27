@@ -812,7 +812,7 @@ public:
     }
     instruction_t qasm()
     {
-        return instruction_t("   NOP");
+        return instruction_t("   nop");
     }
     instruction_t micro_code()
     {
