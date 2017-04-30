@@ -90,6 +90,409 @@ except AttributeError:
     _newclass = 0
 
 
+class SwigPyIterator(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, SwigPyIterator, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, SwigPyIterator, name)
+
+    def __init__(self, *args, **kwargs):
+        raise AttributeError("No constructor defined - class is abstract")
+    __repr__ = _swig_repr
+    __swig_destroy__ = _openql.delete_SwigPyIterator
+    __del__ = lambda self: None
+
+    def value(self):
+        return _openql.SwigPyIterator_value(self)
+
+    def incr(self, n=1):
+        return _openql.SwigPyIterator_incr(self, n)
+
+    def decr(self, n=1):
+        return _openql.SwigPyIterator_decr(self, n)
+
+    def distance(self, x):
+        return _openql.SwigPyIterator_distance(self, x)
+
+    def equal(self, x):
+        return _openql.SwigPyIterator_equal(self, x)
+
+    def copy(self):
+        return _openql.SwigPyIterator_copy(self)
+
+    def next(self):
+        return _openql.SwigPyIterator_next(self)
+
+    def __next__(self):
+        return _openql.SwigPyIterator___next__(self)
+
+    def previous(self):
+        return _openql.SwigPyIterator_previous(self)
+
+    def advance(self, n):
+        return _openql.SwigPyIterator_advance(self, n)
+
+    def __eq__(self, x):
+        return _openql.SwigPyIterator___eq__(self, x)
+
+    def __ne__(self, x):
+        return _openql.SwigPyIterator___ne__(self, x)
+
+    def __iadd__(self, n):
+        return _openql.SwigPyIterator___iadd__(self, n)
+
+    def __isub__(self, n):
+        return _openql.SwigPyIterator___isub__(self, n)
+
+    def __add__(self, n):
+        return _openql.SwigPyIterator___add__(self, n)
+
+    def __sub__(self, *args):
+        return _openql.SwigPyIterator___sub__(self, *args)
+    def __iter__(self):
+        return self
+SwigPyIterator_swigregister = _openql.SwigPyIterator_swigregister
+SwigPyIterator_swigregister(SwigPyIterator)
+
+class vectori(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, vectori, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, vectori, name)
+    __repr__ = _swig_repr
+
+    def iterator(self):
+        return _openql.vectori_iterator(self)
+    def __iter__(self):
+        return self.iterator()
+
+    def __nonzero__(self):
+        return _openql.vectori___nonzero__(self)
+
+    def __bool__(self):
+        return _openql.vectori___bool__(self)
+
+    def __len__(self):
+        return _openql.vectori___len__(self)
+
+    def __getslice__(self, i, j):
+        return _openql.vectori___getslice__(self, i, j)
+
+    def __setslice__(self, *args):
+        return _openql.vectori___setslice__(self, *args)
+
+    def __delslice__(self, i, j):
+        return _openql.vectori___delslice__(self, i, j)
+
+    def __delitem__(self, *args):
+        return _openql.vectori___delitem__(self, *args)
+
+    def __getitem__(self, *args):
+        return _openql.vectori___getitem__(self, *args)
+
+    def __setitem__(self, *args):
+        return _openql.vectori___setitem__(self, *args)
+
+    def pop(self):
+        return _openql.vectori_pop(self)
+
+    def append(self, x):
+        return _openql.vectori_append(self, x)
+
+    def empty(self):
+        return _openql.vectori_empty(self)
+
+    def size(self):
+        return _openql.vectori_size(self)
+
+    def swap(self, v):
+        return _openql.vectori_swap(self, v)
+
+    def begin(self):
+        return _openql.vectori_begin(self)
+
+    def end(self):
+        return _openql.vectori_end(self)
+
+    def rbegin(self):
+        return _openql.vectori_rbegin(self)
+
+    def rend(self):
+        return _openql.vectori_rend(self)
+
+    def clear(self):
+        return _openql.vectori_clear(self)
+
+    def get_allocator(self):
+        return _openql.vectori_get_allocator(self)
+
+    def pop_back(self):
+        return _openql.vectori_pop_back(self)
+
+    def erase(self, *args):
+        return _openql.vectori_erase(self, *args)
+
+    def __init__(self, *args):
+        this = _openql.new_vectori(*args)
+        try:
+            self.this.append(this)
+        except Exception:
+            self.this = this
+
+    def push_back(self, x):
+        return _openql.vectori_push_back(self, x)
+
+    def front(self):
+        return _openql.vectori_front(self)
+
+    def back(self):
+        return _openql.vectori_back(self)
+
+    def assign(self, n, x):
+        return _openql.vectori_assign(self, n, x)
+
+    def resize(self, *args):
+        return _openql.vectori_resize(self, *args)
+
+    def insert(self, *args):
+        return _openql.vectori_insert(self, *args)
+
+    def reserve(self, n):
+        return _openql.vectori_reserve(self, n)
+
+    def capacity(self):
+        return _openql.vectori_capacity(self)
+    __swig_destroy__ = _openql.delete_vectori
+    __del__ = lambda self: None
+vectori_swigregister = _openql.vectori_swigregister
+vectori_swigregister(vectori)
+
+class vectorf(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, vectorf, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, vectorf, name)
+    __repr__ = _swig_repr
+
+    def iterator(self):
+        return _openql.vectorf_iterator(self)
+    def __iter__(self):
+        return self.iterator()
+
+    def __nonzero__(self):
+        return _openql.vectorf___nonzero__(self)
+
+    def __bool__(self):
+        return _openql.vectorf___bool__(self)
+
+    def __len__(self):
+        return _openql.vectorf___len__(self)
+
+    def __getslice__(self, i, j):
+        return _openql.vectorf___getslice__(self, i, j)
+
+    def __setslice__(self, *args):
+        return _openql.vectorf___setslice__(self, *args)
+
+    def __delslice__(self, i, j):
+        return _openql.vectorf___delslice__(self, i, j)
+
+    def __delitem__(self, *args):
+        return _openql.vectorf___delitem__(self, *args)
+
+    def __getitem__(self, *args):
+        return _openql.vectorf___getitem__(self, *args)
+
+    def __setitem__(self, *args):
+        return _openql.vectorf___setitem__(self, *args)
+
+    def pop(self):
+        return _openql.vectorf_pop(self)
+
+    def append(self, x):
+        return _openql.vectorf_append(self, x)
+
+    def empty(self):
+        return _openql.vectorf_empty(self)
+
+    def size(self):
+        return _openql.vectorf_size(self)
+
+    def swap(self, v):
+        return _openql.vectorf_swap(self, v)
+
+    def begin(self):
+        return _openql.vectorf_begin(self)
+
+    def end(self):
+        return _openql.vectorf_end(self)
+
+    def rbegin(self):
+        return _openql.vectorf_rbegin(self)
+
+    def rend(self):
+        return _openql.vectorf_rend(self)
+
+    def clear(self):
+        return _openql.vectorf_clear(self)
+
+    def get_allocator(self):
+        return _openql.vectorf_get_allocator(self)
+
+    def pop_back(self):
+        return _openql.vectorf_pop_back(self)
+
+    def erase(self, *args):
+        return _openql.vectorf_erase(self, *args)
+
+    def __init__(self, *args):
+        this = _openql.new_vectorf(*args)
+        try:
+            self.this.append(this)
+        except Exception:
+            self.this = this
+
+    def push_back(self, x):
+        return _openql.vectorf_push_back(self, x)
+
+    def front(self):
+        return _openql.vectorf_front(self)
+
+    def back(self):
+        return _openql.vectorf_back(self)
+
+    def assign(self, n, x):
+        return _openql.vectorf_assign(self, n, x)
+
+    def resize(self, *args):
+        return _openql.vectorf_resize(self, *args)
+
+    def insert(self, *args):
+        return _openql.vectorf_insert(self, *args)
+
+    def reserve(self, n):
+        return _openql.vectorf_reserve(self, n)
+
+    def capacity(self):
+        return _openql.vectorf_capacity(self)
+    __swig_destroy__ = _openql.delete_vectorf
+    __del__ = lambda self: None
+vectorf_swigregister = _openql.vectorf_swigregister
+vectorf_swigregister(vectorf)
+
+class vectord(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, vectord, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, vectord, name)
+    __repr__ = _swig_repr
+
+    def iterator(self):
+        return _openql.vectord_iterator(self)
+    def __iter__(self):
+        return self.iterator()
+
+    def __nonzero__(self):
+        return _openql.vectord___nonzero__(self)
+
+    def __bool__(self):
+        return _openql.vectord___bool__(self)
+
+    def __len__(self):
+        return _openql.vectord___len__(self)
+
+    def __getslice__(self, i, j):
+        return _openql.vectord___getslice__(self, i, j)
+
+    def __setslice__(self, *args):
+        return _openql.vectord___setslice__(self, *args)
+
+    def __delslice__(self, i, j):
+        return _openql.vectord___delslice__(self, i, j)
+
+    def __delitem__(self, *args):
+        return _openql.vectord___delitem__(self, *args)
+
+    def __getitem__(self, *args):
+        return _openql.vectord___getitem__(self, *args)
+
+    def __setitem__(self, *args):
+        return _openql.vectord___setitem__(self, *args)
+
+    def pop(self):
+        return _openql.vectord_pop(self)
+
+    def append(self, x):
+        return _openql.vectord_append(self, x)
+
+    def empty(self):
+        return _openql.vectord_empty(self)
+
+    def size(self):
+        return _openql.vectord_size(self)
+
+    def swap(self, v):
+        return _openql.vectord_swap(self, v)
+
+    def begin(self):
+        return _openql.vectord_begin(self)
+
+    def end(self):
+        return _openql.vectord_end(self)
+
+    def rbegin(self):
+        return _openql.vectord_rbegin(self)
+
+    def rend(self):
+        return _openql.vectord_rend(self)
+
+    def clear(self):
+        return _openql.vectord_clear(self)
+
+    def get_allocator(self):
+        return _openql.vectord_get_allocator(self)
+
+    def pop_back(self):
+        return _openql.vectord_pop_back(self)
+
+    def erase(self, *args):
+        return _openql.vectord_erase(self, *args)
+
+    def __init__(self, *args):
+        this = _openql.new_vectord(*args)
+        try:
+            self.this.append(this)
+        except Exception:
+            self.this = this
+
+    def push_back(self, x):
+        return _openql.vectord_push_back(self, x)
+
+    def front(self):
+        return _openql.vectord_front(self)
+
+    def back(self):
+        return _openql.vectord_back(self)
+
+    def assign(self, n, x):
+        return _openql.vectord_assign(self, n, x)
+
+    def resize(self, *args):
+        return _openql.vectord_resize(self, *args)
+
+    def insert(self, *args):
+        return _openql.vectord_insert(self, *args)
+
+    def reserve(self, n):
+        return _openql.vectord_reserve(self, n)
+
+    def capacity(self):
+        return _openql.vectord_capacity(self)
+    __swig_destroy__ = _openql.delete_vectord
+    __del__ = lambda self: None
+vectord_swigregister = _openql.vectord_swigregister
+vectord_swigregister(vectord)
+
 class Kernel(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, Kernel, name, value)
@@ -101,15 +504,21 @@ class Kernel(_object):
     if _newclass:
         kernel = _swig_property(_openql.Kernel_kernel_get, _openql.Kernel_kernel_set)
 
-    def __init__(self):
-        this = _openql.new_Kernel()
+    def __init__(self, name):
+        this = _openql.new_Kernel(name)
         try:
             self.this.append(this)
         except Exception:
             self.this = this
 
-    def prepz(self, q0):
-        return _openql.Kernel_prepz(self, q0)
+    def hadamard(self, q0):
+        return _openql.Kernel_hadamard(self, q0)
+
+    def s(self, q0):
+        return _openql.Kernel_s(self, q0)
+
+    def sdag(self, q0):
+        return _openql.Kernel_sdag(self, q0)
 
     def x(self, q0):
         return _openql.Kernel_x(self, q0)
@@ -117,14 +526,44 @@ class Kernel(_object):
     def y(self, q0):
         return _openql.Kernel_y(self, q0)
 
+    def z(self, q0):
+        return _openql.Kernel_z(self, q0)
+
+    def rx90(self, q0):
+        return _openql.Kernel_rx90(self, q0)
+
+    def mrx90(self, q0):
+        return _openql.Kernel_mrx90(self, q0)
+
+    def rx180(self, q0):
+        return _openql.Kernel_rx180(self, q0)
+
+    def ry90(self, q0):
+        return _openql.Kernel_ry90(self, q0)
+
+    def mry90(self, q0):
+        return _openql.Kernel_mry90(self, q0)
+
+    def ry180(self, q0):
+        return _openql.Kernel_ry180(self, q0)
+
+    def measure(self, q0):
+        return _openql.Kernel_measure(self, q0)
+
+    def prepz(self, q0):
+        return _openql.Kernel_prepz(self, q0)
+
     def cnot(self, q0, q1):
         return _openql.Kernel_cnot(self, q0, q1)
+
+    def cphase(self, q0, q1):
+        return _openql.Kernel_cphase(self, q0, q1)
 
     def toffoli(self, q0, q1, q2):
         return _openql.Kernel_toffoli(self, q0, q1, q2)
 
-    def measure(self, q0):
-        return _openql.Kernel_measure(self, q0)
+    def clifford(self, id, q0):
+        return _openql.Kernel_clifford(self, id, q0)
     __swig_destroy__ = _openql.delete_Kernel
     __del__ = lambda self: None
 Kernel_swigregister = _openql.Kernel_swigregister
@@ -137,21 +576,30 @@ class Program(_object):
     __getattr__ = lambda self, name: _swig_getattr(self, Program, name)
     __repr__ = _swig_repr
 
-    def __init__(self):
-        this = _openql.new_Program()
+    def __init__(self, name, nqubits):
+        this = _openql.new_Program(name, nqubits)
         try:
             self.this.append(this)
         except Exception:
             self.this = this
 
-    def Add(self, k):
-        return _openql.Program_Add(self, k)
+    def set_sweep_points(self, sweep_points, num_circuits):
+        return _openql.Program_set_sweep_points(self, sweep_points, num_circuits)
 
-    def Compile(self):
-        return _openql.Program_Compile(self)
+    def add_kernel(self, k):
+        return _openql.Program_add_kernel(self, k)
 
-    def Schedule(self):
-        return _openql.Program_Schedule(self)
+    def compile(self):
+        return _openql.Program_compile(self)
+
+    def schedule(self):
+        return _openql.Program_schedule(self)
+
+    def qasm(self):
+        return _openql.Program_qasm(self)
+
+    def microcode(self):
+        return _openql.Program_microcode(self)
     __swig_destroy__ = _openql.delete_Program
     __del__ = lambda self: None
 Program_swigregister = _openql.Program_swigregister

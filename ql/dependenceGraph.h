@@ -144,7 +144,7 @@ public:
         nodeMap("name", name).
         arcMap("cause", cause).
         arcMap("weight", weight).
-        arcMap("depType", depType).
+        // arcMap("depType", depType).
         node("source", s).
         node("target", t).
         run();
@@ -274,8 +274,8 @@ public:
                 << "\"" << dstID << "\""
                 << "[ label=\""
                 << "q" << cause[arc]
-                << " , " << weight[arc]
-                << " , " << DepTypesNames[ depType[arc] ]
+                // << " , " << weight[arc]
+                // << " , " << DepTypesNames[ depType[arc] ]
                 <<"\""
                 << " " << EdgeStyle << " "
                 << "]"

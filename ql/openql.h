@@ -275,7 +275,7 @@ namespace ql
 	/**
 	 * add clifford
 	 */
-	void clifford(int id, size_t qubit=0)
+	void clifford(size_t id, size_t qubit=0)
 	{
 	   switch (id)
 	   {

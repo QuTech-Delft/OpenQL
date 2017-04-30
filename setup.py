@@ -39,6 +39,7 @@ else:
 	print('Unknown/Unsupported OS !!!')
 
 copyfile(genclib, myclib)
+copyfile( os.path.join(myclibDir, "openql.py"), os.path.join(rootDir, "openql", "openql.py") )
 os.chdir(rootDir)
 
 	
