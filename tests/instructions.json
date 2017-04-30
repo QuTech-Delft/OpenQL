@@ -1,0 +1,69 @@
+{
+   "rx180" : {
+	     "name": "rx180",
+	     "parameters": 1,
+	     "qumis": [
+		 "pulse 0100,0000,0000",
+		 "wait 5"
+	     ],
+	     "duration": 20,
+	     "hardware": [
+		 "awg0",
+		 "vsm"
+	     ],
+	     "latency": 3,
+	     "matrix": [
+		 [
+		     0.0,
+		     0.0
+		 ],
+		 [
+		     1.0,
+		     0.0
+		 ],
+		 [
+		     1.0,
+		     0.0
+		 ],
+		 [
+		     0.0,
+		     0.0
+		 ]
+	     ],
+	     "type": "rf"
+	 },
+   "rz180" : {
+	     "name": "rz180",
+	     "parameters": 1,
+	     "qumis": [
+		 "pulse 0100,0000,0000",
+		 "wait 5"
+	     ],
+	     "duration": 20,
+	     "hardware": [
+		 "awg0",
+		 "vsm"
+	     ],
+	     "latency": 3,
+	     "matrix": [
+		 [
+		     1.0,
+		     0.0
+		 ],
+		 [
+		     0.0,
+		     0.0
+		 ],
+		 [
+		     0.0,
+		     0.0
+		 ],
+		 [
+		    -1.0,
+		     0.0
+		 ]
+	     ],
+	     "type": "rf"
+	 }
+}
+

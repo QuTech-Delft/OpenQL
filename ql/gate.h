@@ -12,7 +12,6 @@
 #include <fstream>
 #include <iomanip>
 #include <complex>
-#include <ql/json.h>
 
 #include <string>
 #include <sstream>
@@ -649,8 +648,8 @@ public:
 
     instruction_t micro_code()
     {
-        // return instruction_t("     wait 60\n     pulse 0000 1111 1111\n     wait 50\n     measure\n");
-        return ql::instruction_map["measure"];
+        return instruction_t("     wait 60\n     pulse 0000 1111 1111\n     wait 50\n     measure\n");
+        // return ql::instruction_map["measure"];
     }
 
     gate_type_t type()
@@ -685,8 +684,8 @@ public:
 
     instruction_t micro_code()
     {
-        // return instruction_t("     waitreg r0\n     waitreg r0\n");
-        return ql::instruction_map["prepz"];
+        return instruction_t("     waitreg r0\n     waitreg r0\n");
+        // return ql::instruction_map["prepz"];
     }
 
     gate_type_t type()
@@ -836,18 +835,47 @@ class custom_gate : public gate
 {
    public:
 
-    string_t name; 
-    cmat_t   m;
+    string_t           name;             // qasm gate name
+    cmat_t             m;                // matrix representation
 
-    size_t             parameters;
-    size_t             duration;
-    // size_t             latency;
+    size_t             parameters;       // number of parameters : single qubit, two qubits ... etc
+    size_t             duration;         // execution time
+    // size_t             latency;       // lateny before execution (to do: change attribute name in parent class)
 
-    ucode_sequence_t   qumis;
-    instruction_type_t operation_type;
+    ucode_sequence_t   qumis;            // microcode sequence
+    instruction_type_t operation_type;   // operation type : rf/flux
+    strings_t          used_hardware;    // used hardware
 
-    strings_t          used_hardware;
+   public:
 
+    /**
+     * ctor
+     */
+    custom_gate(string_t name) : name(name)
+    {
+    }
+
+    /**
+     * copy ctor
+     */
+    custom_gate(const custom_gate& g)
+    {
+       name = g.name;
+       parameters = g.parameters;
+       qumis.assign(g.qumis.begin(), g.qumis.end());      
+       operation_type = g.operation_type;
+       duration = g.duration;
+       latency  = g.latency; 
+       used_hardware.assign(g.used_hardware.begin(), g.used_hardware.end()); 
+       m.m[0] = g.m.m[0]; 
+       m.m[1] = g.m.m[1]; 
+       m.m[2] = g.m.m[2]; 
+       m.m[3] = g.m.m[3]; 
+    }
+
+    /**
+     * explicit ctor
+     */
     custom_gate(string_t& name, cmat_t& m, 
                 size_t parameters, size_t latency, size_t duration, 
 		instruction_type_t& operation_type, ucode_sequence_t& qumis, strings_t hardware) : name(name), m(m), 
@@ -859,14 +887,17 @@ class custom_gate : public gate
 	  used_hardware.push_back(hardware[i]);
     }
 
-    custom_gate(string_t& file_name)
+    /**
+     * load from json
+     */
+    custom_gate(string_t name, string_t& file_name) : name(name)
     {
        std::ifstream f(file_name);
        if (f.is_open())
        {
 	  json instr;
 	  f >> instr;
-	  name = instr["name"];       
+	  // name = instr["name"];       
 	  parameters = instr["parameters"]; 
 	  ucode_sequence_t ucs = instr["qumis"];
 	  qumis.assign(ucs.begin(), ucs.end());      
@@ -880,31 +911,51 @@ class custom_gate : public gate
 	  m.m[1] = complex_t(mat[1][0], mat[1][1]);
 	  m.m[2] = complex_t(mat[2][0], mat[2][1]);
 	  m.m[3] = complex_t(mat[3][0], mat[3][1]);
-	  /*
-	  instr["matrix"]     = { { matrix[0].real(), matrix[0].imag() },
-	     { matrix[1].real(), matrix[1].imag() },
-	     { matrix[2].real(), matrix[2].imag() },
-	     { matrix[3].real(), matrix[3].imag() }};
-	   */
-
        }
        else std::cout << "[x] error : json file not found !" << std::endl;
     }
 
+    /**
+     * qasm output
+     */
     instruction_t qasm()
     {
-        return instruction_t("   NOP");
-    }
-    instruction_t micro_code()
-    {
-        return ql::instruction_map["nop"];
+       std::stringstream ss; 
+       if (operands.size() == 0)
+	  ss << "   " << name;
+       else if (operands.size() == 1)
+	  ss << "   " << name << " q" << operands[0];
+       else
+       {
+	  ss << "   " << name << " q" << operands[0];
+	  for (size_t i=1; i<operands.size(); i++)
+	     ss << ",q" << operands[i];
+       }
+       return instruction_t(ss.str());
     }
 
+    /**
+     * microcode
+     */
+    instruction_t micro_code()
+    {
+	std::stringstream ss;
+	for (size_t i=0; i<qumis.size(); i++)
+	   ss << "     " << qumis[i] << "\n";
+	return instruction_t(ss.str());
+    }
+
+    /**
+     * type
+     */
     gate_type_t type()
     {
         return __custom_gate__;
     }
 
+    /**
+     * matrix
+     */
     cmat_t mat()
     {
         return m;

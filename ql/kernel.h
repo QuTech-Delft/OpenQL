@@ -189,6 +189,38 @@ namespace ql
 	   }
 	}
 
+	/**
+	 * custom single qubit gate 
+	 */
+	void gate(std::string name, size_t qubit)
+	{
+	   std::map<std::string,custom_gate*>::iterator it = gate_definition.find(name);
+	   if (it != gate_definition.end())
+	   {
+	      custom_gate * g = new custom_gate(*(it->second));
+	      g->operands.push_back(qubit);
+	      c.push_back(g);
+	   }
+	   else 
+	      println("[x] error : unknown gate '" << name << "' !");
+	}
+	
+	/**
+	 * custom gate with arbitrary number of operands
+	 */
+	void gate(std::string name, std::vector<size_t> qubits)
+	{
+	   std::map<std::string,custom_gate*>::iterator it = gate_definition.find(name);
+	   if (it != gate_definition.end())
+	   {
+	      custom_gate * g = new custom_gate(*(it->second));
+	      g->operands = qubits;
+	      c.push_back(g);
+	   }
+	   else 
+	      println("[x] error : unknown gate '" << name << "' !");
+	}
+
 
 
 	/**
@@ -320,13 +352,34 @@ namespace ql
 	   return false;
 	}
 
+	/**
+	 * load custom instructions from a json file
+	 */
+	int load_custom_instructions(std::string file_name="instructions.json")
+	{
+	   load_instructions(gate_definition,file_name);
+	   return 0;
+	}
+
+	/**
+	 * debug
+	 */
+	 void print_gates_definition()
+	 {
+	    for (std::map<std::string,custom_gate*>::iterator i=gate_definition.begin(); i!=gate_definition.end(); i++)
+	    {
+	       println("[-] gate '" << i->first << "'");
+	       println(" |- qumis : \n" << i->second->micro_code());
+	    }
+	 }
+
       protected:
 
 	std::string name;
 	circuit     c;
         size_t      iterations;
 	
-	std::map<std::string,custom_gate> gate_definition;
+	std::map<std::string,custom_gate*> gate_definition;
    };
 
 
