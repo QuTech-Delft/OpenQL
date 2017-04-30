@@ -10,11 +10,9 @@ else:
         "Python neither 2 nor 3. This is not permitted. "
         "sys.version_info = {}".format(version_info))
 
-# All of the modules must be completely imported before we can start importing
-# specific names, due to circular dependencies between the various modules.
 if PY3:
-    from .openql import init, schedule, compile
+    from .openql import Program, Kernel
 else:
-    from openql import init, schedule, compile
+    from openql import *
 
 # __all__ = [ init, schedule, compile ]
