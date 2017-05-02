@@ -11,60 +11,70 @@ QX simulator.
 ## Supported Patforms
 
 * Linux
-* Windows (coming soon)
+* Windows
+* OSX
 
 ## Required Packages
 
-* g++ compiler with C++ 11 support (Linux)
-* MSVC 2015 (Windows)
+* g++ compiler with C++11 support (Linux)
+* MSVC 2015 with update 3 (Windows)
 * cmake
 * swig
-* [Optional] XDot to visualize generated graphs in dot format
+* python 3.5
 * [Optional] Graphviz Dot utility to convert graphs from dot to pdf, png etc
+* [Optional] XDot to visualize generated graphs in dot format
 
-## Setup
 
-# Linux
+# Installing OpenQL as Python Package
 
-        mkdir build
-        cd build
-        cmake ..
-        make
-
-# Windows
-
-        mkdir build
-        cd build
-        cmake -G "NMake Makefiles" ..
-        nmake
-
-## Installing Python Package
-
-# Linux
+## Linux
 
 Running the following command in terminal should intall openql package:
 
         python setup.py install --user
 
 
-# Windows
+## Windows
 
-Python.exe and swig.exe should be in the path.
+Python.exe and swig.exe should be in the path of power shell.
 
 Make sure the following variables are defined:
 
-* PYTHON\_INCLUDE (should point to the directory containing Python.h, for instance, on my pc it is C:\Users\iashraf\AppData\Local\Programs\Python\Python35\include)
-
-* PYTHON\_LIB (should point to the python library, for instance, on my pc it is C:\Users\iashraf\AppData\Local\Programs\Python\Python35\libs\python35.lib)
+* PYTHON\_INCLUDE (should point to the directory containing Python.h)
+* PYTHON\_LIB (should point to the python library python35.lib)
 
 Then running the following command in power shell should intall openql package:
 
         python setup.py install
 
 
+# Compiling C++ OpenQL tests and programs
+
+Existing tests and programs can be compiled by the following instructions. You can
+use an existing example as a starting point and write your own programs. Make sure
+to include them in CMakeLists.txt file to inform cmake to compile it as well.
+
+## Linux
+
+        mkdir cbuild
+        cd cbuild
+        cmake ..
+        make
+
+## Windows
+
+        mkdir cbuild
+        cd cbuild
+        cmake -G "NMake Makefiles" ..
+        nmake
+
 
 ## Usage
 
-Executables will be generated in build/tests and build/programs directory.
-Further details coming soon ...
+Example C++ tests and programs can be found in 'tests' and 'programs'
+directories. Executables for these will be generated in 'build/tests' and 'build/programs'
+directory.
+
+Example python tests and programs can be found in 'tests' and 'programs' directories.
+These can be executed as 'python tests/simplePyTest.py'.
 

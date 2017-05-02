@@ -9,4 +9,6 @@ openql.egg-info
 *.swp
 *~
 *.log
+*.so
+*.pyd
 
