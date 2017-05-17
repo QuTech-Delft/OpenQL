@@ -161,30 +161,30 @@ namespace ql
 	{
 	   switch (id)
 	   {
-	      case 0 : break;                                  //  ['I']
-	      case 1 : ry90(0); rx90(0); break;                //  ['Y90', 'X90']
-	      case 2 : mrx90(0); mry90(0); break;              //  ['mX90', 'mY90']
-	      case 3 : rx180(0); break;                        //  ['X180']
-	      case 4 : mry90(0); mrx90(0); break;              //  ['mY90', 'mX90']
-	      case 5 : rx90(0); mry90(0); break;               //  ['X90', 'mY90']
-	      case 6 : ry180(0); break;                        //  ['Y180']
-	      case 7 : mry90(0); rx90(0); break;               //  ['mY90', 'X90']
-	      case 8 : rx90(0); ry90(0); break;                //  ['X90', 'Y90']
-	      case 9 : rx180(0); ry180(0); break;              //  ['X180', 'Y180']
-	      case 10: ry90(0); mrx90(0); break;               //  ['Y90', 'mX90']
-	      case 11: mrx90(0); ry90(0); break;               //  ['mX90', 'Y90']
-	      case 12: ry90(0); rx180(0); break;               //  ['Y90', 'X180']
-	      case 13: mrx90(0); break;                        //  ['mX90']
-	      case 14: rx90(0); mry90(0); mrx90(0); break;     //  ['X90', 'mY90', 'mX90']
-	      case 15: mry90(0); break;                        //  ['mY90']
-	      case 16: rx90(0); break;                         //  ['X90']
-	      case 17: rx90(0); ry90(0); rx90(0); break;       //  ['X90', 'Y90', 'X90']
-	      case 18: mry90(0); rx180(0); break;              //  ['mY90', 'X180']
-	      case 19: rx90(0); ry180(0); break;               //  ['X90', 'Y180']
-	      case 20: rx90(0); mry90(0); rx90(0); break;      //  ['X90', 'mY90', 'X90']
-	      case 21: ry90(0); break;                         //  ['Y90']
-	      case 22: mrx90(0); ry180(0); break;              //  ['mX90', 'Y180']
-	      case 23: rx90(0); ry90(0); mrx90(0); break;      //  ['X90', 'Y90', 'mX90']
+	      case 0 : break;                                          //  ['I']
+	      case 1 : ry90(qubit); rx90(qubit); break;                //  ['Y90', 'X90']
+	      case 2 : mrx90(qubit); mry90(qubit); break;              //  ['mX90', 'mY90']
+	      case 3 : rx180(qubit); break;                            //  ['X180']
+	      case 4 : mry90(qubit); mrx90(qubit); break;              //  ['mY90', 'mX90']
+	      case 5 : rx90(qubit); mry90(qubit); break;               //  ['X90', 'mY90']
+	      case 6 : ry180(qubit); break;                            //  ['Y180']
+	      case 7 : mry90(qubit); rx90(qubit); break;               //  ['mY90', 'X90']
+	      case 8 : rx90(qubit); ry90(qubit); break;                //  ['X90', 'Y90']
+	      case 9 : rx180(qubit); ry180(qubit); break;              //  ['X180', 'Y180']
+	      case 10: ry90(qubit); mrx90(qubit); break;               //  ['Y90', 'mX90']
+	      case 11: mrx90(qubit); ry90(qubit); break;               //  ['mX90', 'Y90']
+	      case 12: ry90(qubit); rx180(qubit); break;               //  ['Y90', 'X180']
+	      case 13: mrx90(qubit); break;                            //  ['mX90']
+	      case 14: rx90(qubit); mry90(qubit); mrx90(qubit); break; //  ['X90', 'mY90', 'mX90']
+	      case 15: mry90(qubit); break;                            //  ['mY90']
+	      case 16: rx90(qubit); break;                             //  ['X90']
+	      case 17: rx90(qubit); ry90(qubit); rx90(qubit); break;   //  ['X90', 'Y90', 'X90']
+	      case 18: mry90(qubit); rx180(qubit); break;              //  ['mY90', 'X180']
+	      case 19: rx90(qubit); ry180(qubit); break;               //  ['X90', 'Y180']
+	      case 20: rx90(qubit); mry90(qubit); rx90(qubit); break;  //  ['X90', 'mY90', 'X90']
+	      case 21: ry90(qubit); break;                             //  ['Y90']
+	      case 22: mrx90(qubit); ry180(qubit); break;              //  ['mX90', 'Y180']
+	      case 23: rx90(qubit); ry90(qubit); mrx90(qubit); break;  //  ['X90', 'Y90', 'mX90']
 	      default: break;
 	   }
 	}
@@ -296,19 +296,19 @@ namespace ql
 
 	void schedule(size_t nqubits)
 	{
-		std::cout << "Scheduling the quantum kernel" << std::endl;
-		DependGraph dg;
-		dg.Init(c,nqubits);
-		// dg.Print();
-        // dg.PrintMatrix();
-        dg.PrintDot();
+	   std::cout << "[+] scheduling the quantum kernel '" << name << "'..."<< std::endl;
+	   DependGraph dg;
+	   dg.Init(c,nqubits);
+	   // dg.Print();
+	   // dg.PrintMatrix();
+	   dg.PrintDot();
 
-        // dg.PrintScheduleASAP();
-        dg.PrintDotScheduleASAP();
-        dg.PrintQASMScheduledASAP();
+	   // dg.PrintScheduleASAP();
+	   dg.PrintDotScheduleASAP();
+	   dg.PrintQASMScheduledASAP();
 
-        // dg.PrintScheduleALAP();
-        dg.PrintQASMScheduledALAP();
+	   // dg.PrintScheduleALAP();
+	   dg.PrintQASMScheduledALAP();
 	}
 
 	std::vector<circuit*> split_circuit(circuit x, bool verbose=false)
