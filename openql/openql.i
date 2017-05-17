@@ -1,3 +1,9 @@
+/**
+ * @file   openql.i
+ * @author Imran Ashraf
+ * @brief  swig interface file
+ */
+
 %module openql
 
 %include "std_string.i"

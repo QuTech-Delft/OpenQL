@@ -1,5 +1,7 @@
-/*
- * Author: Imran Ashraf
+/**
+ * @file   openql.h
+ * @author Imran Ashraf
+ * @brief  header file for python interface
  */
 
 #ifndef EXAMPLE_H

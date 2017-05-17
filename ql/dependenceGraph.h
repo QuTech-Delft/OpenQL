@@ -187,7 +187,7 @@ public:
         fout.close();
     }
 
-    void PrintDot_(
+    void PrintDot1_(
                 bool WithCritical,
                 bool WithCycles,
                 ListDigraph::NodeMap<size_t> & cycle,
@@ -299,7 +299,7 @@ public:
 
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
-        PrintDot_(false, false, cycle, order, dotout);
+        PrintDot1_(false, false, cycle, order, dotout);
         dotout.close();
     }
 
@@ -393,7 +393,7 @@ public:
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         ScheduleASAP(cycle,order);
-        PrintDot_(false,true,cycle,order,dotout);
+        PrintDot1_(false,true,cycle,order,dotout);
 
         dotout.close();
     }
@@ -490,6 +490,121 @@ public:
         {
             std::cout << MAX_CYCLE-cycle[*it] << "     <- " <<  name[*it] << std::endl;
         }
+    }
+
+    void PrintDot2_(
+                bool WithCritical,
+                bool WithCycles,
+                ListDigraph::NodeMap<size_t> & cycle,
+                std::vector<ListDigraph::Node> & order,
+                ofstream& dotout
+                )
+    {
+        ListDigraph::ArcMap<bool> isInCritical(graph);
+        if(WithCritical)
+        {
+            for (ListDigraph::ArcIt a(graph); a != INVALID; ++a)
+            {
+                isInCritical[a] = false;
+                for ( Path<ListDigraph>::ArcIt ap(p); ap != INVALID; ++ap )
+                {
+                    if(a==ap)
+                    {
+                        isInCritical[a] = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        string NodeStyle(" fontcolor=black, style=filled, fontsize=16");
+        string EdgeStyle1(" color=black");
+        string EdgeStyle2(" color=red");
+        string EdgeStyle = EdgeStyle1;
+
+        dotout << "digraph {\ngraph [ rankdir=TD; ]; // or rankdir=LR"
+            << "\nedge [fontsize=16, arrowhead=vee, arrowsize=0.5];"
+            << endl;
+
+        // first print the nodes
+        for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
+        {
+            int nid = graph.id(n);
+            string nodeName = name[n];
+            dotout  << "\"" << nid << "\""
+                    << " [label=\" " << nodeName <<" \""
+                    << NodeStyle
+                    << "];" << endl;
+        }
+
+        if( WithCycles)
+        {
+            // Print cycle numbers as timeline, as shown below
+            size_t cn=0,TotalCycles = MAX_CYCLE - cycle[ *( order.rbegin() ) ];
+            dotout << "{\nnode [shape=plaintext, fontsize=16, fontcolor=blue]; \n";
+
+            for(cn=0;cn<=TotalCycles;++cn)
+            {
+                if(cn>0)
+                    dotout << " -> ";
+                dotout << "Cycle" << cn;
+            }
+            dotout << ";\n}\n";
+
+            // Now print ranks, as shown below
+            std::vector<ListDigraph::Node>::reverse_iterator rit;
+            for ( rit = order.rbegin(); rit != order.rend(); ++rit)
+            {
+                int nid = graph.id(*rit);
+                dotout << "{ rank=same; Cycle" << TotalCycles - (MAX_CYCLE - cycle[*rit]) <<"; " <<nid<<"; }\n";
+            }
+        }
+
+        // now print the edges
+        for (ListDigraph::ArcIt arc(graph); arc != INVALID; ++arc)
+        {
+            ListDigraph::Node srcNode = graph.source(arc);
+            ListDigraph::Node dstNode = graph.target(arc);
+            int srcID = graph.id( srcNode );
+            int dstID = graph.id( dstNode );
+
+            if(WithCritical)
+                EdgeStyle = ( isInCritical[arc]==true ) ? EdgeStyle2 : EdgeStyle1;
+
+            dotout << dec
+                << "\"" << srcID << "\""
+                << "->"
+                << "\"" << dstID << "\""
+                << "[ label=\""
+                << "q" << cause[arc]
+                // << " , " << weight[arc]
+                // << " , " << DepTypesNames[ depType[arc] ]
+                <<"\""
+                << " " << EdgeStyle << " "
+                << "]"
+                << endl;
+        }
+
+        dotout << "}" << endl;
+    }
+
+    void PrintDotScheduleALAP()
+    {
+        std::cout << "Printing Scheduled Graph in scheduledALAP.dot" << std::endl;
+        ofstream dotout;
+        dotout.open( "scheduledALAP.dot", ios::binary);
+        if ( dotout.fail() )
+        {
+            std::cout << "Error opening file" << std::endl;
+            return;
+        }
+
+        ListDigraph::NodeMap<size_t> cycle(graph);
+        std::vector<ListDigraph::Node> order;
+        ScheduleALAP(cycle,order);
+        PrintDot2_(false,true,cycle,order,dotout);
+
+        dotout.close();
     }
 
     void PrintQASMScheduledALAP()

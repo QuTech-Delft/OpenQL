@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <sstream>
 #include <cassert>
-
 #include <time.h>
 
 #include "ql/openql.h"
@@ -15,7 +14,7 @@ int main(int argc, char ** argv)
    srand(0);
 
    int   num_circuits       = 13;
-   float sweep_points[]     = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };  // sizes of the clifford circuits per randomization
+   float sweep_points[]     = { 2 };  // sizes of the clifford circuits per randomization
 
    ql::init(ql::transmon_platform, "instructions.map");
 

@@ -51,6 +51,6 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -Wall -Wfatal-errors -Wno-unused-local-typedef")
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 
-#ADD_SUBDIRECTORY(programs)
+ADD_SUBDIRECTORY(programs)
 ADD_SUBDIRECTORY(tests)
 ADD_SUBDIRECTORY(openql)
