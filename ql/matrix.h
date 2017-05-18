@@ -14,66 +14,66 @@
 
 namespace ql
 {
-   /**
-    * \brief matrix
-    */
-   template <typename __T, size_t __N>
-      class matrix
-      {
+/**
+ * \brief matrix
+ */
+template <typename __T, size_t __N>
+class matrix
+{
 
-	 public:
+public:
 
-	    __T m[__N * __N] /* TODO: properly handle it __attribute__((aligned(16))) */ ; 
+    __T m[__N * __N] /* TODO: properly handle it __attribute__((aligned(16))) */ ;
 
-	    /**
-	     * default ctor
-	     */
-	    matrix() 
-	    {
-	       for (size_t i=0; i<(__N*__N); ++i)
-		  m[i] = 0;
-	    }
+    /**
+     * default ctor
+     */
+    matrix()
+    {
+        for (size_t i=0; i<(__N*__N); ++i)
+            m[i] = 0;
+    }
 
-	    /**
-	     * ctor
-	     */
-	    matrix(const __T * pm) 
-	    {
-	       for (size_t i=0; i<(__N*__N); ++i)
-		  m[i] = pm[i];
-	    }
+    /**
+     * ctor
+     */
+    matrix(const __T * pm)
+    {
+        for (size_t i=0; i<(__N*__N); ++i)
+            m[i] = pm[i];
+    }
 
-	    __T& operator()(uint32_t r, uint32_t c)
-	    {
-	       return m[r*__N+c];
-	    }
+    __T& operator()(uint32_t r, uint32_t c)
+    {
+        return m[r*__N+c];
+    }
 
-	    uint32_t size() const
-	    {
-	       return __N;
-	    }
+    uint32_t size() const
+    {
+        return __N;
+    }
 
-	    /**
-	     * debug
-	     */
-	    void dump() const
-	    {
-	       std::cout << "[i] ---[matrix]-----------------------------------------------------" << std::endl;
-	       std::cout << std::fixed;
-	       for (int32_t r=0; r<__N; ++r)
-	       {
-		  for (int32_t c=0; c<__N; ++c)
-		     std::cout << std::showpos << std::setw(5) << m[r*__N+c] << "\t";
-		  std::cout << std::endl;
-	       }
-	       std::cout << "[i] ----------------------------------------------------------------" << std::endl;
-	    }
+    /**
+     * debug
+     */
+    void dump() const
+    {
+        std::cout << "[i] ---[matrix]-----------------------------------------------------" << std::endl;
+        std::cout << std::fixed;
+        for (int32_t r=0; r<__N; ++r)
+        {
+            for (int32_t c=0; c<__N; ++c)
+                std::cout << std::showpos << std::setw(5) << m[r*__N+c] << "\t";
+            std::cout << std::endl;
+        }
+        std::cout << "[i] ----------------------------------------------------------------" << std::endl;
+    }
 
 
-      };
+};
 
-   typedef std::complex<double> complex_t;
-   typedef matrix<complex_t,2>  cmat_t;
+typedef std::complex<double> complex_t;
+typedef matrix<complex_t,2>  cmat_t;
 
 }
 

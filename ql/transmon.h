@@ -2,7 +2,7 @@
  * @file   transmon_driver.h
  * @date   11/2016
  * @author Nader Khammassi
- * @brief  transmon driver 
+ * @brief  transmon driver
  */
 #ifndef TRANSMON_H
 #define TRANSMON_H
@@ -13,30 +13,30 @@
 
 namespace ql
 {
-   class transmon_driver
-   {
+class transmon_driver
+{
 
-      public: 
+public:
 
-	 transmon_driver()
-	 {
-	 }
+    transmon_driver()
+    {
+    }
 
-	 int compile(circuit& c, std::string file_name, bool optimize=false)
-	 {
-	    circuit dc = decompose(c); 
-	    return 0;
-	 }
+    int compile(circuit& c, std::string file_name, bool optimize=false)
+    {
+        circuit dc = decompose(c);
+        return 0;
+    }
 
-      protected:
+protected:
 
-	 circuit decompose(circuit& c)
-	 {
-	    circuit dc = c;
-	    return c;
-	 }
+    circuit decompose(circuit& c)
+    {
+        circuit dc = c;
+        return c;
+    }
 
-   };
+};
 
 }
 
