@@ -25,7 +25,7 @@ int main(int argc, char ** argv)
    srand(0);
 
    int   num_circuits       = 1;
-   float sweep_points[]     = { 1, 1.25, 1.75, 2.25, 2.75 };  
+   float sweep_points[]     = { 1, 1.25, 1.75, 2.25, 2.75 };
 
    ql::init(ql::transmon_platform, "instructions.map");
 
@@ -44,14 +44,14 @@ int main(int argc, char ** argv)
   // create kernel
    k.prepz(0);
    k.x(0);
-   k.gate("rx180",0);  // custom gate
+   k.gate("rx180", 0);  // custom gate
    k.measure(0);
    prog.add(k);
-   
+
    // compile the program
    prog.compile( /*verbose*/ 1 );
 
-   // print qasm 
+   // print qasm
    println(prog.qasm());
 
    // print micro code

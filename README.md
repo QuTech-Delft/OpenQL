@@ -21,6 +21,7 @@ QX simulator.
 * cmake
 * swig
 * python 3.5
+* [Optional] pytest used for running tests
 * [Optional] Graphviz Dot utility to convert graphs from dot to pdf, png etc
 * [Optional] XDot to visualize generated graphs in dot format
 
@@ -31,7 +32,10 @@ QX simulator.
 
 Running the following command in terminal should install the openql package:
 
-        `python setup.py install --user`
+        python setup.py install --user
+
+Run `py.test -v` to test the installation  
+
 ## Windows
 
 Python.exe and swig.exe should be in the path of power shell.
@@ -43,13 +47,10 @@ Make sure the following variables are defined:
 
 Then running the following command in power shell should install the openql package:
 
-        `python setup.py install`
+        python setup.py install
 
-## Verifying the installation
-Run the following commands to test if the installation was successful 
+Run `py.test -v` to test the installation  
 
-        `tests/simplePyTest.py`
-        `python setup.py tests/qubitsTest.py`    
 
 # Compiling C++ OpenQL tests and programs
 
