@@ -27,13 +27,11 @@ QX simulator.
 
 # Installing OpenQL as Python Package
 
-## Linux
+## Linux & OSX
 
-Running the following command in terminal should intall openql package:
+Running the following command in terminal should install the openql package:
 
-        python setup.py install --user
-
-
+        `python setup.py install --user`
 ## Windows
 
 Python.exe and swig.exe should be in the path of power shell.
@@ -43,10 +41,15 @@ Make sure the following variables are defined:
 * PYTHON\_INCLUDE (should point to the directory containing Python.h)
 * PYTHON\_LIB (should point to the python library python35.lib)
 
-Then running the following command in power shell should intall openql package:
+Then running the following command in power shell should install the openql package:
 
-        python setup.py install
+        `python setup.py install`
 
+## Verifying the installation
+Run the following commands to test if the installation was successful 
+
+        `tests/simplePyTest.py`
+        `python setup.py tests/qubitsTest.py`    
 
 # Compiling C++ OpenQL tests and programs
 
