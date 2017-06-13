@@ -24,7 +24,7 @@ class Kernel
 
         Kernel(std::string name)
         {
-            std::cout << "Kernel::Kernel()" << std::endl;
+            // std::cout << "Kernel::Kernel()" << std::endl;
             kernel = new ql::quantum_kernel(name);
         }
 
@@ -49,7 +49,7 @@ class Kernel
 
         ~Kernel()
         {
-            std::cout << "Kernel::~Kernel()" << std::endl;
+            //std::cout << "Kernel::~Kernel()" << std::endl;
             delete(kernel);
         }
 };
@@ -62,7 +62,7 @@ class Program
     public:
         Program(std::string name, size_t nqubits)
         {
-            std::cout << "Program::Program()" << std::endl;
+            // std::cout << "Program::Program()" << std::endl;
             prog = new ql::quantum_program(name,nqubits);
             ql::init(ql::transmon_platform, "instructions.map");
         }
@@ -75,18 +75,17 @@ class Program
 
         void add_kernel(Kernel &k)
         {
-            std::cout << "Program::Add()" << std::endl;
             prog->add( *(k.kernel) );
         }
 
-        void compile() { prog->compile(1); }
+        void compile(bool verbose=false) { prog->compile(verbose); }
         void schedule() { prog->schedule(); }
         std::string qasm() {return prog->qasm(); }
         std::string microcode() {return prog->microcode(); }
 
         ~Program()
         {
-            std::cout << "Program::~Program()" << std::endl;
+            // std::cout << "Program::~Program()" << std::endl;
             delete(prog);
         }
 };

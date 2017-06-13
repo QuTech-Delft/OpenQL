@@ -1,5 +1,3 @@
-
-
 #include <string>
 #include <vector>
 #include <iostream>
@@ -11,8 +9,6 @@
 #include <time.h>
 
 #include "ql/openql.h"
-
-#define println(x) std::cout << x << std::endl
 
 // clifford inverse lookup table for grounded state 
 const size_t inv_clifford_lut_gs[] = {0, 2, 1, 3, 8, 10, 6, 11, 4, 9, 5, 7, 12, 16, 23, 21, 13, 17, 18, 19, 20, 15, 22, 14};
@@ -51,7 +47,6 @@ void build_rb(int num_cliffords, ql::quantum_kernel& k, int qubits=1, bool diffe
       {
 	 for (int q=0; q<qubits; q++)
 	 {
-	    // println("clifford " << q);
 	    k.clifford(cl[i],q);
 	 }
       }
@@ -79,7 +74,6 @@ void build_rb(int num_cliffords, ql::quantum_kernel& k, int qubits=1, bool diffe
 
 	 for (int i=0; i<num_cliffords; ++i)
 	 {
-	    // println("clifford " << q);
 	    k.clifford(cl[i],q);
 	 }
 	 k.measure(q);
@@ -109,9 +103,9 @@ int main(int argc, char ** argv)
    int   num_circuits       = 1;
    float sweep_points[]     = { 1, 1.25, 1.75, 2.25, 2.75 };  // sizes of the clifford circuits per randomization  
 
-   println("[+] num_qubits    : " << num_qubits);
-   println("[+] num_cliffords : " << num_cliffords);
-   println("[+] different     : " << (different ? "yes" : "no") );
+   std::cout << "[+] num_qubits    : " << num_qubits << std::endl;
+   std::cout << "[+] num_cliffords : " << num_cliffords<< std::endl;
+   std::cout << "[+] different     : " << (different ? "yes" : "no") << std::endl;
 
    // create program 
    ql::str_t prog_name;

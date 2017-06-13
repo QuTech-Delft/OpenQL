@@ -15,11 +15,6 @@
 #include "utils.h"
 #include "gate.h"
 
-#ifndef println
-#define println(x) std::cout << x << std::endl
-#endif // println
-
-
 namespace ql
 {
 
@@ -49,13 +44,13 @@ namespace ql
        while (std::getline(file, line))
        {
 	  #ifdef __debug__
-	  println("[+] line " << i << " : " << line);
+	  println("line " << i << " : " << line);
 	  #endif
 	  size_t p = line.find(":");
 	  if (line.size() < 3) continue;
 	  if (p == std::string::npos)
 	  {
-	     println("[+] syntax error at line " << i << " : invalid syntax.");
+	     println("syntax error at line " << i << " : invalid syntax.");
 	     return false;
 	  }
 	  std::string key = line.substr(0,p);
@@ -63,13 +58,13 @@ namespace ql
 
 	  if (!utils::format_string(key))
 	  {
-	     println("[+] syntax error at line " << i << " : invalid key format.");
+	     println("syntax error at line " << i << " : invalid key format.");
 	     return false;
 	  }
 
 	  if (!utils::format_string(val))
 	  {
-	     println("[+] syntax error at line " << i << " : invalid value format.");
+	     println("syntax error at line " << i << " : invalid value format.");
 	     return false;
 	  }
 

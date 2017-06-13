@@ -10,7 +10,7 @@
 #define QL_KERNEL_H
 
 #include "json.h"
-
+#include "utils.h"
 #include "gate.h"
 #include "optimizer.h"
 #include "dependenceGraph.h"
@@ -363,11 +363,11 @@ public:
 
     }
 
-    void schedule(size_t nqubits)
+    void schedule(size_t nqubits, bool verbose=false)
     {
-        std::cout << "[+] scheduling the quantum kernel '" << name << "'..."<< std::endl;
+        if (verbose) println("scheduling the quantum kernel '" << name << "'...");
         DependGraph dg;
-        dg.Init(c,nqubits);
+        dg.Init(c, nqubits, verbose);
         // dg.Print();
         // dg.PrintMatrix();
         dg.PrintDot();
@@ -382,7 +382,7 @@ public:
 
     std::vector<circuit*> split_circuit(circuit x, bool verbose=false)
     {
-        if (verbose) println("[+] circuit decomposition in basic blocks ... ");
+        if (verbose) println("circuit decomposition in basic blocks ... ");
         std::vector<circuit*> cs;
         cs.push_back(new circuit());
         for (size_t i=0; i<x.size(); i++)
@@ -398,7 +398,7 @@ public:
                 cs.back()->push_back(x[i]);
             }
         }
-        if (verbose) println("[+] circuit decomposion done (" << cs.size() << ").");
+        if (verbose) println("circuit decomposion done (" << cs.size() << ").");
         /*
         for (int i=0; i<cs.size(); ++i)
         {

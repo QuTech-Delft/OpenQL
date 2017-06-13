@@ -10,6 +10,8 @@
 
 #include <string>
 
+#define println(x) std::cout << "[OPENQL] "<< x << std::endl
+
 namespace ql
 {
 /**

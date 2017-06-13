@@ -9,6 +9,7 @@
 #ifndef QL_PROGRAM_H
 #define QL_PROGRAM_H
 
+#include "utils.h"
 #include "platform.h"
 #include "kernel.h"
 
@@ -24,7 +25,7 @@ class quantum_program
 {
 public:
 
-    quantum_program(std::string name, size_t qubits) : name(name), output_path("output/"), default_config(true), qubits(qubits)
+    quantum_program(std::string name, size_t qubits) : name(name), output_path("./"), default_config(true), qubits(qubits)
     {
     }
 
@@ -39,7 +40,7 @@ public:
         default_config   = false;
     }
 
-    void set_ouput_path(std::string dir="output/")
+    void set_ouput_path(std::string dir="./")
     {
         output_path = dir;
     }
@@ -140,7 +141,7 @@ public:
             println("[x] error : openql should initialized for the target platform before compilation !");
             return -1;
         }
-        if (verbose) println("[+] compiling ...");
+        if (verbose) println("compiling ...");
         if (kernels.empty())
             return -1;
 #ifdef ql_optimize
@@ -153,17 +154,17 @@ public:
         ss_qasm << output_path << name << ".qasm";
         std::string s = qasm();
 
-        if (verbose) println("[+] writing qasm to '" << ss_qasm.str() << "' ...");
+        if (verbose) println("writing qasm to '" << ss_qasm.str() << "' ...");
         write_file(ss_qasm.str(),s);
 
-        // println("[+] sweep_points : ");
+        // println("sweep_points : ");
         // for (int i=0; i<sweep_points.size(); i++) println(sweep_points[i]);
 
         std::stringstream ss_asm;
         ss_asm << output_path << name << ".asm";
         std::string uc = microcode();
 
-        if (verbose) println("[+] writing transmon micro-code to '" << ss_asm.str() << "' ...");
+        if (verbose) println("writing transmon micro-code to '" << ss_asm.str() << "' ...");
         write_file(ss_asm.str(),uc);
 
         std::stringstream ss_swpts;
@@ -177,7 +178,7 @@ public:
             std::stringstream ss_config;
             ss_config << output_path << name << "_config.json";
             std::string conf_file_name = ss_config.str();
-            if (verbose) println("[+] writing sweep points to '" << conf_file_name << "'...");
+            if (verbose) println("writing sweep points to '" << conf_file_name << "'...");
             write_file(conf_file_name, config);
         }
         else
@@ -185,17 +186,18 @@ public:
             std::stringstream ss_config;
             ss_config << output_path << config_file_name;
             std::string conf_file_name = ss_config.str();
-            if (verbose) println("[+] writing sweep points to '" << conf_file_name << "'...");
+            if (verbose) println("writing sweep points to '" << conf_file_name << "'...");
             write_file(conf_file_name, config);
         }
-
 
         return 0;
     }
 
-    void schedule()
+    void schedule(bool verbose=false)
     {
-        std::cout << "scheduling the quantum program" << std::endl;
+        if (verbose)
+            println("scheduling the quantum program");
+
         for (auto k : kernels)
             k.schedule(qubits);
     }

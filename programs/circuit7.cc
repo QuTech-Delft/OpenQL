@@ -48,33 +48,3 @@ int main(int argc, char ** argv)
 
     return 0;
 }
-
-
-// h q0
-// cnot q3,q4
-// cnot q3,q5
-// cnot q2,q3
-// cnot q2,q4
-// cnot q2,q6
-// cnot q1,q3
-// cnot q1,q5
-// cnot q1,q6
-// cnot q0,q3
-// cnot q0,q5
-// cnot q0,q6
-
-
-// kernel.hadamard(0);
-// kernel.hadamard(1);
-// kernel.hadamard(2);
-// kernel.cnot(3,4);
-// kernel.cnot(3,5);
-// kernel.cnot(2,3);
-// kernel.cnot(2,4);
-// kernel.cnot(2,6);
-// kernel.cnot(1,3);
-// kernel.cnot(1,5);
-// kernel.cnot(1,6);
-// kernel.cnot(0,3);
-// kernel.cnot(0,5);
-// kernel.cnot(0,6);

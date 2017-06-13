@@ -14,6 +14,7 @@
 #include <lemon/dijkstra.h>
 #include <lemon/connectivity.h>
 
+#include "utils.h"
 #include "gate.h"
 #include "circuit.h"
 
@@ -44,7 +45,7 @@ public:
     DependGraph(): instruction(graph), name(graph), weight(graph),
         cause(graph), depType(graph), dist(graph) {}
 
-    void Init( ql::circuit& ckt, size_t nqubits)
+    void Init( ql::circuit& ckt, size_t nqubits, bool verbose=false)
     {
         size_t nQubits = nqubits;
         // std::cout << "nQubits : " << nQubits << std::endl;
@@ -137,9 +138,9 @@ public:
         }
     }
 
-    void Print()
+    void Print(bool verbose=false)
     {
-        std::cout << "Printing Dependence Graph " << std::endl;
+        if(verbose) println("Printing Dependence Graph ");
         digraphWriter(graph).
         nodeMap("name", name).
         arcMap("cause", cause).
@@ -150,9 +151,9 @@ public:
         run();
     }
 
-    void PrintMatrix()
+    void PrintMatrix(bool verbose=false)
     {
-        std::cout << "Printing Dependence Graph as Matrix" << std::endl;
+        if(verbose) println("Printing Dependence Graph as Matrix");
         ofstream fout;
         // OpenOutFile("dependenceMatrix.dat",fout);
         fout.open( "dependenceMatrix.dat", ios::binary);
@@ -285,9 +286,9 @@ public:
         dotout << "}" << endl;
     }
 
-    void PrintDot()
+    void PrintDot(bool verbose=false)
     {
-        std::cout << "Printing Dependence Graph in DOT" << std::endl;
+        if(verbose) println("Printing Dependence Graph in DOT");
         ofstream dotout;
         // OpenOutFile("dependenceGraph.dot",dotout);
         dotout.open( "dependenceGraph.dot", ios::binary);
@@ -326,21 +327,21 @@ public:
         }
     }
 
-    void PrintTopologicalOrder()
+    void PrintTopologicalOrder(bool verbose=false)
     {
         std::vector<ListDigraph::Node> order;
         TopologicalSort(order);
 
-        std::cout << "Printing nodes in Topological order" << std::endl;
+        if(verbose) println("Printing nodes in Topological order");
         for ( std::vector<ListDigraph::Node>::reverse_iterator it = order.rbegin(); it != order.rend(); ++it)
         {
             std::cout << name[*it] << std::endl;
         }
     }
 
-    void ScheduleASAP(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
+    void ScheduleASAP(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order, bool verbose=false)
     {
-        std::cout << "Performing ASAP Scheduling" << std::endl;
+        if(verbose) println("Performing ASAP Scheduling");
         TopologicalSort(order);
 
         std::vector<ListDigraph::Node>::reverse_iterator currNode = order.rbegin();
@@ -364,7 +365,7 @@ public:
         }
     }
 
-    void PrintScheduleASAP()
+    void PrintScheduleASAP(bool verbose=false)
     {
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
@@ -379,9 +380,9 @@ public:
         }
     }
 
-    void PrintDotScheduleASAP()
+    void PrintDotScheduleASAP(bool verbose=false)
     {
-        std::cout << "Printing Scheduled Graph in scheduledASAP.dot" << std::endl;
+        if(verbose) println("Printing Scheduled Graph in scheduledASAP.dot");
         ofstream dotout;
         dotout.open( "scheduledASAP.dot", ios::binary);
         if ( dotout.fail() )
@@ -398,7 +399,7 @@ public:
         dotout.close();
     }
 
-    void PrintQASMScheduledASAP()
+    void PrintQASMScheduledASAP(bool verbose=false)
     {
         ofstream fout;
         fout.open( "scheduledASAP.qc", ios::binary);
@@ -411,7 +412,7 @@ public:
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         ScheduleASAP(cycle,order);
-        std::cout << "Printing Scheduled QASM in scheduledASAP.qc" << std::endl;
+        if(verbose) println("Printing Scheduled QASM in scheduledASAP.qc");
 
         typedef std::vector<std::string> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
@@ -451,9 +452,9 @@ public:
         fout.close();
     }
 
-    void ScheduleALAP(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
+    void ScheduleALAP(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order, bool verbose=false)
     {
-        std::cout << "Performing ALAP Scheduling" << std::endl;
+        if(verbose) println("Performing ALAP Scheduling");
         TopologicalSort(order);
 
         std::vector<ListDigraph::Node>::iterator currNode = order.begin();
@@ -477,7 +478,7 @@ public:
         }
     }
 
-    void PrintScheduleALAP()
+    void PrintScheduleALAP(bool verbose=false)
     {
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
@@ -588,9 +589,9 @@ public:
         dotout << "}" << endl;
     }
 
-    void PrintDotScheduleALAP()
+    void PrintDotScheduleALAP(bool verbose=false)
     {
-        std::cout << "Printing Scheduled Graph in scheduledALAP.dot" << std::endl;
+        if(verbose) println("Printing Scheduled Graph in scheduledALAP.dot");
         ofstream dotout;
         dotout.open( "scheduledALAP.dot", ios::binary);
         if ( dotout.fail() )
@@ -607,7 +608,7 @@ public:
         dotout.close();
     }
 
-    void PrintQASMScheduledALAP()
+    void PrintQASMScheduledALAP(bool verbose=false)
     {
         ofstream fout;
         fout.open( "scheduledALAP.qc", ios::binary);
@@ -620,7 +621,7 @@ public:
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         ScheduleALAP(cycle,order);
-        std::cout << "Printing Scheduled QASM in scheduledALAP.qc" << std::endl;
+        if(verbose) println("Printing Scheduled QASM in scheduledALAP.qc");
 
         typedef std::vector<std::string> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;

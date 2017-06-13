@@ -17,5 +17,5 @@ nqubits = 3
 p = Program("rbProgram", nqubits)
 p.set_sweep_points(sweep_points, num_circuits)
 p.add_kernel(k)
-p.compile()
+p.compile(True)
 p.schedule()

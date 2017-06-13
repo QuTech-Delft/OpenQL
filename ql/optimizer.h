@@ -8,10 +8,9 @@
 #ifndef OPTIMIZER_H
 #define OPTIMIZER_H
 
+#include "utils.h"
 #include "circuit.h"
 
-
-#define println(x) std::cout << x << std::endl
 
 namespace ql
 {
@@ -34,10 +33,10 @@ public:
     circuit optimize(circuit& ic /*, bool verbose=false */)
     {
         circuit c=ic;
-        // if (verbose) println("[+] optimizing circuit...");
+        // if (verbose) println("optimizing circuit...");
         for (size_t i=c.size(); i>1; i--)
         {
-            // println("[+] window size : " << i);
+            // println("window size : " << i);
             c = optimize_sliding_window(c,i);
             if (c.size()<i) break;
         }
@@ -45,7 +44,7 @@ public:
         if (c.size()>1)
             c = optimize_sliding_window(c,2);
 
-        // if (verbose) println("[+] optimization done.");
+        // if (verbose) println("optimization done.");
 
         return c;
     }
@@ -119,13 +118,13 @@ protected:
         {
             return ql::circuit(c);
         }
-        // println("[+] id pos:");
+        // println("id pos:");
         // for (size_t i=0; i<id_pos.size(); i++)
         // println(id_pos[i]);
 
         if (id_pos.size()==1)
         {
-            // println("[+] rotations cancelling...");
+            // println("rotations cancelling...");
             size_t pos = id_pos[0];
             size_t i=0;
             while (i<c.size())
@@ -141,10 +140,10 @@ protected:
             return oc;
         }
 
-        // println("[+] removing overlapping windows...");
+        // println("removing overlapping windows...");
         std::vector<int> pid;
         // int prev = id_pos[0];
-        // println("[+] rotation cancelling...");
+        // println("rotation cancelling...");
         size_t pos = id_pos[0];
         size_t ip  = 0;
         size_t i=0;
