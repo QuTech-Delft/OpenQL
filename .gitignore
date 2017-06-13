@@ -11,4 +11,6 @@ openql.egg-info
 *.log
 *.so
 *.pyd
-
+*.pyc
+*.cache
+openql/openql.py
