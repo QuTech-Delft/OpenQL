@@ -1,6 +1,6 @@
 from openql import Kernel, Program
 
-p = Program("aProgram", 2)
+p = Program("aProgram", nqubits=1)
 k = Kernel("aKernel")
 
 # populate kernel
