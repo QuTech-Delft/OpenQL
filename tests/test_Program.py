@@ -60,7 +60,6 @@ class Test_kernel(unittest.TestCase):
         print(p.qasm())
         print(p.microcode())
 
-
     def test_5qubit_program(self):
         p = Program("aProgram", nqubits=5)
         k = Kernel("aKernel")
