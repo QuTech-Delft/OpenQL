@@ -27,7 +27,7 @@ class Test_kernel(unittest.TestCase):
         # Test that these operations exist as methods of the kernel
         self.assertTrue(set(operations).issubset(dir(k)))
 
-    @unittest.skip
+    @unittest.skip('NotImplemented')
     def test_kernel_name(self):
         name = "kernel1"
         k = Kernel(name)

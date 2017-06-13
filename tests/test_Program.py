@@ -2,13 +2,13 @@ import unittest
 from openql import Kernel, Program
 
 
-class Test_kernel(unittest.TestCase):
+class Test_program(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
         pass
 
-    @unittest.skip
+    @unittest.skip('NotImplemented')
     def test_program_name(self):
         name = "program1"
         p = Program(name, nqubits=1)
@@ -82,3 +82,36 @@ class Test_kernel(unittest.TestCase):
         # N.B. This does not actually test if the output is correct
         print(p.qasm())
         print(p.microcode())
+
+    @unittest.skip('Gate by name not implemented')
+    def test_allxy_program(self):
+        p = Program('AllXY', nqubits=7)
+        k = Kernel('AllXY_q0')
+
+        q = 0  # target qubit
+
+        pulse_combinations = [
+            ['I', 'I'], ['rx180', 'rx180'], ['ry180', 'ry180'],
+            ['rx180', 'ry180'], ['ry180', 'rx180'],
+            ['rx90', 'I'], ['ry90', 'I'], ['rx90', 'ry90'],
+            ['ry90', 'rx90'], ['rx90', 'ry180'], ['ry90', 'rx180'],
+            ['rx180', 'ry90'], ['ry180', 'rx90'], ['rx90', 'rx180'],
+            ['rx180', 'rx90'], ['ry90', 'ry180'], ['ry180', 'ry90'],
+            ['rx180', 'I'], ['ry180', 'I'], ['rx90', 'rx90'],
+            ['ry90', 'ry90']]
+
+        nr_sweep_pts = len(pulse_combinations)
+
+        for pulse_comb in pulse_combinations:
+            k.prepz(q)
+            # Currently not possible to specify a gate using a string
+            k.gate(pulse_comb[0], q)
+            k.gate(pulse_comb[1], q)
+            k.measure(q)
+
+        p.set_sweep_points(sweep_points=nr_sweep_pts,
+                           nr_circuits=nr_sweep_pts)
+
+        p.compile()
+        print(p.qasm)
+        print(p.microcode)
