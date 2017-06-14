@@ -67,6 +67,10 @@ class Kernel
         void cphase(size_t q0, size_t q1) { kernel->cphase(q0,q1); }
         void toffoli(size_t q0, size_t q1, size_t q2) { kernel->toffoli(q0,q1,q2); }
         void clifford(size_t id, size_t q0) { kernel->clifford(id, q0); }
+        void load_custom_instructions(std::string fname="instructions.json") { kernel->load_custom_instructions(fname); }
+        void print_custom_instructions() { kernel->print_gates_definition(); }
+        void gate(std::string name, std::vector<size_t> qubits) { kernel->gate(name, qubits); }
+        void gate(std::string name, size_t qubit) { kernel->gate(name, qubit); }
 
         ~Kernel()
         {

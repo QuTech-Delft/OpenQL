@@ -11,6 +11,7 @@
 
 namespace std {
    %template(vectori) vector<int>;
+   %template(vectorui) vector<size_t>;
    %template(vectorf) vector<float>;
    %template(vectord) vector<double>;
 };

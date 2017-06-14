@@ -43,7 +43,6 @@ public:
 
     void hadamard(size_t qubit)
     {
-        // qubit not used (default : q0)
 #ifdef DECOMPOSE
         c.push_back(new ql::ry90(qubit));
         c.push_back(new ql::rx180(qubit));
@@ -54,19 +53,16 @@ public:
 
     void s(size_t qubit)
     {
-        // qubit not used (default : q0)
         c.push_back(new ql::phase(qubit));
     }
 
     void sdag(size_t qubit)
     {
-        // qubit not used (default : q0)
         c.push_back(new ql::phasedag(qubit));
     }
 
     void x(size_t qubit)
     {
-        // qubit not used (default : q0)
 #ifdef DECOMPOSE
         c.push_back(new ql::rx180(qubit));
 #else
@@ -76,7 +72,6 @@ public:
 
     void y(size_t qubit)
     {
-        // qubit not used (default : q0)
 #ifdef DECOMPOSE
         c.push_back(new ql::ry180(qubit));
 #else
@@ -86,7 +81,6 @@ public:
 
     void z(size_t qubit)
     {
-        // qubit not used (default : q0)
 #ifdef DECOMPOSE
         c.push_back(new ql::ry180(qubit));
         c.push_back(new ql::rx180(qubit));
@@ -98,49 +92,41 @@ public:
 
     void rx90(size_t qubit)
     {
-        // qubit not used (default : q0)
         c.push_back(new ql::rx90(qubit));
     }
 
     void mrx90(size_t qubit)
     {
-        // qubit not used (default : q0)
         c.push_back(new ql::mrx90(qubit));
     }
 
     void rx180(size_t qubit)
     {
-        // qubit not used (default : q0)
         c.push_back(new ql::rx180(qubit));
     }
 
     void ry90(size_t qubit)
     {
-        // qubit not used (default : q0)
         c.push_back(new ql::ry90(qubit));
     }
 
     void mry90(size_t qubit)
     {
-        // qubit not used (default : q0)
         c.push_back(new ql::mry90(qubit));
     }
 
     void ry180(size_t qubit)
     {
-        // qubit not used (default : q0)
         c.push_back(new ql::ry180(qubit));
     }
 
     void measure(size_t qubit)
     {
-        // qubit not used (default : q0)
         c.push_back(new ql::measure(qubit));
     }
 
     void prepz(size_t qubit)
     {
-        // qubit not used (default : q0)
         c.push_back(new ql::prepz(qubit));
     }
 
