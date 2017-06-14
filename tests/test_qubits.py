@@ -1,14 +1,17 @@
 import os
 import filecmp
 import unittest
-from openql import Kernel, Program
+from openql import openql as ql
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
 
 class Test_qubits(unittest.TestCase):
 
 	def test_1_qubit(self):
-		k = Kernel("aKernel")
+		ql.set_instruction_map_file("instructions.map")
+		ql.init()
+
+		k = ql.Kernel("aKernel")
 
 		# populate kernel
 		k.prepz(0);
@@ -20,18 +23,21 @@ class Test_qubits(unittest.TestCase):
 		nqubits = 1
 		sweep_points = [2]
 		num_circuits = 1
-		p = Program("aProgram", nqubits)
+		p = ql.Program("aProgram", nqubits)
 		p.set_sweep_points(sweep_points, num_circuits)
 
 		p.add_kernel(k) # add kernel to program
 		p.compile()     # compile program
 
 		gold = rootDir + '/golden/test_1_qubit.qasm'
-		isSame = filecmp.cmp('aProgram.qasm', gold)
+		isSame = filecmp.cmp('output/aProgram.qasm', gold)
 		self.assertTrue(isSame)
 
 	def test_2_qubit(self):
-		k = Kernel("aKernel")
+		ql.set_instruction_map_file("instructions.map")
+		ql.init()
+
+		k = ql.Kernel("aKernel")
 
 		# populate kernel
 		k.prepz(0);
@@ -44,18 +50,21 @@ class Test_qubits(unittest.TestCase):
 		nqubits = 3
 		sweep_points = [2]
 		num_circuits = 1
-		p = Program("aProgram", nqubits)
+		p = ql.Program("aProgram", nqubits)
 		p.set_sweep_points(sweep_points, num_circuits)
 
 		p.add_kernel(k) # add kernel to program
 		p.compile()     # compile program
 
 		gold = rootDir + '/golden/test_2_qubit.qasm'
-		isSame = filecmp.cmp('aProgram.qasm', gold)
+		isSame = filecmp.cmp('output/aProgram.qasm', gold)
 		self.assertTrue(isSame)
 
 	def test_3_qubit(self):
-		k = Kernel("aKernel")
+		ql.set_instruction_map_file("instructions.map")
+		ql.init()
+
+		k = ql.Kernel("aKernel")
 
 		# populate kernel
 		k.prepz(0);
@@ -67,14 +76,14 @@ class Test_qubits(unittest.TestCase):
 		nqubits = 3
 		sweep_points = [2]
 		num_circuits = 1
-		p = Program("aProgram", nqubits)
+		p = ql.Program("aProgram", nqubits)
 		p.set_sweep_points(sweep_points, num_circuits)
 
 		p.add_kernel(k) # add kernel to program
 		p.compile()     # compile program
 
 		gold = rootDir + '/golden/test_3_qubit.qasm'
-		isSame = filecmp.cmp('aProgram.qasm', gold)
+		isSame = filecmp.cmp('output/aProgram.qasm', gold)
 		self.assertTrue(isSame)
 
 if __name__ == '__main__':

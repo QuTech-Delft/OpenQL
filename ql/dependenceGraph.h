@@ -155,11 +155,12 @@ public:
     {
         if(verbose) println("Printing Dependence Graph as Matrix");
         ofstream fout;
-        // OpenOutFile("dependenceMatrix.dat",fout);
-        fout.open( "dependenceMatrix.dat", ios::binary);
+        string datfname("output/dependenceMatrix.dat");
+        fout.open( datfname, ios::binary);
         if ( fout.fail() )
         {
-            std::cout << "Error opening file" << std::endl;
+            std::cout << "Error opening file " << datfname << std::endl
+                      << "Make sure the \"output\" directory exists" << std::endl;
             return;
         }
 
@@ -290,11 +291,12 @@ public:
     {
         if(verbose) println("Printing Dependence Graph in DOT");
         ofstream dotout;
-        // OpenOutFile("dependenceGraph.dot",dotout);
-        dotout.open( "dependenceGraph.dot", ios::binary);
+        string dotfname("output/dependenceGraph.dot");
+        dotout.open(dotfname, ios::binary);
         if ( dotout.fail() )
         {
-            std::cout << "Error opening file" << std::endl;
+            std::cout << "Error opening file " << dotfname << std::endl
+                      << "Make sure the \"output\" directory exists" << std::endl;
             return;
         }
 
@@ -382,15 +384,17 @@ public:
 
     void PrintDotScheduleASAP(bool verbose=false)
     {
-        if(verbose) println("Printing Scheduled Graph in scheduledASAP.dot");
         ofstream dotout;
-        dotout.open( "scheduledASAP.dot", ios::binary);
+        string dotfname("output/scheduledASAP.dot");
+        dotout.open( dotfname, ios::binary);
         if ( dotout.fail() )
         {
-            std::cout << "Error opening file" << std::endl;
+            std::cout << "Error opening file " << dotfname << std::endl
+                      << "Make sure the \"output\" directory exists" << std::endl;
             return;
         }
 
+        if(verbose) println("Printing Scheduled Graph in " << dotfname);
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         ScheduleASAP(cycle,order);
@@ -402,17 +406,19 @@ public:
     void PrintQASMScheduledASAP(bool verbose=false)
     {
         ofstream fout;
-        fout.open( "scheduledASAP.qc", ios::binary);
+        string qcfname("output/scheduledASAP.qc");
+        fout.open( qcfname, ios::binary);
         if ( fout.fail() )
         {
-            std::cout << "Error opening file" << std::endl;
+            std::cout << "Error opening file " << qcfname << std::endl
+                      << "Make sure the \"output\" directory exists" << std::endl;
             return;
         }
 
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         ScheduleASAP(cycle,order);
-        if(verbose) println("Printing Scheduled QASM in scheduledASAP.qc");
+        if(verbose) println("Printing Scheduled QASM in " << qcfname);
 
         typedef std::vector<std::string> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
@@ -591,15 +597,17 @@ public:
 
     void PrintDotScheduleALAP(bool verbose=false)
     {
-        if(verbose) println("Printing Scheduled Graph in scheduledALAP.dot");
         ofstream dotout;
-        dotout.open( "scheduledALAP.dot", ios::binary);
+        string dotfname("output/scheduledALAP.dot");
+        dotout.open( dotfname, ios::binary);
         if ( dotout.fail() )
         {
-            std::cout << "Error opening file" << std::endl;
+            std::cout << "Error opening file " << dotfname << std::endl
+                      << "Make sure the \"output\" directory exists" << std::endl;
             return;
         }
 
+        if(verbose) println("Printing Scheduled Graph in " << dotfname);
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         ScheduleALAP(cycle,order);
@@ -611,17 +619,19 @@ public:
     void PrintQASMScheduledALAP(bool verbose=false)
     {
         ofstream fout;
-        fout.open( "scheduledALAP.qc", ios::binary);
+        string qcfname("output/scheduledALAP.qc");
+        fout.open( qcfname, ios::binary);
         if ( fout.fail() )
         {
-            std::cout << "Error opening file" << std::endl;
+            std::cout << "Error opening file " << qcfname << std::endl
+                      << "Make sure the \"output\" directory exists" << std::endl;
             return;
         }
 
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         ScheduleALAP(cycle,order);
-        if(verbose) println("Printing Scheduled QASM in scheduledALAP.qc");
+        if(verbose) println("Printing Scheduled QASM in " << qcfname);
 
         typedef std::vector<std::string> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;

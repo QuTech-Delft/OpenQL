@@ -1,53 +1,53 @@
+from openql import openql as ql
 import unittest
-from openql import Kernel, Program
 
 class Test_basic(unittest.TestCase):
 
 	def test_compilation(self):
-		k = Kernel("aKernel")
+		# set global options kernel
+		ql.set_instruction_map_file("instructions.map")
+		ql.init()
 
 		# populate kernel
-		for i in range(4):
-		    k.prepz(i);
+		k = ql.Kernel("aKernel")
+		k.prepz(0)
+		k.prepz(1)
+		k.identity(0)
+		k.identity(1)
+		k.measure(0)
+		k.measure(1)
 
-		for i in range(4):
-		    k.hadamard(i);
-
-		for i in range(4):
-		    for j in range(3,5):
-		        k.cnot(i,j);
-
-		nqubits = 5
 		sweep_points = [2]
 		num_circuits = 1
-		p = Program("aProgram", nqubits)
-		p.set_sweep_points(sweep_points, num_circuits)
+		nqubits = 2
 
-		p.add_kernel(k) # add kernel to program
-		p.compile()     # compile program
+		p = ql.Program("aProgram", nqubits)
+		p.set_sweep_points(sweep_points, num_circuits)
+		p.add_kernel(k)
+		p.compile(False, True)
 
 	def test_scheduling(self):
-		k = Kernel("aKernel")
+		# set global options kernel
+		ql.set_instruction_map_file("instructions.map")
+		ql.init()
 
 		# populate kernel
-		for i in range(4):
-		    k.prepz(i);
+		k = ql.Kernel("aKernel")
+		k.prepz(0)
+		k.prepz(1)
+		k.identity(0)
+		k.identity(1)
+		k.measure(0)
+		k.measure(1)
 
-		for i in range(4):
-		    k.hadamard(i);
-
-		for i in range(4):
-		    for j in range(3,5):
-		        k.cnot(i,j);
-
-		nqubits = 5
 		sweep_points = [2]
 		num_circuits = 1
-		p = Program("aProgram", nqubits)
-		p.set_sweep_points(sweep_points, num_circuits)
+		nqubits = 2
 
-		p.add_kernel(k) # add kernel to program
-		p.compile()     # compile program
+		p = ql.Program("aProgram", nqubits)
+		p.set_sweep_points(sweep_points, num_circuits)
+		p.add_kernel(k)
+		p.compile(False, True)
 		p.schedule()
 
 

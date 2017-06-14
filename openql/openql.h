@@ -17,17 +17,38 @@
 #include <time.h>
 #include "ql/openql.h"
 
+std::string instruction_map_file = "instructions.map";
+
+void set_instruction_map_file(std::string fname="instructions.map")
+{
+    instruction_map_file = fname;
+}
+
+std::string get_instruction_map_file()
+{
+    return instruction_map_file;
+}
+
+void init()
+{
+    ql::init(ql::transmon_platform, instruction_map_file);
+}
+
 class Kernel
 {
     public:
+        std::string name;
         ql::quantum_kernel *kernel;
 
-        Kernel(std::string name)
+        Kernel(std::string kname)
         {
             // std::cout << "Kernel::Kernel()" << std::endl;
+            name = kname;
             kernel = new ql::quantum_kernel(name);
         }
+        // std::string name() {return kernel_name;}
 
+        void identity(size_t q0) { kernel->identity(q0); }
         void hadamard(size_t q0) { kernel->hadamard(q0); }
         void s(size_t q0) { kernel->s(q0); }
         void sdag(size_t q0) { kernel->sdag(q0); }
@@ -60,11 +81,12 @@ class Program
         ql::quantum_program *prog;
 
     public:
-        Program(std::string name, size_t nqubits)
+        std::string name;
+        Program(std::string pname, size_t nqubits)
         {
+            name = pname;
             // std::cout << "Program::Program()" << std::endl;
-            prog = new ql::quantum_program(name,nqubits);
-            ql::init(ql::transmon_platform, "instructions.map");
+            prog = new ql::quantum_program(name, nqubits);
         }
 
         void set_sweep_points( std::vector<float> sweep_points, size_t num_circuits)
@@ -78,7 +100,7 @@ class Program
             prog->add( *(k.kernel) );
         }
 
-        void compile(bool verbose=false) { prog->compile(verbose); }
+        void compile(bool optimize=false, bool verbose=false) { prog->compile(optimize, verbose); }
         void schedule() { prog->schedule(); }
         std::string qasm() {return prog->qasm(); }
         std::string microcode() {return prog->microcode(); }

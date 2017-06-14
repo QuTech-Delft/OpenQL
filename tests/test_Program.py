@@ -1,5 +1,5 @@
 import unittest
-from openql import Kernel, Program
+from openql import openql as ql
 
 
 class Test_program(unittest.TestCase):
@@ -8,17 +8,17 @@ class Test_program(unittest.TestCase):
     def setUpClass(self):
         pass
 
-    @unittest.skip('NotImplemented')
+    # @unittest.skip('NotImplemented')
     def test_program_name(self):
         name = "program1"
-        p = Program(name, nqubits=1)
+        p = ql.Program(name, nqubits=1)
         # Program does not have a name attribute at this moment
         self.assertEqual(p.name, name)
 
     def test_add_kernel(self):
         # test that this does not raise any error
-        k = Kernel("kernel1")
-        p = Program('program1', nqubits=5)
+        k = ql.Kernel("kernel1")
+        p = ql.Program('program1', nqubits=5)
         p.add_kernel(k)
 
         # there should be a check here to see if k was indeed added
@@ -26,7 +26,7 @@ class Test_program(unittest.TestCase):
 
     def test_program_methods(self):
         # This tests for the existence of the right methods in the wrapping
-        p = Program('program1', nqubits=5)
+        p = ql.Program('program1', nqubits=5)
         program_methods = [
             'add_kernel',
             'compile',
@@ -37,7 +37,9 @@ class Test_program(unittest.TestCase):
         self.assertTrue(set(program_methods).issubset(dir(p)))
 
     def test_simple_program(self):
-        k = Kernel("kernel1")
+        ql.set_instruction_map_file("instructions.map")
+        ql.init()
+        k = ql.Kernel("kernel1")
         k.prepz(0)
         k.prepz(1)
         k.x(0)
@@ -50,7 +52,7 @@ class Test_program(unittest.TestCase):
         sweep_points = [2]
         num_circuits = 1
         nqubits = 3
-        p = Program("rbProgram", nqubits)
+        p = ql.Program("rbProgram", nqubits)
         p.set_sweep_points(sweep_points, num_circuits)
         p.add_kernel(k)
         p.compile()
@@ -61,8 +63,10 @@ class Test_program(unittest.TestCase):
         print(p.microcode())
 
     def test_5qubit_program(self):
-        p = Program("aProgram", nqubits=5)
-        k = Kernel("aKernel")
+        ql.set_instruction_map_file("instructions.map")
+        ql.init()
+        p = ql.Program("aProgram", nqubits=5)
+        k = ql.Kernel("aKernel")
 
         # populate kernel
         for i in range(5):
@@ -85,8 +89,10 @@ class Test_program(unittest.TestCase):
 
     @unittest.skip('Gate by name not implemented')
     def test_allxy_program(self):
-        p = Program('AllXY', nqubits=7)
-        k = Kernel('AllXY_q0')
+        ql.set_instruction_map_file("instructions.map")
+        ql.init()
+        p = ql.Program('AllXY', nqubits=7)
+        k = ql.Kernel('AllXY_q0')
 
         q = 0  # target qubit
 
@@ -115,3 +121,6 @@ class Test_program(unittest.TestCase):
         p.compile()
         print(p.qasm)
         print(p.microcode)
+
+if __name__ == '__main__':
+    unittest.main()

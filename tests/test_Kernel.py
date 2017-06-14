@@ -21,17 +21,15 @@ class Test_kernel(unittest.TestCase):
             # 2 qubit gates
             'cnot', 'cphase',
             # Theorist gates
-            'hadamard', 's', 'sdag', 'toffoli',
+            'identity', 'hadamard', 's', 'sdag', 'toffoli',
             # pauli operators
             'x', 'y', 'z']
         # Test that these operations exist as methods of the kernel
         self.assertTrue(set(operations).issubset(dir(k)))
 
-    @unittest.skip('NotImplemented')
     def test_kernel_name(self):
         name = "kernel1"
         k = Kernel(name)
-        # kernel does not have a name attribute at this moment
         self.assertEqual(k.name, name)
 
     def test_simple_kernel(self):
@@ -48,3 +46,6 @@ class Test_kernel(unittest.TestCase):
 
         # At this point it should be tested if these things have been added
         # to the qubits. However, it is not clear how to view this
+
+if __name__ == '__main__':
+    unittest.main()

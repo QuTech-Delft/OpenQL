@@ -36,6 +36,11 @@ public:
         iterations = it;
     }
 
+    void identity(size_t qubit)
+    {
+        c.push_back(new ql::identity(qubit));
+    }
+
     void hadamard(size_t qubit)
     {
         // qubit not used (default : q0)

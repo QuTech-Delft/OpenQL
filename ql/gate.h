@@ -188,6 +188,41 @@ namespace ql
 
 
 /**
+ * identity
+ */
+class identity : public gate
+{
+public:
+    cmat_t m;
+    identity(size_t q) : m(identity_c)
+    {
+        latency = 2; // TODO fix it
+        operands.push_back(q);
+    }
+
+    instruction_t qasm()
+    {
+        return instruction_t("   i q" + std::to_string(operands[0]) );
+    }
+
+    instruction_t micro_code()
+    {
+        // TODO fix it
+        return instruction_t("     pulse 1100 0000 1100\n     wait 10\n     pulse 1001 0000 1001\n     wait 10");
+    }
+
+    gate_type_t type()
+    {
+        return __identity_gate__;
+    }
+
+    cmat_t mat()
+    {
+        return m;
+    }
+};
+
+/**
  * hadamard
  */
 class hadamard : public gate

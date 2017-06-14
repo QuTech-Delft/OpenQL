@@ -25,7 +25,7 @@ class quantum_program
 {
 public:
 
-    quantum_program(std::string name, size_t qubits) : name(name), output_path("./"), default_config(true), qubits(qubits)
+    quantum_program(std::string name, size_t qubits) : name(name), output_path("output/"), default_config(true), qubits(qubits)
     {
     }
 
@@ -125,16 +125,7 @@ public:
         return ss.str();
     }
 
-
-    void write_file(std::string file_name, std::string& content)
-    {
-        std::ofstream file;
-        file.open(file_name);
-        file << content;
-        file.close();
-    }
-
-    int compile(bool verbose=false)
+    int compile(bool ql_optimize=false, bool verbose=false)
     {
         if (!ql::initialized)
         {
@@ -144,18 +135,20 @@ public:
         if (verbose) println("compiling ...");
         if (kernels.empty())
             return -1;
-#ifdef ql_optimize
-        for (size_t k=0; k<kernels.size(); ++k)
-            kernels[k].optimize();
-#endif // ql_optimize
 
+        if(ql_optimize)
+        {
+            if (verbose) println("optimizations enabled");
+            for (size_t k=0; k<kernels.size(); ++k)
+                kernels[k].optimize();
+        }
 
         std::stringstream ss_qasm;
         ss_qasm << output_path << name << ".qasm";
         std::string s = qasm();
 
         if (verbose) println("writing qasm to '" << ss_qasm.str() << "' ...");
-        write_file(ss_qasm.str(),s);
+        ql::utils::write_file(ss_qasm.str(),s);
 
         // println("sweep_points : ");
         // for (int i=0; i<sweep_points.size(); i++) println(sweep_points[i]);
@@ -165,7 +158,7 @@ public:
         std::string uc = microcode();
 
         if (verbose) println("writing transmon micro-code to '" << ss_asm.str() << "' ...");
-        write_file(ss_asm.str(),uc);
+        ql::utils::write_file(ss_asm.str(),uc);
 
         std::stringstream ss_swpts;
         ss_swpts << "{ \"measurement_points\" : [";
@@ -179,7 +172,7 @@ public:
             ss_config << output_path << name << "_config.json";
             std::string conf_file_name = ss_config.str();
             if (verbose) println("writing sweep points to '" << conf_file_name << "'...");
-            write_file(conf_file_name, config);
+            ql::utils::write_file(conf_file_name, config);
         }
         else
         {
@@ -187,7 +180,7 @@ public:
             ss_config << output_path << config_file_name;
             std::string conf_file_name = ss_config.str();
             if (verbose) println("writing sweep points to '" << conf_file_name << "'...");
-            write_file(conf_file_name, config);
+            ql::utils::write_file(conf_file_name, config);
         }
 
         return 0;
