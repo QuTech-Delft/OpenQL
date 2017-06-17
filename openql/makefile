@@ -3,7 +3,7 @@ SWIG=swig
 INCS= -I. -I/data/repositories/quantRepos/openql -I/opt/lemon/include -I/usr/include/python3.5
 PYTHON=python3
 
-wrapper:
+wrapper: openql.i
 	$(SWIG) -c++ -python openql.i
 
 lib: wrapper
@@ -12,6 +12,7 @@ lib: wrapper
 
 ptest: lib
 	$(PYTHON) test.py
+	# $(PYTHON) test_dependence.py
 
 ctest: lib
 	g++ $(INCS) -std=c++11 -L/data/repositories/quantRepos/openql/swig _openql.so -o test test.cc _openql.so -lpython3.5m

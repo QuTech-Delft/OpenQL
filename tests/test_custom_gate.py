@@ -1,4 +1,4 @@
-# import unittest
+import unittest
 from openql import openql as ql
 
 class Test_kernel(unittest.TestCase):

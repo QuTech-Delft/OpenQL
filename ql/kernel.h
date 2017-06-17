@@ -354,21 +354,36 @@ public:
 
     }
 
-    void schedule(size_t nqubits, bool verbose=false)
+    void schedule(size_t nqubits, std::string scheduler, std::string& schedQASM, std::string& schedDOT, bool verbose=false)
     {
-        if (verbose) println("scheduling the quantum kernel '" << name << "'...");
+        if (verbose) println( scheduler << " scheduling the quantum kernel '" << name << "'...");
+
         DependGraph dg;
         dg.Init(c, nqubits, verbose);
         // dg.Print();
         // dg.PrintMatrix();
-        dg.PrintDot();
+        // dg.PrintDot();
 
-        // dg.PrintScheduleASAP();
-        dg.PrintDotScheduleASAP();
-        dg.PrintQASMScheduledASAP();
-
-        // dg.PrintScheduleALAP();
-        dg.PrintQASMScheduledALAP();
+        if("ASAP" == scheduler)
+        {
+            // dg.PrintScheduleASAP();
+            // dg.PrintDotScheduleASAP();
+            schedDOT = dg.GetDotScheduleASAP();
+            // dg.PrintQASMScheduledASAP();
+            schedQASM = dg.GetQASMScheduledASAP();
+        }
+        else if("ALAP" == scheduler)
+        {
+            // dg.PrintScheduleALAP();
+            // dg.PrintDotScheduleALAP();
+            schedDOT = dg.GetDotScheduleALAP();
+            // dg.PrintQASMScheduledALAP();
+            schedQASM = dg.GetQASMScheduledALAP();
+        }
+        else
+        {
+            println("Unknown scheduler");            
+        }
     }
 
     std::vector<circuit*> split_circuit(circuit x, bool verbose=false)
@@ -431,6 +446,11 @@ public:
             println("[-] gate '" << i->first << "'");
             println(" |- qumis : \n" << i->second->micro_code());
         }
+    }
+
+    std::string getName()
+    {
+        return name;
     }
 
 protected:

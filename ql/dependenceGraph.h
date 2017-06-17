@@ -21,8 +21,8 @@
 using namespace std;
 using namespace lemon;
 
-enum DepTypes{RAW,WAW,WAR};
-const string DepTypesNames[] = {"RAW", "WAW", "WAR"};
+enum DepTypes{RAW, WAW, WAR, RAR};
+const string DepTypesNames[] = {"RAW", "WAW", "WAR", "RAR"};
 auto MAX_CYCLE = std::numeric_limits<std::size_t>::max();
 
 class DependGraph
@@ -88,9 +88,25 @@ public:
                     weight[arc] = instruction[prodNode]->latency;
 
                 cause[arc] = operand;
-                // Last operand is target, well Mostsly! TODO Fix it for other cases
-                if( operandNo == operands.size()-1 ) 
+                if(operandNo == 0)
                 {
+                    ReadersListType readers = LastReaders[operand];
+                    for(auto & readerID : readers)
+                    {
+                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                        if(prodID == srcID)
+                            weight[arc1] = 1; // TODO OR 0 as SOURCE is dummy node?
+                        else
+                            weight[arc1] = instruction[readerNode]->latency;
+
+                        cause[arc1] = operand;
+                        depType[arc1] = RAR; // on control
+                    }
+                }
+
+                if( operandNo == operands.size()-1 ) // Last operand is target, well Mostsly! TODO Fix it for other cases
+                {   
                     depType[arc] = WAW;
                     LastWriter[operand] = consID;
 
@@ -159,8 +175,8 @@ public:
         fout.open( datfname, ios::binary);
         if ( fout.fail() )
         {
-            std::cout << "Error opening file " << datfname << std::endl
-                      << "Make sure the \"output\" directory exists" << std::endl;
+            println("Error opening file " << datfname << std::endl
+                     << "Make sure the \"output\" directory exists");
             return;
         }
 
@@ -194,7 +210,7 @@ public:
                 bool WithCycles,
                 ListDigraph::NodeMap<size_t> & cycle,
                 std::vector<ListDigraph::Node> & order,
-                ofstream& dotout
+                std::ostream& dotout
                 )
     {
         ListDigraph::ArcMap<bool> isInCritical(graph);
@@ -295,8 +311,8 @@ public:
         dotout.open(dotfname, ios::binary);
         if ( dotout.fail() )
         {
-            std::cout << "Error opening file " << dotfname << std::endl
-                      << "Make sure the \"output\" directory exists" << std::endl;
+            println("Error opening file " << dotfname << std::endl
+                     << "Make sure the \"output\" directory exists");
             return;
         }
 
@@ -311,7 +327,7 @@ public:
         // std::cout << "Performing Topological sort." << std::endl;
         ListDigraph::NodeMap<int> rorder(graph);
         if( !dag(graph) )
-            std::cout << "This digraph is not a DAG." << std::endl;
+            println("This digraph is not a DAG.");
 
         topologicalSort(graph, rorder);
 
@@ -319,7 +335,7 @@ public:
         for (ListDigraph::ArcIt a(graph); a != INVALID; ++a)
         {
             if( rorder[graph.source(a)] > rorder[graph.target(a)] )
-                std::cout << "Wrong topologicalSort()" << std::endl;
+                println("Wrong topologicalSort()");
         }
 #endif
 
@@ -373,7 +389,7 @@ public:
         std::vector<ListDigraph::Node> order;
         ScheduleASAP(cycle,order);
 
-        std::cout << "\nPrinting ASAP Schedule" << std::endl;
+        println("\nPrinting ASAP Schedule");
         std::cout << "Cycle <- Instruction " << std::endl;
         std::vector<ListDigraph::Node>::reverse_iterator it;
         for ( it = order.rbegin(); it != order.rend(); ++it)
@@ -389,8 +405,8 @@ public:
         dotout.open( dotfname, ios::binary);
         if ( dotout.fail() )
         {
-            std::cout << "Error opening file " << dotfname << std::endl
-                      << "Make sure the \"output\" directory exists" << std::endl;
+            println("Error opening file " << dotfname << std::endl
+                     << "Make sure the \"output\" directory exists");
             return;
         }
 
@@ -403,15 +419,25 @@ public:
         dotout.close();
     }
 
+    std::string GetDotScheduleASAP(bool verbose=false)
+    {
+        stringstream dotout;
+        ListDigraph::NodeMap<size_t> cycle(graph);
+        std::vector<ListDigraph::Node> order;
+        ScheduleASAP(cycle,order);
+        PrintDot1_(false,true,cycle,order,dotout);
+        return dotout.str();
+    }
+
     void PrintQASMScheduledASAP(bool verbose=false)
     {
         ofstream fout;
-        string qcfname("output/scheduledASAP.qc");
+        string qcfname("output/scheduledASAP.qasm");
         fout.open( qcfname, ios::binary);
         if ( fout.fail() )
         {
-            std::cout << "Error opening file " << qcfname << std::endl
-                      << "Make sure the \"output\" directory exists" << std::endl;
+            println("Error opening file " << qcfname << std::endl
+                     << "Make sure the \"output\" directory exists");
             return;
         }
 
@@ -458,6 +484,51 @@ public:
         fout.close();
     }
 
+    std::string GetQASMScheduledASAP(bool verbose=false)
+    {
+        std::stringstream ss;
+
+        ListDigraph::NodeMap<size_t> cycle(graph);
+        std::vector<ListDigraph::Node> order;
+        ScheduleASAP(cycle,order);
+
+        typedef std::vector<std::string> insInOneCycle;
+        std::map<size_t,insInOneCycle> insInAllCycles;
+
+        std::vector<ListDigraph::Node>::reverse_iterator it;
+        for ( it = order.rbegin(); it != order.rend(); ++it)
+        {
+            insInAllCycles[ cycle[*it] ].push_back( name[*it] );
+        }
+
+        size_t TotalCycles = 0;
+        if( ! order.empty() )
+        {
+            TotalCycles =  cycle[ *( order.begin() ) ];
+        }
+
+        for(size_t currCycle = 1; currCycle<TotalCycles; ++currCycle)
+        {
+            auto it = insInAllCycles.find(currCycle);
+            if( it != insInAllCycles.end() )
+            {
+                auto nInsThisCycle = insInAllCycles[currCycle].size();
+                for(size_t i=0; i<nInsThisCycle; ++i )
+                {
+                    ss << insInAllCycles[currCycle][i];
+                    if( i != nInsThisCycle - 1 ) // last instruction
+                        ss << " | ";
+                }
+            }
+            else
+            {
+                ss << "   nop";
+            }
+            ss << endl;
+        }
+        return ss.str();
+    }
+
     void ScheduleALAP(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order, bool verbose=false)
     {
         if(verbose) println("Performing ALAP Scheduling");
@@ -490,7 +561,7 @@ public:
         std::vector<ListDigraph::Node> order;
         ScheduleALAP(cycle,order);
 
-        std::cout << "\nPrinting ALAP Schedule" << std::endl;
+        println("\nPrinting ALAP Schedule");
         std::cout << "Cycle <- Instruction " << std::endl;
         std::vector<ListDigraph::Node>::reverse_iterator it;
         for ( it = order.rbegin(); it != order.rend(); ++it)
@@ -504,7 +575,7 @@ public:
                 bool WithCycles,
                 ListDigraph::NodeMap<size_t> & cycle,
                 std::vector<ListDigraph::Node> & order,
-                ofstream& dotout
+                std::ostream& dotout
                 )
     {
         ListDigraph::ArcMap<bool> isInCritical(graph);
@@ -602,8 +673,8 @@ public:
         dotout.open( dotfname, ios::binary);
         if ( dotout.fail() )
         {
-            std::cout << "Error opening file " << dotfname << std::endl
-                      << "Make sure the \"output\" directory exists" << std::endl;
+            println("Error opening file " << dotfname << std::endl
+                     << "Make sure the \"output\" directory exists");
             return;
         }
 
@@ -616,15 +687,25 @@ public:
         dotout.close();
     }
 
+    std::string GetDotScheduleALAP(bool verbose=false)
+    {
+        stringstream dotout;
+        ListDigraph::NodeMap<size_t> cycle(graph);
+        std::vector<ListDigraph::Node> order;
+        ScheduleALAP(cycle,order);
+        PrintDot2_(false,true,cycle,order,dotout);
+        return dotout.str();
+    }
+
     void PrintQASMScheduledALAP(bool verbose=false)
     {
         ofstream fout;
-        string qcfname("output/scheduledALAP.qc");
+        string qcfname("output/scheduledALAP.qasm");
         fout.open( qcfname, ios::binary);
         if ( fout.fail() )
         {
-            std::cout << "Error opening file " << qcfname << std::endl
-                      << "Make sure the \"output\" directory exists" << std::endl;
+            println("Error opening file " << qcfname << std::endl
+                     << "Make sure the \"output\" directory exists");
             return;
         }
 
@@ -667,6 +748,51 @@ public:
             }
             fout << endl;
         }
+        fout.close();
+    }
+
+    std::string GetQASMScheduledALAP(bool verbose=false)
+    {
+        std::stringstream ss;
+        ListDigraph::NodeMap<size_t> cycle(graph);
+        std::vector<ListDigraph::Node> order;
+        ScheduleALAP(cycle,order);
+
+        typedef std::vector<std::string> insInOneCycle;
+        std::map<size_t,insInOneCycle> insInAllCycles;
+
+        std::vector<ListDigraph::Node>::iterator it;
+        for ( it = order.begin(); it != order.end(); ++it)
+        {
+            insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( name[*it] );
+        }
+
+        size_t TotalCycles = 0;
+        if( ! order.empty() )
+        {
+            TotalCycles =  MAX_CYCLE - cycle[ *( order.rbegin() ) ];
+        }
+
+        for(size_t currCycle = TotalCycles-1; currCycle>0; --currCycle)
+        {
+            auto it = insInAllCycles.find(currCycle);
+            if( it != insInAllCycles.end() )
+            {
+                auto nInsThisCycle = insInAllCycles[currCycle].size();
+                for(size_t i=0; i<nInsThisCycle; ++i )
+                {
+                    ss << insInAllCycles[currCycle][i];
+                    if( i != nInsThisCycle - 1 ) // last instruction
+                        ss << " | ";
+                }
+            }
+            else
+            {
+                ss << "   nop";
+            }
+            ss << endl;
+        }
+        return ss.str();
     }
 
 };

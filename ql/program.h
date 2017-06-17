@@ -186,13 +186,29 @@ public:
         return 0;
     }
 
-    void schedule(bool verbose=false)
+    void schedule(std::string scheduler="ASAP", bool verbose=false)
     {
+        std::string schedQASM;
+
         if (verbose)
             println("scheduling the quantum program");
 
         for (auto k : kernels)
-            k.schedule(qubits);
+        {
+            std::string kschedQASM;
+            std::string kschedDOT;
+            k.schedule(qubits, scheduler, kschedQASM, kschedDOT, verbose);
+            schedQASM += k.getName() + ":\n";
+            schedQASM += kschedQASM;
+
+            string fname = output_path + k.getName() + scheduler + ".dot";
+            if (verbose) println("writing scheduled qasm to '" << fname << "' ...");
+            ql::utils::write_file(fname, kschedDOT);
+        }
+
+        string fname = output_path + name + scheduler + ".qasm";
+        if (verbose) println("writing scheduled qasm to '" << fname << "' ...");
+        ql::utils::write_file(fname, schedQASM);
     }
 
     void set_sweep_points(float * swpts, size_t size)
