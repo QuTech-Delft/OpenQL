@@ -1,5 +1,5 @@
 import unittest
-from openql import Kernel
+from openql import openql as ql
 
 
 class Test_kernel(unittest.TestCase):
@@ -9,7 +9,7 @@ class Test_kernel(unittest.TestCase):
         pass
 
     def test_allowed_operations(self):
-        k = Kernel("kernel1")
+        k = ql.Kernel("kernel1")
         # The following operations can be executed using a kernel
         operations = [
             # SPAM
@@ -29,11 +29,11 @@ class Test_kernel(unittest.TestCase):
 
     def test_kernel_name(self):
         name = "kernel1"
-        k = Kernel(name)
+        k = ql.Kernel(name)
         self.assertEqual(k.name, name)
 
     def test_simple_kernel(self):
-        k = Kernel("kernel1")
+        k = ql.Kernel("kernel1")
         k.prepz(0)
         k.prepz(1)
         k.x(0)
@@ -46,6 +46,44 @@ class Test_kernel(unittest.TestCase):
 
         # At this point it should be tested if these things have been added
         # to the qubits. However, it is not clear how to view this
+
+    def test_multi_kernel(self):
+        ql.set_instruction_map_file("instructions.map")
+        ql.init()
+
+        k1 = ql.Kernel("kernel1")
+        k1.prepz(0)
+        k1.prepz(1)
+        k1.x(0)
+        k1.y(0)
+        k1.cnot(0, 1)
+        k1.toffoli(0, 1, 2)
+        k1.rx90(0)
+        k1.clifford(2, 0)
+        k1.measure(2)
+
+        k2 = ql.Kernel("kernel2")
+        k2.prepz(0)
+        k2.prepz(1)
+        k2.x(0)
+        k2.y(0)
+        k2.cnot(0, 1)
+        k2.toffoli(0, 1, 2)
+        k2.rx90(0)
+        k2.clifford(2, 0)
+        k2.measure(2)
+
+        sweep_points = [2]
+        num_circuits = 1
+        nqubits = 4
+
+        p = ql.Program("aProgram", nqubits)
+        p.set_sweep_points(sweep_points, num_circuits)
+        p.add_kernel(k1)
+        p.add_kernel(k2)
+        p.compile(False, False)
+        p.schedule("ASAP", False)
+
 
 if __name__ == '__main__':
     unittest.main()
