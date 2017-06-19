@@ -4,8 +4,8 @@
  * @brief  header file for python interface
  */
 
-#ifndef EXAMPLE_H
-#define EXAMPLE_H
+#ifndef PYOPENQL_H
+#define PYOPENQL_H
 
 #include <string>
 #include <vector>

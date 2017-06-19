@@ -198,7 +198,7 @@ public:
             std::string kschedQASM;
             std::string kschedDOT;
             k.schedule(qubits, scheduler, kschedQASM, kschedDOT, verbose);
-            schedQASM += k.getName() + ":\n";
+            schedQASM += "." + k.getName() + "\n";
             schedQASM += kschedQASM;
 
             string fname = output_path + k.getName() + scheduler + ".dot";
