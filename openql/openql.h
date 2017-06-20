@@ -108,6 +108,8 @@ class Program
         void schedule(std::string scheduler="ASAP", bool verbose=false) { prog->schedule(scheduler, verbose); }
         std::string qasm() {return prog->qasm(); }
         std::string microcode() {return prog->microcode(); }
+        void print_interaction_matrix() { prog->print_interaction_matrix(); }
+        void write_interaction_matrix() { prog->write_interaction_matrix(); }
 
         ~Program()
         {

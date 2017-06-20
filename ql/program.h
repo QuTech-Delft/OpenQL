@@ -12,6 +12,7 @@
 #include "utils.h"
 #include "platform.h"
 #include "kernel.h"
+#include "interactionMatrix.h"
 
 namespace ql
 {
@@ -209,6 +210,32 @@ public:
         string fname = output_path + name + scheduler + ".qasm";
         if (verbose) println("writing scheduled qasm to '" << fname << "' ...");
         ql::utils::write_file(fname, schedQASM);
+    }
+
+    void print_interaction_matrix(bool verbose=false)
+    {
+        if (verbose)
+            println("Printing Interactrion Matrix");
+
+        for (auto k : kernels)
+        {
+            InteractionMatrix imat( k.getCircuit(), qubits);
+            string mstr = imat.getString();
+            std::cout << mstr << std::endl;
+        }
+    }
+
+    void write_interaction_matrix(bool verbose=false)
+    {
+        for (auto k : kernels)
+        {
+            InteractionMatrix imat( k.getCircuit(), qubits);
+            string mstr = imat.getString();
+
+            string fname = output_path + k.getName() + "InteractionMatrix.dat";
+            if (verbose) println("writing interaction matrix to '" << fname << "' ...");
+            ql::utils::write_file(fname, mstr);
+        }
     }
 
     void set_sweep_points(float * swpts, size_t size)

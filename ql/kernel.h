@@ -453,6 +453,11 @@ public:
         return name;
     }
 
+    circuit getCircuit()
+    {
+        return c;
+    }
+
 protected:
 
     std::string name;
