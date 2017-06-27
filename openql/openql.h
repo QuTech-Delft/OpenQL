@@ -52,6 +52,8 @@ class Kernel
         void hadamard(size_t q0) { kernel->hadamard(q0); }
         void s(size_t q0) { kernel->s(q0); }
         void sdag(size_t q0) { kernel->sdag(q0); }
+        void t(size_t q0) { kernel->t(q0); }
+        void tdag(size_t q0) { kernel->tdag(q0); }
         void x(size_t q0) { kernel->x(q0); }
         void y(size_t q0) { kernel->y(q0); }
         void z(size_t q0) { kernel->z(q0); }

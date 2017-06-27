@@ -61,6 +61,16 @@ public:
         c.push_back(new ql::phasedag(qubit));
     }
 
+    void t(size_t qubit)
+    {
+        c.push_back(new ql::t(qubit));
+    }
+
+    void tdag(size_t qubit)
+    {
+        c.push_back(new ql::tdag(qubit));
+    }
+
     void x(size_t qubit)
     {
 #ifdef DECOMPOSE

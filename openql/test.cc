@@ -22,6 +22,8 @@ int main()
     Kernel k("aKernel");
     k.prepz(0);
     k.prepz(1);
+    k.t(0);
+    k.tdag(1);
     k.cnot(0,1);
     k.cnot(0,1);
     k.cnot(0,1);

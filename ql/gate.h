@@ -58,6 +58,8 @@ namespace ql
       __pauli_z_gate__   ,
       __phase_gate__     ,
       __phasedag_gate__  ,
+      __t_gate__         ,
+      __tdag_gate__      ,
       __rx90_gate__      ,
       __mrx90_gate__     ,
       __rx180_gate__     ,
@@ -108,6 +110,14 @@ namespace ql
    const complex_t phasedag_c [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
                                                                         __c(0.0, 0.0) , __c(0.0, -1.0)
                                                                       };        /* S */
+
+   const complex_t t_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
+                                                                    __c(0.0, 0.0) , __c(0.707106781, 0.707106781)
+                                                                  };        /* T */
+
+   const complex_t tdag_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
+                                                                       __c(0.0, 0.0) , __c(0.707106781, -0.707106781)
+                                                                     };        /* Tdag */
 
    const complex_t rx90_c  [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(0.0, -rsqrt_2),
                                                                      __c(0.0, -rsqrt_2), __c(rsqrt_2,  0.0)
@@ -327,6 +337,77 @@ public:
     }
 };
 
+/**
+ * T
+ */
+class t : public gate
+{
+public:
+    cmat_t m;
+
+    t(size_t q) : m(t_c)
+    {
+        latency = 1;
+        operands.push_back(q);
+    }
+
+    instruction_t qasm()
+    {
+        return instruction_t("   t q" + std::to_string(operands[0]) );
+    }
+
+    instruction_t micro_code()
+    {
+        // dummy !
+        return instruction_t("     pulse 1110 0000 1110\n     wait 10");
+    }
+
+    gate_type_t type()
+    {
+        return __t_gate__;
+    }
+
+    cmat_t mat()
+    {
+        return m;
+    }
+};
+
+/**
+ * T
+ */
+class tdag : public gate
+{
+public:
+    cmat_t m;
+
+    tdag(size_t q) : m(tdag_c)
+    {
+        latency = 1;
+        operands.push_back(q);
+    }
+
+    instruction_t qasm()
+    {
+        return instruction_t("   tdag q" + std::to_string(operands[0]) );
+    }
+
+    instruction_t micro_code()
+    {
+        // dummy !
+        return instruction_t("     pulse 1110 0000 1110\n     wait 10");
+    }
+
+    gate_type_t type()
+    {
+        return __tdag_gate__;
+    }
+
+    cmat_t mat()
+    {
+        return m;
+    }
+};
 
 /**
  * pauli_x
