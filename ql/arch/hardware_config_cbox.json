@@ -1,0 +1,121 @@
+{
+   "hardware_settings": {
+         "qubit_names" : ["q0", "q1"],
+	 "cycle_time" : 5,  
+	 "mw_mw_buffer": 0,
+	 "mw_flux_buffer": 0,
+	 "mw_readout_buffer": 0,
+	 "flux_mw_buffer": 0,
+	 "flux_flux_buffer": 0,
+	 "flux_readout_buffer": 0,
+	 "readout_mw_buffer": 0,
+	 "readout_flux_buffer": 0,
+	 "readout_readout_buffer": 0
+   },
+
+   "instructions": {
+      "X180 q0" : {
+         "duration": 40, 
+         "latency": -20, 
+         "qubits": ["q0"], 
+         "matrix" : [ [0.0,0.0], [1.0,0.0],
+	              [1.0,0.0], [0.0,0.0] ], 
+         "disable_optimization": false,
+         "type" : "mw",
+         "qumis_instr": "pulse",
+         "qumis_instr_kw": {
+            "codeword": 1,
+            "awg_nr": 0
+         }
+      },
+
+      "Y90 q0" : {
+         "duration": 40,
+         "latency": -20,
+         "qubits": ["q0"],
+         "matrix" : [ [0.7071068,0.0], [-0.7071068,0.0],
+	              [0.7071068,0.0], [ 0.7071068,0.0] ], 
+         "disable_optimization": true, 
+         "type" : "mw",
+         "qumis_instr": "pulse",
+         "qumis_instr_kw": {
+            "codeword": 2, 
+            "awg_nr": 0
+         }
+      },
+
+      "Y180 q0" : {
+         "duration": 40,
+         "latency": -20,
+         "qubits": ["q0"],
+         "matrix" : [ [0.0,0.0], [1.0,0.0],
+	              [1.0,0.0], [0.0,0.0] ], 
+         "disable_optimization": false,
+         "type" : "mw",
+         "qumis_instr": "pulse",
+         "qumis_instr_kw": {
+            "codeword": 3, 
+            "awg_nr": 0
+         }
+      },
+
+      "I q0" : {
+         "duration": 40,
+         "latency": -20,
+         "qubits": ["q0"],
+         "matrix" : [ [1.0,0.0], [0.0,0.0],
+	              [0.0,0.0], [1.0,0.0] ], 
+         "disable_optimization": true, 
+         "type" : "mw",
+         "qumis_instr": "pulse",
+         "qumis_instr_kw": {
+            "codeword": -2, 
+            "awg_nr": 0
+         }
+      },
+
+      "X180 q1" : {
+         "duration": 40, 
+         "latency": -30, 
+         "qubits": ["q1"], 
+         "matrix" : [ [0.0,0.0], [1.0,0.0],
+	              [1.0,0.0], [0.0,0.0] ], 
+         "disable_optimization": false,
+         "type" : "mw",
+         "qumis_instr": "codeword_trigger", 
+         "qumis_instr_kw": {
+            "codeword_ready_bit": 0,
+            "codeword_ready_bit_duration" : 5, 
+            "codeword_bits": [1, 2, 3, 4], 
+            "codeword": 1
+         }
+      },
+
+      "measure q0" : {
+         "duration": 300, 
+         "latency": 80,
+         "qubits": ["q0", "q1"], 
+         "matrix" : [ [0.0,0.0], [1.0,0.0],
+	              [1.0,0.0], [0.0,0.0] ], 
+         "disable_optimization": true,
+         "type" : "readout",
+         "qumis_instr": "trigger",
+         "qumis_instr_kw": {
+            "trigger_bit": 7, 
+            "trigger_duration": 10 
+         }
+      },
+
+      "measure q1" : {
+         "alias" : "measure q0"
+      },
+
+      "measure q0 q1" : {
+         "alias" : "measure q0"
+      },
+
+      "measure all" : {
+         "alias" : "measure q0"
+      }
+   }
+}

@@ -13,7 +13,9 @@
 #include "utils.h"
 #include "gate.h"
 #include "optimizer.h"
+#ifdef __disable_lemon__
 #include "dependenceGraph.h"
+#endif // __disable_lemon__
 
 namespace ql
 {
@@ -366,6 +368,7 @@ public:
 
     void schedule(size_t nqubits, std::string scheduler, std::string& schedQASM, std::string& schedDOT, bool verbose=false)
     {
+       #ifdef __disable_lemon__
         if (verbose) println( scheduler << " scheduling the quantum kernel '" << name << "'...");
 
         DependGraph dg;
@@ -394,6 +397,7 @@ public:
         {
             println("Unknown scheduler");            
         }
+	#endif // __disable_lemon__
     }
 
     std::vector<circuit*> split_circuit(circuit x, bool verbose=false)

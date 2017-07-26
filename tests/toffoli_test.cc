@@ -21,11 +21,11 @@ int main(int argc, char ** argv)
    int   num_circuits   = 1;
 
    // create program
-   ql::quantum_program prog("prog",3);
+   ql::quantum_program prog("prog",5);
    prog.set_sweep_points(sweep_points, num_circuits);
 
    // create a kernel
-   ql::quantum_kernel kernel("myKernel");
+   ql::quantum_kernel kernel("my_kernel");
 
    // add gates to kernel
    kernel.prepz(0);
@@ -33,7 +33,8 @@ int main(int argc, char ** argv)
    kernel.x(0);
    kernel.y(0);
    kernel.cnot(0,1);
-   kernel.toffoli(0,1,2);
+   kernel.cnot(0,2);
+   kernel.toffoli(0,3,4);  // toffoli test
    kernel.measure(2);
 
    // add kernel to prog

@@ -10,7 +10,7 @@
 
 #include <string>
 
-#define println(x) std::cout << "[OPENQL] "<< x << std::endl
+#define println(x) std::cout << "[openql] "<< x << std::endl
 
 namespace ql
 {
@@ -58,14 +58,17 @@ namespace ql
             return true;
         }
 
+	/**
+	 * write content to the file <file_name>
+	 */
         void write_file(std::string file_name, std::string& content)
         {
             std::ofstream file;
             file.open(file_name);
             if ( file.fail() )
             {
-                std::cout << "Error opening file " << file_name << std::endl
-                          << "Make sure the output directory exists for " << file_name << std::endl;
+                std::cout << "[x] error opening file '" << file_name << "' !" << std::endl
+                          << "         make sure the output directory exists for '" << file_name << "'" << std::endl;
                 return;
             }
 

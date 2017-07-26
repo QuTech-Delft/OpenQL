@@ -188,6 +188,7 @@ namespace ql
    class gate
    {
       public:
+         bool optimization_enabled = true;
 	 std::vector<size_t> operands;
 	 size_t latency;                          // to do change attribute name "latency" to "duration" (latency is used to describe hardware latency) 
 	 virtual instruction_t qasm()       = 0;
