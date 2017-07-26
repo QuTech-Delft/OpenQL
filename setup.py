@@ -13,7 +13,7 @@ if not os.path.exists(buildDir):
 os.chdir(buildDir)
 
 if platform == "linux" or platform == "linux2":
-    print('Detected Linux OS')
+    print('Detected Linux OS, compiling ...')
     cmd = 'cmake ..'
     ret = subprocess.check_output(cmd, shell=True)
     cmd = 'make'
@@ -21,7 +21,7 @@ if platform == "linux" or platform == "linux2":
     clibname = "_openql.so"
 
 elif platform == "darwin":
-    print('Detected OSX but its not yet tested!')
+    print('Detected OSX, compiling ...')
     cmd = 'cmake ..'
     ret = subprocess.check_output(cmd, shell=True)
     cmd = 'make'
@@ -29,7 +29,7 @@ elif platform == "darwin":
     clibname = "_openql.so"
 
 elif platform == "win32":
-    print('Detected Windows OS.')
+    print('Detected Windows OS, compiling ...')
     cmd = 'cmake -G "NMake Makefiles" ..'
     ret = subprocess.check_output(cmd, shell=True)
     cmd = 'nmake'
