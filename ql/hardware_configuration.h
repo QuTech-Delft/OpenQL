@@ -57,22 +57,23 @@ namespace ql
 
 	   ql::custom_gate * load_instruction(std::string name, json& instr)
 	   {
-	      // println("---------------");
-	      // println((*instr)["duration"]);
 	      custom_gate * g = new custom_gate(name);
-	      g->name         = name; // instr["name"];
 	      // skip alias fo now
-	      if (instr["alias"] != "null")
+	      if (!instr["alias"].is_null()) // != "null")
+	      {
+		 // todo : look for the target aliased gate 
+		 //        copy it with the new name
+		 println("[i] alias '" << name << "'detected and skipped.");
 		 return g;
+	      }
 	      try 
 	      {
-		 // println(typeid(instr).name());
-		 g->duration     = instr["duration"];
-		 // json attr = it.value();
+		 g->load(instr);
 	      } catch (json::exception e)
 	      {
 		 println("[e] error while loading instruction '" << name << "' : " << e.what());
 	      }
+	      g->print_info();
 	      return g;
 	   }
 

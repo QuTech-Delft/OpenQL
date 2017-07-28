@@ -8,7 +8,7 @@
 #ifndef QL_UTILS_H
 #define QL_UTILS_H
 
-#include <string>
+#include "str.h"
 
 #define println(x) std::cout << "[openql] "<< x << std::endl
 
@@ -31,12 +31,7 @@ namespace ql
          */
         void replace_all(std::string &str, std::string seq, std::string rep)
         {
-            size_t index = str.find(seq);
-            while (index < str.size())
-            {
-                str.replace(index, seq.size(), rep);
-                index = str.find(seq);
-            }
+	   str::replace_all(str,seq,rep);
         }
 
         /**
@@ -75,6 +70,20 @@ namespace ql
             file << content;
             file.close();
         }
+
+
+	/**
+	 * print vector
+	 */
+	 template<typename T>
+	 void print_vector(std::vector<T> v, std::string prefix="", std::string separator=" | ")
+	 {
+	    std::cout << prefix << " [";
+	    size_t sz = v.size()-1;
+	    for (size_t i=0; i<sz; ++i)
+	       std::cout << v[i] << separator; 
+	    std::cout << v[sz] << "]" << std::endl;
+	 }
 
 
     } // utils

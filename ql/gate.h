@@ -190,9 +190,9 @@ namespace ql
       public:
          bool optimization_enabled = true;
 	 std::vector<size_t> operands;
-	 size_t latency;                          // to do change attribute name "latency" to "duration" (latency is used to describe hardware latency) 
+	 size_t duration;                          // to do change attribute name "duration" to "duration" (duration is used to describe hardware duration) 
 	 virtual instruction_t qasm()       = 0;
-	 virtual instruction_t micro_code() = 0;
+	 virtual instruction_t micro_code() = 0;  // to do : deprecated
 	 virtual gate_type_t   type()       = 0;
 	 virtual cmat_t        mat()        = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
    };
@@ -207,7 +207,7 @@ public:
     cmat_t m;
     identity(size_t q) : m(identity_c)
     {
-        latency = 2; // TODO fix it
+        duration = 2; // TODO fix it
         operands.push_back(q);
     }
 
@@ -242,7 +242,7 @@ public:
     cmat_t m;
     hadamard(size_t q) : m(hadamard_c)
     {
-        latency = 2;
+        duration = 2;
         operands.push_back(q);
     }
 
@@ -279,7 +279,7 @@ public:
 
     phase(size_t q) : m(phase_c)
     {
-        latency = 3;
+        duration = 3;
         operands.push_back(q);
     }
 
@@ -312,7 +312,7 @@ public:
 
     phasedag(size_t q) : m(phasedag_c)
     {
-        latency = 3;
+        duration = 3;
         operands.push_back(q);
     }
 
@@ -348,7 +348,7 @@ public:
 
     t(size_t q) : m(t_c)
     {
-        latency = 1;
+        duration = 1;
         operands.push_back(q);
     }
 
@@ -384,7 +384,7 @@ public:
 
     tdag(size_t q) : m(tdag_c)
     {
-        latency = 1;
+        duration = 1;
         operands.push_back(q);
     }
 
@@ -421,7 +421,7 @@ public:
 
     pauli_x(size_t q) : m(pauli_x_c)
     {
-        latency = 1;
+        duration = 1;
         operands.push_back(q);
     }
 
@@ -458,7 +458,7 @@ public:
 
     pauli_y(size_t q) : m(pauli_y_c)
     {
-        latency = 1;
+        duration = 1;
         operands.push_back(q);
     }
 
@@ -496,7 +496,7 @@ public:
 
     pauli_z(size_t q) : m(pauli_z_c)
     {
-        latency = 2;
+        duration = 2;
         operands.push_back(q);
     }
 
@@ -533,7 +533,7 @@ public:
 
     rx90(size_t q) : m(rx90_c)
     {
-        latency = 1;
+        duration = 1;
         operands.push_back(q);
     }
 
@@ -570,7 +570,7 @@ public:
 
     mrx90(size_t q) : m(mrx90_c)
     {
-        latency = 1;
+        duration = 1;
         operands.push_back(q);
     }
 
@@ -606,7 +606,7 @@ public:
 
     rx180(size_t q) : m(rx180_c)
     {
-        latency = 1;
+        duration = 1;
         operands.push_back(q);
     }
 
@@ -643,7 +643,7 @@ public:
 
     ry90(size_t q) : m(ry90_c)
     {
-        latency = 1;
+        duration = 1;
         operands.push_back(q);
     }
 
@@ -680,7 +680,7 @@ public:
 
     mry90(size_t q) : m(mry90_c)
     {
-        latency = 1;
+        duration = 1;
         operands.push_back(q);
     }
 
@@ -716,7 +716,7 @@ public:
 
     ry180(size_t q) : m(ry180_c)
     {
-        latency = 1;
+        duration = 1;
         operands.push_back(q);
     }
 
@@ -753,7 +753,7 @@ public:
 
     measure(size_t q) : m(identity_c)
     {
-        latency = 4;
+        duration = 4;
         operands.push_back(q);
     }
 
@@ -790,7 +790,7 @@ public:
 
     prepz(size_t q) : m(identity_c)
     {
-        latency = 1;
+        duration = 1;
         operands.push_back(q);
     }
 
@@ -826,7 +826,7 @@ public:
 
     cnot(size_t q1, size_t q2) : m(cnot_c)
     {
-        latency = 4;
+        duration = 4;
         operands.push_back(q1);
         operands.push_back(q2);
     }
@@ -859,7 +859,7 @@ public:
 
     cphase(size_t q1, size_t q2) : m(cphase_c)
     {
-        latency = 4;
+        duration = 4;
         operands.push_back(q1);
         operands.push_back(q2);
     }
@@ -892,7 +892,7 @@ public:
 
     toffoli(size_t q1, size_t q2, size_t q3) : m(ctoffoli_c)
     {
-        latency = 6;
+        duration = 6;
         operands.push_back(q1);
         operands.push_back(q2);
         operands.push_back(q3);
@@ -924,7 +924,7 @@ public:
 
     nop() : m(nop_c)
     {
-        latency = 1;
+        duration = 1;
     }
     instruction_t qasm()
     {
@@ -956,8 +956,6 @@ class custom_gate : public gate
     cmat_t             m;                // matrix representation
 
     size_t             parameters;       // number of parameters : single qubit, two qubits ... etc
-    size_t             duration;         // execution time
-    // size_t             latency;       // lateny before execution (to do: change attribute name in parent class)
 
     ucode_sequence_t   qumis;            // microcode sequence
     instruction_type_t operation_type;   // operation type : rf/flux
@@ -981,8 +979,7 @@ class custom_gate : public gate
        parameters = g.parameters;
        qumis.assign(g.qumis.begin(), g.qumis.end());      
        operation_type = g.operation_type;
-       duration = g.duration;
-       latency  = g.latency; 
+       duration  = g.duration; 
        used_hardware.assign(g.used_hardware.begin(), g.used_hardware.end()); 
        m.m[0] = g.m.m[0]; 
        m.m[1] = g.m.m[1]; 
@@ -994,12 +991,12 @@ class custom_gate : public gate
      * explicit ctor
      */
     custom_gate(string_t& name, cmat_t& m, 
-                size_t parameters, size_t latency, size_t duration, 
+                size_t parameters, size_t duration, size_t latency, 
 		instruction_type_t& operation_type, ucode_sequence_t& qumis, strings_t hardware) : name(name), m(m), 
-		                                                                                   parameters(parameters), duration(duration), 
+		                                                                                   parameters(parameters), 
 												   qumis(qumis), operation_type(operation_type) 
     {
-       this->latency = latency;
+       this->duration = duration;
        for (size_t i=0; i<hardware.size(); i++)
 	  used_hardware.push_back(hardware[i]);
     }
@@ -1014,22 +1011,95 @@ class custom_gate : public gate
        {
 	  json instr;
 	  f >> instr;
-	  // name = instr["name"];       
-	  parameters = instr["parameters"]; 
-	  ucode_sequence_t ucs = instr["qumis"];
-	  qumis.assign(ucs.begin(), ucs.end());      
-	  operation_type = instr["type"];       
-	  duration = instr["duration"];   
-	  latency = instr["latency"];    
-	  strings_t hdw = instr["hardware"];
-	  used_hardware.assign(hdw.begin(), hdw.end()); 
+	  load(instr);
+	  f.close();
+       }
+       else std::cout << "[x] error : json file not found !" << std::endl;
+    }
+
+    /**
+     * load instruction from json map
+     */
+    custom_gate(std::string& name, json& instr) : name(name)
+    {
+       load(instr);
+    }
+
+    /**
+     * match qubit id
+     */
+    bool is_qubit_id(std::string& str)
+    {
+       if (str[0] != 'q')
+	  return false;
+       uint32_t l = str.length();
+       if (l>=1)
+       {
+	  for (size_t i=1; i<l; ++i)
+	     if (!str::is_digit(str[i]))
+		return false;
+       }
+       return true;
+    }
+
+    /**
+     * return qubit id
+     */
+    size_t qubit_id(std::string qubit)
+    {
+	 std::string id = qubit.substr(1);
+	 return (atoi(id.c_str()));
+    }
+
+    /**
+     * load instruction from json map
+     */
+    void load(json& instr)
+    {
+       println("loading instruction '" << name << "'...");
+       std::string l_attr = "qubits";
+       try
+       {
+	  l_attr = "qubits";
+	  println("qubits: " << instr["qubits"]);
+	  parameters = instr["qubits"].size(); 
+	  for (size_t i=0; i<parameters; ++i)
+	  {
+	     std::string qid = instr["qubits"][i];
+	     if (!is_qubit_id(qid))
+	     {
+		println("[x] error : invalid qubit id in attribute 'qubits' !");
+		throw std::exception();
+	     }
+	     operands.push_back(qubit_id(qid));
+	  }
+	  // ucode_sequence_t ucs = instr["qumis"];
+	  // qumis.assign(ucs.begin(), ucs.end());      
+	  // operation_type = instr["type"];       
+	  l_attr = "duration";
+	  duration = instr["duration"];    
+	  // strings_t hdw = instr["hardware"];
+	  // used_hardware.assign(hdw.begin(), hdw.end()); 
+	  l_attr = "matrix";
 	  auto mat = instr["matrix"];
 	  m.m[0] = complex_t(mat[0][0], mat[0][1]);
 	  m.m[1] = complex_t(mat[1][0], mat[1][1]);
 	  m.m[2] = complex_t(mat[2][0], mat[2][1]);
 	  m.m[3] = complex_t(mat[3][0], mat[3][1]);
+       } catch (json::exception e)
+       {
+	  println("[e] error while loading instruction '" << name << "' (attr: " << l_attr << ") : " << e.what());
        }
-       else std::cout << "[x] error : json file not found !" << std::endl;
+    }
+
+    void print_info()
+    {
+       println("[-] custom gate : ");
+       println("    |- name     : " << name);
+       println("    |- n_params : " << parameters);
+       utils::print_vector(operands,"[openql]     |- qubits   :"," , ");
+       println("    |- duration : " << duration);
+       println("    |- matrix   : [" << m.m[0] << ", " << m.m[1] << ", " << m.m[2] << ", " << m.m[3] << "]");
     }
 
     /**

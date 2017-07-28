@@ -39,6 +39,11 @@ namespace ql
     */
    class quantum_platform
    {
+
+      public:
+
+        size_t qubit_number;
+         
       public:
        
         /**
@@ -60,7 +65,7 @@ namespace ql
 	   println("[+] configuration file : " << configuration_file_name);
 	   println("[+] supported instructions:");
 	   for (auto g : supported_instructions)
-	      println(g->qasm());
+	      println(g->name); 
 	}
 
       protected:

@@ -121,7 +121,7 @@ namespace ql
 	  instruction_type_t type = (t == "rf" ? rf_t : flux_t );
 	  g->operation_type = type;
 	  g->duration = instr["duration"];
-	  g->latency = instr["latency"];
+	  // g->latency = instr["latency"];
 	  strings_t hdw = instr["hardware"];
 	  g->used_hardware.assign(hdw.begin(), hdw.end());
 	  auto mat = instr["matrix"];

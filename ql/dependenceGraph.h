@@ -85,7 +85,7 @@ public:
                 if(prodID == srcID)
                     weight[arc] = 1; // TODO OR 0 as SOURCE is dummy node?
                 else
-                    weight[arc] = instruction[prodNode]->latency;
+                    weight[arc] = instruction[prodNode]->duration;
 
                 cause[arc] = operand;
                 if(operandNo == 0)
@@ -98,7 +98,7 @@ public:
                         if(prodID == srcID)
                             weight[arc1] = 1; // TODO OR 0 as SOURCE is dummy node?
                         else
-                            weight[arc1] = instruction[readerNode]->latency;
+                            weight[arc1] = instruction[readerNode]->duration;
 
                         cause[arc1] = operand;
                         depType[arc1] = RAR; // on control
@@ -119,7 +119,7 @@ public:
                         if(prodID == srcID)
                             weight[arc1] = 1; // TODO OR 0 as SOURCE is dummy node?
                         else
-                            weight[arc1] = instruction[readerNode]->latency;
+                            weight[arc1] = instruction[readerNode]->duration;
 
                         cause[arc1] = operand;
                         depType[arc1] = WAR;
