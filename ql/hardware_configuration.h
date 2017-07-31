@@ -22,6 +22,9 @@
 
 namespace ql
 {
+
+      typedef std::map<std::string,ql::custom_gate *> instruction_map_t;
+
       /**
        * loading hardware configuration
        */
@@ -40,21 +43,30 @@ namespace ql
 	  /**
 	   * load
 	   */
-	   void load(std::vector<ql::custom_gate*>& supported_gates, json& hardware_settings)
+	   void load(ql::instruction_map_t& instruction_map, json& instruction_settings, json& hardware_settings)
 	   {
 	      json config = load_json(config_file_name);
-	      hardware_settings = config["hardware_settings"];
+	      hardware_settings    = config["hardware_settings"];
+	      instruction_settings = config["instructions"];
 	      json instructions = config["instructions"];
 	      // std::cout << instructions.dump(4) << std::endl;
 	      for (json::iterator it = instructions.begin(); it != instructions.end(); ++it) 
 	      {
 		 std::string  name = it.key();
+		 str::lower_case(name);
 		 json         attr = *it; //.value();
-		 supported_gates.push_back(load_instruction(name,attr));
+		 // supported_gates.push_back(load_instruction(name,attr));
+		 // check for duplicate operations
+		 if (instruction_map.find(name) != instruction_map.end())
+		    println("[!] warning : instruction '" << name << "' redefined : the old definition is overwritten !");
+		 instruction_map[name] = load_instruction(name,attr);
 		 // std::cout << it.key() << " : " << it.value() << "\n";
 	      }
 	   }
 
+	   /**
+	    * load_instruction
+	    */
 	   ql::custom_gate * load_instruction(std::string name, json& instr)
 	   {
 	      custom_gate * g = new custom_gate(name);
@@ -63,7 +75,7 @@ namespace ql
 	      {
 		 // todo : look for the target aliased gate 
 		 //        copy it with the new name
-		 println("[i] alias '" << name << "'detected and skipped.");
+		 println("[i] alias '" << name << "' detected and skipped.");
 		 return g;
 	      }
 	      try 
@@ -77,10 +89,9 @@ namespace ql
 	      return g;
 	   }
 
-
 	 protected:
 
-	   std::string config_file_name;
+	   std::string             config_file_name;
 
 	 private:
 

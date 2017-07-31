@@ -44,9 +44,9 @@ namespace ql
 
 
 
-   typedef std::map<qasm_inst_t, ucode_inst_t> instruction_map_t;
+   typedef std::map<qasm_inst_t, ucode_inst_t> dep_instruction_map_t;
 
-   extern instruction_map_t instruction_map;
+   extern dep_instruction_map_t dep_instruction_map;
 
    // gate types
    typedef enum __gate_type_t
@@ -189,6 +189,7 @@ namespace ql
    {
       public:
          bool optimization_enabled = true;
+	 std::string name = "";
 	 std::vector<size_t> operands;
 	 size_t duration;                          // to do change attribute name "duration" to "duration" (duration is used to describe hardware duration) 
 	 virtual instruction_t qasm()       = 0;
@@ -545,7 +546,7 @@ public:
     instruction_t micro_code()
     {
         // return instruction_t("     pulse 1011 0000 1011\n     wait 10");
-        return ql::instruction_map["rx90"];
+        return ql::dep_instruction_map["rx90"];
     }
 
     gate_type_t type()
@@ -582,7 +583,7 @@ public:
     instruction_t micro_code()
     {
         // return instruction_t("     pulse 1101 0000 1101\n     wait 10");
-        return ql::instruction_map["mrx90"];
+        return ql::dep_instruction_map["mrx90"];
     }
 
     gate_type_t type()
@@ -618,7 +619,7 @@ public:
     instruction_t micro_code()
     {
         // return instruction_t("     pulse 1001 0000 1001\n     wait 10");
-        return ql::instruction_map["rx180"];
+        return ql::dep_instruction_map["rx180"];
     }
 
     gate_type_t type()
@@ -660,7 +661,7 @@ public:
     instruction_t micro_code()
     {
         // return instruction_t("     pulse 1100 0000 1100\n     wait 10");
-        return ql::instruction_map["ry90"];
+        return ql::dep_instruction_map["ry90"];
     }
 
     cmat_t mat()
@@ -692,7 +693,7 @@ public:
     instruction_t micro_code()
     {
         // return instruction_t("     pulse 1110 0000 1110\n     wait 10");
-        return ql::instruction_map["mry90"];
+        return ql::dep_instruction_map["mry90"];
     }
 
     gate_type_t type()
@@ -728,7 +729,7 @@ public:
     instruction_t micro_code()
     {
         // return instruction_t("     pulse 1010 0000 1010\n     wait 10");
-        return ql::instruction_map["ry180"];
+        return ql::dep_instruction_map["ry180"];
     }
 
     gate_type_t type()
@@ -766,7 +767,7 @@ public:
     instruction_t micro_code()
     {
         return instruction_t("     wait 60\n     pulse 0000 1111 1111\n     wait 50\n     measure\n");
-        // return ql::instruction_map["measure"];
+        // return ql::dep_instruction_map["measure"];
     }
 
     gate_type_t type()
@@ -802,7 +803,7 @@ public:
     instruction_t micro_code()
     {
         return instruction_t("     waitreg r0\n     waitreg r0\n");
-        // return ql::instruction_map["prepz"];
+        // return ql::dep_instruction_map["prepz"];
     }
 
     gate_type_t type()
@@ -837,7 +838,7 @@ public:
     }
     instruction_t micro_code()
     {
-        return ql::instruction_map["cnot"];
+        return ql::dep_instruction_map["cnot"];
     }
     gate_type_t type()
     {
@@ -870,7 +871,7 @@ public:
     }
     instruction_t micro_code()
     {
-        return ql::instruction_map["cz"];
+        return ql::dep_instruction_map["cz"];
     }
     gate_type_t type()
     {
@@ -905,7 +906,7 @@ public:
     }
     instruction_t micro_code()
     {
-        return ql::instruction_map["toffoli"];
+        return ql::dep_instruction_map["toffoli"];
     }
     gate_type_t type()
     {
@@ -932,7 +933,7 @@ public:
     }
     instruction_t micro_code()
     {
-        return ql::instruction_map["nop"];
+        return ql::dep_instruction_map["nop"];
     }
     gate_type_t type()
     {
@@ -952,7 +953,7 @@ class custom_gate : public gate
 {
    public:
 
-    string_t           name;             // qasm gate name
+    // string_t           name;             // qasm gate name
     cmat_t             m;                // matrix representation
 
     size_t             parameters;       // number of parameters : single qubit, two qubits ... etc
@@ -966,8 +967,9 @@ class custom_gate : public gate
     /**
      * ctor
      */
-    custom_gate(string_t name) : name(name)
+    custom_gate(string_t name) 
     {
+       this->name = name;
     }
 
     /**
@@ -992,10 +994,11 @@ class custom_gate : public gate
      */
     custom_gate(string_t& name, cmat_t& m, 
                 size_t parameters, size_t duration, size_t latency, 
-		instruction_type_t& operation_type, ucode_sequence_t& qumis, strings_t hardware) : name(name), m(m), 
+		instruction_type_t& operation_type, ucode_sequence_t& qumis, strings_t hardware) : m(m), 
 		                                                                                   parameters(parameters), 
 												   qumis(qumis), operation_type(operation_type) 
     {
+       this->name = name;
        this->duration = duration;
        for (size_t i=0; i<hardware.size(); i++)
 	  used_hardware.push_back(hardware[i]);
@@ -1004,8 +1007,9 @@ class custom_gate : public gate
     /**
      * load from json
      */
-    custom_gate(string_t name, string_t& file_name) : name(name)
+    custom_gate(string_t name, string_t& file_name)
     {
+       this->name = name;
        std::ifstream f(file_name);
        if (f.is_open())
        {
@@ -1020,8 +1024,9 @@ class custom_gate : public gate
     /**
      * load instruction from json map
      */
-    custom_gate(std::string& name, json& instr) : name(name)
+    custom_gate(std::string& name, json& instr) 
     {
+       this->name = name;
        load(instr);
     }
 

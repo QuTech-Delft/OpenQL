@@ -14,7 +14,7 @@
    },
 
    "instructions": {
-      "X180 q0" : {
+      "x180 q0" : {
          "duration": 40, 
          "latency": -20, 
          "qubits": ["q0"], 
@@ -25,26 +25,28 @@
          "qumis_instr": "pulse",
          "qumis_instr_kw": {
             "codeword": 1,
-            "awg_nr": 0
+            "awg_nr": 2
          }
       },
 
-      "Y90 q0" : {
-         "duration": 40,
-         "latency": -20,
-         "qubits": ["q0"],
-         "matrix" : [ [0.7071068,0.0], [-0.7071068,0.0],
-	              [0.7071068,0.0], [ 0.7071068,0.0] ], 
-         "disable_optimization": true, 
+      "x180 q1" : {
+         "duration": 40, 
+         "latency": -30, 
+         "qubits": ["q1"], 
+         "matrix" : [ [0.0,0.0], [1.0,0.0],
+	              [1.0,0.0], [0.0,0.0] ], 
+         "disable_optimization": false,
          "type" : "mw",
-         "qumis_instr": "pulse",
+         "qumis_instr": "codeword_trigger", 
          "qumis_instr_kw": {
-            "codeword": 2, 
-            "awg_nr": 0
+            "codeword_ready_bit": 0,
+            "codeword_ready_bit_duration" : 5, 
+            "codeword_bits": [1, 2, 3, 4], 
+            "codeword": 1
          }
       },
 
-      "Y180 q0" : {
+      "y180 q0" : {
          "duration": 40,
          "latency": -20,
          "qubits": ["q0"],
@@ -59,6 +61,21 @@
          }
       },
 
+      "y90 q1" : {
+         "duration": 40,
+         "latency": -20,
+         "qubits": ["q1"],
+         "matrix" : [ [0.7071068,0.0], [-0.7071068,0.0],
+	              [0.7071068,0.0], [ 0.7071068,0.0] ], 
+         "disable_optimization": true, 
+         "type" : "mw",
+         "qumis_instr": "pulse",
+         "qumis_instr_kw": {
+            "codeword": 4, 
+            "awg_nr": 1
+         }
+      },
+
       "I q0" : {
          "duration": 40,
          "latency": -20,
@@ -70,24 +87,22 @@
          "qumis_instr": "pulse",
          "qumis_instr_kw": {
             "codeword": -2, 
-            "awg_nr": 0
+            "awg_nr": 2
          }
       },
 
-      "X180 q1" : {
-         "duration": 40, 
-         "latency": -30, 
-         "qubits": ["q1"], 
-         "matrix" : [ [0.0,0.0], [1.0,0.0],
-	              [1.0,0.0], [0.0,0.0] ], 
-         "disable_optimization": false,
+      "I q1" : {
+         "duration": 40,
+         "latency": -20,
+         "qubits": ["q1"],
+         "matrix" : [ [1.0,0.0], [0.0,0.0],
+	              [0.0,0.0], [1.0,0.0] ], 
+         "disable_optimization": true, 
          "type" : "mw",
-         "qumis_instr": "codeword_trigger", 
+         "qumis_instr": "pulse",
          "qumis_instr_kw": {
-            "codeword_ready_bit": 0,
-            "codeword_ready_bit_duration" : 5, 
-            "codeword_bits": [1, 2, 3, 4], 
-            "codeword": 1
+            "codeword": -2, 
+            "awg_nr": 0
          }
       },
 
@@ -117,5 +132,19 @@
       "measure all" : {
          "alias" : "measure q0"
       }
+   },
+
+   "gate_decomposition": {
+      "x q0" : ["x180 q0"],
+      "y q0" : ["y180 q0"],
+      "z q0" : ["y180 q0","x180 q0"],
+      "h q0" : ["y90 q0"],
+      "t q0" : ["t q0"],
+      "tdag q0" : ["tdag q0"],
+      "s q0" : ["s q0"],
+      "sdag q0" : ["sdag q0"],
+      "cnot q0,q1" : ["y90 q1","cz q0,q1","y90 q1"]
    }
+
+ 
 }

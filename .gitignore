@@ -2,6 +2,7 @@ build
 cbuild
 dist
 openql.egg-info
+lab
 
 *.dot
 *.qc

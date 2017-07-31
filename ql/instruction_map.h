@@ -21,7 +21,7 @@ namespace ql
     typedef std::string qasm_inst_t;
     typedef std::string ucode_inst_t;
 
-    typedef std::map<qasm_inst_t, ucode_inst_t> instruction_map_t;
+    typedef std::map<qasm_inst_t, ucode_inst_t> dep_instruction_map_t;
     
     namespace utils
     {
@@ -29,12 +29,12 @@ namespace ql
        void replace_all(std::string &str, std::string seq, std::string rep);
     }
 
-    // bool load_instruction_map(std::string file_name, instruction_map_t& imap);
+    // bool load_instruction_map(std::string file_name, dep_instruction_map_t& imap);
 
     /**
      * load instruction map from a file
      */
-    bool load_instruction_map(std::string file_name, instruction_map_t& imap)
+    bool load_instruction_map(std::string file_name, dep_instruction_map_t& imap)
     {
        std::ifstream file(file_name);
 
@@ -76,7 +76,7 @@ namespace ql
        }
        file.close();
        #ifdef __debug__
-       for (instruction_map_t::iterator i=imap.begin(); i!=imap.end(); i++)
+       for (dep_instruction_map_t::iterator i=imap.begin(); i!=imap.end(); i++)
 	  println("[ " << (*i).first <<  " --> " << (*i).second << " ]");
        #endif // __debug__
 
