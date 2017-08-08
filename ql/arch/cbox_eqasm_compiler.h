@@ -28,6 +28,7 @@ namespace ql
 
 	    qumis_program_t qumis_instructions;
 	    size_t          ns_per_cycle;
+	    size_t          total_exec_time = 0;
 
 	    #define __ns_to_cycle(t) (t/ns_per_cycle)
 	   
@@ -58,6 +59,9 @@ namespace ql
 		  {
 		     operation             = instruction_settings[id]["qumis_instr"]; 
 		     size_t duration       = __ns_to_cycle((size_t)instruction_settings[id]["duration"]);
+		     size_t latency        = 0;
+		     if (!instruction_settings[id]["latency"].is_null())
+			latency = __ns_to_cycle((size_t)instruction_settings[id]["latency"]);
 		     operation_type_t type = operation_type(instruction_settings[id]["type"]);
 		     if (type == __unknown_operation__)
 			println("[x] error : unknow operation type of the instruction '" << id << "' !");
@@ -65,19 +69,19 @@ namespace ql
 		     if (operation == "pulse")
 		     {
 			json& j_params = instruction_settings[id]["qumis_instr_kw"];
-			process_pulse(j_params,duration,type);
+			process_pulse(j_params, duration, type, latency);
 			println("pulse code : " << qumis_instructions.back()->code());
 		     } 
 		     else if (operation == "codeword_trigger")
 		     {
 			json& j_params = instruction_settings[id]["qumis_instr_kw"];
-			process_codeword_trigger(j_params, duration, type);
+			process_codeword_trigger(j_params, duration, type, latency);
 		     }
 		     else if  ((operation == "trigger") && (type == __measurement__))
 		     {
 			json& j_params = instruction_settings[id]["qumis_instr_kw"];
                         std::string qumis_instr = instruction_settings[id]["qumis_instr"];
-			process_measure(j_params, qumis_instr, duration, type);
+			process_measure(j_params, qumis_instr, duration, type, latency);
 		     }
 		     // qumis = operation + " " + params.str();
 		     //println("qumis : " << qumis);
@@ -88,8 +92,100 @@ namespace ql
 		  }
 	       }
 
+	       // update start time
+	       // find biggest latency
+	       size_t max_latency = 0;
+	       for (qumis_instruction * instr : qumis_instructions)
+	       {
+		  size_t l = instr->latency;
+		  max_latency = (l > max_latency ? l : max_latency);
+	       }
+	       // set refrence time to max latency (avoid negative reference)
+	       size_t time = max_latency; // 0;
+	       for (qumis_instruction * instr : qumis_instructions)
+	       {
+		  println(time << ":");
+		  println(instr->code());
+		  instr->start = time;
+		  time        += instr->duration; //+1;
+	       }
+
+	       total_exec_time = time;
+
+	       // compensate for latencies
+	       // compensate_latency();
+
+	       // reschedule
+	       // resechedule();
+
 	       emit_eqasm();
 	       // return eqasm_code;
+	    }
+
+	    /**
+	     * compensate for latencies
+	     */
+	    void compensate_latency()
+	    {
+	       for (qumis_instruction * instr : qumis_instructions)
+		  instr->compensate_latency();
+	    }
+	    
+	    /**
+	     * optimize 
+	     */
+	    void resechedule()
+	    {
+	       std::vector<size_t> hw_res_av(__trigger_width__+__awg_number__,0);
+
+	       for (qumis_instruction * instr : qumis_instructions)
+	       {
+		  resources_t res = instr->used_resources;
+		  size_t latest = 0;
+		  for (size_t r=0; r<res.size(); ++r)
+		  {
+		     if (res.test(r))
+			latest = (hw_res_av[r] > latest ? hw_res_av[r] : latest);
+		  }
+		  instr->start = latest;
+		  for (size_t r=0; r<res.size(); ++r)
+		  {
+		     if (res.test(r))
+			hw_res_av[r] = (instr->start+instr->duration);
+		  }
+	       }
+	    }
+
+	    /**
+	     * dump traces
+	     */
+	    void write_traces(std::string file_name="")
+	    {
+	       ql::arch::channels_t channels;
+
+	       for (size_t i=0; i<__trigger_width__; i++)
+	       {
+		  std::string ch = "TRIG_"+std::to_string(i);
+	          channels.push_back(ch);
+	       }
+
+	       for (size_t i=0; i<__awg_number__; i++)
+	       {
+		  std::string ch = "AWG_"+std::to_string(i);
+	          channels.push_back(ch);
+	       }
+
+	       ql::arch::time_diagram diagram(channels,total_exec_time,4);
+
+	       for (qumis_instruction * instr : qumis_instructions)
+	       {
+		  instruction_traces_t trs = instr->trace(); 
+		  for (instruction_trace_t t : trs)
+		     diagram.add_trace(t);
+	       }
+
+	       diagram.dump("../../lab/trace.dat");
+	       
 	    }
 
 
@@ -114,20 +210,20 @@ namespace ql
 	    /**
 	     * process pulse
 	     */
-	    void process_pulse(json& j_params, size_t duration, operation_type_t type)
+	    void process_pulse(json& j_params, size_t duration, operation_type_t type, size_t latency)
 	    {	
 	       println("processing pulse instruction...");
 	       size_t codeword = j_params["codeword"];
 	       size_t awg_nr   = j_params["awg_nr"];
 	       println("\tcodeword: " << codeword);
 	       println("\tawg     : " << awg_nr);
-	       qumis_instructions.push_back(new pulse(codeword,awg_nr,duration,type));
+	       qumis_instructions.push_back(new pulse(codeword,awg_nr,duration,type,latency));
 	    }
 
 	    /**
 	     * process codeword trigger
 	     */
-	    void process_codeword_trigger(json& j_params, size_t duration, operation_type_t type)
+	    void process_codeword_trigger(json& j_params, size_t duration, operation_type_t type, size_t latency)
 	    {
 	       println("processing codeword trigger instruction...");
 	       size_t codeword_ready_bit           = j_params["codeword_ready_bit"];
@@ -157,7 +253,7 @@ namespace ql
 	       // trigger * main_trigger = new trigger(main_codeword_trigger, duration, type);
 	       //println("\t code (m_trigger): " << main_trigger->code() );
 	       
-	       codeword_trigger * instr = new codeword_trigger(main_codeword_trigger, duration, codeword_ready_bit, codeword_ready_bit_duration, type);
+	       codeword_trigger * instr = new codeword_trigger(main_codeword_trigger, duration, codeword_ready_bit, codeword_ready_bit_duration, type, latency);
 	       
 	       println("\tcode: " << instr->code());
 
@@ -167,7 +263,7 @@ namespace ql
 	    /**
 	     * process readout
 	     */
-	    void process_measure(json& j_params, std::string instr, size_t duration, operation_type_t type)
+	    void process_measure(json& j_params, std::string instr, size_t duration, operation_type_t type, size_t latency)
 	    {
 	       println("processing measure instruction...");
 	       qumis_instruction * qumis_instr;
@@ -176,6 +272,7 @@ namespace ql
 		  println("  ---> processing trigger : ");
 		  size_t trigger_bit       = j_params["trigger_bit"];
 		  size_t trigger_duration  = __ns_to_cycle((size_t)j_params["trigger_duration"]);
+
 		  println("\ttrigger bit      : " << trigger_bit);
 		  println("\ttrigger duration : " << trigger_duration);
 		  if (trigger_bit > (__trigger_width__-1))
@@ -185,7 +282,7 @@ namespace ql
 		  }
 		  codeword_t cw = 0;
 		  cw.set(trigger_bit);
-		  qumis_instr = new trigger(cw, trigger_duration, __measurement__); 
+		  qumis_instr = new trigger(cw, trigger_duration, __measurement__, latency); 
 		  qumis_instructions.push_back(new measure(qumis_instr, duration));
 	       }
 	       else

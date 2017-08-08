@@ -11,6 +11,8 @@
 #include <string>
 #include <bitset>
 
+#include <ql/arch/instruction_scheduler.h>
+
 namespace ql
 {
    namespace arch
@@ -20,9 +22,11 @@ namespace ql
       #define __awg_number__    (3)
       #define __resources__    \
               (__trigger_width__+__awg_number__)
+      
+      const std::string channel_name[] = {"TRIG_0","TRIG_1","TRIG_2","TRIG_3","TRIG_4","TRIG_5","TRIG_6","TRIG_7","AWG_0","AWG_1","AWG_2"};
 
       // single qumis instruction
-      typedef size_t               channel_t;
+      // typedef size_t               channel_t;
       typedef bool                 bit_t;
       typedef std::string          qumis_instr_t;
       typedef std::vector<bit_t>   bitset_t;
@@ -68,9 +72,11 @@ namespace ql
 	    
 	    resources_t         used_resources;
 	    size_t              duration;
+	    size_t              latency = 0; 
 	    size_t              start = 0;
 	    qumis_instr_type_t  instruction_type;
 	    operation_type_t    operation_type;
+	    bool                latency_compensated = false;
 	    
 	 public:
 
@@ -78,6 +84,29 @@ namespace ql
 	     * emit qumis code 
 	     */
 	    virtual qumis_instr_t code() = 0;
+
+	    /**
+	     * return instruction trace
+	     */
+	    virtual instruction_traces_t trace() = 0;
+
+	    /**
+	     *  compensate for latency
+	     */
+	    void compensate_latency()
+	    {
+	       if (!latency_compensated)
+	       {
+		  println("compensate latency : " << start << " -> " << (start-latency) << " : latency = " << latency);
+		  start -= latency;
+		  latency_compensated = true;
+	       }
+	       else
+	       {
+		  println("[x] warning : latency of instruction '" << this << "' is already compensated !");
+	       }
+	    }    
+	    
 #if 0
 	    /**
 	     * return qumis instruction type
@@ -98,7 +127,7 @@ namespace ql
       {
 	 public:
 	    
-	    size_t codeword;
+	    size_t codeword; // lut id
 	    size_t awg;
 	    
 	 public:
@@ -106,11 +135,13 @@ namespace ql
 	    /**
 	     * ctor
 	     */
-	    pulse(size_t codeword, size_t awg, size_t duration, ql::arch::operation_type_t operation_type) : codeword(codeword), awg(awg)
+	    pulse(size_t codeword, size_t awg, size_t duration, ql::arch::operation_type_t operation_type, size_t latency=0) : codeword(codeword), awg(awg)
 	    {
 	       this->operation_type    = operation_type ;
 	       this->instruction_type  = __qumis_pulse__;
 	       this->duration          = duration;
+	       this->latency           = latency;
+	       latency_compensated     = false;
 	       used_resources.set(__trigger_width__+awg);         
 	    }
 
@@ -125,6 +156,21 @@ namespace ql
 	       qumis_instr_t instr = "pulse " + params.str();
 	       // println("[i] used resources : " << used_resources);
 	       return instr;
+	    }
+
+	   /**
+	    * trace
+	    */
+	    instruction_traces_t trace()
+	    {
+	       instruction_traces_t trs;
+	       size_t latent_start = (latency_compensated ? (start) : (start-latency));
+	       instruction_trace_t t  = { (__trigger_width__+awg), code(), start, (start+duration), "#4567aa", __top_pos__};
+	       // instruction_trace_t tl = { (__trigger_width__+awg), "", start-latency, (start-latency+duration), "#403377", __bottom_pos__ }; // latent
+	       instruction_trace_t tl = { (__trigger_width__+awg), code(), latent_start, latent_start+duration, "#808080", __bottom_pos__ }; // latent
+	       trs.push_back(t);
+	       trs.push_back(tl);
+	       return trs; 
 	    }
 #if 0
 	    /**
@@ -151,11 +197,12 @@ namespace ql
 	    /**
 	     * ctor
 	     */
-	    trigger(codeword_t codeword, size_t duration, ql::arch::operation_type_t operation_type) : codeword(codeword) 
+	    trigger(codeword_t codeword, size_t duration, ql::arch::operation_type_t operation_type, size_t latency=0) : codeword(codeword) 
 	    {
 	       this->operation_type    = operation_type   ;
 	       this->instruction_type  = __qumis_trigger__;
 	       this->duration          = duration;
+	       this->latency           = latency;
 	       used_resources          = codeword.to_ulong();
 	    }
 	    
@@ -165,10 +212,30 @@ namespace ql
 	    qumis_instr_t code()
 	    {
 	       std::stringstream params;
-	       params << codeword << "," << duration; 
+	       params << codeword << "," << duration << "\nwait " << duration; 
 	       qumis_instr_t instr = "trigger " + params.str();
 	       // println("[i] used resources : " << used_resources);
 	       return instr;
+	    }
+
+	   /**
+	    * trace
+	    */
+	    instruction_traces_t trace()
+	    {
+	       instruction_traces_t trs;
+	       for (size_t ch=0; ch<codeword.size(); ++ch)
+	       {
+		  if (codeword.test(ch))
+		  {
+		     size_t latent_start = (latency_compensated ? (start) : (start-latency));
+		     instruction_trace_t t  = { ch, code(), start, (start+duration), "#c467aa", __top_pos__ };
+		     instruction_trace_t lt = { ch, code(), latent_start, (latent_start+duration), "#808080", __bottom_pos__ };
+		     trs.push_back(lt);
+		     trs.push_back(t);
+		  }
+	       }
+	       return trs; 
 	    }
 
 #if 0
@@ -200,13 +267,16 @@ namespace ql
 	     */
 	    codeword_trigger(codeword_t codeword, size_t duration, 
 	                     size_t ready_bit, size_t ready_bit_duration, 
-			     ql::arch::operation_type_t operation_type) : codeword(codeword), ready_bit(ready_bit), ready_bit_duration(ready_bit_duration) 
+			     ql::arch::operation_type_t operation_type, size_t latency=0) : codeword(codeword), ready_bit(ready_bit), ready_bit_duration(ready_bit_duration) 
 	    {
 	       this->operation_type    = operation_type   ;
 	       this->instruction_type  = __qumis_cw_trigger__;
 	       this->duration          = duration;
+	       this->latency           = latency;
 	       used_resources          = codeword.to_ulong();
 	       used_resources.set(ready_bit);
+	       if (ready_bit_duration > (duration-1))
+		  println("[x] error in codeword trigger definition : 'ready_bit_duration' cannot be greater than overall 'duration' !");
 	    }
 	    
 	    /**
@@ -221,6 +291,30 @@ namespace ql
 	       instr << "trigger " << ready_cw << "," << ready_bit_duration << "\nwait " << (duration-1); 
 	       // println("[i] used resources : " << used_resources);
 	       return instr.str();
+	    }
+
+	   /**
+	    * trace
+	    */
+	    instruction_traces_t trace()
+	    {
+	       instruction_traces_t trs;
+	       size_t latent_start = (latency_compensated ? (start) : (start-latency));
+	       for (size_t ch=0; ch<codeword.size(); ++ch)
+	       {
+		  if (codeword.test(ch))
+		  {
+		     instruction_trace_t t  = { ch, code(), start, (start+duration), "#DD5437", __top_pos__ };
+		     instruction_trace_t lt = { ch, code(), latent_start, (latent_start+duration), "#808080", __bottom_pos__  };
+		     trs.push_back(lt);
+		     trs.push_back(t);
+		  }
+	       }
+	       instruction_trace_t t = { ready_bit, code(), start+1, (start+1+ready_bit_duration), "#DD5437", __top_pos__ };
+	       instruction_trace_t lt = { ready_bit, code(), latent_start+1, (latent_start+1+ready_bit_duration), "#808080", __bottom_pos__ };
+	       trs.push_back(lt);
+	       trs.push_back(t);
+	       return trs; 
 	    }
       };
 
@@ -238,9 +332,10 @@ namespace ql
 	    /**
 	     * ctor
 	     */
-	    measure(qumis_instruction * instruction, size_t duration) : instruction(instruction)
+	    measure(qumis_instruction * instruction, size_t duration, size_t latency=0) : instruction(instruction)
 	    {
 	       this->duration = duration;
+	       this->latency  = latency;
 	       operation_type = __measurement__;
 	       used_resources.set();
 	    }
@@ -254,9 +349,48 @@ namespace ql
 	       inst << instruction->code() << "\n";
 	       inst << "wait " << (duration-instruction->duration); 
 	       // println("[i] used resources : " << used_resources);
-	       return inst.str();
-	  
+	       return inst.str(); 
 	    }
+
+	    /**
+	     *  compensate for latency
+	     */
+	    void compensate_latency()
+	    {
+	       if (!latency_compensated)
+	       {
+		  println("compensate latency : " << start << " -> " << (start-latency) << " : latency = " << latency);
+		  start -= latency;
+		  latency_compensated = true;
+		  instruction->compensate_latency();
+	       }
+	       else
+	       {
+		  println("[x] warning : latency of instruction '" << this << "' is already compensated !");
+	       }
+	    }
+
+
+	   /**
+	    * trace
+	    */
+	    instruction_traces_t trace()
+	    {
+	       instruction_traces_t itrs = instruction->trace();
+	       instruction_traces_t trs; 
+	       bool lt = true;
+	       for (instruction_trace_t t : itrs)
+	       {
+		  t.start = start;
+		  t.end   = start+duration;
+		  t.label = code();
+		  t.color = (lt ? "#808080" : "#328F1C");
+		  trs.push_back(t);
+		  lt = !lt;
+	       }
+	       return trs; 
+	    }
+
 
       };
    
