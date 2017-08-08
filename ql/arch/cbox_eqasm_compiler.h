@@ -102,21 +102,23 @@ namespace ql
 	       }
 	       // set refrence time to max latency (avoid negative reference)
 	       size_t time = max_latency; // 0;
+	       println("time analysis...");
 	       for (qumis_instruction * instr : qumis_instructions)
 	       {
 		  println(time << ":");
 		  println(instr->code());
-		  instr->start = time;
+		  // instr->start = time;
+		  instr->set_start(time);
 		  time        += instr->duration; //+1;
 	       }
 
 	       total_exec_time = time;
 
 	       // compensate for latencies
-	       // compensate_latency();
+	       compensate_latency();
 
 	       // reschedule
-	       // resechedule();
+	       resechedule();
 
 	       emit_eqasm();
 	       // return eqasm_code;
@@ -283,7 +285,7 @@ namespace ql
 		  codeword_t cw = 0;
 		  cw.set(trigger_bit);
 		  qumis_instr = new trigger(cw, trigger_duration, __measurement__, latency); 
-		  qumis_instructions.push_back(new measure(qumis_instr, duration));
+		  qumis_instructions.push_back(new measure(qumis_instr, duration,latency));
 	       }
 	       else
 	       {

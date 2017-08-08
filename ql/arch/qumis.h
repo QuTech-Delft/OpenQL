@@ -106,6 +106,15 @@ namespace ql
 		  println("[x] warning : latency of instruction '" << this << "' is already compensated !");
 	       }
 	    }    
+
+
+	    /**
+	     * set start
+	     */
+	    virtual void set_start(size_t t)
+	    {
+	       start = t;
+	    }
 	    
 #if 0
 	    /**
@@ -378,17 +387,28 @@ namespace ql
 	    {
 	       instruction_traces_t itrs = instruction->trace();
 	       instruction_traces_t trs; 
-	       bool lt = true;
+	       size_t latent_start = (latency_compensated ? (start) : (start-latency));
+	       bool   lt = true;
 	       for (instruction_trace_t t : itrs)
 	       {
-		  t.start = start;
-		  t.end   = start+duration;
+		  t.start = (lt ? latent_start : start);
+		  t.end   = (lt ? (latent_start+duration) : (start+duration));
 		  t.label = code();
 		  t.color = (lt ? "#808080" : "#328F1C");
 		  trs.push_back(t);
 		  lt = !lt;
 	       }
 	       return trs; 
+	    }
+	    
+	    
+	    /**
+	     * set start
+	     */
+	    void set_start(size_t t)
+	    {
+	       start = t;
+	       instruction->set_start(t);
 	    }
 
 
