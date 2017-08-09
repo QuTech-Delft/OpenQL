@@ -92,8 +92,68 @@ namespace ql
 		  }
 	       }
 
-	       // update start time
-	       // find biggest latency
+	       // time analysis
+	       total_exec_time = time_analysis();
+
+	       // compensate for latencies
+	       compensate_latency();
+
+	       // reschedule
+	       resechedule();
+
+	       dump_instructions();
+	       
+	       // decompose meta-instructions
+	       qumis_program_t decomposed;
+	       for (qumis_instruction * instr : qumis_instructions)
+	       {
+		  qumis_program_t dec = instr->decompose();
+		  for (qumis_instruction * i : dec)
+		     decomposed.push_back(i);
+	       }
+	       qumis_instructions.swap(decomposed);
+
+
+	       // reorder instructions
+	       // dump_instructions();
+	       reorder_instructions();
+	       // dump_instructions();
+
+	       // insert waits
+
+	       emit_eqasm();
+	       // return eqasm_code;
+	    }
+
+	    /**
+	     * display instruction and start time
+	     */
+	    void dump_instructions()
+	    {
+	       println("[d] instructions dump:");
+	       for (qumis_instruction * instr : qumis_instructions)
+	       {
+		  size_t t = instr->start;
+		  std::cout << t << " : " << instr->code() << std::endl;
+	       }
+	    }
+
+
+	    /**
+	     * reorder instructions
+	     */
+	     void reorder_instructions()
+	     {
+	       std::sort(qumis_instructions.begin(),qumis_instructions.end(), qumis_comparator);
+	     }
+
+	    /**
+	     * time analysis
+	     */
+	    size_t time_analysis()
+	    {
+	       println("time analysis...");
+	       // update start time : find biggest latency
 	       size_t max_latency = 0;
 	       for (qumis_instruction * instr : qumis_instructions)
 	       {
@@ -102,7 +162,6 @@ namespace ql
 	       }
 	       // set refrence time to max latency (avoid negative reference)
 	       size_t time = max_latency; // 0;
-	       println("time analysis...");
 	       for (qumis_instruction * instr : qumis_instructions)
 	       {
 		  println(time << ":");
@@ -111,18 +170,10 @@ namespace ql
 		  instr->set_start(time);
 		  time        += instr->duration; //+1;
 	       }
-
-	       total_exec_time = time;
-
-	       // compensate for latencies
-	       compensate_latency();
-
-	       // reschedule
-	       resechedule();
-
-	       emit_eqasm();
-	       // return eqasm_code;
+	       return time;
 	    }
+
+
 
 	    /**
 	     * compensate for latencies
@@ -203,8 +254,19 @@ namespace ql
 	       eqasm_code.push_back("wait 1");       // add wait 1 at the begining
 	       eqasm_code.push_back("mov r14, 0");   // 0: infinite loop
 	       eqasm_code.push_back("start:");       // label
+	       size_t t = 0;
 	       for (qumis_instruction * instr : qumis_instructions)
+	       {
+		  size_t start = instr->start; 
+		  size_t dt = start-t;
+		  if (dt)
+		  {
+		     eqasm_code.push_back("wait "+std::to_string(dt));
+		     t = start;
+		  }
 		  eqasm_code.push_back(instr->code());
+	       }
+	       eqasm_code.push_back("wait "+std::to_string(qumis_instructions.back()->duration));
 	       eqasm_code.push_back("beq r14,r14");  // loop
 	       println("compilation done.");
 	    }

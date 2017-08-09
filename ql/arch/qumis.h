@@ -93,7 +93,7 @@ namespace ql
 	    /**
 	     *  compensate for latency
 	     */
-	    void compensate_latency()
+	    virtual void compensate_latency()
 	    {
 	       if (!latency_compensated)
 	       {
@@ -115,18 +115,32 @@ namespace ql
 	    {
 	       start = t;
 	    }
+
+	    /**
+	     * decompose meta-instructions
+	     */
+	    virtual qumis_program_t decompose()
+	    {
+	       qumis_program_t p;
+	       p.push_back(this);
+	       return p;
+	    }
 	    
-#if 0
 	    /**
 	     * return qumis instruction type
 	     */
-	    virtual qumis_instr_type_t instruction_type() = 0;
+	    virtual qumis_instr_type_t get_instruction_type()
+	    {
+	       return instruction_type; 
+	    }
 
 	    /**
 	     * return operation type
 	     */
-	    virtual operation_type_t   operation_type() = 0;
-#endif
+	    virtual operation_type_t get_operation_type()
+	    {
+	       return operation_type;
+	    }
       };
 
       /**
@@ -161,7 +175,7 @@ namespace ql
 	    {
 	       std::stringstream params;
 	       pulse_id_t pid = codeword;
-	       params << (awg == 0 ? pid : 0) << "," << (awg == 1 ? pid : 0) << "," << (awg == 2 ? pid : 0) << "\nwait " << duration; 
+	       params << (awg == 0 ? pid : 0) << "," << (awg == 1 ? pid : 0) << "," << (awg == 2 ? pid : 0); // << "\nwait " << duration; 
 	       qumis_instr_t instr = "pulse " + params.str();
 	       // println("[i] used resources : " << used_resources);
 	       return instr;
@@ -221,7 +235,7 @@ namespace ql
 	    qumis_instr_t code()
 	    {
 	       std::stringstream params;
-	       params << codeword << "," << duration << "\nwait " << duration; 
+	       params << codeword << "," << duration; // << "\nwait " << duration; 
 	       qumis_instr_t instr = "trigger " + params.str();
 	       // println("[i] used resources : " << used_resources);
 	       return instr;
@@ -247,15 +261,6 @@ namespace ql
 	       return trs; 
 	    }
 
-#if 0
-	    /**
-	     * instruction_type
-	     */
-	    qumis_instr_type_t instruction_type()
-	    {
-	       return __qumis_trigger__;
-	    }
-#endif
       };
 
       /**
@@ -268,6 +273,9 @@ namespace ql
 	    codeword_t codeword;
 	    size_t     ready_bit;
 	    size_t     ready_bit_duration;
+
+	    // decompose
+	    qumis_program_t instructions; 
 
 	 public:
 	    
@@ -286,7 +294,50 @@ namespace ql
 	       used_resources.set(ready_bit);
 	       if (ready_bit_duration > (duration-1))
 		  println("[x] error in codeword trigger definition : 'ready_bit_duration' cannot be greater than overall 'duration' !");
+
+	       codeword_t ready_cw = 0;
+	       ready_cw.set(ready_bit);
+	       trigger * rdb = new trigger(ready_cw,ready_bit_duration,operation_type,latency);
+	       trigger * cwt = new trigger(codeword,duration,operation_type,latency);
+	       instructions.push_back(cwt);
+	       instructions.push_back(rdb);
 	    }
+
+	    /**
+	     * decompose codeword trigger 
+	     */
+	    qumis_program_t decompose()
+	    {
+	       instructions[0]->start   = start;
+	       instructions[0]->latency = latency;
+	       instructions[1]->start   = start+1;
+	       instructions[1]->latency = latency;
+	       println("codeword_trigger latency : " << instructions[0]->latency);
+	       println("codeword_trigger start   : " << instructions[0]->start);
+	       println("ready_bit        latency : " << instructions[1]->latency);
+	       println("codeword_trigger start   : " << instructions[1]->start);
+	       return instructions;
+	    }
+	    
+	    /**
+	     *  compensate for latency
+	     */
+	    void compensate_latency()
+	    {
+	       if (!latency_compensated)
+	       {
+		  println("compensate latency : " << start << " -> " << (start-latency) << " : latency = " << latency);
+		  start -= latency;
+		  instructions[0]->compensate_latency();
+		  instructions[1]->compensate_latency();
+		  latency_compensated = true;
+	       }
+	       else
+	       {
+		  println("[x] warning : latency of instruction '" << this << "' is already compensated !");
+	       }
+	    }    
+
 	    
 	    /**
 	     * generate code 
@@ -297,7 +348,7 @@ namespace ql
 	       ready_cw.set(ready_bit);
 	       std::stringstream instr;
 	       instr << "trigger " << codeword << "," << duration << "\nwait 1\n"; 
-	       instr << "trigger " << ready_cw << "," << ready_bit_duration << "\nwait " << (duration-1); 
+	       instr << "trigger " << ready_cw << "," << ready_bit_duration; //  << "\nwait " << (duration-1); 
 	       // println("[i] used resources : " << used_resources);
 	       return instr.str();
 	    }
@@ -325,6 +376,17 @@ namespace ql
 	       trs.push_back(t);
 	       return trs; 
 	    }
+ 
+	    /**
+	     * set start
+	     */
+	    void set_start(size_t t)
+	    {
+	       start = t;
+	       instructions[0]->set_start(t);
+	       instructions[1]->set_start(t+1);
+	    }
+
       };
 
 
@@ -355,9 +417,8 @@ namespace ql
 	    qumis_instr_t code()
 	    {
 	       std::stringstream inst;
-	       inst << instruction->code() << "\n";
-	       inst << "wait " << (duration-instruction->duration); 
-	       // println("[i] used resources : " << used_resources);
+	       inst << instruction->code(); // << "\n";
+	       // inst << "wait " << (duration-instruction->duration); 
 	       return inst.str(); 
 	    }
 
@@ -411,8 +472,15 @@ namespace ql
 	       instruction->set_start(t);
 	    }
 
-
       };
+
+      /**
+       * qumis comparator
+       */
+      bool qumis_comparator(qumis_instruction * i1, qumis_instruction * i2) 
+      { 
+	 return (i1->start < i2->start);
+      }
    
    }
 }

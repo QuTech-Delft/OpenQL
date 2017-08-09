@@ -25,11 +25,11 @@ int main(int argc, char ** argv)
    ql::quantum_kernel kernel("kernel",starmon);
 
    kernel.gate("x180 q0",0);
-   // kernel.gate("y180 q0",0);
-   // kernel.gate("x180 q1",1);
+   kernel.gate("y180 q0",0);
+   kernel.gate("x180 q1",1);
    // kernel.gate("x180 q0",0);
    // kernel.gate("y90 q0",0);
-   // kernel.gate("x90 q1",1);
+   kernel.gate("x90 q1",1);
    // kernel.gate("x180 q0",0);
    // kernel.gate("y180 q0",0);
    // kernel.gate("x180 q1",1);
