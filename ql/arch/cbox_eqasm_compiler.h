@@ -29,8 +29,9 @@ namespace ql
 	    qumis_program_t qumis_instructions;
 	    size_t          ns_per_cycle;
 	    size_t          total_exec_time = 0;
+	    size_t          buffer_matrix[__operation_types_num__][__operation_types_num__]; 
 
-	    #define __ns_to_cycle(t) (t/ns_per_cycle)
+	    #define __ns_to_cycle(t) ((size_t)t/(size_t)ns_per_cycle)
 	   
 	 public:
 
@@ -47,6 +48,22 @@ namespace ql
 	       json& instruction_settings       = platform.instruction_settings;
 	       ns_per_cycle                     = platform.hardware_settings["cycle_time"];
 	       println("[+] cycle_time : " << ns_per_cycle);
+	       // buffer matrix: 
+	       buffer_matrix[__rf__][__rf__]                   = __ns_to_cycle(platform.hardware_settings["mw_mw_buffer"]);
+	       buffer_matrix[__rf__][__flux__]                 = __ns_to_cycle(platform.hardware_settings["mw_flux_buffer"]);
+	       buffer_matrix[__rf__][__measurement__]          = __ns_to_cycle(platform.hardware_settings["mw_readout_buffer"]);
+	       buffer_matrix[__flux__][__rf__]                 = __ns_to_cycle(platform.hardware_settings["flux_mw_buffer"]);
+	       buffer_matrix[__flux__][__flux__]               = __ns_to_cycle(platform.hardware_settings["flux_flux_buffer"]);
+	       buffer_matrix[__flux__][__measurement__]        = __ns_to_cycle(platform.hardware_settings["flux_readout_buffer"]);
+	       buffer_matrix[__measurement__][__rf__]          = __ns_to_cycle(platform.hardware_settings["readout_mw_buffer"]);
+	       buffer_matrix[__measurement__][__flux__]        = __ns_to_cycle(platform.hardware_settings["readout_flux_buffer"]);
+	       buffer_matrix[__measurement__][__measurement__] = __ns_to_cycle(platform.hardware_settings["readout_readout_buffer"]);
+
+	       println("[=] buffer matrix : ");
+	       for (size_t i=0; i<__operation_types_num__; ++i)
+		  for (size_t j=0; j<__operation_types_num__; ++j)
+		     println("(" << i << "," << j << ") :" << buffer_matrix[i][j]);
+
 	       for (ql::gate * g : c)
 	       {
 		  std::string id = g->name;
@@ -101,18 +118,10 @@ namespace ql
 	       // reschedule
 	       resechedule();
 
-	       dump_instructions();
+	       // dump_instructions();
 	       
 	       // decompose meta-instructions
-	       qumis_program_t decomposed;
-	       for (qumis_instruction * instr : qumis_instructions)
-	       {
-		  qumis_program_t dec = instr->decompose();
-		  for (qumis_instruction * i : dec)
-		     decomposed.push_back(i);
-	       }
-	       qumis_instructions.swap(decomposed);
-
+	       decompose_instructions();
 
 	       // reorder instructions
 	       // dump_instructions();
@@ -136,6 +145,21 @@ namespace ql
 		  size_t t = instr->start;
 		  std::cout << t << " : " << instr->code() << std::endl;
 	       }
+	    }
+
+	    /**
+	     * decompose
+	     */
+	    void decompose_instructions()
+	    {
+	       qumis_program_t decomposed;  
+	       for (qumis_instruction * instr : qumis_instructions)
+	       {
+		  qumis_program_t dec = instr->decompose();
+		  for (qumis_instruction * i : dec)
+		     decomposed.push_back(i);
+	       }
+	       qumis_instructions.swap(decomposed);
 	    }
 
 
@@ -189,24 +213,44 @@ namespace ql
 	     */
 	    void resechedule()
 	    {
-	       std::vector<size_t> hw_res_av(__trigger_width__+__awg_number__,0);
+	       std::vector<size_t>           hw_res_av(__trigger_width__+__awg_number__,0);
+	       std::vector<operation_type_t> hw_res_op(__trigger_width__+__awg_number__,__none__);
 
 	       for (qumis_instruction * instr : qumis_instructions)
 	       {
-		  resources_t res = instr->used_resources;
+		  resources_t      res  = instr->used_resources;
+		  operation_type_t type = instr->get_operation_type();
 		  size_t latest = 0;
+		  size_t buf    = 0;
 		  for (size_t r=0; r<res.size(); ++r)
 		  {
 		     if (res.test(r))
-			latest = (hw_res_av[r] > latest ? hw_res_av[r] : latest);
+		     {
+			size_t rbuf = buffer_size(hw_res_op[r],type);
+			buf         = ((rbuf > buf) ? rbuf : buf);
+			latest      = (hw_res_av[r] > latest ? hw_res_av[r] : latest);
+		     }
 		  }
-		  instr->start = latest;
+		  if (buf)
+		     println("[!] inserting buffer...");
+		  instr->start = latest+buf;
 		  for (size_t r=0; r<res.size(); ++r)
 		  {
 		     if (res.test(r))
+		     {
 			hw_res_av[r] = (instr->start+instr->duration);
+			hw_res_op[r] = (type);
+		     }
 		  }
 	       }
+	    }
+
+	    /**
+	     * buffer size
+	     */
+	    size_t buffer_size(operation_type_t t1, operation_type_t t2)
+	    {  
+	       return buffer_matrix[t1][t2];
 	    }
 
 	    /**

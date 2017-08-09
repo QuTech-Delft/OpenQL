@@ -43,18 +43,22 @@ namespace ql
 	 __qumis_pulse__      ,
 	 __qumis_cw_trigger__ ,
 	 __qumis_readout__    ,
+	 __qumis_buffer__     ,
 	 __qumis_wait__
       } qumis_instr_type_t;
 
       // operation type
       typedef enum 
       {
+	 __none__       ,
 	 __rf__         ,
 	 __flux__       ,
 	 __measurement__,
 	 __wait__       ,
 	 __unknown_operation__  
       } operation_type_t;
+
+      #define __operation_types_num__ (4)
 
       // pulse/trigger codewords
       typedef std::bitset<__lut_id_width__>   pulse_id_t;
@@ -258,6 +262,58 @@ namespace ql
 		     trs.push_back(t);
 		  }
 	       }
+	       return trs; 
+	    }
+
+      };
+
+      /**
+       * wait
+       */
+      class wait : public qumis_instruction
+      {
+	 public:
+	    
+	    size_t ch;
+	    
+	 public:
+
+	    /**
+	     * ctor
+	     */
+	    wait(size_t ch, size_t duration, ql::arch::operation_type_t operation_type, size_t latency=0) : ch(ch)
+	    {
+	       this->operation_type    = operation_type ;
+	       this->instruction_type  = __qumis_wait__;
+	       this->duration          = duration;
+	       this->latency           = latency;
+	       latency_compensated     = false;
+	       used_resources.set(ch);         
+	    }
+
+	    /**
+	     * generate code 
+	     */
+	    qumis_instr_t code()
+	    {
+	       qumis_instr_t instr;
+	       // instr = "wait " + std::string(duration);
+	       // println("[i] used resources : " << used_resources);
+	       return instr;
+	    }
+
+	   /**
+	    * trace
+	    */
+	    instruction_traces_t trace()
+	    {
+	       instruction_traces_t trs;
+	       size_t latent_start = (latency_compensated ? (start) : (start-latency));
+	       instruction_trace_t t  = { (ch), "buffer", start, (start+duration), "#ff9933", __top_pos__};
+	       // instruction_trace_t tl = { (__trigger_width__+awg), "", start-latency, (start-latency+duration), "#403377", __bottom_pos__ }; // latent
+	       instruction_trace_t tl = { (ch), "buffer", latent_start, latent_start+duration, "#808080", __bottom_pos__ }; // latent
+	       trs.push_back(t);
+	       trs.push_back(tl);
 	       return trs; 
 	    }
 
