@@ -42,6 +42,11 @@ namespace ql
 	    void compile(ql::circuit& c, ql::quantum_platform& platform)
 	    {
 	       println("[-] compiling qasm code ...");
+	       if (c.empty())
+	       {
+		  println("[-] empty circuit, eqasm compilation aborted !");
+		  return;
+	       }
 	       println("[-] loading circuit (" <<  c.size() << " gates)...");
 	       eqasm_t eqasm_code;
 	       ql::instruction_map_t& instr_map = platform.instruction_map; 
@@ -259,6 +264,11 @@ namespace ql
 	    void write_traces(std::string file_name="")
 	    {
 	       ql::arch::channels_t channels;
+	       if (qumis_instructions.empty())
+	       {
+		  println("[x] not traces to dump !");
+		  return;
+	       }
 
 	       for (size_t i=0; i<__trigger_width__; i++)
 	       {

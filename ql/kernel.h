@@ -267,7 +267,8 @@ class quantum_kernel
        */
       void gate(std::string name, size_t qubit)
       {
-	 std::map<std::string,custom_gate*>::iterator it = gate_definition.find(name);
+	 std::string instr = name + " q" + std::to_string(qubit);
+	 std::map<std::string,custom_gate*>::iterator it = gate_definition.find(instr);
 	 if (it != gate_definition.end())
 	 {
 	    custom_gate * g = new custom_gate(*(it->second));
@@ -283,7 +284,11 @@ class quantum_kernel
        */
       void gate(std::string name, std::vector<size_t> qubits)
       {
-	 std::map<std::string,custom_gate*>::iterator it = gate_definition.find(name);
+	 std::string instr = name + " ";
+	 for (size_t i=0; i<(qubits.size()-1); ++i)
+	    instr += "q" + std::to_string(qubits[i]) + ",";
+	 instr += "q" + std::to_string(qubits[qubits.size()-1]);
+	 std::map<std::string,custom_gate*>::iterator it = gate_definition.find(instr);
 	 if (it != gate_definition.end())
 	 {
 	    custom_gate * g = new custom_gate(*(it->second));

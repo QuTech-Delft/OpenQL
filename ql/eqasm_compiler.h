@@ -35,6 +35,8 @@ namespace ql
 	  */
 	 virtual void write_eqasm(std::string file_name="")
 	 {
+	    if (eqasm_code.empty())
+	       return;
 	    if (file_name=="")
 	    {
 	       println("[c] eqasm code (" << eqasm_code.size() << " lines) :");
