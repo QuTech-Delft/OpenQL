@@ -14,8 +14,19 @@ int main(int argc, char ** argv)
 {
    srand(0);
 
-   // specify the platform
-   ql::init(ql::transmon_platform, "instructions.map");
+   // init
+   ql::init();
+   // ql::init(ql::transmon_platform, "instructions.map");
+
+   // create platform
+   ql::quantum_platform starmon("starmon","hardware_config_cbox.json");
+
+   // print info
+   starmon.print_info();
+
+   // set platform
+   ql::set_platform(starmon);
+
 
    float sweep_points[] = {2};
    int   num_circuits   = 1;
@@ -25,7 +36,7 @@ int main(int argc, char ** argv)
    prog.set_sweep_points(sweep_points, num_circuits);
 
    // create a kernel
-   ql::quantum_kernel kernel("my_kernel");
+   ql::quantum_kernel kernel("my_kernel",starmon);
 
    // add gates to kernel
    kernel.prepz(0);

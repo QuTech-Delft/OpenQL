@@ -27,16 +27,27 @@ int main(int argc, char ** argv)
    int   num_circuits       = 1;
    float sweep_points[]     = { 1, 1.25, 1.75, 2.25, 2.75 };
 
-   ql::init(ql::transmon_platform, "instructions.map");
+   ql::init();
+   // ql::init(ql::transmon_platform, "instructions.map");
+
+   // create platform
+   ql::quantum_platform starmon("starmon","hardware_config_cbox.json");
+
+   // print info
+   starmon.print_info();
+
+   // set platform
+   ql::set_platform(starmon);
 
    // create program
    ql::quantum_program prog("prog", 2);
    prog.set_sweep_points(sweep_points, num_circuits);
 
-   ql::quantum_kernel k("custom_gate_test");
+   ql::quantum_kernel k("custom_gate_test",starmon);
 
+   // deprecated !
    // load custom instruction definition
-   k.load_custom_instructions();
+   // k.load_custom_instructions();
 
    // print user-defined instructions (qasm/microcode)
    k.print_gates_definition();

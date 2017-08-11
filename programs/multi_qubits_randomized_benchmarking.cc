@@ -88,7 +88,20 @@ int main(int argc, char ** argv)
 {	
    srand(clock());
 
-   ql::init(ql::transmon_platform, "instructions.map");
+   // initialize openql
+   ql::init();
+   // ql::init(ql::transmon_platform, "instructions.map");
+
+   // create platform
+   ql::quantum_platform starmon("starmon","hardware_config_cbox.json");
+
+   // print info
+   starmon.print_info();
+
+   // set platform
+   ql::set_platform(starmon);
+
+
 
    int   num_qubits = 1; 
    int   num_cliffords = 4096;
@@ -117,7 +130,7 @@ int main(int argc, char ** argv)
    // create subcircuit
    ql::str_t name;
    name << "rb_" << num_qubits;
-   ql::quantum_kernel kernel(name.str());
+   ql::quantum_kernel kernel(name.str(),starmon);
    build_rb(num_cliffords, kernel, num_qubits, different);
    rb.add(kernel);
 

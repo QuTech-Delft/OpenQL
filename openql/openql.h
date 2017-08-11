@@ -16,6 +16,7 @@
 #include <cassert>
 #include <time.h>
 #include "ql/openql.h"
+#include "ql/quantum_platform.h"
 
 std::string instruction_map_file = "instructions.map";
 
@@ -31,20 +32,37 @@ std::string get_instruction_map_file()
 
 void init()
 {
-    ql::init(ql::transmon_platform, instruction_map_file);
+    // ql::init(ql::transmon_platform, instruction_map_file);
+    ql::init();
 }
+
+class Platform
+{
+   public:
+
+     ql::quantum_platform * platform;
+     std::string            name;
+     std::string            config_file;
+
+     Platform(std::string name, std::string config_file)
+     {
+	this->name = name;
+	this->config_file = config_file;
+	platform = new ql::quantum_platform(name,config_file);
+     }
+};
 
 class Kernel
 {
     public:
         std::string name;
-        ql::quantum_kernel *kernel;
+        ql::quantum_kernel * kernel;
 
-        Kernel(std::string kname)
+        Kernel(std::string kname, Platform platform)
         {
             // std::cout << "Kernel::Kernel()" << std::endl;
             name = kname;
-            kernel = new ql::quantum_kernel(name);
+            kernel = new ql::quantum_kernel(name,platform);
         }
         // std::string name() {return kernel_name;}
 

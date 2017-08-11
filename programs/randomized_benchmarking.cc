@@ -53,7 +53,18 @@ int main(int argc, char ** argv)
 {	
    srand(0);
 
-   ql::init(ql::transmon_platform, "instructions.map");
+   // initialize openql
+   ql::init();
+   // ql::init(ql::transmon_platform, "instructions.map");
+
+   // create platform
+   ql::quantum_platform starmon("starmon","hardware_config_cbox.json");
+
+   // print info
+   starmon.print_info();
+
+   // set platform
+   ql::set_platform(starmon);
 
    int   num_randomizations = 3; 
    int   num_circuits       = 13;
@@ -74,7 +85,7 @@ int main(int argc, char ** argv)
 	 // create subcircuit
 	 ql::str_t name;
 	 name << "rb" << c_size;
-	 ql::quantum_kernel kernel(name.str());
+	 ql::quantum_kernel kernel(name.str(),starmon);
 	 build_rb(c_size, kernel);
 	 rb.add(kernel);
       }

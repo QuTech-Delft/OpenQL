@@ -56,7 +56,18 @@ int main(int argc, char ** argv)
    int   num_circuits       = 4;
    float sweep_points[]   = { 2, 4, 8, 16 };  // sizes of the clifford circuits per randomization  
 
-   ql::init(ql::transmon_platform, "instructions.map");
+   // ql::init(ql::transmon_platform, "instructions.map");
+   ql::init();
+   // ql::init(ql::transmon_platform, "instructions.map");
+
+   // create platform
+   ql::quantum_platform starmon("starmon","hardware_config_cbox.json");
+
+   // print info
+   starmon.print_info();
+
+   // set platform
+   ql::set_platform(starmon);
 
    // ql::sweep_points_t sweep_points;
 
@@ -64,7 +75,7 @@ int main(int argc, char ** argv)
 
    rb.set_sweep_points(sweep_points, num_circuits);
 
-   ql::quantum_kernel kernel("rb1024");
+   ql::quantum_kernel kernel("rb1024",starmon);
 
    build_rb(1024, kernel);
 
@@ -76,7 +87,7 @@ int main(int argc, char ** argv)
 
    rb.compile();
 
-   std::cout << rb.qasm() << std::endl;
+   // std::cout << rb.qasm() << std::endl;
 
    return 0;
 }

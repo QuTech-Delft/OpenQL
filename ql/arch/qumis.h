@@ -108,7 +108,7 @@ namespace ql
 	    {
 	       if (!latency_compensated)
 	       {
-		  println("compensate latency : " << start << " -> " << (start-latency) << " : latency = " << latency);
+		  // println("compensate latency : " << start << " -> " << (start-latency) << " : latency = " << latency);
 		  start -= latency;
 		  latency_compensated = true;
 	       }
@@ -200,7 +200,7 @@ namespace ql
 	       instruction_traces_t trs;
 	       size_t latent_start = (latency_compensated ? (start) : (start-latency));
 	       std::string label   = qasm_label + " : " + code(); 
-	       println("pulse label : " << label);
+	       // println("pulse label : " << label);
 	       instruction_trace_t t  = { (__trigger_width__+awg), label, start, (start+duration), "#4567aa", __top_pos__};
 	       // instruction_trace_t tl = { (__trigger_width__+awg), "", start-latency, (start-latency+duration), "#403377", __bottom_pos__ }; // latent
 	       instruction_trace_t tl = { (__trigger_width__+awg), label, latent_start, latent_start+duration, "#808080", __bottom_pos__ }; // latent
@@ -261,7 +261,7 @@ namespace ql
 	    {
 	       instruction_traces_t trs;
 	       std::string label   = qasm_label + " : " + code(); 
-	       println("trig label : " << label);
+	       // println("trig label : " << label);
 	       for (size_t ch=0; ch<codeword.size(); ++ch)
 	       {
 		  if (codeword.test(ch))
@@ -381,10 +381,10 @@ namespace ql
 	       instructions[0]->latency = latency;
 	       instructions[1]->start   = start+1;
 	       instructions[1]->latency = latency;
-	       println("codeword_trigger latency : " << instructions[0]->latency);
-	       println("codeword_trigger start   : " << instructions[0]->start);
-	       println("ready_bit        latency : " << instructions[1]->latency);
-	       println("codeword_trigger start   : " << instructions[1]->start);
+	       // println("codeword_trigger latency : " << instructions[0]->latency);
+	       // println("codeword_trigger start   : " << instructions[0]->start);
+	       // println("ready_bit        latency : " << instructions[1]->latency);
+	       // println("codeword_trigger start   : " << instructions[1]->start);
 	       return instructions;
 	    }
 	    
@@ -395,7 +395,7 @@ namespace ql
 	    {
 	       if (!latency_compensated)
 	       {
-		  println("compensate latency : " << start << " -> " << (start-latency) << " : latency = " << latency);
+		  // println("compensate latency : " << start << " -> " << (start-latency) << " : latency = " << latency);
 		  start -= latency;
 		  instructions[0]->compensate_latency();
 		  instructions[1]->compensate_latency();
@@ -430,7 +430,7 @@ namespace ql
 	       instruction_traces_t trs;
 	       size_t latent_start = (latency_compensated ? (start) : (start-latency));
 	       std::string label   = qasm_label + " : " + code(); 
-	       println("cw label : " << label);
+	       // println("cw label : " << label);
 	       for (size_t ch=0; ch<codeword.size(); ++ch)
 	       {
 		  if (codeword.test(ch))
@@ -500,7 +500,7 @@ namespace ql
 	    {
 	       if (!latency_compensated)
 	       {
-		  println("compensate latency : " << start << " -> " << (start-latency) << " : latency = " << latency);
+		  // println("compensate latency : " << start << " -> " << (start-latency) << " : latency = " << latency);
 		  start -= latency;
 		  latency_compensated = true;
 		  instruction->compensate_latency();
