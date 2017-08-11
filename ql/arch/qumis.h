@@ -66,6 +66,7 @@ namespace ql
 
       // hardware resources
       typedef std::bitset<__resources__>      resources_t;
+      typedef std::vector<size_t>             qubit_set_t;
 
       /**
        * qumis instruction interface  
@@ -75,11 +76,17 @@ namespace ql
 	 public:
 	    
 	    resources_t         used_resources;
+	    qubit_set_t         used_qubits;
+
 	    size_t              duration;
 	    size_t              latency = 0; 
 	    size_t              start = 0;
+
 	    qumis_instr_type_t  instruction_type;
 	    operation_type_t    operation_type;
+
+	    std::string         qasm_label;
+
 	    bool                latency_compensated = false;
 	    
 	 public:
@@ -192,9 +199,11 @@ namespace ql
 	    {
 	       instruction_traces_t trs;
 	       size_t latent_start = (latency_compensated ? (start) : (start-latency));
-	       instruction_trace_t t  = { (__trigger_width__+awg), code(), start, (start+duration), "#4567aa", __top_pos__};
+	       std::string label   = qasm_label + " : " + code(); 
+	       println("pulse label : " << label);
+	       instruction_trace_t t  = { (__trigger_width__+awg), label, start, (start+duration), "#4567aa", __top_pos__};
 	       // instruction_trace_t tl = { (__trigger_width__+awg), "", start-latency, (start-latency+duration), "#403377", __bottom_pos__ }; // latent
-	       instruction_trace_t tl = { (__trigger_width__+awg), code(), latent_start, latent_start+duration, "#808080", __bottom_pos__ }; // latent
+	       instruction_trace_t tl = { (__trigger_width__+awg), label, latent_start, latent_start+duration, "#808080", __bottom_pos__ }; // latent
 	       trs.push_back(t);
 	       trs.push_back(tl);
 	       return trs; 
@@ -251,13 +260,15 @@ namespace ql
 	    instruction_traces_t trace()
 	    {
 	       instruction_traces_t trs;
+	       std::string label   = qasm_label + " : " + code(); 
+	       println("trig label : " << label);
 	       for (size_t ch=0; ch<codeword.size(); ++ch)
 	       {
 		  if (codeword.test(ch))
 		  {
 		     size_t latent_start = (latency_compensated ? (start) : (start-latency));
-		     instruction_trace_t t  = { ch, code(), start, (start+duration), "#c467aa", __top_pos__ };
-		     instruction_trace_t lt = { ch, code(), latent_start, (latent_start+duration), "#808080", __bottom_pos__ };
+		     instruction_trace_t t  = { ch, label, start, (start+duration), "#c467aa", __top_pos__ };
+		     instruction_trace_t lt = { ch, label, latent_start, (latent_start+duration), "#808080", __bottom_pos__ };
 		     trs.push_back(lt);
 		     trs.push_back(t);
 		  }
@@ -340,7 +351,7 @@ namespace ql
 	     */
 	    codeword_trigger(codeword_t codeword, size_t duration, 
 	                     size_t ready_bit, size_t ready_bit_duration, 
-			     ql::arch::operation_type_t operation_type, size_t latency=0) : codeword(codeword), ready_bit(ready_bit), ready_bit_duration(ready_bit_duration) 
+			     ql::arch::operation_type_t operation_type, size_t latency=0, std::string qasm_label="") : codeword(codeword), ready_bit(ready_bit), ready_bit_duration(ready_bit_duration) 
 	    {
 	       this->operation_type    = operation_type   ;
 	       this->instruction_type  = __qumis_cw_trigger__;
@@ -355,6 +366,8 @@ namespace ql
 	       ready_cw.set(ready_bit);
 	       trigger * rdb = new trigger(ready_cw,ready_bit_duration,operation_type,latency);
 	       trigger * cwt = new trigger(codeword,duration,operation_type,latency);
+	       rdb->qasm_label = qasm_label;
+	       cwt->qasm_label = qasm_label;
 	       instructions.push_back(cwt);
 	       instructions.push_back(rdb);
 	    }
@@ -416,18 +429,20 @@ namespace ql
 	    {
 	       instruction_traces_t trs;
 	       size_t latent_start = (latency_compensated ? (start) : (start-latency));
+	       std::string label   = qasm_label + " : " + code(); 
+	       println("cw label : " << label);
 	       for (size_t ch=0; ch<codeword.size(); ++ch)
 	       {
 		  if (codeword.test(ch))
 		  {
-		     instruction_trace_t t  = { ch, code(), start, (start+duration), "#DD5437", __top_pos__ };
-		     instruction_trace_t lt = { ch, code(), latent_start, (latent_start+duration), "#808080", __bottom_pos__  };
+		     instruction_trace_t t  = { ch, label, start, (start+duration), "#DD5437", __top_pos__ };
+		     instruction_trace_t lt = { ch, label, latent_start, (latent_start+duration), "#808080", __bottom_pos__  };
 		     trs.push_back(lt);
 		     trs.push_back(t);
 		  }
 	       }
-	       instruction_trace_t t = { ready_bit, code(), start+1, (start+1+ready_bit_duration), "#DD5437", __top_pos__ };
-	       instruction_trace_t lt = { ready_bit, code(), latent_start+1, (latent_start+1+ready_bit_duration), "#808080", __bottom_pos__ };
+	       instruction_trace_t t = { ready_bit, label, start+1, (start+1+ready_bit_duration), "#DD5437", __top_pos__ };
+	       instruction_trace_t lt = { ready_bit, label, latent_start+1, (latent_start+1+ready_bit_duration), "#808080", __bottom_pos__ };
 	       trs.push_back(lt);
 	       trs.push_back(t);
 	       return trs; 
@@ -510,7 +525,7 @@ namespace ql
 	       {
 		  t.start = (lt ? latent_start : start);
 		  t.end   = (lt ? (latent_start+duration) : (start+duration));
-		  t.label = code();
+		  t.label = qasm_label + " : " + code();
 		  t.color = (lt ? "#808080" : "#328F1C");
 		  trs.push_back(t);
 		  lt = !lt;

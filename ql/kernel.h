@@ -280,6 +280,27 @@ class quantum_kernel
       }
 
       /**
+       * custom 2 qubits gate 
+       */
+      void gate(std::string name, size_t q0, size_t q1)
+      {
+	 std::string instr = name + " ";
+	 instr += "q" + std::to_string(q0) + ",q" + std::to_string(q1);
+	 std::vector<size_t> qubits;
+	 qubits.push_back(q0);
+	 qubits.push_back(q1);
+	 std::map<std::string,custom_gate*>::iterator it = gate_definition.find(instr);
+	 if (it != gate_definition.end())
+	 {
+	    custom_gate * g = new custom_gate(*(it->second));
+	    g->operands = qubits;
+	    c.push_back(g);
+	 }
+	 else
+	    println("[x] error : unknown gate '" << name << "' !");
+      }
+
+      /**
        * custom gate with arbitrary number of operands
        */
       void gate(std::string name, std::vector<size_t> qubits)
@@ -298,6 +319,7 @@ class quantum_kernel
 	 else
 	    println("[x] error : unknown gate '" << name << "' !");
       }
+
 
 
 
