@@ -467,16 +467,18 @@ public:
             if( it != insInAllCycles.end() )
             {
                 auto nInsThisCycle = insInAllCycles[currCycle].size();
+		fout << "{ "; 
                 for(size_t i=0; i<nInsThisCycle; ++i )
                 {
                     fout << insInAllCycles[currCycle][i];
                     if( i != nInsThisCycle - 1 ) // last instruction
                         fout << " | ";
                 }
+		fout << " }"; 
             }
             else
             {
-                fout << "   nop";
+                fout << "   qwait 1";
             }
             fout << endl;
         }

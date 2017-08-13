@@ -215,7 +215,7 @@ public:
     void print_interaction_matrix(bool verbose=false)
     {
         if (verbose)
-            println("Printing Interactrion Matrix");
+            println("printing interaction matrix...");
 
         for (auto k : kernels)
         {

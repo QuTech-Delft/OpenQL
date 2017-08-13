@@ -57,11 +57,11 @@ None
 """
 
 
-%feature("docstring") Kernel
-""" Kernel class which contains various quantum instructions."""
+%feature("docstring") kernel
+""" kernel class which contains various quantum instructions."""
 
 
-%feature("docstring") Kernel::Kernel
+%feature("docstring") kernel::kernel
 """ Constructs a kernel object.
 
 Parameters
@@ -71,7 +71,7 @@ arg1 : str
 """
 
 
-%feature("docstring") Kernel::identity
+%feature("docstring") kernel::identity
 """ Applies identity on the qubit specified in argument.
 
 Parameters
@@ -81,7 +81,7 @@ arg1 : int
 """
 
 
-%feature("docstring") Kernel::hadamard
+%feature("docstring") kernel::hadamard
 """ Applies hadamard on the qubit specified in argument.
 
 Parameters
@@ -90,7 +90,7 @@ arg1 : int
     target qubit
 """
 
-%feature("docstring") Kernel::s
+%feature("docstring") kernel::s
 """ Applies s on the qubit specified in argument.
 
 Parameters
@@ -99,7 +99,7 @@ arg1 : int
     target qubit
 """
 
-%feature("docstring") Kernel::sdag
+%feature("docstring") kernel::sdag
 """ Applies sdag on the qubit specified in argument.
 
 Parameters
@@ -108,7 +108,7 @@ arg1 : int
     target qubit
 """
 
-%feature("docstring") Kernel::s
+%feature("docstring") kernel::s
 """ Applies x on the qubit specified in argument.
 
 Parameters
@@ -117,7 +117,7 @@ arg1 : int
     target qubit
 """
 
-%feature("docstring") Kernel::y
+%feature("docstring") kernel::y
 """ Applies y on the qubit specified in argument.
 
 Parameters
@@ -126,7 +126,7 @@ arg1 : int
     target qubit
 """
 
-%feature("docstring") Kernel::z
+%feature("docstring") kernel::z
 """ Applies z on the qubit specified in argument.
 
 Parameters
@@ -135,7 +135,7 @@ arg1 : int
     target qubit
 """
 
-%feature("docstring") Kernel::rx90
+%feature("docstring") kernel::rx90
 """ Applies rx90 on the qubit specified in argument.
 
 Parameters
@@ -145,7 +145,7 @@ arg1 : int
 """
 
 
-%feature("docstring") Kernel::mrx90
+%feature("docstring") kernel::mrx90
 """ Applies mrx90 on the qubit specified in argument.
 
 Parameters
@@ -154,7 +154,7 @@ arg1 : int
     target qubit
 """
 
-%feature("docstring") Kernel::rx180
+%feature("docstring") kernel::rx180
 """ Applies rx180 on the qubit specified in argument.
 
 Parameters
@@ -163,7 +163,7 @@ arg1 : int
     target qubit
 """
 
-%feature("docstring") Kernel::ry180
+%feature("docstring") kernel::ry180
 """ Applies ry180 on the qubit specified in argument.
 
 Parameters
@@ -172,7 +172,7 @@ arg1 : int
     target qubit
 """
 
-%feature("docstring") Kernel::measure
+%feature("docstring") kernel::measure
 """ measures input qubit.
 
 Parameters
@@ -182,7 +182,7 @@ arg1 : int
 """
 
 
-%feature("docstring") Kernel::cnot
+%feature("docstring") kernel::cnot
 """ Applies controlled-not operation.
 
 Parameters
@@ -193,7 +193,7 @@ arg2 : int
     target qubit
 """
 
-%feature("docstring") Kernel::cphase
+%feature("docstring") kernel::cphase
 """ Applies controlled-phase operation.
 
 Parameters
@@ -205,7 +205,7 @@ arg2 : int
 """
 
 
-%feature("docstring") Kernel::toffoli
+%feature("docstring") kernel::toffoli
 """ Applies controlled-controlled-not operation.
 
 Parameters
@@ -219,7 +219,7 @@ arg3 : int
 """
 
 
-%feature("docstring") Kernel::clifford
+%feature("docstring") kernel::clifford
 """ Applies clifford operation of the specified id on the qubit.
 
 Parameters
@@ -256,7 +256,7 @@ The ids and the corresponding operations are:
 23: ['X90', 'Y90', 'mX90']
 """
 
-%feature("docstring") Kernel::load_custom_instructions
+%feature("docstring") kernel::load_custom_instructions
 """ Loads the JSON file describing custom instructions.
 
 Parameters
@@ -266,7 +266,7 @@ arg1 : str
 """
 
 
-%feature("docstring") Kernel::print_custom_instructions
+%feature("docstring") kernel::print_custom_instructions
 """ Prints the available custom instructions.
 
 Parameters
@@ -274,7 +274,7 @@ Parameters
 None
 """
 
-%feature("docstring") Kernel::toffoli
+%feature("docstring") kernel::toffoli
 """ Applies custom gate on specified qubits.
 
 Parameters
@@ -286,22 +286,22 @@ arg2 : []
 """
 
 
-%feature("docstring") Program
-""" Program class which contains one or more Kernels."""
+%feature("docstring") program
+""" program class which contains one or more kernels."""
 
 
-%feature("docstring") Program::Program
-""" Constructs a Program object.
+%feature("docstring") program::program
+""" Constructs a program object.
 
 Parameters
 ----------
 arg1 : str
-    name of the Program
+    name of the program
 arg1 : int
 	number of qubits the program will use
 """
 
-%feature("docstring") Program::set_sweep_points
+%feature("docstring") program::set_sweep_points
 """ Sets sweep points for an experiment.
 
 Parameters
@@ -312,17 +312,17 @@ arg1 : int
 	number of circuits
 """
 
-%feature("docstring") Program::add_kernel
-""" Adds specified Kernel to Program.
+%feature("docstring") program::add_kernel
+""" Adds specified kernel to program.
 
 Parameters
 ----------
-arg1 : Kernel
-    Kernel to be added
+arg1 : kernel
+    kernel to be added
 """
 
-%feature("docstring") Program::compile
-""" Compiles the Program.
+%feature("docstring") program::compile
+""" Compiles the program.
 
 Parameters
 ----------
@@ -332,8 +332,8 @@ arg2 : bool
     verbose, default is False
 """
 
-%feature("docstring") Program::schedule
-""" Schedules the Program.
+%feature("docstring") program::schedule
+""" Schedules the program.
 
 Parameters
 ----------
@@ -344,8 +344,8 @@ arg2 : bool
 """
 
 
-%feature("docstring") Program::qasm
-""" Returns Program QASM
+%feature("docstring") program::qasm
+""" Returns program QASM
 Parameters
 ----------
 None
@@ -355,8 +355,8 @@ Returns
 str
     qasm """
 
-%feature("docstring") Program::microcode
-""" Returns Program microcode
+%feature("docstring") program::microcode
+""" Returns program microcode
 Parameters
 ----------
 None

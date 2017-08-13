@@ -394,7 +394,7 @@ class quantum_kernel
 
       }
 
-      void schedule(size_t nqubits, std::string scheduler, std::string& schedQASM, std::string& schedDOT, bool verbose=false)
+      void schedule(size_t nqubits, std::string scheduler, std::string& sched_qasm, std::string& sched_dot, bool verbose=false)
       {
 #ifdef __disable_lemon__
 	 if (verbose) println( scheduler << " scheduling the quantum kernel '" << name << "'...");
@@ -409,17 +409,17 @@ class quantum_kernel
 	 {
 	    // dg.PrintScheduleASAP();
 	    // dg.PrintDotScheduleASAP();
-	    schedDOT = dg.GetDotScheduleASAP();
+	    sched_dot = dg.GetDotScheduleASAP();
 	    // dg.PrintQASMScheduledASAP();
-	    schedQASM = dg.GetQASMScheduledASAP();
+	    sched_qasm = dg.GetQASMScheduledASAP();
 	 }
 	 else if("ALAP" == scheduler)
 	 {
 	    // dg.PrintScheduleALAP();
 	    // dg.PrintDotScheduleALAP();
-	    schedDOT = dg.GetDotScheduleALAP();
+	    sched_dot = dg.GetDotScheduleALAP();
 	    // dg.PrintQASMScheduledALAP();
-	    schedQASM = dg.GetQASMScheduledALAP();
+	    sched_qasm = dg.GetQASMScheduledALAP();
 	 }
 	 else
 	 {
@@ -457,6 +457,9 @@ class quantum_kernel
 	 return cs;
       }
 
+     /**
+      * detect measurements and qubit preparations
+      */
       bool contains_measurements(circuit x)
       {
 	 for (size_t i=0; i<x.size(); i++)
@@ -464,6 +467,23 @@ class quantum_kernel
 	    if (x[i]->type() == __measure_gate__)
 	       return true;
 	    if (x[i]->type() == __prepz_gate__)
+	       return true;
+	 }
+	 return false;
+      }
+
+     /**
+      * detect unoptimizable gates 
+      */
+      bool contains_unoptimizable_gates(circuit x)
+      {
+	 for (size_t i=0; i<x.size(); i++)
+	 {
+	    if (x[i]->type() == __measure_gate__)
+	       return true;
+	    if (x[i]->type() == __prepz_gate__)
+	       return true;
+	    if (!(x[i]->optimization_enabled))
 	       return true;
 	 }
 	 return false;

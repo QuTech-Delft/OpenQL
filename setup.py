@@ -22,6 +22,7 @@ if platform == "linux" or platform == "linux2":
 
 elif platform == "darwin":
     print('Detected OSX but its not yet tested!')
+    os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.10"
     cmd = 'cmake ..'
     ret = subprocess.check_output(cmd, shell=True)
     cmd = 'make'
