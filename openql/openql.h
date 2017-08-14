@@ -37,7 +37,7 @@ void init()
     ql::init();
 }
 
-class platform
+class Platform
 {
    public:
 
@@ -45,19 +45,19 @@ class platform
      std::string            p_name;
      std::string            config_file;
 
-     platform(std::string name, std::string config_file) : p_name(name), config_file(config_file)
+     Platform(std::string name, std::string config_file) : p_name(name), config_file(config_file)
      {
 	ql_platform = new ql::quantum_platform(name,config_file);
      }
 };
 
-class kernel
+class Kernel
 {
     public:
         std::string name;
         ql::quantum_kernel * ql_kernel;
 
-        kernel(std::string kname, platform p)
+        Kernel(std::string kname, Platform p)
         {
             // std::cout << "kernel::kernel()" << std::endl;
             name = kname;
@@ -91,21 +91,21 @@ class kernel
         void gate(std::string name, std::vector<size_t> qubits) { ql_kernel->gate(name, qubits); }
         void gate(std::string name, size_t qubit) { ql_kernel->gate(name, qubit); }
 
-        ~kernel()
+        ~Kernel()
         {
             //std::cout << "kernel::~kernel()" << std::endl;
             delete(ql_kernel);
         }
 };
 
-class program
+class Program
 {
     private:
         ql::quantum_program *prog;
 
     public:
         std::string name;
-        program(std::string pname, size_t nqubits, platform p)
+        Program(std::string pname, size_t nqubits, Platform p)
         {
             name = pname;
             // std::cout << "program::program()" << std::endl;
@@ -118,7 +118,7 @@ class program
             prog->set_sweep_points(sp, num_circuits);
         }
 
-        void add_kernel(kernel& k)
+        void add_kernel(Kernel& k)
         {
             prog->add( *(k.ql_kernel) );
         }
@@ -130,7 +130,7 @@ class program
         void print_interaction_matrix() { prog->print_interaction_matrix(); }
         void write_interaction_matrix() { prog->write_interaction_matrix(); }
 
-        ~program()
+        ~Program()
         {
             // std::cout << "program::~program()" << std::endl;
             delete(prog);

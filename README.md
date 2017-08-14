@@ -26,30 +26,6 @@ QX simulator.
 * [Optional] XDot to visualize generated graphs in dot format
 
 
-# Installing OpenQL as Python Package
-
-## Linux & OSX
-
-Running the following command in terminal should install the openql package:
-
-        python setup.py install --user
-
-Run `py.test -v` to test the installation  
-
-## Windows
-
-Python.exe and swig.exe should be in the path of power shell.
-
-Make sure the following variables are defined:
-
-* PYTHON\_INCLUDE (should point to the directory containing Python.h)
-* PYTHON\_LIB (should point to the python library python35.lib)
-
-Then running the following command in power shell should install the openql package:
-
-        python setup.py install
-
-Run `py.test -v` to test the installation  
 
 
 # Compiling C++ OpenQL tests and programs
@@ -87,3 +63,35 @@ directory.
 Example python tests and programs can be found in the 'tests' and 'programs' directories.
 These can be executed as 'python tests/simplePyTest.py'.
 
+# Installing OpenQL as Python Package
+
+N.B. the instructions below will compile the C++ files the first time they are run. If you are updating an existing installation you should first clean and recompile the C++ files using the following commands. 
+```
+    cd cbuild 
+    make clean  # this cleans whatever was the result of the build
+    cmake .     # generates the make files
+    make        # recompiles the library 
+```
+
+## Linux & OSX
+
+Running the following command in terminal should install the openql package:
+
+        pip install  -e .
+
+Run `py.test -v` to test the installation  
+
+## Windows
+
+Python.exe and swig.exe should be in the path of power shell.
+
+Make sure the following variables are defined:
+
+* PYTHON\_INCLUDE (should point to the directory containing Python.h)
+* PYTHON\_LIB (should point to the python library python35.lib)
+
+Then running the following command in power shell should install the openql package:
+
+        pip install  -e .
+
+Run `py.test -v` to test the installation  
