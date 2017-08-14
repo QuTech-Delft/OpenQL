@@ -208,6 +208,7 @@ public:
     cmat_t m;
     identity(size_t q) : m(identity_c)
     {
+        name = "i";
         duration = 2; // TODO fix it
         operands.push_back(q);
     }
@@ -243,6 +244,7 @@ public:
     cmat_t m;
     hadamard(size_t q) : m(hadamard_c)
     {
+        name = "h";
         duration = 2;
         operands.push_back(q);
     }
@@ -280,6 +282,7 @@ public:
 
     phase(size_t q) : m(phase_c)
     {
+        name = "s";
         duration = 3;
         operands.push_back(q);
     }
@@ -313,6 +316,7 @@ public:
 
     phasedag(size_t q) : m(phasedag_c)
     {
+        name = "sdag";
         duration = 3;
         operands.push_back(q);
     }
@@ -349,6 +353,7 @@ public:
 
     t(size_t q) : m(t_c)
     {
+        name = "t";
         duration = 1;
         operands.push_back(q);
     }
@@ -385,6 +390,7 @@ public:
 
     tdag(size_t q) : m(tdag_c)
     {
+        name = "tdag";
         duration = 1;
         operands.push_back(q);
     }
@@ -422,6 +428,7 @@ public:
 
     pauli_x(size_t q) : m(pauli_x_c)
     {
+        name = "x";
         duration = 1;
         operands.push_back(q);
     }
@@ -459,6 +466,7 @@ public:
 
     pauli_y(size_t q) : m(pauli_y_c)
     {
+        name = "y";
         duration = 1;
         operands.push_back(q);
     }
@@ -497,6 +505,7 @@ public:
 
     pauli_z(size_t q) : m(pauli_z_c)
     {
+        name = "z";
         duration = 2;
         operands.push_back(q);
     }
@@ -534,6 +543,7 @@ public:
 
     rx90(size_t q) : m(rx90_c)
     {
+        name = "x90";
         duration = 1;
         operands.push_back(q);
     }
@@ -571,6 +581,7 @@ public:
 
     mrx90(size_t q) : m(mrx90_c)
     {
+        name = "mx90";
         duration = 1;
         operands.push_back(q);
     }
@@ -607,6 +618,7 @@ public:
 
     rx180(size_t q) : m(rx180_c)
     {
+        name = "x180";
         duration = 1;
         operands.push_back(q);
     }
@@ -644,6 +656,7 @@ public:
 
     ry90(size_t q) : m(ry90_c)
     {
+        name = "y90";
         duration = 1;
         operands.push_back(q);
     }
@@ -681,6 +694,7 @@ public:
 
     mry90(size_t q) : m(mry90_c)
     {
+        name = "my90";
         duration = 1;
         operands.push_back(q);
     }
@@ -717,6 +731,7 @@ public:
 
     ry180(size_t q) : m(ry180_c)
     {
+        name = "y180";
         duration = 1;
         operands.push_back(q);
     }
@@ -754,6 +769,7 @@ public:
 
     measure(size_t q) : m(identity_c)
     {
+        name = "measure";
         duration = 4;
         operands.push_back(q);
     }
@@ -791,6 +807,7 @@ public:
 
     prepz(size_t q) : m(identity_c)
     {
+        name = "prepz";
         duration = 1;
         operands.push_back(q);
     }
@@ -827,6 +844,7 @@ public:
 
     cnot(size_t q1, size_t q2) : m(cnot_c)
     {
+        name = "cnot";
         duration = 4;
         operands.push_back(q1);
         operands.push_back(q2);
@@ -860,6 +878,7 @@ public:
 
     cphase(size_t q1, size_t q2) : m(cphase_c)
     {
+        name = "cz";
         duration = 4;
         operands.push_back(q1);
         operands.push_back(q2);
@@ -893,6 +912,7 @@ public:
 
     toffoli(size_t q1, size_t q2, size_t q3) : m(ctoffoli_c)
     {
+        name = "toffoli";
         duration = 6;
         operands.push_back(q1);
         operands.push_back(q2);
@@ -925,6 +945,7 @@ public:
 
     nop() : m(nop_c)
     {
+        name = "i";
         duration = 1;
     }
     instruction_t qasm()
