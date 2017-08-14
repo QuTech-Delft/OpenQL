@@ -1,4 +1,6 @@
 {
+   "eqasm_compiler" : "qumis_compiler",
+
    "hardware_settings": {
 	 "qubit_number": 2,
 	 "cycle_time" : 5,  

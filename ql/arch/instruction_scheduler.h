@@ -8,6 +8,10 @@
 #ifndef QL_INSTRUCTION_SCHEDULER_H
 #define QL_INSTRUCTION_SCHEDULER_H
 
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+
 #include <ql/arch/cbox_eqasm_compiler.h>
 
 namespace ql
@@ -146,9 +150,9 @@ namespace ql
 	      size_t hh = time/(3600); 
 	      size_t mn = (time%(3600))/60; 
 	      size_t sc = time%60;
-	      ss << setfill('0') << setw(2) << hh << ':' 
-	         << setfill('0') << setw(2) << mn << ':' 
-		 << setfill('0') << setw(2) << sc;
+	      ss << std::setfill('0') << std::setw(2) << hh << ':' 
+	         << std::setfill('0') << std::setw(2) << mn << ':' 
+		 << std::setfill('0') << std::setw(2) << sc;
 	      return ss.str();
 	   }
 
@@ -169,7 +173,7 @@ namespace ql
 	   
 	   std::string start_categories()
 	   {
-	      stringstream ss;
+	      std::stringstream ss;
 	      ss << "\"categories\": [" <<
 	      "{" <<
 		 "\"category\": [" <<

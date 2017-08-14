@@ -35,7 +35,7 @@
 
 #include <time.h>
 
-#include "ql/openql.h"
+#include <ql/openql.h>
 
 int main(int argc, char ** argv)
 {
@@ -61,7 +61,7 @@ int main(int argc, char ** argv)
 
 
     // create program
-    ql::quantum_program prog("a_program", 7);
+    ql::quantum_program prog("a_program", 7, starmon);
     prog.set_sweep_points(sweep_points, num_circuits);
 
     // create kernel

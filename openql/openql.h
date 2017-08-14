@@ -37,7 +37,7 @@ void init()
     ql::init();
 }
 
-class Platform
+class platform
 {
    public:
 
@@ -45,7 +45,7 @@ class Platform
      std::string            p_name;
      std::string            config_file;
 
-     Platform(std::string name, std::string config_file) : p_name(name), config_file(config_file)
+     platform(std::string name, std::string config_file) : p_name(name), config_file(config_file)
      {
 	ql_platform = new ql::quantum_platform(name,config_file);
      }
@@ -57,7 +57,7 @@ class kernel
         std::string name;
         ql::quantum_kernel * ql_kernel;
 
-        kernel(std::string kname, Platform p)
+        kernel(std::string kname, platform p)
         {
             // std::cout << "kernel::kernel()" << std::endl;
             name = kname;
@@ -105,11 +105,11 @@ class program
 
     public:
         std::string name;
-        program(std::string pname, size_t nqubits)
+        program(std::string pname, size_t nqubits, platform p)
         {
             name = pname;
             // std::cout << "program::program()" << std::endl;
-            prog = new ql::quantum_program(name, nqubits);
+            prog = new ql::quantum_program(name, nqubits, *(p.ql_platform));
         }
 
         void set_sweep_points( std::vector<float> sweep_points, size_t num_circuits)

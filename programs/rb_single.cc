@@ -71,7 +71,7 @@ int main(int argc, char ** argv)
 
    // ql::sweep_points_t sweep_points;
 
-   ql::quantum_program rb("rb",1);
+   ql::quantum_program rb("rb",1,starmon);
 
    rb.set_sweep_points(sweep_points, num_circuits);
 

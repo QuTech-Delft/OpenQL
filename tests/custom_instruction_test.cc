@@ -40,7 +40,7 @@ int main(int argc, char ** argv)
    ql::set_platform(starmon);
 
    // create program
-   ql::quantum_program prog("prog", 2);
+   ql::quantum_program prog("prog", 2, starmon);
    prog.set_sweep_points(sweep_points, num_circuits);
 
    ql::quantum_kernel k("custom_gate_test",starmon);

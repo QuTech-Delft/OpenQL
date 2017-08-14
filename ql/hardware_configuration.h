@@ -46,8 +46,39 @@ namespace ql
 	   void load(ql::instruction_map_t& instruction_map, json& instruction_settings, json& hardware_settings)
 	   {
 	      json config = load_json(config_file_name);
-	      hardware_settings    = config["hardware_settings"];
-	      instruction_settings = config["instructions"];
+
+	      // load eqasm compiler backend
+	      if (config["eqasm_compiler"].is_null())
+	      {
+		 println("[x] error : eqasm compiler backend is not specified in the hardware configuration file !");
+		 throw std::exception();
+	      }
+	      else
+		 eqasm_compiler_name = config["eqasm_compiler"];
+
+	      // load hardware_settings 
+	      if (config["hardware_settings"].is_null())
+	      {
+		 println("[x] error : hardware settings are not specified in the hardware configuration file !");
+		 throw std::exception();
+	      }
+	      else
+	      {
+		 hardware_settings    = config["hardware_settings"];
+	      }
+
+	      // load instruction_settings
+	      if (config["instructions"].is_null())
+	      {
+		 println("[x] error : instructions settings are not specified in the hardware configuration file !");
+		 throw std::exception();
+	      }
+	      else
+	      {
+		 instruction_settings = config["instructions"];
+	      }
+
+
 	      json instructions = config["instructions"];
 	      // std::cout << instructions.dump(4) << std::endl;
 	      for (json::iterator it = instructions.begin(); it != instructions.end(); ++it) 
@@ -89,9 +120,10 @@ namespace ql
 	      return g;
 	   }
 
-	 protected:
+	 public:
 
-	   std::string             config_file_name;
+	   std::string       config_file_name;
+	   std::string       eqasm_compiler_name;    
 
 	 private:
 

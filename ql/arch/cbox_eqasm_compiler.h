@@ -50,7 +50,7 @@ namespace ql
 	       }
 	       println("[-] loading circuit (" <<  c.size() << " gates)...");
 	       eqasm_t eqasm_code;
-	       ql::instruction_map_t& instr_map = platform.instruction_map; 
+	       // ql::instruction_map_t& instr_map = platform.instruction_map; 
 	       json& instruction_settings       = platform.instruction_settings;
 	       num_qubits                       = platform.hardware_settings["qubit_number"];
 	       ns_per_cycle                     = platform.hardware_settings["cycle_time"];
@@ -101,7 +101,7 @@ namespace ql
 			// println("pulse id: " << id);
 			json& j_params = instruction_settings[id]["qumis_instr_kw"];
 			process_pulse(j_params, duration, type, latency, g->operands, id);
-			println("pulse code : " << qumis_instructions.back()->code());
+			// println("pulse code : " << qumis_instructions.back()->code());
 		     } 
 		     else if (operation == "codeword_trigger")
 		     {
@@ -211,8 +211,8 @@ namespace ql
 	       size_t time = max_latency; // 0;
 	       for (qumis_instruction * instr : qumis_instructions)
 	       {
-		  println(time << ":");
-		  println(instr->code());
+		  // println(time << ":");
+		  // println(instr->code());
 		  // instr->start = time;
 		  instr->set_start(time);
 		  time        += instr->duration; //+1;
@@ -227,6 +227,7 @@ namespace ql
 	     */
 	    void compensate_latency()
 	    {
+	       println("latency compensation...");
 	       for (qumis_instruction * instr : qumis_instructions)
 		  instr->compensate_latency();
 	    }
@@ -236,6 +237,10 @@ namespace ql
 	     */
 	    void resechedule()
 	    {
+	       println("instruction rescheduling...");
+	       println("resource dependency analysis...");
+	       println("buffer insertion...");
+
 	       std::vector<size_t>           hw_res_av(__trigger_width__+__awg_number__,0);
 	       std::vector<size_t>           qu_res_av(num_qubits,0);
 	       std::vector<operation_type_t> hw_res_op(__trigger_width__+__awg_number__,__none__);
@@ -260,6 +265,7 @@ namespace ql
 			latest_hw   = (hw_res_av[r] > latest_hw ? hw_res_av[r] : latest_hw);
 		     }
 		  }
+
 		  // qubit dependency
 		  for (size_t q : qu_res) // qubits used by the instr
 		  {
@@ -274,8 +280,9 @@ namespace ql
 		  size_t latest = std::max(latest_hw,latest_qu);
 		  size_t buf    = std::max(buf_hw,buf_qu);
 
-		  if (buf)
-		     println("[!] inserting buffer...");
+		  //if (buf)
+		    // println("[!] inserting buffer...");
+
 		  instr->start = latest+buf;
 		  // update latest hw record
 		  for (size_t r=0; r<hw_res.size(); ++r)
@@ -394,7 +401,7 @@ namespace ql
 	       // println("processing codeword trigger instruction...");
 	       size_t codeword_ready_bit           = j_params["codeword_ready_bit"];
 	       size_t codeword_ready_bit_duration  = __ns_to_cycle((size_t)j_params["codeword_ready_bit_duration"]);
-	       size_t bit_nr                       = j_params["codeword_bits"].size();
+	       // size_t bit_nr                       = j_params["codeword_bits"].size();
 	       std::vector<size_t> bits            = j_params["codeword_bits"];
 
 	       // println("\tcodeword_ready_bit          : " << codeword_ready_bit);

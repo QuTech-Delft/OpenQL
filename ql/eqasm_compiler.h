@@ -5,15 +5,22 @@
  * @brief  executable qasm compiler interface 
  */
 
-#include "circuit.h"
+
 
 #ifndef QL_EQASM_COMPILER_H
 #define QL_EQASM_COMPILER_H
+
+#include <fstream>
+
+#include <ql/circuit.h>
+#include <ql/platform.h>
 
 typedef std::vector<std::string> eqasm_t; 
 
 namespace ql
 {
+   class quantum_platform;
+
    /**
     * eqasm compiler interface
     */
@@ -46,7 +53,24 @@ namespace ql
 	    else
 	    {
 	       // write to file
+	       std::ofstream file(file_name);
+	       if (file.is_open())
+	       {
+		  println("writing eqasm code (" << eqasm_code.size() << " lines) to '" << file_name << "' ...");
+		  for (std::string l : eqasm_code)
+		     file << l << std::endl;
+		  file.close();
+	       }
+	       else 
+		  println("[x] error : when opening file '" << file_name << "' !");
 	    }
+	 }
+
+	 /**
+	  * write traces
+	  */
+	 virtual void write_traces(std::string file_name="")
+	 {
 	 }
    };
 }

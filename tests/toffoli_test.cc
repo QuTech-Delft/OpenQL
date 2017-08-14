@@ -8,7 +8,7 @@
 
 #include <time.h>
 
-#include "ql/openql.h"
+#include <ql/openql.h>
 
 int main(int argc, char ** argv)
 {
@@ -32,7 +32,7 @@ int main(int argc, char ** argv)
    int   num_circuits   = 1;
 
    // create program
-   ql::quantum_program prog("prog",5);
+   ql::quantum_program prog("prog",5,starmon);
    prog.set_sweep_points(sweep_points, num_circuits);
 
    // create a kernel

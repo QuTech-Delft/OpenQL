@@ -1113,13 +1113,15 @@ class custom_gate : public gate
     instruction_t qasm()
     {
        std::stringstream ss; 
+       size_t p = name.find(" ");
+       std::string gate_name = name.substr(0,p);
        if (operands.size() == 0)
-	  ss << "   " << name;
+	  ss << "   " << gate_name;
        else if (operands.size() == 1)
-	  ss << "   " << name << " q" << operands[0];
+	  ss << "   " << gate_name << " q" << operands[0];
        else
        {
-	  ss << "   " << name << " q" << operands[0];
+	  ss << "   " << gate_name << " q" << operands[0];
 	  for (size_t i=1; i<operands.size(); i++)
 	     ss << ",q" << operands[i];
        }

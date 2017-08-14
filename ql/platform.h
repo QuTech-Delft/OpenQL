@@ -4,13 +4,15 @@
  * @author Nader Khammassi
  * @brief  platform header for target-specific compilation
  */
-#ifndef PLATFORM_H
-#define PLATFORM_H
+#ifndef QL_PLATFORM_H
+#define QL_PLATFORM_H
 
 #include <string>
 
-#include "circuit.h"
-#include "hardware_configuration.h"
+#include <ql/circuit.h>
+#include <ql/hardware_configuration.h>
+// #include <ql/eqasm_compiler.h>
+// #include <ql/arch/cbox_eqasm_compiler.h>
 
 namespace ql
 {
@@ -21,6 +23,7 @@ namespace ql
       qx_simulator_platform,
       unsupported_platform
    } ql_platform_t;
+
    typedef std::vector<std::string> micro_code_t;
 
    /**
@@ -42,8 +45,11 @@ namespace ql
 
       public:
 
-	std::string             name;                     // platform name
-	size_t                  qubit_number;             // number of qubits
+	std::string               name;                     // platform name
+	std::string               eqasm_compiler_name;      // eqasm backend
+	size_t                    qubit_number;             // number of qubits
+
+        // ql::eqasm_compiler *      backend_compiler;         // backend compiler
          
       public:
 
@@ -62,12 +68,28 @@ namespace ql
 	{
 	   ql::hardware_configuration hwc(configuration_file_name);
 	   hwc.load(instruction_map, instruction_settings, hardware_settings);
+	   eqasm_compiler_name = hwc.eqasm_compiler_name;
+
 	   if (hardware_settings["qubit_number"].is_null())
 	   {
 	      println("[x] error : qubit number of the platform is not specified in the configuration file !");
 	      throw std::exception();
 	   }
 	   qubit_number = hardware_settings["qubit_number"];
+
+	   // if (eqasm_compiler_name == "qumis_compiler")
+	   // {
+	   //    backend_compiler = new ql::arch::cbox_eqasm_compiler();
+	   // } 
+	   // else if (eqasm_compiler_name == "none") 
+	   // {
+	   //    backend_compiler = NULL;
+	   // }
+	   // else
+	   // {
+	   //    println("[x] error : the eqasm compiler backend specified in the hardware configuration file is not supported !");
+	   //    throw std::exception();
+	   // }
 	}
 
 	/**
@@ -77,6 +99,7 @@ namespace ql
 	{
 	   println("[+] platform name      : " << name);
 	   println("[+] qubit number       : " << qubit_number);
+	   println("[+] eqasm compiler     : " << eqasm_compiler_name);
 	   println("[+] configuration file : " << configuration_file_name);
 	   println("[+] supported instructions:");
 	   for (ql::instruction_map_t::iterator i=instruction_map.begin(); i!=instruction_map.end(); i++)

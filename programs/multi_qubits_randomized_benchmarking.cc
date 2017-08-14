@@ -8,7 +8,7 @@
 
 #include <time.h>
 
-#include "ql/openql.h"
+#include <ql/openql.h>
 
 // clifford inverse lookup table for grounded state 
 const size_t inv_clifford_lut_gs[] = {0, 2, 1, 3, 8, 10, 6, 11, 4, 9, 5, 7, 12, 16, 23, 21, 13, 17, 18, 19, 20, 15, 22, 14};
@@ -123,7 +123,7 @@ int main(int argc, char ** argv)
    // create program 
    ql::str_t prog_name;
    prog_name << "rb_" << num_qubits << "_" << (different ? "diff" : "same");   
-   ql::quantum_program rb(prog_name.str(),num_qubits);
+   ql::quantum_program rb(prog_name.str(),num_qubits,starmon);
    rb.set_sweep_points(sweep_points, num_circuits);
    rb.set_config_file("rb_config.json");
 

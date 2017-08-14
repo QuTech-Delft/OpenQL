@@ -5,8 +5,13 @@
 #include <ql/arch/instruction_scheduler.h>
 
 
+
 int main(int argc, char ** argv)
 {
+
+   float  sweep_points[]   = { 1, 2.25, 2.75, 3.25, 3.75 };  // single sweep point with 4 calibration points
+   size_t n_swp_pts        = 5;
+   
    // initialize openql
    ql::init();
 
@@ -19,8 +24,13 @@ int main(int argc, char ** argv)
    // set platform
    ql::set_platform(starmon);
 
+   // ql::arch::cbox_eqasm_compiler compiler
 
-   ql::arch::cbox_eqasm_compiler compiler;
+   size_t qubit_number = starmon.qubit_number;
+
+   ql::quantum_program prog("prog", qubit_number, starmon);
+
+   prog.set_sweep_points(sweep_points,n_swp_pts);
 
    ql::quantum_kernel kernel("kernel",starmon);
 
@@ -37,6 +47,16 @@ int main(int argc, char ** argv)
    // kernel.gate("x180 q1",1);
    kernel.gate("measure",0);
 
+   prog.add(kernel);
+
+   prog.compile();
+
+   prog.schedule("ASAP");
+
+   // compiler.compile(kernel.get_circuit(), starmon);
+   // compiler.write_eqasm();
+   // compiler.write_traces();
+
    // kernel.x(0);
    // kernel.y(1);
 
@@ -47,9 +67,7 @@ int main(int argc, char ** argv)
    println(ql::custom_gate("y90  q0").qasm());
    */
 
-   compiler.compile(kernel.get_circuit(), starmon);
-   compiler.write_eqasm();
-   compiler.write_traces();
+
 
    /*
    ql::arch::channels_t channels;

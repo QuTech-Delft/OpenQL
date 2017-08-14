@@ -8,7 +8,7 @@
 
 #include <time.h>
 
-#include "ql/openql.h"
+#include <ql/openql.h>
 
 int main(int argc, char ** argv)
 {	
@@ -30,7 +30,7 @@ int main(int argc, char ** argv)
    ql::set_platform(starmon);
 
    // create program 
-   ql::quantum_program prog("prog",1);
+   ql::quantum_program prog("prog",1,starmon);
    prog.set_sweep_points(sweep_points, num_circuits);
 
    for (int j=0; j<1; j++)
