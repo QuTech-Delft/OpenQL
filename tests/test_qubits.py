@@ -9,10 +9,10 @@ rootDir = os.path.dirname(os.path.realpath(__file__))
 class Test_qubits(unittest.TestCase):
 
     def test_1_qubit(self):
-        ql.set_instruction_map_file("instructions.map")
+        # ql.set_instruction_map_file("instructions.map")
         ql.init()
-
-        k = ql.Kernel("aKernel")
+        platf = ql.Platform("starmon", "hardware_config_cbox.json")
+        k = ql.Kernel("aKernel", platf)
 
         # populate kernel
         k.prepz(0)
@@ -24,7 +24,7 @@ class Test_qubits(unittest.TestCase):
         nqubits = 1
         sweep_points = [2]
         num_circuits = 1
-        p = ql.Program("aProgram", nqubits)
+        p = ql.Program("aProgram", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
 
         p.add_kernel(k)  # add kernel to program
