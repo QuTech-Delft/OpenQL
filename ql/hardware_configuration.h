@@ -84,6 +84,7 @@ namespace ql
 	      for (json::iterator it = instructions.begin(); it != instructions.end(); ++it) 
 	      {
 		 std::string  name = it.key();
+		 // println("'" << name << "'");
 		 str::lower_case(name);
 		 json         attr = *it; //.value();
 		 // supported_gates.push_back(load_instruction(name,attr));
@@ -106,7 +107,7 @@ namespace ql
 	      {
 		 // todo : look for the target aliased gate 
 		 //        copy it with the new name
-		 println("[i] alias '" << name << "' detected and skipped.");
+		 println("[!] alias '" << name << "' detected but skipped (not supported yet).");
 		 return g;
 	      }
 	      try 
@@ -116,7 +117,7 @@ namespace ql
 	      {
 		 println("[e] error while loading instruction '" << name << "' : " << e.what());
 	      }
-	      g->print_info();
+	      // g->print_info();
 	      return g;
 	   }
 

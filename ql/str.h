@@ -49,7 +49,7 @@ namespace str
     */
    inline void replace_all(std::string &str, std::string seq, std::string rep)
    {
-      int index = str.find(seq);
+      size_t index = str.find(seq);
       while (index < str.size())
       {
 	 str.replace(index, seq.size(), rep);
@@ -66,10 +66,10 @@ namespace str
     * @return 
     *    occurence count of seq in str
     */
-   inline int occur_count(std::string &str, std::string seq)
+   inline size_t occur_count(std::string &str, std::string seq)
    {
       int count = 0, index = str.find(seq);
-      while (index < str.size() && index >= 0 )
+      while (index < str.size()) // && index >= 0 )
       {
 	 count++;
 	 index = str.find(seq, index+1);
@@ -90,9 +90,9 @@ namespace str
    inline strings word_list(std::string &str, std::string separator)
    {
       strings wrds;
-      int     index = str.find(separator);
-      int     prev = 0;
-      while (index < str.size() && index >= 0 )
+      size_t  index = str.find(separator);
+      size_t  prev = 0;
+      while (index < str.size()) // && index >= 0 )
       {
 	 wrds.push_back(str.substr(prev,index-prev));
 	 prev=index+1;
@@ -110,7 +110,7 @@ namespace str
     */
    inline void lower_case(std::string& str)
    {
-      for (int i=0; i<str.size(); ++i)
+      for (size_t i=0; i<str.size(); ++i)
       {
 	 char c = str[i];
 	 if(c<='Z' && c>='A')
@@ -162,10 +162,10 @@ namespace str
     *    word count in a line (line format : words 
     *    separated by spaces : "word word word ...")
     */
-   inline int word_count(std::string &str)
+   inline size_t word_count(std::string &str)
    {
       // spaces count
-      int count = occur_count(str, " ");
+      size_t count = occur_count(str, " ");
       return count+1;
    }
 

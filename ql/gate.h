@@ -215,13 +215,13 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("   i q" + std::to_string(operands[0]) );
+        return instruction_t("i q" + std::to_string(operands[0]) );
     }
 
     instruction_t micro_code()
     {
         // TODO fix it
-        return instruction_t("     pulse 1100 0000 1100\n     wait 10\n     pulse 1001 0000 1001\n     wait 10");
+        return instruction_t("  pulse 1100 0000 1100\n     wait 10\n     pulse 1001 0000 1001\n     wait 10");
     }
 
     gate_type_t type()
@@ -251,13 +251,13 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("   h q" + std::to_string(operands[0]) );
+        return instruction_t("h q" + std::to_string(operands[0]) );
     }
 
     instruction_t micro_code()
     {
         // y90 + x180
-        return instruction_t("     pulse 1100 0000 1100\n     wait 10\n     pulse 1001 0000 1001\n     wait 10");
+        return instruction_t("  pulse 1100 0000 1100\n     wait 10\n     pulse 1001 0000 1001\n     wait 10");
     }
 
     gate_type_t type()
@@ -289,13 +289,13 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("   s q" + std::to_string(operands[0]) );
+        return instruction_t("s q" + std::to_string(operands[0]) );
     }
 
     instruction_t micro_code()
     {
         // dummy !
-        return instruction_t("     pulse 1110 0000 1110\n     wait 10");
+        return instruction_t("  pulse 1110 0000 1110\n     wait 10");
     }
 
     gate_type_t type()
@@ -323,13 +323,13 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("   sdag q" + std::to_string(operands[0]) );
+        return instruction_t("sdag q" + std::to_string(operands[0]) );
     }
 
     instruction_t micro_code()
     {
         // dummy !
-        return instruction_t("     pulse 1110 0000 1110\n     wait 10");
+        return instruction_t("  pulse 1110 0000 1110\n     wait 10");
     }
 
     gate_type_t type()
@@ -360,13 +360,13 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("   t q" + std::to_string(operands[0]) );
+        return instruction_t("t q" + std::to_string(operands[0]) );
     }
 
     instruction_t micro_code()
     {
         // dummy !
-        return instruction_t("     pulse 1110 0000 1110\n     wait 10");
+        return instruction_t("  pulse 1110 0000 1110\n     wait 10");
     }
 
     gate_type_t type()
@@ -397,13 +397,13 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("   tdag q" + std::to_string(operands[0]) );
+        return instruction_t("tdag q" + std::to_string(operands[0]) );
     }
 
     instruction_t micro_code()
     {
         // dummy !
-        return instruction_t("     pulse 1110 0000 1110\n     wait 10");
+        return instruction_t("  pulse 1110 0000 1110\n     wait 10");
     }
 
     gate_type_t type()
@@ -435,13 +435,13 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("   x q" + std::to_string(operands[0]) );
+        return instruction_t("x q" + std::to_string(operands[0]) );
     }
 
     instruction_t micro_code()
     {
         // x180
-        return instruction_t("     pulse 1001 0000 1001\n     wait 10");
+        return instruction_t("  pulse 1001 0000 1001\n     wait 10");
     }
 
     gate_type_t type()
@@ -473,13 +473,13 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("   y q" + std::to_string(operands[0]) );
+        return instruction_t("y q" + std::to_string(operands[0]) );
     }
 
     instruction_t micro_code()
     {
         // y180
-        return instruction_t("     pulse 1010 0000 1010\n     wait 10");
+        return instruction_t("  pulse 1010 0000 1010\n     wait 10");
     }
 
 
@@ -512,13 +512,13 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("   z q" + std::to_string(operands[0]) );
+        return instruction_t("z q" + std::to_string(operands[0]) );
     }
 
     instruction_t micro_code()
     {
         // x180 + y180
-        return instruction_t("     pulse 1001 0000 1001\n     wait 10\n     pulse 1010 0000 1010\n     wait 10");
+        return instruction_t("  pulse 1001 0000 1001\n     wait 10\n     pulse 1010 0000 1010\n     wait 10");
     }
 
     gate_type_t type()
@@ -543,19 +543,19 @@ public:
 
     rx90(size_t q) : m(rx90_c)
     {
-        name = "x90";
+        name = "rx90";
         duration = 1;
         operands.push_back(q);
     }
 
     instruction_t qasm()
     {
-        return instruction_t("   rx90 q" + std::to_string(operands[0]) );
+        return instruction_t("rx90 q" + std::to_string(operands[0]) );
     }
 
     instruction_t micro_code()
     {
-        // return instruction_t("     pulse 1011 0000 1011\n     wait 10");
+        // return instruction_t("  pulse 1011 0000 1011\n     wait 10");
         return ql::dep_instruction_map["rx90"];
     }
 
@@ -588,12 +588,12 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("   mrx90 q" + std::to_string(operands[0]) );
+        return instruction_t("mrx90 q" + std::to_string(operands[0]) );
     }
 
     instruction_t micro_code()
     {
-        // return instruction_t("     pulse 1101 0000 1101\n     wait 10");
+        // return instruction_t("  pulse 1101 0000 1101\n     wait 10");
         return ql::dep_instruction_map["mrx90"];
     }
 
@@ -625,12 +625,12 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("   rx180 q" + std::to_string(operands[0]) );
+        return instruction_t("rx180 q" + std::to_string(operands[0]) );
     }
 
     instruction_t micro_code()
     {
-        // return instruction_t("     pulse 1001 0000 1001\n     wait 10");
+        // return instruction_t("  pulse 1001 0000 1001\n     wait 10");
         return ql::dep_instruction_map["rx180"];
     }
 
@@ -656,14 +656,14 @@ public:
 
     ry90(size_t q) : m(ry90_c)
     {
-        name = "y90";
+        name = "ry90";
         duration = 1;
         operands.push_back(q);
     }
 
     instruction_t qasm()
     {
-        return instruction_t("   ry90 q" + std::to_string(operands[0]) );
+        return instruction_t("ry90 q" + std::to_string(operands[0]) );
     }
 
     gate_type_t type()
@@ -673,7 +673,7 @@ public:
 
     instruction_t micro_code()
     {
-        // return instruction_t("     pulse 1100 0000 1100\n     wait 10");
+        // return instruction_t("  pulse 1100 0000 1100\n     wait 10");
         return ql::dep_instruction_map["ry90"];
     }
 
@@ -701,12 +701,12 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("   mry90 q" + std::to_string(operands[0]) );
+        return instruction_t("mry90 q" + std::to_string(operands[0]) );
     }
 
     instruction_t micro_code()
     {
-        // return instruction_t("     pulse 1110 0000 1110\n     wait 10");
+        // return instruction_t("  pulse 1110 0000 1110\n     wait 10");
         return ql::dep_instruction_map["mry90"];
     }
 
@@ -731,19 +731,19 @@ public:
 
     ry180(size_t q) : m(ry180_c)
     {
-        name = "y180";
+        name = "ry180";
         duration = 1;
         operands.push_back(q);
     }
 
     instruction_t qasm()
     {
-        return instruction_t("   ry180 q" + std::to_string(operands[0]) );
+        return instruction_t("ry180 q" + std::to_string(operands[0]) );
     }
 
     instruction_t micro_code()
     {
-        // return instruction_t("     pulse 1010 0000 1010\n     wait 10");
+        // return instruction_t("  pulse 1010 0000 1010\n     wait 10");
         return ql::dep_instruction_map["ry180"];
     }
 
@@ -776,13 +776,13 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("   measure q" + std::to_string(operands[0]) );
+        return instruction_t("measure q" + std::to_string(operands[0]) );
                              // + "\n   display_binary\n");
     }
 
     instruction_t micro_code()
     {
-        return instruction_t("     wait 60\n     pulse 0000 1111 1111\n     wait 50\n     measure\n");
+        return instruction_t("  wait 60\n     pulse 0000 1111 1111\n     wait 50\n     measure\n");
         // return ql::dep_instruction_map["measure"];
     }
 
@@ -814,12 +814,12 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("   prepz q" + std::to_string(operands[0]) );
+        return instruction_t("prepz q" + std::to_string(operands[0]) );
     }
 
     instruction_t micro_code()
     {
-        return instruction_t("     waitreg r0\n     waitreg r0\n");
+        return instruction_t("  waitreg r0\n     waitreg r0\n");
         // return ql::dep_instruction_map["prepz"];
     }
 
@@ -851,7 +851,7 @@ public:
     }
     instruction_t qasm()
     {
-        return instruction_t("   cnot q" + std::to_string(operands[0])
+        return instruction_t("cnot q" + std::to_string(operands[0])
                              + ", q"  + std::to_string(operands[1]) );
     }
     instruction_t micro_code()
@@ -885,7 +885,7 @@ public:
     }
     instruction_t qasm()
     {
-        return instruction_t("   cz q" + std::to_string(operands[0])
+        return instruction_t("cz q" + std::to_string(operands[0])
                              + ", q"  + std::to_string(operands[1]) );
     }
     instruction_t micro_code()
@@ -920,7 +920,7 @@ public:
     }
     instruction_t qasm()
     {
-        return instruction_t("   toffoli q" + std::to_string(operands[0])
+        return instruction_t("toffoli q" + std::to_string(operands[0])
                              + ", q"  + std::to_string(operands[1])
                              + ", q"  + std::to_string(operands[2]) );
     }
@@ -950,7 +950,7 @@ public:
     }
     instruction_t qasm()
     {
-        return instruction_t("   nop");
+        return instruction_t("nop");
     }
     instruction_t micro_code()
     {
@@ -1082,12 +1082,12 @@ class custom_gate : public gate
      */
     void load(json& instr)
     {
-       println("loading instruction '" << name << "'...");
+       // println("loading instruction '" << name << "'...");
        std::string l_attr = "qubits";
        try
        {
 	  l_attr = "qubits";
-	  println("qubits: " << instr["qubits"]);
+	  // println("qubits: " << instr["qubits"]);
 	  parameters = instr["qubits"].size(); 
 	  for (size_t i=0; i<parameters; ++i)
 	  {
@@ -1137,12 +1137,15 @@ class custom_gate : public gate
        size_t p = name.find(" ");
        std::string gate_name = name.substr(0,p);
        if (operands.size() == 0)
-	  ss << "   " << gate_name;
+	  ss << gate_name;
+	  // ss << "   " << gate_name;
        else if (operands.size() == 1)
-	  ss << "   " << gate_name << " q" << operands[0];
+	  ss << gate_name << " q" << operands[0];
+	  // ss << "   " << gate_name << " q" << operands[0];
        else
        {
-	  ss << "   " << gate_name << " q" << operands[0];
+	  // ss << "   " << gate_name << " q" << operands[0];
+	  ss << gate_name << " q" << operands[0];
 	  for (size_t i=1; i<operands.size(); i++)
 	     ss << ",q" << operands[i];
        }

@@ -80,6 +80,7 @@ class quantum_program
          ss << "qubits " << qubits << "\n";
          for (size_t k=0; k<kernels.size(); ++k)
             ss <<'\n' << kernels[k].qasm();
+	/*
          ss << ".cal0_1\n";
          ss << "   prepz q0\n";
          ss << "   measure q0\n";
@@ -94,6 +95,7 @@ class quantum_program
          ss << "   prepz q0\n";
          ss << "   x q0\n";
          ss << "   measure q0\n";
+	 */
          return ss.str();
       }
 
@@ -104,6 +106,7 @@ class quantum_program
          ss << uc_header();
          for (size_t k=0; k<kernels.size(); ++k)
             ss <<'\n' << kernels[k].micro_code();
+	 /*
          ss << "     # calibration points :\n";  // wait for 100us
          // calibration points for |0>
          for (size_t i=0; i<2; ++i)
@@ -132,6 +135,7 @@ class quantum_program
             ss << "     wait 50\n";
             ss << "     measure\n";  // measurement discrimination
          }
+	 */
 
          ss << "     beq  r3,  r3, loop   # infinite loop";
          return ss.str();

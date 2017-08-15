@@ -336,7 +336,7 @@ namespace ql
 	       ss << "\n";
 	    for (size_t i=0; i<c.size(); ++i)
 	    {
-	       ss << c[i]->qasm() << "\n";
+	       ss << "   " << c[i]->qasm() << "\n";
 	       // std::cout << c[i]->qasm() << std::endl;
 	    }
 	    return ss.str();

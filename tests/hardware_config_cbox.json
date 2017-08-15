@@ -16,7 +16,7 @@
    },
 
    "instructions": {
-      "x180 q1" : {
+      "rx180 q1" : {
          "duration": 40, 
          "latency": 20, 
          "qubits": ["q1"], 
@@ -31,7 +31,7 @@
          }
       },
 
-      "x180 q0" : {
+      "rx180 q0" : {
          "duration": 40, 
          "latency": 10, 
          "qubits": ["q0"], 
@@ -48,7 +48,7 @@
          }
       },
 
-      "x90 q0" : {
+      "rx90 q0" : {
          "duration": 40, 
          "latency": 10, 
          "qubits": ["q0"], 
@@ -65,7 +65,7 @@
          }
       },
 
-      "x90 q1" : {
+      "rx90 q1" : {
 	 "duration": 40, 
          "latency": 10, 
          "qubits": ["q1"], 
@@ -86,7 +86,7 @@
 
 
 
-      "y180 q0" : {
+      "ry180 q0" : {
          "duration": 40,
          "latency": 20,
          "qubits": ["q0"],
@@ -101,7 +101,7 @@
          }
       },
 
-      "y90 q0" : {
+      "ry90 q0" : {
          "duration": 40,
          "latency": 20,
          "qubits": ["q0"],
@@ -222,15 +222,15 @@
    },
 
    "gate_decomposition": {
-      "x q0" : ["x180 q0"],
-      "y q0" : ["y180 q0"],
-      "z q0" : ["y180 q0","x180 q0"],
-      "h q0" : ["y90 q0"],
+      "x q0" : ["rx180 q0"],
+      "y q0" : ["ry180 q0"],
+      "z q0" : ["ry180 q0","rx180 q0"],
+      "h q0" : ["ry90 q0"],
       "t q0" : ["t q0"],
       "tdag q0" : ["tdag q0"],
       "s q0" : ["s q0"],
       "sdag q0" : ["sdag q0"],
-      "cnot q0,q1" : ["y90 q1","cz q0,q1","y90 q1"]
+      "cnot q0,q1" : ["ry90 q1","cz q0,q1","ry90 q1"]
    }
 
  

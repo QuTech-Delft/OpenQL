@@ -31,6 +31,7 @@ namespace ql
 	    size_t          ns_per_cycle;
 	    size_t          total_exec_time = 0;
 	    size_t          buffer_matrix[__operation_types_num__][__operation_types_num__]; 
+	    bool            verbose = false;
 
 	    #define __ns_to_cycle(t) ((size_t)t/(size_t)ns_per_cycle)
 	   
@@ -42,20 +43,20 @@ namespace ql
 	    // eqasm_t 
 	    void compile(ql::circuit& c, ql::quantum_platform& platform)
 	    {
-	       println("[-] compiling qasm code ...");
+	       if (verbose) println("[-] compiling qasm code ...");
 	       if (c.empty())
 	       {
 		  println("[-] empty circuit, eqasm compilation aborted !");
 		  return;
 	       }
-	       println("[-] loading circuit (" <<  c.size() << " gates)...");
+	       if (verbose) println("[-] loading circuit (" <<  c.size() << " gates)...");
 	       eqasm_t eqasm_code;
 	       // ql::instruction_map_t& instr_map = platform.instruction_map; 
 	       json& instruction_settings       = platform.instruction_settings;
 	       num_qubits                       = platform.hardware_settings["qubit_number"];
 	       ns_per_cycle                     = platform.hardware_settings["cycle_time"];
-	       println("[+] num_qubits : " << num_qubits);
-	       println("[+] cycle_time : " << ns_per_cycle);
+	       // println("[+] num_qubits : " << num_qubits);
+	       // println("[+] cycle_time : " << ns_per_cycle);
 	       // buffer matrix: 
 	       buffer_matrix[__rf__][__rf__]                   = __ns_to_cycle(platform.hardware_settings["mw_mw_buffer"]);
 	       buffer_matrix[__rf__][__flux__]                 = __ns_to_cycle(platform.hardware_settings["mw_flux_buffer"]);
@@ -76,7 +77,7 @@ namespace ql
 
 	       for (ql::gate * g : c)
 	       {
-		  std::string id = g->name;
+		  std::string id = g->qasm(); // g->name;
 		  str::lower_case(id);
 		  str::replace_all(id,"  ","");
 		  // println(" processing instruction '" << id << "'...");
@@ -175,6 +176,7 @@ namespace ql
 	     */
 	    void decompose_instructions()
 	    {
+	       if (verbose) println("decomposing instructions...");
 	       qumis_program_t decomposed;  
 	       for (qumis_instruction * instr : qumis_instructions)
 	       {
@@ -191,6 +193,7 @@ namespace ql
 	     */
 	     void reorder_instructions()
 	     {
+	       if (verbose) println("reodering instructions...");
 	       std::sort(qumis_instructions.begin(),qumis_instructions.end(), qumis_comparator);
 	     }
 
@@ -199,7 +202,7 @@ namespace ql
 	     */
 	    size_t time_analysis()
 	    {
-	       println("time analysis...");
+	       if (verbose) println("time analysis...");
 	       // update start time : find biggest latency
 	       size_t max_latency = 0;
 	       for (qumis_instruction * instr : qumis_instructions)
@@ -227,7 +230,7 @@ namespace ql
 	     */
 	    void compensate_latency()
 	    {
-	       println("latency compensation...");
+	       if (verbose) println("latency compensation...");
 	       for (qumis_instruction * instr : qumis_instructions)
 		  instr->compensate_latency();
 	    }
@@ -237,9 +240,9 @@ namespace ql
 	     */
 	    void resechedule()
 	    {
-	       println("instruction rescheduling...");
-	       println("resource dependency analysis...");
-	       println("buffer insertion...");
+	       if (verbose) println("instruction rescheduling...");
+	       if (verbose) println("resource dependency analysis...");
+	       if (verbose) println("buffer insertion...");
 
 	       std::vector<size_t>           hw_res_av(__trigger_width__+__awg_number__,0);
 	       std::vector<size_t>           qu_res_av(num_qubits,0);
@@ -355,7 +358,7 @@ namespace ql
 	     */
 	    void emit_eqasm()
 	    {
-	       println("compiling eqasm...");
+	       if (verbose) println("compiling eqasm...");
 	       eqasm_code.clear();
 	       eqasm_code.push_back("wait 1");       // add wait 1 at the begining
 	       eqasm_code.push_back("mov r14, 0");   // 0: infinite loop

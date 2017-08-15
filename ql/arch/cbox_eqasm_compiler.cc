@@ -34,18 +34,18 @@ int main(int argc, char ** argv)
 
    ql::quantum_kernel kernel("kernel",starmon);
 
-   kernel.gate("x180",0);
-   kernel.gate("y180",0);
-   kernel.gate("x180",1);
+   kernel.prepz(0);
+   kernel.gate("rx180",0);
+   kernel.gate("ry180",0);
+   kernel.gate("rx180",1);
    kernel.gate("cz",0,1);
    // kernel.gate("x180 q0",0);
    // kernel.gate("y90 q0",0);
-   kernel.gate("x90",1);
+   kernel.gate("rx90",1);
 
-   // kernel.gate("x180 q0",0);
-   // kernel.gate("y180 q0",0);
-   // kernel.gate("x180 q1",1);
-   kernel.gate("measure",0);
+   kernel.measure(0);
+
+   // kernel.gate("measure",0);
 
    prog.add(kernel);
 
