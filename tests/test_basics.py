@@ -12,32 +12,39 @@ class Test_basic(unittest.TestCase):
         ql.init()
         config_fn = os.path.join(curdir, 'hardware_config_cbox.json')
         platf = ql.Platform("starmon", config_fn)
-        k = ql.Kernel("aKernel", platf)
-
-        # populate kernel
-        # k.prepz(0)
-        k.gate("prepz",0)
-        # k.prepz(1)
-        # k.identity(0)
-        k.gate('x', 0)
-        # k.identity(1)
-        # k.measure(0)
-        # k.measure(1)
-        k.gate("measure", 0)
-
         sweep_points = [1]
-        num_circuits = 1
-        nqubits = 1
-
+        num_circuits = 2
+        nqubits = 2
         p = ql.Program("aProgram", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
-        p.add_kernel(k)
-        print('*'*80)
-        print('*'*80)
-        print('*'*80)
 
-        p.schedule()
+        # populate kernel
+        k = ql.Kernel("first_kernel", platf)
+        # k.prepz(0)
+        k.gate("prepz", 0)
+        # k.x(0)
+        k.gate('x180', 0)
+        k.gate("measure", 0)
+        p.add_kernel(k)
+
+        k = ql.Kernel("second_kernel", platf)
+        # k.prepz(0)
+        k.gate("prepz", 0)
+        k.gate('x90', 0)
+        k.gate('x180', 1)
+        k.gate('cz', [0, 1])
+        k.gate('x90', 0)
+        k.gate("measure", 0)
+        p.add_kernel(k)
+
+        # print statements are here for debug purposes
+        print('*'*80)
+        print('*'*80)
+        print('*'*80)
         p.compile(optimize=False, verbose=False)
+
+        # N.B. the output file get's created in the output directory
+        # next to where this file was called.
 
 
     # def test_scheduling(self):
