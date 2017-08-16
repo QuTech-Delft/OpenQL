@@ -19,7 +19,7 @@ int main(int argc, char ** argv)
 
     // ql::init(ql::transmon_platform, "instructions.map");
 
-    ql::init();
+    // ql::init();
     // ql::init(ql::transmon_platform, "instructions.map");
 
     // create platform

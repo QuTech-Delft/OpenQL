@@ -18,21 +18,6 @@
 
 #include <ql/openql.h>
 
-void set_output_dir(std::string dir)
-{
-    ql::utils::set_output_dir(dir);
-}
-
-std::string get_output_dir()
-{
-    return ql::utils::get_output_dir();
-}
-
-void init()
-{
-    ql::init();
-}
-
 class Platform
 {
    public:
@@ -82,7 +67,7 @@ class Kernel
         void cphase(size_t q0, size_t q1) { ql_kernel->cphase(q0,q1); }
         void toffoli(size_t q0, size_t q1, size_t q2) { ql_kernel->toffoli(q0,q1,q2); }
         void clifford(size_t id, size_t q0) { ql_kernel->clifford(id, q0); }
-        void load_custom_instructions(std::string fname="instructions.json") { ql_kernel->load_custom_instructions(fname); }
+        // void load_custom_instructions(std::string fname="instructions.json") { ql_kernel->load_custom_instructions(fname); }
         void print_custom_instructions() { ql_kernel->print_gates_definition(); }
         void gate(std::string name, std::vector<size_t> qubits) { ql_kernel->gate(name, qubits); }
         void gate(std::string name, size_t qubit) { ql_kernel->gate(name, qubit); }

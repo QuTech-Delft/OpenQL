@@ -9,8 +9,10 @@ class Test_basic(unittest.TestCase):
     def test_compilation(self):
         # set global options kernel
         ql.init()
-        
-        ql.set_output_dir("output")
+
+        output_dir = os.path.join(curdir, 'test_output')
+ql.set_output_dir(output_dir)
+
         print('output dir : {}'.format( ql.get_output_dir() ) )
 
         config_fn = os.path.join(curdir, 'test_cfg_cbox.json')

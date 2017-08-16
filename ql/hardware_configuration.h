@@ -84,8 +84,8 @@ namespace ql
 	      for (json::iterator it = instructions.begin(); it != instructions.end(); ++it) 
 	      {
 		 std::string  name = it.key();
-		 // println("'" << name << "'");
 		 str::lower_case(name);
+		 // println("'" << name << "'");
 		 json         attr = *it; //.value();
 		 // supported_gates.push_back(load_instruction(name,attr));
 		 // check for duplicate operations

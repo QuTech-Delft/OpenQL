@@ -267,6 +267,7 @@ namespace ql
 	  */
 	 void gate(std::string name, size_t qubit)
 	 {
+	    str::lower_case(name);
 	    std::string instr = name + " q" + std::to_string(qubit);
 	    std::map<std::string,custom_gate*>::iterator it = gate_definition.find(instr);
 	    if (it != gate_definition.end())

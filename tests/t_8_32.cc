@@ -17,7 +17,7 @@ int main(int argc, char ** argv)
     float sweep_points[]     = {2};  // sizes of the clifford circuits per randomization
     int   num_circuits       = 1;
 
-    ql::init(ql::transmon_platform, "instructions.map");
+    // ql::init(ql::transmon_platform, "instructions.map");
 
     // create program
     ql::quantum_program prog("prog", 8);

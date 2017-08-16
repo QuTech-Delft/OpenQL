@@ -89,7 +89,7 @@ int main(int argc, char ** argv)
    srand(clock());
 
    // initialize openql
-   ql::init();
+   // ql::init();
    // ql::init(ql::transmon_platform, "instructions.map");
 
    // create platform

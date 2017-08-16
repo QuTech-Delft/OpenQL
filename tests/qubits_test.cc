@@ -46,7 +46,7 @@ int main(int argc, char ** argv)
 
     // initialize the target platform
 
-    ql::init();
+    // ql::init();
     // ql::init(ql::transmon_platform, "instructions.map");
 
     // create platform
