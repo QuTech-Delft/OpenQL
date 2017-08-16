@@ -9,22 +9,11 @@ rootDir = os.path.dirname(os.path.realpath(__file__))
 curdir = os.path.dirname(__file__)
 config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
 platf = ql.Platform("starmon", config_fn)
+output_dir = os.path.join(curdir, 'test_output')
+ql.set_output_dir(output_dir)
 
 
 class Test_single_qubit_seqs(unittest.TestCase):
-    @classmethod
-    # def setUpClass(self):
-    #     self.test_file_dir = join(
-    #         pq.__path__[0], 'tests', 'qasm_files')
-    #     self.config_fn = join(self.test_file_dir, 'config.json')
-    #     self.simple_config_fn = join(self.test_file_dir, 'config_simple.json')
-    #     self.qubit_name = 'q0'
-    #     self.jump_to_start = ("beq r14, r14, Exp_Start " +
-    #                           "\t# Jump to start ad nauseam")
-    #     self.times = gen.gen_sweep_pts(start=100e-9, stop=5e-6, step=200e-9)
-    #     self.clocks = np.round(self.times/5e-9).astype(int)
-
-
     def test_allxy(self):
         ql.init()  # I want to get rid of this line <----
         p = Program(pname="AllXY", nqubits=1, p=platf)
