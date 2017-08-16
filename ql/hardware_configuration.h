@@ -86,7 +86,6 @@ namespace ql
 		 std::string  name = it.key();
 		 str::lower_case(name);
 		 // println("'" << name << "'");
-		 str::lower_case(name);
 		 json         attr = *it; //.value();
 		 // supported_gates.push_back(load_instruction(name,attr));
 		 // check for duplicate operations

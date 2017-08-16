@@ -27,7 +27,7 @@ int main(int argc, char ** argv)
    int   num_circuits       = 1;
    float sweep_points[]     = { 1, 1.25, 1.75, 2.25, 2.75 };
 
-   ql::init();
+   // ql::init();
    // ql::init(ql::transmon_platform, "instructions.map");
 
    // create platform

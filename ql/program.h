@@ -155,11 +155,11 @@ class quantum_program
 
       int compile(bool ql_optimize=false, bool verbose=false)
       {
-         if (!ql::initialized)
-         {
-            println("[x] error : openql should initialized for the target platform before compilation !");
-            return -1;
-         }
+         // if (!ql::initialized)
+         // {
+         //    println("[x] error : openql should initialized for the target platform before compilation !");
+         //    return -1;
+         // }
          if (verbose) println("compiling ...");
          if (kernels.empty())
             return -1;
