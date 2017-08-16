@@ -6,7 +6,7 @@ from openql import openql as ql
 rootDir = os.path.dirname(os.path.realpath(__file__))
 
 curdir = os.path.dirname(__file__)
-config_fn = os.path.join(curdir, 'hardware_config_cbox.json')
+config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
 platf = ql.Platform("starmon", config_fn)
 
 class Test_dependence(unittest.TestCase):

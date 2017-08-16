@@ -9,7 +9,7 @@ class Test_basic(unittest.TestCase):
     def test_compilation(self):
         # set global options kernel
         ql.init()
-        config_fn = os.path.join(curdir, 'hardware_config_cbox.json')
+        config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
         platf = ql.Platform("starmon", config_fn)
         sweep_points = [1]
         num_circuits = 2
