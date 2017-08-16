@@ -1,5 +1,5 @@
 {
-   "eqasm_compiler" : "qumis_compiler",
+   "eqasm_compiler" : "none",
 
    "hardware_settings": {
 	 "qubit_number": 2,
