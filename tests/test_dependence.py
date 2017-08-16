@@ -16,9 +16,6 @@ ql.set_output_dir(output_dir)
 class Test_dependence(unittest.TestCase):
 
     def test_independent(self):
-        # set global options kernel
-        ql.init()
-
         # populate kernel
         k = ql.Kernel("aKernel", platf)
 

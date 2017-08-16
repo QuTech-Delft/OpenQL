@@ -16,7 +16,6 @@ ql.set_output_dir(output_dir)
 class Test_qubits(unittest.TestCase):
 
     def test_1_qubit(self):
-        ql.init()
         k = ql.Kernel("aKernel", platf)
 
         # populate kernel
@@ -41,7 +40,6 @@ class Test_qubits(unittest.TestCase):
         self.assertTrue(isSame)
 
     def test_2_qubit(self):
-        ql.init()
 
         k = ql.Kernel("aKernel", platf)
 
@@ -68,8 +66,6 @@ class Test_qubits(unittest.TestCase):
         self.assertTrue(isSame)
 
     def test_3_qubit(self):
-        ql.init()
-
         k = ql.Kernel("aKernel", platf)
 
         # populate kernel

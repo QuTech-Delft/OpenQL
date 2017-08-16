@@ -48,7 +48,7 @@ class Test_program(unittest.TestCase):
         self.assertTrue(set(program_methods).issubset(dir(p)))
 
     def test_simple_program(self):
-        ql.init()
+
         k = ql.Kernel("kernel1", platf)
         k.prepz(0)
         k.prepz(1)
@@ -73,7 +73,7 @@ class Test_program(unittest.TestCase):
         print(p.microcode())
 
     def test_5qubit_program(self):
-        ql.init()
+
         nqubits=5
         p = ql.Program("aProgram", nqubits, platf)
         k = ql.Kernel("aKernel", platf)
@@ -99,7 +99,7 @@ class Test_program(unittest.TestCase):
 
     @unittest.skip('Gate by name not implemented')
     def test_allxy_program(self):
-        ql.init()
+
         nqubits=7
         p = ql.Program('AllXY', nqubits,platf)
         k = ql.Kernel('AllXY_q0', platf)

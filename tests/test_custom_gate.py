@@ -13,9 +13,6 @@ ql.set_output_dir(output_dir)
 class Test_kernel(unittest.TestCase):
 
     def custom_gate_test(self):
-        # set global options kernel
-        ql.init()
-
         # create a kernel
         k = ql.Kernel("aKernel", platf)
 

@@ -18,6 +18,16 @@
 
 #include <ql/openql.h>
 
+void set_output_dir(std::string dir="output")
+{
+    ql::utils::set_output_dir(dir);
+}
+
+std::string get_output_dir()
+{
+    return ql::utils::get_output_dir();
+}
+
 class Platform
 {
    public:

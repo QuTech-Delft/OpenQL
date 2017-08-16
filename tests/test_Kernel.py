@@ -56,7 +56,6 @@ class Test_kernel(unittest.TestCase):
         # to the qubits. However, it is not clear how to view this
 
     def test_multi_kernel(self):
-        ql.init()
 
         k1 = ql.Kernel("kernel1", platf)
         k1.prepz(0)

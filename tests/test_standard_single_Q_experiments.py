@@ -15,7 +15,6 @@ ql.set_output_dir(output_dir)
 
 class Test_single_qubit_seqs(unittest.TestCase):
     def test_allxy(self):
-        ql.init()  # I want to get rid of this line <----
         p = Program(pname="AllXY", nqubits=1, p=platf)
         # uppercase lowercase problems
         allXY = [['i', 'i'], ['rx180', 'rx180'], ['ry180', 'ry180'],
