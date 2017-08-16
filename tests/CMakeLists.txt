@@ -21,4 +21,4 @@ ADD_EXECUTABLE(quantum_platform_test quantum_platform_test.cc )
 TARGET_LINK_LIBRARIES(quantum_platform_test ${LEMON_LIBRARIES} )
 
 configure_file(hardware_config_cbox.json hardware_config_cbox.json COPYONLY)
-configure_file(instructions.json instructions.json COPYONLY)
+# configure_file(instructions.json instructions.json COPYONLY)

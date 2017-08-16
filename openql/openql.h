@@ -19,6 +19,7 @@
 #include <ql/openql.h>
 // #include <ql/quantum_platform.h>
 
+/*
 std::string instruction_map_file = "instructions.map";
 
 void set_instruction_map_file(std::string fname="instructions.map")
@@ -36,6 +37,7 @@ void init()
     // ql::init(ql::transmon_platform, instruction_map_file);
     ql::init();
 }
+*/
 
 class Platform
 {
