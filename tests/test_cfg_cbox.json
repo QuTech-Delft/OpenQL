@@ -256,7 +256,7 @@
          }
       },
 
-      "I q0" : {
+      "i q0" : {
          "duration": 40,
          "latency": 20,
          "qubits": ["q0"],
@@ -271,7 +271,7 @@
          }
       },
 
-      "I q1" : {
+      "i q1" : {
          "duration": 40,
          "latency": 20,
          "qubits": ["q1"],

@@ -1,4 +1,3 @@
-import os
 import filecmp
 import unittest
 from openql import Kernel, Program
@@ -26,8 +25,9 @@ class Test_single_qubit_seqs(unittest.TestCase):
 
 
     def test_allxy(self):
+        ql.init()  # I want to get rid of this line <----
         p = Program(pname="AllXY", nqubits=1, p=platf)
-
+        # uppercase lowercase problems
         allXY = [['i', 'i'], ['rx180', 'rx180'], ['ry180', 'ry180'],
                  ['rx180', 'ry180'], ['ry180', 'rx180'],
                  ['rx90', 'i'], ['ry90', 'i'], ['rx90', 'ry90'],
@@ -112,21 +112,29 @@ class Test_single_qubit_seqs(unittest.TestCase):
     #         self.assertEqual(
     #             compiler.qumis_instructions[-1], self.jump_to_start)
 
-    # def test_qasm_seq_butterfly(self):
-    #     for q_name in ['q0', 'q1']:
-    #         qasm_file = sq_qasm.butterfly(q_name)
-    #         qasm_fn = qasm_file.name
-    #         qumis_fn = join(self.test_file_dir,
-    #                         "butterfly_{}.qumis".format(q_name))
-    #         compiler = qc.QASM_QuMIS_Compiler(self.config_fn,
-    #                                           verbosity_level=0)
-    #         compiler.compile(qasm_fn, qumis_fn)
-    #         asm = Assembler(qumis_fn)
-    #         asm.convert_to_instructions()
+    def test_qasm_seq_butterfly(self):
+        ql.init()
+        p = Program(pname="AllXY", nqubits=1, p=platf)
 
-    #         self.assertEqual(compiler.qumis_instructions[2], 'Exp_Start: ')
-    #         self.assertEqual(
-    #             compiler.qumis_instructions[-1], self.jump_to_start)
+        k = Kernel('0', p=platf)
+        k.prepz(0)
+        k.measure(0)
+        k.measure(0)
+        # what does the measurement tell us it is?
+        k.measure(0)
+        # what is the post measuremnet state
+        p.add_kernel(k)
+
+        k = Kernel('1', p=platf)
+        k.prepz(0)
+        k.measure(0)
+        k.x(0)
+        k.measure(0)
+        k.measure(0)
+        p.add_kernel(k)
+        p.compile()
+
+
 
     # def test_qasm_seq_randomized_benchmarking(self):
     #     ncl = [2, 4, 6, 20]
