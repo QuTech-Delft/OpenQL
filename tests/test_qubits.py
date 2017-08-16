@@ -5,13 +5,15 @@ from openql import openql as ql
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
 
+curdir = os.path.dirname(__file__)
+config_fn = os.path.join(curdir, 'hardware_config_cbox.json')
+platf = ql.Platform("starmon", config_fn)
 
 class Test_qubits(unittest.TestCase):
 
     def test_1_qubit(self):
         # ql.set_instruction_map_file("instructions.map")
         ql.init()
-        platf = ql.Platform("starmon", "hardware_config_cbox.json")
         k = ql.Kernel("aKernel", platf)
 
         # populate kernel
@@ -38,7 +40,7 @@ class Test_qubits(unittest.TestCase):
         ql.set_instruction_map_file("instructions.map")
         ql.init()
 
-        k = ql.Kernel("aKernel")
+        k = ql.Kernel("aKernel", platf)
 
         # populate kernel
         k.prepz(0)
@@ -51,7 +53,7 @@ class Test_qubits(unittest.TestCase):
         nqubits = 3
         sweep_points = [2]
         num_circuits = 1
-        p = ql.Program("aProgram", nqubits)
+        p = ql.Program("aProgram", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
 
         p.add_kernel(k)  # add kernel to program
@@ -65,7 +67,7 @@ class Test_qubits(unittest.TestCase):
         ql.set_instruction_map_file("instructions.map")
         ql.init()
 
-        k = ql.Kernel("aKernel")
+        k = ql.Kernel("aKernel", platf)
 
         # populate kernel
         k.prepz(0)
@@ -77,7 +79,7 @@ class Test_qubits(unittest.TestCase):
         nqubits = 3
         sweep_points = [2]
         num_circuits = 1
-        p = ql.Program("aProgram", nqubits)
+        p = ql.Program("aProgram", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
 
         p.add_kernel(k)  # add kernel to program

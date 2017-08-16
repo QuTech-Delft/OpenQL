@@ -1,6 +1,10 @@
+import os
 import unittest
 from openql import openql as ql
 
+curdir = os.path.dirname(__file__)
+config_fn = os.path.join(curdir, 'hardware_config_cbox.json')
+platf = ql.Platform("starmon", config_fn)
 
 class Test_program(unittest.TestCase):
 
@@ -11,14 +15,16 @@ class Test_program(unittest.TestCase):
     # @unittest.skip('NotImplemented')
     def test_program_name(self):
         name = "program1"
-        p = ql.Program(name, nqubits=1)
+        nqubits=1
+        p = ql.Program(name, nqubits, platf)
         # Program does not have a name attribute at this moment
         self.assertEqual(p.name, name)
 
     def test_add_kernel(self):
         # test that this does not raise any error
-        k = ql.Kernel("kernel1")
-        p = ql.Program('program1', nqubits=5)
+        k = ql.Kernel("kernel1", platf)
+        nqubits=5
+        p = ql.Program('program1', nqubits, platf)
         p.add_kernel(k)
 
         # there should be a check here to see if k was indeed added
@@ -26,7 +32,8 @@ class Test_program(unittest.TestCase):
 
     def test_program_methods(self):
         # This tests for the existence of the right methods in the wrapping
-        p = ql.Program('program1', nqubits=5)
+        nqubits=5
+        p = ql.Program('program1', nqubits, platf)
         program_methods = [
             'add_kernel',
             'compile',
@@ -39,7 +46,7 @@ class Test_program(unittest.TestCase):
     def test_simple_program(self):
         ql.set_instruction_map_file("instructions.map")
         ql.init()
-        k = ql.Kernel("kernel1")
+        k = ql.Kernel("kernel1", platf)
         k.prepz(0)
         k.prepz(1)
         k.x(0)
@@ -52,7 +59,7 @@ class Test_program(unittest.TestCase):
         sweep_points = [2]
         num_circuits = 1
         nqubits = 3
-        p = ql.Program("rbProgram", nqubits)
+        p = ql.Program("rbProgram", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
         p.add_kernel(k)
         p.compile()
@@ -65,8 +72,9 @@ class Test_program(unittest.TestCase):
     def test_5qubit_program(self):
         ql.set_instruction_map_file("instructions.map")
         ql.init()
-        p = ql.Program("aProgram", nqubits=5)
-        k = ql.Kernel("aKernel")
+        nqubits=5
+        p = ql.Program("aProgram", nqubits, platf)
+        k = ql.Kernel("aKernel", platf)
 
         # populate kernel
         for i in range(5):
@@ -91,8 +99,9 @@ class Test_program(unittest.TestCase):
     def test_allxy_program(self):
         ql.set_instruction_map_file("instructions.map")
         ql.init()
-        p = ql.Program('AllXY', nqubits=7)
-        k = ql.Kernel('AllXY_q0')
+        nqubits=7
+        p = ql.Program('AllXY', nqubits,platf)
+        k = ql.Kernel('AllXY_q0', platf)
 
         q = 0  # target qubit
 

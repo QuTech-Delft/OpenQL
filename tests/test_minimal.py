@@ -1,5 +1,10 @@
+import os
 import unittest
 from openql import openql as ql
+
+curdir = os.path.dirname(__file__)
+config_fn = os.path.join(curdir, 'hardware_config_cbox.json')
+platf = ql.Platform("starmon", config_fn)
 
 class Test_kernel(unittest.TestCase):
 
@@ -9,7 +14,7 @@ class Test_kernel(unittest.TestCase):
         ql.init()
 
         # create a kernel
-        k = ql.Kernel("aKernel")
+        k = ql.Kernel("aKernel", platf)
 
         # populate a kernel
         k.prepz(0)
@@ -21,7 +26,7 @@ class Test_kernel(unittest.TestCase):
         nqubits = 1
 
         # create a program
-        p = ql.Program("aProgram", nqubits)
+        p = ql.Program("aProgram", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
 
         # add kernel to program

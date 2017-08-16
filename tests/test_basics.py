@@ -4,7 +4,6 @@ import os
 
 curdir = os.path.dirname(__file__)
 
-
 class Test_basic(unittest.TestCase):
 
     def test_compilation(self):
@@ -37,10 +36,6 @@ class Test_basic(unittest.TestCase):
         k.gate("measure", 0)
         p.add_kernel(k)
 
-        # print statements are here for debug purposes
-        print('*'*80)
-        print('*'*80)
-        print('*'*80)
         p.compile(optimize=False, verbose=False)
 
         # N.B. the output file get's created in the output directory

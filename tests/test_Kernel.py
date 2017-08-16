@@ -1,6 +1,10 @@
+import os
 import unittest
 from openql import openql as ql
 
+curdir = os.path.dirname(__file__)
+config_fn = os.path.join(curdir, 'hardware_config_cbox.json')
+platf = ql.Platform("starmon", config_fn)
 
 class Test_kernel(unittest.TestCase):
 
@@ -9,7 +13,7 @@ class Test_kernel(unittest.TestCase):
         pass
 
     def test_allowed_operations(self):
-        k = ql.Kernel("kernel1")
+        k = ql.Kernel("kernel1", platf)
         # The following operations can be executed using a kernel
         operations = [
             # SPAM
@@ -29,11 +33,11 @@ class Test_kernel(unittest.TestCase):
 
     def test_kernel_name(self):
         name = "kernel1"
-        k = ql.Kernel(name)
+        k = ql.Kernel(name, platf)
         self.assertEqual(k.name, name)
 
     def test_simple_kernel(self):
-        k = ql.Kernel("kernel1")
+        k = ql.Kernel("kernel1", platf)
         k.prepz(0)
         k.prepz(1)
         k.x(0)
@@ -51,7 +55,7 @@ class Test_kernel(unittest.TestCase):
         ql.set_instruction_map_file("instructions.map")
         ql.init()
 
-        k1 = ql.Kernel("kernel1")
+        k1 = ql.Kernel("kernel1", platf)
         k1.prepz(0)
         k1.prepz(1)
         k1.x(0)
@@ -62,7 +66,7 @@ class Test_kernel(unittest.TestCase):
         k1.clifford(2, 0)
         k1.measure(2)
 
-        k2 = ql.Kernel("kernel2")
+        k2 = ql.Kernel("kernel2", platf)
         k2.prepz(0)
         k2.prepz(1)
         k2.x(0)
@@ -77,7 +81,7 @@ class Test_kernel(unittest.TestCase):
         num_circuits = 1
         nqubits = 4
 
-        p = ql.Program("aProgram", nqubits)
+        p = ql.Program("aProgram", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
         p.add_kernel(k1)
         p.add_kernel(k2)

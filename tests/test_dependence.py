@@ -5,6 +5,10 @@ from openql import openql as ql
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
 
+curdir = os.path.dirname(__file__)
+config_fn = os.path.join(curdir, 'hardware_config_cbox.json')
+platf = ql.Platform("starmon", config_fn)
+
 class Test_dependence(unittest.TestCase):
 
     def test_independent(self):
@@ -13,7 +17,7 @@ class Test_dependence(unittest.TestCase):
         ql.init()
 
         # populate kernel
-        k = ql.Kernel("aKernel")
+        k = ql.Kernel("aKernel", platf)
 
         for i in range(4):
             k.prepz(i)
@@ -29,7 +33,7 @@ class Test_dependence(unittest.TestCase):
         num_circuits = 1
         nqubits = 4
 
-        p = ql.Program("aProgram", nqubits)
+        p = ql.Program("aProgram", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
         p.add_kernel(k)
         p.compile(False, False)
@@ -46,7 +50,7 @@ class Test_dependence(unittest.TestCase):
         ql.init()
 
         # populate kernel
-        k = ql.Kernel("aKernel")
+        k = ql.Kernel("aKernel", platf)
 
         for i in range(4):
             k.prepz(i)
@@ -62,7 +66,7 @@ class Test_dependence(unittest.TestCase):
         num_circuits = 1
         nqubits = 4
 
-        p = ql.Program("aProgram", nqubits)
+        p = ql.Program("aProgram", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
         p.add_kernel(k)
         p.compile(False, False)
@@ -79,7 +83,7 @@ class Test_dependence(unittest.TestCase):
         ql.init()
 
         # populate kernel
-        k = ql.Kernel("aKernel")
+        k = ql.Kernel("aKernel", platf)
 
         for i in range(4):
             k.prepz(i)
@@ -95,7 +99,7 @@ class Test_dependence(unittest.TestCase):
         num_circuits = 1
         nqubits = 4
 
-        p = ql.Program("aProgram", nqubits)
+        p = ql.Program("aProgram", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
         p.add_kernel(k)
         p.compile(False, False)
@@ -112,7 +116,7 @@ class Test_dependence(unittest.TestCase):
         ql.init()
 
         # populate kernel
-        k = ql.Kernel("aKernel")
+        k = ql.Kernel("aKernel", platf)
 
         for i in range(4):
             k.prepz(i)
@@ -128,7 +132,7 @@ class Test_dependence(unittest.TestCase):
         num_circuits = 1
         nqubits = 4
 
-        p = ql.Program("aProgram", nqubits)
+        p = ql.Program("aProgram", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
         p.add_kernel(k)
         p.compile(False, False)
@@ -144,7 +148,7 @@ class Test_dependence(unittest.TestCase):
         ql.init()
 
         # populate kernel
-        k = ql.Kernel("aKernel")
+        k = ql.Kernel("aKernel", platf)
 
         for i in range(4):
             k.prepz(i)
@@ -160,7 +164,7 @@ class Test_dependence(unittest.TestCase):
         num_circuits = 1
         nqubits = 4
 
-        p = ql.Program("aProgram", nqubits)
+        p = ql.Program("aProgram", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
         p.add_kernel(k)
         p.compile(False, False)
