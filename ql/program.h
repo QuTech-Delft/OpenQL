@@ -38,6 +38,7 @@ class quantum_program
       quantum_program(std::string name, size_t qubits, quantum_platform platform) : platform(platform), name(name), default_config(true), qubits(qubits) 
       {
          eqasm_compiler_name = platform.eqasm_compiler_name;
+	 backend_compiler    = NULL;
          if (eqasm_compiler_name =="")
          {
             println("[x] error : eqasm compiler name must be specified in the hardware configuration file !");
