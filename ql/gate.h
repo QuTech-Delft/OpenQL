@@ -852,7 +852,7 @@ public:
     instruction_t qasm()
     {
         return instruction_t("cnot q" + std::to_string(operands[0])
-                             + ", q"  + std::to_string(operands[1]) );
+                             + ",q"  + std::to_string(operands[1]) );
     }
     instruction_t micro_code()
     {
@@ -921,8 +921,8 @@ public:
     instruction_t qasm()
     {
         return instruction_t("toffoli q" + std::to_string(operands[0])
-                             + ", q"  + std::to_string(operands[1])
-                             + ", q"  + std::to_string(operands[2]) );
+                             + ",q"  + std::to_string(operands[1])
+                             + ",q"  + std::to_string(operands[2]) );
     }
     instruction_t micro_code()
     {

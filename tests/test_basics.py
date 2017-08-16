@@ -13,7 +13,7 @@ class Test_basic(unittest.TestCase):
         ql.set_output_dir("output")
         print('output dir : {}'.format( ql.get_output_dir() ) )
 
-        config_fn = os.path.join(curdir, 'hardware_config_cbox.json')
+        config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
         platf = ql.Platform("starmon", config_fn)
         sweep_points = [1]
         num_circuits = 2

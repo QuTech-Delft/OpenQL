@@ -7,7 +7,6 @@ for various target platforms. While the microcode is platform-specific, the
 quantum assembly code (qasm) is hardware-agnostic and can be simulated on the
 QX simulator.
 
-
 ## Supported Patforms
 
 * Linux
@@ -25,6 +24,12 @@ QX simulator.
 * [Optional] Graphviz Dot utility to convert graphs from dot to pdf, png etc
 * [Optional] XDot to visualize generated graphs in dot format
 
+
+# Getting started 
+
+After installing OpenQL (see install instructions below) a good place to get started is by looking at the files in the "tests" directory, e.g., test_basics.py. Here you can find commented examples on how to use OpenQL. 
+
+N.B. gates in OpenQL are *case insensitive*. 
 
 
 
@@ -65,12 +70,10 @@ These can be executed as 'python tests/simplePyTest.py'.
 
 # Installing OpenQL as Python Package
 
-N.B. the instructions below will compile the C++ files the first time they are run. If you are updating an existing installation you should first clean and recompile the C++ files using the following commands. 
+N.B. the instructions below will compile the C++ files the first time they are run. 
+If you are updating an existing installation you should first clean and recompile the C++ files using the following command. 
 ```
-    cd cbuild 
-    make clean  # this cleans whatever was the result of the build
-    cmake .     # generates the make files
-    make        # recompiles the library 
+    rm -rf cbuild       # delete the old build folder 
 ```
 
 ## Linux & OSX
