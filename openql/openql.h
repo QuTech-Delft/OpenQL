@@ -119,7 +119,12 @@ class Program
             prog->add( *(k.ql_kernel) );
         }
 
-        void compile(bool optimize=false, bool verbose=false) { prog->compile(optimize, verbose); }
+        void compile(bool optimize=false, bool verbose=false) 
+        {
+            prog->compile(optimize, verbose); 
+            prog->schedule("ALAP", verbose);
+        }
+
         void schedule(std::string scheduler="ASAP", bool verbose=false) { prog->schedule(scheduler, verbose); }
         std::string qasm() {return prog->qasm(); }
         std::string microcode() {return prog->microcode(); }
