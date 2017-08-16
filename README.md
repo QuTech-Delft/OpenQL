@@ -68,7 +68,7 @@ These can be executed as 'python tests/simplePyTest.py'.
 N.B. the instructions below will compile the C++ files the first time they are run. 
 If you are updating an existing installation you should first clean and recompile the C++ files using the following command. 
 ```
-    rm -rf cbuild build # delete the old build folder 
+    rm -rf cbuild       # delete the old build folder 
 ```
 
 ## Linux & OSX
