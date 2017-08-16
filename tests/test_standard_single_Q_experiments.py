@@ -1,3 +1,4 @@
+import os
 import filecmp
 import unittest
 from openql import Kernel, Program
