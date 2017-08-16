@@ -2,12 +2,12 @@
  * @file   quantum_platform_test.cc
  * @date   07/2017
  * @author Nader Khammassi
- * @brief  test for quantum_platform creation. 
+ * @brief  test for quantum_platform creation.
  */
 
 #include <iostream>
 #include <fstream>
-#include <string> 
+#include <string>
 #include <map>
 
 #include <cmath>
@@ -25,7 +25,7 @@ using namespace nlohmann;
 int main(int argc, char ** argv)
 {
    // create platform
-   ql::quantum_platform transmon("transmon","hardware_config_cbox.json");
+   ql::quantum_platform transmon("transmon","test_cfg_cbox.json");
 
    // print info
    transmon.print_info();

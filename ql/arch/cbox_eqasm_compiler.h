@@ -346,7 +346,7 @@ namespace ql
 		     diagram.add_trace(t);
 	       }
 
-	       diagram.dump("./output/trace.dat");
+	       diagram.dump(ql::utils::get_output_dir() + "/trace.dat");
 	       
 	    }
 

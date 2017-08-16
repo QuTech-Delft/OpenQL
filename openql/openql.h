@@ -17,27 +17,6 @@
 #include <time.h>
 
 #include <ql/openql.h>
-// #include <ql/quantum_platform.h>
-
-/*
-std::string instruction_map_file = "instructions.map";
-
-void set_instruction_map_file(std::string fname="instructions.map")
-{
-    instruction_map_file = fname;
-}
-
-std::string get_instruction_map_file()
-{
-    return instruction_map_file;
-}
-
-void init()
-{
-    // ql::init(ql::transmon_platform, instruction_map_file);
-    ql::init();
-}
-*/
 
 class Platform
 {
@@ -88,7 +67,7 @@ class Kernel
         void cphase(size_t q0, size_t q1) { ql_kernel->cphase(q0,q1); }
         void toffoli(size_t q0, size_t q1, size_t q2) { ql_kernel->toffoli(q0,q1,q2); }
         void clifford(size_t id, size_t q0) { ql_kernel->clifford(id, q0); }
-        void load_custom_instructions(std::string fname="instructions.json") { ql_kernel->load_custom_instructions(fname); }
+        // void load_custom_instructions(std::string fname="instructions.json") { ql_kernel->load_custom_instructions(fname); }
         void print_custom_instructions() { ql_kernel->print_gates_definition(); }
         void gate(std::string name, std::vector<size_t> qubits) { ql_kernel->gate(name, qubits); }
         void gate(std::string name, size_t qubit) { ql_kernel->gate(name, qubit); }
@@ -140,3 +119,25 @@ class Program
 };
 
 #endif
+
+
+// %feature("docstring") set_instruction_map_file
+// """ Sets instruction map file.
+
+// Parameters
+// ----------
+// arg1 : str
+//     Releative path of instruction map file, default is instructions.map in current directory.
+// """
+
+// %feature("docstring") get_instruction_map_file
+// """ Returns the path of current set instruction map file.
+
+// Parameters
+// ----------
+// None
+
+// Returns
+// -------
+// str
+//     Path of instruction map file. """

@@ -21,14 +21,14 @@ int main(int argc, char ** argv)
    ql::init();
 
    // create platform
-   ql::quantum_platform starmon("starmon","hardware_config_cbox.json");
+   ql::quantum_platform starmon("starmon","test_cfg_cbox.json");
 
    // print info
    starmon.print_info();
 
    // set platform
    ql::set_platform(starmon);
-   
+
    // compiler
    ql::arch::cbox_eqasm_compiler compiler;
 
