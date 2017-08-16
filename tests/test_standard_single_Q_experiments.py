@@ -1,5 +1,5 @@
 import os
-import filecmp
+import numpy as np
 import unittest
 from openql import Kernel, Program
 from openql import openql as ql
@@ -85,21 +85,22 @@ class Test_single_qubit_seqs(unittest.TestCase):
     #         self.assertEqual(
     #             compiler.qumis_instructions[-1], self.jump_to_start)
 
-    # def test_qasm_seq_echo(self):
-    #     for q_name in ['q0', 'q1']:
-    #         qasm_file = sq_qasm.echo(q_name, times=self.times)
-    #         qasm_fn = qasm_file.name
-    #         qumis_fn = join(self.test_file_dir,
-    #                         "echo_{}.qumis".format(q_name))
-    #         compiler = qc.QASM_QuMIS_Compiler(self.config_fn,
-    #                                           verbosity_level=0)
-    #         compiler.compile(qasm_fn, qumis_fn)
-    #         asm = Assembler(qumis_fn)
-    #         asm.convert_to_instructions()
-
-    #         self.assertEqual(compiler.qumis_instructions[2], 'Exp_Start: ')
-    #         self.assertEqual(
-    #             compiler.qumis_instructions[-1], self.jump_to_start)
+    def test_qasm_seq_echo(self):
+        p = Program(pname="Echo", nqubits=1, p=platf)
+        times = np.linspace(0, 20e3, 61)  # in ns
+        for tau in times:
+            k = Kernel('echo_tau_{}ns'.format(tau), p=platf)
+            k.prepz(0)
+            k.rx90(0)
+            # This is a dirty hack that repeats the I gate
+            for j in range(int(tau/2)):
+                k.gate('i', 0)
+            k.rx180(0)
+            for j in range(int(tau/2)):
+                k.gate('i', 0)
+            k.rx90(0)
+            k.measure(0)
+        p.compile()
 
     def test_qasm_seq_butterfly(self):
         ql.init()
@@ -123,22 +124,3 @@ class Test_single_qubit_seqs(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-
-
-    # def test_qasm_seq_randomized_benchmarking(self):
-    #     ncl = [2, 4, 6, 20]
-    #     nr_seeds = 10
-    #     for q_name in ['q0', 'q1']:
-    #         qasm_file = sq_qasm.randomized_benchmarking(q_name, ncl, nr_seeds)
-    #         qasm_fn = qasm_file.name
-    #         qumis_fn = join(self.test_file_dir,
-    #                         "randomized_benchmarking_{}.qumis".format(q_name))
-    #         compiler = qc.QASM_QuMIS_Compiler(self.config_fn,
-    #                                           verbosity_level=0)
-    #         compiler.compile(qasm_fn, qumis_fn)
-    #         asm = Assembler(qumis_fn)
-    #         asm.convert_to_instructions()
-
-    #         self.assertEqual(compiler.qumis_instructions[2], 'Exp_Start: ')
-    #         self.assertEqual(
-    #             compiler.qumis_instructions[-1], self.jump_to_start)
