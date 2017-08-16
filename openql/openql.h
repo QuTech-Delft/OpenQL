@@ -17,23 +17,19 @@
 #include <time.h>
 
 #include <ql/openql.h>
-// #include <ql/quantum_platform.h>
 
-std::string instruction_map_file = "instructions.map";
-
-void set_instruction_map_file(std::string fname="instructions.map")
+void set_output_dir(std::string dir)
 {
-    instruction_map_file = fname;
+    ql::utils::set_output_dir(dir);
 }
 
-std::string get_instruction_map_file()
+std::string get_output_dir()
 {
-    return instruction_map_file;
+    return ql::utils::get_output_dir();
 }
 
 void init()
 {
-    // ql::init(ql::transmon_platform, instruction_map_file);
     ql::init();
 }
 
@@ -138,3 +134,25 @@ class Program
 };
 
 #endif
+
+
+// %feature("docstring") set_instruction_map_file
+// """ Sets instruction map file.
+
+// Parameters
+// ----------
+// arg1 : str
+//     Releative path of instruction map file, default is instructions.map in current directory.
+// """
+
+// %feature("docstring") get_instruction_map_file
+// """ Returns the path of current set instruction map file.
+
+// Parameters
+// ----------
+// None
+
+// Returns
+// -------
+// str
+//     Path of instruction map file. """

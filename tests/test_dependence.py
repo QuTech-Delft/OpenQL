@@ -9,11 +9,12 @@ curdir = os.path.dirname(__file__)
 config_fn = os.path.join(curdir, 'hardware_config_cbox.json')
 platf = ql.Platform("starmon", config_fn)
 
+ql.set_output_dir("output")
+
 class Test_dependence(unittest.TestCase):
 
     def test_independent(self):
         # set global options kernel
-        ql.set_instruction_map_file("instructions.map")
         ql.init()
 
         # populate kernel
@@ -46,7 +47,6 @@ class Test_dependence(unittest.TestCase):
 
     def test_WAW(self):
         # set global options kernel
-        ql.set_instruction_map_file("instructions.map")
         ql.init()
 
         # populate kernel
@@ -79,7 +79,6 @@ class Test_dependence(unittest.TestCase):
 
     def test_RAR_Control(self):
         # set global options kernel
-        ql.set_instruction_map_file("instructions.map")
         ql.init()
 
         # populate kernel
@@ -112,7 +111,6 @@ class Test_dependence(unittest.TestCase):
 
     def test_RAW(self):
         # set global options kernel
-        ql.set_instruction_map_file("instructions.map")
         ql.init()
 
         # populate kernel
@@ -144,7 +142,6 @@ class Test_dependence(unittest.TestCase):
 
     def test_WAR(self):
         # set global options kernel
-        ql.set_instruction_map_file("instructions.map")
         ql.init()
 
         # populate kernel

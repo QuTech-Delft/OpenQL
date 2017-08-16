@@ -35,7 +35,7 @@ class quantum_program
 
    public:
 
-      quantum_program(std::string name, size_t qubits, quantum_platform platform) : platform(platform), name(name), output_path("output/"), default_config(true), qubits(qubits) 
+      quantum_program(std::string name, size_t qubits, quantum_platform platform) : platform(platform), name(name), default_config(true), qubits(qubits) 
       {
          eqasm_compiler_name = platform.eqasm_compiler_name;
          if (eqasm_compiler_name =="")
@@ -66,11 +66,6 @@ class quantum_program
       {
          config_file_name = file_name;
          default_config   = false;
-      }
-
-      void set_ouput_path(std::string dir="./")
-      {
-         output_path = dir;
       }
 
       std::string qasm()
@@ -181,7 +176,7 @@ class quantum_program
          }
 
          std::stringstream ss_qasm;
-         ss_qasm << output_path << name << ".qasm";
+         ss_qasm << ql::utils::get_output_dir() << "/" << name << ".qasm";
          std::string s = qasm();
 
          if (verbose) println("writing qasm to '" << ss_qasm.str() << "' ...");
@@ -209,10 +204,10 @@ class quantum_program
 
          println("compiling eqasm code...");
          backend_compiler->compile(fused, platform);
-         println("writing eqasm code to '" << ("./output/"+name+".asm") << "'...");
-         backend_compiler->write_eqasm("./output/"+name+".asm");
+         println("writing eqasm code to '" << ( ql::utils::get_output_dir() + "/" + name+".asm") << "'...");
+         backend_compiler->write_eqasm( ql::utils::get_output_dir() + "/" + name + ".asm");
          println("writing traces...");
-         backend_compiler->write_traces("./output/trace.dat");
+         backend_compiler->write_traces( ql::utils::get_output_dir() + "/trace.dat");
 
          // deprecated hardcoded microcode generation 
 
@@ -236,7 +231,7 @@ class quantum_program
          if (default_config)
          {
             std::stringstream ss_config;
-            ss_config << output_path << name << "_config.json";
+            ss_config << ql::utils::get_output_dir() << "/" << name << "_config.json";
             std::string conf_file_name = ss_config.str();
             if (verbose) println("writing sweep points to '" << conf_file_name << "'...");
             ql::utils::write_file(conf_file_name, config);
@@ -244,7 +239,7 @@ class quantum_program
          else
          {
             std::stringstream ss_config;
-            ss_config << output_path << config_file_name;
+            ss_config << ql::utils::get_output_dir() << "/" << config_file_name;
             std::string conf_file_name = ss_config.str();
             if (verbose) println("writing sweep points to '" << conf_file_name << "'...");
             ql::utils::write_file(conf_file_name, config);
@@ -275,12 +270,12 @@ class quantum_program
             sched_qasm += "." + k.getName() + "\n";
             sched_qasm += kernel_sched_qasm;
 
-            string fname = output_path + k.getName() + scheduler + ".dot";
+            string fname = ql::utils::get_output_dir() + "/" + k.getName() + scheduler + ".dot";
             if (verbose) println("writing scheduled qasm to '" << fname << "' ...");
             ql::utils::write_file(fname, kernel_sched_dot);
          }
 
-         string fname = output_path + name + scheduler + ".qasm";
+         string fname = ql::utils::get_output_dir() + "/" + name + scheduler + ".qasm";
          if (verbose) println("writing scheduled qasm to '" << fname << "' ...");
          ql::utils::write_file(fname, sched_qasm);
       }
@@ -305,7 +300,7 @@ class quantum_program
             InteractionMatrix imat( k.getCircuit(), qubits);
             string mstr = imat.getString();
 
-            string fname = output_path + k.getName() + "InteractionMatrix.dat";
+            string fname = ql::utils::get_output_dir() + "/" + k.getName() + "InteractionMatrix.dat";
             if (verbose) println("writing interaction matrix to '" << fname << "' ...");
             ql::utils::write_file(fname, mstr);
          }
@@ -324,7 +319,7 @@ class quantum_program
       std::vector<quantum_kernel> kernels;
       std::vector<float>          sweep_points;
       std::string                 name;
-      std::string                 output_path;
+      // std::string                 output_path;
       std::string                 config_file_name;
       bool                        default_config;
       size_t                      qubits;

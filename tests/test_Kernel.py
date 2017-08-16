@@ -6,6 +6,8 @@ curdir = os.path.dirname(__file__)
 config_fn = os.path.join(curdir, 'hardware_config_cbox.json')
 platf = ql.Platform("starmon", config_fn)
 
+ql.set_output_dir("output")
+
 class Test_kernel(unittest.TestCase):
 
     @classmethod
@@ -52,7 +54,6 @@ class Test_kernel(unittest.TestCase):
         # to the qubits. However, it is not clear how to view this
 
     def test_multi_kernel(self):
-        ql.set_instruction_map_file("instructions.map")
         ql.init()
 
         k1 = ql.Kernel("kernel1", platf)

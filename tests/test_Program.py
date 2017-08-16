@@ -6,6 +6,8 @@ curdir = os.path.dirname(__file__)
 config_fn = os.path.join(curdir, 'hardware_config_cbox.json')
 platf = ql.Platform("starmon", config_fn)
 
+ql.set_output_dir("output")
+
 class Test_program(unittest.TestCase):
 
     @classmethod
@@ -44,7 +46,6 @@ class Test_program(unittest.TestCase):
         self.assertTrue(set(program_methods).issubset(dir(p)))
 
     def test_simple_program(self):
-        ql.set_instruction_map_file("instructions.map")
         ql.init()
         k = ql.Kernel("kernel1", platf)
         k.prepz(0)
@@ -70,7 +71,6 @@ class Test_program(unittest.TestCase):
         print(p.microcode())
 
     def test_5qubit_program(self):
-        ql.set_instruction_map_file("instructions.map")
         ql.init()
         nqubits=5
         p = ql.Program("aProgram", nqubits, platf)
@@ -97,7 +97,6 @@ class Test_program(unittest.TestCase):
 
     @unittest.skip('Gate by name not implemented')
     def test_allxy_program(self):
-        ql.set_instruction_map_file("instructions.map")
         ql.init()
         nqubits=7
         p = ql.Program('AllXY', nqubits,platf)
@@ -127,7 +126,8 @@ class Test_program(unittest.TestCase):
         p.set_sweep_points(sweep_points=nr_sweep_pts,
                            nr_circuits=nr_sweep_pts)
 
-        p.compile()
+        # compile  opt  verbose
+        p.compile(False, False)
         print(p.qasm)
         print(p.microcode)
 

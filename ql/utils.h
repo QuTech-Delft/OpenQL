@@ -19,6 +19,16 @@ namespace ql
      */
     namespace utils
     {
+        std::string output_dir("output");
+        void set_output_dir(std::string dir)
+        {
+            output_dir = dir;
+        }
+        std::string get_output_dir()
+        {
+            return output_dir;
+        }
+
         /**
          * @param str
          *    string to be processed

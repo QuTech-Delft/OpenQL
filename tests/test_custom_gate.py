@@ -6,11 +6,12 @@ curdir = os.path.dirname(__file__)
 config_fn = os.path.join(curdir, 'hardware_config_cbox.json')
 platf = ql.Platform("starmon", config_fn)
 
+ql.set_output_dir("output")
+        
 class Test_kernel(unittest.TestCase):
 
     def custom_gate_test(self):
         # set global options kernel
-        ql.set_instruction_map_file("instructions.map")
         ql.init()
 
         # create a kernel

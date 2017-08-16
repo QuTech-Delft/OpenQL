@@ -9,10 +9,11 @@ curdir = os.path.dirname(__file__)
 config_fn = os.path.join(curdir, 'hardware_config_cbox.json')
 platf = ql.Platform("starmon", config_fn)
 
+ql.set_output_dir("output")
+
 class Test_qubits(unittest.TestCase):
 
     def test_1_qubit(self):
-        # ql.set_instruction_map_file("instructions.map")
         ql.init()
         k = ql.Kernel("aKernel", platf)
 
@@ -30,14 +31,14 @@ class Test_qubits(unittest.TestCase):
         p.set_sweep_points(sweep_points, num_circuits)
 
         p.add_kernel(k)  # add kernel to program
-        p.compile()     # compile program
+        # compile  opt  verbose
+        p.compile(False, False)
 
         gold = rootDir + '/golden/test_1_qubit.qasm'
         isSame = filecmp.cmp('output/aProgram.qasm', gold)
         self.assertTrue(isSame)
 
     def test_2_qubit(self):
-        ql.set_instruction_map_file("instructions.map")
         ql.init()
 
         k = ql.Kernel("aKernel", platf)
@@ -57,14 +58,14 @@ class Test_qubits(unittest.TestCase):
         p.set_sweep_points(sweep_points, num_circuits)
 
         p.add_kernel(k)  # add kernel to program
-        p.compile()     # compile program
+        # compile  opt  verbose
+        p.compile(False, False)
 
         gold = rootDir + '/golden/test_2_qubit.qasm'
         isSame = filecmp.cmp('output/aProgram.qasm', gold)
         self.assertTrue(isSame)
 
     def test_3_qubit(self):
-        ql.set_instruction_map_file("instructions.map")
         ql.init()
 
         k = ql.Kernel("aKernel", platf)
@@ -83,7 +84,8 @@ class Test_qubits(unittest.TestCase):
         p.set_sweep_points(sweep_points, num_circuits)
 
         p.add_kernel(k)  # add kernel to program
-        p.compile()     # compile program
+        # compile  opt  verbose
+        p.compile(False, False)
 
         gold = rootDir + '/golden/test_3_qubit.qasm'
         isSame = filecmp.cmp('output/aProgram.qasm', gold)
