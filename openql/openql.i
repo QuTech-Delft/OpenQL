@@ -53,7 +53,7 @@ str
 
 Parameters
 ----------
-None 
+None
 """
 
 
@@ -295,10 +295,12 @@ arg2 : []
 
 Parameters
 ----------
-arg1 : str
+pname : str
     name of the program
-arg1 : int
-	number of qubits the program will use
+nqubits : int
+    number of qubits the program will use
+p       : Platform
+    instance of an OpenQL Platform
 """
 
 %feature("docstring") program::set_sweep_points

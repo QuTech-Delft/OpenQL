@@ -286,21 +286,6 @@
          }
       },
 
-      "I q0" : {
-         "duration": 40,
-         "latency": 20,
-         "qubits": ["q0"],
-         "matrix" : [ [1.0,0.0], [0.0,0.0],
-	              [0.0,0.0], [1.0,0.0] ], 
-         "disable_optimization": true, 
-         "type" : "mw",
-         "qumis_instr": "pulse",
-         "qumis_instr_kw": {
-            "codeword": -2, 
-            "awg_nr": 0
-         }
-      },
-
       "measure q0" : {
          "duration": 300, 
          "latency": 50,
