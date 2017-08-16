@@ -31,7 +31,7 @@ int main(int argc, char ** argv)
    // ql::init(ql::transmon_platform, "instructions.map");
 
    // create platform
-   ql::quantum_platform starmon("starmon","hardware_config_cbox.json");
+   ql::quantum_platform starmon("starmon","test_cfg_cbox.json");
 
    // print info
    starmon.print_info();

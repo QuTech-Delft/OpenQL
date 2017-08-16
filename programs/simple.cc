@@ -11,17 +11,17 @@
 #include <ql/openql.h>
 
 int main(int argc, char ** argv)
-{	
+{
    srand(0);
 
    int   num_circuits       = 13;
-   float sweep_points[]     = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };  // sizes of the clifford circuits per randomization  
+   float sweep_points[]     = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };  // sizes of the clifford circuits per randomization
 
    ql::init();
    // ql::init(ql::transmon_platform, "instructions.map");
 
    // create platform
-   ql::quantum_platform starmon("starmon","hardware_config_cbox.json");
+   ql::quantum_platform starmon("starmon","test_cfg_cbox.json");
 
    // print info
    starmon.print_info();
@@ -29,7 +29,7 @@ int main(int argc, char ** argv)
    // set platform
    ql::set_platform(starmon);
 
-   // create program 
+   // create program
    ql::quantum_program prog("prog",1,starmon);
    prog.set_sweep_points(sweep_points, num_circuits);
 

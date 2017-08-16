@@ -2,12 +2,12 @@
  * @file   hardware_configuration_loader.cc
  * @date   07/2017
  * @author Nader Khammassi
- * @brief  temporary test for hardware configuration 
+ * @brief  temporary test for hardware configuration
  */
 
 #include <iostream>
 #include <fstream>
-#include <string> 
+#include <string>
 #include <map>
 
 #include <cmath>
@@ -24,7 +24,7 @@ using namespace nlohmann;
 
 int main(int argc, char ** argv)
 {
-   ql::quantum_platform transmon("transmon","hardware_config_cbox.json");
+   ql::quantum_platform transmon("transmon","test_cfg_cbox.json");
 
    transmon.print_info();
 
