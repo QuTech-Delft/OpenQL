@@ -65,12 +65,10 @@ These can be executed as 'python tests/simplePyTest.py'.
 
 # Installing OpenQL as Python Package
 
-N.B. the instructions below will compile the C++ files the first time they are run. If you are updating an existing installation you should first clean and recompile the C++ files using the following commands. 
+N.B. the instructions below will compile the C++ files the first time they are run. 
+If you are updating an existing installation you should first clean and recompile the C++ files using the following command. 
 ```
-    cd cbuild 
-    make clean  # this cleans whatever was the result of the build
-    cmake .     # generates the make files
-    make        # recompiles the library 
+    rm -rf cbuild build # delete the old build folder 
 ```
 
 ## Linux & OSX
