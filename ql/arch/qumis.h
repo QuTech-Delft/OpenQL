@@ -248,7 +248,7 @@ namespace ql
 	    qumis_instr_t code()
 	    {
 	       std::stringstream params;
-	       params << codeword << "," << duration; // << "\nwait " << duration; 
+	       params << codeword << ", " << duration; // << "\nwait " << duration; 
 	       qumis_instr_t instr = "trigger " + params.str();
 	       // println("[i] used resources : " << used_resources);
 	       return instr;
@@ -416,8 +416,8 @@ namespace ql
 	       codeword_t ready_cw = 0;
 	       ready_cw.set(ready_bit);
 	       std::stringstream instr;
-	       instr << "trigger " << codeword << "," << duration << "\nwait 1\n"; 
-	       instr << "trigger " << ready_cw << "," << ready_bit_duration; //  << "\nwait " << (duration-1); 
+	       instr << "trigger " << codeword << ", " << duration << "\nwait 1\n"; 
+	       instr << "trigger " << ready_cw << ", " << ready_bit_duration; //  << "\nwait " << (duration-1); 
 	       // println("[i] used resources : " << used_resources);
 	       return instr.str();
 	    }
