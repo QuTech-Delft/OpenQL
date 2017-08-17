@@ -28,7 +28,7 @@ class Test_single_qubit_seqs(unittest.TestCase):
                  ['rx180', 'i'], ['ry180', 'i'], ['rx90', 'rx90'],
                  ['ry90', 'ry90']]
          # this should be implicit
-        p.set_sweep_points(np.arange(len(allXY)), len(allXY))
+        p.set_sweep_points(np.arange(len(allXY), dtype=float), len(allXY))
 
         for i, xy in enumerate(allXY):
             k = Kernel("allXY"+str(i), p=platf)

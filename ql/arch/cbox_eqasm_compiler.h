@@ -2,7 +2,7 @@
  * @file   cbox_eqasm_compiler.h
  * @date   07/2017
  * @author Nader Khammassi
- * @brief  cbox eqasm compiler implementation 
+ * @brief  cbox eqasm compiler implementation
  */
 
 #ifndef QL_CBOX_EQASM_COMPILER_H
@@ -13,7 +13,7 @@
 #include <ql/arch/qumis.h>
 
 // eqasm code : set of qumis instructions
-typedef std::vector<ql::arch::qumis_instr_t> eqasm_t; 
+typedef std::vector<ql::arch::qumis_instr_t> eqasm_t;
 
 namespace ql
 {
@@ -30,17 +30,17 @@ namespace ql
 	    size_t          num_qubits;
 	    size_t          ns_per_cycle;
 	    size_t          total_exec_time = 0;
-	    size_t          buffer_matrix[__operation_types_num__][__operation_types_num__]; 
+	    size_t          buffer_matrix[__operation_types_num__][__operation_types_num__];
 	    bool            verbose = false;
 
 	    #define __ns_to_cycle(t) ((size_t)t/(size_t)ns_per_cycle)
-	   
+
 	 public:
 
 	    /*
 	     * compile qasm to qumis
 	     */
-	    // eqasm_t 
+	    // eqasm_t
 	    void compile(ql::circuit& c, ql::quantum_platform& platform)
 	    {
 	       if (verbose) println("[-] compiling qasm code ...");
@@ -51,13 +51,13 @@ namespace ql
 	       }
 	       if (verbose) println("[-] loading circuit (" <<  c.size() << " gates)...");
 	       eqasm_t eqasm_code;
-	       // ql::instruction_map_t& instr_map = platform.instruction_map; 
+	       // ql::instruction_map_t& instr_map = platform.instruction_map;
 	       json& instruction_settings       = platform.instruction_settings;
 	       num_qubits                       = platform.hardware_settings["qubit_number"];
 	       ns_per_cycle                     = platform.hardware_settings["cycle_time"];
 	       // println("[+] num_qubits : " << num_qubits);
 	       // println("[+] cycle_time : " << ns_per_cycle);
-	       // buffer matrix: 
+	       // buffer matrix:
 	       buffer_matrix[__rf__][__rf__]                   = __ns_to_cycle(platform.hardware_settings["mw_mw_buffer"]);
 	       buffer_matrix[__rf__][__flux__]                 = __ns_to_cycle(platform.hardware_settings["mw_flux_buffer"]);
 	       buffer_matrix[__rf__][__measurement__]          = __ns_to_cycle(platform.hardware_settings["mw_readout_buffer"]);
@@ -85,7 +85,7 @@ namespace ql
 		  std::string operation;
 		  if (!instruction_settings[id].is_null())
 		  {
-		     operation             = instruction_settings[id]["qumis_instr"]; 
+		     operation             = instruction_settings[id]["qumis_instr"];
 		     size_t duration       = __ns_to_cycle((size_t)instruction_settings[id]["duration"]);
 		     size_t latency        = 0;
 		     if (!instruction_settings[id]["latency"].is_null())
@@ -103,7 +103,7 @@ namespace ql
 			json& j_params = instruction_settings[id]["qumis_instr_kw"];
 			process_pulse(j_params, duration, type, latency, g->operands, id);
 			// println("pulse code : " << qumis_instructions.back()->code());
-		     } 
+		     }
 		     else if (operation == "codeword_trigger")
 		     {
 			// println("cw id: " << id);
@@ -143,7 +143,7 @@ namespace ql
 	       resechedule();
 
 	       // dump_instructions();
-	       
+
 	       // decompose meta-instructions
 	       decompose_instructions();
 
@@ -177,7 +177,7 @@ namespace ql
 	    void decompose_instructions()
 	    {
 	       if (verbose) println("decomposing instructions...");
-	       qumis_program_t decomposed;  
+	       qumis_program_t decomposed;
 	       for (qumis_instruction * instr : qumis_instructions)
 	       {
 		  qumis_program_t dec = instr->decompose();
@@ -234,9 +234,9 @@ namespace ql
 	       for (qumis_instruction * instr : qumis_instructions)
 		  instr->compensate_latency();
 	    }
-	    
+
 	    /**
-	     * optimize 
+	     * optimize
 	     */
 	    void resechedule()
 	    {
@@ -309,7 +309,7 @@ namespace ql
 	     * buffer size
 	     */
 	    size_t buffer_size(operation_type_t t1, operation_type_t t2)
-	    {  
+	    {
 	       return buffer_matrix[t1][t2];
 	    }
 
@@ -341,13 +341,13 @@ namespace ql
 
 	       for (qumis_instruction * instr : qumis_instructions)
 	       {
-		  instruction_traces_t trs = instr->trace(); 
+		  instruction_traces_t trs = instr->trace();
 		  for (instruction_trace_t t : trs)
 		     diagram.add_trace(t);
 	       }
 
 	       diagram.dump(ql::utils::get_output_dir() + "/trace.dat");
-	       
+
 	    }
 
 
@@ -366,7 +366,7 @@ namespace ql
 	       size_t t = 0;
 	       for (qumis_instruction * instr : qumis_instructions)
 	       {
-		  size_t start = instr->start; 
+		  size_t start = instr->start;
 		  size_t dt = start-t;
 		  if (dt)
 		  {
@@ -376,7 +376,7 @@ namespace ql
 		  eqasm_code.push_back(instr->code());
 	       }
 	       eqasm_code.push_back("wait "+std::to_string(qumis_instructions.back()->duration));
-	       eqasm_code.push_back("beq r14,r14");  // loop
+	       eqasm_code.push_back("beq r14, r14 start");  // loop
 	       println("compilation done.");
 	    }
 
@@ -384,7 +384,7 @@ namespace ql
 	     * process pulse
 	     */
 	    void process_pulse(json& j_params, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
-	    {	
+	    {
 	       // println("processing pulse instruction...");
 	       size_t codeword = j_params["codeword"];
 	       size_t awg_nr   = j_params["awg_nr"];
@@ -428,12 +428,12 @@ namespace ql
 	       for (size_t b : bits) main_codeword_trigger.set(b);
 	       // trigger * main_trigger = new trigger(main_codeword_trigger, duration, type);
 	       //println("\t code (m_trigger): " << main_trigger->code() );
-	       
+
 	       codeword_trigger * instr = new codeword_trigger(main_codeword_trigger, duration, codeword_ready_bit, codeword_ready_bit_duration, type, latency, qasm_label);
-	       
+
 	       instr->used_qubits = qubits;
 	       instr->qasm_label  = qasm_label;
-	       
+
 	       // println("\tcode: " << instr->code());
 
 	       qumis_instructions.push_back(instr);
@@ -461,7 +461,7 @@ namespace ql
 		  }
 		  codeword_t cw = 0;
 		  cw.set(trigger_bit);
-		  qumis_instr = new trigger(cw, trigger_duration, __measurement__, latency); 
+		  qumis_instr = new trigger(cw, trigger_duration, __measurement__, latency);
 		  qumis_instr->used_qubits = qubits;
 		  qumis_instr->qasm_label  = qasm_label;
 		  measure * m = new measure(qumis_instr, duration,latency);
@@ -479,7 +479,7 @@ namespace ql
 
 
 	    /**
-	     * process trigger 
+	     * process trigger
 	     */
 	    void process_trigger(json& j_params, std::string instr, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
 	    {
@@ -497,7 +497,7 @@ namespace ql
 	       }
 	       codeword_t cw = 0;
 	       cw.set(trigger_bit);
-	       trig = new trigger(cw, trigger_duration, __measurement__, latency); 
+	       trig = new trigger(cw, trigger_duration, __measurement__, latency);
 	       trig->used_qubits = qubits;
 	       trig->qasm_label  = qasm_label;
 	       qumis_instructions.push_back(trig);
