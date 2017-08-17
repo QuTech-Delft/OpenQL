@@ -3,11 +3,11 @@
  * @author  Nader KHAMMASSI
  * @contact nader.khammassi@gmail.com
  * @date    15/03/2010
- * @brief   ql exception
+ * @brief   ql exception (from xpu)
  *
  * @copyright
  *
- * QL - C++ Parallel  Programming Library for Multicore Architectures
+ * XPU - C++ Parallel  Programming Library for Multicore Architectures
  *
  * Copyright (C) 2014 Nader Khammassi, All Rights Reserved.
  *
@@ -27,8 +27,8 @@
  */
 
 
-#ifndef __QL_EXCEPTION_H__
-#define __QL_EXCEPTION_H__
+#ifndef QL_EXCEPTION_H
+#define QL_EXCEPTION_H
 
 #include <string>            // for string
 #include <cstring>           // for strerror
@@ -41,6 +41,7 @@ namespace ql
    {
 
 	 public:
+
 	   /**
 	    *   construct a exception with a explanatory message.
 	    *   
@@ -71,6 +72,6 @@ namespace ql
 
 } // namespace ql
 
-#endif // __QL_EXCEPTION_H__
+#endif // QL_EXCEPTION_H
 
 

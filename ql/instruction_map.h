@@ -92,9 +92,10 @@ namespace ql
 	  try 
 	  {
 	     fs >> j;
-	  } catch (std::exception e)
+	  } catch (json::exception e)
 	  {
 	     println("[x] error : malformed json file : \n\t" << e.what());
+	     throw (e);
 	  }
        }
        else

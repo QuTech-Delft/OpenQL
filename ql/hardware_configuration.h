@@ -46,7 +46,15 @@ namespace ql
 	   */
 	   void load(ql::instruction_map_t& instruction_map, json& instruction_settings, json& hardware_settings) throw (ql::exception)
 	   {
-	      json config = load_json(config_file_name);
+	      json config;
+	      try
+	      {
+		 config = load_json(config_file_name);
+	      } catch (json::exception e)
+	      {
+		 throw ql::exception("[x] error : ql::hardware_configuration::load() :  failed to load the hardware config file : malformed json file ! : \n\t"+
+		                                  std::string(e.what()),false);
+	      }
 
 	      // load eqasm compiler backend
 	      if (config["eqasm_compiler"].is_null())
@@ -56,7 +64,9 @@ namespace ql
 		 throw ql::exception("[x] error : ql::hardware_configuration::load() : eqasm compiler backend is not specified in the hardware config file !",false);
 	      }
 	      else
+	      {
 		 eqasm_compiler_name = config["eqasm_compiler"];
+	      }
 
 	      // load hardware_settings 
 	      if (config["hardware_settings"].is_null())
@@ -81,6 +91,7 @@ namespace ql
 	      {
 		 instruction_settings = config["instructions"];
 	      }
+
 	      // load instructions
 	      json instructions = config["instructions"];
 	      // std::cout << instructions.dump(4) << std::endl;
@@ -116,10 +127,11 @@ namespace ql
 	      try 
 	      {
 		 g->load(instr);
-	      } catch (json::exception e)
+	      } catch (ql::exception e)
 	      {
 		 println("[e] error while loading instruction '" << name << "' : " << e.what());
-		 throw ql::exception("[x] error : hardware_configuration::load_instruction() : error while loading instruction '" + name + "' : " + e.what(),false);
+		 throw e; 
+		 // ql::exception("[x] error : hardware_configuration::load_instruction() : error while loading instruction '" + name + "' : " + e.what(),false);
 	      }
 	      // g->print_info();
 	      return g;
