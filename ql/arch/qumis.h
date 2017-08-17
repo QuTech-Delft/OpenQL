@@ -186,7 +186,7 @@ namespace ql
 	    {
 	       std::stringstream params;
 	       pulse_id_t pid = codeword;
-	       params << (awg == 0 ? pid : 0) << "," << (awg == 1 ? pid : 0) << "," << (awg == 2 ? pid : 0); // << "\nwait " << duration; 
+	       params << (awg == 0 ? pid : 0) << ", " << (awg == 1 ? pid : 0) << ", " << (awg == 2 ? pid : 0); // << "\nwait " << duration; 
 	       qumis_instr_t instr = "pulse " + params.str();
 	       // println("[i] used resources : " << used_resources);
 	       return instr;
