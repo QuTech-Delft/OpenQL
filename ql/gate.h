@@ -21,6 +21,7 @@
 #include <ql/json.h>
 
 #include <ql/openql.h>
+#include <ql/exception.h>
 
 using json = nlohmann::json;
 
@@ -1080,7 +1081,7 @@ class custom_gate : public gate
     /**
      * load instruction from json map
      */
-    void load(json& instr)
+    void load(json& instr) throw (ql::exception)
     {
        // println("loading instruction '" << name << "'...");
        std::string l_attr = "qubits";
@@ -1095,7 +1096,7 @@ class custom_gate : public gate
 	     if (!is_qubit_id(qid))
 	     {
 		println("[x] error : invalid qubit id in attribute 'qubits' !");
-		throw std::exception();
+		throw ql::exception("[x] error : ql::custom_gate() : error while loading instruction '" + name + "' : attribute 'qubits' : invalid qubit id !", false);
 	     }
 	     operands.push_back(qubit_id(qid));
 	  }
@@ -1115,6 +1116,7 @@ class custom_gate : public gate
        } catch (json::exception e)
        {
 	  println("[e] error while loading instruction '" << name << "' (attr: " << l_attr << ") : " << e.what());
+	  throw ql::exception("[x] error : ql::custom_gate() : error while loading instruction '" + name + "' : attribute '" + l_attr + "' : \n\t" + e.what(), false);
        }
     }
 
