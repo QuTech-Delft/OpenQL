@@ -18,7 +18,7 @@
 
 #include <ql/openql.h>
 
-void set_output_dir(std::string dir="output")
+void set_output_dir_(std::string dir="output")
 {
     ql::utils::set_output_dir(dir);
 }
@@ -134,25 +134,3 @@ class Program
 };
 
 #endif
-
-
-// %feature("docstring") set_instruction_map_file
-// """ Sets instruction map file.
-
-// Parameters
-// ----------
-// arg1 : str
-//     Releative path of instruction map file, default is instructions.map in current directory.
-// """
-
-// %feature("docstring") get_instruction_map_file
-// """ Returns the path of current set instruction map file.
-
-// Parameters
-// ----------
-// None
-
-// Returns
-// -------
-// str
-//     Path of instruction map file. """
