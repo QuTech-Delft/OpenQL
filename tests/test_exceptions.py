@@ -6,25 +6,30 @@ curdir = os.path.dirname(__file__)
 
 class Test_basic(unittest.TestCase):
 
-    def test_config_exception(self):
+    # this test should fail as the eqasm compiler is not specified
+    # in the configuration being loaded
+    def test_config_exception_compiler(self):
         output_dir = os.path.join(curdir, 'test_output')
         ql.set_output_dir(output_dir)
-        print('output dir : {}'.format( ql.get_output_dir() ) )
-        config_fn = os.path.join(curdir, 'test_cfg_cbox_broken.json')
-        platf = ql.Platform("starmon", config_fn)
-        sweep_points = [1]
-        num_circuits = 2
-        nqubits = 2
-        p = ql.Program("aProgram", nqubits, platf)
-        p.set_sweep_points(sweep_points, num_circuits)
+        config_fn = os.path.join(curdir, 'test_cfg_cbox_broken01.json')
+        try:
+            platf = ql.Platform("starmon", config_fn)
+            raise
+        except:
+            pass
 
-        # populate kernel
-        k = ql.Kernel("first_kernel", platf)
-        k.gate("prepz", 0)
-        k.gate("measure", 0)
-        p.add_kernel(k)
+    # this test should fail as the hardware section is not there
+    # in the configuration being loaded
+    def test_config_exception_hardware(self):
+        output_dir = os.path.join(curdir, 'test_output')
+        ql.set_output_dir(output_dir)
+        config_fn = os.path.join(curdir, 'test_cfg_cbox_broken02.json')
+        try:
+            platf = ql.Platform("starmon", config_fn)
+            raise
+        except:
+            pass
 
-        p.compile(optimize=False, verbose=False)
 
 if __name__ == '__main__':
     unittest.main()

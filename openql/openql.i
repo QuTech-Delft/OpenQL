@@ -11,6 +11,7 @@
 
 %include "std_string.i"
 %include "std_vector.i"
+%include "exception.i"
 
 namespace std {
    %template(vectori) vector<int>;
@@ -36,6 +37,27 @@ def set_output_dir(path):
             raise
     _openql.set_output_dir_(path)
 %}
+
+
+
+%exception
+{
+try
+    {
+        $action
+        if (PyErr_Occurred()) SWIG_fail;
+    }
+    catch(ql::exception & e )
+    {
+        SWIG_exception(SWIG_TypeError, e.what());
+    }
+    SWIG_CATCH_STDEXCEPT
+    catch(...)
+    {
+        SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+    }
+}
+
 
 
 %feature("docstring") set_output_dir

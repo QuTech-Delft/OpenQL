@@ -28,6 +28,7 @@ std::string get_output_dir()
     return ql::utils::get_output_dir();
 }
 
+
 class Platform
 {
 public:
@@ -38,16 +39,7 @@ public:
 
     Platform(std::string name, std::string config_file) : p_name(name), config_file(config_file)
     {
-        try
-        {
-            ql_platform = new ql::quantum_platform(name, config_file);
-        }
-        catch(ql::exception& e)
-        {
-            std::cout << "Caught exception in wrapper" << std::endl;
-            std::cout << e.what() << std::endl;
-            std::cout << "Caught exception in wrapper" << std::endl;
-        }
+        ql_platform = new ql::quantum_platform(name, config_file);
     }
 };
 
