@@ -12,11 +12,8 @@ int main(int argc, char ** argv)
    float  sweep_points[]   = { 1, 2.25, 2.75, 3.25, 3.75 };  // single sweep point with 4 calibration points
    size_t n_swp_pts        = 5;
 
-   // initialize openql
-   ql::init();
-
    // create platform
-   ql::quantum_platform starmon("starmon","test_cfg_cbox.json");
+   ql::quantum_platform starmon("starmon","hardware_config_cbox.json");
 
    // print info
    starmon.print_info();
