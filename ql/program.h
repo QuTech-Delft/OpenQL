@@ -154,7 +154,7 @@ class quantum_program
          return ss.str();
       }
 
-      int compile(bool ql_optimize=false, bool verbose=false)
+      int compile(bool ql_optimize=false, bool verbose=false) throw (ql::exception)
       {
          // if (!ql::initialized)
          // {
@@ -203,8 +203,17 @@ class quantum_program
             fused.insert(fused.end(),kc.begin(),kc.end());
          }
 
-         println("compiling eqasm code...");
-         backend_compiler->compile(fused, platform);
+	 try 
+	 {
+	    println("compiling eqasm code...");
+	    backend_compiler->compile(fused, platform);
+	 }
+	 catch (ql::exception e)
+	 {
+	    println("[x] error : eqasm_compiler.compile() : compilation interrupted due to fatal error.");
+	    throw e;
+	 }
+
          println("writing eqasm code to '" << ( ql::utils::get_output_dir() + "/" + name+".asm") << "'...");
          backend_compiler->write_eqasm( ql::utils::get_output_dir() + "/" + name + ".asm");
          println("writing traces...");

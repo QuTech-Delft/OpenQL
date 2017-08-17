@@ -41,7 +41,7 @@ namespace ql
 	     * compile qasm to qumis
 	     */
 	    // eqasm_t
-	    void compile(ql::circuit& c, ql::quantum_platform& platform)
+	    void compile(ql::circuit& c, ql::quantum_platform& platform) throw (ql::exception)
 	    {
 	       if (verbose) println("[-] compiling qasm code ...");
 	       if (c.empty())
@@ -53,20 +53,41 @@ namespace ql
 	       eqasm_t eqasm_code;
 	       // ql::instruction_map_t& instr_map = platform.instruction_map;
 	       json& instruction_settings       = platform.instruction_settings;
-	       num_qubits                       = platform.hardware_settings["qubit_number"];
-	       ns_per_cycle                     = platform.hardware_settings["cycle_time"];
-	       // println("[+] num_qubits : " << num_qubits);
-	       // println("[+] cycle_time : " << ns_per_cycle);
-	       // buffer matrix:
-	       buffer_matrix[__rf__][__rf__]                   = __ns_to_cycle(platform.hardware_settings["mw_mw_buffer"]);
-	       buffer_matrix[__rf__][__flux__]                 = __ns_to_cycle(platform.hardware_settings["mw_flux_buffer"]);
-	       buffer_matrix[__rf__][__measurement__]          = __ns_to_cycle(platform.hardware_settings["mw_readout_buffer"]);
-	       buffer_matrix[__flux__][__rf__]                 = __ns_to_cycle(platform.hardware_settings["flux_mw_buffer"]);
-	       buffer_matrix[__flux__][__flux__]               = __ns_to_cycle(platform.hardware_settings["flux_flux_buffer"]);
-	       buffer_matrix[__flux__][__measurement__]        = __ns_to_cycle(platform.hardware_settings["flux_readout_buffer"]);
-	       buffer_matrix[__measurement__][__rf__]          = __ns_to_cycle(platform.hardware_settings["readout_mw_buffer"]);
-	       buffer_matrix[__measurement__][__flux__]        = __ns_to_cycle(platform.hardware_settings["readout_flux_buffer"]);
-	       buffer_matrix[__measurement__][__measurement__] = __ns_to_cycle(platform.hardware_settings["readout_readout_buffer"]);
+
+	       std::string params[] = { "qubit_number", "cycle_time", "mw_mw_buffer", "mw_flux_buffer", "mw_readout_buffer", "flux_mw_buffer", 
+	                                "flux_flux_buffer", "flux_readout_buffer", "readout_mw_buffer", "readout_flux_buffer", "readout_readout_buffer" };
+	       size_t p = 0;
+
+	       try 
+	       {
+		  num_qubits                                      = platform.hardware_settings[params[p++]];
+		  ns_per_cycle                                    = platform.hardware_settings[params[p++]];
+
+		  buffer_matrix[__rf__][__rf__]                   = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+		  buffer_matrix[__rf__][__flux__]                 = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+		  buffer_matrix[__rf__][__measurement__]          = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+		  buffer_matrix[__flux__][__rf__]                 = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+		  buffer_matrix[__flux__][__flux__]               = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+		  buffer_matrix[__flux__][__measurement__]        = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+		  buffer_matrix[__measurement__][__rf__]          = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+		  buffer_matrix[__measurement__][__flux__]        = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+		  buffer_matrix[__measurement__][__measurement__] = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+#if 0
+		  buffer_matrix[__rf__][__rf__]                   = __ns_to_cycle(platform.hardware_settings["mw_mw_buffer"]);
+		  buffer_matrix[__rf__][__flux__]                 = __ns_to_cycle(platform.hardware_settings["mw_flux_buffer"]);
+		  buffer_matrix[__rf__][__measurement__]          = __ns_to_cycle(platform.hardware_settings["mw_readout_buffer"]);
+		  buffer_matrix[__flux__][__rf__]                 = __ns_to_cycle(platform.hardware_settings["flux_mw_buffer"]);
+		  buffer_matrix[__flux__][__flux__]               = __ns_to_cycle(platform.hardware_settings["flux_flux_buffer"]);
+		  buffer_matrix[__flux__][__measurement__]        = __ns_to_cycle(platform.hardware_settings["flux_readout_buffer"]);
+		  buffer_matrix[__measurement__][__rf__]          = __ns_to_cycle(platform.hardware_settings["readout_mw_buffer"]);
+		  buffer_matrix[__measurement__][__flux__]        = __ns_to_cycle(platform.hardware_settings["readout_flux_buffer"]);
+		  buffer_matrix[__measurement__][__measurement__] = __ns_to_cycle(platform.hardware_settings["readout_readout_buffer"]);
+#endif
+	       }
+	       catch (json::exception e)
+	       {
+		 throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter '"+params[p-1]+"'\n\t"+ std::string(e.what()),false);
+	       }
 
 	       /*
 	       println("[=] buffer matrix : ");
@@ -80,23 +101,36 @@ namespace ql
 		  std::string id = g->qasm(); // g->name;
 		  str::lower_case(id);
 		  str::replace_all(id,"  ","");
-		  // println(" processing instruction '" << id << "'...");
 		  std::string qumis;
 		  std::string operation;
 		  if (!instruction_settings[id].is_null())
 		  {
+		     if (instruction_settings[id]["qumis_instr"].is_null())
+			throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : 'qumis_instr' for instruction '"+id+"' is not specified !",false);
 		     operation             = instruction_settings[id]["qumis_instr"];
 		     size_t duration       = __ns_to_cycle((size_t)instruction_settings[id]["duration"]);
 		     size_t latency        = 0;
+		     
 		     if (!instruction_settings[id]["latency"].is_null())
 			latency = __ns_to_cycle((size_t)instruction_settings[id]["latency"]);
+		     else
+			throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter 'latency' of instruction '"+id+"' not specified !",false);
 		     // used qubits
 		     qubit_set_t used_qubits;
 		     // instruction type processing
+		     if (instruction_settings[id]["type"].is_null())
+			throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter 'type' of instruction '"+id+"' not specified !",false);
 		     operation_type_t type = operation_type(instruction_settings[id]["type"]);
 		     if (type == __unknown_operation__)
+		     {
 			println("[x] error : unknow operation type of the instruction '" << id << "' !");
+			throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : the type of instruction '"+id+"' is unknown !",false);
+		     }
+		     if (instruction_settings[id]["qumis_instr_kw"].is_null())
+			throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : 'qumis_instr_kw' for instruction '"+id+"' is not specified !",false);
+
 		     std::stringstream params;
+
 		     if (operation == "pulse")
 		     {
 			// println("pulse id: " << id);
@@ -321,7 +355,7 @@ namespace ql
 	       ql::arch::channels_t channels;
 	       if (qumis_instructions.empty())
 	       {
-		  println("[x] not traces to dump !");
+		  println("[!] warning : empty qumis code : not traces to dump !");
 		  return;
 	       }
 
@@ -386,8 +420,17 @@ namespace ql
 	    void process_pulse(json& j_params, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
 	    {
 	       // println("processing pulse instruction...");
+	       // check for hardware configuration integrity
+	       if (j_params["codeword"].is_null())
+		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing pulse instruction : 'codeword' for instruction '"+qasm_label+"' is not specified !",false);
+	       if (j_params["awg_nr"].is_null())
+		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing pulse instruction : 'awg_nr' for instruction '"+qasm_label+"' is not specified !",false);
+
 	       size_t codeword = j_params["codeword"];
 	       size_t awg_nr   = j_params["awg_nr"];
+
+	       if (awg_nr >= __awg_number__)
+		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing pulse instruction : 'awg_nr' for instruction '"+qasm_label+"' is out of range !",false);
 	       // println("\tcodeword: " << codeword);
 	       // println("\tawg     : " << awg_nr);
 	       pulse * p = new pulse(codeword,awg_nr,duration,type,latency);
@@ -402,6 +445,14 @@ namespace ql
 	    void process_codeword_trigger(json& j_params, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
 	    {
 	       // println("processing codeword trigger instruction...");
+	       // check for hardware configuration integrity
+	       if (j_params["codeword_ready_bit"].is_null())
+		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing codeword trigger : 'codeword_ready_bit' for instruction '"+qasm_label+"' is not specified !",false);
+	       if (j_params["codeword_ready_bit_duration"].is_null())
+		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing codeword trigger : 'codeword_ready_bit_duration' for instruction '"+qasm_label+"' is not specified !",false);
+	       if (j_params["codeword_bits"].is_null())
+		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing codeword trigger : 'codeword_bits' for instruction '"+qasm_label+"' is not specified !",false);
+
 	       size_t codeword_ready_bit           = j_params["codeword_ready_bit"];
 	       size_t codeword_ready_bit_duration  = __ns_to_cycle((size_t)j_params["codeword_ready_bit_duration"]);
 	       // size_t bit_nr                       = j_params["codeword_bits"].size();
@@ -413,8 +464,7 @@ namespace ql
 
 	       if (codeword_ready_bit > (__trigger_width__-1))
 	       {
-		  println("[x] error : invalid 'read bit' number in the codeword trigger definition !");
-		  throw std::exception();
+		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing codeword trigger : 'ready_bit' of instruction '"+qasm_label+"' is out of range !",false);
 	       }
 
 	       // ready trigger
@@ -448,7 +498,12 @@ namespace ql
 	       qumis_instruction * qumis_instr;
 	       if (instr == "trigger")
 	       {
-		  // println("  ---> processing trigger : ");
+		  // check for hardware configuration integrity
+		  if (j_params["trigger_bit"].is_null())
+		     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing measure instruction : 'trigger_bit' for instruction '"+qasm_label+"' is not specified !",false);
+		  if (j_params["trigger_duration"].is_null())
+		     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing measure instruction : 'trigger_duration' for instruction '"+qasm_label+"' is not specified !",false);
+
 		  size_t trigger_bit       = j_params["trigger_bit"];
 		  size_t trigger_duration  = __ns_to_cycle((size_t)j_params["trigger_duration"]);
 
@@ -456,8 +511,8 @@ namespace ql
 		  // println("\ttrigger duration : " << trigger_duration);
 		  if (trigger_bit > (__trigger_width__-1))
 		  {
-		     println("[x] error while processing the 'readout' instruction : invalid trigger bit.");
-		     throw std::exception();
+		     //println("[x] error while processing the 'readout' instruction : invalid trigger bit.");
+		     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing measure instruction '"+qasm_label+"' : invalid trigger bit (out of range) !",false);
 		  }
 		  codeword_t cw = 0;
 		  cw.set(trigger_bit);
@@ -472,7 +527,7 @@ namespace ql
 	       else
 	       {
 		     println("[x] error while processing the 'readout' instruction : only trigger-based implementation is supported !");
-		     throw std::exception();
+		     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing the '"+qasm_label+"' instruction : only trigger-based implementation is supported !",false);
 	       }
 	       // println("measure instruction processed.");
 	    }
@@ -485,6 +540,13 @@ namespace ql
 	    {
 	       // println("processing trigger instruction...");
 	       qumis_instruction * trig;
+
+	       // check for hardware configuration integrity
+	       if (j_params["trigger_bit"].is_null())
+		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing trigger instruction : 'trigger_bit' for instruction '"+qasm_label+"' is not specified !",false);
+	       if (j_params["trigger_duration"].is_null())
+		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing trigger instruction : 'trigger_duration' for instruction '"+qasm_label+"' is not specified !",false);
+
 	       size_t trigger_bit       = j_params["trigger_bit"];
 	       size_t trigger_duration  = __ns_to_cycle((size_t)j_params["trigger_duration"]);
 
@@ -492,8 +554,8 @@ namespace ql
 	       // println("\ttrigger duration : " << trigger_duration);
 	       if (trigger_bit > (__trigger_width__-1))
 	       {
-		  println("[x] error while processing the 'trigger' instruction : invalid trigger bit.");
-		  throw std::exception();
+		  // println("[x] error while processing the 'trigger' instruction : invalid trigger bit.");
+		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing trigger instruction '"+qasm_label+"' : invalid trigger bit (out of range) !",false);
 	       }
 	       codeword_t cw = 0;
 	       cw.set(trigger_bit);
