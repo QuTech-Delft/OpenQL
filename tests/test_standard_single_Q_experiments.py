@@ -36,55 +36,6 @@ class Test_single_qubit_seqs(unittest.TestCase):
 
         p.compile()
 
-
-    # def test_qasm_seq_MotzoiXY(self):
-    #     for q_name in ['q0', 'q1']:
-    #         qasm_file = sq_qasm.two_elt_MotzoiXY(q_name)
-    #         qasm_fn = qasm_file.name
-    #         qumis_fn = join(self.test_file_dir,
-    #                         "motzoi_{}.qumis".format(q_name))
-    #         compiler = qc.QASM_QuMIS_Compiler(self.config_fn,
-    #                                           verbosity_level=0)
-    #         compiler.compile(qasm_fn, qumis_fn)
-    #         asm = Assembler(qumis_fn)
-    #         asm.convert_to_instructions()
-
-    #         self.assertEqual(compiler.qumis_instructions[2], 'Exp_Start: ')
-    #         self.assertEqual(
-    #             compiler.qumis_instructions[-1], self.jump_to_start)
-
-    # def test_qasm_seq_OffOn(self):
-    #     for q_name in ['q0', 'q1']:
-    #         qasm_file = sq_qasm.off_on(q_name)
-    #         qasm_fn = qasm_file.name
-    #         qumis_fn = join(self.test_file_dir,
-    #                         "off_on_{}.qumis".format(q_name))
-    #         compiler = qc.QASM_QuMIS_Compiler(self.config_fn,
-    #                                           verbosity_level=0)
-    #         compiler.compile(qasm_fn, qumis_fn)
-    #         asm = Assembler(qumis_fn)
-    #         asm.convert_to_instructions()
-
-    #         self.assertEqual(compiler.qumis_instructions[2], 'Exp_Start: ')
-    #         self.assertEqual(
-    #             compiler.qumis_instructions[-1], self.jump_to_start)
-
-    # def test_qasm_seq_ramsey(self):
-    #     for q_name in ['q0', 'q1']:
-    #         qasm_file = sq_qasm.Ramsey(q_name, times=self.times)
-    #         qasm_fn = qasm_file.name
-    #         qumis_fn = join(self.test_file_dir,
-    #                         "Ramsey_{}.qumis".format(q_name))
-    #         compiler = qc.QASM_QuMIS_Compiler(self.simple_config_fn,
-    #                                           verbosity_level=0)
-    #         compiler.compile(qasm_fn, qumis_fn)
-    #         asm = Assembler(qumis_fn)
-    #         asm.convert_to_instructions()
-
-    #         self.assertEqual(compiler.qumis_instructions[2], 'Exp_Start: ')
-    #         self.assertEqual(
-    #             compiler.qumis_instructions[-1], self.jump_to_start)
-
     def test_qasm_seq_echo(self):
         p = Program(pname="Echo", nqubits=1, p=platf)
         times = np.linspace(0, 20e3, 61)  # in ns
@@ -103,8 +54,7 @@ class Test_single_qubit_seqs(unittest.TestCase):
         p.compile()
 
     def test_qasm_seq_butterfly(self):
-        ql.init()
-        p = Program(pname="AllXY", nqubits=1, p=platf)
+        p = Program(pname="Butterfly", nqubits=1, p=platf)
 
         k = Kernel('0', p=platf)
         k.prepz(0)
