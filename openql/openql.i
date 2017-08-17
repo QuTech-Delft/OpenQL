@@ -25,14 +25,39 @@ namespace std {
 
 
 
+%pythoncode %{
+import os, errno
 
-%feature("docstring") init
-""" Initializes OpenQL environment.
+def set_output_dir(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+    _openql.set_output_dir_(path)
+%}
+
+
+%feature("docstring") set_output_dir
+""" Sets output directory for the generated files. The direcoty will be created of it does not already exist.
+
+Parameters
+----------
+arg1 : str
+    Path to a directory.
+"""
+
+%feature("docstring") get_output_dir
+""" Returns the path of current set directory for output files.
 
 Parameters
 ----------
 None
-"""
+
+Returns
+-------
+str
+    Path of output directory. """
 
 
 %feature("docstring") kernel
