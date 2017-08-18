@@ -1,0 +1,113 @@
+// Example config for CBox. Not usable in real life as it is incomplete
+{
+    "qubit_names" : ["q0", "q1"],
+    "cycle_time" : 5,  // this translates duration units to clocks
+    // We add the buffers between all the different operation types here
+    // This could also be defined as a matrix
+    "MW_MW_buffer": 0,
+    "MW_Flux_buffer": 0,
+    "MW_RO_buffer": 0,
+    "Flux_MW_buffer": 0,
+    "Flux_Flux_buffer": 0,
+    "Flux_RO_buffer": 0,
+    "RO_MW_buffer": 0,
+    "RO_Flux_buffer": 0,
+    "RO_RO_buffer": 0,
+
+    "operations": {
+        // We added some microwave operations here
+        "X180 q0" : {
+            "duration": 40, // All times are specified in ns
+            "latency": -20, // Beware that latencies should be allowed to be negative
+            "qubits": ["q0"], // the resources used by this operation
+            "matrix" : [[0.0, 1.0], [1.0, 0]], // the ideal target matrix
+            "disable_optimization": false,
+            "type" : "MW",
+            "qumis_instr": "pulse",
+            "qumis_instr_kw": {
+                "codeword": 1,
+                "awg_nr": 0
+                // In the future we would like to add the content of the LUT's here
+                // and have the compilation/prepare process take care of this
+            },
+        "Y90 q0" : {
+            "duration": 40,
+            "latency": -20,
+            "qubits": ["q0"],
+            // This is an empty matrix and should not compile away this gate
+            "matrix" : [],
+            "disable_optimization": true, //Because we put no matrix we need to disable optimization for this gate
+            "type" : "MW",
+            "qumis_instr": "pulse",
+            "qumis_instr_kw": {
+                "codeword": 2, // <-- Only this entry changed
+                "awg_nr": 0
+            },
+        "Y180 q0" : {
+            "duration": 40,
+            "latency": -20,
+            "qubits": ["q0"],
+            "matrix" : [[0.0, 1.0], [-1, 0]], // the ideal target matrix beware the complex number, we cannot yet express this in JSON
+            "disable_optimization": false,
+            "type" : "MW",
+            "qumis_instr": "pulse",
+            "qumis_instr_kw": {
+                "codeword": 3, // <-- Only this entry changed
+                "awg_nr": 0
+            },
+
+            "I q0" : {
+                "duration": 40,
+                "latency": -20,
+                "qubits": ["q0"],
+                "matrix" : [[1.0, 0.0], [0, 1]], // the ideal target matrix beware the complex number
+                "disable_optimization": true, // Because this is an explicit wait we must disable optimization
+                "type" : "MW",
+                "qumis_instr": "pulse",
+                "qumis_instr_kw": {
+                    "codeword": -2, // this number corresponds to a "dummy" codeword that not actually sends a trigger. Edge cases like this should be added to the docs.
+                    "awg_nr": 0
+                },
+
+            "X180 q1" : {
+                "duration": 40, // All times are specified in ns
+                "latency": -30, // Beware that latencies should be allowed to be negative
+                "qubits": ["q1"], // the resources used by this operation
+                "matrix" : [[0.0, 1.0], [1.0, 0]], // the ideal target matrix
+                "disable_optimization": false,
+                "type" : "MW",
+                "qumis_instr": "codeword_trigger", // This is a composite qumis instruction
+                "qumis_instr_kw": {
+                    "codeword_ready_bit": 0,
+                    "codeword_ready_bit_duration" : 5, // 1 clock
+                    "codeword_bits": [1, 2, 3, 4], // LSB left , MSB right
+                    "codeword": 1, // Should compile into 1000
+                    // In the future we would like to add the content of the LUT's here
+                    // and have the compilation/prepare process take care of this
+                },
+
+
+        // For the CBox there is only a multiplexed RO set up
+        "measure q0" : {
+            "duration": 300, // number can vary wildly depending on our homework
+            "latency": 80,
+            "qubits": ["q0", "q1"], // cannot do a RO on other qubit
+            "matrix" : [], // RO does not have a matrix?!?
+            "disable_optimization": true,
+            "type" : "RO",
+            "qumis_instr": "trigger",
+            "qumis_instr_kw": {
+                "trigger_bit": 7, // last bit is used to trigger
+                "trigger_duration": 10, // trigger high for 2 clocks
+        },
+        "measure q1" : {
+            "alias" : "measure q0"
+        },
+        "measure q0 q1" : {
+            "alias" : "measure q0"
+        },
+        "measure all" : {
+            "alias" : "measure q0"
+        }
+}
+

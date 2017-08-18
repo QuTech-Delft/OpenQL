@@ -30,10 +30,10 @@ Entries are either an `alias` or a full entry.
     + `qubits` (list) : what qubits this operation affects (can be empty list)
     + `type`: one of either `MW`, `Flux`, `RO`, `None`.
     + `matrix` (matrix): the process matrix, can be an empty matrix.
-    + `target_matrix` (matrix): the ideal process matrix of the operation, can be an empty matrix.
-    + (iff CBox_v3) `qumis_instr` (str): one of `wait`, `pulse`, `trigger`, `CW_trigger`, `dummy`, `measure`.
-    + (iff CBox_v3) `qumis_instr_kw` (dict): dictionary containing keyword arguments for the qumis instruction.
-    + (iff CC-Light) `qisa_kw` (dict): dictionary containing keyword arguments for the CC-Light instruction. Format is shown in the Section *CC-Light instruction configuration*.
+    + 'disable_optimization' (bool): if this is True this operation cannot be compiled away. 
+    + type (str): one of either `MW`, `Flux`, `RO`, `None`
+    + `qumis_instr` (str): one of `wait`, `pulse`, `trigger`, `CW_trigger`, `dummy`, `measure`.
+    + `qumis_instr_kw` (dict): dictionary containing keyword arguments for the qumis instruction. 
 
 ## CBox_v3 instuction configuration
 OpenQL supports the following instructions
@@ -46,16 +46,16 @@ OpenQL supports the following instructions
 - `trigger` : raises a trigger for a specified time
     + `trigger_bit` (int) : trigger_bit
     + `trigger_duration` (int): duration for which to set the trigger bit high
-- `CW_trigger`
-    + `trigger_bit` (int) : trigger_bit
-    + `trigger_duration` (int): duration for which to set the trigger bit high
-    + `CW_bits` (list of int) : bits specifying the bits available for the codeword
-    + `codeword_duration` (int): duration for which to raise the codeword bits high
-    + `codeword` (int) : integer specifying what bits to raise from the CW_bits
+- `codeword_trigger` : 
+    + `codeword_ready_bit` (int) : codeword_ready_bit
+    + `codeword_ready_bit_duration` (int): duration for which to set the codeword_ready_bit high
+    + `codeword_bits` (list of int) : bits available for specifying the codeword (bit mask specifying used bits)
+    + `codeword_duration` (int): duration for which to set the codeword bits high
+    + `codeword` (int) : integer value the codeword bits should present in binary format.
 - `dummy` blocks the qubit for the duration specified but executes no instruction
     + no arguments
 - `measure`
-    + `measurement_duration` (int): duration of the measurement instruction.
+    + no arguments
 
 ## CC-Light instuction configuration
 Every quantum operation (QISA instruction) is translated into one or multiple microinstructions. For the first release of CC-Light, only one microinstruction is supported. It should contain the following information:
