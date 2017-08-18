@@ -5,19 +5,5 @@ qubits 3
    prepz q0
    prepz q1
    prepz q2
-   toffoli q0, q1, q2
+   toffoli q0,q1,q2
    measure q2
-.cal0_1
-   prepz q0
-   measure q0
-.cal0_2
-   prepz q0
-   measure q0
-.cal1_1
-   prepz q0
-   x q0
-   measure q0
-.cal1_2
-   prepz q0
-   x q0
-   measure q0

@@ -8,9 +8,9 @@
 #ifndef QL_UTILS_H
 #define QL_UTILS_H
 
-#include <string>
+#include "str.h"
 
-#define println(x) std::cout << "[OPENQL] "<< x << std::endl
+#define println(x) std::cout << "[openql] "<< x << std::endl
 
 namespace ql
 {
@@ -19,6 +19,16 @@ namespace ql
      */
     namespace utils
     {
+        std::string output_dir("output");
+        void set_output_dir(std::string dir)
+        {
+            output_dir = dir;
+        }
+        std::string get_output_dir()
+        {
+            return output_dir;
+        }
+
         /**
          * @param str
          *    string to be processed
@@ -31,12 +41,7 @@ namespace ql
          */
         void replace_all(std::string &str, std::string seq, std::string rep)
         {
-            size_t index = str.find(seq);
-            while (index < str.size())
-            {
-                str.replace(index, seq.size(), rep);
-                index = str.find(seq);
-            }
+	   str::replace_all(str,seq,rep);
         }
 
         /**
@@ -58,20 +63,37 @@ namespace ql
             return true;
         }
 
+	/**
+	 * write content to the file <file_name>
+	 */
         void write_file(std::string file_name, std::string& content)
         {
             std::ofstream file;
             file.open(file_name);
             if ( file.fail() )
             {
-                std::cout << "Error opening file " << file_name << std::endl
-                          << "Make sure the output directory exists for " << file_name << std::endl;
+                std::cout << "[x] error opening file '" << file_name << "' !" << std::endl
+                          << "         make sure the output directory exists for '" << file_name << "'" << std::endl;
                 return;
             }
 
             file << content;
             file.close();
         }
+
+
+	/**
+	 * print vector
+	 */
+	 template<typename T>
+	 void print_vector(std::vector<T> v, std::string prefix="", std::string separator=" | ")
+	 {
+	    std::cout << prefix << " [";
+	    size_t sz = v.size()-1;
+	    for (size_t i=0; i<sz; ++i)
+	       std::cout << v[i] << separator; 
+	    std::cout << v[sz] << "]" << std::endl;
+	 }
 
 
     } // utils

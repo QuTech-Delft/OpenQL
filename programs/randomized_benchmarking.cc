@@ -10,9 +10,9 @@
 
 #include <time.h>
 
-#include "ql/openql.h"
+#include <ql/openql.h>
 
-// clifford inverse lookup table for grounded state 
+// clifford inverse lookup table for grounded state
 const size_t inv_clifford_lut_gs[] = {0, 2, 1, 3, 8, 10, 6, 11, 4, 9, 5, 7, 12, 16, 23, 21, 13, 17, 18, 19, 20, 15, 22, 14};
 // const size_t inv_clifford_lut_es[] = {3, 8, 10, 0, 2, 1, 9, 5, 7, 6, 11, 4, 21, 13, 17, 12, 16, 23, 15, 22, 14, 18, 19, 20};
 
@@ -26,7 +26,7 @@ void build_rb(int num_cliffords, ql::quantum_kernel& k)
 {
    assert((num_cliffords%2) == 0);
    int n = num_cliffords/2;
-   
+
    cliffords_t cl;
    cliffords_t inv_cl;
 
@@ -50,21 +50,32 @@ void build_rb(int num_cliffords, ql::quantum_kernel& k)
 
 
 int main(int argc, char ** argv)
-{	
+{
    srand(0);
 
-   ql::init(ql::transmon_platform, "instructions.map");
+   // initialize openql
+   // ql::init();
+   // ql::init(ql::transmon_platform, "instructions.map");
 
-   int   num_randomizations = 3; 
+   // create platform
+   ql::quantum_platform starmon("starmon","test_cfg_cbox.json");
+
+   // print info
+   starmon.print_info();
+
+   // set platform
+   ql::set_platform(starmon);
+
+   int   num_randomizations = 3;
    int   num_circuits       = 13;
-   float sweep_points[]     = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };  // sizes of the clifford circuits per randomization  
+   float sweep_points[]     = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };  // sizes of the clifford circuits per randomization
 
    for (int r=0; r<num_randomizations; r++)
    {
-      // create program 
+      // create program
       ql::str_t prog_name;
-      prog_name << "rb_" << r;   
-      ql::quantum_program rb(prog_name.str(),1);
+      prog_name << "rb_" << r;
+      ql::quantum_program rb(prog_name.str(),1,starmon);
       rb.set_sweep_points(sweep_points, num_circuits);
       rb.set_config_file("rb_config.json");
 
@@ -74,7 +85,7 @@ int main(int argc, char ** argv)
 	 // create subcircuit
 	 ql::str_t name;
 	 name << "rb" << c_size;
-	 ql::quantum_kernel kernel(name.str());
+	 ql::quantum_kernel kernel(name.str(),starmon);
 	 build_rb(c_size, kernel);
 	 rb.add(kernel);
       }

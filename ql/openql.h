@@ -29,42 +29,27 @@ typedef std::stringstream  str_t;
 /**
  * configurable instruction map
  */
-/* static */ instruction_map_t instruction_map;
-/* static */ bool              initialized = false;
-/* static */ ql_platform_t     target_platform;
+/* static */ dep_instruction_map_t dep_instruction_map;
+/* static */ // bool              initialized = false;
+/* static */ // ql_platform_t     target_platform;
 
-void init(ql_platform_t platform, std::string instruction_map_file="")
+// target platform
+ql::quantum_platform           target_platform;          
+
+
+// deprecated : for back compatibility
+// should be removed
+/*
+void init(ql_platform_t platform, std::string dep_instruction_map_file="")
+{
+}
+*/
+
+void set_platform(ql::quantum_platform platform)
 {
     target_platform = platform;
-
-    if (instruction_map_file != "")
-    {
-        if (!load_instruction_map(instruction_map_file,instruction_map))
-            println("[x] error : failed to load the instruction map !");
-    }
-    else
-    {
-        /**
-         * predefined setups : transmon, starmon..
-         */
-        if (target_platform == transmon_platform)
-        {
-            instruction_map["rx90" ]   = ucode_inst_t("     pulse 1011 0000 1011\n     wait 10");
-            instruction_map["mrx90"]   = ucode_inst_t("     pulse 1101 0000 1101\n     wait 10");
-            instruction_map["rx180"]   = ucode_inst_t("     pulse 1001 0000 1001\n     wait 10");
-            instruction_map["ry90" ]   = ucode_inst_t("     pulse 1100 0000 1100\n     wait 10");
-            instruction_map["mry90"]   = ucode_inst_t("     pulse 1110 0000 1110\n     wait 10");
-            instruction_map["ry180"]   = ucode_inst_t("     pulse 1010 0000 1010\n     wait 10");
-            instruction_map["prepz"]   = ucode_inst_t("     waitreg r0\n     waitreg r0\n");
-            instruction_map["measure"] = ucode_inst_t("     wait 60\n     pulse 0000 1111 1111\n     wait 50\n     measure\n");
-        }
-        else if (target_platform == starmon_platform)
-        {
-        }
-
-    }
-    initialized = true;
 }
+
 
 /**
  * generate qasm for a give circuit

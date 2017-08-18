@@ -2,6 +2,7 @@ build
 cbuild
 dist
 openql.egg-info
+lab
 
 *.dot
 *.qc
@@ -14,3 +15,4 @@ openql.egg-info
 *.pyc
 *.cache
 openql/openql.py
+*/test_output/*

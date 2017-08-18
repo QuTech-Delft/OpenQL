@@ -12,7 +12,7 @@
 
 #include <ql/openql.h>
 
-// clifford inverse lookup table for grounded state 
+// clifford inverse lookup table for grounded state
 const size_t inv_clifford_lut_gs[] = {0, 2, 1, 3, 8, 10, 6, 11, 4, 9, 5, 7, 12, 16, 23, 21, 13, 17, 18, 19, 20, 15, 22, 14};
 //const size_t inv_clifford_lut_es[] = {3, 8, 10, 0, 2, 1, 9, 5, 7, 6, 11, 4, 21, 13, 17, 12, 16, 23, 15, 22, 14, 18, 19, 20};
 
@@ -26,7 +26,7 @@ void build_rb(int num_cliffords, ql::quantum_kernel& k)
 {
    assert((num_cliffords%2) == 0);
    int n = num_cliffords/2;
-   
+
    cliffords_t cl;
    cliffords_t inv_cl;
 
@@ -50,21 +50,32 @@ void build_rb(int num_cliffords, ql::quantum_kernel& k)
 
 
 int main(int argc, char ** argv)
-{	
+{
    srand(0);
 
    int   num_circuits       = 4;
-   float sweep_points[]   = { 2, 4, 8, 16 };  // sizes of the clifford circuits per randomization  
+   float sweep_points[]   = { 2, 4, 8, 16 };  // sizes of the clifford circuits per randomization
 
-   ql::init(ql::transmon_platform, "instructions.map");
+   // ql::init(ql::transmon_platform, "instructions.map");
+   // ql::init();
+   // ql::init(ql::transmon_platform, "instructions.map");
+
+   // create platform
+   ql::quantum_platform starmon("starmon","test_cfg_cbox.json");
+
+   // print info
+   starmon.print_info();
+
+   // set platform
+   ql::set_platform(starmon);
 
    // ql::sweep_points_t sweep_points;
 
-   ql::quantum_program rb("rb",1);
+   ql::quantum_program rb("rb",1,starmon);
 
    rb.set_sweep_points(sweep_points, num_circuits);
 
-   ql::quantum_kernel kernel("rb1024");
+   ql::quantum_kernel kernel("rb1024",starmon);
 
    build_rb(1024, kernel);
 
@@ -76,7 +87,7 @@ int main(int argc, char ** argv)
 
    rb.compile();
 
-   std::cout << rb.qasm() << std::endl;
+   // std::cout << rb.qasm() << std::endl;
 
    return 0;
 }

@@ -85,7 +85,7 @@ public:
                 if(prodID == srcID)
                     weight[arc] = 1; // TODO OR 0 as SOURCE is dummy node?
                 else
-                    weight[arc] = instruction[prodNode]->latency;
+                    weight[arc] = instruction[prodNode]->duration;
 
                 cause[arc] = operand;
                 if(operandNo == 0)
@@ -98,7 +98,7 @@ public:
                         if(prodID == srcID)
                             weight[arc1] = 1; // TODO OR 0 as SOURCE is dummy node?
                         else
-                            weight[arc1] = instruction[readerNode]->latency;
+                            weight[arc1] = instruction[readerNode]->duration;
 
                         cause[arc1] = operand;
                         depType[arc1] = RAR; // on control
@@ -119,7 +119,7 @@ public:
                         if(prodID == srcID)
                             weight[arc1] = 1; // TODO OR 0 as SOURCE is dummy node?
                         else
-                            weight[arc1] = instruction[readerNode]->latency;
+                            weight[arc1] = instruction[readerNode]->duration;
 
                         cause[arc1] = operand;
                         depType[arc1] = WAR;
@@ -171,12 +171,12 @@ public:
     {
         if(verbose) println("Printing Dependence Graph as Matrix");
         ofstream fout;
-        string datfname("output/dependenceMatrix.dat");
+        string datfname( ql::utils::get_output_dir() + "/dependenceMatrix.dat");
         fout.open( datfname, ios::binary);
         if ( fout.fail() )
         {
             println("Error opening file " << datfname << std::endl
-                     << "Make sure the \"output\" directory exists");
+                     << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
             return;
         }
 
@@ -307,12 +307,12 @@ public:
     {
         if(verbose) println("Printing Dependence Graph in DOT");
         ofstream dotout;
-        string dotfname("output/dependenceGraph.dot");
+        string dotfname(ql::utils::get_output_dir() + "/dependenceGraph.dot");
         dotout.open(dotfname, ios::binary);
         if ( dotout.fail() )
         {
             println("Error opening file " << dotfname << std::endl
-                     << "Make sure the \"output\" directory exists");
+                     << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
             return;
         }
 
@@ -401,12 +401,12 @@ public:
     void PrintDotScheduleASAP(bool verbose=false)
     {
         ofstream dotout;
-        string dotfname("output/scheduledASAP.dot");
+        string dotfname( ql::utils::get_output_dir() + "/scheduledASAP.dot");
         dotout.open( dotfname, ios::binary);
         if ( dotout.fail() )
         {
             println("Error opening file " << dotfname << std::endl
-                     << "Make sure the \"output\" directory exists");
+                     << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
             return;
         }
 
@@ -432,12 +432,12 @@ public:
     void PrintQASMScheduledASAP(bool verbose=false)
     {
         ofstream fout;
-        string qcfname("output/scheduledASAP.qasm");
+        string qcfname(ql::utils::get_output_dir() + "/scheduledASAP.qasm");
         fout.open( qcfname, ios::binary);
         if ( fout.fail() )
         {
             println("Error opening file " << qcfname << std::endl
-                     << "Make sure the \"output\" directory exists");
+                     << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
             return;
         }
 
@@ -467,16 +467,18 @@ public:
             if( it != insInAllCycles.end() )
             {
                 auto nInsThisCycle = insInAllCycles[currCycle].size();
+		fout << "{ "; 
                 for(size_t i=0; i<nInsThisCycle; ++i )
                 {
                     fout << insInAllCycles[currCycle][i];
                     if( i != nInsThisCycle - 1 ) // last instruction
                         fout << " | ";
                 }
+		fout << " }"; 
             }
             else
             {
-                fout << "   nop";
+                fout << "   qwait 1";
             }
             fout << endl;
         }
@@ -669,12 +671,12 @@ public:
     void PrintDotScheduleALAP(bool verbose=false)
     {
         ofstream dotout;
-        string dotfname("output/scheduledALAP.dot");
+        string dotfname(ql::utils::get_output_dir() + "/scheduledALAP.dot");
         dotout.open( dotfname, ios::binary);
         if ( dotout.fail() )
         {
             println("Error opening file " << dotfname << std::endl
-                     << "Make sure the \"output\" directory exists");
+                     << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
             return;
         }
 
@@ -700,12 +702,12 @@ public:
     void PrintQASMScheduledALAP(bool verbose=false)
     {
         ofstream fout;
-        string qcfname("output/scheduledALAP.qasm");
+        string qcfname(ql::utils::get_output_dir() + "/scheduledALAP.qasm");
         fout.open( qcfname, ios::binary);
         if ( fout.fail() )
         {
             println("Error opening file " << qcfname << std::endl
-                     << "Make sure the \"output\" directory exists");
+                     << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
             return;
         }
 
