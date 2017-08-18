@@ -6,7 +6,7 @@ from openql import openql as ql
 rootDir = os.path.dirname(os.path.realpath(__file__))
 
 curdir = os.path.dirname(__file__)
-config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
+config_fn = os.path.join(curdir, 'test_config_default.json')
 platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
@@ -28,7 +28,7 @@ class Test_qubits(unittest.TestCase):
         nqubits = 1
         sweep_points = [2]
         num_circuits = 1
-        p = ql.Program("aProgram", nqubits, platf)
+        p = ql.Program("1_qubit_program", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
 
         p.add_kernel(k)  # add kernel to program
@@ -36,7 +36,8 @@ class Test_qubits(unittest.TestCase):
         p.compile(False, False)
 
         gold = rootDir + '/golden/test_1_qubit.qasm'
-        isSame = filecmp.cmp('output/aProgram.qasm', gold)
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        isSame = filecmp.cmp(qasm_fn, gold)
         self.assertTrue(isSame)
 
     def test_2_qubit(self):
@@ -54,7 +55,7 @@ class Test_qubits(unittest.TestCase):
         nqubits = 3
         sweep_points = [2]
         num_circuits = 1
-        p = ql.Program("aProgram", nqubits, platf)
+        p = ql.Program("2_qubit_program", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
 
         p.add_kernel(k)  # add kernel to program
@@ -62,7 +63,8 @@ class Test_qubits(unittest.TestCase):
         p.compile(False, False)
 
         gold = rootDir + '/golden/test_2_qubit.qasm'
-        isSame = filecmp.cmp('output/aProgram.qasm', gold)
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        isSame = filecmp.cmp(qasm_fn, gold)
         self.assertTrue(isSame)
 
     def test_3_qubit(self):
@@ -78,7 +80,7 @@ class Test_qubits(unittest.TestCase):
         nqubits = 3
         sweep_points = [2]
         num_circuits = 1
-        p = ql.Program("aProgram", nqubits, platf)
+        p = ql.Program("3_qubit_program", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
 
         p.add_kernel(k)  # add kernel to program
@@ -86,7 +88,8 @@ class Test_qubits(unittest.TestCase):
         p.compile(False, False)
 
         gold = rootDir + '/golden/test_3_qubit.qasm'
-        isSame = filecmp.cmp('output/aProgram.qasm', gold)
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        isSame = filecmp.cmp(qasm_fn, gold)
         self.assertTrue(isSame)
 
 if __name__ == '__main__':
