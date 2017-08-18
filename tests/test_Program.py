@@ -68,9 +68,9 @@ class Test_program(unittest.TestCase):
         p.compile()
         p.schedule()
 
-        # N.B. This does not actually test if the output is correct
-        print(p.qasm())
-        print(p.microcode())
+        # N.B. This does not actually test if the output is correct : this is deprecated (should not be used !)
+        # print(p.qasm())
+        # print(p.microcode())
 
     def test_5qubit_program(self):
 
@@ -94,8 +94,8 @@ class Test_program(unittest.TestCase):
         p.compile()     # compile program
 
         # N.B. This does not actually test if the output is correct
-        print(p.qasm())
-        print(p.microcode())
+        # print(p.qasm())       # deprecated
+        # print(p.microcode())  # deprecated
 
     @unittest.skip('Gate by name not implemented')
     def test_allxy_program(self):
@@ -130,8 +130,8 @@ class Test_program(unittest.TestCase):
 
         # compile  opt  verbose
         p.compile(False, False)
-        print(p.qasm)
-        print(p.microcode)
+        # print(p.qasm)       # deprecated
+        # print(p.microcode)  # deprecated
 
 if __name__ == '__main__':
     unittest.main()
