@@ -7,17 +7,3 @@ qubits 1
    y q0
    rx90 q0
    measure q0
-.cal0_1
-   prepz q0
-   measure q0
-.cal0_2
-   prepz q0
-   measure q0
-.cal1_1
-   prepz q0
-   x q0
-   measure q0
-.cal1_2
-   prepz q0
-   x q0
-   measure q0

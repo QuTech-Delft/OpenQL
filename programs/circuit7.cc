@@ -17,13 +17,25 @@ int main(int argc, char ** argv)
     float sweep_points[]     = { 2, 4, 8, 16 };  // sizes of the clifford circuits per randomization
     int   num_circuits       = 4;
 
-    ql::init(ql::transmon_platform, "instructions.map");
+    // ql::init(ql::transmon_platform, "instructions.map");
+
+    // ql::init();
+    // ql::init(ql::transmon_platform, "instructions.map");
+
+    // create platform
+    ql::quantum_platform starmon("starmon","test_cfg_cbox.json");
+
+    // print info
+    starmon.print_info();
+
+    // set platform
+    ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog("prog", 7);
+    ql::quantum_program prog("prog", 7, starmon);
     prog.set_sweep_points(sweep_points, num_circuits);
 
-    ql::quantum_kernel kernel("kernel7");
+    ql::quantum_kernel kernel("kernel7",starmon);
 
     for (int j=0; j<1; j++)
         kernel.hadamard(j);

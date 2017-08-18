@@ -1,7 +1,23 @@
 
-Main author: OpenQL has been created initially by Nader Khammassi.
+OpenQL framework has been created initially by Nader Khammassi.
+...
 
-Other Contributors:
+
+Contributors:
+
+- Imran Ashraf 
+    Implemented ASAP/ALAP Gate Scheduling Algorithms
+    Created a Python Package for OpenQL
+    Setup CMake-based Compilation
+    ...
+
+- Adriaan Rol and Xiang Fu
+    Contributed to the Hardware Configuration Specification
+    Testing OpenQL on the Hardware
+    ...
+
+Note: please fill your contributions in this file...
+
 -
 -
 -

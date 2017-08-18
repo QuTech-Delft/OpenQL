@@ -17,18 +17,19 @@
 
 namespace ql
 {
-typedef std::vector<gate*> circuit;
+
+   typedef std::vector<gate*> circuit;
 
 
-void print(circuit& c)
-{
+   void print(circuit& c)
+   {
 #if __print_circuit__
-    std::cout << "-------------------" << std::endl;
-    for (int i=0; i<c.size(); i++)
-        std::cout << "   " << c[i]->qasm();
-    std::cout << "\n-------------------" << std::endl;
+      std::cout << "-------------------" << std::endl;
+      for (int i=0; i<c.size(); i++)
+	 std::cout << "   " << c[i]->qasm();
+      std::cout << "\n-------------------" << std::endl;
 #endif // __print_circuit__
-}
+   }
 }
 
 #endif // CIRCUIT_H

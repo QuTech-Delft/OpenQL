@@ -38,8 +38,8 @@ INCLUDE_DIRECTORIES(
 )
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
-  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -Wfatal-errors ")
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -Wall -Wfatal-errors")
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -Wfatal-errors -ggdb")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -Wall -Wfatal-errors -ggdb")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 IF(MSVC)
@@ -47,8 +47,8 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++11")
 ENDIF(MSVC)
 
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -Wfatal-errors ")
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -Wall -Wfatal-errors -Wno-unused-local-typedef")
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -Wfatal-errors -ggdb")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -Wall -Wfatal-errors -Wno-unused-local-typedef -ggdb")
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 
 ADD_SUBDIRECTORY(programs)

@@ -21,7 +21,7 @@ namespace ql
     typedef std::string qasm_inst_t;
     typedef std::string ucode_inst_t;
 
-    typedef std::map<qasm_inst_t, ucode_inst_t> instruction_map_t;
+    typedef std::map<qasm_inst_t, ucode_inst_t> dep_instruction_map_t;
     
     namespace utils
     {
@@ -29,12 +29,12 @@ namespace ql
        void replace_all(std::string &str, std::string seq, std::string rep);
     }
 
-    // bool load_instruction_map(std::string file_name, instruction_map_t& imap);
+    // bool load_instruction_map(std::string file_name, dep_instruction_map_t& imap);
 
     /**
      * load instruction map from a file
      */
-    bool load_instruction_map(std::string file_name, instruction_map_t& imap)
+    bool load_instruction_map(std::string file_name, dep_instruction_map_t& imap)
     {
        std::ifstream file(file_name);
 
@@ -76,7 +76,7 @@ namespace ql
        }
        file.close();
        #ifdef __debug__
-       for (instruction_map_t::iterator i=imap.begin(); i!=imap.end(); i++)
+       for (dep_instruction_map_t::iterator i=imap.begin(); i!=imap.end(); i++)
 	  println("[ " << (*i).first <<  " --> " << (*i).second << " ]");
        #endif // __debug__
 
@@ -92,9 +92,10 @@ namespace ql
 	  try 
 	  {
 	     fs >> j;
-	  } catch (std::exception e)
+	  } catch (json::exception e)
 	  {
 	     println("[x] error : malformed json file : \n\t" << e.what());
+	     throw (e);
 	  }
        }
        else
@@ -121,7 +122,7 @@ namespace ql
 	  instruction_type_t type = (t == "rf" ? rf_t : flux_t );
 	  g->operation_type = type;
 	  g->duration = instr["duration"];
-	  g->latency = instr["latency"];
+	  // g->latency = instr["latency"];
 	  strings_t hdw = instr["hardware"];
 	  g->used_hardware.assign(hdw.begin(), hdw.end());
 	  auto mat = instr["matrix"];

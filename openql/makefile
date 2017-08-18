@@ -1,13 +1,14 @@
 SWIG=swig
 
-INCS= -I. -I/data/repositories/quantRepos/openql -I/opt/lemon/include -I/usr/include/python3.5
+INCS= -I..  -I. -I/usr/include/python3.5
 PYTHON=python3
 
 wrapper: openql.i
+	export MACOSX_DEPLOYMENT_TARGET="10.10"
 	$(SWIG) -c++ -python openql.i
 
 lib: wrapper
-	g++ -fpic $(INCS) -std=c++11 -c openql_wrap.cxx
+	g++ -fpic $(INCS) -std=c++11 -c openql_wrap.cxx -ggdb
 	g++ -shared openql_wrap.o -o _openql.so
 
 ptest: lib
