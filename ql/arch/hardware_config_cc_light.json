@@ -1,8 +1,8 @@
 {
-   "eqasm_compiler" : "qumis_compiler",
+   "eqasm_compiler" : "cc_light_compiler",
 
    "hardware_settings": {
-	 "qubit_number": 2,
+	 "qubit_number": 7,
 	 "cycle_time" : 5,  
 	 "mw_mw_buffer": 0,
 	 "mw_flux_buffer": 0,
@@ -24,11 +24,7 @@
 	              [1.0,0.0], [0.0,0.0] ], 
          "disable_optimization": false,
          "type" : "mw",
-         "qumis_instr": "pulse",
-         "qumis_instr_kw": {
-            "codeword": 1,
-            "awg_nr": 2
-         }
+         "cc_light_instr": "x"
       },
 
       "rx180 q0" : {
@@ -39,13 +35,7 @@
 	              [1.0,0.0], [0.0,0.0] ], 
          "disable_optimization": false,
          "type" : "mw",
-         "qumis_instr": "codeword_trigger", 
-         "qumis_instr_kw": {
-            "codeword_ready_bit": 0,
-            "codeword_ready_bit_duration" : 5, 
-            "codeword_bits": [1, 2, 3, 4], 
-            "codeword": 1
-         }
+         "cc_light_instr": "x"
       },
 
       "rx90 q0" : {
@@ -55,14 +45,7 @@
          "matrix" : [ [0.0,0.0], [1.0,0.0],
 	              [1.0,0.0], [0.0,0.0] ], 
          "disable_optimization": false,
-         "type" : "mw",
-         "qumis_instr": "codeword_trigger", 
-         "qumis_instr_kw": {
-            "codeword_ready_bit": 0,
-            "codeword_ready_bit_duration" : 5, 
-            "codeword_bits": [1, 2, 4, 5], 
-            "codeword": 1
-         }
+         "cc_light_instr": "x90"
       },
 
       "rx90 q1" : {
@@ -73,13 +56,7 @@
 	              [1.0,0.0], [0.0,0.0] ], 
          "disable_optimization": false,
          "type" : "mw",
-         "qumis_instr": "codeword_trigger", 
-         "qumis_instr_kw": {
-            "codeword_ready_bit": 0,
-            "codeword_ready_bit_duration" : 5, 
-            "codeword_bits": [1, 2, 4, 5], 
-            "codeword": 1
-         }
+         "cc_light_instr": "x90"
       },
 
       "ry180 q0" : {
@@ -90,11 +67,18 @@
 	              [1.0,0.0], [0.0,0.0] ], 
          "disable_optimization": false,
          "type" : "mw",
-         "qumis_instr": "pulse",
-         "qumis_instr_kw": {
-            "codeword": 3, 
-            "awg_nr": 0
-         }
+         "cc_light_instr": "y"
+      },
+
+      "ry180 q1" : {
+         "duration": 40,
+         "latency": 20,
+         "qubits": ["q1"],
+         "matrix" : [ [0.0,0.0], [1.0,0.0],
+	              [1.0,0.0], [0.0,0.0] ], 
+         "disable_optimization": false,
+         "type" : "mw",
+         "cc_light_instr": "y"
       },
 
       "ry90 q0" : {
@@ -105,26 +89,40 @@
 	              [0.7071068,0.0], [ 0.7071068,0.0] ], 
          "disable_optimization": true, 
          "type" : "mw",
-         "qumis_instr": "pulse",
-         "qumis_instr_kw": {
-            "codeword": 4, 
-            "awg_nr": 1
-         }
+         "cc_light_instr": "y90"
+      },
+
+      "ry90 q1" : {
+         "duration": 40,
+         "latency": 20,
+         "qubits": ["q1"],
+         "matrix" : [ [0.7071068,0.0], [-0.7071068,0.0],
+	              [0.7071068,0.0], [ 0.7071068,0.0] ], 
+         "disable_optimization": true, 
+         "type" : "mw",
+         "cc_light_instr": "y90"
       },
 
       "prepz q0" : {
          "duration": 100,
          "latency": 0,
-         "qubits": ["q0","q1"],
+         "qubits": ["q0"],
          "matrix" : [ [0.0,0.0], [1.0,0.0],
 	              [1.0,0.0], [0.0,0.0] ], 
          "disable_optimization": true, 
          "type" : "mw",
-         "qumis_instr": "pulse",
-         "qumis_instr_kw": {
-            "codeword": 2, 
-            "awg_nr": 1
-         }
+         "cc_light_instr": "prepz"
+      },
+
+      "prepz q1" : {
+         "duration": 100,
+         "latency": 0,
+         "qubits": ["q1"],
+         "matrix" : [ [0.0,0.0], [1.0,0.0],
+	              [1.0,0.0], [0.0,0.0] ], 
+         "disable_optimization": true, 
+         "type" : "mw",
+         "cc_light_instr": "prepz"
       },
 
       "cz q0,q1" : {
@@ -135,14 +133,8 @@
 	              [1.0,0.0], [0.0,0.0] ], 
          "disable_optimization": true,
          "type" : "flux",
-         "qumis_instr": "trigger",
-         "qumis_instr_kw": {
-            "trigger_bit": 6, 
-            "trigger_duration": 80 
-         }
+         "cc_light_instr": "prepz"
       },
-
-
 
       "I q0" : {
          "duration": 40,
@@ -152,11 +144,7 @@
 	              [0.0,0.0], [1.0,0.0] ], 
          "disable_optimization": true, 
          "type" : "mw",
-         "qumis_instr": "pulse",
-         "qumis_instr_kw": {
-            "codeword": -2, 
-            "awg_nr": 2
-         }
+         "cc_light_instr": "i"
       },
 
       "I q1" : {
@@ -167,26 +155,7 @@
 	              [0.0,0.0], [1.0,0.0] ], 
          "disable_optimization": true, 
          "type" : "mw",
-         "qumis_instr": "pulse",
-         "qumis_instr_kw": {
-            "codeword": -2, 
-            "awg_nr": 0
-         }
-      },
-
-      "I q0" : {
-         "duration": 40,
-         "latency": 20,
-         "qubits": ["q0"],
-         "matrix" : [ [1.0,0.0], [0.0,0.0],
-	              [0.0,0.0], [1.0,0.0] ], 
-         "disable_optimization": true, 
-         "type" : "mw",
-         "qumis_instr": "pulse",
-         "qumis_instr_kw": {
-            "codeword": -2, 
-            "awg_nr": 0
-         }
+         "cc_light_instr": "i"
       },
 
       "measure q0" : {
@@ -197,37 +166,30 @@
 	              [1.0,0.0], [0.0,0.0] ], 
          "disable_optimization": true,
          "type" : "readout",
-         "qumis_instr": "trigger",
-         "qumis_instr_kw": {
-            "trigger_bit": 7, 
-            "trigger_duration": 10 
-         }
+         "cc_light_instr": "measure"
       },
 
       "measure q1" : {
-         "alias" : "measure q0"
-      },
-
-      "measure q0 q1" : {
-         "alias" : "measure q0"
-      },
-
-      "measure all" : {
-         "alias" : "measure q0"
+         "duration": 300, 
+         "latency": 50,
+         "qubits": ["q0", "q1"], 
+         "matrix" : [ [0.0,0.0], [1.0,0.0],
+	              [1.0,0.0], [0.0,0.0] ], 
+         "disable_optimization": true,
+         "type" : "readout",
+         "cc_light_instr": "measure"
       }
    },
 
    "gate_decomposition": {
-      "x q0" : ["rx180 q0"],
-      "y q0" : ["ry180 q0"],
-      "z q0" : ["ry180 q0","rx180 q0"],
-      "h q0" : ["ry90 q0"],
+      "x q0" : ["x q0"],
+      "y q0" : ["y q0"],
+      "z q0" : ["z q0"],
+      "h q0" : ["h q0"],
       "t q0" : ["t q0"],
       "tdag q0" : ["tdag q0"],
       "s q0" : ["s q0"],
       "sdag q0" : ["sdag q0"],
-      "cnot q0,q1" : ["ry90 q1","cz q0,q1","ry90 q1"]
+      "cnot q0,q1" : ["cnot q0,q1"]
    }
-
- 
 }

@@ -13,13 +13,16 @@ int main(int argc, char ** argv)
    size_t n_swp_pts        = 5;
 
    // create platform
-   ql::quantum_platform starmon("starmon","hardware_config_cbox.json");
+   // ql::quantum_platform starmon("starmon","hardware_config_cbox.json");
+   ql::quantum_platform starmon("seven_qubit_chip","hardware_config_cc_light.json");
 
    // print info
    starmon.print_info();
 
    // set platform
    ql::set_platform(starmon);
+
+   return 0;
 
    // ql::arch::cbox_eqasm_compiler compiler
 
