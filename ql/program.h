@@ -50,7 +50,12 @@ class quantum_program
          }
          else if (eqasm_compiler_name == "none")
          {
+
          }
+	 else if (eqasm_compiler_name == "cc_light_compiler" )
+	 {
+	    // create backend for cclight here
+	 }
          else
          {
             println("[x] error : the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
