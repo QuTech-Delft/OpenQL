@@ -277,7 +277,10 @@ namespace ql
 	       c.push_back(g);
 	    }
 	    else
-	       println("[x] error : unknown gate '" << name << "' !");
+	    {
+	       println("[x] error : unknown gate '" << instr << "' !");
+	       throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+instr+"' is not supported by the target platform !",false);
+	    }
 	 }
 
 	 /**
@@ -298,7 +301,10 @@ namespace ql
 	       c.push_back(g);
 	    }
 	    else
-	       println("[x] error : unknown gate '" << name << "' !");
+	    {
+	       println("[x] error : unknown gate '" << instr << "' !");
+	       throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+instr+"' is not supported by the target platform !",false);
+	    }
 	 }
 
 	 /**
@@ -318,7 +324,10 @@ namespace ql
 	       c.push_back(g);
 	    }
 	    else
-	       println("[x] error : unknown gate '" << name << "' !");
+	    {
+	       println("[x] error : unknown gate '" << instr << "' !");
+	       throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+instr+"' is not supported by the target platform !",false);
+	    }
 	 }
 
 

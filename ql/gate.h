@@ -551,7 +551,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("rx90 q" + std::to_string(operands[0]) );
+        return instruction_t("rx90 q" + std::to_string(operands[0]));
     }
 
     instruction_t micro_code()
@@ -887,7 +887,7 @@ public:
     instruction_t qasm()
     {
         return instruction_t("cz q" + std::to_string(operands[0])
-                             + ", q"  + std::to_string(operands[1]) );
+                             + ",q"  + std::to_string(operands[1]) );
     }
     instruction_t micro_code()
     {

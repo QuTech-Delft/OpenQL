@@ -15,6 +15,7 @@
 #include <ql/interactionMatrix.h>
 #include <ql/eqasm_compiler.h>
 #include <ql/arch/cbox_eqasm_compiler.h>
+#include <ql/arch/cc_light_eqasm_compiler.h>
 
 namespace ql
 {
@@ -54,7 +55,7 @@ class quantum_program
          }
 	 else if (eqasm_compiler_name == "cc_light_compiler" )
 	 {
-	    // create backend for cclight here
+            backend_compiler = new ql::arch::cc_light_eqasm_compiler();
 	 }
          else
          {

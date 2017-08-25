@@ -1,0 +1,52 @@
+import os
+import unittest
+from openql import openql as ql
+
+curdir    = os.path.dirname(__file__)
+
+output_dir = os.path.join(curdir, 'test_output')
+ql.set_output_dir(output_dir)
+
+def first_example():
+    # You can specify a config location, here we use a default config
+    config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
+    platform  = ql.Platform('seven_qubits_chip', config_fn)
+    sweep_points = [1,2]
+    num_circuits = 2
+    num_qubits = 7
+    p = ql.Program('my_program', num_qubits, platform)
+    p.set_sweep_points(sweep_points, num_circuits)
+
+    # populate kernel using default gates
+    k = ql.Kernel('first_kernel', platform)
+    k.prepz(0)
+    k.x(2)
+    k.y(3)
+    k.z(5)
+    k.rx90(0)
+    # k.cphase(0,1)  # when uncommented this should raise 'operation not supported' exception. 
+    k.cphase(0,3)
+    k.measure(0)
+
+    # add the kernel to the program
+    p.add_kernel(k)
+
+    # populate a second kernel using both custom and default gates
+    k = ql.Kernel('second_kernel', platform)
+    k.gate('prepz', 0) # this line is equivalent to the previous
+    k.gate('x', 0)
+    k.y(1)
+    k.z(5)
+    k.gate('rx90', 0)
+    k.gate('cz', [0, 3])
+    k.gate('measz', 0)
+
+    # add the kernel to the program
+    p.add_kernel(k)
+
+    # compile the program
+    p.compile(optimize=False, verbose=False)
+
+
+if __name__ == '__main__':
+    first_example()

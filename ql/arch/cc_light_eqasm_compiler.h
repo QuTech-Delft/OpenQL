@@ -87,10 +87,9 @@ namespace ql
 		  std::string operation;
 		  if (!instruction_settings[id].is_null())
 		  {
-		     /*
-		     if (instruction_settings[id]["cc_light_eqasm_instr"].is_null())
-			throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : 'cc_light_eqasm_instr' for instruction '"+id+"' is not specified !",false);
-		     operation             = instruction_settings[id]["cc_light_eqasm_instr"];
+		     if (instruction_settings[id]["cc_light_instr"].is_null())
+			throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : 'cc_light_instr' for instruction '"+id+"' is not specified !",false);
+		     operation             = instruction_settings[id]["cc_light_instr"];
 		     size_t duration       = __ns_to_cycle((size_t)instruction_settings[id]["duration"]);
 		     size_t latency        = 0;
 		     
@@ -109,41 +108,29 @@ namespace ql
 			println("[x] error : unknow operation type of the instruction '" << id << "' !");
 			throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : the type of instruction '"+id+"' is unknown !",false);
 		     }
-		     if (instruction_settings[id]["cc_light_eqasm_instr_kw"].is_null())
-			throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : 'cc_light_eqasm_instr_kw' for instruction '"+id+"' is not specified !",false);
 
-		     std::stringstream params;
+		     if (instruction_settings[id]["cc_light_instr_type"].is_null())
+		     {
+			println("[x] error : unknow operation type of the instruction '" << id << "' !");
+			throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : the type of instruction '"+id+"' is unknown !",false);
+		     }
 
-		     if (operation == "pulse")
+		     std::string instr_type = instruction_settings[id]["cc_light_instr_type"];
+
+		     if (instr_type == "single_qubit_gate")
 		     {
-			// println("pulse id: " << id);
-			json& j_params = instruction_settings[id]["cc_light_eqasm_instr_kw"];
-			process_pulse(j_params, duration, type, latency, g->operands, id);
-			// println("pulse code : " << cc_light_eqasm_instructions.back()->code());
+			cc_light_single_qubit_gate * instr = new cc_light_single_qubit_gate(operation,single_qubit_mask(g->operands[0]));
+			cc_light_eqasm_instructions.push_back(instr);
 		     }
-		     else if (operation == "codeword_trigger")
+		     else if (instr_type == "two_qubits_gate")
 		     {
-			// println("cw id: " << id);
-			json& j_params = instruction_settings[id]["cc_light_eqasm_instr_kw"];
-			process_codeword_trigger(j_params, duration, type, latency, g->operands, id);
-		     }
-		     else if  ((operation == "trigger") && (type == __measurement__))
+			cc_light_two_qubits_gate * instr = new cc_light_two_qubits_gate(operation,two_qubits_mask(qubit_pair_t(g->operands[0],g->operands[1])));
+			cc_light_eqasm_instructions.push_back(instr);
+		     } else // unknown type of operation
 		     {
-			// println("measurement (trig) id: " << id);
-			json& j_params = instruction_settings[id]["cc_light_eqasm_instr_kw"];
-                        std::string cc_light_eqasm_instr = instruction_settings[id]["cc_light_eqasm_instr"];
-			process_measure(j_params, cc_light_eqasm_instr, duration, type, latency, g->operands, id);
+			println("[x] error : unknow instruction type of the instruction '" << id << "' (should be single or two qubit gates) !");
+			throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : the type of instruction '"+id+"' is unknown !",false);
 		     }
-		     else if  ((operation == "trigger"))
-		     {
-			// println("trig id: " << id);
-			json& j_params = instruction_settings[id]["cc_light_eqasm_instr_kw"];
-                        std::string cc_light_eqasm_instr = instruction_settings[id]["cc_light_eqasm_instr"];
-			process_trigger(j_params, cc_light_eqasm_instr, duration, type, latency, g->operands, id);
-		     }
-		     // cc_light_eqasm = operation + " " + params.str();
-		     //println("cc_light_eqasm : " << cc_light_eqasm);
-*/
 		  }
 		  else
 		  {
@@ -170,7 +157,7 @@ namespace ql
 
 	       // insert waits
 
-	       // emit_eqasm();
+	       emit_eqasm();
 	       // return eqasm_code;
 	    }
 
@@ -261,7 +248,7 @@ namespace ql
 	       if (verbose) println("instruction rescheduling...");
 	       if (verbose) println("resource dependency analysis...");
 	       if (verbose) println("buffer insertion...");
-
+#if 0
 	       std::vector<size_t>           hw_res_av(__trigger_width__+__awg_number__,0);
 	       std::vector<size_t>           qu_res_av(num_qubits,0);
 	       std::vector<operation_type_t> hw_res_op(__trigger_width__+__awg_number__,__none__);
@@ -321,6 +308,7 @@ namespace ql
 		     qu_res_op[q] = (type);
 		  }
 	       }
+#endif
 	    }
 
 	    /**
@@ -336,6 +324,7 @@ namespace ql
 	     */
 	    void write_traces(std::string file_name="")
 	    {
+#if 0
 	       ql::arch::channels_t channels;
 	       if (cc_light_eqasm_instructions.empty())
 	       {
@@ -365,7 +354,7 @@ namespace ql
 	       }
 
 	       diagram.dump(ql::utils::get_output_dir() + "/trace.dat");
-
+#endif
 	    }
 
 
@@ -378,9 +367,9 @@ namespace ql
 	    {
 	       if (verbose) println("compiling eqasm...");
 	       eqasm_code.clear();
-	       eqasm_code.push_back("wait 1");       // add wait 1 at the begining
-	       eqasm_code.push_back("mov r14, 0");   // 0: infinite loop
-	       eqasm_code.push_back("start:");       // label
+	       // eqasm_code.push_back("wait 1");       // add wait 1 at the begining
+	       // eqasm_code.push_back("mov r14, 0");   // 0: infinite loop
+	       // eqasm_code.push_back("start:");       // label
 	       size_t t = 0;
 	       for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
 	       {
@@ -393,163 +382,19 @@ namespace ql
 		  }
 		  eqasm_code.push_back(instr->code());
 	       }
-	       eqasm_code.push_back("wait "+std::to_string(cc_light_eqasm_instructions.back()->duration));
-	       eqasm_code.push_back("beq r14, r14 start");  // loop
+	       // eqasm_code.push_back("wait "+std::to_string(cc_light_eqasm_instructions.back()->duration));
+	       // eqasm_code.push_back("beq r14, r14 start");  // loop
 	       println("compilation done.");
 	    }
 
 	    /**
-	     * process pulse
+	     * process 
 	     */
-	    void process_pulse(json& j_params, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
+	    void process_single_qubit_gate(std::string instr_name, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
 	    {
-	       // println("processing pulse instruction...");
-	       // check for hardware configuration integrity
-	       if (j_params["codeword"].is_null())
-		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing pulse instruction : 'codeword' for instruction '"+qasm_label+"' is not specified !",false);
-	       if (j_params["awg_nr"].is_null())
-		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing pulse instruction : 'awg_nr' for instruction '"+qasm_label+"' is not specified !",false);
-
-	       size_t codeword = j_params["codeword"];
-	       size_t awg_nr   = j_params["awg_nr"];
-
-	       if (awg_nr >= __awg_number__)
-		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing pulse instruction : 'awg_nr' for instruction '"+qasm_label+"' is out of range !",false);
-	       // println("\tcodeword: " << codeword);
-	       // println("\tawg     : " << awg_nr);
-	       pulse * p = new pulse(codeword,awg_nr,duration,type,latency);
-	       p->used_qubits = qubits;
-	       p->qasm_label  = qasm_label;
-	       cc_light_eqasm_instructions.push_back(p);
-	    }
-
-	    /**
-	     * process codeword trigger
-	     */
-	    void process_codeword_trigger(json& j_params, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
-	    {
-	       // println("processing codeword trigger instruction...");
-	       // check for hardware configuration integrity
-	       if (j_params["codeword_ready_bit"].is_null())
-		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing codeword trigger : 'codeword_ready_bit' for instruction '"+qasm_label+"' is not specified !",false);
-	       if (j_params["codeword_ready_bit_duration"].is_null())
-		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing codeword trigger : 'codeword_ready_bit_duration' for instruction '"+qasm_label+"' is not specified !",false);
-	       if (j_params["codeword_bits"].is_null())
-		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing codeword trigger : 'codeword_bits' for instruction '"+qasm_label+"' is not specified !",false);
-
-	       size_t codeword_ready_bit           = j_params["codeword_ready_bit"];
-	       size_t codeword_ready_bit_duration  = __ns_to_cycle((size_t)j_params["codeword_ready_bit_duration"]);
-	       // size_t bit_nr                       = j_params["codeword_bits"].size();
-	       std::vector<size_t> bits            = j_params["codeword_bits"];
-
-	       // println("\tcodeword_ready_bit          : " << codeword_ready_bit);
-	       // println("\tcodeword_ready_bit_duration : " << codeword_ready_bit_duration);
-	       // println("\tbit_nr                      : " << bit_nr);
-
-	       if (codeword_ready_bit > (__trigger_width__-1))
-	       {
-		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing codeword trigger : 'ready_bit' of instruction '"+qasm_label+"' is out of range !",false);
-	       }
-
-	       // ready trigger
-	       // codeword_t ready_codeword = 0;
-	       // ready_codeword.set(codeword_ready_bit);
-	       // trigger * ready_trigger = new trigger(ready_codeword_trigger, codeword_ready_bit_duration, type);
-	       // println("\t code (r_trigger): " << ready_trigger->code() );
-
-	       // codeword trigger
-	       codeword_t main_codeword_trigger = 0;
-	       for (size_t b : bits) main_codeword_trigger.set(b);
-	       // trigger * main_trigger = new trigger(main_codeword_trigger, duration, type);
-	       //println("\t code (m_trigger): " << main_trigger->code() );
-
-	       codeword_trigger * instr = new codeword_trigger(main_codeword_trigger, duration, codeword_ready_bit, codeword_ready_bit_duration, type, latency, qasm_label);
-
-	       instr->used_qubits = qubits;
-	       instr->qasm_label  = qasm_label;
-
-	       // println("\tcode: " << instr->code());
-
+	       cc_light_single_qubit_gate * instr = new cc_light_single_qubit_gate(instr_name,single_qubit_mask(qubits[0]));
 	       cc_light_eqasm_instructions.push_back(instr);
 	    }
-
-	    /**
-	     * process readout
-	     */
-	    void process_measure(json& j_params, std::string instr, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
-	    {
-	       // println("processing measure instruction...");
-	       cc_light_eqasm_instruction * cc_light_eqasm_instr;
-	       if (instr == "trigger")
-	       {
-		  // check for hardware configuration integrity
-		  if (j_params["trigger_bit"].is_null())
-		     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing measure instruction : 'trigger_bit' for instruction '"+qasm_label+"' is not specified !",false);
-		  if (j_params["trigger_duration"].is_null())
-		     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing measure instruction : 'trigger_duration' for instruction '"+qasm_label+"' is not specified !",false);
-
-		  size_t trigger_bit       = j_params["trigger_bit"];
-		  size_t trigger_duration  = __ns_to_cycle((size_t)j_params["trigger_duration"]);
-
-		  // println("\ttrigger bit      : " << trigger_bit);
-		  // println("\ttrigger duration : " << trigger_duration);
-		  if (trigger_bit > (__trigger_width__-1))
-		  {
-		     //println("[x] error while processing the 'readout' instruction : invalid trigger bit.");
-		     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing measure instruction '"+qasm_label+"' : invalid trigger bit (out of range) !",false);
-		  }
-		  codeword_t cw = 0;
-		  cw.set(trigger_bit);
-		  cc_light_eqasm_instr = new trigger(cw, trigger_duration, __measurement__, latency);
-		  cc_light_eqasm_instr->used_qubits = qubits;
-		  cc_light_eqasm_instr->qasm_label  = qasm_label;
-		  measure * m = new measure(cc_light_eqasm_instr, duration,latency);
-		  m->used_qubits = qubits;
-		  m->qasm_label  = qasm_label;
-		  cc_light_eqasm_instructions.push_back(m);
-	       }
-	       else
-	       {
-		     println("[x] error while processing the 'readout' instruction : only trigger-based implementation is supported !");
-		     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing the '"+qasm_label+"' instruction : only trigger-based implementation is supported !",false);
-	       }
-	       // println("measure instruction processed.");
-	    }
-
-
-	    /**
-	     * process trigger
-	     */
-	    void process_trigger(json& j_params, std::string instr, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
-	    {
-	       // println("processing trigger instruction...");
-	       cc_light_eqasm_instruction * trig;
-
-	       // check for hardware configuration integrity
-	       if (j_params["trigger_bit"].is_null())
-		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing trigger instruction : 'trigger_bit' for instruction '"+qasm_label+"' is not specified !",false);
-	       if (j_params["trigger_duration"].is_null())
-		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing trigger instruction : 'trigger_duration' for instruction '"+qasm_label+"' is not specified !",false);
-
-	       size_t trigger_bit       = j_params["trigger_bit"];
-	       size_t trigger_duration  = __ns_to_cycle((size_t)j_params["trigger_duration"]);
-
-	       // println("\ttrigger bit      : " << trigger_bit);
-	       // println("\ttrigger duration : " << trigger_duration);
-	       if (trigger_bit > (__trigger_width__-1))
-	       {
-		  // println("[x] error while processing the 'trigger' instruction : invalid trigger bit.");
-		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing trigger instruction '"+qasm_label+"' : invalid trigger bit (out of range) !",false);
-	       }
-	       codeword_t cw = 0;
-	       cw.set(trigger_bit);
-	       trig = new trigger(cw, trigger_duration, __measurement__, latency);
-	       trig->used_qubits = qubits;
-	       trig->qasm_label  = qasm_label;
-	       cc_light_eqasm_instructions.push_back(trig);
-	    }
-
-
 
 	    /**
 	     * return operation type
