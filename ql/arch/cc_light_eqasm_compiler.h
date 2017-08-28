@@ -377,8 +377,8 @@ namespace ql
 		  size_t dt = start-t;
 		  if (dt)
 		  {
-		     eqasm_code.push_back("wait "+std::to_string(dt));
-		     t = start;
+		     // eqasm_code.push_back("wait "+std::to_string(dt));
+		     // t = start;
 		  }
 		  eqasm_code.push_back(instr->code());
 	       }
