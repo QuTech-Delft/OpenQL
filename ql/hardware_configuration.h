@@ -91,6 +91,7 @@ namespace ql
 	      {
 		 instruction_settings = config["instructions"];
 	      }
+	      // create the control store
 
 	      // load instructions
 	      json instructions = config["instructions"];

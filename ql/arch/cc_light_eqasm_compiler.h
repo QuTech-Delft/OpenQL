@@ -2,7 +2,7 @@
  * @file   cc_light_eqasm_compiler.h
  * @date   08/2017
  * @author Nader Khammassi
- * @brief  cbox eqasm compiler implementation
+ * @brief  cclighteqasm compiler implementation
  */
 
 #ifndef QL_CC_LIGHT_EQASM_COMPILER_H
@@ -77,6 +77,38 @@ namespace ql
 	       {
 		 throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter '"+params[p-1]+"'\n\t"+ std::string(e.what()),false);
 	       }
+
+	       std::stringstream control_store;
+	       control_store << "         Condition  OpTypeLeft  CW_Left  OpTypeRight  CW_Right\n";
+	       control_store << "     0:      0          0          0          0           0    \n";
+	       for (auto i : instruction_settings)
+	       {
+		  if (i["cc_light_instr_type"] == "single_qubit_gate")
+		  {
+		     auto opcode     = i["cc_light_opcode"];
+		     auto condition  = 0;
+		     auto optype     = (i["type"] == "mw" ? 1 : (i["type"] == "flux" ? 2 : ((i["type"] == "readout" ? 3 : 0))));
+		     auto codeword   = i["cc_light_codeword"];
+		     control_store << "     " << i["cc_light_opcode"] << ":     0          " << optype << "          " << codeword << "          0          0\n";
+		  }
+		  else if (i["cc_light_instr_type"] == "two_qubits_gate")
+		  {
+		     auto opcode     = i["cc_light_opcode"];
+		     auto condition  = 0;
+		     auto optype     = (i["type"] == "mw" ? 1 : (i["type"] == "flux" ? 2 : ((i["type"] == "readout" ? 3 : 0))));
+		     auto codeword_l = i["cc_light_left_codeword"];
+		     auto codeword_r = i["cc_light_right_codeword"];
+		     control_store << "     " << i["cc_light_opcode"] << ":     0          " << optype << "          " << codeword_l << "          " << optype << "          " << codeword_r << "\n";
+		  }
+		  else
+		     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : invalid 'cc_light_instr_type' for instruction !",false);
+		  // println("\n" << control_store.str());
+	       }
+
+	       std::string cs_filename = ql::utils::get_output_dir() + "/cs.txt";
+	       println("writing control store fil to '" << cs_filename << "' ...");
+	       std::string s = control_store.str();
+	       ql::utils::write_file(cs_filename,s);
 
 	       for (ql::gate * g : c)
 	       {

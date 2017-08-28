@@ -46,7 +46,7 @@ int main(int argc, char ** argv)
    kernel.gate("y",0);
    kernel.gate("h",1);
    kernel.gate("cz",0,2);
-   kernel.gate("cz",0,4);
+   kernel.gate("cnot",6,4);
 
    // kernel.measure(0);
 
