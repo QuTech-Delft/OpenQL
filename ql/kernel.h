@@ -395,13 +395,13 @@ namespace ql
 
 	 }
 
-	 void schedule(size_t nqubits, std::string scheduler, std::string& sched_qasm, std::string& sched_dot, bool verbose=false)
+	 void schedule(size_t qubits, quantum_platform platform, std::string scheduler, std::string& sched_qasm, std::string& sched_dot, bool verbose=false)
 	 {
 #ifndef __disable_lemon__
 	    if (verbose) println( scheduler << " scheduling the quantum kernel '" << name << "'...");
 
 	    DependGraph dg;
-	    dg.Init(c, nqubits, verbose);
+	    dg.Init(qubits, c, platform, verbose);
 	    // dg.Print();
 	    // dg.PrintMatrix();
 	    // dg.PrintDot();

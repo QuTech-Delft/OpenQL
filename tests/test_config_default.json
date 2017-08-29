@@ -2,7 +2,7 @@
    "eqasm_compiler" : "none",
 
    "hardware_settings": {
-	 "qubit_number": 2,
+	 "qubit_number": 7,
 	 "cycle_time" : 5,  
 	 "mw_mw_buffer": 0,
 	 "mw_flux_buffer": 0,

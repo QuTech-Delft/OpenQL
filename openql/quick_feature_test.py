@@ -5,30 +5,27 @@ curdir = os.path.dirname(__file__)
 config_fn = os.path.join(curdir, '../tests/test_cfg_cbox.json')
 platf = ql.Platform("starmon", config_fn)
 
-# gall the outputs are generated in 'output' dir
+# all the outputs are generated in 'output' dir
 output_dir = os.path.join(curdir, 'output')
 ql.set_output_dir(output_dir)
-
 
 def feature_test():
 
     # create a kernel
     k = ql.Kernel("aKernel", platf)
 
-    # print user-defined instructions (qasm/microcode)
-    k.print_custom_instructions()
-
     # populate a kernel
     k.prepz(0)
+    k.prepz(1)
+    k.hadamard(0)
+    k.cnot(0, 1)
+    # k.gate("x", 0)
     k.x(0)
+    k.measure(0)
 
-    k.gate("rx180", [0])
-    # or
-    k.gate("rx180", 0)
-
-    num_circuits = 1
+    num_circuits = 2
     sweep_points = [1, 1.25, 1.75, 2.25, 2.75 ]
-    nqubits = 1
+    nqubits = 2
 
     # create a program
     p = ql.Program("aProgram", nqubits, platf)

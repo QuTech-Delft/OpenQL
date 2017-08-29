@@ -35,7 +35,7 @@ class quantum_program
 
    public:
 
-      quantum_program(std::string name, size_t qubits, quantum_platform platform) : platform(platform), name(name), default_config(true), qubits(qubits) 
+      quantum_program(std::string name, size_t nqubits /**/, quantum_platform platform) : platform(platform), name(name), default_config(true), qubits(nqubits)
       {
          eqasm_compiler_name = platform.eqasm_compiler_name;
 	 backend_compiler    = NULL;
@@ -276,7 +276,7 @@ class quantum_program
          {
             std::string kernel_sched_qasm;
             std::string kernel_sched_dot;
-            k.schedule(qubits, scheduler, kernel_sched_qasm, kernel_sched_dot, verbose);
+            k.schedule(qubits, platform, scheduler, kernel_sched_qasm, kernel_sched_dot, verbose);
             sched_qasm += "." + k.getName() + "\n";
             sched_qasm += kernel_sched_qasm;
 

@@ -65,8 +65,9 @@ class Test_program(unittest.TestCase):
         p = ql.Program("rbProgram", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
         p.add_kernel(k)
-        p.compile()
-        p.schedule()
+        print( p.qasm() )
+        p.compile(False, False)
+        p.schedule("ALAP", True)
 
         # N.B. This does not actually test if the output is correct : this is deprecated (should not be used !)
         # print(p.qasm())

@@ -45,9 +45,9 @@ public:
     DependGraph(): instruction(graph), name(graph), weight(graph),
         cause(graph), depType(graph), dist(graph) {}
 
-    void Init( ql::circuit& ckt, size_t nqubits, bool verbose=false)
+    void Init( size_t nQubits, ql::circuit& ckt, ql::quantum_platform platform, bool verbose=false)
     {
-        size_t nQubits = nqubits;
+        size_t cycle_time=platform.cycle_time;
         // std::cout << "nQubits : " << nQubits << std::endl;
 
         // add dummy source node
@@ -85,7 +85,10 @@ public:
                 if(prodID == srcID)
                     weight[arc] = 1; // TODO OR 0 as SOURCE is dummy node?
                 else
-                    weight[arc] = instruction[prodNode]->duration;
+                {
+                    weight[arc] = (instruction[prodNode]->duration)/cycle_time;
+                    // println("Case 1: " << name[prodNode] << " -> " << name[consNode] << ", duration: " << instruction[prodNode]->duration << ", weight: " << weight[arc]);
+                }
 
                 cause[arc] = operand;
                 if(operandNo == 0)
@@ -98,7 +101,10 @@ public:
                         if(prodID == srcID)
                             weight[arc1] = 1; // TODO OR 0 as SOURCE is dummy node?
                         else
-                            weight[arc1] = instruction[readerNode]->duration;
+                        {
+                            weight[arc1] = (instruction[readerNode]->duration)/cycle_time;
+                            // println("Case 2: " << name[readerNode] << " -> " << name[consNode] << ", duration: " << instruction[readerNode]->duration << ", weight: " << weight[arc1]);
+                        }
 
                         cause[arc1] = operand;
                         depType[arc1] = RAR; // on control
@@ -119,7 +125,10 @@ public:
                         if(prodID == srcID)
                             weight[arc1] = 1; // TODO OR 0 as SOURCE is dummy node?
                         else
-                            weight[arc1] = instruction[readerNode]->duration;
+                        {
+                            weight[arc1] = (instruction[readerNode]->duration)/cycle_time;
+                            // println("Case 3: " << name[readerNode] << " -> " << name[consNode] << ", duration: " << instruction[readerNode]->duration << ", weight: " << weight[arc1]);
+                        }
 
                         cause[arc1] = operand;
                         depType[arc1] = WAR;
