@@ -30,174 +30,178 @@ typedef std::string instruction_t;
 namespace ql
 {
 
-   typedef std::string qasm_inst_t;
-   typedef std::string ucode_inst_t;
+typedef std::string qasm_inst_t;
+typedef std::string ucode_inst_t;
 
-   typedef std::string string_t;
-   typedef std::vector<std::string> strings_t;
-   typedef std::vector<std::string> ucode_sequence_t;
+typedef std::string string_t;
+typedef std::vector<std::string> strings_t;
+typedef std::vector<std::string> ucode_sequence_t;
 
-   typedef enum
-   {
-      flux_t,
-      rf_t
-   } instruction_type_t;
-
-
-
-   typedef std::map<qasm_inst_t, ucode_inst_t> dep_instruction_map_t;
-
-   extern dep_instruction_map_t dep_instruction_map;
-
-   // gate types
-   typedef enum __gate_type_t
-   {
-      __identity_gate__  ,
-      __hadamard_gate__  ,
-      __pauli_x_gate__   ,
-      __pauli_y_gate__   ,
-      __pauli_z_gate__   ,
-      __phase_gate__     ,
-      __phasedag_gate__  ,
-      __t_gate__         ,
-      __tdag_gate__      ,
-      __rx90_gate__      ,
-      __mrx90_gate__     ,
-      __rx180_gate__     ,
-      __ry90_gate__      ,
-      __mry90_gate__     ,
-      __ry180_gate__     ,
-      __rz_gate__        ,
-      __prepz_gate__     ,
-      __cnot_gate__      ,
-      __cphase_gate__    ,
-      __toffoli_gate__   ,
-      __custom_gate__    ,
-      __measure_gate__   ,
-      __display__        ,
-      __display_binary__ ,
-      __nop_gate__
-   } gate_type_t;
-
-   #define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
-   #define rsqrt_2 (0.7071067811865475244008443621048490392848359376884740365883398690f)
-
-   #define __c(r,i) complex_t(r,i)
-
-   const complex_t identity_c [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
-                                                                         __c(0.0, 0.0) , __c(1.0, 0.0)
-                                                                      };     /* I */
-
-   const complex_t pauli_x_c  [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) , __c(1.0, 0.0),
-                                                                        __c(1.0, 0.0) , __c(0.0, 0.0)
-                                                                      };      /* X */
-
-   const complex_t pauli_y_c  [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) , __c(0.0,-1.0),
-                                                                        __c(0.0, 1.0) , __c(0.0, 0.0)
-                                                                      };      /* Y */
-
-   const complex_t pauli_z_c  [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
-                                                                        __c(0.0, 0.0) , __c(-1.0,0.0)
-                                                                      };      /* Z */
-
-   const complex_t hadamard_c [] /* __attribute__((aligned(64))) */  = { rsqrt_2      ,  rsqrt_2, 
-                                                                         rsqrt_2      , -rsqrt_2 
-                                                                       };            /* H */
-
-   const complex_t phase_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
-                                                                        __c(0.0, 0.0) , __c(0.0, 1.0)
-                                                                      };        /* S */
-
-   const complex_t phasedag_c [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
-                                                                        __c(0.0, 0.0) , __c(0.0, -1.0)
-                                                                      };        /* S */
-
-   const complex_t t_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
-                                                                    __c(0.0, 0.0) , __c(0.707106781, 0.707106781)
-                                                                  };        /* T */
-
-   const complex_t tdag_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
-                                                                       __c(0.0, 0.0) , __c(0.707106781, -0.707106781)
-                                                                     };        /* Tdag */
-
-   const complex_t rx90_c  [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(0.0, -rsqrt_2),
-                                                                     __c(0.0, -rsqrt_2), __c(rsqrt_2,  0.0)
-                                                                   };   /* rx90  */
-
-   const complex_t ry90_c  [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(-rsqrt_2, 0.0),
-                                                                     __c(rsqrt_2, 0.0 ), __c( rsqrt_2, 0.0)
-                                                                   };   /* ry90  */
-
-   const complex_t mrx90_c [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(0.0,  rsqrt_2),
-                                                                     __c(0.0, rsqrt_2) , __c(rsqrt_2,  0.0)
-                                                                   };   /* mrx90 */
-
-   const complex_t mry90_c [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(rsqrt_2, 0.0),
-                                                                     __c(-rsqrt_2, 0.0), __c(rsqrt_2, 0.0)
-                                                                   };   /* ry90  */
-
-   const complex_t rx180_c [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) , __c(0.0,-1.0),
-                                                                     __c(0.0,-1.0) , __c(0.0, 0.0)
-                                                                   };   /* rx180 */
-
-   const complex_t ry180_c [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) , __c(-1.0, 0.0),
-                                                                     __c(1.0, 0.0) , __c( 0.0, 0.0)
-                                                                   };   /* ry180 */
-   
-   /**
-    * to do : multi-qubit gates should not be represented by their matrix (the matrix depends on the ctrl/target qubit locations, the simulation using such matrix is inefficient as well...)
-    */
-
-   const complex_t cnot_c [] /* __attribute__((aligned(64))) */ =  {
-                                                                     __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-                                                                     __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-                                                                     __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
-                                                                     __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0)
-                                                                    };  /* cnot  */
-
-   // TODO correct it, for now copied from cnot
-   const complex_t cphase_c [] /* __attribute__((aligned(64))) */ = {
-                                                                      __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-                                                                      __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-                                                                      __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
-                                                                      __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(-1.0, 0.0)
-                                                                    }; /* cz */
-
-   // TODO correct it, for now copied from toffoli
-   const complex_t ctoffoli_c[] /* __attribute__((aligned(64))) */ = {
-                                                                      __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-                                                                      __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-                                                                      __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-                                                                      __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-                                                                      __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-                                                                      __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-                                                                      __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0),
-                                                                      __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0)
-   };
-
-   const complex_t nop_c      [] /*__attribute__((aligned(64)))*/ = { 
-                                                                      __c(1.0, 0.0) , __c(0.0, 0.0),
-                                                                      __c(0.0, 0.0) , __c(1.0, 0.0)
-   };
-
-  #undef __c
+typedef enum
+{
+    flux_t,
+    rf_t
+} instruction_type_t;
 
 
-  /**
-   * gate interface
-   */
-   class gate
-   {
-      public:
-         bool optimization_enabled = true;
-	 std::string name = "";
-	 std::vector<size_t> operands;
-	 size_t duration;                          // to do change attribute name "duration" to "duration" (duration is used to describe hardware duration) 
-	 virtual instruction_t qasm()       = 0;
-	 virtual instruction_t micro_code() = 0;  // to do : deprecated
-	 virtual gate_type_t   type()       = 0;
-	 virtual cmat_t        mat()        = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
-   };
+
+typedef std::map<qasm_inst_t, ucode_inst_t> dep_instruction_map_t;
+
+extern dep_instruction_map_t dep_instruction_map;
+
+// gate types
+typedef enum __gate_type_t
+{
+    __identity_gate__  ,
+    __hadamard_gate__  ,
+    __pauli_x_gate__   ,
+    __pauli_y_gate__   ,
+    __pauli_z_gate__   ,
+    __phase_gate__     ,
+    __phasedag_gate__  ,
+    __t_gate__         ,
+    __tdag_gate__      ,
+    __rx90_gate__      ,
+    __mrx90_gate__     ,
+    __rx180_gate__     ,
+    __ry90_gate__      ,
+    __mry90_gate__     ,
+    __ry180_gate__     ,
+    __rz_gate__        ,
+    __prepz_gate__     ,
+    __cnot_gate__      ,
+    __cphase_gate__    ,
+    __toffoli_gate__   ,
+    __custom_gate__    ,
+    __measure_gate__   ,
+    __display__        ,
+    __display_binary__ ,
+    __nop_gate__
+} gate_type_t;
+
+#define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
+#define rsqrt_2 (0.7071067811865475244008443621048490392848359376884740365883398690f)
+
+#define __c(r,i) complex_t(r,i)
+
+const complex_t identity_c [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
+                                                                     __c(0.0, 0.0) , __c(1.0, 0.0)
+                                                                   };     /* I */
+
+const complex_t pauli_x_c  [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) , __c(1.0, 0.0),
+                                                                     __c(1.0, 0.0) , __c(0.0, 0.0)
+                                                                   };      /* X */
+
+const complex_t pauli_y_c  [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) , __c(0.0,-1.0),
+                                                                     __c(0.0, 1.0) , __c(0.0, 0.0)
+                                                                   };      /* Y */
+
+const complex_t pauli_z_c  [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
+                                                                     __c(0.0, 0.0) , __c(-1.0,0.0)
+                                                                   };      /* Z */
+
+const complex_t hadamard_c [] /* __attribute__((aligned(64))) */  = { rsqrt_2      ,  rsqrt_2,
+                                                                      rsqrt_2      , -rsqrt_2
+                                                                    };            /* H */
+
+const complex_t phase_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
+                                                                     __c(0.0, 0.0) , __c(0.0, 1.0)
+                                                                   };        /* S */
+
+const complex_t phasedag_c [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
+                                                                     __c(0.0, 0.0) , __c(0.0, -1.0)
+                                                                   };        /* S */
+
+const complex_t t_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
+                                                                 __c(0.0, 0.0) , __c(0.707106781, 0.707106781)
+                                                               };        /* T */
+
+const complex_t tdag_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
+                                                                    __c(0.0, 0.0) , __c(0.707106781, -0.707106781)
+                                                                  };        /* Tdag */
+
+const complex_t rx90_c  [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(0.0, -rsqrt_2),
+                                                                  __c(0.0, -rsqrt_2), __c(rsqrt_2,  0.0)
+                                                                };   /* rx90  */
+
+const complex_t ry90_c  [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(-rsqrt_2, 0.0),
+                                                                  __c(rsqrt_2, 0.0 ), __c( rsqrt_2, 0.0)
+                                                                };   /* ry90  */
+
+const complex_t mrx90_c [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(0.0,  rsqrt_2),
+                                                                  __c(0.0, rsqrt_2) , __c(rsqrt_2,  0.0)
+                                                                };   /* mrx90 */
+
+const complex_t mry90_c [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(rsqrt_2, 0.0),
+                                                                  __c(-rsqrt_2, 0.0), __c(rsqrt_2, 0.0)
+                                                                };   /* ry90  */
+
+const complex_t rx180_c [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) , __c(0.0,-1.0),
+                                                                  __c(0.0,-1.0) , __c(0.0, 0.0)
+                                                                };   /* rx180 */
+
+const complex_t ry180_c [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) , __c(-1.0, 0.0),
+                                                                  __c(1.0, 0.0) , __c( 0.0, 0.0)
+                                                                };   /* ry180 */
+
+/**
+ * to do : multi-qubit gates should not be represented by their matrix (the matrix depends on the ctrl/target qubit locations, the simulation using such matrix is inefficient as well...)
+ */
+
+const complex_t cnot_c [] /* __attribute__((aligned(64))) */ =
+{
+    __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0)
+};  /* cnot  */
+
+// TODO correct it, for now copied from cnot
+const complex_t cphase_c [] /* __attribute__((aligned(64))) */ =
+{
+    __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(-1.0, 0.0)
+}; /* cz */
+
+// TODO correct it, for now copied from toffoli
+const complex_t ctoffoli_c[] /* __attribute__((aligned(64))) */ =
+{
+    __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0),
+    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0)
+};
+
+const complex_t nop_c      [] /*__attribute__((aligned(64)))*/ =
+{
+    __c(1.0, 0.0) , __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(1.0, 0.0)
+};
+
+#undef __c
+
+
+/**
+ * gate interface
+ */
+class gate
+{
+public:
+    bool optimization_enabled = true;
+    std::string name = "";
+    std::vector<size_t> operands;
+    size_t duration;                          // to do change attribute name "duration" to "duration" (duration is used to describe hardware duration)
+    virtual instruction_t qasm()       = 0;
+    virtual instruction_t micro_code() = 0;  // to do : deprecated
+    virtual gate_type_t   type()       = 0;
+    virtual cmat_t        mat()        = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
+};
 
 
 /**
@@ -210,7 +214,7 @@ public:
     identity(size_t q) : m(identity_c)
     {
         name = "i";
-        duration = 2; // TODO fix it
+        duration = 40;
         operands.push_back(q);
     }
 
@@ -246,7 +250,7 @@ public:
     hadamard(size_t q) : m(hadamard_c)
     {
         name = "h";
-        duration = 2;
+        duration = 40;
         operands.push_back(q);
     }
 
@@ -284,7 +288,7 @@ public:
     phase(size_t q) : m(phase_c)
     {
         name = "s";
-        duration = 3;
+        duration = 80;
         operands.push_back(q);
     }
 
@@ -318,7 +322,7 @@ public:
     phasedag(size_t q) : m(phasedag_c)
     {
         name = "sdag";
-        duration = 3;
+        duration = 80;
         operands.push_back(q);
     }
 
@@ -355,7 +359,7 @@ public:
     t(size_t q) : m(t_c)
     {
         name = "t";
-        duration = 1;
+        duration = 20;
         operands.push_back(q);
     }
 
@@ -392,7 +396,7 @@ public:
     tdag(size_t q) : m(tdag_c)
     {
         name = "tdag";
-        duration = 1;
+        duration = 20;
         operands.push_back(q);
     }
 
@@ -430,7 +434,7 @@ public:
     pauli_x(size_t q) : m(pauli_x_c)
     {
         name = "x";
-        duration = 1;
+        duration = 40;
         operands.push_back(q);
     }
 
@@ -468,7 +472,7 @@ public:
     pauli_y(size_t q) : m(pauli_y_c)
     {
         name = "y";
-        duration = 1;
+        duration = 40;
         operands.push_back(q);
     }
 
@@ -507,7 +511,7 @@ public:
     pauli_z(size_t q) : m(pauli_z_c)
     {
         name = "z";
-        duration = 2;
+        duration = 80;
         operands.push_back(q);
     }
 
@@ -545,7 +549,7 @@ public:
     rx90(size_t q) : m(rx90_c)
     {
         name = "rx90";
-        duration = 1;
+        duration = 40;
         operands.push_back(q);
     }
 
@@ -583,7 +587,7 @@ public:
     mrx90(size_t q) : m(mrx90_c)
     {
         name = "mx90";
-        duration = 1;
+        duration = 40;
         operands.push_back(q);
     }
 
@@ -620,7 +624,7 @@ public:
     rx180(size_t q) : m(rx180_c)
     {
         name = "x180";
-        duration = 1;
+        duration = 40;
         operands.push_back(q);
     }
 
@@ -658,7 +662,7 @@ public:
     ry90(size_t q) : m(ry90_c)
     {
         name = "ry90";
-        duration = 1;
+        duration = 40;
         operands.push_back(q);
     }
 
@@ -696,7 +700,7 @@ public:
     mry90(size_t q) : m(mry90_c)
     {
         name = "my90";
-        duration = 1;
+        duration = 40;
         operands.push_back(q);
     }
 
@@ -733,7 +737,7 @@ public:
     ry180(size_t q) : m(ry180_c)
     {
         name = "ry180";
-        duration = 1;
+        duration = 40;
         operands.push_back(q);
     }
 
@@ -766,19 +770,19 @@ public:
 class measure : public gate
 {
 public:
-    cmat_t m; 
+    cmat_t m;
 
     measure(size_t q) : m(identity_c)
     {
         name = "measure";
-        duration = 4;
+        duration = 300;
         operands.push_back(q);
     }
 
     instruction_t qasm()
     {
         return instruction_t("measure q" + std::to_string(operands[0]) );
-                             // + "\n   display_binary\n");
+        // + "\n   display_binary\n");
     }
 
     instruction_t micro_code()
@@ -809,7 +813,7 @@ public:
     prepz(size_t q) : m(identity_c)
     {
         name = "prepz";
-        duration = 1;
+        duration = 100;
         operands.push_back(q);
     }
 
@@ -846,7 +850,7 @@ public:
     cnot(size_t q1, size_t q2) : m(cnot_c)
     {
         name = "cnot";
-        duration = 4;
+        duration = 80;
         operands.push_back(q1);
         operands.push_back(q2);
     }
@@ -880,7 +884,7 @@ public:
     cphase(size_t q1, size_t q2) : m(cphase_c)
     {
         name = "cz";
-        duration = 4;
+        duration = 80;
         operands.push_back(q1);
         operands.push_back(q2);
     }
@@ -914,7 +918,7 @@ public:
     toffoli(size_t q1, size_t q2, size_t q3) : m(ctoffoli_c)
     {
         name = "toffoli";
-        duration = 6;
+        duration = 160;
         operands.push_back(q1);
         operands.push_back(q2);
         operands.push_back(q3);
@@ -947,7 +951,7 @@ public:
     nop() : m(nop_c)
     {
         name = "i";
-        duration = 1;
+        duration = 20;
     }
     instruction_t qasm()
     {
@@ -973,7 +977,7 @@ public:
  */
 class custom_gate : public gate
 {
-   public:
+public:
 
     // string_t           name;             // qasm gate name
     cmat_t             m;                // matrix representation
@@ -984,14 +988,14 @@ class custom_gate : public gate
     instruction_type_t operation_type;   // operation type : rf/flux
     strings_t          used_hardware;    // used hardware
 
-   public:
+public:
 
     /**
      * ctor
      */
-    custom_gate(string_t name) 
+    custom_gate(string_t name)
     {
-       this->name = name;
+        this->name = name;
     }
 
     /**
@@ -999,31 +1003,31 @@ class custom_gate : public gate
      */
     custom_gate(const custom_gate& g)
     {
-       name = g.name;
-       parameters = g.parameters;
-       qumis.assign(g.qumis.begin(), g.qumis.end());      
-       operation_type = g.operation_type;
-       duration  = g.duration; 
-       used_hardware.assign(g.used_hardware.begin(), g.used_hardware.end()); 
-       m.m[0] = g.m.m[0]; 
-       m.m[1] = g.m.m[1]; 
-       m.m[2] = g.m.m[2]; 
-       m.m[3] = g.m.m[3]; 
+        name = g.name;
+        parameters = g.parameters;
+        qumis.assign(g.qumis.begin(), g.qumis.end());
+        operation_type = g.operation_type;
+        duration  = g.duration;
+        used_hardware.assign(g.used_hardware.begin(), g.used_hardware.end());
+        m.m[0] = g.m.m[0];
+        m.m[1] = g.m.m[1];
+        m.m[2] = g.m.m[2];
+        m.m[3] = g.m.m[3];
     }
 
     /**
      * explicit ctor
      */
-    custom_gate(string_t& name, cmat_t& m, 
-                size_t parameters, size_t duration, size_t latency, 
-		instruction_type_t& operation_type, ucode_sequence_t& qumis, strings_t hardware) : m(m), 
-		                                                                                   parameters(parameters), 
-												   qumis(qumis), operation_type(operation_type) 
+    custom_gate(string_t& name, cmat_t& m,
+                size_t parameters, size_t duration, size_t latency,
+                instruction_type_t& operation_type, ucode_sequence_t& qumis, strings_t hardware) : m(m),
+        parameters(parameters),
+        qumis(qumis), operation_type(operation_type)
     {
-       this->name = name;
-       this->duration = duration;
-       for (size_t i=0; i<hardware.size(); i++)
-	  used_hardware.push_back(hardware[i]);
+        this->name = name;
+        this->duration = duration;
+        for (size_t i=0; i<hardware.size(); i++)
+            used_hardware.push_back(hardware[i]);
     }
 
     /**
@@ -1031,25 +1035,25 @@ class custom_gate : public gate
      */
     custom_gate(string_t name, string_t& file_name)
     {
-       this->name = name;
-       std::ifstream f(file_name);
-       if (f.is_open())
-       {
-	  json instr;
-	  f >> instr;
-	  load(instr);
-	  f.close();
-       }
-       else std::cout << "[x] error : json file not found !" << std::endl;
+        this->name = name;
+        std::ifstream f(file_name);
+        if (f.is_open())
+        {
+            json instr;
+            f >> instr;
+            load(instr);
+            f.close();
+        }
+        else std::cout << "[x] error : json file not found !" << std::endl;
     }
 
     /**
      * load instruction from json map
      */
-    custom_gate(std::string& name, json& instr) 
+    custom_gate(std::string& name, json& instr)
     {
-       this->name = name;
-       load(instr);
+        this->name = name;
+        load(instr);
     }
 
     /**
@@ -1057,16 +1061,16 @@ class custom_gate : public gate
      */
     bool is_qubit_id(std::string& str)
     {
-       if (str[0] != 'q')
-	  return false;
-       uint32_t l = str.length();
-       if (l>=1)
-       {
-	  for (size_t i=1; i<l; ++i)
-	     if (!str::is_digit(str[i]))
-		return false;
-       }
-       return true;
+        if (str[0] != 'q')
+            return false;
+        uint32_t l = str.length();
+        if (l>=1)
+        {
+            for (size_t i=1; i<l; ++i)
+                if (!str::is_digit(str[i]))
+                    return false;
+        }
+        return true;
     }
 
     /**
@@ -1074,8 +1078,8 @@ class custom_gate : public gate
      */
     size_t qubit_id(std::string qubit)
     {
-	 std::string id = qubit.substr(1);
-	 return (atoi(id.c_str()));
+        std::string id = qubit.substr(1);
+        return (atoi(id.c_str()));
     }
 
     /**
@@ -1083,51 +1087,52 @@ class custom_gate : public gate
      */
     void load(json& instr) throw (ql::exception)
     {
-       // println("loading instruction '" << name << "'...");
-       std::string l_attr = "qubits";
-       try
-       {
-	  l_attr = "qubits";
-	  // println("qubits: " << instr["qubits"]);
-	  parameters = instr["qubits"].size(); 
-	  for (size_t i=0; i<parameters; ++i)
-	  {
-	     std::string qid = instr["qubits"][i];
-	     if (!is_qubit_id(qid))
-	     {
-		println("[x] error : invalid qubit id in attribute 'qubits' !");
-		throw ql::exception("[x] error : ql::custom_gate() : error while loading instruction '" + name + "' : attribute 'qubits' : invalid qubit id !", false);
-	     }
-	     operands.push_back(qubit_id(qid));
-	  }
-	  // ucode_sequence_t ucs = instr["qumis"];
-	  // qumis.assign(ucs.begin(), ucs.end());      
-	  // operation_type = instr["type"];       
-	  l_attr = "duration";
-	  duration = instr["duration"];    
-	  // strings_t hdw = instr["hardware"];
-	  // used_hardware.assign(hdw.begin(), hdw.end()); 
-	  l_attr = "matrix";
-	  auto mat = instr["matrix"];
-	  m.m[0] = complex_t(mat[0][0], mat[0][1]);
-	  m.m[1] = complex_t(mat[1][0], mat[1][1]);
-	  m.m[2] = complex_t(mat[2][0], mat[2][1]);
-	  m.m[3] = complex_t(mat[3][0], mat[3][1]);
-       } catch (json::exception e)
-       {
-	  println("[e] error while loading instruction '" << name << "' (attr: " << l_attr << ") : " << e.what());
-	  throw ql::exception("[x] error : ql::custom_gate() : error while loading instruction '" + name + "' : attribute '" + l_attr + "' : \n\t" + e.what(), false);
-       }
+        // println("loading instruction '" << name << "'...");
+        std::string l_attr = "qubits";
+        try
+        {
+            l_attr = "qubits";
+            // println("qubits: " << instr["qubits"]);
+            parameters = instr["qubits"].size();
+            for (size_t i=0; i<parameters; ++i)
+            {
+                std::string qid = instr["qubits"][i];
+                if (!is_qubit_id(qid))
+                {
+                    println("[x] error : invalid qubit id in attribute 'qubits' !");
+                    throw ql::exception("[x] error : ql::custom_gate() : error while loading instruction '" + name + "' : attribute 'qubits' : invalid qubit id !", false);
+                }
+                operands.push_back(qubit_id(qid));
+            }
+            // ucode_sequence_t ucs = instr["qumis"];
+            // qumis.assign(ucs.begin(), ucs.end());
+            // operation_type = instr["type"];
+            l_attr = "duration";
+            duration = instr["duration"];
+            // strings_t hdw = instr["hardware"];
+            // used_hardware.assign(hdw.begin(), hdw.end());
+            l_attr = "matrix";
+            auto mat = instr["matrix"];
+            m.m[0] = complex_t(mat[0][0], mat[0][1]);
+            m.m[1] = complex_t(mat[1][0], mat[1][1]);
+            m.m[2] = complex_t(mat[2][0], mat[2][1]);
+            m.m[3] = complex_t(mat[3][0], mat[3][1]);
+        }
+        catch (json::exception e)
+        {
+            println("[e] error while loading instruction '" << name << "' (attr: " << l_attr << ") : " << e.what());
+            throw ql::exception("[x] error : ql::custom_gate() : error while loading instruction '" + name + "' : attribute '" + l_attr + "' : \n\t" + e.what(), false);
+        }
     }
 
     void print_info()
     {
-       println("[-] custom gate : ");
-       println("    |- name     : " << name);
-       println("    |- n_params : " << parameters);
-       utils::print_vector(operands,"[openql]     |- qubits   :"," , ");
-       println("    |- duration : " << duration);
-       println("    |- matrix   : [" << m.m[0] << ", " << m.m[1] << ", " << m.m[2] << ", " << m.m[3] << "]");
+        println("[-] custom gate : ");
+        println("    |- name     : " << name);
+        println("    |- n_params : " << parameters);
+        utils::print_vector(operands,"[openql]     |- qubits   :"," , ");
+        println("    |- duration : " << duration);
+        println("    |- matrix   : [" << m.m[0] << ", " << m.m[1] << ", " << m.m[2] << ", " << m.m[3] << "]");
     }
 
     /**
@@ -1135,23 +1140,23 @@ class custom_gate : public gate
      */
     instruction_t qasm()
     {
-       std::stringstream ss; 
-       size_t p = name.find(" ");
-       std::string gate_name = name.substr(0,p);
-       if (operands.size() == 0)
-	  ss << gate_name;
-	  // ss << "   " << gate_name;
-       else if (operands.size() == 1)
-	  ss << gate_name << " q" << operands[0];
-	  // ss << "   " << gate_name << " q" << operands[0];
-       else
-       {
-	  // ss << "   " << gate_name << " q" << operands[0];
-	  ss << gate_name << " q" << operands[0];
-	  for (size_t i=1; i<operands.size(); i++)
-	     ss << ",q" << operands[i];
-       }
-       return instruction_t(ss.str());
+        std::stringstream ss;
+        size_t p = name.find(" ");
+        std::string gate_name = name.substr(0,p);
+        if (operands.size() == 0)
+            ss << gate_name;
+        // ss << "   " << gate_name;
+        else if (operands.size() == 1)
+            ss << gate_name << " q" << operands[0];
+        // ss << "   " << gate_name << " q" << operands[0];
+        else
+        {
+            // ss << "   " << gate_name << " q" << operands[0];
+            ss << gate_name << " q" << operands[0];
+            for (size_t i=1; i<operands.size(); i++)
+                ss << ",q" << operands[i];
+        }
+        return instruction_t(ss.str());
     }
 
     /**
@@ -1159,10 +1164,10 @@ class custom_gate : public gate
      */
     instruction_t micro_code()
     {
-	std::stringstream ss;
-	for (size_t i=0; i<qumis.size(); i++)
-	   ss << "     " << qumis[i] << "\n";
-	return instruction_t(ss.str());
+        std::stringstream ss;
+        for (size_t i=0; i<qumis.size(); i++)
+            ss << "     " << qumis[i] << "\n";
+        return instruction_t(ss.str());
     }
 
     /**
@@ -1180,7 +1185,7 @@ class custom_gate : public gate
     {
         return m;
     }
- 
+
 };
 
 } // end ql namespace

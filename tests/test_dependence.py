@@ -15,7 +15,8 @@ ql.set_output_dir(output_dir)
 
 class Test_dependence(unittest.TestCase):
 
-    @unittest.expectedFailure
+    # @unittest.expectedFailure
+    # @unittest.skip
     def test_independent(self):
         # populate kernel
         k = ql.Kernel("aKernel", platf)
@@ -40,12 +41,11 @@ class Test_dependence(unittest.TestCase):
         p.compile(False, False)
         p.schedule("ASAP", False)
 
-        gold = rootDir + '/golden/test_independentASAP.qasm'
+        gold = rootDir + '/golden/test_independence.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'ASAP.qasm')
         isSame = filecmp.cmp(qasm_fn, gold)
         self.assertTrue(isSame)
 
-    @unittest.expectedFailure
     def test_WAW(self):
 
         # populate kernel
@@ -76,7 +76,6 @@ class Test_dependence(unittest.TestCase):
         isSame = filecmp.cmp(qasm_fn, gold)
         self.assertTrue(isSame)
 
-    @unittest.expectedFailure
     def test_RAR_Control(self):
 
         # populate kernel
@@ -107,7 +106,6 @@ class Test_dependence(unittest.TestCase):
         isSame = filecmp.cmp(qasm_fn, gold)
         self.assertTrue(isSame)
 
-    @unittest.expectedFailure
     def test_RAW(self):
 
         # populate kernel
@@ -138,7 +136,6 @@ class Test_dependence(unittest.TestCase):
         isSame = filecmp.cmp(qasm_fn, gold)
         self.assertTrue(isSame)
 
-    @unittest.expectedFailure
     def test_WAR(self):
 
         # populate kernel

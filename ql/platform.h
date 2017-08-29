@@ -48,6 +48,7 @@ namespace ql
 	std::string               name;                     // platform name
 	std::string               eqasm_compiler_name;      // eqasm backend
 	size_t                    qubit_number;             // number of qubits
+    size_t      cycle_time;
 
         // ql::eqasm_compiler *      backend_compiler;         // backend compiler
          
@@ -76,6 +77,7 @@ namespace ql
 	      throw std::exception();
 	   }
 	   qubit_number = hardware_settings["qubit_number"];
+       cycle_time = hardware_settings["cycle_time"];
 
 	   // if (eqasm_compiler_name == "qumis_compiler")
 	   // {

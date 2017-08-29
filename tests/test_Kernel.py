@@ -81,14 +81,14 @@ class Test_kernel(unittest.TestCase):
 
         sweep_points = [2]
         num_circuits = 1
-        nqubits = 4
+        nqubits = 3
 
         p = ql.Program("aProgram", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
         p.add_kernel(k1)
         p.add_kernel(k2)
         p.compile(False, False)
-        p.schedule("ASAP", False)
+        p.schedule("ALAP", False)
 
 
 if __name__ == '__main__':
