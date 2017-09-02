@@ -25,6 +25,15 @@ enum DepTypes{RAW, WAW, WAR, RAR};
 const string DepTypesNames[] = {"RAW", "WAW", "WAR", "RAR"};
 auto MAX_CYCLE = std::numeric_limits<std::size_t>::max();
 
+typedef std::list<ql::gate *>ParallelSection;
+class Bundle
+{
+public:
+    size_t cycle;
+    std::list<ParallelSection>ParallelSections;
+};
+typedef std::list<Bundle>Bundles;
+
 class DependGraph
 {
 private:
@@ -746,14 +755,14 @@ public:
             if( it != insInAllCycles.end() )
             {
                 auto nInsThisCycle = insInAllCycles[currCycle].size();
-		fout << "{ "; 
+		        fout << "{ "; 
                 for(size_t i=0; i<nInsThisCycle; ++i )
                 {
                     fout << insInAllCycles[currCycle][i];
                     if( i != nInsThisCycle - 1 ) // last instruction
                         fout << " | ";
                 }
-		fout << " }"; 
+		        fout << " }"; 
             }
             else
             {
@@ -806,6 +815,113 @@ public:
             ss << endl;
         }
         return ss.str();
+    }
+
+    // the following without nops
+    Bundles GetBundlesScheduleALAP()
+    {
+        println("Scheduling ALAP to get bundles ...");
+        Bundles bundles;
+        ListDigraph::NodeMap<size_t> cycle(graph);
+        std::vector<ListDigraph::Node> order;
+        ScheduleALAP(cycle,order);
+
+
+        typedef std::vector<ql::gate*> insInOneCycle;
+        std::map<size_t,insInOneCycle> insInAllCycles;
+
+        std::vector<ListDigraph::Node>::iterator it;
+        for ( it = order.begin(); it != order.end(); ++it)
+        {
+            insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( instruction[*it] );
+        }
+
+        size_t TotalCycles = 0;
+        if( ! order.empty() )
+        {
+            TotalCycles =  MAX_CYCLE - cycle[ *( order.rbegin() ) ];
+        }
+
+        size_t empty_bundle_counter = 0;
+        for(size_t currCycle = TotalCycles-1; currCycle>0; --currCycle)
+        {
+            auto it = insInAllCycles.find(currCycle);
+            Bundle abundle;
+            abundle.cycle = TotalCycles - currCycle;                
+            if( it != insInAllCycles.end() )
+            {
+                auto nInsThisCycle = insInAllCycles[currCycle].size();
+                for(size_t i=0; i<nInsThisCycle; ++i )
+                {
+                    ParallelSection aparsec;
+                    auto & ins = insInAllCycles[currCycle][i];
+                    aparsec.push_back(ins);
+                    abundle.ParallelSections.push_back(aparsec);
+                }
+                bundles.push_back(abundle);
+            }
+        }
+        println("Scheduling ALAP to get bundles [DONE]");
+        return bundles;
+    }
+
+
+
+    // the following inserts nops
+    Bundles GetBundlesScheduleALAP2()
+    {
+        println("Scheduling ALAP to get bundles ...");
+        Bundles bundles;
+        ListDigraph::NodeMap<size_t> cycle(graph);
+        std::vector<ListDigraph::Node> order;
+        ScheduleALAP(cycle,order);
+
+
+        typedef std::vector<ql::gate*> insInOneCycle;
+        std::map<size_t,insInOneCycle> insInAllCycles;
+
+        std::vector<ListDigraph::Node>::iterator it;
+        for ( it = order.begin(); it != order.end(); ++it)
+        {
+            insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( instruction[*it] );
+        }
+
+        size_t TotalCycles = 0;
+        if( ! order.empty() )
+        {
+            TotalCycles =  MAX_CYCLE - cycle[ *( order.rbegin() ) ];
+        }
+
+        size_t empty_bundle_counter = 0;
+        for(size_t currCycle = TotalCycles-1; currCycle>0; --currCycle)
+        {
+            auto it = insInAllCycles.find(currCycle);
+            Bundle abundle;
+            abundle.cycle = TotalCycles - currCycle;                
+            if( it != insInAllCycles.end() )
+            {
+                auto nInsThisCycle = insInAllCycles[currCycle].size();
+                for(size_t i=0; i<nInsThisCycle; ++i )
+                {
+                    ParallelSection aparsec;
+                    auto & ins = insInAllCycles[currCycle][i];
+                    aparsec.push_back(ins);
+                    abundle.ParallelSections.push_back(aparsec);
+                }
+            }
+            else
+            {
+                // insert empty bundle
+                ParallelSection aparsec;
+                auto ins = new ql::nop();
+                aparsec.push_back(ins);
+                abundle.ParallelSections.push_back(aparsec);
+            }
+            bundles.push_back(abundle);
+        }
+
+        println("Scheduling ALAP to get bundles [DONE]");
+        return bundles;
     }
 
 };

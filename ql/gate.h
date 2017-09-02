@@ -950,7 +950,7 @@ public:
 
     nop() : m(nop_c)
     {
-        name = "i";
+        name = "nop";
         duration = 20;
     }
     instruction_t qasm()
