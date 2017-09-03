@@ -1,12 +1,12 @@
 /**
- * @file   dependenceGraph.h
+ * @file   scheduler.h
  * @date   01/2017
  * @author Imran Ashraf
  * @brief  ASAP/AlAP scheduling
  */
 
-#ifndef DEPENDENCEGRAPH_H
-#define DEPENDENCEGRAPH_H
+#ifndef _SCHEDULER_H
+#define _SCHEDULER_H
 
 #include <lemon/list_graph.h>
 #include <lemon/lgf_reader.h>
@@ -34,7 +34,7 @@ public:
 };
 typedef std::list<Bundle>Bundles;
 
-class DependGraph
+class Scheduler
 {
 private:
     ListDigraph graph;
@@ -51,7 +51,7 @@ private:
     ListDigraph::Node s, t;
 
 public:
-    DependGraph(): instruction(graph), name(graph), weight(graph),
+    Scheduler(): instruction(graph), name(graph), weight(graph),
         cause(graph), depType(graph), dist(graph) {}
 
     void Init( size_t nQubits, ql::circuit& ckt, ql::quantum_platform platform, bool verbose=false)

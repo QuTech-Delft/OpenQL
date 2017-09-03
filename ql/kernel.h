@@ -14,7 +14,7 @@
 #include "gate.h"
 #include "optimizer.h"
 #ifndef __disable_lemon__
-#include "dependenceGraph.h"
+#include "scheduler.h"
 #endif // __disable_lemon__
 
 namespace ql
@@ -409,27 +409,27 @@ namespace ql
 #ifndef __disable_lemon__
 	    if (verbose) println( scheduler << " scheduling the quantum kernel '" << name << "'...");
 
-	    DependGraph dg;
-	    dg.Init(qubits, c, platform, verbose);
-	    // dg.Print();
-	    // dg.PrintMatrix();
-	    // dg.PrintDot();
+	    Scheduler sched;
+	    sched.Init(qubits, c, platform, verbose);
+	    // sched.Print();
+	    // sched.PrintMatrix();
+	    // sched.PrintDot();
 
 	    if("ASAP" == scheduler)
 	    {
-	       // dg.PrintScheduleASAP();
-	       // dg.PrintDotScheduleASAP();
-	       sched_dot = dg.GetDotScheduleASAP();
-	       // dg.PrintQASMScheduledASAP();
-	       sched_qasm = dg.GetQASMScheduledASAP();
+	       // sched.PrintScheduleASAP();
+	       // sched.PrintDotScheduleASAP();
+	       sched_dot = sched.GetDotScheduleASAP();
+	       // sched.PrintQASMScheduledASAP();
+	       sched_qasm = sched.GetQASMScheduledASAP();
 	    }
 	    else if("ALAP" == scheduler)
 	    {
-	       // dg.PrintScheduleALAP();
-	       // dg.PrintDotScheduleALAP();
-	       sched_dot = dg.GetDotScheduleALAP();
-	       // dg.PrintQASMScheduledALAP();
-	       sched_qasm = dg.GetQASMScheduledALAP();
+	       // sched.PrintScheduleALAP();
+	       // sched.PrintDotScheduleALAP();
+	       sched_dot = sched.GetDotScheduleALAP();
+	       // sched.PrintQASMScheduledALAP();
+	       sched_qasm = sched.GetQASMScheduledALAP();
 	    }
 	    else
 	    {
