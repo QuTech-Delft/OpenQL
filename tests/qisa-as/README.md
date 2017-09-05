@@ -1,3 +1,6 @@
+# QISA-Assembler
+The version of the QISA-Assembler for CC-light is included here for testing purposes only. It corresponds to the version at commit #004985a8fedc7d1487d00cf09fbbe15cd49ef4bd of the CC-light repository. 
+
 ### Assembler for the Quantum Instruction Set Architecture
 ---
 ```
