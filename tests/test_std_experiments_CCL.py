@@ -44,7 +44,7 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        QISA_fn = os.path.join(output_dir, p.name+'.asm')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     def test_qasm_seq_echo(self):
@@ -70,7 +70,7 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        QISA_fn = os.path.join(output_dir, p.name+'.asm')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     def test_qasm_seq_butterfly(self):
@@ -95,5 +95,5 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        QISA_fn = os.path.join(output_dir, p.name+'.asm')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)

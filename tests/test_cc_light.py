@@ -46,7 +46,7 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile(optimize=False, verbose=True)
 
-        QISA_fn = os.path.join(output_dir, p.name+'.asm')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     # single qubit mask generation test with custom gates
@@ -75,9 +75,9 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(optimize=False)
 
-        QISA_fn = os.path.join(output_dir, p.name+'.asm')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     # single qubit mask generation multi-kernel test (custom with non-custom
@@ -123,9 +123,9 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(optimize=False)
 
-        QISA_fn = os.path.join(output_dir, p.name+'.asm')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     # two qubit mask generation test
@@ -162,9 +162,9 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(optimize=False)
 
-        QISA_fn = os.path.join(output_dir, p.name+'.asm')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
 
