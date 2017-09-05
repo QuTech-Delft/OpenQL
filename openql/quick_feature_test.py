@@ -52,6 +52,7 @@ def test_smit():
 
     # populate kernel using default gates
     k = ql.Kernel('first_kernel', platform)
+
     k.prepz(0)
     k.prepz(1)
     k.prepz(2)

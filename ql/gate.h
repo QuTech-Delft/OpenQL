@@ -288,7 +288,7 @@ public:
     phase(size_t q) : m(phase_c)
     {
         name = "s";
-        duration = 80;
+        duration = 40;
         operands.push_back(q);
     }
 
@@ -322,7 +322,7 @@ public:
     phasedag(size_t q) : m(phasedag_c)
     {
         name = "sdag";
-        duration = 80;
+        duration = 40;
         operands.push_back(q);
     }
 
@@ -359,7 +359,7 @@ public:
     t(size_t q) : m(t_c)
     {
         name = "t";
-        duration = 20;
+        duration = 40;
         operands.push_back(q);
     }
 
@@ -396,7 +396,7 @@ public:
     tdag(size_t q) : m(tdag_c)
     {
         name = "tdag";
-        duration = 20;
+        duration = 40;
         operands.push_back(q);
     }
 
@@ -511,7 +511,7 @@ public:
     pauli_z(size_t q) : m(pauli_z_c)
     {
         name = "z";
-        duration = 80;
+        duration = 40;
         operands.push_back(q);
     }
 
@@ -775,7 +775,7 @@ public:
     measure(size_t q) : m(identity_c)
     {
         name = "measure";
-        duration = 300;
+        duration = 40;
         operands.push_back(q);
     }
 
@@ -813,7 +813,7 @@ public:
     prepz(size_t q) : m(identity_c)
     {
         name = "prepz";
-        duration = 100;
+        duration = 40;
         operands.push_back(q);
     }
 

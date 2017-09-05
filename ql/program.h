@@ -212,7 +212,7 @@ class quantum_program
 	 try 
 	 {
 	    println("compiling eqasm code...");
-	    backend_compiler->compile(fused, platform);
+	    backend_compiler->compile(name, fused, platform);
 	 }
 	 catch (ql::exception e)
 	 {
@@ -220,8 +220,8 @@ class quantum_program
 	    throw e;
 	 }
 
-         println("writing eqasm code to '" << ( ql::utils::get_output_dir() + "/" + name+".asm") << "'...");
-         backend_compiler->write_eqasm( ql::utils::get_output_dir() + "/" + name + ".asm");
+         // println("writing eqasm code to '" << ( ql::utils::get_output_dir() + "/" + name+".asm") << "'...");
+         // backend_compiler->write_eqasm( ql::utils::get_output_dir() + "/" + name + ".asm");
          println("writing traces...");
          backend_compiler->write_traces( ql::utils::get_output_dir() + "/trace.dat");
 

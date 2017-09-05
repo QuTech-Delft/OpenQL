@@ -3,7 +3,7 @@
 
    "hardware_settings": {
 	 "qubit_number": 7,
-	 "cycle_time" : 5,  
+	 "cycle_time" : 20,  
 	 "mw_mw_buffer": 0,
 	 "mw_flux_buffer": 0,
 	 "mw_readout_buffer": 20,
