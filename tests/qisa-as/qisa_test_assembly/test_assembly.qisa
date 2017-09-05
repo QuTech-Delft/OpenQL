@@ -1,0 +1,79 @@
+                  .register r9 x
+                  .register r1 y
+
+                  NOP
+                  STOP
+
+                  ADD        y, r2, r3
+                  SUB        r4, r5, r6
+
+                  AND        r7, r8, x
+                  OR         r10, r11, r12
+                  XOR        r13, r14, r15
+                  NOT        r16, r17
+
+                  CMP        r18, r19
+
+                  BR         NE, forward_label
+
+                  LDI        r20, 0x2000
+                  LDUI       r21, 32767
+
+forward_label:    FBR        EQ, r22
+                  FMR        r23, q3
+
+backward_label:   SMIS       s5, {1, 4, 6}
+                  SMIT       t5, {(3,1), (5,2)}
+
+# Test encoding of a large T register address.
+                  SMIT       t63, {(3,1), (5,2)}
+
+                  BR         GT, backward_label
+
+# Quantum single format instructions
+                  QWAIT	     10
+                  QWAITR     r24
+
+# Aliases
+
+addr:
+                  SHL1       r25,r26
+                  NAND       r27,r28,r29
+                  NOR        r30,r31,r0
+                  XNOR       y,r2,r3
+
+                  BRA        addr
+                  BRN        addr
+                  BEQ        r4, r5, addr
+                  BNE        r4, r5, addr
+		  BLT	     r4, r5, addr
+		  BLE	     r4, r5, addr
+		  BGT	     r4, r5, addr
+		  BGE	     r4, r5, addr
+		  BLTU	     r4, r5, addr
+		  BLEU	     r4, r5, addr
+		  BGTU	     r4, r5, addr
+		  BGEU	     r4, r5, addr
+
+                  MOV        r6,r7
+
+                  MULT2      r8,r9
+
+# Branch alias, forward label
+                  BEQ        r4, r5, br_alias_fwd
+                  NOP
+                  NOP
+br_alias_fwd:     BRA        addr
+
+# Quantum double format instructions (some).
+
+bs 1 X s0
+bs 2 X s0 | Y s1
+bs 3 X s0 | C,Y s1 | CNOT t2
+bs 4 QNOP | QNOP
+bs 5 QNOP
+bs 6 QNOP | X s3
+bs 7 X s0 | Y s1 | CNOT t63 | X s6
+
+bs 7 X s0 | Y s1
+bs 0 CNOT t63 | X s6

@@ -14,7 +14,7 @@ output_dir = os.path.join(curdir, 'test_output')
 ql.set_output_dir(output_dir)
 
 
-class Test_single_qubit_seqs(unittest.TestCase):
+class Test_single_qubit_seqs_CBox(unittest.TestCase):
     def test_allxy(self):
         p = Program(pname="AllXY", nqubits=1, p=platf)
         # uppercase lowercase problems

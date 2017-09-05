@@ -1,0 +1,144 @@
+# This file contains the definitions of opcodes of the classic and quantum
+# instructions.
+# It is used in the build phase of QISA-AS, to define the opcodes for the
+# predefined classic instructions, and to define new quantum instructions.
+#
+# The opcodes for the instructions are defined in four dictionaries, which
+# are described in the following comments.
+
+# def_opcode
+#
+# Define opcode for a single-format instruction.
+# The instruction name must be one of the predefined classic instructions.
+# The valid range of the opcode is: 0-63. The opcode corresponds to bits
+#   [30:25] in the single-format instruction, excluding(!) the bit 31.
+# It must be unique with respect to the other defined classic instructions.
+#
+# Specify as:
+#
+#   def_opcode['<instruction_name>'] = <opcode>
+#
+#
+# Example:
+#
+#   def_opcode['BEQ'] = 0x21
+
+# def_q_arg_none
+#
+# Define opcode for a double-format instruction that has no arguments.
+# The instruction is added to the list of known quantum instructions.
+# The valid range of the opcode is: 0-255. It corresponds to the bits [13:6]
+#  of a double instruction.
+# It must be unique with respect to the other defined quantum instructions.
+#
+# Specify as:
+#
+#   def_q_arg_none['<instruction_name>'] = <opcode>
+#
+# Example:
+#
+#   def_q_arg_none['QNOP'] = 0x0
+#
+# NOTE: there is only one such instruction in the current CC-Light:
+#       QNOP with the opcode of 0.
+
+
+# def_q_arg_st
+#
+# Define opcode for a quantum instruction that uses one of the available 'S'
+# registers.
+# The instruction is added to the list of known quantum instructions.
+# The valid range of the opcode is: 1-127. It corresponds to the bits [13:6]
+#  of a double instruction.
+# It must be unique with respect to the other defined quantum instructions.
+#
+# Specify as:
+#
+#   def_q_arg_st['<instruction_name>'] = <opcode>
+#
+# Example:
+#
+#   def_q_arg_st['H'] = 0x12
+
+# def_q_arg_tt
+#
+# Define opcode for a quantum instruction that uses one of the available 'T'
+# registers.
+# The instruction is added to the list of known quantum instructions.
+# The valid range of the opcode is: 128-255. It corresponds to the bits [13:6]
+#  of a double instruction.
+# It must be unique with respect to the other defined quantum instructions.
+#
+# Specify as:
+#
+#   def_q_arg_tt['<instruction_name>'] = <opcode>
+#
+# Example:
+#
+#   def_q_arg_tt['SWAP'] = 0x83
+
+# Note on the extension of this file:
+# Originally, it was named qisa_instructions.def, but the .def instruction
+# has a special meaning on the Windows platform.
+# It is now called qisa_instructions.dbpd
+# This hopefully unique extension stands for
+#   'Definition By Python Dictionaries'.
+
+
+# ---------------------------------------------------
+
+# Classic instructions (single instruction format)
+
+def_opcode['NOP']      = 0x00
+def_opcode['BR']       = 0x01
+def_opcode['STOP']     = 0x08
+def_opcode['CMP']      = 0x0D
+def_opcode['LDI']      = 0x16
+def_opcode['LDUI']     = 0x17
+def_opcode['OR']       = 0x18
+def_opcode['XOR']      = 0x19
+def_opcode['AND']      = 0x1A
+def_opcode['NOT']      = 0x1B
+def_opcode['ADD']      = 0x1E
+def_opcode['SUB']      = 0x1F
+
+# Quantum-classical mixed instructions (single instruction format)
+def_opcode['FBR']      = 0x14
+def_opcode['FMR']      = 0x15
+
+# Quantum instructions (single instruction format)
+def_opcode['SMIS']     = 0x20
+def_opcode['SMIT']     = 0x28
+def_opcode['QWAIT']    = 0x30
+def_opcode['QWAITR']   = 0x38
+
+# Quantum Instructions (double instruction format)
+
+# No arguments
+def_q_arg_none['QNOP'] = 0x00
+
+# Uses register 'S'
+def_q_arg_st['PrepX']  = 0x01
+def_q_arg_st['PrepZ']  = 0x02
+def_q_arg_st['MeasX']  = 0x03
+def_q_arg_st['MeasZ']  = 0x04
+def_q_arg_st['I']      = 0x05
+def_q_arg_st['X']      = 0x06
+def_q_arg_st['Y']      = 0x07
+def_q_arg_st['Z']      = 0x08
+def_q_arg_st['H']      = 0x09
+def_q_arg_st['S']      = 0x0a
+def_q_arg_st['Sdag']   = 0x0b
+def_q_arg_st['X90']    = 0x0c
+def_q_arg_st['Xm90']   = 0x0d
+def_q_arg_st['Y90']    = 0x0e
+def_q_arg_st['Ym90']   = 0x0f
+def_q_arg_st['T']      = 0x10
+def_q_arg_st['Tdag']   = 0x11
+def_q_arg_st['X45']    = 0x12
+def_q_arg_st['Xm45']   = 0x13
+
+# Uses register 'T'
+def_q_arg_tt['CNOT']   = 0x20
+def_q_arg_tt['CZ']     = 0x21
+def_q_arg_tt['SWAP']   = 0x22
