@@ -253,28 +253,31 @@ public:
 
 void PrintBundles(Bundles & bundles, bool verbose=false)
 {
-    if(verbose) println("Printing simplified CC-Light QISA");
-
-    for (Bundle & abundle : bundles)
+    if(verbose) 
     {
-        std::cout << abundle.cycle << "  ";
+        println("Printing simplified CC-Light QISA");
 
-        for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
+        for (Bundle & abundle : bundles)
         {
-            for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
+            std::cout << abundle.cycle << "  ";
+
+            for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
             {
-                std::cout << (*insIt)->qasm();
-                if( std::next(insIt) != secIt->end() )
+                for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
                 {
-                    std::cout << " , ";
+                    std::cout << (*insIt)->qasm();
+                    if( std::next(insIt) != secIt->end() )
+                    {
+                        std::cout << " , ";
+                    }
+                }
+                if( std::next(secIt) != abundle.ParallelSections.end() )
+                {
+                    std::cout << " | ";
                 }
             }
-            if( std::next(secIt) != abundle.ParallelSections.end() )
-            {
-                std::cout << " | ";
-            }
+            std::cout << "\n";
         }
-        std::cout << "\n";
     }
 
     // for (Bundle & abundle : bundles)
@@ -297,7 +300,7 @@ void PrintBundles(Bundles & bundles, bool verbose=false)
 void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=false)
 {
     ofstream fout;
-    string qisafname( ql::utils::get_output_dir() + "/" + prog_name + "_CCL_ALAP.qisa");
+    string qisafname( ql::utils::get_output_dir() + "/" + prog_name + ".qisa");
     fout.open( qisafname, ios::binary);
     if ( fout.fail() )
     {
@@ -389,7 +392,7 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
 void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool verbose=false)
 {
     ofstream fout;
-    string qisafname( ql::utils::get_output_dir() + "/" + prog_name + "_CCL_ALAP.tqisa");
+    string qisafname( ql::utils::get_output_dir() + "/" + prog_name + ".tqisa");
     fout.open( qisafname, ios::binary);
     if ( fout.fail() )
     {
@@ -477,7 +480,7 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool v
     fout.close();
 }
 
-void cc_light_schedule(std::string prog_name, size_t nqubits, ql::circuit & ckt, ql::quantum_platform & platform, bool verbose=true)
+void cc_light_schedule(std::string prog_name, size_t nqubits, ql::circuit & ckt, ql::quantum_platform & platform, bool verbose=false)
 {
     Bundles bundles1;
 
@@ -525,12 +528,12 @@ void cc_light_schedule(std::string prog_name, size_t nqubits, ql::circuit & ckt,
     }
 
     // print scheduled bundles with parallelism
-    PrintBundles(bundles2,true);
+    PrintBundles(bundles2, verbose);
 
     // print scheduled bundles with parallelism in cc-light syntax
-    PrintCCLighQasm(prog_name, bundles2, true);
+    PrintCCLighQasm(prog_name, bundles2, verbose);
 
-    PrintCCLighQasmTimeStamped(prog_name, bundles2, true);
+    PrintCCLighQasmTimeStamped(prog_name, bundles2, verbose);
 
 
     println("scheduling ccLight instructions done.");

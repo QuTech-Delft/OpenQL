@@ -17,7 +17,7 @@ output_dir = os.path.join(curdir, 'test_output')
 ql.set_output_dir(output_dir)
 
 
-class Test_single_qubit_seqs_CBox(unittest.TestCase):
+class Test_single_qubit_seqs_CCL(unittest.TestCase):
     def test_allxy(self):
         p = Program(pname="AllXY", nqubits=1, p=platf)
         # uppercase lowercase problems
@@ -44,7 +44,7 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        QISA_fn = os.path.join(output_dir, p.name+'.asm')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     def test_qasm_seq_echo(self):
@@ -70,7 +70,7 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        QISA_fn = os.path.join(output_dir, p.name+'.asm')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     def test_qasm_seq_butterfly(self):
@@ -95,5 +95,5 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        QISA_fn = os.path.join(output_dir, p.name+'.asm')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
