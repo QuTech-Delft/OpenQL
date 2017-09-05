@@ -1,36 +1,13 @@
 import os
-import sys
 import unittest
 from openql import openql as ql
-
+from test_QISA_assembler_present import assemble
 
 
 curdir = os.path.dirname(__file__)
 
 output_dir = os.path.join(curdir, 'test_output')
 ql.set_output_dir(output_dir)
-
-sys.path.append(os.path.join(curdir, 'qisa-as', 'build'))
-# from pyQisaAs import QISA_Driver
-try:
-    from pyQisaAs import QISA_Driver
-    assemble = True
-except:
-    assemble = False
-
-def assemble(QISA_fn):
-    # Test that the generated code is valid
-    if assemble:
-        driver = QISA_Driver()
-        driver.enableScannerTracing(False)
-        driver.enableParserTracing(False)
-        driver.setVerbose(True)
-        print("parsing file ", QISA_fn)
-        success = driver.parse(QISA_fn)
-        if not success:
-            raise RuntimeError(driver.getLastErrorMessage())
-        # Assembler(qumis_fn).convert_to_instructions()
-
 
 
 class Test_basic(unittest.TestCase):
@@ -102,7 +79,6 @@ class Test_basic(unittest.TestCase):
 
         QISA_fn = os.path.join(output_dir, p.name+'.asm')
         assemble(QISA_fn)
-
 
     # single qubit mask generation multi-kernel test (custom with non-custom
     # gates)
