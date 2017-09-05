@@ -19,6 +19,7 @@
 #include <ql/circuit.h>
 #include <ql/scheduler.h>
 
+#include <iomanip>
 #include <map>
 #include <sstream>
 
@@ -380,6 +381,94 @@ void PrintCCLighQasm(Bundles & bundles, bool verbose=false)
     fout.close();
 }
 
+
+void PrintCCLighQasmTimeStamped(Bundles & bundles, bool verbose=false)
+{
+    ofstream fout;
+    string qisafname( ql::utils::get_output_dir() + "/scheduledCCLightALAPTimeStamped.qisa");
+    fout.open( qisafname, ios::binary);
+    if ( fout.fail() )
+    {
+        println("Error opening file " << qisafname << std::endl
+                 << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
+        return;
+    }
+
+
+    std::stringstream ssbundles;
+    size_t curr_cycle=0; // first instruction should be with pre-interval 1, 'bs 1'
+
+    for (Bundle & abundle : bundles)
+    {
+        auto bcycle = abundle.cycle;
+        auto delta = bcycle - curr_cycle;
+
+        if(delta < 8)
+            ssbundles << std::setw(4) << curr_cycle << "    bs " << delta << "    ";
+        else
+            ssbundles << std::setw(4) << curr_cycle << "    qwait " << delta-1 << "\n"
+                      << std::setw(4) << curr_cycle + (delta-1) << "    bs 1    ";
+
+        for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
+        {
+            qubit_set_t squbits;
+            qubit_pair_set_t dqubits;
+            auto firstInsIt = secIt->begin();
+            auto iname = (*(firstInsIt))->name;
+            auto itype = (*(firstInsIt))->type();
+            if( itype == __nop_gate__ )
+            {
+                ssbundles << iname;
+            }
+            else
+            {
+                for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
+                {
+                    if( itype == __cnot_gate__ )
+                    {
+                        auto & op1 = (*insIt)->operands[0];
+                        auto & op2 = (*insIt)->operands[1];
+                        dqubits.push_back( qubit_pair_t(op1,op2) );
+                    }
+                    else
+                    {
+                        auto & op = (*insIt)->operands[0];
+                        squbits.push_back(op);
+                    }
+                }
+                std::string rname;
+                if( itype == __cnot_gate__ )
+                {
+                    rname = gMaskManager.getRegName(dqubits);
+                }
+                else
+                {
+                    rname = gMaskManager.getRegName(squbits);
+                }
+
+                ssbundles << iname << " " << rname;
+            }
+
+            if( std::next(secIt) != abundle.ParallelSections.end() )
+            {
+                ssbundles << " | ";
+            }
+        }
+        curr_cycle+=delta;
+        ssbundles << "\n";
+    }
+
+    if(verbose)
+    {
+        println("Printing CC-Light QISA");
+        std::cout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
+    }
+
+    if(verbose) println("Writing CC-Light QISA to " << qisafname);
+    fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
+    fout.close();
+}
+
 void cc_light_schedule(size_t nqubits, ql::circuit & ckt, ql::quantum_platform & platform, bool verbose=true)
 {
     Bundles bundles1;
@@ -431,6 +520,9 @@ void cc_light_schedule(size_t nqubits, ql::circuit & ckt, ql::quantum_platform &
 
     // print scheduled bundles with parallelism in cc-light syntax
     PrintCCLighQasm(bundles2, true);
+
+    PrintCCLighQasmTimeStamped(bundles2, true);
+
 
     println("scheduling ccLight instructions done.");
 }
