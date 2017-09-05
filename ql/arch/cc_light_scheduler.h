@@ -307,7 +307,7 @@ void PrintCCLighQasm(Bundles & bundles, bool verbose=false)
 
 
     std::stringstream ssbundles;
-    size_t curr_cycle=1;
+    size_t curr_cycle=0; // first instruction should be with pre-interval 1, 'bs 1'
 
     for (Bundle & abundle : bundles)
     {
