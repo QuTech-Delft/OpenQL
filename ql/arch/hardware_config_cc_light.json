@@ -3,7 +3,7 @@
 
    "hardware_settings": {
 	 "qubit_number": 7,
-	 "cycle_time" : 20,  
+	 "cycle_time" : 5,  
 	 "mw_mw_buffer": 0,
 	 "mw_flux_buffer": 0,
 	 "mw_readout_buffer": 20,
@@ -24,8 +24,8 @@
       "disable_optimization": false,
       "type": "mw",
       "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "cx",
-      "cc_light_codeword": 111,
+      "cc_light_instr": "prepx",
+      "cc_light_codeword": 10,
       "cc_light_opcode": 99,
       "cc_light_cond": 1
    },
