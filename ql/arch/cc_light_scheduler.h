@@ -300,7 +300,7 @@ void PrintBundles(Bundles & bundles, bool verbose=false)
 void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=false)
 {
     ofstream fout;
-    string qisafname( ql::utils::get_output_dir() + "/" + prog_name + "_CCL.qisa");
+    string qisafname( ql::utils::get_output_dir() + "/" + prog_name + ".qisa");
     fout.open( qisafname, ios::binary);
     if ( fout.fail() )
     {
@@ -392,7 +392,7 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
 void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool verbose=false)
 {
     ofstream fout;
-    string qisafname( ql::utils::get_output_dir() + "/" + prog_name + "_CCL.tqisa");
+    string qisafname( ql::utils::get_output_dir() + "/" + prog_name + ".tqisa");
     fout.open( qisafname, ios::binary);
     if ( fout.fail() )
     {
