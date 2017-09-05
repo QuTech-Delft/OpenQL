@@ -84,24 +84,34 @@ public:
         std::stringstream control_store;
         control_store << "         Condition  OpTypeLeft  CW_Left  OpTypeRight  CW_Right\n";
         control_store << "     0:      0          0          0          0           0    \n";
+	std::set<size_t> opcode_set;
         for (auto i : instruction_settings)
         {
             if (i["cc_light_instr_type"] == "single_qubit_gate")
             {
-                auto opcode     = i["cc_light_opcode"];
-                auto condition  = 0;
+                size_t opcode     = i["cc_light_opcode"];
+		if (opcode_set.find(opcode) != opcode_set.end())
+		   continue;
+		opcode_set.insert(opcode);
+		size_t condition  = (i["cc_light_cond"].is_null() ? 0 : i["cc_light_cond"].get<size_t>());
+		println(condition);
                 auto optype     = (i["type"] == "mw" ? 1 : (i["type"] == "flux" ? 2 : ((i["type"] == "readout" ? 3 : 0))));
                 auto codeword   = i["cc_light_codeword"];
-                control_store << "     " << i["cc_light_opcode"] << ":     0          " << optype << "          " << codeword << "          0          0\n";
+                control_store << "     " << i["cc_light_opcode"] << ":     " << condition << "          " << optype << "          " << codeword << "          0          0\n";
             }
             else if (i["cc_light_instr_type"] == "two_qubits_gate")
             {
-                auto opcode     = i["cc_light_opcode"];
-                auto condition  = 0;
+                size_t opcode     = i["cc_light_opcode"];
+		if (opcode_set.find(opcode) != opcode_set.end())
+		   continue;
+		opcode_set.insert(opcode);
+                // size_t condition  = 0;
+		size_t condition  = (i["cc_light_cond"].is_null() ? 0 : i["cc_light_cond"].get<size_t>());
+		println(condition);
                 auto optype     = (i["type"] == "mw" ? 1 : (i["type"] == "flux" ? 2 : ((i["type"] == "readout" ? 3 : 0))));
                 auto codeword_l = i["cc_light_left_codeword"];
                 auto codeword_r = i["cc_light_right_codeword"];
-                control_store << "     " << i["cc_light_opcode"] << ":     0          " << optype << "          " << codeword_l << "          " << optype << "          " << codeword_r << "\n";
+                control_store << "     " << i["cc_light_opcode"] << ":     " << condition << "          " << optype << "          " << codeword_l << "          " << optype << "          " << codeword_r << "\n";
             }
             else
                 throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : invalid 'cc_light_instr_type' for instruction !",false);
