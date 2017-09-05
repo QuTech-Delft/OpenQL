@@ -43,7 +43,7 @@ public:
      * compile qasm to cc_light_eqasm
      */
     // eqasm_t
-    void compile(ql::circuit& c, ql::quantum_platform& platform) throw (ql::exception)
+    void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& platform) throw (ql::exception)
     {
         if (verbose) println("[-] compiling qasm code ...");
         if (c.empty())
@@ -113,8 +113,7 @@ public:
         std::string s = control_store.str();
         ql::utils::write_file(cs_filename,s);
 
-
-		cc_light_schedule(num_qubits, c, platform, verbose);
+		cc_light_schedule(prog_name, num_qubits, c, platform, verbose);
 
 
         for (ql::gate * g : c)

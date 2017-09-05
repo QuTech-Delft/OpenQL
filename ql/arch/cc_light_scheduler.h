@@ -294,10 +294,10 @@ void PrintBundles(Bundles & bundles, bool verbose=false)
 
 }
 
-void PrintCCLighQasm(Bundles & bundles, bool verbose=false)
+void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=false)
 {
     ofstream fout;
-    string qisafname( ql::utils::get_output_dir() + "/scheduledCCLightALAP.qisa");
+    string qisafname( ql::utils::get_output_dir() + "/" + prog_name + "_CCL_ALAP.qisa");
     fout.open( qisafname, ios::binary);
     if ( fout.fail() )
     {
@@ -386,10 +386,10 @@ void PrintCCLighQasm(Bundles & bundles, bool verbose=false)
 }
 
 
-void PrintCCLighQasmTimeStamped(Bundles & bundles, bool verbose=false)
+void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool verbose=false)
 {
     ofstream fout;
-    string qisafname( ql::utils::get_output_dir() + "/scheduledCCLightALAPTimeStamped.qisa");
+    string qisafname( ql::utils::get_output_dir() + "/" + prog_name + "_CCL_ALAP.tqisa");
     fout.open( qisafname, ios::binary);
     if ( fout.fail() )
     {
@@ -477,7 +477,7 @@ void PrintCCLighQasmTimeStamped(Bundles & bundles, bool verbose=false)
     fout.close();
 }
 
-void cc_light_schedule(size_t nqubits, ql::circuit & ckt, ql::quantum_platform & platform, bool verbose=true)
+void cc_light_schedule(std::string prog_name, size_t nqubits, ql::circuit & ckt, ql::quantum_platform & platform, bool verbose=true)
 {
     Bundles bundles1;
 
@@ -528,9 +528,9 @@ void cc_light_schedule(size_t nqubits, ql::circuit & ckt, ql::quantum_platform &
     PrintBundles(bundles2,true);
 
     // print scheduled bundles with parallelism in cc-light syntax
-    PrintCCLighQasm(bundles2, true);
+    PrintCCLighQasm(prog_name, bundles2, true);
 
-    PrintCCLighQasmTimeStamped(bundles2, true);
+    PrintCCLighQasmTimeStamped(prog_name, bundles2, true);
 
 
     println("scheduling ccLight instructions done.");
