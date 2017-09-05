@@ -1,0 +1,7 @@
+This work is based on code found on https://github.com/jonathan-beard/simple_wc_example.git, which uses the
+Apache License 2.0
+
+As per this license, a list of changes must be provided.
+
+Other than the general idea about using Bison/Flex in c++ and the CMake setup, there are no other similarities.
+Therefore the list of changes are not relevant in this case.
