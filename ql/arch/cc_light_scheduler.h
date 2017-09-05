@@ -70,7 +70,7 @@ public:
         }
     }
 
-    Mask(qubit_set_t & qs, std::string rn) : squbits(qs), regName(rn)
+    Mask(std::string rn, qubit_set_t & qs ) : regName(rn), squbits(qs)
     { 
         if(CurrSRegCount < MAX_S_REG)
         {
@@ -212,27 +212,27 @@ public:
         for(size_t r=0; r<CurrSRegCount; ++r)
         {
             auto & m = SReg2Mask[r];
-            ssmasks << "smis " << m.regName << " , { ";
+            ssmasks << "smis " << m.regName << ", {";
             for(auto it = m.squbits.begin(); it != m.squbits.end(); ++it)
             {
                 ssmasks << *it;
                 if( std::next(it) != m.squbits.end() )
                     ssmasks << ", ";
             }
-            ssmasks << " } \n";
+            ssmasks << "} \n";
         }
 
         for(size_t r=0; r<CurrTRegCount; ++r)
         {
             auto & m = TReg2Mask[r];
-            ssmasks << "smit " << m.regName << " , { ";
+            ssmasks << "smit " << m.regName << ", {";
             for(auto it = m.dqubits.begin(); it != m.dqubits.end(); ++it)
             {
-                ssmasks << "(" << it->first << "," << it->second << ")";
+                ssmasks << "(" << it->first << ", " << it->second << ")";
                 if( std::next(it) != m.dqubits.end() )
                     ssmasks << ", ";
             }
-            ssmasks << " } \n";
+            ssmasks << "} \n";
         }
 
         return ssmasks.str();
@@ -370,6 +370,10 @@ void PrintCCLighQasm(Bundles & bundles, bool verbose=false)
         ssbundles << "\n";
     }
 
+    auto & lastBundle = bundles.back();
+    auto lbduration = lastBundle.duration;
+    ssbundles << "qwait " << lbduration << "\n";
+
     if(verbose)
     {
         println("Printing CC-Light QISA");
@@ -404,10 +408,10 @@ void PrintCCLighQasmTimeStamped(Bundles & bundles, bool verbose=false)
         auto delta = bcycle - curr_cycle;
 
         if(delta < 8)
-            ssbundles << std::setw(4) << curr_cycle << "    bs " << delta << "    ";
+            ssbundles << std::setw(4) << curr_cycle << ":    bs " << delta << "    ";
         else
-            ssbundles << std::setw(4) << curr_cycle << "    qwait " << delta-1 << "\n"
-                      << std::setw(4) << curr_cycle + (delta-1) << "    bs 1    ";
+            ssbundles << std::setw(4) << curr_cycle << ":    qwait " << delta-1 << "\n"
+                      << std::setw(4) << curr_cycle + (delta-1) << ":    bs 1    ";
 
         for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
         {
@@ -458,13 +462,17 @@ void PrintCCLighQasmTimeStamped(Bundles & bundles, bool verbose=false)
         ssbundles << "\n";
     }
 
+    auto & lastBundle = bundles.back();
+    auto lbduration = lastBundle.duration;
+    ssbundles << std::setw(4) << curr_cycle << ":    qwait " << lbduration << "\n";
+
     if(verbose)
     {
-        println("Printing CC-Light QISA");
+        println("Printing Time-stamped CC-Light QISA");
         std::cout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
     }
 
-    if(verbose) println("Writing CC-Light QISA to " << qisafname);
+    if(verbose) println("Writing Time-stamped CC-Light QISA to " << qisafname);
     fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
     fout.close();
 }
@@ -505,6 +513,7 @@ void cc_light_schedule(size_t nqubits, ql::circuit & ckt, ql::quantum_platform &
     {
         Bundle abundle2;
         abundle2.cycle = abundle1.cycle;
+        abundle2.duration = abundle1.duration;
         for(auto & sec : abundle1.ParallelSections)
         {
             if( !sec.empty() )

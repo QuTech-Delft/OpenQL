@@ -30,6 +30,7 @@ class Bundle
 {
 public:
     size_t cycle;
+    size_t duration;
     std::list<ParallelSection>ParallelSections;
 };
 typedef std::list<Bundle>Bundles;
@@ -49,6 +50,7 @@ private:
     Path<ListDigraph> p;
 
     ListDigraph::Node s, t;
+    // size_t cycle_time;
 
 public:
     Scheduler(): instruction(graph), name(graph), weight(graph),
@@ -56,7 +58,7 @@ public:
 
     void Init( size_t nQubits, ql::circuit& ckt, ql::quantum_platform platform, bool verbose=false)
     {
-        size_t cycle_time=platform.cycle_time;
+        // cycle_time=platform.cycle_time;
         // std::cout << "nQubits : " << nQubits << std::endl;
 
         // add dummy source node
@@ -95,7 +97,7 @@ public:
                     weight[arc] = 1; // TODO OR 0 as SOURCE is dummy node?
                 else
                 {
-                    weight[arc] = (instruction[prodNode]->duration)/cycle_time;
+                    weight[arc] = instruction[prodNode]->duration;
                     // println("Case 1: " << name[prodNode] << " -> " << name[consNode] << ", duration: " << instruction[prodNode]->duration << ", weight: " << weight[arc]);
                 }
 
@@ -111,7 +113,7 @@ public:
                             weight[arc1] = 1; // TODO OR 0 as SOURCE is dummy node?
                         else
                         {
-                            weight[arc1] = (instruction[readerNode]->duration)/cycle_time;
+                            weight[arc1] = instruction[readerNode]->duration;
                             // println("Case 2: " << name[readerNode] << " -> " << name[consNode] << ", duration: " << instruction[readerNode]->duration << ", weight: " << weight[arc1]);
                         }
 
@@ -135,7 +137,7 @@ public:
                             weight[arc1] = 1; // TODO OR 0 as SOURCE is dummy node?
                         else
                         {
-                            weight[arc1] = (instruction[readerNode]->duration)/cycle_time;
+                            weight[arc1] = instruction[readerNode]->duration;
                             // println("Case 3: " << name[readerNode] << " -> " << name[consNode] << ", duration: " << instruction[readerNode]->duration << ", weight: " << weight[arc1]);
                         }
 
@@ -567,7 +569,7 @@ public:
                 size_t targetCycle = cycle[targetNode];
                 if(currCycle >= targetCycle)
                 {
-                    currCycle = targetCycle - + weight[arc];
+                    currCycle = targetCycle - weight[arc];
                 }
             }
             cycle[*currNode]=currCycle;
@@ -842,12 +844,12 @@ public:
             TotalCycles =  MAX_CYCLE - cycle[ *( order.rbegin() ) ];
         }
 
-        size_t empty_bundle_counter = 0;
         for(size_t currCycle = TotalCycles-1; currCycle>0; --currCycle)
         {
             auto it = insInAllCycles.find(currCycle);
             Bundle abundle;
-            abundle.cycle = TotalCycles - currCycle;                
+            abundle.cycle = TotalCycles - currCycle;
+            size_t bduration = 0;
             if( it != insInAllCycles.end() )
             {
                 auto nInsThisCycle = insInAllCycles[currCycle].size();
@@ -857,7 +859,10 @@ public:
                     auto & ins = insInAllCycles[currCycle][i];
                     aparsec.push_back(ins);
                     abundle.ParallelSections.push_back(aparsec);
+                    size_t iduration = ins->duration;
+                    bduration = std::max(bduration, iduration);
                 }
+                abundle.duration = bduration;
                 bundles.push_back(abundle);
             }
         }
@@ -892,7 +897,6 @@ public:
             TotalCycles =  MAX_CYCLE - cycle[ *( order.rbegin() ) ];
         }
 
-        size_t empty_bundle_counter = 0;
         for(size_t currCycle = TotalCycles-1; currCycle>0; --currCycle)
         {
             auto it = insInAllCycles.find(currCycle);
