@@ -117,11 +117,22 @@ public:
 	std::set<size_t> opcode_set;
         for (auto i : instruction_settings)
         {
+	    std::string instr_name = i["cc_light_instr"];
             if (i["cc_light_instr_type"] == "single_qubit_gate")
             {
                 size_t opcode     = i["cc_light_opcode"];
 		if (opcode_set.find(opcode) != opcode_set.end())
 		   continue;
+		// opcode range check
+		if (i["type"] == "readout")
+		{
+		   if (opcode < 0x4 || opcode > 0x7)
+		      throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for measure instruction '"+instr_name+"' : should be in [0x04..0x07] range : current opcode: "+std::to_string(opcode),false);
+		}
+		else if (opcode < 1 || opcode > 127)
+		{
+		      throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for single qubit gate instruction '"+instr_name+"' : should be in [1..127] range : current opcode: "+std::to_string(opcode),false);
+		}
 		opcode_set.insert(opcode);
 		size_t condition  = (i["cc_light_cond"].is_null() ? 0 : i["cc_light_cond"].get<size_t>());
 		if (i["cc_light_instr"].is_null())
@@ -136,6 +147,8 @@ public:
                 size_t opcode     = i["cc_light_opcode"];
 		if (opcode_set.find(opcode) != opcode_set.end())
 		   continue;
+		if (opcode < 127 || opcode > 255)
+		      throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for two qubits gate instruction '"+instr_name+"' : should be in [128..255] range : current opcode: "+std::to_string(opcode),false);
 		opcode_set.insert(opcode);
                 // size_t condition  = 0;
 		size_t condition  = (i["cc_light_cond"].is_null() ? 0 : i["cc_light_cond"].get<size_t>());

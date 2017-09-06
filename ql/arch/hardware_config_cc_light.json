@@ -204,11 +204,11 @@
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measx",
       "cc_light_codeword": 30,
-      "cc_light_opcode": 3
+      "cc_light_opcode": 4
    },
    "measx q1": {
       "duration": 40,
@@ -216,11 +216,11 @@
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measx",
       "cc_light_codeword": 31,
-      "cc_light_opcode": 3
+      "cc_light_opcode": 4
    },
    "measx q2": {
       "duration": 40,
@@ -228,11 +228,11 @@
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measx",
       "cc_light_codeword": 32,
-      "cc_light_opcode": 3
+      "cc_light_opcode": 4
    },
    "measx q3": {
       "duration": 40,
@@ -240,11 +240,11 @@
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measx",
       "cc_light_codeword": 33,
-      "cc_light_opcode": 3
+      "cc_light_opcode": 4
    },
    "measx q4": {
       "duration": 40,
@@ -252,11 +252,11 @@
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measx",
       "cc_light_codeword": 34,
-      "cc_light_opcode": 3
+      "cc_light_opcode": 4
    },
    "measx q5": {
       "duration": 40,
@@ -264,11 +264,11 @@
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measx",
       "cc_light_codeword": 35,
-      "cc_light_opcode": 3
+      "cc_light_opcode": 4
    },
    "measx q6": {
       "duration": 40,
@@ -276,11 +276,11 @@
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measx",
       "cc_light_codeword": 36,
-      "cc_light_opcode": 3
+      "cc_light_opcode": 4
    },
    "measz q0": {
       "duration": 40,
@@ -288,11 +288,11 @@
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 40,
-      "cc_light_opcode": 4
+      "cc_light_opcode": 5
    },
    "measz q1": {
       "duration": 40,
@@ -300,11 +300,11 @@
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 41,
-      "cc_light_opcode": 4
+      "cc_light_opcode": 5
    },
    "measz q2": {
       "duration": 40,
@@ -312,11 +312,11 @@
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 42,
-      "cc_light_opcode": 4
+      "cc_light_opcode": 5
    },
    "measz q3": {
       "duration": 40,
@@ -324,11 +324,11 @@
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 43,
-      "cc_light_opcode": 4
+      "cc_light_opcode": 5
    },
    "measz q4": {
       "duration": 40,
@@ -336,11 +336,11 @@
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 44,
-      "cc_light_opcode": 4
+      "cc_light_opcode": 5
    },
    "measz q5": {
       "duration": 40,
@@ -348,11 +348,11 @@
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 45,
-      "cc_light_opcode": 4
+      "cc_light_opcode": 5
    },
    "measz q6": {
       "duration": 40,
@@ -360,11 +360,11 @@
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 46,
-      "cc_light_opcode": 4
+      "cc_light_opcode": 5
    },
    "measure q0": {
       "duration": 40,
@@ -372,11 +372,11 @@
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 40,
-      "cc_light_opcode": 4
+      "cc_light_opcode": 5
    },
    "measure q1": {
       "duration": 40,
@@ -384,11 +384,11 @@
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 41,
-      "cc_light_opcode": 4
+      "cc_light_opcode": 5
    },
    "measure q2": {
       "duration": 40,
@@ -396,11 +396,11 @@
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 42,
-      "cc_light_opcode": 4
+      "cc_light_opcode": 5
    },
    "measure q3": {
       "duration": 40,
@@ -408,11 +408,11 @@
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 43,
-      "cc_light_opcode": 4
+      "cc_light_opcode": 5
    },
    "measure q4": {
       "duration": 40,
@@ -420,11 +420,11 @@
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 44,
-      "cc_light_opcode": 4
+      "cc_light_opcode": 5
    },
    "measure q5": {
       "duration": 40,
@@ -432,11 +432,11 @@
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 45,
-      "cc_light_opcode": 4
+      "cc_light_opcode": 5
    },
    "measure q6": {
       "duration": 40,
@@ -444,11 +444,11 @@
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "readout",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 46,
-      "cc_light_opcode": 4
+      "cc_light_opcode": 5
    },
    "i q0": {
       "duration": 40,
@@ -460,7 +460,7 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "i",
       "cc_light_codeword": 50,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 100
    },
    "i q1": {
       "duration": 40,
@@ -472,7 +472,7 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "i",
       "cc_light_codeword": 51,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 100
    },
    "i q2": {
       "duration": 40,
@@ -484,7 +484,7 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "i",
       "cc_light_codeword": 52,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 100
    },
    "i q3": {
       "duration": 40,
@@ -496,7 +496,7 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "i",
       "cc_light_codeword": 53,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 100
    },
    "i q4": {
       "duration": 40,
@@ -508,7 +508,7 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "i",
       "cc_light_codeword": 54,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 100
    },
    "i q5": {
       "duration": 40,
@@ -520,7 +520,7 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "i",
       "cc_light_codeword": 55,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 100
    },
    "i q6": {
       "duration": 40,
@@ -532,7 +532,7 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "i",
       "cc_light_codeword": 56,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 100
    },
    "x q0": {
       "duration": 40,
@@ -1721,7 +1721,7 @@
       "cc_light_instr": "cnot",
       "cc_light_right_codeword": 127,
       "cc_light_left_codeword": 135,
-      "cc_light_opcode": 32
+      "cc_light_opcode": 128
    },
    "cnot q0,q3": {
       "duration": 80,
@@ -1734,7 +1734,7 @@
       "cc_light_instr": "cnot",
       "cc_light_right_codeword": 128,
       "cc_light_left_codeword": 136,
-      "cc_light_opcode": 32
+      "cc_light_opcode": 128
    },
    "cnot q3,q1": {
       "duration": 80,
@@ -1747,7 +1747,7 @@
       "cc_light_instr": "cnot",
       "cc_light_right_codeword": 129,
       "cc_light_left_codeword": 137,
-      "cc_light_opcode": 32
+      "cc_light_opcode": 128
    },
    "cnot q1,q4": {
       "duration": 80,
@@ -1760,7 +1760,7 @@
       "cc_light_instr": "cnot",
       "cc_light_right_codeword": 130,
       "cc_light_left_codeword": 138,
-      "cc_light_opcode": 32
+      "cc_light_opcode": 128
    },
    "cnot q2,q5": {
       "duration": 80,
@@ -1773,7 +1773,7 @@
       "cc_light_instr": "cnot",
       "cc_light_right_codeword": 131,
       "cc_light_left_codeword": 139,
-      "cc_light_opcode": 32
+      "cc_light_opcode": 128
    },
    "cnot q5,q3": {
       "duration": 80,
@@ -1786,7 +1786,7 @@
       "cc_light_instr": "cnot",
       "cc_light_right_codeword": 132,
       "cc_light_left_codeword": 140,
-      "cc_light_opcode": 32
+      "cc_light_opcode": 128
    },
    "cnot q3,q6": {
       "duration": 80,
@@ -1799,7 +1799,7 @@
       "cc_light_instr": "cnot",
       "cc_light_right_codeword": 133,
       "cc_light_left_codeword": 141,
-      "cc_light_opcode": 32
+      "cc_light_opcode": 128
    },
    "cnot q6,q4": {
       "duration": 80,
@@ -1812,7 +1812,7 @@
       "cc_light_instr": "cnot",
       "cc_light_right_codeword": 134,
       "cc_light_left_codeword": 142,
-      "cc_light_opcode": 32
+      "cc_light_opcode": 128
    },
    "cnot q0,q2": {
       "duration": 80,
@@ -1825,7 +1825,7 @@
       "cc_light_instr": "cnot",
       "cc_light_right_codeword": 135,
       "cc_light_left_codeword": 143,
-      "cc_light_opcode": 32
+      "cc_light_opcode": 128
    },
    "cnot q3,q0": {
       "duration": 80,
@@ -1838,7 +1838,7 @@
       "cc_light_instr": "cnot",
       "cc_light_right_codeword": 136,
       "cc_light_left_codeword": 144,
-      "cc_light_opcode": 32
+      "cc_light_opcode": 128
    },
    "cnot q1,q3": {
       "duration": 80,
@@ -1851,7 +1851,7 @@
       "cc_light_instr": "cnot",
       "cc_light_right_codeword": 137,
       "cc_light_left_codeword": 145,
-      "cc_light_opcode": 32
+      "cc_light_opcode": 128
    },
    "cnot q4,q1": {
       "duration": 80,
@@ -1864,7 +1864,7 @@
       "cc_light_instr": "cnot",
       "cc_light_right_codeword": 138,
       "cc_light_left_codeword": 146,
-      "cc_light_opcode": 32
+      "cc_light_opcode": 128
    },
    "cnot q5,q2": {
       "duration": 80,
@@ -1877,7 +1877,7 @@
       "cc_light_instr": "cnot",
       "cc_light_right_codeword": 139,
       "cc_light_left_codeword": 147,
-      "cc_light_opcode": 32
+      "cc_light_opcode": 128
    },
    "cnot q3,q5": {
       "duration": 80,
@@ -1890,7 +1890,7 @@
       "cc_light_instr": "cnot",
       "cc_light_right_codeword": 140,
       "cc_light_left_codeword": 148,
-      "cc_light_opcode": 32
+      "cc_light_opcode": 128
    },
    "cnot q6,q3": {
       "duration": 80,
@@ -1903,7 +1903,7 @@
       "cc_light_instr": "cnot",
       "cc_light_right_codeword": 141,
       "cc_light_left_codeword": 149,
-      "cc_light_opcode": 32
+      "cc_light_opcode": 128
    },
    "cnot q4,q6": {
       "duration": 80,
@@ -1916,7 +1916,7 @@
       "cc_light_instr": "cnot",
       "cc_light_right_codeword": 142,
       "cc_light_left_codeword": 150,
-      "cc_light_opcode": 32
+      "cc_light_opcode": 128
    },
    "cz q2,q0": {
       "duration": 80,
@@ -1929,7 +1929,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 143,
       "cc_light_left_codeword": 151,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q0,q3": {
       "duration": 80,
@@ -1942,7 +1942,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q3,q1": {
       "duration": 80,
@@ -1955,7 +1955,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q1,q4": {
       "duration": 80,
@@ -1968,7 +1968,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q2,q5": {
       "duration": 80,
@@ -1981,7 +1981,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q5,q3": {
       "duration": 80,
@@ -1994,7 +1994,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q3,q6": {
       "duration": 80,
@@ -2007,7 +2007,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q6,q4": {
       "duration": 80,
@@ -2020,7 +2020,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q0,q2": {
       "duration": 80,
@@ -2033,7 +2033,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q3,q0": {
       "duration": 80,
@@ -2046,7 +2046,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q1,q3": {
       "duration": 80,
@@ -2059,7 +2059,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q4,q1": {
       "duration": 80,
@@ -2072,7 +2072,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q5,q2": {
       "duration": 80,
@@ -2085,7 +2085,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q3,q5": {
       "duration": 80,
@@ -2098,7 +2098,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q6,q3": {
       "duration": 80,
@@ -2111,7 +2111,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q4,q6": {
       "duration": 80,
@@ -2124,7 +2124,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    }
    },
 
