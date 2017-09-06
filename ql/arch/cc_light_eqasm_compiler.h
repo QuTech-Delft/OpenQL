@@ -126,7 +126,7 @@ public:
 		size_t condition  = (i["cc_light_cond"].is_null() ? 0 : i["cc_light_cond"].get<size_t>());
 		if (i["cc_light_instr"].is_null())
 		   throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
-		qisa << "def_opcode[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
+		qisa << "def_q_arg_st[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
                 auto optype     = (i["type"] == "mw" ? 1 : (i["type"] == "flux" ? 2 : ((i["type"] == "readout" ? 3 : 0))));
                 auto codeword   = i["cc_light_codeword"];
                 control_store << "     " << i["cc_light_opcode"] << ":     " << condition << "          " << optype << "          " << codeword << "          0          0\n";
@@ -142,7 +142,7 @@ public:
 		if (i["cc_light_instr"].is_null())
 		   throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
 		// qisa << "def_opcode[" << i["cc_light_instr"] << "]\t= " << opcode << "\n";
-		qisa << "def_opcode[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
+		qisa << "def_q_arg_tt[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
                 auto optype     = (i["type"] == "mw" ? 1 : (i["type"] == "flux" ? 2 : ((i["type"] == "readout" ? 3 : 0))));
                 auto codeword_l = i["cc_light_left_codeword"];
                 auto codeword_r = i["cc_light_right_codeword"];
