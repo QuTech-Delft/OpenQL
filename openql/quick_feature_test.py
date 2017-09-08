@@ -19,18 +19,21 @@ def test_smis():
 
     # populate kernel using default gates
     k = ql.Kernel('first_kernel', platform)
+    # k.print_custom_instructions()
+
     k.prepz(0)
     k.prepz(1)
-    k.prepz(2)
-    k.prepz(3)
+    # k.prepz(2)
+    # k.prepz(3)
     k.hadamard(0)
     k.hadamard(1)
-    k.x(2)
-    k.x(3)
-    k.measure(0)
+    # k.x(2)
+    # k.x(3)
+    # k.measure(0)
+    k.gate("measure", 0)
     k.measure(1)
-    k.measure(2)
-    k.measure(3)
+    # k.measure(2)
+    # k.measure(3)
 
     # add the kernel to the program
     p.add_kernel(k)
@@ -77,7 +80,7 @@ def test_smit():
 
 
 if __name__ == '__main__':
-    test_smit()
+    test_smis()
 
 
 

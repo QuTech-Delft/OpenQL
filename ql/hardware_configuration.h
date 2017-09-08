@@ -101,7 +101,6 @@ public:
         {
             std::string  name = it.key();
             str::lower_case(name);
-            // println("'" << name << "'");
             json         attr = *it; //.value();
 
             std::string simple_instruction_name(name);
@@ -116,7 +115,6 @@ public:
                 println("[!] warning : ql::hardware_configuration::load() : instruction '" << name << "' redefined : the old definition is overwritten !");
 
             instruction_map[name] = load_instruction(simple_instruction_name, attr);
-            // std::cout << it.key() << " : " << it.value() << "\n";
         }
     }
 

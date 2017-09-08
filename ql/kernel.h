@@ -135,7 +135,22 @@ namespace ql
 
 	 void measure(size_t qubit)
 	 {
-	    c.push_back(new ql::measure(qubit));
+	    std::string gname("measure");
+	    std::string instr = gname + " q" + std::to_string(qubit);
+	    std::map<std::string,custom_gate*>::iterator it = gate_definition.find(instr);
+	    if (it != gate_definition.end())
+	    {
+	       custom_gate * g = new custom_gate(*(it->second));
+	       g->operands.push_back(qubit);
+	       c.push_back(g);
+	    }
+	    else
+	    {
+	       println("[x] error : unknown gate '" << instr << "' !");
+	       throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+instr+"' is not supported by the target platform !",false);
+	    }
+
+	    // c.push_back(new ql::measure(qubit));
 	 }
 
 	 void prepz(size_t qubit)

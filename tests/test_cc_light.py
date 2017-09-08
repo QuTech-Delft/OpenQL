@@ -50,7 +50,7 @@ class Test_basic(unittest.TestCase):
         assemble(QISA_fn)
 
     # single qubit mask generation test with custom gates
-    # @unittest.skip
+    @unittest.skip
     def test_smis_with_custom_gates(self):
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
@@ -129,7 +129,7 @@ class Test_basic(unittest.TestCase):
         assemble(QISA_fn)
 
     # two qubit mask generation test
-    # @unittest.skip
+    @unittest.skip
     def test_smit(self):
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')

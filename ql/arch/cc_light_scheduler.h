@@ -313,16 +313,17 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
     std::stringstream ssbundles;
     size_t curr_cycle=0; // first instruction should be with pre-interval 1, 'bs 1'
 
+    ssbundles << "start:" << "\n";
     for (Bundle & abundle : bundles)
     {
         auto bcycle = abundle.cycle;
         auto delta = bcycle - curr_cycle;
 
         if(delta < 8)
-            ssbundles << "bs " << delta << "    ";
+            ssbundles << "    bs " << delta << "    ";
         else
-            ssbundles << "qwait " << delta-1 << "\n"
-                      << "bs 1    ";
+            ssbundles << "    qwait " << delta-1 << "\n"
+                      << "    bs 1    ";
 
         for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
         {
@@ -330,6 +331,7 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
             qubit_pair_set_t dqubits;
             auto firstInsIt = secIt->begin();
             auto iname = (*(firstInsIt))->name;
+            std::cout << "instruction name : " << iname << std::endl;
             auto itype = (*(firstInsIt))->type();
             if( itype == __nop_gate__ )
             {
@@ -352,7 +354,7 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
                     }
                 }
                 std::string rname;
-                if( itype == __cnot_gate__ )
+                if( itype == __cnot_gate__ || itype == __cphase_gate__)
                 {
                     rname = gMaskManager.getRegName(dqubits);
                 }
@@ -375,7 +377,10 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
 
     auto & lastBundle = bundles.back();
     auto lbduration = lastBundle.duration;
-    ssbundles << "qwait " << lbduration << "\n";
+    ssbundles << "    qwait " << lbduration << "\n";
+    ssbundles << "    br always, start" << "\n"
+              << "    nop \n"
+              << "    nop" << endl;
 
     if(verbose)
     {

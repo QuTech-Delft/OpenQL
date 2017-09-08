@@ -141,7 +141,6 @@ public:
     {
         ql_kernel->clifford(id, q0);
     }
-    // void load_custom_instructions(std::string fname="instructions.json") { ql_kernel->load_custom_instructions(fname); }
     void print_custom_instructions()
     {
         ql_kernel->print_gates_definition();
