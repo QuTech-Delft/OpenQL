@@ -951,7 +951,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 143,
       "cc_light_left_codeword": 151,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q0,q3": {
       "duration": 80,
@@ -964,7 +964,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q3,q1": {
       "duration": 80,
@@ -977,7 +977,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q1,q4": {
       "duration": 80,
@@ -990,7 +990,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q2,q5": {
       "duration": 80,
@@ -1003,7 +1003,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q5,q3": {
       "duration": 80,
@@ -1016,7 +1016,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q3,q6": {
       "duration": 80,
@@ -1029,7 +1029,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q6,q4": {
       "duration": 80,
@@ -1042,7 +1042,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q0,q2": {
       "duration": 80,
@@ -1055,7 +1055,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q3,q0": {
       "duration": 80,
@@ -1068,7 +1068,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q1,q3": {
       "duration": 80,
@@ -1081,7 +1081,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q4,q1": {
       "duration": 80,
@@ -1094,7 +1094,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q5,q2": {
       "duration": 80,
@@ -1107,7 +1107,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q3,q5": {
       "duration": 80,
@@ -1120,7 +1120,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q6,q3": {
       "duration": 80,
@@ -1133,7 +1133,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    },
    "cz q4,q6": {
       "duration": 80,
@@ -1146,7 +1146,7 @@
       "cc_light_instr": "cz",
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
-      "cc_light_opcode": 33
+      "cc_light_opcode": 129
    }
    },
 
