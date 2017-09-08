@@ -146,10 +146,8 @@ namespace ql
 	    }
 	    else
 	    {
-	       println("[x] error : unknown gate '" << instr << "' !");
-	       throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+instr+"' is not supported by the target platform !",false);
+	    	c.push_back(new ql::measure(qubit));
 	    }
-
 	    // c.push_back(new ql::measure(qubit));
 	 }
 
