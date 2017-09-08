@@ -13,7 +13,7 @@ def test_smis():
     platform  = ql.Platform('seven_qubits_chip', config_fn)
     sweep_points = [1,2]
     num_circuits = 1
-    num_qubits = 7
+    num_qubits = platform.get_qubit_number()
     p = ql.Program('my_program', num_qubits, platform)
     p.set_sweep_points(sweep_points, num_circuits)
 

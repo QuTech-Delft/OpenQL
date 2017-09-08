@@ -41,6 +41,10 @@ public:
     {
         ql_platform = new ql::quantum_platform(name, config_file);
     }
+    size_t get_qubit_number()
+    {
+        return ql_platform->get_qubit_number();
+    }
 };
 
 class Kernel

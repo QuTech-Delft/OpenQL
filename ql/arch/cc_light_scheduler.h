@@ -331,7 +331,6 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
             qubit_pair_set_t dqubits;
             auto firstInsIt = secIt->begin();
             auto iname = (*(firstInsIt))->name;
-            std::cout << "instruction name : " << iname << std::endl;
             auto itype = (*(firstInsIt))->type();
             if( itype == __nop_gate__ )
             {
@@ -388,7 +387,7 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
         std::cout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
     }
 
-    if(verbose) println("Writing CC-Light QISA to " << qisafname);
+    println("Writing CC-Light QISA to " << qisafname);
     fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
     fout.close();
 }
@@ -409,17 +408,17 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool v
 
     std::stringstream ssbundles;
     size_t curr_cycle=0; // first instruction should be with pre-interval 1, 'bs 1'
-
+    ssbundles << "start:" << "\n";
     for (Bundle & abundle : bundles)
     {
         auto bcycle = abundle.cycle;
         auto delta = bcycle - curr_cycle;
 
         if(delta < 8)
-            ssbundles << std::setw(4) << curr_cycle << ":    bs " << delta << "    ";
+            ssbundles << std::setw(8) << curr_cycle << ":    bs " << delta << "    ";
         else
-            ssbundles << std::setw(4) << curr_cycle << ":    qwait " << delta-1 << "\n"
-                      << std::setw(4) << curr_cycle + (delta-1) << ":    bs 1    ";
+            ssbundles << std::setw(8) << curr_cycle << ":    qwait " << delta-1 << "\n"
+                      << std::setw(8) << curr_cycle + (delta-1) << ":    bs 1    ";
 
         for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
         {
@@ -472,7 +471,11 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool v
 
     auto & lastBundle = bundles.back();
     auto lbduration = lastBundle.duration;
-    ssbundles << std::setw(4) << curr_cycle << ":    qwait " << lbduration << "\n";
+    ssbundles << std::setw(8) << curr_cycle++ << ":    qwait " << lbduration << "\n";
+    ssbundles << std::setw(8) << curr_cycle++ << ":    br always, start" << "\n";
+    ssbundles << std::setw(8) << curr_cycle++ << ":    nop \n";
+    ssbundles << std::setw(8) << curr_cycle++ << ":    nop" << endl;
+
 
     if(verbose)
     {
@@ -480,7 +483,7 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool v
         std::cout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
     }
 
-    if(verbose) println("Writing Time-stamped CC-Light QISA to " << qisafname);
+    println("Writing Time-stamped CC-Light QISA to " << qisafname);
     fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
     fout.close();
 }

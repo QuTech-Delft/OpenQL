@@ -108,6 +108,11 @@ namespace ql
 	      println("  |-- " << (*i).first);
 	}
 
+    size_t get_qubit_number()
+    {
+        return qubit_number;
+    }
+
       // protected:
       public:
         

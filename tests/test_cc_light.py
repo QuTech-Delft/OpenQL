@@ -21,7 +21,7 @@ class Test_basic(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_circuits = 1
-        num_qubits = 7
+        num_qubits = platform.get_qubit_number()
         p = ql.Program('basic_CCL', num_qubits, platform)
         p.set_sweep_points(sweep_points, num_circuits)
 
@@ -47,7 +47,7 @@ class Test_basic(unittest.TestCase):
         p.compile(optimize=False, verbose=True)
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+        # assemble(QISA_fn)
 
     # single qubit mask generation test with custom gates
     @unittest.skip
