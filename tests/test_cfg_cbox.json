@@ -227,7 +227,7 @@
       },
 
       "cz q0,q1" : {
-         "duration": 80, 
+         "duration": 40, 
          "latency": 10,
          "qubits": ["q0", "q1"], 
          "matrix" : [ [0.0,0.0], [1.0,0.0],
@@ -242,7 +242,7 @@
       },
 
       "cnot q0,q1" : {
-         "duration": 80, 
+         "duration": 40, 
          "latency": 10,
          "qubits": ["q0", "q1"], 
          "matrix" : [ [0.0,0.0], [1.0,0.0],

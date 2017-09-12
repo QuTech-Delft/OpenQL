@@ -463,7 +463,7 @@ public:
 
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
-        ScheduleASAP(cycle,order);
+        ScheduleASAP(cycle, order, verbose);
         if(verbose) println("Printing Scheduled QASM in " << qcfname);
 
         typedef std::vector<std::string> insInOneCycle;
@@ -512,7 +512,7 @@ public:
 
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
-        ScheduleASAP(cycle,order);
+        ScheduleASAP(cycle, order, verbose);
 
         typedef std::vector<std::string> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;

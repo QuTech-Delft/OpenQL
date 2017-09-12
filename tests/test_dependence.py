@@ -38,14 +38,15 @@ class Test_dependence(unittest.TestCase):
         p = ql.Program("independent", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
         p.add_kernel(k)
-        p.compile(False, False)
-        p.schedule("ASAP", False)
+        p.compile(False, True)
+        p.schedule("ASAP", True)
 
         gold = rootDir + '/golden/test_independence.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'ASAP.qasm')
         isSame = filecmp.cmp(qasm_fn, gold)
         self.assertTrue(isSame)
 
+    # @unittest.skip
     def test_WAW(self):
 
         # populate kernel
@@ -76,6 +77,7 @@ class Test_dependence(unittest.TestCase):
         isSame = filecmp.cmp(qasm_fn, gold)
         self.assertTrue(isSame)
 
+    # @unittest.skip
     def test_RAR_Control(self):
 
         # populate kernel
@@ -106,6 +108,7 @@ class Test_dependence(unittest.TestCase):
         isSame = filecmp.cmp(qasm_fn, gold)
         self.assertTrue(isSame)
 
+    # @unittest.skip
     def test_RAW(self):
 
         # populate kernel
@@ -136,6 +139,7 @@ class Test_dependence(unittest.TestCase):
         isSame = filecmp.cmp(qasm_fn, gold)
         self.assertTrue(isSame)
 
+    # @unittest.skip
     def test_WAR(self):
 
         # populate kernel

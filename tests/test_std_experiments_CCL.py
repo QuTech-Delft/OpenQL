@@ -97,3 +97,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         # Test that the generated code is valid
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
+
+if __name__ == '__main__':
+    unittest.main()
+        
