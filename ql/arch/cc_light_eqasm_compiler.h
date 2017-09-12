@@ -84,60 +84,60 @@ public:
 
         std::stringstream qisa;
 
-	qisa << "# Classic instructions (single instruction format)\n";
-	qisa << "def_opcode[\"nop\"]      = 0x00\n";
-	qisa << "def_opcode[\"br\"]       = 0x01\n";
-	qisa << "def_opcode[\"stop\"]     = 0x08\n";
-	qisa << "def_opcode[\"cmp\"]      = 0x0d\n";
-	qisa << "def_opcode[\"ldi\"]      = 0x16\n";
-	qisa << "def_opcode[\"ldui\"]     = 0x17\n";
-	qisa << "def_opcode[\"or\"]       = 0x18\n";
-	qisa << "def_opcode[\"xor\"]      = 0x19\n";
-	qisa << "def_opcode[\"and\"]      = 0x1a\n";
-	qisa << "def_opcode[\"not\"]      = 0x1b\n";
-	qisa << "def_opcode[\"add\"]      = 0x1e\n";
-	qisa << "def_opcode[\"sub\"]      = 0x1f\n";
-	qisa << "# quantum-classical mixed instructions (single instruction format)\n";
-	qisa << "def_opcode[\"fbr\"]      = 0x14\n";
-	qisa << "def_opcode[\"fmr\"]      = 0x15\n";
-	qisa << "# quantum instructions (single instruction format)\n";
-	qisa << "def_opcode[\"smis\"]     = 0x20\n";
-	qisa << "def_opcode[\"smit\"]     = 0x28\n";
-	qisa << "def_opcode[\"qwait\"]    = 0x30\n";
-	qisa << "def_opcode[\"qwaitr\"]   = 0x38\n";
-	qisa << "# quantum instructions (double instruction format)\n";
-	qisa << "# no arguments\n";
-	qisa << "def_q_arg_none[\"qnop\"] = 0x00\n";
+        qisa << "# Classic instructions (single instruction format)\n";
+        qisa << "def_opcode[\"nop\"]      = 0x00\n";
+        qisa << "def_opcode[\"br\"]       = 0x01\n";
+        qisa << "def_opcode[\"stop\"]     = 0x08\n";
+        qisa << "def_opcode[\"cmp\"]      = 0x0d\n";
+        qisa << "def_opcode[\"ldi\"]      = 0x16\n";
+        qisa << "def_opcode[\"ldui\"]     = 0x17\n";
+        qisa << "def_opcode[\"or\"]       = 0x18\n";
+        qisa << "def_opcode[\"xor\"]      = 0x19\n";
+        qisa << "def_opcode[\"and\"]      = 0x1a\n";
+        qisa << "def_opcode[\"not\"]      = 0x1b\n";
+        qisa << "def_opcode[\"add\"]      = 0x1e\n";
+        qisa << "def_opcode[\"sub\"]      = 0x1f\n";
+        qisa << "# quantum-classical mixed instructions (single instruction format)\n";
+        qisa << "def_opcode[\"fbr\"]      = 0x14\n";
+        qisa << "def_opcode[\"fmr\"]      = 0x15\n";
+        qisa << "# quantum instructions (single instruction format)\n";
+        qisa << "def_opcode[\"smis\"]     = 0x20\n";
+        qisa << "def_opcode[\"smit\"]     = 0x28\n";
+        qisa << "def_opcode[\"qwait\"]    = 0x30\n";
+        qisa << "def_opcode[\"qwaitr\"]   = 0x38\n";
+        qisa << "# quantum instructions (double instruction format)\n";
+        qisa << "# no arguments\n";
+        qisa << "def_q_arg_none[\"qnop\"] = 0x00\n";
 
         std::stringstream control_store;
 
         control_store << "         Condition  OpTypeLeft  CW_Left  OpTypeRight  CW_Right\n";
         control_store << "     0:      0          0          0          0           0    \n";
 
-	std::set<size_t> opcode_set;
+        std::set<size_t> opcode_set;
         for (auto i : instruction_settings)
         {
-	    std::string instr_name = i["cc_light_instr"];
+            std::string instr_name = i["cc_light_instr"];
             if (i["cc_light_instr_type"] == "single_qubit_gate")
             {
                 size_t opcode     = i["cc_light_opcode"];
-		if (opcode_set.find(opcode) != opcode_set.end())
-		   continue;
-		// opcode range check
-		if (i["type"] == "readout")
-		{
-		   if (opcode < 0x4 || opcode > 0x7)
-		      throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for measure instruction '"+instr_name+"' : should be in [0x04..0x07] range : current opcode: "+std::to_string(opcode),false);
-		}
-		else if (opcode < 1 || opcode > 127)
-		{
-		      throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for single qubit gate instruction '"+instr_name+"' : should be in [1..127] range : current opcode: "+std::to_string(opcode),false);
-		}
-		opcode_set.insert(opcode);
-		size_t condition  = (i["cc_light_cond"].is_null() ? 0 : i["cc_light_cond"].get<size_t>());
-		if (i["cc_light_instr"].is_null())
-		   throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
-		qisa << "def_q_arg_st[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
+                if (opcode_set.find(opcode) != opcode_set.end())
+                    continue;
+                // opcode range check
+                if (i["type"] == "readout")
+                {
+                    if (opcode < 0x4 || opcode > 0x7)
+                        throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for measure instruction '"+instr_name+"' : should be in [0x04..0x07] range : current opcode: "+std::to_string(opcode),false);
+                }
+                else if (opcode < 1 || opcode > 127)
+                {
+                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for single qubit gate instruction '"+instr_name+"' : should be in [1..127] range : current opcode: "+std::to_string(opcode),false);
+                }
+                opcode_set.insert(opcode);
+                size_t condition  = (i["cc_light_cond"].is_null() ? 0 : i["cc_light_cond"].get<size_t>());
+                if (i["cc_light_instr"].is_null())
+                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
+                qisa << "def_q_arg_st[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
                 auto optype     = (i["type"] == "mw" ? 1 : (i["type"] == "flux" ? 2 : ((i["type"] == "readout" ? 3 : 0))));
                 auto codeword   = i["cc_light_codeword"];
                 control_store << "     " << i["cc_light_opcode"] << ":     " << condition << "          " << optype << "          " << codeword << "          0          0\n";
@@ -145,17 +145,17 @@ public:
             else if (i["cc_light_instr_type"] == "two_qubits_gate")
             {
                 size_t opcode     = i["cc_light_opcode"];
-		if (opcode_set.find(opcode) != opcode_set.end())
-		   continue;
-		if (opcode < 127 || opcode > 255)
-		      throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for two qubits gate instruction '"+instr_name+"' : should be in [128..255] range : current opcode: "+std::to_string(opcode),false);
-		opcode_set.insert(opcode);
+                if (opcode_set.find(opcode) != opcode_set.end())
+                    continue;
+                if (opcode < 127 || opcode > 255)
+                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for two qubits gate instruction '"+instr_name+"' : should be in [128..255] range : current opcode: "+std::to_string(opcode),false);
+                opcode_set.insert(opcode);
                 // size_t condition  = 0;
-		size_t condition  = (i["cc_light_cond"].is_null() ? 0 : i["cc_light_cond"].get<size_t>());
-		if (i["cc_light_instr"].is_null())
-		   throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
-		// qisa << "def_opcode[" << i["cc_light_instr"] << "]\t= " << opcode << "\n";
-		qisa << "def_q_arg_tt[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
+                size_t condition  = (i["cc_light_cond"].is_null() ? 0 : i["cc_light_cond"].get<size_t>());
+                if (i["cc_light_instr"].is_null())
+                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
+                // qisa << "def_opcode[" << i["cc_light_instr"] << "]\t= " << opcode << "\n";
+                qisa << "def_q_arg_tt[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
                 auto optype     = (i["type"] == "mw" ? 1 : (i["type"] == "flux" ? 2 : ((i["type"] == "readout" ? 3 : 0))));
                 auto codeword_l = i["cc_light_left_codeword"];
                 auto codeword_r = i["cc_light_right_codeword"];
@@ -173,11 +173,8 @@ public:
         println("writing qisa instruction file to '" << im_filename << "' ...");
         std::string s = control_store.str();
         ql::utils::write_file(cs_filename,s);
-	s = qisa.str();
-	ql::utils::write_file(im_filename,s);
-
-	cc_light_schedule(prog_name, num_qubits, c, platform, verbose);
-
+        s = qisa.str();
+        ql::utils::write_file(im_filename,s);
 
         for (ql::gate * g : c)
         {
@@ -239,8 +236,11 @@ public:
             else
             {
                 println("[x] error : cc_light_eqasm_compiler : instruction '" << id << "' not supported by the target platform !");
+                throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : the instruction '"+id+"' is not supported by the target platform !",false);
             }
         }
+
+        cc_light_schedule(prog_name, num_qubits, c, platform, verbose);
 
         // time analysis
         // total_exec_time = time_analysis();
