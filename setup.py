@@ -17,7 +17,7 @@ if platform == "linux" or platform == "linux2":
     cmd = 'cmake ..'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
-    cmd = 'make'
+    cmd = 'make -j4'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
     clibname = "_openql.so"
@@ -28,7 +28,7 @@ elif platform == "darwin":
     cmd = 'cmake ..'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
-    cmd = 'make'
+    cmd = 'make -j4'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
     clibname = "_openql.so"
@@ -38,7 +38,7 @@ elif platform == "win32":
     cmd = 'cmake -G "NMake Makefiles" ..'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
-    cmd = 'nmake'
+    cmd = 'nmake -j4'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
     clibname = "_openql.pyd"
