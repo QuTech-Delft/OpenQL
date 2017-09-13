@@ -176,6 +176,7 @@ public:
         s = qisa.str();
         ql::utils::write_file(im_filename,s);
 
+        /*
         for (ql::gate * g : c)
         {
             std::string id = g->qasm(); // g->name;
@@ -239,6 +240,7 @@ public:
                 throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : the instruction '"+id+"' is not supported by the target platform !",false);
             }
         }
+        */
 
         cc_light_schedule(prog_name, num_qubits, c, platform, verbose);
 
