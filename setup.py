@@ -38,7 +38,7 @@ elif platform == "win32":
     cmd = 'cmake -G "NMake Makefiles" ..'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
-    cmd = 'nmake -j4'
+    cmd = 'nmake'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
     clibname = "_openql.pyd"
