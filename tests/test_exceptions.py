@@ -6,6 +6,16 @@ curdir = os.path.dirname(__file__)
 
 class Test_basic(unittest.TestCase):
 
+    # this test should raise exception as specified configuration
+    # file does not exist
+    def test_missing_config(self):
+        config_fn = os.path.join(curdir, 'test_cfg_cbox_not_available.json')
+        try:
+            platf = ql.Platform("starmon", config_fn)
+            raise
+        except:
+            pass
+
     # this test should fail as the eqasm compiler is not specified
     # in the configuration being loaded
     def test_config_exception_compiler(self):
