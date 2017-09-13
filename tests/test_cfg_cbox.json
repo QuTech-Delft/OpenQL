@@ -100,7 +100,7 @@
       },
 
       "rx90 q1" : {
-	 "duration": 40, 
+	      "duration": 40, 
          "latency": 10, 
          "qubits": ["q1"], 
          "matrix" : [ [0.0,0.0], [1.0,0.0],

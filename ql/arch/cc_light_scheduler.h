@@ -259,7 +259,7 @@ void PrintBundles(Bundles & bundles, bool verbose=false)
 
         for (Bundle & abundle : bundles)
         {
-            std::cout << abundle.cycle << "  ";
+            std::cout << abundle.start_cycle << "  ";
 
             for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
             {
@@ -282,7 +282,7 @@ void PrintBundles(Bundles & bundles, bool verbose=false)
 
     // for (Bundle & abundle : bundles)
     // {
-    //     std::cout << abundle.cycle << "  ";
+    //     std::cout << abundle.start_cycle << "  ";
 
     //     for(auto & sec : abundle.ParallelSections)
     //     {
@@ -316,7 +316,7 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
     ssbundles << "start:" << "\n";
     for (Bundle & abundle : bundles)
     {
-        auto bcycle = abundle.cycle;
+        auto bcycle = abundle.start_cycle;
         auto delta = bcycle - curr_cycle;
 
         if(delta < 8)
@@ -375,7 +375,7 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
     }
 
     auto & lastBundle = bundles.back();
-    auto lbduration = lastBundle.duration;
+    auto lbduration = lastBundle.duration_in_cycles;
     ssbundles << "    qwait " << lbduration << "\n";
     ssbundles << "    br always, start" << "\n"
               << "    nop \n"
@@ -411,7 +411,7 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool v
     ssbundles << "start:" << "\n";
     for (Bundle & abundle : bundles)
     {
-        auto bcycle = abundle.cycle;
+        auto bcycle = abundle.start_cycle;
         auto delta = bcycle - curr_cycle;
 
         if(delta < 8)
@@ -470,7 +470,7 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool v
     }
 
     auto & lastBundle = bundles.back();
-    auto lbduration = lastBundle.duration;
+    auto lbduration = lastBundle.duration_in_cycles;
     ssbundles << std::setw(8) << curr_cycle++ << ":    qwait " << lbduration << "\n";
     ssbundles << std::setw(8) << curr_cycle++ << ":    br always, start" << "\n";
     ssbundles << std::setw(8) << curr_cycle++ << ":    nop \n";
@@ -495,7 +495,7 @@ void cc_light_schedule(std::string prog_name, size_t nqubits, ql::circuit & ckt,
     if(verbose) println("scheduling ccLight instructions ...");
     Scheduler sched;
     sched.Init(nqubits, ckt, platform, verbose);
-    bundles1 = sched.GetBundlesScheduleALAP();
+    bundles1 = sched.GetBundlesScheduleALAP(verbose);
 
     // combine parallel instrcutions of same type from different sections
     // into a single section
@@ -523,8 +523,8 @@ void cc_light_schedule(std::string prog_name, size_t nqubits, ql::circuit & ckt,
     for (Bundle & abundle1 : bundles1)
     {
         Bundle abundle2;
-        abundle2.cycle = abundle1.cycle;
-        abundle2.duration = abundle1.duration;
+        abundle2.start_cycle = abundle1.start_cycle;
+        abundle2.duration_in_cycles = abundle1.duration_in_cycles;
         for(auto & sec : abundle1.ParallelSections)
         {
             if( !sec.empty() )
@@ -541,6 +541,7 @@ void cc_light_schedule(std::string prog_name, size_t nqubits, ql::circuit & ckt,
     // print scheduled bundles with parallelism in cc-light syntax
     PrintCCLighQasm(prog_name, bundles2, verbose);
 
+    // print scheduled bundles with parallelism in cc-light syntax with time-stamps
     PrintCCLighQasmTimeStamped(prog_name, bundles2, verbose);
 
 

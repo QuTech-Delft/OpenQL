@@ -29,8 +29,8 @@ typedef std::list<ql::gate *>ParallelSection;
 class Bundle
 {
 public:
-    size_t cycle;
-    size_t duration;
+    size_t start_cycle;
+    size_t duration_in_cycles;
     std::list<ParallelSection>ParallelSections;
 };
 typedef std::list<Bundle>Bundles;
@@ -50,7 +50,7 @@ private:
     Path<ListDigraph> p;
 
     ListDigraph::Node s, t;
-    // size_t cycle_time;
+    size_t cycle_time;
 
 public:
     Scheduler(): instruction(graph), name(graph), weight(graph),
@@ -58,8 +58,7 @@ public:
 
     void Init( size_t nQubits, ql::circuit& ckt, ql::quantum_platform platform, bool verbose=false)
     {
-        // cycle_time=platform.cycle_time;
-        // std::cout << "nQubits : " << nQubits << std::endl;
+        cycle_time=platform.cycle_time;
 
         // add dummy source node
         ListDigraph::Node srcNode = graph.addNode();
@@ -97,8 +96,10 @@ public:
                     weight[arc] = 1; // TODO OR 0 as SOURCE is dummy node?
                 else
                 {
-                    weight[arc] = instruction[prodNode]->duration;
-                    // println("Case 1: " << name[prodNode] << " -> " << name[consNode] << ", duration: " << instruction[prodNode]->duration << ", weight: " << weight[arc]);
+                    weight[arc] = (instruction[prodNode]->duration)/cycle_time;
+                    // println("Case 1: " << name[prodNode] << " -> " << name[consNode] 
+                    //                    << ", duration (ns) : " << instruction[prodNode]->duration 
+                    //                    << ", weight: " << weight[arc] );
                 }
 
                 cause[arc] = operand;
@@ -113,8 +114,10 @@ public:
                             weight[arc1] = 1; // TODO OR 0 as SOURCE is dummy node?
                         else
                         {
-                            weight[arc1] = instruction[readerNode]->duration;
-                            // println("Case 2: " << name[readerNode] << " -> " << name[consNode] << ", duration: " << instruction[readerNode]->duration << ", weight: " << weight[arc1]);
+                            weight[arc1] = (instruction[readerNode]->duration)/cycle_time;;
+                            // println("Case 2: " << name[readerNode] << " -> " << name[consNode] 
+                            //                    << ", duration (ns): " << instruction[readerNode]->duration 
+                            //                    << ", weight: " << weight[arc1] );
                         }
 
                         cause[arc1] = operand;
@@ -137,8 +140,10 @@ public:
                             weight[arc1] = 1; // TODO OR 0 as SOURCE is dummy node?
                         else
                         {
-                            weight[arc1] = instruction[readerNode]->duration;
-                            // println("Case 3: " << name[readerNode] << " -> " << name[consNode] << ", duration: " << instruction[readerNode]->duration << ", weight: " << weight[arc1]);
+                            weight[arc1] = (instruction[readerNode]->duration)/cycle_time;;
+                            // println("Case 3: " << name[readerNode] << " -> " << name[consNode] 
+                            //                    << ", duration (ns): " << instruction[readerNode]->duration 
+                            //                    << ", weight: " << weight[arc1] );
                         }
 
                         cause[arc1] = operand;
@@ -820,7 +825,7 @@ public:
     }
 
     // the following without nops
-    Bundles GetBundlesScheduleALAP()
+    Bundles GetBundlesScheduleALAP(bool verbose=false)
     {
         println("Scheduling ALAP to get bundles ...");
         Bundles bundles;
@@ -848,7 +853,7 @@ public:
         {
             auto it = insInAllCycles.find(currCycle);
             Bundle abundle;
-            abundle.cycle = TotalCycles - currCycle;
+            abundle.start_cycle = TotalCycles - currCycle;
             size_t bduration = 0;
             if( it != insInAllCycles.end() )
             {
@@ -862,7 +867,7 @@ public:
                     size_t iduration = ins->duration;
                     bduration = std::max(bduration, iduration);
                 }
-                abundle.duration = bduration;
+                abundle.duration_in_cycles = bduration/cycle_time;
                 bundles.push_back(abundle);
             }
         }
@@ -901,7 +906,7 @@ public:
         {
             auto it = insInAllCycles.find(currCycle);
             Bundle abundle;
-            abundle.cycle = TotalCycles - currCycle;                
+            abundle.start_cycle = TotalCycles - currCycle;                
             if( it != insInAllCycles.end() )
             {
                 auto nInsThisCycle = insInAllCycles[currCycle].size();
