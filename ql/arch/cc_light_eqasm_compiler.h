@@ -242,7 +242,8 @@ public:
         }
         */
 
-        cc_light_schedule(prog_name, num_qubits, c, platform, verbose);
+        // cc_light_schedule(prog_name, num_qubits, c, platform, verbose);
+        cc_light_schedule_rc(prog_name, num_qubits, c, platform, verbose);
 
         // time analysis
         // total_exec_time = time_analysis();

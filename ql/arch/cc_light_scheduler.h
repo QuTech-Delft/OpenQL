@@ -2,7 +2,7 @@
  * @file   cc_light_scheduler.h
  * @date   08/2017
  * @author Imran Ashraf
- * @brief  AlAP scheduler for cc light
+ * @brief  resource-constraint scheduler and code generator for cc light
  */
 
 #ifndef CC_LIGHT_SCHEDULER_H
@@ -18,6 +18,7 @@
 #include <ql/gate.h>
 #include <ql/circuit.h>
 #include <ql/scheduler.h>
+#include <ql/arch/cc_light_resource_manager.h>
 
 #include <iomanip>
 #include <map>
@@ -279,22 +280,6 @@ void PrintBundles(Bundles & bundles, bool verbose=false)
             std::cout << "\n";
         }
     }
-
-    // for (Bundle & abundle : bundles)
-    // {
-    //     std::cout << abundle.start_cycle << "  ";
-
-    //     for(auto & sec : abundle.ParallelSections)
-    //     {
-    //         for(auto & ins: sec)
-    //         {
-    //             std::cout << ins->qasm() << " , ";
-    //         }
-    //         std::cout << "|";
-    //     }
-    //     std::cout << "\n";
-    // }
-
 }
 
 void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=false)
@@ -340,7 +325,7 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
             {
                 for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
                 {
-                    if( itype == __cnot_gate__ )
+                    if( itype == __cnot_gate__ || itype == __cphase_gate__)
                     {
                         auto & op1 = (*insIt)->operands[0];
                         auto & op2 = (*insIt)->operands[1];
@@ -435,7 +420,7 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool v
             {
                 for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
                 {
-                    if( itype == __cnot_gate__ )
+                    if( itype == __cnot_gate__ || itype == __cphase_gate__)
                     {
                         auto & op1 = (*insIt)->operands[0];
                         auto & op2 = (*insIt)->operands[1];
@@ -448,7 +433,7 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool v
                     }
                 }
                 std::string rname;
-                if( itype == __cnot_gate__ )
+                if( itype == __cnot_gate__ || itype == __cphase_gate__)
                 {
                     rname = gMaskManager.getRegName(dqubits);
                 }
@@ -509,8 +494,11 @@ void cc_light_schedule(std::string prog_name, size_t nqubits, ql::circuit & ckt,
                 auto insIt2 = secIt2->begin();
                 if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
                 {
-                    if( (*insIt1)->type() == (*insIt2)->type() )
+                    auto n1 = (*insIt1)->name;
+                    auto n2 = (*insIt2)->name;
+                    if( n1 == n2 )
                     {
+                        // std::cout << "splicing " << n1 << " and " << n2  << std::endl;
                         (*secIt1).splice(insIt1, (*secIt2) );
                     }
                 }
@@ -548,6 +536,71 @@ void cc_light_schedule(std::string prog_name, size_t nqubits, ql::circuit & ckt,
     println("scheduling ccLight instructions done.");
 }
 
+
+void cc_light_schedule_rc( std::string prog_name, size_t nqubits, ql::circuit & ckt,
+                           ql::quantum_platform & platform, bool verbose=false)
+{
+    Bundles bundles1;
+
+    if(verbose) println("rc scheduling ccLight instructions ...");
+    resource_manager_t rm(platform.cycle_time);
+    Scheduler sched;
+    sched.Init(nqubits, ckt, platform, verbose);
+
+    bundles1 = sched.GetBundlesScheduleALAP(rm, verbose);
+
+    // combine parallel instrcutions of same type from different sections
+    // into a single section
+    for (Bundle & abundle : bundles1)
+    {
+        for( auto secIt1 = abundle.ParallelSections.begin(); secIt1 != abundle.ParallelSections.end(); ++secIt1 )
+        {
+            for( auto secIt2 = std::next(secIt1); secIt2 != abundle.ParallelSections.end(); ++secIt2)
+            {
+                auto insIt1 = secIt1->begin();
+                auto insIt2 = secIt2->begin();
+                if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
+                {
+                    auto n1 = (*insIt1)->name;
+                    auto n2 = (*insIt2)->name;
+                    if( n1 == n2 )
+                    {
+                        // std::cout << "splicing " << n1 << " and " << n2  << std::endl;
+                        (*secIt1).splice(insIt1, (*secIt2) );
+                    }
+                }
+            }
+        }
+    }
+
+    // remove empty sections
+    Bundles bundles2;
+    for (Bundle & abundle1 : bundles1)
+    {
+        Bundle abundle2;
+        abundle2.start_cycle = abundle1.start_cycle;
+        abundle2.duration_in_cycles = abundle1.duration_in_cycles;
+        for(auto & sec : abundle1.ParallelSections)
+        {
+            if( !sec.empty() )
+            {
+                abundle2.ParallelSections.push_back(sec);
+            }
+        }
+        bundles2.push_back(abundle2);
+    }
+
+    // print scheduled bundles with parallelism
+    PrintBundles(bundles2, verbose);
+
+    // print scheduled bundles with parallelism in cc-light syntax
+    PrintCCLighQasm(prog_name, bundles2, verbose);
+
+    // print scheduled bundles with parallelism in cc-light syntax with time-stamps
+    PrintCCLighQasmTimeStamped(prog_name, bundles2, verbose);
+
+    println("scheduling ccLight instructions done.");
+}
 
 } // end of namespace arch
 } // end of namespace ql
