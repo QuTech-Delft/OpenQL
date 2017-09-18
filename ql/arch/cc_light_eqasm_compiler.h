@@ -33,7 +33,6 @@ public:
     size_t          ns_per_cycle;
     size_t          total_exec_time = 0;
     size_t          buffer_matrix[__operation_types_num__][__operation_types_num__];
-    bool            verbose = false;
 
 #define __ns_to_cycle(t) ((size_t)t/(size_t)ns_per_cycle)
 
@@ -43,7 +42,7 @@ public:
      * compile qasm to cc_light_eqasm
      */
     // eqasm_t
-    void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& platform) throw (ql::exception)
+    void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& platform, bool verbose=false) throw (ql::exception)
     {
         if (verbose) println("[-] compiling qasm code ...");
         if (c.empty())
@@ -264,7 +263,7 @@ public:
 
         // insert waits
 
-        emit_eqasm();
+        emit_eqasm(verbose);
         // return eqasm_code;
     }
 
@@ -284,7 +283,7 @@ public:
     /**
      * decompose
      */
-    void decompose_instructions()
+    void decompose_instructions(bool verbose=false)
     {
         /*
         if (verbose) println("decomposing instructions...");
@@ -312,7 +311,7 @@ public:
     /**
      * time analysis
      */
-    size_t time_analysis()
+    size_t time_analysis(bool verbose=false)
     {
         if (verbose) println("time analysis...");
         // update start time : find biggest latency
@@ -340,7 +339,7 @@ public:
     /**
      * compensate for latencies
      */
-    void compensate_latency()
+    void compensate_latency(bool verbose=false)
     {
         if (verbose) println("latency compensation...");
         for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
@@ -350,7 +349,7 @@ public:
     /**
      * optimize
      */
-    void resechedule()
+    void resechedule(bool verbose=false)
     {
         if (verbose) println("instruction rescheduling...");
         if (verbose) println("resource dependency analysis...");
@@ -470,7 +469,7 @@ private:
     /**
      * emit qasm code
      */
-    void emit_eqasm()
+    void emit_eqasm(bool verbose=false)
     {
         if (verbose) println("compiling eqasm...");
         eqasm_code.clear();

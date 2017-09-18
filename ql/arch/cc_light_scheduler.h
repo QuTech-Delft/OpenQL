@@ -242,16 +242,6 @@ public:
 } gMaskManager;
 
 
-
-// typedef std::list<ql::gate*>ParallelSection;
-// class Bundle
-// {
-// public:
-//     size_t cycle;
-//     std::list<ParallelSection>ParallelSections;
-// };
-// typedef std::list<Bundle>Bundles;
-
 void PrintBundles(Bundles & bundles, bool verbose=false)
 {
     if(verbose) 
@@ -284,6 +274,8 @@ void PrintBundles(Bundles & bundles, bool verbose=false)
 
 void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=false)
 {
+    if(verbose) println("Printing ccLight QISA");
+
     ofstream fout;
     string qisafname( ql::utils::get_output_dir() + "/" + prog_name + ".qisa");
     fout.open( qisafname, ios::binary);
@@ -375,11 +367,13 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
     println("Writing CC-Light QISA to " << qisafname);
     fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
     fout.close();
+    if(verbose) println("Printing ccLight QISA [Done]");
 }
 
 
 void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool verbose=false)
 {
+    if(verbose) println("Printing Time-stamped ccLight QISA");
     ofstream fout;
     string qisafname( ql::utils::get_output_dir() + "/" + prog_name + ".tqisa");
     fout.open( qisafname, ios::binary);
@@ -456,7 +450,8 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool v
 
     auto & lastBundle = bundles.back();
     auto lbduration = lastBundle.duration_in_cycles;
-    ssbundles << std::setw(8) << curr_cycle++ << ":    qwait " << lbduration << "\n";
+    ssbundles << std::setw(8) << curr_cycle   << ":    qwait " << lbduration << "\n";
+    curr_cycle+=lbduration;
     ssbundles << std::setw(8) << curr_cycle++ << ":    br always, start" << "\n";
     ssbundles << std::setw(8) << curr_cycle++ << ":    nop \n";
     ssbundles << std::setw(8) << curr_cycle++ << ":    nop" << endl;
@@ -471,6 +466,8 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool v
     println("Writing Time-stamped CC-Light QISA to " << qisafname);
     fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
     fout.close();
+
+    if(verbose) println("Printing Time-stamped ccLight QISA [Done]");
 }
 
 void cc_light_schedule(std::string prog_name, size_t nqubits, ql::circuit & ckt, ql::quantum_platform & platform, bool verbose=false)
@@ -532,8 +529,7 @@ void cc_light_schedule(std::string prog_name, size_t nqubits, ql::circuit & ckt,
     // print scheduled bundles with parallelism in cc-light syntax with time-stamps
     PrintCCLighQasmTimeStamped(prog_name, bundles2, verbose);
 
-
-    println("scheduling ccLight instructions done.");
+    if(verbose) println("scheduling ccLight instructions [Done].");
 }
 
 
@@ -542,8 +538,8 @@ void cc_light_schedule_rc( std::string prog_name, size_t nqubits, ql::circuit & 
 {
     Bundles bundles1;
 
-    if(verbose) println("rc scheduling ccLight instructions ...");
-    resource_manager_t rm(platform.cycle_time);
+    if(verbose) println("RC scheduling ccLight instructions ...");
+    resource_manager_t rm(platform);
     Scheduler sched;
     sched.Init(nqubits, ckt, platform, verbose);
 
@@ -599,7 +595,7 @@ void cc_light_schedule_rc( std::string prog_name, size_t nqubits, ql::circuit & 
     // print scheduled bundles with parallelism in cc-light syntax with time-stamps
     PrintCCLighQasmTimeStamped(prog_name, bundles2, verbose);
 
-    println("scheduling ccLight instructions done.");
+    if(verbose) println("RC scheduling ccLight instructions [Done].");
 }
 
 } // end of namespace arch

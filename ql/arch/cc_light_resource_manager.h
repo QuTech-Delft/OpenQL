@@ -14,14 +14,10 @@
 
 using json = nlohmann::json;
 
-// auto MAX_CYCLE = std::numeric_limits<std::size_t>::max(); // TODO should go to utils
-size_t MAX_CYCLE = 100; // revert back to above
-
 namespace ql
 {
 namespace arch
 {
-
 
 class resource_t
 {
@@ -32,10 +28,11 @@ public:
 
     resource_t(std::string n, size_t cycle_time) : name(n), platform_cycle_time(cycle_time)
     {
-        std::cout << "constructing resource : " << n << std::endl;
+        // println("constructing resource : " << n);
     }
     virtual bool available(size_t cycle, ql::gate * ins)=0;
     virtual void reserve(size_t cycle, ql::gate * ins)=0;
+    virtual ~resource_t() {}
 };
 
 bool inline is_measure(std::string & name)
@@ -47,9 +44,9 @@ class qubit_resource_t : public resource_t
 {
 public:
     std::vector<size_t> state; // is busy till cycle number contained in state
-    qubit_resource_t(json & jplatform, size_t cycle_time) : resource_t("qubits", cycle_time)
+    qubit_resource_t(ql::quantum_platform & platform) : resource_t("qubits", platform.cycle_time)
     {
-        count = jplatform["resources"][name]["count"];
+        count = platform.resources[name]["count"];
         state.resize(count);
         for(size_t i=0; i<count; i++)
         {
@@ -61,14 +58,14 @@ public:
     {
         for( auto q : ins->operands )
         {
-            std::cout << " available? curr cycle: " << cycle << "  qubit: " << q << " is busy till cycle : " << state[q] << std::endl;
+            // println(" available? curr cycle: " << cycle << "  qubit: " << q << " is busy till cycle : " << state[q]);
             if( cycle > state[q] )
             {
-                std::cout << "    qubit resource busy ..." << std::endl;
+                // println("    qubit resource busy ...");
                 return false;
             }
         }
-        std::cout << "    qubit resource available ..." << std::endl;
+        // println("    qubit resource available ...");
         return true;
     }
 
@@ -77,9 +74,10 @@ public:
         for( auto q : ins->operands )
         {
             state[q] = cycle - (ins->duration)/platform_cycle_time;
-            std::cout << "reserved. curr cycle: " << cycle << " qubit: " << q << " reserved till cycle: " << state[q] << std::endl;
+            // println("reserved. curr cycle: " << cycle << " qubit: " << q << " reserved till cycle: " << state[q]);
         }
     }
+    ~qubit_resource_t() {}
 };
 
 
@@ -90,9 +88,9 @@ public:
     std::vector<std::string> operations;
     std::map<size_t,size_t> qubit2qwg;
 
-    qwg_resource_t(json & jplatform, size_t cycle_time) : resource_t("qwgs", cycle_time)
+    qwg_resource_t(ql::quantum_platform & platform) : resource_t("qwgs", platform.cycle_time)
     {
-        count = jplatform["resources"][name]["count"];
+        count = platform.resources[name]["count"];
         state.resize(count);
         operations.resize(count);
 
@@ -101,10 +99,10 @@ public:
             state[i] = MAX_CYCLE;
             operations[i] = "";
         }
-        auto & constraints = jplatform["resources"][name]["connection_map"];
+        auto & constraints = platform.resources[name]["connection_map"];
         for (json::iterator it = constraints.begin(); it != constraints.end(); ++it)
         {
-            // std::cout << it.key() << " : " << it.value() << "\n";
+            // println(it.key() << " : " << it.value() << "\n";
             size_t qwgNo = stoi( it.key() );
             auto & connected_qubits = it.value();
             for(auto & q : connected_qubits)
@@ -118,19 +116,19 @@ public:
         {
             for( auto q : ins->operands )
             {
-                std::cout << " available? curr cycle: " << cycle << "  qwg: " << qubit2qwg[q] 
-                          << " is busy till cycle : " << state[ qubit2qwg[q] ] << " for operation: " << operations[ qubit2qwg[q] ] << std::endl;
+                // println(" available? curr cycle: " << cycle << "  qwg: " << qubit2qwg[q] 
+                //           << " is busy till cycle : " << state[ qubit2qwg[q] ] << " for operation: " << operations[ qubit2qwg[q] ]);
                 if( cycle > state[ qubit2qwg[q] ] )
                 {
                     if( operations[ qubit2qwg[q] ] != (ins->name) )
                     {
-                        std::cout << "    qwg resource busy " << std::endl;
+                        // println("    qwg resource busy ");
                         return false;
                     }
                 }
             }
         }
-        std::cout << "    qwg resource available ..." << std::endl;
+        // println("    qwg resource available ...");
         return true;
     }
 
@@ -142,11 +140,12 @@ public:
             {
                 state[ qubit2qwg[q] ]  = cycle - (ins->duration)/platform_cycle_time;
                 operations[ qubit2qwg[q] ] = ins->name;
-                std::cout << "reserved. curr cycle: " << cycle << " qwg: " << qubit2qwg[q] << " reserved till cycle: " << state[ qubit2qwg[q] ] 
-                          << " for operation: " << operations[ qubit2qwg[q] ]  << std::endl;
+                // println("reserved. curr cycle: " << cycle << " qwg: " << qubit2qwg[q] << " reserved till cycle: " << state[ qubit2qwg[q] ] 
+                //           << " for operation: " << operations[ qubit2qwg[q] ] );
             }
         }
     }
+    ~qwg_resource_t() {}
 };
 
 class meas_resource_t : public resource_t
@@ -155,19 +154,19 @@ public:
     std::vector<size_t> state; // is busy till cycle number contained in state
     std::map<size_t,size_t> qubit2meas;
 
-    meas_resource_t(json & jplatform, size_t cycle_time) : resource_t("meas_units", cycle_time)
+    meas_resource_t(ql::quantum_platform & platform) : resource_t("meas_units", platform.cycle_time)
     {
-        count = jplatform["resources"][name]["count"];
+        count = platform.resources[name]["count"];
         state.resize(count);
 
         for(size_t i=0; i<count; i++)
         {
             state[i] = MAX_CYCLE;
         }
-        auto & constraints = jplatform["resources"][name]["connection_map"];
+        auto & constraints = platform.resources[name]["connection_map"];
         for (json::iterator it = constraints.begin(); it != constraints.end(); ++it)
         {
-            // std::cout << it.key() << " : " << it.value() << "\n";
+            // println(it.key() << " : " << it.value() << "\n";
             size_t measUnitNo = stoi( it.key() );
             auto & connected_qubits = it.value();
             for(auto & q : connected_qubits)
@@ -181,15 +180,15 @@ public:
         {
             for(auto q : ins->operands)
             {
-                std::cout << " available? curr cycle: " << cycle << "  meas: " << qubit2meas[q] 
-                          << " is busy till cycle : " << state[ qubit2meas[q] ] << " for operation: measure" << std::endl;
+                // println(" available? curr cycle: " << cycle << "  meas: " << qubit2meas[q] 
+                //           << " is busy till cycle : " << state[ qubit2meas[q] ] << " for operation: measure");
                 if( cycle == state[ qubit2meas[q] ] )
                 {
-                    std::cout << "    measure resource busy " << std::endl;
+                    // println("    measure resource busy ");
                     return false;
                 }
             }
-            std::cout << "    measure resource available ..." << std::endl;
+            // println("    measure resource available ...");
         }
         return true;
     }
@@ -201,11 +200,12 @@ public:
             for(auto q : ins->operands)
             {
                 state[ qubit2meas[q] ] = cycle - (ins->duration)/platform_cycle_time;
-                std::cout << "reserved. curr cycle: " << cycle << " meas: " << qubit2meas[q] << " reserved till cycle: " << state[ qubit2meas[q] ] 
-                          << " for operation: measure" << std::endl;
+                // println("reserved. curr cycle: " << cycle << " meas: " << qubit2meas[q] << " reserved till cycle: " << state[ qubit2meas[q] ] 
+                //           << " for operation: measure");
             }
         }
     }
+    ~meas_resource_t() {}
 };
 
 class edge_resource_t : public resource_t
@@ -216,9 +216,9 @@ public:
     std::map< qubits_pair_t, size_t > qubits2edge;
     std::map<size_t, std::vector<size_t> > edge2edges;
 
-    edge_resource_t(json & jplatform, size_t cycle_time) : resource_t("edges", cycle_time)
+    edge_resource_t(ql::quantum_platform & platform) : resource_t("edges", platform.cycle_time)
     {
-        count = jplatform["resources"][name]["count"];
+        count = platform.resources[name]["count"];
         state.resize(count);
 
         for(size_t i=0; i<count; i++)
@@ -226,19 +226,19 @@ public:
             state[i] = MAX_CYCLE;
         }
 
-        for( auto & anedge : jplatform["topology"]["edges"] )
+        for( auto & anedge : platform.topology["edges"] )
         {
             size_t s = anedge["src"];
             size_t d = anedge["dst"];
             size_t e = anedge["id"];
-            // std::cout << s << " " << d << " : " << e << std::endl;
+            // println(s << " " << d << " : " << e);
 
             qubits_pair_t aqpair(s,d);
             auto it = qubits2edge.find(aqpair);
             if( it != qubits2edge.end() )
             {
-                std::cout << "Error: re-defining edge number !" << std::endl;
-                exit(0);
+                println("Error: re-defining edge number !");
+                throw ql::exception("[x] Error : re-defining edge number !",false);
             }
             else
             {
@@ -248,10 +248,10 @@ public:
             }
         }
 
-        auto & constraints = jplatform["resources"][name]["connection_map"];
+        auto & constraints = platform.resources[name]["connection_map"];
         for (json::iterator it = constraints.begin(); it != constraints.end(); ++it)
         {
-            // std::cout << it.key() << " : " << it.value() << "\n";
+            // println(it.key() << " : " << it.value() << "\n";
             size_t edgeNo = stoi( it.key() );
             auto & connected_edges = it.value();
             for(auto & e : connected_edges)
@@ -271,8 +271,8 @@ public:
             {
                 auto edge_no = qubits2edge[aqpair];
 
-                std::cout << " available? curr cycle: " << cycle << ", edge: " << edge_no
-                          << " is busy till cycle : " << state[edge_no] << " for operation: cz" << std::endl;
+                // println(" available? curr cycle: " << cycle << ", edge: " << edge_no
+                //           << " is busy till cycle : " << state[edge_no] << " for operation: cz");
 
                 std::vector<size_t> edges2check(edge2edges[edge_no]);
                 edges2check.push_back(edge_no);
@@ -280,16 +280,16 @@ public:
                 {
                     if( cycle > state[e] )
                     {
-                        std::cout << "    edge resource busy " << std::endl;
+                        // println("    edge resource busy ");
                         return false;
                     }
                 }
-                std::cout << "    edge resource available ..." << std::endl;
+                // println("    edge resource available ...");
             }
             else
             {
-                std::cout << "Error: Use of illegal edge !" << std::endl;
-                exit(0);
+                println("Error: Use of illegal edge !");
+                throw ql::exception("[x] Error : Use of illegal edge !",false);
             }
         }
         return true;
@@ -309,10 +309,11 @@ public:
                 state[e] = cycle - (ins->duration)/platform_cycle_time;
             }
 
-            std::cout << "reserved. curr cycle: " << cycle << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] 
-                      << " for operation: cz" << std::endl;
+            // println("reserved. curr cycle: " << cycle << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] 
+            //           << " for operation: cz");
         }
     }
+    ~edge_resource_t() {}
 };
 
 
@@ -320,55 +321,47 @@ class resource_manager_t
 {
 public:
     std::vector<resource_t*> resource_ptrs;
-    json jplatform;
 
-    resource_manager_t( size_t cycle_time )
+    resource_manager_t( ql::quantum_platform & platform )
     {
-        std::ifstream jin("CCL_platform.json");
-        if( ! jin.good() )
+        // println("No of resources : " << platform.resources.size());
+        for (json::iterator it = platform.resources.begin(); it != platform.resources.end(); ++it)
         {
-            std::cout << "Error opening CCL_platform.json" << std::endl;
-        }
-        jin >> jplatform;
-        jin.close();
-
-        std::cout << "No of resources : " << jplatform["resources"].size() << std::endl;
-        for (json::iterator it = jplatform["resources"].begin(); it != jplatform["resources"].end(); ++it)
-        {
-            // std::cout << it.key() << " : " << it.value() << "\n";
+            // println(it.key() << " : " << it.value() << "\n";
             std::string n = it.key();
 
 
             if( n == "qubits")
             {
-                resource_t * ares = new qubit_resource_t(jplatform, cycle_time);
+                resource_t * ares = new qubit_resource_t(platform);
                 resource_ptrs.push_back( ares );
             }
             else if( n == "qwgs")
             {
-                resource_t * ares = new qwg_resource_t(jplatform, cycle_time);
+                resource_t * ares = new qwg_resource_t(platform);
                 resource_ptrs.push_back( ares );
             }
             else if( n == "meas_units")
             {
-                resource_t * ares = new meas_resource_t(jplatform, cycle_time);
+                resource_t * ares = new meas_resource_t(platform);
                 resource_ptrs.push_back( ares );
             }
             else if( n == "edges")
             {
-                resource_t * ares = new edge_resource_t(jplatform, cycle_time);
+                resource_t * ares = new edge_resource_t(platform);
                 resource_ptrs.push_back( ares );
             }
             else
             {
-                std::cout << "Error : Un-modelled resource: " << n <<  std::endl;
+                println("Error : Un-modelled resource: " << n );
+                throw ql::exception("[x] Error : Un-modelled resource: "+n+" !",false);
             }
 
         }
     }
     bool available(size_t cycle, ql::gate * ins)
     {
-        std::cout << "\nchecking availablility of resources for: " << ins->qasm() << std::endl;
+        // println("checking availablility of resources for: " << ins->qasm());
         for(auto rptr : resource_ptrs)
         {
             if( rptr->available(cycle, ins) == false)
@@ -378,7 +371,7 @@ public:
     }
     void reserve(size_t cycle, ql::gate * ins)
     {
-        std::cout << "reserving resources for: " << ins->qasm() << std::endl;
+        // println("reserving resources for: " << ins->qasm());
         for(auto rptr : resource_ptrs)
         {
             rptr->reserve(cycle, ins);

@@ -216,7 +216,21 @@ def test_edge_illegal():
     p.add_kernel(k)
 
     # compile the program
-    p.compile(optimize=False, verbose=True)
+    try:
+        p.compile(optimize=False, verbose=True)
+        raise
+    except:
+        pass
+    
 
 if __name__ == '__main__':
-    test_edge_illegal()
+    # test_qwg_busy()
+    # test_qwg_available_01()
+    # test_qwg_available_02()
+    # test_qwg_busy()
+    # test_measure_available01()
+    # test_measure_available02()
+    # test_measure_busy()
+    # test_edge_available()
+    test_edge_busy()
+    # test_edge_illegal()

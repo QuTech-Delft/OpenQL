@@ -44,7 +44,8 @@ public:
     /**
      * load
      */
-    void load(ql::instruction_map_t& instruction_map, json& instruction_settings, json& hardware_settings) throw (ql::exception)
+    void load(ql::instruction_map_t& instruction_map, json& instruction_settings, json& hardware_settings,
+              json& resources, json& topology  ) throw (ql::exception)
     {
         json config;
         try
@@ -85,7 +86,6 @@ public:
         if (config["instructions"].is_null())
         {
             println("[x] error : ql::hardware_configuration::load() : 'instructions' section is not specified in the hardware config file !");
-            // throw std::exception();
             throw ql::exception("[x] error : ql::hardware_configuration::load() : 'instructions' section is not specified in the hardware config file !",false);
         }
         else
@@ -93,6 +93,28 @@ public:
             instruction_settings = config["instructions"];
         }
         // create the control store
+
+        // load platform resources
+        if (config["resources"].is_null())
+        {
+            println("[x] error : ql::hardware_configuration::load() : 'resources' section is not specified in the hardware config file !");
+            throw ql::exception("[x] error : ql::hardware_configuration::load() : 'resources' section is not specified in the hardware config file !",false);
+        }
+        else
+        {
+            resources = config["resources"];
+        }
+
+        // load platform topology
+        if (config["topology"].is_null())
+        {
+            println("[x] error : ql::hardware_configuration::load() : 'topology' section is not specified in the hardware config file !");
+            throw ql::exception("[x] error : ql::hardware_configuration::load() : 'topology' section is not specified in the hardware config file !",false);
+        }
+        else
+        {
+            topology = config["topology"];
+        }
 
         // load instructions
         json instructions = config["instructions"];

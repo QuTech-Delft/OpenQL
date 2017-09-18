@@ -68,7 +68,7 @@ namespace ql
 	                                                                          configuration_file_name(configuration_file_name)
 	{
 	   ql::hardware_configuration hwc(configuration_file_name);
-	   hwc.load(instruction_map, instruction_settings, hardware_settings);
+	   hwc.load(instruction_map, instruction_settings, hardware_settings, resources, topology);
 	   eqasm_compiler_name = hwc.eqasm_compiler_name;
 
 	   if (hardware_settings["qubit_number"].is_null())
@@ -120,6 +120,8 @@ namespace ql
 	ql::instruction_map_t   instruction_map;          // supported operations
 	json                    instruction_settings;     // instruction settings (to use by the eqasm backend)
 	json                    hardware_settings;        // additional hardware settings (to use by the eqasm backend)
+    json                    resources;
+    json                    topology;
 
 	// std::vector<ql::custom_gate *> supported_instructions; // supported operation 
 

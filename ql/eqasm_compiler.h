@@ -35,7 +35,7 @@ namespace ql
          /*
 	  * compile must be implemented by all compilation backends.
 	  */
-	 virtual void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& p) = 0;
+	 virtual void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& p, bool verbose) = 0;
 
 	 /**
 	  * write eqasm code to file/stdout

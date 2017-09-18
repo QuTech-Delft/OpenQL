@@ -587,7 +587,7 @@ public:
     void ScheduleALAP( ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order,
                        ql::arch::resource_manager_t & rm, bool verbose=false )
     {
-        if(verbose) println("Performing ALAP Scheduling");
+        if(verbose) println("Performing RC ALAP Scheduling");
         TopologicalSort(order);
 
         std::vector<ListDigraph::Node>::iterator currNode = order.begin();
@@ -622,10 +622,11 @@ public:
             if(currCycle <= 0)
             {
                 println("Error: could not find schedule");
-                exit(0);
+                throw ql::exception("[x] Error : could not find schedule !",false);
             }
             ++currNode;
         }
+        if(verbose) println("Performing RC ALAP Scheduling [Done].");
     }
 
     void PrintScheduleALAP(bool verbose=false)
@@ -873,7 +874,7 @@ public:
     // the following without nops
     Bundles GetBundlesScheduleALAP(bool verbose=false)
     {
-        println("Scheduling ALAP to get bundles ...");
+        if(verbose) println("Scheduling ALAP to get bundles ...");
         Bundles bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
@@ -917,16 +918,16 @@ public:
                 bundles.push_back(abundle);
             }
         }
-        println("Scheduling ALAP to get bundles [DONE]");
+        if(verbose) println("Scheduling ALAP to get bundles [DONE]");
         return bundles;
     }
 
 
 
     // the following inserts nops
-    Bundles GetBundlesScheduleALAP2()
+    Bundles GetBundlesScheduleALAP2(bool verbose=false)
     {
-        println("Scheduling ALAP to get bundles ...");
+        if(verbose) println("Scheduling ALAP to get bundles ...");
         Bundles bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
@@ -975,14 +976,14 @@ public:
             bundles.push_back(abundle);
         }
 
-        println("Scheduling ALAP to get bundles [DONE]");
+        if(verbose) println("Scheduling ALAP to get bundles [DONE]");
         return bundles;
     }
 
     // the following without nops but with rc
     Bundles GetBundlesScheduleALAP( ql::arch::resource_manager_t & rm, bool verbose=false )
     {
-        println("RC Scheduling ALAP to get bundles ...");
+        if(verbose) println("RC Scheduling ALAP to get bundles ...");
         Bundles bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
@@ -1026,7 +1027,7 @@ public:
                 bundles.push_back(abundle);
             }
         }
-        println("Scheduling ALAP to get bundles [DONE]");
+        if(verbose) println("RC Scheduling ALAP to get bundles [DONE]");
         return bundles;
     }
 
