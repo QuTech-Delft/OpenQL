@@ -10,6 +10,8 @@
 
 #include "str.h"
 
+#include <limits>
+
 #define println(x) std::cout << "[openql] "<< x << std::endl
 
 auto MAX_CYCLE = std::numeric_limits<int>::max(); // TODO should go to utils

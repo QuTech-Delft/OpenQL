@@ -297,7 +297,7 @@ public:
 
     void reserve(size_t cycle, ql::gate * ins)
     {
-        if(ins->name == "cz")
+        if( 2 == (ins->operands).size() ) // ( ins->name == "cz" )
         {
             auto q0 = ins->operands[0];
             auto q1 = ins->operands[1];
@@ -310,7 +310,7 @@ public:
             }
 
             // println("reserved. curr cycle: " << cycle << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] 
-            //           << " for operation: cz");
+            //           << " for operation: " << ins->name);
         }
     }
     ~edge_resource_t() {}

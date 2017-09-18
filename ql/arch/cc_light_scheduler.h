@@ -309,6 +309,7 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
             auto firstInsIt = secIt->begin();
             auto iname = (*(firstInsIt))->name;
             auto itype = (*(firstInsIt))->type();
+            auto nOperands = ((*firstInsIt)->operands).size();
             if( itype == __nop_gate__ )
             {
                 ssbundles << iname;
@@ -317,7 +318,12 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
             {
                 for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
                 {
-                    if( itype == __cnot_gate__ || itype == __cphase_gate__)
+                    if( 1 == nOperands )
+                    {
+                        auto & op = (*insIt)->operands[0];
+                        squbits.push_back(op);
+                    }
+                    else if( 2 == nOperands )
                     {
                         auto & op1 = (*insIt)->operands[0];
                         auto & op2 = (*insIt)->operands[1];
@@ -325,18 +331,21 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
                     }
                     else
                     {
-                        auto & op = (*insIt)->operands[0];
-                        squbits.push_back(op);
+                        throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
                     }
                 }
                 std::string rname;
-                if( itype == __cnot_gate__ || itype == __cphase_gate__)
+                if( 1 == nOperands )
+                {
+                    rname = gMaskManager.getRegName(squbits);
+                }
+                else if( 2 == nOperands )
                 {
                     rname = gMaskManager.getRegName(dqubits);
                 }
                 else
                 {
-                    rname = gMaskManager.getRegName(squbits);
+                    throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
                 }
 
                 ssbundles << iname << " " << rname;
@@ -406,6 +415,7 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool v
             auto firstInsIt = secIt->begin();
             auto iname = (*(firstInsIt))->name;
             auto itype = (*(firstInsIt))->type();
+            auto nOperands = ((*firstInsIt)->operands).size();
             if( itype == __nop_gate__ )
             {
                 ssbundles << iname;
@@ -414,7 +424,12 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool v
             {
                 for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
                 {
-                    if( itype == __cnot_gate__ || itype == __cphase_gate__)
+                    if( 1 == nOperands )
+                    {
+                        auto & op = (*insIt)->operands[0];
+                        squbits.push_back(op);
+                    }
+                    else if( 2 == nOperands )
                     {
                         auto & op1 = (*insIt)->operands[0];
                         auto & op2 = (*insIt)->operands[1];
@@ -422,18 +437,21 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool v
                     }
                     else
                     {
-                        auto & op = (*insIt)->operands[0];
-                        squbits.push_back(op);
+                        throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
                     }
                 }
                 std::string rname;
-                if( itype == __cnot_gate__ || itype == __cphase_gate__)
+                if( 1 == nOperands )
+                {
+                    rname = gMaskManager.getRegName(squbits);
+                }
+                else if( 2 == nOperands )
                 {
                     rname = gMaskManager.getRegName(dqubits);
                 }
                 else
                 {
-                    rname = gMaskManager.getRegName(squbits);
+                    throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
                 }
 
                 ssbundles << iname << " " << rname;

@@ -324,7 +324,9 @@
       "s q0" : ["s q0"],
       "sdag q0" : ["sdag q0"],
       "cnot q0,q1" : ["ry90 q1","cz q0,q1","ry90 q1"]
-   }
+   },
 
+   "resources": {},
+   "topology": {}
  
 }

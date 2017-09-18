@@ -24,7 +24,6 @@ using namespace lemon;
 
 enum DepTypes{RAW, WAW, WAR, RAR};
 const string DepTypesNames[] = {"RAW", "WAW", "WAR", "RAR"};
-// auto MAX_CYCLE = std::numeric_limits<std::size_t>::max();
 
 typedef std::list<ql::gate *>ParallelSection;
 class Bundle
