@@ -67,6 +67,8 @@ typedef enum __gate_type_t
     __ry90_gate__      ,
     __mry90_gate__     ,
     __ry180_gate__     ,
+    __rx_gate__        ,
+    __ry_gate__        ,
     __rz_gate__        ,
     __prepz_gate__     ,
     __cnot_gate__      ,
@@ -314,6 +316,9 @@ public:
     }
 };
 
+/**
+ * phase dag
+ */
 class phasedag : public gate
 {
 public:
@@ -347,6 +352,131 @@ public:
         return m;
     }
 };
+
+
+/**
+ * rx 
+ */
+class rx : public gate
+{
+public:
+    cmat_t m;
+    double angle;
+
+    rx(size_t q, double angle) : angle(angle)
+    {
+        name = "rx";
+        duration = 40;
+        operands.push_back(q);
+        m(0,0) = cos(angle/2);               m(0,1) = complex_t(0,-sin(angle/2));
+        m(1,0) = complex_t(0,-sin(angle/2)); m(1,1) = cos(angle/2);
+    }
+
+    instruction_t qasm()
+    {
+        return instruction_t("rx q" + std::to_string(operands[0]) + std::to_string(angle) );
+    }
+
+    instruction_t micro_code()
+    {
+        // dummy !
+        return instruction_t("  pulse 1110 0000 1110\n     wait 10");
+    }
+
+    gate_type_t type()
+    {
+        return __rx_gate__;
+    }
+
+    cmat_t mat()
+    {
+        return m;
+    }
+};
+
+
+/**
+ * ry 
+ */
+class ry : public gate
+{
+public:
+    cmat_t m;
+    double angle;
+
+    ry(size_t q, double angle) : angle(angle)
+    {
+        name = "ry";
+        duration = 40;
+        operands.push_back(q);
+	m(0,0) = cos(angle/2); m(0,1) = -sin(angle/2);
+	m(1,0) = sin(angle/2); m(1,1) = cos(angle/2);
+    }
+
+    instruction_t qasm()
+    {
+        return instruction_t("ry q" + std::to_string(operands[0]) + std::to_string(angle) );
+    }
+
+    instruction_t micro_code()
+    {
+        // dummy !
+        return instruction_t("  pulse 1110 0000 1110\n     wait 10");
+    }
+
+    gate_type_t type()
+    {
+        return __ry_gate__;
+    }
+
+    cmat_t mat()
+    {
+        return m;
+    }
+};
+
+
+/**
+ * rz 
+ */
+class rz : public gate
+{
+public:
+    cmat_t m;
+    double angle;
+
+    rz(size_t q, double angle) : angle(angle)
+    {
+        name = "rz";
+        duration = 40;
+        operands.push_back(q);
+	m(0,0) = complex_t(cos(-angle/2), sin(-angle/2));   m(0,1) = 0;
+	m(1,0) = 0;  m(1,1) =  complex_t(cos(angle/2), sin(angle/2));
+    }
+
+    instruction_t qasm()
+    {
+        return instruction_t("rz q" + std::to_string(operands[0]) + std::to_string(angle) );
+    }
+
+    instruction_t micro_code()
+    {
+        // dummy !
+        return instruction_t("  pulse 1110 0000 1110\n     wait 10");
+    }
+
+    gate_type_t type()
+    {
+        return __rz_gate__;
+    }
+
+    cmat_t mat()
+    {
+        return m;
+    }
+};
+
+
 
 /**
  * T
@@ -908,7 +1038,7 @@ public:
 };
 
 /**
- * cphase
+ * toffoli 
  */
 class toffoli : public gate
 {
