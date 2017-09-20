@@ -164,6 +164,7 @@ namespace ql
 		  else
 		  {
 		     println("[x] error : cbox_eqasm_compiler : instruction '" << id << "' not supported by the target platform !");
+		     throw ql::exception("[x] error : cbox_eqasm_compiler : error while reading hardware settings : instruction '"+id+"' not supported by the target platform !",false);
 		  }
 	       }
 

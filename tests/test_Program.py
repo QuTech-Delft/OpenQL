@@ -53,15 +53,13 @@ class Test_program(unittest.TestCase):
         k.prepz(0)
         k.prepz(1)
         k.x(0)
-        k.y(0)
         k.cnot(0, 1)
-        k.toffoli(0, 1, 2)
-        k.rx90(0)
-        k.clifford(2, 0)
-        k.measure(2)
+        k.gate("rx90", 1)
+        k.clifford(1, 0)
+        k.measure(0)
         sweep_points = [2]
         num_circuits = 1
-        nqubits = 3
+        nqubits = 2
         p = ql.Program("rbProgram", nqubits, platf)
         p.set_sweep_points(sweep_points, num_circuits)
         p.add_kernel(k)
@@ -69,9 +67,6 @@ class Test_program(unittest.TestCase):
         p.compile(False, False)
         p.schedule("ALAP", True)
 
-        # N.B. This does not actually test if the output is correct : this is deprecated (should not be used !)
-        # print(p.qasm())
-        # print(p.microcode())
 
     def test_5qubit_program(self):
 
@@ -80,13 +75,12 @@ class Test_program(unittest.TestCase):
         k = ql.Kernel("aKernel", platf)
 
         # populate kernel
-        for i in range(5):
+        for i in range(2):
             k.prepz(i)
-        for i in range(3):
+        for i in range(2):
             k.hadamard(i)
-        for i in range(3):
-            for j in range(3, 5):
-                k.cnot(i, j)
+        k.cnot(0, 1)
+        k.cphase(0, 1)
 
         # sweep points is not specified the program does not work but don't
         # know what it does...
@@ -94,11 +88,8 @@ class Test_program(unittest.TestCase):
         p.add_kernel(k)  # add kernel to program
         p.compile()     # compile program
 
-        # N.B. This does not actually test if the output is correct
-        # print(p.qasm())       # deprecated
-        # print(p.microcode())  # deprecated
 
-    @unittest.skip('Gate by name not implemented')
+    # @unittest.skip('Gate by name not implemented')
     def test_allxy_program(self):
 
         nqubits=7
@@ -126,13 +117,10 @@ class Test_program(unittest.TestCase):
             k.gate(pulse_comb[1], q)
             k.measure(q)
 
-        p.set_sweep_points(sweep_points=nr_sweep_pts,
-                           nr_circuits=nr_sweep_pts)
+        p.set_sweep_points( [nr_sweep_pts], nr_sweep_pts)
 
         # compile  opt  verbose
         p.compile(False, False)
-        # print(p.qasm)       # deprecated
-        # print(p.microcode)  # deprecated
 
 if __name__ == '__main__':
     unittest.main()

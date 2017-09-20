@@ -41,116 +41,288 @@ namespace ql
 
 	 void identity(size_t qubit)
 	 {
-	    c.push_back(new ql::identity(qubit));
+	    std::string gname("identity");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
+	    	c.push_back(new ql::identity(qubit));
+	    }
 	 }
 
 	 void hadamard(size_t qubit)
 	 {
+	    std::string gname("hadamard");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
 #ifdef DECOMPOSE
-	    c.push_back(new ql::ry90(qubit));
-	    c.push_back(new ql::rx180(qubit));
+	    	c.push_back(new ql::ry90(qubit));
+	    	c.push_back(new ql::rx180(qubit));
 #else
-	    c.push_back(new ql::hadamard(qubit));
+	    	c.push_back(new ql::hadamard(qubit));
 #endif
+	    }
 	 }
 
 	 void s(size_t qubit)
 	 {
-	    c.push_back(new ql::phase(qubit));
+	    std::string gname("s");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
+	    	c.push_back(new ql::phase(qubit));
+	    }
 	 }
 
 	 void sdag(size_t qubit)
 	 {
-	    c.push_back(new ql::phasedag(qubit));
+	    std::string gname("sdag");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
+	    	c.push_back(new ql::phasedag(qubit));
+	    }
 	 }
 
 	 void t(size_t qubit)
 	 {
-	    c.push_back(new ql::t(qubit));
+	    std::string gname("t");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
+	    	c.push_back(new ql::t(qubit));
+	    }
 	 }
 
 	 void tdag(size_t qubit)
 	 {
-	    c.push_back(new ql::tdag(qubit));
+	    std::string gname("tdag");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
+	    	c.push_back(new ql::tdag(qubit));
+	    }
 	 }
 
 	 void x(size_t qubit)
 	 {
+	    std::string gname("x");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
 #ifdef DECOMPOSE
-	    c.push_back(new ql::rx180(qubit));
+	    	c.push_back(new ql::rx180(qubit));
 #else
-	    c.push_back(new ql::pauli_x(qubit));
+	    	c.push_back(new ql::pauli_x(qubit));
 #endif
+	    }
 	 }
 
 	 void y(size_t qubit)
 	 {
+	    std::string gname("y");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
 #ifdef DECOMPOSE
-	    c.push_back(new ql::ry180(qubit));
+	    	c.push_back(new ql::ry180(qubit));
 #else
-	    c.push_back(new ql::pauli_y(qubit));
+	    	c.push_back(new ql::pauli_y(qubit));
 #endif
+	    }
 	 }
 
 	 void z(size_t qubit)
 	 {
+	    std::string gname("y");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
 #ifdef DECOMPOSE
-	    c.push_back(new ql::ry180(qubit));
-	    c.push_back(new ql::rx180(qubit));
+	    	c.push_back(new ql::ry180(qubit));
+	    	c.push_back(new ql::rx180(qubit));
 #else
-	    c.push_back(new ql::pauli_z(qubit));
+	    	c.push_back(new ql::pauli_z(qubit));
 #endif
+	    }
 	 }
-
 
 	 void rx90(size_t qubit)
 	 {
-	    c.push_back(new ql::rx90(qubit));
+	    std::string gname("rx90");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
+	    	c.push_back(new ql::rx90(qubit));
+	    }
 	 }
 
 	 void mrx90(size_t qubit)
 	 {
-	    c.push_back(new ql::mrx90(qubit));
+	    std::string gname("mrx90");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
+	    	c.push_back(new ql::mrx90(qubit));
+	    }
 	 }
 
 	 void rx180(size_t qubit)
 	 {
-	    c.push_back(new ql::rx180(qubit));
+	    std::string gname("rx180");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
+	    	c.push_back(new ql::rx180(qubit));
+	    }
 	 }
 
 	 void ry90(size_t qubit)
 	 {
-	    c.push_back(new ql::ry90(qubit));
+	    std::string gname("ry90");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
+	    	c.push_back(new ql::ry90(qubit));
+	    }
 	 }
 
 	 void mry90(size_t qubit)
 	 {
-	    c.push_back(new ql::mry90(qubit));
+	    std::string gname("mry90");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
+	    	c.push_back(new ql::mry90(qubit));
+	    }
 	 }
 
 	 void ry180(size_t qubit)
 	 {
-	    c.push_back(new ql::ry180(qubit));
+	    std::string gname("ry180");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
+	    	c.push_back(new ql::ry180(qubit));
+	    }
 	 }
 
 	 void measure(size_t qubit)
 	 {
-	    c.push_back(new ql::measure(qubit));
+	    std::string gname("measure");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
+	    	c.push_back(new ql::measure(qubit));
+	    }
 	 }
 
 	 void prepz(size_t qubit)
 	 {
-	    c.push_back(new ql::prepz(qubit));
+	    std::string gname("prepz");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit);
+	    if(g != nullptr)
+	    {
+	    	// std::cout << "loading custom gate with duration : " << g->duration << std::endl;
+	        c.push_back(g);
+	    }
+	    else
+	    {
+	    	// std::cout << "loading default gate with duration : " << g->duration << std::endl;
+      	    c.push_back(new ql::prepz(qubit));
+	    }
 	 }
 
 	 void cnot(size_t qubit1, size_t qubit2)
 	 {
-	    c.push_back(new ql::cnot(qubit1, qubit2));
+	    std::string gname("cnot");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit1, qubit2);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
+		   c.push_back(new ql::cnot(qubit1, qubit2));
+	    }
 	 }
 
 	 void cphase(size_t qubit1, size_t qubit2)
 	 {
-	    c.push_back(new ql::cphase(qubit1, qubit2));
+	    std::string gname("cphase");
+	    custom_gate * g = get_custom_gate_if_available(gname, qubit1, qubit2);
+	    if(g != nullptr)
+	    {
+	       c.push_back(g);
+	    }
+	    else
+	    {
+	    	c.push_back(new ql::cphase(qubit1, qubit2));
+	    }
 	 }
 
 	 void toffoli(size_t qubit1, size_t qubit2, size_t qubit3)
@@ -411,9 +583,9 @@ namespace ql
 
 	    Scheduler sched;
 	    sched.Init(qubits, c, platform, verbose);
-	    // sched.Print();
-	    // sched.PrintMatrix();
-	    // sched.PrintDot();
+	    // sched.Print(verbose);
+	    // sched.PrintMatrix(verbose);
+	    // sched.PrintDot(verbose);
 
 	    if("ASAP" == scheduler)
 	    {
@@ -506,6 +678,33 @@ namespace ql
 	 {
 	    load_instructions(gate_definition,file_name);
 	    return 0;
+	 }
+
+	 custom_gate* get_custom_gate_if_available(std::string & gname, size_t qubit)
+	 {
+	 	custom_gate* g = nullptr;
+	    std::string instr = gname + " q" + std::to_string(qubit);
+	    std::map<std::string,custom_gate*>::iterator it = gate_definition.find(instr);
+	    if (it != gate_definition.end())
+	    {
+	       g = new custom_gate(*(it->second));
+	       g->operands.push_back(qubit);
+	    }
+	    return g;
+	 }
+
+	 custom_gate* get_custom_gate_if_available(std::string & gname, size_t qubit1, size_t qubit2)
+	 {
+	 	custom_gate* g = nullptr;
+	    std::string instr = gname + " q" + std::to_string(qubit1) + ",q" + std::to_string(qubit2);
+	    std::map<std::string,custom_gate*>::iterator it = gate_definition.find(instr);
+	    if (it != gate_definition.end())
+	    {
+	       g = new custom_gate(*(it->second));
+	       g->operands.push_back(qubit1);
+	       g->operands.push_back(qubit2);
+	    }
+	    return g;
 	 }
 
 	 /**

@@ -41,6 +41,10 @@ public:
     {
         ql_platform = new ql::quantum_platform(name, config_file);
     }
+    size_t get_qubit_number()
+    {
+        return ql_platform->get_qubit_number();
+    }
 };
 
 class Kernel
@@ -141,7 +145,6 @@ public:
     {
         ql_kernel->clifford(id, q0);
     }
-    // void load_custom_instructions(std::string fname="instructions.json") { ql_kernel->load_custom_instructions(fname); }
     void print_custom_instructions()
     {
         ql_kernel->print_gates_definition();

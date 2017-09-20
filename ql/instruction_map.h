@@ -99,7 +99,10 @@ namespace ql
 	  }
        }
        else
-	  println("[x] error : failed to open file '" << file_name << "' !");
+       {
+        println("[x] error : failed to open file '" << file_name << "' !");
+        throw ql::exception("[x] error : failed to open file '" + file_name + "' !",false);
+       }
       return j;
     }
 
