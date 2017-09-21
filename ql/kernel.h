@@ -72,6 +72,28 @@ namespace ql
 	    }
 	 }
 
+
+	 void rx(size_t qubit, double angle)
+	 {
+	    std::string gname("rx");
+	    // to do : rotation decomposition 
+	    c.push_back(new ql::rx(qubit,angle));
+	 }
+
+	 void ry(size_t qubit, double angle)
+	 {
+	    std::string gname("ry");
+	    // to do : rotation decomposition 
+	    c.push_back(new ql::ry(qubit,angle));
+	 }
+
+	 void rz(size_t qubit, double angle)
+	 {
+	    std::string gname("rz");
+	    // to do : rotation decomposition 
+	    c.push_back(new ql::rz(qubit,angle));
+	 }
+
 	 void s(size_t qubit)
 	 {
 	    std::string gname("s");
