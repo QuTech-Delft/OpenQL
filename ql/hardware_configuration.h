@@ -92,6 +92,7 @@ public:
         {
             instruction_settings = config["instructions"];
         }
+
         // create the control store
 
         // load instructions
@@ -104,10 +105,10 @@ public:
             json         attr = *it; //.value();
 
             std::string simple_instruction_name(name);
-			if( attr.find("cc_light_instr") != attr.end() )
-			{
-				simple_instruction_name = attr["cc_light_instr"];
-			}
+            if( attr.find("cc_light_instr") != attr.end() )
+            {
+               simple_instruction_name = attr["cc_light_instr"];
+            }
 
             // supported_gates.push_back(load_instruction(name,attr));
             // check for duplicate operations
@@ -115,6 +116,35 @@ public:
                 println("[!] warning : ql::hardware_configuration::load() : instruction '" << name << "' redefined : the old definition is overwritten !");
 
             instruction_map[name] = load_instruction(simple_instruction_name, attr);
+            // println("instruction " << name << " loaded.");
+        }
+        
+        // load gate decomposition/aliases
+        if (!config["gate_decomposition"].is_null())
+        {
+           json gate_decomposition = config["gate_decomposition"];
+           for (json::iterator it = gate_decomposition.begin(); it != gate_decomposition.end(); ++it)
+           {
+              std::string  name = it.key();
+              str::lower_case(name);
+              json         attr = *it; //.value();
+              // check for duplicate operations
+              if (instruction_map.find(name) != instruction_map.end())
+                println("[!] warning : ql::hardware_configuration::load() : composite instruction '" << name << "' redefined : the old definition is overwritten !");
+
+              if (!attr.is_array())
+                 throw ql::exception("[x] error : ql::hardware_configuration::load() : 'gate_decomposition' section : gate '"+name+"' is malformed !",false);
+              std::vector<gate *> gs;
+              for (size_t i=0; i<attr.size(); ++i)
+              {
+                 std::string instr_name = attr[i];
+                 // println("checking if instruction '" << instr_name << "' is already defined...");
+                 if (instruction_map.find(instr_name) == instruction_map.end())
+                       throw ql::exception("[x] error : ql::hardware_configuration::load() : 'gate_decomposition' section : instruction "+instr_name+" composing gate '"+name+"' is not defined !",false);
+                 gs.push_back(instruction_map[instr_name]);
+              }
+              instruction_map[name] = new composite_gate(name,gs);
+           }
         }
     }
 
