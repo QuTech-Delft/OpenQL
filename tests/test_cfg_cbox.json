@@ -319,10 +319,6 @@
       "y q0" : ["ry180 q0"],
       "z q0" : ["ry180 q0","rx180 q0"],
       "h q0" : ["ry90 q0"],
-      "t q0" : ["t q0"],
-      "tdag q0" : ["tdag q0"],
-      "s q0" : ["s q0"],
-      "sdag q0" : ["sdag q0"],
       "cnot q0,q1" : ["ry90 q1","cz q0,q1","ry90 q1"]
    },
 

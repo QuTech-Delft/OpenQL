@@ -121,6 +121,18 @@ public:
     {
         ql_kernel->ry180(q0);
     }
+    void rx(size_t q0, double angle)
+    {
+        ql_kernel->rx(q0, angle);
+    }
+    void ry(size_t q0, double angle)
+    {
+        ql_kernel->ry(q0, angle);
+    }
+    void rz(size_t q0, double angle)
+    {
+        ql_kernel->rz(q0, angle);
+    }
     void measure(size_t q0)
     {
         ql_kernel->measure(q0);

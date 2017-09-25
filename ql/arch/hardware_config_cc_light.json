@@ -2130,14 +2130,14 @@
 
 
    "gate_decomposition": {
-      "x q0" : ["x q0"],
-      "y q0" : ["y q0"],
+      "measure_all" : ["measure q0", "measure q1", "measure q2", "measure q3", "measure q4", "measure q5", "measure q6"],
+      "y q0" : ["x q0", "y q0"],
       "z q0" : ["z q0"],
-      "h q0" : ["h q0"],
+      "h q0" : ["ry90 q0"],
       "t q0" : ["t q0"],
       "tdag q0" : ["tdag q0"],
       "s q0" : ["s q0"],
       "sdag q0" : ["sdag q0"],
-      "cnot q0,q1" : ["cnot q0,q1"]
+      "cnot q0,q1" : ["ry90 q1","cz q2,q0","ry90 q1"]
    }
 }

@@ -30,6 +30,7 @@ int main(int argc, char ** argv)
    // print info
    seven_qubits_chip.print_info();
 
+   // return 0;
    size_t qubit_number = seven_qubits_chip.qubit_number;
 
    // set platform
@@ -47,6 +48,8 @@ int main(int argc, char ** argv)
    kernel.gate("h",1);
    kernel.gate("cz",0,2);
    kernel.gate("cnot",6,4);
+
+   kernel.gate("measure_all");
 
    // kernel.measure(0);
 

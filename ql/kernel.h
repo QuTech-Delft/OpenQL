@@ -72,6 +72,28 @@ namespace ql
 	    }
 	 }
 
+
+	 void rx(size_t qubit, double angle)
+	 {
+	    std::string gname("rx");
+	    // to do : rotation decomposition 
+	    c.push_back(new ql::rx(qubit,angle));
+	 }
+
+	 void ry(size_t qubit, double angle)
+	 {
+	    std::string gname("ry");
+	    // to do : rotation decomposition 
+	    c.push_back(new ql::ry(qubit,angle));
+	 }
+
+	 void rz(size_t qubit, double angle)
+	 {
+	    std::string gname("rz");
+	    // to do : rotation decomposition 
+	    c.push_back(new ql::rz(qubit,angle));
+	 }
+
 	 void s(size_t qubit)
 	 {
 	    std::string gname("s");
@@ -501,9 +523,28 @@ namespace ql
 	       throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+instr+"' is not supported by the target platform !",false);
 	    }
 	 }
-
-
-
+	 
+	 /**
+	  * custom gate with no qubits
+	  */
+	 void gate(std::string name)
+	 {
+	    str::lower_case(name);
+	    std::map<std::string,custom_gate*>::iterator it = gate_definition.find(name);
+	    if (it != gate_definition.end())
+	    {
+	       // custom_gate * g = new custom_gate(*(it->second));
+	       custom_gate * g = it->second;
+	       g->operands.clear();
+	       g->operands.insert(g->operands.begin(),it->second->operands.begin(), it->second->operands.end());
+	       c.push_back(g);
+	    }
+	    else
+	    {
+	       println("[x] error : unknown gate '" << name << "' !");
+	       throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+name+"' is not supported by the target platform !",false);
+	    }
+	 }
 
 	 /**
 	  * qasm

@@ -272,9 +272,9 @@ void PrintBundles(Bundles & bundles, bool verbose=false)
     }
 }
 
-void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=false)
+void PrintCCLighQasm(std::string prog_name, ql::quantum_platform & platform, Bundles & bundles, bool verbose=false)
 {
-    if(verbose) println("Printing ccLight QISA");
+    if(verbose) println("Printing CC-Light QISA");
 
     ofstream fout;
     string qisafname( ql::utils::get_output_dir() + "/" + prog_name + ".qisa");
@@ -307,7 +307,12 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
             qubit_set_t squbits;
             qubit_pair_set_t dqubits;
             auto firstInsIt = secIt->begin();
-            auto iname = (*(firstInsIt))->name;
+
+            auto id = (*(firstInsIt))->name;
+            auto iname = id;
+            if ( !platform.instruction_settings[id]["cc_light_instr"].is_null() )
+                iname = platform.instruction_settings[id]["cc_light_instr"];
+
             auto itype = (*(firstInsIt))->type();
             auto nOperands = ((*firstInsIt)->operands).size();
             if( itype == __nop_gate__ )
@@ -376,13 +381,13 @@ void PrintCCLighQasm(std::string prog_name, Bundles & bundles, bool verbose=fals
     println("Writing CC-Light QISA to " << qisafname);
     fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
     fout.close();
-    if(verbose) println("Printing ccLight QISA [Done]");
+    if(verbose) println("Printing CC-Light QISA [Done]");
 }
 
 
-void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool verbose=false)
+void PrintCCLighQasmTimeStamped(std::string prog_name, ql::quantum_platform & platform, Bundles & bundles, bool verbose=false)
 {
-    if(verbose) println("Printing Time-stamped ccLight QISA");
+    if(verbose) println("Printing Time-stamped CC-Light QISA");
     ofstream fout;
     string qisafname( ql::utils::get_output_dir() + "/" + prog_name + ".tqisa");
     fout.open( qisafname, ios::binary);
@@ -413,7 +418,12 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool v
             qubit_set_t squbits;
             qubit_pair_set_t dqubits;
             auto firstInsIt = secIt->begin();
-            auto iname = (*(firstInsIt))->name;
+
+            auto id = (*(firstInsIt))->name;
+            auto iname = id;
+            if ( !platform.instruction_settings[id]["cc_light_instr"].is_null() )
+                iname = platform.instruction_settings[id]["cc_light_instr"];
+
             auto itype = (*(firstInsIt))->type();
             auto nOperands = ((*firstInsIt)->operands).size();
             if( itype == __nop_gate__ )
@@ -485,14 +495,14 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, Bundles & bundles, bool v
     fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
     fout.close();
 
-    if(verbose) println("Printing Time-stamped ccLight QISA [Done]");
+    if(verbose) println("Printing Time-stamped CC-Light QISA [Done]");
 }
 
 void cc_light_schedule(std::string prog_name, size_t nqubits, ql::circuit & ckt, ql::quantum_platform & platform, bool verbose=false)
 {
     Bundles bundles1;
 
-    if(verbose) println("scheduling ccLight instructions ...");
+    if(verbose) println("Scheduling CC-Light instructions ...");
     Scheduler sched;
     sched.Init(nqubits, ckt, platform, verbose);
     bundles1 = sched.GetBundlesScheduleALAP(verbose);
@@ -539,15 +549,15 @@ void cc_light_schedule(std::string prog_name, size_t nqubits, ql::circuit & ckt,
     }
 
     // print scheduled bundles with parallelism
-    PrintBundles(bundles2, verbose);
+    // PrintBundles(bundles2, verbose);
 
     // print scheduled bundles with parallelism in cc-light syntax
-    PrintCCLighQasm(prog_name, bundles2, verbose);
+    PrintCCLighQasm(prog_name, platform, bundles2, verbose);
 
     // print scheduled bundles with parallelism in cc-light syntax with time-stamps
-    PrintCCLighQasmTimeStamped(prog_name, bundles2, verbose);
+    PrintCCLighQasmTimeStamped(prog_name, platform, bundles2, verbose);
 
-    if(verbose) println("scheduling ccLight instructions [Done].");
+    if(verbose) println("Scheduling CC-Light instructions [Done].");
 }
 
 
@@ -556,7 +566,7 @@ void cc_light_schedule_rc( std::string prog_name, size_t nqubits, ql::circuit & 
 {
     Bundles bundles1;
 
-    if(verbose) println("RC scheduling ccLight instructions ...");
+    if(verbose) println("Resource constraint scheduling of CC-Light instructions ...");
     resource_manager_t rm(platform);
     Scheduler sched;
     sched.Init(nqubits, ckt, platform, verbose);
@@ -605,15 +615,15 @@ void cc_light_schedule_rc( std::string prog_name, size_t nqubits, ql::circuit & 
     }
 
     // print scheduled bundles with parallelism
-    PrintBundles(bundles2, verbose);
+    // PrintBundles(bundles2, verbose);
 
     // print scheduled bundles with parallelism in cc-light syntax
-    PrintCCLighQasm(prog_name, bundles2, verbose);
+    PrintCCLighQasm(prog_name, platform, bundles2, verbose);
 
     // print scheduled bundles with parallelism in cc-light syntax with time-stamps
-    PrintCCLighQasmTimeStamped(prog_name, bundles2, verbose);
+    PrintCCLighQasmTimeStamped(prog_name, platform, bundles2, verbose);
 
-    if(verbose) println("RC scheduling ccLight instructions [Done].");
+    if(verbose) println("Resource constraint scheduling of CC-Light instructions [Done].");
 }
 
 } // end of namespace arch

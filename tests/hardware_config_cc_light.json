@@ -2192,6 +2192,6 @@
       "tdag q0" : ["tdag q0"],
       "s q0" : ["s q0"],
       "sdag q0" : ["sdag q0"],
-      "cnot q0,q1" : ["cnot q0,q1"]
+      "cnot q2,q0" : ["cnot q2,q0"]
    }
 }
