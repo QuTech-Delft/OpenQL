@@ -62,7 +62,7 @@ class Test_basic(unittest.TestCase):
 
         # populate the second kernel using both custom and default gates
         k = ql.Kernel('aKernel', platform)
-        k.gate('prepz', 0)  # this line is equivalent to the previous
+        k.gate('prepz', 0)
         k.gate('x', 0)
         k.y(1)
         k.z(5)
@@ -402,6 +402,35 @@ class Test_basic(unittest.TestCase):
             raise
         except:
             pass
+
+    # fast feedback test
+    # @unittest.expectedFailure
+    # @unittest.skip
+    def test_fast_feedback(self):
+        # You can specify a config location, here we use a default config
+        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
+        platform = ql.Platform('seven_qubits_chip', config_fn)
+        sweep_points = [1, 2]
+        num_circuits = 1
+        num_qubits = platform.get_qubit_number()
+        p = ql.Program('aProgram', num_qubits, platform)
+        p.set_sweep_points(sweep_points, num_circuits)
+
+        # populate kernel using default gates
+        k = ql.Kernel('aKernel', platform)
+        k.prepz(0)
+        k.gate('cprepz', 1)
+        k.measure(0)
+        k.measure(1)
+
+        # add the kernel to the program
+        p.add_kernel(k)
+
+        # compile the program
+        p.compile(optimize=False, verbose=True)
+
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        assemble(QISA_fn)
 
 
 if __name__ == '__main__':
