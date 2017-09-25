@@ -212,7 +212,7 @@ class quantum_program
 	 try 
 	 {
 	    println("compiling eqasm code...");
-	    backend_compiler->compile(name, fused, platform);
+	    backend_compiler->compile(name, fused, platform, verbose);
 	 }
 	 catch (ql::exception e)
 	 {

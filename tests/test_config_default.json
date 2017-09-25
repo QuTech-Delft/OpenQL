@@ -334,8 +334,9 @@
       "y q0" : ["ry180 q0"],
       "z q0" : ["ry180 q0","rx180 q0"],
       "h q0" : ["ry90 q0"],
-      "cnot q0,q1" : ["ry90 q1","cz q0,q1","ry90 q1"]
-   }
+      "cnot q2,q4" : ["ry90 q1","cz q0,q1","ry90 q1"]
+   },
 
- 
+   "resources": {},
+   "topology": {}
 }

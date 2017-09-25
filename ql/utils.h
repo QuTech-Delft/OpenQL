@@ -10,7 +10,11 @@
 
 #include "str.h"
 
+#include <limits>
+
 #define println(x) std::cout << "[openql] "<< x << std::endl
+
+auto MAX_CYCLE = std::numeric_limits<int>::max(); // TODO should go to utils
 
 namespace ql
 {
@@ -19,7 +23,7 @@ namespace ql
      */
     namespace utils
     {
-        std::string output_dir("output");
+        std::string output_dir("test_output");
         void set_output_dir(std::string dir)
         {
             output_dir = dir;
