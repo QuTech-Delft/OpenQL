@@ -182,7 +182,7 @@ public:
             {
                 // println(" available? curr cycle: " << cycle << "  meas: " << qubit2meas[q] 
                 //           << " is busy till cycle : " << state[ qubit2meas[q] ] << " for operation: measure");
-                if( cycle == state[ qubit2meas[q] ] )
+                if( cycle > state[ qubit2meas[q] ] )
                 {
                     // println("    measure resource busy ");
                     return false;

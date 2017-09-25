@@ -594,7 +594,6 @@ public:
         ++currNode;
         while(currNode != order.end() )
         {
-            // std::cout << "Scheduling " << name[*currNode] << std::endl;
             size_t currCycle=MAX_CYCLE;
             for( ListDigraph::OutArcIt arc(graph,*currNode); arc != INVALID; ++arc )
             {
@@ -605,16 +604,20 @@ public:
                     currCycle = targetCycle - weight[arc];
                 }
             }
+
             while(currCycle > 0)
             {
+                // std::cout << "Trying to scheduling: " << name[*currNode] << "  in cycle: " << currCycle << std::endl;
                 if( rm.available(currCycle, instruction[*currNode]) )
                 {
+                    // std::cout << "Resource available, Scheduled. \n";
                     rm.reserve(currCycle, instruction[*currNode] );
                     cycle[*currNode]=currCycle;
                     break;
                 }
                 else
                 {
+                    // std::cout << "Resource not available, trying again ...\n";
                     --currCycle;    
                 }
             }
