@@ -23,6 +23,7 @@ def_opcode["qwaitr"]   = 0x38
 # no arguments
 def_q_arg_none["qnop"] = 0x00
 def_q_arg_tt["cnot"]	= 0x80
+def_q_arg_st["cprepz"]	= 0x4b
 def_q_arg_tt["cz"]	= 0x81
 def_q_arg_st["h"]	= 0x9
 def_q_arg_st["i"]	= 0x5
@@ -30,7 +31,9 @@ def_q_arg_st["measz"]	= 0x4
 def_q_arg_st["measx"]	= 0x3
 def_q_arg_st["prepx"]	= 0x1
 def_q_arg_st["prepz"]	= 0x2
+def_q_arg_st["rx180"]	= 0x22
 def_q_arg_st["x90"]	= 0xc
+def_q_arg_st["ry180"]	= 0x23
 def_q_arg_st["y90"]	= 0xe
 def_q_arg_st["s"]	= 0xa
 def_q_arg_st["sdag"]	= 0xb

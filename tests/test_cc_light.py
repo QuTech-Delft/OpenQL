@@ -43,7 +43,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=True)
+        p.compile(optimize=False, verbose=False)
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -74,7 +74,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False)
+        p.compile(optimize=False, verbose=False)
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -122,7 +122,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False)
+        p.compile(optimize=False, verbose=False)
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -166,6 +166,7 @@ class Test_basic(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
+	# @unittest.skip
     def test_qubit_busy(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
@@ -185,12 +186,12 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=True)
+        p.compile(optimize=False, verbose=False)
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
-
+	# @unittest.skip
     def test_qwg_available_01(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
@@ -210,12 +211,12 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=True)
+        p.compile(optimize=False, verbose=False)
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
-
+	# @unittest.skip
     def test_qwg_available_02(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
@@ -235,12 +236,12 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=True)
+        p.compile(optimize=False, verbose=False)
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
-
+	# @unittest.skip
     def test_qwg_busy(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
@@ -260,8 +261,9 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=True)
+        p.compile(optimize=False, verbose=False)
 
+	# @unittest.skip
     def test_measure_available01(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
@@ -280,12 +282,12 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=True)
+        p.compile(optimize=False, verbose=False)
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
-
+	# @unittest.skip
     def test_measure_available02(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
@@ -306,8 +308,9 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=True)
+        p.compile(optimize=False, verbose=False)
 
+	# @unittest.skip
     def test_measure_busy(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
@@ -328,11 +331,12 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=True)
+        p.compile(optimize=False, verbose=False)
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
+	# @unittest.skip
     def test_edge_available(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
@@ -352,8 +356,9 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=True)
+        p.compile(optimize=False, verbose=False)
 
+	# @unittest.skip
     def test_edge_busy(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
@@ -373,11 +378,12 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=True)
+        p.compile(optimize=False, verbose=False)
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
+	# @unittest.skip
     def test_edge_illegal(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
@@ -398,7 +404,7 @@ class Test_basic(unittest.TestCase):
 
         # compile the program
         try:
-            p.compile(optimize=False, verbose=True)
+            p.compile(optimize=False, verbose=False)
             raise
         except:
             pass
@@ -427,7 +433,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=True)
+        p.compile(optimize=False, verbose=False)
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
