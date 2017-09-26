@@ -17,13 +17,13 @@
 #include "utils.h"
 #include "gate.h"
 #include "circuit.h"
+#include <ql/arch/cc_light_resource_manager.h>
 
 using namespace std;
 using namespace lemon;
 
 enum DepTypes{RAW, WAW, WAR, RAR};
 const string DepTypesNames[] = {"RAW", "WAW", "WAR", "RAR"};
-auto MAX_CYCLE = std::numeric_limits<std::size_t>::max();
 
 typedef std::list<ql::gate *>ParallelSection;
 class Bundle
@@ -582,6 +582,55 @@ public:
         }
     }
 
+    // with rc
+    void ScheduleALAP( ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order,
+                       ql::arch::resource_manager_t & rm, bool verbose=false )
+    {
+        if(verbose) println("Performing RC ALAP Scheduling");
+        TopologicalSort(order);
+
+        std::vector<ListDigraph::Node>::iterator currNode = order.begin();
+        cycle[*currNode]=MAX_CYCLE; // src dummy in cycle 0
+        ++currNode;
+        while(currNode != order.end() )
+        {
+            size_t currCycle=MAX_CYCLE;
+            for( ListDigraph::OutArcIt arc(graph,*currNode); arc != INVALID; ++arc )
+            {
+                ListDigraph::Node targetNode  = graph.target(arc);
+                size_t targetCycle = cycle[targetNode];
+                if( currCycle >= targetCycle )
+                {
+                    currCycle = targetCycle - weight[arc];
+                }
+            }
+
+            while(currCycle > 0)
+            {
+                // std::cout << "Trying to scheduling: " << name[*currNode] << "  in cycle: " << currCycle << std::endl;
+                if( rm.available(currCycle, instruction[*currNode]) )
+                {
+                    // std::cout << "Resource available, Scheduled. \n";
+                    rm.reserve(currCycle, instruction[*currNode] );
+                    cycle[*currNode]=currCycle;
+                    break;
+                }
+                else
+                {
+                    // std::cout << "Resource not available, trying again ...\n";
+                    --currCycle;    
+                }
+            }
+            if(currCycle <= 0)
+            {
+                println("Error: could not find schedule");
+                throw ql::exception("[x] Error : could not find schedule !",false);
+            }
+            ++currNode;
+        }
+        if(verbose) println("Performing RC ALAP Scheduling [Done].");
+    }
+
     void PrintScheduleALAP(bool verbose=false)
     {
         ListDigraph::NodeMap<size_t> cycle(graph);
@@ -827,7 +876,7 @@ public:
     // the following without nops
     Bundles GetBundlesScheduleALAP(bool verbose=false)
     {
-        println("Scheduling ALAP to get bundles ...");
+        if(verbose) println("Scheduling ALAP to get bundles ...");
         Bundles bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
@@ -871,16 +920,16 @@ public:
                 bundles.push_back(abundle);
             }
         }
-        println("Scheduling ALAP to get bundles [DONE]");
+        if(verbose) println("Scheduling ALAP to get bundles [DONE]");
         return bundles;
     }
 
 
 
     // the following inserts nops
-    Bundles GetBundlesScheduleALAP2()
+    Bundles GetBundlesScheduleALAP2(bool verbose=false)
     {
-        println("Scheduling ALAP to get bundles ...");
+        if(verbose) println("Scheduling ALAP to get bundles ...");
         Bundles bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
@@ -929,7 +978,58 @@ public:
             bundles.push_back(abundle);
         }
 
-        println("Scheduling ALAP to get bundles [DONE]");
+        if(verbose) println("Scheduling ALAP to get bundles [DONE]");
+        return bundles;
+    }
+
+    // the following without nops but with rc
+    Bundles GetBundlesScheduleALAP( ql::arch::resource_manager_t & rm, bool verbose=false )
+    {
+        if(verbose) println("RC Scheduling ALAP to get bundles ...");
+        Bundles bundles;
+        ListDigraph::NodeMap<size_t> cycle(graph);
+        std::vector<ListDigraph::Node> order;
+        ScheduleALAP(cycle, order, rm, verbose);
+
+
+        typedef std::vector<ql::gate*> insInOneCycle;
+        std::map<size_t,insInOneCycle> insInAllCycles;
+
+        std::vector<ListDigraph::Node>::iterator it;
+        for ( it = order.begin(); it != order.end(); ++it)
+        {
+            insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( instruction[*it] );
+        }
+
+        size_t TotalCycles = 0;
+        if( ! order.empty() )
+        {
+            TotalCycles =  MAX_CYCLE - cycle[ *( order.rbegin() ) ];
+        }
+
+        for(size_t currCycle = TotalCycles-1; currCycle>0; --currCycle)
+        {
+            auto it = insInAllCycles.find(currCycle);
+            Bundle abundle;
+            abundle.start_cycle = TotalCycles - currCycle;
+            size_t bduration = 0;
+            if( it != insInAllCycles.end() )
+            {
+                auto nInsThisCycle = insInAllCycles[currCycle].size();
+                for(size_t i=0; i<nInsThisCycle; ++i )
+                {
+                    ParallelSection aparsec;
+                    auto & ins = insInAllCycles[currCycle][i];
+                    aparsec.push_back(ins);
+                    abundle.ParallelSections.push_back(aparsec);
+                    size_t iduration = ins->duration;
+                    bduration = std::max(bduration, iduration);
+                }
+                abundle.duration_in_cycles = bduration/cycle_time;
+                bundles.push_back(abundle);
+            }
+        }
+        if(verbose) println("RC Scheduling ALAP to get bundles [DONE]");
         return bundles;
     }
 

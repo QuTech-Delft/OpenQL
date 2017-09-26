@@ -22,38 +22,38 @@ int main(int argc, char ** argv)
 
 
    // create platform
-   ql::quantum_platform starmon("starmon","../tests/test_cfg_cbox.json");
+   ql::quantum_platform platf("seven_qubits_chip","../tests/hardware_config_cc_light.json");
 
    // print info
-   starmon.print_info();
+   // platf.print_info();
 
    // set platform
-   ql::set_platform(starmon);
+   ql::set_platform(platf);
 
    // create program
-   ql::quantum_program prog("prog", 2, starmon);
+   ql::quantum_program prog("aProgram", 7, platf);
    prog.set_sweep_points(sweep_points, num_circuits);
 
-   ql::quantum_kernel k("custom_gate_test",starmon);
+   ql::quantum_kernel k("aKernel",platf);
 
    // print user-defined instructions (qasm/microcode)
-   k.print_gates_definition();
+   // k.print_gates_definition();
 
   // create kernel
    k.prepz(0);
    k.x(0);
-   k.gate("rx180", 0);  // custom gate
+   k.gate("rx90", 0);  // custom gate
    k.measure(0);
    prog.add(k);
 
    // compile the program
-   prog.compile( /*verbose*/ 1 );
+   prog.compile( /*optimize*/ false, /*verbose*/ true );
 
    // print qasm
    println(prog.qasm());
 
    // print micro code
-   println(prog.microcode());
+   // println(prog.microcode());
 
    return 0;
 }

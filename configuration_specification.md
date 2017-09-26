@@ -57,6 +57,53 @@ OpenQL supports the following instructions
 - `measure`
     + no arguments
 
+## CC-Light platform configuration
+The configuration file speficies the resources available in the target platforms and the topology.
+
+### "resources" entry
+These resources can be qubits, waveform generators, measurement units and possible edges for 2-qubit operations. This information is used to model these resources in OpenQL to perform resource-constraint scheduling. An example entry of a resource `meas_units` is shown below:
+
+	    "meas_units" :
+	    {
+	      "count": 2,
+	      "connection_map":
+	      {
+	        "0" : [0, 2, 3, 5, 6],
+	        "1" : [1, 4]
+	      }
+	    }
+	    
+where
+- `count` is the number of `meas_units` resources available in the platform, which in the above example is 2.
+- `connection_map` specifies how each `meas_unit` is connected to the qubits. For example the first instance of `meas_units` is connected to qubit numbers 0, 2, 3, 5, 6.
+
+Another less clear example is the following `edges` resources:
+
+	    "edges":
+	    {
+	      "count": 8,
+	      "connection_map":
+	      {
+	        "0": [2], 
+	        "1": [3],
+	        "2": [0],
+	        "3": [1],
+	        "4": [6],
+	        "5": [7],
+	        "6": [4],
+	        "7": [5]
+	      }
+	    }
+	
+which specifies the 8 edges in ccLight platform. `connection_map` specifies, for instance that edge 0 is connected to edge 2. The constraint which is derived from this information is that, if there is an operation on edge 0, it is not possible to use edge 2 in a 2-qubit operation unless edge 0 is free. Similar constraints are deduced for rest of 7 the edges.
+
+### topology
+This section specifies:
+- grid `x_size` and `y_size`
+- `qubits` definition which maps qubit ids to qubit `x` and `y` coordinates on the grid
+- `edges` definition which maps edge ids to edge `src` and `dst` qubits
+
+
 ## CC-Light instuction configuration
 Every quantum operation (QISA instruction) is translated into one or multiple microinstructions. For the first release of CC-Light, only one microinstruction is supported. It should contain the following information:
 
