@@ -168,7 +168,7 @@ public:
         }
 
         std::string cs_filename = ql::utils::get_output_dir() + "/cs.txt";
-        std::string im_filename = ql::utils::get_output_dir() + "/qisa_instructions.dbpd"; // "/qisa_opcodes.qmap";
+        std::string im_filename = ql::utils::get_output_dir() + "/qisa_opcodes.qmap"; // "/qisa_instructions.dbpd";
         println("writing control store file to '" << cs_filename << "' ...");
         println("writing qisa instruction file to '" << im_filename << "' ...");
         std::string s = control_store.str();
