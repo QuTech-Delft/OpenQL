@@ -12,6 +12,8 @@ find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 find_package(PythonInterp 3 REQUIRED)
 
+set(QISA_OPCODE_CONFIG_FILE "${PROJECT_SOURCE_DIR}/qisa_opcodes.qmap")
+
 # Teach cmake how to generate the instruction declarations
 # using the 'gen_qisa_instructions' python script.
 add_custom_command(
@@ -22,14 +24,14 @@ add_custom_command(
   COMMAND ${PYTHON_EXECUTABLE}
     ${PROJECT_SOURCE_DIR}/scripts/gen_qisa_instructions.py
     ARGS
-      -d ${PROJECT_SOURCE_DIR}/qisa_instructions.dbpd
+      -d ${QISA_OPCODE_CONFIG_FILE}
       -co ${PROJECT_BINARY_DIR}/qisa_opcode_defs.inc
       -lt ${PROJECT_SOURCE_DIR}/qisa_lexer.tmpl
       -lo ${PROJECT_BINARY_DIR}/qisa_lexer.l
       -pt ${PROJECT_SOURCE_DIR}/qisa_parser.tmpl
       -po ${PROJECT_BINARY_DIR}/qisa_parser.yy
   DEPENDS
-    ${PROJECT_SOURCE_DIR}/qisa_instructions.dbpd
+    ${QISA_OPCODE_CONFIG_FILE}
     ${PROJECT_SOURCE_DIR}/qisa_lexer.tmpl
     ${PROJECT_SOURCE_DIR}/qisa_parser.tmpl
     ${PROJECT_SOURCE_DIR}/scripts/gen_qisa_instructions.py
@@ -62,7 +64,7 @@ add_library(qisa-as-lib
   ${PROJECT_BINARY_DIR}/qisa_opcode_defs.inc
   qisa_parser.tmpl
   qisa_lexer.tmpl
-  qisa_instructions.dbpd
+  ${QISA_OPCODE_CONFIG_FILE}
   ${FLEX_qisa_lexer_OUTPUTS}
   ${BISON_qisa_parser_OUTPUTS}
 )

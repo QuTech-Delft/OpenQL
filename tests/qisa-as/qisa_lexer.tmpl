@@ -74,24 +74,32 @@ identifier    {alpha}[a-zA-Z0-9_]*
 ")"            { return QISA::QISA_Parser::make_PAREN_CLOSE(loc); }
 
  /* Branch conditions. */
-"ALWAYS"       { return QISA::QISA_Parser::make_COND_ALWAYS(QISA::QISA_Driver::COND_ALWAYS, loc); }
-"NEVER"        { return QISA::QISA_Parser::make_COND_NEVER (QISA::QISA_Driver::COND_NEVER , loc); }
-"EQ"           { return QISA::QISA_Parser::make_COND_EQ    (QISA::QISA_Driver::COND_EQ    , loc); }
-"NE"           { return QISA::QISA_Parser::make_COND_NE    (QISA::QISA_Driver::COND_NE    , loc); }
-"LT"           { return QISA::QISA_Parser::make_COND_LT    (QISA::QISA_Driver::COND_LT    , loc); }
-"LE"           { return QISA::QISA_Parser::make_COND_LE    (QISA::QISA_Driver::COND_LE    , loc); }
-"GT"           { return QISA::QISA_Parser::make_COND_GT    (QISA::QISA_Driver::COND_GT    , loc); }
-"GE"           { return QISA::QISA_Parser::make_COND_GE    (QISA::QISA_Driver::COND_GE    , loc); }
-"LTU"          { return QISA::QISA_Parser::make_COND_LTU   (QISA::QISA_Driver::COND_LTU   , loc); }
-"LEU"          { return QISA::QISA_Parser::make_COND_LEU   (QISA::QISA_Driver::COND_LEU   , loc); }
-"GTU"          { return QISA::QISA_Parser::make_COND_GTU   (QISA::QISA_Driver::COND_GTU   , loc); }
-"GEU"          { return QISA::QISA_Parser::make_COND_GEU   (QISA::QISA_Driver::COND_GEU   , loc); }
+"ALWAYS"       { return QISA::QISA_Parser::make_COND_ALWAYS  (QISA::QISA_Driver::COND_ALWAYS  , loc); }
+"NEVER"        { return QISA::QISA_Parser::make_COND_NEVER   (QISA::QISA_Driver::COND_NEVER   , loc); }
+"EQ"           { return QISA::QISA_Parser::make_COND_EQ      (QISA::QISA_Driver::COND_EQ      , loc); }
+"NE"           { return QISA::QISA_Parser::make_COND_NE      (QISA::QISA_Driver::COND_NE      , loc); }
+"EQZ"          { return QISA::QISA_Parser::make_COND_EQZ     (QISA::QISA_Driver::COND_EQZ     , loc); }
+"NEZ"          { return QISA::QISA_Parser::make_COND_NEZ     (QISA::QISA_Driver::COND_NEZ     , loc); }
+"LT"           { return QISA::QISA_Parser::make_COND_LT      (QISA::QISA_Driver::COND_LT      , loc); }
+"LTZ"          { return QISA::QISA_Parser::make_COND_LTZ     (QISA::QISA_Driver::COND_LTZ     , loc); }
+"LE"           { return QISA::QISA_Parser::make_COND_LE      (QISA::QISA_Driver::COND_LE      , loc); }
+"GT"           { return QISA::QISA_Parser::make_COND_GT      (QISA::QISA_Driver::COND_GT      , loc); }
+"GE"           { return QISA::QISA_Parser::make_COND_GE      (QISA::QISA_Driver::COND_GE      , loc); }
+"GEZ"          { return QISA::QISA_Parser::make_COND_GEZ     (QISA::QISA_Driver::COND_GEZ     , loc); }
+"LTU"          { return QISA::QISA_Parser::make_COND_LTU     (QISA::QISA_Driver::COND_LTU     , loc); }
+"LEU"          { return QISA::QISA_Parser::make_COND_LEU     (QISA::QISA_Driver::COND_LEU     , loc); }
+"GTU"          { return QISA::QISA_Parser::make_COND_GTU     (QISA::QISA_Driver::COND_GTU     , loc); }
+"GEU"          { return QISA::QISA_Parser::make_COND_GEU     (QISA::QISA_Driver::COND_GEU     , loc); }
+"CARRY"        { return QISA::QISA_Parser::make_COND_CARRY   (QISA::QISA_Driver::COND_CARRY   , loc); }
+"NOTCARRY"     { return QISA::QISA_Parser::make_COND_NOTCARRY(QISA::QISA_Driver::COND_NOTCARRY, loc); }
 
  /* Classic low-level instructions. */
 "NOP"          { return QISA::QISA_Parser::make_NOP(loc); }
 "STOP"         { return QISA::QISA_Parser::make_STOP(loc); }
 "ADD"          { return QISA::QISA_Parser::make_ADD(loc); }
 "SUB"          { return QISA::QISA_Parser::make_SUB(loc); }
+"ADDC"         { return QISA::QISA_Parser::make_ADDC(loc); }
+"SUBC"         { return QISA::QISA_Parser::make_SUBC(loc); }
 "AND"          { return QISA::QISA_Parser::make_AND(loc); }
 "OR"           { return QISA::QISA_Parser::make_OR(loc); }
 "XOR"          { return QISA::QISA_Parser::make_XOR(loc); }
@@ -126,7 +134,8 @@ identifier    {alpha}[a-zA-Z0-9_]*
 "BLEU"         { return QISA::QISA_Parser::make_BLEU(loc); }
 "BGTU"         { return QISA::QISA_Parser::make_BGTU(loc); }
 "BGEU"         { return QISA::QISA_Parser::make_BGEU(loc); }
-"MOV"          { return QISA::QISA_Parser::make_MOV(loc); }
+"COPY"          { return QISA::QISA_Parser::make_COPY(loc); }
+"MOV"         { return QISA::QISA_Parser::make_MOV(loc); }
 "MULT2"        { return QISA::QISA_Parser::make_MULT2(loc); }
 
  /* Quantum instructions */

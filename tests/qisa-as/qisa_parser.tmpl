@@ -117,6 +117,8 @@
 %token <uint8_t>     COND_NEVER
 %token <uint8_t>     COND_EQ
 %token <uint8_t>     COND_NE
+%token <uint8_t>     COND_EQZ
+%token <uint8_t>     COND_NEZ
 %token <uint8_t>     COND_LT
 %token <uint8_t>     COND_LE
 %token <uint8_t>     COND_GT
@@ -125,12 +127,19 @@
 %token <uint8_t>     COND_LEU
 %token <uint8_t>     COND_GTU
 %token <uint8_t>     COND_GEU
+%token <uint8_t>     COND_LTZ
+%token <uint8_t>     COND_GEZ
+%token <uint8_t>     COND_CARRY
+%token <uint8_t>     COND_NOTCARRY
+
 
 /* Classic mnemonic tokens */
 %token NOP
 %token STOP
 %token ADD
 %token SUB
+%token ADDC
+%token SUBC
 %token AND
 %token OR
 %token XOR
@@ -165,6 +174,7 @@
 %token BLEU
 %token BGTU
 %token BGEU
+%token COPY
 %token MOV
 %token MULT2
 
@@ -228,6 +238,11 @@ REGISTER
   | R_REGISTER
   | S_REGISTER
   | T_REGISTER
+  | error
+    {
+      driver.addExpectationErrorMessage("a register");
+      YYABORT;
+    }
   ;
 
 
@@ -281,8 +296,8 @@ register_decl
     }
   | DIR_REGISTER REGISTER error
     {
-      std::cerr << "Note that you cannot use an instruction name (such as 'X') as register alias" << std::endl;
-      std::cerr << "ERROR DETECTED" << std::endl;
+       driver.addSpecificErrorMessage("Note that you cannot use an existing register or instruction name as register alias");
+       YYABORT;
     }
   ;
 
@@ -327,6 +342,11 @@ q_reg
         YYERROR;
       }
     }
+  | error
+    {
+      driver.addExpectationErrorMessage("a Q_REGISTER");
+      YYABORT;
+    }
   ;
 
 r_reg
@@ -343,6 +363,11 @@ r_reg
       {
         YYERROR;
       }
+    }
+  | error
+    {
+      driver.addExpectationErrorMessage("an R_REGISTER");
+      YYABORT;
     }
   ;
 
@@ -361,6 +386,11 @@ s_reg
         YYERROR;
       }
     }
+  | error
+    {
+      driver.addExpectationErrorMessage("an S_REGISTER");
+      YYABORT;
+    }
   ;
 
 t_reg
@@ -377,6 +407,11 @@ t_reg
       {
         YYERROR;
       }
+    }
+  | error
+    {
+      driver.addExpectationErrorMessage("a T_REGISTER");
+      YYABORT;
     }
   ;
 
@@ -395,6 +430,11 @@ imm
       {
         YYERROR;
       }
+    }
+  | error
+    {
+      driver.addExpectationErrorMessage("an IMMEDIATE VALUE");
+      YYABORT;
     }
   ;
 
@@ -424,6 +464,23 @@ cond
     { $$$$ = $1; }
   | COND_GEU
     { $$$$ = $1; }
+  | COND_LTZ
+    { $$$$ = $1; }
+  | COND_GEZ
+    { $$$$ = $1; }
+  | COND_EQZ
+    { $$$$ = $1; }
+  | COND_NEZ
+    { $$$$ = $1; }
+  | COND_CARRY
+    { $$$$ = $1; }
+  | COND_NOTCARRY
+    { $$$$ = $1; }
+  | error
+    {
+      driver.addExpectationErrorMessage("a CONDITION");
+      YYABORT;
+    }
   ;
 
 one_or_more_qubit_addresses
@@ -592,6 +649,11 @@ q_instr
     { $$$$ = $1; }
   | q_instr_arg_tt
     { $$$$ = $1; }
+  | error
+    {
+       driver.addExpectationErrorMessage("a valid quantum instruction");
+       YYABORT;
+    }
   ;
 
 one_or_more_q_instrs
@@ -609,9 +671,16 @@ one_or_more_q_instrs
     }
     ;
 
+// Make the BS token optional.
+optional_bs
+  :
+  | BS
+  ;
+
+
 // Bundle separator
 q_bs
-  : BS INTEGER
+  : optional_bs INTEGER
     {
       if (driver.validate_bundle_separator($2, @2))
       {
@@ -627,17 +696,14 @@ q_bs
 
 /* Grammars for each instruction */
 
-
-/* The quantum bundle specification uses some state that must be cleared
- * whenever classic instructions are encountered.
- * We therefore split statement into a classic statement and a quantum statement.
+/* The quantum bundle specification used some state that had to be cleared
+ * whenever classic instructions were encountered.
+ * We therefore had to split statement into a classic statement and a quantum statement.
+ * We leave it split now, for these historic reasons.
  */
 
 statement
  : classic_statement
-   {
-     driver.reset_q_state();
-   }
  | quantum_statement
  ;
 
@@ -655,6 +721,10 @@ classic_statement
   | ADD r_reg COMMA r_reg COMMA r_reg { if (!driver.generate_XXX_rd_rs_rt("ADD", @1, $2, @2, $4, @4, $6, @6)) { YYERROR;} }
   /* sub rd, rs, rt */
   | SUB r_reg COMMA r_reg COMMA r_reg { if (!driver.generate_XXX_rd_rs_rt("SUB", @1, $2, @2, $4, @4, $6, @6)) { YYERROR;} }
+  /* addc rd, rs, rt */
+  | ADDC r_reg COMMA r_reg COMMA r_reg { if (!driver.generate_XXX_rd_rs_rt("ADDC", @1, $2, @2, $4, @4, $6, @6)) { YYERROR;} }
+  /* subc rd, rs, rt */
+  | SUBC r_reg COMMA r_reg COMMA r_reg { if (!driver.generate_XXX_rd_rs_rt("SUBC", @1, $2, @2, $4, @4, $6, @6)) { YYERROR;} }
   /* and rd, rs, rt */
   | AND r_reg COMMA r_reg COMMA r_reg { if (!driver.generate_XXX_rd_rs_rt("AND", @1, $2, @2, $4, @4, $6, @6)) { YYERROR;} }
   /* or rd, rs, rt */
@@ -754,9 +824,14 @@ classic_statement
   | BGEU r_reg COMMA r_reg COMMA offset_to_label
     { if (!driver.generate_BR_COND(@1, $2, @2, $4, @4, $6, @6, QISA::QISA_Driver::COND_GEU)) { YYERROR;} }
 
-  /* MOV   rd, rs        */
-  | MOV r_reg COMMA r_reg
+  /* COPY  rd, rs        */
+  | COPY r_reg COMMA r_reg
+    { if (!driver.generate_COPY(@1, $2, @2, $4, @4)) { YYERROR;} }
+
+  /* MOV   rd, imm        */
+  | MOV r_reg COMMA imm
     { if (!driver.generate_MOV(@1, $2, @2, $4, @4)) { YYERROR;} }
+
   /* MULT2 rd, rs        */
   | MULT2 r_reg COMMA r_reg
     { if (!driver.generate_MULT2(@1, $2, @2, $4, @4)) { YYERROR;} }
@@ -768,7 +843,9 @@ classic_statement
    ************************/
 quantum_statement
   /* Bundle of quantum instructions. */
-  : q_bs one_or_more_q_instrs { if (!driver.generate_q_bundle($1, @1, $2, @2)) { YYERROR;} }
+  : q_bs one_or_more_q_instrs { if (!driver.generate_q_bundle($1, @1, $2, @2)) { YYABORT;} }
+  // If a bundle specification is not given, use a default of 1.
+  | one_or_more_q_instrs { if (!driver.generate_q_bundle(1, @$, $1, @1)) { YYABORT;} }
   ;
 %%
 

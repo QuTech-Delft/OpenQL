@@ -1,11 +1,16 @@
                   .register r9 x
                   .register r1 y
+                  .def_sym  MOV_SMALL_CONSTANT 0x1234
+                  .def_sym  MOV_LARGE_CONSTANT 0x12345678
 
                   NOP
                   STOP
 
                   ADD        y, r2, r3
                   SUB        r4, r5, r6
+
+                  ADDC       y, r2, r3
+                  SUBC       r4, r5, r6
 
                   AND        r7, r8, x
                   OR         r10, r11, r12
@@ -55,9 +60,19 @@ addr:
 		  BGTU	     r4, r5, addr
 		  BGEU	     r4, r5, addr
 
-                  MOV        r6,r7
+                  BR         EQZ, addr
+                  BR         NEZ, addr
+                  BR         LTZ, addr
+                  BR         GEZ, addr
+                  BR         CARRY, addr
+                  BR         NOTCARRY, addr
+
+                  COPY       r6,r7
 
                   MULT2      r8,r9
+
+                  MOV       r10, MOV_SMALL_CONSTANT
+                  MOV       r11, MOV_LARGE_CONSTANT
 
 # Branch alias, forward label
                   BEQ        r4, r5, br_alias_fwd

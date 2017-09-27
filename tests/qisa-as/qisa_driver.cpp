@@ -29,9 +29,7 @@ QISA_Driver::QISA_Driver()
     , _verbose(false)
     , _totalNrOfQubits(0)
     , _max_bs_val(0)
-    , _disassemblyInstructionCounter(0)
     , _disassemblyStartedQuantumBundle(false)
-    , _assemblyStartedQuantumBundle(false)
     , _lastDriverAction(DRIVER_ACTION_NONE)
 {
   // Bring in the opcodes that have been defined for the qisa instructions.
@@ -54,20 +52,21 @@ QISA_Driver::QISA_Driver()
   // The width of this field is currently 3 bits, so the maximum value is set to 7.
   _max_bs_val = 7;
 
-
   // Name the branch conditions.
   _branchConditionNames[COND_ALWAYS] = "ALWAYS";
   _branchConditionNames[COND_NEVER ] = "NEVER";
   _branchConditionNames[COND_EQ    ] = "EQ";
   _branchConditionNames[COND_NE    ] = "NE";
-  _branchConditionNames[COND_LT    ] = "LT";
-  _branchConditionNames[COND_LE    ] = "LE";
-  _branchConditionNames[COND_GT    ] = "GT";
-  _branchConditionNames[COND_GE    ] = "GE";
+  _branchConditionNames[COND_LTZ   ] = "LTZ";
+  _branchConditionNames[COND_GEZ   ] = "GEZ";
   _branchConditionNames[COND_LTU   ] = "LTU";
+  _branchConditionNames[COND_GEU   ] = "GEU";
   _branchConditionNames[COND_LEU   ] = "LEU";
   _branchConditionNames[COND_GTU   ] = "GTU";
-  _branchConditionNames[COND_GEU   ] = "GEU";
+  _branchConditionNames[COND_LT    ] = "LT";
+  _branchConditionNames[COND_GE    ] = "GE";
+  _branchConditionNames[COND_LE    ] = "LE";
+  _branchConditionNames[COND_GT    ] = "GT";
 
   // Valid target-control pairs: 'left-to-right' direction
   _valid_target_control_pairs[std::make_pair(2,0)] =  0;
@@ -164,7 +163,8 @@ QISA_Driver::disassemble(const std::string& filename)
     // Read the instructions one at a time.
     qisa_instruction_type inst;
 
-    _disassemblyInstructionCounter = 0;
+    // Used to keep track of the current instruction within the input file.
+    size_t disassemblyInstructionCounter = 0;
 
     while(inputFile.read((char*)&inst, sizeof(qisa_instruction_type)))
     {
@@ -175,19 +175,24 @@ QISA_Driver::disassemble(const std::string& filename)
                   << " (" << binary << ")" << std::endl;
       }
 
-      if (!disassembleInstruction(inst))
+      DisassembledInstruction disassembledInstruction;
+      disassembledInstruction.address = disassemblyInstructionCounter;
+      disassembledInstruction.hexCode = getHex(inst, 8);
+      if (!disassembleInstruction(inst, disassembledInstruction))
       {
         std::ostringstream ss;
         ss << "0x" << std::hex << std::setfill('0') << std::setw(8) << inst;
 
         _errorStream << "Error while disassembling instruction "
                      << getHex(inst, 8)
-                     <<  ", instructionCount = " << _disassemblyInstructionCounter;
+                     <<  ", instructionCount = " << disassemblyInstructionCounter;
         _errorLoc = location();
         result = false;
       }
 
-      _disassemblyInstructionCounter++;
+      _disassembledInstructions[disassemblyInstructionCounter] = disassembledInstruction;
+
+      disassemblyInstructionCounter++;
     }
     postProcessDisassembly();
   }
@@ -208,32 +213,8 @@ QISA_Driver::postProcessDisassembly()
   if (_verbose)
     std::cout << "DISASSEMBLY POST-PROCESS" << std::endl;
 
-  // Go back to the beginning of the _disassemblyOutput.
-  _disassemblyOutput.seekp(0);
-
-  // This will hold the new _disassemblyOutput once it has been processed.
-  std::stringstream newOutput;
-
-  size_t nrOfLabels = _disassemblyLabels.size();
-
-  // This is the simple (but unlikely) case where there are no branch
-  // instructions in the code.
-  if (nrOfLabels == 0)
-  {
-    if (_verbose)
-      std::cout << "No branch instructions found." << std::endl;
-
-    std::string line;
-    int instructionCounter = 0;
-
-    while (std::getline(_disassemblyOutput, line))
-    {
-      newOutput << std::setw(8) << std::setfill('0')
-             << instructionCounter << ": " << line << std::endl;
-      instructionCounter++;
-    }
-  }
-  else
+  // Only do the following in case that labels have been used.
+  if (!_disassemblyLabels.empty())
   {
     // Create a map from the used branch destination to label with an index.
 
@@ -243,12 +224,15 @@ QISA_Driver::postProcessDisassembly()
     // Calculate the number of digits needed to print the labels.
     // Source: https://stackoverflow.com/a/1489861
     int nrOfDigitsPerLabel = 0;
+
+    size_t nrOfLabels = _disassemblyLabels.size();
     while (nrOfLabels != 0)
     {
       nrOfLabels /= 10;
       nrOfDigitsPerLabel++;
     }
-    // The extra 2 are for the ": " that come after a 'full' label.
+    // Used to get the correct indentation in case there is no label.
+    // The extra spaces (+ 2) are for the ": " that come after a 'full' label.
     std::string emptyLabel(strlen(DISASSEMBLY_LABEL_PREFIX) + nrOfDigitsPerLabel + 2, ' ');
 
     // Determine the name of the labels.
@@ -275,48 +259,66 @@ QISA_Driver::postProcessDisassembly()
     if (_verbose)
       std::cout << "Processing " << branchInstr2destAddrMap.size() << " branch instructions..." << std::endl;
 
-    std::string line;
-    uint64_t instructionCounter = 0;
-
-    while (std::getline(_disassemblyOutput, line))
+    for (auto itInstr = _disassembledInstructions.begin(); itInstr != _disassembledInstructions.end(); ++itInstr)
     {
-      newOutput << std::setw(8) << std::setfill('0')
-                << instructionCounter << ": " << std::setw(0);
-
       // If this is a branch destination, prepend the label instruction;
-      auto itDest = _disassemblyLabels.find(instructionCounter);
+      auto itDest = _disassemblyLabels.find(itInstr->second.address);
       if (itDest != _disassemblyLabels.end())
       {
-        newOutput << dest2LabelMap[itDest->first] << ": ";
+        itInstr->second.label = dest2LabelMap[itDest->first] + ": ";
       }
       else
       {
-        // Else, just output spaces instead.
-        newOutput << emptyLabel;
+        // Else, just use spaces instead.
+        itInstr->second.label = emptyLabel;
       }
 
-      newOutput << line;
-
-      auto itBranchInstr = branchInstr2destAddrMap.find(instructionCounter);
+      auto itBranchInstr = branchInstr2destAddrMap.find(itInstr->second.address);
       // If this is a branch instruction, emit its corresponding label and offset as comment.
       if (itBranchInstr != branchInstr2destAddrMap.end())
       {
-        const int64_t offset = itBranchInstr->second - instructionCounter;
-        newOutput << ", " << dest2LabelMap[itBranchInstr->second]
+        const int64_t offset = itBranchInstr->second - itInstr->second.address;
+
+        std::ostringstream ssNewInstruction;
+        ssNewInstruction << itInstr->second.instruction << ", " << dest2LabelMap[itBranchInstr->second]
                   << " # offset(" << std::showpos << offset << std::noshowpos << ")";
+        itInstr->second.instruction = ssNewInstruction.str();
       }
-
-      newOutput << std::endl;
-
-      instructionCounter++;
     }
   }
+
+
+  // This will hold the new _disassemblyOutput once it has been processed.
+  std::stringstream newOutput;
+
+  if (_disassemblyLabels.empty())
+  {
+    // This is the simple (but unlikely) case where there are no branch
+    // instructions in the code.
+
+    if (_verbose)
+      std::cout << "No branch instructions found." << std::endl;
+
+    for (auto it = _disassembledInstructions.begin(); it != _disassembledInstructions.end(); ++it)
+    {
+      newOutput << it->second.hexCode << ": " << it->second.instruction << std::endl;
+    }
+  }
+  else
+  {
+    for (auto it = _disassembledInstructions.begin(); it != _disassembledInstructions.end(); ++it)
+    {
+      newOutput << it->second.hexCode << ": " << it->second.label << it->second.instruction << std::endl;
+    }
+  }
+
+
   _disassemblyOutput.swap(newOutput);
 
 }
 
 std::string
-QISA_Driver::getHex(int val, int nDigits)
+QISA_Driver::getHex(uint64_t val, int nDigits)
 {
   std::ostringstream ss;
   ss << "0x" << std::hex << std::setfill('0') << std::setw(nDigits) << val;
@@ -324,27 +326,26 @@ QISA_Driver::getHex(int val, int nDigits)
 }
 
 bool
-QISA_Driver::disassembleInstruction(qisa_instruction_type inst)
+QISA_Driver::disassembleInstruction(qisa_instruction_type inst, DisassembledInstruction& disassembledInst)
 {
   if (inst & (1L << DBL_INST_FORMAT_BIT_OFFSET))
   {
-    return disassembleQuantumInstruction(inst);
+    return disassembleQuantumInstruction(inst, disassembledInst);
   }
   else
   {
     // A quantum bundle ends when a non-bundle instruction is encountered.
     if (_disassemblyStartedQuantumBundle)
     {
-      _disassemblyOutput << std::endl;
       _disassemblyStartedQuantumBundle = false;
     }
 
-    return disassembleClassicInstruction(inst);
+    return disassembleClassicInstruction(inst, disassembledInst);
   }
 }
 
 bool
-QISA_Driver::disassembleClassicInstruction(qisa_instruction_type inst)
+QISA_Driver::disassembleClassicInstruction(qisa_instruction_type inst, DisassembledInstruction& disassembledInst)
 {
   int opc= (inst >> OPCODE_OFFSET) & OPCODE_MASK;
 
@@ -380,16 +381,19 @@ QISA_Driver::disassembleClassicInstruction(qisa_instruction_type inst)
   //      return hash;
   //  }
 
+  std::ostringstream ssInst;
 
   if ((inst_name == "NOP") ||
       (inst_name == "STOP"))
   {
-    _disassemblyOutput << inst_name << std::endl;
+    ssInst << inst_name;
   }
-  else if ((inst_name == "ADD") ||
-           (inst_name == "SUB") ||
-           (inst_name == "AND") ||
-           (inst_name == "OR")  ||
+  else if ((inst_name == "ADD")  ||
+           (inst_name == "ADDC") ||
+           (inst_name == "SUB")  ||
+           (inst_name == "SUBC") ||
+           (inst_name == "AND")  ||
+           (inst_name == "OR")   ||
            (inst_name == "XOR"))
   {
     const int rd = (inst >> RD_OFFSET) & RD_MASK;
@@ -401,7 +405,7 @@ QISA_Driver::disassembleClassicInstruction(qisa_instruction_type inst)
     const int rt = (inst >> RT_OFFSET) & RT_MASK;
     if (!checkRegisterNumber(rt, errLoc, R_REGISTER)) return false;
 
-    _disassemblyOutput << inst_name << " R" << rd << ", R" << rs << ", R" << rt << std::endl;
+    ssInst << inst_name << " R" << rd << ", R" << rs << ", R" << rt;
   }
   else if (inst_name == "NOT")
   {
@@ -411,7 +415,7 @@ QISA_Driver::disassembleClassicInstruction(qisa_instruction_type inst)
     const int rt = (inst >> RT_OFFSET) & RT_MASK;
     if (!checkRegisterNumber(rt, errLoc, R_REGISTER)) return false;
 
-    _disassemblyOutput << inst_name << " R" << rd << ", R" << rt << std::endl;
+    ssInst << inst_name << " R" << rd << ", R" << rt;
   }
   else if (inst_name == "CMP")
   {
@@ -421,7 +425,7 @@ QISA_Driver::disassembleClassicInstruction(qisa_instruction_type inst)
     const int rt = (inst >> RT_OFFSET) & RT_MASK;
     if (!checkRegisterNumber(rt, errLoc, R_REGISTER)) return false;
 
-    _disassemblyOutput << inst_name << " R" << rs << ", R" << rt << std::endl;
+    ssInst << inst_name << " R" << rs << ", R" << rt;
   }
   else if (inst_name == "BR")
   {
@@ -442,14 +446,14 @@ QISA_Driver::disassembleClassicInstruction(qisa_instruction_type inst)
     struct {signed int x:21;} s;
     const int addr_offset = s.x = addr;
 
-    const uint64_t dest_address = _disassemblyInstructionCounter + addr_offset;
+    const uint64_t dest_address = disassembledInst.address + addr_offset;
 
     // Mark the fact that this instruction is a branch instruction
     // that will need to address a label.
-    _disassemblyLabels[dest_address].push_back(_disassemblyInstructionCounter);
+    _disassemblyLabels[dest_address].push_back(disassembledInst.address);
 
     // The labels will be added afterwards.
-    _disassemblyOutput << inst_name << " " << _branchConditionNames[cond] << std::endl;
+    ssInst << inst_name << " " << _branchConditionNames[cond];
   }
   else if (inst_name == "LDI")
   {
@@ -462,9 +466,9 @@ QISA_Driver::disassembleClassicInstruction(qisa_instruction_type inst)
     struct {signed int x:20;} s;
     const int signed_imm= s.x = imm;
 
-    _disassemblyOutput << inst_name << " R" << rd << ", "
-                       << getHex(signed_imm, 5) << " # dec("
-                       << signed_imm << ")" << std::endl;
+    ssInst << inst_name << " R" << rd << ", "
+           << getHex(signed_imm, 5) << " # dec("
+           << signed_imm << ")";
   }
   else if (inst_name == "LDUI")
   {
@@ -473,9 +477,9 @@ QISA_Driver::disassembleClassicInstruction(qisa_instruction_type inst)
 
     const int imm = inst & U_IMM15_MASK;
 
-    _disassemblyOutput << inst_name << " R" << rd << ", "
-                       << getHex(imm, 4) << " # dec("
-                       << imm << ")" << std::endl;
+    ssInst << inst_name << " R" << rd << ", "
+           << getHex(imm, 4) << " # dec("
+           << imm << ")";
   }
   else if (inst_name == "FBR")
   {
@@ -491,7 +495,7 @@ QISA_Driver::disassembleClassicInstruction(qisa_instruction_type inst)
 
     const int rd = (inst >> RD_OFFSET) & RD_MASK;
 
-    _disassemblyOutput << inst_name << " " << _branchConditionNames[cond] << ", R" << rd << std::endl;
+    ssInst << inst_name << " " << _branchConditionNames[cond] << ", R" << rd;
   }
   else if (inst_name == "FMR")
   {
@@ -501,7 +505,7 @@ QISA_Driver::disassembleClassicInstruction(qisa_instruction_type inst)
     const int qs = inst & QS_MASK;
     if (!checkRegisterNumber(qs, errLoc, Q_REGISTER)) return false;
 
-    _disassemblyOutput << inst_name << " R" << rd << ", Q" << qs << std::endl;
+    ssInst << inst_name << " R" << rd << ", Q" << qs << std::endl;
   }
   else if (inst_name == "SMIS")
   {
@@ -511,7 +515,7 @@ QISA_Driver::disassembleClassicInstruction(qisa_instruction_type inst)
     uint64_t s_mask_bits = (inst & S_MASK_MASK);
 
     auto s_mask = bits2s_mask(s_mask_bits);
-    _disassemblyOutput << inst_name << " S" << sd << ", " << get_s_mask_str(s_mask) << std::endl;
+    ssInst << inst_name << " S" << sd << ", " << get_s_mask_str(s_mask);
   }
   else if (inst_name == "SMIT")
   {
@@ -521,7 +525,7 @@ QISA_Driver::disassembleClassicInstruction(qisa_instruction_type inst)
     uint64_t t_mask_bits = (inst & T_MASK_MASK);
 
     auto t_mask = bits2t_mask(t_mask_bits);
-    _disassemblyOutput << inst_name << " T" << td << ", " << get_t_mask_str(t_mask) << std::endl;
+    ssInst << inst_name << " T" << td << ", " << get_t_mask_str(t_mask);
   }
   else if (inst_name == "QWAIT")
   {
@@ -530,35 +534,36 @@ QISA_Driver::disassembleClassicInstruction(qisa_instruction_type inst)
 
     const int u_imm = inst & U_IMM20_MASK;
 
-    _disassemblyOutput << inst_name << " " << u_imm << std::endl;
+    ssInst << inst_name << " " << u_imm;
   }
   else if (inst_name == "QWAITR")
   {
     const int rs = (inst >> RS_OFFSET) & RS_MASK;
     if (!checkRegisterNumber(rs, errLoc, R_REGISTER)) return false;
 
-    _disassemblyOutput << inst_name << " R" << rs << std::endl;
+    ssInst << inst_name << " R" << rs;
   }
   else
   {
-    _disassemblyOutput << "<Not yet supported: '"
-                       << _classicOpcode2instName[opc] << "'>" << std::endl;
+    ssInst << "<Not yet supported: '"
+           << _classicOpcode2instName[opc] << "'>" << std::endl;
   }
 
-
-//  _disassemblyOutput << std::setw(8) << std::setfill('0') << _disassemblyInstructionCounter << ": "
-//                     << std::setw(0) << "INST(opc=" << opc
-//                     << ",rd=" << (int)rd << ",rs=" << (int)rs << ",rt=" << (int)rt << ");" << std::endl;
+  disassembledInst.instruction = ssInst.str();
 
   return true;
 }
 
 bool
-QISA_Driver::disassembleQuantumInstruction(qisa_instruction_type inst)
+QISA_Driver::disassembleQuantumInstruction(qisa_instruction_type inst, DisassembledInstruction& disassembledInst)
 {
   int bs = inst & BS_MASK;
 
+  std::ostringstream ssInst;
 
+  ssInst << "BS " << bs << " ";
+
+#if 0 // Hold on to this for the high-level disassembly, if we will handle that.
   if (bs > 0)
   {
     // If a previous bundle was started, we have to issue a new-line to
@@ -574,15 +579,20 @@ QISA_Driver::disassembleQuantumInstruction(qisa_instruction_type inst)
   }
   else
   {
-    if (!_disassemblyStartedQuantumBundle)
+    if (_disassemblyStartedQuantumBundle)
     {
-      error("Attempt to continue a bundle without start.");
-      _disassemblyOutput << "ERROR: CONTINUE BUNDLE WITHOUT START" << std::endl;
-      return false;
+      // If we already started a bundle, add this one to the set.
+      _disassemblyOutput << " | ";
     }
+    else
+    {
+      // Otherwise we start a new quantum bundle with 0 as wait time.
+      _disassemblyOutput << "BS " << bs << " ";
 
-    _disassemblyOutput << " | ";
+      _disassemblyStartedQuantumBundle = true;
+    }
   }
+#endif
 
   // Quantum instructions are put pair-wise in a
   // 'very large instruction word' (VLIW).
@@ -615,20 +625,22 @@ QISA_Driver::disassembleQuantumInstruction(qisa_instruction_type inst)
   if (q_0_is_nop &&
       q_1_is_nop)
   {
-    _disassemblyOutput << q_0_str;
+    ssInst << q_0_str;
   }
   else if (q_0_is_nop)
   {
-    _disassemblyOutput << q_1_str;
+    ssInst << q_1_str;
   }
   else if (q_1_is_nop)
   {
-    _disassemblyOutput << q_0_str;
+    ssInst << q_0_str;
   }
   else
   {
-    _disassemblyOutput << q_0_str << " | " << q_1_str;
+    ssInst << q_0_str << " | " << q_1_str;
   }
+
+  disassembledInst.instruction = ssInst.str();
 
   return true;
 }
@@ -638,6 +650,8 @@ std::string
 QISA_Driver::getLastErrorMessage()
 {
   std::ostringstream ss;
+  // Start with a new-line, so all lines will be indented properly.
+  ss << std::endl;
   ss << getErrorSourceLine();
   ss << std::endl;
   ss << _errorStream.str();
@@ -684,7 +698,22 @@ QISA_Driver::getErrorSourceLine()
     }
   }
 
+  // Add context lines
+  unsigned int start_context_line = start_error_line - NUM_CONTEXT_LINES_IN_ERROR_MSG;
+  unsigned int end_context_line = end_error_line + NUM_CONTEXT_LINES_IN_ERROR_MSG;
+
+  // Adjust start_context_line if it is too small.
+  if (start_context_line < 1)
+    start_context_line = 1;
+
+  // Note that end_context_line may extend past the end of the file...
+
   std::ostringstream ss;
+
+  std::ostringstream ss_pre_context;
+  std::ostringstream ss_error_lines;
+  std::ostringstream ss_marker_line;
+  std::ostringstream ss_post_context;
 
   std::string line;
   std::string last_error_source_line;
@@ -696,19 +725,38 @@ QISA_Driver::getErrorSourceLine()
     while ( std::getline (srcFile,line) )
     {
       line_counter++;
-      if ((line_counter >= start_error_line) &&
-          (line_counter <= end_error_line))
-      {
-        last_error_source_line = line;
-        ss << line << std::endl;
-      }
 
-      if (line_counter > end_error_line)
+      if ((line_counter >= start_context_line) &&
+          (line_counter <= end_context_line))
+      {
+        if (line_counter < start_error_line)
+        {
+          ss_pre_context << std::setfill(' ') << std::setw(8) << line_counter << ": ";
+          ss_pre_context << line << std::endl;
+        }
+        else
+          if ((line_counter >= start_error_line) &&
+              (line_counter <= end_error_line))
+          {
+            last_error_source_line = line;
+            ss_error_lines << std::setfill(' ') << std::setw(8) << line_counter << ": ";
+            ss_error_lines << line << std::endl;
+          }
+          else
+          {
+            ss_post_context << std::setfill(' ') << std::setw(8) << line_counter << ": ";
+            ss_post_context << line << std::endl;
+          }
+      }
+      if (line_counter > end_context_line)
       {
         break;
       }
     }
     srcFile.close();
+
+
+    // Insert a set of carets (^) to show the exact location of the error.
 
     // Special case for when the error was an unexpected NEWLINE.
     // In that case, we want the error marker (^) to point to the
@@ -734,18 +782,28 @@ QISA_Driver::getErrorSourceLine()
       {
         if (last_error_source_line[i-1] == '\t')
         {
-          ss << "\t";
+          ss_marker_line << "\t";
         }
         else
         {
-          ss << " ";
+          ss_marker_line << " ";
         }
       }
       else
       {
-        ss << "^";
+        ss_marker_line << "^";
       }
     }
+    ss_marker_line << std::endl;
+
+    ss << ss_pre_context.str();
+    ss << "-------------------------------" << std::endl;
+    ss << ss_error_lines.str();
+    // Note: add 10 spaces to account for the line number.
+    ss << "          " << ss_marker_line.str();
+    ss << "-------------------------------" << std::endl;
+    ss << ss_post_context.str();
+
   }
   else
   {
@@ -782,7 +840,7 @@ QISA_Driver::setVerbose(bool verbose)
 void
 QISA_Driver::error(const location& l, const std::string& m)
 {
-  _errorStream << l << ": " << m << std::endl;
+  _errorStream << _filename << ":" << l << ": " << m << std::endl;
   _errorLoc = l;
 }
 
@@ -793,7 +851,19 @@ QISA_Driver::error(const std::string& m)
   _errorLoc = location();
 }
 
+void
+QISA_Driver::addSpecificErrorMessage(const std::string& msg)
+{
+  _errorStream << msg << std::endl;
+}
 
+void QISA_Driver::addExpectationErrorMessage(const std::string& expected_item)
+{
+  if (_errorStream.str().find(", expecting") == std::string::npos)
+  {
+    addSpecificErrorMessage("ERROR DETECTED: Expected " + expected_item + " here");
+  }
+}
 
 void
 QISA_Driver::add_symbol(const std::string& symbol_name,
@@ -1920,7 +1990,7 @@ QISA_Driver::generate_BR_COND(const location& inst_loc,
 /* ALIAS: [MOV rd,rs] --> [LDI rd,0 ; ADD rd,rs,rd] */
 
 bool
-QISA_Driver::generate_MOV(const location& inst_loc,
+QISA_Driver::generate_COPY(const location& inst_loc,
                           uint8_t rd,
                           const location& rd_loc,
                           uint8_t rs,
@@ -1928,21 +1998,70 @@ QISA_Driver::generate_MOV(const location& inst_loc,
 {
   if (_verbose)
       std::cout << std::setw(8) << std::setfill('0') << _instructions.size() << ": " << std::setw(0)
-                << "-- ALIAS: MOV(rd=" << (int)rd << ",rs=" << (int)rs << ");" << std::endl;
+                << "-- ALIAS: COPY(rd=" << (int)rd << ",rs=" << (int)rs << ");" << std::endl;
 
   // We leave checking the parameters up to the generation functions we call.
-
-  bool result = generate_LDI(inst_loc, rd, rd_loc, 0, inst_loc);
-
-  if (result)
-  {
-    result = generate_XXX_rd_rs_rt("ADD", inst_loc, rd, rd_loc, rs, rs_loc, rd, rd_loc);
-  }
+  bool result = generate_XXX_rd_rs_rt("OR", inst_loc, rd, rd_loc, rs, rs_loc, rs, rs_loc);
 
   if (result && _verbose)
       std::cout << std::setw(8) << std::setfill('0') << _instructions.size() << ": " << std::setw(0)
                 << "-- END ALIAS" << std::endl;
   return result;
+}
+
+bool QISA_Driver::generate_MOV(const location& inst_loc,
+                                uint8_t rd,
+                                const location& rd_loc,
+                                int64_t imm,
+                                const location& imm_loc)
+{
+  if (_verbose)
+      std::cout << std::setw(8) << std::setfill('0') << _instructions.size() << ": " << std::setw(0)
+                << "-- ALIAS: MOV(rd=" << (int)rd << ",imm=" << imm << ");" << std::endl;
+
+
+  // The 'imm' value is encoded using 32 bits (signed).
+  // Check if the given value is within this range.
+
+  const int64_t minImm = -(1LL<<31) + 1;
+  const int64_t maxImm =  (1LL<<31) - 1;
+
+  if (!checkValueRange(imm, minImm, maxImm, "imm", imm_loc))
+  {
+    return false;
+  }
+
+  bool result = false;
+
+  const int64_t minImm20 = -(1LL<<19) + 1;
+  const int64_t maxImm20 =  (1LL<<19) - 1;
+
+  if (imm < minImm20 || imm > maxImm20)
+  {
+    // If the immediate doesn't fit in a 20 bit signed integer, we must split the given value into a lower and an upper part.
+    // The lower part will have 17 bits and the upper part will have the rest (15 bits).
+    const int64_t lowerPart = imm & U_IMM17_MASK;
+    const int64_t upperPart = ((imm & ~U_IMM17_MASK) >> 17) & U_IMM15_MASK;
+
+    result = generate_LDI(inst_loc, rd, rd_loc, lowerPart, imm_loc);
+
+    if (result)
+    {
+      result = generate_LDUI(inst_loc, rd, rd_loc, upperPart, imm_loc);
+    }
+  }
+  else
+  {
+    // We can use the immediate value as is and we'll be done.
+    result = generate_LDI(inst_loc, rd, rd_loc, imm, imm_loc);
+  }
+
+  if (result && _verbose)
+      std::cout << std::setw(8) << std::setfill('0') << _instructions.size() << ": " << std::setw(0)
+                << "-- END ALIAS" << std::endl;
+
+  return result;
+
 }
 
 /* ALIAS: [MULT2 rd,rs] --> [ADD rd,rs,rs] */
@@ -2334,19 +2453,6 @@ QISA_Driver::generate_q_bundle(uint8_t bs_val,
       std::cout << "," << _quantumOpcode2instName[(*it)->opcode];
     }
     std::cout << ")" << std::endl;
-  }
-
-  if (bs_val == 0)
-  {
-    if (!_assemblyStartedQuantumBundle)
-    {
-      error(bs_loc, "Trying to continue a bundle that hasn't been started (bs == 0).");
-      return false;
-    }
-  }
-  else
-  {
-    _assemblyStartedQuantumBundle = true;
   }
 
   bool issued_bs = false;
@@ -2752,13 +2858,5 @@ QISA_Driver::save(const std::string& outputFileName)
 
   return result;
 }
-
-void
-QISA_Driver::reset_q_state()
-{
-  // After each classic instruction, we need to reset the 'started bundle' flag.
-  _assemblyStartedQuantumBundle = false;
-}
-
 
 } // namespace QISA

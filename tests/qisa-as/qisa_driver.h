@@ -64,18 +64,24 @@ public: // -- constants
   // This is the encoding of the different branch conditions.
   enum BranchCondition
   {
-    COND_ALWAYS = 0x0,
-    COND_NEVER  = 0x1,
-    COND_EQ     = 0x2,
-    COND_NE     = 0x3,
-    COND_LT     = 0xc,
-    COND_LE     = 0xe,
-    COND_GT     = 0xf,
-    COND_GE     = 0xd,
-    COND_LTU    = 0x8,
-    COND_LEU    = 0xa,
-    COND_GTU    = 0xb,
-    COND_GEU    = 0x9
+    COND_ALWAYS   = 0x0,
+    COND_NEVER    = 0x1,
+    COND_EQ       = 0x2,
+    COND_NE       = 0x3,
+    COND_LTZ      = 0x6,
+    COND_GEZ      = 0x7,
+    COND_LTU      = 0x8,
+    COND_NOTCARRY = 0x8, // alias
+    COND_GEU      = 0x9,
+    COND_CARRY    = 0x9, // alias
+    COND_LEU      = 0xa,
+    COND_EQZ      = 0xa, // alias
+    COND_GTU      = 0xb,
+    COND_NEZ      = 0xb, // alias
+    COND_LT       = 0xc,
+    COND_GE       = 0xd,
+    COND_LE       = 0xe,
+    COND_GT       = 0xf
   };
 
 public:
@@ -183,6 +189,28 @@ public:
 
   void
   error(const std::string& m);
+
+  /**
+   * Add an error message without disturbing the error location.
+   * This is used to append to parser generated errors.
+   *
+   * @param msg Message to be appended to the list of errors.
+   */
+  void
+  addSpecificErrorMessage(const std::string& msg);
+
+  /**
+   * Add an error message that describes what the parser was expecting.
+   * This version only adds the message if the parser generated error doesn't already contains a reference to an expected token.
+   * This is to prevent multiple (possibly different) messages about expectations.
+   * The error location is not altered.
+   *
+   * @param expected_item Description of the item that is expected.
+   */
+  void
+  addExpectationErrorMessage(const std::string& expected_item);
+
+
 
 
   // Symbol table management functions
@@ -590,13 +618,21 @@ public:
                    BranchCondition cond);
 
 
-  /* MOV   rd, rs        */
+  /* COPY  rd, rs        */
   bool
-  generate_MOV(const QISA::location& inst_loc,
+  generate_COPY(const QISA::location& inst_loc,
                uint8_t rd,
                const QISA::location& rd_loc,
                uint8_t rs,
                const QISA::location& rs_loc);
+
+  /* MOV   rd, imm       */
+  bool
+  generate_MOV(const QISA::location& inst_loc,
+                uint8_t rd,
+                const QISA::location& rd_loc,
+                int64_t imm,
+                const location& imm_loc);
 
   /* MULT2 rd, rs        */
   bool
@@ -608,15 +644,13 @@ public:
 
 
 
-  //! Reset the state that is maintained between quantum bundle specifications.
-  void
-  reset_q_state();
-
   // The name of the file being parsed.
   // Used later to pass the file name to the location tracker.
   // NOTE: This is a public member due to the way that the bison parser wants to use it.
   std::string _filename;
 
+  private: // -- Forward declaration.
+  struct DisassembledInstruction;
 
   private: // -- functions
 
@@ -837,16 +871,16 @@ public:
 
 
   std::string
-  getHex(int val, int nDigits);
+  getHex(uint64_t val, int nDigits);
 
   bool
-  disassembleInstruction(qisa_instruction_type inst);
+  disassembleInstruction(qisa_instruction_type inst, DisassembledInstruction& disassembledInst);
 
   bool
-  disassembleClassicInstruction(qisa_instruction_type inst);
+  disassembleClassicInstruction(qisa_instruction_type inst, DisassembledInstruction& disassembledInst);
 
   bool
-  disassembleQuantumInstruction(qisa_instruction_type inst);
+  disassembleQuantumInstruction(qisa_instruction_type inst, DisassembledInstruction& disassembledInst);
 
   /**
    * Post-process the disassembly steps to add labels.
@@ -933,6 +967,7 @@ private: // -- constants
     COND_MASK      = 0x00000f, //  4 bits
 
     IMM20_MASK     = 0x0fffff, // 20 bits
+    U_IMM17_MASK   = 0x01ffff, // 17 bits, used in MOVI alias.
     U_IMM15_MASK   = 0x007fff, // 15 bits
 
     QS_MASK        = 0x000007, //  3 bits
@@ -973,6 +1008,8 @@ private: // -- constants
     Q_INST_TD_MASK             = 0x00003f, // 6 bits
   };
 
+  // Specifies the number of context lines to display around the affected erroneous line.
+  static const int NUM_CONTEXT_LINES_IN_ERROR_MSG = 3;
 
 private: // -- variables
   // Whether lexer traces should be generated.
@@ -1007,21 +1044,15 @@ private: // -- variables
   // List of assembled instructions.
   std::vector<qisa_instruction_type> _instructions;
 
-  // List of disassembled instructions.
+  // Textual output of the disassembler.
   std::stringstream _disassemblyOutput;
 
-  // Used while disassembling, to keep track of the current instruction within the input file.
-  size_t _disassemblyInstructionCounter;
+  // Maps an instruction address to the information about the corresponding disassebled instruction.
+  std::map<uint64_t, DisassembledInstruction> _disassembledInstructions;
 
   // Used to check whether a bundle specification of 0 is legal or not.
-  // This one is used while disassembling.
+  // This is used while disassembling.
   bool _disassemblyStartedQuantumBundle;
-
-
-  // Used to check whether a bundle specification of 0 is legal or not.
-  // This one is used while assembling.
-  bool _assemblyStartedQuantumBundle;
-
 
   // Used to keep track of which instruction should have a label,
   // according to branch destinations.
@@ -1091,6 +1122,27 @@ private: // -- variables
     // Where the instruction resides in the 'program' (_instructions).
     uint64_t programCounter;
   };
+
+  struct DisassembledInstruction
+  {
+    // Address of this instruction.
+    uint64_t address;
+
+    // Opcode, used to differentiate possible output.
+    int opCode;
+
+    // Hexadecimal representation of the instruction.
+    std::string hexCode;
+
+    // Label, in case this instruction is used as a branch target.
+    std::string label;
+
+    // Full decoded instruction text.
+    std::string instruction;
+
+  };
+
+
 
   // Needed to be able to use a location in a std::map.
   struct LocationCompare {
@@ -1170,4 +1222,3 @@ SrcType QISA_Driver::reverseBits(const SrcType src)
 
 
 } /* end namespace QISA */
-
