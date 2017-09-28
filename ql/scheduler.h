@@ -831,46 +831,37 @@ public:
 
     std::string GetQASMScheduledALAP(bool verbose=false)
     {
-        std::stringstream ss;
-        ListDigraph::NodeMap<size_t> cycle(graph);
-        std::vector<ListDigraph::Node> order;
-        ScheduleALAP(cycle,order);
+        Bundles bundles = GetBundlesScheduleALAP(verbose);
 
-        typedef std::vector<std::string> insInOneCycle;
-        std::map<size_t,insInOneCycle> insInAllCycles;
+        std::stringstream ssbundles;
+        size_t curr_cycle=1;
 
-        std::vector<ListDigraph::Node>::iterator it;
-        for ( it = order.begin(); it != order.end(); ++it)
+        for (Bundle & abundle : bundles)
         {
-            insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( name[*it] );
-        }
-
-        size_t TotalCycles = 0;
-        if( ! order.empty() )
-        {
-            TotalCycles =  MAX_CYCLE - cycle[ *( order.rbegin() ) ];
-        }
-
-        for(size_t currCycle = TotalCycles-1; currCycle>0; --currCycle)
-        {
-            auto it = insInAllCycles.find(currCycle);
-            if( it != insInAllCycles.end() )
+            ssbundles << "    ";
+            for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
             {
-                auto nInsThisCycle = insInAllCycles[currCycle].size();
-                for(size_t i=0; i<nInsThisCycle; ++i )
+                auto firstInsIt = secIt->begin();
+                auto insqasm = (*(firstInsIt))->qasm();
+                ssbundles << insqasm << " ";
+
+                if( std::next(secIt) != abundle.ParallelSections.end() )
                 {
-                    ss << insInAllCycles[currCycle][i];
-                    if( i != nInsThisCycle - 1 ) // last instruction
-                        ss << " | ";
+                    ssbundles << " | ";
                 }
             }
+
+            auto bcycle = abundle.start_cycle;
+            auto delta = bcycle - curr_cycle;
+            if(delta>0)
+                ssbundles << "\n    qwait " << delta << "\n";
             else
-            {
-                ss << "   nop";
-            }
-            ss << endl;
+                ssbundles << "\n";
+
+            curr_cycle+=delta;
         }
-        return ss.str();
+
+        return ssbundles.str();
     }
 
     // the following without nops
@@ -927,7 +918,7 @@ public:
 
 
     // the following inserts nops
-    Bundles GetBundlesScheduleALAP2(bool verbose=false)
+    Bundles GetBundlesScheduleALAPWithNOPS(bool verbose=false)
     {
         if(verbose) println("Scheduling ALAP to get bundles ...");
         Bundles bundles;
