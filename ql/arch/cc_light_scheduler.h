@@ -505,6 +505,7 @@ void cc_light_schedule(std::string prog_name, size_t nqubits, ql::circuit & ckt,
     if(verbose) println("Scheduling CC-Light instructions ...");
     Scheduler sched;
     sched.Init(nqubits, ckt, platform, verbose);
+    // sched.PrintDot();
     bundles1 = sched.GetBundlesScheduleALAP(verbose);
 
     // combine parallel instrcutions of same type from different sections
@@ -570,7 +571,7 @@ void cc_light_schedule_rc( std::string prog_name, size_t nqubits, ql::circuit & 
     resource_manager_t rm(platform);
     Scheduler sched;
     sched.Init(nqubits, ckt, platform, verbose);
-
+    // sched.PrintDot();
     bundles1 = sched.GetBundlesScheduleALAP(rm, verbose);
 
     // combine parallel instrcutions of same type from different sections

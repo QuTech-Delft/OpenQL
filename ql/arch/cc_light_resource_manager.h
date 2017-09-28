@@ -73,7 +73,7 @@ public:
     {
         for( auto q : ins->operands )
         {
-            state[q] = cycle - (ins->duration)/platform_cycle_time;
+            state[q] = cycle; // - (ins->duration)/platform_cycle_time; // duration already taken care of
             // println("reserved. curr cycle: " << cycle << " qubit: " << q << " reserved till cycle: " << state[q]);
         }
     }
@@ -138,7 +138,7 @@ public:
         {
             for( auto q : ins->operands )
             {
-                state[ qubit2qwg[q] ]  = cycle - (ins->duration)/platform_cycle_time;
+                state[ qubit2qwg[q] ]  = cycle; // - (ins->duration)/platform_cycle_time; // duration already taken care of
                 operations[ qubit2qwg[q] ] = ins->name;
                 // println("reserved. curr cycle: " << cycle << " qwg: " << qubit2qwg[q] << " reserved till cycle: " << state[ qubit2qwg[q] ] 
                 //           << " for operation: " << operations[ qubit2qwg[q] ] );
@@ -199,7 +199,7 @@ public:
         {
             for(auto q : ins->operands)
             {
-                state[ qubit2meas[q] ] = cycle - (ins->duration)/platform_cycle_time;
+                state[ qubit2meas[q] ] = cycle;// - (ins->duration)/platform_cycle_time; // duration already taken care of
                 // println("reserved. curr cycle: " << cycle << " meas: " << qubit2meas[q] << " reserved till cycle: " << state[ qubit2meas[q] ] 
                 //           << " for operation: measure");
             }
@@ -231,7 +231,7 @@ public:
             size_t s = anedge["src"];
             size_t d = anedge["dst"];
             size_t e = anedge["id"];
-            // println(s << " " << d << " : " << e);
+            println(s << " " << d << " : " << e);
 
             qubits_pair_t aqpair(s,d);
             auto it = qubits2edge.find(aqpair);
@@ -242,9 +242,9 @@ public:
             }
             else
             {
-                qubits_pair_t arqpair(d,s);
+                // qubits_pair_t arqpair(d,s);
                 qubits2edge[aqpair] = e;
-                qubits2edge[arqpair] = e;
+                // qubits2edge[arqpair] = e;
             }
         }
 
@@ -306,7 +306,7 @@ public:
             state[edge_no] = cycle + ins->duration - 1;
             for(auto & e : edge2edges[edge_no])
             {
-                state[e] = cycle - (ins->duration)/platform_cycle_time;
+                state[e] = cycle; // - (ins->duration)/platform_cycle_time; // duration already taken care of
             }
 
             // println("reserved. curr cycle: " << cycle << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] 
