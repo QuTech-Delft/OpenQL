@@ -52,14 +52,22 @@ def test_bug():
 
     k = ql.Kernel('aKernel', platform)
 
+
     k.prepz(0)
-    k.gate('rx180', 0)
+    k.prepz(1)
     # k.x(0)
     k.measure(0)
-    k.gate('rx180', 0)
-    k.gate('rx180', 0)
-    k.prepz(0)
-    k.measure(0)
+    k.measure(1)
+    # k.x(0)
+    # k.gate('rx180', 0)
+
+    # k.gate('rx180', 0)
+    # # k.x(0)
+    # k.measure(0)
+    # k.gate('rx180', 0)
+    # k.gate('rx180', 0)
+    # k.prepz(0)
+    # k.measure(0)
 
     # add the kernel to the program
     p.add_kernel(k)
@@ -68,4 +76,38 @@ def test_bug():
     p.compile(optimize=False, verbose=True)
 
 if __name__ == '__main__':
+    # test1()
     test_bug()
+
+# should mw_mw_buffer be there at the top of gate duration or its the minimum between two gates?
+#   whenever there are back to back operations, buffer need to be adjusted
+
+# what about latency?
+#   yes it should be compensated and it can be +ve/-ve
+
+# size of bundle cannot be > 2?
+#   Nope, no limit
+
+# can operations of different types be combined together in one bundle?
+#   yes, no problem
+
+# mw - mw
+# k.prepz(0)
+# k.x(0)
+
+# mw - readout
+# k.prepz(0)
+# k.measure(1)
+
+# mw - flux
+# k.prepz(1)
+# k.cnot(2, 0)
+
+# flux - mw
+# k.cnot(2, 0)
+# k.prepz(1)
+
+# bundle size limit
+# k.prepz(0)
+# k.x(1)
+# k.y(2)
