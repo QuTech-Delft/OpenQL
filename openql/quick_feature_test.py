@@ -38,34 +38,6 @@ def test1():
 
     # compile the program
     p.compile(optimize=False, verbose=True)
-  
-
-def test_bug():
-    config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
-    # config_fn = os.path.join(curdir, '/home/iashraf/Desktop/test.json')
-    platform  = ql.Platform('seven_qubits_chip', config_fn)
-    sweep_points = [1,2]
-    num_circuits = 1
-    num_qubits = 7
-    p = ql.Program('aProgram', num_qubits, platform)
-    p.set_sweep_points(sweep_points, num_circuits)
-
-    k = ql.Kernel('aKernel', platform)
-
-    k.prepz(0)
-    k.gate('rx180', 0)
-    # k.x(0)
-    k.measure(0)
-    k.gate('rx180', 0)
-    k.gate('rx180', 0)
-    k.prepz(0)
-    k.measure(0)
-
-    # add the kernel to the program
-    p.add_kernel(k)
-
-    # compile the program
-    p.compile(optimize=False, verbose=True)
 
 if __name__ == '__main__':
     test_bug()
