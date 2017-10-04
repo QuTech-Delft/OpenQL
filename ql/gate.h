@@ -2,6 +2,7 @@
  * @file   gate.h
  * @date   11/2016
  * @author Nader Khammassi
+ *         Imran Ashraf
  * @brief  gates implementation
  */
 
@@ -1328,11 +1329,29 @@ class composite_gate : public custom_gate
     cmat_t m;
     double angle;
     std::vector<gate *> gs;
-    // std::string  name;
+    std::vector<std::string> gs_names; // list of names of gates in gate sequence
+    bool is_decomposed;
+
+    composite_gate(std::string name) : custom_gate(name)
+    {
+        duration = 0;
+        is_decomposed = false;
+    }
+
+    composite_gate(std::string name, std::vector<std::string> gs_name_seq) : custom_gate(name)
+    {
+        duration = 0;
+        is_decomposed = false;
+        for (auto & gs_name : gs_name_seq)
+        {
+           gs_names.push_back(gs_name);
+        }
+    }
 
     composite_gate(std::string name, std::vector<gate *> seq) : custom_gate(name)
     {
         duration = 0;
+        is_decomposed = true;
         for (gate * g : seq)
         {
            gs.push_back(g);

@@ -9,10 +9,12 @@
 #include <fstream>
 #include <string>
 #include <map>
-
 #include <typeinfo>
-
 #include <cmath>
+
+#include <sstream>
+#include <algorithm>
+#include <iterator>
 
 #include <ql/openql.h>
 #include <ql/exception.h>
@@ -129,7 +131,7 @@ public:
             std::string simple_instruction_name(name);
             if( attr.find("cc_light_instr") != attr.end() )
             {
-               simple_instruction_name = attr["cc_light_instr"];
+                simple_instruction_name = attr["cc_light_instr"];
             }
 
             // supported_gates.push_back(load_instruction(name,attr));
@@ -138,37 +140,81 @@ public:
                 println("[!] warning : ql::hardware_configuration::load() : instruction '" << name << "' redefined : the old definition is overwritten !");
 
             instruction_map[name] = load_instruction(simple_instruction_name, attr);
-            // println("instruction " << name << " loaded.");
+            println("instruction " << name << " loaded.");
         }
-        
+
         // load gate decomposition/aliases
+        std::vector<ql::composite_gate *> gates_to_be_decomposed;
         if (!config["gate_decomposition"].is_null())
         {
-           json gate_decomposition = config["gate_decomposition"];
-           for (json::iterator it = gate_decomposition.begin(); it != gate_decomposition.end(); ++it)
-           {
-              std::string  name = it.key();
-              str::lower_case(name);
-              json         attr = *it; //.value();
-              // check for duplicate operations
-              if (instruction_map.find(name) != instruction_map.end())
-                println("[!] warning : ql::hardware_configuration::load() : composite instruction '" << name << "' redefined : the old definition is overwritten !");
+            json gate_decomposition = config["gate_decomposition"];
+            for (json::iterator it = gate_decomposition.begin(); it != gate_decomposition.end(); ++it)
+            {
+                std::string  name = it.key();
+                str::lower_case(name);
+                json         attr = *it;
 
-              if (!attr.is_array())
-                 throw ql::exception("[x] error : ql::hardware_configuration::load() : 'gate_decomposition' section : gate '"+name+"' is malformed !",false);
-              std::vector<gate *> gs;
-              for (size_t i=0; i<attr.size(); ++i)
-              {
-                 std::string instr_name = attr[i];
-                 // println("checking if instruction '" << instr_name << "' is already defined...");
-                 if (instruction_map.find(instr_name) == instruction_map.end())
-                       throw ql::exception("[x] error : ql::hardware_configuration::load() : 'gate_decomposition' section : instruction "+instr_name+" composing gate '"+name+"' is not defined !",false);
-                 gs.push_back(instruction_map[instr_name]);
-              }
-              instruction_map[name] = new composite_gate(name,gs);
-           }
+                // check for duplicate operations
+                if (instruction_map.find(name) != instruction_map.end())
+                    println("[!] warning : ql::hardware_configuration::load() : composite instruction '" << name << "' redefined : the old definition is overwritten !");
+
+                if (!attr.is_array())
+                    throw ql::exception("[x] error : ql::hardware_configuration::load() : 'gate_decomposition' section : gate '"+name+"' is malformed !",false);
+
+                // for composite gates, only there names are added to the list
+                // this is important as some of the gates might not be known
+                // later these names will be used to dcompose this composite gate
+                // TODO this vector initialization can be optimized
+                std::vector<std::string> gate_names;
+                for (size_t i=0; i<attr.size(); ++i)
+                {
+                    gate_names.push_back( attr[i] );
+                }
+                instruction_map[name] = new composite_gate(name, gate_names);
+                gates_to_be_decomposed.push_back( instruction_map[name] );
+            }
+
+            // as all the composite gates are now known, start decomposing these gates
+            for (auto & comp_gate : gates_to_be_decomposed)
+            {
+                for( auto & gname : comp_gate.gs_names)
+                {
+                    
+                }
+            }
         }
     }
+
+
+/*
+                std::vector<gate *> gs;
+                for (size_t i=0; i<attr.size(); ++i)
+                {
+                    std::string instr_name = attr[i];
+                    if ( instruction_map.find(instr_name) == instruction_map.end() )
+                    {
+                        // the gates used in decompositon are not already known
+
+                        // if( instr_name.find("%") != std::string::npos )
+                        {
+                            // add sub-gate for generalized gate decomposition as its not available
+                            std::cout << "[GD] Creating and adding custom_gate: " << instr_name << std::endl;
+                            instruction_map[instr_name] = new composite_gate(instr_name);
+                            gs.push_back( instruction_map[instr_name] );
+                        }
+                        // else
+                        // {
+                        //     throw ql::exception("[x] error : ql::hardware_configuration::load() : 'gate_decomposition' section : instruction "+instr_name+" composing gate '"+name+"' is not defined !",false);
+                        // }
+                    }
+                    else
+                    {
+                        // the gates used in decompositon are known
+                        gs.push_back( instruction_map[instr_name] );
+                    }
+                }
+                instruction_map[name] = new composite_gate(name,gs);
+*/
 
     /**
      * load_instruction

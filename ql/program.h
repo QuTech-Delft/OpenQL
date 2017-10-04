@@ -283,10 +283,10 @@ class quantum_program
             std::string kernel_sched_qasm;
             std::string kernel_sched_dot;
             k.schedule(qubits, platform, scheduler, kernel_sched_qasm, kernel_sched_dot, verbose);
-            sched_qasm += "." + k.getName() + "\n";
+            sched_qasm += "." + k.get_name() + "\n";
             sched_qasm += kernel_sched_qasm;
 
-            string fname = ql::utils::get_output_dir() + "/" + k.getName() + scheduler + ".dot";
+            string fname = ql::utils::get_output_dir() + "/" + k.get_name() + scheduler + ".dot";
             if (verbose) println("writing scheduled qasm to '" << fname << "' ...");
             ql::utils::write_file(fname, kernel_sched_dot);
          }
@@ -303,7 +303,7 @@ class quantum_program
 
          for (auto k : kernels)
          {
-            InteractionMatrix imat( k.getCircuit(), qubits);
+            InteractionMatrix imat( k.get_circuit(), qubits);
             string mstr = imat.getString();
             std::cout << mstr << std::endl;
          }
@@ -313,10 +313,10 @@ class quantum_program
       {
          for (auto k : kernels)
          {
-            InteractionMatrix imat( k.getCircuit(), qubits);
+            InteractionMatrix imat( k.get_circuit(), qubits);
             string mstr = imat.getString();
 
-            string fname = ql::utils::get_output_dir() + "/" + k.getName() + "InteractionMatrix.dat";
+            string fname = ql::utils::get_output_dir() + "/" + k.get_name() + "InteractionMatrix.dat";
             if (verbose) println("writing interaction matrix to '" << fname << "' ...");
             ql::utils::write_file(fname, mstr);
          }

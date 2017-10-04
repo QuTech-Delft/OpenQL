@@ -55,12 +55,9 @@ public:
 
     Kernel(std::string kname, Platform p)
     {
-        // std::cout << "kernel::kernel()" << std::endl;
         name = kname;
         ql_kernel = new ql::quantum_kernel(name, *(p.ql_platform));
     }
-    // std::string name() {return ql_kernel_name;}
-
     void identity(size_t q0)
     {
         ql_kernel->identity(q0);
@@ -149,6 +146,10 @@ public:
     {
         ql_kernel->cphase(q0,q1);
     }
+    void cz(size_t q0, size_t q1)
+    {
+        ql_kernel->cz(q0,q1);
+    }
     void toffoli(size_t q0, size_t q1, size_t q2)
     {
         ql_kernel->toffoli(q0,q1,q2);
@@ -161,18 +162,25 @@ public:
     {
         ql_kernel->print_gates_definition();
     }
+    void gate(std::string name)
+    {
+        ql_kernel->gate(name);
+    }
+    void gate(std::string name, size_t qubit)
+    {
+        ql_kernel->gate(name, std::vector<size_t> {qubit} );
+    }
+    void gate(std::string name, size_t qubit0, size_t qubit1)
+    {
+        ql_kernel->gate(name, std::vector<size_t> {qubit0, qubit1} );
+    }
     void gate(std::string name, std::vector<size_t> qubits)
     {
         ql_kernel->gate(name, qubits);
     }
-    void gate(std::string name, size_t qubit)
-    {
-        ql_kernel->gate(name, qubit);
-    }
 
     ~Kernel()
     {
-        //std::cout << "kernel::~kernel()" << std::endl;
         delete(ql_kernel);
     }
 };
