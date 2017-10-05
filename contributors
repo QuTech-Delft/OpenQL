@@ -6,10 +6,12 @@ OpenQL framework has been created initially by Nader Khammassi.
 Contributors:
 
 - Imran Ashraf 
+    Support for multi-qubit gates
     Implemented ASAP/ALAP Gate Scheduling Algorithms
+    Implemented parametrized gate decomposition
+    CMake-based Compilation for cross-platform build setup
     Created a Python Package for OpenQL
-    Setup CMake-based Compilation
-    ...
+
 
 - Adriaan Rol and Xiang Fu
     Contributed to the Hardware Configuration Specification

@@ -838,6 +838,11 @@ public:
 
         for (Bundle & abundle : bundles)
         {
+            auto bcycle = abundle.start_cycle;
+            auto delta = bcycle - curr_cycle;
+            if(delta>0)
+                ssbundles << "\n    qwait " << delta << "\n";
+
             ssbundles << "    ";
             for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
             {
@@ -850,17 +855,9 @@ public:
                     ssbundles << " | ";
                 }
             }
-
-            auto bcycle = abundle.start_cycle;
-            auto delta = bcycle - curr_cycle;
-            if(delta>0)
-                ssbundles << "\n    qwait " << delta << "\n";
-            else
-                ssbundles << "\n";
-
+            ssbundles << "\n";
             curr_cycle+=delta;
         }
-
         return ssbundles.str();
     }
 

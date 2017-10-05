@@ -40,28 +40,24 @@ def test_cclight():
     p.compile(optimize=False, verbose=True)
 
 def test_none():
-    config_fn = os.path.join(curdir, '../tests/test_config_default.json')
-    platform  = ql.Platform('seven_qubits_chip', config_fn)
+    config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
+    platform  = ql.Platform('platform_none', config_fn)
     sweep_points = [1,2]
     num_circuits = 1
-    num_qubits = 7
+    num_qubits = 17
     p = ql.Program('aProgram', num_qubits, platform)
     p.set_sweep_points(sweep_points, num_circuits)
 
     k = ql.Kernel('aKernel', platform)
 
-    k.prepz(0)
-    k.prepz(1)
-    # k.gate("rot_90",0)
-    # k.gate("rot2_90",0)
-    k.gate("rot3_90",1)
-    # k.gate("cust_cnot", 0, 1 ) # ok
-    k.gate("cust_cnot", 2, 3 )
+    k.x(0) # x will be dcomposed
+    k.gate("x",0); # x will be dcomposed
+    k.gate("y",0); # decomposition not available, will use custom gate
+    k.gate("s",1); # decomposition as well as custom gate not available, will use default gate
+    k.gate("roty90",0) # any name can be used for composite gate
 
-    # k.gate("cnot", 2, 3 ) #???
-    # k.gate("cnot", [2, 3] ) #???
-    k.measure(0)
-    k.measure(1)
+    k.gate("cnot", 0, 1) # cnot will be decomposed
+    k.gate("cnot", [2, 3]) # same as above but with a list of qubits
 
     # add the kernel to the program
     p.add_kernel(k)
@@ -72,16 +68,5 @@ def test_none():
 if __name__ == '__main__':
     test_none()
 
-
-# composite gate names should be different than the other gates
-#   composite gate name should start with "%"
-# I think it is possible to keep them even same by
-# saving list of gate names on the right side used in decomposition
-# at the time of loading hardware configuration file
-# and add them later only when actual gate is added to kernel.
-
-# "%rot_90 0" : ["ry90 0"],
-# "%rot2_90 0" : ["%rot_90 0", "ry90 0"],
-# "%rot3_90 0" : ["%rot2_90 0", "ry90 0"],
-
-# "%cnot 0,1" : ["ry90 1","cz 0,1","ry90 1"]
+# optimize parameter passing as ref
+# optimize vector assignments
