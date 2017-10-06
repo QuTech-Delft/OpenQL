@@ -1342,7 +1342,7 @@ class composite_gate : public custom_gate
         {
            gs.push_back(g);
            duration += g->duration;
-           operands.insert(operands.end(), g->operands.begin(),g->operands.end());
+           operands.insert(operands.end(), g->operands.begin(), g->operands.end());
         }
     }
 

@@ -61,7 +61,7 @@ public:
         // load eqasm compiler backend
         if (config["eqasm_compiler"].is_null())
         {
-            println("[x] error : ql::hardware_configuration::load() : eqasm compiler backend is not specified in the hardware config file !");
+            EOUT("eqasm compiler backend is not specified in the hardware config file !");
             // throw std::exception();
             throw ql::exception("[x] error : ql::hardware_configuration::load() : eqasm compiler backend is not specified in the hardware config file !",false);
         }
@@ -73,7 +73,7 @@ public:
         // load hardware_settings
         if (config["hardware_settings"].is_null())
         {
-            println("[x] error : ql::hardware_configuration::load() : 'hardware_settings' section is not specified in the hardware config file !");
+            EOUT("'hardware_settings' section is not specified in the hardware config file !");
             // throw std::exception();
             throw ql::exception("[x] error : ql::hardware_configuration::load() : 'hardware_settings' section is not specified in the hardware config file !",false);
         }
@@ -85,7 +85,7 @@ public:
         // load instruction_settings
         if (config["instructions"].is_null())
         {
-            println("[x] error : ql::hardware_configuration::load() : 'instructions' section is not specified in the hardware config file !");
+            EOUT("'instructions' section is not specified in the hardware config file !");
             throw ql::exception("[x] error : ql::hardware_configuration::load() : 'instructions' section is not specified in the hardware config file !",false);
         }
         else
@@ -98,7 +98,7 @@ public:
         // load platform resources
         if (config["resources"].is_null())
         {
-            println("[x] error : ql::hardware_configuration::load() : 'resources' section is not specified in the hardware config file !");
+            EOUT("'resources' section is not specified in the hardware config file !");
             throw ql::exception("[x] error : ql::hardware_configuration::load() : 'resources' section is not specified in the hardware config file !",false);
         }
         else
@@ -109,7 +109,7 @@ public:
         // load platform topology
         if (config["topology"].is_null())
         {
-            println("[x] error : ql::hardware_configuration::load() : 'topology' section is not specified in the hardware config file !");
+            EOUT("'topology' section is not specified in the hardware config file !");
             throw ql::exception("[x] error : ql::hardware_configuration::load() : 'topology' section is not specified in the hardware config file !",false);
         }
         else
@@ -128,10 +128,10 @@ public:
 
             // check for duplicate operations
             if (instruction_map.find(name) != instruction_map.end())
-                println("[!] warning : ql::hardware_configuration::load() : instruction '" << name << "' redefined : the old definition is overwritten !");
+                WOUT("instruction '" << name << "' redefined : the old definition is overwritten !");
 
             instruction_map[name] = load_instruction(name, attr);
-            println("instruction " << name << " loaded.");
+            DOUT("instruction " << name << " loaded.");
         }
 
         // load gate decomposition/aliases
@@ -142,9 +142,10 @@ public:
             {
                 std::string  comp_ins = it.key();
                 str::lower_case(comp_ins);
-                std::cout << "\n[GD] Adding composite instr : " << comp_ins << std::endl;
+                DOUT("");
+                DOUT("Adding composite instr : " << comp_ins);
                 std::replace( comp_ins.begin(), comp_ins.end(), ',', ' ');                
-                std::cout << "[GD] Adjusted composite instr : " << comp_ins << std::endl;
+                DOUT("Adjusted composite instr : " << comp_ins);
 
                 // check for duplicate operations
                 if (instruction_map.find(comp_ins) != instruction_map.end())
@@ -159,7 +160,7 @@ public:
                 {
                     std::string sub_ins = sub_instructions[i];
                     str::lower_case(sub_ins);
-                    std::cout << "[GD] Adding sub instr: " << sub_ins << std::endl;
+                    DOUT("Adding sub instr: " << sub_ins);
 
                     std::replace( sub_ins.begin(), sub_ins.end(), ',', ' ');
 
@@ -177,18 +178,18 @@ public:
                         sub_ins_adjusted += "%" + std::to_string(tokens.size()-2);
                     }
 
-                    std::cout << "[GD] Adjusted sub instr: " << sub_ins_adjusted << std::endl;
+                    DOUT("Adjusted sub instr: " << sub_ins_adjusted);
 
                     if ( instruction_map.find(sub_ins_adjusted) != instruction_map.end() )
                     {
                         // using existing sub ins
-                        std::cout << "[GD] using existing sub instr : " << sub_ins_adjusted << std::endl;
+                        DOUT("using existing sub instr : " << sub_ins_adjusted);
                         gs.push_back( instruction_map[sub_ins_adjusted] );
                     }
                     else
                     {
                         // adding new sub ins
-                        std::cout << "[GD] adding new sub instr : " << sub_ins_adjusted << std::endl;
+                        DOUT("adding new sub instr : " << sub_ins_adjusted);
                         instruction_map[sub_ins_adjusted] = new composite_gate(sub_ins_adjusted);
                         gs.push_back( instruction_map[sub_ins_adjusted] );
                     }
@@ -209,7 +210,7 @@ public:
         {
             // todo : look for the target aliased gate
             //        copy it with the new name
-            println("[!] warning : hardware_configuration::load() : alias '" << name << "' detected but ignored (not supported yet : please define your instruction).");
+            WOUT("alias '" << name << "' detected but ignored (not supported yet : please define your instruction).");
             return g;
         }
         try
@@ -218,7 +219,7 @@ public:
         }
         catch (ql::exception e)
         {
-            println("[e] error while loading instruction '" << name << "' : " << e.what());
+            EOUT("error while loading instruction '" << name << "' : " << e.what());
             throw e;
             // ql::exception("[x] error : hardware_configuration::load_instruction() : error while loading instruction '" + name + "' : " + e.what(),false);
         }

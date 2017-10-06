@@ -12,7 +12,20 @@
 
 #include <limits>
 
-#define println(x) std::cout << "[openql] "<< x << std::endl
+#define println(x) std::cout << "[OPENQL] "<< x << std::endl
+
+#define COUT(content) std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" "<< content << std::endl
+#define WOUT(content) std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" Warning: "<< content << std::endl
+#define EOUT(content) std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" Error: "<< content << std::endl
+
+// #ifdef DEBUG
+// #define DOUT(content)                          COUT(content)
+// #else
+// #define DOUT(content)
+// #endif
+
+#define DOUT(content)
+
 
 auto MAX_CYCLE = std::numeric_limits<int>::max(); // TODO should go to utils
 

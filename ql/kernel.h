@@ -477,11 +477,11 @@ public:
     void get_decomposed_ins( ql::composite_gate * gptr, std::vector<std::string> & sub_instructons )
     {
         auto & sub_gates = gptr->gs;
-        std::cout << "composite ins: " << gptr->name << std::endl;
+        DOUT("composite ins: " << gptr->name);
         for(auto & agate : sub_gates)
         {
             std::string & sub_ins = agate->name;
-            std::cout << "  sub ins: " << sub_ins << std::endl;
+            DOUT("  sub ins: " << sub_ins);
             auto it = gate_definition.find(sub_ins);
             if( it != gate_definition.end() )
             {
@@ -509,21 +509,21 @@ public:
             instr_parameterized += "%" + std::to_string(i);
         }
 
-        std::cout << "instr_parameterized: " << instr_parameterized << std::endl;
+        DOUT("instr_parameterized: " << instr_parameterized);
 
         // check for composite ins
         auto it = gate_definition.find(instr_parameterized);
         if( it != gate_definition.end() )
         {
-            std::cout << "composite gate found for " << instr_parameterized << std::endl;
+            DOUT("composite gate found for " << instr_parameterized);
             composite_gate * gptr = (composite_gate *)(it->second);
             std::vector<std::string> sub_instructons;
             get_decomposed_ins( gptr, sub_instructons );
             for(auto & sub_ins : sub_instructons)
             {
-                std::cout << "Adding sub ins: " << sub_ins << std::endl;
+                DOUT("Adding sub ins: " << sub_ins);
                 std::replace( sub_ins.begin(), sub_ins.end(), ',', ' ');
-                std::cout << " after comma removal, sub ins: " << sub_ins << std::endl;
+                DOUT(" after comma removal, sub ins: " << sub_ins);
                 std::istringstream iss(sub_ins);
 
                 std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
@@ -542,7 +542,7 @@ public:
                 if(!custom_added)
                 {
                     // default gate check
-                    std::cout << "adding default gate for " << sub_ins_name << std::endl;
+                    DOUT("adding default gate for " << sub_ins_name);
                     bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits);
                     if( !default_available )
                     {
@@ -555,7 +555,7 @@ public:
         }
         else
         {
-            std::cout << "composite gate not found for " << instr_parameterized << std::endl;
+            DOUT("composite gate not found for " << instr_parameterized);
         }
         return added;
     }
@@ -590,24 +590,26 @@ public:
         // if not, then error
 
         str::lower_case(gname);
-        std::cout << "Adding gate : " << gname << std::endl;
-        std::cout << "trying to add decomposed gate for: " << gname << std::endl;
+        DOUT("Adding gate : " << gname);
+        DOUT("trying to add decomposed gate for: " << gname);
         // specialized/parameterized composite gate check
         bool decom_added = add_decomposed_gate_if_available(gname, qubits);
         if(decom_added)
         {
-            std::cout << "decomposed gates added for " << gname << std::endl;
+            DOUT("decomposed gates added for " << gname);
         }
         else
         {
             // specialized/parameterized custom gate check
-            std::cout << "adding custom gate for " << gname << std::endl;
+            DOUT("adding custom gate for " << gname);
             bool custom_added = add_custom_gate_if_available( gname, qubits );
             if(!custom_added)
             {
                 // default gate check (which is always parameterized)
-            	std::cout << "adding default gate for " << gname;
-                for(auto & q : qubits) std::cout << " " << q << ",";
+            	// DOUT("adding default gate for " << gname);
+                //   for(auto & q : qubits)
+                //        DOUT(" " << q << ",");
+
 				bool default_available = add_default_gate_if_available(gname, qubits);
 				if( !default_available )
                 {
@@ -616,15 +618,15 @@ public:
                 }
                 else
                 {
-                    std::cout << "default gate added for " << gname << std::endl;
+                    DOUT("default gate added for " << gname);
                 }
             }
             else
             {
-                std::cout << "custom gate added for " << gname << std::endl;
+                DOUT("custom gate added for " << gname);
             }
         }
-        std::cout << std::endl;
+        DOUT("");
     }
 
 

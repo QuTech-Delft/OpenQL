@@ -241,8 +241,18 @@ public:
         }
         */
 
+        Bundles schedBundles = cc_light_schedule_rc(prog_name, num_qubits, c, platform, verbose);
         // cc_light_schedule(prog_name, num_qubits, c, platform, verbose);
-        cc_light_schedule_rc(prog_name, num_qubits, c, platform, verbose);
+
+        // print scheduled bundles with parallelism
+        // PrintBundles(schedBundles, verbose);
+
+        // print scheduled bundles with parallelism in cc-light syntax
+        PrintCCLighQasm(prog_name, platform, schedBundles, verbose);
+
+        // print scheduled bundles with parallelism in cc-light syntax with time-stamps
+        PrintCCLighQasmTimeStamped(prog_name, platform, schedBundles, verbose);
+
 
         // time analysis
         // total_exec_time = time_analysis();
@@ -267,6 +277,7 @@ public:
         // return eqasm_code;
     }
 
+
     /**
      * display instruction and start time
      */
@@ -279,6 +290,7 @@ public:
             std::cout << t << " : " << instr->code() << std::endl;
         }
     }
+
 
     /**
      * decompose
