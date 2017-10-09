@@ -11,6 +11,10 @@
 #include "str.h"
 
 #include <limits>
+#include <algorithm>
+#include <iterator>
+#include <string>
+#include <sstream>
 
 #define println(x) std::cout << "[OPENQL] "<< x << std::endl
 
@@ -18,14 +22,13 @@
 #define WOUT(content) std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" Warning: "<< content << std::endl
 #define EOUT(content) std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" Error: "<< content << std::endl
 
-// #ifdef DEBUG
-// #define DOUT(content)                          COUT(content)
-// #else
-// #define DOUT(content)
-// #endif
-
+#ifdef DEBUG
+#define DOUT(content)                          COUT(content)
+#else
 #define DOUT(content)
+#endif
 
+// #define DOUT(content)
 
 auto MAX_CYCLE = std::numeric_limits<int>::max(); // TODO should go to utils
 
@@ -111,6 +114,18 @@ namespace ql
 	       std::cout << v[i] << separator; 
 	    std::cout << v[sz] << "]" << std::endl;
 	 }
+
+    template<class T>
+    std::string to_string(std::vector<T> v, std::string vector_prefix = "", 
+                          std::string elem_sep = ", ") 
+    {
+        std::ostringstream ss;
+        ss << vector_prefix << " [";
+        std::copy(v.begin(), v.end() - 1, std::ostream_iterator<T>(ss, elem_sep.c_str()) );
+        ss << v.back() << "]";
+        return ss.str();
+    }
+
 
 
     } // utils

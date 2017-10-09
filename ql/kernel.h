@@ -36,6 +36,7 @@ public:
     quantum_kernel(std::string name, ql::quantum_platform& platform) : name(name), iterations(1)
     {
         gate_definition = platform.instruction_map;
+        qubit_number = platform.qubit_number;
     }
 
     void loop(size_t it)
@@ -418,6 +419,34 @@ public:
     {
     	bool result=false;
 
+        bool is_one_qubit_gate = (gname == "identity") || (gname == "hadamard") || (gname == "s") || (gname == "sdag")
+                        || (gname == "t") || (gname == "tdag") || (gname == "rx90") || (gname == "mrx90") || (gname == "rx180")
+                        || (gname == "ry90") || (gname == "mry90") || (gname == "ry180")
+                        || (gname == "measure") || (gname == "prez");
+
+        bool is_two_qubit_gate = (gname == "cnot") || (gname == "cz") || (gname == "cphase");
+
+        if(is_one_qubit_gate)
+        {
+            if( qubits.size() != 1 )
+                return false;
+            if( qubits[0] < 0 || qubits[0] > qubit_number )
+                return false;
+        }
+        else if(is_two_qubit_gate)
+        {
+            if( qubits.size() != 2 )
+                return false;
+            if( qubits[0] > qubit_number || qubits[1] > qubit_number )
+                return false;
+            if( qubits[0] == qubits[1] )
+                return false;
+        }
+        else
+        {
+            return false;
+        }
+
              if( gname == "identity" )   { c.push_back(new ql::identity(qubits[0]) ); result = true; }
         else if( gname == "hadamard" )   { c.push_back(new ql::hadamard(qubits[0]) ); result = true; }
         else if( gname == "s" )          { c.push_back(new ql::phase(qubits[0]) ); result = true; }
@@ -471,6 +500,12 @@ public:
                 c.push_back(g);
             }
         }
+
+        if(added)
+            DOUT("custom gate added for " << gname);
+        else
+            DOUT("custom gate not added for " << gname);
+
         return added;
     }
 
@@ -537,6 +572,8 @@ public:
                     this_gate_qubits.push_back( all_qubits[ stoi( tokens[i].substr(1) ) ] );
                 }
 
+                DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
+
                 // custom gate check
                 bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits);
                 if(!custom_added)
@@ -546,8 +583,8 @@ public:
                     bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits);
                     if( !default_available )
                     {
-                        println("[x] error : unknown gate '" << sub_ins_name << "' !");
-                        throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+sub_ins_name+"' is not supported by the target platform !",false);
+                        EOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                        throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+sub_ins_name+"' with " +ql::utils::to_string(this_gate_qubits,"qubits")+" is not supported by the target platform !",false);
                     }
                 }
             }
@@ -590,7 +627,8 @@ public:
         // if not, then error
 
         str::lower_case(gname);
-        DOUT("Adding gate : " << gname);
+        DOUT("Adding gate : " << gname << " with " << ql::utils::to_string(qubits,"qubits"));
+
         DOUT("trying to add decomposed gate for: " << gname);
         // specialized/parameterized composite gate check
         bool decom_added = add_decomposed_gate_if_available(gname, qubits);
@@ -606,15 +644,13 @@ public:
             if(!custom_added)
             {
                 // default gate check (which is always parameterized)
-            	// DOUT("adding default gate for " << gname);
-                //   for(auto & q : qubits)
-                //        DOUT(" " << q << ",");
+            	DOUT("adding default gate for " << gname);
 
 				bool default_available = add_default_gate_if_available(gname, qubits);
 				if( !default_available )
                 {
-                	println("[x] error : unknown gate '" << gname << "' !");
-                	throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' is not supported by the target platform !",false);
+                	EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+                	throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
                 }
                 else
                 {
@@ -838,6 +874,7 @@ protected:
     std::string name;
     circuit     c;
     size_t      iterations;
+    size_t      qubit_number;
 
     std::map<std::string,custom_gate*> gate_definition;
 };

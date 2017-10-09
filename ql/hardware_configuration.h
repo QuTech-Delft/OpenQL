@@ -164,6 +164,11 @@ public:
 
                     std::replace( sub_ins.begin(), sub_ins.end(), ',', ' ');
 
+                    DOUT("After comma removal sub instr: " << sub_ins);
+
+                    std::string sub_ins_adjusted(sub_ins);
+
+                    /*
                     std::istringstream iss(sub_ins);
                     std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
                                      std::istream_iterator<std::string>{} };
@@ -179,6 +184,7 @@ public:
                     }
 
                     DOUT("Adjusted sub instr: " << sub_ins_adjusted);
+                    */
 
                     if ( instruction_map.find(sub_ins_adjusted) != instruction_map.end() )
                     {

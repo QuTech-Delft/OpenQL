@@ -62,6 +62,12 @@ class quantum_program
             println("[x] error : the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
             throw std::exception();
          }
+
+         if(nqubits > platform.qubit_number)
+         {
+            EOUT("number of qubits requested in program '" + std::to_string(nqubits) + "' is greater than the qubits available in platform '" + std::to_string(platform.qubit_number) + "'" );
+            throw ql::exception("[x] error : number of qubits requested in program '"+std::to_string(nqubits)+"' is greater than the qubits available in platform '"+std::to_string(platform.qubit_number)+"' !",false);
+         }
       }
 
       void add(ql::quantum_kernel k)
