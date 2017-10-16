@@ -1,4 +1,4 @@
-## Specifying experimental configuration
+# Specifying experimental configuration
 
 The goal of the config is to specify the information required by the compiler which compile user-defined C++ or Python program into 1) QISA instructions with corresponding microcode for CC-Light, or 2) qumis instructions for CBox_v3. It should be emphasized that flexibility and extensibility of this format is a driving requirement.  The config is specified in JSON and contains a nested dictionary with the required information for **every** allowed operation including it's arguments.  If there is no entry in the configuration for a specific operation with it's arguments then it is not allowed.  There is a different entry in the configuration for different arguments of the same function: e.g., `X180(q0)` and `X180(q1)` would be two distinct entries in the config. In addition to the configuration entries there are several globally defined parameters.
 
@@ -24,6 +24,7 @@ Entries are either an `alias` or a full entry.
 
 - `alias` entries only contain one item:
     + `alias` (str) : name of operation +args it is an alias of
+
 - full entries contain the following pieces of information
     + `duration` (int) : duration of the operation in ns
     + `latency` (int): latency of operation in ns
@@ -56,6 +57,18 @@ OpenQL supports the following instructions
     + no arguments
 - `measure`
     + no arguments
+
+## CC-Light instuction configuration
+Every quantum operation (QISA instruction) is translated into one or multiple microinstructions. For the first release of CC-Light, only one microinstruction is supported. Apart from above mentioned information required to specify full-entries,
+the following information should be specified to generate cc-light QISA code:
+
+- `cc_light_instr` (str):  the name of the operation in the program.
+- `physical qubits` (int): the address of targeted physical qubits. A list containing up to two integers ranging from 0 to 6. Can be empty. See appendix for more details.
+- `cc_light_instr_type` (str): which can be "single_qubit_gate" or "two_qubit_gate".
+- `cc_light_codeword` (int): 0\~255 for MW, 0\~7 for flux. Otherwise omiited.
+- `cc_light_opcode` (int): 0\~127 for single qubit operations, 128\~255 for two qubit operations.
+- `cc_light_cond` (int): value can 0, 1, 2, or 3. used for CC-Light fast feedback control. The opcode should be unique, however, the codeword for conditional operations can still be the same as for the unconditional variants of these operations.
+
 
 ## CC-Light platform configuration
 The configuration file speficies the resources available in the target platforms and the topology.
@@ -104,27 +117,6 @@ This section specifies:
 - `edges` definition which maps edge ids to edge `src` and `dst` qubits
 
 
-## CC-Light instuction configuration
-Every quantum operation (QISA instruction) is translated into one or multiple microinstructions. For the first release of CC-Light, only one microinstruction is supported. It should contain the following information:
-
-- `name` (str):  the name of the operation in the program.
-- `physical qubits` (int): the address of targeted physical qubits. A list containing up to two integers ranging from 0 to 6. Can be empty. See appendix for more details.
-- `type`: (int): 0 for single-qubit gates, 1 for two-qubit gates.
-- `op_left type`: one of either `MW`, `Flux`, `RO`, `None`.
-- `op_left` (int): 0\~255 for MW, 0\~7 for flux. Otherwise omiited.
-- `lut_idx` (int) : index of the lookuptable that stores the waveform.
-- `op_right type`: one of either `MW`, `Flux`, `RO`, `None`.
-- `op_right` (int): 0\~255 for MW, 0\~7 for flux. Otherwise omiited.
-- `lut_idx` (int) : index of the lookuptable that stores the waveform.
-
-
-## Potential extensibility and current flaws
-
-- **New qumis instructions** will be needed as hardware changes (e.g., vector switch matrix) or to support different platforms (spin-qubits, NV-centers, etc). This should not affect the structure of this config but will change the content in the future.
-- **Classical logic** is not specified in this document but does relate to the underlying qumis instructions, e.g, operations conditional on measurement outcomes.
-- **Composite qumis instructions**. In the current proposal it is not possible to specify composite qumis instructions even though there is a clear potential for this. An example would be quickly putting a copy of a pulse on a different channel or triggering a scope.
-- The format is flattened out completely, not taking use of any structure in the configuration. This is on purpose.
-
 ## Example use of aliases
 
 - CZ(q0, q1) -> CZ(q1, q0)
@@ -134,6 +126,13 @@ Every quantum operation (QISA instruction) is translated into one or multiple mi
 - X180(q0) -> X(q0)
 - X180(q0) -> rX180(q0)
 
+
+## Potential extensibility and current flaws
+
+- **New qumis instructions** will be needed as hardware changes (e.g., vector switch matrix) or to support different platforms (spin-qubits, NV-centers, etc). This should not affect the structure of this config but will change the content in the future.
+- **Classical logic** is not specified in this document but does relate to the underlying qumis instructions, e.g, operations conditional on measurement outcomes.
+- **Composite qumis instructions**. In the current proposal it is not possible to specify composite qumis instructions even though there is a clear potential for this. An example would be quickly putting a copy of a pulse on a different channel or triggering a scope.
+- The format is flattened out completely, not taking use of any structure in the configuration. This is on purpose.
 
 
 ## Appendix: Device channel to qubit mapping

@@ -38,7 +38,6 @@ def test1():
 
     # compile the program
     p.compile(optimize=False, verbose=True)
-  
 
 def test_bug():
     config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
