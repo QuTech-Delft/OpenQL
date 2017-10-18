@@ -72,6 +72,24 @@ class quantum_program
 
       void add(ql::quantum_kernel k)
       {
+         // check sanity of supplied qubit numbers for each gate
+         ql::circuit& kc = k.get_circuit();
+         for( auto & g : kc )
+         {
+            auto & gate_operands = g->operands;
+            auto & gname = g->name;
+            for(auto & qno : gate_operands)
+            {
+               DOUT("qno : " << qno);
+               if( qno < 0 || qno >= qubits )
+               {   
+                   EOUT("No of qubits in program: " << qubits << ", specified qubit number out of range for gate:'" << gname << "' with " << ql::utils::to_string(gate_operands,"qubits") );
+                   throw ql::exception("[x] error : ql::kernel::gate() : No of qubits in program: "+std::to_string(qubits)+", specified qubit number out of range for gate '"+gname+"' with " +ql::utils::to_string(gate_operands,"qubits")+" !",false);
+               }
+            }
+         }
+
+         // if sane, now add kernel to list of kernels
          kernels.push_back(k);
       }
 
@@ -292,9 +310,10 @@ class quantum_program
             sched_qasm += "." + k.get_name() + "\n";
             sched_qasm += kernel_sched_qasm;
 
-            string fname = ql::utils::get_output_dir() + "/" + k.get_name() + scheduler + ".dot";
-            if (verbose) println("writing scheduled qasm to '" << fname << "' ...");
-            ql::utils::write_file(fname, kernel_sched_dot);
+            // disable generation of dot file for each kernel
+            // string fname = ql::utils::get_output_dir() + "/" + k.get_name() + scheduler + ".dot";
+            // if (verbose) println("writing scheduled qasm to '" << fname << "' ...");
+            // ql::utils::write_file(fname, kernel_sched_dot);
          }
 
          string fname = ql::utils::get_output_dir() + "/" + name + scheduler + ".qasm";

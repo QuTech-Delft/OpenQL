@@ -430,14 +430,10 @@ public:
         {
             if( qubits.size() != 1 )
                 return false;
-            if( qubits[0] < 0 || qubits[0] > qubit_number )
-                return false;
         }
         else if(is_two_qubit_gate)
         {
             if( qubits.size() != 2 )
-                return false;
-            if( qubits[0] > qubit_number || qubits[1] > qubit_number )
                 return false;
             if( qubits[0] == qubits[1] )
                 return false;
@@ -552,6 +548,16 @@ public:
         {
             DOUT("composite gate found for " << instr_parameterized);
             composite_gate * gptr = (composite_gate *)(it->second);
+            if( __composite_gate__ == gptr->type() )
+            {
+                COUT("composite gate type");
+            }
+            else
+            {
+                COUT("Not a composite gate type");
+                return false;
+            }
+
             std::vector<std::string> sub_instructons;
             get_decomposed_ins( gptr, sub_instructons );
             for(auto & sub_ins : sub_instructons)
@@ -619,6 +625,16 @@ public:
      */
     void gate(std::string gname, std::vector<size_t> qubits = {} )
     {
+        for(auto & qno : qubits)
+        {
+            DOUT("qno : " << qno);
+            if( qno < 0 || qno >= qubit_number )
+            {   
+                EOUT("Number of qubits in platform: " << std::to_string(qubit_number) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+                throw ql::exception("[x] error : ql::kernel::gate() : Number of qubits in platform: "+std::to_string(qubit_number)+", specified qubit numbers out of range for gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" !",false);
+            }
+        }
+        
         // check if composite gate is available
         // if not, check if a parameterized composite gate is available
         // if not, check if a specialized custom gate is available
@@ -752,7 +768,7 @@ public:
         {
             // sched.PrintScheduleASAP();
             // sched.PrintDotScheduleASAP();
-            sched_dot = sched.GetDotScheduleASAP();
+            // sched_dot = sched.GetDotScheduleASAP();
             // sched.PrintQASMScheduledASAP();
             sched_qasm = sched.GetQASMScheduledASAP();
         }
@@ -760,7 +776,7 @@ public:
         {
             // sched.PrintScheduleALAP();
             // sched.PrintDotScheduleALAP();
-            sched_dot = sched.GetDotScheduleALAP();
+            // sched_dot = sched.GetDotScheduleALAP();
             // sched.PrintQASMScheduledALAP();
             sched_qasm = sched.GetQASMScheduledALAP();
         }

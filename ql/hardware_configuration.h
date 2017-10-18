@@ -196,7 +196,9 @@ public:
                     {
                         // adding new sub ins
                         DOUT("adding new sub instr : " << sub_ins_adjusted);
-                        instruction_map[sub_ins_adjusted] = new composite_gate(sub_ins_adjusted);
+                        // sub-ins can only be custom instructions
+                        instruction_map[sub_ins_adjusted] = new custom_gate(sub_ins_adjusted);
+                        // instruction_map[sub_ins_adjusted] = new composite_gate(sub_ins_adjusted);
                         gs.push_back( instruction_map[sub_ins_adjusted] );
                     }
                 }

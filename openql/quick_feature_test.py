@@ -41,23 +41,35 @@ def test_cclight():
 
 def test_none():
     config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
+    # config_fn = os.path.join(curdir, '/home/iashraf/Desktop/cfg_patch.json')
+
     platform  = ql.Platform('platform_none', config_fn)
     sweep_points = [1,2]
     num_circuits = 1
-    num_qubits = 17
+    num_qubits = 2
     p = ql.Program('aProgram', num_qubits, platform)
     p.set_sweep_points(sweep_points, num_circuits)
 
     k = ql.Kernel('aKernel', platform)
 
-    k.x(0) # x will be dcomposed
-    k.gate("x",0); # x will be dcomposed
-    k.gate("y",0); # decomposition not available, will use custom gate
-    k.gate("s",1); # decomposition as well as custom gate not available, will use default gate
-    k.gate("roty90",0) # any name can be used for composite gate
+    # k.gate('measx', 2) #segfault
+    # k.gate('measx', 3) #appears but is non existing
+    # k.gate('measx', 4) #system error: bad_alloc
 
-    k.gate("cnot", 0, 1) # cnot will be decomposed
-    k.gate("cnot", [2, 3]) # same as above but with a list of qubits
+    # k.gate('measx', 1) # appears
+    # k.gate('measz', 1) # never appears
+    # k.gate('measx', 1) # appears
+    # k.gate('cnot', 0, 1)
+    k.gate('T', 0)
+
+    # k.x(0) # x will be dcomposed
+    # k.gate("x",0); # x will be dcomposed
+    # k.gate("y",0); # decomposition not available, will use custom gate
+    # k.gate("s",1); # decomposition as well as custom gate not available, will use default gate
+    # k.gate("roty90",0) # any name can be used for composite gate
+ 
+    # k.gate("cnot", 0, 1) # cnot will be decomposed
+    # k.gate("cnot", [2, 3]) # same as above but with a list of qubits
 
     # add the kernel to the program
     p.add_kernel(k)
@@ -67,37 +79,3 @@ def test_none():
   
 if __name__ == '__main__':
     test_none()
-
-
-# should mw_mw_buffer be there at the top of gate duration or its the minimum between two gates?
-#   whenever there are back to back operations, buffer need to be adjusted
-
-# what about latency?
-#   yes it should be compensated and it can be +ve/-ve
-
-# size of bundle cannot be > 2?
-#   Nope, no limit
-
-# can operations of different types be combined together in one bundle?
-#   yes, no problem
-
-# mw - mw
-# k.prepz(0)
-# k.x(0)
-
-# mw - readout
-# k.prepz(0)
-# k.measure(1)
-
-# mw - flux
-# k.prepz(1)
-# k.cnot(2, 0)
-
-# flux - mw
-# k.cnot(2, 0)
-# k.prepz(1)
-
-# bundle size limit
-# k.prepz(0)
-# k.x(1)
-# k.y(2)
