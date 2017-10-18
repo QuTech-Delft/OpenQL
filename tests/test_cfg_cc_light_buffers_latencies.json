@@ -4,15 +4,15 @@
    "hardware_settings": {
 	 "qubit_number": 7,
 	 "cycle_time" : 20,  
-	 "mw_mw_buffer": 0,
-	 "mw_flux_buffer": 0,
-	 "mw_readout_buffer": 0,
-	 "flux_mw_buffer": 0,
-	 "flux_flux_buffer": 0,
-	 "flux_readout_buffer": 0,
-	 "readout_mw_buffer": 0,
-	 "readout_flux_buffer": 0,
-	 "readout_readout_buffer": 0
+	 "mw_mw_buffer": 20,
+	 "mw_flux_buffer": 40,
+	 "mw_readout_buffer": 60,
+	 "flux_mw_buffer": 80,
+	 "flux_flux_buffer": 100,
+	 "flux_readout_buffer": 120,
+	 "readout_mw_buffer": 140,
+	 "readout_flux_buffer": 160,
+	 "readout_readout_buffer": 180
    },
 
   "resources":

@@ -276,7 +276,7 @@ class Test_basic(unittest.TestCase):
         k = ql.Kernel('aKernel', platform)
 
         k.measure(0)
-        k.measure(5)
+        k.measure(1)
 
         # add the kernel to the program
         p.add_kernel(k)
@@ -438,6 +438,54 @@ class Test_basic(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
+    def test_buffer_buffer_delays(self):
+        config_fn = os.path.join(curdir, 'test_cfg_cc_light_buffers_latencies.json')
+        platform = ql.Platform('seven_qubits_chip', config_fn)
+        sweep_points = [1, 2]
+        num_circuits = 1
+        num_qubits = 7
+        p = ql.Program('aProgram', num_qubits, platform)
+        p.set_sweep_points(sweep_points, num_circuits)
+
+        # populate kernel using default gates
+        k = ql.Kernel('aKernel', platform)
+        k.prepz(0)
+        k.prepz(1)
+        k.prepz(2)
+        k.prepz(3)
+        k.hadamard(0)
+        k.hadamard(1)
+        k.x(2)
+        k.x(3)
+        k.cnot(2, 0)
+        k.cnot(2, 0)
+        k.cnot(1, 4)
+        k.measure(0)
+        k.measure(1)
+        k.measure(2)
+        k.measure(3)
+
+        # add the kernel to the program
+        p.add_kernel(k)
+
+        # compile the program
+        p.compile(optimize=False, verbose=False)
+
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        assemble(QISA_fn)
 
 if __name__ == '__main__':
     unittest.main()
+
+
+# should mw_mw_buffer be there at the top of gate duration or its the minimum between two gates?
+#   whenever there are back to back operations, buffer need to be adjusted
+
+# what about latency?
+#   yes it should be compensated and it can be +ve/-ve
+
+# size of bundle cannot be > 2?
+#   Nope, no limit
+
+# can operations of different types be combined together in one bundle?
+#   yes, no problem

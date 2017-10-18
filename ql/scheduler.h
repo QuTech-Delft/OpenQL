@@ -62,7 +62,7 @@ public:
 
         // add dummy source node
         ListDigraph::Node srcNode = graph.addNode();
-        instruction[srcNode] = new ql::nop();
+        instruction[srcNode] = new ql::SOURCE();
         name[srcNode] = instruction[srcNode]->qasm();
         s=srcNode;
 
@@ -161,7 +161,7 @@ public:
 
         // add dummy target node
         ListDigraph::Node targetNode = graph.addNode();
-        instruction[targetNode] = new ql::nop();;
+        instruction[targetNode] = new ql::SINK();
         name[targetNode] = instruction[targetNode]->qasm();
         t=targetNode;
 
@@ -584,7 +584,7 @@ public:
     }
 
     /*
-    // with rc but without buffer
+    // with rc but without buffer-buffer delays and latency compensation
     void ScheduleALAP( ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order,
                        ql::arch::resource_manager_t & rm, bool verbose=false )
     {
@@ -639,7 +639,7 @@ public:
     */
 
 
-    // with rc and buffers
+    // with rc, buffer-buffer delays and latency compensation
     void ScheduleALAP( ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order,
                        ql::arch::resource_manager_t & rm, ql::quantum_platform & platform, bool verbose=false )
     {
@@ -682,6 +682,12 @@ public:
                 operation_type[*currNode] = "none";
             }
 
+            std::string operation_name(id);
+            if ( !platform.instruction_settings[id]["cc_light_instr"].is_null() )
+            {
+                operation_name = platform.instruction_settings[id]["cc_light_instr"];
+            }
+
             size_t currCycle=MAX_CYCLE;
             size_t buffer_cycles = 0;
             for( ListDigraph::OutArcIt arc(graph,*currNode); arc != INVALID; ++arc )
@@ -706,11 +712,11 @@ public:
             while(currCycle > 0)
             {
                 COUT("Trying to schedule: " << name[*currNode] << "  in cycle: " << currCycle);
-                if( rm.available(currCycle, instruction[*currNode], operation_type[*currNode]) )
+                if( rm.available(currCycle, instruction[*currNode], operation_name) )
                 {
                     DOUT("Resources available, Scheduled.");
 
-                    rm.reserve(currCycle-buffer_cycles, curr_ins, operation_type[*currNode]);
+                    rm.reserve(currCycle-buffer_cycles, curr_ins, operation_name);
                     cycle[*currNode]=currCycle-buffer_cycles;
                     break;
                 }
@@ -727,6 +733,44 @@ public:
             }
             ++currNode;
         }
+
+        DOUT("\nPrinting ALAP Schedule before latency compensation");
+        DOUT("Cycle   Cycle-simplified    Instruction");
+        for ( auto it = order.begin(); it != order.end(); ++it)
+        {
+            DOUT( cycle[*it] << " :: " << MAX_CYCLE-cycle[*it] << "  <- " << name[*it] );
+        }
+
+        // latency compensation
+        for ( auto it = order.begin(); it != order.end(); ++it)
+        {
+            auto & curr_ins = instruction[*it];
+            auto & id = curr_ins->name;
+            long latency_cycles=0;
+            if ( !platform.instruction_settings[id]["latency"].is_null() )
+            {
+                float latency_ns = platform.instruction_settings[id]["latency"];
+                latency_cycles = (std::ceil( std::abs(latency_ns) / cycle_time)) * ql::utils::sign_of(latency_ns);
+            }
+            cycle[*it] = cycle[*it] + latency_cycles;
+            // DOUT( MAX_CYCLE-cycle[*it] << " <- " << name[*it] << latency_cycles );
+        }
+
+        // re-order
+        std::sort
+            (
+                order.begin(),
+                order.end(),
+                [&](ListDigraph::Node & n1, ListDigraph::Node & n2) { return cycle[n1] > cycle[n2]; }
+            );
+
+        DOUT("\nPrinting ALAP Schedule after latency compensation");
+        DOUT("Cycle   Cycle-simplified    Instruction");
+        for ( auto it = order.begin(); it != order.end(); ++it)
+        {
+            DOUT( cycle[*it] << "     =     " << MAX_CYCLE-cycle[*it] << "        " << name[*it] );
+        }
+
         if(verbose) COUT("Performing RC ALAP Scheduling [Done].");
     }
 
@@ -1095,16 +1139,21 @@ public:
         std::vector<ListDigraph::Node>::iterator it;
         for ( it = order.begin(); it != order.end(); ++it)
         {
-            insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( instruction[*it] );
+            if( instruction[*it]->type() != ql::gate_type_t::__dummy_gate__ )
+            {
+                insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( instruction[*it] );
+                // insInAllCycles[ cycle[*it] ].push_back( instruction[*it] );
+            }
         }
 
         size_t TotalCycles = 0;
         if( ! order.empty() )
         {
             TotalCycles =  MAX_CYCLE - cycle[ *( order.rbegin() ) ];
+            // TotalCycles =  cycle[ *( order.rbegin() ) ];
         }
 
-        for(size_t currCycle = TotalCycles-1; currCycle>0; --currCycle)
+        for(int currCycle = TotalCycles; currCycle>=0; --currCycle)
         {
             auto it = insInAllCycles.find(currCycle);
             if( it != insInAllCycles.end() )
