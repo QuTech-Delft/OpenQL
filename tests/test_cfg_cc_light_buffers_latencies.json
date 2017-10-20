@@ -752,7 +752,7 @@
    },
    "y q4": {
       "duration": 40,
-      "latency": 0,
+      "latency": 20,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -764,7 +764,7 @@
    },
    "y q5": {
       "duration": 40,
-      "latency": 0,
+      "latency": -20,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
