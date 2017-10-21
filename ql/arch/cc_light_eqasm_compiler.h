@@ -113,15 +113,35 @@ public:
         control_store << "         Condition  OpTypeLeft  CW_Left  OpTypeRight  CW_Right\n";
         control_store << "     0:      0          0          0          0           0    \n";
 
+        std::map<std::string,size_t> instr_name_2_opcode;
         std::set<size_t> opcode_set;
+        size_t opcode=0;
         for (auto i : instruction_settings)
         {
             std::string instr_name = i["cc_light_instr"];
+            if (i["cc_light_opcode"].is_null())
+                throw ql::exception("[x] error : ql::eqasm_compiler::compile() : missing opcode for instruction '"+instr_name,false);
+            else
+                opcode = i["cc_light_opcode"];
+
+            auto mapit = instr_name_2_opcode.find(instr_name);
+            if( mapit != instr_name_2_opcode.end() )
+            {
+                // found
+                if( opcode != mapit->second )
+                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : multiple opcodes for instruction '"+instr_name,false);
+            }
+            else
+            {
+                // not found
+                instr_name_2_opcode[instr_name] = opcode;
+            }
+
             if (i["cc_light_instr_type"] == "single_qubit_gate")
             {
-                size_t opcode     = i["cc_light_opcode"];
                 if (opcode_set.find(opcode) != opcode_set.end())
                     continue;
+
                 // opcode range check
                 if (i["type"] == "readout")
                 {

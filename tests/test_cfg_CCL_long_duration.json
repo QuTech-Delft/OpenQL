@@ -5,7 +5,7 @@
         "cycle_time": 5,
         "mw_mw_buffer": 0,
         "mw_flux_buffer": 0,
-        "mw_readout_buffer": 20,
+        "mw_readout_buffer": 0,
         "flux_mw_buffer": 0,
         "flux_flux_buffer": 0,
         "flux_readout_buffer": 0,
@@ -608,7 +608,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_00",
             "cc_light_codeword": 0,
-            "cc_light_opcode": 8
+            "cc_light_opcode": 30
         },
         "i q1": {
             "duration": 20,
@@ -639,7 +639,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_00",
             "cc_light_codeword": 0,
-            "cc_light_opcode": 8
+            "cc_light_opcode": 30
         },
         "i q2": {
             "duration": 20,
@@ -670,7 +670,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_00",
             "cc_light_codeword": 0,
-            "cc_light_opcode": 8
+            "cc_light_opcode": 30
         },
         "i q3": {
             "duration": 20,
@@ -701,7 +701,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_00",
             "cc_light_codeword": 0,
-            "cc_light_opcode": 8
+            "cc_light_opcode": 30
         },
         "i q4": {
             "duration": 20,
@@ -732,7 +732,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_00",
             "cc_light_codeword": 0,
-            "cc_light_opcode": 8
+            "cc_light_opcode": 30
         },
         "i q5": {
             "duration": 20,
@@ -763,7 +763,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_00",
             "cc_light_codeword": 0,
-            "cc_light_opcode": 8
+            "cc_light_opcode": 30
         },
         "i q6": {
             "duration": 20,
@@ -794,7 +794,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_00",
             "cc_light_codeword": 0,
-            "cc_light_opcode": 8
+            "cc_light_opcode": 30
         },
         "i q7": {
             "duration": 20,
@@ -825,7 +825,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_00",
             "cc_light_codeword": 0,
-            "cc_light_opcode": 8
+            "cc_light_opcode": 30
         },
         "rX180 q0": {
             "duration": 20,
@@ -856,7 +856,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_01",
             "cc_light_codeword": 1,
-            "cc_light_opcode": 9
+            "cc_light_opcode": 31
         },
         "rX180 q1": {
             "duration": 20,
@@ -887,7 +887,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_01",
             "cc_light_codeword": 1,
-            "cc_light_opcode": 9
+            "cc_light_opcode": 31
         },
         "rX180 q2": {
             "duration": 20,
@@ -918,7 +918,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_01",
             "cc_light_codeword": 1,
-            "cc_light_opcode": 9
+            "cc_light_opcode": 31
         },
         "rX180 q3": {
             "duration": 20,
@@ -949,7 +949,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_01",
             "cc_light_codeword": 1,
-            "cc_light_opcode": 9
+            "cc_light_opcode": 31
         },
         "rX180 q4": {
             "duration": 20,
@@ -980,7 +980,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_01",
             "cc_light_codeword": 1,
-            "cc_light_opcode": 9
+            "cc_light_opcode": 31
         },
         "rX180 q5": {
             "duration": 20,
@@ -1011,7 +1011,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_01",
             "cc_light_codeword": 1,
-            "cc_light_opcode": 9
+            "cc_light_opcode": 31
         },
         "rX180 q6": {
             "duration": 20,
@@ -1042,7 +1042,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_01",
             "cc_light_codeword": 1,
-            "cc_light_opcode": 9
+            "cc_light_opcode": 31
         },
         "rX180 q7": {
             "duration": 20,
@@ -1073,7 +1073,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_01",
             "cc_light_codeword": 1,
-            "cc_light_opcode": 9
+            "cc_light_opcode": 31
         },
         "rY180 q0": {
             "duration": 20,
@@ -1104,7 +1104,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_02",
             "cc_light_codeword": 2,
-            "cc_light_opcode": 10
+            "cc_light_opcode": 32
         },
         "rY180 q1": {
             "duration": 20,
@@ -1135,7 +1135,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_02",
             "cc_light_codeword": 2,
-            "cc_light_opcode": 10
+            "cc_light_opcode": 32
         },
         "rY180 q2": {
             "duration": 20,
@@ -1166,7 +1166,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_02",
             "cc_light_codeword": 2,
-            "cc_light_opcode": 10
+            "cc_light_opcode": 32
         },
         "rY180 q3": {
             "duration": 20,
@@ -1197,7 +1197,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_02",
             "cc_light_codeword": 2,
-            "cc_light_opcode": 10
+            "cc_light_opcode": 32
         },
         "rY180 q4": {
             "duration": 20,
@@ -1228,7 +1228,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_02",
             "cc_light_codeword": 2,
-            "cc_light_opcode": 10
+            "cc_light_opcode": 32
         },
         "rY180 q5": {
             "duration": 20,
@@ -1259,7 +1259,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_02",
             "cc_light_codeword": 2,
-            "cc_light_opcode": 10
+            "cc_light_opcode": 32
         },
         "rY180 q6": {
             "duration": 20,
@@ -1290,7 +1290,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_02",
             "cc_light_codeword": 2,
-            "cc_light_opcode": 10
+            "cc_light_opcode": 32
         },
         "rY180 q7": {
             "duration": 20,
@@ -1321,7 +1321,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_02",
             "cc_light_codeword": 2,
-            "cc_light_opcode": 10
+            "cc_light_opcode": 32
         },
         "rX90 q0": {
             "duration": 20,
@@ -1352,7 +1352,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_03",
             "cc_light_codeword": 3,
-            "cc_light_opcode": 11
+            "cc_light_opcode": 33
         },
         "rX90 q1": {
             "duration": 20,
@@ -1383,7 +1383,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_03",
             "cc_light_codeword": 3,
-            "cc_light_opcode": 11
+            "cc_light_opcode": 33
         },
         "rX90 q2": {
             "duration": 20,
@@ -1414,7 +1414,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_03",
             "cc_light_codeword": 3,
-            "cc_light_opcode": 11
+            "cc_light_opcode": 33
         },
         "rX90 q3": {
             "duration": 20,
@@ -1445,7 +1445,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_03",
             "cc_light_codeword": 3,
-            "cc_light_opcode": 11
+            "cc_light_opcode": 33
         },
         "rX90 q4": {
             "duration": 20,
@@ -1476,7 +1476,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_03",
             "cc_light_codeword": 3,
-            "cc_light_opcode": 11
+            "cc_light_opcode": 33
         },
         "rX90 q5": {
             "duration": 20,
@@ -1507,7 +1507,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_03",
             "cc_light_codeword": 3,
-            "cc_light_opcode": 11
+            "cc_light_opcode": 33
         },
         "rX90 q6": {
             "duration": 20,
@@ -1538,7 +1538,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_03",
             "cc_light_codeword": 3,
-            "cc_light_opcode": 11
+            "cc_light_opcode": 33
         },
         "rX90 q7": {
             "duration": 20,
@@ -1569,7 +1569,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_03",
             "cc_light_codeword": 3,
-            "cc_light_opcode": 11
+            "cc_light_opcode": 33
         },
         "rY90 q0": {
             "duration": 20,
@@ -1600,7 +1600,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_04",
             "cc_light_codeword": 4,
-            "cc_light_opcode": 12
+            "cc_light_opcode": 34
         },
         "rY90 q1": {
             "duration": 20,
@@ -1631,7 +1631,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_04",
             "cc_light_codeword": 4,
-            "cc_light_opcode": 12
+            "cc_light_opcode": 34
         },
         "rY90 q2": {
             "duration": 20,
@@ -1662,7 +1662,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_04",
             "cc_light_codeword": 4,
-            "cc_light_opcode": 12
+            "cc_light_opcode": 34
         },
         "rY90 q3": {
             "duration": 20,
@@ -1693,7 +1693,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_04",
             "cc_light_codeword": 4,
-            "cc_light_opcode": 12
+            "cc_light_opcode": 34
         },
         "rY90 q4": {
             "duration": 20,
@@ -1724,7 +1724,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_04",
             "cc_light_codeword": 4,
-            "cc_light_opcode": 12
+            "cc_light_opcode": 34
         },
         "rY90 q5": {
             "duration": 20,
@@ -1755,7 +1755,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_04",
             "cc_light_codeword": 4,
-            "cc_light_opcode": 12
+            "cc_light_opcode": 34
         },
         "rY90 q6": {
             "duration": 20,
@@ -1786,7 +1786,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_04",
             "cc_light_codeword": 4,
-            "cc_light_opcode": 12
+            "cc_light_opcode": 34
         },
         "rY90 q7": {
             "duration": 20,
@@ -1817,7 +1817,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_04",
             "cc_light_codeword": 4,
-            "cc_light_opcode": 12
+            "cc_light_opcode": 34
         },
         "rXm90 q0": {
             "duration": 20,
@@ -1848,7 +1848,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_05",
             "cc_light_codeword": 5,
-            "cc_light_opcode": 13
+            "cc_light_opcode": 35
         },
         "rXm90 q1": {
             "duration": 20,
@@ -1879,7 +1879,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_05",
             "cc_light_codeword": 5,
-            "cc_light_opcode": 13
+            "cc_light_opcode": 35
         },
         "rXm90 q2": {
             "duration": 20,
@@ -1910,7 +1910,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_05",
             "cc_light_codeword": 5,
-            "cc_light_opcode": 13
+            "cc_light_opcode": 35
         },
         "rXm90 q3": {
             "duration": 20,
@@ -1941,7 +1941,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_05",
             "cc_light_codeword": 5,
-            "cc_light_opcode": 13
+            "cc_light_opcode": 35
         },
         "rXm90 q4": {
             "duration": 20,
@@ -1972,7 +1972,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_05",
             "cc_light_codeword": 5,
-            "cc_light_opcode": 13
+            "cc_light_opcode": 35
         },
         "rXm90 q5": {
             "duration": 20,
@@ -2003,7 +2003,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_05",
             "cc_light_codeword": 5,
-            "cc_light_opcode": 13
+            "cc_light_opcode": 35
         },
         "rXm90 q6": {
             "duration": 20,
@@ -2034,7 +2034,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_05",
             "cc_light_codeword": 5,
-            "cc_light_opcode": 13
+            "cc_light_opcode": 35
         },
         "rXm90 q7": {
             "duration": 20,
@@ -2065,7 +2065,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_05",
             "cc_light_codeword": 5,
-            "cc_light_opcode": 13
+            "cc_light_opcode": 35
         },
         "rYm90 q0": {
             "duration": 20,
@@ -2096,7 +2096,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_06",
             "cc_light_codeword": 6,
-            "cc_light_opcode": 14
+            "cc_light_opcode": 36
         },
         "rYm90 q1": {
             "duration": 20,
@@ -2127,7 +2127,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_06",
             "cc_light_codeword": 6,
-            "cc_light_opcode": 14
+            "cc_light_opcode": 36
         },
         "rYm90 q2": {
             "duration": 20,
@@ -2158,7 +2158,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_06",
             "cc_light_codeword": 6,
-            "cc_light_opcode": 14
+            "cc_light_opcode": 36
         },
         "rYm90 q3": {
             "duration": 20,
@@ -2189,7 +2189,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_06",
             "cc_light_codeword": 6,
-            "cc_light_opcode": 14
+            "cc_light_opcode": 36
         },
         "rYm90 q4": {
             "duration": 20,
@@ -2220,7 +2220,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_06",
             "cc_light_codeword": 6,
-            "cc_light_opcode": 14
+            "cc_light_opcode": 36
         },
         "rYm90 q5": {
             "duration": 20,
@@ -2251,7 +2251,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_06",
             "cc_light_codeword": 6,
-            "cc_light_opcode": 14
+            "cc_light_opcode": 36
         },
         "rYm90 q6": {
             "duration": 20,
@@ -2282,7 +2282,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_06",
             "cc_light_codeword": 6,
-            "cc_light_opcode": 14
+            "cc_light_opcode": 36
         },
         "rYm90 q7": {
             "duration": 20,
@@ -2313,7 +2313,7 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "CW_06",
             "cc_light_codeword": 6,
-            "cc_light_opcode": 14
+            "cc_light_opcode": 36
         },
         "CW_00 q0": {
             "duration": 20,
