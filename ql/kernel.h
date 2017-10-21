@@ -550,11 +550,11 @@ public:
             composite_gate * gptr = (composite_gate *)(it->second);
             if( __composite_gate__ == gptr->type() )
             {
-                COUT("composite gate type");
+                DOUT("composite gate type");
             }
             else
             {
-                COUT("Not a composite gate type");
+                DOUT("Not a composite gate type");
                 return false;
             }
 
