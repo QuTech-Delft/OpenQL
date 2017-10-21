@@ -2238,14 +2238,6 @@
 
 
    "gate_decomposition": {
-      "x q0" : ["x q0"],
-      "y q0" : ["y q0"],
-      "z q0" : ["z q0"],
-      "h q0" : ["h q0"],
-      "t q0" : ["t q0"],
-      "tdag q0" : ["tdag q0"],
-      "s q0" : ["s q0"],
-      "sdag q0" : ["sdag q0"],
-      "cnot q2,q0" : ["cnot q2,q0"]
+      "ss q0" : ["s q0"]
    }
 }

@@ -242,13 +242,15 @@ public:
         */
 
         // schedule with platform constraints
+        // Bundles schedBundles = cc_light_schedule(prog_name, nqubits, c, platform, verbose);
         Bundles schedBundles = cc_light_schedule_rc(prog_name, num_qubits, c, platform, verbose);
 
+        MaskManager mask_manager;
         // print scheduled bundles with parallelism in cc-light syntax
-        PrintCCLighQasm(prog_name, platform, schedBundles, verbose);
+        PrintCCLighQasm(prog_name, platform, mask_manager, schedBundles, verbose);
 
         // print scheduled bundles with parallelism in cc-light syntax with time-stamps
-        PrintCCLighQasmTimeStamped(prog_name, platform, schedBundles, verbose);
+        PrintCCLighQasmTimeStamped(prog_name, platform, mask_manager, schedBundles, verbose);
 
         // time analysis
         // total_exec_time = time_analysis();

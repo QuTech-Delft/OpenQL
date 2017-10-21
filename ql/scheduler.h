@@ -833,7 +833,7 @@ public:
 
             while(currCycle > 0)
             {
-                COUT("Trying to schedule: " << name[*currNode] << "  in cycle: " << currCycle);
+                DOUT("Trying to schedule: " << name[*currNode] << "  in cycle: " << currCycle);
                 if( rm.available(currCycle, instruction[*currNode], operation_name) )
                 {
                     DOUT("Resources available, Scheduled.");

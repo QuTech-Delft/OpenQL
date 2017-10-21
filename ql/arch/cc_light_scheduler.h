@@ -32,20 +32,17 @@ namespace ql
 namespace arch
 {
 
-const size_t MAX_S_REG =32;
-const size_t MAX_T_REG =64;
-
 // TODO systematic
 // typedef size_t                     qubit_t;
 typedef std::vector<size_t>        qubit_set_t;
 typedef std::pair<size_t,size_t>   qubit_pair_t;
 typedef std::vector<qubit_pair_t>  qubit_pair_set_t;
 
+const size_t MAX_S_REG =32;
+const size_t MAX_T_REG =64;
+
 size_t CurrSRegCount=0;
 size_t CurrTRegCount=0;
-
-qubit_set_t squbits;
-qubit_pair_set_t dqubits;
 
 class Mask
 {
@@ -98,14 +95,15 @@ public:
 
 };
 
-std::map<size_t,Mask> SReg2Mask;
-std::map<qubit_set_t,Mask> QS2Mask;
-
-std::map<size_t,Mask> TReg2Mask;
-std::map<qubit_pair_set_t,Mask> QPS2Mask;
-
-static class MaskManager
+class MaskManager
 {
+private:
+    std::map<size_t,Mask> SReg2Mask;
+    std::map<qubit_set_t,Mask> QS2Mask;
+
+    std::map<size_t,Mask> TReg2Mask;
+    std::map<qubit_pair_set_t,Mask> QPS2Mask;
+
 public:
     MaskManager()
     {
@@ -239,7 +237,13 @@ public:
         return ssmasks.str();
     }
 
-} gMaskManager;
+    ~MaskManager()
+    {
+        CurrSRegCount=0;
+        CurrTRegCount=0;
+    }
+
+};
 
 
 void PrintBundles(Bundles & bundles, bool verbose=false)
@@ -272,7 +276,8 @@ void PrintBundles(Bundles & bundles, bool verbose=false)
     }
 }
 
-void PrintCCLighQasm(std::string prog_name, ql::quantum_platform & platform, Bundles & bundles, bool verbose=false)
+void PrintCCLighQasm(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
+    Bundles & bundles, bool verbose=false)
 {
     if(verbose) COUT("Printing CC-Light QISA");
 
@@ -385,7 +390,8 @@ void PrintCCLighQasm(std::string prog_name, ql::quantum_platform & platform, Bun
 }
 
 
-void PrintCCLighQasmTimeStamped(std::string prog_name, ql::quantum_platform & platform, Bundles & bundles, bool verbose=false)
+void PrintCCLighQasmTimeStamped(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
+    Bundles & bundles, bool verbose=false)
 {
     if(verbose) COUT("Printing Time-stamped CC-Light QISA");
     ofstream fout;
@@ -498,7 +504,8 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, ql::quantum_platform & pl
     if(verbose) COUT("Printing Time-stamped CC-Light QISA [Done]");
 }
 
-void cc_light_schedule(std::string prog_name, size_t nqubits, ql::circuit & ckt, ql::quantum_platform & platform, bool verbose=false)
+Bundles cc_light_schedule(  std::string prog_name, size_t nqubits, ql::circuit & ckt,
+                            ql::quantum_platform & platform, bool verbose=false)
 {
     Bundles bundles1;
 
@@ -549,21 +556,13 @@ void cc_light_schedule(std::string prog_name, size_t nqubits, ql::circuit & ckt,
         bundles2.push_back(abundle2);
     }
 
-    // print scheduled bundles with parallelism
-    // PrintBundles(bundles2, verbose);
-
-    // print scheduled bundles with parallelism in cc-light syntax
-    PrintCCLighQasm(prog_name, platform, bundles2, verbose);
-
-    // print scheduled bundles with parallelism in cc-light syntax with time-stamps
-    PrintCCLighQasmTimeStamped(prog_name, platform, bundles2, verbose);
-
     if(verbose) COUT("Scheduling CC-Light instructions [Done].");
+    return bundles2;
 }
 
 
 Bundles cc_light_schedule_rc( std::string prog_name, size_t nqubits, ql::circuit & ckt,
-                           ql::quantum_platform & platform, bool verbose=false)
+                              ql::quantum_platform & platform, bool verbose=false)
 {
     Bundles bundles1;
 
