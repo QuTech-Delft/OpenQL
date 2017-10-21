@@ -2,6 +2,7 @@
  * @file   hardware_configuration.h
  * @date   07/2017
  * @author Nader Khammassi
+ *         Imran Ashraf
  * @brief  hardware configuration loader
  */
 
@@ -126,18 +127,20 @@ public:
             str::lower_case(name);
             json         attr = *it; //.value();
 
-            std::string simple_instruction_name(name);
-            if( attr.find("cc_light_instr") != attr.end() )
-            {
-               simple_instruction_name = attr["cc_light_instr"];
-            }
+            // std::string simple_instruction_name(name);
+            // if( attr.find("cc_light_instr") != attr.end() )
+            // {
+            //    simple_instruction_name = attr["cc_light_instr"];
+            // }
 
             // supported_gates.push_back(load_instruction(name,attr));
             // check for duplicate operations
             if (instruction_map.find(name) != instruction_map.end())
                 println("[!] warning : ql::hardware_configuration::load() : instruction '" << name << "' redefined : the old definition is overwritten !");
 
-            instruction_map[name] = load_instruction(simple_instruction_name, attr);
+            // instruction_map[name] = load_instruction(simple_instruction_name, attr);
+            instruction_map[name] = load_instruction(name, attr);
+
             // println("instruction " << name << " loaded.");
         }
         

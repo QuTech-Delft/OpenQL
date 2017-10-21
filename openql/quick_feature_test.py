@@ -6,7 +6,7 @@ curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
 ql.set_output_dir(output_dir)
 
-def test1():
+def test():
     config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
     platform  = ql.Platform('seven_qubits_chip', config_fn)
     sweep_points = [1,2]
@@ -39,5 +39,7 @@ def test1():
     # compile the program
     p.compile(optimize=False, verbose=True)
 
+
+
 if __name__ == '__main__':
-    test_bug()
+    test()

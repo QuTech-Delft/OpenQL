@@ -9,7 +9,7 @@
 SWIG=swig
 LEMON_ROOT=/opt/lemon
 INCS=-I .. -I . -I $(LEMON_ROOT)/include
-CFLAGS=-fpic $(INCS) -std=c++11 -Wfatal-errors `python3-config --cflags`
+CFLAGS=-fpic $(INCS) -std=c++11 -Wfatal-errors `python3-config --cflags` -D DEBUG
 LDFLAGS=`python3-config --ldflags`
 
 PYTHON=python3

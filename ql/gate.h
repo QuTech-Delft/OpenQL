@@ -2,6 +2,7 @@
  * @file   gate.h
  * @date   11/2016
  * @author Nader Khammassi
+ *         Imran Ashraf
  * @brief  gates implementation
  */
 
@@ -79,7 +80,8 @@ typedef enum __gate_type_t
     __measure_gate__   ,
     __display__        ,
     __display_binary__ ,
-    __nop_gate__
+    __nop_gate__       ,
+    __dummy_gate__
 } gate_type_t;
 
 #define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
@@ -1103,6 +1105,63 @@ public:
 };
 
 
+class SOURCE : public gate
+{
+public:
+    cmat_t m;
+
+    SOURCE() : m(nop_c)
+    {
+        name = "SOURCE";
+        duration = 20;
+    }
+    instruction_t qasm()
+    {
+        return instruction_t("SOURCE");
+    }
+    instruction_t micro_code()
+    {
+        return ql::dep_instruction_map["SOURCE"];
+    }
+    gate_type_t type()
+    {
+        return __dummy_gate__;
+    }
+    cmat_t mat()
+    {
+        return m;
+    }
+};
+
+class SINK : public gate
+{
+public:
+    cmat_t m;
+
+    SINK() : m(nop_c)
+    {
+        name = "SINK";
+        duration = 20;
+    }
+    instruction_t qasm()
+    {
+        return instruction_t("SINK");
+    }
+    instruction_t micro_code()
+    {
+        return ql::dep_instruction_map["SINK"];
+    }
+    gate_type_t type()
+    {
+        return __dummy_gate__;
+    }
+    cmat_t mat()
+    {
+        return m;
+    }
+};
+
+
 /**
  * custom gate support
  */
@@ -1337,7 +1396,7 @@ class composite_gate : public custom_gate
         {
            gs.push_back(g);
            duration += g->duration;
-           operands.insert(operands.end(), g->operands.begin(),g->operands.end());
+           operands.insert(operands.end(), g->operands.begin(), g->operands.end());
         }
     }
 

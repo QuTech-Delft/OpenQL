@@ -4,15 +4,15 @@
    "hardware_settings": {
 	 "qubit_number": 7,
 	 "cycle_time" : 20,  
-	 "mw_mw_buffer": 0,
-	 "mw_flux_buffer": 0,
-	 "mw_readout_buffer": 0,
-	 "flux_mw_buffer": 0,
-	 "flux_flux_buffer": 0,
-	 "flux_readout_buffer": 0,
-	 "readout_mw_buffer": 0,
-	 "readout_flux_buffer": 0,
-	 "readout_readout_buffer": 0
+	 "mw_mw_buffer": 20,
+	 "mw_flux_buffer": 40,
+	 "mw_readout_buffer": 60,
+	 "flux_mw_buffer": 80,
+	 "flux_flux_buffer": 100,
+	 "flux_readout_buffer": 120,
+	 "readout_mw_buffer": 140,
+	 "readout_flux_buffer": 160,
+	 "readout_readout_buffer": 180
    },
 
   "resources":
@@ -752,7 +752,7 @@
    },
    "y q4": {
       "duration": 40,
-      "latency": 0,
+      "latency": 20,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -764,7 +764,7 @@
    },
    "y q5": {
       "duration": 40,
-      "latency": 0,
+      "latency": -20,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -2238,14 +2238,6 @@
 
 
    "gate_decomposition": {
-      "x q0" : ["x q0"],
-      "y q0" : ["y q0"],
-      "z q0" : ["z q0"],
-      "h q0" : ["h q0"],
-      "t q0" : ["t q0"],
-      "tdag q0" : ["tdag q0"],
-      "s q0" : ["s q0"],
-      "sdag q0" : ["sdag q0"],
-      "cnot q2,q0" : ["cnot q2,q0"]
+      "ss q0" : ["s q0"]
    }
 }
