@@ -126,6 +126,15 @@ This section specifies:
 - X180(q0) -> X(q0)
 - X180(q0) -> rX180(q0)
 
+## Parametrized gate-decomposition
+Parametrized gate decompositions can be specified in `gate_decomposition` section, as shown below:
+
+    "rx180 %0" : ["x %0"]
+
+Based on this, `k.gate('rx180', 3)` will be decomposed to x(q3). Simmilarly, multi-qubit gate-decompositions can be specified as:
+
+    "cnot %0,%1" : ["ry90 %0","cz %0,%1","ry90 %1"]
+
 
 ## Potential extensibility and current flaws
 
