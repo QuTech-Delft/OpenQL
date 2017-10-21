@@ -52,24 +52,10 @@ def test_none():
 
     k = ql.Kernel('aKernel', platform)
 
-    # k.gate('measx', 2) #segfault
-    # k.gate('measx', 3) #appears but is non existing
-    # k.gate('measx', 4) #system error: bad_alloc
-
-    # k.gate('measx', 1) # appears
-    # k.gate('measz', 1) # never appears
-    # k.gate('measx', 1) # appears
-    # k.gate('cnot', 0, 1)
-    k.gate('T', 0)
-
-    # k.x(0) # x will be dcomposed
-    # k.gate("x",0); # x will be dcomposed
-    # k.gate("y",0); # decomposition not available, will use custom gate
-    # k.gate("s",1); # decomposition as well as custom gate not available, will use default gate
-    # k.gate("roty90",0) # any name can be used for composite gate
- 
-    # k.gate("cnot", 0, 1) # cnot will be decomposed
-    # k.gate("cnot", [2, 3]) # same as above but with a list of qubits
+    k.x(0)
+    k.gate("x",0); # x will be dcomposed
+    k.gate("cnot", 0, 1) # cnot will be decomposed
+    k.gate("cnot", [2, 3]) # same as above but with a list of qubits
 
     # add the kernel to the program
     p.add_kernel(k)

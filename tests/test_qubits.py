@@ -58,7 +58,7 @@ class Test_qubits(unittest.TestCase):
         k.prepz(0)
         k.prepz(1)
         k.prepz(2)
-        k.cnot(0, 1)
+        k.cz(0, 1)
         k.clifford(1, 2)
         k.measure(2)
 

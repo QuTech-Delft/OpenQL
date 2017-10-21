@@ -58,7 +58,7 @@ public:
         for( auto q : ins->operands )
         {
             DOUT(" available? curr cycle: " << cycle << "  qubit: " << q << " is busy till cycle : " << state[q]);
-            if( cycle > state[q] )
+            if( cycle >= state[q] )
             {
                 DOUT("    qubit resource busy ...");
                 return false;
@@ -72,7 +72,7 @@ public:
     {
         for( auto q : ins->operands )
         {
-            state[q] = cycle; // - (ins->duration)/platform_cycle_time; // duration already taken care of
+            state[q] = cycle;
             DOUT("reserved. curr cycle: " << cycle << " qubit: " << q << " reserved till cycle: " << state[q]);
         }
     }
@@ -117,9 +117,9 @@ public:
             {
                 DOUT(" available? curr cycle: " << cycle << "  qwg: " << qubit2qwg[q] 
                        << " is busy till cycle : " << state[ qubit2qwg[q] ] << " for operation: " << operations[ qubit2qwg[q] ]);
-                if( cycle > state[ qubit2qwg[q] ] )
+                if( cycle >= state[ qubit2qwg[q] ] )
                 {
-                    if( operations[ qubit2qwg[q] ] != operation ) // operation != (ins->name)
+                    if( operations[ qubit2qwg[q] ] != operation )
                     {
                         DOUT("    qwg resource busy ");
                         return false;
@@ -137,8 +137,8 @@ public:
         {
             for( auto q : ins->operands )
             {
-                state[ qubit2qwg[q] ]  = cycle; // - (ins->duration)/platform_cycle_time; // duration already taken care of
-                operations[ qubit2qwg[q] ] = operation; // operation != ins->name;
+                state[ qubit2qwg[q] ]  = cycle;
+                operations[ qubit2qwg[q] ] = operation;
                 DOUT("reserved. curr cycle: " << cycle << " qwg: " << qubit2qwg[q] << " reserved till cycle: " << state[ qubit2qwg[q] ] 
                           << " for operation: " << operations[ qubit2qwg[q] ] );
             }
@@ -180,8 +180,8 @@ public:
             for(auto q : ins->operands)
             {
                 DOUT(" available? curr cycle: " << cycle << "  meas: " << qubit2meas[q] 
-                          << " is busy till cycle : " << state[ qubit2meas[q] ] << " for operation: measure");
-                if( cycle > state[ qubit2meas[q] ] )
+                          << " is busy till cycle : " << state[ qubit2meas[q] ] );
+                if( cycle >= state[ qubit2meas[q] ] )
                 {
                     DOUT("    measure resource busy ");
                     return false;
@@ -198,9 +198,8 @@ public:
         {
             for(auto q : ins->operands)
             {
-                state[ qubit2meas[q] ] = cycle;// - (ins->duration)/platform_cycle_time; // duration already taken care of
-                DOUT("reserved. curr cycle: " << cycle << " meas: " << qubit2meas[q] << " reserved till cycle: " << state[ qubit2meas[q] ] 
-                          << " for operation: measure");
+                state[ qubit2meas[q] ] = cycle;
+                DOUT("reserved. curr cycle: " << cycle << " meas: " << qubit2meas[q] << " reserved till cycle: " << state[ qubit2meas[q] ] );
             }
         }
     }
@@ -241,9 +240,7 @@ public:
             }
             else
             {
-                // qubits_pair_t arqpair(d,s);
                 qubits2edge[aqpair] = e;
-                // qubits2edge[arqpair] = e;
             }
         }
 
@@ -277,7 +274,7 @@ public:
                 edges2check.push_back(edge_no);
                 for(auto & e : edges2check)
                 {
-                    if( cycle > state[e] )
+                    if( cycle >= state[e] )
                     {
                         DOUT("    edge resource busy ");
                         return false;
@@ -302,10 +299,10 @@ public:
             auto q1 = ins->operands[1];
             qubits_pair_t aqpair(q0, q1);
             auto edge_no = qubits2edge[aqpair];
-            state[edge_no] = cycle + ins->duration - 1;
+            state[edge_no] = cycle;
             for(auto & e : edge2edges[edge_no])
             {
-                state[e] = cycle; // - (ins->duration)/platform_cycle_time; // duration already taken care of
+                state[e] = cycle;
             }
 
             DOUT("reserved. curr cycle: " << cycle << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] 

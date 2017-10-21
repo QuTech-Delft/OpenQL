@@ -2,6 +2,7 @@
  * @file   utils.h
  * @date   04/2017
  * @author Nader Khammassi
+ *         Imran Ashraf
  * @brief  string utils (from qx)
  */
 
@@ -28,9 +29,7 @@
 #define DOUT(content)
 #endif
 
-// #define DOUT(content)
-
-auto MAX_CYCLE = std::numeric_limits<int>::max(); // TODO should go to utils
+auto MAX_CYCLE = std::numeric_limits<int>::max();
 
 namespace ql
 {
@@ -127,6 +126,11 @@ namespace ql
     }
 
 
+    template <typename T>
+    int sign_of(T val)
+    {
+        return (T(0) < val) - (val < T(0));
+    }
 
     } // utils
 } // ql

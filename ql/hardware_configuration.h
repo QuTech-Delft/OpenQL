@@ -2,6 +2,7 @@
  * @file   hardware_configuration.h
  * @date   07/2017
  * @author Nader Khammassi
+ *         Imran Ashraf
  * @brief  hardware configuration loader
  */
 

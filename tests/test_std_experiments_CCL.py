@@ -19,6 +19,21 @@ ql.set_output_dir(output_dir)
 
 
 class Test_single_qubit_seqs_CCL(unittest.TestCase):
+
+    def test_bug(self):
+        p = Program(pname="bug", nqubits=1, p=platf)
+
+        k = Kernel("bugKernel", p=platf)
+        k.gate('rx180', 0)
+        k.gate('measure', 0)
+
+        p.add_kernel(k)
+        p.compile()
+
+        # Test that the generated code is valid
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        assemble(QISA_fn)
+
     def test_allxy(self):
         p = Program(pname="AllXY", nqubits=1, p=platf)
         # uppercase lowercase problems

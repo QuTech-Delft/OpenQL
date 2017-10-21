@@ -35,8 +35,8 @@ class Test_dependence(unittest.TestCase):
             k.prepz(i)
 
         # no dependence
-        k.cnot(0, 1)
-        k.cnot(2, 3)
+        k.cz(0, 1)
+        k.cz(2, 3)
 
         k.measure(0)
         k.measure(1)
@@ -65,8 +65,8 @@ class Test_dependence(unittest.TestCase):
             k.prepz(i)
 
         # q1 dependence
-        k.cnot(0, 1)
-        k.cnot(0, 1)
+        k.cz(0, 1)
+        k.cz(2, 1)
 
         k.measure(0)
         k.measure(1)
@@ -96,8 +96,8 @@ class Test_dependence(unittest.TestCase):
             k.prepz(i)
 
         # q0 dependence
-        k.cnot(0, 1)
-        k.cnot(0, 2)
+        k.cz(0, 1)
+        k.cz(0, 2)
 
         k.measure(0)
         k.measure(1)
@@ -127,8 +127,8 @@ class Test_dependence(unittest.TestCase):
             k.prepz(i)
 
         # q1 dependence
-        k.cnot(0, 1)
-        k.cnot(1, 2)
+        k.cz(0, 1)
+        k.cz(1, 2)
 
         k.measure(0)
         k.measure(1)
@@ -158,8 +158,8 @@ class Test_dependence(unittest.TestCase):
             k.prepz(i)
 
         # q0 dependence
-        k.cnot(0, 1)
-        k.cnot(2, 0)
+        k.cz(0, 1)
+        k.cz(2, 0)
 
         k.measure(0)
         k.measure(1)

@@ -6,7 +6,7 @@
 	 "cycle_time" : 5,  
 	 "mw_mw_buffer": 0,
 	 "mw_flux_buffer": 0,
-	 "mw_readout_buffer": 20,
+	 "mw_readout_buffer": 0,
 	 "flux_mw_buffer": 0,
 	 "flux_flux_buffer": 0,
 	 "flux_readout_buffer": 0,

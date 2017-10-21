@@ -6,7 +6,7 @@
 	 "cycle_time" : 5,  
 	 "mw_mw_buffer": 0,
 	 "mw_flux_buffer": 0,
-	 "mw_readout_buffer": 20,
+	 "mw_readout_buffer": 0,
 	 "flux_mw_buffer": 0,
 	 "flux_flux_buffer": 0,
 	 "flux_readout_buffer": 0,
@@ -259,6 +259,21 @@
          "qubits": ["q0","q1"],
          "matrix" : [ [0.0,0.0], [1.0,0.0],
 	              [1.0,0.0], [0.0,0.0] ], 
+         "disable_optimization": true, 
+         "type" : "mw",
+         "qumis_instr": "pulse",
+         "qumis_instr_kw": {
+            "codeword": 2, 
+            "awg_nr": 1
+         }
+      },
+
+      "prepz" : {
+         "duration": 40,
+         "latency": 0,
+         "qubits": ["q0","q1"],
+         "matrix" : [ [0.0,0.0], [1.0,0.0],
+                 [1.0,0.0], [0.0,0.0] ], 
          "disable_optimization": true, 
          "type" : "mw",
          "qumis_instr": "pulse",

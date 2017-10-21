@@ -25,9 +25,9 @@ class Test_CCL_long_duration(unittest.TestCase):
         """
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platf  = ql.Platform('seven_qubits_chip', config_fn)
-        p = ql.Program(pname="AllXY", nqubits=platf.get_qubit_number(), p=platf)
+        p = ql.Program(pname="AllXYLongDuration", nqubits=platf.get_qubit_number(), p=platf)
 
-        allXY = [ ['i', 'i'], ['rx180', 'rx180'], ['ry180', 'ry180'] ]
+        allXY = [ ['i', 'i'], ['rx180', 'ry180'], ['ry180', 'rx180'] ]
                 # ,
                 #  ['rx180', 'ry180'], ['ry180', 'rx180'],
                 #  ['rx90', 'i'], ['ry90', 'i'], ['rx90', 'ry90'],
