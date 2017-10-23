@@ -1,0 +1,48 @@
+# Classic instructions (single instruction format)
+def_opcode["nop"]      = 0x00
+def_opcode["br"]       = 0x01
+def_opcode["stop"]     = 0x08
+def_opcode["cmp"]      = 0x0d
+def_opcode["ldi"]      = 0x16
+def_opcode["ldui"]     = 0x17
+def_opcode["or"]       = 0x18
+def_opcode["xor"]      = 0x19
+def_opcode["and"]      = 0x1a
+def_opcode["not"]      = 0x1b
+def_opcode["add"]      = 0x1e
+def_opcode["sub"]      = 0x1f
+# quantum-classical mixed instructions (single instruction format)
+def_opcode["fbr"]      = 0x14
+def_opcode["fmr"]      = 0x15
+# quantum instructions (single instruction format)
+def_opcode["smis"]     = 0x20
+def_opcode["smit"]     = 0x28
+def_opcode["qwait"]    = 0x30
+def_opcode["qwaitr"]   = 0x38
+# quantum instructions (double instruction format)
+# no arguments
+def_q_arg_none["qnop"] = 0x00
+def_q_arg_tt["cnot"]	= 0x80
+def_q_arg_st["cprepz"]	= 0x4b
+def_q_arg_tt["cz"]	= 0x81
+def_q_arg_st["h"]	= 0x9
+def_q_arg_st["i"]	= 0x5
+def_q_arg_st["measz"]	= 0x4
+def_q_arg_st["measx"]	= 0x3
+def_q_arg_st["prepx"]	= 0x1
+def_q_arg_st["prepz"]	= 0x2
+def_q_arg_st["rx180"]	= 0x22
+def_q_arg_st["x90"]	= 0xc
+def_q_arg_st["ry180"]	= 0x23
+def_q_arg_st["y90"]	= 0xe
+def_q_arg_st["s"]	= 0xa
+def_q_arg_st["sdag"]	= 0xb
+def_q_arg_st["t"]	= 0x10
+def_q_arg_st["tdag"]	= 0x11
+def_q_arg_st["x"]	= 0x6
+def_q_arg_st["x45"]	= 0x12
+def_q_arg_st["xm45"]	= 0x13
+def_q_arg_st["xm90"]	= 0xd
+def_q_arg_st["y"]	= 0x7
+def_q_arg_st["ym90"]	= 0xf
+def_q_arg_st["z"]	= 0x8

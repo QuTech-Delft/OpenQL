@@ -15,6 +15,7 @@
 #include <ql/interactionMatrix.h>
 #include <ql/eqasm_compiler.h>
 #include <ql/arch/cbox_eqasm_compiler.h>
+#include <ql/arch/cc_light_eqasm_compiler.h>
 
 namespace ql
 {
@@ -35,7 +36,7 @@ class quantum_program
 
    public:
 
-      quantum_program(std::string name, size_t qubits, quantum_platform platform) : platform(platform), name(name), default_config(true), qubits(qubits) 
+      quantum_program(std::string name, size_t nqubits /**/, quantum_platform platform) : platform(platform), name(name), default_config(true), qubits(nqubits)
       {
          eqasm_compiler_name = platform.eqasm_compiler_name;
 	 backend_compiler    = NULL;
@@ -50,16 +51,45 @@ class quantum_program
          }
          else if (eqasm_compiler_name == "none")
          {
+
          }
+	 else if (eqasm_compiler_name == "cc_light_compiler" )
+	 {
+            backend_compiler = new ql::arch::cc_light_eqasm_compiler();
+	 }
          else
          {
             println("[x] error : the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
             throw std::exception();
          }
+
+         if(nqubits > platform.qubit_number)
+         {
+            EOUT("number of qubits requested in program '" + std::to_string(nqubits) + "' is greater than the qubits available in platform '" + std::to_string(platform.qubit_number) + "'" );
+            throw ql::exception("[x] error : number of qubits requested in program '"+std::to_string(nqubits)+"' is greater than the qubits available in platform '"+std::to_string(platform.qubit_number)+"' !",false);
+         }
       }
 
       void add(ql::quantum_kernel k)
       {
+         // check sanity of supplied qubit numbers for each gate
+         ql::circuit& kc = k.get_circuit();
+         for( auto & g : kc )
+         {
+            auto & gate_operands = g->operands;
+            auto & gname = g->name;
+            for(auto & qno : gate_operands)
+            {
+               // DOUT("qno : " << qno);
+               if( qno < 0 || qno >= qubits )
+               {   
+                   EOUT("No of qubits in program: " << qubits << ", specified qubit number out of range for gate:'" << gname << "' with " << ql::utils::to_string(gate_operands,"qubits") );
+                   throw ql::exception("[x] error : ql::kernel::gate() : No of qubits in program: "+std::to_string(qubits)+", specified qubit number out of range for gate '"+gname+"' with " +ql::utils::to_string(gate_operands,"qubits")+" !",false);
+               }
+            }
+         }
+
+         // if sane, now add kernel to list of kernels
          kernels.push_back(k);
       }
 
@@ -206,7 +236,7 @@ class quantum_program
 	 try 
 	 {
 	    println("compiling eqasm code...");
-	    backend_compiler->compile(fused, platform);
+	    backend_compiler->compile(name, fused, platform, verbose);
 	 }
 	 catch (ql::exception e)
 	 {
@@ -214,7 +244,7 @@ class quantum_program
 	    throw e;
 	 }
 
-         println("writing eqasm code to '" << ( ql::utils::get_output_dir() + "/" + name+".asm") << "'...");
+         // println("writing eqasm code to '" << ( ql::utils::get_output_dir() + "/" + name+".asm") << "'...");
          backend_compiler->write_eqasm( ql::utils::get_output_dir() + "/" + name + ".asm");
          println("writing traces...");
          backend_compiler->write_traces( ql::utils::get_output_dir() + "/trace.dat");
@@ -276,13 +306,14 @@ class quantum_program
          {
             std::string kernel_sched_qasm;
             std::string kernel_sched_dot;
-            k.schedule(qubits, scheduler, kernel_sched_qasm, kernel_sched_dot, verbose);
-            sched_qasm += "." + k.getName() + "\n";
-            sched_qasm += kernel_sched_qasm;
+            k.schedule(qubits, platform, scheduler, kernel_sched_qasm, kernel_sched_dot, verbose);
+            sched_qasm += "\n." + k.get_name();
+            sched_qasm += kernel_sched_qasm + '\n';
 
-            string fname = ql::utils::get_output_dir() + "/" + k.getName() + scheduler + ".dot";
-            if (verbose) println("writing scheduled qasm to '" << fname << "' ...");
-            ql::utils::write_file(fname, kernel_sched_dot);
+            // disable generation of dot file for each kernel
+            // string fname = ql::utils::get_output_dir() + "/" + k.get_name() + scheduler + ".dot";
+            // if (verbose) println("writing scheduled qasm to '" << fname << "' ...");
+            // ql::utils::write_file(fname, kernel_sched_dot);
          }
 
          string fname = ql::utils::get_output_dir() + "/" + name + scheduler + ".qasm";
@@ -297,7 +328,7 @@ class quantum_program
 
          for (auto k : kernels)
          {
-            InteractionMatrix imat( k.getCircuit(), qubits);
+            InteractionMatrix imat( k.get_circuit(), qubits);
             string mstr = imat.getString();
             std::cout << mstr << std::endl;
          }
@@ -307,10 +338,10 @@ class quantum_program
       {
          for (auto k : kernels)
          {
-            InteractionMatrix imat( k.getCircuit(), qubits);
+            InteractionMatrix imat( k.get_circuit(), qubits);
             string mstr = imat.getString();
 
-            string fname = ql::utils::get_output_dir() + "/" + k.getName() + "InteractionMatrix.dat";
+            string fname = ql::utils::get_output_dir() + "/" + k.get_name() + "InteractionMatrix.dat";
             if (verbose) println("writing interaction matrix to '" << fname << "' ...");
             ql::utils::write_file(fname, mstr);
          }

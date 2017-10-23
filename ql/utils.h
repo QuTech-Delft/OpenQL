@@ -2,6 +2,7 @@
  * @file   utils.h
  * @date   04/2017
  * @author Nader Khammassi
+ *         Imran Ashraf
  * @brief  string utils (from qx)
  */
 
@@ -10,7 +11,25 @@
 
 #include "str.h"
 
-#define println(x) std::cout << "[openql] "<< x << std::endl
+#include <limits>
+#include <algorithm>
+#include <iterator>
+#include <string>
+#include <sstream>
+
+#define println(x) std::cout << "[OPENQL] "<< x << std::endl
+
+#define COUT(content) std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" "<< content << std::endl
+#define WOUT(content) std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" Warning: "<< content << std::endl
+#define EOUT(content) std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" Error: "<< content << std::endl
+
+#ifdef DEBUG
+#define DOUT(content)                          COUT(content)
+#else
+#define DOUT(content)
+#endif
+
+auto MAX_CYCLE = std::numeric_limits<int>::max();
 
 namespace ql
 {
@@ -19,7 +38,7 @@ namespace ql
      */
     namespace utils
     {
-        std::string output_dir("output");
+        std::string output_dir("test_output");
         void set_output_dir(std::string dir)
         {
             output_dir = dir;
@@ -95,6 +114,23 @@ namespace ql
 	    std::cout << v[sz] << "]" << std::endl;
 	 }
 
+    template<class T>
+    std::string to_string(std::vector<T> v, std::string vector_prefix = "", 
+                          std::string elem_sep = ", ") 
+    {
+        std::ostringstream ss;
+        ss << vector_prefix << " [";
+        std::copy(v.begin(), v.end() - 1, std::ostream_iterator<T>(ss, elem_sep.c_str()) );
+        ss << v.back() << "]";
+        return ss.str();
+    }
+
+
+    template <typename T>
+    int sign_of(T val)
+    {
+        return (T(0) < val) - (val < T(0));
+    }
 
     } // utils
 } // ql

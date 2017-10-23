@@ -1,11 +1,7 @@
 # OpenQL Framework #
 
-OpenQL is a C++ framework for high-level quantum programming. The framework
-provide a compiler for compiling and optimizing quantum code. The compiler
-produce the intermediate quantum assembly language and the compiled micro-code
-for various target platforms. While the microcode is platform-specific, the
-quantum assembly code (qasm) is hardware-agnostic and can be simulated on the
-QX simulator.
+OpenQL is a C++ framework for high-level quantum programming. The framework provides a compiler for compiling and optimizing quantum code. The compiler produce the intermediate quantum assembly language and the compiled micro-code
+for various target platforms. While the microcode is platform-specific, the quantum assembly code (qasm) is hardware-agnostic and can be simulated on the QX simulator.
 
 ## Supported Patforms
 
@@ -24,6 +20,25 @@ QX simulator.
 * [Optional] Graphviz Dot utility to convert graphs from dot to pdf, png etc
 * [Optional] XDot to visualize generated graphs in dot format
 
+## Notes for Windows Users
+* Use Power Shell for installation
+* Set execution policy by:
+
+        Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
+
+* Install [PowerShell Community Extensions](https://www.google.com "PowerShell Community Extensions")
+* MSVC 2015 should be added to the path by using the following command:
+
+        Invoke-BatchFile "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
+* To make your life easier, you can add this command to the profile you are using for power shell, avoiding the need to manually run this command every time you open a power shell. You can see the path of profile by `echo $PROFILE`. Create/Edit this fille to add the above command.
+
+* Python.exe and swig.exe should be in the path of power shell. To test if swig.exe is the path, run:
+
+        Get-Command swig
+
+* Make sure the following variables are defined:
+  * PYTHON\_INCLUDE (should point to the directory containing Python.h)
+  * PYTHON\_LIB (should point to the python library python35.lib)
 
 # Getting started 
 
@@ -73,28 +88,13 @@ These can be executed as 'python tests/simplePyTest.py'.
 N.B. the instructions below will compile the C++ files the first time they are run. 
 If you are updating an existing installation you should first clean and recompile the C++ files using the following command. 
 ```
-    rm -rf cbuild       # delete the old build folder 
+    rm -rf build cbuild       # delete the old build folders
 ```
 
-## Linux & OSX
+## Linux, Windows & OSX
 
-Running the following command in terminal should install the openql package:
-
-        pip install  -e .
-
-Run `py.test -v` to test the installation  
-
-## Windows
-
-Python.exe and swig.exe should be in the path of power shell.
-
-Make sure the following variables are defined:
-
-* PYTHON\_INCLUDE (should point to the directory containing Python.h)
-* PYTHON\_LIB (should point to the python library python35.lib)
-
-Then running the following command in power shell should install the openql package:
+Running the following command in Terminal/Power Shell should install the openql package:
 
         pip install  -e .
 
-Run `py.test -v` to test the installation  
+Run `py.test -v` to test the installation

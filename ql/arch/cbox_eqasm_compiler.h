@@ -41,7 +41,7 @@ namespace ql
 	     * compile qasm to qumis
 	     */
 	    // eqasm_t
-	    void compile(ql::circuit& c, ql::quantum_platform& platform) throw (ql::exception)
+	    void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& platform, bool verbose=false) throw (ql::exception)
 	    {
 	       if (verbose) println("[-] compiling qasm code ...");
 	       if (c.empty())
@@ -164,6 +164,7 @@ namespace ql
 		  else
 		  {
 		     println("[x] error : cbox_eqasm_compiler : instruction '" << id << "' not supported by the target platform !");
+		     throw ql::exception("[x] error : cbox_eqasm_compiler : error while reading hardware settings : instruction '"+id+"' not supported by the target platform !",false);
 		  }
 	       }
 

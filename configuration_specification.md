@@ -1,4 +1,4 @@
-## Specifying experimental configuration
+# Specifying experimental configuration
 
 The goal of the config is to specify the information required by the compiler which compile user-defined C++ or Python program into 1) QISA instructions with corresponding microcode for CC-Light, or 2) qumis instructions for CBox_v3. It should be emphasized that flexibility and extensibility of this format is a driving requirement.  The config is specified in JSON and contains a nested dictionary with the required information for **every** allowed operation including it's arguments.  If there is no entry in the configuration for a specific operation with it's arguments then it is not allowed.  There is a different entry in the configuration for different arguments of the same function: e.g., `X180(q0)` and `X180(q1)` would be two distinct entries in the config. In addition to the configuration entries there are several globally defined parameters.
 
@@ -7,15 +7,15 @@ The goal of the config is to specify the information required by the compiler wh
 - `qubit names` (list) : list of qubit names (not needed?)
 - `cycle_time` (int) : the clock cycle time of the device running the qumis
 
-- `MW_MW_buffer` (int) : buffer between pulses of type MW and MW in ns
-- `MW_Flux_buffer` (int) : buffer between pulses of type MW and Flux in ns
-- `MW_RO_buffer` (int) : buffer between pulses of type MW and RO in ns
-- `Flux_MW_buffer` (int) : buffer between pulses of type Flux and MW in ns
-- `Flux_Flux_buffer` (int) : buffer between pulses of type Flux and Flux in ns
-- `Flux_RO_buffer` (int) : buffer between pulses of type Flux and RO in ns
-- `RO_MW_buffer` (int) : buffer between pulses of type RO and MW in ns
-- `RO_Flux_buffer` (int) : buffer between pulses of type RO and Flux in ns
-- `RO_RO_buffer` (int) : buffer between pulses of type RO and RO in ns
+- `mw_mw_buffer` (int) : buffer between pulses of type MW and MW in ns
+- `mw_flux_buffer` (int) : buffer between pulses of type MW and Flux in ns
+- `mw_readout_buffer` (int) : buffer between pulses of type MW and RO in ns
+- `flux_mw_buffer` (int) : buffer between pulses of type Flux and MW in ns
+- `flux_flux_buffer` (int) : buffer between pulses of type Flux and Flux in ns
+- `flux_readout_buffer` (int) : buffer between pulses of type Flux and RO in ns
+- `readout_mw_buffer` (int) : buffer between pulses of type RO and MW in ns
+- `readout_flux_buffer` (int) : buffer between pulses of type RO and Flux in ns
+- `readout_readout_buffer` (int) : buffer between pulses of type RO and RO in ns
 
 ## Configuration entries
 Entries are either an `alias` or a full entry.
@@ -24,14 +24,14 @@ Entries are either an `alias` or a full entry.
 
 - `alias` entries only contain one item:
     + `alias` (str) : name of operation +args it is an alias of
+
 - full entries contain the following pieces of information
     + `duration` (int) : duration of the operation in ns
     + `latency` (int): latency of operation in ns
     + `qubits` (list) : what qubits this operation affects (can be empty list)
-    + `type`: one of either `MW`, `Flux`, `RO`, `None`.
     + `matrix` (matrix): the process matrix, can be an empty matrix.
     + 'disable_optimization' (bool): if this is True this operation cannot be compiled away. 
-    + type (str): one of either `MW`, `Flux`, `RO`, `None`
+    + type (str): one of either `mw`, `flux`, `readout`, `none`
     + `qumis_instr` (str): one of `wait`, `pulse`, `trigger`, `CW_trigger`, `dummy`, `measure`.
     + `qumis_instr_kw` (dict): dictionary containing keyword arguments for the qumis instruction. 
 
@@ -58,25 +58,63 @@ OpenQL supports the following instructions
     + no arguments
 
 ## CC-Light instuction configuration
-Every quantum operation (QISA instruction) is translated into one or multiple microinstructions. For the first release of CC-Light, only one microinstruction is supported. It should contain the following information:
+Every quantum operation (QISA instruction) is translated into one or multiple microinstructions. For the first release of CC-Light, only one microinstruction is supported. Apart from above mentioned information required to specify full-entries,
+the following information should be specified to generate cc-light QISA code:
 
-- `name` (str):  the name of the operation in the program.
+- `cc_light_instr` (str):  the name of the operation in the program.
 - `physical qubits` (int): the address of targeted physical qubits. A list containing up to two integers ranging from 0 to 6. Can be empty. See appendix for more details.
-- `type`: (int): 0 for single-qubit gates, 1 for two-qubit gates.
-- `op_left type`: one of either `MW`, `Flux`, `RO`, `None`.
-- `op_left` (int): 0\~255 for MW, 0\~7 for flux. Otherwise omiited.
-- `lut_idx` (int) : index of the lookuptable that stores the waveform.
-- `op_right type`: one of either `MW`, `Flux`, `RO`, `None`.
-- `op_right` (int): 0\~255 for MW, 0\~7 for flux. Otherwise omiited.
-- `lut_idx` (int) : index of the lookuptable that stores the waveform.
+- `cc_light_instr_type` (str): which can be "single_qubit_gate" or "two_qubit_gate".
+- `cc_light_codeword` (int): 0\~255 for MW, 0\~7 for flux. Otherwise omiited.
+- `cc_light_opcode` (int): 0\~127 for single qubit operations, 128\~255 for two qubit operations.
+- `cc_light_cond` (int): value can 0, 1, 2, or 3. used for CC-Light fast feedback control. The opcode should be unique, however, the codeword for conditional operations can still be the same as for the unconditional variants of these operations.
 
 
-## Potential extensibility and current flaws
+## CC-Light platform configuration
+The configuration file speficies the resources available in the target platforms and the topology.
 
-- **New qumis instructions** will be needed as hardware changes (e.g., vector switch matrix) or to support different platforms (spin-qubits, NV-centers, etc). This should not affect the structure of this config but will change the content in the future.
-- **Classical logic** is not specified in this document but does relate to the underlying qumis instructions, e.g, operations conditional on measurement outcomes.
-- **Composite qumis instructions**. In the current proposal it is not possible to specify composite qumis instructions even though there is a clear potential for this. An example would be quickly putting a copy of a pulse on a different channel or triggering a scope.
-- The format is flattened out completely, not taking use of any structure in the configuration. This is on purpose.
+### "resources" entry
+These resources can be qubits, waveform generators, measurement units and possible edges for 2-qubit operations. This information is used to model these resources in OpenQL to perform resource-constraint scheduling. An example entry of a resource `meas_units` is shown below:
+
+	    "meas_units" :
+	    {
+	      "count": 2,
+	      "connection_map":
+	      {
+	        "0" : [0, 2, 3, 5, 6],
+	        "1" : [1, 4]
+	      }
+	    }
+	    
+where
+- `count` is the number of `meas_units` resources available in the platform, which in the above example is 2.
+- `connection_map` specifies how each `meas_unit` is connected to the qubits. For example the first instance of `meas_units` is connected to qubit numbers 0, 2, 3, 5, 6.
+
+Another less clear example is the following `edges` resources:
+
+	    "edges":
+	    {
+	      "count": 8,
+	      "connection_map":
+	      {
+	        "0": [2], 
+	        "1": [3],
+	        "2": [0],
+	        "3": [1],
+	        "4": [6],
+	        "5": [7],
+	        "6": [4],
+	        "7": [5]
+	      }
+	    }
+	
+which specifies the 8 edges in ccLight platform. `connection_map` specifies, for instance that edge 0 is connected to edge 2. The constraint which is derived from this information is that, if there is an operation on edge 0, it is not possible to use edge 2 in a 2-qubit operation unless edge 0 is free. Similar constraints are deduced for rest of 7 the edges.
+
+### topology
+This section specifies:
+- grid `x_size` and `y_size`
+- `qubits` definition which maps qubit ids to qubit `x` and `y` coordinates on the grid
+- `edges` definition which maps edge ids to edge `src` and `dst` qubits
+
 
 ## Example use of aliases
 
@@ -87,6 +125,22 @@ Every quantum operation (QISA instruction) is translated into one or multiple mi
 - X180(q0) -> X(q0)
 - X180(q0) -> rX180(q0)
 
+## Parametrized gate-decomposition
+Parametrized gate decompositions can be specified in `gate_decomposition` section, as shown below:
+
+    "rx180 %0" : ["x %0"]
+
+Based on this, `k.gate('rx180', 3)` will be decomposed to x(q3). Simmilarly, multi-qubit gate-decompositions can be specified as:
+
+    "cnot %0,%1" : ["ry90 %0","cz %0,%1","ry90 %1"]
+
+
+## Potential extensibility and current flaws
+
+- **New qumis instructions** will be needed as hardware changes (e.g., vector switch matrix) or to support different platforms (spin-qubits, NV-centers, etc). This should not affect the structure of this config but will change the content in the future.
+- **Classical logic** is not specified in this document but does relate to the underlying qumis instructions, e.g, operations conditional on measurement outcomes.
+- **Composite qumis instructions**. In the current proposal it is not possible to specify composite qumis instructions even though there is a clear potential for this. An example would be quickly putting a copy of a pulse on a different channel or triggering a scope.
+- The format is flattened out completely, not taking use of any structure in the configuration. This is on purpose.
 
 
 ## Appendix: Device channel to qubit mapping

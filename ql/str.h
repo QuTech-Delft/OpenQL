@@ -68,7 +68,7 @@ namespace str
     */
    inline size_t occur_count(std::string &str, std::string seq)
    {
-      int count = 0, index = str.find(seq);
+      size_t count = 0, index = str.find(seq);
       while (index < str.size()) // && index >= 0 )
       {
 	 count++;
@@ -227,7 +227,7 @@ namespace str
     */
    inline bool is_empty(std::string &str)
    {
-      for (int i=0; i<str.size(); ++i)
+      for (size_t i=0; i<str.size(); ++i)
       {
 	 char c = str[i];
 	 if (is_letter(c) || is_digit(c))

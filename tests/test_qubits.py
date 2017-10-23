@@ -12,6 +12,16 @@ platf = ql.Platform("starmon", config_fn)
 output_dir = os.path.join(curdir, 'test_output')
 ql.set_output_dir(output_dir)
 
+def file_compare(fn1, fn2):
+    isSame = False
+    with open(fn1, 'r') as f1:
+        with open(fn2, 'r') as f2:
+            a = f1.read()
+            b = f2.read()
+            f1.close()
+            f2.close()
+            isSame = (a==b)
+    return isSame
 
 class Test_qubits(unittest.TestCase):
 
@@ -35,10 +45,10 @@ class Test_qubits(unittest.TestCase):
         # compile  opt  verbose
         p.compile(False, False)
 
-        gold = rootDir + '/golden/test_1_qubit.qasm'
+        gold_fn = rootDir + '/golden/test_1_qubit.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-        isSame = filecmp.cmp(qasm_fn, gold)
-        self.assertTrue(isSame)
+
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_2_qubit(self):
 
@@ -48,7 +58,7 @@ class Test_qubits(unittest.TestCase):
         k.prepz(0)
         k.prepz(1)
         k.prepz(2)
-        k.cnot(0, 1)
+        k.cz(0, 1)
         k.clifford(1, 2)
         k.measure(2)
 
@@ -62,10 +72,10 @@ class Test_qubits(unittest.TestCase):
         # compile  opt  verbose
         p.compile(False, False)
 
-        gold = rootDir + '/golden/test_2_qubit.qasm'
+        gold_fn = rootDir + '/golden/test_2_qubit.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-        isSame = filecmp.cmp(qasm_fn, gold)
-        self.assertTrue(isSame)
+
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_3_qubit(self):
         k = ql.Kernel("aKernel", platf)
@@ -87,10 +97,10 @@ class Test_qubits(unittest.TestCase):
         # compile  opt  verbose
         p.compile(False, False)
 
-        gold = rootDir + '/golden/test_3_qubit.qasm'
+        gold_fn = rootDir + '/golden/test_3_qubit.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-        isSame = filecmp.cmp(qasm_fn, gold)
-        self.assertTrue(isSame)
+
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 if __name__ == '__main__':
     unittest.main()

@@ -5,7 +5,7 @@ qubits 3
    prepz q0
    prepz q1
    prepz q2
-   cnot q0,q1
+   cz q0,q1
    ry90 q2
    rx90 q2
    measure q2

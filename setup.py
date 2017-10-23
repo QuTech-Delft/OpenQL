@@ -15,26 +15,32 @@ os.chdir(buildDir)
 if platform == "linux" or platform == "linux2":
     print('Detected Linux OS, installing openql ... ')
     cmd = 'cmake ..'
-    ret = subprocess.check_output(cmd, shell=True)
+    proc = subprocess.Popen(cmd, shell=True)
+    proc.communicate()
     cmd = 'make'
-    ret = subprocess.check_output(cmd, shell=True)
+    proc = subprocess.Popen(cmd, shell=True)
+    proc.communicate()
     clibname = "_openql.so"
 
 elif platform == "darwin":
     print('Detected OSX, installing openql ... ')
     os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.10"
     cmd = 'cmake ..'
-    ret = subprocess.check_output(cmd, shell=True)
+    proc = subprocess.Popen(cmd, shell=True)
+    proc.communicate()
     cmd = 'make'
-    ret = subprocess.check_output(cmd, shell=True)
+    proc = subprocess.Popen(cmd, shell=True)
+    proc.communicate()
     clibname = "_openql.so"
 
 elif platform == "win32":
     print('Detected Windows OS, installing openql ... ')
     cmd = 'cmake -G "NMake Makefiles" ..'
-    ret = subprocess.check_output(cmd, shell=True)
+    proc = subprocess.Popen(cmd, shell=True)
+    proc.communicate()
     cmd = 'nmake'
-    ret = subprocess.check_output(cmd, shell=True)
+    proc = subprocess.Popen(cmd, shell=True)
+    proc.communicate()
     clibname = "_openql.pyd"
 
 else:
@@ -63,6 +69,3 @@ setup(name='openql',
       include_package_data=True,
       package_data={'openql': [clib]},
       zip_safe=False)
-
-# os.remove(os.path.join(rootDir, "openql", "openql.py"))
-# os.remove(clib)
