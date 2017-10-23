@@ -62,6 +62,8 @@ public:
         cycle_time=platform.cycle_time;
 
         // populate buffer map
+        // 'none' type is a dummy type and no buffer cycles will be inserted for
+        // instructions of type 'none'
         std::vector<std::string> buffer_names = {"none", "mw", "flux", "readout"};
         for(auto & buf1 : buffer_names)
         {

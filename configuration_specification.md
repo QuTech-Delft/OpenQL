@@ -7,15 +7,15 @@ The goal of the config is to specify the information required by the compiler wh
 - `qubit names` (list) : list of qubit names (not needed?)
 - `cycle_time` (int) : the clock cycle time of the device running the qumis
 
-- `MW_MW_buffer` (int) : buffer between pulses of type MW and MW in ns
-- `MW_Flux_buffer` (int) : buffer between pulses of type MW and Flux in ns
-- `MW_RO_buffer` (int) : buffer between pulses of type MW and RO in ns
-- `Flux_MW_buffer` (int) : buffer between pulses of type Flux and MW in ns
-- `Flux_Flux_buffer` (int) : buffer between pulses of type Flux and Flux in ns
-- `Flux_RO_buffer` (int) : buffer between pulses of type Flux and RO in ns
-- `RO_MW_buffer` (int) : buffer between pulses of type RO and MW in ns
-- `RO_Flux_buffer` (int) : buffer between pulses of type RO and Flux in ns
-- `RO_RO_buffer` (int) : buffer between pulses of type RO and RO in ns
+- `mw_mw_buffer` (int) : buffer between pulses of type MW and MW in ns
+- `mw_flux_buffer` (int) : buffer between pulses of type MW and Flux in ns
+- `mw_readout_buffer` (int) : buffer between pulses of type MW and RO in ns
+- `flux_mw_buffer` (int) : buffer between pulses of type Flux and MW in ns
+- `flux_flux_buffer` (int) : buffer between pulses of type Flux and Flux in ns
+- `flux_readout_buffer` (int) : buffer between pulses of type Flux and RO in ns
+- `readout_mw_buffer` (int) : buffer between pulses of type RO and MW in ns
+- `readout_flux_buffer` (int) : buffer between pulses of type RO and Flux in ns
+- `readout_readout_buffer` (int) : buffer between pulses of type RO and RO in ns
 
 ## Configuration entries
 Entries are either an `alias` or a full entry.
@@ -29,10 +29,9 @@ Entries are either an `alias` or a full entry.
     + `duration` (int) : duration of the operation in ns
     + `latency` (int): latency of operation in ns
     + `qubits` (list) : what qubits this operation affects (can be empty list)
-    + `type`: one of either `MW`, `Flux`, `RO`, `None`.
     + `matrix` (matrix): the process matrix, can be an empty matrix.
     + 'disable_optimization' (bool): if this is True this operation cannot be compiled away. 
-    + type (str): one of either `MW`, `Flux`, `RO`, `None`
+    + type (str): one of either `mw`, `flux`, `readout`, `none`
     + `qumis_instr` (str): one of `wait`, `pulse`, `trigger`, `CW_trigger`, `dummy`, `measure`.
     + `qumis_instr_kw` (dict): dictionary containing keyword arguments for the qumis instruction. 
 
