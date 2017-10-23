@@ -50,15 +50,21 @@ def test_none():
     p = ql.Program('aProgram', num_qubits, platform)
     p.set_sweep_points(sweep_points, num_circuits)
 
-    k = ql.Kernel('aKernel', platform)
+    k1 = ql.Kernel('aKernel1', platform)
+    k2 = ql.Kernel('aKernel2', platform)
 
-    k.x(0)
-    k.gate("x",0); # x will be dcomposed
-    k.gate("cnot", 0, 1) # cnot will be decomposed
-    k.gate("cnot", [2, 3]) # same as above but with a list of qubits
+    k1.gate("x",0);
+    k1.gate("x",0);
+
+    k2.gate("x",0);
+    k2.gate("x",0);
+
+    # k.gate("cnot", 0, 1)
+    # k.gate("cnot", [2, 3])
 
     # add the kernel to the program
-    p.add_kernel(k)
+    p.add_kernel(k1)
+    p.add_kernel(k2)
 
     # compile the program
     p.compile(optimize=False, verbose=True)
