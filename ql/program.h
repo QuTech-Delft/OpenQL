@@ -80,7 +80,7 @@ class quantum_program
             auto & gname = g->name;
             for(auto & qno : gate_operands)
             {
-               DOUT("qno : " << qno);
+               // DOUT("qno : " << qno);
                if( qno < 0 || qno >= qubits )
                {   
                    EOUT("No of qubits in program: " << qubits << ", specified qubit number out of range for gate:'" << gname << "' with " << ql::utils::to_string(gate_operands,"qubits") );
@@ -307,8 +307,8 @@ class quantum_program
             std::string kernel_sched_qasm;
             std::string kernel_sched_dot;
             k.schedule(qubits, platform, scheduler, kernel_sched_qasm, kernel_sched_dot, verbose);
-            sched_qasm += "." + k.get_name() + "\n";
-            sched_qasm += kernel_sched_qasm;
+            sched_qasm += "\n." + k.get_name();
+            sched_qasm += kernel_sched_qasm + '\n';
 
             // disable generation of dot file for each kernel
             // string fname = ql::utils::get_output_dir() + "/" + k.get_name() + scheduler + ".dot";

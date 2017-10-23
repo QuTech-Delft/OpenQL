@@ -557,6 +557,7 @@ public:
         }
 
         size_t empty_cycles=0;
+        ss << '\n';
         for(size_t currCycle = 1; currCycle<TotalCycles; ++currCycle)
         {
             auto it = insInAllCycles.find(currCycle);
