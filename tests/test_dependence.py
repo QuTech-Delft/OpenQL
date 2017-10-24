@@ -46,7 +46,7 @@ class Test_dependence(unittest.TestCase):
         nqubits = 4
 
         p = ql.Program("independent", nqubits, platf)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         p.compile(False, True)
         p.schedule("ASAP", True)
@@ -76,7 +76,7 @@ class Test_dependence(unittest.TestCase):
         nqubits = 4
 
         p = ql.Program("WAW", nqubits, platf)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         p.compile(False, False)
         p.schedule("ASAP", False)
@@ -107,7 +107,7 @@ class Test_dependence(unittest.TestCase):
         nqubits = 4
 
         p = ql.Program("RAR", nqubits, platf)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         p.compile(False, False)
         p.schedule("ASAP", False)
@@ -138,7 +138,7 @@ class Test_dependence(unittest.TestCase):
         nqubits = 4
 
         p = ql.Program("RAW", nqubits, platf)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         p.compile(False, False)
         p.schedule("ASAP", False)
@@ -169,7 +169,7 @@ class Test_dependence(unittest.TestCase):
         nqubits = 4
 
         p = ql.Program("WAR", nqubits, platf)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         p.compile(False, False)
         p.schedule("ASAP", False)

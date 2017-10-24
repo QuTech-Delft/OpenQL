@@ -39,7 +39,7 @@ class Test_qubits(unittest.TestCase):
         sweep_points = [2]
         num_circuits = 1
         p = ql.Program("1_qubit_program", nqubits, platf)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         p.add_kernel(k)  # add kernel to program
         # compile  opt  verbose
@@ -66,7 +66,7 @@ class Test_qubits(unittest.TestCase):
         sweep_points = [2]
         num_circuits = 1
         p = ql.Program("2_qubit_program", nqubits, platf)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         p.add_kernel(k)  # add kernel to program
         # compile  opt  verbose
@@ -91,7 +91,7 @@ class Test_qubits(unittest.TestCase):
         sweep_points = [2]
         num_circuits = 1
         p = ql.Program("3_qubit_program", nqubits, platf)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         p.add_kernel(k)  # add kernel to program
         # compile  opt  verbose

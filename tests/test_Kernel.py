@@ -84,7 +84,7 @@ class Test_kernel(unittest.TestCase):
         nqubits = 3
 
         p = ql.Program("aProgram", nqubits, platf)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k1)
         p.add_kernel(k2)
         p.compile(False, False)

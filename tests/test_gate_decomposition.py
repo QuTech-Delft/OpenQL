@@ -13,7 +13,7 @@ class Tester(unittest.TestCase):
         num_circuits = 1
         num_qubits = 17
         p = ql.Program('aProgram', num_qubits, platform)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         k = ql.Kernel('aKernel', platform)
 

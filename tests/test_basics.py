@@ -17,7 +17,7 @@ class Test_basic(unittest.TestCase):
         num_circuits = 2
         nqubits = 2
         p = ql.Program("aProgram", nqubits, platf)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate kernel
         k = ql.Kernel("first_kernel", platf)
@@ -63,7 +63,7 @@ class Test_basic(unittest.TestCase):
     #     nqubits = 2
 
     #     p = ql.Program("aProgram", nqubits)
-    #     p.set_sweep_points(sweep_points, num_circuits)
+    #     p.set_sweep_points(sweep_points, len(sweep_points))
     #     p.add_kernel(k)
     #     p.compile(False, True)
     #     p.schedule()

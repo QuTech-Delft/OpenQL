@@ -15,7 +15,7 @@ def first_example():
     num_circuits = 2
     nqubits = 2
     p = ql.Program("my_program", nqubits, platf)
-    p.set_sweep_points(sweep_points, num_circuits)
+    p.set_sweep_points(sweep_points, len(sweep_points))
 
     # populate kernel using default gates
     k = ql.Kernel("first_kernel", platf)
