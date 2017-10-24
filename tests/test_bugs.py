@@ -22,7 +22,7 @@ class Test_bugs(unittest.TestCase):
         num_circuits = 1
         num_qubits = 2
         p = ql.Program('aProgram', num_qubits, platf)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
         k = ql.Kernel('aKernel', platf)
 
         qubit = 1

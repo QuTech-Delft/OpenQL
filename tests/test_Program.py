@@ -61,7 +61,7 @@ class Test_program(unittest.TestCase):
         num_circuits = 1
         nqubits = 2
         p = ql.Program("rbProgram", nqubits, platf)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         print( p.qasm() )
         p.compile(False, False)

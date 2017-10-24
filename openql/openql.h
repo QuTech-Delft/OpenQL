@@ -199,10 +199,10 @@ public:
         prog = new ql::quantum_program(name, nqubits, *(p.ql_platform));
     }
 
-    void set_sweep_points( std::vector<float> sweep_points, size_t num_circuits)
+    void set_sweep_points( std::vector<float> sweep_points, size_t num_sweep_points)
     {
         float* sp = &sweep_points[0];
-        prog->set_sweep_points(sp, num_circuits);
+        prog->set_sweep_points(sp, num_sweep_points);
     }
 
     void add_kernel(Kernel& k)

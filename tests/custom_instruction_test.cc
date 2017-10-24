@@ -24,7 +24,6 @@ int main(int argc, char ** argv)
 {
    srand(0);
 
-   int   num_circuits       = 1;
    float sweep_points[]     = { 1, 1.25, 1.75, 2.25, 2.75 };
 
    // ql::init();
@@ -41,7 +40,7 @@ int main(int argc, char ** argv)
 
    // create program
    ql::quantum_program prog("prog", 2, starmon);
-   prog.set_sweep_points(sweep_points, num_circuits);
+   prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
    ql::quantum_kernel k("custom_gate_test",starmon);
 

@@ -42,7 +42,6 @@ int main(int argc, char ** argv)
     srand(0);
 
     float sweep_points[] = {2};
-    int   num_circuits   = 1;
 
     // initialize the target platform
 
@@ -62,7 +61,7 @@ int main(int argc, char ** argv)
 
     // create program
     ql::quantum_program prog("a_program", 7, starmon);
-    prog.set_sweep_points(sweep_points, num_circuits);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
     // create kernel
     ql::quantum_kernel kernel("a_kernel",starmon);

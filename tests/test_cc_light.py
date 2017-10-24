@@ -34,7 +34,7 @@ class Test_basic(unittest.TestCase):
         num_circuits = 1
         num_qubits = platform.get_qubit_number()
         p = ql.Program('aProgram', num_qubits, platform)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
@@ -70,7 +70,7 @@ class Test_basic(unittest.TestCase):
         num_circuits = 2
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate the second kernel using both custom and default gates
         k = ql.Kernel('aKernel', platform)
@@ -102,7 +102,7 @@ class Test_basic(unittest.TestCase):
         num_circuits = 2
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate the first kernel using default gates
         k = ql.Kernel('aKernel01', platform)
@@ -149,7 +149,7 @@ class Test_basic(unittest.TestCase):
         num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
@@ -188,7 +188,7 @@ class Test_advance(unittest.TestCase):
         num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
@@ -213,7 +213,7 @@ class Test_advance(unittest.TestCase):
         num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
@@ -238,7 +238,7 @@ class Test_advance(unittest.TestCase):
         num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
@@ -263,7 +263,7 @@ class Test_advance(unittest.TestCase):
         num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
@@ -285,7 +285,7 @@ class Test_advance(unittest.TestCase):
         num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         k = ql.Kernel('aKernel', platform)
 
@@ -309,7 +309,7 @@ class Test_advance(unittest.TestCase):
         num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
@@ -332,7 +332,7 @@ class Test_advance(unittest.TestCase):
         num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
@@ -358,7 +358,7 @@ class Test_advance(unittest.TestCase):
         num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
@@ -380,7 +380,7 @@ class Test_advance(unittest.TestCase):
         num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
@@ -405,7 +405,7 @@ class Test_advance(unittest.TestCase):
         num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
@@ -434,7 +434,7 @@ class Test_advance(unittest.TestCase):
         num_circuits = 1
         num_qubits = platform.get_qubit_number()
         p = ql.Program('aProgram', num_qubits, platform)
-        p.set_sweep_points(sweep_points, num_circuits)
+        p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
@@ -488,7 +488,7 @@ class Test_advance(unittest.TestCase):
             num_circuits = 1
             num_qubits = 7
             p = ql.Program('aProgram', num_qubits, platform)
-            p.set_sweep_points(sweep_points, num_circuits)
+            p.set_sweep_points(sweep_points, len(sweep_points))
             k = ql.Kernel('aKernel', platform)
 
             for gate, qubits in testKernel:
@@ -530,7 +530,7 @@ class Test_advance(unittest.TestCase):
             num_circuits = 1
             num_qubits = 7
             p = ql.Program('aProgram', num_qubits, platform)
-            p.set_sweep_points(sweep_points, num_circuits)
+            p.set_sweep_points(sweep_points, len(sweep_points))
             k = ql.Kernel('aKernel', platform)
 
             for gate, qubits in testKernel:

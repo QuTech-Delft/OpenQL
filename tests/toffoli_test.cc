@@ -29,11 +29,10 @@ int main(int argc, char ** argv)
 
 
    float sweep_points[] = {2};
-   int   num_circuits   = 1;
 
    // create program
    ql::quantum_program prog("prog",5,starmon);
-   prog.set_sweep_points(sweep_points, num_circuits);
+   prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
    // create a kernel
    ql::quantum_kernel kernel("my_kernel",starmon);
