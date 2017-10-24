@@ -336,7 +336,7 @@ Parameters
 arg1 : []
     list of sweep points
 arg1 : int
-	number of circuits
+	number of sweep points
 """
 
 %feature("docstring") program::add_kernel
