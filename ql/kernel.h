@@ -628,7 +628,7 @@ public:
         for(auto & qno : qubits)
         {
             DOUT("qno : " << qno);
-            if( qno < 0 || qno >= qubit_number )
+            if( qno >= qubit_number )
             {   
                 EOUT("Number of qubits in platform: " << std::to_string(qubit_number) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
                 throw ql::exception("[x] error : ql::kernel::gate() : Number of qubits in platform: "+std::to_string(qubit_number)+", specified qubit numbers out of range for gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" !",false);

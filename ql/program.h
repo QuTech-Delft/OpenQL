@@ -81,7 +81,7 @@ class quantum_program
             for(auto & qno : gate_operands)
             {
                // DOUT("qno : " << qno);
-               if( qno < 0 || qno >= qubits )
+               if( qno >= qubits )
                {   
                    EOUT("No of qubits in program: " << qubits << ", specified qubit number out of range for gate:'" << gname << "' with " << ql::utils::to_string(gate_operands,"qubits") );
                    throw ql::exception("[x] error : ql::kernel::gate() : No of qubits in program: "+std::to_string(qubits)+", specified qubit number out of range for gate '"+gname+"' with " +ql::utils::to_string(gate_operands,"qubits")+" !",false);
