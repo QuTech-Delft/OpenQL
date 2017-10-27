@@ -42,7 +42,7 @@ class quantum_program
 	 backend_compiler    = NULL;
          if (eqasm_compiler_name =="")
          {
-            println("[x] error : eqasm compiler name must be specified in the hardware configuration file !");
+            EOUT("eqasm compiler name must be specified in the hardware configuration file !");
             throw std::exception();
          }
          else if (eqasm_compiler_name == "qumis_compiler")
@@ -59,7 +59,7 @@ class quantum_program
 	 }
          else
          {
-            println("[x] error : the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
+            EOUT("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
             throw std::exception();
          }
 
@@ -188,10 +188,10 @@ class quantum_program
       {
          // if (!ql::initialized)
          // {
-         //    println("[x] error : openql should initialized for the target platform before compilation !");
+         //    EOUT("[x] error : openql should initialized for the target platform before compilation !");
          //    return -1;
          // }
-         if (verbose) println("compiling ...");
+         if (verbose) COUT("compiling ...");
          if (kernels.empty())
             return -1;
 
@@ -199,8 +199,8 @@ class quantum_program
          {
             if (verbose)
             {
-               println("optimizations enabled");
-               println("optimizing quantum kernels...");
+               COUT("optimizations enabled");
+               COUT("optimizing quantum kernels...");
             }
             for (size_t k=0; k<kernels.size(); ++k)
                kernels[k].optimize();
@@ -210,12 +210,12 @@ class quantum_program
          ss_qasm << ql::utils::get_output_dir() << "/" << name << ".qasm";
          std::string s = qasm();
 
-         if (verbose) println("writing qasm to '" << ss_qasm.str() << "' ...");
+         if (verbose) COUT("writing qasm to '" << ss_qasm.str() << "' ...");
          ql::utils::write_file(ss_qasm.str(),s);
 
          if (backend_compiler == NULL)
          {
-            println("warning : no eqasm compiler has been specified in the configuration file, only qasm code has been compiled.");
+            WOUT("no eqasm compiler has been specified in the configuration file, only qasm code has been compiled.");
             return 0;
          }
 
@@ -223,7 +223,7 @@ class quantum_program
          // for (int i=0; i<sweep_points.size(); i++) println(sweep_points[i]);
 
          if (verbose)
-            println("fusing quantum kernels...");
+            COUT("fusing quantum kernels...");
 
          ql::circuit fused;
 
@@ -235,18 +235,18 @@ class quantum_program
 
 	 try 
 	 {
-	    println("compiling eqasm code...");
+	    COUT("compiling eqasm code...");
 	    backend_compiler->compile(name, fused, platform, verbose);
 	 }
 	 catch (ql::exception e)
 	 {
-	    println("[x] error : eqasm_compiler.compile() : compilation interrupted due to fatal error.");
+	    EOUT("[x] error : eqasm_compiler.compile() : compilation interrupted due to fatal error.");
 	    throw e;
 	 }
 
-         // println("writing eqasm code to '" << ( ql::utils::get_output_dir() + "/" + name+".asm") << "'...");
+         // COUT("writing eqasm code to '" << ( ql::utils::get_output_dir() + "/" + name+".asm") << "'...");
          backend_compiler->write_eqasm( ql::utils::get_output_dir() + "/" + name + ".asm");
-         println("writing traces...");
+         COUT("writing traces...");
          backend_compiler->write_traces( ql::utils::get_output_dir() + "/trace.dat");
 
          // deprecated hardcoded microcode generation 
@@ -256,7 +256,7 @@ class quantum_program
          ss_asm << output_path << name << ".asm";
          std::string uc = microcode();
 
-         if (verbose) println("writing transmon micro-code to '" << ss_asm.str() << "' ...");
+         if (verbose) COUT("writing transmon micro-code to '" << ss_asm.str() << "' ...");
          ql::utils::write_file(ss_asm.str(),uc);
          */
 
@@ -273,7 +273,7 @@ class quantum_program
             std::stringstream ss_config;
             ss_config << ql::utils::get_output_dir() << "/" << name << "_config.json";
             std::string conf_file_name = ss_config.str();
-            if (verbose) println("writing sweep points to '" << conf_file_name << "'...");
+            if (verbose) COUT("writing sweep points to '" << conf_file_name << "'...");
             ql::utils::write_file(conf_file_name, config);
          }
          else
@@ -281,16 +281,16 @@ class quantum_program
             std::stringstream ss_config;
             ss_config << ql::utils::get_output_dir() << "/" << config_file_name;
             std::string conf_file_name = ss_config.str();
-            if (verbose) println("writing sweep points to '" << conf_file_name << "'...");
+            if (verbose) COUT("writing sweep points to '" << conf_file_name << "'...");
             ql::utils::write_file(conf_file_name, config);
          }
 	 }
 	 else
 	 {
-	    println("[x] error : cannot write sweepoint file : sweep point array is empty !");
+	    EOUT("cannot write sweepoint file : sweep point array is empty !");
 	 }
 
-	 println("compilation of program '" << name << "' done.");
+	 COUT("compilation of program '" << name << "' done.");
 
          return 0;
       }
@@ -300,7 +300,7 @@ class quantum_program
          std::string sched_qasm;
 
          if (verbose)
-            println("scheduling the quantum program");
+            COUT("scheduling the quantum program");
 
          for (auto k : kernels)
          {
@@ -312,19 +312,19 @@ class quantum_program
 
             // disable generation of dot file for each kernel
             // string fname = ql::utils::get_output_dir() + "/" + k.get_name() + scheduler + ".dot";
-            // if (verbose) println("writing scheduled qasm to '" << fname << "' ...");
+            // if (verbose) COUT("writing scheduled qasm to '" << fname << "' ...");
             // ql::utils::write_file(fname, kernel_sched_dot);
          }
 
          string fname = ql::utils::get_output_dir() + "/" + name + scheduler + ".qasm";
-         if (verbose) println("writing scheduled qasm to '" << fname << "' ...");
+         if (verbose) COUT("writing scheduled qasm to '" << fname << "' ...");
          ql::utils::write_file(fname, sched_qasm);
       }
 
       void print_interaction_matrix(bool verbose=false)
       {
          if (verbose)
-            println("printing interaction matrix...");
+            COUT("printing interaction matrix...");
 
          for (auto k : kernels)
          {
@@ -342,7 +342,7 @@ class quantum_program
             string mstr = imat.getString();
 
             string fname = ql::utils::get_output_dir() + "/" + k.get_name() + "InteractionMatrix.dat";
-            if (verbose) println("writing interaction matrix to '" << fname << "' ...");
+            if (verbose) COUT("writing interaction matrix to '" << fname << "' ...");
             ql::utils::write_file(fname, mstr);
          }
       }

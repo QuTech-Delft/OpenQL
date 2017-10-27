@@ -78,7 +78,7 @@ public:
 
         if (hardware_settings["qubit_number"].is_null())
         {
-            println("[x] error : qubit number of the platform is not specified in the configuration file !");
+            EOUT("qubit number of the platform is not specified in the configuration file !");
             throw std::exception();
         }
         qubit_number = hardware_settings["qubit_number"];
@@ -94,7 +94,7 @@ public:
         // }
         // else
         // {
-        //    println("[x] error : the eqasm compiler backend specified in the hardware configuration file is not supported !");
+        //    EOUT("eqasm compiler backend specified in the hardware configuration file is not supported !");
         //    throw std::exception();
         // }
     }

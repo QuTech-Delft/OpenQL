@@ -756,7 +756,7 @@ public:
     void schedule(size_t qubits, quantum_platform platform, std::string scheduler, std::string& sched_qasm, std::string& sched_dot, bool verbose=false)
     {
 #ifndef __disable_lemon__
-        if (verbose) println( scheduler << " scheduling the quantum kernel '" << name << "'...");
+        if (verbose) COUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
 
         Scheduler sched;
         sched.Init(qubits, c, platform, verbose);
@@ -782,14 +782,14 @@ public:
         }
         else
         {
-            println("Unknown scheduler");
+            EOUT("Unknown scheduler");
         }
 #endif // __disable_lemon__
     }
 
     std::vector<circuit*> split_circuit(circuit x, bool verbose=false)
     {
-        if (verbose) println("circuit decomposition in basic blocks ... ");
+        if (verbose) COUT("circuit decomposition in basic blocks ... ");
         std::vector<circuit*> cs;
         cs.push_back(new circuit());
         for (size_t i=0; i<x.size(); i++)
@@ -864,8 +864,8 @@ public:
     {
         for (std::map<std::string,custom_gate*>::iterator i=gate_definition.begin(); i!=gate_definition.end(); i++)
         {
-            println("[-] gate '" << i->first << "'");
-            println(" |- qumis : \n" << i->second->micro_code());
+            COUT("[-] gate '" << i->first << "'");
+            COUT(" |- qumis : \n" << i->second->micro_code());
         }
     }
 

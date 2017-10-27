@@ -44,13 +44,13 @@ namespace ql
        while (std::getline(file, line))
        {
 	  #ifdef __debug__
-	  println("line " << i << " : " << line);
+	  DOUT("line " << i << " : " << line);
 	  #endif
 	  size_t p = line.find(":");
 	  if (line.size() < 3) continue;
 	  if (p == std::string::npos)
 	  {
-	     println("syntax error at line " << i << " : invalid syntax.");
+	     EOUT("syntax error at line " << i << " : invalid syntax.");
 	     return false;
 	  }
 	  std::string key = line.substr(0,p);
@@ -58,26 +58,26 @@ namespace ql
 
 	  if (!utils::format_string(key))
 	  {
-	     println("syntax error at line " << i << " : invalid key format.");
+	     EOUT("syntax error at line " << i << " : invalid key format.");
 	     return false;
 	  }
 
 	  if (!utils::format_string(val))
 	  {
-	     println("syntax error at line " << i << " : invalid value format.");
+	     EOUT("syntax error at line " << i << " : invalid value format.");
 	     return false;
 	  }
 
 	  #ifdef __debug__
-	  println(" --> key : " << key);
-	  println(" --> val : " << val);
+	  DOUT(" --> key : " << key);
+	  DOUT(" --> val : " << val);
 	  #endif
 	  imap[key] = val;
        }
        file.close();
        #ifdef __debug__
        for (dep_instruction_map_t::iterator i=imap.begin(); i!=imap.end(); i++)
-	  println("[ " << (*i).first <<  " --> " << (*i).second << " ]");
+	  DOUT("[ " << (*i).first <<  " --> " << (*i).second << " ]");
        #endif // __debug__
 
        return true;
@@ -94,13 +94,13 @@ namespace ql
 	     fs >> j;
 	  } catch (json::exception e)
 	  {
-	     println("[x] error : malformed json file : \n\t" << e.what());
+	     EOUT("malformed json file : \n\t" << e.what());
 	     throw (e);
 	  }
        }
        else
        {
-        println("[x] error : failed to open file '" << file_name << "' !");
+        EOUT("failed to open file '" << file_name << "' !");
         throw ql::exception("[x] error : failed to open file '" + file_name + "' !",false);
        }
       return j;

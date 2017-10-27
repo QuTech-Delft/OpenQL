@@ -120,7 +120,7 @@ public:
 
         // load instructions
         json instructions = config["instructions"];
-        // std::cout << instructions.dump(4) << std::endl;
+        // DOUT(instructions.dump(4));
         for (json::iterator it = instructions.begin(); it != instructions.end(); ++it)
         {
             std::string  name = it.key();
@@ -150,7 +150,7 @@ public:
 
                 // check for duplicate operations
                 if (instruction_map.find(comp_ins) != instruction_map.end())
-                    println("[!] warning : ql::hardware_configuration::load() : composite instruction '" << comp_ins << "' redefined : the old definition is overwritten !");
+                    WOUT("composite instruction '" << comp_ins << "' redefined : the old definition is overwritten !");
 
                 json sub_instructions = *it;
                 if (!sub_instructions.is_array())

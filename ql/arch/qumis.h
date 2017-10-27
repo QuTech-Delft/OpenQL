@@ -114,7 +114,7 @@ namespace ql
 	       }
 	       else
 	       {
-		  println("[x] warning : latency of instruction '" << this << "' is already compensated !");
+		  WOUT("latency of instruction '" << this << "' is already compensated !");
 	       }
 	    }    
 
@@ -362,7 +362,7 @@ namespace ql
 	       used_resources          = codeword.to_ulong();
 	       used_resources.set(ready_bit);
 	       if (ready_bit_duration > (duration-1))
-		  println("[x] error in codeword trigger definition : 'ready_bit_duration' cannot be greater than overall 'duration' !");
+		  EOUT("in codeword trigger definition : 'ready_bit_duration' cannot be greater than overall 'duration' !");
 
 	       codeword_t ready_cw = 0;
 	       ready_cw.set(ready_bit);
@@ -405,7 +405,7 @@ namespace ql
 	       }
 	       else
 	       {
-		  println("[x] warning : latency of instruction '" << this << "' is already compensated !");
+		  WOUT("latency of instruction '" << this << "' is already compensated !");
 	       }
 	    }    
 
@@ -509,7 +509,7 @@ namespace ql
 	       }
 	       else
 	       {
-		  println("[x] warning : latency of instruction '" << this << "' is already compensated !");
+		  WOUT("latency of instruction '" << this << "' is already compensated !");
 	       }
 	    }
 

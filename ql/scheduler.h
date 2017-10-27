@@ -99,7 +99,7 @@ public:
 
         for( auto ins : ckt )
         {
-            // std::cout << "\nCurrent instruction : " << ins->qasm() << std::endl;
+            // DOUT("\nCurrent instruction : " << ins->qasm());
 
             // Add nodes
             ListDigraph::Node consNode = graph.addNode();
@@ -112,7 +112,7 @@ public:
             auto operands = ins->operands;
             for( auto operand : operands )
             {
-                // cout << "Operand is " << operand << std::endl;
+                // DOUT("Operand is " << operand);
                 int prodID = LastWriter[operand];
                 ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                 ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
@@ -373,7 +373,7 @@ public:
 
     void TopologicalSort(std::vector<ListDigraph::Node> & order)
     {
-        // std::cout << "Performing Topological sort." << std::endl;
+        // COUT("Performing Topological sort.");
         ListDigraph::NodeMap<int> rorder(graph);
         if( !dag(graph) )
             COUT("This digraph is not a DAG.");
@@ -599,7 +599,7 @@ public:
         ++currNode;
         while(currNode != order.end() )
         {
-            // std::cout << "Scheduling " << name[*currNode] << std::endl;
+            // DOUT("Scheduling " << name[*currNode]);
             size_t currCycle=MAX_CYCLE;
             for( ListDigraph::OutArcIt arc(graph,*currNode); arc != INVALID; ++arc )
             {
