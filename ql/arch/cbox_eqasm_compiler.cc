@@ -31,6 +31,7 @@ int main(int argc, char ** argv)
 
    ql::quantum_kernel kernel("kernel",starmon);
 
+/*
    kernel.prepz(0);
    kernel.gate("rx180",0);
    kernel.gate("ry180",0);
@@ -41,6 +42,15 @@ int main(int argc, char ** argv)
    kernel.gate("rx90",1);
 
    kernel.measure(0);
+*/
+  kernel.gate("g1",0);
+  kernel.gate("g1",1);
+  kernel.gate("g2",0);
+  kernel.gate("g2",1);
+  kernel.gate("g3",0);
+  kernel.gate("g3",1);
+  kernel.gate("g4",1);
+
 
    // kernel.gate("measure",0);
 
