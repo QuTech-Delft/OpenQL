@@ -508,7 +508,7 @@ namespace ql
                   println("[x] codeword cannot be greater than 7 (3 bits)");
 
                codeword_t trig_mask;
-               trig_mask.set(trig_channel);
+               trig_mask.set(6-trig_channel);
 
                // build external codeword trigger
                size_t cw = codeword.to_ulong();
