@@ -99,7 +99,7 @@ public:
 
         for( auto ins : ckt )
         {
-            // std::cout << "\nCurrent instruction : " << ins->qasm() << std::endl;
+            // DOUT("\nCurrent instruction : " << ins->qasm());
 
             // Add nodes
             ListDigraph::Node consNode = graph.addNode();
@@ -108,79 +108,123 @@ public:
             name[consNode] = ins->qasm();
 
             // Add edges
-            size_t operandNo=0;
             auto operands = ins->operands;
-            for( auto operand : operands )
+            size_t operandCount = operands.size();
+            size_t operandNo=0;
+
+            // TODO check LastReaders push_back/insert logic, LastReaders should be LastReader
+            // TODO fix printing of qwait in ASAP/ALAP and qisa/tqisa
+            // TODO fix get/print/write function names
+            if(ins->name == "swap" || ins->name == "wait")
             {
-                // cout << "Operand is " << operand << std::endl;
-                int prodID = LastWriter[operand];
-                ListDigraph::Node prodNode = graph.nodeFromId(prodID);
-                ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-                if(prodID == srcID)
-                    weight[arc] = 1; // TODO OR 0 as SOURCE is dummy node?
-                else
+                for( auto operand : operands )
                 {
-                    weight[arc] = (instruction[prodNode]->duration)/cycle_time;
-                    // COUT("Case 1: " << name[prodNode] << " -> " << name[consNode] 
-                    //                    << ", duration (ns) : " << instruction[prodNode]->duration 
-                    //                    << ", weight: " << weight[arc] );
-                }
+                    { // RAW dependencies
+                        int prodID = LastWriter[operand];
+                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+                        weight[arc] = std::fmax( std::ceil( (instruction[prodNode]->duration) / cycle_time), 1);
+                        cause[arc] = operand;
+                        depType[arc] = RAW;
+                    }
 
-                cause[arc] = operand;
-                if(operandNo == 0)
-                {
-                    ReadersListType readers = LastReaders[operand];
-                    for(auto & readerID : readers)
-                    {
-                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                        if(prodID == srcID)
-                            weight[arc1] = 1; // TODO OR 0 as SOURCE is dummy node?
-                        else
+                    { // RAR dependencies
+                        ReadersListType readers = LastReaders[operand];
+                        for(auto & readerID : readers)
                         {
-                            weight[arc1] = (instruction[readerNode]->duration)/cycle_time;;
-                            // COUT("Case 2: " << name[readerNode] << " -> " << name[consNode] 
-                            //                    << ", duration (ns): " << instruction[readerNode]->duration 
-                            //                    << ", weight: " << weight[arc1] );
+                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                            weight[arc1] = std::fmax( std::ceil( (instruction[readerNode]->duration) / cycle_time), 1);
+                            cause[arc1] = operand;
+                            depType[arc1] = RAR;
                         }
+                    }
 
-                        cause[arc1] = operand;
-                        depType[arc1] = RAR; // on control
+                    { // WAW dependencies
+                        int prodID = LastWriter[operand];
+                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+                        weight[arc] = std::fmax( std::ceil( (instruction[prodNode]->duration) / cycle_time), 1);
+                        cause[arc] = operand;
+                        depType[arc] = WAW;
+                    }
+
+                    { // WAR dependencies
+                        ReadersListType readers = LastReaders[operand];
+                        for(auto & readerID : readers)
+                        {
+                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                            weight[arc1] = std::fmax( std::ceil( (instruction[readerNode]->duration) / cycle_time), 1);
+                            cause[arc1] = operand;
+                            depType[arc1] = WAR;
+                        }
                     }
                 }
 
-                if( operandNo == operands.size()-1 ) // Last operand is target, well Mostsly! TODO Fix it for other cases
-                {   
-                    depType[arc] = WAW;
+                // now update LastWriter and LastReaders
+                for( auto operand : operands )
+                {
                     LastWriter[operand] = consID;
-
-                    // for WAR dependencies
-                    ReadersListType readers = LastReaders[operand];
-                    for(auto & readerID : readers)
+                    LastReaders[operand].push_back(consID);
+                }
+            }
+            else
+            {
+                for( auto operand : operands )
+                {
+                    // DOUT("Operand: " << operand);
+                    if( operandNo < operandCount-1 )
                     {
-                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                        if(prodID == srcID)
-                            weight[arc1] = 1; // TODO OR 0 as SOURCE is dummy node?
-                        else
+                        // RAW dependencies
+                        int prodID = LastWriter[operand];
+                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+                        weight[arc] = std::fmax( std::ceil( (instruction[prodNode]->duration) / cycle_time), 1);
+                        cause[arc] = operand;
+                        depType[arc] = RAW;
+
+                        // RAR dependencies
+                        ReadersListType readers = LastReaders[operand];
+                        for(auto & readerID : readers)
                         {
-                            weight[arc1] = (instruction[readerNode]->duration)/cycle_time;;
-                            // COUT("Case 3: " << name[readerNode] << " -> " << name[consNode] 
-                            //                    << ", duration (ns): " << instruction[readerNode]->duration 
-                            //                    << ", weight: " << weight[arc1] );
+                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                            weight[arc1] = std::fmax( std::ceil( (instruction[readerNode]->duration) / cycle_time), 1);
+                            cause[arc1] = operand;
+                            depType[arc1] = RAR;
                         }
 
-                        cause[arc1] = operand;
-                        depType[arc1] = WAR;
+                        // update LastReaders for this operand
+                        LastReaders[operand].push_back(consID);
                     }
-                }
-                else
-                {
-                    LastReaders[operand].push_back(consID);
-                    depType[arc] = RAW;
-                }
-                operandNo++;
-            } // end of operand for
+                    else
+                    {
+                        // WAW dependencies
+                        int prodID = LastWriter[operand];
+                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+                        weight[arc] = std::fmax( std::ceil( (instruction[prodNode]->duration) / cycle_time), 1);
+                        cause[arc] = operand;
+                        depType[arc] = WAW;
+
+                        // WAR dependencies
+                        ReadersListType readers = LastReaders[operand];
+                        for(auto & readerID : readers)
+                        {
+                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                            weight[arc1] = std::fmax( std::ceil( (instruction[readerNode]->duration) / cycle_time), 1);
+                            cause[arc1] = operand;
+                            depType[arc1] = WAR;
+                        }
+
+                        // update LastWriter for this operand
+                        LastWriter[operand] = consID;
+                    }
+                    operandNo++;
+                } // end of operand for
+            } // end of if/else
         } // end of instruction for
 
         // add dummy target node
@@ -196,9 +240,9 @@ public:
             if( outDeg[n] == 0 && n!=targetNode )
             {
                 ListDigraph::Arc arc = graph.addArc(n,targetNode);
-                weight[arc] = 1; // TODO OR 0?
-                cause[arc] = 0; // NA
-                depType[arc] = RAW; // NA
+                weight[arc] = 1; // TARGET is dummy
+                cause[arc] = 0;
+                depType[arc] = RAW;
             }
         }
     }
@@ -341,8 +385,8 @@ public:
                 << "\"" << dstID << "\""
                 << "[ label=\""
                 << "q" << cause[arc]
-                // << " , " << weight[arc]
-                // << " , " << DepTypesNames[ depType[arc] ]
+                << " , " << weight[arc]
+                << " , " << DepTypesNames[ depType[arc] ]
                 <<"\""
                 << " " << EdgeStyle << " "
                 << "]"
@@ -447,6 +491,16 @@ public:
         }
     }
 
+    std::string GetDotScheduleASAP(bool verbose=false)
+    {
+        stringstream dotout;
+        ListDigraph::NodeMap<size_t> cycle(graph);
+        std::vector<ListDigraph::Node> order;
+        ScheduleASAP(cycle,order);
+        PrintDot1_(false,true,cycle,order,dotout);
+        return dotout.str();
+    }
+
     void PrintDotScheduleASAP(bool verbose=false)
     {
         ofstream dotout;
@@ -460,79 +514,8 @@ public:
         }
 
         if(verbose) COUT("Printing Scheduled Graph in " << dotfname);
-        ListDigraph::NodeMap<size_t> cycle(graph);
-        std::vector<ListDigraph::Node> order;
-        ScheduleASAP(cycle,order);
-        PrintDot1_(false,true,cycle,order,dotout);
-
+        dotout << GetDotScheduleASAP(verbose);
         dotout.close();
-    }
-
-    std::string GetDotScheduleASAP(bool verbose=false)
-    {
-        stringstream dotout;
-        ListDigraph::NodeMap<size_t> cycle(graph);
-        std::vector<ListDigraph::Node> order;
-        ScheduleASAP(cycle,order);
-        PrintDot1_(false,true,cycle,order,dotout);
-        return dotout.str();
-    }
-
-    void PrintQASMScheduledASAP(bool verbose=false)
-    {
-        ofstream fout;
-        string qcfname(ql::utils::get_output_dir() + "/scheduledASAP.qasm");
-        fout.open( qcfname, ios::binary);
-        if ( fout.fail() )
-        {
-            COUT("Error opening file " << qcfname << std::endl
-                     << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
-            return;
-        }
-
-        ListDigraph::NodeMap<size_t> cycle(graph);
-        std::vector<ListDigraph::Node> order;
-        ScheduleASAP(cycle, order, verbose);
-        if(verbose) COUT("Printing Scheduled QASM in " << qcfname);
-
-        typedef std::vector<std::string> insInOneCycle;
-        std::map<size_t,insInOneCycle> insInAllCycles;
-
-        std::vector<ListDigraph::Node>::reverse_iterator it;
-        for ( it = order.rbegin(); it != order.rend(); ++it)
-        {
-            insInAllCycles[ cycle[*it] ].push_back( name[*it] );
-        }
-
-        size_t TotalCycles = 0;
-        if( ! order.empty() )
-        {
-            TotalCycles =  cycle[ *( order.begin() ) ];
-        }
-
-        for(size_t currCycle = 1; currCycle<TotalCycles; ++currCycle)
-        {
-            auto it = insInAllCycles.find(currCycle);
-            if( it != insInAllCycles.end() )
-            {
-                auto nInsThisCycle = insInAllCycles[currCycle].size();
-		fout << "{ "; 
-                for(size_t i=0; i<nInsThisCycle; ++i )
-                {
-                    fout << insInAllCycles[currCycle][i];
-                    if( i != nInsThisCycle - 1 ) // last instruction
-                        fout << " | ";
-                }
-		fout << " }"; 
-            }
-            else
-            {
-                fout << "   qwait 1";
-            }
-            fout << endl;
-        }
-
-        fout.close();
     }
 
     std::string GetQASMScheduledASAP(bool verbose=false)
@@ -549,7 +532,9 @@ public:
         std::vector<ListDigraph::Node>::reverse_iterator it;
         for ( it = order.rbegin(); it != order.rend(); ++it)
         {
-            insInAllCycles[ cycle[*it] ].push_back( name[*it] );
+            auto & ins_name = name[*it];
+            if(ins_name != "qwait")
+                insInAllCycles[ cycle[*it] ].push_back( name[*it] );
         }
 
         size_t TotalCycles = 0;
@@ -574,7 +559,8 @@ public:
                 auto nInsThisCycle = insInAllCycles[currCycle].size();
                 for(size_t i=0; i<nInsThisCycle; ++i )
                 {
-                    ss << insInAllCycles[currCycle][i];
+                    auto & ins_name = insInAllCycles[currCycle][i];
+                    ss << ins_name;
                     if( i != nInsThisCycle - 1 ) // last instruction
                         ss << " | ";
                 }
@@ -588,7 +574,23 @@ public:
         return ss.str();
     }
 
-    // without rc
+    void PrintQASMScheduledASAP(bool verbose=false)
+    {
+        ofstream fout;
+        string qcfname(ql::utils::get_output_dir() + "/scheduledASAP.qasm");
+        fout.open( qcfname, ios::binary);
+        if ( fout.fail() )
+        {
+            COUT("Error opening file " << qcfname << std::endl
+                     << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
+            return;
+        }
+
+        fout << GetQASMScheduledASAP(verbose);
+        fout.close();
+    }
+
+    // without rc and latency compensation
     void ScheduleALAP(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order, bool verbose=false)
     {
         if(verbose) COUT("Performing ALAP Scheduling");
@@ -615,198 +617,6 @@ public:
         }
     }
 
-
-    /*
-    // with rc but without buffer-buffer delays and latency compensation
-    void ScheduleALAP1( ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order,
-                       ql::arch::resource_manager_t & rm, bool verbose=false )
-    {
-        if(verbose) COUT("Performing RC ALAP Scheduling");
-        TopologicalSort(order);
-
-        std::vector<ListDigraph::Node>::iterator currNode = order.begin();
-        cycle[*currNode]=MAX_CYCLE; // src dummy in cycle 0
-        ++currNode;
-        while(currNode != order.end() )
-        {
-            size_t currCycle=MAX_CYCLE;
-            for( ListDigraph::OutArcIt arc(graph,*currNode); arc != INVALID; ++arc )
-            {
-                ListDigraph::Node targetNode  = graph.target(arc);
-                size_t targetCycle = cycle[targetNode];
-                if( currCycle >= targetCycle )
-                {
-                    currCycle = targetCycle - weight[arc];
-                }
-            }
-
-            while(currCycle > 0)
-            {
-                std::cout << "Trying to scheduling: " << name[*currNode] << "  in cycle: " << currCycle << std::endl;
-                if( rm.available(currCycle, instruction[*currNode]) )
-                {
-                    std::cout << "Resource available, Scheduled. \n";
-                    // auto prevNode = std::prev(currNode);
-                    // if( prevNode != order.end() )
-                    //     std::cout << "Previous node: " << name[*prevNode] << std::endl;
-                    rm.reserve(currCycle, instruction[*currNode] );
-                    cycle[*currNode]=currCycle;
-                    break;
-                }
-                else
-                {
-                    std::cout << "Resource not available, trying again ...\n";
-                    --currCycle;
-                }
-            }
-            if(currCycle <= 0)
-            {
-                COUT("Error: could not find schedule");
-                throw ql::exception("[x] Error : could not find schedule !",false);
-            }
-            std::cout << std::endl;
-            ++currNode;
-        }
-        if(verbose) COUT("Performing RC ALAP Scheduling [Done].");
-    }
-    */
-
-    /*
-    // with rc, buffer-buffer delays (but only for dependent edges) and latency compensation
-    void ScheduleALAP2( ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order,
-                       ql::arch::resource_manager_t & rm, ql::quantum_platform & platform, bool verbose=false )
-    {
-        if(verbose) COUT("Performing RC ALAP Scheduling");
-        TopologicalSort(order);
-
-        std::vector<std::string> buffer_names = {"none", "mw", "flux", "readout"};
-        std::map< std::pair<std::string,std::string>, size_t> buffer_cycles_map;
-        for(auto & buf1 : buffer_names)
-        {
-            for(auto & buf2 : buffer_names)
-            {
-                auto bpair = std::pair<std::string,std::string>(buf1,buf2);
-                auto bname = buf1+ "_" + buf2 + "_buffer";
-                if( buf1 == "none" || buf2 == "none" )
-                    buffer_cycles_map[ bpair ] = 0;
-                else
-                    buffer_cycles_map[ bpair ] = size_t(platform.hardware_settings[bname]) / cycle_time;
-                DOUT("Initializing " << bname << ": "<< buffer_cycles_map[bpair]);
-            }
-        }
-
-        ListDigraph::NodeMap<std::string> operation_type(graph);
-
-        std::vector<ListDigraph::Node>::iterator currNode = order.begin();
-        cycle[*currNode]=MAX_CYCLE; // src dummy in cycle 0
-        operation_type[*currNode] = "none";
-        ++currNode;
-        while(currNode != order.end() )
-        {
-            DOUT("");
-            auto & curr_ins = instruction[*currNode];
-            auto & id = curr_ins->name;
-            if ( !platform.instruction_settings[id]["type"].is_null() )
-            {
-                operation_type[*currNode] = (platform.instruction_settings[id]["type"]) ;
-            }
-            else
-            {
-                operation_type[*currNode] = "none";
-            }
-
-            std::string operation_name(id);
-            if ( !platform.instruction_settings[id]["cc_light_instr"].is_null() )
-            {
-                operation_name = platform.instruction_settings[id]["cc_light_instr"];
-            }
-
-            size_t currCycle=MAX_CYCLE;
-            size_t buffer_cycles = 0;
-            for( ListDigraph::OutArcIt arc(graph,*currNode); arc != INVALID; ++arc )
-            {
-                ListDigraph::Node targetNode  = graph.target(arc);
-                size_t targetCycle = cycle[targetNode];
-                if( currCycle >= targetCycle )
-                {
-                    currCycle = targetCycle - weight[arc];
-                }
-
-                auto & curr_op_type = operation_type[*currNode];
-                auto & prev_op_type = operation_type[targetNode];
-
-                auto temp_buf_cycles = buffer_cycles_map[ std::pair<std::string,std::string>(curr_op_type, prev_op_type) ];
-                buffer_cycles = std::max(temp_buf_cycles, buffer_cycles);
-                DOUT("Curr node: " << name[*currNode] << ", type: " << curr_op_type);
-                DOUT("Prev node: " << name[targetNode] << ", type: " << prev_op_type);
-                DOUT(curr_op_type+ "_" + prev_op_type + "_buffer cycles to be inserted: " << buffer_cycles);
-            }
-
-            while(currCycle > 0)
-            {
-                DOUT("Trying to schedule: " << name[*currNode] << "  in cycle: " << currCycle);
-                if( rm.available(currCycle, instruction[*currNode], operation_type[*currNode]) )
-                {
-                    DOUT("Resources available, Scheduled.");
-
-                    rm.reserve(currCycle-buffer_cycles, curr_ins, operation_name);
-                    cycle[*currNode]=currCycle-buffer_cycles;
-                    break;
-                }
-                else
-                {
-                    DOUT("Resources not available, trying again ...");
-                    --currCycle;
-                }
-            }
-            if(currCycle <= 0)
-            {
-                EOUT("Could not find schedule");
-                throw ql::exception("[x] Error : could not find schedule !",false);
-            }
-            ++currNode;
-        }
-
-        DOUT("\nPrinting ALAP Schedule before latency compensation");
-        DOUT("Cycle   Cycle-simplified    Instruction");
-        for ( auto it = order.begin(); it != order.end(); ++it)
-        {
-            DOUT( cycle[*it] << " :: " << MAX_CYCLE-cycle[*it] << "  <- " << name[*it] );
-        }
-
-        // latency compensation
-        for ( auto it = order.begin(); it != order.end(); ++it)
-        {
-            auto & curr_ins = instruction[*it];
-            auto & id = curr_ins->name;
-            long latency_cycles=0;
-            if ( !platform.instruction_settings[id]["latency"].is_null() )
-            {
-                float latency_ns = platform.instruction_settings[id]["latency"];
-                latency_cycles = (std::ceil( std::abs(latency_ns) / cycle_time)) * ql::utils::sign_of(latency_ns);
-            }
-            cycle[*it] = cycle[*it] + latency_cycles;
-            // DOUT( MAX_CYCLE-cycle[*it] << " <- " << name[*it] << latency_cycles );
-        }
-
-        // re-order
-        std::sort
-            (
-                order.begin(),
-                order.end(),
-                [&](ListDigraph::Node & n1, ListDigraph::Node & n2) { return cycle[n1] > cycle[n2]; }
-            );
-
-        DOUT("\nPrinting ALAP Schedule after latency compensation");
-        DOUT("Cycle   Cycle-simplified    Instruction");
-        for ( auto it = order.begin(); it != order.end(); ++it)
-        {
-            DOUT( cycle[*it] << "     =     " << MAX_CYCLE-cycle[*it] << "        " << name[*it] );
-        }
-
-        if(verbose) COUT("Performing RC ALAP Scheduling [Done].");
-    }
-    */
 
     // with rc and latency compensation
     void ScheduleALAP( ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order,
@@ -1007,8 +817,8 @@ public:
                 << "\"" << dstID << "\""
                 << "[ label=\""
                 << "q" << cause[arc]
-                // << " , " << weight[arc]
-                // << " , " << DepTypesNames[ depType[arc] ]
+                << " , " << weight[arc]
+                << " , " << DepTypesNames[ depType[arc] ]
                 <<"\""
                 << " " << EdgeStyle << " "
                 << "]"
@@ -1049,61 +859,6 @@ public:
         return dotout.str();
     }
 
-    void PrintQASMScheduledALAP(bool verbose=false)
-    {
-        ofstream fout;
-        string qcfname(ql::utils::get_output_dir() + "/scheduledALAP.qasm");
-        fout.open( qcfname, ios::binary);
-        if ( fout.fail() )
-        {
-            EOUT("Error opening file " << qcfname << std::endl
-                     << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
-            return;
-        }
-
-        ListDigraph::NodeMap<size_t> cycle(graph);
-        std::vector<ListDigraph::Node> order;
-        ScheduleALAP(cycle,order);
-        if(verbose) COUT("Printing Scheduled QASM in " << qcfname);
-
-        typedef std::vector<std::string> insInOneCycle;
-        std::map<size_t,insInOneCycle> insInAllCycles;
-
-        std::vector<ListDigraph::Node>::iterator it;
-        for ( it = order.begin(); it != order.end(); ++it)
-        {
-            insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( name[*it] );
-        }
-
-        size_t TotalCycles = 0;
-        if( ! order.empty() )
-        {
-            TotalCycles =  MAX_CYCLE - cycle[ *( order.rbegin() ) ];
-        }
-
-        for(size_t currCycle = TotalCycles-1; currCycle>0; --currCycle)
-        {
-            auto it = insInAllCycles.find(currCycle);
-            if( it != insInAllCycles.end() )
-            {
-                auto nInsThisCycle = insInAllCycles[currCycle].size();
-		        fout << "{ "; 
-                for(size_t i=0; i<nInsThisCycle; ++i )
-                {
-                    fout << insInAllCycles[currCycle][i];
-                    if( i != nInsThisCycle - 1 ) // last instruction
-                        fout << " | ";
-                }
-		        fout << " }"; 
-            }
-            else
-            {
-                fout << "   qwait 1";
-            }
-            fout << endl;
-        }
-        fout.close();
-    }
 
     std::string GetQASMScheduledALAP(bool verbose=false)
     {
@@ -1139,7 +894,24 @@ public:
         return ssbundles.str();
     }
 
-    // the following without nops
+    void PrintQASMScheduledALAP(bool verbose=false)
+    {
+        ofstream fout;
+        string qcfname(ql::utils::get_output_dir() + "/scheduledALAP.qasm");
+        fout.open( qcfname, ios::binary);
+        if ( fout.fail() )
+        {
+            EOUT("Error opening file " << qcfname << std::endl
+                     << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
+            return;
+        }
+
+        fout << GetQASMScheduledALAP(verbose);
+        fout.close();
+    }
+
+
+    // the following without rc and buffer-buffer delays
     Bundles GetBundlesScheduleALAP(bool verbose=false)
     {
         if(verbose) COUT("Scheduling ALAP to get bundles ...");
@@ -1154,7 +926,9 @@ public:
         std::vector<ListDigraph::Node>::iterator it;
         for ( it = order.begin(); it != order.end(); ++it)
         {
-            insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( instruction[*it] );
+            auto & ins_name = name[*it];
+            if( ins_name != "qwait")
+                insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( instruction[*it] );
         }
 
         size_t TotalCycles = 0;
@@ -1190,64 +964,7 @@ public:
     }
 
 
-
-    // the following inserts nops
-    Bundles GetBundlesScheduleALAPWithNOPS(bool verbose=false)
-    {
-        if(verbose) COUT("Scheduling ALAP to get bundles ...");
-        Bundles bundles;
-        ListDigraph::NodeMap<size_t> cycle(graph);
-        std::vector<ListDigraph::Node> order;
-        ScheduleALAP(cycle,order);
-
-
-        typedef std::vector<ql::gate*> insInOneCycle;
-        std::map<size_t,insInOneCycle> insInAllCycles;
-
-        std::vector<ListDigraph::Node>::iterator it;
-        for ( it = order.begin(); it != order.end(); ++it)
-        {
-            insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( instruction[*it] );
-        }
-
-        size_t TotalCycles = 0;
-        if( ! order.empty() )
-        {
-            TotalCycles =  MAX_CYCLE - cycle[ *( order.rbegin() ) ];
-        }
-
-        for(size_t currCycle = TotalCycles-1; currCycle>0; --currCycle)
-        {
-            auto it = insInAllCycles.find(currCycle);
-            Bundle abundle;
-            abundle.start_cycle = TotalCycles - currCycle;                
-            if( it != insInAllCycles.end() )
-            {
-                auto nInsThisCycle = insInAllCycles[currCycle].size();
-                for(size_t i=0; i<nInsThisCycle; ++i )
-                {
-                    ParallelSection aparsec;
-                    auto & ins = insInAllCycles[currCycle][i];
-                    aparsec.push_back(ins);
-                    abundle.ParallelSections.push_back(aparsec);
-                }
-            }
-            else
-            {
-                // insert empty bundle
-                ParallelSection aparsec;
-                auto ins = new ql::nop();
-                aparsec.push_back(ins);
-                abundle.ParallelSections.push_back(aparsec);
-            }
-            bundles.push_back(abundle);
-        }
-
-        if(verbose) COUT("Scheduling ALAP to get bundles [DONE]");
-        return bundles;
-    }
-
-    // the following without nops but with rc
+    // the following with rc and buffer-buffer delays
     Bundles GetBundlesScheduleALAP( ql::arch::resource_manager_t & rm, ql::quantum_platform & platform, bool verbose=false )
     {
         if(verbose) COUT("RC Scheduling ALAP to get bundles ...");
@@ -1262,10 +979,10 @@ public:
         std::vector<ListDigraph::Node>::iterator it;
         for ( it = order.begin(); it != order.end(); ++it)
         {
-            if( instruction[*it]->type() != ql::gate_type_t::__dummy_gate__ )
+            auto & ins_name = name[*it];
+            if( ins_name != "qwait" || instruction[*it]->type() != ql::gate_type_t::__dummy_gate__ )
             {
                 insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( instruction[*it] );
-                // insInAllCycles[ cycle[*it] ].push_back( instruction[*it] );
             }
         }
 
@@ -1273,7 +990,6 @@ public:
         if( ! order.empty() )
         {
             TotalCycles =  MAX_CYCLE - cycle[ *( order.rbegin() ) ];
-            // TotalCycles =  cycle[ *( order.rbegin() ) ];
         }
 
         for(int currCycle = TotalCycles; currCycle>=0; --currCycle)

@@ -81,7 +81,9 @@ typedef enum __gate_type_t
     __display__        ,
     __display_binary__ ,
     __nop_gate__       ,
-    __dummy_gate__
+    __dummy_gate__     ,
+    __swap_gate__      ,
+    __wait_gate__
 } gate_type_t;
 
 #define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
@@ -169,6 +171,14 @@ const complex_t cphase_c [] /* __attribute__((aligned(64))) */ =
     __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
     __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(-1.0, 0.0)
 }; /* cz */
+
+const complex_t swap_c [] /* __attribute__((aligned(64))) */ =
+{
+    __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0)
+};  /* swap  */
 
 // TODO correct it, for now copied from toffoli
 const complex_t ctoffoli_c[] /* __attribute__((aligned(64))) */ =
@@ -1083,7 +1093,7 @@ public:
 
     nop() : m(nop_c)
     {
-        name = "nop";
+        name = "wait";
         duration = 20;
     }
     instruction_t qasm()
@@ -1105,6 +1115,70 @@ public:
 };
 
 
+class swap : public gate
+{
+public:
+    cmat_t m;
+
+    swap(size_t q1, size_t q2) : m(swap_c)
+    {
+        name = "swap";
+        duration = 80;
+        operands.push_back(q1);
+        operands.push_back(q2);
+    }
+    instruction_t qasm()
+    {
+        return instruction_t("swap q" + std::to_string(operands[0])
+                             + ",q"  + std::to_string(operands[1]) );
+    }
+    instruction_t micro_code()
+    {
+        return ql::dep_instruction_map["swap"];
+    }
+    gate_type_t type()
+    {
+        return __swap_gate__;
+    }
+    cmat_t mat()
+    {
+        return m;
+    }
+};
+
+
+class wait : public gate
+{
+public:
+    cmat_t m;
+
+    wait(std::vector<size_t> qubits, size_t d) : m(nop_c)
+    {
+        name = "wait";
+        duration = d;
+        for(auto & q : qubits)
+        {
+            operands.push_back(q);
+        }
+    }
+    instruction_t qasm()
+    {
+        return instruction_t("qwait");
+    }
+    instruction_t micro_code()
+    {
+        return ql::dep_instruction_map["wait"];
+    }
+    gate_type_t type()
+    {
+        return __wait_gate__;
+    }
+    cmat_t mat()
+    {
+        return m;
+    }
+};
+
 class SOURCE : public gate
 {
 public:
@@ -1113,7 +1187,7 @@ public:
     SOURCE() : m(nop_c)
     {
         name = "SOURCE";
-        duration = 20;
+        duration = 1;
     }
     instruction_t qasm()
     {
@@ -1141,7 +1215,7 @@ public:
     SINK() : m(nop_c)
     {
         name = "SINK";
-        duration = 20;
+        duration = 1;
     }
     instruction_t qasm()
     {
