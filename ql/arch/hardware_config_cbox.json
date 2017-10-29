@@ -86,7 +86,7 @@
          "type" : "mw",
          "qumis_instr": "pulse_trigger", 
          "qumis_instr_kw": {
-            "trigger_channel": 0,
+            "trigger_channel": 3,
             "codeword": 4
          }
       },
@@ -131,7 +131,7 @@
          "type" : "mw",
          "qumis_instr": "pulse_trigger", 
          "qumis_instr_kw": {
-            "trigger_channel": 1,
+            "trigger_channel": 2,
             "codeword": 7
          }
       },

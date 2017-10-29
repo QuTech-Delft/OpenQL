@@ -823,6 +823,16 @@ namespace ql
          return (i1->start < i2->start);
       }
 
+      /**
+       * triggers comparator
+       */
+      bool triggers_comparator(qumis_instruction * t1, qumis_instruction * t2) 
+      { 
+         return (t1->duration < t2->duration);
+      }
+
+
+
    }
 }
 

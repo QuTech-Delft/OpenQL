@@ -189,13 +189,14 @@ namespace ql
                decompose_instructions();
 
                // reorder instructions
-               // dump_instructions();
                reorder_instructions();
-               // dump_instructions();
 
-               // insert waits
+               // split/merge concurrent triggers
+               process_concurrent_triggers();
 
+               // emit eqasm 
                emit_eqasm();
+
                // return eqasm_code;
             }
 
@@ -264,6 +265,106 @@ namespace ql
                return time;
             }
 
+            /**
+             *
+             */
+            void merge_triggers(qumis_program_t& pti, qumis_program_t& pto)
+            {
+            }
+
+            /**
+             * process concurrent triggers
+             */
+            void process_concurrent_triggers()
+            {
+               if (qumis_instructions.empty())
+                  return;
+               
+               // find parallel sections
+               qumis_program_t              ps; 
+               std::vector<qumis_program_t> parallel_sections;
+               ps.push_back(qumis_instructions[0]);
+               size_t st = qumis_instructions[0]->start;
+               // group by start time
+               if (verbose) println("clustering concurent instructions..."); 
+               for (size_t i=1; i<qumis_instructions.size(); ++i)
+               {
+                  if (qumis_instructions[i]->start != st)
+                  {
+                     parallel_sections.push_back(ps);
+                     ps.clear();
+                     ps.push_back(qumis_instructions[i]);
+                  }
+                  else
+                  {
+                     // continue within the parallel section
+                     ps.push_back(qumis_instructions[i]);
+                  }
+                  st = qumis_instructions[i]->start;
+               }
+               // print prallel sections
+               #if 0
+               for (qumis_program_t p : parallel_sections)
+               {
+                  println("[+] parallel section : ");
+                  for (qumis_instruction * instr : p)
+                     println("\t(" << instr->start << ") : " << instr->code());
+               }
+               #endif 
+               // detect parallel triggers
+               if (verbose) println("detecting concurent triggers..."); 
+               for (qumis_program_t p : parallel_sections)
+               {
+                  qumis_program_t triggers;
+                  for (qumis_instruction * instr : p)
+                     if (instr->instruction_type == __qumis_trigger__)
+                        triggers.push_back(instr);
+                  // process triggers ... 
+                  if (triggers.size() < 2)
+                     continue;
+                  // println("[+] merging triggers... ");
+                  std::sort(triggers.begin(), triggers.end(), triggers_comparator);
+                  qumis_program_t merged_triggers;
+                  size_t prev_duration = 0;
+
+                  if (verbose) println("merging and splitting concurent triggers..."); 
+                  for (size_t i=0; i<triggers.size(); ++i)
+                  {
+                     if (prev_duration == triggers[i]->duration)
+                        continue;  // already merged with the previous trigger
+                     triggers[i]->duration -= prev_duration;
+                     triggers[i]->start    += prev_duration;
+                     prev_duration          = triggers[i]->duration;
+                     codeword_t codeword = ((trigger *)triggers[i])->codeword;
+                     for (size_t j=i+1; j<triggers.size(); ++j)
+                        codeword |= ((trigger*)triggers[j])->codeword;
+                     ((trigger *)triggers[i])->codeword = codeword;
+                     merged_triggers.push_back(triggers[i]);
+                  }
+
+                  // update parallel section with merged triggers
+                  for (qumis_instruction * instr : p)
+                     if (instr->instruction_type != __qumis_trigger__)
+                        merged_triggers.push_back(instr);
+
+                  // print merged triggers
+                  #if 0
+                  println(" ---> merged triggers: ");
+                  for (qumis_instruction * mt : merged_triggers)
+                     println("\t + [" << mt->start << "] : " << mt->code() );
+                  #endif
+
+                  p.swap(merged_triggers);
+
+                  std::sort(p.begin(), p.end(), qumis_comparator);
+               }
+
+               if (verbose) println("updating qumis program..."); 
+               qumis_instructions.clear();
+               for (qumis_program_t p : parallel_sections)
+                  for (qumis_instruction * instr : p)
+                     qumis_instructions.push_back(instr);
+            }
 
 
             /**
@@ -405,6 +506,7 @@ namespace ql
                eqasm_code.push_back("mov r14, 0");   // 0: infinite loop
                eqasm_code.push_back("start:");       // label
                size_t t = 0;
+               size_t i = 0;
                for (qumis_instruction * instr : qumis_instructions)
                {
                   size_t start = instr->start;
@@ -414,7 +516,19 @@ namespace ql
                      eqasm_code.push_back("wait "+std::to_string(dt));
                      t = start;
                   }
+                  #if 0
+                  else
+                  {
+                     if (i)
+                     {
+                        println("[+] concurrent instructions : ");
+                        println("\t1: " << qumis_instructions[i-1]->code());
+                        println("\t2: " << qumis_instructions[i]->code());
+                     }
+                  }
+                  #endif
                   eqasm_code.push_back(instr->code());
+                  i++;
                }
                eqasm_code.push_back("wait "+std::to_string(qumis_instructions.back()->duration));
                eqasm_code.push_back("beq r14, r14 start");  // loop
