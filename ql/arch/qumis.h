@@ -761,8 +761,9 @@ namespace ql
                
                used_resources.set(trig_channel);
                
-               if (trig_channel > 7)
-                  println("[x] trigger channel number cannot be greater than 7.");
+               // already tested
+               // if (trig_channel > 7)
+                  // println("[x] trigger channel number cannot be greater than 7.");
 
                codeword_t trig_mask;
                trig_mask.set(6-trig_channel);
@@ -784,12 +785,13 @@ namespace ql
                instructions[0]->latency = latency;
                instructions[1]->start   = start+duration;
                instructions[1]->latency = latency;
+               #if 0
                println("trigger_sequence::decompose() :");
                println("\t trigger_sequence[0] latency : " << instructions[0]->latency);
                println("\t trigger_sequence[0] start   : " << instructions[0]->start);
                println("\t trigger_sequence[1] latency : " << instructions[1]->latency);
                println("\t trigger_sequence[1] start   : " << instructions[1]->start);
-
+               #endif
                return instructions;
             }
 

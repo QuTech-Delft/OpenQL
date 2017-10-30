@@ -310,7 +310,7 @@ namespace ql
                }
                parallel_sections.push_back(ps);
                // print prallel sections
-               #if 1
+               #if 0
                for (qumis_program_t p : parallel_sections)
                {
                   println("[+] parallel section : ");
@@ -474,7 +474,7 @@ namespace ql
                   return;
                }
 
-               for (size_t i=0; i<__trigger_width__; i++)
+               for (size_t i=__trigger_width__-1; i>0; i--)
                {
                   std::string ch = "TRIG_"+std::to_string(i);
                   channels.push_back(ch);
@@ -535,7 +535,7 @@ namespace ql
                   }
                   #endif
                   eqasm_code.push_back(instr->code());
-                  println(t << " : " << instr->code());
+                  // println(t << " : " << instr->code());
                   i++;
                }
                eqasm_code.push_back("wait "+std::to_string(qumis_instructions.back()->duration));
