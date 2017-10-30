@@ -33,6 +33,7 @@ namespace ql
             size_t          buffer_matrix[__operation_types_num__][__operation_types_num__];
             size_t          iterations;  // loop iterations
             bool            verbose = false;
+            eqasm_t         timed_eqasm_code;
 
             #define __ns_to_cycle(t) ((size_t)t/(size_t)ns_per_cycle)
 
@@ -220,6 +221,9 @@ namespace ql
                // emit eqasm 
                emit_eqasm();
 
+               // dump timed eqasm code
+               write_timed_eqasm(ql::utils::get_output_dir() + "/program.tasm");
+
                // return eqasm_code;
             }
 
@@ -234,6 +238,23 @@ namespace ql
                   size_t t = instr->start;
                   std::cout << t << " : " << instr->code() << std::endl;
                }
+            }
+
+
+            /**
+             * write time eqasm
+             */
+             void write_timed_eqasm(std::string file_name="")
+             {
+               std::stringstream ss;
+               if (verbose) println("writing time qumis code...");
+               for (std::string l : timed_eqasm_code)
+                  ss << l << '\n';
+               std::string t_eqasm = ss.str();
+               if (file_name == "")
+                  std::cout << ss.str() << std::endl;
+               else
+                  utils::write_file(file_name,t_eqasm);
             }
 
             /**
@@ -288,12 +309,7 @@ namespace ql
                return time;
             }
 
-            /**
-             *
-             */
-            void merge_triggers(qumis_program_t& pti, qumis_program_t& pto)
-            {
-            }
+
 
             /**
              * process concurrent triggers
@@ -526,6 +542,7 @@ namespace ql
             {
                if (verbose) println("compiling eqasm...");
                eqasm_code.clear();
+               timed_eqasm_code.clear();
                eqasm_code.push_back("wait 1");       // add wait 1 at the begining
                eqasm_code.push_back("mov r12, 1");   // counter step 
                eqasm_code.push_back("mov r13, 0");   // boundary
@@ -556,18 +573,19 @@ namespace ql
                   }
                   #endif
                   eqasm_code.push_back(instr->code());
+                  timed_eqasm_code.push_back(std::to_string(t)+"\t: "+instr->code());
                   // println(t << " : " << instr->code());
                   i++;
                }
                eqasm_code.push_back("wait "+std::to_string(qumis_instructions.back()->duration));
                if (iterations)
                {
-                  eqasm_code.push_back("sub r14, r14, r12");  // loop
-                  eqasm_code.push_back("bne r13, r14 start");  // loop
+                  eqasm_code.push_back("sub r14, r14, r12");  
+                  eqasm_code.push_back("bne r13, r14 start"); 
                }
                else
-                  eqasm_code.push_back("beq r13, r13 start");  // loop
-               println("compilation done.");
+                  eqasm_code.push_back("beq r13, r13 start"); 
+               if (verbose) println("eqasm compilation done.");
             }
 
             /**

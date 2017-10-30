@@ -32,7 +32,7 @@ namespace ql
 
       public:
 
-         /*
+    /*
 	  * compile must be implemented by all compilation backends.
 	  */
 	 virtual void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& p, bool verbose) = 0;
@@ -41,30 +41,30 @@ namespace ql
 	  * write eqasm code to file/stdout
 	  */
 	 virtual void write_eqasm(std::string file_name="")
-	 {
-	    if (eqasm_code.empty())
-	       return;
-	    if (file_name=="")
-	    {
-	       println("[c] eqasm code (" << eqasm_code.size() << " lines) :");
-	       for (std::string l : eqasm_code)
-		  std::cout << l << std::endl;
-	    }
-	    else
-	    {
-	       // write to file
-	       std::ofstream file(file_name);
-	       if (file.is_open())
-	       {
-		  println("writing eqasm code (" << eqasm_code.size() << " lines) to '" << file_name << "' ...");
-		  for (std::string l : eqasm_code)
-		     file << l << std::endl;
-		  file.close();
-	       }
-	       else 
-		  println("[x] error : when opening file '" << file_name << "' !");
-	    }
-	 }
+    {
+       if (eqasm_code.empty())
+          return;
+       if (file_name=="")
+       {
+          println("[c] eqasm code (" << eqasm_code.size() << " lines) :");
+          for (std::string l : eqasm_code)
+             std::cout << l << std::endl;
+       }
+       else
+       {
+          // write to file
+          std::ofstream file(file_name);
+          if (file.is_open())
+          {
+             println("writing eqasm code (" << eqasm_code.size() << " lines) to '" << file_name << "' ...");
+             for (std::string l : eqasm_code)
+                file << l << std::endl;
+             file.close();
+          }
+          else 
+             println("[x] error : when opening file '" << file_name << "' !");
+       }
+    }
 
 	 /**
 	  * write traces
