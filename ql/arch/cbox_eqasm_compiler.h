@@ -628,8 +628,8 @@ namespace ql
 
                pulse_cw_t codeword = cw;  
 
-               println("\ttrigger channel    : " << trigger_channel);
-               println("\tcodeword           : " << codeword.to_ulong());
+               // println("\ttrigger channel    : " << trigger_channel);
+               // println("\tcodeword           : " << codeword.to_ulong());
 
                if (trigger_channel > (__trigger_width__-1))
                {

@@ -279,10 +279,10 @@ namespace ql
                      instruction_trace_t lt = { ch, label, latent_start, (latent_start+duration), "#808080", __bottom_pos__ };
                      trs.push_back(lt);
                      trs.push_back(t);
-                     println("qasm label   : " << label);
-                     println("latency      : " << latency);
-                     println("start        : " << start);
-                     println("latent start : " << latent_start);
+                     // println("qasm label   : " << label);
+                     // println("latency      : " << latency);
+                     // println("start        : " << start);
+                     // println("latent start : " << latent_start);
                   }
                }
                return trs; 
@@ -700,9 +700,9 @@ namespace ql
                instruction_traces_t trs;
                size_t latent_start = (latency_compensated ? (start) : (start-latency));
                std::string label   = qasm_label + " : " + code(); 
-               println("qasm label   : " << label);
-               println("start        : " << start);
-               println("latent start : " << latent_start);
+               // println("qasm label   : " << label);
+               // println("start        : " << start);
+               // println("latent start : " << latent_start);
                
                for (size_t i=0; i<instructions.size(); ++i)
                {
