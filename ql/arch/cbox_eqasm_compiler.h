@@ -31,9 +31,10 @@ namespace ql
             size_t          ns_per_cycle;
             size_t          total_exec_time = 0;
             size_t          buffer_matrix[__operation_types_num__][__operation_types_num__];
+            size_t          iterations;  // loop iterations
             bool            verbose = false;
 
-         #define __ns_to_cycle(t) ((size_t)t/(size_t)ns_per_cycle)
+            #define __ns_to_cycle(t) ((size_t)t/(size_t)ns_per_cycle)
 
          public:
 
@@ -50,6 +51,22 @@ namespace ql
                   return;
                }
                if (verbose) println("[-] loading circuit (" <<  c.size() << " gates)...");
+
+               iterations = 0;
+
+               try 
+               {
+                  iterations = platform.hardware_settings["iterations"];
+               }
+               catch (json::exception e)
+               {
+                  // don't throw exception : iterations is a non-mondatory field
+                  // throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter '"+params[p-1]+"'\n\t"+ std::string(e.what()),false);
+                  iterations = 0;
+               }
+
+               println("[+] iterations : " << iterations);
+
                eqasm_t eqasm_code;
                // ql::instruction_map_t& instr_map = platform.instruction_map;
                json& instruction_settings       = platform.instruction_settings;
@@ -510,8 +527,12 @@ namespace ql
                if (verbose) println("compiling eqasm...");
                eqasm_code.clear();
                eqasm_code.push_back("wait 1");       // add wait 1 at the begining
-               eqasm_code.push_back("mov r14, 0");   // 0: infinite loop
+               eqasm_code.push_back("mov r12, 1");   // counter step 
+               eqasm_code.push_back("mov r13, 0");   // boundary
+               if (iterations)
+               eqasm_code.push_back("mov r14, "+std::to_string(iterations));   // 0: infinite loop
                eqasm_code.push_back("start:");       // label
+               eqasm_code.push_back("wait 2");       // label
                size_t t = 0;
                size_t i = 0;
                for (qumis_instruction * instr : qumis_instructions)
@@ -539,7 +560,13 @@ namespace ql
                   i++;
                }
                eqasm_code.push_back("wait "+std::to_string(qumis_instructions.back()->duration));
-               eqasm_code.push_back("beq r14, r14 start");  // loop
+               if (iterations)
+               {
+                  eqasm_code.push_back("sub r14, r14, r12");  // loop
+                  eqasm_code.push_back("bne r13, r14 start");  // loop
+               }
+               else
+                  eqasm_code.push_back("beq r13, r13 start");  // loop
                println("compilation done.");
             }
 

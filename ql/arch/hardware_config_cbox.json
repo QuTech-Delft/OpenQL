@@ -4,6 +4,7 @@
    "hardware_settings": {
 	 "qubit_number": 2,
 	 "cycle_time" : 5,  
+    "iterations" : 512,
 	 "mw_mw_buffer": 0,
 	 "mw_flux_buffer": 0,
 	 "mw_readout_buffer": 20,
@@ -18,7 +19,7 @@
    "instructions": {
       "rx180 q1" : {
          "duration": 40, 
-         "latency": 20, 
+         "latency": 10, 
          "qubits": ["q1"], 
          "matrix" : [ [0.0,0.0], [1.0,0.0],
 	              [1.0,0.0], [0.0,0.0] ], 

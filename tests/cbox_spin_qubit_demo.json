@@ -144,10 +144,10 @@
 	                 [0.0,0.0], [1.0,0.0] ], 
          "disable_optimization": true, 
          "type" : "mw",
-         "qumis_instr": "pulse",
+         "qumis_instr": "trigger_sequence", 
          "qumis_instr_kw": {
-            "codeword": -2, 
-            "awg_nr": 2
+            "trigger_channel": 0,
+            "trigger_width": 0
          }
       },
 
@@ -159,10 +159,10 @@
 	                   [0.0,0.0], [1.0,0.0] ], 
          "disable_optimization": true, 
          "type" : "mw",
-         "qumis_instr": "pulse",
+         "qumis_instr": "trigger_sequence", 
          "qumis_instr_kw": {
-            "codeword": -2, 
-            "awg_nr": 1
+            "trigger_channel": 0,
+            "trigger_width": 0
          }
       }
    },
