@@ -10,10 +10,9 @@ def test_cclight():
     config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
     platform  = ql.Platform('seven_qubits_chip', config_fn)
     sweep_points = [1,2]
-    num_circuits = 1
     num_qubits = 7
     p = ql.Program('aProgram', num_qubits, platform)
-    p.set_sweep_points(sweep_points, num_circuits)
+    p.set_sweep_points(sweep_points, len(sweep_points))
 
     k = ql.Kernel('aKernel', platform)
 
@@ -45,10 +44,9 @@ def test_none():
 
     platform  = ql.Platform('platform_none', config_fn)
     sweep_points = [1,2]
-    num_circuits = 1
     num_qubits = 2
     p = ql.Program('aProgram', num_qubits, platform)
-    p.set_sweep_points(sweep_points, num_circuits)
+    p.set_sweep_points(sweep_points, len(sweep_points))
 
     k1 = ql.Kernel('aKernel1', platform)
     k2 = ql.Kernel('aKernel2', platform)
@@ -68,48 +66,15 @@ def test_none():
 
     # compile the program
     p.compile(optimize=False, verbose=True)
+    # p.schedule('ALAP', True)
 
-def test_none_wait():
-    config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
-    platform  = ql.Platform('platform_none', config_fn)
-    sweep_points = [1,2]
-    num_qubits = 5
-    p = ql.Program('aProgram', num_qubits, platform)
-    p.set_sweep_points(sweep_points, len(sweep_points))
-    k = ql.Kernel('aKernel', platform)
 
-    # simple wait test
-    k.gate("x", 0);
-    k.wait(40, [0])
-    k.gate("x", 0)
-
-    # # wait should not be in parallel with another gate
-    # k.gate("x", 0)
-    # k.wait(10, [1])
-    # k.gate("x", 1)
-
-    # simple swap test
-    # k.gate("x", 0);
-    # k.gate("swap", 0, 1)
-    # k.gate("x", 0)
-
-    # k.gate("x", 0)
-    # k.gate("x", 1)
-    # # k.gate("swap", 0, 1)
-    # k.wait(20, [1])
-    # k.gate("cz", 0, 1)
-    # k.gate("cz", 0, 1)
-    # k.gate("x", 0)
-    # # k.wait(10, [0,1])
-
-    # something like the following can be used for last reader(s) test
-    # k.gate("cz", 0, 1)
-    # k.gate("cz", 0, 2)
-    # k.gate("cz", 0, 3)
-
-    p.add_kernel(k)
-    # p.compile(optimize=False, verbose=True)
-    p.schedule('ALAP', True)
-  
 if __name__ == '__main__':
-    test_none_wait()
+    test_cclight()
+
+
+# something like the following can be used for last reader(s) test
+# test limit on duration of wait
+# k.gate("cz", 0, 1)
+# k.gate("cz", 0, 2)
+# k.gate("cz", 0, 3)

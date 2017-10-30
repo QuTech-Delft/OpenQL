@@ -980,7 +980,7 @@ public:
         for ( it = order.begin(); it != order.end(); ++it)
         {
             auto & ins_name = name[*it];
-            if( ins_name != "qwait" || instruction[*it]->type() != ql::gate_type_t::__dummy_gate__ )
+            if( ins_name != "qwait" && instruction[*it]->type() != ql::gate_type_t::__dummy_gate__ )
             {
                 insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( instruction[*it] );
             }

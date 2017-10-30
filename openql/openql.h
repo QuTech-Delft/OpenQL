@@ -158,7 +158,7 @@ public:
     {
         ql_kernel->clifford(id, q0);
     }
-    void wait(size_t duration, std::vector<size_t> qubits = {})
+    void wait(std::vector<size_t> qubits, size_t duration)
     {
         ql_kernel->wait(qubits, duration);
     }
@@ -177,6 +177,10 @@ public:
     void gate(std::string name, size_t qubit0, size_t qubit1)
     {
         ql_kernel->gate(name, std::vector<size_t> {qubit0, qubit1} );
+    }
+    void gate(std::string name, std::vector<size_t> qubits, size_t duration=0)
+    {
+        ql_kernel->gate(name, qubits, duration);
     }
     ~Kernel()
     {

@@ -639,7 +639,7 @@ public:
         sched.Init(qubits, c, platform, verbose);
         // sched.Print(verbose);
         // sched.PrintMatrix(verbose);
-        sched.PrintDot(verbose);
+        // sched.PrintDot(verbose);
 
         if("ASAP" == scheduler)
         {

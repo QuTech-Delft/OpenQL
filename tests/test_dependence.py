@@ -179,5 +179,56 @@ class Test_dependence(unittest.TestCase):
         
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
+
+    def test_swap_single(self):
+
+        # populate kernel
+        k = ql.Kernel("aKernel", platf)
+
+        k.gate("x", 0);
+        k.gate("swap", 0, 1)
+        k.gate("x", 0)
+
+        sweep_points = [2]
+        num_circuits = 1
+        nqubits = 4
+
+        p = ql.Program("swap_single", nqubits, platf)
+        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.add_kernel(k)
+        p.compile(False, False)
+        p.schedule("ASAP", False)
+
+        gold_fn = rootDir + '/golden/test_swap_single_ASAP.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'ASAP.qasm')
+
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
+
+    def test_swap_multi(self):
+
+        # populate kernel
+        k = ql.Kernel("aKernel", platf)
+
+        # swap test with 2 qubit gates
+        k.gate("x", 0)
+        k.gate("x", 1)
+        k.gate("swap", 0, 1)
+        k.gate("cz", 0, 2)
+        k.gate("cz", 1, 4)
+
+        sweep_points = [2]
+        num_circuits = 1
+        nqubits = 5
+
+        p = ql.Program("swap_multi", nqubits, platf)
+        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.add_kernel(k)
+        p.compile(False, False)
+        p.schedule("ASAP", False)
+
+        gold_fn = rootDir + '/golden/test_swap_multi_ASAP.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'ASAP.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
+
 if __name__ == '__main__':
     unittest.main()

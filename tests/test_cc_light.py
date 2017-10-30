@@ -31,7 +31,6 @@ class Test_basic(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
-        num_circuits = 1
         num_qubits = platform.get_qubit_number()
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -67,7 +66,6 @@ class Test_basic(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
-        num_circuits = 2
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -99,7 +97,6 @@ class Test_basic(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
-        num_circuits = 2
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -146,7 +143,6 @@ class Test_basic(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -185,7 +181,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -210,7 +205,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -235,7 +229,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -260,7 +253,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -282,7 +274,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -306,7 +297,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -329,7 +319,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -355,7 +344,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -377,7 +365,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -402,7 +389,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -431,7 +417,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
-        num_circuits = 1
         num_qubits = platform.get_qubit_number()
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -485,7 +470,6 @@ class Test_advance(unittest.TestCase):
             config_fn = os.path.join(curdir, 'test_cfg_cc_light_buffers_latencies.json')
             platform  = ql.Platform('seven_qubits_chip', config_fn)
             sweep_points = [1,2]
-            num_circuits = 1
             num_qubits = 7
             p = ql.Program('aProgram', num_qubits, platform)
             p.set_sweep_points(sweep_points, len(sweep_points))
@@ -527,7 +511,6 @@ class Test_advance(unittest.TestCase):
             config_fn = os.path.join(curdir, 'test_cfg_cc_light_buffers_latencies.json')
             platform  = ql.Platform('seven_qubits_chip', config_fn)
             sweep_points = [1,2]
-            num_circuits = 1
             num_qubits = 7
             p = ql.Program('aProgram', num_qubits, platform)
             p.set_sweep_points(sweep_points, len(sweep_points))
