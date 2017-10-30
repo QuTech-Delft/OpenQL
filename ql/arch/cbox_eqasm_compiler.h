@@ -150,6 +150,12 @@ namespace ql
                         json& j_params = instruction_settings[id]["qumis_instr_kw"];
                         process_pulse_trigger(j_params, duration, type, latency, g->operands, id);
                      }
+                     else if (operation == "trigger_sequence")
+                     {
+                        // println("cw id: " << id);
+                        json& j_params = instruction_settings[id]["qumis_instr_kw"];
+                        process_trigger_sequence(j_params, duration, type, latency, g->operands, id);
+                     }
                      else if  ((operation == "trigger") && (type == __measurement__))
                      {
                         // println("measurement (trig) id: " << id);
@@ -302,8 +308,9 @@ namespace ql
                   }
                   st = qumis_instructions[i]->start;
                }
+               parallel_sections.push_back(ps);
                // print prallel sections
-               #if 0
+               #if 1
                for (qumis_program_t p : parallel_sections)
                {
                   println("[+] parallel section : ");
@@ -528,6 +535,7 @@ namespace ql
                   }
                   #endif
                   eqasm_code.push_back(instr->code());
+                  println(t << " : " << instr->code());
                   i++;
                }
                eqasm_code.push_back("wait "+std::to_string(qumis_instructions.back()->duration));
@@ -652,6 +660,42 @@ namespace ql
 
                qumis_instructions.push_back(instr);
             }
+
+            /**
+             * process trigger sequence
+             */
+            void process_trigger_sequence(json& j_params, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
+            {
+               // println("processing codeword trigger instruction...");
+               // check for hardware configuration integrity
+               if (j_params["trigger_width"].is_null())
+                  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing trigger sequence: 'trigger_width' for instruction '"+qasm_label+"' is not specified !",false);
+               if (j_params["trigger_channel"].is_null())
+                  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing trigger sequence: 'trigger_channel' for instruction '"+qasm_label+"' is not specified !",false);
+
+               size_t trigger_width   = j_params["trigger_width"];
+               size_t trigger_channel = j_params["trigger_channel"];
+
+               // println("\ttrigger channel    : " << trigger_channel);
+               // println("\ttrigger width      : " << trigger_width); 
+
+               if (trigger_channel > (__trigger_width__-1))
+               {
+                  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing codeword trigger : 'trigger_channel' of instruction '"+qasm_label+"' is out of range !",false);
+               }
+
+               // trigger sequence
+               trigger_sequence * instr = new trigger_sequence(trigger_channel, trigger_width, duration, type, latency, qasm_label);
+
+               instr->used_qubits = qubits;
+               instr->qasm_label  = qasm_label;
+
+               // println("\tcode: " << instr->code());
+
+               qumis_instructions.push_back(instr);
+            }
+
+
 
 
 

@@ -42,11 +42,13 @@ namespace ql
       // instruction type
       typedef enum 
       {
-         __qumis_trigger__    ,
-         __qumis_pulse__      ,
-         __qumis_cw_trigger__ ,
-         __qumis_readout__    ,
-         __qumis_buffer__     ,
+         __qumis_trigger__       ,
+         __qumis_pulse__         ,
+         __qumis_cw_trigger__    ,
+         __qumis_pulse_trigger__ ,
+         __qumis_trigger_seq__   ,
+         __qumis_readout__       ,
+         __qumis_buffer__        ,
          __qumis_wait__
       } qumis_instr_type_t;
 
@@ -499,7 +501,7 @@ namespace ql
                                                                  trig_channel(trig_channel) 
             {
                this->operation_type    = operation_type   ;
-               this->instruction_type  = __qumis_cw_trigger__;
+               this->instruction_type  = __qumis_pulse_trigger__;
                this->duration          = duration;
                this->latency           = latency;
                used_resources.set(trig_channel);
@@ -726,6 +728,138 @@ namespace ql
             }
 
       };
+
+
+      /**
+       * trigger_sequence
+       *   trigger sequence  
+       */
+      class trigger_sequence : public qumis_instruction
+      {
+         public:
+
+            size_t     trig_channel;
+            size_t     trig_width;
+
+            qumis_program_t  instructions; 
+
+         public:
+
+            /**
+             * ctor
+             */
+            trigger_sequence(size_t trig_channel, size_t trig_width, size_t duration, 
+                  ql::arch::operation_type_t operation_type, 
+                  size_t latency=0, std::string qasm_label="") : trig_channel(trig_channel), trig_width(trig_width)
+                                                                  
+            {
+               this->operation_type    = operation_type   ;
+               this->instruction_type  = __qumis_trigger_seq__;
+               this->duration          = duration;
+               this->latency           = latency;
+               this->start             = 0;
+               
+               used_resources.set(trig_channel);
+               
+               if (trig_channel > 7)
+                  println("[x] trigger channel number cannot be greater than 7.");
+
+               codeword_t trig_mask;
+               trig_mask.set(6-trig_channel);
+
+               trigger * t0 = new trigger(trig_mask,trig_width,operation_type,latency);
+               trigger * t1 = new trigger(trig_mask,trig_width,operation_type,latency);
+               t0->qasm_label = qasm_label;
+               t1->qasm_label = qasm_label;
+               instructions.push_back(t0);
+               instructions.push_back(t1);
+            }
+
+            /**
+             * decompose trigger sequence
+             */
+            qumis_program_t decompose()
+            {
+               instructions[0]->start   = start;
+               instructions[0]->latency = latency;
+               instructions[1]->start   = start+duration;
+               instructions[1]->latency = latency;
+               println("trigger_sequence::decompose() :");
+               println("\t trigger_sequence[0] latency : " << instructions[0]->latency);
+               println("\t trigger_sequence[0] start   : " << instructions[0]->start);
+               println("\t trigger_sequence[1] latency : " << instructions[1]->latency);
+               println("\t trigger_sequence[1] start   : " << instructions[1]->start);
+
+               return instructions;
+            }
+
+            /**
+             *  compensate for latency
+             */
+            void compensate_latency()
+            {
+               if (!latency_compensated)
+               {
+                  // println("compensate latency : " << start << " -> " << (start-latency) << " : latency = " << latency);
+                  start -= latency;
+                  for (auto i : instructions)
+                     i->compensate_latency();
+                  latency_compensated = true;
+               }
+               else
+               {
+                  println("[x] warning : latency of instruction '" << this << "' is already compensated !");
+               }
+            }    
+
+
+            /**
+             * generate code 
+             */
+            qumis_instr_t code()
+            {
+               std::stringstream instr;
+               instr << instructions[0]->code() << "\nwait " << duration+trig_width << "\n"; 
+               instr << instructions[1]->code() << "\nwait " << trig_width;
+               return instr.str();
+            }
+
+            /**
+             * trace
+             */
+            instruction_traces_t trace()
+            {
+               instruction_traces_t trs;
+               size_t latent_start = (latency_compensated ? (start) : (start-latency));
+               std::string label   = qasm_label + " : " + code(); 
+               // println("qasm label   : " << label);
+               // println("start        : " << start);
+               // println("latent start : " << latent_start);
+               
+               for (size_t i=0; i<instructions.size(); ++i)
+               {
+                  instruction_trace_t t  = { trig_channel, label, start, (start+instructions[i]->duration), "#DD5437", __top_pos__ };
+                  instruction_trace_t lt = { trig_channel, label, latent_start, (latent_start+instructions[i]->duration), "#808080", __bottom_pos__ };
+                  trs.push_back(lt);
+                  trs.push_back(t);
+               }
+
+               return trs; 
+            }
+
+            /**
+             * set start
+             */
+            void set_start(size_t t)
+            {
+               start = t;
+               instructions[0]->start = t;
+               instructions[1]->start = t+trig_width+duration;
+            }
+
+      };
+
+
 
 
 
