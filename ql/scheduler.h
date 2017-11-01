@@ -112,9 +112,6 @@ public:
             size_t operandCount = operands.size();
             size_t operandNo=0;
 
-            // TODO check LastReaders push_back/insert logic, LastReaders should be LastReader
-            // TODO fix printing of qwait in ASAP/ALAP and qisa/tqisa
-            // TODO fix get/print/write function names
             if(ins->name == "swap" || ins->name == "wait")
             {
                 for( auto operand : operands )
@@ -417,7 +414,7 @@ public:
 
     void TopologicalSort(std::vector<ListDigraph::Node> & order)
     {
-        // std::cout << "Performing Topological sort." << std::endl;
+        // COUT("Performing Topological sort.");
         ListDigraph::NodeMap<int> rorder(graph);
         if( !dag(graph) )
             COUT("This digraph is not a DAG.");

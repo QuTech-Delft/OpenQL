@@ -35,6 +35,8 @@ Entries are either an `alias` or a full entry.
     + `qumis_instr` (str): one of `wait`, `pulse`, `trigger`, `CW_trigger`, `dummy`, `measure`.
     + `qumis_instr_kw` (dict): dictionary containing keyword arguments for the qumis instruction. 
 
+**Note:** At the moment, `entry` is case-sensitive at it is used as unique id to the entries.
+
 ## CBox_v3 instuction configuration
 OpenQL supports the following instructions
 

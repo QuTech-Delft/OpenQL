@@ -33,7 +33,7 @@ public:
     circuit optimize(circuit& ic /*, bool verbose=false */)
     {
         circuit c=ic;
-        // if (verbose) println("optimizing circuit...");
+        // if (verbose) COUT("optimizing circuit...");
         for (size_t i=c.size(); i>1; i--)
         {
             // println("window size : " << i);
@@ -44,7 +44,7 @@ public:
         if (c.size()>1)
             c = optimize_sliding_window(c,2);
 
-        // if (verbose) println("optimization done.");
+        // if (verbose) COUT("optimization done.");
 
         return c;
     }
@@ -124,7 +124,7 @@ protected:
 
         if (id_pos.size()==1)
         {
-            // println("rotations cancelling...");
+            // COUT("rotations cancelling...");
             size_t pos = id_pos[0];
             size_t i=0;
             while (i<c.size())
@@ -140,10 +140,10 @@ protected:
             return oc;
         }
 
-        // println("removing overlapping windows...");
+        // COUT("removing overlapping windows...");
         std::vector<int> pid;
         // int prev = id_pos[0];
-        // println("rotation cancelling...");
+        // COUT("rotation cancelling...");
         size_t pos = id_pos[0];
         size_t ip  = 0;
         size_t i=0;

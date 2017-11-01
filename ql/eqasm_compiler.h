@@ -46,7 +46,7 @@ namespace ql
 	       return;
 	    if (file_name=="")
 	    {
-	       println("[c] eqasm code (" << eqasm_code.size() << " lines) :");
+	       COUT("[c] eqasm code (" << eqasm_code.size() << " lines) :");
 	       for (std::string l : eqasm_code)
 		  std::cout << l << std::endl;
 	    }
@@ -62,7 +62,7 @@ namespace ql
 		  file.close();
 	       }
 	       else 
-		  println("[x] error : when opening file '" << file_name << "' !");
+		  EOUT("opening file '" << file_name << "' !");
 	    }
 	 }
 

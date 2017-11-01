@@ -43,13 +43,13 @@ namespace ql
 	    // eqasm_t
 	    void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& platform, bool verbose=false) throw (ql::exception)
 	    {
-	       if (verbose) println("[-] compiling qasm code ...");
+	       if (verbose) COUT("[-] compiling qasm code ...");
 	       if (c.empty())
 	       {
-		  println("[-] empty circuit, eqasm compilation aborted !");
+		  EOUT("empty circuit, eqasm compilation aborted !");
 		  return;
 	       }
-	       if (verbose) println("[-] loading circuit (" <<  c.size() << " gates)...");
+	       if (verbose) COUT("loading circuit (" <<  c.size() << " gates)...");
 	       eqasm_t eqasm_code;
 	       // ql::instruction_map_t& instr_map = platform.instruction_map;
 	       json& instruction_settings       = platform.instruction_settings;
@@ -123,7 +123,7 @@ namespace ql
 		     operation_type_t type = operation_type(instruction_settings[id]["type"]);
 		     if (type == __unknown_operation__)
 		     {
-			println("[x] error : unknow operation type of the instruction '" << id << "' !");
+			EOUT("unknow operation type of the instruction '" << id << "' !");
 			throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : the type of instruction '"+id+"' is unknown !",false);
 		     }
 		     if (instruction_settings[id]["qumis_instr_kw"].is_null())
@@ -163,7 +163,7 @@ namespace ql
 		  }
 		  else
 		  {
-		     println("[x] error : cbox_eqasm_compiler : instruction '" << id << "' not supported by the target platform !");
+		     EOUT("cbox_eqasm_compiler : instruction '" << id << "' not supported by the target platform !");
 		     throw ql::exception("[x] error : cbox_eqasm_compiler : error while reading hardware settings : instruction '"+id+"' not supported by the target platform !",false);
 		  }
 	       }
@@ -198,7 +198,7 @@ namespace ql
 	     */
 	    void dump_instructions()
 	    {
-	       println("[d] instructions dump:");
+	       COUT("[d] instructions dump:");
 	       for (qumis_instruction * instr : qumis_instructions)
 	       {
 		  size_t t = instr->start;
@@ -211,7 +211,7 @@ namespace ql
 	     */
 	    void decompose_instructions()
 	    {
-	       if (verbose) println("decomposing instructions...");
+	       if (verbose) COUT("decomposing instructions...");
 	       qumis_program_t decomposed;
 	       for (qumis_instruction * instr : qumis_instructions)
 	       {
@@ -228,7 +228,7 @@ namespace ql
 	     */
 	     void reorder_instructions()
 	     {
-	       if (verbose) println("reodering instructions...");
+	       if (verbose) COUT("reodering instructions...");
 	       std::sort(qumis_instructions.begin(),qumis_instructions.end(), qumis_comparator);
 	     }
 
@@ -237,7 +237,7 @@ namespace ql
 	     */
 	    size_t time_analysis()
 	    {
-	       if (verbose) println("time analysis...");
+	       if (verbose) COUT("time analysis...");
 	       // update start time : find biggest latency
 	       size_t max_latency = 0;
 	       for (qumis_instruction * instr : qumis_instructions)
@@ -265,7 +265,7 @@ namespace ql
 	     */
 	    void compensate_latency()
 	    {
-	       if (verbose) println("latency compensation...");
+	       if (verbose) COUT("latency compensation...");
 	       for (qumis_instruction * instr : qumis_instructions)
 		  instr->compensate_latency();
 	    }
@@ -275,9 +275,9 @@ namespace ql
 	     */
 	    void resechedule()
 	    {
-	       if (verbose) println("instruction rescheduling...");
-	       if (verbose) println("resource dependency analysis...");
-	       if (verbose) println("buffer insertion...");
+	       if (verbose) COUT("instruction rescheduling...");
+	       if (verbose) COUT("resource dependency analysis...");
+	       if (verbose) COUT("buffer insertion...");
 
 	       std::vector<size_t>           hw_res_av(__trigger_width__+__awg_number__,0);
 	       std::vector<size_t>           qu_res_av(num_qubits,0);
@@ -356,7 +356,7 @@ namespace ql
 	       ql::arch::channels_t channels;
 	       if (qumis_instructions.empty())
 	       {
-		  println("[!] warning : empty qumis code : not traces to dump !");
+		  WOUT("empty qumis code : not traces to dump !");
 		  return;
 	       }
 
@@ -393,7 +393,7 @@ namespace ql
 	     */
 	    void emit_eqasm()
 	    {
-	       if (verbose) println("compiling eqasm...");
+	       if (verbose) COUT("compiling eqasm...");
 	       eqasm_code.clear();
 	       eqasm_code.push_back("wait 1");       // add wait 1 at the begining
 	       eqasm_code.push_back("mov r14, 0");   // 0: infinite loop
@@ -412,7 +412,7 @@ namespace ql
 	       }
 	       eqasm_code.push_back("wait "+std::to_string(qumis_instructions.back()->duration));
 	       eqasm_code.push_back("beq r14, r14 start");  // loop
-	       println("compilation done.");
+	       COUT("compilation done.");
 	    }
 
 	    /**
@@ -420,7 +420,7 @@ namespace ql
 	     */
 	    void process_pulse(json& j_params, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
 	    {
-	       // println("processing pulse instruction...");
+	       // COUT("processing pulse instruction...");
 	       // check for hardware configuration integrity
 	       if (j_params["codeword"].is_null())
 		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing pulse instruction : 'codeword' for instruction '"+qasm_label+"' is not specified !",false);
@@ -445,7 +445,7 @@ namespace ql
 	     */
 	    void process_codeword_trigger(json& j_params, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
 	    {
-	       // println("processing codeword trigger instruction...");
+	       // COUT("processing codeword trigger instruction...");
 	       // check for hardware configuration integrity
 	       if (j_params["codeword_ready_bit"].is_null())
 		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing codeword trigger : 'codeword_ready_bit' for instruction '"+qasm_label+"' is not specified !",false);
@@ -512,7 +512,7 @@ namespace ql
 		  // println("\ttrigger duration : " << trigger_duration);
 		  if (trigger_bit > (__trigger_width__-1))
 		  {
-		     //println("[x] error while processing the 'readout' instruction : invalid trigger bit.");
+		     //EOUT("error while processing measure instruction : invalid trigger bit.");
 		     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing measure instruction '"+qasm_label+"' : invalid trigger bit (out of range) !",false);
 		  }
 		  codeword_t cw = 0;
@@ -527,10 +527,10 @@ namespace ql
 	       }
 	       else
 	       {
-		     println("[x] error while processing the 'readout' instruction : only trigger-based implementation is supported !");
+		     EOUT("while processing the 'readout' instruction : only trigger-based implementation is supported !");
 		     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing the '"+qasm_label+"' instruction : only trigger-based implementation is supported !",false);
 	       }
-	       // println("measure instruction processed.");
+	       // COUT("measure instruction processed.");
 	    }
 
 
@@ -539,7 +539,7 @@ namespace ql
 	     */
 	    void process_trigger(json& j_params, std::string instr, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
 	    {
-	       // println("processing trigger instruction...");
+	       // COUT("processing trigger instruction...");
 	       qumis_instruction * trig;
 
 	       // check for hardware configuration integrity
@@ -555,7 +555,7 @@ namespace ql
 	       // println("\ttrigger duration : " << trigger_duration);
 	       if (trigger_bit > (__trigger_width__-1))
 	       {
-		  // println("[x] error while processing the 'trigger' instruction : invalid trigger bit.");
+		  // EOUT("while processing the 'trigger' instruction : invalid trigger bit.");
 		  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing trigger instruction '"+qasm_label+"' : invalid trigger bit (out of range) !",false);
 	       }
 	       codeword_t cw = 0;

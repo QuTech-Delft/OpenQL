@@ -20,8 +20,8 @@ def test_cclight():
     k.prepz(1)
     k.prepz(2)
     k.prepz(3)
-    k.hadamard(0)
-    k.hadamard(1)
+    # k.hadamard(0)
+    # k.hadamard(1)
     k.x(2)
     k.x(3)
     k.cnot(2, 0)
@@ -36,7 +36,7 @@ def test_cclight():
     p.add_kernel(k)
 
     # compile the program
-    p.compile(optimize=False, verbose=True)
+    p.compile(optimize=False, verbose=False)
 
 def test_none():
     config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
@@ -65,16 +65,20 @@ def test_none():
     p.add_kernel(k2)
 
     # compile the program
-    p.compile(optimize=False, verbose=True)
+    p.compile(optimize=False, verbose=False)
     # p.schedule('ALAP', True)
 
 
 if __name__ == '__main__':
     test_cclight()
+    # test_none()
 
-
+# TODO check LastReaders push_back/insert logic, LastReaders should be LastReader
+# TODO fix printing of qwait in ASAP/ALAP and qisa/tqisa
+# TODO fix get/print/write function names
 # something like the following can be used for last reader(s) test
 # test limit on duration of wait
 # k.gate("cz", 0, 1)
 # k.gate("cz", 0, 2)
 # k.gate("cz", 0, 3)
+

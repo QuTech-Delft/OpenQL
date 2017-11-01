@@ -2,14 +2,14 @@
 # using quick_feature_test.cc or quick_feature_test.py file as test.
 # this can be done by:
 #	make -f quick_feature_test.makefile clean wrapper lib ctest
-#
+#  -DDEBUG
 # This requires compilation and installation of lemon library
 # and setting up LEMON_ROOT variable accordingly
 
 SWIG=swig
 LEMON_ROOT=/opt/lemon
 INCS=-I .. -I . -I $(LEMON_ROOT)/include
-CFLAGS=-fpic $(INCS) -std=c++11 -Wfatal-errors `python3-config --cflags` -DDEBUG
+CFLAGS=-fpic $(INCS) -std=c++11 -Wfatal-errors `python3-config --cflags`
 LDFLAGS=`python3-config --ldflags`
 
 PYTHON=python3

@@ -1308,7 +1308,8 @@ public:
             load(instr);
             f.close();
         }
-        else std::cout << "[x] error : json file not found !" << std::endl;
+        else
+            EOUT("json file not found !");
     }
 
     /**
@@ -1351,19 +1352,19 @@ public:
      */
     void load(json& instr) throw (ql::exception)
     {
-        // println("loading instruction '" << name << "'...");
+        // DOUT("loading instruction '" << name << "'...");
         std::string l_attr = "qubits";
         try
         {
             l_attr = "qubits";
-            // println("qubits: " << instr["qubits"]);
+            // DOUT("qubits: " << instr["qubits"]);
             parameters = instr["qubits"].size();
             for (size_t i=0; i<parameters; ++i)
             {
                 std::string qid = instr["qubits"][i];
                 if (!is_qubit_id(qid))
                 {
-                    println("[x] error : invalid qubit id in attribute 'qubits' !");
+                    EOUT("invalid qubit id in attribute 'qubits' !");
                     throw ql::exception("[x] error : ql::custom_gate() : error while loading instruction '" + name + "' : attribute 'qubits' : invalid qubit id !", false);
                 }
                 operands.push_back(qubit_id(qid));
@@ -1384,7 +1385,7 @@ public:
         }
         catch (json::exception e)
         {
-            println("[e] error while loading instruction '" << name << "' (attr: " << l_attr << ") : " << e.what());
+            EOUT("while loading instruction '" << name << "' (attr: " << l_attr << ") : " << e.what());
             throw ql::exception("[x] error : ql::custom_gate() : error while loading instruction '" + name + "' : attribute '" + l_attr + "' : \n\t" + e.what(), false);
         }
     }

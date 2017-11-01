@@ -60,7 +60,7 @@ std::string qasm(ql::circuit c)
     for (size_t i=0; i<c.size(); ++i)
     {
         ss << c[i]->qasm() << "\n";
-        std::cout << c[i]->qasm() << std::endl;
+        // COUT(c[i]->qasm());
     }
     return ss.str();
 }
