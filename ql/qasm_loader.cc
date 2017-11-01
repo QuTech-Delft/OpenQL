@@ -14,7 +14,7 @@
  *   @arg file_name
  * 
  */
-int main(int argc, char ** argv)
+int main(int argc, const char ** argv)
 {
    if (argc == 2)
    {
@@ -23,7 +23,7 @@ int main(int argc, char ** argv)
    }
    else
    {
-      println("[x] qasm file not specified !\n[?] usage : " << argv[0] << " file.qasm");
+      std::cout << "[x] qasm file not specified !\n[?] usage : " << argv[0] << " file.qasm" << std::endl;
       return -1;
    }
 
