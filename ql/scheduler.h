@@ -112,7 +112,39 @@ public:
             size_t operandCount = operands.size();
             size_t operandNo=0;
 
-            if(ins->name == "swap" || ins->name == "wait")
+            if(ins->name == "wait")
+            {
+                for( auto operand : operands )
+                {
+                    { // WAW dependencies
+                        int prodID = LastWriter[operand];
+                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+                        weight[arc] = std::fmax( std::ceil( (instruction[prodNode]->duration) / cycle_time), 1);
+                        cause[arc] = operand;
+                        depType[arc] = WAW;
+                    }
+
+                    { // WAR dependencies
+                        ReadersListType readers = LastReaders[operand];
+                        for(auto & readerID : readers)
+                        {
+                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                            weight[arc1] = std::fmax( std::ceil( (instruction[readerNode]->duration) / cycle_time), 1);
+                            cause[arc1] = operand;
+                            depType[arc1] = WAR;
+                        }
+                    }
+                }
+
+                // now update LastWriter
+                for( auto operand : operands )
+                {
+                    LastWriter[operand] = consID;
+                }
+            }
+            else if(ins->name == "swap" )
             {
                 for( auto operand : operands )
                 {

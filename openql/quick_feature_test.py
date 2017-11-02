@@ -68,17 +68,40 @@ def test_none():
     p.compile(optimize=False, verbose=False)
     # p.schedule('ALAP', True)
 
+def test_bug():
+    config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
+    platform  = ql.Platform('seven_qubits_chip', config_fn)
+    sweep_points = [1,2]
+    num_qubits = 7
+    p = ql.Program('aProgram', num_qubits, platform)
+    p.set_sweep_points(sweep_points, len(sweep_points))
+
+    qubit_idx = 0
+    waits = [20, 40, 60, 100, 200, 400, 800, 1000, 2000]
+    for kno, wait_nanoseconds in enumerate(waits):
+        k = ql.Kernel("kernel_"+str(kno), p=platform)
+
+        k.prepz(qubit_idx)
+
+        k.gate('rx90', qubit_idx)
+        k.gate("wait", [qubit_idx], wait_nanoseconds)
+
+        k.gate('rx180', qubit_idx)
+        k.gate("wait", [qubit_idx], wait_nanoseconds)
+
+        k.gate('rx90', qubit_idx)
+        k.gate("wait", [qubit_idx], wait_nanoseconds)
+
+        k.measure(qubit_idx)
+
+        # add the kernel to the program
+        p.add_kernel(k)
+
+    # compile the program
+    p.compile(optimize=False, verbose=False)
+
 
 if __name__ == '__main__':
-    test_cclight()
+    test_bug()
+    # test_cclight()
     # test_none()
-
-# TODO check LastReaders push_back/insert logic, LastReaders should be LastReader
-# TODO fix printing of qwait in ASAP/ALAP and qisa/tqisa
-# TODO fix get/print/write function names
-# something like the following can be used for last reader(s) test
-# test limit on duration of wait
-# k.gate("cz", 0, 1)
-# k.gate("cz", 0, 2)
-# k.gate("cz", 0, 3)
-

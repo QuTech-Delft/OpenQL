@@ -174,7 +174,8 @@ public:
 
     void wait(std::vector<size_t> qubits, size_t duration)
     {
-        gate("wait", qubits, duration );
+        if(duration!=0)
+            gate("wait", qubits, duration );
     }
 
     /**
@@ -333,7 +334,12 @@ public:
     	else if( gname == "cz" )         { c.push_back(new ql::cphase(qubits[0], qubits[1]) ); result = true; }
     	else if( gname == "cphase" )     { c.push_back(new ql::cphase(qubits[0], qubits[1]) ); result = true; }
         else if( gname == "swap" )       { c.push_back(new ql::swap(qubits[0], qubits[1]) ); result = true; }
-        else if( gname == "wait")        { c.push_back(new ql::wait(qubits, duration) ); result = true; }
+        else if( gname == "wait")        
+        {
+            if(duration!=0)
+                c.push_back(new ql::wait(qubits, duration));
+            result = true; 
+        }
         else result = false;
 
     	return result;
