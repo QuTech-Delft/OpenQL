@@ -52,7 +52,11 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         # this should be implicit
         p.set_sweep_points(times, len(times))
         for tau in times:
-            k = Kernel('echo_tau_{}ns'.format(tau), p=platf)
+            # this is an invalid kernel name (contains '.')
+            # and will produce and invalid qasm
+            n = 'echo_tau_{}ns'.format(tau) 
+            n = n.replace(".","_")
+            k = Kernel(n, p=platf)
             k.prepz(0)
             k.rx90(0)
             # This is a dirty hack that repeats the I gate

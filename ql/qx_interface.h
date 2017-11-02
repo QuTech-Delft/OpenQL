@@ -97,6 +97,7 @@ namespace qx
    // gates (availble only on the qx server version)
    // to do : implement them on the local qx simulator
    __define_qx_gate(qwait);
+   __define_qx_gate(id);
    __define_qx_gate(rx180);
    __define_qx_gate(ry180);
    __define_qx_gate(rz180);

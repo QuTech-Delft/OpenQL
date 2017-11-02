@@ -53,13 +53,16 @@ private:
     size_t cycle_time;
     std::map< std::pair<std::string,std::string>, size_t> buffer_cycles_map;
 
+    size_t num_qubits;
+
 public:
     Scheduler(): instruction(graph), name(graph), weight(graph),
         cause(graph), depType(graph), dist(graph) {}
 
     void Init( size_t nQubits, ql::circuit& ckt, ql::quantum_platform platform, bool verbose=false)
     {
-        cycle_time=platform.cycle_time;
+        num_qubits = nQubits;
+        cycle_time = platform.cycle_time;
 
         // populate buffer map
         // 'none' type is a dummy type and no buffer cycles will be inserted for
@@ -495,6 +498,9 @@ public:
         ScheduleASAP(cycle, order, verbose);
         if(verbose) COUT("Printing Scheduled QASM in " << qcfname);
 
+        // this is required for qasm code validity
+        fout << "qubits " << num_qubits << "\n"; 
+
         typedef std::vector<std::string> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
 
@@ -516,14 +522,14 @@ public:
             if( it != insInAllCycles.end() )
             {
                 auto nInsThisCycle = insInAllCycles[currCycle].size();
-		fout << "{ "; 
+                fout << "{ "; 
                 for(size_t i=0; i<nInsThisCycle; ++i )
                 {
                     fout << insInAllCycles[currCycle][i];
                     if( i != nInsThisCycle - 1 ) // last instruction
                         fout << " | ";
                 }
-		fout << " }"; 
+                fout << " }"; 
             }
             else
             {
@@ -572,12 +578,14 @@ public:
                 }
 
                 auto nInsThisCycle = insInAllCycles[currCycle].size();
+                ss << "{ "; 
                 for(size_t i=0; i<nInsThisCycle; ++i )
                 {
                     ss << insInAllCycles[currCycle][i];
                     if( i != nInsThisCycle - 1 ) // last instruction
                         ss << " | ";
                 }
+                ss << " }"; 
                 ss << '\n';
             }
             else
@@ -1066,6 +1074,9 @@ public:
         ScheduleALAP(cycle,order);
         if(verbose) COUT("Printing Scheduled QASM in " << qcfname);
 
+        // this is required for qasm code validity
+        fout << "qubits " << num_qubits << "\n"; 
+
         typedef std::vector<std::string> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
 
@@ -1087,14 +1098,14 @@ public:
             if( it != insInAllCycles.end() )
             {
                 auto nInsThisCycle = insInAllCycles[currCycle].size();
-		        fout << "{ "; 
+                fout << "{ "; 
                 for(size_t i=0; i<nInsThisCycle; ++i )
                 {
                     fout << insInAllCycles[currCycle][i];
                     if( i != nInsThisCycle - 1 ) // last instruction
                         fout << " | ";
                 }
-		        fout << " }"; 
+                fout << " }"; 
             }
             else
             {

@@ -298,6 +298,7 @@ class quantum_program
       void schedule(std::string scheduler="ASAP", bool verbose=false)
       {
          std::string sched_qasm;
+         sched_qasm += "qubits " + std::to_string(qubits) + "\n";
 
          if (verbose)
             println("scheduling the quantum program");

@@ -220,6 +220,17 @@ namespace str
    }
 
    /**
+    * is digit
+    */
+   inline bool is_number(std::string& x)
+   {
+      for (size_t i=0; i<x.size(); ++i)
+         if (!is_digit(x[i])) return false;
+      return true;
+   }
+
+
+   /**
     * @param str
     *    string to be processed
     * @return 

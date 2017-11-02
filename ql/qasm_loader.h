@@ -539,6 +539,17 @@ namespace qx
                else
                   current_sub_circuit(qubits_count)->add(new qx::hadamard(q));
             } 
+            else if (words[0] == "i")    // hadamard gate
+            {
+               uint32_t q = qubit_id(words[1]); // atoi(words[1].c_str());
+               if (q > (qubits_count-1))
+                  print_semantic_error(" target qubit out of range !");
+               // println(" => hadamard gate on: " << q);
+               if (pg) 
+                  pg->add(new qx::id(q));
+               else
+                  current_sub_circuit(qubits_count)->add(new qx::hadamard(q));
+            }
             else if (words[0] == "rx90")    // rx90 
             {
                uint32_t q = qubit_id(words[1]); // atoi(words[1].c_str());
@@ -782,6 +793,14 @@ namespace qx
                   pg->add(new qx::pauli_z(q));
                else
                   current_sub_circuit(qubits_count)->add(new qx::pauli_z(q));
+            }
+            else if (words[0] == "qwait")   // z gate
+            {
+               size_t t = is_number(words[1]);
+               if (pg) 
+                  pg->add(new qx::qwait(t));
+               else
+                  current_sub_circuit(qubits_count)->add(new qx::qwait(t));
             }	
             else if (words[0] == "cz")   // z gate
             {
