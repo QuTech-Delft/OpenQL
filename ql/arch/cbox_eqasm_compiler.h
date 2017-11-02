@@ -507,15 +507,15 @@ namespace ql
                   return;
                }
 
-               for (size_t i=__trigger_width__-1; i>0; i--)
+               for (size_t i=__trigger_width__; i>0; i--)
                {
-                  std::string ch = "TRIG_"+std::to_string(i);
+                  std::string ch = "- MRK_"+std::to_string(i-1);
                   channels.push_back(ch);
                }
 
                for (size_t i=0; i<__awg_number__; i++)
                {
-                  std::string ch = "AWG_"+std::to_string(i);
+                  std::string ch = "- AWG_"+std::to_string(i);
                   channels.push_back(ch);
                }
 
