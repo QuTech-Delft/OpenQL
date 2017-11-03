@@ -30,6 +30,9 @@ std::string get_output_dir()
 }
 
 
+/**
+ * quantum program interface
+ */
 class Platform
 {
 public:
@@ -49,26 +52,9 @@ public:
 };
 
 
-class QASM_Loader 
-{
-public:
-
-    qx::qasm_loader      * loader;
-    std::string            file_name;
-
-    QASM_Loader(std::string file_name) : file_name(file_name)
-    {
-         loader = new qx::qasm_loader(file_name);
-    }
-
-    size_t load()
-    {
-        return loader->parse();
-    }
-};
-
-
-
+/**
+ * quantum kernel interface
+ */
 class Kernel
 {
 public:
@@ -207,6 +193,10 @@ public:
     }
 };
 
+
+/**
+ * quantum program interface
+ */
 class Program
 {
 private:
@@ -265,5 +255,45 @@ public:
         delete(prog);
     }
 };
+
+
+
+/**
+ * qasm code loader
+ */
+class QASM_Loader 
+{
+   public:
+
+      qx::qasm_loader      * loader;
+      std::string            file_name;
+
+      /**
+       * constructor
+       **/
+      QASM_Loader(std::string file_name) : file_name(file_name)
+      {
+         loader = new qx::qasm_loader(file_name);
+      }
+
+      /**
+       * read and parse the qasm file 
+       * @return 0 if success else error code
+       **/
+      size_t load()
+      {
+         return loader->parse();
+      }
+
+      /**
+       * destructor
+       */
+      ~QASM_Loader()
+      {
+         delete loader;
+      }
+};
+
+
 
 #endif

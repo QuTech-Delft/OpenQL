@@ -163,7 +163,7 @@ namespace qx
        /**
         * circuit
         */
-        circuit(size_t num_qubits, std::string name="", size_t iterations=1) : num_qubits(num_qubits), name(name), iterations(iterations)
+        circuit(size_t num_qubits, std::string name="", size_t iterations=1) : num_qubits(num_qubits), iterations(iterations), name(name) 
         {
         }
 

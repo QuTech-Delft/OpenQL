@@ -62,8 +62,12 @@ namespace qx
 
       private:
 
+         // qasm file name
          std::string   file_name;
          std::string   path;
+
+         // qubits count
+         uint32_t      qubits_count;
 
          // current line
          int           line_index;
@@ -77,7 +81,7 @@ namespace qx
          map_t         definitions;
 
          // circuits
-         uint32_t                           qubits_count;
+
          circuits_t                         circuits;
          std::vector<ql::quantum_kernel *>  kernels;
 
@@ -85,11 +89,11 @@ namespace qx
          str::strings                       quantum_state_files;
 
          // noise
-         double                             phase_noise;
-         double                             rotation_noise;
+         // double                             phase_noise;
+         // double                             rotation_noise;
 
          // decoherence
-         double                             decoherence; // const
+         // double                             decoherence; 
 
          // error model
          qx::error_model_t                  error_model;
@@ -103,8 +107,8 @@ namespace qx
           *    qasm_loader constructor
           */
          qasm_loader(std::string file_name) : file_name(file_name), qubits_count(0), parsed_successfully(false), 
-                                                      syntax_error(false), semantic_error(false), phase_noise(0), rotation_noise(0), decoherence(0),
-                                                      error_model(qx::__unknown_error_model__), error_probability(0)
+                                              syntax_error(false), semantic_error(false), /* phase_noise(0), rotation_noise(0), decoherence(0), */
+                                              error_model(qx::__unknown_error_model__), error_probability(0)
          {
             size_t last = file_name.find_last_of('/');
             if (last != std::string::npos)
