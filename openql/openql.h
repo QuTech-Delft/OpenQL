@@ -17,6 +17,7 @@
 #include <time.h>
 
 #include <ql/openql.h>
+#include <ql/qasm_loader.h>
 
 void set_output_dir_(std::string dir="output")
 {
@@ -46,6 +47,27 @@ public:
         return ql_platform->get_qubit_number();
     }
 };
+
+
+class QASM_Loader 
+{
+public:
+
+    qx::qasm_loader      * loader;
+    std::string            file_name;
+
+    QASM_Loader(std::string file_name) : file_name(file_name)
+    {
+         loader = new qx::qasm_loader(file_name);
+    }
+
+    size_t load()
+    {
+        return loader->parse();
+    }
+};
+
+
 
 class Kernel
 {
