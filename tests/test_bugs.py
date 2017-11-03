@@ -21,9 +21,9 @@ class Test_bugs(unittest.TestCase):
         sweep_points = [1,2]
         num_circuits = 1
         num_qubits = 2
-        p = ql.Program('aProgram', num_qubits, platf)
+        p = ql.Program('test_bug', num_qubits, platf)
         p.set_sweep_points(sweep_points, len(sweep_points))
-        k = ql.Kernel('aKernel', platf)
+        k = ql.Kernel('kernel1', platf)
 
         qubit = 1
 
@@ -37,6 +37,7 @@ class Test_bugs(unittest.TestCase):
 
         # add the kernel to the program
         p.add_kernel(k)
+
 
 if __name__ == '__main__':
     unittest.main()

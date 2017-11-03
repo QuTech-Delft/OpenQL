@@ -90,6 +90,18 @@ class Test_kernel(unittest.TestCase):
         p.compile(False, False)
         p.schedule("ALAP", False)
 
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgramALAP.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

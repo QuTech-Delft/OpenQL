@@ -60,19 +60,31 @@ class Test_program(unittest.TestCase):
         sweep_points = [2]
         num_circuits = 1
         nqubits = 2
-        p = ql.Program("rbProgram", nqubits, platf)
+        p = ql.Program("rb_program", nqubits, platf)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         print( p.qasm() )
         p.compile(False, False)
         p.schedule("ALAP", True)
 
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'rb_program.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'rb_programALAP.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
+
+
+
 
     def test_5qubit_program(self):
 
         nqubits=5
-        p = ql.Program("aProgram", nqubits, platf)
-        k = ql.Kernel("aKernel", platf)
+        p = ql.Program("a_program", nqubits, platf)
+        k = ql.Kernel("a_kernel", platf)
 
         # populate kernel
         for i in range(2):
@@ -121,6 +133,17 @@ class Test_program(unittest.TestCase):
 
         # compile  opt  verbose
         p.compile(False, False)
+        
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'AllXY.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
+
+
 
 if __name__ == '__main__':
     unittest.main()

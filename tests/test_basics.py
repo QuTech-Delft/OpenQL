@@ -16,7 +16,7 @@ class Test_basic(unittest.TestCase):
         sweep_points = [1]
         num_circuits = 2
         nqubits = 2
-        p = ql.Program("aProgram", nqubits, platf)
+        p = ql.Program("basic", nqubits, platf)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate kernel
@@ -39,35 +39,20 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         p.compile(optimize=False, verbose=False)
+        p.schedule('ALAP')
 
         # N.B. the output file get's created in the output directory
         # next to where this file was called.
+        
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'basic.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'basicALAP.qasm'))
 
-
-    # def test_scheduling(self):
-    #     # set global options kernel
-    #     ql.set_instruction_map_file("instructions.map")
-    #     ql.init()
-
-    #     # populate kernel
-    #     k = ql.Kernel("aKernel")
-    #     k.prepz(0)
-    #     k.prepz(1)
-    #     k.identity(0)
-    #     k.identity(1)
-    #     k.measure(0)
-    #     k.measure(1)
-
-    #     sweep_points = [2]
-    #     num_circuits = 1
-    #     nqubits = 2
-
-    #     p = ql.Program("aProgram", nqubits)
-    #     p.set_sweep_points(sweep_points, len(sweep_points))
-    #     p.add_kernel(k)
-    #     p.compile(False, True)
-    #     p.schedule()
-
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
 
 if __name__ == '__main__':
     unittest.main()

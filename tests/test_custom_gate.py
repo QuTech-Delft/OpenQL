@@ -47,6 +47,17 @@ class Test_kernel(unittest.TestCase):
         # schedule
         p.schedule()
 
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
+
+
+
         # all the outputs are generated in 'output' dir
 
 if __name__ == '__main__':

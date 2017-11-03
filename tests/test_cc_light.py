@@ -56,6 +56,15 @@ class Test_basic(unittest.TestCase):
 
         # compile the program
         p.compile(optimize=False, verbose=False)
+  
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -80,13 +89,22 @@ class Test_basic(unittest.TestCase):
         k.z(5)
         k.gate('rx90', 0)
         k.gate('cnot', [0, 3])
-        k.gate('measz', 0)
+        k.gate('measure', 0)
 
         # add the kernel to the program
         p.add_kernel(k)
 
         # compile the program
         p.compile(optimize=False, verbose=False)
+
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -128,13 +146,22 @@ class Test_basic(unittest.TestCase):
         k.gate('rx90', 0)
         # k.gate('cz', [0, 3])
         k.gate('cnot', [0, 3])
-        k.gate('measz', 0)
+        k.gate('measure', 0)
 
         # add the kernel to the program
         p.add_kernel(k)
 
         # compile the program
         p.compile(optimize=False, verbose=False)
+
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -175,6 +202,15 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile(optimize=False, verbose=False)
 
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
+
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
@@ -202,6 +238,15 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile(optimize=False, verbose=False)
 
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
+
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
@@ -226,6 +271,15 @@ class Test_advance(unittest.TestCase):
 
         # compile the program
         p.compile(optimize=False, verbose=False)
+
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -252,6 +306,15 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile(optimize=False, verbose=False)
 
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
+
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
@@ -277,6 +340,15 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile(optimize=False, verbose=False)
 
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
+
 	# @unittest.skip
     def test_measure_available01(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
@@ -301,6 +373,15 @@ class Test_advance(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
+
 	# @unittest.skip
     def test_measure_available02(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
@@ -323,6 +404,15 @@ class Test_advance(unittest.TestCase):
 
         # compile the program
         p.compile(optimize=False, verbose=False)
+
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
 
 	# @unittest.skip
     def test_measure_busy(self):
@@ -350,6 +440,15 @@ class Test_advance(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
+
 	# @unittest.skip
     def test_edge_available(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
@@ -371,6 +470,15 @@ class Test_advance(unittest.TestCase):
 
         # compile the program
         p.compile(optimize=False, verbose=False)
+
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
 
 	# @unittest.skip
     def test_edge_busy(self):
@@ -397,6 +505,15 @@ class Test_advance(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
+
 	# @unittest.skip
     def test_edge_illegal(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
@@ -422,6 +539,15 @@ class Test_advance(unittest.TestCase):
             raise
         except:
             pass
+
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
 
     # fast feedback test
     # @unittest.expectedFailure
@@ -451,6 +577,15 @@ class Test_advance(unittest.TestCase):
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
+
+        # load qasm
+        # qasm_files = []
+        # qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+        # for qasm_file in qasm_files:
+        #    qasm_reader = ql.QASM_Loader(qasm_file)
+        #    errors = qasm_reader.load()
+        #    self.assertTrue(errors == 0)
 
 
     def test_ccl_buffers(self):
@@ -497,6 +632,15 @@ class Test_advance(unittest.TestCase):
             p.add_kernel(k)
             p.compile(optimize=False, verbose=True)
 
+            # load qasm
+            qasm_files = []
+            qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+            for qasm_file in qasm_files:
+               qasm_reader = ql.QASM_Loader(qasm_file)
+               errors = qasm_reader.load()
+               self.assertTrue(errors == 0)
+
             QISA_fn = os.path.join(output_dir, p.name+'.qisa')
             gold_fn = rootDir + '/golden/test_ccl_buffers_'+str(testNo)+'.qisa'        
 
@@ -538,6 +682,15 @@ class Test_advance(unittest.TestCase):
 
             p.add_kernel(k)
             p.compile(optimize=False, verbose=True)
+
+            # load qasm
+            qasm_files = []
+            qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+
+            for qasm_file in qasm_files:
+               qasm_reader = ql.QASM_Loader(qasm_file)
+               errors = qasm_reader.load()
+               self.assertTrue(errors == 0)
 
             QISA_fn = os.path.join(output_dir, p.name+'.qisa')
             gold_fn = rootDir + '/golden/test_ccl_latencies_'+str(testNo)+'.qisa'        
