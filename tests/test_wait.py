@@ -38,7 +38,7 @@ class Test_wait(unittest.TestCase):
         k.gate("x", 0)
 
         p.add_kernel(k)
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_simple.qisa'        
@@ -61,7 +61,7 @@ class Test_wait(unittest.TestCase):
         k.gate("x", 1)
 
         p.add_kernel(k)
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_parallel.qisa'        

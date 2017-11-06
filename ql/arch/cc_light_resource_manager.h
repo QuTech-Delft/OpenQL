@@ -229,14 +229,13 @@ public:
             size_t s = anedge["src"];
             size_t d = anedge["dst"];
             size_t e = anedge["id"];
-            // COUT(s << " " << d << " : " << e);
 
             qubits_pair_t aqpair(s,d);
             auto it = qubits2edge.find(aqpair);
             if( it != qubits2edge.end() )
             {
-                COUT("Error: re-defining edge number !");
-                throw ql::exception("[x] Error : re-defining edge number !",false);
+                EOUT("re-defining edge " << s <<"->" << d << " !");
+                throw ql::exception("[x] Error : re-defining edge !",false);
             }
             else
             {
@@ -257,7 +256,9 @@ public:
 
     bool available(size_t cycle, ql::gate * ins, std::string & operation)
     {
-        if( 2 == (ins->operands).size() ) // 2 operand instruction reserve edges
+        auto gname = ins->name;
+        bool is_two_qubit_gate = (gname == "cnot") || (gname == "cz") || (gname == "cphase") || (gname == "swap");
+        if( is_two_qubit_gate ) // 2 qubit instruction reserve edges
         {
             auto q0 = ins->operands[0];
             auto q1 = ins->operands[1];
@@ -284,7 +285,7 @@ public:
             }
             else
             {
-                COUT("Error: Use of illegal edge !");
+                EOUT("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
                 throw ql::exception("[x] Error : Use of illegal edge !",false);
             }
         }
@@ -293,7 +294,9 @@ public:
 
     void reserve(size_t cycle, ql::gate * ins, std::string & operation)
     {
-        if( 2 == (ins->operands).size() ) // 2 operand instruction reserve edges
+        auto gname = ins->name;
+        bool is_two_qubit_gate = (gname == "cnot") || (gname == "cz") || (gname == "cphase") || (gname == "swap");
+        if( is_two_qubit_gate ) // 2 qubit instruction reserve edges
         {
             auto q0 = ins->operands[0];
             auto q1 = ins->operands[1];

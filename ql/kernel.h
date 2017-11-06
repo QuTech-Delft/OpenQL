@@ -37,6 +37,7 @@ public:
     {
         gate_definition = platform.instruction_map;
         qubit_number = platform.qubit_number;
+        cycle_time = platform.cycle_time;
     }
 
     void loop(size_t it)
@@ -337,7 +338,10 @@ public:
         else if( gname == "wait")        
         {
             if(duration!=0)
-                c.push_back(new ql::wait(qubits, duration));
+            {
+                size_t duration_in_cycles = std::fmax( std::ceil(duration/cycle_time), 1);
+                c.push_back(new ql::wait(qubits, duration, duration_in_cycles));
+            }
             result = true; 
         }
         else result = false;
@@ -653,7 +657,7 @@ public:
             // sched.PrintDotScheduleASAP();
             // sched_dot = sched.GetDotScheduleASAP();
             // sched.PrintQASMScheduledASAP();
-            sched_qasm = sched.GetQASMScheduledASAP();
+            sched_qasm = sched.GetQASMScheduledASAP(verbose);
         }
         else if("ALAP" == scheduler)
         {
@@ -661,7 +665,7 @@ public:
             // sched.PrintDotScheduleALAP();
             // sched_dot = sched.GetDotScheduleALAP();
             // sched.PrintQASMScheduledALAP();
-            sched_qasm = sched.GetQASMScheduledALAP();
+            sched_qasm = sched.GetQASMScheduledALAP(verbose);
         }
         else
         {
@@ -774,6 +778,7 @@ protected:
     circuit     c;
     size_t      iterations;
     size_t      qubit_number;
+    size_t      cycle_time;
 
     std::map<std::string,custom_gate*> gate_definition;
 };

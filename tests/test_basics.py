@@ -38,35 +38,7 @@ class Test_basic(unittest.TestCase):
         k.gate("measure", 0)
         p.add_kernel(k)
 
-        p.compile(optimize=False, verbose=False)
-
-        # N.B. the output file get's created in the output directory
-        # next to where this file was called.
-
-
-    # def test_scheduling(self):
-    #     # set global options kernel
-    #     ql.set_instruction_map_file("instructions.map")
-    #     ql.init()
-
-    #     # populate kernel
-    #     k = ql.Kernel("aKernel")
-    #     k.prepz(0)
-    #     k.prepz(1)
-    #     k.identity(0)
-    #     k.identity(1)
-    #     k.measure(0)
-    #     k.measure(1)
-
-    #     sweep_points = [2]
-    #     num_circuits = 1
-    #     nqubits = 2
-
-    #     p = ql.Program("aProgram", nqubits)
-    #     p.set_sweep_points(sweep_points, len(sweep_points))
-    #     p.add_kernel(k)
-    #     p.compile(False, True)
-    #     p.schedule()
+        p.compile(False, "ALAP", True)
 
 
 if __name__ == '__main__':

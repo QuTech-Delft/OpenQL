@@ -30,7 +30,7 @@ class Tester(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", True)
 
 if __name__ == '__main__':
     unittest.main()

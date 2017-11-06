@@ -1151,11 +1151,13 @@ class wait : public gate
 {
 public:
     cmat_t m;
+    size_t duration_in_cycles;
 
-    wait(std::vector<size_t> qubits, size_t d) : m(nop_c)
+    wait(std::vector<size_t> qubits, size_t d, size_t dc) : m(nop_c)
     {
         name = "wait";
         duration = d;
+        duration_in_cycles = dc;
         for(auto & q : qubits)
         {
             operands.push_back(q);
@@ -1163,7 +1165,7 @@ public:
     }
     instruction_t qasm()
     {
-        return instruction_t("qwait");
+        return instruction_t("qwait " + std::to_string(duration_in_cycles));
     }
     instruction_t micro_code()
     {

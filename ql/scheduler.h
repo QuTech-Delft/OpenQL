@@ -62,7 +62,7 @@ public:
         cycle_time=platform.cycle_time;
 
         // populate buffer map
-        // 'none' type is a dummy type and no buffer cycles will be inserted for
+        // 'none' type is a dummy type and 0 buffer cycles will be inserted for
         // instructions of type 'none'
         std::vector<std::string> buffer_names = {"none", "mw", "flux", "readout"};
         for(auto & buf1 : buffer_names)
@@ -77,9 +77,9 @@ public:
                 }
                 else
                 {
-                    buffer_cycles_map[ bpair ] = size_t(platform.hardware_settings[bname]) / cycle_time;
+                    buffer_cycles_map[ bpair ] = std::ceil( size_t(platform.hardware_settings[bname]) / cycle_time);
                 }
-                // DOUT("Initializing " << bname << ": "<< buffer_cycles_map[bpair]);
+                DOUT("Initializing " << bname << ": "<< buffer_cycles_map[bpair]);
             }
         }
 
@@ -581,11 +581,13 @@ public:
             {
                 if( empty_cycles > 0 )
                 {
-                    ss << "qwait " << empty_cycles << '\n';
+                    ss << "    qwait " << empty_cycles << '\n';
                     empty_cycles=0;
                 }
 
                 auto nInsThisCycle = insInAllCycles[currCycle].size();
+                if(nInsThisCycle>0)
+                    ss << "    ";
                 for(size_t i=0; i<nInsThisCycle; ++i )
                 {
                     auto & ins_name = insInAllCycles[currCycle][i];
@@ -705,7 +707,7 @@ public:
             ++currNode;
         }
 
-        DOUT("\nPrinting ALAP Schedule before latency compensation");
+        DOUT("Printing ALAP Schedule before latency compensation");
         DOUT("Cycle   Cycle-simplified    Instruction");
         for ( auto it = order.begin(); it != order.end(); ++it)
         {
@@ -735,7 +737,7 @@ public:
                 [&](ListDigraph::Node & n1, ListDigraph::Node & n2) { return cycle[n1] > cycle[n2]; }
             );
 
-        DOUT("\nPrinting ALAP Schedule after latency compensation");
+        DOUT("Printing ALAP Schedule after latency compensation");
         DOUT("Cycle   Cycle-simplified    Instruction");
         for ( auto it = order.begin(); it != order.end(); ++it)
         {
@@ -955,8 +957,7 @@ public:
         std::vector<ListDigraph::Node>::iterator it;
         for ( it = order.begin(); it != order.end(); ++it)
         {
-            auto & ins_name = name[*it];
-            if( ins_name != "qwait")
+            if( instruction[*it]->type() != ql::gate_type_t::__wait_gate__ )
                 insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( instruction[*it] );
         }
 
@@ -984,7 +985,7 @@ public:
                     size_t iduration = ins->duration;
                     bduration = std::max(bduration, iduration);
                 }
-                abundle.duration_in_cycles = bduration/cycle_time;
+                abundle.duration_in_cycles = std::ceil(bduration/cycle_time);
                 bundles.push_back(abundle);
             }
         }
@@ -1008,8 +1009,9 @@ public:
         std::vector<ListDigraph::Node>::iterator it;
         for ( it = order.begin(); it != order.end(); ++it)
         {
-            auto & ins_name = name[*it];
-            if( ins_name != "qwait" && instruction[*it]->type() != ql::gate_type_t::__dummy_gate__ )
+            if ( instruction[*it]->type() != ql::gate_type_t::__wait_gate__ &&
+                 instruction[*it]->type() != ql::gate_type_t::__dummy_gate__ 
+               )
             {
                 insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( instruction[*it] );
             }
@@ -1039,7 +1041,7 @@ public:
                     bduration = std::max(bduration, iduration);
                 }
                 abundle.start_cycle = TotalCycles - currCycle;
-                abundle.duration_in_cycles = bduration/cycle_time;
+                abundle.duration_in_cycles = std::ceil(bduration/cycle_time);
                 bundles.push_back(abundle);
             }
         }

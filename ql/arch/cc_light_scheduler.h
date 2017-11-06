@@ -276,10 +276,60 @@ void PrintBundles(Bundles & bundles, bool verbose=false)
     }
 }
 
-void PrintCCLighQasm(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
+
+void WriteCCLightQasm(std::string prog_name, size_t num_qubits, Bundles & bundles, bool verbose=false)
+{
+    if(verbose) COUT("Writing Recourse-contraint scheduled CC-Light QASM");
+    ofstream fout;
+    string qasmfname( ql::utils::get_output_dir() + "/" + prog_name + "_scheduled_rc.qasm");
+    COUT("Writing Recourse-contraint scheduled CC-Light QASM to " << qasmfname);
+    fout.open( qasmfname, ios::binary);
+    if ( fout.fail() )
+    {
+        COUT("Error opening file " << qasmfname << std::endl
+                 << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
+        return;
+    }
+
+    size_t curr_cycle=1;
+    fout <<"qubits " << num_qubits << '\n'
+         << ".fused_kernels\n";
+    for (Bundle & abundle : bundles)
+    {
+        auto bcycle = abundle.start_cycle;
+        auto delta = bcycle - curr_cycle;
+        if(delta>0) 
+        {
+            fout << "    qwait " << delta << "\n";
+        }
+
+        for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
+        {
+            for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
+            {
+                fout << "    " << (*insIt)->qasm();
+                if( std::next(insIt) != secIt->end() )
+                {
+                    fout << " , ";
+                }
+            }
+            if( std::next(secIt) != abundle.ParallelSections.end() )
+            {
+                fout << " | ";
+            }
+        }
+        curr_cycle+=delta;
+        fout << '\n';
+    }
+
+    fout.close();
+    if(verbose) COUT("Writing Recourse-contraint scheduled CC-Light QASM [Done]");
+}
+
+void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
     Bundles & bundles, bool verbose=false)
 {
-    if(verbose) COUT("Printing CC-Light QISA");
+    if(verbose) COUT("Generating CC-Light QISA");
 
     ofstream fout;
     string qisafname( ql::utils::get_output_dir() + "/" + prog_name + ".qisa");
@@ -318,7 +368,10 @@ void PrintCCLighQasm(std::string prog_name, ql::quantum_platform & platform, Mas
             if ( !platform.instruction_settings[id]["cc_light_instr"].is_null() )
                 iname = platform.instruction_settings[id]["cc_light_instr"];
             else
+            {
+                EOUT("cc_light_instr not defined for instruction: " << id << " !");
                 throw ql::exception("Error : cc_light_instr not defined for instruction: "+id+" !",false);
+            }
 
             auto itype = (*(firstInsIt))->type();
             auto nOperands = ((*firstInsIt)->operands).size();
@@ -379,23 +432,23 @@ void PrintCCLighQasm(std::string prog_name, ql::quantum_platform & platform, Mas
               << "    nop \n"
               << "    nop" << endl;
 
-    if(verbose)
-    {
-        COUT("Printing CC-Light QISA");
-        std::cout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
-    }
+    // if(verbose)
+    // {
+    //     COUT("Printing CC-Light QISA");
+    //     std::cout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
+    // }
 
     COUT("Writing CC-Light QISA to " << qisafname);
     fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
     fout.close();
-    if(verbose) COUT("Printing CC-Light QISA [Done]");
+    if(verbose) COUT("Generating CC-Light QISA [Done]");
 }
 
 
-void PrintCCLighQasmTimeStamped(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
+void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
     Bundles & bundles, bool verbose=false)
 {
-    if(verbose) COUT("Printing Time-stamped CC-Light QISA");
+    if(verbose) COUT("Generating Time-stamped CC-Light QISA");
     ofstream fout;
     string qisafname( ql::utils::get_output_dir() + "/" + prog_name + ".tqisa");
     fout.open( qisafname, ios::binary);
@@ -495,17 +548,17 @@ void PrintCCLighQasmTimeStamped(std::string prog_name, ql::quantum_platform & pl
     ssbundles << std::setw(8) << curr_cycle++ << ":    nop" << endl;
 
 
-    if(verbose)
-    {
-        COUT("Printing Time-stamped CC-Light QISA");
-        std::cout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
-    }
+    // if(verbose)
+    // {
+    //     COUT("Printing Time-stamped CC-Light QISA");
+    //     std::cout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
+    // }
 
     COUT("Writing Time-stamped CC-Light QISA to " << qisafname);
     fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
     fout.close();
 
-    if(verbose) COUT("Printing Time-stamped CC-Light QISA [Done]");
+    if(verbose) COUT("Generating Time-stamped CC-Light QISA [Done]");
 }
 
 Bundles cc_light_schedule(  std::string prog_name, size_t nqubits, ql::circuit & ckt,

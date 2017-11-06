@@ -54,7 +54,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -84,7 +84,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -131,7 +131,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -169,7 +169,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -195,7 +195,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -219,7 +219,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -243,7 +243,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -267,7 +267,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
 	# @unittest.skip
     def test_measure_available01(self):
@@ -287,7 +287,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -312,7 +312,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
 	# @unittest.skip
     def test_measure_busy(self):
@@ -334,7 +334,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -358,7 +358,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
 	# @unittest.skip
     def test_edge_busy(self):
@@ -379,7 +379,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -404,7 +404,7 @@ class Test_advance(unittest.TestCase):
 
         # compile the program
         try:
-            p.compile(optimize=False, verbose=False)
+            p.compile(False, "ALAP", False) # optimize  scheduler  verbose
             raise
         except:
             pass
@@ -432,7 +432,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -479,7 +479,7 @@ class Test_advance(unittest.TestCase):
                 k.gate(gate, qubits)
 
             p.add_kernel(k)
-            p.compile(optimize=False, verbose=True)
+            p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
             QISA_fn = os.path.join(output_dir, p.name+'.qisa')
             gold_fn = rootDir + '/golden/test_ccl_buffers_'+str(testNo)+'.qisa'        
@@ -520,7 +520,7 @@ class Test_advance(unittest.TestCase):
                 k.gate(gate, qubits)
 
             p.add_kernel(k)
-            p.compile(optimize=False, verbose=True)
+            p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
             QISA_fn = os.path.join(output_dir, p.name+'.qisa')
             gold_fn = rootDir + '/golden/test_ccl_latencies_'+str(testNo)+'.qisa'        

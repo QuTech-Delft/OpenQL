@@ -213,28 +213,31 @@ public:
         prog->add( *(k.ql_kernel) );
     }
 
-    void compile(bool optimize=false, bool verbose=false)
+    void compile(bool optimize=false, std::string scheduler="ALAP", bool verbose=false)
     {
-        prog->compile(optimize, verbose);
-        prog->schedule("ALAP", verbose);
+        prog->compile(optimize, scheduler, verbose);
     }
 
     void schedule(std::string scheduler="ASAP", bool verbose=false)
     {
         prog->schedule(scheduler, verbose);
     }
+
     std::string qasm()
     {
         return prog->qasm();
     }
+
     std::string microcode()
     {
         return prog->microcode();
     }
+
     void print_interaction_matrix()
     {
         prog->print_interaction_matrix();
     }
+
     void write_interaction_matrix()
     {
         prog->write_interaction_matrix();

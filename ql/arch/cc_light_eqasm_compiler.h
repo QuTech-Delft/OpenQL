@@ -262,15 +262,17 @@ public:
         */
 
         // schedule with platform constraints
-        // Bundles schedBundles = cc_light_schedule(prog_name, nqubits, c, platform, verbose);
-        Bundles schedBundles = cc_light_schedule_rc(prog_name, num_qubits, c, platform, verbose);
+        // Bundles sched_bundles = cc_light_schedule(prog_name, nqubits, c, platform, verbose);
+        Bundles sched_bundles = cc_light_schedule_rc(prog_name, num_qubits, c, platform, verbose);
+
+        WriteCCLightQasm(prog_name, num_qubits, sched_bundles, verbose);
 
         MaskManager mask_manager;
         // print scheduled bundles with parallelism in cc-light syntax
-        PrintCCLighQasm(prog_name, platform, mask_manager, schedBundles, verbose);
+        WriteCCLightQisa(prog_name, platform, mask_manager, sched_bundles, verbose);
 
         // print scheduled bundles with parallelism in cc-light syntax with time-stamps
-        PrintCCLighQasmTimeStamped(prog_name, platform, mask_manager, schedBundles, verbose);
+        WriteCCLightQisaTimeStamped(prog_name, platform, mask_manager, sched_bundles, verbose);
 
         // time analysis
         // total_exec_time = time_analysis();
@@ -520,7 +522,7 @@ private:
         }
         // eqasm_code.push_back("wait "+std::to_string(cc_light_eqasm_instructions.back()->duration));
         // eqasm_code.push_back("beq r14, r14 start");  // loop
-        COUT("emitting eqasm code done.");
+        if (verbose) COUT("emitting eqasm code done.");
     }
 
     /**

@@ -20,11 +20,10 @@ def test_cclight():
     k.prepz(1)
     k.prepz(2)
     k.prepz(3)
-    # k.hadamard(0)
-    # k.hadamard(1)
+    k.x(2)
+    k.gate("wait", [1,2], 100)
     k.x(2)
     k.x(3)
-    k.cnot(2, 0)
     k.cnot(2, 0)
     k.cnot(1, 4)
     k.measure(0)
@@ -36,11 +35,10 @@ def test_cclight():
     p.add_kernel(k)
 
     # compile the program
-    p.compile(optimize=False, verbose=False)
+    p.compile(False, "ALAP", True)
 
 def test_none():
     config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
-    # config_fn = os.path.join(curdir, '/home/iashraf/Desktop/cfg_patch.json')
 
     platform  = ql.Platform('platform_none', config_fn)
     sweep_points = [1,2]
@@ -65,8 +63,9 @@ def test_none():
     p.add_kernel(k2)
 
     # compile the program
-    p.compile(optimize=False, verbose=False)
-    # p.schedule('ALAP', True)
+    # p.compile(optimize=False, scheduler="ASAP", verbose=True)
+    p.compile(False, "ASAP", True)
+
 
 def test_bug():
     config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
@@ -98,10 +97,11 @@ def test_bug():
         p.add_kernel(k)
 
     # compile the program
-    p.compile(optimize=False, verbose=False)
+    # p.compile(optimize=False, scheduler="ALAP", verbose=True)
+    p.compile(False, "ASAP", True)
 
 
 if __name__ == '__main__':
-    test_bug()
-    # test_cclight()
+    # test_bug()
+    test_cclight()
     # test_none()

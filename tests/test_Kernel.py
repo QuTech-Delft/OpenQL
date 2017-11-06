@@ -87,9 +87,7 @@ class Test_kernel(unittest.TestCase):
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k1)
         p.add_kernel(k2)
-        p.compile(False, False)
-        p.schedule("ALAP", False)
-
+        p.compile(False, "ALAP", False)
 
 if __name__ == '__main__':
     unittest.main()

@@ -64,8 +64,7 @@ class Test_program(unittest.TestCase):
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         print( p.qasm() )
-        p.compile(False, False)
-        p.schedule("ALAP", True)
+        p.compile(False, "ALAP", False)
 
 
     def test_5qubit_program(self):
@@ -86,7 +85,7 @@ class Test_program(unittest.TestCase):
         # know what it does...
         p.set_sweep_points([10], 10)
         p.add_kernel(k)  # add kernel to program
-        p.compile()     # compile program
+        p.compile(False, "ALAP", False)     # compile program
 
 
     # @unittest.skip('Gate by name not implemented')
@@ -119,8 +118,7 @@ class Test_program(unittest.TestCase):
 
         p.set_sweep_points( [nr_sweep_pts], nr_sweep_pts)
 
-        # compile  opt  verbose
-        p.compile(False, False)
+        p.compile(False, "ALAP", False)
 
 if __name__ == '__main__':
     unittest.main()
