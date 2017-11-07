@@ -97,4 +97,6 @@ Running the following command in Terminal/Power Shell should install the openql 
 
         pip install  -e .
 
-Run `py.test -v` to test the installation
+# Running the tests
+
+Run `py.test -v` to test the installation. In order to pass all the tests, `qisa-as` inside `tests` directory should be installed first. Follow the instructions in `tests/qisa-as/README.md` to install `qisa-as`.
