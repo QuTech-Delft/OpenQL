@@ -29,8 +29,8 @@ public:
     {
         // COUT("constructing resource : " << n);
     }
-    virtual bool available(size_t cycle, ql::gate * ins, std::string & operation)=0;
-    virtual void reserve(size_t cycle, ql::gate * ins, std::string & operation)=0;
+    virtual bool available(size_t cycle, ql::gate * ins, std::string & operation, std::string & operation_type, size_t operation_cycles)=0;
+    virtual void reserve(size_t cycle, ql::gate * ins, std::string & operation, std::string & operation_type, size_t operation_cycles)=0;
     virtual ~resource_t() {}
 };
 
@@ -53,11 +53,13 @@ public:
         }
     }
 
-    bool available(size_t cycle, ql::gate * ins, std::string & operation)
+    bool available(size_t cycle, ql::gate * ins, std::string & operation,
+        std::string & operation_type, size_t operation_cycles)
     {
         for( auto q : ins->operands )
         {
-            DOUT(" available? curr cycle: " << cycle << "  qubit: " << q << " is busy till cycle : " << state[q]);
+            DOUT(" available? curr cycle: " << cycle << "  qubit: " << q 
+                << " is busy till cycle : " << state[q]);
             if( cycle >= state[q] )
             {
                 DOUT("    qubit resource busy ...");
@@ -68,12 +70,14 @@ public:
         return true;
     }
 
-    void reserve(size_t cycle, ql::gate * ins, std::string & operation)
+    void reserve(size_t cycle, ql::gate * ins, std::string & operation,
+        std::string & operation_type, size_t operation_cycles)
     {
         for( auto q : ins->operands )
         {
             state[q] = cycle;
-            DOUT("reserved. curr cycle: " << cycle << " qubit: " << q << " reserved till cycle: " << state[q]);
+            DOUT("reserved. curr cycle: " << cycle << " qubit: " << q 
+                << " reserved till cycle: " << state[q]);
         }
     }
     ~qubit_resource_t() {}
@@ -109,14 +113,17 @@ public:
         }
     }
 
-    bool available(size_t cycle, ql::gate * ins, std::string & operation)
+    bool available(size_t cycle, ql::gate * ins, std::string & operation,
+        std::string & operation_type, size_t operation_cycles)
     {
-        if( ! is_measure(ins->name) )
+        bool is_single_qubit_gate = (operation_type == "single_qubit_gate");
+        if( is_single_qubit_gate && (!is_measure(ins->name)) )
         {
             for( auto q : ins->operands )
             {
                 DOUT(" available? curr cycle: " << cycle << "  qwg: " << qubit2qwg[q] 
-                       << " is busy till cycle : " << state[ qubit2qwg[q] ] << " for operation: " << operations[ qubit2qwg[q] ]);
+                       << " is busy till cycle : " << state[ qubit2qwg[q] ] 
+                       << " for operation: " << operations[ qubit2qwg[q] ]);
                 if( cycle >= state[ qubit2qwg[q] ] )
                 {
                     if( operations[ qubit2qwg[q] ] != operation )
@@ -131,16 +138,19 @@ public:
         return true;
     }
 
-    void reserve(size_t cycle, ql::gate * ins, std::string & operation)
+    void reserve(size_t cycle, ql::gate * ins, std::string & operation,
+        std::string & operation_type, size_t operation_cycles)
     {
-        if( ! is_measure(ins->name) )
+        bool is_single_qubit_gate = (operation_type == "single_qubit_gate");
+        if( is_single_qubit_gate && (!is_measure(ins->name)) )
         {
             for( auto q : ins->operands )
             {
-                state[ qubit2qwg[q] ]  = cycle;
+                state[ qubit2qwg[q] ]  = cycle - (operation_cycles - 1);
                 operations[ qubit2qwg[q] ] = operation;
-                DOUT("reserved. curr cycle: " << cycle << " qwg: " << qubit2qwg[q] << " reserved till cycle: " << state[ qubit2qwg[q] ] 
-                          << " for operation: " << operations[ qubit2qwg[q] ] );
+                DOUT("reserved. curr cycle: " << cycle << " qwg: " << qubit2qwg[q] 
+                    << " reserved till cycle: " << state[ qubit2qwg[q] ] 
+                    << " for operation: " << operations[ qubit2qwg[q] ] );
             }
         }
     }
@@ -173,7 +183,8 @@ public:
         }
     }
 
-    bool available(size_t cycle, ql::gate * ins, std::string & operation)
+    bool available(size_t cycle, ql::gate * ins, std::string & operation,
+        std::string & operation_type, size_t operation_cycles)
     {
         if( is_measure(ins->name) )
         {
@@ -192,14 +203,16 @@ public:
         return true;
     }
 
-    void reserve(size_t cycle, ql::gate * ins, std::string & operation)
+    void reserve(size_t cycle, ql::gate * ins, std::string & operation,
+        std::string & operation_type, size_t operation_cycles)
     {
         if( is_measure(ins->name) )
         {
             for(auto q : ins->operands)
             {
-                state[ qubit2meas[q] ] = cycle;
-                DOUT("reserved. curr cycle: " << cycle << " meas: " << qubit2meas[q] << " reserved till cycle: " << state[ qubit2meas[q] ] );
+                state[ qubit2meas[q] ] = cycle - (operation_cycles - 1);
+                DOUT("reserved. curr cycle: " << cycle << " meas: " << qubit2meas[q] 
+                    << " reserved till cycle: " << state[ qubit2meas[q] ] );
             }
         }
     }
@@ -254,10 +267,11 @@ public:
         }
     }
 
-    bool available(size_t cycle, ql::gate * ins, std::string & operation)
+    bool available(size_t cycle, ql::gate * ins, std::string & operation,
+        std::string & operation_type, size_t operation_cycles)
     {
         auto gname = ins->name;
-        bool is_two_qubit_gate = (gname == "cnot") || (gname == "cz") || (gname == "cphase") || (gname == "swap");
+        bool is_two_qubit_gate = (operation_type == "two_qubits_gate");
         if( is_two_qubit_gate ) // 2 qubit instruction reserve edges
         {
             auto q0 = ins->operands[0];
@@ -292,24 +306,26 @@ public:
         return true;
     }
 
-    void reserve(size_t cycle, ql::gate * ins, std::string & operation)
+    void reserve(size_t cycle, ql::gate * ins, std::string & operation,
+        std::string & operation_type, size_t operation_cycles)
     {
         auto gname = ins->name;
-        bool is_two_qubit_gate = (gname == "cnot") || (gname == "cz") || (gname == "cphase") || (gname == "swap");
+        bool is_two_qubit_gate = (operation_type == "two_qubits_gate");
         if( is_two_qubit_gate ) // 2 qubit instruction reserve edges
         {
             auto q0 = ins->operands[0];
             auto q1 = ins->operands[1];
             qubits_pair_t aqpair(q0, q1);
             auto edge_no = qubits2edge[aqpair];
-            state[edge_no] = cycle;
+            state[edge_no] = cycle - (operation_cycles - 1);
             for(auto & e : edge2edges[edge_no])
             {
-                state[e] = cycle;
+                state[e] = cycle - (operation_cycles - 1);
             }
 
-            DOUT("reserved. curr cycle: " << cycle << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] 
-                      << " for operation: " << ins->name);
+            DOUT("reserved. curr cycle: " << cycle << " edge: " << edge_no 
+                << " reserved till cycle: " << state[ edge_no ] 
+                << " for operation: " << ins->name);
         }
     }
     ~edge_resource_t() {}
@@ -358,22 +374,24 @@ public:
 
         }
     }
-    bool available(size_t cycle, ql::gate * ins, std::string & operation)
+    bool available(size_t cycle, ql::gate * ins, std::string & operation,
+        std::string & operation_type, size_t operation_cycles)
     {
         // COUT("checking availablility of resources for: " << ins->qasm());
         for(auto rptr : resource_ptrs)
         {
-            if( rptr->available(cycle, ins, operation) == false)
+            if( rptr->available(cycle, ins, operation, operation_type, operation_cycles) == false)
                 return false;
         }
         return true;
     }
-    void reserve(size_t cycle, ql::gate * ins, std::string & operation)
+    void reserve(size_t cycle, ql::gate * ins, std::string & operation,
+        std::string & operation_type, size_t operation_cycles)
     {
         // COUT("reserving resources for: " << ins->qasm());
         for(auto rptr : resource_ptrs)
         {
-            rptr->reserve(cycle, ins, operation);
+            rptr->reserve(cycle, ins, operation, operation_type, operation_cycles);
         }
     }
     ~resource_manager_t()

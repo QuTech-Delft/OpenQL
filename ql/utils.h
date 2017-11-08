@@ -132,6 +132,13 @@ namespace ql
         return (T(0) < val) - (val < T(0));
     }
 
+
+    bool string_has(const std::string & str, const std::string & token)
+    {
+      return ( str.find(token) != std::string::npos);
+    }
+
+
     } // utils
 } // ql
 

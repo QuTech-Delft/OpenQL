@@ -671,6 +671,14 @@ public:
                 operation_name = platform.instruction_settings[id]["cc_light_instr"];
             }
 
+            std::string operation_type;
+            if ( !platform.instruction_settings[id]["cc_light_instr_type"].is_null() )
+            {
+                operation_type = platform.instruction_settings[id]["cc_light_instr_type"];
+            }
+
+            size_t operation_cycles = std::ceil( (curr_ins->duration) / cycle_time);
+
             size_t currCycle=MAX_CYCLE;
             for( ListDigraph::OutArcIt arc(graph,*currNode); arc != INVALID; ++arc )
             {
@@ -685,23 +693,23 @@ public:
             while(currCycle > 0)
             {
                 DOUT("Trying to schedule: " << name[*currNode] << "  in cycle: " << currCycle);
-                if( rm.available(currCycle, instruction[*currNode], operation_name) )
+                if( rm.available(currCycle, instruction[*currNode], operation_name, operation_type, operation_cycles) )
                 {
                     DOUT("Resources available, Scheduled.");
 
-                    rm.reserve(currCycle, curr_ins, operation_name);
+                    rm.reserve(currCycle, curr_ins, operation_name, operation_type, operation_cycles);
                     cycle[*currNode]=currCycle;
                     break;
                 }
                 else
                 {
                     DOUT("Resources not available, trying again ...");
-                    --currCycle;
+                    --currCycle; // TODO --operation_cycles
                 }
             }
             if(currCycle <= 0)
             {
-                COUT("Error: could not find schedule");
+                EOUT("Error: could not find schedule");
                 throw ql::exception("[x] Error : could not find schedule !",false);
             }
             ++currNode;

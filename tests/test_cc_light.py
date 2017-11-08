@@ -445,7 +445,7 @@ class Test_advance(unittest.TestCase):
                             (0, [ ("x",[0]), ("y",[0]) ]),
                 # mw - mw buffer (different qubit but same awg channel is involved)
                             (1, [ ("x",[0]), ("y",[1]) ]),
-                # should mw - mw buffer (different qubit and different awg channel)
+                # mw - mw buffer (different qubit and different awg channel)
                             (2, [ ("x",[0]), ("y",[2]) ]),
                 # mw - flux
                             (3, [ ("x",[2]), ("cnot", [0,2]) ]),

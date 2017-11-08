@@ -57,7 +57,7 @@ class Test_wait(unittest.TestCase):
 
         # wait should not be in parallel with another gate
         k.gate("x", 0)
-        k.gate("wait", [1], 20) # OR k.wait([1], 20)
+        k.gate("wait", [0], 20) # OR k.wait([1], 20)
         k.gate("x", 1)
 
         p.add_kernel(k)
