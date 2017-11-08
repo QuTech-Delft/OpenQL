@@ -756,6 +756,17 @@ public:
         }
     }
 
+    std::string get_gates_definition()
+    {
+        std::stringstream ss;
+
+        for (std::map<std::string,custom_gate*>::iterator i=gate_definition.begin(); i!=gate_definition.end(); i++)
+        {
+            ss << i->first << '\n';
+        }
+        return ss.str();
+    }
+
     /**
      * name getter
      */

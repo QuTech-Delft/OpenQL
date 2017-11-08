@@ -162,9 +162,9 @@ public:
     {
         ql_kernel->wait(qubits, duration);
     }
-    void print_custom_instructions()
+    std::string get_custom_instructions()
     {
-        ql_kernel->print_gates_definition();
+        return ql_kernel->get_gates_definition();
     }
     void gate(std::string name)
     {

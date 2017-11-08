@@ -79,7 +79,8 @@ None
 Returns
 -------
 str
-    Path of output directory. """
+    Path of output directory
+"""
 
 
 %feature("docstring") Platform
@@ -318,19 +319,24 @@ The ids and the corresponding operations are:
 
 Parameters
 ----------
-arg1 : list
+arg1 : []
     list of qubits
 arg2 : int
     duration in ns
 """
 
 
-%feature("docstring") Kernel::print_custom_instructions
-""" Prints the available custom instructions.
+%feature("docstring") Kernel::get_custom_instructions
+""" Returns list of available custom instructions.
 
 Parameters
 ----------
 None
+
+Returns
+-------
+[]
+    List of available custom instructions
 """
 
 
@@ -341,7 +347,7 @@ Parameters
 ----------
 arg1 : str
     name of gate
-arg2 : list
+arg2 : []
     list of qubits
 arg3 : int
     duration in ns (at the moment it is only supported for wait instruction, in the future it will be extended to override duration of other gates as well)
