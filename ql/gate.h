@@ -1253,6 +1253,7 @@ public:
     ucode_sequence_t   qumis;            // microcode sequence
     instruction_type_t operation_type;   // operation type : rf/flux
     strings_t          used_hardware;    // used hardware
+    std::string        arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
 
 public:
 
@@ -1389,6 +1390,12 @@ public:
         {
             EOUT("while loading instruction '" << name << "' (attr: " << l_attr << ") : " << e.what());
             throw ql::exception("[x] error : ql::custom_gate() : error while loading instruction '" + name + "' : attribute '" + l_attr + "' : \n\t" + e.what(), false);
+        }
+
+        if ( !instr["cc_light_instr"].is_null() )
+        {
+            arch_operation_name = instr["cc_light_instr"];
+            // DOUT("loaded cc_light_instr name : " << arch_operation_name)            ;
         }
     }
 

@@ -11,6 +11,7 @@
 #include <ql/json.h>
 #include <fstream>
 #include <vector>
+#include <string>
 
 using json = nlohmann::json;
 
@@ -300,7 +301,7 @@ public:
             else
             {
                 EOUT("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
-                throw ql::exception("[x] Error : Use of illegal edge !",false);
+                throw ql::exception("[x] Error : Use of illegal edge"+std::to_string(q0)+"->"+std::to_string(q1)+"in operation:"+ins->name+" !",false);
             }
         }
         return true;

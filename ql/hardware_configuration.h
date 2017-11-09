@@ -16,6 +16,7 @@
 #include <sstream>
 #include <algorithm>
 #include <iterator>
+#include <regex>
 
 #include <ql/openql.h>
 #include <ql/exception.h>
@@ -121,11 +122,14 @@ public:
         // load instructions
         json instructions = config["instructions"];
         // DOUT(instructions.dump(4));
+        static const std::regex comma_space_pattern("\\s*,\\s*");
         for (json::iterator it = instructions.begin(); it != instructions.end(); ++it)
         {
-            std::string  name = it.key();
-            str::lower_case(name);
+            std::string  name1 = it.key();
+            str::lower_case(name1);
             json         attr = *it; //.value();
+
+            std::string name = std::regex_replace(name1, comma_space_pattern, ",");
 
             // check for duplicate operations
             if (instruction_map.find(name) != instruction_map.end())

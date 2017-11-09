@@ -68,7 +68,8 @@ def test_none():
 
 
 def test_bug():
-    config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
+    # config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
+    config_fn = os.path.join(curdir, '/home/iashraf/Desktop/leonBug/logical_complex.json')
     platform  = ql.Platform('seven_qubits_chip', config_fn)
     sweep_points = [1,2]
     num_qubits = 7
@@ -77,14 +78,17 @@ def test_bug():
 
     k = ql.Kernel('aKernel', platform)
 
+    # k.gate('x', 0)
+    # k.gate('x', 2)
+    # k.gate('cnot', 2, 0)
 
-    for i in range(7):
-        k.prepz(i)  # to ensure enough separation in timing
-        k.gate('x', i)
-
-    for cw in range(8):
-        k.gate('cz', 2, 0)
-        k.gate('cz', 3, 1)
+    # k.gate("prepz",[0])
+    # k.gate("prepz",[1])
+    k.gate("h",[0])
+    k.gate("cnot", [0, 2])
+    # k.gate("measure", [0])
+    k.gate("MeasX", [0])
+    # k.gate("measure", [1])
 
     # add the kernel to the program
     p.add_kernel(k)

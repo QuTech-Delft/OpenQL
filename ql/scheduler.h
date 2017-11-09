@@ -489,13 +489,13 @@ public:
         ++currNode;
         while(currNode != order.rend() )
         {
-            // std::cout << "Scheduling " << name[*currNode] << std::endl;
             size_t currCycle=0;
+            // COUT("Scheduling " << name[*currNode]);
             for( ListDigraph::InArcIt arc(graph,*currNode); arc != INVALID; ++arc )
             {
                 ListDigraph::Node srcNode  = graph.source(arc);
                 size_t srcCycle = cycle[srcNode];
-                if(currCycle <= srcCycle)
+                if(currCycle < (srcCycle + weight[arc]))
                 {
                     currCycle = srcCycle + weight[arc];
                 }
@@ -628,17 +628,17 @@ public:
         TopologicalSort(order);
 
         std::vector<ListDigraph::Node>::iterator currNode = order.begin();
-        cycle[*currNode]=MAX_CYCLE; // src dummy in cycle 0
+        cycle[*currNode]=MAX_CYCLE;
         ++currNode;
         while(currNode != order.end() )
         {
-            // std::cout << "Scheduling " << name[*currNode] << std::endl;
-            size_t currCycle=MAX_CYCLE;
+            // DOUT("Scheduling " << name[*currNode]);
+            size_t currCycle=MAX_CYCLE;            
             for( ListDigraph::OutArcIt arc(graph,*currNode); arc != INVALID; ++arc )
             {
                 ListDigraph::Node targetNode  = graph.target(arc);
                 size_t targetCycle = cycle[targetNode];
-                if(currCycle >= targetCycle)
+                if(currCycle > (targetCycle-weight[arc]) )
                 {
                     currCycle = targetCycle - weight[arc];
                 }
@@ -646,6 +646,13 @@ public:
             cycle[*currNode]=currCycle;
             ++currNode;
         }
+        // DOUT("Printing ALAP Schedule");
+        // DOUT("Cycle   Cycle-simplified    Instruction");
+        // for ( auto it = order.begin(); it != order.end(); ++it)
+        // {
+        //     DOUT( cycle[*it] << " :: " << MAX_CYCLE-cycle[*it] << "  <- " << name[*it] );
+        // }
+        if(verbose) COUT("Performing ALAP Scheduling [Done].");
     }
 
 
@@ -657,8 +664,8 @@ public:
         TopologicalSort(order);
 
         std::vector<ListDigraph::Node>::iterator currNode = order.begin();
-        cycle[*currNode]=MAX_CYCLE; // src dummy in cycle 0
-
+        size_t currCycle=MAX_CYCLE;
+        cycle[*currNode]=currCycle;
         ++currNode;
         while(currNode != order.end() )
         {
@@ -678,13 +685,11 @@ public:
             }
 
             size_t operation_cycles = std::ceil( (curr_ins->duration) / cycle_time);
-
-            size_t currCycle=MAX_CYCLE;
             for( ListDigraph::OutArcIt arc(graph,*currNode); arc != INVALID; ++arc )
             {
                 ListDigraph::Node targetNode  = graph.target(arc);
                 size_t targetCycle = cycle[targetNode];
-                if( currCycle >= targetCycle )
+                if( currCycle > (targetCycle - weight[arc]) )
                 {
                     currCycle = targetCycle - weight[arc];
                 }
@@ -715,12 +720,12 @@ public:
             ++currNode;
         }
 
-        DOUT("Printing ALAP Schedule before latency compensation");
-        DOUT("Cycle   Cycle-simplified    Instruction");
-        for ( auto it = order.begin(); it != order.end(); ++it)
-        {
-            DOUT( cycle[*it] << " :: " << MAX_CYCLE-cycle[*it] << "  <- " << name[*it] );
-        }
+        // DOUT("Printing ALAP Schedule before latency compensation");
+        // DOUT("Cycle   Cycle-simplified    Instruction");
+        // for ( auto it = order.begin(); it != order.end(); ++it)
+        // {
+        //     DOUT( cycle[*it] << " :: " << MAX_CYCLE-cycle[*it] << "  <- " << name[*it] );
+        // }
 
         // latency compensation
         for ( auto it = order.begin(); it != order.end(); ++it)
@@ -745,12 +750,12 @@ public:
                 [&](ListDigraph::Node & n1, ListDigraph::Node & n2) { return cycle[n1] > cycle[n2]; }
             );
 
-        DOUT("Printing ALAP Schedule after latency compensation");
-        DOUT("Cycle   Cycle-simplified    Instruction");
-        for ( auto it = order.begin(); it != order.end(); ++it)
-        {
-            DOUT( cycle[*it] << "     =     " << MAX_CYCLE-cycle[*it] << "        " << name[*it] );
-        }
+        // DOUT("Printing ALAP Schedule after latency compensation");
+        // DOUT("Cycle   Cycle-simplified    Instruction");
+        // for ( auto it = order.begin(); it != order.end(); ++it)
+        // {
+        //     DOUT( cycle[*it] << "     =     " << MAX_CYCLE-cycle[*it] << "        " << name[*it] );
+        // }
 
         if(verbose) COUT("Performing RC ALAP Scheduling [Done].");
     }

@@ -364,20 +364,30 @@ void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, Ma
             auto firstInsIt = secIt->begin();
 
             auto id = (*(firstInsIt))->name;
-            std::string iname;
-            if ( !platform.instruction_settings[id]["cc_light_instr"].is_null() )
-                iname = platform.instruction_settings[id]["cc_light_instr"];
+            std::string cc_light_instr_name;
+            auto it = platform.instruction_map.find(id);
+            if (it != platform.instruction_map.end())
+            {
+                custom_gate* g = it->second;
+                cc_light_instr_name = g->arch_operation_name;
+                if(cc_light_instr_name.empty())
+                {
+                    EOUT("cc_light_instr not defined for instruction: " << id << " !");
+                    throw ql::exception("Error : cc_light_instr not defined for instruction: "+id+" !",false);
+                }                    
+                // DOUT("cc_light_instr name: " << cc_light_instr_name);
+            }
             else
             {
-                EOUT("cc_light_instr not defined for instruction: " << id << " !");
-                throw ql::exception("Error : cc_light_instr not defined for instruction: "+id+" !",false);
+                EOUT("custom instruction not found for : " << id << " !");
+                throw ql::exception("Error : custom instruction not found for : "+id+" !",false);
             }
 
             auto itype = (*(firstInsIt))->type();
             auto nOperands = ((*firstInsIt)->operands).size();
             if( itype == __nop_gate__ )
             {
-                ssbundles << iname;
+                ssbundles << cc_light_instr_name;
             }
             else
             {
@@ -413,7 +423,7 @@ void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, Ma
                     throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
                 }
 
-                ssbundles << iname << " " << rname;
+                ssbundles << cc_light_instr_name << " " << rname;
             }
 
             if( std::next(secIt) != abundle.ParallelSections.end() )
@@ -481,17 +491,30 @@ void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & p
             auto firstInsIt = secIt->begin();
 
             auto id = (*(firstInsIt))->name;
-            std::string iname;
-            if ( !platform.instruction_settings[id]["cc_light_instr"].is_null() )
-                iname = platform.instruction_settings[id]["cc_light_instr"];
+            std::string cc_light_instr_name;
+            auto it = platform.instruction_map.find(id);
+            if (it != platform.instruction_map.end())
+            {
+                custom_gate* g = it->second;
+                cc_light_instr_name = g->arch_operation_name;
+                if(cc_light_instr_name.empty())
+                {
+                    EOUT("cc_light_instr not defined for instruction: " << id << " !");
+                    throw ql::exception("Error : cc_light_instr not defined for instruction: "+id+" !",false);
+                }                    
+                // DOUT("cc_light_instr name: " << cc_light_instr_name);
+            }
             else
-                throw ql::exception("Error : cc_light_instr not defined for instruction: "+id+" !",false);
+            {
+                EOUT("custom instruction not found for : " << id << " !");
+                throw ql::exception("Error : custom instruction not found for : "+id+" !",false);
+            }
 
             auto itype = (*(firstInsIt))->type();
             auto nOperands = ((*firstInsIt)->operands).size();
             if( itype == __nop_gate__ )
             {
-                ssbundles << iname;
+                ssbundles << cc_light_instr_name;
             }
             else
             {
@@ -527,7 +550,7 @@ void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & p
                     throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
                 }
 
-                ssbundles << iname << " " << rname;
+                ssbundles << cc_light_instr_name << " " << rname;
             }
 
             if( std::next(secIt) != abundle.ParallelSections.end() )
