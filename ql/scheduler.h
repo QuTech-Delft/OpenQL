@@ -191,11 +191,12 @@ public:
                     }
                 }
 
-                // now update LastWriter and LastReaders
                 for( auto operand : operands )
                 {
+                    // update LastWriter and LastReaders
                     LastWriter[operand] = consID;
-                    LastReaders[operand].push_back(consID);
+                    // clear LastReaders for this operand
+                    LastReaders[operand].clear();
                 }
             }
             else
@@ -247,6 +248,9 @@ public:
                             cause[arc1] = operand;
                             depType[arc1] = WAR;
                         }
+
+                        // clear LastReaders for this operand
+                        LastReaders[operand].clear();
 
                         // update LastWriter for this operand
                         LastWriter[operand] = consID;
