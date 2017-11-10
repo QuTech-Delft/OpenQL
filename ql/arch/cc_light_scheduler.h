@@ -326,6 +326,29 @@ void WriteCCLightQasm(std::string prog_name, size_t num_qubits, Bundles & bundle
     if(verbose) COUT("Writing Recourse-contraint scheduled CC-Light QASM [Done]");
 }
 
+std::string get_cc_light_instruction_name(std::string & id, ql::quantum_platform & platform)
+{
+    std::string cc_light_instr_name;
+    auto it = platform.instruction_map.find(id);
+    if (it != platform.instruction_map.end())
+    {
+        custom_gate* g = it->second;
+        cc_light_instr_name = g->arch_operation_name;
+        if(cc_light_instr_name.empty())
+        {
+            EOUT("cc_light_instr not defined for instruction: " << id << " !");
+            throw ql::exception("Error : cc_light_instr not defined for instruction: "+id+" !",false);
+        }                    
+        // DOUT("cc_light_instr name: " << cc_light_instr_name);
+    }
+    else
+    {
+        EOUT("custom instruction not found for : " << id << " !");
+        throw ql::exception("Error : custom instruction not found for : "+id+" !",false);
+    }
+    return cc_light_instr_name;
+}
+
 void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
     Bundles & bundles, bool verbose=false)
 {
@@ -491,25 +514,7 @@ void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & p
             auto firstInsIt = secIt->begin();
 
             auto id = (*(firstInsIt))->name;
-            std::string cc_light_instr_name;
-            auto it = platform.instruction_map.find(id);
-            if (it != platform.instruction_map.end())
-            {
-                custom_gate* g = it->second;
-                cc_light_instr_name = g->arch_operation_name;
-                if(cc_light_instr_name.empty())
-                {
-                    EOUT("cc_light_instr not defined for instruction: " << id << " !");
-                    throw ql::exception("Error : cc_light_instr not defined for instruction: "+id+" !",false);
-                }                    
-                // DOUT("cc_light_instr name: " << cc_light_instr_name);
-            }
-            else
-            {
-                EOUT("custom instruction not found for : " << id << " !");
-                throw ql::exception("Error : custom instruction not found for : "+id+" !",false);
-            }
-
+            std::string cc_light_instr_name = get_cc_light_instruction_name(id, platform);
             auto itype = (*(firstInsIt))->type();
             auto nOperands = ((*firstInsIt)->operands).size();
             if( itype == __nop_gate__ )
@@ -584,6 +589,7 @@ void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & p
     if(verbose) COUT("Generating Time-stamped CC-Light QISA [Done]");
 }
 
+
 Bundles cc_light_schedule(  std::string prog_name, size_t nqubits, ql::circuit & ckt,
                             ql::quantum_platform & platform, bool verbose=false)
 {
@@ -607,13 +613,19 @@ Bundles cc_light_schedule(  std::string prog_name, size_t nqubits, ql::circuit &
                 auto insIt2 = secIt2->begin();
                 if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
                 {
-                    auto n1 = (*insIt1)->name;
-                    auto n2 = (*insIt2)->name;
+                    auto id1 = (*insIt1)->name;
+                    auto id2 = (*insIt2)->name;
+                    auto n1 = get_cc_light_instruction_name(id1, platform);
+                    auto n2 = get_cc_light_instruction_name(id2, platform);
                     if( n1 == n2 )
                     {
-                        // std::cout << "splicing " << n1 << " and " << n2  << std::endl;
+                        // DOUT("splicing " << n1 << " and " << n2);
                         (*secIt1).splice(insIt1, (*secIt2) );
                     }
+                    // else
+                    // {
+                    //     DOUT("Not splicing " << n1 << " and " << n2);
+                    // }
                 }
             }
         }
@@ -665,12 +677,18 @@ Bundles cc_light_schedule_rc( std::string prog_name, size_t nqubits, ql::circuit
                 auto insIt2 = secIt2->begin();
                 if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
                 {
-                    auto n1 = (*insIt1)->name;
-                    auto n2 = (*insIt2)->name;
+                    auto id1 = (*insIt1)->name;
+                    auto id2 = (*insIt2)->name;
+                    auto n1 = get_cc_light_instruction_name(id1, platform);
+                    auto n2 = get_cc_light_instruction_name(id2, platform);
                     if( n1 == n2 )
                     {
-                        // std::cout << "splicing " << n1 << " and " << n2  << std::endl;
+                        DOUT("splicing " << n1 << " and " << n2);
                         (*secIt1).splice(insIt1, (*secIt2) );
+                    }
+                    else
+                    {
+                        DOUT("Not splicing " << n1 << " and " << n2);
                     }
                 }
             }
