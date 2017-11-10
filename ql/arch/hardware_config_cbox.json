@@ -19,7 +19,7 @@
    "instructions": {
       "rx180 q1" : {
          "duration": 40, 
-         "latency": 10, 
+         "latency": 0, 
          "qubits": ["q1"], 
          "matrix" : [ [0.0,0.0], [1.0,0.0],
 	              [1.0,0.0], [0.0,0.0] ], 
@@ -28,7 +28,7 @@
          "qumis_instr": "pulse",
          "qumis_instr_kw": {
             "codeword": 1,
-            "awg_nr": 2
+            "awg_nr": 1
          }
       },
 
@@ -155,7 +155,7 @@
 
       "rx180 q0" : {
          "duration": 40, 
-         "latency": 10, 
+         "latency": 0, 
          "qubits": ["q0"], 
          "matrix" : [ [0.0,0.0], [1.0,0.0],
 	              [1.0,0.0], [0.0,0.0] ], 
@@ -166,13 +166,13 @@
             "codeword_ready_bit": 0,
             "codeword_ready_bit_duration" : 5, 
             "codeword_bits": [1, 2, 3, 4], 
-            "codeword": 1
+            "codeword": 3
          }
       },
 
       "rx90 q0" : {
          "duration": 40, 
-         "latency": 10, 
+         "latency": 0, 
          "qubits": ["q0"], 
          "matrix" : [ [0.0,0.0], [1.0,0.0],
 	              [1.0,0.0], [0.0,0.0] ], 
@@ -189,7 +189,7 @@
 
       "rx90 q1" : {
 	 "duration": 40, 
-         "latency": 10, 
+         "latency": 0, 
          "qubits": ["q1"], 
          "matrix" : [ [0.0,0.0], [1.0,0.0],
 	              [1.0,0.0], [0.0,0.0] ], 
@@ -206,7 +206,7 @@
 
       "ry180 q0" : {
          "duration": 40,
-         "latency": 20,
+         "latency": 0,
          "qubits": ["q0"],
          "matrix" : [ [0.0,0.0], [1.0,0.0],
 	              [1.0,0.0], [0.0,0.0] ], 
@@ -221,7 +221,7 @@
 
       "ry90 q0" : {
          "duration": 40,
-         "latency": 20,
+         "latency": 0,
          "qubits": ["q0"],
          "matrix" : [ [0.7071068,0.0], [-0.7071068,0.0],
 	              [0.7071068,0.0], [ 0.7071068,0.0] ], 
@@ -251,7 +251,7 @@
 
       "cz q0,q1" : {
          "duration": 80, 
-         "latency": 10,
+         "latency": 0,
          "qubits": ["q0", "q1"], 
          "matrix" : [ [0.0,0.0], [1.0,0.0],
 	              [1.0,0.0], [0.0,0.0] ], 
@@ -268,7 +268,7 @@
 
       "I q0" : {
          "duration": 40,
-         "latency": 20,
+         "latency": 0,
          "qubits": ["q0"],
          "matrix" : [ [1.0,0.0], [0.0,0.0],
 	              [0.0,0.0], [1.0,0.0] ], 
@@ -283,7 +283,7 @@
 
       "I q1" : {
          "duration": 40,
-         "latency": 20,
+         "latency": 0,
          "qubits": ["q1"],
          "matrix" : [ [1.0,0.0], [0.0,0.0],
 	              [0.0,0.0], [1.0,0.0] ], 
@@ -298,7 +298,7 @@
 
       "I q0" : {
          "duration": 40,
-         "latency": 20,
+         "latency": 0,
          "qubits": ["q0"],
          "matrix" : [ [1.0,0.0], [0.0,0.0],
 	              [0.0,0.0], [1.0,0.0] ], 

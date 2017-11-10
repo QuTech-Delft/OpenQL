@@ -51,6 +51,8 @@ int main(int argc, char ** argv)
   kernel.gate("g3",1);
   kernel.gate("g4",1);
 
+  kernel.gate("rx180",1);
+
   kernel.gate("ro",0);
 
 
