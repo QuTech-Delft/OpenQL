@@ -13,7 +13,7 @@ int main(int argc, char ** argv)
    size_t n_swp_pts        = 5;
 
    // create platform
-   ql::quantum_platform starmon("starmon","hardware_config_cbox.json");
+   ql::quantum_platform starmon("starmon","spin_demo_2811.json");
 
    // print info
    starmon.print_info();
@@ -43,6 +43,7 @@ int main(int argc, char ** argv)
 
    kernel.measure(0);
 */
+/*
   kernel.gate("g1",0);
   kernel.gate("g1",1);
   kernel.gate("g2",0);
@@ -52,9 +53,15 @@ int main(int argc, char ** argv)
   kernel.gate("g4",1);
 
   kernel.gate("rx180",1);
-
   kernel.gate("ro",0);
+*/
 
+  kernel.rx90(0);    // 145ns,ch 4,cw 1
+  kernel.ry90(0);    // 145ns,ch 4,cw 3
+  kernel.mrx90(0);   // 145ns,ch 4,cw 2
+  kernel.mry90(0);   // 145ns,ch 4,cw 4
+  kernel.identity(0);// 125ns,ch 4,cw 5
+  kernel.ry90(1);    // 145ns,ch 5,cw 3
 
    // kernel.gate("measure",0);
 

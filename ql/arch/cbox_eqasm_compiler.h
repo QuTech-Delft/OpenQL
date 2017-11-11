@@ -66,7 +66,7 @@ namespace ql
                   iterations = 0;
                }
 
-               println("[+] iterations : " << iterations);
+               println("iterations : " << iterations);
 
                eqasm_t eqasm_code;
                // ql::instruction_map_t& instr_map = platform.instruction_map;
@@ -336,6 +336,8 @@ namespace ql
                   }
                   else
                   {
+                     // println("processing parallel section...");
+                     // println(qumis_instructions[i]->start << " : " << qumis_instructions[i]->code());
                      // continue within the parallel section
                      ps.push_back(qumis_instructions[i]);
                   }
@@ -353,7 +355,7 @@ namespace ql
                #endif 
                // detect parallel triggers
                if (verbose) println("detecting concurent triggers..."); 
-               for (qumis_program_t p : parallel_sections)
+               for (qumis_program_t& p : parallel_sections)
                {
                   qumis_program_t triggers;
                   for (qumis_instruction * instr : p)
@@ -370,6 +372,7 @@ namespace ql
                   if (verbose) println("merging and splitting concurent triggers..."); 
                   for (size_t i=0; i<triggers.size(); ++i)
                   {
+                     // println("in : trigger " << i << " : " << triggers[i]->code());
                      if (prev_duration == triggers[i]->duration)
                         continue;  // already merged with the previous trigger
                      triggers[i]->duration -= prev_duration;
@@ -379,8 +382,12 @@ namespace ql
                      for (size_t j=i+1; j<triggers.size(); ++j)
                         codeword |= ((trigger*)triggers[j])->codeword;
                      ((trigger *)triggers[i])->codeword = codeword;
+                     // println("out: trigger " << i << " : " << triggers[i]->code());
                      merged_triggers.push_back(triggers[i]);
                   }
+                  // println("=> merged triggers : ");
+                  // for (qumis_instruction * instr : merged_triggers)
+                     // println("\t(" << instr->start << ") : " << instr->code());
 
                   // update parallel section with merged triggers
                   for (qumis_instruction * instr : p)
@@ -397,6 +404,10 @@ namespace ql
                   p.swap(merged_triggers);
 
                   std::sort(p.begin(), p.end(), qumis_comparator);
+
+                  // println("=> updated parallel section : ");
+                  // for (qumis_instruction * instr : p)
+                     // println("\t(" << instr->start << ") : " << instr->code());
                }
 
                if (verbose) println("updating qumis program..."); 

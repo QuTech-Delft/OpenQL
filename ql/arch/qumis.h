@@ -257,11 +257,13 @@ namespace ql
             qumis_instr_t code()
             {
                std::stringstream params;
-               std::bitset<7> cw = codeword.to_ulong();
+               std::bitset<7> cwr = codeword.to_ulong();
+               std::bitset<7> cw  = 0;
+               for (size_t b=6; b!=0; --b)
+                  cw[b] = cwr[6-b];
                // params << codeword << ", " << duration; // << "\nwait " << duration; 
                params << cw << ", " << duration; // << "\nwait " << duration; 
                qumis_instr_t instr = "trigger " + params.str();
-               // println("[i] used resources : " << used_resources);
                return instr;
             }
 
