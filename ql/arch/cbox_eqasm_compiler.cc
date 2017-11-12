@@ -43,7 +43,9 @@ int main(int argc, char ** argv)
 
    kernel.measure(0);
 */
-/*
+
+#if 0
+  // test pulse trigger 
   kernel.gate("g1",0);
   kernel.gate("g1",1);
   kernel.gate("g2",0);
@@ -54,16 +56,34 @@ int main(int argc, char ** argv)
 
   kernel.gate("rx180",1);
   kernel.gate("ro",0);
-*/
+#endif
 
+#if 0
+  // test parallel triggers
   kernel.rx90(0);    // 145ns,ch 4,cw 1
   kernel.ry90(0);    // 145ns,ch 4,cw 3
   kernel.mrx90(0);   // 145ns,ch 4,cw 2
   kernel.mry90(0);   // 145ns,ch 4,cw 4
   kernel.identity(0);// 125ns,ch 4,cw 5
   kernel.ry90(1);    // 145ns,ch 5,cw 3
+#endif
 
    // kernel.gate("measure",0);
+   std::pair<std::string,std::string> all_xy[] = {{"i", "i"}, {"rx180", "rx180"}, {"ry180", "ry180"},
+                             {"rx180", "ry180"}, {"ry180", "rx180"},
+                             {"rx90", "i"}, {"ry90", "i"}, {"rx90", "ry90"},
+                             {"ry90", "rx90"}, {"rx90", "ry180"}, {"ry90", "rx180"},
+                             {"rx180", "ry90"}, {"ry180", "rx90"}, {"rx90", "rx180"},
+                             {"rx180", "rx90"}, {"ry90", "ry180"}, {"ry180", "ry90"},
+                             {"rx180", "i"}, {"ry180", "i"}, {"rx90", "rx90"},
+                             {"ry90", "ry90"}};
+   for (auto xy : all_xy)
+   {
+      kernel.prepz(0);
+      kernel.gate(xy.first, 0);
+      kernel.gate(xy.second, 0);
+      kernel.measure(0);
+   }
 
    prog.add(kernel);
 
