@@ -292,35 +292,52 @@ void WriteCCLightQasm(std::string prog_name, size_t num_qubits, Bundles & bundle
     }
 
     size_t curr_cycle=1;
-    fout <<"qubits " << num_qubits << '\n'
-         << ".fused_kernels\n";
+    fout <<"qubits " << num_qubits << "\n\n"
+         << ".fused_kernels";
     for (Bundle & abundle : bundles)
     {
         auto bcycle = abundle.start_cycle;
         auto delta = bcycle - curr_cycle;
-        if(delta>0) 
-        {
-            fout << "    qwait " << delta << "\n";
-        }
+        if(delta>1)
+            fout << "\n    qwait " << delta-1 << "\n";
+        else
+            fout << "\n";
 
+        std::stringstream ssbundles;
+        size_t icount=0;
         for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
         {
             for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
             {
-                fout << "    " << (*insIt)->qasm();
+                ssbundles << (*insIt)->qasm();
                 if( std::next(insIt) != secIt->end() )
                 {
-                    fout << " , ";
+                    ssbundles << " | ";
                 }
+                icount++;
             }
             if( std::next(secIt) != abundle.ParallelSections.end() )
             {
-                fout << " | ";
+                ssbundles << " | ";
             }
         }
+
+        if (icount > 1) 
+        {
+            fout << "    { ";
+            fout << ssbundles.str();
+            fout << " }"; 
+        }
+        else
+        {
+            fout << "    " << ssbundles.str();
+        }
         curr_cycle+=delta;
-        fout << '\n';
     }
+
+    auto & lastBundle = bundles.back();
+    auto lbduration = lastBundle.duration_in_cycles;
+    fout << "\n    qwait " << lbduration -1 << '\n';
 
     fout.close();
     if(verbose) COUT("Writing Recourse-contraint scheduled CC-Light QASM [Done]");

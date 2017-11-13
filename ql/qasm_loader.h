@@ -308,7 +308,7 @@ namespace qx
                   print_syntax_error(" invalid qubit identifier !");
             }
             std::string id = str.substr(1);
-            for (int i=0; i<id.size(); ++i)
+            for (size_t i=0; i<id.size(); ++i)
             {
                if (!is_digit(id[i]))
                   print_syntax_error(" invalid qubit identifier !" << "(id:" << id << ")");
@@ -326,7 +326,7 @@ namespace qx
             if (str[0] != 'b')
                print_syntax_error(" invalid bit identifier !");
             std::string id = str.substr(1);
-            for (int i=0; i<id.size(); ++i)
+            for (size_t i=0; i<id.size(); ++i)
             {
                if (!is_digit(id[i]))
                   print_syntax_error(" invalid qubit identifier !");
@@ -1108,7 +1108,7 @@ namespace qx
                println("[x] syntax error: invalid qubit/bit identifier !");
                return "";
             }
-            for (int i=1; i<(str.size()-1); i++)
+            for (size_t i=1; i<(str.size()-1); i++)
             {
                if (!is_digit(str[i]))
                {

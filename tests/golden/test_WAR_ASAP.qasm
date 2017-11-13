@@ -8,4 +8,5 @@ qubits 4
     { cz q2,q0 | measure q1 }
     qwait 15
     measure q0
+    qwait 59
 

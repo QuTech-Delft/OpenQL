@@ -562,15 +562,15 @@ public:
         std::vector<ListDigraph::Node> order;
         ScheduleASAP(cycle, order, verbose);
 
-        typedef std::vector<std::string> insInOneCycle;
+        typedef std::vector<ql::gate*> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
 
-        std::vector<ListDigraph::Node>::reverse_iterator it;
-        for ( it = order.rbegin(); it != order.rend(); ++it)
+        std::vector<ListDigraph::Node>::reverse_iterator rit;
+        for ( rit = order.rbegin(); rit != order.rend(); ++rit)
         {
-            auto & ins_name = name[*it];
+            auto & ins_name = name[*rit];
             if(ins_name != "qwait")
-                insInAllCycles[ cycle[*it] ].push_back( name[*it] );
+                insInAllCycles[ cycle[*rit] ].push_back( instruction[*rit] );
         }
 
         size_t TotalCycles = 0;
@@ -598,7 +598,8 @@ public:
                 if (nInsThisCycle > 1) ss << "{ "; 
                 for(size_t i=0; i<nInsThisCycle; ++i )
                 {
-                    auto & ins_name = insInAllCycles[currCycle][i];
+                    auto & ins = insInAllCycles[currCycle][i];
+                    std::string ins_name = ins->qasm();
                     ss << ins_name;
                     if( i != nInsThisCycle - 1 ) // last instruction
                         ss << " | ";
@@ -611,6 +612,23 @@ public:
                 ++empty_cycles;
             }
         }
+
+        // printing of last qwait
+        size_t bduration = 0;
+        size_t currCycle = TotalCycles-1;
+        auto it = insInAllCycles.find(currCycle);
+        if( it != insInAllCycles.end() )
+        {
+            auto nInsThisCycle = insInAllCycles[currCycle].size();
+            for(size_t i=0; i<nInsThisCycle; ++i )
+            {
+                size_t iduration = insInAllCycles[currCycle][i]->duration;
+                bduration = std::max(bduration, iduration);
+            }
+        }
+        size_t bduration_in_cycles = std::ceil(bduration/cycle_time);
+        ss << "    qwait " << bduration_in_cycles -1 << '\n';
+
         return ss.str();
     }
 
@@ -945,6 +963,11 @@ public:
             if (abundle.ParallelSections.size() > 1) ssbundles << " }"; 
             curr_cycle+=delta;
         }
+
+        auto & lastBundle = bundles.back();
+        auto lbduration = lastBundle.duration_in_cycles;
+        ssbundles << "\n    qwait " << lbduration -1 << '\n';
+
         return ssbundles.str();
     }
 

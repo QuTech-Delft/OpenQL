@@ -6,4 +6,5 @@ qubits 4
     { cz q0,q1 | cz q2,q3 }
     qwait 7
     { measure q0 | measure q1 }
+    qwait 59
 
