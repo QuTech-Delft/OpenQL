@@ -10,8 +10,8 @@ smis s8, {0, 1, 5, 6}
 smis s9, {2, 3, 4} 
 
 start:
-    bs 1    x s0
-    bs 3    y s1
+    bs 1    prepz s7
+    bs 2    x s7
     qwait 2
     br always, start
     nop 

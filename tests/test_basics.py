@@ -38,16 +38,12 @@ class Test_basic(unittest.TestCase):
         k.gate("measure", 0)
         p.add_kernel(k)
 
-        p.compile(optimize=False, verbose=False)
-        p.schedule('ALAP')
-
-        # N.B. the output file get's created in the output directory
-        # next to where this file was called.
+        p.compile(False, "ALAP", True)
         
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'basic.qasm'))
-        qasm_files.append(os.path.join(output_dir, 'basicALAP.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'basic_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)

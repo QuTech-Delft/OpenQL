@@ -42,14 +42,12 @@ class Test_kernel(unittest.TestCase):
         p.add_kernel(k)
 
         # compile  opt  verbose
-        p.compile(False, True)
-
-        # schedule
-        p.schedule()
+        p.compile(False, "ASAP", True)
 
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)

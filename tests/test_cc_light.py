@@ -31,7 +31,6 @@ class Test_basic(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
-        num_circuits = 1
         num_qubits = platform.get_qubit_number()
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -55,11 +54,12 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
-  
+        
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
@@ -76,7 +76,6 @@ class Test_basic(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
-        num_circuits = 2
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -95,11 +94,12 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
@@ -117,7 +117,6 @@ class Test_basic(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
-        num_circuits = 2
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -152,11 +151,12 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
@@ -166,6 +166,37 @@ class Test_basic(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
+    def test_smis_all_bundled(self):
+        # You can specify a config location, here we use a default config
+        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
+        platform = ql.Platform('seven_qubits_chip', config_fn)
+        sweep_points = [1, 2]
+        num_qubits = platform.get_qubit_number()
+        p = ql.Program('aProgram', num_qubits, platform)
+        p.set_sweep_points(sweep_points, len(sweep_points))
+
+        k = ql.Kernel('aKernel', platform)
+
+        for i in range(7):
+            k.prepz(i)
+
+        for i in range(7):
+            k.gate('x', i)
+
+        # add the kernel to the program
+        p.add_kernel(k)
+
+        # compile the program
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = rootDir + '/golden/test_smis_all_bundled.qisa'
+
+        assemble(QISA_fn)
+
+        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+
+
     # two qubit mask generation test
     # @unittest.skip
     def test_smit(self):
@@ -173,7 +204,6 @@ class Test_basic(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -200,11 +230,12 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
@@ -214,6 +245,41 @@ class Test_basic(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
+    def test_smit_all_bundled(self):
+        # You can specify a config location, here we use a default config
+        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
+        platform = ql.Platform('seven_qubits_chip', config_fn)
+        sweep_points = [1, 2]
+        num_qubits = platform.get_qubit_number()
+        p = ql.Program('aProgram', num_qubits, platform)
+        p.set_sweep_points(sweep_points, len(sweep_points))
+
+        # populate kernel using default gates
+        k = ql.Kernel('aKernel', platform)
+
+        for i in range(7):
+            k.prepz(i)
+
+        k.gate('cz', 2, 0)
+        k.gate('cz', 3, 5)
+        k.gate('cz', 1, 4)
+
+        k.gate('cz', 4, 6)
+        k.gate('cz', 2, 5)
+        k.gate('cz', 3, 0)
+
+        # add the kernel to the program
+        p.add_kernel(k)
+
+        # compile the program
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        GOLD_fn = rootDir + '/golden/test_smit_all_bundled.qisa'
+
+        assemble(QISA_fn)
+
+        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
 
 class Test_advance(unittest.TestCase):
 	# @unittest.skip
@@ -221,7 +287,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -236,11 +301,12 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
@@ -255,7 +321,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -270,11 +335,12 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
@@ -289,7 +355,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -304,11 +369,12 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
@@ -323,7 +389,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -338,11 +403,12 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
@@ -354,7 +420,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -368,7 +433,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -376,6 +441,7 @@ class Test_advance(unittest.TestCase):
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
@@ -387,7 +453,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -403,11 +468,12 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
@@ -419,7 +485,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -435,7 +500,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -443,6 +508,7 @@ class Test_advance(unittest.TestCase):
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
@@ -454,7 +520,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -469,11 +534,12 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
@@ -485,7 +551,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -500,7 +565,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -508,6 +573,7 @@ class Test_advance(unittest.TestCase):
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
@@ -519,7 +585,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 7
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -535,7 +600,7 @@ class Test_advance(unittest.TestCase):
 
         # compile the program
         try:
-            p.compile(optimize=False, verbose=False)
+            p.compile(False, "ALAP", False) # optimize  scheduler  verbose
             raise
         except:
             pass
@@ -543,6 +608,7 @@ class Test_advance(unittest.TestCase):
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
@@ -557,7 +623,6 @@ class Test_advance(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
-        num_circuits = 1
         num_qubits = platform.get_qubit_number()
         p = ql.Program('aProgram', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -573,7 +638,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -595,7 +660,7 @@ class Test_advance(unittest.TestCase):
                             (0, [ ("x",[0]), ("y",[0]) ]),
                 # mw - mw buffer (different qubit but same awg channel is involved)
                             (1, [ ("x",[0]), ("y",[1]) ]),
-                # should mw - mw buffer (different qubit and different awg channel)
+                # mw - mw buffer (different qubit and different awg channel)
                             (2, [ ("x",[0]), ("y",[2]) ]),
                 # mw - flux
                             (3, [ ("x",[2]), ("cnot", [0,2]) ]),
@@ -620,7 +685,6 @@ class Test_advance(unittest.TestCase):
             config_fn = os.path.join(curdir, 'test_cfg_cc_light_buffers_latencies.json')
             platform  = ql.Platform('seven_qubits_chip', config_fn)
             sweep_points = [1,2]
-            num_circuits = 1
             num_qubits = 7
             p = ql.Program('aProgram', num_qubits, platform)
             p.set_sweep_points(sweep_points, len(sweep_points))
@@ -630,11 +694,12 @@ class Test_advance(unittest.TestCase):
                 k.gate(gate, qubits)
 
             p.add_kernel(k)
-            p.compile(optimize=False, verbose=True)
+            p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
             # load qasm
             qasm_files = []
             qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+            qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
             for qasm_file in qasm_files:
                qasm_reader = ql.QASM_Loader(qasm_file)
@@ -671,7 +736,6 @@ class Test_advance(unittest.TestCase):
             config_fn = os.path.join(curdir, 'test_cfg_cc_light_buffers_latencies.json')
             platform  = ql.Platform('seven_qubits_chip', config_fn)
             sweep_points = [1,2]
-            num_circuits = 1
             num_qubits = 7
             p = ql.Program('aProgram', num_qubits, platform)
             p.set_sweep_points(sweep_points, len(sweep_points))
@@ -681,11 +745,12 @@ class Test_advance(unittest.TestCase):
                 k.gate(gate, qubits)
 
             p.add_kernel(k)
-            p.compile(optimize=False, verbose=True)
+            p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
             # load qasm
             qasm_files = []
             qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
+            qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
             for qasm_file in qasm_files:
                qasm_reader = ql.QASM_Loader(qasm_file)

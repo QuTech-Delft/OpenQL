@@ -2,7 +2,7 @@
 # using quick_feature_test.cc or quick_feature_test.py file as test.
 # this can be done by:
 #	make -f quick_feature_test.makefile clean wrapper lib ctest
-#
+#  -DDEBUG
 # This requires compilation and installation of lemon library
 # and setting up LEMON_ROOT variable accordingly
 

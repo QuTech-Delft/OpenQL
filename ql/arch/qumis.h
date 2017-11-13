@@ -121,7 +121,8 @@ namespace ql
                }
                else
                {
-                  println("[x] warning : latency of instruction '" << this << "' is already compensated !");
+                  // println("[x] warning : latency of instruction '" << this << "' is already compensated !");
+                  WOUT("latency of instruction '" << this << "' is already compensated !");
                }
             }    
 
@@ -159,6 +160,7 @@ namespace ql
             {
                return operation_type;
             }
+
       };
 
       /**

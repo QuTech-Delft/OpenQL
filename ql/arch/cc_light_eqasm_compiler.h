@@ -44,13 +44,13 @@ public:
     // eqasm_t
     void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& platform, bool verbose=false) throw (ql::exception)
     {
-        if (verbose) println("[-] compiling qasm code ...");
+        if (verbose) COUT("[-] compiling qasm code ...");
         if (c.empty())
         {
-            println("[-] empty circuit, eqasm compilation aborted !");
+            EOUT("empty circuit, eqasm compilation aborted !");
             return;
         }
-        if (verbose) println("[-] loading circuit (" <<  c.size() << " gates)...");
+        if (verbose) COUT("[-] loading circuit (" <<  c.size() << " gates)...");
         eqasm_t eqasm_code;
         // ql::instruction_map_t& instr_map = platform.instruction_map;
         json& instruction_settings       = platform.instruction_settings;
@@ -188,8 +188,8 @@ public:
 
         std::string cs_filename = ql::utils::get_output_dir() + "/cs.txt";
         std::string im_filename = ql::utils::get_output_dir() + "/qisa_opcodes.qmap"; // "/qisa_instructions.dbpd";
-        println("writing control store file to '" << cs_filename << "' ...");
-        println("writing qisa instruction file to '" << im_filename << "' ...");
+        COUT("writing control store file to '" << cs_filename << "' ...");
+        COUT("writing qisa instruction file to '" << im_filename << "' ...");
         std::string s = control_store.str();
         ql::utils::write_file(cs_filename,s);
         s = qisa.str();
@@ -225,13 +225,13 @@ public:
                 operation_type_t type = operation_type(instruction_settings[id]["type"]);
                 if (type == __unknown_operation__)
                 {
-                    println("[x] error : unknow operation type of the instruction '" << id << "' !");
+                    EOUT("unknow operation type of the instruction '" << id << "' !");
                     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : the type of instruction '"+id+"' is unknown !",false);
                 }
 
                 if (instruction_settings[id]["cc_light_instr_type"].is_null())
                 {
-                    println("[x] error : unknow operation type of the instruction '" << id << "' !");
+                    EOUT("unknown operation type of the instruction '" << id << "' !");
                     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : the type of instruction '"+id+"' is unknown !",false);
                 }
 
@@ -249,28 +249,30 @@ public:
                 }
                 else   // unknown type of operation
                 {
-                    println("[x] error : unknow instruction type of the instruction '" << id << "' (should be single or two qubit gates) !");
+                    EOUT("unknown instruction type of the instruction '" << id << "' (should be single or two qubit gates) !");
                     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : the type of instruction '"+id+"' is unknown !",false);
                 }
             }
             else
             {
-                println("[x] error : cc_light_eqasm_compiler : instruction '" << id << "' not supported by the target platform !");
+                EOUT("cc_light_eqasm_compiler : instruction '" << id << "' not supported by the target platform !");
                 throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : the instruction '"+id+"' is not supported by the target platform !",false);
             }
         }
         */
 
         // schedule with platform constraints
-        // Bundles schedBundles = cc_light_schedule(prog_name, nqubits, c, platform, verbose);
-        Bundles schedBundles = cc_light_schedule_rc(prog_name, num_qubits, c, platform, verbose);
+        // Bundles sched_bundles = cc_light_schedule(prog_name, nqubits, c, platform, verbose);
+        Bundles sched_bundles = cc_light_schedule_rc(prog_name, num_qubits, c, platform, verbose);
+
+        WriteCCLightQasm(prog_name, num_qubits, sched_bundles, verbose);
 
         MaskManager mask_manager;
         // print scheduled bundles with parallelism in cc-light syntax
-        PrintCCLighQasm(prog_name, platform, mask_manager, schedBundles, verbose);
+        WriteCCLightQisa(prog_name, platform, mask_manager, sched_bundles, verbose);
 
         // print scheduled bundles with parallelism in cc-light syntax with time-stamps
-        PrintCCLighQasmTimeStamped(prog_name, platform, mask_manager, schedBundles, verbose);
+        WriteCCLightQisaTimeStamped(prog_name, platform, mask_manager, sched_bundles, verbose);
 
         // time analysis
         // total_exec_time = time_analysis();
@@ -316,7 +318,7 @@ public:
     void decompose_instructions(bool verbose=false)
     {
         /*
-        if (verbose) println("decomposing instructions...");
+        if (verbose) COUT("decomposing instructions...");
         cc_light_eqasm_program_t decomposed;
         for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
         {
@@ -334,7 +336,7 @@ public:
      */
     void reorder_instructions()
     {
-        // if (verbose) println("reodering instructions...");
+        // if (verbose) COUT("reodering instructions...");
         // std::sort(cc_light_eqasm_instructions.begin(),cc_light_eqasm_instructions.end(), cc_light_eqasm_comparator);
     }
 
@@ -343,7 +345,7 @@ public:
      */
     size_t time_analysis(bool verbose=false)
     {
-        if (verbose) println("time analysis...");
+        if (verbose) COUT("time analysis...");
         // update start time : find biggest latency
         size_t max_latency = 0;
         for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
@@ -371,7 +373,7 @@ public:
      */
     void compensate_latency(bool verbose=false)
     {
-        if (verbose) println("latency compensation...");
+        if (verbose) COUT("latency compensation...");
         for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
             instr->compensate_latency();
     }
@@ -381,9 +383,9 @@ public:
      */
     void resechedule(bool verbose=false)
     {
-        if (verbose) println("instruction rescheduling...");
-        if (verbose) println("resource dependency analysis...");
-        if (verbose) println("buffer insertion...");
+        if (verbose) COUT("instruction rescheduling...");
+        if (verbose) COUT("resource dependency analysis...");
+        if (verbose) COUT("buffer insertion...");
 #if 0
         std::vector<size_t>           hw_res_av(__trigger_width__+__awg_number__,0);
         std::vector<size_t>           qu_res_av(num_qubits,0);
@@ -501,7 +503,7 @@ private:
      */
     void emit_eqasm(bool verbose=false)
     {
-        if (verbose) println("compiling eqasm...");
+        if (verbose) COUT("emitting eqasm...");
         eqasm_code.clear();
         // eqasm_code.push_back("wait 1");       // add wait 1 at the begining
         // eqasm_code.push_back("mov r14, 0");   // 0: infinite loop
@@ -520,7 +522,7 @@ private:
         }
         // eqasm_code.push_back("wait "+std::to_string(cc_light_eqasm_instructions.back()->duration));
         // eqasm_code.push_back("beq r14, r14 start");  // loop
-        println("compilation done.");
+        if (verbose) COUT("emitting eqasm code done.");
     }
 
     /**

@@ -81,7 +81,9 @@ typedef enum __gate_type_t
     __display__        ,
     __display_binary__ ,
     __nop_gate__       ,
-    __dummy_gate__
+    __dummy_gate__     ,
+    __swap_gate__      ,
+    __wait_gate__
 } gate_type_t;
 
 #define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
@@ -169,6 +171,14 @@ const complex_t cphase_c [] /* __attribute__((aligned(64))) */ =
     __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
     __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(-1.0, 0.0)
 }; /* cz */
+
+const complex_t swap_c [] /* __attribute__((aligned(64))) */ =
+{
+    __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0)
+};  /* swap  */
 
 // TODO correct it, for now copied from toffoli
 const complex_t ctoffoli_c[] /* __attribute__((aligned(64))) */ =
@@ -1083,7 +1093,7 @@ public:
 
     nop() : m(nop_c)
     {
-        name = "nop";
+        name = "wait";
         duration = 20;
     }
     instruction_t qasm()
@@ -1105,6 +1115,72 @@ public:
 };
 
 
+class swap : public gate
+{
+public:
+    cmat_t m;
+
+    swap(size_t q1, size_t q2) : m(swap_c)
+    {
+        name = "swap";
+        duration = 80;
+        operands.push_back(q1);
+        operands.push_back(q2);
+    }
+    instruction_t qasm()
+    {
+        return instruction_t("swap q" + std::to_string(operands[0])
+                             + ",q"  + std::to_string(operands[1]) );
+    }
+    instruction_t micro_code()
+    {
+        return ql::dep_instruction_map["swap"];
+    }
+    gate_type_t type()
+    {
+        return __swap_gate__;
+    }
+    cmat_t mat()
+    {
+        return m;
+    }
+};
+
+
+class wait : public gate
+{
+public:
+    cmat_t m;
+    size_t duration_in_cycles;
+
+    wait(std::vector<size_t> qubits, size_t d, size_t dc) : m(nop_c)
+    {
+        name = "wait";
+        duration = d;
+        duration_in_cycles = dc;
+        for(auto & q : qubits)
+        {
+            operands.push_back(q);
+        }
+    }
+    instruction_t qasm()
+    {
+        return instruction_t("qwait " + std::to_string(duration_in_cycles));
+    }
+    instruction_t micro_code()
+    {
+        return ql::dep_instruction_map["wait"];
+    }
+    gate_type_t type()
+    {
+        return __wait_gate__;
+    }
+    cmat_t mat()
+    {
+        return m;
+    }
+};
+
 class SOURCE : public gate
 {
 public:
@@ -1113,7 +1189,7 @@ public:
     SOURCE() : m(nop_c)
     {
         name = "SOURCE";
-        duration = 20;
+        duration = 1;
     }
     instruction_t qasm()
     {
@@ -1141,7 +1217,7 @@ public:
     SINK() : m(nop_c)
     {
         name = "SINK";
-        duration = 20;
+        duration = 1;
     }
     instruction_t qasm()
     {
@@ -1177,6 +1253,7 @@ public:
     ucode_sequence_t   qumis;            // microcode sequence
     instruction_type_t operation_type;   // operation type : rf/flux
     strings_t          used_hardware;    // used hardware
+    std::string        arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
 
 public:
 
@@ -1234,7 +1311,8 @@ public:
             load(instr);
             f.close();
         }
-        else std::cout << "[x] error : json file not found !" << std::endl;
+        else
+            EOUT("json file not found !");
     }
 
     /**
@@ -1277,19 +1355,19 @@ public:
      */
     void load(json& instr) throw (ql::exception)
     {
-        // println("loading instruction '" << name << "'...");
+        // DOUT("loading instruction '" << name << "'...");
         std::string l_attr = "qubits";
         try
         {
             l_attr = "qubits";
-            // println("qubits: " << instr["qubits"]);
+            // DOUT("qubits: " << instr["qubits"]);
             parameters = instr["qubits"].size();
             for (size_t i=0; i<parameters; ++i)
             {
                 std::string qid = instr["qubits"][i];
                 if (!is_qubit_id(qid))
                 {
-                    println("[x] error : invalid qubit id in attribute 'qubits' !");
+                    EOUT("invalid qubit id in attribute 'qubits' !");
                     throw ql::exception("[x] error : ql::custom_gate() : error while loading instruction '" + name + "' : attribute 'qubits' : invalid qubit id !", false);
                 }
                 operands.push_back(qubit_id(qid));
@@ -1310,8 +1388,14 @@ public:
         }
         catch (json::exception e)
         {
-            println("[e] error while loading instruction '" << name << "' (attr: " << l_attr << ") : " << e.what());
+            EOUT("while loading instruction '" << name << "' (attr: " << l_attr << ") : " << e.what());
             throw ql::exception("[x] error : ql::custom_gate() : error while loading instruction '" + name + "' : attribute '" + l_attr + "' : \n\t" + e.what(), false);
+        }
+
+        if ( !instr["cc_light_instr"].is_null() )
+        {
+            arch_operation_name = instr["cc_light_instr"];
+            // DOUT("loaded cc_light_instr name : " << arch_operation_name)            ;
         }
     }
 

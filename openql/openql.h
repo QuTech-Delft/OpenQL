@@ -166,9 +166,13 @@ public:
     {
         ql_kernel->clifford(id, q0);
     }
-    void print_custom_instructions()
+    void wait(std::vector<size_t> qubits, size_t duration)
     {
-        ql_kernel->print_gates_definition();
+        ql_kernel->wait(qubits, duration);
+    }
+    std::string get_custom_instructions()
+    {
+        return ql_kernel->get_gates_definition();
     }
     void gate(std::string name)
     {
@@ -182,11 +186,10 @@ public:
     {
         ql_kernel->gate(name, std::vector<size_t> {qubit0, qubit1} );
     }
-    void gate(std::string name, std::vector<size_t> qubits)
+    void gate(std::string name, std::vector<size_t> qubits, size_t duration=0)
     {
-        ql_kernel->gate(name, qubits);
+        ql_kernel->gate(name, qubits, duration);
     }
-
     ~Kernel()
     {
         delete(ql_kernel);
@@ -222,28 +225,31 @@ public:
         prog->add( *(k.ql_kernel) );
     }
 
-    void compile(bool optimize=false, bool verbose=false)
+    void compile(bool optimize=false, std::string scheduler="ALAP", bool verbose=false)
     {
-        prog->compile(optimize, verbose);
-        prog->schedule("ALAP", verbose);
+        prog->compile(optimize, scheduler, verbose);
     }
 
     void schedule(std::string scheduler="ASAP", bool verbose=false)
     {
         prog->schedule(scheduler, verbose);
     }
+
     std::string qasm()
     {
         return prog->qasm();
     }
+
     std::string microcode()
     {
         return prog->microcode();
     }
+
     void print_interaction_matrix()
     {
         prog->print_interaction_matrix();
     }
+
     void write_interaction_matrix()
     {
         prog->write_interaction_matrix();

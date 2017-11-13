@@ -20,8 +20,8 @@
 #define println(x) std::cout << "[OPENQL] "<< x << std::endl
 
 #define COUT(content) std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" "<< content << std::endl
-#define WOUT(content) std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" Warning: "<< content << std::endl
-#define EOUT(content) std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" Error: "<< content << std::endl
+#define WOUT(content) std::cerr << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" Warning: "<< content << std::endl
+#define EOUT(content) std::cerr << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" Error: "<< content << std::endl
 
 #ifdef DEBUG
 #define DOUT(content)                          COUT(content)
@@ -131,6 +131,13 @@ namespace ql
     {
         return (T(0) < val) - (val < T(0));
     }
+
+
+    bool string_has(const std::string & str, const std::string & token)
+    {
+      return ( str.find(token) != std::string::npos);
+    }
+
 
     } // utils
 } // ql

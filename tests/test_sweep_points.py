@@ -37,10 +37,7 @@ class Test_sweep_points(unittest.TestCase):
         p.add_kernel(k)
 
         # compile  opt  verbose
-        p.compile(False, True)
-
-        # schedule
-        p.schedule()
+        p.compile(False, "ALAP", False)
 
         # all the outputs are generated in 'output' dir
         with open(os.path.join(self.__class__.output_dir, 'aProgram_config.json')) as fp:

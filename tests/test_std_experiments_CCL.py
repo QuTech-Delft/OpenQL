@@ -57,7 +57,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
             k.measure(0)
             p.add_kernel(k)
 
-        p.compile()
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         # Test that the generated code is valid
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
@@ -87,7 +87,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
             k.rx90(0)
             k.measure(0)
             p.add_kernel(k)
-        p.compile()
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         # Test that the generated code is valid
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
@@ -112,7 +112,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         k.measure(0)
         k.measure(0)
         p.add_kernel(k)
-        p.compile()
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
 
         # Test that the generated code is valid
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')

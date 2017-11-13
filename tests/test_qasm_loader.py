@@ -46,15 +46,12 @@ class Test_QASM_Loader(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
-        p.schedule("ASAP", True)
-        p.schedule("ALAP", True)
+        p.compile(False, "ASAP", False)
         
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'sequential_program.qasm'))
-        qasm_files.append(os.path.join(output_dir, 'sequential_programASAP.qasm'))
-        qasm_files.append(os.path.join(output_dir, 'sequential_programALAP.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'sequential_program_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
@@ -94,15 +91,12 @@ class Test_QASM_Loader(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, verbose=False)
-        p.schedule("ASAP", True)
-        p.schedule("ALAP", True)
+        p.compile(False, "ASAP", False)
         
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'parallel_program.qasm'))
-        qasm_files.append(os.path.join(output_dir, 'parallel_programASAP.qasm'))
-        qasm_files.append(os.path.join(output_dir, 'parallel_programALAP.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'parallel_program_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)

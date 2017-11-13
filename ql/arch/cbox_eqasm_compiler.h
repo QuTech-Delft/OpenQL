@@ -90,6 +90,7 @@ namespace ql
                   buffer_matrix[__measurement__][__rf__]          = __ns_to_cycle(platform.hardware_settings[params[p++]]);
                   buffer_matrix[__measurement__][__flux__]        = __ns_to_cycle(platform.hardware_settings[params[p++]]);
                   buffer_matrix[__measurement__][__measurement__] = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+
 #if 0
                   buffer_matrix[__rf__][__rf__]                   = __ns_to_cycle(platform.hardware_settings["mw_mw_buffer"]);
                   buffer_matrix[__rf__][__flux__]                 = __ns_to_cycle(platform.hardware_settings["mw_flux_buffer"]);

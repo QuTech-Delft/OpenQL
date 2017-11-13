@@ -253,7 +253,7 @@ public:
         }
         else
         {
-            println("[x] warning : latency of instruction '" << this << "' is already compensated !");
+            WOUT("latency of instruction '" << this << "' is already compensated !");
         }
     }
 

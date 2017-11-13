@@ -87,20 +87,18 @@ class Test_kernel(unittest.TestCase):
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k1)
         p.add_kernel(k2)
-        p.compile(False, False)
-        p.schedule("ALAP", False)
+
+        p.compile(False, "ALAP", False)
 
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
-        qasm_files.append(os.path.join(output_dir, 'aProgramALAP.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
            errors = qasm_reader.load()
            self.assertTrue(errors == 0)
-
-
 
 
 if __name__ == '__main__':
