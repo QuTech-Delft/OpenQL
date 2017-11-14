@@ -626,8 +626,10 @@ public:
                 bduration = std::max(bduration, iduration);
             }
         }
-        size_t bduration_in_cycles = std::ceil(bduration/cycle_time);
-        ss << "    qwait " << bduration_in_cycles -1 << '\n';
+
+        int bduration_in_cycles = std::ceil(bduration/cycle_time);
+        if( bduration_in_cycles > 1 )
+            ss << "    qwait " << bduration_in_cycles -1 << '\n';
 
         return ss.str();
     }
@@ -965,8 +967,9 @@ public:
         }
 
         auto & lastBundle = bundles.back();
-        auto lbduration = lastBundle.duration_in_cycles;
-        ssbundles << "\n    qwait " << lbduration -1 << '\n';
+        int lbduration = lastBundle.duration_in_cycles;
+        if( lbduration > 1 )
+            ssbundles << "\n    qwait " << lbduration -1 << '\n';
 
         return ssbundles.str();
     }

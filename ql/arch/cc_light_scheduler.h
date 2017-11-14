@@ -336,8 +336,9 @@ void WriteCCLightQasm(std::string prog_name, size_t num_qubits, Bundles & bundle
     }
 
     auto & lastBundle = bundles.back();
-    auto lbduration = lastBundle.duration_in_cycles;
-    fout << "\n    qwait " << lbduration -1 << '\n';
+    int lbduration = lastBundle.duration_in_cycles;
+    if( lbduration>1 )
+        fout << "\n    qwait " << lbduration -1 << '\n';
 
     fout.close();
     if(verbose) COUT("Writing Recourse-contraint scheduled CC-Light QASM [Done]");
@@ -476,8 +477,9 @@ void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, Ma
     }
 
     auto & lastBundle = bundles.back();
-    auto lbduration = lastBundle.duration_in_cycles;
-    ssbundles << "    qwait " << lbduration << "\n";
+    int lbduration = lastBundle.duration_in_cycles;
+    if( lbduration>1 )
+        ssbundles << "    qwait " << lbduration << "\n";
     ssbundles << "    br always, start" << "\n"
               << "    nop \n"
               << "    nop" << endl;
@@ -585,8 +587,9 @@ void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & p
     }
 
     auto & lastBundle = bundles.back();
-    auto lbduration = lastBundle.duration_in_cycles;
-    ssbundles << std::setw(8) << curr_cycle   << ":    qwait " << lbduration << "\n";
+    int lbduration = lastBundle.duration_in_cycles;
+    if( lbduration>1 )
+        ssbundles << std::setw(8) << curr_cycle   << ":    qwait " << lbduration << "\n";
     curr_cycle+=lbduration;
     ssbundles << std::setw(8) << curr_cycle++ << ":    br always, start" << "\n";
     ssbundles << std::setw(8) << curr_cycle++ << ":    nop \n";

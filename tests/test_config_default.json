@@ -388,7 +388,18 @@
       },
 
       "measure q1" : {
-         "alias" : "measure q0"
+         "duration": 300, 
+         "latency": 50,
+         "qubits": ["q0", "q1"], 
+         "matrix" : [ [0.0,0.0], [1.0,0.0],
+                 [1.0,0.0], [0.0,0.0] ], 
+         "disable_optimization": true,
+         "type" : "readout",
+         "qumis_instr": "trigger",
+         "qumis_instr_kw": {
+            "trigger_bit": 7, 
+            "trigger_duration": 10 
+         }
       },
 
       "measure q0 q1" : {
