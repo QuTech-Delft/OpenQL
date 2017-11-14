@@ -203,7 +203,7 @@
          "disable_optimization": true,
          "type" : "mw",
          "qumis_instr": "trigger_sequence", 
-         "qumis_instr_kw": { "trigger_channel": 0, "trigger_width": 1 }
+         "qumis_instr_kw": { "trigger_channel": 4, "trigger_width": 1 }
       },
 
       "measure q0" :

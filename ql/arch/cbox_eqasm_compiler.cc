@@ -58,16 +58,17 @@ int main(int argc, char ** argv)
   kernel.gate("ro",0);
 #endif
 
-#if 0
+#if 1
   // test parallel triggers
   kernel.rx90(0);    // 145ns,ch 4,cw 1
-  kernel.ry90(0);    // 145ns,ch 4,cw 3
-  kernel.mrx90(0);   // 145ns,ch 4,cw 2
-  kernel.mry90(0);   // 145ns,ch 4,cw 4
-  kernel.identity(0);// 125ns,ch 4,cw 5
-  kernel.ry90(1);    // 145ns,ch 5,cw 3
+  // kernel.ry90(0);    // 145ns,ch 4,cw 3
+  // kernel.mrx90(0);   // 145ns,ch 4,cw 2
+  // kernel.mry90(0);   // 145ns,ch 4,cw 4
+  // kernel.identity(0);// 125ns,ch 4,cw 5
+  // kernel.ry90(1);    // 145ns,ch 5,cw 3
 #endif
 
+#if 0
    // kernel.gate("measure",0);
    std::pair<std::string,std::string> all_xy[] = {{"i", "i"}, {"rx180", "rx180"}, {"ry180", "ry180"},
                              {"rx180", "ry180"}, {"ry180", "rx180"},
@@ -84,12 +85,14 @@ int main(int argc, char ** argv)
       kernel.gate(xy.second, 0);
       kernel.measure(0);
    }
+#endif
 
    prog.add(kernel);
 
-   prog.compile();
+   // prog.compile();
+   prog.compile(false, "ALAP", true);
 
-   prog.schedule("ASAP");
+   // prog.schedule("ASAP");
 
    // compiler.compile(kernel.get_circuit(), starmon);
    // compiler.write_eqasm();

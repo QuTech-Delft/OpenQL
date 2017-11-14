@@ -29,7 +29,7 @@
          "disable_optimization": true,
          "type" : "mw",
          "qumis_instr": "pulse_trigger",
-         "qumis_instr_kw": { "trigger_channel": 4, "codeword": 0 }
+         "qumis_instr_kw": { "trigger_channel": 1, "codeword": 3 }
       },
 
       "mrx90 q0" :

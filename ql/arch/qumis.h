@@ -70,7 +70,6 @@ namespace ql
       typedef std::bitset<__pulse_cw_width__> pulse_cw_t;
       typedef std::bitset<__trigger_width__>  codeword_t;
 
-
       // hardware resources
       typedef std::bitset<__resources__>      resources_t;
       typedef std::vector<size_t>             qubit_set_t;
@@ -259,10 +258,9 @@ namespace ql
             qumis_instr_t code()
             {
                std::stringstream params;
-               std::bitset<7> cwr = codeword.to_ulong();
-               std::bitset<7> cw  = 0;
-               for (size_t b=6; b!=0; --b)
-                  cw[b] = cwr[6-b];
+               std::bitset<__trigger_width__> cwr = codeword.to_ulong();
+               // println("codeword  :\t" << codeword);
+               std::bitset<7> cw  = cwr.to_ulong();
                // params << codeword << ", " << duration; // << "\nwait " << duration; 
                params << cw << ", " << duration; // << "\nwait " << duration; 
                qumis_instr_t instr = "trigger " + params.str();
@@ -512,10 +510,10 @@ namespace ql
                used_resources.set(trig_channel);
                
                if (codeword.to_ulong() > 7)
-                  println("[x] codeword cannot be greater than 7 (3 bits)");
+                  println("[x] error : codeword cannot be greater than 7 (3 bits) !");
 
                codeword_t trig_mask;
-               trig_mask.set(6-trig_channel);
+               trig_mask.set(7-trig_channel);
 
                // build external codeword trigger
                size_t cw = codeword.to_ulong();

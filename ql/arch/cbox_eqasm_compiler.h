@@ -66,7 +66,7 @@ namespace ql
                   iterations = 0;
                }
 
-               println("iterations : " << iterations);
+               if (verbose) println("[-] iterations : " << iterations);
 
                eqasm_t eqasm_code;
                // ql::instruction_map_t& instr_map = platform.instruction_map;
@@ -75,6 +75,8 @@ namespace ql
                std::string params[] = { "qubit_number", "cycle_time", "mw_mw_buffer", "mw_flux_buffer", "mw_readout_buffer", "flux_mw_buffer", 
                   "flux_flux_buffer", "flux_readout_buffer", "readout_mw_buffer", "readout_flux_buffer", "readout_readout_buffer" };
                size_t p = 0;
+
+               if (verbose) println("[-] loading hardware seetings...");
 
                try 
                {
@@ -114,6 +116,8 @@ namespace ql
                   for (size_t j=0; j<__operation_types_num__; ++j)
                   println("(" << i << "," << j << ") :" << buffer_matrix[i][j]);
                 */
+               
+               if (verbose) println("[-] loading instruction seetings...");
 
                for (ql::gate * g : c)
                {
@@ -122,6 +126,9 @@ namespace ql
                   str::replace_all(id,"  ","");
                   std::string qumis;
                   std::string operation;
+
+                  if (verbose) println("[-] loading instruction '" << id << " ...");
+
                   if (!instruction_settings[id].is_null())
                   {
                      if (instruction_settings[id]["qumis_instr"].is_null())
@@ -197,6 +204,7 @@ namespace ql
                      println("[x] error : cbox_eqasm_compiler : instruction '" << id << "' not supported by the target platform !");
                      throw ql::exception("[x] error : cbox_eqasm_compiler : error while reading hardware settings : instruction '"+id+"' not supported by the target platform !",false);
                   }
+                  if (verbose) println("[-] instructions loaded successfully.");
                }
 
                // time analysis
@@ -648,9 +656,9 @@ namespace ql
                // println("\tcodeword_ready_bit_duration : " << codeword_ready_bit_duration);
                // println("\tbit_nr                      : " << bit_nr);
 
-               if (codeword_ready_bit > (__trigger_width__-1))
+               if ((codeword_ready_bit > (__trigger_width__-1)) || (codeword_ready_bit == 0))
                {
-                  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing codeword trigger : 'ready_bit' of instruction '"+qasm_label+"' is out of range !",false);
+                  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing codeword trigger : 'ready_bit' of instruction '"+qasm_label+"' is out of range ! (should be a value whithin [1..7])",false);
                }
 
                // ready trigger
@@ -696,9 +704,9 @@ namespace ql
                // println("\ttrigger channel    : " << trigger_channel);
                // println("\tcodeword           : " << codeword.to_ulong());
 
-               if (trigger_channel > (__trigger_width__-1))
+               if ((trigger_channel > (__trigger_width__-1)) || (trigger_channel == 0))
                {
-                  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing codeword trigger : 'trigger_channel' of instruction '"+qasm_label+"' is out of range !",false);
+                  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing codeword trigger : 'trigger_channel' of instruction '"+qasm_label+"' is out of range ! (should be whithin [1..7])",false);
                }
 
                // ready trigger
@@ -736,9 +744,9 @@ namespace ql
                // println("\ttrigger channel    : " << trigger_channel);
                // println("\ttrigger width      : " << trigger_width); 
 
-               if (trigger_channel > (__trigger_width__-1))
+               if ((trigger_channel > (__trigger_width__-1)) || (trigger_channel == 0))
                {
-                  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing codeword trigger : 'trigger_channel' of instruction '"+qasm_label+"' is out of range !",false);
+                  throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing codeword trigger : 'trigger_channel' of instruction '"+qasm_label+"' is out of range ! (should be a value whithin [1..7])",false);
                }
 
                // trigger sequence
@@ -776,7 +784,7 @@ namespace ql
 
                   // println("\ttrigger bit      : " << trigger_bit);
                   // println("\ttrigger duration : " << trigger_duration);
-                  if (trigger_bit > (__trigger_width__-1))
+                  if ((trigger_bit > (__trigger_width__-1)))
                   {
                      //println("[x] error while processing the 'readout' instruction : invalid trigger bit.");
                      throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing measure instruction '"+qasm_label+"' : invalid trigger bit (out of range) !",false);

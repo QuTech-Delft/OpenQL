@@ -41,7 +41,7 @@
          "type" : "mw",
          "qumis_instr": "codeword_trigger", 
          "qumis_instr_kw": {
-            "codeword_ready_bit": 0,
+            "codeword_ready_bit": 5,
             "codeword_ready_bit_duration" : 5, 
             "codeword_bits": [1, 2, 3, 4], 
             "codeword": 1
@@ -73,7 +73,7 @@
          "type" : "mw",
          "qumis_instr": "codeword_trigger", 
          "qumis_instr_kw": {
-            "codeword_ready_bit": 0,
+            "codeword_ready_bit": 5,
             "codeword_ready_bit_duration" : 5, 
             "codeword_bits": [1, 2, 3, 4], 
             "codeword": 1
@@ -92,7 +92,7 @@
          "type" : "mw",
          "qumis_instr": "codeword_trigger", 
          "qumis_instr_kw": {
-            "codeword_ready_bit": 0,
+            "codeword_ready_bit": 5,
             "codeword_ready_bit_duration" : 5, 
             "codeword_bits": [1, 2, 4, 5], 
             "codeword": 1
@@ -109,7 +109,7 @@
          "type" : "mw",
          "qumis_instr": "codeword_trigger", 
          "qumis_instr_kw": {
-            "codeword_ready_bit": 0,
+            "codeword_ready_bit": 5,
             "codeword_ready_bit_duration" : 5, 
             "codeword_bits": [1, 2, 4, 5], 
             "codeword": 1
