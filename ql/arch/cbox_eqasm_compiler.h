@@ -669,7 +669,7 @@ namespace ql
 
                // codeword trigger
                codeword_t main_codeword_trigger = 0;
-               for (size_t b : bits) main_codeword_trigger.set(b);
+               for (size_t b : bits) main_codeword_trigger.set(7-b);
                // trigger * main_trigger = new trigger(main_codeword_trigger, duration, type);
                //println("\t code (m_trigger): " << main_trigger->code() );
 
@@ -784,13 +784,13 @@ namespace ql
 
                   // println("\ttrigger bit      : " << trigger_bit);
                   // println("\ttrigger duration : " << trigger_duration);
-                  if ((trigger_bit > (__trigger_width__-1)))
+                  if ((trigger_bit > (__trigger_width__-1)) || (trigger_bit == 0))
                   {
                      //println("[x] error while processing the 'readout' instruction : invalid trigger bit.");
-                     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing measure instruction '"+qasm_label+"' : invalid trigger bit (out of range) !",false);
+                     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing measure instruction '"+qasm_label+"' : invalid trigger bit (out of range, trigger should be in [1..7]) !",false);
                   }
                   codeword_t cw = 0;
-                  cw.set(trigger_bit);
+                  cw.set(7-trigger_bit);
                   qumis_instr = new trigger(cw, trigger_duration, __measurement__, latency);
                   qumis_instr->used_qubits = qubits;
                   qumis_instr->qasm_label  = qasm_label;
@@ -833,7 +833,7 @@ namespace ql
                   throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing trigger instruction '"+qasm_label+"' : invalid trigger bit (out of range) !",false);
                }
                codeword_t cw = 0;
-               cw.set(trigger_bit);
+               cw.set(7-trigger_bit);
                trig = new trigger(cw, trigger_duration, __measurement__, latency);
                trig->used_qubits = qubits;
                trig->qasm_label  = qasm_label;

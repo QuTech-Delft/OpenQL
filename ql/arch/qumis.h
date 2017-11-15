@@ -380,7 +380,7 @@ namespace ql
                println("[x] error in codeword trigger definition : 'ready_bit_duration' cannot be greater than overall 'duration' !");
 
             codeword_t ready_cw = 0;
-            ready_cw.set(ready_bit);
+            ready_cw.set(7-ready_bit);
             trigger * rdb = new trigger(ready_cw,ready_bit_duration,operation_type,latency);
             trigger * cwt = new trigger(codeword,duration,operation_type,latency);
             rdb->qasm_label = qasm_label;
@@ -431,7 +431,7 @@ namespace ql
             qumis_instr_t code()
             {
                codeword_t ready_cw = 0;
-               ready_cw.set(ready_bit);
+               ready_cw.set(7-ready_bit);
                std::stringstream instr;
                instr << "trigger " << codeword << ", " << duration << "\nwait 1\n"; 
                instr << "trigger " << ready_cw << ", " << ready_bit_duration; //  << "\nwait " << (duration-1); 
@@ -769,7 +769,7 @@ namespace ql
                   // println("[x] trigger channel number cannot be greater than 7.");
 
                codeword_t trig_mask;
-               trig_mask.set(6-trig_channel);
+               trig_mask.set(7-trig_channel);
 
                trigger * t0 = new trigger(trig_mask,trig_width,operation_type,latency);
                trigger * t1 = new trigger(trig_mask,trig_width,operation_type,latency);

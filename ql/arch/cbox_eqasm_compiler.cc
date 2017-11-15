@@ -60,7 +60,9 @@ int main(int argc, char ** argv)
 
 #if 1
   // test parallel triggers
+  kernel.prepz(0);
   kernel.rx90(0);    // 145ns,ch 4,cw 1
+  kernel.measure(0);
   // kernel.ry90(0);    // 145ns,ch 4,cw 3
   // kernel.mrx90(0);   // 145ns,ch 4,cw 2
   // kernel.mry90(0);   // 145ns,ch 4,cw 4
