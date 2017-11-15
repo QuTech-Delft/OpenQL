@@ -80,7 +80,7 @@ public:
                 }
                 else
                 {
-                    buffer_cycles_map[ bpair ] = std::ceil( size_t(platform.hardware_settings[bname]) / cycle_time);
+                    buffer_cycles_map[ bpair ] = std::ceil( static_cast<float>(platform.hardware_settings[bname]) / cycle_time);
                 }
                 DOUT("Initializing " << bname << ": "<< buffer_cycles_map[bpair]);
             }
@@ -123,7 +123,7 @@ public:
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-                        weight[arc] = std::fmax( std::ceil( (instruction[prodNode]->duration) / cycle_time), 1);
+                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
                         cause[arc] = operand;
                         depType[arc] = WAW;
                     }
@@ -134,7 +134,7 @@ public:
                         {
                             ListDigraph::Node readerNode = graph.nodeFromId(readerID);
                             ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                            weight[arc1] = std::fmax( std::ceil( (instruction[readerNode]->duration) / cycle_time), 1);
+                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
                             depType[arc1] = WAR;
                         }
@@ -155,7 +155,7 @@ public:
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-                        weight[arc] = std::fmax( std::ceil( (instruction[prodNode]->duration) / cycle_time), 1);
+                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
                         cause[arc] = operand;
                         depType[arc] = RAW;
                     }
@@ -166,7 +166,7 @@ public:
                         {
                             ListDigraph::Node readerNode = graph.nodeFromId(readerID);
                             ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                            weight[arc1] = std::fmax( std::ceil( (instruction[readerNode]->duration) / cycle_time), 1);
+                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
                             depType[arc1] = RAR;
                         }
@@ -176,7 +176,7 @@ public:
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-                        weight[arc] = std::fmax( std::ceil( (instruction[prodNode]->duration) / cycle_time), 1);
+                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
                         cause[arc] = operand;
                         depType[arc] = WAW;
                     }
@@ -187,7 +187,7 @@ public:
                         {
                             ListDigraph::Node readerNode = graph.nodeFromId(readerID);
                             ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                            weight[arc1] = std::fmax( std::ceil( (instruction[readerNode]->duration) / cycle_time), 1);
+                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
                             depType[arc1] = WAR;
                         }
@@ -213,7 +213,7 @@ public:
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-                        weight[arc] = std::fmax( std::ceil( (instruction[prodNode]->duration) / cycle_time), 1);
+                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
                         cause[arc] = operand;
                         depType[arc] = RAW;
 
@@ -223,7 +223,7 @@ public:
                         {
                             ListDigraph::Node readerNode = graph.nodeFromId(readerID);
                             ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                            weight[arc1] = std::fmax( std::ceil( (instruction[readerNode]->duration) / cycle_time), 1);
+                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
                             depType[arc1] = RAR;
                         }
@@ -237,7 +237,7 @@ public:
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-                        weight[arc] = std::fmax( std::ceil( (instruction[prodNode]->duration) / cycle_time), 1);
+                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
                         cause[arc] = operand;
                         depType[arc] = WAW;
 
@@ -247,7 +247,7 @@ public:
                         {
                             ListDigraph::Node readerNode = graph.nodeFromId(readerID);
                             ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                            weight[arc1] = std::fmax( std::ceil( (instruction[readerNode]->duration) / cycle_time), 1);
+                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
                             depType[arc1] = WAR;
                         }
@@ -568,8 +568,7 @@ public:
         std::vector<ListDigraph::Node>::reverse_iterator rit;
         for ( rit = order.rbegin(); rit != order.rend(); ++rit)
         {
-            auto & ins_name = name[*rit];
-            if(ins_name != "qwait")
+            if( instruction[*rit]->type() != ql::gate_type_t::__wait_gate__ )
                 insInAllCycles[ cycle[*rit] ].push_back( instruction[*rit] );
         }
 
@@ -627,7 +626,7 @@ public:
             }
         }
 
-        int bduration_in_cycles = std::ceil(bduration/cycle_time);
+        int bduration_in_cycles = std::ceil(static_cast<float>(bduration)/cycle_time);
         if( bduration_in_cycles > 1 )
             ss << "    qwait " << bduration_in_cycles -1 << '\n';
 
@@ -701,19 +700,24 @@ public:
             DOUT("");
             auto & curr_ins = instruction[*currNode];
             auto & id = curr_ins->name;
+
             std::string operation_name(id);
+            std::string operation_type; // MW/FLUX/READOUT etc
+            std::string instruction_type; // sing/two qubit
             if ( !platform.instruction_settings[id]["cc_light_instr"].is_null() )
             {
                 operation_name = platform.instruction_settings[id]["cc_light_instr"];
             }
-
-            std::string operation_type;
+            if ( !platform.instruction_settings[id]["type"].is_null() )
+            {
+                operation_type = platform.instruction_settings[id]["type"];
+            }
             if ( !platform.instruction_settings[id]["cc_light_instr_type"].is_null() )
             {
-                operation_type = platform.instruction_settings[id]["cc_light_instr_type"];
+                instruction_type = platform.instruction_settings[id]["cc_light_instr_type"];
             }
 
-            size_t operation_cycles = std::ceil( (curr_ins->duration) / cycle_time);
+            size_t operation_cycles = std::ceil( static_cast<float>(curr_ins->duration) / cycle_time);
             for( ListDigraph::OutArcIt arc(graph,*currNode); arc != INVALID; ++arc )
             {
                 ListDigraph::Node targetNode  = graph.target(arc);
@@ -727,11 +731,11 @@ public:
             while(currCycle > 0)
             {
                 DOUT("Trying to schedule: " << name[*currNode] << "  in cycle: " << currCycle);
-                if( rm.available(currCycle, instruction[*currNode], operation_name, operation_type, operation_cycles) )
+                if( rm.available(currCycle, curr_ins, operation_name, operation_type, instruction_type, operation_cycles) )
                 {
                     DOUT("Resources available, Scheduled.");
 
-                    rm.reserve(currCycle, curr_ins, operation_name, operation_type, operation_cycles);
+                    rm.reserve(currCycle, curr_ins, operation_name, operation_type, instruction_type, operation_cycles);
                     cycle[*currNode]=currCycle;
                     break;
                 }
@@ -765,7 +769,8 @@ public:
             if ( !platform.instruction_settings[id]["latency"].is_null() )
             {
                 float latency_ns = platform.instruction_settings[id]["latency"];
-                latency_cycles = (std::ceil( std::abs(latency_ns) / cycle_time)) * ql::utils::sign_of(latency_ns);
+                latency_cycles = (std::ceil( static_cast<float>(std::abs(latency_ns)) / cycle_time)) * 
+                                        ql::utils::sign_of(latency_ns);
             }
             cycle[*it] = cycle[*it] + latency_cycles;
             // DOUT( MAX_CYCLE-cycle[*it] << " <- " << name[*it] << latency_cycles );
@@ -1034,7 +1039,7 @@ public:
                     size_t iduration = ins->duration;
                     bduration = std::max(bduration, iduration);
                 }
-                abundle.duration_in_cycles = std::ceil(bduration/cycle_time);
+                abundle.duration_in_cycles = std::ceil(static_cast<float>(bduration)/cycle_time);
                 bundles.push_back(abundle);
             }
         }
@@ -1090,7 +1095,7 @@ public:
                     bduration = std::max(bduration, iduration);
                 }
                 abundle.start_cycle = TotalCycles - currCycle;
-                abundle.duration_in_cycles = std::ceil(bduration/cycle_time);
+                abundle.duration_in_cycles = std::ceil(static_cast<float>(bduration)/cycle_time);
                 bundles.push_back(abundle);
             }
         }

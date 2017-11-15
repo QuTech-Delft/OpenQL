@@ -28,17 +28,14 @@ public:
 
     resource_t(std::string n) : name(n)
     {
-        // COUT("constructing resource : " << n);
+        DOUT("constructing resource : " << n);
     }
-    virtual bool available(size_t cycle, ql::gate * ins, std::string & operation, std::string & operation_type, size_t operation_cycles)=0;
-    virtual void reserve(size_t cycle, ql::gate * ins, std::string & operation, std::string & operation_type, size_t operation_cycles)=0;
+    virtual bool available(size_t cycle, ql::gate * ins, std::string & operation_name,
+        std::string & operation_type, std::string & instruction_type, size_t operation_cycles)=0;
+    virtual void reserve(size_t cycle, ql::gate * ins, std::string & operation_name,
+        std::string & operation_type, std::string & instruction_type, size_t operation_cycles)=0;
     virtual ~resource_t() {}
 };
-
-bool inline is_measure(std::string & name)
-{
-    return ( (name).find("meas") != std::string::npos );
-}
 
 class qubit_resource_t : public resource_t
 {
@@ -54,8 +51,8 @@ public:
         }
     }
 
-    bool available(size_t cycle, ql::gate * ins, std::string & operation,
-        std::string & operation_type, size_t operation_cycles)
+    bool available(size_t cycle, ql::gate * ins, std::string & operation_name,
+        std::string & operation_type, std::string & instruction_type, size_t operation_cycles)
     {
         for( auto q : ins->operands )
         {
@@ -71,8 +68,8 @@ public:
         return true;
     }
 
-    void reserve(size_t cycle, ql::gate * ins, std::string & operation,
-        std::string & operation_type, size_t operation_cycles)
+    void reserve(size_t cycle, ql::gate * ins, std::string & operation_name,
+        std::string & operation_type, std::string & instruction_type, size_t operation_cycles)
     {
         for( auto q : ins->operands )
         {
@@ -114,11 +111,11 @@ public:
         }
     }
 
-    bool available(size_t cycle, ql::gate * ins, std::string & operation,
-        std::string & operation_type, size_t operation_cycles)
+    bool available(size_t cycle, ql::gate * ins, std::string & operation_name,
+        std::string & operation_type, std::string & instruction_type, size_t operation_cycles)
     {
-        bool is_single_qubit_gate = (operation_type == "single_qubit_gate");
-        if( is_single_qubit_gate && (!is_measure(ins->name)) )
+        bool is_mw = (operation_type == "mw");
+        if( is_mw )
         {
             for( auto q : ins->operands )
             {
@@ -127,7 +124,7 @@ public:
                        << " for operation: " << operations[ qubit2qwg[q] ]);
                 if( cycle >= state[ qubit2qwg[q] ] )
                 {
-                    if( operations[ qubit2qwg[q] ] != operation )
+                    if( operations[ qubit2qwg[q] ] != operation_name )
                     {
                         DOUT("    qwg resource busy ");
                         return false;
@@ -139,16 +136,16 @@ public:
         return true;
     }
 
-    void reserve(size_t cycle, ql::gate * ins, std::string & operation,
-        std::string & operation_type, size_t operation_cycles)
+    void reserve(size_t cycle, ql::gate * ins, std::string & operation_name,
+        std::string & operation_type, std::string & instruction_type, size_t operation_cycles)
     {
-        bool is_single_qubit_gate = (operation_type == "single_qubit_gate");
-        if( is_single_qubit_gate && (!is_measure(ins->name)) )
+        bool is_mw = (operation_type == "mw");
+        if( is_mw )
         {
             for( auto q : ins->operands )
             {
                 state[ qubit2qwg[q] ]  = cycle - (operation_cycles - 1);
-                operations[ qubit2qwg[q] ] = operation;
+                operations[ qubit2qwg[q] ] = operation_name;
                 DOUT("reserved. curr cycle: " << cycle << " qwg: " << qubit2qwg[q] 
                     << " reserved till cycle: " << state[ qubit2qwg[q] ] 
                     << " for operation: " << operations[ qubit2qwg[q] ] );
@@ -161,6 +158,7 @@ public:
 class meas_resource_t : public resource_t
 {
 public:
+    std::vector<size_t> start_cycle; // last measurement start cycle
     std::vector<size_t> state; // is busy till cycle number contained in state
     std::map<size_t,size_t> qubit2meas;
 
@@ -168,9 +166,11 @@ public:
     {
         count = platform.resources[name]["count"];
         state.resize(count);
+        start_cycle.resize(count);
 
         for(size_t i=0; i<count; i++)
         {
+            start_cycle[i] = MAX_CYCLE;            
             state[i] = MAX_CYCLE;
         }
         auto & constraints = platform.resources[name]["connection_map"];
@@ -184,19 +184,25 @@ public:
         }
     }
 
-    bool available(size_t cycle, ql::gate * ins, std::string & operation,
-        std::string & operation_type, size_t operation_cycles)
+    bool available(size_t cycle, ql::gate * ins, std::string & operation_name,
+        std::string & operation_type, std::string & instruction_type, size_t operation_cycles)
     {
-        if( is_measure(ins->name) )
+        bool is_measure = (operation_type == "readout");
+        if( is_measure )
         {
             for(auto q : ins->operands)
             {
                 DOUT(" available? curr cycle: " << cycle << "  meas: " << qubit2meas[q] 
                           << " is busy till cycle : " << state[ qubit2meas[q] ] );
-                if( cycle >= state[ qubit2meas[q] ] )
+                if( cycle != start_cycle[ qubit2meas[q] ] )
                 {
-                    DOUT("    measure resource busy ");
-                    return false;
+                    // If current measurement on same measurement-unit does not start in the
+                    // same cycle, then it should wait for current measurement to finish
+                    if( cycle >= state[ qubit2meas[q] ] )
+                    {
+                        DOUT("    measure resource busy ");
+                        return false;
+                    }
                 }
             }
             DOUT("    measure resource available ...");
@@ -204,13 +210,15 @@ public:
         return true;
     }
 
-    void reserve(size_t cycle, ql::gate * ins, std::string & operation,
-        std::string & operation_type, size_t operation_cycles)
+    void reserve(size_t cycle, ql::gate * ins, std::string & operation_name,
+        std::string & operation_type, std::string & instruction_type, size_t operation_cycles)
     {
-        if( is_measure(ins->name) )
+        bool is_measure = (operation_type == "readout");
+        if( is_measure )
         {
             for(auto q : ins->operands)
             {
+                start_cycle[ qubit2meas[q] ] = cycle;
                 state[ qubit2meas[q] ] = cycle - (operation_cycles - 1);
                 DOUT("reserved. curr cycle: " << cycle << " meas: " << qubit2meas[q] 
                     << " reserved till cycle: " << state[ qubit2meas[q] ] );
@@ -268,12 +276,12 @@ public:
         }
     }
 
-    bool available(size_t cycle, ql::gate * ins, std::string & operation,
-        std::string & operation_type, size_t operation_cycles)
+    bool available(size_t cycle, ql::gate * ins, std::string & operation_name,
+        std::string & operation_type, std::string & instruction_type, size_t operation_cycles)
     {
         auto gname = ins->name;
-        bool is_two_qubit_gate = (operation_type == "two_qubits_gate");
-        if( is_two_qubit_gate ) // 2 qubit instruction reserve edges
+        bool is_flux = (operation_type == "flux");
+        if( is_flux )
         {
             auto q0 = ins->operands[0];
             auto q1 = ins->operands[1];
@@ -307,12 +315,12 @@ public:
         return true;
     }
 
-    void reserve(size_t cycle, ql::gate * ins, std::string & operation,
-        std::string & operation_type, size_t operation_cycles)
+    void reserve(size_t cycle, ql::gate * ins, std::string & operation_name,
+        std::string & operation_type, std::string & instruction_type, size_t operation_cycles)
     {
         auto gname = ins->name;
-        bool is_two_qubit_gate = (operation_type == "two_qubits_gate");
-        if( is_two_qubit_gate ) // 2 qubit instruction reserve edges
+        bool is_flux = (operation_type == "flux");
+        if( is_flux )
         {
             auto q0 = ins->operands[0];
             auto q1 = ins->operands[1];
@@ -375,24 +383,24 @@ public:
 
         }
     }
-    bool available(size_t cycle, ql::gate * ins, std::string & operation,
-        std::string & operation_type, size_t operation_cycles)
+    bool available(size_t cycle, ql::gate * ins, std::string & operation_name,
+        std::string & operation_type, std::string & instruction_type, size_t operation_cycles)
     {
         // COUT("checking availablility of resources for: " << ins->qasm());
         for(auto rptr : resource_ptrs)
         {
-            if( rptr->available(cycle, ins, operation, operation_type, operation_cycles) == false)
+            if( rptr->available(cycle, ins, operation_name, operation_type, instruction_type, operation_cycles) == false)
                 return false;
         }
         return true;
     }
-    void reserve(size_t cycle, ql::gate * ins, std::string & operation,
-        std::string & operation_type, size_t operation_cycles)
+    void reserve(size_t cycle, ql::gate * ins, std::string & operation_name,
+        std::string & operation_type, std::string & instruction_type, size_t operation_cycles)
     {
         // COUT("reserving resources for: " << ins->qasm());
         for(auto rptr : resource_ptrs)
         {
-            rptr->reserve(cycle, ins, operation, operation_type, operation_cycles);
+            rptr->reserve(cycle, ins, operation_name, operation_type, instruction_type, operation_cycles);
         }
     }
     ~resource_manager_t()

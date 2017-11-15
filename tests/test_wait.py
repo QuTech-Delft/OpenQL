@@ -103,5 +103,56 @@ class Test_wait(unittest.TestCase):
         gold_fn = rootDir + '/golden/test_wait_sweep.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
+    def test_wait_multi(self):
+        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
+        platform = ql.Platform('seven_qubits_chip', config_fn)
+        sweep_points = [1, 2]
+        num_qubits = platform.get_qubit_number()
+        p = ql.Program('aProgram', num_qubits, platform)
+        p.set_sweep_points(sweep_points, len(sweep_points))
+
+        k = ql.Kernel('aKernel', platform)
+
+        for i in range(4):
+            k.gate("x", i)
+
+        k.gate("wait", [0, 1, 2, 3], 40)
+        k.wait([0, 1, 2, 3], 40)
+
+        for i in range(4):
+            k.gate("measure", i)
+
+        p.add_kernel(k)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        gold_fn = rootDir + '/golden/test_wait_multi.qisa'        
+        self.assertTrue( file_compare(QISA_fn, gold_fn) )
+
+    def test_wait_barrier(self):
+        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
+        platform = ql.Platform('seven_qubits_chip', config_fn)
+        sweep_points = [1, 2]
+        num_qubits = platform.get_qubit_number()
+        p = ql.Program('aProgram', num_qubits, platform)
+        p.set_sweep_points(sweep_points, len(sweep_points))
+
+        k = ql.Kernel('aKernel', platform)
+
+        k.gate("x", 0)
+        k.gate("x", 1)
+        k.gate("measure", 0)
+        k.gate("measure", 1)
+        k.gate("wait", [0, 1], 0) # this will serve as barrier
+        k.gate("y", 0)
+
+        p.add_kernel(k)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        gold_fn = rootDir + '/golden/test_wait_barrier.qisa'        
+        self.assertTrue( file_compare(QISA_fn, gold_fn) )
+
+
 if __name__ == '__main__':
     unittest.main()

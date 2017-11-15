@@ -1,0 +1,21 @@
+smis s0, {0} 
+smis s1, {1} 
+smis s2, {2} 
+smis s3, {3} 
+smis s4, {4} 
+smis s5, {5} 
+smis s6, {6} 
+smis s7, {0, 1, 2, 3, 4, 5, 6} 
+smis s8, {0, 1, 5, 6} 
+smis s9, {2, 3, 4} 
+smis s10, {0, 1} 
+
+start:
+    bs 1    x s10
+    bs 2    measz s10
+    bs 3    y s0
+    qwait 2
+    br always, start
+    nop 
+    nop
+

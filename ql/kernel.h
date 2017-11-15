@@ -175,8 +175,7 @@ public:
 
     void wait(std::vector<size_t> qubits, size_t duration)
     {
-        if(duration!=0)
-            gate("wait", qubits, duration );
+        gate("wait", qubits, duration );
     }
 
     /**
@@ -337,11 +336,8 @@ public:
         else if( gname == "swap" )       { c.push_back(new ql::swap(qubits[0], qubits[1]) ); result = true; }
         else if( gname == "wait")        
         {
-            if(duration!=0)
-            {
-                size_t duration_in_cycles = std::fmax( std::ceil(duration/cycle_time), 1);
-                c.push_back(new ql::wait(qubits, duration, duration_in_cycles));
-            }
+            size_t duration_in_cycles = std::ceil(static_cast<float>(duration)/cycle_time);
+            c.push_back(new ql::wait(qubits, duration, duration_in_cycles));
             result = true; 
         }
         else result = false;

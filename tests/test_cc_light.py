@@ -426,6 +426,8 @@ class Test_advance(unittest.TestCase):
 
         k = ql.Kernel('aKernel', platform)
 
+        # following should be packed together as measure resource is available
+        # this is because measurement is starting on different meas unit
         k.measure(0)
         k.measure(1)
 
@@ -460,9 +462,10 @@ class Test_advance(unittest.TestCase):
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
 
+        # following should be packed together as measure resource is available
+        # this is because measurement is starting in same cycle on same meas unit
         k.measure(0)
-        k.x(0)
-        k.measure(4)
+        k.measure(2)
 
         # add the kernel to the program
         p.add_kernel(k)
@@ -492,9 +495,11 @@ class Test_advance(unittest.TestCase):
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
 
+        # following should not be packed together as measurement is starting on same
+        # meas unit which is busy
         k.measure(0)
-        k.x(0)
-        k.measure(5)
+        k.wait([2], 20)
+        k.measure(2)
 
         # add the kernel to the program
         p.add_kernel(k)
