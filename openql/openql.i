@@ -9,9 +9,9 @@
 
 %module(docstring=DOCSTRING) openql
 
-%include "std_string.i"
 %include "std_vector.i"
 %include "exception.i"
+%include "std_string.i"
 
 namespace std {
    %template(vectori) vector<int>;

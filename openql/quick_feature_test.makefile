@@ -15,7 +15,7 @@ LDFLAGS=`python3-config --ldflags`
 PYTHON=python3
 
 wrapper:
-	$(SWIG) -c++ -python -castmode -o openql_wrap.cxx openql.i
+	$(SWIG) -c++ -python -castmode -modern -keyword -o openql_wrap.cxx openql.i
 
 lib:
 	g++ $(CFLAGS) -c openql_wrap.cxx

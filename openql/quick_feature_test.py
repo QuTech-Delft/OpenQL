@@ -69,7 +69,8 @@ def test_bug():
     k.gate('cz', 1, 4)
 
     p.add_kernel(k)
-    p.compile(False, 'ASAP', True)
+    # optimize=false, scheduler="ALAP", verbose=false
+    p.compile(optimize=False, scheduler='ASAP', verbose=True)
 
 
 if __name__ == '__main__':

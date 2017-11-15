@@ -1,43 +1,40 @@
-from openql import openql as ql
+import openql.openql as ql
 import os
 
 curdir = os.path.dirname(__file__)
+output_dir = os.path.join(curdir, 'test_output')
+ql.set_output_dir(output_dir)
 
-def first_example():
-    # set global options kernel
-    ql.init()
-    config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
-    platf = ql.Platform("starmon", config_fn)
-    sweep_points = [1]
-    num_circuits = 2
+def hello_openql():
+    # if you copy this example somewhere else, make sure to provide
+    # correct path of configuration file
+    config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
+    # config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
+    platform = ql.Platform("myPlatform", config_fn)
     nqubits = 2
-    p = ql.Program("my_program", nqubits, platf)
-    p.set_sweep_points(sweep_points, num_circuits)
+    p = ql.Program("aProgram", nqubits, platform)
 
-    # populate kernel using default gates
-    k = ql.Kernel("first_kernel", platf)
-    k.prepz(0)
-    k.ry90(0)
-    k.rx180(0)
-    k.measure(0)
+    # create a kernel
+    k = ql.Kernel("aKernel", platform)
 
-    # add the kernel to the program
-    p.add_kernel(k)
+    # populate kernel using default and custom gates
+    for i in range(nqubits):
+        k.prepz(i)
 
-    # populate a second kernel using both custom and default gates
-    k = ql.Kernel("second_kernel", platf)
-    k.gate("prepz", 0) # this line is equivalent to the previous
-    k.gate('rx180', 0)
-    k.rx180(1)
+    k.x(0)
+    k.hadamard(1)
     k.gate('cz', [0, 1])
-    k.gate("measure", 0)
+    k.measure(0)
+    k.gate("measure", 1)
 
     # add the kernel to the program
     p.add_kernel(k)
 
     # compile the program
-    p.compile(optimize=False, verbose=False)
+    p.compile(optimize=False, scheduler='ASAP' , verbose=True)
+
+    print('Output files are generated in {0}'.format(output_dir))
 
 
 if __name__ == '__main__':
-    first_example()
+    hello_openql()

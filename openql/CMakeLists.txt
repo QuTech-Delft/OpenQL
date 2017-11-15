@@ -11,10 +11,12 @@ INCLUDE_DIRECTORIES(
 
 # SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -Wall -Wfatal-errors")
 
-SET(CMAKE_SWIG_FLAGS "")
+# SET(CMAKE_SWIG_FLAGS -castmode -modern -keyword)
 
 SET_SOURCE_FILES_PROPERTIES(openql.i PROPERTIES CPLUSPLUS ON)
-SET_SOURCE_FILES_PROPERTIES(openql.i PROPERTIES SWIG_FLAGS "-castmode")
+# SET_SOURCE_FILES_PROPERTIES(openql.i PROPERTIES SWIG_FLAGS -castmode -modern -keyword)
+SET_PROPERTY(SOURCE openql.i PROPERTY SWIG_FLAGS -castmode -modern -keyword)
+
 # SWIG_ADD_MODULE(openql python openql.i openql.cxx)
 SWIG_ADD_MODULE(openql python openql.i)
 # SWIG_ADD_LIBRARY(openql LANGUAGE python SOURCES openql.i TYPE SHARED)
