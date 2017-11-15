@@ -170,6 +170,10 @@ public:
     {
         ql_kernel->wait(qubits, duration);
     }
+    void barrier(std::vector<size_t> qubits)
+    {
+        ql_kernel->wait(qubits, 0);
+    }
     std::string get_custom_instructions()
     {
         return ql_kernel->get_gates_definition();

@@ -293,7 +293,7 @@ public:
 
         bool is_two_qubit_gate = (gname == "cnot") || (gname == "cz") || (gname == "cphase") || (gname == "swap");
 
-        bool is_multi_qubit_gate = (gname == "wait");
+        bool is_multi_qubit_gate = (gname == "wait") || (gname == "barrier");
 
         if(is_one_qubit_gate)
         {
@@ -334,7 +334,8 @@ public:
     	else if( gname == "cz" )         { c.push_back(new ql::cphase(qubits[0], qubits[1]) ); result = true; }
     	else if( gname == "cphase" )     { c.push_back(new ql::cphase(qubits[0], qubits[1]) ); result = true; }
         else if( gname == "swap" )       { c.push_back(new ql::swap(qubits[0], qubits[1]) ); result = true; }
-        else if( gname == "wait")        
+        else if( gname == "barrier")     { c.push_back(new ql::wait(qubits, 0, 0)); result = true; }
+        else if( gname == "wait")
         {
             size_t duration_in_cycles = std::ceil(static_cast<float>(duration)/cycle_time);
             c.push_back(new ql::wait(qubits, duration, duration_in_cycles));

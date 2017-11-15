@@ -153,6 +153,33 @@ class Test_wait(unittest.TestCase):
         gold_fn = rootDir + '/golden/test_wait_barrier.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
+    def test_barrier(self):
+        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
+        platform = ql.Platform('seven_qubits_chip', config_fn)
+        sweep_points = [1, 2]
+        num_qubits = platform.get_qubit_number()
+        p = ql.Program('aProgram', num_qubits, platform)
+        p.set_sweep_points(sweep_points, len(sweep_points))
+
+        k = ql.Kernel('aKernel', platform)
+
+        k.gate("x", 0)
+        k.gate("x", 1)
+        k.gate("measure", 0)
+        k.gate("measure", 1)
+
+        # k.barrier([0, 1])
+        # OR 
+        k.gate("barrier", [0, 1])
+
+        k.gate("y", 0)
+
+        p.add_kernel(k)
+        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        gold_fn = rootDir + '/golden/test_barrier.qisa'        
+        self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
 if __name__ == '__main__':
     unittest.main()
