@@ -57,7 +57,7 @@ class Test_wait(unittest.TestCase):
 
         # wait should not be in parallel with another gate
         k.gate("x", 0)
-        k.gate("wait", [0], 20) # OR k.wait([1], 20)
+        k.gate("wait", [1], 20) # OR k.wait([0], 20)
         k.gate("x", 1)
 
         p.add_kernel(k)
@@ -141,10 +141,10 @@ class Test_wait(unittest.TestCase):
 
         k.gate("x", 0)
         k.gate("x", 1)
+        k.gate("y", 0)
+        k.gate("wait", [0, 1], 0) # this will serve as barrier
         k.gate("measure", 0)
         k.gate("measure", 1)
-        k.gate("wait", [0, 1], 0) # this will serve as barrier
-        k.gate("y", 0)
 
         p.add_kernel(k)
         p.compile(False, "ALAP", False) # optimize  scheduler  verbose
@@ -165,14 +165,14 @@ class Test_wait(unittest.TestCase):
 
         k.gate("x", 0)
         k.gate("x", 1)
-        k.gate("measure", 0)
-        k.gate("measure", 1)
+        k.gate("y", 0)
 
         # k.barrier([0, 1])
         # OR 
         k.gate("barrier", [0, 1])
 
-        k.gate("y", 0)
+        k.gate("measure", 0)
+        k.gate("measure", 1)
 
         p.add_kernel(k)
         p.compile(False, "ALAP", False) # optimize  scheduler  verbose

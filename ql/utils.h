@@ -29,7 +29,7 @@
 #define DOUT(content)
 #endif
 
-auto MAX_CYCLE = std::numeric_limits<int>::max();
+size_t MAX_CYCLE = std::numeric_limits<int>::max();
 
 namespace ql
 {

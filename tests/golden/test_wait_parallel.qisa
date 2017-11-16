@@ -11,7 +11,7 @@ smis s9, {2, 3, 4}
 
 start:
     bs 1    x s0
-    bs 2    x s1
+    bs 1    x s1
     qwait 2
     br always, start
     nop 

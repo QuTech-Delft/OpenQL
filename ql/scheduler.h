@@ -685,17 +685,17 @@ public:
 
 
     // with rc and latency compensation
-    void ScheduleALAP( ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order,
+    void ScheduleASAP( ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order,
                        ql::arch::resource_manager_t & rm, ql::quantum_platform & platform, bool verbose=false )
     {
-        if(verbose) COUT("Performing RC ALAP Scheduling");
+        if(verbose) COUT("Performing RC ASAP Scheduling");
         TopologicalSort(order);
 
-        std::vector<ListDigraph::Node>::iterator currNode = order.begin();
-        size_t currCycle=MAX_CYCLE;
-        cycle[*currNode]=currCycle;
+        std::vector<ListDigraph::Node>::reverse_iterator currNode = order.rbegin();
+        size_t currCycle=0;
+        cycle[*currNode]=currCycle; // source node
         ++currNode;
-        while(currNode != order.end() )
+        while(currNode != order.rend() )
         {
             DOUT("");
             auto & curr_ins = instruction[*currNode];
@@ -703,7 +703,7 @@ public:
 
             std::string operation_name(id);
             std::string operation_type; // MW/FLUX/READOUT etc
-            std::string instruction_type; // sing/two qubit
+            std::string instruction_type; // single / two qubit
             if ( !platform.instruction_settings[id]["cc_light_instr"].is_null() )
             {
                 operation_name = platform.instruction_settings[id]["cc_light_instr"];
@@ -717,35 +717,38 @@ public:
                 instruction_type = platform.instruction_settings[id]["cc_light_instr_type"];
             }
 
-            size_t operation_cycles = std::ceil( static_cast<float>(curr_ins->duration) / cycle_time);
-            for( ListDigraph::OutArcIt arc(graph,*currNode); arc != INVALID; ++arc )
+            size_t operation_duration = std::ceil( static_cast<float>(curr_ins->duration) / cycle_time);
+            size_t op_start_cycle=0;
+            DOUT("Scheduling " << name[*currNode]);
+            for( ListDigraph::InArcIt arc(graph,*currNode); arc != INVALID; ++arc )
             {
-                ListDigraph::Node targetNode  = graph.target(arc);
-                size_t targetCycle = cycle[targetNode];
-                if( currCycle > (targetCycle - weight[arc]) )
+                ListDigraph::Node srcNode  = graph.source(arc);
+                size_t srcCycle = cycle[srcNode];
+                if(op_start_cycle < (srcCycle + weight[arc]))
                 {
-                    currCycle = targetCycle - weight[arc];
+                    op_start_cycle = srcCycle + weight[arc];
                 }
             }
 
-            while(currCycle > 0)
+            while(op_start_cycle < MAX_CYCLE)
             {
-                DOUT("Trying to schedule: " << name[*currNode] << "  in cycle: " << currCycle);
-                if( rm.available(currCycle, curr_ins, operation_name, operation_type, instruction_type, operation_cycles) )
+                DOUT("Trying to schedule: " << name[*currNode] << "  in cycle: " << op_start_cycle);
+                DOUT("current operation_duration: " << operation_duration);
+                if( rm.available(op_start_cycle, curr_ins, operation_name, operation_type, instruction_type, operation_duration) )
                 {
                     DOUT("Resources available, Scheduled.");
 
-                    rm.reserve(currCycle, curr_ins, operation_name, operation_type, instruction_type, operation_cycles);
-                    cycle[*currNode]=currCycle;
+                    rm.reserve(op_start_cycle, curr_ins, operation_name, operation_type, instruction_type, operation_duration);
+                    cycle[*currNode]=op_start_cycle;
                     break;
                 }
                 else
                 {
                     DOUT("Resources not available, trying again ...");
-                    --currCycle; // TODO --operation_cycles
+                    ++op_start_cycle;
                 }
             }
-            if(currCycle <= 0)
+            if(op_start_cycle >= MAX_CYCLE)
             {
                 EOUT("Error: could not find schedule");
                 throw ql::exception("[x] Error : could not find schedule !",false);
@@ -753,11 +756,11 @@ public:
             ++currNode;
         }
 
-        // DOUT("Printing ALAP Schedule before latency compensation");
-        // DOUT("Cycle   Cycle-simplified    Instruction");
-        // for ( auto it = order.begin(); it != order.end(); ++it)
+        // DOUT("Printing ASAP Schedule before latency compensation");
+        // DOUT("Cycle    Instruction");
+        // for ( auto it = order.rbegin(); it != order.rend(); ++it)
         // {
-        //     DOUT( cycle[*it] << " :: " << MAX_CYCLE-cycle[*it] << "  <- " << name[*it] );
+        //     DOUT( cycle[*it] << "  <- " << name[*it] );
         // }
 
         // latency compensation
@@ -773,7 +776,7 @@ public:
                                         ql::utils::sign_of(latency_ns);
             }
             cycle[*it] = cycle[*it] + latency_cycles;
-            // DOUT( MAX_CYCLE-cycle[*it] << " <- " << name[*it] << latency_cycles );
+            // DOUT( cycle[*it] << " <- " << name[*it] << latency_cycles );
         }
 
         // re-order
@@ -784,14 +787,14 @@ public:
                 [&](ListDigraph::Node & n1, ListDigraph::Node & n2) { return cycle[n1] > cycle[n2]; }
             );
 
-        // DOUT("Printing ALAP Schedule after latency compensation");
-        // DOUT("Cycle   Cycle-simplified    Instruction");
-        // for ( auto it = order.begin(); it != order.end(); ++it)
+        // DOUT("Printing ASAP Schedule after latency compensation");
+        // DOUT("Cycle    Instruction");
+        // for ( auto it = order.rbegin(); it != order.rend(); ++it)
         // {
-        //     DOUT( cycle[*it] << "     =     " << MAX_CYCLE-cycle[*it] << "        " << name[*it] );
+        //     DOUT( cycle[*it] << "        " << name[*it] );
         // }
 
-        if(verbose) COUT("Performing RC ALAP Scheduling [Done].");
+        if(verbose) COUT("Performing RC ASAP Scheduling [Done].");
     }
 
 
@@ -1049,13 +1052,13 @@ public:
 
 
     // the following with rc and buffer-buffer delays
-    Bundles GetBundlesScheduleALAP( ql::arch::resource_manager_t & rm, ql::quantum_platform & platform, bool verbose=false )
+    Bundles GetBundlesScheduleASAP( ql::arch::resource_manager_t & rm, ql::quantum_platform & platform, bool verbose=false )
     {
-        if(verbose) COUT("RC Scheduling ALAP to get bundles ...");
+        if(verbose) COUT("RC Scheduling ASAP to get bundles ...");
         Bundles bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
-        ScheduleALAP(cycle, order, rm, platform, verbose);
+        ScheduleASAP(cycle, order, rm, platform, verbose);
 
         typedef std::vector<ql::gate*> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
@@ -1067,17 +1070,17 @@ public:
                  instruction[*it]->type() != ql::gate_type_t::__dummy_gate__ 
                )
             {
-                insInAllCycles[ MAX_CYCLE - cycle[*it] ].push_back( instruction[*it] );
+                insInAllCycles[ cycle[*it] ].push_back( instruction[*it] );
             }
         }
 
         size_t TotalCycles = 0;
         if( ! order.empty() )
         {
-            TotalCycles =  MAX_CYCLE - cycle[ *( order.rbegin() ) ];
+            TotalCycles =  cycle[ *( order.begin() ) ];
         }
 
-        for(int currCycle = TotalCycles; currCycle>=0; --currCycle)
+        for(size_t currCycle = 0; currCycle<=TotalCycles; ++currCycle)
         {
             auto it = insInAllCycles.find(currCycle);
             if( it != insInAllCycles.end() )
@@ -1094,7 +1097,7 @@ public:
                     size_t iduration = ins->duration;
                     bduration = std::max(bduration, iduration);
                 }
-                abundle.start_cycle = TotalCycles - currCycle;
+                abundle.start_cycle = currCycle;
                 abundle.duration_in_cycles = std::ceil(static_cast<float>(bduration)/cycle_time);
                 bundles.push_back(abundle);
             }
@@ -1138,7 +1141,7 @@ public:
             operations_prev_bundle = operations_curr_bundle;
         }
 
-        if(verbose) COUT("RC Scheduling ALAP to get bundles [DONE]");
+        if(verbose) COUT("RC Scheduling ASAP to get bundles [DONE]");
         return bundles;
     }
 

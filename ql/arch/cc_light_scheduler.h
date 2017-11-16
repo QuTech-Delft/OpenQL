@@ -683,7 +683,7 @@ Bundles cc_light_schedule_rc( std::string prog_name, size_t nqubits, ql::circuit
     Scheduler sched;
     sched.Init(nqubits, ckt, platform, verbose);
     // sched.PrintDot();
-    bundles1 = sched.GetBundlesScheduleALAP(rm, platform, verbose);
+    bundles1 = sched.GetBundlesScheduleASAP(rm, platform, verbose);
 
     // combine parallel instrcutions of same type from different sections
     // into a single section
