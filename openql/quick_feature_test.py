@@ -52,7 +52,10 @@ def test_none():
 
 
 def test_bug():
-    config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
+    # config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
+    config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light_bak.json')
+    # config_fn = os.path.join(curdir, '../tests/test_cfg_cc_light_buffers_latencies.json')
+
     platform  = ql.Platform('seven_qubits_chip', config_fn)
     num_qubits = 7
     p = ql.Program('aProgram', num_qubits, platform)
@@ -61,16 +64,17 @@ def test_bug():
 
     k = ql.Kernel('aKernel', platform)
 
-    for i in range(6):
-        k.prepz(i)
+    qubit = 1
+    k.prepz(qubit)
+    k.gate('x', qubit)
+    k.measure(qubit)
 
-    k.gate('cz', 2, 0)
-    k.gate('cz', 3, 5)
-    k.gate('cz', 1, 4)
+    k.prepz(qubit)
+    k.gate('x', qubit)
+    k.measure(qubit)
 
     p.add_kernel(k)
-    # optimize=false, scheduler="ALAP", verbose=false
-    p.compile(optimize=False, scheduler='ASAP', verbose=True)
+    p.compile(optimize=False, scheduler='ASAP', verbose=False)
 
 
 if __name__ == '__main__':
