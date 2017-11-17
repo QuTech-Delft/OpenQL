@@ -19,8 +19,6 @@
 #include <map>
 
 #include <stdint.h>
-// Added for windows compatibility
-#define M_PI 3.14168
 
 #include <ql/str.h>
 #include <ql/qx_interface.h>
