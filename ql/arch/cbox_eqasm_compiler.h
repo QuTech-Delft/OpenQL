@@ -19,6 +19,26 @@ namespace ql
 {
    namespace arch
    {
+
+      typedef std::pair<std::string, size_t> sch_qasm_t;
+      typedef std::pair<double,size_t>       segment_t;
+      typedef std::vector<segment_t>         waveform_t;
+
+      typedef enum __phase_t 
+      { __initialization__ , __manip__ , __readout__ } phase_t;
+
+      typedef std::pair<phase_t,size_t>  timed_phase_t;
+      typedef std::vector<timed_phase_t> timed_phases_t;
+
+
+      /**
+       * tqasm comparator
+       */
+      bool tqasm_comparator(sch_qasm_t q1, sch_qasm_t q2)
+      {
+         return (q1.second < q2.second); 
+      }
+
       /**
        * cbox eqasm compiler
        */
@@ -451,6 +471,9 @@ namespace ql
                std::vector<operation_type_t> hw_res_op(__trigger_width__+__awg_number__,__none__);
                std::vector<operation_type_t> qu_res_op(num_qubits,__none__);
 
+               std::map<std::string,size_t>   timed_qasm;
+               std::vector<sch_qasm_t> qasm_schedule;
+
                for (qumis_instruction * instr : qumis_instructions)
                {
                   resources_t      hw_res  = instr->used_resources;
@@ -460,7 +483,8 @@ namespace ql
                   size_t buf_hw    = 0;
                   size_t latest_qu = 0;
                   size_t buf_qu    = 0;
-                  // hardware dependency
+
+                  // hw deps
                   for (size_t r=0; r<hw_res.size(); ++r)
                   {
                      if (hw_res.test(r))
@@ -471,7 +495,7 @@ namespace ql
                      }
                   }
 
-                  // qubit dependency
+                  // qubit deps
                   for (size_t q : qu_res) // qubits used by the instr
                   {
                      size_t rbuf  = buffer_size(qu_res_op[q],type);
@@ -489,6 +513,13 @@ namespace ql
                   // println("[!] inserting buffer...");
 
                   instr->start = latest+buf;
+
+                  // update timed qasm
+                  std::map<std::string,size_t>::iterator it = timed_qasm.find(instr->qasm_label);
+                  if (it == timed_qasm.end())
+                     timed_qasm[instr->qasm_label] = latest+buf;
+                  qasm_schedule.push_back(sch_qasm_t(instr->qasm_label,latest+buf));
+
                   // update latest hw record
                   for (size_t r=0; r<hw_res.size(); ++r)
                   {
@@ -505,6 +536,115 @@ namespace ql
                      qu_res_op[q] = (type);
                   }
                }
+               // sch_qasm gen
+               #define __seg_unit__ (250)
+               
+               std::sort(qasm_schedule.begin(),qasm_schedule.end(),tqasm_comparator);
+               
+               const double init_level      = 0.1f;
+               const double operation_level = 0.2f;
+               const double readout_level   = 0.3f;
+
+               // init sequence
+               waveform_t init_wf;
+               init_wf.push_back(segment_t(30*0.5* 0.004 , 1500*4));
+               init_wf.push_back(segment_t(30*0.5*-0.004 , 1500*4));
+               init_wf.push_back(segment_t(30*0.5*-0.0105, 100*4));
+               init_wf.push_back(segment_t(0, 4000*4));
+               init_wf.push_back(segment_t(30*0.5*0.002, 100*4));
+               init_wf.push_back(segment_t(30*0.5*0.004, 1));  // extra 250ns
+               // manip
+               waveform_t manip_wf;
+               manip_wf.push_back(segment_t(30*0.5*0.004 , 1500*4));
+               // readout
+               waveform_t readout_wf;
+               readout_wf.push_back(segment_t(30*0.5*0.004, 1));  // extra 250ns
+               readout_wf.push_back(segment_t(30*0.5*0.000, 1500*4));
+
+               std::vector<waveform_t> wfs;
+
+               timed_phases_t tps;
+
+               phase_t p = __initialization__;
+               tps.push_back(timed_phase_t(__initialization__,1));
+
+               // println("0\t:  init");
+               for (size_t i=0; i < qasm_schedule.size(); ++i)
+               {
+                  sch_qasm_t qi = qasm_schedule[i];
+                  phase_t cp = (is_inialization(qi) ? __initialization__ : ( is_readout(qi) ? __readout__ : __manip__));
+                  if (cp != p)
+                  {
+                     // println(qi.second << "\t: " << (cp == __initialization__ ? " init " : (cp == __readout__ ? " readout " : " manip ")));
+                     tps.push_back(timed_phase_t(cp,qi.second));
+                  }
+                  p = cp;
+               }
+
+               for (size_t i=0; i<tps.size()-1; ++i)
+               {
+                  auto p = tps[i];
+                  // println("- " << p.first << " : " << (p.first == __manip__ ?  (tps[i+1].second-p.second)*ns_per_cycle/__seg_unit__ : 0));
+                  if (p.first == __initialization__)
+                     wfs.push_back(init_wf);
+                  else if (p.first == __readout__)
+                     wfs.push_back(readout_wf);
+                  else if (p.first == __manip__)
+                  {
+                     waveform_t w = manip_wf;
+                     w[0].second  = (tps[i+1].second-p.second)*ns_per_cycle/__seg_unit__; 
+                     wfs.push_back(w);
+                  }
+               }
+               wfs.push_back(readout_wf);
+               write_waveforms(wfs);
+            }
+
+            /**
+             * write waveforms sequence
+             */
+            void write_waveforms(std::vector<waveform_t>& wfs)
+            {
+               std::string file_name = ql::utils::get_output_dir() + "/waveforms_sequence.json";
+               if (verbose) println("writing waveforms sequence to '" << file_name << "'...");
+
+               std::stringstream js;
+               js << "\n{ \n   \"segment_size\" : 300,\n   \"sequence\" : [";
+               for (size_t wi=0; wi < wfs.size(); wi++)
+               {
+                  waveform_t w = wfs[wi];
+                  for (size_t si=0; si < w.size(); si++)
+                  {
+                     segment_t s = w[si];
+                     js << " [ " << s.first << ", " << s.second << "]";
+                     if (!((si == (w.size()-1)) && (wi == (wfs.size()-1))))
+                        js << ", ";
+                  }
+               }
+               js << "]\n}";
+               std::string fs = js.str();
+               str::replace_all(fs,", ,",",");
+               utils::write_file(file_name,fs);
+            }
+
+            /**
+             * is initialization
+             */
+            bool is_inialization(sch_qasm_t& i)
+            {
+               size_t f = i.first.find("prepz");
+               if (f != std::string::npos) return true;
+               return false;
+            }
+
+            /**
+             * is readout
+             */
+            bool is_readout(sch_qasm_t& i)
+            {
+               size_t f = i.first.find("measure");
+               if (f != std::string::npos) return true;
+               return false;
             }
 
             /**
