@@ -538,8 +538,16 @@ namespace ql
                }
                // sch_qasm gen
                #define __seg_unit__ (250)
-               
+               // println(">> tqasm map: ");
+               // for (std::map<std::string,size_t>::iterator it=timed_qasm.begin(); it != timed_qasm.end(); it++)
+               //    println("[ " << it->first << " : " << it->second << " ]");
+               // println(">> qasm schedule : ");
+               // for (sch_qasm_t instr : qasm_schedule)
+               //    println("[" << instr.first << " : " << instr.second << "]");
                std::sort(qasm_schedule.begin(),qasm_schedule.end(),tqasm_comparator);
+               // println(">> sorted qasm schedule : ");
+               // for (sch_qasm_t instr : qasm_schedule)
+               //   println("[" << instr.first << " : " << instr.second << "]");
                
                const double init_level      = 0.1f;
                const double operation_level = 0.2f;
@@ -566,6 +574,7 @@ namespace ql
                timed_phases_t tps;
 
                phase_t p = __initialization__;
+               // wfs.push_back(init_wf);
                tps.push_back(timed_phase_t(__initialization__,1));
 
                // println("0\t:  init");
@@ -580,11 +589,16 @@ namespace ql
                   }
                   p = cp;
                }
+               // println(" timed phases: ");
+               // for (auto p : tps)
+               //   println("- " << p.first << " : " << p.second);
 
+               // println(" tektronix vector: ");
                for (size_t i=0; i<tps.size()-1; ++i)
                {
                   auto p = tps[i];
                   // println("- " << p.first << " : " << (p.first == __manip__ ?  (tps[i+1].second-p.second)*ns_per_cycle/__seg_unit__ : 0));
+                  // println("- " << p.first << " : " << (p.first == __manip__ ?  (tps[i+1].second-p.second) : 0));
                   if (p.first == __initialization__)
                      wfs.push_back(init_wf);
                   else if (p.first == __readout__)
@@ -694,6 +708,8 @@ namespace ql
 
 
          private:
+           
+            #define __max_wait__ (32767)
 
             /**
              * emit qasm code
@@ -718,7 +734,8 @@ namespace ql
                   size_t dt = start-t;
                   if (dt)
                   {
-                     eqasm_code.push_back("wait "+std::to_string(dt));
+                     // eqasm_code.push_back("wait "+std::to_string(dt));
+                     wait(dt);
                      t = start;
                   }
                   #if 0
@@ -747,6 +764,28 @@ namespace ql
                   eqasm_code.push_back("beq r13, r13 start"); 
                if (verbose) println("eqasm compilation done.");
             }
+
+
+            /**
+             * wait instruction
+             */
+            void wait(size_t t)
+            {
+               if (t < __max_wait__)
+               {
+                  eqasm_code.push_back("wait "+std::to_string(t));
+               }
+               else
+               {
+                  size_t num_max_waits = t/__max_wait__;
+                  size_t rest          = t%__max_wait__;
+                  for (size_t i=0; i<num_max_waits; i++)
+                     eqasm_code.push_back("wait "+std::to_string(__max_wait__));
+                  if (rest)
+                     eqasm_code.push_back("wait "+std::to_string(rest));
+               }
+            }
+
 
             /**
              * process pulse
