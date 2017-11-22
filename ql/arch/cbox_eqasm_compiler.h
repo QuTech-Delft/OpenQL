@@ -49,6 +49,7 @@ namespace ql
             qumis_program_t qumis_instructions;
             size_t          num_qubits;
             size_t          ns_per_cycle;
+            size_t          max_latency = 0;
             size_t          total_exec_time = 0;
             size_t          buffer_matrix[__operation_types_num__][__operation_types_num__];
             size_t          iterations;  // loop iterations
@@ -137,7 +138,7 @@ namespace ql
                   println("(" << i << "," << j << ") :" << buffer_matrix[i][j]);
                 */
                
-               if (verbose) println("[-] loading instruction seetings...");
+               if (verbose) println("[-] loading instruction settings...");
 
                for (ql::gate * g : c)
                {
@@ -161,6 +162,8 @@ namespace ql
                         latency = __ns_to_cycle((size_t)instruction_settings[id]["latency"]);
                      else
                         throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter 'latency' of instruction '"+id+"' not specified !",false);
+
+                     max_latency = (latency > max_latency ? latency : max_latency);
                      // used qubits
                      qubit_set_t used_qubits;
                      // instruction type processing
@@ -227,14 +230,15 @@ namespace ql
                   if (verbose) println("[-] instructions loaded successfully.");
                }
 
+
                // time analysis
                total_exec_time = time_analysis();
 
-               // compensate for latencies
-               compensate_latency();
-
                // reschedule
                resechedule();
+
+               // compensate for latencies
+               compensate_latency();
 
                // dump_instructions();
 
@@ -466,8 +470,8 @@ namespace ql
                if (verbose) println("resource dependency analysis...");
                if (verbose) println("buffer insertion...");
 
-               std::vector<size_t>           hw_res_av(__trigger_width__+__awg_number__,0);
-               std::vector<size_t>           qu_res_av(num_qubits,0);
+               std::vector<size_t>           hw_res_av(__trigger_width__+__awg_number__,max_latency);
+               std::vector<size_t>           qu_res_av(num_qubits,max_latency);
                std::vector<operation_type_t> hw_res_op(__trigger_width__+__awg_number__,__none__);
                std::vector<operation_type_t> qu_res_op(num_qubits,__none__);
 
@@ -549,9 +553,9 @@ namespace ql
                // for (sch_qasm_t instr : qasm_schedule)
                //   println("[" << instr.first << " : " << instr.second << "]");
                
-               const double init_level      = 0.1f;
-               const double operation_level = 0.2f;
-               const double readout_level   = 0.3f;
+               // const double init_level      = 0.1f;
+               // const double operation_level = 0.2f;
+               // const double readout_level   = 0.3f;
 
                // init sequence
                waveform_t init_wf;

@@ -197,13 +197,13 @@
       "prepz q0" :
       {
          "duration": 1000000,
-         "latency": 0,
+         "latency": 500,
          "qubits": ["q0","q1"],
          "matrix" : [ [1.0,0.0], [0.0,0.0], [0.0,0.0], [1.0,0.0]],
          "disable_optimization": true,
          "type" : "mw",
-         "qumis_instr": "trigger_sequence", 
-         "qumis_instr_kw": { "trigger_channel": 3, "trigger_width": 2 }
+         "qumis_instr": "pulse_trigger", 
+         "qumis_instr_kw": { "trigger_channel": 3, "codeword": 7 }
       },
 
       "prepz q1" :
