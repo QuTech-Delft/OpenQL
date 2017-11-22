@@ -623,7 +623,8 @@ namespace ql
              */
             void write_waveforms(std::vector<waveform_t>& wfs)
             {
-               std::string file_name = ql::utils::get_output_dir() + "/waveforms_sequence.json";
+               // std::string file_name = ql::utils::get_output_dir() + "/waveforms_sequence.json";
+               std::string file_name = ql::utils::get_output_dir() + "/waveform_sequence.dat";
                if (verbose) println("writing waveforms sequence to '" << file_name << "'...");
 
                std::stringstream js;
