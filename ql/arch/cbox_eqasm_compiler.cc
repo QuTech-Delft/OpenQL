@@ -64,6 +64,7 @@ int main(int argc, char ** argv)
   kernel.rx90(0);    // 145ns,ch 4,cw 1
   kernel.ry90(0);    // 145ns,ch 4,cw 3
   kernel.rx180(0);   // 145ns,ch 4,cw 2
+  kernel.ry180(0);   // 145ns,ch 4,cw 2
   kernel.measure(0);
   kernel.prepz(0);
   kernel.rx180(0);   // 145ns,ch 4,cw 2
@@ -72,6 +73,7 @@ int main(int argc, char ** argv)
   kernel.prepz(1);
   kernel.rx90(1);    // 145ns,ch 4,cw 1
   kernel.ry90(1);    // 145ns,ch 4,cw 3
+  kernel.ry180(0);   // 145ns,ch 4,cw 2
   kernel.measure(1);
   kernel.prepz(1);
   kernel.rx180(1);   // 145ns,ch 4,cw 2

@@ -249,8 +249,8 @@
 
    "gate_decomposition":
    {
-      "x %0" : ["rx180 %0"],
-      "y %0" : ["ry180 %0"]
+      "x q0" : ["rx180 q0"],
+      "y q0" : ["ry180 q0"]
    },
 
    "resources" : {},

@@ -478,6 +478,8 @@ namespace ql
                std::map<std::string,size_t>   timed_qasm;
                std::vector<sch_qasm_t> qasm_schedule;
 
+               size_t execution_time = 0;
+
                for (qumis_instruction * instr : qumis_instructions)
                {
                   resources_t      hw_res  = instr->used_resources;
@@ -517,6 +519,10 @@ namespace ql
                   // println("[!] inserting buffer...");
 
                   instr->start = latest+buf;
+
+                  // update execution time
+                  size_t end_time = instr->start + instr->duration;
+                  execution_time = (end_time > execution_time ? end_time : execution_time);
 
                   // update timed qasm
                   std::map<std::string,size_t>::iterator it = timed_qasm.find(instr->qasm_label);
@@ -615,20 +621,20 @@ namespace ql
                   }
                }
                wfs.push_back(readout_wf);
-               write_waveforms(wfs);
+               write_waveforms(wfs,execution_time);
             }
 
             /**
              * write waveforms sequence
              */
-            void write_waveforms(std::vector<waveform_t>& wfs)
+            void write_waveforms(std::vector<waveform_t>& wfs, size_t execution_time)
             {
                // std::string file_name = ql::utils::get_output_dir() + "/waveforms_sequence.json";
                std::string file_name = ql::utils::get_output_dir() + "/waveform_sequence.dat";
                if (verbose) println("writing waveforms sequence to '" << file_name << "'...");
 
                std::stringstream js;
-               js << "\n{ \n   \"segment_size\" : 300,\n   \"sequence\" : [";
+               js << "\n{ \n   \"execution_time\" : " << (execution_time*ns_per_cycle/1e9) << ",\n   \"segment_size\" : 300,\n   \"sequence\" : [";
                for (size_t wi=0; wi < wfs.size(); wi++)
                {
                   waveform_t w = wfs[wi];
