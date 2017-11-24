@@ -245,7 +245,7 @@ class quantum_program
          backend_compiler->write_eqasm( ql::utils::get_output_dir() + "/" + name + ".asm");
 
          if(verbose) COUT("writing traces to '" << ( ql::utils::get_output_dir() + "/trace.dat"));
-         backend_compiler->write_traces( ql::utils::get_output_dir() + "/trace.dat");
+         if (verbose) backend_compiler->write_traces( ql::utils::get_output_dir() + "/trace.dat");
 
          // deprecated hardcoded microcode generation 
 
