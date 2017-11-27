@@ -61,6 +61,7 @@ public:
 
     void Init( size_t nQubits, ql::circuit& ckt, ql::quantum_platform platform, bool verbose=false)
     {
+        DOUT("Scheduler initialization ...");
         num_qubits = nQubits;
         cycle_time = platform.cycle_time;
 
@@ -102,7 +103,7 @@ public:
 
         for( auto ins : ckt )
         {
-            // DOUT("\nCurrent instruction : " << ins->qasm());
+            // DOUT("Current instruction : " << ins->qasm());
 
             // Add nodes
             ListDigraph::Node consNode = graph.addNode();
@@ -281,6 +282,7 @@ public:
                 depType[arc] = RAW;
             }
         }
+        DOUT("Scheduler initialization Done.");
     }
 
     void Print(bool verbose=false)
@@ -497,7 +499,7 @@ public:
         while(currNode != order.rend() )
         {
             size_t currCycle=0;
-            // COUT("Scheduling " << name[*currNode]);
+            // DOUT("Scheduling " << name[*currNode]);
             for( ListDigraph::InArcIt arc(graph,*currNode); arc != INVALID; ++arc )
             {
                 ListDigraph::Node srcNode  = graph.source(arc);
@@ -510,6 +512,8 @@ public:
             cycle[*currNode]=currCycle;
             ++currNode;
         }
+
+        if(verbose) COUT("Performing ASAP Scheduling Done.");
     }
 
     void PrintScheduleASAP(bool verbose=false)
@@ -556,6 +560,8 @@ public:
 
     std::string GetQASMScheduledASAP(bool verbose=false)
     {
+        if(verbose) COUT("Getting ASAP Scheduling QASM ...");
+
         std::stringstream ss;
 
         ListDigraph::NodeMap<size_t> cycle(graph);
@@ -630,6 +636,7 @@ public:
         if( bduration_in_cycles > 1 )
             ss << "    qwait " << bduration_in_cycles -1 << '\n';
 
+        if(verbose) COUT("Getting ASAP Scheduling QASM Done.");
         return ss.str();
     }
 

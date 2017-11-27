@@ -166,30 +166,9 @@ public:
                     std::string sub_ins = sub_instructions[i];
                     str::lower_case(sub_ins);
                     DOUT("Adding sub instr: " << sub_ins);
-
                     std::replace( sub_ins.begin(), sub_ins.end(), ',', ' ');
-
                     DOUT("After comma removal sub instr: " << sub_ins);
-
                     std::string sub_ins_adjusted(sub_ins);
-
-                    /*
-                    std::istringstream iss(sub_ins);
-                    std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
-                                     std::istream_iterator<std::string>{} };
-
-                    std::string sub_ins_adjusted = tokens[0] + " ";
-                    for(size_t t=1; t<tokens.size()-1; t++)
-                    {
-                        sub_ins_adjusted += "%" + std::to_string(t-1) + " ";
-                    }
-                    if(tokens.size() > 1)
-                    {
-                        sub_ins_adjusted += "%" + std::to_string(tokens.size()-2);
-                    }
-
-                    DOUT("Adjusted sub instr: " << sub_ins_adjusted);
-                    */
 
                     if ( instruction_map.find(sub_ins_adjusted) != instruction_map.end() )
                     {
@@ -197,48 +176,55 @@ public:
                         DOUT("using existing sub instr : " << sub_ins_adjusted);
                         gs.push_back( instruction_map[sub_ins_adjusted] );
                     }
-                    else
+                    else if( sub_ins_adjusted.find("%") != std::string::npos )
                     {
-                        // adding new sub ins
+                        // adding new sub ins if not already available
+                        // this can be done for parameterized custom instructions
                         DOUT("adding new sub instr : " << sub_ins_adjusted);
                         // sub-ins can only be custom instructions
                         instruction_map[sub_ins_adjusted] = new custom_gate(sub_ins_adjusted);
-                        // instruction_map[sub_ins_adjusted] = new composite_gate(sub_ins_adjusted);
                         gs.push_back( instruction_map[sub_ins_adjusted] );
+                    }
+                    else
+                    {
+                        // for specialized custom instructions, raise error if instruction
+                        // is not already available
+                        EOUT("custom instruction not found for '" << sub_ins_adjusted <<"'");
+                        ql::exception("[x] error : custom instruction not found for '" + sub_ins_adjusted + "'",false);
                     }
                 }
                 instruction_map[comp_ins] = new composite_gate(comp_ins, gs);
             }
         }
 
-        // load aliases
-        if (!config["aliases"].is_null())
-        {
-           aliases = config["aliases"];
-           for (json::iterator it = aliases.begin(); it != aliases.end(); ++it)
-           {
-              std::string  name = it.key();
-              println("loading alias " << name);
-              str::lower_case(name);
-              json         attr = *it; //.value();
-              // check for duplicate operations
-              if (instruction_map.find(name) != instruction_map.end())
-                 println("[!] warning : ql::hardware_configuration::load() : composite instruction '" << name << "' redefined : the old definition is overwritten !");
+        // // load aliases
+        // if (!config["aliases"].is_null())
+        // {
+        //    aliases = config["aliases"];
+        //    for (json::iterator it = aliases.begin(); it != aliases.end(); ++it)
+        //    {
+        //       std::string  name = it.key();
+        //       println("loading alias " << name);
+        //       str::lower_case(name);
+        //       json         attr = *it; //.value();
+        //       // check for duplicate operations
+        //       if (instruction_map.find(name) != instruction_map.end())
+        //          println("[!] warning : ql::hardware_configuration::load() : composite instruction '" << name << "' redefined : the old definition is overwritten !");
 
-              if (!attr.is_array())
-                 throw ql::exception("[x] error : ql::hardware_configuration::load() : 'gate_decomposition' section : gate '"+name+"' is malformed !",false);
-              std::vector<gate *> gs;
-              for (size_t i=0; i<attr.size(); ++i)
-              {
-                 std::string instr_name = attr[i];
-                 // println("checking if instruction '" << instr_name << "' is already defined...");
-                 if (instruction_map.find(instr_name) == instruction_map.end())
-                    throw ql::exception("[x] error : ql::hardware_configuration::load() : 'gate_decomposition' section : instruction "+instr_name+" composing gate '"+name+"' is not defined !",false);
-                 gs.push_back(instruction_map[instr_name]);
-              }
-              instruction_map[name] = new composite_gate(name,gs);
-           }
-        }
+        //       if (!attr.is_array())
+        //          throw ql::exception("[x] error : ql::hardware_configuration::load() : 'gate_decomposition' section : gate '"+name+"' is malformed !",false);
+        //       std::vector<gate *> gs;
+        //       for (size_t i=0; i<attr.size(); ++i)
+        //       {
+        //          std::string instr_name = attr[i];
+        //          // println("checking if instruction '" << instr_name << "' is already defined...");
+        //          if (instruction_map.find(instr_name) == instruction_map.end())
+        //             throw ql::exception("[x] error : ql::hardware_configuration::load() : 'gate_decomposition' section : instruction "+instr_name+" composing gate '"+name+"' is not defined !",false);
+        //          gs.push_back(instruction_map[instr_name]);
+        //       }
+        //       instruction_map[name] = new composite_gate(name,gs);
+        //    }
+        // }
 
 
 

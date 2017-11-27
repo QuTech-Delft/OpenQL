@@ -409,10 +409,96 @@ public:
         }
     }
 
-    // TODO optimized parameter passing
-    bool add_decomposed_gate_if_available(std::string gate_name, std::vector<size_t> all_qubits)
+    bool add_spec_decomposed_gate_if_available(std::string gate_name, std::vector<size_t> all_qubits)
     {
         bool added = false;
+        DOUT("Checking if specialized decomposition is available for " << gate_name);
+        std::string instr_parameterized = gate_name + " ";
+        size_t i;
+        for(i=0; i<all_qubits.size()-1; i++)
+        {
+            instr_parameterized += "q" + std::to_string(all_qubits[i]) + " ";
+        }
+        if(all_qubits.size() >= 1)
+        {
+            instr_parameterized += "q" + std::to_string(all_qubits[i]);
+        }
+        DOUT("decomposed specialized instruction name: " << instr_parameterized);
+
+        auto it = gate_definition.find(instr_parameterized);
+        if( it != gate_definition.end() )
+        {
+            DOUT("specialized composite gate found for " << instr_parameterized);
+            composite_gate * gptr = (composite_gate *)(it->second);
+            if( __composite_gate__ == gptr->type() )
+            {
+                DOUT("composite gate type");
+            }
+            else
+            {
+                DOUT("Not a composite gate type");
+                return false;
+            }
+
+
+            std::vector<std::string> sub_instructons;
+            get_decomposed_ins( gptr, sub_instructons );
+            for(auto & sub_ins : sub_instructons)
+            {
+                DOUT("Adding sub ins: " << sub_ins);
+                std::replace( sub_ins.begin(), sub_ins.end(), ',', ' ');
+                DOUT(" after comma removal, sub ins: " << sub_ins);
+                std::istringstream iss(sub_ins);
+
+                std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
+                                                 std::istream_iterator<std::string>{} };
+
+                std::vector<size_t> this_gate_qubits;
+                std::string & sub_ins_name = tokens[0];
+
+                for(size_t i=1; i<tokens.size(); i++)
+                {
+                    DOUT("tokens[i] : " << tokens[i]);
+                    auto sub_str_token = tokens[i].substr(1);
+                    DOUT("sub_str_token[i] : " << sub_str_token);
+                    this_gate_qubits.push_back( stoi( tokens[i].substr(1) ) );
+                }
+
+                DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
+
+                // custom gate check
+                bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits);
+                if(!custom_added)
+                {
+                    // default gate check
+                    DOUT("adding default gate for " << sub_ins_name);
+                    bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits);
+                    if( default_available )
+                    {
+                        WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                    }
+                    else
+                    {
+                        EOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                        throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+sub_ins_name+"' with " +ql::utils::to_string(this_gate_qubits,"qubits")+" is not supported by the target platform !",false);
+                    }
+                }
+            }
+            added = true;
+        }
+        else
+        {
+            DOUT("composite gate not found for " << instr_parameterized);
+        }
+
+        return added;
+    }
+
+
+    bool add_param_decomposed_gate_if_available(std::string gate_name, std::vector<size_t> all_qubits)
+    {
+        bool added = false;
+        DOUT("Checking if parameterized decomposition is available for " << gate_name);
         std::string instr_parameterized = gate_name + " ";
         size_t i;
         for(i=0; i<all_qubits.size()-1; i++)
@@ -423,14 +509,13 @@ public:
         {
             instr_parameterized += "%" + std::to_string(i);
         }
-
-        DOUT("instr_parameterized: " << instr_parameterized);
+        DOUT("decomposed parameterized instruction name: " << instr_parameterized);
 
         // check for composite ins
         auto it = gate_definition.find(instr_parameterized);
         if( it != gate_definition.end() )
         {
-            DOUT("composite gate found for " << instr_parameterized);
+            DOUT("parameterized composite gate found for " << instr_parameterized);
             composite_gate * gptr = (composite_gate *)(it->second);
             if( __composite_gate__ == gptr->type() )
             {
@@ -471,7 +556,11 @@ public:
                     // default gate check
                     DOUT("adding default gate for " << sub_ins_name);
                     bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits);
-                    if( !default_available )
+                    if( default_available )
+                    {
+                        WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                    }
+                    else
                     {
                         EOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
                         throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+sub_ins_name+"' with " +ql::utils::to_string(this_gate_qubits,"qubits")+" is not supported by the target platform !",false);
@@ -486,6 +575,7 @@ public:
         }
         return added;
     }
+
 
     /**
      * custom 1 qubit gate
@@ -519,8 +609,8 @@ public:
             }
         }
         
-        // check if composite gate is available
-        // if not, check if a parameterized composite gate is available
+        // check if specialized composite gate is available
+        // if not, check if parameterized composite gate is available
         // if not, check if a specialized custom gate is available
         // if not, check if a parameterized custom gate is available
         // if not, check if a default gate is available
@@ -529,37 +619,47 @@ public:
         str::lower_case(gname);
         DOUT("Adding gate : " << gname << " with " << ql::utils::to_string(qubits,"qubits"));
 
-        DOUT("trying to add decomposed gate for: " << gname);
-        // specialized/parameterized composite gate check
-        bool decom_added = add_decomposed_gate_if_available(gname, qubits);
-        if(decom_added)
+        // specialized composite gate check
+        DOUT("trying to add specialized decomposed gate for: " << gname);
+        bool spec_decom_added = add_spec_decomposed_gate_if_available(gname, qubits);
+        if(spec_decom_added)
         {
-            DOUT("decomposed gates added for " << gname);
+            DOUT("specialized decomposed gates added for " << gname);
         }
         else
         {
-            // specialized/parameterized custom gate check
-            DOUT("adding custom gate for " << gname);
-            bool custom_added = add_custom_gate_if_available(gname, qubits, duration);
-            if(!custom_added)
+            // parameterized composite gate check
+            DOUT("trying to add parameterized decomposed gate for: " << gname);
+            bool param_decom_added = add_param_decomposed_gate_if_available(gname, qubits);
+            if(param_decom_added)
             {
-                // default gate check (which is always parameterized)
-            	DOUT("adding default gate for " << gname);
-
-				bool default_available = add_default_gate_if_available(gname, qubits, duration);
-				if( !default_available )
-                {
-                	EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
-                	throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
-                }
-                else
-                {
-                    DOUT("default gate added for " << gname);
-                }
+                DOUT("decomposed gates added for " << gname);
             }
             else
             {
-                DOUT("custom gate added for " << gname);
+                // specialized/parameterized custom gate check
+                DOUT("adding custom gate for " << gname);
+                bool custom_added = add_custom_gate_if_available(gname, qubits, duration);
+                if(!custom_added)
+                {
+                    // default gate check (which is always parameterized)
+                	DOUT("adding default gate for " << gname);
+
+    				bool default_available = add_default_gate_if_available(gname, qubits, duration);
+    				if( default_available )
+                    {
+                        WOUT("default gate added for " << gname);
+                    }
+                    else                        
+                    {
+                    	EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+                    	throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
+                    }
+                }
+                else
+                {
+                    DOUT("custom gate added for " << gname);
+                }
             }
         }
         DOUT("");
