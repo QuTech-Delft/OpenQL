@@ -55,6 +55,7 @@ public:
     json                    hardware_settings;        // additional hardware settings (to use by the eqasm backend)
     json                    resources;
     json                    topology;
+    json                    aliases;                  // workaround the generic instruction composition
 
     // ql::eqasm_compiler *      backend_compiler;         // backend compiler
     // std::vector<ql::custom_gate *> supported_instructions; // supported operation
@@ -73,7 +74,8 @@ public:
         configuration_file_name(configuration_file_name)
     {
         ql::hardware_configuration hwc(configuration_file_name);
-        hwc.load(instruction_map, instruction_settings, hardware_settings, resources, topology);
+        // hwc.load(instruction_map, instruction_settings, hardware_settings, resources, topology);
+        hwc.load(instruction_map, instruction_settings, hardware_settings, resources, topology, aliases);
         eqasm_compiler_name = hwc.eqasm_compiler_name;
 
         if (hardware_settings["qubit_number"].is_null())

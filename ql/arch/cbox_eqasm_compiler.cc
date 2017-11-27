@@ -58,7 +58,7 @@ int main(int argc, char ** argv)
   kernel.gate("ro",0);
 #endif
 
-#if 1
+#if 0
   // test parallel triggers
   kernel.prepz(0);
   kernel.rx90(0);    // 145ns,ch 4,cw 1
@@ -85,6 +85,12 @@ int main(int argc, char ** argv)
   // kernel.identity(0);// 125ns,ch 4,cw 5
   // kernel.ry90(1);    // 145ns,ch 5,cw 3
 #endif
+
+  kernel.prepz(0);
+  kernel.ry90(0);    
+  kernel.ry180(1);   
+  kernel.measure(0);
+  // kernel.measure(1);
 
 #if 0
    // kernel.gate("measure",0);

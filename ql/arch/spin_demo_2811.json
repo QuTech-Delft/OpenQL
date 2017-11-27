@@ -230,27 +230,14 @@
          "type" : "readout",
          "qumis_instr": "trigger_sequence", 
          "qumis_instr_kw": { "trigger_channel": 3, "trigger_width": 10 }
-      },
-      
-      "measure q1" :
-      {
-         "duration": 400,
-         "latency": 0, 
-         "qubits": ["q0","q1"], 
-         "matrix" : [[0.0,0.0], [1.0,0.0], [1.0,0.0], [0.0,0.0]],
-         "disable_optimization": false,
-         "type" : "readout",
-         "qumis_instr": "trigger_sequence", 
-         "qumis_instr_kw": { "trigger_channel": 3, "trigger_width": 10 }
       }
 
    },
 
 
-   "gate_decomposition":
+   "aliases":
    {
-      "x q0" : ["rx180 q0"],
-      "y q0" : ["ry180 q0"]
+      "measure q1" : ["prepz q0", "measure q0"]
    },
 
    "resources" : {},

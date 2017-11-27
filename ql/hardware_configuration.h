@@ -47,7 +47,7 @@ public:
      * load
      */
     void load(ql::instruction_map_t& instruction_map, json& instruction_settings, json& hardware_settings,
-              json& resources, json& topology  ) throw (ql::exception)
+              json& resources, json& topology, json& aliases ) throw (ql::exception)
     {
         json config;
         try
@@ -139,7 +139,7 @@ public:
             DOUT("instruction " << name << " loaded.");
         }
 
-        // load gate decomposition/aliases
+        // load gate decomposition
         if (!config["gate_decomposition"].is_null())
         {
             json gate_decomposition = config["gate_decomposition"];
@@ -210,6 +210,38 @@ public:
                 instruction_map[comp_ins] = new composite_gate(comp_ins, gs);
             }
         }
+
+        // load aliases
+        if (!config["aliases"].is_null())
+        {
+           aliases = config["aliases"];
+           for (json::iterator it = aliases.begin(); it != aliases.end(); ++it)
+           {
+              std::string  name = it.key();
+              println("loading alias " << name);
+              str::lower_case(name);
+              json         attr = *it; //.value();
+              // check for duplicate operations
+              if (instruction_map.find(name) != instruction_map.end())
+                 println("[!] warning : ql::hardware_configuration::load() : composite instruction '" << name << "' redefined : the old definition is overwritten !");
+
+              if (!attr.is_array())
+                 throw ql::exception("[x] error : ql::hardware_configuration::load() : 'gate_decomposition' section : gate '"+name+"' is malformed !",false);
+              std::vector<gate *> gs;
+              for (size_t i=0; i<attr.size(); ++i)
+              {
+                 std::string instr_name = attr[i];
+                 // println("checking if instruction '" << instr_name << "' is already defined...");
+                 if (instruction_map.find(instr_name) == instruction_map.end())
+                    throw ql::exception("[x] error : ql::hardware_configuration::load() : 'gate_decomposition' section : instruction "+instr_name+" composing gate '"+name+"' is not defined !",false);
+                 gs.push_back(instruction_map[instr_name]);
+              }
+              instruction_map[name] = new composite_gate(name,gs);
+           }
+        }
+
+
+
     }
 
     /**
