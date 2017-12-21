@@ -46,7 +46,7 @@ class Test_QASM_Loader(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ASAP", False)
+        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_WARNING')
         
         # load qasm
         qasm_files = []
@@ -91,7 +91,7 @@ class Test_QASM_Loader(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ASAP", False)
+        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_WARNING')
         
         # load qasm
         qasm_files = []

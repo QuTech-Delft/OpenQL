@@ -35,7 +35,7 @@ def first_example():
     p.add_kernel(k)
 
     # compile the program
-    p.compile(optimize=False, verbose=False)
+    p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
 #-------------------------------------------------------------------------------
 

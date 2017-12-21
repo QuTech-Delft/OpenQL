@@ -19,16 +19,6 @@
 
 #define println(x) std::cout << "[OPENQL] "<< x << std::endl
 
-#define COUT(content) std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" "<< content << std::endl
-#define WOUT(content) std::cerr << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" Warning: "<< content << std::endl
-#define EOUT(content) std::cerr << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" Error: "<< content << std::endl
-
-#ifdef DEBUG
-#define DOUT(content)                          COUT(content)
-#else
-#define DOUT(content)
-#endif
-
 size_t MAX_CYCLE = std::numeric_limits<int>::max();
 
 namespace ql
@@ -60,7 +50,7 @@ namespace ql
          */
         void replace_all(std::string &str, std::string seq, std::string rep)
         {
-	   str::replace_all(str,seq,rep);
+            str::replace_all(str,seq,rep);
         }
 
         /**
@@ -82,9 +72,9 @@ namespace ql
             return true;
         }
 
-	/**
-	 * write content to the file <file_name>
-	 */
+        /**
+        * write content to the file <file_name>
+        */
         void write_file(std::string file_name, std::string& content)
         {
             std::ofstream file;
@@ -101,46 +91,98 @@ namespace ql
         }
 
 
-	/**
-	 * print vector
-	 */
-	 template<typename T>
-	 void print_vector(std::vector<T> v, std::string prefix="", std::string separator=" | ")
-	 {
-	    std::cout << prefix << " [";
-	    size_t sz = v.size()-1;
-	    for (size_t i=0; i<sz; ++i)
-	       std::cout << v[i] << separator; 
-	    std::cout << v[sz] << "]" << std::endl;
-	 }
+        /**
+         * print vector
+         */
+        template<typename T>
+        void print_vector(std::vector<T> v, std::string prefix="", std::string separator=" | ")
+        {
+            std::cout << prefix << " [";
+            size_t sz = v.size()-1;
+            for (size_t i=0; i<sz; ++i)
+                std::cout << v[i] << separator;
+            std::cout << v[sz] << "]" << std::endl;
+        }
 
-    template<class T>
-    std::string to_string(std::vector<T> v, std::string vector_prefix = "", 
-                          std::string elem_sep = ", ") 
-    {
-        std::ostringstream ss;
-        ss << vector_prefix << " [";
-        std::copy(v.begin(), v.end() - 1, std::ostream_iterator<T>(ss, elem_sep.c_str()) );
-        ss << v.back() << "]";
-        return ss.str();
-    }
-
-
-    template <typename T>
-    int sign_of(T val)
-    {
-        return (T(0) < val) - (val < T(0));
-    }
+        template<class T>
+        std::string to_string(std::vector<T> v, std::string vector_prefix = "",
+                              std::string elem_sep = ", ")
+        {
+            std::ostringstream ss;
+            ss << vector_prefix << " [";
+            std::copy(v.begin(), v.end() - 1, std::ostream_iterator<T>(ss, elem_sep.c_str()) );
+            ss << v.back() << "]";
+            return ss.str();
+        }
 
 
-    bool string_has(const std::string & str, const std::string & token)
-    {
-      return ( str.find(token) != std::string::npos);
-    }
+        template <typename T>
+        int sign_of(T val)
+        {
+            return (T(0) < val) - (val < T(0));
+        }
 
 
-    } // utils
-} // ql
+        bool string_has(const std::string & str, const std::string & token)
+        {
+            return ( str.find(token) != std::string::npos);
+        }
+
+
+        namespace logger
+        {
+            enum log_level_t
+            {
+                LOG_NOTHING,
+                LOG_CRITICAL,
+                LOG_ERROR,
+                LOG_WARNING,
+                LOG_INFO,
+                LOG_DEBUG
+            };
+            log_level_t LOG_LEVEL;
+
+            void set_log_level(std::string level)
+            {
+                if(level == "LOG_NOTHING") 
+                    ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_NOTHING;
+                else if(level == "LOG_CRITICAL") 
+                    ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_CRITICAL;
+                else if(level == "LOG_ERROR") 
+                    ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_ERROR;
+                else if(level == "LOG_WARNING") 
+                    ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_WARNING;
+                else if(level == "LOG_INFO")
+                    ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_INFO;
+                else if(level == "LOG_DEBUG")
+                    ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_DEBUG;
+                else
+                    std::cerr << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" Error: Unknown log level" << std::endl;
+            }
+
+        } // logger namespace
+
+    } // utils namespace
+} // ql namespace
+
+#define EOUT(content) \
+    if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_ERROR ) \
+        std::cerr << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" Error: "<< content << std::endl
+
+#define WOUT(content) \
+    if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_WARNING ) \
+        std::cerr << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" Warning: "<< content << std::endl
+
+#define IOUT(content) \
+    if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_INFO ) \
+        std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" Info: "<< content << std::endl
+
+#define DOUT(content) \
+    if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG ) \
+        std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" "<< content << std::endl
+
+#define COUT(content) \
+        std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" "<< content << std::endl
 
 #endif //QL_UTILS_H
 

@@ -246,47 +246,44 @@ public:
 };
 
 
-void PrintBundles(Bundles & bundles, bool verbose=false)
+void PrintBundles(Bundles & bundles)
 {
-    if(verbose) 
+    COUT("Printing simplified CC-Light QISA");
+
+    for (Bundle & abundle : bundles)
     {
-        COUT("Printing simplified CC-Light QISA");
+        std::cout << abundle.start_cycle << "  ";
 
-        for (Bundle & abundle : bundles)
+        for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
         {
-            std::cout << abundle.start_cycle << "  ";
-
-            for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
+            for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
             {
-                for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
+                std::cout << (*insIt)->qasm();
+                if( std::next(insIt) != secIt->end() )
                 {
-                    std::cout << (*insIt)->qasm();
-                    if( std::next(insIt) != secIt->end() )
-                    {
-                        std::cout << " , ";
-                    }
-                }
-                if( std::next(secIt) != abundle.ParallelSections.end() )
-                {
-                    std::cout << " | ";
+                    std::cout << " , ";
                 }
             }
-            std::cout << "\n";
+            if( std::next(secIt) != abundle.ParallelSections.end() )
+            {
+                std::cout << " | ";
+            }
         }
+        std::cout << "\n";
     }
 }
 
 
-void WriteCCLightQasm(std::string prog_name, size_t num_qubits, Bundles & bundles, bool verbose=false)
+void WriteCCLightQasm(std::string prog_name, size_t num_qubits, Bundles & bundles)
 {
-    if(verbose) COUT("Writing Recourse-contraint scheduled CC-Light QASM");
+    IOUT("Writing Recourse-contraint scheduled CC-Light QASM");
     ofstream fout;
     string qasmfname( ql::utils::get_output_dir() + "/" + prog_name + "_scheduled_rc.qasm");
-    COUT("Writing Recourse-contraint scheduled CC-Light QASM to " << qasmfname);
+    IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << qasmfname);
     fout.open( qasmfname, ios::binary);
     if ( fout.fail() )
     {
-        COUT("Error opening file " << qasmfname << std::endl
+        EOUT("opening file " << qasmfname << std::endl
                  << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
         return;
     }
@@ -341,7 +338,7 @@ void WriteCCLightQasm(std::string prog_name, size_t num_qubits, Bundles & bundle
         fout << "\n    qwait " << lbduration -1 << '\n';
 
     fout.close();
-    if(verbose) COUT("Writing Recourse-contraint scheduled CC-Light QASM [Done]");
+    IOUT("Writing Recourse-contraint scheduled CC-Light QASM [Done]");
 }
 
 std::string get_cc_light_instruction_name(std::string & id, ql::quantum_platform & platform)
@@ -368,16 +365,16 @@ std::string get_cc_light_instruction_name(std::string & id, ql::quantum_platform
 }
 
 void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
-    Bundles & bundles, bool verbose=false)
+    Bundles & bundles)
 {
-    if(verbose) COUT("Generating CC-Light QISA");
+    IOUT("Generating CC-Light QISA");
 
     ofstream fout;
     string qisafname( ql::utils::get_output_dir() + "/" + prog_name + ".qisa");
     fout.open( qisafname, ios::binary);
     if ( fout.fail() )
     {
-        COUT("Error opening file " << qisafname << std::endl
+        EOUT("opening file " << qisafname << std::endl
                  << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
         return;
     }
@@ -490,23 +487,23 @@ void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, Ma
     //     std::cout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
     // }
 
-    COUT("Writing CC-Light QISA to " << qisafname);
+    IOUT("Writing CC-Light QISA to " << qisafname);
     fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
     fout.close();
-    if(verbose) COUT("Generating CC-Light QISA [Done]");
+    IOUT("Generating CC-Light QISA [Done]");
 }
 
 
 void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
-    Bundles & bundles, bool verbose=false)
+    Bundles & bundles)
 {
-    if(verbose) COUT("Generating Time-stamped CC-Light QISA");
+    IOUT("Generating Time-stamped CC-Light QISA");
     ofstream fout;
     string qisafname( ql::utils::get_output_dir() + "/" + prog_name + ".tqisa");
     fout.open( qisafname, ios::binary);
     if ( fout.fail() )
     {
-        COUT("Error opening file " << qisafname << std::endl
+        EOUT("opening file " << qisafname << std::endl
                  << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
         return;
     }
@@ -595,31 +592,24 @@ void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & p
     ssbundles << std::setw(8) << curr_cycle++ << ":    nop \n";
     ssbundles << std::setw(8) << curr_cycle++ << ":    nop" << endl;
 
-
-    // if(verbose)
-    // {
-    //     COUT("Printing Time-stamped CC-Light QISA");
-    //     std::cout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
-    // }
-
-    COUT("Writing Time-stamped CC-Light QISA to " << qisafname);
+    IOUT("Writing Time-stamped CC-Light QISA to " << qisafname);
     fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
     fout.close();
 
-    if(verbose) COUT("Generating Time-stamped CC-Light QISA [Done]");
+    IOUT("Generating Time-stamped CC-Light QISA [Done]");
 }
 
 
 Bundles cc_light_schedule(  std::string prog_name, size_t nqubits, ql::circuit & ckt,
-                            ql::quantum_platform & platform, bool verbose=false)
+                            ql::quantum_platform & platform)
 {
     Bundles bundles1;
 
-    if(verbose) COUT("Scheduling CC-Light instructions ...");
+    IOUT("Scheduling CC-Light instructions ...");
     Scheduler sched;
-    sched.Init(nqubits, ckt, platform, verbose);
+    sched.Init(nqubits, ckt, platform);
     // sched.PrintDot();
-    bundles1 = sched.GetBundlesScheduleALAP(verbose);
+    bundles1 = sched.GetBundlesScheduleALAP();
 
     // combine parallel instrcutions of same type from different sections
     // into a single section
@@ -668,22 +658,22 @@ Bundles cc_light_schedule(  std::string prog_name, size_t nqubits, ql::circuit &
         bundles2.push_back(abundle2);
     }
 
-    if(verbose) COUT("Scheduling CC-Light instructions [Done].");
+    IOUT("Scheduling CC-Light instructions [Done].");
     return bundles2;
 }
 
 
 Bundles cc_light_schedule_rc( std::string prog_name, size_t nqubits, ql::circuit & ckt,
-                              ql::quantum_platform & platform, bool verbose=false)
+                              ql::quantum_platform & platform)
 {
     Bundles bundles1;
 
-    if(verbose) COUT("Resource constraint scheduling of CC-Light instructions ...");
+    IOUT("Resource constraint scheduling of CC-Light instructions ...");
     resource_manager_t rm(platform);
     Scheduler sched;
-    sched.Init(nqubits, ckt, platform, verbose);
+    sched.Init(nqubits, ckt, platform);
     // sched.PrintDot();
-    bundles1 = sched.GetBundlesScheduleASAP(rm, platform, verbose);
+    bundles1 = sched.GetBundlesScheduleASAP(rm, platform);
 
     // combine parallel instrcutions of same type from different sections
     // into a single section
@@ -732,7 +722,7 @@ Bundles cc_light_schedule_rc( std::string prog_name, size_t nqubits, ql::circuit
         bundles2.push_back(abundle2);
     }
 
-    if(verbose) COUT("Resource constraint scheduling of CC-Light instructions [Done].");
+    IOUT("Resource constraint scheduling of CC-Light instructions [Done].");
     return bundles2;
 }
 

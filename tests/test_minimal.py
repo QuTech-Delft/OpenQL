@@ -35,12 +35,8 @@ class Test_kernel(unittest.TestCase):
         # add kernel to program
         p.add_kernel(k)
 
-        # compile  opt  verbose
-        p.compile(False, True)
-
-        # schedule
-        p.schedule()
-
+        # compile  the program
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_INFO')
         # all the outputs are generated in 'output' dir
 
 if __name__ == '__main__':

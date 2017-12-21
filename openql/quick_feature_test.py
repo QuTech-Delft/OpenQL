@@ -30,15 +30,21 @@ def test_cclight():
         k.measure(i)
 
     p.add_kernel(k)
-    p.compile(False, "ALAP", True)
+
+    # LOG_NOTHING,
+    # LOG_CRITICAL,
+    # LOG_ERROR,
+    # LOG_WARNING,
+    # LOG_INFO,
+    # LOG_DEBUG
+
+    p.compile(optimize=False, scheduler='ASAP', log_level='LOG_INFO')
 
 def test_none():
     config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
     platform  = ql.Platform('platform_none', config_fn)
     num_qubits = 5
     p = ql.Program('aProgram', num_qubits, platform)
-    # sweep_points = [1,2]
-    # p.set_sweep_points(sweep_points, len(sweep_points))
 
     k = ql.Kernel('aKernel', platform)
 
@@ -48,33 +54,8 @@ def test_none():
     k.gate("cz", [2, 3])
 
     p.add_kernel(k)
-    p.compile(False, "ASAP", True)
+    p.compile(optimize=False, scheduler='ASAP', log_level='LOG_CRITICAL')
 
-
-def test_bug():
-    # config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
-    config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light_bak.json')
-    # config_fn = os.path.join(curdir, '../tests/test_cfg_cc_light_buffers_latencies.json')
-
-    platform  = ql.Platform('seven_qubits_chip', config_fn)
-    num_qubits = 7
-    p = ql.Program('aProgram', num_qubits, platform)
-    sweep_points = [1,2]
-    p.set_sweep_points(sweep_points, len(sweep_points))
-
-    k = ql.Kernel('aKernel', platform)
-
-    qubit = 1
-    k.prepz(qubit)
-    k.gate('x', qubit)
-    k.measure(qubit)
-
-    k.prepz(qubit)
-    k.gate('x', qubit)
-    k.measure(qubit)
-
-    p.add_kernel(k)
-    p.compile(optimize=False, scheduler='ASAP', verbose=False)
 
 def test_gate_decomp():
     # config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
@@ -89,40 +70,14 @@ def test_gate_decomp():
     # print(k.get_custom_instructions())
 
     k.gate('prepz', 1)
-    k.gate('x', 1) # will use custom gate
+    k.gate('x', 1)  # will use custom gate
     k.gate('x1', 0) # will use parameterized decomposition
     k.gate('x2', 1) # will use specialized decomposition
     k.gate('measure', 1)
 
     p.add_kernel(k)
-    p.compile(optimize=False, scheduler='ASAP', verbose=False)
+    p.compile(optimize=False, scheduler='ASAP', log_level='LOG_CRITICAL')
 
 
 if __name__ == '__main__':
-    test_gate_decomp()
-
-      # "x1 %0" : ["rx180 %0", "ry180 %0"],
-      # "x2 q1" : ["rx180 q1", "i q1", "ry180 q1"]
-
-   # "gate_decomposition": {
-   #    "x q0" : ["rx180 q0"],
-   #    "y q0" : ["ry180 q0"],
-   #    "z q0" : ["ry180 q0","rx180 q0"],
-   #    "h q0" : ["ry90 q0"],
-   #    "cnot q0,q1" : ["ry90 q1","cz q0,q1","ry90 q1"]
-   # },
-
-      # "ry180 q1" : {
-      #    "duration": 40,
-      #    "latency": 20,
-      #    "qubits": ["q1"],
-      #    "matrix" : [ [0.0,0.0], [1.0,0.0],
-      #            [1.0,0.0], [0.0,0.0] ], 
-      #    "disable_optimization": false,
-      #    "type" : "mw",
-      #    "qumis_instr": "pulse",
-      #    "qumis_instr_kw": {
-      #       "codeword": 3, 
-      #       "awg_nr": 0
-      #    }
-      # },
+    test_cclight()

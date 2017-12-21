@@ -88,7 +88,7 @@ class Test_kernel(unittest.TestCase):
         p.add_kernel(k1)
         p.add_kernel(k2)
 
-        p.compile(False, "ALAP", False)
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         # load qasm
         qasm_files = []

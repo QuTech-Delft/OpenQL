@@ -42,7 +42,7 @@ class Test_kernel(unittest.TestCase):
         p.add_kernel(k)
 
         # compile  opt  verbose
-        p.compile(False, "ASAP", True)
+        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_WARNING')
 
         # load qasm
         qasm_files = []

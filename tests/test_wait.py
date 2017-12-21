@@ -38,7 +38,7 @@ class Test_wait(unittest.TestCase):
         k.gate("x", 0)
 
         p.add_kernel(k)
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_simple.qisa'        
@@ -61,7 +61,7 @@ class Test_wait(unittest.TestCase):
         k.gate("x", 1)
 
         p.add_kernel(k)
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_parallel.qisa'        
@@ -97,7 +97,7 @@ class Test_wait(unittest.TestCase):
             p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ASAP", True)
+        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_WARNING')
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_sweep.qisa'        
@@ -123,7 +123,7 @@ class Test_wait(unittest.TestCase):
             k.gate("measure", i)
 
         p.add_kernel(k)
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_multi.qisa'        
@@ -147,7 +147,7 @@ class Test_wait(unittest.TestCase):
         k.gate("measure", 1)
 
         p.add_kernel(k)
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_barrier.qisa'        
@@ -175,7 +175,7 @@ class Test_wait(unittest.TestCase):
         k.gate("measure", 1)
 
         p.add_kernel(k)
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_barrier.qisa'        
