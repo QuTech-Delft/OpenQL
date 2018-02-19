@@ -161,7 +161,7 @@ public:
                 auto codeword   = i["cc_light_codeword"];
                 control_store << "     " << i["cc_light_opcode"] << ":     " << condition << "          " << optype << "          " << codeword << "          0          0\n";
             }
-            else if (i["cc_light_instr_type"] == "two_qubits_gate")
+            else if (i["cc_light_instr_type"] == "two_qubit_gate")
             {
                 size_t opcode     = i["cc_light_opcode"];
                 if (opcode_set.find(opcode) != opcode_set.end())
@@ -242,9 +242,9 @@ public:
                     cc_light_single_qubit_gate * instr = new cc_light_single_qubit_gate(operation,single_qubit_mask(g->operands[0]));
                     cc_light_eqasm_instructions.push_back(instr);
                 }
-                else if (instr_type == "two_qubits_gate")
+                else if (instr_type == "two_qubit_gate")
                 {
-                    cc_light_two_qubits_gate * instr = new cc_light_two_qubits_gate(operation,two_qubits_mask(qubit_pair_t(g->operands[0],g->operands[1])));
+                    cc_light_two_qubit_gate * instr = new cc_light_two_qubit_gate(operation,two_qubit_mask(qubit_pair_t(g->operands[0],g->operands[1])));
                     cc_light_eqasm_instructions.push_back(instr);
                 }
                 else   // unknown type of operation
