@@ -2,7 +2,7 @@
  * @file   interactionMatrix.h
  * @date   06/2017
  * @author Imran Ashraf
- * @brief  ASAP/AlAP scheduling
+ * @brief  qubit interaction matrix
  */
 
 

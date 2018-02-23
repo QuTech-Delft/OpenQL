@@ -17,8 +17,11 @@
 #include "utils.h"
 #include "gate.h"
 #include "optimizer.h"
+#include "ql/ir.h"
+
 #ifndef __disable_lemon__
 #include "scheduler.h"
+
 #endif // __disable_lemon__
 
 namespace ql
@@ -758,7 +761,9 @@ public:
             // sched.PrintDotScheduleASAP();
             // sched_dot = sched.GetDotScheduleASAP();
             // sched.PrintQASMScheduledASAP();
-            sched_qasm = sched.GetQASMScheduledASAP();
+            ql::ir::bundles_t bundles = sched.schedule_asap();
+            sched_qasm = ql::ir::qasm(bundles);
+
         }
         else if("ALAP" == scheduler)
         {
@@ -766,7 +771,8 @@ public:
             // sched.PrintDotScheduleALAP();
             // sched_dot = sched.GetDotScheduleALAP();
             // sched.PrintQASMScheduledALAP();
-            sched_qasm = sched.GetQASMScheduledALAP();
+            ql::ir::bundles_t bundles = sched.schedule_alap();
+            sched_qasm = ql::ir::qasm(bundles);
         }
         else
         {

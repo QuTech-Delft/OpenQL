@@ -2,7 +2,7 @@
  * @file   cc_light_scheduler.h
  * @date   08/2017
  * @author Imran Ashraf
- * @brief  resource-constraint scheduler and code generator for cc light
+ * @brief  resource-constraint scheduler and code generator for cc-light
  */
 
 #ifndef CC_LIGHT_SCHEDULER_H
@@ -16,6 +16,7 @@
 
 #include <ql/utils.h>
 #include <ql/gate.h>
+#include <ql/ir.h>
 #include <ql/circuit.h>
 #include <ql/scheduler.h>
 #include <ql/arch/cc_light_resource_manager.h>
@@ -32,8 +33,6 @@ namespace ql
 namespace arch
 {
 
-// TODO systematic
-// typedef size_t                     qubit_t;
 typedef std::vector<size_t>        qubit_set_t;
 typedef std::pair<size_t,size_t>   qubit_pair_t;
 typedef std::vector<qubit_pair_t>  qubit_pair_set_t;
@@ -246,15 +245,15 @@ public:
 };
 
 
-void PrintBundles(Bundles & bundles)
+void PrintBundles(ql::ir::bundles_t & bundles)
 {
     COUT("Printing simplified CC-Light QISA");
 
-    for (Bundle & abundle : bundles)
+    for (ql::ir::bundle_t & abundle : bundles)
     {
         std::cout << abundle.start_cycle << "  ";
 
-        for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
+        for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
         {
             for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
             {
@@ -264,7 +263,7 @@ void PrintBundles(Bundles & bundles)
                     std::cout << " , ";
                 }
             }
-            if( std::next(secIt) != abundle.ParallelSections.end() )
+            if( std::next(secIt) != abundle.parallel_sections.end() )
             {
                 std::cout << " | ";
             }
@@ -274,7 +273,7 @@ void PrintBundles(Bundles & bundles)
 }
 
 
-void WriteCCLightQasm(std::string prog_name, size_t num_qubits, Bundles & bundles)
+void WriteCCLightQasm(std::string prog_name, size_t num_qubits, ql::ir::bundles_t & bundles)
 {
     IOUT("Writing Recourse-contraint scheduled CC-Light QASM");
     ofstream fout;
@@ -291,7 +290,7 @@ void WriteCCLightQasm(std::string prog_name, size_t num_qubits, Bundles & bundle
     size_t curr_cycle=1;
     fout <<"qubits " << num_qubits << "\n\n"
          << ".fused_kernels";
-    for (Bundle & abundle : bundles)
+    for ( ql::ir::bundle_t & abundle : bundles)
     {
         auto bcycle = abundle.start_cycle;
         auto delta = bcycle - curr_cycle;
@@ -302,7 +301,7 @@ void WriteCCLightQasm(std::string prog_name, size_t num_qubits, Bundles & bundle
 
         std::stringstream ssbundles;
         size_t icount=0;
-        for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
+        for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
         {
             for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
             {
@@ -313,7 +312,7 @@ void WriteCCLightQasm(std::string prog_name, size_t num_qubits, Bundles & bundle
                 }
                 icount++;
             }
-            if( std::next(secIt) != abundle.ParallelSections.end() )
+            if( std::next(secIt) != abundle.parallel_sections.end() )
             {
                 ssbundles << " | ";
             }
@@ -365,7 +364,7 @@ std::string get_cc_light_instruction_name(std::string & id, ql::quantum_platform
 }
 
 void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
-    Bundles & bundles)
+    ql::ir::bundles_t & bundles)
 {
     IOUT("Generating CC-Light QISA");
 
@@ -384,7 +383,7 @@ void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, Ma
     size_t curr_cycle=0; // first instruction should be with pre-interval 1, 'bs 1'
 
     ssbundles << "start:" << "\n";
-    for (Bundle & abundle : bundles)
+    for (ql::ir::bundle_t & abundle : bundles)
     {
         auto bcycle = abundle.start_cycle;
         auto delta = bcycle - curr_cycle;
@@ -395,7 +394,7 @@ void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, Ma
             ssbundles << "    qwait " << delta-1 << "\n"
                       << "    bs 1    ";
 
-        for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
+        for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
         {
             qubit_set_t squbits;
             qubit_pair_set_t dqubits;
@@ -464,7 +463,7 @@ void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, Ma
                 ssbundles << cc_light_instr_name << " " << rname;
             }
 
-            if( std::next(secIt) != abundle.ParallelSections.end() )
+            if( std::next(secIt) != abundle.parallel_sections.end() )
             {
                 ssbundles << " | ";
             }
@@ -495,7 +494,7 @@ void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, Ma
 
 
 void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
-    Bundles & bundles)
+    ql::ir::bundles_t & bundles)
 {
     IOUT("Generating Time-stamped CC-Light QISA");
     ofstream fout;
@@ -512,7 +511,7 @@ void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & p
     std::stringstream ssbundles;
     size_t curr_cycle=0; // first instruction should be with pre-interval 1, 'bs 1'
     ssbundles << "start:" << "\n";
-    for (Bundle & abundle : bundles)
+    for (ql::ir::bundle_t & abundle : bundles)
     {
         auto bcycle = abundle.start_cycle;
         auto delta = bcycle - curr_cycle;
@@ -523,7 +522,7 @@ void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & p
             ssbundles << std::setw(8) << curr_cycle << ":    qwait " << delta-1 << "\n"
                       << std::setw(8) << curr_cycle + (delta-1) << ":    bs 1    ";
 
-        for( auto secIt = abundle.ParallelSections.begin(); secIt != abundle.ParallelSections.end(); ++secIt )
+        for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
         {
             qubit_set_t squbits;
             qubit_pair_set_t dqubits;
@@ -574,7 +573,7 @@ void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & p
                 ssbundles << cc_light_instr_name << " " << rname;
             }
 
-            if( std::next(secIt) != abundle.ParallelSections.end() )
+            if( std::next(secIt) != abundle.parallel_sections.end() )
             {
                 ssbundles << " | ";
             }
@@ -600,24 +599,22 @@ void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & p
 }
 
 
-Bundles cc_light_schedule(  std::string prog_name, size_t nqubits, ql::circuit & ckt,
+ql::ir::bundles_t cc_light_schedule(  std::string prog_name, size_t nqubits, ql::circuit & ckt,
                             ql::quantum_platform & platform)
 {
-    Bundles bundles1;
-
     IOUT("Scheduling CC-Light instructions ...");
     Scheduler sched;
     sched.Init(nqubits, ckt, platform);
     // sched.PrintDot();
-    bundles1 = sched.GetBundlesScheduleALAP();
+    ql::ir::bundles_t bundles1 = sched.schedule_asap();
 
     // combine parallel instrcutions of same type from different sections
     // into a single section
-    for (Bundle & abundle : bundles1)
+    for (ql::ir::bundle_t & abundle : bundles1)
     {
-        for( auto secIt1 = abundle.ParallelSections.begin(); secIt1 != abundle.ParallelSections.end(); ++secIt1 )
+        for( auto secIt1 = abundle.parallel_sections.begin(); secIt1 != abundle.parallel_sections.end(); ++secIt1 )
         {
-            for( auto secIt2 = std::next(secIt1); secIt2 != abundle.ParallelSections.end(); ++secIt2)
+            for( auto secIt2 = std::next(secIt1); secIt2 != abundle.parallel_sections.end(); ++secIt2)
             {
                 auto insIt1 = secIt1->begin();
                 auto insIt2 = secIt2->begin();
@@ -642,17 +639,17 @@ Bundles cc_light_schedule(  std::string prog_name, size_t nqubits, ql::circuit &
     }
 
     // remove empty sections
-    Bundles bundles2;
-    for (Bundle & abundle1 : bundles1)
+    ql::ir::bundles_t bundles2;
+    for (ql::ir::bundle_t & abundle1 : bundles1)
     {
-        Bundle abundle2;
+        ql::ir::bundle_t abundle2;
         abundle2.start_cycle = abundle1.start_cycle;
         abundle2.duration_in_cycles = abundle1.duration_in_cycles;
-        for(auto & sec : abundle1.ParallelSections)
+        for(auto & sec : abundle1.parallel_sections)
         {
             if( !sec.empty() )
             {
-                abundle2.ParallelSections.push_back(sec);
+                abundle2.parallel_sections.push_back(sec);
             }
         }
         bundles2.push_back(abundle2);
@@ -663,25 +660,23 @@ Bundles cc_light_schedule(  std::string prog_name, size_t nqubits, ql::circuit &
 }
 
 
-Bundles cc_light_schedule_rc( std::string prog_name, size_t nqubits, ql::circuit & ckt,
+ql::ir::bundles_t cc_light_schedule_rc( std::string prog_name, size_t nqubits, ql::circuit & ckt,
                               ql::quantum_platform & platform)
 {
-    Bundles bundles1;
-
     IOUT("Resource constraint scheduling of CC-Light instructions ...");
     resource_manager_t rm(platform);
     Scheduler sched;
     sched.Init(nqubits, ckt, platform);
     // sched.PrintDot();
-    bundles1 = sched.GetBundlesScheduleASAP(rm, platform);
+    ql::ir::bundles_t bundles1 = sched.schedule_asap(rm, platform);
 
     // combine parallel instrcutions of same type from different sections
     // into a single section
-    for (Bundle & abundle : bundles1)
+    for (ql::ir::bundle_t & abundle : bundles1)
     {
-        for( auto secIt1 = abundle.ParallelSections.begin(); secIt1 != abundle.ParallelSections.end(); ++secIt1 )
+        for( auto secIt1 = abundle.parallel_sections.begin(); secIt1 != abundle.parallel_sections.end(); ++secIt1 )
         {
-            for( auto secIt2 = std::next(secIt1); secIt2 != abundle.ParallelSections.end(); ++secIt2)
+            for( auto secIt2 = std::next(secIt1); secIt2 != abundle.parallel_sections.end(); ++secIt2)
             {
                 auto insIt1 = secIt1->begin();
                 auto insIt2 = secIt2->begin();
@@ -706,17 +701,17 @@ Bundles cc_light_schedule_rc( std::string prog_name, size_t nqubits, ql::circuit
     }
 
     // remove empty sections
-    Bundles bundles2;
-    for (Bundle & abundle1 : bundles1)
+    ql::ir::bundles_t bundles2;
+    for (ql::ir::bundle_t & abundle1 : bundles1)
     {
-        Bundle abundle2;
+        ql::ir::bundle_t abundle2;
         abundle2.start_cycle = abundle1.start_cycle;
         abundle2.duration_in_cycles = abundle1.duration_in_cycles;
-        for(auto & sec : abundle1.ParallelSections)
+        for(auto & sec : abundle1.parallel_sections)
         {
             if( !sec.empty() )
             {
-                abundle2.ParallelSections.push_back(sec);
+                abundle2.parallel_sections.push_back(sec);
             }
         }
         bundles2.push_back(abundle2);

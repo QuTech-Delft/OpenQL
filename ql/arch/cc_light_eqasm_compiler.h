@@ -9,6 +9,7 @@
 #define QL_CC_LIGHT_EQASM_COMPILER_H
 
 #include <ql/platform.h>
+#include <ql/ir.h>
 #include <ql/eqasm_compiler.h>
 #include <ql/arch/cc_light_eqasm.h>
 
@@ -262,17 +263,18 @@ public:
         */
 
         // schedule with platform constraints
-        // Bundles sched_bundles = cc_light_schedule(prog_name, nqubits, c, platform);
-        Bundles sched_bundles = cc_light_schedule_rc(prog_name, num_qubits, c, platform);
+        // ql::ir sched_ir = cc_light_schedule(prog_name, num_qubits, c, platform);
+        ql::ir::bundles_t bundles = cc_light_schedule_rc(prog_name, num_qubits, c, platform);
 
-        WriteCCLightQasm(prog_name, num_qubits, sched_bundles);
+        // print scheduled bundles with parallelism
+        WriteCCLightQasm(prog_name, num_qubits, bundles);
 
         MaskManager mask_manager;
         // print scheduled bundles with parallelism in cc-light syntax
-        WriteCCLightQisa(prog_name, platform, mask_manager, sched_bundles);
+        WriteCCLightQisa(prog_name, platform, mask_manager, bundles);
 
         // print scheduled bundles with parallelism in cc-light syntax with time-stamps
-        WriteCCLightQisaTimeStamped(prog_name, platform, mask_manager, sched_bundles);
+        WriteCCLightQisaTimeStamped(prog_name, platform, mask_manager, bundles);
 
         // time analysis
         // total_exec_time = time_analysis();
