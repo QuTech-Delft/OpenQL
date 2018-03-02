@@ -42,7 +42,7 @@ class Test_qubits(unittest.TestCase):
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         p.add_kernel(k)  # add kernel to program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         gold_fn = rootDir + '/golden/test_1_qubit.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
@@ -68,7 +68,7 @@ class Test_qubits(unittest.TestCase):
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         p.add_kernel(k)  # add kernel to program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         gold_fn = rootDir + '/golden/test_2_qubit.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
@@ -93,7 +93,7 @@ class Test_qubits(unittest.TestCase):
 
         p.add_kernel(k)  # add kernel to program
 
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         gold_fn = rootDir + '/golden/test_3_qubit.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')

@@ -27,7 +27,6 @@ namespace ql
    class eqasm_compiler
    {
       public:
-
          eqasm_t eqasm_code;
 
       public:
@@ -35,7 +34,7 @@ namespace ql
     /*
 	  * compile must be implemented by all compilation backends.
 	  */
-	 virtual void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& p, bool verbose) = 0;
+	 virtual void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& p) = 0;
 
 	 /**
 	  * write eqasm code to file/stdout
@@ -56,13 +55,13 @@ namespace ql
           std::ofstream file(file_name);
           if (file.is_open())
           {
-             println("writing eqasm code (" << eqasm_code.size() << " lines) to '" << file_name << "' ...");
+             IOUT("writing eqasm code (" << eqasm_code.size() << " lines) to '" << file_name << "' ...");
              for (std::string l : eqasm_code)
                 file << l << std::endl;
              file.close();
           }
           else 
-             println("[x] error : when opening file '" << file_name << "' !");
+             EOUT("opening file '" << file_name << "' !");
        }
     }
 

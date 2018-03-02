@@ -59,7 +59,7 @@ public:
     Scheduler(): instruction(graph), name(graph), weight(graph),
         cause(graph), depType(graph), dist(graph) {}
 
-    void Init( size_t nQubits, ql::circuit& ckt, ql::quantum_platform platform, bool verbose=false)
+    void Init( size_t nQubits, ql::circuit& ckt, ql::quantum_platform platform)
     {
         DOUT("Scheduler initialization ...");
         num_qubits = nQubits;
@@ -285,9 +285,9 @@ public:
         DOUT("Scheduler initialization Done.");
     }
 
-    void Print(bool verbose=false)
+    void Print()
     {
-        if(verbose) COUT("Printing Dependence Graph ");
+        COUT("Printing Dependence Graph ");
         digraphWriter(graph).
         nodeMap("name", name).
         arcMap("cause", cause).
@@ -298,15 +298,15 @@ public:
         run();
     }
 
-    void PrintMatrix(bool verbose=false)
+    void PrintMatrix()
     {
-        if(verbose) COUT("Printing Dependence Graph as Matrix");
+        COUT("Printing Dependence Graph as Matrix");
         ofstream fout;
         string datfname( ql::utils::get_output_dir() + "/dependenceMatrix.dat");
         fout.open( datfname, ios::binary);
         if ( fout.fail() )
         {
-            COUT("Error opening file " << datfname << std::endl
+            EOUT("opening file " << datfname << std::endl
                      << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
             return;
         }
@@ -434,15 +434,15 @@ public:
         dotout << "}" << endl;
     }
 
-    void PrintDot(bool verbose=false)
+    void PrintDot()
     {
-        if(verbose) COUT("Printing Dependence Graph in DOT");
+        IOUT("Printing Dependence Graph in DOT");
         ofstream dotout;
         string dotfname(ql::utils::get_output_dir() + "/dependenceGraph.dot");
         dotout.open(dotfname, ios::binary);
         if ( dotout.fail() )
         {
-            COUT("Error opening file " << dotfname << std::endl
+            EOUT("opening file " << dotfname << std::endl
                      << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
             return;
         }
@@ -455,10 +455,10 @@ public:
 
     void TopologicalSort(std::vector<ListDigraph::Node> & order)
     {
-        // COUT("Performing Topological sort.");
+        DOUT("Performing Topological sort.");
         ListDigraph::NodeMap<int> rorder(graph);
         if( !dag(graph) )
-            COUT("This digraph is not a DAG.");
+            EOUT("This digraph is not a DAG.");
 
         topologicalSort(graph, rorder);
 
@@ -466,7 +466,7 @@ public:
         for (ListDigraph::ArcIt a(graph); a != INVALID; ++a)
         {
             if( rorder[graph.source(a)] > rorder[graph.target(a)] )
-                COUT("Wrong topologicalSort()");
+                EOUT("Wrong topologicalSort()");
         }
 #endif
 
@@ -476,21 +476,21 @@ public:
         }
     }
 
-    void PrintTopologicalOrder(bool verbose=false)
+    void PrintTopologicalOrder()
     {
         std::vector<ListDigraph::Node> order;
         TopologicalSort(order);
 
-        if(verbose) COUT("Printing nodes in Topological order");
+        COUT("Printing nodes in Topological order");
         for ( std::vector<ListDigraph::Node>::reverse_iterator it = order.rbegin(); it != order.rend(); ++it)
         {
             std::cout << name[*it] << std::endl;
         }
     }
 
-    void ScheduleASAP(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order, bool verbose=false)
+    void ScheduleASAP(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
     {
-        if(verbose) COUT("Performing ASAP Scheduling");
+        DOUT("Performing ASAP Scheduling");
         TopologicalSort(order);
 
         std::vector<ListDigraph::Node>::reverse_iterator currNode = order.rbegin();
@@ -513,10 +513,10 @@ public:
             ++currNode;
         }
 
-        if(verbose) COUT("Performing ASAP Scheduling Done.");
+        DOUT("Performing ASAP Scheduling Done.");
     }
 
-    void PrintScheduleASAP(bool verbose=false)
+    void PrintScheduleASAP()
     {
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
@@ -531,7 +531,7 @@ public:
         }
     }
 
-    std::string GetDotScheduleASAP(bool verbose=false)
+    std::string GetDotScheduleASAP()
     {
         stringstream dotout;
         ListDigraph::NodeMap<size_t> cycle(graph);
@@ -541,32 +541,32 @@ public:
         return dotout.str();
     }
 
-    void PrintDotScheduleASAP(bool verbose=false)
+    void PrintDotScheduleASAP()
     {
         ofstream dotout;
         string dotfname( ql::utils::get_output_dir() + "/scheduledASAP.dot");
         dotout.open( dotfname, ios::binary);
         if ( dotout.fail() )
         {
-            COUT("Error opening file " << dotfname << std::endl
+            EOUT("opening file " << dotfname << std::endl
                      << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
             return;
         }
 
-        if(verbose) COUT("Printing Scheduled Graph in " << dotfname);
-        dotout << GetDotScheduleASAP(verbose);
+        IOUT("Printing Scheduled Graph in " << dotfname);
+        dotout << GetDotScheduleASAP();
         dotout.close();
     }
 
-    std::string GetQASMScheduledASAP(bool verbose=false)
+    std::string GetQASMScheduledASAP()
     {
-        if(verbose) COUT("Getting ASAP Scheduling QASM ...");
+        DOUT("Getting ASAP Scheduling QASM ...");
 
         std::stringstream ss;
 
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
-        ScheduleASAP(cycle, order, verbose);
+        ScheduleASAP(cycle, order);
 
         typedef std::vector<ql::gate*> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
@@ -636,30 +636,30 @@ public:
         if( bduration_in_cycles > 1 )
             ss << "    qwait " << bduration_in_cycles -1 << '\n';
 
-        if(verbose) COUT("Getting ASAP Scheduling QASM Done.");
+        DOUT("Getting ASAP Scheduling QASM Done.");
         return ss.str();
     }
 
-    void PrintQASMScheduledASAP(bool verbose=false)
+    void PrintQASMScheduledASAP()
     {
         ofstream fout;
         string qcfname(ql::utils::get_output_dir() + "/scheduledASAP.qasm");
         fout.open( qcfname, ios::binary);
         if ( fout.fail() )
         {
-            COUT("Error opening file " << qcfname << std::endl
+            EOUT("opening file " << qcfname << std::endl
                      << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
             return;
         }
 
-        fout << GetQASMScheduledASAP(verbose);
+        fout << GetQASMScheduledASAP();
         fout.close();
     }
 
     // without rc and latency compensation
-    void ScheduleALAP(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order, bool verbose=false)
+    void ScheduleALAP(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
     {
-        if(verbose) COUT("Performing ALAP Scheduling");
+        DOUT("Performing ALAP Scheduling");
         TopologicalSort(order);
 
         std::vector<ListDigraph::Node>::iterator currNode = order.begin();
@@ -687,15 +687,15 @@ public:
         // {
         //     DOUT( cycle[*it] << " :: " << MAX_CYCLE-cycle[*it] << "  <- " << name[*it] );
         // }
-        if(verbose) COUT("Performing ALAP Scheduling [Done].");
+        DOUT("Performing ALAP Scheduling [Done].");
     }
 
 
     // with rc and latency compensation
     void ScheduleASAP( ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order,
-                       ql::arch::resource_manager_t & rm, ql::quantum_platform & platform, bool verbose=false )
+                       ql::arch::resource_manager_t & rm, ql::quantum_platform & platform)
     {
-        if(verbose) COUT("Performing RC ASAP Scheduling");
+        DOUT("Performing RC ASAP Scheduling");
         TopologicalSort(order);
 
         std::vector<ListDigraph::Node>::reverse_iterator currNode = order.rbegin();
@@ -801,11 +801,11 @@ public:
         //     DOUT( cycle[*it] << "        " << name[*it] );
         // }
 
-        if(verbose) COUT("Performing RC ASAP Scheduling [Done].");
+        DOUT("Performing RC ASAP Scheduling [Done].");
     }
 
 
-    void PrintScheduleALAP(bool verbose=false)
+    void PrintScheduleALAP()
     {
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
@@ -916,7 +916,7 @@ public:
         dotout << "}" << endl;
     }
 
-    void PrintDotScheduleALAP(bool verbose=false)
+    void PrintDotScheduleALAP()
     {
         ofstream dotout;
         string dotfname(ql::utils::get_output_dir() + "/scheduledALAP.dot");
@@ -928,7 +928,7 @@ public:
             return;
         }
 
-        if(verbose) COUT("Printing Scheduled Graph in " << dotfname);
+        IOUT("Printing Scheduled Graph in " << dotfname);
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         ScheduleALAP(cycle,order);
@@ -937,7 +937,7 @@ public:
         dotout.close();
     }
 
-    std::string GetDotScheduleALAP(bool verbose=false)
+    std::string GetDotScheduleALAP()
     {
         stringstream dotout;
         ListDigraph::NodeMap<size_t> cycle(graph);
@@ -948,9 +948,9 @@ public:
     }
 
 
-    std::string GetQASMScheduledALAP(bool verbose=false)
+    std::string GetQASMScheduledALAP()
     {
-        Bundles bundles = GetBundlesScheduleALAP(verbose);
+        Bundles bundles = GetBundlesScheduleALAP();
 
         std::stringstream ssbundles;
         size_t curr_cycle=1;
@@ -989,7 +989,7 @@ public:
         return ssbundles.str();
     }
 
-    void PrintQASMScheduledALAP(bool verbose=false)
+    void PrintQASMScheduledALAP()
     {
         ofstream fout;
         string qcfname(ql::utils::get_output_dir() + "/scheduledALAP.qasm");
@@ -1001,15 +1001,15 @@ public:
             return;
         }
 
-        fout << GetQASMScheduledALAP(verbose);
+        fout << GetQASMScheduledALAP();
         fout.close();
     }
 
 
     // the following without rc and buffer-buffer delays
-    Bundles GetBundlesScheduleALAP(bool verbose=false)
+    Bundles GetBundlesScheduleALAP()
     {
-        if(verbose) COUT("Scheduling ALAP to get bundles ...");
+        DOUT("Scheduling ALAP to get bundles ...");
         Bundles bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
@@ -1053,19 +1053,19 @@ public:
                 bundles.push_back(abundle);
             }
         }
-        if(verbose) COUT("Scheduling ALAP to get bundles [DONE]");
+        DOUT("Scheduling ALAP to get bundles [DONE]");
         return bundles;
     }
 
 
     // the following with rc and buffer-buffer delays
-    Bundles GetBundlesScheduleASAP( ql::arch::resource_manager_t & rm, ql::quantum_platform & platform, bool verbose=false )
+    Bundles GetBundlesScheduleASAP( ql::arch::resource_manager_t & rm, ql::quantum_platform & platform )
     {
-        if(verbose) COUT("RC Scheduling ASAP to get bundles ...");
+        DOUT("RC Scheduling ASAP to get bundles ...");
         Bundles bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
-        ScheduleASAP(cycle, order, rm, platform, verbose);
+        ScheduleASAP(cycle, order, rm, platform);
 
         typedef std::vector<ql::gate*> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
@@ -1148,7 +1148,7 @@ public:
             operations_prev_bundle = operations_curr_bundle;
         }
 
-        if(verbose) COUT("RC Scheduling ASAP to get bundles [DONE]");
+        DOUT("RC Scheduling ASAP to get bundles [DONE]");
         return bundles;
     }
 

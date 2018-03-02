@@ -382,9 +382,13 @@ public:
         }
 
         if(added)
+        {
             DOUT("custom gate added for " << gname);
+        }
         else
+        {
             DOUT("custom gate not added for " << gname);
+        }
 
         return added;
     }
@@ -737,16 +741,16 @@ public:
 
     }
 
-    void schedule(size_t qubits, quantum_platform platform, std::string scheduler, std::string& sched_qasm, std::string& sched_dot, bool verbose=false)
+    void schedule(size_t qubits, quantum_platform platform, std::string scheduler, std::string& sched_qasm, std::string& sched_dot)
     {
 #ifndef __disable_lemon__
-        if (verbose) COUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
+        IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
 
         Scheduler sched;
-        sched.Init(qubits, c, platform, verbose);
-        // sched.Print(verbose);
-        // sched.PrintMatrix(verbose);
-        // sched.PrintDot(verbose);
+        sched.Init(qubits, c, platform);
+        // sched.Print();
+        // sched.PrintMatrix();
+        // sched.PrintDot();
 
         if("ASAP" == scheduler)
         {
@@ -754,7 +758,7 @@ public:
             // sched.PrintDotScheduleASAP();
             // sched_dot = sched.GetDotScheduleASAP();
             // sched.PrintQASMScheduledASAP();
-            sched_qasm = sched.GetQASMScheduledASAP(verbose);
+            sched_qasm = sched.GetQASMScheduledASAP();
         }
         else if("ALAP" == scheduler)
         {
@@ -762,7 +766,7 @@ public:
             // sched.PrintDotScheduleALAP();
             // sched_dot = sched.GetDotScheduleALAP();
             // sched.PrintQASMScheduledALAP();
-            sched_qasm = sched.GetQASMScheduledALAP(verbose);
+            sched_qasm = sched.GetQASMScheduledALAP();
         }
         else
         {
@@ -771,9 +775,9 @@ public:
 #endif // __disable_lemon__
     }
 
-    std::vector<circuit*> split_circuit(circuit x, bool verbose=false)
+    std::vector<circuit*> split_circuit(circuit x)
     {
-        if (verbose) COUT("circuit decomposition in basic blocks ... ");
+        IOUT("circuit decomposition in basic blocks ... ");
         std::vector<circuit*> cs;
         cs.push_back(new circuit());
         for (size_t i=0; i<x.size(); i++)
@@ -789,7 +793,7 @@ public:
                 cs.back()->push_back(x[i]);
             }
         }
-        if (verbose) println("circuit decomposion done (" << cs.size() << ").");
+        IOUT("circuit decomposion done (" << cs.size() << ").");
         /*
            for (int i=0; i<cs.size(); ++i)
            {

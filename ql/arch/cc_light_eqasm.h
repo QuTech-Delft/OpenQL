@@ -156,7 +156,7 @@ public:
 /**
  * two qubits mask
  */
-class two_qubits_mask
+class two_qubit_mask
 {
 public:
 
@@ -165,14 +165,14 @@ public:
     /**
      * ctor mask
      */
-    two_qubits_mask(qubit_pair_set_t& qs) : qs(qs)
+    two_qubit_mask(qubit_pair_set_t& qs) : qs(qs)
     {
     }
 
     /**
      * ctor mask
      */
-    two_qubits_mask(qubit_pair_t p)
+    two_qubit_mask(qubit_pair_t p)
     {
         qs.push_back(p);
     }
@@ -329,18 +329,18 @@ public:
 /**
  * cc_light_two_qubit_gate
  */
-class cc_light_two_qubits_gate : public cc_light_eqasm_instruction
+class cc_light_two_qubit_gate : public cc_light_eqasm_instruction
 {
 
 public:
 
-    two_qubits_mask mask;
+    two_qubit_mask mask;
 
 
     /**
      * ctor
      */
-    cc_light_two_qubits_gate(std::string name, two_qubits_mask mask) : mask(mask)
+    cc_light_two_qubit_gate(std::string name, two_qubit_mask mask) : mask(mask)
     {
         this->name = name;
     }

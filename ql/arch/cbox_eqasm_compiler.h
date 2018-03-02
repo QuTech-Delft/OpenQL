@@ -53,7 +53,6 @@ namespace ql
             size_t          total_exec_time = 0;
             size_t          buffer_matrix[__operation_types_num__][__operation_types_num__];
             size_t          iterations;  // loop iterations
-            bool            verbose = false;
             eqasm_t         timed_eqasm_code;
 
             #define __ns_to_cycle(t) ((size_t)t/(size_t)ns_per_cycle)
@@ -64,15 +63,15 @@ namespace ql
              * compile qasm to qumis
              */
             // eqasm_t
-            void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& platform, bool verbose=false) throw (ql::exception)
+            void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& platform) throw (ql::exception)
             {
-               if (verbose) println("[-] compiling qasm code ...");
+               IOUT("[-] compiling qasm code ...");
                if (c.empty())
                {
-                  println("[-] empty circuit, eqasm compilation aborted !");
+                  EOUT("[-] empty circuit, eqasm compilation aborted !");
                   return;
                }
-               if (verbose) println("[-] loading circuit (" <<  c.size() << " gates)...");
+               IOUT("[-] loading circuit (" <<  c.size() << " gates)...");
 
                iterations = 0;
 
@@ -87,7 +86,7 @@ namespace ql
                   iterations = 0;
                }
 
-               if (verbose) println("[-] iterations : " << iterations);
+               IOUT("[-] iterations : " << iterations);
 
                eqasm_t eqasm_code;
                // ql::instruction_map_t& instr_map = platform.instruction_map;
@@ -97,7 +96,7 @@ namespace ql
                   "flux_flux_buffer", "flux_readout_buffer", "readout_mw_buffer", "readout_flux_buffer", "readout_readout_buffer" };
                size_t p = 0;
 
-               if (verbose) println("[-] loading hardware seetings...");
+               IOUT("[-] loading hardware seetings...");
 
                try 
                {
@@ -138,7 +137,7 @@ namespace ql
                   println("(" << i << "," << j << ") :" << buffer_matrix[i][j]);
                 */
                
-               if (verbose) println("[-] loading instruction settings...");
+               IOUT("[-] loading instruction settings...");
 
                for (ql::gate * g : c)
                {
@@ -148,7 +147,7 @@ namespace ql
                   std::string qumis;
                   std::string operation;
 
-                  if (verbose) println("[-] loading instruction '" << id << " ...");
+                  IOUT("[-] loading instruction '" << id << " ...");
 
                   if (!instruction_settings[id].is_null())
                   {
@@ -188,7 +187,7 @@ namespace ql
                      operation_type_t type = operation_type(instruction_settings[id]["type"]);
                      if (type == __unknown_operation__)
                      {
-                        println("[x] error : unknow operation type of the instruction '" << id << "' !");
+                        EOUT("Unknow operation type of the instruction '" << id << "' !");
                         throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : the type of instruction '"+id+"' is unknown !",false);
                      }
                      if (instruction_settings[id]["qumis_instr_kw"].is_null())
@@ -246,10 +245,10 @@ namespace ql
                   }
                   else
                   {
-                     println("[x] error : cbox_eqasm_compiler : instruction '" << id << "' not supported by the target platform !");
+                     EOUT("cbox_eqasm_compiler : instruction '" << id << "' not supported by the target platform !");
                      throw ql::exception("[x] error : cbox_eqasm_compiler : error while reading hardware settings : instruction '"+id+"' not supported by the target platform !",false);
                   }
-                  if (verbose) println("[-] instructions loaded successfully.");
+                  IOUT("[-] instructions loaded successfully.");
                }
 
 
@@ -315,7 +314,7 @@ namespace ql
              */
             void dump_instructions()
             {
-               println("[d] instructions dump:");
+               IOUT(" instructions dump:");
                for (qumis_instruction * instr : qumis_instructions)
                {
                   size_t t = instr->start;
@@ -330,7 +329,7 @@ namespace ql
              void write_timed_eqasm(std::string file_name="")
              {
                std::stringstream ss;
-               if (verbose) println("writing time qumis code...");
+               IOUT("writing time qumis code...");
                for (std::string l : timed_eqasm_code)
                   ss << l << '\n';
                std::string t_eqasm = ss.str();
@@ -345,7 +344,7 @@ namespace ql
              */
             void decompose_instructions()
             {
-               if (verbose) println("decomposing instructions...");
+               IOUT("decomposing instructions...");
                qumis_program_t decomposed;
                for (qumis_instruction * instr : qumis_instructions)
                {
@@ -362,7 +361,7 @@ namespace ql
              */
             void reorder_instructions()
             {
-               if (verbose) println("reodering instructions...");
+               DOUT("reodering instructions...");
                std::sort(qumis_instructions.begin(),qumis_instructions.end(), qumis_comparator);
             }
 
@@ -371,7 +370,7 @@ namespace ql
              */
             size_t time_analysis()
             {
-               if (verbose) println("time analysis...");
+               DOUT("time analysis...");
                // update start time : find biggest latency
                size_t max_latency = 0;
                for (qumis_instruction * instr : qumis_instructions)
@@ -408,7 +407,7 @@ namespace ql
                ps.push_back(qumis_instructions[0]);
                size_t st = qumis_instructions[0]->start;
                // group by start time
-               if (verbose) println("clustering concurent instructions..."); 
+               DOUT("clustering concurent instructions..."); 
                for (size_t i=1; i<qumis_instructions.size(); ++i)
                {
                   if (qumis_instructions[i]->start != st)
@@ -437,7 +436,7 @@ namespace ql
                }
                #endif 
                // detect parallel triggers
-               if (verbose) println("detecting concurent triggers..."); 
+               DOUT("detecting concurent triggers..."); 
                for (qumis_program_t& p : parallel_sections)
                {
                   qumis_program_t triggers;
@@ -452,7 +451,7 @@ namespace ql
                   qumis_program_t merged_triggers;
                   size_t prev_duration = 0;
 
-                  if (verbose) println("merging and splitting concurent triggers..."); 
+                  DOUT("merging and splitting concurent triggers..."); 
                   for (size_t i=0; i<triggers.size(); ++i)
                   {
                      // println("in : trigger " << i << " : " << triggers[i]->code());
@@ -493,7 +492,7 @@ namespace ql
                      // println("\t(" << instr->start << ") : " << instr->code());
                }
 
-               if (verbose) println("updating qumis program..."); 
+               DOUT("updating qumis program..."); 
                qumis_instructions.clear();
                for (qumis_program_t p : parallel_sections)
                   for (qumis_instruction * instr : p)
@@ -506,7 +505,7 @@ namespace ql
              */
             void compensate_latency()
             {
-               if (verbose) println("latency compensation...");
+               DOUT("latency compensation...");
                for (qumis_instruction * instr : qumis_instructions)
                   instr->compensate_latency();
             }
@@ -516,9 +515,9 @@ namespace ql
              */
             void resechedule()
             {
-               if (verbose) println("instruction rescheduling...");
-               if (verbose) println("resource dependency analysis...");
-               if (verbose) println("buffer insertion...");
+               DOUT("instruction rescheduling...");
+               DOUT("resource dependency analysis...");
+               DOUT("buffer insertion...");
 
                std::vector<size_t>           hw_res_av(__trigger_width__+__awg_number__,max_latency);
                std::vector<size_t>           qu_res_av(num_qubits,max_latency);
@@ -684,7 +683,7 @@ namespace ql
             {
                // std::string file_name = ql::utils::get_output_dir() + "/waveforms_sequence.json";
                std::string file_name = ql::utils::get_output_dir() + "/waveform_sequence.dat";
-               if (verbose) println("writing waveforms sequence to '" << file_name << "'...");
+               DOUT("writing waveforms sequence to '" << file_name << "'...");
 
                std::stringstream js;
                js << "\n{ \n   \"execution_time\" : " << (execution_time*ns_per_cycle/1e9) << ",\n   \"segment_size\" : 300,\n   \"sequence\" : [";
@@ -741,7 +740,7 @@ namespace ql
                ql::arch::channels_t channels;
                if (qumis_instructions.empty())
                {
-                  println("[!] warning : empty qumis code : not traces to dump !");
+                  WOUT("Empty qumis code : not traces to dump !");
                   return;
                }
 
@@ -780,7 +779,7 @@ namespace ql
              */
             void emit_eqasm()
             {
-               if (verbose) println("compiling eqasm...");
+               DOUT("compiling eqasm...");
                eqasm_code.clear();
                timed_eqasm_code.clear();
                eqasm_code.push_back("wait 1");       // add wait 1 at the begining
@@ -826,7 +825,7 @@ namespace ql
                }
                else
                   eqasm_code.push_back("beq r13, r13 start"); 
-               if (verbose) println("eqasm compilation done.");
+               DOUT("eqasm compilation done.");
             }
 
 
@@ -1054,7 +1053,7 @@ namespace ql
                }
                else
                {
-                  println("[x] error while processing the 'readout' instruction : only trigger-based implementation is supported !");
+                  EOUT("while processing the 'readout' instruction : only trigger-based implementation is supported !");
                   throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while processing the '"+qasm_label+"' instruction : only trigger-based implementation is supported !",false);
                }
                // println("measure instruction processed.");

@@ -48,7 +48,7 @@ class Test_dependence(unittest.TestCase):
         p = ql.Program("independent", nqubits, platf)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
-        p.compile(False, "ASAP", False)
+        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_WARNING')
 
         gold_fn = rootDir + '/golden/test_independence.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
@@ -89,7 +89,7 @@ class Test_dependence(unittest.TestCase):
         p = ql.Program("WAW", nqubits, platf)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
-        p.compile(False, "ASAP", False)
+        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_WARNING')
 
         gold_fn = rootDir + '/golden/test_WAW_ASAP.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
@@ -130,7 +130,7 @@ class Test_dependence(unittest.TestCase):
         p = ql.Program("RAR", nqubits, platf)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
-        p.compile(False, "ASAP", False)
+        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_WARNING')
 
         gold_fn = rootDir + '/golden/test_RAR_Control_ASAP.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
@@ -172,7 +172,7 @@ class Test_dependence(unittest.TestCase):
         p = ql.Program("RAW", nqubits, platf)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
-        p.compile(False, "ASAP", False)
+        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_WARNING')
 
         gold_fn = rootDir + '/golden/test_RAW_ASAP.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
@@ -214,7 +214,7 @@ class Test_dependence(unittest.TestCase):
         p = ql.Program("WAR", nqubits, platf)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
-        p.compile(False, "ASAP", False)
+        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_WARNING')
 
         gold_fn = rootDir + '/golden/test_WAR_ASAP.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
@@ -249,7 +249,7 @@ class Test_dependence(unittest.TestCase):
         p = ql.Program("swap_single", nqubits, platf)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
-        p.compile(False, "ASAP", False)
+        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_WARNING')
 
         gold_fn = rootDir + '/golden/test_swap_single_ASAP.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
@@ -286,7 +286,7 @@ class Test_dependence(unittest.TestCase):
         p = ql.Program("swap_multi", nqubits, platf)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
-        p.compile(False, "ASAP", False)
+        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_WARNING')
 
         gold_fn = rootDir + '/golden/test_swap_multi_ASAP.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')

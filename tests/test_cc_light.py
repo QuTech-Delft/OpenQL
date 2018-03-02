@@ -54,8 +54,8 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+
         # load qasm
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
@@ -94,7 +94,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         # load qasm
         qasm_files = []
@@ -151,7 +151,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         # load qasm
         qasm_files = []
@@ -187,7 +187,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         GOLD_fn = rootDir + '/golden/test_smis_all_bundled.qisa'
@@ -230,7 +230,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         # load qasm
         qasm_files = []
@@ -272,7 +272,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         GOLD_fn = rootDir + '/golden/test_smit_all_bundled.qisa'
@@ -301,7 +301,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         # load qasm
         qasm_files = []
@@ -335,7 +335,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         # load qasm
         qasm_files = []
@@ -369,7 +369,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         # load qasm
         qasm_files = []
@@ -403,7 +403,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         # load qasm
         qasm_files = []
@@ -435,7 +435,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -471,7 +471,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         # load qasm
         qasm_files = []
@@ -505,7 +505,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -539,7 +539,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         # load qasm
         qasm_files = []
@@ -570,7 +570,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -605,7 +605,7 @@ class Test_advance(unittest.TestCase):
 
         # compile the program
         try:
-            p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+            p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
             raise
         except:
             pass
@@ -643,7 +643,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -699,7 +699,7 @@ class Test_advance(unittest.TestCase):
                 k.gate(gate, qubits)
 
             p.add_kernel(k)
-            p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+            p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
             # load qasm
             qasm_files = []
@@ -750,7 +750,7 @@ class Test_advance(unittest.TestCase):
                 k.gate(gate, qubits)
 
             p.add_kernel(k)
-            p.compile(False, "ALAP", False) # optimize  scheduler  verbose
+            p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
             # load qasm
             qasm_files = []

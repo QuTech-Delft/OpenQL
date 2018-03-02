@@ -228,14 +228,10 @@ public:
         prog->add( *(k.ql_kernel) );
     }
 
-    void compile(bool optimize=false, std::string scheduler="ALAP", bool verbose=false)
+    void compile(bool optimize=false, std::string scheduler="ALAP", std::string log_level="LOG_INFO")
     {
-        prog->compile(optimize, scheduler, verbose);
-    }
-
-    void schedule(std::string scheduler="ASAP", bool verbose=false)
-    {
-        prog->schedule(scheduler, verbose);
+        ql::utils::logger::set_log_level(log_level);
+        prog->compile(optimize, scheduler);
     }
 
     std::string qasm()

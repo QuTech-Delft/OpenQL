@@ -403,19 +403,14 @@ arg1 : bool
     optimize, default is False
 arg2 : str
     scheduler which can be 'ASAP' or 'ALAP', default is 'ALAP'
-arg2 : bool
-    verbose, default is False
-"""
-
-%feature("docstring") Program::schedule
-""" Schedules the program.
-
-Parameters
-----------
-arg1 : string
-    scheduler which can be 'ASAP' or 'ALAP', default is ASAP
-arg2 : bool
-    verbose, default is False
+arg3 : str
+    verbosity level which in ascending order of verbosity can be 
+        LOG_NOTHING,
+        LOG_CRITICAL,
+        LOG_ERROR,
+        LOG_WARNING,
+        LOG_INFO,
+        LOG_DEBUG
 """
 
 

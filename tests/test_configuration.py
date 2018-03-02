@@ -25,7 +25,7 @@ class Test_Configuration(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", True)
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
         
         # load qasm
         qasm_files = []
@@ -61,7 +61,7 @@ class Test_Configuration(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", True)
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
         
         # load qasm
         qasm_files = []
@@ -95,7 +95,7 @@ class Test_Configuration(unittest.TestCase):
 
         try:
             # compile the program
-            p.compile(False, "ALAP", True)
+            p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
         except:
             # print("exception raised")
             pass

@@ -30,7 +30,7 @@ class Tester(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(False, "ALAP", True)
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
 
 if __name__ == '__main__':
     unittest.main()

@@ -9,10 +9,10 @@
 typedef ql::arch::cc_light_eqasm_instruction  ccl_instr;
 
 typedef ql::arch::cc_light_single_qubit_gate  ccl_sqg_instr;
-typedef ql::arch::cc_light_two_qubits_gate     ccl_tqg_instr;
+typedef ql::arch::cc_light_two_qubit_gate     ccl_tqg_instr;
 
 typedef ql::arch::single_qubit_mask           ccl_sqg_mask;
-typedef ql::arch::two_qubits_mask             ccl_tqg_mask;
+typedef ql::arch::two_qubit_mask             ccl_tqg_mask;
 
 #ifndef __p
 #define __p(x,y) ql::arch::qubit_pair_t(x,y)

@@ -38,7 +38,7 @@ class Test_basic(unittest.TestCase):
         k.gate("measure", 0)
         p.add_kernel(k)
 
-        p.compile(False, "ALAP", True)
+        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
         
         # load qasm
         qasm_files = []
