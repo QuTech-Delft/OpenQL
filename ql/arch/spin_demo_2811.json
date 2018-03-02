@@ -7,11 +7,11 @@
    "cycle_time" : 5, 
    "iterations" : 1, 
    "mw_mw_buffer": 0,
-   "mw_flux_buffer": 10,
-   "mw_readout_buffer": 50,
-   "flux_mw_buffer": 10,
+   "mw_flux_buffer": 0,
+   "mw_readout_buffer": 0,
+   "flux_mw_buffer": 0,
    "flux_flux_buffer": 0,
-   "flux_readout_buffer": 50,
+   "flux_readout_buffer": 0,
    "readout_mw_buffer": 0,
    "readout_flux_buffer": 0,
    "readout_readout_buffer": 0
@@ -196,8 +196,8 @@
 
       "prepz q0" :
       {
-         "duration": 1000000,
-         "latency": 500,
+         "duration": 10000,
+         "latency": 0,
          "qubits": ["q0","q1"],
          "matrix" : [ [1.0,0.0], [0.0,0.0], [0.0,0.0], [1.0,0.0]],
          "disable_optimization": true,
