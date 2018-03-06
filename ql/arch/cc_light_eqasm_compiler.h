@@ -23,7 +23,7 @@ namespace ql
 namespace arch
 {
 /**
- * cbox eqasm compiler
+ * cclight eqasm compiler
  */
 class cc_light_eqasm_compiler : public eqasm_compiler
 {

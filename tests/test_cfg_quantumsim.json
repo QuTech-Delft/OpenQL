@@ -1,0 +1,56 @@
+{
+   "eqasm_compiler" : "quantumsim_compiler",
+   "hardware_settings": 
+   {
+      "qubit_number": 5,
+      "cycle_time" : 20
+   },
+
+   "instructions": 
+   {
+      "hadamard" : 
+      {
+         "duration": 20, 
+         "qubits": ["q1"], 
+         "matrix" : [ [0.0,0.0], [1.0,0.0],
+	              [1.0,0.0], [0.0,0.0] ], 
+         "disable_optimization": false,
+         "quantumsim_instr_name": "hadamard",
+         "quantumsim_instr_type": "single_qubit_gate"
+      },
+
+      "cphase" : 
+      {
+         "duration": 20, 
+         "qubits": ["q0", "q1"],
+         "matrix" : [ [0.0,0.0], [1.0,0.0],
+	              [1.0,0.0], [0.0,0.0] ], 
+         "disable_optimization": false,
+         "quantumsim_instr_name": "cphase",
+         "quantumsim_instr_type": "two_qubit_gate"
+      },
+
+      "measure" :
+      {
+         "duration": 200, 
+         "qubits": ["q0"], 
+         "matrix" : [ [0.0,0.0], [1.0,0.0],
+	                   [1.0,0.0], [0.0,0.0] ], 
+         "disable_optimization": false,
+         "quantumsim_instr_name": "measure",
+         "quantumsim_instr_type": "single_qubit_gate"
+      }
+   },
+
+   "resources":
+   {
+      "qubits": 
+      {
+         "count": 5,
+         "T1": [10, 10, 10, 10, 10],
+         "T2": [10, 10, 10, 10, 10]
+      }
+   },
+   "topology": {},
+   "gate_decomposition": {}   
+}

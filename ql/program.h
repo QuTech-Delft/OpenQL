@@ -16,6 +16,7 @@
 #include <ql/eqasm_compiler.h>
 #include <ql/arch/cbox_eqasm_compiler.h>
 #include <ql/arch/cc_light_eqasm_compiler.h>
+#include <ql/arch/quantumsim_eqasm_compiler.h>
 
 namespace ql
 {
@@ -45,18 +46,22 @@ class quantum_program
             EOUT("eqasm compiler name must be specified in the hardware configuration file !");
             throw std::exception();
          }
-         else if (eqasm_compiler_name == "qumis_compiler")
-         {
-            backend_compiler = new ql::arch::cbox_eqasm_compiler();
-         }
          else if (eqasm_compiler_name == "none")
          {
 
+         }
+         else if (eqasm_compiler_name == "qumis_compiler")
+         {
+            backend_compiler = new ql::arch::cbox_eqasm_compiler();
          }
 	      else if (eqasm_compiler_name == "cc_light_compiler" )
 	      {
             backend_compiler = new ql::arch::cc_light_eqasm_compiler();
 	      }
+         else if (eqasm_compiler_name == "quantumsim_compiler" )
+         {
+            backend_compiler = new ql::arch::quantumsim_eqasm_compiler();
+         }
          else
          {
             EOUT("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
@@ -186,12 +191,6 @@ class quantum_program
 
       int compile(bool ql_optimize=false, std::string scheduler="ALAP") throw (ql::exception)
       {
-         // if (!ql::initialized)
-         // {
-         //    EOUT("[x] error : openql should initialized for the target platform before compilation !");
-         //    return -1;
-         // }
-
          IOUT("compiling ...");
 
          if (kernels.empty())
@@ -219,13 +218,8 @@ class quantum_program
             return 0;
          }
 
-         // println("sweep_points : ");
-         // for (int i=0; i<sweep_points.size(); i++) println(sweep_points[i]);
-
          IOUT("fusing quantum kernels...");
-
          ql::circuit fused;
-
          for (size_t k=0; k<kernels.size(); ++k)
          {
             ql::circuit& kc = kernels[k].get_circuit();

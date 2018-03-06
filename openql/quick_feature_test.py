@@ -52,9 +52,26 @@ def test_none():
     # p.compile(optimize=False, scheduler='ASAP', log_level='LOG_INFO')
     p.compile(optimize=False, scheduler='ALAP', log_level='LOG_INFO')
 
+def test_quantumsim():
+    config_fn = os.path.join(curdir, '../tests/test_cfg_quantumsim.json')
+    platform  = ql.Platform('platform_none', config_fn)
+    num_qubits = 2
+    k = ql.Kernel('aKernel', platform)
+
+    k.gate("hadamard",0)
+    k.gate("hadamard",1)
+    k.gate("cphase", [0, 1])
+    k.gate("measure", 0)
+    k.gate("measure", 1)
+
+    p = ql.Program('aProgram', num_qubits, platform)
+    p.add_kernel(k)
+    p.compile(optimize=False, scheduler='ASAP', log_level='LOG_INFO')
+
 if __name__ == '__main__':
-    test_none()
-    test_cclight()
+    test_quantumsim()
+    # test_none()
+    # test_cclight()
 
 
     # LOG_NOTHING,

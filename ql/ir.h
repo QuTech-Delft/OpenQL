@@ -50,7 +50,7 @@ namespace ql
                 {
                     auto first_ins_it = sec_it->begin();
                     auto insqasm = (*(first_ins_it))->qasm();
-                    ssqasm << insqasm << " ";
+                    ssqasm << insqasm;
 
                     if( std::next(sec_it) != abundle.parallel_sections.end() )
                     {
