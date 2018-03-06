@@ -125,6 +125,14 @@ namespace ql
                }
             }    
 
+            /**
+             * set used_qubits
+             */
+            virtual void set_used_qubits(qubit_set_t& uq)
+            {
+               used_qubits = uq;
+            }
+
 
             /**
              * set start
@@ -406,6 +414,16 @@ namespace ql
             }
 
             /**
+             * set used qubits
+             */
+            void set_used_qubits(qubit_set_t& uq)
+            {
+               used_qubits = uq;
+               for (auto i : instructions)
+                  i->used_qubits = uq;
+            }
+
+            /**
              *  compensate for latency
              */
             void compensate_latency()
@@ -678,6 +696,17 @@ namespace ql
                }
             }    
 
+            /**
+             * set used qubits
+             */
+            void set_used_qubits(qubit_set_t& uq)
+            {
+               used_qubits = uq;
+               for (auto i : instructions)
+                  i->used_qubits = uq;
+            }
+
+
 
             /**
              * generate code 
@@ -797,6 +826,17 @@ namespace ql
                #endif
                return instructions;
             }
+
+            /**
+             * set used qubits
+             */
+            void set_used_qubits(qubit_set_t& uq)
+            {
+               used_qubits = uq;
+               for (auto i : instructions)
+                  i->used_qubits = uq;
+            }
+
 
             /**
              *  compensate for latency
