@@ -14,7 +14,6 @@ class Test_basic(unittest.TestCase):
         config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
         platf = ql.Platform("starmon", config_fn)
         sweep_points = [1]
-        num_circuits = 2
         nqubits = 2
         p = ql.Program("basic", nqubits, platf)
         p.set_sweep_points(sweep_points, len(sweep_points))

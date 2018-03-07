@@ -1,7 +1,6 @@
 # OpenQL Framework #
 
-OpenQL is a C++ framework for high-level quantum programming. The framework provides a compiler for compiling and optimizing quantum code. The compiler produce the intermediate quantum assembly language and the compiled micro-code
-for various target platforms. While the microcode is platform-specific, the quantum assembly code (qasm) is hardware-agnostic and can be simulated on the QX simulator.
+OpenQL is a framework for high-level quantum programming in C++/Python. The framework provides a compiler for compiling and optimizing quantum code. The compiler produces the intermediate quantum assembly language and the compiled micro-code for various target platforms. While the microcode is platform-specific, the quantum assembly code (qasm) is hardware-agnostic and can be simulated on the QX simulator.
 
 ## Supported Patforms
 
@@ -20,7 +19,10 @@ for various target platforms. While the microcode is platform-specific, the quan
 * [Optional] Graphviz Dot utility to convert graphs from dot to pdf, png etc
 * [Optional] XDot to visualize generated graphs in dot format
 
+In all the instructions below, `python` refers to `Python 3.5` and `pip` refers to `Pip 3.5`.
+
 ## Notes for Windows Users
+
 * Use Power Shell for installation
 * Set execution policy by:
 
@@ -40,12 +42,32 @@ for various target platforms. While the microcode is platform-specific, the quan
   * PYTHON\_INCLUDE (should point to the directory containing Python.h)
   * PYTHON\_LIB (should point to the python library python35.lib)
 
-# Getting started 
 
-After installing OpenQL (see install instructions below) a good place to get started is by looking at the files in the "tests" directory, e.g., test_basics.py. Here you can find commented examples on how to use OpenQL. 
+# Installing OpenQL as Python Package
 
-N.B. gates in OpenQL are *case insensitive*. 
+N.B. the instructions below will compile the C++ files the first time you try to install OpenQL package. If you are updating an existing installation you should first clean and recompile the C++ files using the following command. 
 
+```
+rm -rf build cbuild       # delete the old build folders
+```
+
+## Linux, Windows & OSX
+
+Running the following command in Terminal/Power Shell should install the openql package:
+
+```
+python setup.py install  --user
+```
+
+Or
+
+```
+pip install  -e .
+```
+
+## Running the tests
+
+In order to pass all the tests, `qisa-as` inside `tests` directory should be installed first. Follow the instructions in `tests/qisa-as/README.md` to install `qisa-as`. Once `qisa-as` is installed, you can run `py.test -v` to run all the tests to check the installation.
 
 
 # Compiling C++ OpenQL tests and programs
@@ -54,25 +76,31 @@ Existing tests and programs can be compiled by the following instructions. You c
 
 
 ## Linux/OSX
-    mkdir cbuild 
-    cd OpenQL/cbuild 
-    cmake ..   # generates the make file based on CMakeLists.txt in the OpenQL directory
-    make       # compiles the source code into the current directory. 
+
+```
+mkdir cbuild 
+cd OpenQL/cbuild 
+cmake ..   # generates the make file based on CMakeLists.txt in the OpenQL directory
+make       # compiles the source code into the current directory. 
+```
 
 To execute an example program go to e.g., `OpenQL/cbuild/programs` and execute one of the files e.g.,  `./simple`. The output will be saved to the output directory next to the file.
 
 If one wants to compile and run a single file, e.g., `example.cc`, to compile it one can run : 
+
 ```
-    mkdir output           # create an output directory if it does not exist
-    g++ -std=c++11 example.cc -o example.exe -I OpenQL/   # compile the file
-    ./example.exe                                         # execute the file
+mkdir output           # create an output directory if it does not exist
+g++ -std=c++11 example.cc -o example.exe -I OpenQL/   # compile the file
+./example.exe                                         # execute the file
 ```
 
 ## Windows
-    cd OpenQL/cbuild
-    cmake -G "NMake Makefiles" ..
-    nmake
 
+```
+cd OpenQL/cbuild
+cmake -G "NMake Makefiles" ..
+nmake
+```
 
 ## Usage
 
@@ -83,20 +111,8 @@ directory.
 Example python tests and programs can be found in the 'tests' and 'programs' directories.
 These can be executed as 'python tests/simplePyTest.py'.
 
-# Installing OpenQL as Python Package
+# Getting started 
 
-N.B. the instructions below will compile the C++ files the first time they are run. 
-If you are updating an existing installation you should first clean and recompile the C++ files using the following command. 
-```
-    rm -rf build cbuild       # delete the old build folders
-```
+After installing OpenQL a good place to get started is by looking at the files in the "tests" directory. Here you can find commented examples on how to use OpenQL. For instance, `programs/getting_started.py` could be a good starting point. `doc` directory as well as the Wiki page documents various aspects.
 
-## Linux, Windows & OSX
-
-Running the following command in Terminal/Power Shell should install the openql package:
-
-        pip install  -e .
-
-# Running the tests
-
-Run `py.test -v` to test the installation. In order to pass all the tests, `qisa-as` inside `tests` directory should be installed first. Follow the instructions in `tests/qisa-as/README.md` to install `qisa-as`.
+N.B. gates in OpenQL are *case insensitive*. 
