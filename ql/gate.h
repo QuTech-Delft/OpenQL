@@ -368,7 +368,7 @@ public:
 
 
 /**
- * rx 
+ * rx
  */
 class rx : public gate
 {
@@ -387,7 +387,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("rx q" + std::to_string(operands[0]) + std::to_string(angle) );
+        return instruction_t("rx q" + std::to_string(operands[0]) + ", " + std::to_string(angle) );
     }
 
     instruction_t micro_code()
@@ -409,7 +409,7 @@ public:
 
 
 /**
- * ry 
+ * ry
  */
 class ry : public gate
 {
@@ -428,7 +428,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("ry q" + std::to_string(operands[0]) + std::to_string(angle) );
+        return instruction_t("ry q" + std::to_string(operands[0]) + ", " + std::to_string(angle) );
     }
 
     instruction_t micro_code()
@@ -450,7 +450,7 @@ public:
 
 
 /**
- * rz 
+ * rz
  */
 class rz : public gate
 {
@@ -469,7 +469,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("rz q" + std::to_string(operands[0]) + std::to_string(angle) );
+        return instruction_t("rz q" + std::to_string(operands[0]) + ", " + std::to_string(angle) );
     }
 
     instruction_t micro_code()
@@ -1051,7 +1051,7 @@ public:
 };
 
 /**
- * toffoli 
+ * toffoli
  */
 class toffoli : public gate
 {
@@ -1463,7 +1463,7 @@ public:
 };
 
 /**
- * composite gate 
+ * composite gate
  */
 class composite_gate : public custom_gate
 {
