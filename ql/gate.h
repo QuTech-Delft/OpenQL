@@ -78,7 +78,7 @@ typedef enum __gate_type_t
     __custom_gate__    ,
     __composite_gate__ ,
     __measure_gate__   ,
-    __display__        ,
+    __display__        , // TODO change it later such that it should be available from config file as custom gate
     __display_binary__ ,
     __nop_gate__       ,
     __dummy_gate__     ,
@@ -1230,6 +1230,34 @@ public:
     gate_type_t type()
     {
         return __dummy_gate__;
+    }
+    cmat_t mat()
+    {
+        return m;
+    }
+};
+
+class display : public gate
+{
+public:
+    cmat_t m;
+
+    display() : m(nop_c)
+    {
+        name = "display";
+        duration = 0;
+    }
+    instruction_t qasm()
+    {
+        return instruction_t("display");
+    }
+    instruction_t micro_code()
+    {
+        return ql::dep_instruction_map["display"];
+    }
+    gate_type_t type()
+    {
+        return __display__;
     }
     cmat_t mat()
     {

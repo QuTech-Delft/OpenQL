@@ -49,7 +49,6 @@ def test_none():
 
     p.add_kernel(k)
 
-    # p.compile(optimize=False, scheduler='ASAP', log_level='LOG_INFO')
     p.compile(optimize=False, scheduler='ALAP', log_level='LOG_INFO')
 
 def test_quantumsim():
@@ -68,10 +67,25 @@ def test_quantumsim():
     p.add_kernel(k)
     p.compile(optimize=False, scheduler='ASAP', log_level='LOG_INFO')
 
+def test_display():
+    ql.set_log_level('LOG_DEBUG')
+    config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
+    platform  = ql.Platform('platform_none', config_fn)
+    num_qubits = 5
+    p = ql.Program('aProgram', num_qubits, platform)
+
+    k = ql.Kernel('aKernel', platform)
+
+    k.gate("hadamard",0)
+    k.gate("measure", 0)
+    k.display()
+
+    p.add_kernel(k)
+
+    p.compile(optimize=False, scheduler='ALAP', log_level='LOG_DEBUG')
+
 if __name__ == '__main__':
-    test_quantumsim()
-    # test_none()
-    # test_cclight()
+    test_display()
 
 
     # LOG_NOTHING,

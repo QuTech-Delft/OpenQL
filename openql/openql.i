@@ -83,6 +83,23 @@ str
 """
 
 
+%feature("docstring") set_log_level
+""" Sets the log level globally
+
+Parameters
+----------
+arg1 : str
+    verbosity level which in ascending order of verbosity can be
+        LOG_NOTHING,
+        LOG_CRITICAL,
+        LOG_ERROR,
+        LOG_WARNING,
+        LOG_INFO,
+        LOG_DEBUG
+"""
+
+
+
 %feature("docstring") Platform
 """ Platform class specifiying the target platform to be used for compilation."""
 
@@ -325,6 +342,18 @@ arg2 : int
     duration in ns
 """
 
+%feature("docstring") Kernel::display
+""" inserts QX display instruction (so QX specific).
+
+Parameters
+----------
+None
+
+Returns
+-------
+None
+"""
+
 
 %feature("docstring") Kernel::get_custom_instructions
 """ Returns list of available custom instructions.
@@ -404,7 +433,7 @@ arg1 : bool
 arg2 : str
     scheduler which can be 'ASAP' or 'ALAP', default is 'ALAP'
 arg3 : str
-    verbosity level which in ascending order of verbosity can be 
+    verbosity level which in ascending order of verbosity can be
         LOG_NOTHING,
         LOG_CRITICAL,
         LOG_ERROR,

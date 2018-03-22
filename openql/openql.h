@@ -28,6 +28,11 @@ std::string get_output_dir()
     return ql::utils::get_output_dir();
 }
 
+void set_log_level(std::string log_level="LOG_DEBUG")
+{
+    ql::utils::logger::set_log_level(log_level);
+}
+
 
 /**
  * quantum program interface
@@ -177,6 +182,10 @@ public:
     {
         return ql_kernel->get_gates_definition();
     }
+    void display()
+    {
+        ql_kernel->display();
+    }
     void gate(std::string name)
     {
         ql_kernel->gate(name);
@@ -266,7 +275,7 @@ public:
 /**
  * qasm code loader
  */
-class QASM_Loader 
+class QASM_Loader
 {
    public:
 
@@ -282,7 +291,7 @@ class QASM_Loader
       }
 
       /**
-       * read and parse the qasm file 
+       * read and parse the qasm file
        * @return 0 if success else error code
        **/
       size_t load()

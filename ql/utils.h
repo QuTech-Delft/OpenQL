@@ -111,7 +111,6 @@ namespace ql
             std::ostringstream ss;
             ss << vector_prefix << " [";
             std::copy(v.begin(), v.end() - 1, std::ostream_iterator<T>(ss, elem_sep.c_str()) );
-            ss << v.back() << "]";
             return ss.str();
         }
 
@@ -144,13 +143,13 @@ namespace ql
 
             void set_log_level(std::string level)
             {
-                if(level == "LOG_NOTHING") 
+                if(level == "LOG_NOTHING")
                     ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_NOTHING;
-                else if(level == "LOG_CRITICAL") 
+                else if(level == "LOG_CRITICAL")
                     ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_CRITICAL;
-                else if(level == "LOG_ERROR") 
+                else if(level == "LOG_ERROR")
                     ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_ERROR;
-                else if(level == "LOG_WARNING") 
+                else if(level == "LOG_WARNING")
                     ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_WARNING;
                 else if(level == "LOG_INFO")
                     ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_INFO;

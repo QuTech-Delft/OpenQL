@@ -6,6 +6,7 @@ OpenQL framework has been created initially by Nader Khammassi.
 Contributors:
 
 - Imran Ashraf
+    Backend for Quantumsim simulator
     compilation for CC-Light architecture
         - resource-constrained scheduling
         - parallel (SIMD and VLIW) QISA code generation

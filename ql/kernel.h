@@ -181,6 +181,11 @@ public:
         gate("wait", qubits, duration );
     }
 
+    void display()
+    {
+        c.push_back(new ql::display());
+    }
+
     /**
      * add clifford
      */
@@ -342,7 +347,7 @@ public:
         {
             size_t duration_in_cycles = std::ceil(static_cast<float>(duration)/cycle_time);
             c.push_back(new ql::wait(qubits, duration, duration_in_cycles));
-            result = true; 
+            result = true;
         }
         else result = false;
 
@@ -610,12 +615,12 @@ public:
         {
             DOUT("qno : " << qno);
             if( qno >= qubit_number )
-            {   
+            {
                 EOUT("Number of qubits in platform: " << std::to_string(qubit_number) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
                 throw ql::exception("[x] error : ql::kernel::gate() : Number of qubits in platform: "+std::to_string(qubit_number)+", specified qubit numbers out of range for gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" !",false);
             }
         }
-        
+
         // check if specialized composite gate is available
         // if not, check if parameterized composite gate is available
         // if not, check if a specialized custom gate is available
@@ -657,7 +662,7 @@ public:
                     {
                         WOUT("default gate added for " << gname);
                     }
-                    else                        
+                    else
                     {
                     	EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
                     	throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
@@ -891,7 +896,6 @@ public:
     }
 
 protected:
-
     std::string name;
     circuit     c;
     size_t      iterations;

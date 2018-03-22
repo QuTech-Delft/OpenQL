@@ -194,6 +194,40 @@ public:
                     LastReaders[operand].clear();
                 }
             }
+            else if(ins->name == "display")
+            {
+                std::vector<size_t> qubits(num_qubits);
+                std::iota(qubits.begin(), qubits.end(), 0);
+                for( auto operand : qubits )
+                {
+                    { // WAW dependencies
+                        int prodID = LastWriter[operand];
+                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
+                        cause[arc] = operand;
+                        depType[arc] = WAW;
+                    }
+
+                    { // WAR dependencies
+                        ReadersListType readers = LastReaders[operand];
+                        for(auto & readerID : readers)
+                        {
+                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+                            cause[arc1] = operand;
+                            depType[arc1] = WAR;
+                        }
+                    }
+                }
+
+                // now update LastWriter
+                for( auto operand : operands )
+                {
+                    LastWriter[operand] = consID;
+                }
+            }
             else
             {
                 for( auto operand : operands )
@@ -595,7 +629,7 @@ public:
             if ( !platform.instruction_settings[id]["latency"].is_null() )
             {
                 float latency_ns = platform.instruction_settings[id]["latency"];
-                latency_cycles = (std::ceil( static_cast<float>(std::abs(latency_ns)) / cycle_time)) * 
+                latency_cycles = (std::ceil( static_cast<float>(std::abs(latency_ns)) / cycle_time)) *
                                         ql::utils::sign_of(latency_ns);
             }
             cycle[*it] = cycle[*it] + latency_cycles;
@@ -732,7 +766,7 @@ public:
         for ( it = order.begin(); it != order.end(); ++it)
         {
             if ( instruction[*it]->type() != ql::gate_type_t::__wait_gate__ &&
-                 instruction[*it]->type() != ql::gate_type_t::__dummy_gate__ 
+                 instruction[*it]->type() != ql::gate_type_t::__dummy_gate__
                )
             {
                 insInAllCycles[ cycle[*it] ].push_back( instruction[*it] );
