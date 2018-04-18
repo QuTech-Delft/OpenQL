@@ -41,8 +41,8 @@ class Test_basic(unittest.TestCase):
         k.prepz(1)
         k.prepz(2)
         k.prepz(3)
-        k.gate('h', 0)
-        k.gate('h', 1)
+        k.gate('h', [0])
+        k.gate('h', [1])
         k.x(2)
         k.x(3)
         k.measure(0)
@@ -82,13 +82,13 @@ class Test_basic(unittest.TestCase):
 
         # populate the second kernel using both custom and default gates
         k = ql.Kernel('aKernel', platform)
-        k.gate('prepz', 0)
-        k.gate('x', 0)
+        k.gate('prepz', [0])
+        k.gate('x', [0])
         k.y(1)
         k.z(5)
-        k.gate('rx90', 0)
+        k.gate('rx90', [0])
         k.gate('cnot', [0, 3])
-        k.gate('measure', 0)
+        k.gate('measure', [0])
 
         # add the kernel to the program
         p.add_kernel(k)
@@ -138,14 +138,14 @@ class Test_basic(unittest.TestCase):
 
         # populate the second kernel using both custom and default gates
         k = ql.Kernel('aKernel02', platform)
-        k.gate('prepz', 0)  # this line is equivalent to the previous
-        k.gate('x', 0)
+        k.gate('prepz', [0])  # this line is equivalent to the previous
+        k.gate('x', [0])
         k.y(1)
         k.z(5)
-        k.gate('rx90', 0)
+        k.gate('rx90', [0])
         # k.gate('cz', [0, 3])
         k.gate('cnot', [0, 3])
-        k.gate('measure', 0)
+        k.gate('measure', [0])
 
         # add the kernel to the program
         p.add_kernel(k)
@@ -181,7 +181,7 @@ class Test_basic(unittest.TestCase):
             k.prepz(i)
 
         for i in range(7):
-            k.gate('x', i)
+            k.gate('x', [i])
 
         # add the kernel to the program
         p.add_kernel(k)
@@ -214,8 +214,8 @@ class Test_basic(unittest.TestCase):
         k.prepz(1)
         k.prepz(2)
         k.prepz(3)
-        k.gate('h', 0)
-        k.gate('h', 1)
+        k.gate('h', [0])
+        k.gate('h', [1])
         k.x(2)
         k.x(3)
         k.cnot(2, 0)
@@ -260,13 +260,12 @@ class Test_basic(unittest.TestCase):
         for i in range(7):
             k.prepz(i)
 
-        k.gate('cz', 2, 0)
-        k.gate('cz', 3, 5)
-        k.gate('cz', 1, 4)
-
-        k.gate('cz', 4, 6)
-        k.gate('cz', 2, 5)
-        k.gate('cz', 3, 0)
+        k.gate('cz', [2, 0])
+        k.gate('cz', [3, 5])
+        k.gate('cz', [1, 4])
+        k.gate('cz', [4, 6])
+        k.gate('cz', [2, 5])
+        k.gate('cz', [3, 0])
 
         # add the kernel to the program
         p.add_kernel(k)
@@ -328,7 +327,7 @@ class Test_advance(unittest.TestCase):
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
 
-        k.gate('h', 0)
+        k.gate('h', [0])
         k.x(2)
 
         # add the kernel to the program
@@ -396,7 +395,7 @@ class Test_advance(unittest.TestCase):
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
 
-        k.gate('h', 0)
+        k.gate('h', [0])
         k.x(1)
 
         # add the kernel to the program
@@ -532,8 +531,8 @@ class Test_advance(unittest.TestCase):
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
 
-        k.gate('cz', 0, 2)
-        k.gate('cz', 4, 6)
+        k.gate('cz', [0, 2])
+        k.gate('cz', [4, 6])
 
         # add the kernel to the program
         p.add_kernel(k)
@@ -563,8 +562,8 @@ class Test_advance(unittest.TestCase):
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
 
-        k.gate('cz', 0, 2)
-        k.gate('cz', 1, 3)
+        k.gate('cz', [0, 2])
+        k.gate('cz', [1, 3])
 
         # add the kernel to the program
         p.add_kernel(k)
@@ -635,7 +634,7 @@ class Test_advance(unittest.TestCase):
         # populate kernel using default gates
         k = ql.Kernel('aKernel', platform)
         k.prepz(0)
-        k.gate('cprepz', 1)
+        k.gate('cprepz', [1])
         k.measure(0)
         k.measure(1)
 

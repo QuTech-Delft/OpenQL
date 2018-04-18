@@ -36,11 +36,11 @@ class Test_QASM_Loader(unittest.TestCase):
 
         # populate a second kernel using both custom and default gates
         k = ql.Kernel("kernel_2", platf)
-        k.gate("prepz", 0) 
-        k.gate('rx180', 0)
+        k.gate("prepz", [0]) 
+        k.gate('rx180', [0])
         k.rx180(0)
         k.gate('cz', [0, 1])
-        k.gate("measure", 0)
+        k.gate("measure", [0])
 
         # add the kernel to the program
         p.add_kernel(k)
@@ -79,13 +79,13 @@ class Test_QASM_Loader(unittest.TestCase):
 
         # populate a second kernel using both custom and default gates
         k = ql.Kernel("kernel_2", platf)
-        k.gate("prepz", 0) 
-        k.gate('rx180', 0)
+        k.gate("prepz", [0]) 
+        k.gate('rx180', [0])
         k.rx180(0)
         k.ry90(0)
         k.rx180(1)
         k.gate('cz', [0, 1])
-        k.gate("measure", 0)
+        k.gate("measure", [0])
 
         # add the kernel to the program
         p.add_kernel(k)

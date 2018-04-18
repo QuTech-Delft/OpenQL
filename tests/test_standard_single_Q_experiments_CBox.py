@@ -16,7 +16,7 @@ ql.set_output_dir(output_dir)
 
 class Test_single_qubit_seqs_CBox(unittest.TestCase):
     def test_allxy(self):
-        p = Program(pname="AllXY", nqubits=1, p=platf)
+        p = Program(pname="AllXY", nqubits=1, platform=platf)
         # uppercase lowercase problems
 
         allXY = [['i', 'i'], ['rx180', 'rx180'], ['ry180', 'ry180'],
@@ -31,10 +31,10 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         p.set_sweep_points(np.arange(len(allXY), dtype=float), len(allXY))
 
         for i, xy in enumerate(allXY):
-            k = Kernel("allXY"+str(i), p=platf)
+            k = Kernel("allXY"+str(i), platform=platf)
             k.prepz(0)
-            k.gate(xy[0], 0)
-            k.gate(xy[1], 0)
+            k.gate(xy[0], [0])
+            k.gate(xy[1], [0])
             k.measure(0)
             p.add_kernel(k)
 
@@ -45,7 +45,7 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         Assembler(qumis_fn).convert_to_instructions()
 
     def test_qasm_seq_echo(self):
-        p = Program(pname="Echo", nqubits=1, p=platf)
+        p = Program(pname="Echo", nqubits=1, platform=platf)
         times = np.linspace(0, 20e3, 61)  # in ns
         # To prevent superslow workaround
         times = np.linspace(0, 60, 61)  # in ns
@@ -56,15 +56,15 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
             # and will produce and invalid qasm
             n = 'echo_tau_{}ns'.format(tau) 
             n = n.replace(".","_")
-            k = Kernel(n, p=platf)
+            k = Kernel(n, platform=platf)
             k.prepz(0)
             k.rx90(0)
             # This is a dirty hack that repeats the I gate
             for j in range(int(tau/2)):
-                k.gate('i', 0)
+                k.gate('i', [0])
             k.rx180(0)
             for j in range(int(tau/2)):
-                k.gate('i', 0)
+                k.gate('i', [0])
             k.rx90(0)
             k.measure(0)
             p.add_kernel(k)
@@ -75,9 +75,9 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         Assembler(qumis_fn).convert_to_instructions()
 
     def test_qasm_seq_butterfly(self):
-        p = Program(pname="Butterfly", nqubits=1, p=platf)
+        p = Program(pname="Butterfly", nqubits=1, platform=platf)
 
-        k = Kernel('0', p=platf)
+        k = Kernel('0', platform=platf)
         k.prepz(0)
         k.measure(0)
         k.measure(0)
@@ -86,7 +86,7 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         # what is the post measuremnet state
         p.add_kernel(k)
 
-        k = Kernel('1', p=platf)
+        k = Kernel('1', platform=platf)
         k.prepz(0)
         k.measure(0)
         k.x(0)

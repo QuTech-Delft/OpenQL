@@ -65,10 +65,10 @@ public:
     std::string name;
     ql::quantum_kernel * ql_kernel;
 
-    Kernel(std::string kname, Platform p)
+    Kernel(std::string kname, Platform platform)
     {
         name = kname;
-        ql_kernel = new ql::quantum_kernel(name, *(p.ql_platform));
+        ql_kernel = new ql::quantum_kernel(name, *(platform.ql_platform));
     }
     void identity(size_t q0)
     {
@@ -186,22 +186,17 @@ public:
     {
         ql_kernel->display();
     }
-    void gate(std::string name)
+
+    void gate(std::string name, std::vector<size_t> qubits={}, size_t duration=0, double angle=0.0)
     {
-        ql_kernel->gate(name);
+        ql_kernel->gate(name, qubits, duration, angle);
     }
-    void gate(std::string name, size_t qubit)
+
+    void controlled(Kernel &k, std::vector<size_t> qubits)
     {
-        ql_kernel->gate(name, std::vector<size_t> {qubit} );
+        ql_kernel->controlled(k.ql_kernel, qubits);
     }
-    void gate(std::string name, size_t qubit0, size_t qubit1)
-    {
-        ql_kernel->gate(name, std::vector<size_t> {qubit0, qubit1} );
-    }
-    void gate(std::string name, std::vector<size_t> qubits, size_t duration=0)
-    {
-        ql_kernel->gate(name, qubits, duration);
-    }
+
     ~Kernel()
     {
         delete(ql_kernel);
@@ -219,11 +214,11 @@ private:
 
 public:
     std::string name;
-    Program(std::string pname, size_t nqubits, Platform p)
+    Program(std::string pname, size_t nqubits, Platform platform)
     {
         name = pname;
         // std::cout << "program::program()" << std::endl;
-        prog = new ql::quantum_program(name, nqubits, *(p.ql_platform));
+        prog = new ql::quantum_program(name, nqubits, *(platform.ql_platform));
     }
 
     void set_sweep_points( std::vector<float> sweep_points, size_t num_sweep_points)
@@ -271,14 +266,12 @@ public:
 };
 
 
-
 /**
  * qasm code loader
  */
 class QASM_Loader
 {
    public:
-
       qx::qasm_loader      * loader;
       std::string            file_name;
 
@@ -307,7 +300,6 @@ class QASM_Loader
          delete loader;
       }
 };
-
 
 
 #endif

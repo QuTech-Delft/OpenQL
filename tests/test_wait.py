@@ -28,14 +28,14 @@ class Test_wait(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('aProgram', num_qubits, platform)
+        p = ql.Program('test_wait_simple', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         k = ql.Kernel('aKernel', platform)
 
-        k.gate("x", 0)
+        k.gate("x", [0])
         k.gate("wait", [0], 40) # OR k.wait([0], 40)
-        k.gate("x", 0)
+        k.gate("x", [0])
 
         p.add_kernel(k)
         p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
@@ -50,15 +50,15 @@ class Test_wait(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('aProgram', num_qubits, platform)
+        p = ql.Program('test_wait_parallel', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         k = ql.Kernel('aKernel', platform)
 
         # wait should not be in parallel with another gate
-        k.gate("x", 0)
+        k.gate("x", [0])
         k.gate("wait", [1], 20) # OR k.wait([0], 20)
-        k.gate("x", 1)
+        k.gate("x", [1])
 
         p.add_kernel(k)
         p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
@@ -72,23 +72,23 @@ class Test_wait(unittest.TestCase):
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
         num_qubits = 7
-        p = ql.Program('aProgram', num_qubits, platform)
+        p = ql.Program('test_wait_sweep', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         qubit_idx = 0
         waits = [20, 40, 60, 100, 200, 400, 800, 1000, 2000]
         for kno, wait_nanoseconds in enumerate(waits):
-            k = ql.Kernel("kernel_"+str(kno), p=platform)
+            k = ql.Kernel("kernel_"+str(kno), platform)
 
             k.prepz(qubit_idx)
 
-            k.gate('rx90', qubit_idx)
+            k.gate('rx90', [qubit_idx])
             k.gate("wait", [qubit_idx], wait_nanoseconds)
 
-            k.gate('rx180', qubit_idx)
+            k.gate('rx180', [qubit_idx])
             k.gate("wait", [qubit_idx], wait_nanoseconds)
 
-            k.gate('rx90', qubit_idx)
+            k.gate('rx90', [qubit_idx])
             k.gate("wait", [qubit_idx], wait_nanoseconds)
 
             k.measure(qubit_idx)
@@ -108,19 +108,19 @@ class Test_wait(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('aProgram', num_qubits, platform)
+        p = ql.Program('test_wait_multi', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         k = ql.Kernel('aKernel', platform)
 
         for i in range(4):
-            k.gate("x", i)
+            k.gate("x", [i])
 
         k.gate("wait", [0, 1, 2, 3], 40)
         k.wait([0, 1, 2, 3], 40)
 
         for i in range(4):
-            k.gate("measure", i)
+                k.gate("measure", [i])
 
         p.add_kernel(k)
         p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
@@ -134,17 +134,17 @@ class Test_wait(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('aProgram', num_qubits, platform)
+        p = ql.Program('test_wait_barrier', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         k = ql.Kernel('aKernel', platform)
 
-        k.gate("x", 0)
-        k.gate("x", 1)
-        k.gate("y", 0)
+        k.gate("x", [0])
+        k.gate("x", [1])
+        k.gate("y", [0])
         k.gate("wait", [0, 1], 0) # this will serve as barrier
-        k.gate("measure", 0)
-        k.gate("measure", 1)
+        k.gate("measure", [0])
+        k.gate("measure", [1])
 
         p.add_kernel(k)
         p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
@@ -158,21 +158,21 @@ class Test_wait(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('aProgram', num_qubits, platform)
+        p = ql.Program('test_barrier', num_qubits, platform)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         k = ql.Kernel('aKernel', platform)
 
-        k.gate("x", 0)
-        k.gate("x", 1)
-        k.gate("y", 0)
+        k.gate("x", [0])
+        k.gate("x", [1])
+        k.gate("y", [0])
 
         # k.barrier([0, 1])
         # OR 
         k.gate("barrier", [0, 1])
 
-        k.gate("measure", 0)
-        k.gate("measure", 1)
+        k.gate("measure", [0])
+        k.gate("measure", [1])
 
         p.add_kernel(k)
         p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')

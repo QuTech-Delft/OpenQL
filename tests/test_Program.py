@@ -53,7 +53,7 @@ class Test_program(unittest.TestCase):
         k.prepz(1)
         k.x(0)
         k.cnot(0, 1)
-        k.gate("rx90", 1)
+        k.gate("rx90", [1])
         k.clifford(1, 0)
         k.measure(0)
         sweep_points = [2]
@@ -123,8 +123,8 @@ class Test_program(unittest.TestCase):
         for pulse_comb in pulse_combinations:
             k.prepz(q)
             # Currently not possible to specify a gate using a string
-            k.gate(pulse_comb[0], q)
-            k.gate(pulse_comb[1], q)
+            k.gate(pulse_comb[0], [q])
+            k.gate(pulse_comb[1], [q])
             k.measure(q)
 
         p.add_kernel(k)

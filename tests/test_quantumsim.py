@@ -24,11 +24,11 @@ class Test_quantumsim(unittest.TestCase):
         k = ql.Kernel('aKernel', platform)
 
         # populate kernel using default gates
-        k.gate("hadamard",0)
-        k.gate("hadamard",1)
+        k.gate("hadamard",[0])
+        k.gate("hadamard",[1])
         k.gate("cphase", [0, 1])
-        k.gate("measure", 0)
-        k.gate("measure", 1)
+        k.gate("measure", [0])
+        k.gate("measure", [1])
 
         # add the kernel to the program
         p.add_kernel(k)

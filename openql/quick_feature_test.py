@@ -10,7 +10,7 @@ def test_cclight():
     config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
     platform  = ql.Platform('seven_qubits_chip', config_fn)
     num_qubits = 7
-    p = ql.Program('aProgram', num_qubits, platform)
+    p = ql.Program('test_cclight', num_qubits, platform)
     sweep_points = [1,2]
     p.set_sweep_points(sweep_points, len(sweep_points))
 
@@ -30,15 +30,13 @@ def test_cclight():
         k.measure(i)
 
     p.add_kernel(k)
-
     p.compile(optimize=False, scheduler='ASAP', log_level='LOG_INFO')
-    # p.compile(optimize=False, scheduler='ALAP', log_level='LOG_INFO')
 
 def test_none():
     config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
     platform  = ql.Platform('platform_none', config_fn)
     num_qubits = 5
-    p = ql.Program('aProgram', num_qubits, platform)
+    p = ql.Program('test_none', num_qubits, platform)
 
     k = ql.Kernel('aKernel', platform)
 
@@ -48,7 +46,6 @@ def test_none():
     k.gate("cz", [2, 3])
 
     p.add_kernel(k)
-
     p.compile(optimize=False, scheduler='ALAP', log_level='LOG_INFO')
 
 def test_quantumsim():
@@ -63,29 +60,40 @@ def test_quantumsim():
     k.gate("measure", 0)
     k.gate("measure", 1)
 
-    p = ql.Program('aProgram', num_qubits, platform)
+    p = ql.Program('test_quantumsim', num_qubits, platform)
     p.add_kernel(k)
     p.compile(optimize=False, scheduler='ASAP', log_level='LOG_INFO')
 
-def test_display():
-    ql.set_log_level('LOG_DEBUG')
-    config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
+def test_controlled_kernel():
+    config_fn = os.path.join(curdir, '../tests/test_cfg_none_simple.json')
     platform  = ql.Platform('platform_none', config_fn)
-    num_qubits = 5
-    p = ql.Program('aProgram', num_qubits, platform)
+    num_qubits = 4
+    p = ql.Program('test_controlled_kernel', num_qubits, platform)
 
-    k = ql.Kernel('aKernel', platform)
+    k = ql.Kernel('kernel1', platform)
+    ck = ql.Kernel('controlled_kernel1', platform)
 
-    k.gate("hadamard",0)
-    k.gate("measure", 0)
-    k.display()
+    k.gate("x", [1])
+    # k.gate("y", [1])
+    # k.gate("z", [1])
+    # k.gate("h", [1])
+    # k.gate("i", [1])
+    # k.gate("s", [1])
+    # k.gate("t", [1])
+    # k.gate("sdag", [1])
+    # k.gate("tdag", [1])
+
+    # generate controlled version of k. qubit 2 is used as control qubit
+    # ck.controlled(k, [2])
 
     p.add_kernel(k)
+    # p.add_kernel(ck)
 
-    p.compile(optimize=False, scheduler='ALAP', log_level='LOG_DEBUG')
+    p.compile(optimize=False, scheduler='ASAP', log_level='LOG_INFO')
 
 if __name__ == '__main__':
-    test_display()
+    test_controlled_kernel()
+    # test_cclight()
 
 
     # LOG_NOTHING,

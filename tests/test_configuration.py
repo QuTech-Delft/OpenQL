@@ -11,14 +11,14 @@ class Test_Configuration(unittest.TestCase):
     def test_case_insensitivity(self):
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
-        p = ql.Program(pname="aProgram", nqubits=platform.get_qubit_number(), p=platform)
+        p = ql.Program(pname="aProgram", nqubits=platform.get_qubit_number(), platform=platform)
         sweep_points = [1,2]
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         k = ql.Kernel('aKernel', platform)
-        k.gate('rx180', 0)  # in the configuartion its name is rX180 q0
-        k.gate('rX180', 2)  # in the configuartion its name is rx180 q2
-        k.gate('cZ', 2, 0)  # in the configuartion its name is CZ q2, q0 
+        k.gate('rx180', [0])  # in the configuartion its name is rX180 q0
+        k.gate('rX180', [2])  # in the configuartion its name is rx180 q2
+        k.gate('cZ', [2, 0])  # in the configuartion its name is CZ q2, q0 
                             # (Note space in q2, q0)
 
         # add the kernel to the program
@@ -42,15 +42,15 @@ class Test_Configuration(unittest.TestCase):
     def test_missing_instr(self):
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
-        p = ql.Program(pname="aProgram", nqubits=platform.get_qubit_number(), p=platform)
+        p = ql.Program(pname="aProgram", nqubits=platform.get_qubit_number(), platform=platform)
         sweep_points = [1,2]
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         k = ql.Kernel('aKernel', platform)
-        k.gate('rx180', 0)  # available
+        k.gate('rx180', [0])  # available
 
         try:
-            k.gate('rx181', 2)  # not available, will raise exception
+            k.gate('rx181', [2])  # not available, will raise exception
         except:
             pass
         else:
@@ -78,17 +78,17 @@ class Test_Configuration(unittest.TestCase):
     def test_missing_cc_light_instr(self):
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
-        p = ql.Program(pname="aProgram", nqubits=platform.get_qubit_number(), p=platform)
+        p = ql.Program(pname="aProgram", nqubits=platform.get_qubit_number(), platform=platform)
         sweep_points = [1,2]
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         k = ql.Kernel('aKernel', platform)
 
-        k.gate('rx180', 0)  # fine
+        k.gate('rx180', [0])  # fine
 
         # cc_light_instr field is empty for this instruction
         # so it will raise error
-        k.gate('rx180', 6)
+        k.gate('rx180', [6])
 
         # add the kernel to the program
         p.add_kernel(k)

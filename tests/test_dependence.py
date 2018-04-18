@@ -238,9 +238,9 @@ class Test_dependence(unittest.TestCase):
         # populate kernel
         k = ql.Kernel("aKernel", platf)
 
-        k.gate("x", 0);
-        k.gate("swap", 0, 1)
-        k.gate("x", 0)
+        k.gate("x", [0]);
+        k.gate("swap", [0, 1])
+        k.gate("x", [0])
 
         sweep_points = [2]
         num_circuits = 1
@@ -273,11 +273,11 @@ class Test_dependence(unittest.TestCase):
         k = ql.Kernel("aKernel", platf)
 
         # swap test with 2 qubit gates
-        k.gate("x", 0)
-        k.gate("x", 1)
-        k.gate("swap", 0, 1)
-        k.gate("cz", 0, 2)
-        k.gate("cz", 1, 4)
+        k.gate("x", [0])
+        k.gate("x", [1])
+        k.gate("swap", [0, 1])
+        k.gate("cz", [0, 2])
+        k.gate("cz", [1, 4])
 
         sweep_points = [2]
         num_circuits = 1

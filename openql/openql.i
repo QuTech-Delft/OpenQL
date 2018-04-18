@@ -379,10 +379,27 @@ arg1 : str
 arg2 : []
     list of qubits
 arg3 : int
-    duration in ns (at the moment it is only supported for wait instruction, in the future it will be extended to override duration of other gates as well)
+    duration in ns (at the moment it is only supported for wait instruction, in the future it will be extended to override duration of any gate)
+arg3 : double
+    angle of roation, used internally only for roations (rx, ry and rz)
 """
 
 
+%feature("docstring") Kernel::controlled
+""" generate controlled version of the kernel.
+
+Parameters
+----------
+arg1 : ql::Kernel
+    input kernel. Except measure, Kernel to be controlled may contain any of the default gates as well custom gates which are not specialized for a specific qubits.
+arg2 : []
+    list of control qubits. At the moment only single qubit control is possible. This will be extended to support multi-qubit control.
+
+Returns
+-------
+ql::Kernel
+    controlled version of the kernel
+"""
 
 
 

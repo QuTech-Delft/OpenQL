@@ -53,36 +53,36 @@ extern dep_instruction_map_t dep_instruction_map;
 // gate types
 typedef enum __gate_type_t
 {
-    __identity_gate__  ,
-    __hadamard_gate__  ,
-    __pauli_x_gate__   ,
-    __pauli_y_gate__   ,
-    __pauli_z_gate__   ,
-    __phase_gate__     ,
-    __phasedag_gate__  ,
-    __t_gate__         ,
-    __tdag_gate__      ,
-    __rx90_gate__      ,
-    __mrx90_gate__     ,
-    __rx180_gate__     ,
-    __ry90_gate__      ,
-    __mry90_gate__     ,
-    __ry180_gate__     ,
-    __rx_gate__        ,
-    __ry_gate__        ,
-    __rz_gate__        ,
-    __prepz_gate__     ,
-    __cnot_gate__      ,
-    __cphase_gate__    ,
-    __toffoli_gate__   ,
-    __custom_gate__    ,
-    __composite_gate__ ,
-    __measure_gate__   ,
-    __display__        , // TODO change it later such that it should be available from config file as custom gate
-    __display_binary__ ,
-    __nop_gate__       ,
-    __dummy_gate__     ,
-    __swap_gate__      ,
+    __identity_gate__,
+    __hadamard_gate__,
+    __pauli_x_gate__,
+    __pauli_y_gate__,
+    __pauli_z_gate__,
+    __phase_gate__,
+    __phasedag_gate__,
+    __t_gate__,
+    __tdag_gate__,
+    __rx90_gate__,
+    __mrx90_gate__,
+    __rx180_gate__,
+    __ry90_gate__,
+    __mry90_gate__,
+    __ry180_gate__,
+    __rx_gate__,
+    __ry_gate__,
+    __rz_gate__,
+    __prepz_gate__,
+    __cnot_gate__,
+    __cphase_gate__,
+    __toffoli_gate__,
+    __custom_gate__,
+    __composite_gate__,
+    __measure_gate__,
+    __display__,         // TODO change it later such that it should be available from config file as custom gate
+    __display_binary__,
+    __nop_gate__,
+    __dummy_gate__,
+    __swap_gate__,
     __wait_gate__
 } gate_type_t;
 
@@ -91,64 +91,64 @@ typedef enum __gate_type_t
 
 #define __c(r,i) complex_t(r,i)
 
-const complex_t identity_c [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
-                                                                     __c(0.0, 0.0) , __c(1.0, 0.0)
+const complex_t identity_c [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0), __c(0.0, 0.0),
+                                                                     __c(0.0, 0.0), __c(1.0, 0.0)
                                                                    };     /* I */
 
-const complex_t pauli_x_c  [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) , __c(1.0, 0.0),
-                                                                     __c(1.0, 0.0) , __c(0.0, 0.0)
+const complex_t pauli_x_c  [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0), __c(1.0, 0.0),
+                                                                     __c(1.0, 0.0), __c(0.0, 0.0)
                                                                    };      /* X */
 
-const complex_t pauli_y_c  [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) , __c(0.0,-1.0),
-                                                                     __c(0.0, 1.0) , __c(0.0, 0.0)
+const complex_t pauli_y_c  [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0), __c(0.0,-1.0),
+                                                                     __c(0.0, 1.0), __c(0.0, 0.0)
                                                                    };      /* Y */
 
-const complex_t pauli_z_c  [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
-                                                                     __c(0.0, 0.0) , __c(-1.0,0.0)
+const complex_t pauli_z_c  [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0), __c(0.0, 0.0),
+                                                                     __c(0.0, 0.0), __c(-1.0,0.0)
                                                                    };      /* Z */
 
-const complex_t hadamard_c [] /* __attribute__((aligned(64))) */  = { rsqrt_2      ,  rsqrt_2,
-                                                                      rsqrt_2      , -rsqrt_2
+const complex_t hadamard_c [] /* __attribute__((aligned(64))) */  = { rsqrt_2,  rsqrt_2,
+                                                                      rsqrt_2, -rsqrt_2
                                                                     };            /* H */
 
-const complex_t phase_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
-                                                                     __c(0.0, 0.0) , __c(0.0, 1.0)
+const complex_t phase_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0), __c(0.0, 0.0),
+                                                                     __c(0.0, 0.0), __c(0.0, 1.0)
                                                                    };        /* S */
 
-const complex_t phasedag_c [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
-                                                                     __c(0.0, 0.0) , __c(0.0, -1.0)
+const complex_t phasedag_c [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0), __c(0.0, 0.0),
+                                                                     __c(0.0, 0.0), __c(0.0, -1.0)
                                                                    };        /* S */
 
-const complex_t t_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
-                                                                 __c(0.0, 0.0) , __c(0.707106781, 0.707106781)
+const complex_t t_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0), __c(0.0, 0.0),
+                                                                 __c(0.0, 0.0), __c(0.707106781, 0.707106781)
                                                                };        /* T */
 
-const complex_t tdag_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0) , __c(0.0, 0.0),
-                                                                    __c(0.0, 0.0) , __c(0.707106781, -0.707106781)
+const complex_t tdag_c    [] /* __attribute__((aligned(64))) */ = { __c(1.0, 0.0), __c(0.0, 0.0),
+                                                                    __c(0.0, 0.0), __c(0.707106781, -0.707106781)
                                                                   };        /* Tdag */
 
-const complex_t rx90_c  [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(0.0, -rsqrt_2),
+const complex_t rx90_c  [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0), __c(0.0, -rsqrt_2),
                                                                   __c(0.0, -rsqrt_2), __c(rsqrt_2,  0.0)
                                                                 };   /* rx90  */
 
-const complex_t ry90_c  [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(-rsqrt_2, 0.0),
+const complex_t ry90_c  [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0), __c(-rsqrt_2, 0.0),
                                                                   __c(rsqrt_2, 0.0 ), __c( rsqrt_2, 0.0)
                                                                 };   /* ry90  */
 
-const complex_t mrx90_c [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(0.0,  rsqrt_2),
-                                                                  __c(0.0, rsqrt_2) , __c(rsqrt_2,  0.0)
+const complex_t mrx90_c [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0), __c(0.0,  rsqrt_2),
+                                                                  __c(0.0, rsqrt_2), __c(rsqrt_2,  0.0)
                                                                 };   /* mrx90 */
 
-const complex_t mry90_c [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0) , __c(rsqrt_2, 0.0),
+const complex_t mry90_c [] /* __attribute__((aligned(64))) */ = { __c(rsqrt_2, 0.0), __c(rsqrt_2, 0.0),
                                                                   __c(-rsqrt_2, 0.0), __c(rsqrt_2, 0.0)
                                                                 };   /* ry90  */
 
-const complex_t rx180_c [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) , __c(0.0,-1.0),
-                                                                  __c(0.0,-1.0) , __c(0.0, 0.0)
+const complex_t rx180_c [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0), __c(0.0,-1.0),
+                                                                  __c(0.0,-1.0), __c(0.0, 0.0)
                                                                 };   /* rx180 */
 
-const complex_t ry180_c [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) , __c(-1.0, 0.0),
-                                                                  __c(1.0, 0.0) , __c( 0.0, 0.0)
+const complex_t ry180_c [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0), __c(-1.0, 0.0),
+                                                                  __c(1.0, 0.0), __c( 0.0, 0.0)
                                                                 };   /* ry180 */
 
 /**
@@ -157,46 +157,46 @@ const complex_t ry180_c [] /* __attribute__((aligned(64))) */ = { __c(0.0, 0.0) 
 
 const complex_t cnot_c [] /* __attribute__((aligned(64))) */ =
 {
-    __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0)
+    __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0)
 };  /* cnot  */
 
 // TODO correct it, for now copied from cnot
 const complex_t cphase_c [] /* __attribute__((aligned(64))) */ =
 {
-    __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(-1.0, 0.0)
+    __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(-1.0, 0.0)
 }; /* cz */
 
 const complex_t swap_c [] /* __attribute__((aligned(64))) */ =
 {
-    __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0)
+    __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0)
 };  /* swap  */
 
 // TODO correct it, for now copied from toffoli
 const complex_t ctoffoli_c[] /* __attribute__((aligned(64))) */ =
 {
-    __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
-    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0),
-    __c(0.0, 0.0) , __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0) , __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0)
+    __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0),
+    __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(0.0, 0.0), __c(1.0, 0.0), __c(0.0, 0.0)
 };
 
 const complex_t nop_c      [] /*__attribute__((aligned(64)))*/ =
 {
-    __c(1.0, 0.0) , __c(0.0, 0.0),
-    __c(0.0, 0.0) , __c(1.0, 0.0)
+    __c(1.0, 0.0), __c(0.0, 0.0),
+    __c(0.0, 0.0), __c(1.0, 0.0)
 };
 
 #undef __c
@@ -211,7 +211,8 @@ public:
     bool optimization_enabled = true;
     std::string name = "";
     std::vector<size_t> operands;
-    size_t duration;                          // to do change attribute name "duration" to "duration" (duration is used to describe hardware duration)
+    size_t duration;                         // to do change attribute name "duration" to "duration" (duration is used to describe hardware duration)
+    double angle;                            // for arbitrary rotations
     virtual instruction_t qasm()       = 0;
     virtual instruction_t micro_code() = 0;  // to do : deprecated
     virtual gate_type_t   type()       = 0;
@@ -374,15 +375,17 @@ class rx : public gate
 {
 public:
     cmat_t m;
-    double angle;
 
-    rx(size_t q, double angle) : angle(angle)
+    rx(size_t q, double theta)
     {
         name = "rx";
         duration = 40;
+        angle = theta;
         operands.push_back(q);
-        m(0,0) = cos(angle/2);               m(0,1) = complex_t(0,-sin(angle/2));
-        m(1,0) = complex_t(0,-sin(angle/2)); m(1,1) = cos(angle/2);
+        m(0,0) = cos(angle/2);
+        m(0,1) = complex_t(0,-sin(angle/2));
+        m(1,0) = complex_t(0,-sin(angle/2));
+        m(1,1) = cos(angle/2);
     }
 
     instruction_t qasm()
@@ -415,15 +418,17 @@ class ry : public gate
 {
 public:
     cmat_t m;
-    double angle;
 
-    ry(size_t q, double angle) : angle(angle)
+    ry(size_t q, double theta)
     {
         name = "ry";
         duration = 40;
+        angle = theta;
         operands.push_back(q);
-   m(0,0) = cos(angle/2); m(0,1) = -sin(angle/2);
-   m(1,0) = sin(angle/2); m(1,1) = cos(angle/2);
+        m(0,0) = cos(angle/2);
+        m(0,1) = -sin(angle/2);
+        m(1,0) = sin(angle/2);
+        m(1,1) = cos(angle/2);
     }
 
     instruction_t qasm()
@@ -456,15 +461,17 @@ class rz : public gate
 {
 public:
     cmat_t m;
-    double angle;
 
-    rz(size_t q, double angle) : angle(angle)
+    rz(size_t q, double theta)
     {
         name = "rz";
         duration = 40;
+        angle = theta;
         operands.push_back(q);
-   m(0,0) = complex_t(cos(-angle/2), sin(-angle/2));   m(0,1) = 0;
-   m(1,0) = 0;  m(1,1) =  complex_t(cos(angle/2), sin(angle/2));
+        m(0,0) = complex_t(cos(-angle/2), sin(-angle/2));
+        m(0,1) = 0;
+        m(1,0) = 0;
+        m(1,1) =  complex_t(cos(angle/2), sin(angle/2));
     }
 
     instruction_t qasm()
@@ -1272,12 +1279,8 @@ public:
 class custom_gate : public gate
 {
 public:
-
-    // string_t           name;             // qasm gate name
     cmat_t             m;                // matrix representation
-
     size_t             parameters;       // number of parameters : single qubit, two qubits ... etc
-
     ucode_sequence_t   qumis;            // microcode sequence
     instruction_type_t operation_type;   // operation type : rf/flux
     strings_t          used_hardware;    // used hardware
@@ -1495,8 +1498,8 @@ public:
  */
 class composite_gate : public custom_gate
 {
-   public:
-    double angle;
+public:
+    double angle; // TODO not needed, should be removed, check it!!!
     cmat_t m;
     std::vector<gate *> gs;
 
@@ -1510,17 +1513,17 @@ class composite_gate : public custom_gate
         duration = 0;
         for (gate * g : seq)
         {
-           gs.push_back(g);
-           duration += g->duration;
-           operands.insert(operands.end(), g->operands.begin(), g->operands.end());
+            gs.push_back(g);
+            duration += g->duration;
+            operands.insert(operands.end(), g->operands.begin(), g->operands.end());
         }
     }
 
     instruction_t qasm()
     {
-       std::stringstream instr;
+        std::stringstream instr;
         for (gate * g : gs)
-           instr << g->qasm() << "\n";
+            instr << g->qasm() << "\n";
         return instruction_t(instr.str());
     }
 
