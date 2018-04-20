@@ -252,19 +252,6 @@
          }
       },
 
-      "cz" : {
-         "duration": 20,
-         "latency": 10,
-         "matrix" : [ [0.0,0.0], [1.0,0.0],
-                 [1.0,0.0], [0.0,0.0] ],
-         "disable_optimization": true,
-         "type" : "flux",
-         "qumis_instr": "trigger",
-         "qumis_instr_kw": {
-            "trigger_bit": 6,
-            "trigger_duration": 80
-         }
-      },
 
       "cz q0,q1" : {
          "duration": 80,

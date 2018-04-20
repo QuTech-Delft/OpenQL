@@ -7,7 +7,11 @@ config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
 platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_output_dir(output_dir)
+
+ql.set_option('output_dir', output_dir)
+ql.set_option('optimize', 'no')
+ql.set_option('scheduler', 'ALAP')
+ql.set_option('log_level', 'LOG_WARNING')
 
 
 class Test_program(unittest.TestCase):
@@ -63,7 +67,7 @@ class Test_program(unittest.TestCase):
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         print( p.qasm() )
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # load qasm
         qasm_files = []
@@ -96,7 +100,7 @@ class Test_program(unittest.TestCase):
         # know what it does...
         p.set_sweep_points([10], 10)
         p.add_kernel(k)  # add kernel to program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
 
     # @unittest.skip('Gate by name not implemented')
@@ -130,7 +134,7 @@ class Test_program(unittest.TestCase):
         p.add_kernel(k)
         p.set_sweep_points( [nr_sweep_pts], nr_sweep_pts)
 
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # load qasm
         qasm_files = []

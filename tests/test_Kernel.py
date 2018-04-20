@@ -7,7 +7,11 @@ config_fn = os.path.join(curdir, 'test_config_default.json')
 platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_output_dir(output_dir)
+
+ql.set_option('output_dir', output_dir)
+ql.set_option('optimize', 'no')
+ql.set_option('scheduler', 'ASAP')
+ql.set_option('log_level', 'LOG_WARNING')
 
 
 class Test_kernel(unittest.TestCase):
@@ -88,7 +92,7 @@ class Test_kernel(unittest.TestCase):
         p.add_kernel(k1)
         p.add_kernel(k2)
 
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # load qasm
         qasm_files = []

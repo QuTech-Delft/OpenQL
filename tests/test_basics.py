@@ -9,8 +9,12 @@ class Test_basic(unittest.TestCase):
     def test_compilation(self):
         # set global options kernel
         output_dir = os.path.join(curdir, 'test_output')
-        ql.set_output_dir(output_dir)
-        print('output dir : {}'.format( ql.get_output_dir() ) )
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ALAP')
+        ql.set_option('log_level', 'LOG_WARNING')
+
+        print('output dir : {}'.format( ql.get_option('output_dir') ) )
         config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
         platf = ql.Platform("starmon", config_fn)
         sweep_points = [1]
@@ -37,7 +41,7 @@ class Test_basic(unittest.TestCase):
         k.gate("measure", 0)
         p.add_kernel(k)
 
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
         
         # load qasm
         qasm_files = []

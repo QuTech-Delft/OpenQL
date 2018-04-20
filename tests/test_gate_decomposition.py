@@ -3,6 +3,12 @@ import unittest
 import os
 
 curdir = os.path.dirname(__file__)
+output_dir = os.path.join(curdir, 'test_output')
+
+ql.set_option('output_dir', output_dir)
+ql.set_option('optimize', 'no')
+ql.set_option('scheduler', 'ALAP')
+ql.set_option('log_level', 'LOG_WARNING')
 
 class Tester(unittest.TestCase):
 
@@ -30,7 +36,7 @@ class Tester(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
 if __name__ == '__main__':
     unittest.main()

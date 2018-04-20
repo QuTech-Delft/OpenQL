@@ -21,6 +21,13 @@
 
 size_t MAX_CYCLE = std::numeric_limits<int>::max();
 
+#if defined(_WIN32)
+
+#else 
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
+
 namespace ql
 {
     /**
@@ -28,14 +35,13 @@ namespace ql
      */
     namespace utils
     {
-        std::string output_dir("test_output");
-        void set_output_dir(std::string dir)
+        void make_output_dir(std::string dir)
         {
-            output_dir = dir;
-        }
-        std::string get_output_dir()
-        {
-            return output_dir;
+            #if defined(_WIN32)
+            _mkdir(strPath.c_str());
+            #else 
+            mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+            #endif
         }
 
         /**
@@ -162,6 +168,60 @@ namespace ql
         } // logger namespace
 
     } // utils namespace
+
+    namespace options
+    {
+        std::map<std::string, std::string> _options
+        {
+            {"log_level", "LOG_NOTHING"},
+            {"output_dir", "test_output"},
+            {"scheduler", "ASAP"},
+            {"use_default_gates", "yes"},
+            {"optimize", "no"}
+        };
+
+        std::string get(std::string opt_name)
+        {
+            if( _options.find(opt_name) != _options.end() )
+            {
+                return _options[opt_name];
+            }
+            else
+            {
+                return "UNKNOWN";
+            }
+        }
+
+        void set(std::string opt_name, std::string opt_value)
+        {
+            if( _options.find(opt_name) != _options.end() )
+            {
+                _options[opt_name] = opt_value;
+
+                if(opt_name == "log_level")
+                    ql::utils::logger::set_log_level(opt_value);
+                else if(opt_name == "output_dir")
+                    ql::utils::make_output_dir(opt_value);
+
+            }
+            else
+            {
+                std::cerr << "[OPENQL] " << __FILE__ <<":"<< __LINE__ 
+                          <<" Error: Un-known option:"<< opt_name << std::endl;
+            }
+        }
+
+        void print()
+        {
+            std::cout << "OpenQL Options:\n";
+            for(auto elem : _options)
+            {
+                std::cout << "    " << elem.first << " : " << elem.second << "\n";
+            }            
+        }
+
+    } // options namespace
+
 } // ql namespace
 
 #define EOUT(content) \

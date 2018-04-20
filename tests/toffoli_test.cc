@@ -51,7 +51,7 @@ int main(int argc, char ** argv)
    prog.add(kernel);
 
    // compile the program
-   prog.compile(1);
+   prog.compile();
 
    // schedule program to generate scheduled qasm
    prog.schedule();

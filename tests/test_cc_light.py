@@ -7,7 +7,11 @@ rootDir = os.path.dirname(os.path.realpath(__file__))
 
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_output_dir(output_dir)
+
+ql.set_option('output_dir', output_dir)
+ql.set_option('optimize', 'no')
+ql.set_option('scheduler', 'ALAP')
+ql.set_option('log_level', 'LOG_WARNING')
 
 def file_compare(fn1, fn2):
     isSame = False
@@ -54,7 +58,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # load qasm
         qasm_files = []
@@ -94,7 +98,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # load qasm
         qasm_files = []
@@ -151,7 +155,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # load qasm
         qasm_files = []
@@ -187,7 +191,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         GOLD_fn = rootDir + '/golden/test_smis_all_bundled.qisa'
@@ -230,7 +234,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # load qasm
         qasm_files = []
@@ -272,7 +276,7 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         GOLD_fn = rootDir + '/golden/test_smit_all_bundled.qisa'
@@ -301,7 +305,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # load qasm
         qasm_files = []
@@ -335,7 +339,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # load qasm
         qasm_files = []
@@ -369,7 +373,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # load qasm
         qasm_files = []
@@ -403,7 +407,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # load qasm
         qasm_files = []
@@ -435,7 +439,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -471,7 +475,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # load qasm
         qasm_files = []
@@ -505,7 +509,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -539,7 +543,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # load qasm
         qasm_files = []
@@ -570,7 +574,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -605,7 +609,7 @@ class Test_advance(unittest.TestCase):
 
         # compile the program
         try:
-            p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+            p.compile()
             raise
         except:
             pass
@@ -643,7 +647,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
@@ -699,7 +703,7 @@ class Test_advance(unittest.TestCase):
                 k.gate(gate, qubits)
 
             p.add_kernel(k)
-            p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+            p.compile()
 
             # load qasm
             qasm_files = []
@@ -750,7 +754,7 @@ class Test_advance(unittest.TestCase):
                 k.gate(gate, qubits)
 
             p.add_kernel(k)
-            p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+            p.compile()
 
             # load qasm
             qasm_files = []

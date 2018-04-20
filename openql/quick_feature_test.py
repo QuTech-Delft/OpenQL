@@ -4,7 +4,7 @@ import numpy as np
 
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_output_dir(output_dir)
+ql.set_option("output_dir", output_dir)
 
 def test_cclight():
     config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
@@ -68,21 +68,35 @@ def test_quantumsim():
     p.compile(optimize=False, scheduler='ASAP', log_level='LOG_INFO')
 
 def test_display():
-    ql.set_log_level('LOG_DEBUG')
-    config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
+    ql.set_option('log_level', 'LOG_INFO')
+    ql.set_option('use_default_gates', 'yes')
+    ql.set_option('scheduler', 'ALAP')
+    ql.print_options()
+
+    config_fn = os.path.join(curdir, '../tests/test_config_default.json')
     platform  = ql.Platform('platform_none', config_fn)
-    num_qubits = 5
-    p = ql.Program('aProgram', num_qubits, platform)
 
-    k = ql.Kernel('aKernel', platform)
+    k = ql.Kernel("aKernel", platform)
 
-    k.gate("hadamard",0)
-    k.gate("measure", 0)
-    k.display()
+    for i in range(4):
+        k.prepz(i)
 
+    # q1 dependence
+    k.cz(0, 1)
+    k.cz(2, 1)
+
+    k.measure(0)
+    k.measure(1)
+
+    sweep_points = [2]
+    num_circuits = 1
+    nqubits = 4
+
+    p = ql.Program("WAW", nqubits, platform)
+    p.set_sweep_points(sweep_points, len(sweep_points))
     p.add_kernel(k)
 
-    p.compile(optimize=False, scheduler='ALAP', log_level='LOG_DEBUG')
+    p.compile()
 
 if __name__ == '__main__':
     test_display()

@@ -482,12 +482,20 @@ public:
                 bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits);
                 if(!custom_added)
                 {
-                    // default gate check
-                    DOUT("adding default gate for " << sub_ins_name);
-                    bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits);
-                    if( default_available )
+                    if(ql::options::get("use_default_gates") == "yes")
                     {
-                        WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                        // default gate check
+                        DOUT("adding default gate for " << sub_ins_name);
+                        bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits);
+                        if( default_available )
+                        {
+                            WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                        }
+                        else
+                        {
+                            EOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                            throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+sub_ins_name+"' with " +ql::utils::to_string(this_gate_qubits,"qubits")+" is not supported by the target platform !",false);
+                        }
                     }
                     else
                     {
@@ -565,12 +573,20 @@ public:
                 bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits);
                 if(!custom_added)
                 {
-                    // default gate check
-                    DOUT("adding default gate for " << sub_ins_name);
-                    bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits);
-                    if( default_available )
+                    if(ql::options::get("use_default_gates") == "yes")
                     {
-                        WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                        // default gate check
+                        DOUT("adding default gate for " << sub_ins_name);
+                        bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits);
+                        if( default_available )
+                        {
+                            WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                        }
+                        else
+                        {
+                            EOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                            throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+sub_ins_name+"' with " +ql::utils::to_string(this_gate_qubits,"qubits")+" is not supported by the target platform !",false);
+                        }
                     }
                     else
                     {
@@ -654,18 +670,26 @@ public:
                 bool custom_added = add_custom_gate_if_available(gname, qubits, duration);
                 if(!custom_added)
                 {
-                    // default gate check (which is always parameterized)
-                	DOUT("adding default gate for " << gname);
-
-    				bool default_available = add_default_gate_if_available(gname, qubits, duration);
-    				if( default_available )
+                    if(ql::options::get("use_default_gates") == "yes")
                     {
-                        WOUT("default gate added for " << gname);
+                        // default gate check (which is always parameterized)
+                    	DOUT("adding default gate for " << gname);
+
+        				bool default_available = add_default_gate_if_available(gname, qubits, duration);
+        				if( default_available )
+                        {
+                            WOUT("default gate added for " << gname);
+                        }
+                        else
+                        {
+                        	EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+                        	throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
+                        }
                     }
                     else
                     {
-                    	EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
-                    	throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
+                        EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+                        throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
                     }
                 }
                 else
@@ -749,8 +773,10 @@ public:
 
     }
 
-    void schedule(size_t qubits, quantum_platform platform, std::string scheduler, std::string& sched_qasm, std::string& sched_dot)
+    void schedule(size_t qubits, quantum_platform platform, std::string& sched_qasm, std::string& sched_dot)
     {
+        std::string scheduler = ql::options::get("scheduler");
+
 #ifndef __disable_lemon__
         IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
 

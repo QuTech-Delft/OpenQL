@@ -5,7 +5,11 @@ from openql import openql as ql
 
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_output_dir(output_dir)
+
+ql.set_option('output_dir', output_dir)
+ql.set_option('optimize', 'no')
+ql.set_option('scheduler', 'ALAP')
+ql.set_option('log_level', 'LOG_WARNING')
 
 class Test_Configuration(unittest.TestCase):
     def test_case_insensitivity(self):
@@ -25,7 +29,7 @@ class Test_Configuration(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
         
         # load qasm
         qasm_files = []
@@ -61,7 +65,7 @@ class Test_Configuration(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
         
         # load qasm
         qasm_files = []
@@ -95,7 +99,7 @@ class Test_Configuration(unittest.TestCase):
 
         try:
             # compile the program
-            p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+            p.compile()
         except:
             # print("exception raised")
             pass

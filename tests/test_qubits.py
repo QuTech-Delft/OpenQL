@@ -10,7 +10,11 @@ config_fn = os.path.join(curdir, 'test_config_default.json')
 platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_output_dir(output_dir)
+
+ql.set_option('output_dir', output_dir)
+ql.set_option('optimize', 'no')
+ql.set_option('scheduler', 'ALAP')
+ql.set_option('log_level', 'LOG_WARNING')
 
 def file_compare(fn1, fn2):
     isSame = False
@@ -42,7 +46,7 @@ class Test_qubits(unittest.TestCase):
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         p.add_kernel(k)  # add kernel to program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         gold_fn = rootDir + '/golden/test_1_qubit.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
@@ -68,7 +72,7 @@ class Test_qubits(unittest.TestCase):
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         p.add_kernel(k)  # add kernel to program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         gold_fn = rootDir + '/golden/test_2_qubit.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
@@ -93,7 +97,7 @@ class Test_qubits(unittest.TestCase):
 
         p.add_kernel(k)  # add kernel to program
 
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         gold_fn = rootDir + '/golden/test_3_qubit.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')

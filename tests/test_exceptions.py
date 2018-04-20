@@ -20,7 +20,7 @@ class Test_basic(unittest.TestCase):
     # in the configuration being loaded
     def test_config_exception_compiler(self):
         output_dir = os.path.join(curdir, 'test_output')
-        ql.set_output_dir(output_dir)
+        ql.set_option('output_dir', output_dir)
         config_fn = os.path.join(curdir, 'test_cfg_cbox_broken01.json')
         try:
             platf = ql.Platform("starmon", config_fn)
@@ -32,7 +32,7 @@ class Test_basic(unittest.TestCase):
     # in the configuration being loaded
     def test_config_exception_hardware(self):
         output_dir = os.path.join(curdir, 'test_output')
-        ql.set_output_dir(output_dir)
+        ql.set_option('output_dir', output_dir)
         config_fn = os.path.join(curdir, 'test_cfg_cbox_broken02.json')
         try:
             platf = ql.Platform("starmon", config_fn)
