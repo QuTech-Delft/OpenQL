@@ -203,6 +203,13 @@ class quantum_program
                kernels[k].optimize();
          }
 
+         if( ql::options::get("decompose_toffoli") == "yes" )
+         {
+            IOUT("Decomposing Toffoli ...");
+            for (size_t k=0; k<kernels.size(); ++k)
+               kernels[k].decompose_toffoli();
+         }
+
          std::stringstream ss_qasm;
          ss_qasm << ql::options::get("output_dir") << "/" << name << ".qasm";
          std::string s = qasm();

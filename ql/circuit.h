@@ -23,12 +23,10 @@ namespace ql
 
    void print(circuit& c)
    {
-#if __print_circuit__
       std::cout << "-------------------" << std::endl;
-      for (int i=0; i<c.size(); i++)
-	 std::cout << "   " << c[i]->qasm();
+      for (size_t i=0; i<c.size(); i++)
+	  	std::cout << "   " << c[i]->qasm() << std::endl;
       std::cout << "\n-------------------" << std::endl;
-#endif // __print_circuit__
    }
 }
 

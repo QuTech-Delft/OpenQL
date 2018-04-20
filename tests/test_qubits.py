@@ -97,6 +97,7 @@ class Test_qubits(unittest.TestCase):
 
         p.add_kernel(k)  # add kernel to program
 
+        ql.set_option('decompose_toffoli', 'no')
         p.compile()
 
         gold_fn = rootDir + '/golden/test_3_qubit.qasm'

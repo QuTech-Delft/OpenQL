@@ -38,6 +38,8 @@ class quantum_kernel
 {
 public:
 
+    quantum_kernel(std::string name) : name(name), iterations(1) {}
+
     quantum_kernel(std::string name, ql::quantum_platform& platform) : name(name), iterations(1)
     {
         gate_definition = platform.instruction_map;
@@ -809,6 +811,34 @@ public:
 
     }
 
+    void decompose_toffoli()
+    {
+        DOUT("decompose_toffoli()");
+        for( auto cit = c.begin(); cit != c.end(); ++cit )
+        {
+            auto g = *cit;
+            ql::gate_type_t gtype = g->type();
+            std::vector<size_t> goperands = g->operands;
+
+            ql::quantum_kernel toff_kernel("toff_kernel");
+            toff_kernel.gate_definition = gate_definition;
+            toff_kernel.qubit_number = qubit_number;
+            toff_kernel.cycle_time = cycle_time;
+
+            if( __toffoli_gate__ == gtype )
+            {
+                size_t cq1 = goperands[0];
+                size_t cq2 = goperands[1];
+                size_t tq = goperands[2];
+                toff_kernel.controlled_cnot(tq, cq1, cq2);
+                ql::circuit& toff_ckt = toff_kernel.get_circuit();
+                cit = c.erase(cit);
+                cit = c.insert(cit, toff_ckt.begin(), toff_ckt.end());
+            }
+        }
+        DOUT("decompose_toffoli() [Done] ");
+    }
+
     void schedule(size_t qubits, quantum_platform platform, std::string& sched_qasm, std::string& sched_dot)
     {
         std::string scheduler = ql::options::get("scheduler");
@@ -1236,7 +1266,7 @@ public:
         }
     }
 
-protected:
+public:
     std::string name;
     circuit     c;
     size_t      iterations;

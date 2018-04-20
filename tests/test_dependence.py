@@ -11,10 +11,11 @@ platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
 
-ql.set_option('output_dir', output_dir)
-ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ASAP')
-ql.set_option('log_level', 'LOG_INFO')
+def set_ql_options():
+    ql.set_option('output_dir', output_dir)
+    ql.set_option('optimize', 'no')
+    ql.set_option('scheduler', 'ASAP')
+    ql.set_option('log_level', 'LOG_INFO')
 
 def file_compare(fn1, fn2):
     isSame = False
@@ -32,6 +33,8 @@ class Test_dependence(unittest.TestCase):
     # @unittest.expectedFailure
     # @unittest.skip
     def test_independent(self):
+        set_ql_options()
+
         # populate kernel
         k = ql.Kernel("aKernel", platf)
 
@@ -52,7 +55,6 @@ class Test_dependence(unittest.TestCase):
         p = ql.Program("independent", nqubits, platf)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
-
         p.compile()
 
         gold_fn = rootDir + '/golden/test_independence.qasm'
@@ -71,8 +73,9 @@ class Test_dependence(unittest.TestCase):
 
 
 
-    @unittest.skip
+    # @unittest.skip
     def test_WAW(self):
+        set_ql_options()
 
         # populate kernel
         k = ql.Kernel("aKernel", platf)
@@ -94,7 +97,6 @@ class Test_dependence(unittest.TestCase):
         p = ql.Program("WAW", nqubits, platf)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
-
         p.compile()
 
         gold_fn = rootDir + '/golden/test_WAW_ASAP.qasm'
@@ -116,8 +118,9 @@ class Test_dependence(unittest.TestCase):
            self.assertTrue(errors == 0)
 
 
-    @unittest.skip
+    # @unittest.skip
     def test_RAR_Control(self):
+        set_ql_options()
 
         # populate kernel
         k = ql.Kernel("aKernel", platf)
@@ -158,8 +161,9 @@ class Test_dependence(unittest.TestCase):
 
 
 
-    @unittest.skip
+    # @unittest.skip
     def test_RAW(self):
+        set_ql_options()
 
         # populate kernel
         k = ql.Kernel("aKernel", platf)
@@ -200,8 +204,9 @@ class Test_dependence(unittest.TestCase):
 
 
 
-    @unittest.skip
+    # @unittest.skip
     def test_WAR(self):
+        set_ql_options()
 
         # populate kernel
         k = ql.Kernel("aKernel", platf)
@@ -241,8 +246,9 @@ class Test_dependence(unittest.TestCase):
            self.assertTrue(errors == 0)
 
 
-    @unittest.skip
+    # @unittest.skip
     def test_swap_single(self):
+        set_ql_options()
 
         # populate kernel
         k = ql.Kernel("aKernel", platf)
@@ -275,8 +281,9 @@ class Test_dependence(unittest.TestCase):
            errors = qasm_reader.load()
            self.assertTrue(errors == 0)
 
-    @unittest.skip
+    # @unittest.skip
     def test_swap_multi(self):
+        set_ql_options()
 
         # populate kernel
         k = ql.Kernel("aKernel", platf)

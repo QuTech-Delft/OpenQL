@@ -177,7 +177,8 @@ namespace ql
             {"output_dir", "test_output"},
             {"scheduler", "ASAP"},
             {"use_default_gates", "yes"},
-            {"optimize", "no"}
+            {"optimize", "no"},
+            {"decompose_toffoli", "no"}
         };
 
         std::string get(std::string opt_name)
