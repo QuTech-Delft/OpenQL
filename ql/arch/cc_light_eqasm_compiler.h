@@ -187,8 +187,8 @@ public:
             // println("\n" << qisa.str());
         }
 
-        std::string cs_filename = ql::utils::get_output_dir() + "/cs.txt";
-        std::string im_filename = ql::utils::get_output_dir() + "/qisa_opcodes.qmap"; // "/qisa_instructions.dbpd";
+        std::string cs_filename = ql::options::get("output_dir") + "/cs.txt";
+        std::string im_filename = ql::options::get("output_dir") + "/qisa_opcodes.qmap"; // "/qisa_instructions.dbpd";
         IOUT("writing control store file to '" << cs_filename << "' ...");
         IOUT("writing qisa instruction file to '" << im_filename << "' ...");
         std::string s = control_store.str();
@@ -493,7 +493,7 @@ public:
                 diagram.add_trace(t);
         }
 
-        diagram.dump(ql::utils::get_output_dir() + "/trace.dat");
+        diagram.dump(ql::options::get("output_dir") + "/trace.dat");
 #endif
     }
 

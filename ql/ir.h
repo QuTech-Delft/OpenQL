@@ -72,12 +72,12 @@ namespace ql
         void write_qasm(bundles_t & bundles)
         {
             std::ofstream fout;
-            std::string fname(ql::utils::get_output_dir() + "/ir.qasm");
+            std::string fname( ql::options::get("output_dir") + "/ir.qasm" );
             fout.open( fname, std::ios::binary);
             if ( fout.fail() )
             {
                 EOUT("Error opening file " << fname << std::endl
-                         << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
+                         << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
                 return;
             }
 

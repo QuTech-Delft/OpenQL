@@ -189,14 +189,14 @@ class quantum_program
          return ss.str();
       }
 
-      int compile(bool ql_optimize=false, std::string scheduler="ALAP") throw (ql::exception)
+      int compile()
       {
          IOUT("compiling ...");
 
          if (kernels.empty())
             return -1;
 
-         if(ql_optimize)
+         if( ql::options::get("optimize") == "yes" )
          {
             IOUT("optimizing quantum kernels...");
             for (size_t k=0; k<kernels.size(); ++k)
@@ -204,13 +204,13 @@ class quantum_program
          }
 
          std::stringstream ss_qasm;
-         ss_qasm << ql::utils::get_output_dir() << "/" << name << ".qasm";
+         ss_qasm << ql::options::get("output_dir") << "/" << name << ".qasm";
          std::string s = qasm();
 
          IOUT("writing un-scheduled qasm to '" << ss_qasm.str() << "' ...");
          ql::utils::write_file(ss_qasm.str(),s);
 
-         schedule(scheduler);
+         schedule();
 
          if (backend_compiler == NULL)
          {
@@ -237,11 +237,11 @@ class quantum_program
       	   throw e;
       	}
 
-         IOUT("writing eqasm code to '" << ( ql::utils::get_output_dir() + "/" + name+".asm"));
-         backend_compiler->write_eqasm( ql::utils::get_output_dir() + "/" + name + ".asm");
+         IOUT("writing eqasm code to '" << ( ql::options::get("output_dir") + "/" + name+".asm"));
+         backend_compiler->write_eqasm( ql::options::get("output_dir") + "/" + name + ".asm");
 
-         IOUT("writing traces to '" << ( ql::utils::get_output_dir() + "/trace.dat"));
-         backend_compiler->write_traces( ql::utils::get_output_dir() + "/trace.dat");
+         IOUT("writing traces to '" << ( ql::options::get("output_dir") + "/trace.dat"));
+         backend_compiler->write_traces( ql::options::get("output_dir") + "/trace.dat");
 
          // deprecated hardcoded microcode generation 
 
@@ -265,7 +265,7 @@ class quantum_program
             if (default_config)
             {
                std::stringstream ss_config;
-               ss_config << ql::utils::get_output_dir() << "/" << name << "_config.json";
+               ss_config << ql::options::get("output_dir") << "/" << name << "_config.json";
                std::string conf_file_name = ss_config.str();
                IOUT("writing sweep points to '" << conf_file_name << "'...");
                ql::utils::write_file(conf_file_name, config);
@@ -273,7 +273,7 @@ class quantum_program
             else
             {
                std::stringstream ss_config;
-               ss_config << ql::utils::get_output_dir() << "/" << config_file_name;
+               ss_config << ql::options::get("output_dir") << "/" << config_file_name;
                std::string conf_file_name = ss_config.str();
                IOUT("writing sweep points to '" << conf_file_name << "'...");
                ql::utils::write_file(conf_file_name, config);
@@ -289,7 +289,7 @@ class quantum_program
          return 0;
       }
 
-      void schedule(std::string scheduler="ASAP")
+      void schedule()
       {
          std::string sched_qasm;
          sched_qasm += "qubits " + std::to_string(qubits) + "\n";
@@ -301,16 +301,16 @@ class quantum_program
          {
             std::string kernel_sched_qasm;
             std::string kernel_sched_dot;
-            k.schedule(qubits, platform, scheduler, kernel_sched_qasm, kernel_sched_dot);
+            k.schedule(qubits, platform, kernel_sched_qasm, kernel_sched_dot);
             sched_qasm += "\n." + k.get_name();
             sched_qasm += kernel_sched_qasm + '\n';
             // disabled generation of dot file for each kernel
-            // string fname = ql::utils::get_output_dir() + "/" + k.get_name() + scheduler + ".dot";
+            // string fname = ql::options::get("output_dir") + "/" + k.get_name() + scheduler + ".dot";
             // IOUT("writing scheduled qasm to '" << fname << "' ...");
             // ql::utils::write_file(fname, kernel_sched_dot);
          }
 
-         string fname = ql::utils::get_output_dir() + "/" + name + "_scheduled.qasm";
+         string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
          IOUT("writing scheduled qasm to '" << fname << "' ...");
          ql::utils::write_file(fname, sched_qasm);
       }
@@ -334,7 +334,7 @@ class quantum_program
             InteractionMatrix imat( k.get_circuit(), qubits);
             string mstr = imat.getString();
 
-            string fname = ql::utils::get_output_dir() + "/" + k.get_name() + "InteractionMatrix.dat";
+            string fname = ql::options::get("output_dir") + "/" + k.get_name() + "InteractionMatrix.dat";
             IOUT("writing interaction matrix to '" << fname << "' ...");
             ql::utils::write_file(fname, mstr);
          }

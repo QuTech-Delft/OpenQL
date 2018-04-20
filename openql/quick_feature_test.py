@@ -4,7 +4,11 @@ import numpy as np
 
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_output_dir(output_dir)
+
+ql.set_option('output_dir', output_dir)
+ql.set_option('optimize', 'no')
+ql.set_option('scheduler', 'ASAP')
+ql.set_option('log_level', 'LOG_WARNING')
 
 def test_cclight():
     config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
@@ -30,7 +34,7 @@ def test_cclight():
         k.measure(i)
 
     p.add_kernel(k)
-    p.compile(optimize=False, scheduler='ASAP', log_level='LOG_INFO')
+    p.compile()
 
 def test_none():
     config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
@@ -46,7 +50,7 @@ def test_none():
     k.gate("cz", [2, 3])
 
     p.add_kernel(k)
-    p.compile(optimize=False, scheduler='ALAP', log_level='LOG_INFO')
+    p.compile()
 
 def test_quantumsim():
     config_fn = os.path.join(curdir, '../tests/test_cfg_quantumsim.json')
@@ -62,7 +66,7 @@ def test_quantumsim():
 
     p = ql.Program('test_quantumsim', num_qubits, platform)
     p.add_kernel(k)
-    p.compile(optimize=False, scheduler='ASAP', log_level='LOG_INFO')
+    p.compile()
 
 def test_controlled_kernel():
     config_fn = os.path.join(curdir, '../tests/test_cfg_none_simple.json')
@@ -87,9 +91,10 @@ def test_controlled_kernel():
     # ck.controlled(k, [2])
 
     p.add_kernel(k)
-    # p.add_kernel(ck)
+    p.add_kernel(ck)
 
-    p.compile(optimize=False, scheduler='ASAP', log_level='LOG_INFO')
+    p.compile()
+
 
 if __name__ == '__main__':
     test_controlled_kernel()

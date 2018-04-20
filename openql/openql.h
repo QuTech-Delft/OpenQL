@@ -18,21 +18,20 @@
 #include <ql/openql.h>
 #include <ql/qasm_loader.h>
 
-void set_output_dir_(std::string dir="output")
+void set_option(std::string option_name, std::string option_value)
 {
-    ql::utils::set_output_dir(dir);
+    ql::options::set(option_name, option_value);
 }
 
-std::string get_output_dir()
+std::string get_option(std::string option_name)
 {
-    return ql::utils::get_output_dir();
+    return ql::options::get(option_name);
 }
 
-void set_log_level(std::string log_level="LOG_DEBUG")
+void print_options()
 {
-    ql::utils::logger::set_log_level(log_level);
+    ql::options::print();
 }
-
 
 /**
  * quantum program interface
@@ -232,10 +231,9 @@ public:
         prog->add( *(k.ql_kernel) );
     }
 
-    void compile(bool optimize=false, std::string scheduler="ALAP", std::string log_level="LOG_INFO")
+    void compile()
     {
-        ql::utils::logger::set_log_level(log_level);
-        prog->compile(optimize, scheduler);
+        prog->compile();
     }
 
     std::string qasm()

@@ -277,13 +277,13 @@ void WriteCCLightQasm(std::string prog_name, size_t num_qubits, ql::ir::bundles_
 {
     IOUT("Writing Recourse-contraint scheduled CC-Light QASM");
     ofstream fout;
-    string qasmfname( ql::utils::get_output_dir() + "/" + prog_name + "_scheduled_rc.qasm");
+    string qasmfname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
     IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << qasmfname);
     fout.open( qasmfname, ios::binary);
     if ( fout.fail() )
     {
         EOUT("opening file " << qasmfname << std::endl
-                 << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
+                 << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
         return;
     }
 
@@ -369,12 +369,12 @@ void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, Ma
     IOUT("Generating CC-Light QISA");
 
     ofstream fout;
-    string qisafname( ql::utils::get_output_dir() + "/" + prog_name + ".qisa");
+    string qisafname( ql::options::get("output_dir") + "/" + prog_name + ".qisa");
     fout.open( qisafname, ios::binary);
     if ( fout.fail() )
     {
         EOUT("opening file " << qisafname << std::endl
-                 << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
+                 << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
         return;
     }
 
@@ -498,12 +498,12 @@ void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & p
 {
     IOUT("Generating Time-stamped CC-Light QISA");
     ofstream fout;
-    string qisafname( ql::utils::get_output_dir() + "/" + prog_name + ".tqisa");
+    string qisafname( ql::options::get("output_dir") + "/" + prog_name + ".tqisa");
     fout.open( qisafname, ios::binary);
     if ( fout.fail() )
     {
         EOUT("opening file " << qisafname << std::endl
-                 << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
+                 << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
         return;
     }
 

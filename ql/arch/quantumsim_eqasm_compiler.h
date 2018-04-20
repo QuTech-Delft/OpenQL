@@ -76,13 +76,13 @@ private:
     {
         IOUT("Writing scheduled Quantumsim program");
         ofstream fout;
-        string qfname( ql::utils::get_output_dir() + "/" + prog_name + "_quantumsim.py");
+        string qfname( ql::options::get("output_dir") + "/" + prog_name + "_quantumsim.py");
         IOUT("Writing scheduled Quantumsim program to " << qfname);
         fout.open( qfname, ios::binary);
         if ( fout.fail() )
         {
             EOUT("opening file " << qfname << std::endl
-                     << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
+                     << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
             return;
         }
 

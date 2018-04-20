@@ -3,6 +3,13 @@ import unittest
 import json
 from openql import openql as ql
 
+curdir = os.path.dirname(__file__)
+output_dir = os.path.join(curdir, 'test_output')
+
+ql.set_option('output_dir', output_dir)
+ql.set_option('optimize', 'no')
+ql.set_option('scheduler', 'ALAP')
+ql.set_option('log_level', 'LOG_WARNING')
 
 class Test_sweep_points(unittest.TestCase):
 
@@ -13,7 +20,8 @@ class Test_sweep_points(unittest.TestCase):
         cls.platf = ql.Platform("starmon", config_fn)
 
         cls.output_dir = os.path.join(curdir, 'test_output')
-        ql.set_output_dir(cls.output_dir)
+        ql.set_option('output_dir', cls.output_dir)
+
 
             
     def test_sweep_points(self):
@@ -37,7 +45,7 @@ class Test_sweep_points(unittest.TestCase):
         p.add_kernel(k)
 
         # compile
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # all the outputs are generated in 'output' dir
         with open(os.path.join(self.__class__.output_dir, 'aProgram_config.json')) as fp:

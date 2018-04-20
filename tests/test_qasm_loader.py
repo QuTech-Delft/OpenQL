@@ -7,8 +7,11 @@ config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
 platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_output_dir(output_dir)
 
+ql.set_option('output_dir', output_dir)
+ql.set_option('optimize', 'no')
+ql.set_option('scheduler', 'ASAP')
+ql.set_option('log_level', 'LOG_WARNING')
 
 class Test_QASM_Loader(unittest.TestCase):
 
@@ -46,7 +49,7 @@ class Test_QASM_Loader(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_WARNING')
+        p.compile()
         
         # load qasm
         qasm_files = []
@@ -91,7 +94,7 @@ class Test_QASM_Loader(unittest.TestCase):
         p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_WARNING')
+        p.compile()
         
         # load qasm
         qasm_files = []

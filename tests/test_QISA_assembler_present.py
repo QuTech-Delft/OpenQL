@@ -7,7 +7,7 @@ from openql import openql as ql
 curdir = os.path.dirname(__file__)
 
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_output_dir(output_dir)
+ql.set_option('output_dir', output_dir)
 
 sys.path.append(os.path.join(curdir, 'qisa-as', 'build'))
 

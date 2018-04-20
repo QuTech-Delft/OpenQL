@@ -327,12 +327,12 @@ public:
     {
         COUT("Printing Dependence Graph as Matrix");
         ofstream fout;
-        string datfname( ql::utils::get_output_dir() + "/dependenceMatrix.dat");
+        string datfname( ql::options::get("output_dir") + "/dependenceMatrix.dat");
         fout.open( datfname, ios::binary);
         if ( fout.fail() )
         {
             EOUT("opening file " << datfname << std::endl
-                     << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
+                     << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
             return;
         }
 
@@ -463,12 +463,12 @@ public:
     // {
     //     IOUT("Printing Dependence Graph in DOT");
     //     ofstream dotout;
-    //     string dotfname(ql::utils::get_output_dir() + "/dependenceGraph.dot");
+    //     string dotfname(ql::options::get("output_dir") + "/dependenceGraph.dot");
     //     dotout.open(dotfname, ios::binary);
     //     if ( dotout.fail() )
     //     {
     //         EOUT("opening file " << dotfname << std::endl
-    //                  << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
+    //                  << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
     //         return;
     //     }
 
@@ -538,7 +538,7 @@ public:
             ++currNode;
         }
 
-        DOUT("Performing ASAP Scheduling Done.");
+        DOUT("Performing ASAP Scheduling [Done].");
     }
 
     // with rc and latency compensation
@@ -682,12 +682,12 @@ public:
     // void PrintDotScheduleASAP()
     // {
     //     ofstream dotout;
-    //     string dotfname( ql::utils::get_output_dir() + "/scheduledASAP.dot");
+    //     string dotfname( ql::options::get("output_dir") + "/scheduledASAP.dot");
     //     dotout.open( dotfname, ios::binary);
     //     if ( dotout.fail() )
     //     {
     //         EOUT("opening file " << dotfname << std::endl
-    //                  << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
+    //                  << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
     //         return;
     //     }
 
@@ -992,12 +992,12 @@ public:
     // void PrintDotScheduleALAP()
     // {
     //     ofstream dotout;
-    //     string dotfname(ql::utils::get_output_dir() + "/scheduledALAP.dot");
+    //     string dotfname(ql::options::get("output_dir") + "/scheduledALAP.dot");
     //     dotout.open( dotfname, ios::binary);
     //     if ( dotout.fail() )
     //     {
     //         EOUT("Error opening file " << dotfname << std::endl
-    //                  << "Make sure the output directory ("<< ql::utils::get_output_dir() << ") exists");
+    //                  << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
     //         return;
     //     }
 

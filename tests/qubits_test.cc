@@ -78,7 +78,7 @@ int main(int argc, char ** argv)
             kernel.cnot(i,j);
 
     prog.add(kernel);   // add kernel to program
-    prog.compile(1);    // compile program
+    prog.compile();    // compile program
 
     ql::quantum_program sprog = prog;
     sprog.schedule();

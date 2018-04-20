@@ -7,7 +7,11 @@ rootDir = os.path.dirname(os.path.realpath(__file__))
 
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_output_dir(output_dir)
+
+ql.set_option('output_dir', output_dir)
+ql.set_option('optimize', 'no')
+ql.set_option('scheduler', 'ALAP')
+ql.set_option('log_level', 'LOG_WARNING')
 
 def file_compare(fn1, fn2):
     isSame = False
@@ -38,7 +42,7 @@ class Test_wait(unittest.TestCase):
         k.gate("x", [0])
 
         p.add_kernel(k)
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_simple.qisa'        
@@ -61,7 +65,7 @@ class Test_wait(unittest.TestCase):
         k.gate("x", [1])
 
         p.add_kernel(k)
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_parallel.qisa'        
@@ -97,7 +101,7 @@ class Test_wait(unittest.TestCase):
             p.add_kernel(k)
 
         # compile the program
-        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_WARNING')
+        p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_sweep.qisa'        
@@ -123,7 +127,7 @@ class Test_wait(unittest.TestCase):
                 k.gate("measure", [i])
 
         p.add_kernel(k)
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_multi.qisa'        
@@ -147,7 +151,7 @@ class Test_wait(unittest.TestCase):
         k.gate("measure", [1])
 
         p.add_kernel(k)
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_barrier.qisa'        
@@ -175,7 +179,7 @@ class Test_wait(unittest.TestCase):
         k.gate("measure", [1])
 
         p.add_kernel(k)
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_barrier.qisa'        

@@ -276,7 +276,7 @@ namespace ql
                emit_eqasm();
 
                // dump timed eqasm code
-               write_timed_eqasm(ql::utils::get_output_dir() + "/program.tasm");
+               write_timed_eqasm(ql::options::get("output_dir") + "/program.tasm");
 
                // return eqasm_code;
             }
@@ -681,8 +681,8 @@ namespace ql
              */
             void write_waveforms(std::vector<waveform_t>& wfs, size_t execution_time)
             {
-               // std::string file_name = ql::utils::get_output_dir() + "/waveforms_sequence.json";
-               std::string file_name = ql::utils::get_output_dir() + "/waveform_sequence.dat";
+               // std::string file_name = ql::options::get("output_dir") + "/waveforms_sequence.json";
+               std::string file_name = ql::options::get("output_dir") + "/waveform_sequence.dat";
                DOUT("writing waveforms sequence to '" << file_name << "'...");
 
                std::stringstream js;
@@ -765,7 +765,7 @@ namespace ql
                      diagram.add_trace(t);
                }
 
-               diagram.dump(ql::utils::get_output_dir() + "/trace.dat");
+               diagram.dump(ql::options::get("output_dir") + "/trace.dat");
 
             }
 

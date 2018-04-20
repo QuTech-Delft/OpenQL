@@ -5,7 +5,7 @@ from openql import openql as ql
 
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_output_dir(output_dir)
+ql.set_option('output_dir', output_dir)
 
 class Test_CCL_long_duration(unittest.TestCase):
     def test_AllXY(self):

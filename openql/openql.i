@@ -25,7 +25,7 @@ namespace std {
 %}
 
 
-
+/*
 %pythoncode %{
 import os, errno
 
@@ -37,7 +37,7 @@ def set_output_dir(path):
             raise
     _openql.set_output_dir_(path)
 %}
-
+*/
 
 
 %exception
@@ -60,42 +60,40 @@ try
 
 
 
-%feature("docstring") set_output_dir
-""" Sets output directory for the generated files. The direcoty will be created of it does not already exist.
+%feature("docstring") set_option
+""" Sets any of the following OpenQL options (default values also mentioned)
+    'log_level'  : 'LOG_NOTHING'
+    'output_dir' : 'test_output'
+    'scheduler'  : 'ASAP'
 
 Parameters
 ----------
 arg1 : str
-    Path to a directory.
+    Option name
+arg2 : str
+    Option value
 """
 
-%feature("docstring") get_output_dir
-""" Returns the path of current set directory for output files.
+%feature("docstring") get_option
+""" Returns value of any of the following OpenQL options (default values also mentioned)
+    'log_level'  : 'LOG_NOTHING'
+    'output_dir' : 'test_output'
+    'scheduler'  : 'ASAP'
 
 Parameters
 ----------
-None
+arg1 : str
+    Option name
 
 Returns
 -------
 str
-    Path of output directory
+    Option value
 """
 
+%feature("docstring") print_options
+""" Prints a list of available OpenQL options with their values.
 
-%feature("docstring") set_log_level
-""" Sets the log level globally
-
-Parameters
-----------
-arg1 : str
-    verbosity level which in ascending order of verbosity can be
-        LOG_NOTHING,
-        LOG_CRITICAL,
-        LOG_ERROR,
-        LOG_WARNING,
-        LOG_INFO,
-        LOG_DEBUG
 """
 
 
@@ -445,18 +443,7 @@ arg1 : kernel
 
 Parameters
 ----------
-arg1 : bool
-    optimize, default is False
-arg2 : str
-    scheduler which can be 'ASAP' or 'ALAP', default is 'ALAP'
-arg3 : str
-    verbosity level which in ascending order of verbosity can be
-        LOG_NOTHING,
-        LOG_CRITICAL,
-        LOG_ERROR,
-        LOG_WARNING,
-        LOG_INFO,
-        LOG_DEBUG
+None
 """
 
 

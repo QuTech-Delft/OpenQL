@@ -15,7 +15,11 @@ config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
 platf = ql.Platform('seven_qubits_chip', config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_output_dir(output_dir)
+
+ql.set_option('output_dir', output_dir)
+ql.set_option('optimize', 'no')
+ql.set_option('scheduler', 'ALAP')
+ql.set_option('log_level', 'LOG_WARNING')
 
 
 class Test_single_qubit_seqs_CCL(unittest.TestCase):
@@ -28,7 +32,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         k.gate('measure', [0])
 
         p.add_kernel(k)
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # Test that the generated code is valid
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
@@ -57,7 +61,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
             k.measure(0)
             p.add_kernel(k)
 
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # Test that the generated code is valid
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
@@ -88,7 +92,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
             k.measure(0)
             p.add_kernel(k)
             
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # Test that the generated code is valid
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
@@ -113,7 +117,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         k.measure(0)
         k.measure(0)
         p.add_kernel(k)
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+        p.compile()
 
         # Test that the generated code is valid
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')

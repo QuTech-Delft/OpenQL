@@ -7,7 +7,11 @@ rootDir = os.path.dirname(os.path.realpath(__file__))
 
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_output_dir(output_dir)
+
+ql.set_option('output_dir', output_dir)
+ql.set_option('optimize', 'no')
+ql.set_option('scheduler', 'ASAP')
+ql.set_option('log_level', 'LOG_WARNING')
 
 class Test_controlled_kernel(unittest.TestCase):
     # controlled-T requires an ancilla. At the moment qubit 0 is implicitly used
@@ -34,7 +38,7 @@ class Test_controlled_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.add_kernel(ck)
 
-        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_INFO')
+        p.compile()
 
     def test_controlled_rotations(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
@@ -55,7 +59,7 @@ class Test_controlled_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.add_kernel(ck)
 
-        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_INFO')
+        p.compile()
 
     def test_controlled_two_qubit_gates(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
@@ -74,7 +78,7 @@ class Test_controlled_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.add_kernel(ck)
 
-        p.compile(optimize=False, scheduler='ASAP', log_level='LOG_INFO')
+        p.compile()
 
 if __name__ == '__main__':
     unittest.main()
