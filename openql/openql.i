@@ -61,10 +61,15 @@ try
 
 
 %feature("docstring") set_option
-""" Sets any of the following OpenQL options (default values also mentioned)
-    'log_level'  : 'LOG_NOTHING'
-    'output_dir' : 'test_output'
-    'scheduler'  : 'ASAP'
+""" Sets any of the following OpenQL options:
+     Opt. Name   :   Default     : Possible values
+    'log_level'  : LOG_NOTHING   : 'LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}'
+    'output_dir' : 'test_output' : <output directory>
+    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
+    'use_default_gates' : 'yes'  : 'yes/no'
+    'optimize'   :   'no'        : 'yes/no'
+    'decompose_toffoli' :  'no'  : 'yes/no'
+
 
 Parameters
 ----------
@@ -75,10 +80,14 @@ arg2 : str
 """
 
 %feature("docstring") get_option
-""" Returns value of any of the following OpenQL options (default values also mentioned)
-    'log_level'  : 'LOG_NOTHING'
-    'output_dir' : 'test_output'
-    'scheduler'  : 'ASAP'
+""" Returns value of any of the following OpenQL options:
+     Opt. Name   :   Default     : Possible values
+    'log_level'  : LOG_NOTHING   : 'LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}'
+    'output_dir' : 'test_output' : <output directory>
+    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
+    'use_default_gates' : 'yes'  : 'yes/no'
+    'optimize'   :   'no'        : 'yes/no'
+    'decompose_toffoli' :  'no'  : 'yes/no'
 
 Parameters
 ----------

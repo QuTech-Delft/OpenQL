@@ -86,7 +86,6 @@ class Test_controlled_kernel(unittest.TestCase):
         num_qubits = 4
 
         p = ql.Program('test_decompose_toffoli', num_qubits, platform)
-
         k = ql.Kernel('kernel1', platform)
 
         k.hadamard(2)
@@ -94,8 +93,7 @@ class Test_controlled_kernel(unittest.TestCase):
         k.hadamard(2)
 
         p.add_kernel(k)
-
-        ql.set_option('decompose_toffoli', 'yes')
+        ql.set_option('decompose_toffoli', 'NC') # NC/AM/no
         p.compile()
 
 if __name__ == '__main__':

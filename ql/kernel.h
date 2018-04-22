@@ -323,7 +323,8 @@ public:
             || (gname == "cz") || (gname == "cphase") 
             || (gname == "swap");
 
-        bool is_multi_qubit_gate = (gname == "wait") || (gname == "barrier");
+        bool is_multi_qubit_gate = (gname == "toffoli") 
+            || (gname == "wait") || (gname == "barrier");
 
         if(is_one_qubit_gate)
         {
@@ -376,6 +377,8 @@ public:
     	else if( gname == "cnot" )       { c.push_back(new ql::cnot(qubits[0], qubits[1]) ); result = true; }
     	else if( gname == "cz" || gname == "cphase" )
             { c.push_back(new ql::cphase(qubits[0], qubits[1]) ); result = true; }
+        else if( gname == "toffoli" )
+            { c.push_back(new ql::toffoli(qubits[0], qubits[1], qubits[2]) ); result = true; }
         else if( gname == "swap" )       { c.push_back(new ql::swap(qubits[0], qubits[1]) ); result = true; }
         else if( gname == "barrier")     { c.push_back(new ql::wait(qubits, 0, 0)); result = true; }
         else if( gname == "wait")
@@ -830,7 +833,15 @@ public:
                 size_t cq1 = goperands[0];
                 size_t cq2 = goperands[1];
                 size_t tq = goperands[2];
-                toff_kernel.controlled_cnot(tq, cq1, cq2);
+                auto opt = ql::options::get("decompose_toffoli");
+                if ( opt == "AM" )
+                {
+                    toff_kernel.controlled_cnot_AM(tq, cq1, cq2);
+                }
+                else
+                {
+                    toff_kernel.controlled_cnot_NC(tq, cq1, cq2);
+                }
                 ql::circuit& toff_ckt = toff_kernel.get_circuit();
                 cit = c.erase(cit);
                 cit = c.insert(cit, toff_ckt.begin(), toff_ckt.end());
@@ -1025,28 +1036,45 @@ public:
     {
         // well, basically you dont need to do anything for it :‑)
     }
+
     void controlled_s(size_t tq, size_t cq)
     {
-        cphase(cq, tq);
+        // cphase(cq, tq);
+
         // from: https://arxiv.org/pdf/1206.0758v3.pdf
         // A meet-in-the-middle algorithm for fast synthesis 
         // of depth-optimal quantum circuits
-        // TODO test the following as it does not seem to generate desired matrix
-        // cnot(tq, cq);
-        // tdag(cq);
-        // cnot(tq, cq);
-        // tdag(cq);
-        // tdag(tq);
+
+        cnot(tq, cq);
+        tdag(cq);
+        cnot(tq, cq);
+        t(cq);
+        t(tq);
     }
+
+    void controlled_sdag(size_t tq, size_t cq)
+    {
+        // based on: https://arxiv.org/pdf/1206.0758v3.pdf
+        // A meet-in-the-middle algorithm for fast synthesis 
+        // of depth-optimal quantum circuits
+
+        tdag(cq);
+        tdag(tq);
+        cnot(tq, cq);
+        t(cq);
+        cnot(tq, cq);
+    }
+
     void controlled_t(size_t tq, size_t cq)
     {
         WOUT("Controlled-T implementation requires an ancilla");
         WOUT("At the moment, Qubit 0 is used as ancilla");
         WOUT("This will change when Qubit allocater is implemented");
-        // from: https://arxiv.org/pdf/1206.0758v3.pdf        
+        // from: https://arxiv.org/pdf/1206.0758v3.pdf
         // A meet-in-the-middle algorithm for fast synthesis 
         // of depth-optimal quantum circuits
         size_t aq = 0; // TODO at the moment qubit 0 is used as ancilla
+
         cnot(cq, tq); hadamard(aq);
         sdag(cq); cnot(tq, aq);
         cnot(aq, cq);
@@ -1068,6 +1096,39 @@ public:
         cnot(cq, tq);
         h(aq);
     }
+
+    void controlled_tdag(size_t tq, size_t cq)
+    {
+        WOUT("Controlled-Tdag implementation requires an ancilla");
+        WOUT("At the moment, Qubit 0 is used as ancilla");
+        WOUT("This will change when Qubit allocater is implemented");
+        // from: https://arxiv.org/pdf/1206.0758v3.pdf        
+        // A meet-in-the-middle algorithm for fast synthesis 
+        // of depth-optimal quantum circuits
+        size_t aq = 0; // TODO at the moment qubit 0 is used as ancilla
+
+        h(aq);
+        cnot(cq, tq);
+        sdag(cq); cnot(tq, aq);
+        cnot(aq, cq);
+        t(cq);
+        cnot(tq, cq); tdag(aq);
+        cnot(tq, aq);
+        t(cq); tdag(aq);
+        cnot(aq, cq);
+        h(cq);
+        tdag(cq);
+        h(cq);
+        cnot(aq, cq);
+        tdag(cq); t(aq);
+        cnot(tq, aq);
+        cnot(tq, cq);
+        tdag(cq); t(aq);
+        cnot(aq, cq);
+        s(cq); cnot(tq, aq);
+        cnot(cq, tq); hadamard(aq);
+    }
+
     void controlled_ix(size_t tq, size_t cq)
     {
         // from: https://arxiv.org/pdf/1210.0974.pdf
@@ -1077,10 +1138,10 @@ public:
     }
 
     // toffoli decomposition
-    void controlled_cnot(size_t tq, size_t cq1, size_t cq2)
+    // from: https://arxiv.org/pdf/1210.0974.pdf
+    // Quantum circuits of T-depth one 
+    void controlled_cnot_AM(size_t tq, size_t cq1, size_t cq2)
     {
-        // from: https://arxiv.org/pdf/1210.0974.pdf
-        // Quantum circuits of T-depth one 
         h(tq);
         t(cq1); t(cq2); t(tq); 
         cnot(cq2, cq1);
@@ -1094,6 +1155,26 @@ public:
         cnot(cq2, cq1);
         h(tq);
     }
+
+    // toffoli decomposition
+    // Neilsen and Chuang    
+    void controlled_cnot_NC(size_t tq, size_t cq1, size_t cq2)
+    {
+        h(tq);
+        cnot(cq2,tq);
+        tdag(tq);
+        cnot(cq1,tq);
+        t(tq);
+        cnot(cq2,tq);
+        tdag(tq);
+        cnot(cq1,tq);
+        tdag(cq2); t(tq);
+        cnot(cq1,cq2); h(tq);
+        tdag(cq2);
+        cnot(cq1,cq2);
+        t(cq1); s(cq2);
+    }
+
     void controlled_swap(size_t tq1, size_t tq2, size_t cq)
     {
         // from: https://arxiv.org/pdf/1210.0974.pdf
@@ -1182,18 +1263,38 @@ public:
                 size_t cq = control_qubits[0];
                 controlled_t(tq, cq);
             }
+            else if( __tdag_gate__ == gtype )
+            {
+                size_t tq = goperands[0];
+                size_t cq = control_qubits[0];
+                controlled_tdag(tq, cq);
+            }
             else if( __phase_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubits[0];
                 controlled_s(tq, cq);
             }
+            else if( __phasedag_gate__ == gtype )
+            {
+                size_t tq = goperands[0];
+                size_t cq = control_qubits[0];
+                controlled_sdag(tq, cq);
+            }
             else if( __cnot_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq1 = control_qubits[0];
                 size_t cq2 = control_qubits[1];
-                controlled_cnot(tq, cq1, cq2);
+                auto opt = ql::options::get("decompose_toffoli");
+                if ( opt == "AM" )
+                {
+                    controlled_cnot_AM(tq, cq1, cq2);
+                }
+                else
+                {
+                    controlled_cnot_NC(tq, cq1, cq2);
+                }
             }
             else if( __swap_gate__ == gtype )
             {

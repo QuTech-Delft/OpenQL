@@ -173,12 +173,12 @@ namespace ql
     {
         std::map<std::string, std::string> _options
         {
-            {"log_level", "LOG_NOTHING"},
+            {"log_level", "LOG_NOTHING"},   // LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}
             {"output_dir", "test_output"},
-            {"scheduler", "ASAP"},
-            {"use_default_gates", "yes"},
-            {"optimize", "no"},
-            {"decompose_toffoli", "no"}
+            {"scheduler", "ASAP"},          // ASAP/ALAP
+            {"use_default_gates", "yes"},   // yes/no
+            {"optimize", "no"},             // yes/no
+            {"decompose_toffoli", "no"}     // no/NC/MA
         };
 
         std::string get(std::string opt_name)

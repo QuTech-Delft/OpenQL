@@ -77,7 +77,7 @@ def test_controlled_kernel():
     k = ql.Kernel('kernel1', platform)
     ck = ql.Kernel('controlled_kernel1', platform)
 
-    k.gate("x", [1])
+    # k.gate("x", [1])
     # k.gate("y", [1])
     # k.gate("z", [1])
     # k.gate("h", [1])
@@ -87,11 +87,15 @@ def test_controlled_kernel():
     # k.gate("sdag", [1])
     # k.gate("tdag", [1])
 
+
     # generate controlled version of k. qubit 2 is used as control qubit
     # ck.controlled(k, [2])
 
+    k.gate("toffoli", [1,2,3] )
+    ql.set_option('decompose_toffoli', 'NC')
+
     p.add_kernel(k)
-    p.add_kernel(ck)
+    # p.add_kernel(ck)
 
     p.compile()
 

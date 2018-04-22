@@ -203,11 +203,21 @@ class quantum_program
                kernels[k].optimize();
          }
 
-         if( ql::options::get("decompose_toffoli") == "yes" )
+         auto tdopt = ql::options::get("decompose_toffoli");
+         if( tdopt == "AM" || tdopt == "NC" )
          {
             IOUT("Decomposing Toffoli ...");
             for (size_t k=0; k<kernels.size(); ++k)
                kernels[k].decompose_toffoli();
+         }
+         else if( tdopt == "no" )
+         {
+            IOUT("Not Decomposing Toffoli ...");
+         }
+         else
+         {
+            EOUT("Unknown option '" << tdopt << "' set for decompose_toffoli");
+            throw ql::exception("Error: Unknown option '"+tdopt+"' set for decompose_toffoli !",false);
          }
 
          std::stringstream ss_qasm;
