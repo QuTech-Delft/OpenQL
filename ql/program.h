@@ -322,7 +322,10 @@ class quantum_program
             std::string kernel_sched_qasm;
             std::string kernel_sched_dot;
             k.schedule(qubits, platform, kernel_sched_qasm, kernel_sched_dot);
-            sched_qasm += "\n." + k.get_name() + "("+ std::to_string(k.iterations) + ")";
+            if( k.iterations > 1 )
+               sched_qasm += "\n." + k.get_name() + "("+ std::to_string(k.iterations) + ")";
+            else
+               sched_qasm += "\n." + k.get_name();
             sched_qasm += kernel_sched_qasm + '\n';
             // disabled generation of dot file for each kernel
             // string fname = ql::options::get("output_dir") + "/" + k.get_name() + scheduler + ".dot";
