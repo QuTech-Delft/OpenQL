@@ -1,7 +1,0 @@
-        SMIT t5, { (2,0), (3,1), (6,4) }
-        SMIT t5, 0b10000101
-        SMIT t5, 0x85
-        SMIT t5, 133
-        SMIT t63, 133
-        SMIT t31, 133
-

@@ -1,8 +1,0 @@
-BS 5 Y S3 | CNOT t60
-
-QWAIT 10
-
-# This should fail, because there was a classic instruction in between the
-# two bundles.
-
-BS 0 X s5
