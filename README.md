@@ -11,7 +11,7 @@ OpenQL is a framework for high-level quantum programming in C++/Python. The fram
 ## Required Packages
 
 * g++ compiler with C++11 support (Linux)
-* MSVC 2015 with update 3 (Windows)
+* MSVC 2015 with update 3 or above (Windows)
 * cmake
 * swig
 * python 3.5
@@ -67,7 +67,7 @@ pip install  -e .
 
 ## Running the tests
 
-In order to pass all the tests, `qisa-as` inside `tests` directory should be installed first. Follow the instructions in `tests/qisa-as/README.md` to install `qisa-as`. Once `qisa-as` is installed, you can run `py.test -v` to run all the tests to check the installation.
+In order to pass all the tests, `qisa-as` should be installed first. Follow [these instructions](https://github.com/DiCarloLab-Delft/ElecPrj_CCLight/tree/development/qisa-as) to install python interface of `qisa-as`. Once `qisa-as` is installed, you can run `py.test -v` to run all the tests to check the installation.
 
 
 # Compiling C++ OpenQL tests and programs

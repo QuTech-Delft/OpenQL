@@ -1,4 +1,0 @@
-        SMIS s3, { 0, 3, 4, 6 }
-        SMIS s3, 0b1011001
-        SMIS s3, 0x59
-        SMIS s3, 89

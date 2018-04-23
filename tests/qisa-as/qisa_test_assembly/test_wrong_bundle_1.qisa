@@ -1,4 +1,0 @@
-# This should fail, as the quantum bundle wait specification has not been set in a
-# previous quantum bundle (where BS value was non-zero).
-
-BS 0 X s5

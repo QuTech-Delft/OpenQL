@@ -9,6 +9,9 @@ curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
 ql.set_option('output_dir', output_dir)
 
+qmapFilename = curdir
+sys.path.append(os.path.join(qmapFilename, 'qisa_opcodes.qmap'))
+
 sys.path.append(os.path.join(curdir, 'qisa-as', 'build'))
 
 
@@ -16,25 +19,31 @@ class Test_QISA_asssembler(unittest.TestCase):
 
     def test_QISA_assembler_present(self):
         # from pyQisaAs import QISA_Driver
-        from pyQisaAs import QISA_Driver
+        from qisa_as import QISA_Driver
 
+driver = None
 
 try:
-    from pyQisaAs import QISA_Driver
+    from qisa_as import QISA_Driver
+    driver = QISA_Driver()
     assembler_present = True
 except:
     assembler_present = False
 
 
 def assemble(QISA_fn):
+
     # Test that the generated code is valid
     if assembler_present:
-        driver = QISA_Driver()
-        driver.enableScannerTracing(False)
-        driver.enableParserTracing(False)
-        driver.setVerbose(True)
-        print("parsing file ", QISA_fn)
-        success = driver.parse(QISA_fn)
-        if not success:
-            raise RuntimeError(driver.getLastErrorMessage())
-        # Assembler(qumis_fn).convert_to_instructions()
+        # Try loading quantum instructions from FILE...
+        success = driver.loadQuantumInstructions(qmapFilename)
+
+        if success:
+            driver.enableScannerTracing(False)
+            driver.enableParserTracing(False)
+            driver.setVerbose(True)
+            print("parsing file ", QISA_fn)
+            success = driver.assemble(QISA_fn)
+            if not success:
+                raise RuntimeError(driver.getLastErrorMessage())
+            # Assembler(qumis_fn).convert_to_instructions()
