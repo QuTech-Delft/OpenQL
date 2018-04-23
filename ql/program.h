@@ -240,7 +240,10 @@ class quantum_program
          for (size_t k=0; k<kernels.size(); ++k)
          {
             ql::circuit& kc = kernels[k].get_circuit();
-            fused.insert(fused.end(),kc.begin(),kc.end());
+            for(size_t i=0; i<kernels[k].iterations; i++)
+            {
+               fused.insert(fused.end(),kc.begin(),kc.end());   
+            }
          }
 
       	try 
@@ -319,7 +322,7 @@ class quantum_program
             std::string kernel_sched_qasm;
             std::string kernel_sched_dot;
             k.schedule(qubits, platform, kernel_sched_qasm, kernel_sched_dot);
-            sched_qasm += "\n." + k.get_name();
+            sched_qasm += "\n." + k.get_name() + "("+ std::to_string(k.iterations) + ")";
             sched_qasm += kernel_sched_qasm + '\n';
             // disabled generation of dot file for each kernel
             // string fname = ql::options::get("output_dir") + "/" + k.get_name() + scheduler + ".dot";

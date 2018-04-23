@@ -104,6 +104,36 @@ class Test_kernel(unittest.TestCase):
            errors = qasm_reader.load()
            self.assertTrue(errors == 0)
 
+    def test_kernel_iterations(self):
+
+        k = ql.Kernel("akernel", platf)
+        k.prepz(0)
+        k.prepz(1)
+        k.x(0)
+        k.y(1)
+        k.cnot(0, 1)
+        k.measure(0)
+        k.measure(1)
+
+        sweep_points = [2]
+        num_circuits = 1
+        nqubits = 3
+
+        p = ql.Program("test_kernel_iterations", nqubits, platf)
+        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.add_kernel(k,5)
+
+        p.compile()
+
+        # load qasm
+        qasm_files = []
+        qasm_files.append(os.path.join(output_dir, 'test_kernel_iterations.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'test_kernel_iterations_scheduled.qasm'))
+
+        for qasm_file in qasm_files:
+           qasm_reader = ql.QASM_Loader(qasm_file)
+           errors = qasm_reader.load()
+           self.assertTrue(errors == 0)
 
 if __name__ == '__main__':
     unittest.main()

@@ -226,8 +226,9 @@ public:
         prog->set_sweep_points(sp, num_sweep_points);
     }
 
-    void add_kernel(Kernel& k)
+    void add_kernel(Kernel& k, size_t iterations=1)
     {
+        (k.ql_kernel)->loop(iterations);
         prog->add( *(k.ql_kernel) );
     }
 
