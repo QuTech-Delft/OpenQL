@@ -317,7 +317,7 @@ public:
                 || (gname == "rx") || (gname == "ry") || (gname == "rz")
                 || (gname == "rx90") || (gname == "mrx90") || (gname == "rx180")
                 || (gname == "ry90") || (gname == "mry90") || (gname == "ry180")
-                || (gname == "measure") || (gname == "prez");
+                || (gname == "measure") || (gname == "prepz");
 
         bool is_two_qubit_gate = (gname == "cnot") 
             || (gname == "cz") || (gname == "cphase") 
@@ -398,10 +398,13 @@ public:
         bool added = false;
         // first check if a specialized custom gate is available
         std::string instr = gname + " ";
-        for (size_t i=0; i<(qubits.size()-1); ++i)
-            instr += "q" + std::to_string(qubits[i]) + ",";
-        if(qubits.size() >= 1) // to make if work with gates without operands
-            instr += "q" + std::to_string(qubits[qubits.size()-1]);
+        if(qubits.size() > 0)
+        {
+            for (size_t i=0; i<(qubits.size()-1); ++i)
+                instr += "q" + std::to_string(qubits[i]) + ",";
+            if(qubits.size() >= 1) // to make if work with gates without operands
+                instr += "q" + std::to_string(qubits[qubits.size()-1]);
+        }        
 
         std::map<std::string,custom_gate*>::iterator it = gate_definition.find(instr);
         if (it != gate_definition.end())
@@ -468,13 +471,16 @@ public:
         DOUT("Checking if specialized decomposition is available for " << gate_name);
         std::string instr_parameterized = gate_name + " ";
         size_t i;
-        for(i=0; i<all_qubits.size()-1; i++)
+        if(all_qubits.size() > 0)
         {
-            instr_parameterized += "q" + std::to_string(all_qubits[i]) + " ";
-        }
-        if(all_qubits.size() >= 1)
-        {
-            instr_parameterized += "q" + std::to_string(all_qubits[i]);
+            for(i=0; i<all_qubits.size()-1; i++)
+            {
+                instr_parameterized += "q" + std::to_string(all_qubits[i]) + " ";
+            }
+            if(all_qubits.size() >= 1)
+            {
+                instr_parameterized += "q" + std::to_string(all_qubits[i]);
+            }
         }
         DOUT("decomposed specialized instruction name: " << instr_parameterized);
 
@@ -562,13 +568,16 @@ public:
         DOUT("Checking if parameterized decomposition is available for " << gate_name);
         std::string instr_parameterized = gate_name + " ";
         size_t i;
-        for(i=0; i<all_qubits.size()-1; i++)
+        if(all_qubits.size() > 0)        
         {
-            instr_parameterized += "%" + std::to_string(i) + " ";
-        }
-        if(all_qubits.size() >= 1)
-        {
-            instr_parameterized += "%" + std::to_string(i);
+            for(i=0; i<all_qubits.size()-1; i++)
+            {
+                instr_parameterized += "%" + std::to_string(i) + " ";
+            }
+            if(all_qubits.size() >= 1)
+            {
+                instr_parameterized += "%" + std::to_string(i);
+            }
         }
         DOUT("decomposed parameterized instruction name: " << instr_parameterized);
 

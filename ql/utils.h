@@ -97,29 +97,32 @@ namespace ql
         }
 
 
-        /**
-         * print vector
-         */
-        template<typename T>
-        void print_vector(std::vector<T> v, std::string prefix="", std::string separator=" | ")
-        {
-            std::cout << prefix << " [";
-            size_t sz = v.size()-1;
-            for (size_t i=0; i<sz; ++i)
-                std::cout << v[i] << separator;
-            std::cout << v[sz] << "]" << std::endl;
-        }
-
         template<class T>
         std::string to_string(std::vector<T> v, std::string vector_prefix = "",
                               std::string elem_sep = ", ")
         {
             std::ostringstream ss;
             ss << vector_prefix << " [";
-            std::copy(v.begin(), v.end() - 1, std::ostream_iterator<T>(ss, elem_sep.c_str()) );
+            size_t sz = v.size();
+            if(sz > 0)
+            {
+                for (size_t i=0; i<sz-1; ++i)
+                    ss << v[i] << elem_sep;
+            }
+
+            ss << "]";
             return ss.str();
         }
 
+
+        /**
+         * print vector
+         */
+        template<typename T>
+        void print_vector(std::vector<T> v, std::string prefix="", std::string separator=" | ")
+        {
+            std::cout << to_string(v, prefix, separator) << std::endl;
+        }
 
         template <typename T>
         int sign_of(T val)

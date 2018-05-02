@@ -1,0 +1,25 @@
+{
+   "eqasm_compiler" : "qx",
+
+   "hardware_settings": {
+	 "qubit_number": 10,
+	 "cycle_time" : 20
+   },
+
+  "resources": {
+  },
+  "topology" : {
+  },
+
+   "instructions": {
+   "display": {
+      "duration": 20,
+      "qubits": [],
+      "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+      "disable_optimization": true
+      }
+   },
+
+   "gate_decomposition": {
+   }
+}

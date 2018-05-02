@@ -87,7 +87,7 @@ private:
         }
 
         fout << "# Quantumsim program generated OpenQL\n"
-             << "# Please modify at your will to obtain extra information from Quantumsim\n\n"
+             << "# Please modify at your wil to obtain extra information from Quantumsim\n\n"
              << "import numpy as np\n"
              << "from quantumsim.circuit import Circuit\n"
              << "from quantumsim.circuit import uniform_noisy_sampler\n"
@@ -96,6 +96,7 @@ private:
         fout << "\n# create a circuit\n";
         fout << "c = Circuit(title=\"" << prog_name << "\")\n\n";
 
+        DOUT("Adding qubits to Quantumsim program");
         fout << "\n# add qubits\n";
         for (json::iterator it = platform.resources.begin(); it != platform.resources.end(); ++it)
         {
@@ -120,6 +121,7 @@ private:
             }
         }
 
+        DOUT("Adding Gates to Quantumsim program");
         fout << "\n# add gates\n";
         for ( ql::ir::bundle_t & abundle : bundles)
         {
@@ -147,11 +149,13 @@ private:
                     else
                     {
                         ssbundles <<  "c.add_"<< iname << "(" ;
-                        for(auto opit = operands.begin(); opit != operands.end() -1; opit++ )
+                        size_t noperands = operands.size();
+                        if( noperands > 0 )
                         {
-                            ssbundles << "\"q" << *opit <<"\", ";
+                            for(auto opit = operands.begin(); opit != operands.end()-1; opit++ )
+                                ssbundles << "\"q" << *opit <<"\", ";
+                            ssbundles << "\"q" << operands.back()<<"\"";
                         }
-                        ssbundles << "\"q" << operands.back()<<"\"";
                         ssbundles << ", time=" << bcycle << ")" << endl;
                     }
                 }

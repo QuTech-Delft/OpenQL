@@ -50,6 +50,10 @@ class quantum_program
          {
 
          }
+         else if (eqasm_compiler_name == "qx")
+         {
+            // at the moment no qx specific thing is done
+         }
          else if (eqasm_compiler_name == "qumis_compiler")
          {
             backend_compiler = new ql::arch::cbox_eqasm_compiler();

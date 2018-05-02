@@ -52,23 +52,6 @@ def test_none():
     p.add_kernel(k)
     p.compile()
 
-def test_kernel_repeat():
-    config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
-    platform  = ql.Platform('platform_none', config_fn)
-    num_qubits = 5
-    p = ql.Program('test_kernel_repeat', num_qubits, platform)
-
-    k = ql.Kernel('aKernel', platform)
-
-    k.gate("x",[0])
-    k.gate("y", [1])
-    k.gate("cz", [0, 1])
-    k.gate("measure", [0])
-    k.gate("measure", [1])
-
-    p.add_kernel(k,5)
-    p.compile()
-
 def test_controlled_kernel():
     config_fn = os.path.join(curdir, '../tests/test_cfg_none_simple.json')
     platform  = ql.Platform('platform_none', config_fn)
@@ -103,8 +86,6 @@ def test_controlled_kernel():
 
 if __name__ == '__main__':
     test_kernel_repeat()
-    # test_controlled_kernel()
-    # test_cclight()
 
 
     # LOG_NOTHING,
