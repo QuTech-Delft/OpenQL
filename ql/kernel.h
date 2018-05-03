@@ -13,10 +13,11 @@
 #include <algorithm>
 #include <iterator>
 
-#include "json.h"
-#include "utils.h"
-#include "gate.h"
-#include "optimizer.h"
+#include "ql/json.h"
+#include "ql/utils.h"
+#include "ql/options.h"
+#include "ql/gate.h"
+#include "ql/optimizer.h"
 #include "ql/ir.h"
 
 #define PI M_PI

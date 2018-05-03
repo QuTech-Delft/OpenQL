@@ -172,60 +172,6 @@ namespace ql
 
     } // utils namespace
 
-    namespace options
-    {
-        std::map<std::string, std::string> _options
-        {
-            {"log_level", "LOG_NOTHING"},   // LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}
-            {"output_dir", "test_output"},
-            {"scheduler", "ASAP"},          // ASAP/ALAP
-            {"use_default_gates", "yes"},   // yes/no
-            {"optimize", "no"},             // yes/no
-            {"decompose_toffoli", "no"}     // no/NC/MA
-        };
-
-        std::string get(std::string opt_name)
-        {
-            if( _options.find(opt_name) != _options.end() )
-            {
-                return _options[opt_name];
-            }
-            else
-            {
-                return "UNKNOWN";
-            }
-        }
-
-        void set(std::string opt_name, std::string opt_value)
-        {
-            if( _options.find(opt_name) != _options.end() )
-            {
-                _options[opt_name] = opt_value;
-
-                if(opt_name == "log_level")
-                    ql::utils::logger::set_log_level(opt_value);
-                else if(opt_name == "output_dir")
-                    ql::utils::make_output_dir(opt_value);
-
-            }
-            else
-            {
-                std::cerr << "[OPENQL] " << __FILE__ <<":"<< __LINE__ 
-                          <<" Error: Un-known option:"<< opt_name << std::endl;
-            }
-        }
-
-        void print()
-        {
-            std::cout << "OpenQL Options:\n";
-            for(auto elem : _options)
-            {
-                std::cout << "    " << elem.first << " : " << elem.second << "\n";
-            }            
-        }
-
-    } // options namespace
-
 } // ql namespace
 
 #define EOUT(content) \

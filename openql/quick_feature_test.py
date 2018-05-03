@@ -85,7 +85,7 @@ def test_controlled_kernel():
 
 
 if __name__ == '__main__':
-    test_kernel_repeat()
+    test_controlled_kernel()
 
 
     # LOG_NOTHING,
