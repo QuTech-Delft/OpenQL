@@ -12,9 +12,9 @@ OpenQL is a framework for high-level quantum programming in C++/Python. The fram
 
 * g++ compiler with C++11 support (Linux)
 * MSVC 2015 with update 3 or above (Windows)
-* cmake
+* cmake (>= 3.0)
 * swig
-* python 3.5
+* python (>= 3.5)
 * [Optional] pytest used for running tests
 * [Optional] Graphviz Dot utility to convert graphs from dot to pdf, png etc
 * [Optional] XDot to visualize generated graphs in dot format

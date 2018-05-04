@@ -48,6 +48,7 @@ def test_none():
     k.gate("x",0)
     k.gate("cz", [0, 1])
     k.gate("cz", [2, 3])
+    k.gate("display", [])
 
     p.add_kernel(k)
     p.compile()
@@ -83,9 +84,28 @@ def test_controlled_kernel():
 
     p.compile()
 
+def test_qx():
+    config_fn = os.path.join(curdir, '../tests/hardware_config_qx.json')
+    platform  = ql.Platform('platform_qx', config_fn)
+    num_qubits = 5
+    p = ql.Program('test_qx', num_qubits, platform)
+
+    k = ql.Kernel('aKernel', platform)
+
+    k.gate("x", [0])
+    k.gate("x",[0])
+    k.gate("cz", [0, 1])
+    k.gate("cz", [2, 3])
+    k.gate("display")
+    k.gate("display", [])
+    k.display()
+
+    p.add_kernel(k)
+    p.compile()
+
 
 if __name__ == '__main__':
-    test_controlled_kernel()
+    test_qx()
 
 
     # LOG_NOTHING,
