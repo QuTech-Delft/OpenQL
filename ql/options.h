@@ -64,6 +64,7 @@ namespace ql
           }
           catch (const std::exception& e)
           {
+            app->reset();
             EOUT("Un-known option:"<< e.what());
             throw ql::exception("[x] Error parsing options. "+std::string(e.what())+" !",false);
           }
