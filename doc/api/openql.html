@@ -4,7 +4,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 
     <title>openql.openql API documentation</title>
-    <meta name="description" content="`OpenQL` is a C++ framework for high-level quantum programming. The framework provide a compiler for..." />
+    <meta name="description" content="`OpenQL` is a C++/Python framework for high-level quantum programming. The framework provide a compi..." />
 
   <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300' rel='stylesheet' type='text/css'>
   
@@ -1295,7 +1295,7 @@ table {
 
   <header id="section-intro">
   <h1 class="title"><span class="name">openql.openql</span> module</h1>
-  <p><code>OpenQL</code> is a C++ framework for high-level quantum programming. The framework provide a compiler for compiling and optimizing quantum code. The compiler produce the intermediate quantum assembly language and the compiled micro-code for various target platforms. While the microcode is platform-specific, the quantum assembly code (qasm) is hardware-agnostic and can be simulated on the QX simulator.</p>
+  <p><code>OpenQL</code> is a C++/Python framework for high-level quantum programming. The framework provide a compiler for compiling and optimizing quantum code. The compiler produce the intermediate quantum assembly language and the compiled micro-code for various target platforms. While the microcode is platform-specific, the quantum assembly code (qasm) is hardware-agnostic and can be simulated on the QX simulator.</p>
   
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql', this);">Show source &equiv;</a></p>
   <div id="source-openql.openql" class="source">
@@ -1305,7 +1305,7 @@ table {
 <span class="c1"># Do not make changes to this file unless you know what you are doing--modify</span>
 <span class="c1"># the SWIG interface file instead.</span>
 
-<span class="sd">&quot;&quot;&quot;`OpenQL` is a C++ framework for high-level quantum programming. The framework provide a compiler for compiling and optimizing quantum code. The compiler produce the intermediate quantum assembly language and the compiled micro-code for various target platforms. While the microcode is platform-specific, the quantum assembly code (qasm) is hardware-agnostic and can be simulated on the QX simulator.&quot;&quot;&quot;</span>
+<span class="sd">&quot;&quot;&quot;`OpenQL` is a C++/Python framework for high-level quantum programming. The framework provide a compiler for compiling and optimizing quantum code. The compiler produce the intermediate quantum assembly language and the compiled micro-code for various target platforms. While the microcode is platform-specific, the quantum assembly code (qasm) is hardware-agnostic and can be simulated on the QX simulator.&quot;&quot;&quot;</span>
 
 
 <span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">version_info</span> <span class="k">as</span> <span class="n">_swig_python_version_info</span>
@@ -2360,24 +2360,31 @@ table {
         <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         generate controlled version of the kernel.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+
 <span class="sd">        arg1 : ql::Kernel</span>
 <span class="sd">            input kernel. Except measure, Kernel to be controlled may contain any of the default gates as well custom gates which are not specialized for a specific qubits.</span>
+
 <span class="sd">        arg2 : []</span>
-<span class="sd">            list of control qubits. At the moment only single qubit control is possible. This will be extended to support multi-qubit control.</span>
+<span class="sd">            list of control qubits.</span>
+
+<span class="sd">        arg3 : []</span>
+<span class="sd">            list of ancilla qubits. Number of ancilla qubits should be equal to number of control qubits.</span>
+
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
+
 <span class="sd">        ql::Kernel</span>
 <span class="sd">            controlled version of the kernel</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">qubits</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">)</span>
 
     <span class="n">__swig_destroy__</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">delete_Kernel</span>
     <span class="fm">__del__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">None</span>
@@ -2426,7 +2433,7 @@ table {
         <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sweep_points</span><span class="p">,</span> <span class="n">num_sweep_points</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         Adds specified kernel to program.</span>
 
@@ -2436,7 +2443,7 @@ table {
 <span class="sd">            kernel to be added</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">iterations</span><span class="p">)</span>
 
 
     <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -3149,24 +3156,31 @@ arg2 : str
         <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         generate controlled version of the kernel.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+
 <span class="sd">        arg1 : ql::Kernel</span>
 <span class="sd">            input kernel. Except measure, Kernel to be controlled may contain any of the default gates as well custom gates which are not specialized for a specific qubits.</span>
+
 <span class="sd">        arg2 : []</span>
-<span class="sd">            list of control qubits. At the moment only single qubit control is possible. This will be extended to support multi-qubit control.</span>
+<span class="sd">            list of control qubits.</span>
+
+<span class="sd">        arg3 : []</span>
+<span class="sd">            list of ancilla qubits. Number of ancilla qubits should be equal to number of control qubits.</span>
+
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
+
 <span class="sd">        ql::Kernel</span>
 <span class="sd">            controlled version of the kernel</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">qubits</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">)</span>
 
     <span class="n">__swig_destroy__</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">delete_Kernel</span>
     <span class="fm">__del__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">None</span>
@@ -3400,7 +3414,7 @@ arg2 : int
             
   <div class="item">
     <div class="name def" id="openql.openql.Kernel.controlled">
-    <p>def <span class="ident">controlled</span>(</p><p>self, k, qubits)</p>
+    <p>def <span class="ident">controlled</span>(</p><p>self, k, control_qubits, ancilla_qubits)</p>
     </div>
     
 
@@ -3409,16 +3423,18 @@ arg2 : int
     <div class="desc"><p>generate controlled version of the kernel.</p>
 <h2>Parameters</h2>
 <p>arg1 : ql::Kernel
-    input kernel. Except measure, Kernel to be controlled may contain any of the default gates as well custom gates which are not specialized for a specific qubits.
-arg2 : []
-    list of control qubits. At the moment only single qubit control is possible. This will be extended to support multi-qubit control.</p>
+    input kernel. Except measure, Kernel to be controlled may contain any of the default gates as well custom gates which are not specialized for a specific qubits.</p>
+<p>arg2 : []
+    list of control qubits.</p>
+<p>arg3 : []
+    list of ancilla qubits. Number of ancilla qubits should be equal to number of control qubits.</p>
 <h2>Returns</h2>
 <p>ql::Kernel
     controlled version of the kernel</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Kernel.controlled', this);">Show source &equiv;</a></p>
   <div id="source-openql.openql.Kernel.controlled" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">     generate controlled version of the kernel.</span>
 <span class="sd">    Parameters</span>
@@ -3426,13 +3442,15 @@ arg2 : []
 <span class="sd">    arg1 : ql::Kernel</span>
 <span class="sd">        input kernel. Except measure, Kernel to be controlled may contain any of the default gates as well custom gates which are not specialized for a specific qubits.</span>
 <span class="sd">    arg2 : []</span>
-<span class="sd">        list of control qubits. At the moment only single qubit control is possible. This will be extended to support multi-qubit control.</span>
+<span class="sd">        list of control qubits.</span>
+<span class="sd">    arg3 : []</span>
+<span class="sd">        list of ancilla qubits. Number of ancilla qubits should be equal to number of control qubits.</span>
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    ql::Kernel</span>
 <span class="sd">        controlled version of the kernel</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">qubits</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">)</span>
 </pre></div>
 
   </div>
@@ -4544,7 +4562,7 @@ arg2 : str
         <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sweep_points</span><span class="p">,</span> <span class="n">num_sweep_points</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         Adds specified kernel to program.</span>
 
@@ -4554,7 +4572,7 @@ arg2 : str
 <span class="sd">            kernel to be added</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">iterations</span><span class="p">)</span>
 
 
     <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -4687,7 +4705,7 @@ p       : Platform
             
   <div class="item">
     <div class="name def" id="openql.openql.Program.add_kernel">
-    <p>def <span class="ident">add_kernel</span>(</p><p>self, k)</p>
+    <p>def <span class="ident">add_kernel</span>(</p><p>self, k, iterations=1)</p>
     </div>
     
 
@@ -4700,7 +4718,7 @@ p       : Platform
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Program.add_kernel', this);">Show source &equiv;</a></p>
   <div id="source-openql.openql.Program.add_kernel" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">     Adds specified kernel to program.</span>
 <span class="sd">    Parameters</span>
@@ -4708,7 +4726,7 @@ p       : Platform
 <span class="sd">    arg1 : kernel</span>
 <span class="sd">        kernel to be added</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">iterations</span><span class="p">)</span>
 </pre></div>
 
   </div>

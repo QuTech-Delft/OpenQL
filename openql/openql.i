@@ -4,7 +4,7 @@
  * @brief  swig interface file
  */
 %define DOCSTRING
-"`OpenQL` is a C++ framework for high-level quantum programming. The framework provide a compiler for compiling and optimizing quantum code. The compiler produce the intermediate quantum assembly language and the compiled micro-code for various target platforms. While the microcode is platform-specific, the quantum assembly code (qasm) is hardware-agnostic and can be simulated on the QX simulator."
+"`OpenQL` is a C++/Python framework for high-level quantum programming. The framework provide a compiler for compiling and optimizing quantum code. The compiler produce the intermediate quantum assembly language and the compiled micro-code for various target platforms. While the microcode is platform-specific, the quantum assembly code (qasm) is hardware-agnostic and can be simulated on the QX simulator."
 %enddef
 
 %module(docstring=DOCSTRING) openql
@@ -397,13 +397,20 @@ arg3 : double
 
 Parameters
 ----------
+
 arg1 : ql::Kernel
     input kernel. Except measure, Kernel to be controlled may contain any of the default gates as well custom gates which are not specialized for a specific qubits.
+
 arg2 : []
-    list of control qubits. At the moment only single qubit control is possible. This will be extended to support multi-qubit control.
+    list of control qubits.
+
+arg3 : []
+    list of ancilla qubits. Number of ancilla qubits should be equal to number of control qubits.
+
 
 Returns
 -------
+
 ql::Kernel
     controlled version of the kernel
 """

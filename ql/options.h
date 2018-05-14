@@ -57,9 +57,9 @@ namespace ql
 
       void set(std::string opt_name, std::string opt_value)
       {
-          std::vector<std::string> opts = {opt_value, "--"+opt_name};
           try
           {
+            std::vector<std::string> opts = {opt_value, "--"+opt_name};
             app->parse(opts);
           }
           catch (const std::exception& e)

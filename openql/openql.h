@@ -191,9 +191,11 @@ public:
         ql_kernel->gate(name, qubits, duration, angle);
     }
 
-    void controlled(Kernel &k, std::vector<size_t> qubits)
+    void controlled(Kernel &k,
+        std::vector<size_t> control_qubits,
+        std::vector<size_t> ancilla_qubits)
     {
-        ql_kernel->controlled(k.ql_kernel, qubits);
+        ql_kernel->controlled(k.ql_kernel, control_qubits, ancilla_qubits);
     }
 
     ~Kernel()
