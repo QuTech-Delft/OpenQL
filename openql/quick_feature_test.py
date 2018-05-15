@@ -8,7 +8,8 @@ output_dir = os.path.join(curdir, 'test_output')
 ql.set_option('output_dir', output_dir)
 ql.set_option('optimize', 'no')
 ql.set_option('scheduler', 'ASAP')
-ql.set_option('log_level', 'LOG_WARNING')
+ql.set_option('log_level', 'LOG_DEBUG')
+ql.set_option('decompose_toffoli', 'no')
 
 def test_cclight():
     config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
@@ -56,11 +57,14 @@ def test_none():
 def test_controlled_kernel():
     config_fn = os.path.join(curdir, '../tests/test_cfg_none_simple.json')
     platform  = ql.Platform('platform_none', config_fn)
-    num_qubits = 4
+    num_qubits = 12
     p = ql.Program('test_controlled_kernel', num_qubits, platform)
 
     k = ql.Kernel('kernel1', platform)
     ck = ql.Kernel('controlled_kernel1', platform)
+
+    # k.gate("toffoli", [1,2,3] )
+    # ql.set_option('decompose_toffoli', 'NC')
 
     # k.gate("x", [1])
     # k.gate("y", [1])
@@ -72,15 +76,21 @@ def test_controlled_kernel():
     # k.gate("sdag", [1])
     # k.gate("tdag", [1])
 
-
     # generate controlled version of k. qubit 2 is used as control qubit
     # ck.controlled(k, [2])
 
-    k.gate("toffoli", [1,2,3] )
-    ql.set_option('decompose_toffoli', 'NC')
+    k.gate("x", [1])
+    # k.gate('cnot', [1,2])
+
+    # generate controlled version of k. qubit 3 is used as control qubit
+    # ck.controlled(k, [3]) # Error
+    # ck.controlled(k, [3], [7])
+    # ck.controlled(k, [3,4], [7,8])
+    # ck.controlled(k, [3,4,5], [7,8,9])
+    ck.controlled(k, [3,4,5,6], [7,8,9,10])
 
     p.add_kernel(k)
-    # p.add_kernel(ck)
+    p.add_kernel(ck)
 
     p.compile()
 
@@ -104,8 +114,12 @@ def test_qx():
     p.compile()
 
 
+def test():
+    ql.set_option('optimize', 'yes')
+
 if __name__ == '__main__':
-    test_qx()
+    test_controlled_kernel()
+    # test()
 
 
     # LOG_NOTHING,

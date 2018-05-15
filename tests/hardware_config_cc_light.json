@@ -17,10 +17,6 @@
 
   "resources":
    {
-    "qubits":
-    {
-      "count": 7
-    },
     "qwgs" :
     {
       "count": 3,

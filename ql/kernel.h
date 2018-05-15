@@ -1075,7 +1075,7 @@ public:
         cnot(tq, cq);
     }
 
-    void controlled_t(size_t tq, size_t cq)
+    void controlled_t(size_t tq, size_t cq, size_t aq)
     {
         WOUT("Controlled-T implementation requires an ancilla");
         WOUT("At the moment, Qubit 0 is used as ancilla");
@@ -1083,8 +1083,6 @@ public:
         // from: https://arxiv.org/pdf/1206.0758v3.pdf
         // A meet-in-the-middle algorithm for fast synthesis 
         // of depth-optimal quantum circuits
-        size_t aq = 0; // TODO at the moment qubit 0 is used as ancilla
-
         cnot(cq, tq); hadamard(aq);
         sdag(cq); cnot(tq, aq);
         cnot(aq, cq);
@@ -1107,7 +1105,7 @@ public:
         h(aq);
     }
 
-    void controlled_tdag(size_t tq, size_t cq)
+    void controlled_tdag(size_t tq, size_t cq, size_t aq)
     {
         WOUT("Controlled-Tdag implementation requires an ancilla");
         WOUT("At the moment, Qubit 0 is used as ancilla");
@@ -1115,8 +1113,6 @@ public:
         // from: https://arxiv.org/pdf/1206.0758v3.pdf        
         // A meet-in-the-middle algorithm for fast synthesis 
         // of depth-optimal quantum circuits
-        size_t aq = 0; // TODO at the moment qubit 0 is used as ancilla
-
         h(aq);
         cnot(cq, tq);
         sdag(cq); cnot(tq, aq);
@@ -1225,10 +1221,8 @@ public:
     }
 
 
-    void controlled(ql::quantum_kernel *k, std::vector<size_t> control_qubits)
+    void controlled_single(ql::quantum_kernel *k, size_t control_qubit, size_t ancilla_qubit)
     {
-        DOUT("Generating controlled kernel ... ");
-
         ql::circuit& ckt = k->get_circuit();
         for( auto & g : ckt )
         {
@@ -1240,132 +1234,139 @@ public:
             if( __pauli_x_gate__ == gtype  || __rx180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_x(tq, cq);
             }
             else if( __pauli_y_gate__ == gtype  || __ry180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_y(tq, cq);
             }
             else if( __pauli_z_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_z(tq, cq);
             }
             else if( __hadamard_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_h(tq, cq);
             }
             else if( __identity_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_i(tq, cq);
             }
             else if( __t_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
-                controlled_t(tq, cq);
+                size_t cq = control_qubit;
+                size_t aq = ancilla_qubit;
+                controlled_t(tq, cq, aq);
             }
             else if( __tdag_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
-                controlled_tdag(tq, cq);
+                size_t cq = control_qubit;
+                size_t aq = ancilla_qubit;
+                controlled_tdag(tq, cq, aq);
             }
             else if( __phase_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_s(tq, cq);
             }
             else if( __phasedag_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_sdag(tq, cq);
             }
             else if( __cnot_gate__ == gtype )
             {
-                size_t tq = goperands[0];
-                size_t cq1 = control_qubits[0];
-                size_t cq2 = control_qubits[1];
+                size_t cq1 = goperands[0];
+                size_t cq2 = control_qubit;
+                size_t tq = goperands[1];
+
                 auto opt = ql::options::get("decompose_toffoli");
                 if ( opt == "AM" )
                 {
                     controlled_cnot_AM(tq, cq1, cq2);
                 }
-                else
+                else if ( opt == "NC" )
                 {
                     controlled_cnot_NC(tq, cq1, cq2);
+                }
+                else
+                {
+                    toffoli(cq1, cq2, tq);
                 }
             }
             else if( __swap_gate__ == gtype )
             {
                 size_t tq1 = goperands[0];
                 size_t tq2 = goperands[1];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_swap(tq1, tq2, cq);
             }
             else if( __rx_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_rz(tq, cq, g->angle);
             }
             else if( __ry_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_rz(tq, cq, g->angle);
             }
             else if( __rz_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_rz(tq, cq, g->angle);
             }
             else if( __rx90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_rx(tq, cq, PI/2);
             }
             else if( __mrx90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_rx(tq, cq, -1*PI/2);
             }
             else if( __rx180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_rx(tq, cq, PI);
                 // controlled_x(tq, cq);
             }
             else if( __ry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_ry(tq, cq, PI/4);
             }
             else if( __mry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_ry(tq, cq, -1*PI/4);
             }
             else if( __ry180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
-                size_t cq = control_qubits[0];
+                size_t cq = control_qubit;
                 controlled_ry(tq, cq, PI);
                 // controlled_y(tq, cq);
             }
@@ -1376,6 +1377,60 @@ public:
             }
         }
     }
+
+    void controlled(ql::quantum_kernel *k, 
+        std::vector<size_t> control_qubits,
+        std::vector<size_t> ancilla_qubits
+        )
+    {
+        DOUT("Generating controlled kernel ... ");
+        int ncq = control_qubits.size();
+        int naq = ancilla_qubits.size();
+
+        if( ncq == 0 )
+        {
+            EOUT("At least one control_qubits should be specified !");
+            throw ql::exception("[x] error : ql::kernel::controlled : At least one control_qubits should be specified !",false);
+        }
+        else if( ncq == 1 )
+        {
+            //                      control               ancilla
+            controlled_single(k, control_qubits[0], ancilla_qubits[0]);
+        }
+        else if( ncq > 1 )
+        {
+            // Network implementing C^n(U) operation
+            // - based on Fig. 4.10, p.p 185, Nielson & Chuang
+            // - requires as many ancilla/work qubits as control qubits
+            if(naq == ncq)
+            {
+                toffoli(control_qubits[0], control_qubits[1], ancilla_qubits[0]);
+
+                for(int n=0; n<=naq-3; n++)
+                {
+                    toffoli(control_qubits[n+2], ancilla_qubits[n], ancilla_qubits[n+1]);
+                }
+
+                //                      control               ancilla
+                controlled_single(k, ancilla_qubits[naq-2], ancilla_qubits[naq-1]);
+
+                for(int n=naq-3; n>=0; n--)
+                {
+                    toffoli(control_qubits[n+2], ancilla_qubits[n], ancilla_qubits[n+1]);
+                }
+
+                toffoli(control_qubits[0], control_qubits[1], ancilla_qubits[0]);
+            }
+            else
+            {
+                EOUT("No. of control qubits should be equal to No. of ancilla qubits!");
+                throw ql::exception("[x] error : ql::kernel::controlled : No. of control qubits should be equal to No. of ancilla qubits!",false);
+            }
+        }
+
+        DOUT("Generating controlled kernel [Done]");
+    }
+
 
 public:
     std::string name;
