@@ -198,6 +198,11 @@ public:
         ql_kernel->controlled(k.ql_kernel, control_qubits, ancilla_qubits);
     }
 
+    void conjugate(Kernel &k)
+    {
+        ql_kernel->conjugate(k.ql_kernel);
+    }
+
     ~Kernel()
     {
         delete(ql_kernel);

@@ -94,6 +94,41 @@ def test_controlled_kernel():
 
     p.compile()
 
+def test_conjugate():
+    config_fn = os.path.join(curdir, '../tests/test_cfg_none_simple.json')
+    platform  = ql.Platform('platform_none', config_fn)
+    num_qubits = 3
+    p = ql.Program('test_controlled_kernel', num_qubits, platform)
+
+    k = ql.Kernel('kernel1', platform)
+    ck = ql.Kernel('conjugate_kernel1', platform)
+
+    k.gate("x", [0])
+    k.gate("y", [0])
+    k.gate("z", [0])
+    k.gate("h", [0])
+    k.gate("i", [0])
+    k.gate("s", [0])
+    k.gate("t", [0])
+    k.gate("sdag", [0])
+    k.gate("tdag", [0])
+
+    k.gate('cnot', [0,1])
+    k.gate('cphase', [1,2])
+    k.gate('swap', [2,0])
+
+    k.gate('toffoli', [0,1,2])
+
+    # generate conjugate
+    ck.conjugate(k)
+
+    p.add_kernel(k)
+    p.add_kernel(ck)
+
+    # ql.set_option('decompose_toffoli', 'NC')
+
+    p.compile()
+
 def test_qx():
     config_fn = os.path.join(curdir, '../tests/hardware_config_qx.json')
     platform  = ql.Platform('platform_qx', config_fn)
@@ -118,8 +153,7 @@ def test():
     ql.set_option('optimize', 'yes')
 
 if __name__ == '__main__':
-    test_controlled_kernel()
-    # test()
+    test_conjugate()
 
 
     # LOG_NOTHING,

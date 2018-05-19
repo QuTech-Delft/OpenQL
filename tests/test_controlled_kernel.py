@@ -14,12 +14,12 @@ ql.set_option('scheduler', 'ASAP')
 ql.set_option('log_level', 'LOG_WARNING')
 
 class Test_controlled_kernel(unittest.TestCase):
-    # controlled-T requires an ancilla. At the moment qubit 0 is implicitly used
+
     def test_controlled_single_qubit_gates(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform  = ql.Platform('platform_none', config_fn)
         num_qubits = 3
-        p = ql.Program('Test_controlled_single_qubit_gates', num_qubits, platform)
+        p = ql.Program('test_controlled_single_qubit_gates', num_qubits, platform)
 
         k = ql.Kernel('kernel1', platform)
         ck = ql.Kernel('controlled_kernel1', platform)
@@ -32,7 +32,9 @@ class Test_controlled_kernel(unittest.TestCase):
         k.gate("s", [0])
         k.gate("t", [0])
 
-        # generate controlled version of k. qubit 2 is used as control qubit
+        # generate controlled version of k.
+        # qubit 1 is used as control qubit
+        # qubit 2 is used as ancilla qubit
         ck.controlled(k, [1], [2])
 
         p.add_kernel(k)
@@ -44,7 +46,7 @@ class Test_controlled_kernel(unittest.TestCase):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform  = ql.Platform('platform_none', config_fn)
         num_qubits = 3
-        p = ql.Program('Test_controlled_rotations', num_qubits, platform)
+        p = ql.Program('test_controlled_rotations', num_qubits, platform)
 
         k = ql.Kernel('kernel1', platform)
         ck = ql.Kernel('controlled_kernel1', platform)
@@ -53,7 +55,9 @@ class Test_controlled_kernel(unittest.TestCase):
         k.gate("ry", [0], angle=(np.pi)/4 )
         k.gate("rz", [0], angle=(np.pi)/4 )
 
-        # generate controlled version of k. qubit 2 is used as control qubit        
+        # generate controlled version of k.
+        # qubit 1 is used as control qubit
+        # qubit 2 is used as ancilla qubit
         ck.controlled(k, [1], [2])
 
         p.add_kernel(k)
@@ -65,14 +69,16 @@ class Test_controlled_kernel(unittest.TestCase):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform  = ql.Platform('platform_none', config_fn)
         num_qubits = 4
-        p = ql.Program('Test_controlled_two_qubit_gates', num_qubits, platform)
+        p = ql.Program('test_controlled_two_qubit_gates', num_qubits, platform)
 
         k = ql.Kernel('kernel1', platform)
         ck = ql.Kernel('controlled_kernel1', platform)
 
         k.gate("swap", [0, 1])
 
-        # generate controlled version of k. qubit 3 is used as control qubit
+        # generate controlled version of k.
+        # qubit 2 is used as control qubit
+        # qubit 3 is used as ancilla qubit
         ck.controlled(k, [2], [3])
 
         p.add_kernel(k)
@@ -84,7 +90,7 @@ class Test_controlled_kernel(unittest.TestCase):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform  = ql.Platform('platform_none', config_fn)
         num_qubits = 12
-        p = ql.Program('Test_controlled_two_qubit_gates', num_qubits, platform)
+        p = ql.Program('test_multi_controlled', num_qubits, platform)
 
         k = ql.Kernel('kernel1', platform)
         ck = ql.Kernel('controlled_kernel1', platform)
@@ -95,8 +101,9 @@ class Test_controlled_kernel(unittest.TestCase):
         # disable toffoli decomposition to visualize the network
         ql.set_option('decompose_toffoli', 'no')
 
-        # generate controlled version of k
-        # ck.controlled(k, [3]) # Error as no ancilla qubits provided
+        # generate controlled version of k.
+        # qubits 2, 3, 4, 5, 6 are used as control qubits
+        # qubits 7, 8, 9, 10, 11 are used as ancilla qubits
         ck.controlled(k, [2, 3, 4, 5, 6], [7, 8, 9, 10, 11])
 
         p.add_kernel(k)

@@ -393,7 +393,7 @@ arg3 : double
 
 
 %feature("docstring") Kernel::controlled
-""" generate controlled version of the kernel.
+""" generates controlled version of the kernel from the input kernel.
 
 Parameters
 ----------
@@ -410,9 +410,22 @@ arg3 : []
 
 Returns
 -------
+None
+"""
 
-ql::Kernel
-    controlled version of the kernel
+%feature("docstring") Kernel::conjugate
+""" generates conjugate version of the kernel from the input kernel.
+
+Parameters
+----------
+
+arg1 : ql::Kernel
+    input kernel. Except measure, Kernel to be conjugated.
+
+
+Returns
+-------
+None
 """
 
 

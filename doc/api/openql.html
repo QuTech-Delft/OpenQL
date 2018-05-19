@@ -1071,6 +1071,7 @@ table {
     <li class="mono"><a href="#openql.openql.Kernel.barrier">barrier</a></li>
     <li class="mono"><a href="#openql.openql.Kernel.clifford">clifford</a></li>
     <li class="mono"><a href="#openql.openql.Kernel.cnot">cnot</a></li>
+    <li class="mono"><a href="#openql.openql.Kernel.conjugate">conjugate</a></li>
     <li class="mono"><a href="#openql.openql.Kernel.controlled">controlled</a></li>
     <li class="mono"><a href="#openql.openql.Kernel.cphase">cphase</a></li>
     <li class="mono"><a href="#openql.openql.Kernel.cz">cz</a></li>
@@ -2362,7 +2363,7 @@ table {
 
     <span class="k">def</span> <span class="nf">controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">         generate controlled version of the kernel.</span>
+<span class="sd">         generates controlled version of the kernel from the input kernel.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -2379,12 +2380,29 @@ table {
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-
-<span class="sd">        ql::Kernel</span>
-<span class="sd">            controlled version of the kernel</span>
+<span class="sd">        None</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">conjugate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         generates conjugate version of the kernel from the input kernel.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        arg1 : ql::Kernel</span>
+<span class="sd">            input kernel. Except measure, Kernel to be conjugated.</span>
+
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_conjugate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
 
     <span class="n">__swig_destroy__</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">delete_Kernel</span>
     <span class="fm">__del__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">None</span>
@@ -3158,7 +3176,7 @@ arg2 : str
 
     <span class="k">def</span> <span class="nf">controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">         generate controlled version of the kernel.</span>
+<span class="sd">         generates controlled version of the kernel from the input kernel.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -3175,12 +3193,29 @@ arg2 : str
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-
-<span class="sd">        ql::Kernel</span>
-<span class="sd">            controlled version of the kernel</span>
+<span class="sd">        None</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">conjugate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         generates conjugate version of the kernel from the input kernel.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        arg1 : ql::Kernel</span>
+<span class="sd">            input kernel. Except measure, Kernel to be conjugated.</span>
+
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_conjugate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
 
     <span class="n">__swig_destroy__</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">delete_Kernel</span>
     <span class="fm">__del__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">None</span>
@@ -3413,6 +3448,43 @@ arg2 : int
   
             
   <div class="item">
+    <div class="name def" id="openql.openql.Kernel.conjugate">
+    <p>def <span class="ident">conjugate</span>(</p><p>self, k)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>generates conjugate version of the kernel from the input kernel.</p>
+<h2>Parameters</h2>
+<p>arg1 : ql::Kernel
+    input kernel. Except measure, Kernel to be conjugated.</p>
+<h2>Returns</h2>
+<p>None</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Kernel.conjugate', this);">Show source &equiv;</a></p>
+  <div id="source-openql.openql.Kernel.conjugate" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">conjugate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     generates conjugate version of the kernel from the input kernel.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    arg1 : ql::Kernel</span>
+<span class="sd">        input kernel. Except measure, Kernel to be conjugated.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_conjugate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+</pre></div>
+
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
     <div class="name def" id="openql.openql.Kernel.controlled">
     <p>def <span class="ident">controlled</span>(</p><p>self, k, control_qubits, ancilla_qubits)</p>
     </div>
@@ -3420,7 +3492,7 @@ arg2 : int
 
     
   
-    <div class="desc"><p>generate controlled version of the kernel.</p>
+    <div class="desc"><p>generates controlled version of the kernel from the input kernel.</p>
 <h2>Parameters</h2>
 <p>arg1 : ql::Kernel
     input kernel. Except measure, Kernel to be controlled may contain any of the default gates as well custom gates which are not specialized for a specific qubits.</p>
@@ -3429,14 +3501,13 @@ arg2 : int
 <p>arg3 : []
     list of ancilla qubits. Number of ancilla qubits should be equal to number of control qubits.</p>
 <h2>Returns</h2>
-<p>ql::Kernel
-    controlled version of the kernel</p></div>
+<p>None</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Kernel.controlled', this);">Show source &equiv;</a></p>
   <div id="source-openql.openql.Kernel.controlled" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">     generate controlled version of the kernel.</span>
+<span class="sd">     generates controlled version of the kernel from the input kernel.</span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    arg1 : ql::Kernel</span>
@@ -3447,8 +3518,7 @@ arg2 : int
 <span class="sd">        list of ancilla qubits. Number of ancilla qubits should be equal to number of control qubits.</span>
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    ql::Kernel</span>
-<span class="sd">        controlled version of the kernel</span>
+<span class="sd">    None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">)</span>
 </pre></div>

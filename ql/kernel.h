@@ -1318,13 +1318,13 @@ public:
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rz(tq, cq, g->angle);
+                controlled_rx(tq, cq, g->angle);
             }
             else if( __ry_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rz(tq, cq, g->angle);
+                controlled_ry(tq, cq, g->angle);
             }
             else if( __rz_gate__ == gtype )
             {
@@ -1431,6 +1431,113 @@ public:
         DOUT("Generating controlled kernel [Done]");
     }
 
+    void conjugate(ql::quantum_kernel *k)
+    {
+        COUT("Generating conjugate kernel");
+        ql::circuit& ckt = k->get_circuit();
+        for( auto rgit = ckt.rbegin(); rgit != ckt.rend(); ++rgit )
+        {
+            auto g = *rgit;
+            std::string gname = g->name;
+            ql::gate_type_t gtype = g->type();
+            DOUT("Generating conjugate gate for " << gname);
+            DOUT("Type : " << gtype);            
+            if( __pauli_x_gate__ == gtype  || __rx180_gate__ == gtype )
+            {
+                gate("x", g->operands, g->duration, g->angle);
+            }
+            else if( __pauli_y_gate__ == gtype  || __ry180_gate__ == gtype )
+            {
+                gate("y", g->operands, g->duration, g->angle);
+            }
+            else if( __pauli_z_gate__ == gtype )
+            {
+                gate("z", g->operands, g->duration, g->angle);
+            }
+            else if( __hadamard_gate__ == gtype )
+            {
+                gate("hadamard", g->operands, g->duration, g->angle);
+            }
+            else if( __identity_gate__ == gtype )
+            {
+                gate("identity", g->operands, g->duration, g->angle);
+            }
+            else if( __t_gate__ == gtype )
+            {
+                gate("tdag", g->operands, g->duration, g->angle);
+            }
+            else if( __tdag_gate__ == gtype )
+            {
+                gate("t", g->operands, g->duration, g->angle);
+            }
+            else if( __phase_gate__ == gtype )
+            {
+                gate("sdag", g->operands, g->duration, g->angle);
+            }
+            else if( __phasedag_gate__ == gtype )
+            {
+                gate("s", g->operands, g->duration, g->angle);
+            }
+            else if( __cnot_gate__ == gtype )
+            {
+                gate("cnot", g->operands, g->duration, g->angle);
+            }
+            else if( __swap_gate__ == gtype )
+            {
+                gate("swap", g->operands, g->duration, g->angle);
+            }
+            else if( __rx_gate__ == gtype )
+            {
+                gate("rx", g->operands, g->duration, -(g->angle) );
+            }
+            else if( __ry_gate__ == gtype )
+            {
+                gate("ry", g->operands, g->duration, -(g->angle) );
+            }
+            else if( __rz_gate__ == gtype )
+            {
+                gate("rz", g->operands, g->duration, -(g->angle) );
+            }
+            else if( __rx90_gate__ == gtype )
+            {
+                gate("mrx90", g->operands, g->duration, g->angle);
+            }
+            else if( __mrx90_gate__ == gtype )
+            {
+                gate("rx90", g->operands, g->duration, g->angle);
+            }
+            else if( __rx180_gate__ == gtype )
+            {
+                gate("x", g->operands, g->duration, g->angle);
+            }
+            else if( __ry90_gate__ == gtype )
+            {
+                gate("mry90", g->operands, g->duration, g->angle);
+            }
+            else if( __mry90_gate__ == gtype )
+            {
+                gate("ry90", g->operands, g->duration, g->angle);
+            }
+            else if( __ry180_gate__ == gtype )
+            {
+                gate("y", g->operands, g->duration, g->angle);
+            }
+            else if( __cphase_gate__ == gtype )
+            {
+                gate("cphase", g->operands, g->duration, g->angle);
+            }
+            else if( __toffoli_gate__ == gtype )
+            {
+                gate("toffoli", g->operands, g->duration, g->angle);
+            }
+            else
+            {
+                EOUT("Conjugate version of gate '" << gname << "' not defined !");
+                throw ql::exception("[x] error : ql::kernel::conjugate : Conjugate version of gate '"+gname+"' not defined ! ",false);
+            }
+        }
+        COUT("Generating conjugate kernel [Done]");
+    }
 
 public:
     std::string name;
