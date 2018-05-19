@@ -32,6 +32,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - updated qisa-as support for tests
 
 ### Removed
+- qisa-as is not a part of openql
 - prog.compile() does not get optimiz/schedule/verbose options
 
 ### Fixed

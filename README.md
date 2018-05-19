@@ -67,7 +67,17 @@ pip install  -e .
 
 ## Running the tests
 
-In order to pass all the tests, `qisa-as` should be installed first. Follow [these instructions](https://github.com/DiCarloLab-Delft/ElecPrj_CCLight/tree/development/qisa-as) to install python interface of `qisa-as`. Once `qisa-as` is installed, you can run `py.test -v` to run all the tests to check the installation.
+In order to pass all the tests, `qisa-as` should be installed first. Follow [these instructions](https://github.com/DiCarloLab-Delft/ElecPrj_CCLight/tree/development/qisa-as) to install python interface of `qisa-as`. Once `qisa-as` is installed, you can run all the tests by:
+
+```
+py.test -v
+```
+
+Or
+
+```
+python -m pytest
+```
 
 
 # Compiling C++ OpenQL tests and programs
