@@ -3,6 +3,7 @@ OpenQL C++ Coding Conventions
 
 In order to maintain the code homogeneous and consistent, all contibutors are invited to follow this coding convetion.
 
+
 ## Files Naming ##
 
 C++ source files should be named `.cc` 
