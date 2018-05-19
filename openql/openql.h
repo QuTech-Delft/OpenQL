@@ -186,7 +186,7 @@ public:
         ql_kernel->display();
     }
 
-    void gate(std::string name, std::vector<size_t> qubits={}, size_t duration=0, double angle=0.0)
+    void gate(std::string name, std::vector<size_t> qubits, size_t duration=0, double angle=0.0)
     {
         ql_kernel->gate(name, qubits, duration, angle);
     }

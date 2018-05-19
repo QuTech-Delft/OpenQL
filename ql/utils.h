@@ -22,7 +22,7 @@
 size_t MAX_CYCLE = std::numeric_limits<int>::max();
 
 #if defined(_WIN32)
-
+#include <direct.h>
 #else 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -38,7 +38,7 @@ namespace ql
         void make_output_dir(std::string dir)
         {
             #if defined(_WIN32)
-            _mkdir(strPath.c_str());
+            _mkdir(dir.c_str());
             #else 
             mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
             #endif
