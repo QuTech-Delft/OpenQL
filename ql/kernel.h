@@ -32,6 +32,7 @@ namespace ql
 // un-comment it to decompose
 // #define DECOMPOSE
 
+enum class kernel_type_t {STATIC, WHILE, IF, ELSE};
 /**
  * quantum_kernel
  */
@@ -39,18 +40,30 @@ class quantum_kernel
 {
 public:
 
-    quantum_kernel(std::string name) : name(name), iterations(1) {}
+    quantum_kernel(std::string name) : 
+        name(name), iterations(1), type(kernel_type_t::STATIC) {}
 
-    quantum_kernel(std::string name, ql::quantum_platform& platform) : name(name), iterations(1)
+    quantum_kernel(std::string name, ql::quantum_platform& platform) : 
+        name(name), iterations(1), type(kernel_type_t::STATIC)
     {
         gate_definition = platform.instruction_map;
         qubit_number = platform.qubit_number;
         cycle_time = platform.cycle_time;
     }
 
-    void loop(size_t it)
+    void set_static_loop_count(size_t it)
     {
         iterations = it;
+    }
+
+    void set_condition_variable(size_t var)
+    {
+        condition_variable = var;
+    }
+
+    void set_kernel_type(kernel_type_t typ)
+    {
+        type = typ;
     }
 
     void identity(size_t qubit)
@@ -759,16 +772,46 @@ public:
     std::string qasm()
     {
         std::stringstream ss;
-        ss << "." << name;
-        if (iterations > 1)
-            ss << "(" << iterations << ") \n";
-        else
-            ss << "\n";
-        for (size_t i=0; i<c.size(); ++i)
+        ss << name << ":";
+
+        if(type == kernel_type_t::STATIC)
+        {
+            if (iterations > 1)
+                ss << "(" << iterations << ") \n";
+
+        }
+        ss << "\n";
+
+        if(type == kernel_type_t::IF)
+        {
+            ss << "   bz r" << condition_variable <<", " << name << "_if_end\n";
+        }
+
+        if(type == kernel_type_t::ELSE)
+        {
+            ss << "   bnz r" << condition_variable <<", " << name << "_else_end\n";
+        }
+
+        for(size_t i=0; i<c.size(); ++i)
         {
             ss << "   " << c[i]->qasm() << "\n";
-            // std::cout << c[i]->qasm() << std::endl;
         }
+
+        if(type == kernel_type_t::IF)
+        {
+            ss << name <<"_if_end:\n";
+        }
+
+        if(type == kernel_type_t::ELSE)
+        {
+            ss << name <<"_else_end:\n";
+        }
+
+        if(type == kernel_type_t::WHILE)
+        {
+            ss << "   bnz r" << condition_variable <<", " << name << "\n";
+        }
+
         return ss.str();
     }
 
@@ -895,6 +938,7 @@ public:
         else
         {
             EOUT("Unknown scheduler");
+            throw ql::exception("Unknown scheduler!", false);
         }
 #endif // __disable_lemon__
     }
@@ -1540,15 +1584,33 @@ public:
     }
 
 public:
-    std::string name;
-    circuit     c;
-    size_t      iterations;
-    size_t      qubit_number;
-    size_t      cycle_time;
+    std::string   name;
+    circuit       c;
+    size_t        iterations;
+    size_t        condition_variable;
+    size_t        qubit_number;
+    size_t        cycle_time;
+    kernel_type_t type;
     std::map<std::string,custom_gate*> gate_definition;
 };
 
 
+// enum COND_OPERATOR{EQ, NEQ, LEQ, GEQ};
+// class Condition
+// {
+// public:
+//     size_t left_op;
+//     size_t right_op;
+
+
+// public:
+
+//     Condition(size_t lop, std::string cond_str, size_t rop)
+//     {
+
+//     }
+
+// };
 
 
 } // namespace ql

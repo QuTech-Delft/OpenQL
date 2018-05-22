@@ -230,7 +230,7 @@ class quantum_program
          std::string s = qasm();
 
          IOUT("writing un-scheduled qasm to '" << ss_qasm.str() << "' ...");
-         ql::utils::write_file(ss_qasm.str(),s);
+         ql::utils::write_file(ss_qasm.str(), s);
 
          schedule();
 
@@ -247,11 +247,11 @@ class quantum_program
             ql::circuit& kc = kernels[k].get_circuit();
             for(size_t i=0; i<kernels[k].iterations; i++)
             {
-               fused.insert(fused.end(),kc.begin(),kc.end());   
+               fused.insert(fused.end(), kc.begin(), kc.end());
             }
          }
 
-      	try 
+      	try
       	{
       	   IOUT("compiling eqasm code...");
       	   backend_compiler->compile(name, fused, platform);

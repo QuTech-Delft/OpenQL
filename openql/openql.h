@@ -235,7 +235,33 @@ public:
 
     void add_kernel(Kernel& k, size_t iterations=1)
     {
-        (k.ql_kernel)->loop(iterations);
+        (k.ql_kernel)->set_kernel_type(ql::kernel_type_t::STATIC);
+        (k.ql_kernel)->set_static_loop_count(iterations);
+        prog->add( *(k.ql_kernel), iterations);
+    }
+
+    void add_if(Kernel& k, size_t condition_variable)
+    {
+        (k.ql_kernel)->set_kernel_type(ql::kernel_type_t::IF);
+        (k.ql_kernel)->set_condition_variable(condition_variable);
+        prog->add( *(k.ql_kernel) );
+    }
+
+    void add_if_else(Kernel& k_if, Kernel& k_else, size_t condition_variable)
+    {
+        (k_if.ql_kernel)->set_kernel_type(ql::kernel_type_t::IF);
+        (k_if.ql_kernel)->set_condition_variable(condition_variable);
+        prog->add( *(k_if.ql_kernel) );
+
+        (k_else.ql_kernel)->set_kernel_type(ql::kernel_type_t::ELSE);
+        (k_else.ql_kernel)->set_condition_variable(condition_variable);
+        prog->add( *(k_else.ql_kernel) );
+    }
+
+    void add_while(Kernel& k, size_t condition_variable)
+    {
+        (k.ql_kernel)->set_kernel_type(ql::kernel_type_t::WHILE);
+        (k.ql_kernel)->set_condition_variable(condition_variable);
         prog->add( *(k.ql_kernel) );
     }
 

@@ -22,17 +22,14 @@ def test_cclight():
     k = ql.Kernel('aKernel', platform)
 
     for i in range(4):
-        k.prepz(i)
+        k.gate('prepz', [i])
 
-    k.x(2)
-    k.gate("wait", [1,2], 100)
-    k.x(2)
-    k.x(3)
-    k.cnot(2, 0)
-    k.cnot(1, 4)
+    k.gate('x', [2])
+    k.gate('cnot', [2, 0])
+    k.gate('cnot', [1, 4])
 
     for i in range(4):
-        k.measure(i)
+        k.gate('measure', [i])
 
     p.add_kernel(k)
     p.compile()
@@ -45,8 +42,8 @@ def test_none():
 
     k = ql.Kernel('aKernel', platform)
 
-    k.gate("x",0)
-    k.gate("x",0)
+    k.gate("x", [0])
+    k.gate("x", [0])
     k.gate("cz", [0, 1])
     k.gate("cz", [2, 3])
     k.gate("display", [])
@@ -54,80 +51,6 @@ def test_none():
     p.add_kernel(k)
     p.compile()
 
-def test_controlled_kernel():
-    config_fn = os.path.join(curdir, '../tests/test_cfg_none_simple.json')
-    platform  = ql.Platform('platform_none', config_fn)
-    num_qubits = 12
-    p = ql.Program('test_controlled_kernel', num_qubits, platform)
-
-    k = ql.Kernel('kernel1', platform)
-    ck = ql.Kernel('controlled_kernel1', platform)
-
-    # k.gate("toffoli", [1,2,3] )
-    # ql.set_option('decompose_toffoli', 'NC')
-
-    # k.gate("x", [1])
-    # k.gate("y", [1])
-    # k.gate("z", [1])
-    # k.gate("h", [1])
-    # k.gate("i", [1])
-    # k.gate("s", [1])
-    # k.gate("t", [1])
-    # k.gate("sdag", [1])
-    # k.gate("tdag", [1])
-
-    # generate controlled version of k. qubit 2 is used as control qubit
-    # ck.controlled(k, [2])
-
-    k.gate("x", [1])
-    # k.gate('cnot', [1,2])
-
-    # generate controlled version of k. qubit 3 is used as control qubit
-    # ck.controlled(k, [3]) # Error
-    # ck.controlled(k, [3], [7])
-    # ck.controlled(k, [3,4], [7,8])
-    # ck.controlled(k, [3,4,5], [7,8,9])
-    ck.controlled(k, [3,4,5,6], [7,8,9,10])
-
-    p.add_kernel(k)
-    p.add_kernel(ck)
-
-    p.compile()
-
-def test_conjugate():
-    config_fn = os.path.join(curdir, '../tests/test_cfg_none_simple.json')
-    platform  = ql.Platform('platform_none', config_fn)
-    num_qubits = 3
-    p = ql.Program('test_controlled_kernel', num_qubits, platform)
-
-    k = ql.Kernel('kernel1', platform)
-    ck = ql.Kernel('conjugate_kernel1', platform)
-
-    k.gate("x", [0])
-    k.gate("y", [0])
-    k.gate("z", [0])
-    k.gate("h", [0])
-    k.gate("i", [0])
-    k.gate("s", [0])
-    k.gate("t", [0])
-    k.gate("sdag", [0])
-    k.gate("tdag", [0])
-
-    k.gate('cnot', [0,1])
-    k.gate('cphase', [1,2])
-    k.gate('swap', [2,0])
-
-    k.gate('toffoli', [0,1,2])
-
-    # generate conjugate
-    ck.conjugate(k)
-
-    p.add_kernel(k)
-    p.add_kernel(ck)
-
-    # ql.set_option('decompose_toffoli', 'NC')
-
-    p.compile()
 
 def test_qx():
     config_fn = os.path.join(curdir, '../tests/hardware_config_qx.json')
@@ -149,11 +72,41 @@ def test_qx():
     p.compile()
 
 
-def test():
-    ql.set_option('optimize', 'yes')
+def test_loop():
+    config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
+    platform  = ql.Platform('platform_none', config_fn)
+    num_qubits = 5
+    p = ql.Program('test_loop', num_qubits, platform)
+
+    k = ql.Kernel('aKernel', platform)
+
+    k.gate('x', [0])
+    k.gate('x', [0])
+    k.gate('cz', [0, 1])
+    k.gate('cz', [2, 3])
+    k.gate('measure', [0])
+
+    classical_reg = 0
+
+    # what if the following calls return label
+    # these labels can then be utilized to create nested loops
+    # this idea can also be extended to branch to even arbitrary places
+    # in the code for instance by returning labels from k.gate() as well.
+
+    # a kernel should have:
+    # - prologue (can be used for if/for)
+    # - Kernel   (used for all kernels)
+    # - epilogue (can be used for while)
+
+    p.add_kernel(k)
+    p.add_if(k, classical_reg)
+    p.add_if_else(k, k, classical_reg)
+    p.add_while(k, classical_reg)
+
+    p.compile()
 
 if __name__ == '__main__':
-    test_conjugate()
+    test_loop()
 
 
     # LOG_NOTHING,
@@ -162,3 +115,8 @@ if __name__ == '__main__':
     # LOG_WARNING,
     # LOG_INFO,
     # LOG_DEBUG
+
+# TODO: check multiple kernels with same name
+#       for now programer should provide unique name for each kernel
+
+# TODO: check for empty kernel and classical code around it !
