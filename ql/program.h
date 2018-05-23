@@ -80,7 +80,7 @@ class quantum_program
          }
       }
 
-      void add(ql::quantum_kernel k)
+      void add(ql::quantum_kernel &k)
       {
          // check sanity of supplied qubit numbers for each gate
          ql::circuit& kc = k.get_circuit();
@@ -101,6 +101,38 @@ class quantum_program
 
          // if sane, now add kernel to list of kernels
          kernels.push_back(k);
+      }
+
+      void add_for(ql::quantum_kernel &k, size_t iterations=1)
+      {
+         k.set_kernel_type(ql::kernel_type_t::STATIC);
+         k.set_static_loop_count(iterations);
+         add(k);
+      }
+
+      void add_if(ql::quantum_kernel &k, size_t var)
+      {
+         k.set_kernel_type(ql::kernel_type_t::IF);
+         k.set_condition_variable(var);
+         add(k);
+      }
+
+      void add_if_else(ql::quantum_kernel &k_if, ql::quantum_kernel &k_else, size_t var)
+      {
+         k_if.set_kernel_type(ql::kernel_type_t::IF);
+         k_if.set_condition_variable(var);
+         add(k_if);
+
+         k_else.set_kernel_type(ql::kernel_type_t::ELSE);
+         k_else.set_condition_variable(var);
+         add(k_else);
+      }
+
+      void add_while(ql::quantum_kernel &k, size_t var)
+      {
+         k.set_kernel_type(ql::kernel_type_t::WHILE);
+         k.set_condition_variable(var);
+         add(k);
       }
 
       void set_config_file(std::string file_name)
@@ -327,10 +359,6 @@ class quantum_program
             std::string kernel_sched_qasm;
             std::string kernel_sched_dot;
             k.schedule(qubits, platform, kernel_sched_qasm, kernel_sched_dot);
-            if( k.iterations > 1 )
-               sched_qasm += "\n." + k.get_name() + "("+ std::to_string(k.iterations) + ")";
-            else
-               sched_qasm += "\n." + k.get_name();
             sched_qasm += kernel_sched_qasm + '\n';
             // disabled generation of dot file for each kernel
             // string fname = ql::options::get("output_dir") + "/" + k.get_name() + scheduler + ".dot";

@@ -116,7 +116,3 @@ if __name__ == '__main__':
     # LOG_INFO,
     # LOG_DEBUG
 
-# TODO: check multiple kernels with same name
-#       for now programer should provide unique name for each kernel
-
-# TODO: check for empty kernel and classical code around it !

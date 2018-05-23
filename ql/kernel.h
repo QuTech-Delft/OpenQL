@@ -765,11 +765,7 @@ public:
         DOUT("");
     }
 
-
-    /**
-     * qasm
-     */
-    std::string qasm()
+    std::string get_prologue()
     {
         std::stringstream ss;
         ss << name << ":";
@@ -780,22 +776,25 @@ public:
                 ss << "(" << iterations << ") \n";
 
         }
-        ss << "\n";
+        else
+            ss << "\n";
 
         if(type == kernel_type_t::IF)
         {
-            ss << "   bz r" << condition_variable <<", " << name << "_if_end\n";
+            ss << "    bz r" << condition_variable <<", " << name << "_if_end\n";
         }
 
         if(type == kernel_type_t::ELSE)
         {
-            ss << "   bnz r" << condition_variable <<", " << name << "_else_end\n";
+            ss << "    bnz r" << condition_variable <<", " << name << "_else_end\n";
         }
 
-        for(size_t i=0; i<c.size(); ++i)
-        {
-            ss << "   " << c[i]->qasm() << "\n";
-        }
+        return ss.str();
+    }
+
+    std::string get_epilogue()
+    {
+        std::stringstream ss;
 
         if(type == kernel_type_t::IF)
         {
@@ -809,10 +808,28 @@ public:
 
         if(type == kernel_type_t::WHILE)
         {
-            ss << "   bnz r" << condition_variable <<", " << name << "\n";
+            ss << "    bnz r" << condition_variable <<", " << name << "\n";
+        }
+        return ss.str();
+    }
+
+    /**
+     * qasm
+     */
+    std::string qasm()
+    {
+        std::stringstream ss;
+
+        ss << get_prologue();
+
+        for(size_t i=0; i<c.size(); ++i)
+        {
+            ss << "    " << c[i]->qasm() << "\n";
         }
 
-        return ss.str();
+        ss << get_epilogue();
+
+        return  ss.str();
     }
 
     /**
@@ -906,6 +923,7 @@ public:
     void schedule(size_t qubits, quantum_platform platform, std::string& sched_qasm, std::string& sched_dot)
     {
         std::string scheduler = ql::options::get("scheduler");
+        std::string kqasm("");
 
 #ifndef __disable_lemon__
         IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
@@ -923,8 +941,7 @@ public:
             // sched_dot = sched.GetDotScheduleASAP();
             // sched.PrintQASMScheduledASAP();
             ql::ir::bundles_t bundles = sched.schedule_asap();
-            sched_qasm = ql::ir::qasm(bundles);
-
+            kqasm = ql::ir::qasm(bundles);
         }
         else if("ALAP" == scheduler)
         {
@@ -933,13 +950,16 @@ public:
             // sched_dot = sched.GetDotScheduleALAP();
             // sched.PrintQASMScheduledALAP();
             ql::ir::bundles_t bundles = sched.schedule_alap();
-            sched_qasm = ql::ir::qasm(bundles);
+            kqasm = ql::ir::qasm(bundles);
         }
         else
         {
             EOUT("Unknown scheduler");
             throw ql::exception("Unknown scheduler!", false);
         }
+
+        sched_qasm = get_prologue() + kqasm + get_epilogue();
+
 #endif // __disable_lemon__
     }
 
