@@ -32,7 +32,15 @@ namespace ql
 // un-comment it to decompose
 // #define DECOMPOSE
 
-enum class kernel_type_t {STATIC, WHILE, IF, ELSE};
+enum class kernel_type_t
+{
+    STATIC, 
+    FOR_START, FOR_END,
+    WHILE_START, WHILE_END,
+    IF_START, IF_END, 
+    ELSE_START, ELSE_END
+};
+
 /**
  * quantum_kernel
  */
@@ -768,25 +776,22 @@ public:
     std::string get_prologue()
     {
         std::stringstream ss;
-        ss << name << ":";
+        ss << name << ":\n";
 
-        if(type == kernel_type_t::STATIC)
+        if(type == kernel_type_t::IF_START)
         {
-            if (iterations > 1)
-                ss << "(" << iterations << ") \n";
-
-        }
-        else
-            ss << "\n";
-
-        if(type == kernel_type_t::IF)
-        {
-            ss << "    bz r" << condition_variable <<", " << name << "_if_end\n";
+            ss << "    bz r" << condition_variable <<", " << name << "_end\n";
         }
 
-        if(type == kernel_type_t::ELSE)
+        if(type == kernel_type_t::ELSE_START)
         {
-            ss << "    bnz r" << condition_variable <<", " << name << "_else_end\n";
+            ss << "    bnz r" << condition_variable <<", " << name << "_end\n";
+        }
+
+        if(type == kernel_type_t::FOR_START)
+        {
+            // for now r1 is used, fix it
+            ss << "    ldi r1" <<", " << iterations << "\n";
         }
 
         return ss.str();
@@ -796,20 +801,24 @@ public:
     {
         std::stringstream ss;
 
-        if(type == kernel_type_t::IF)
+        if(type == kernel_type_t::WHILE_END)
         {
-            ss << name <<"_if_end:\n";
+            ss << "    bnz r" << condition_variable <<", " << name << "_start\n";
         }
 
-        if(type == kernel_type_t::ELSE)
+        if(type == kernel_type_t::FOR_END)
         {
-            ss << name <<"_else_end:\n";
+            std::string kname(name);
+            std::replace( kname.begin(), kname.end(), '_', ' ');
+            std::istringstream iss(kname);
+            std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
+                                             std::istream_iterator<std::string>{} };
+
+            // for now r1 is used, fix it
+            ss << "    dec r1\n";
+            ss << "    bnz r1, " << tokens[0] << "\n";
         }
 
-        if(type == kernel_type_t::WHILE)
-        {
-            ss << "    bnz r" << condition_variable <<", " << name << "\n";
-        }
         return ss.str();
     }
 
@@ -1613,24 +1622,6 @@ public:
     kernel_type_t type;
     std::map<std::string,custom_gate*> gate_definition;
 };
-
-
-// enum COND_OPERATOR{EQ, NEQ, LEQ, GEQ};
-// class Condition
-// {
-// public:
-//     size_t left_op;
-//     size_t right_op;
-
-
-// public:
-
-//     Condition(size_t lop, std::string cond_str, size_t rop)
-//     {
-
-//     }
-
-// };
 
 
 } // namespace ql

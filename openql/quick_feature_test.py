@@ -7,7 +7,7 @@ output_dir = os.path.join(curdir, 'test_output')
 
 ql.set_option('output_dir', output_dir)
 ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ASAP')
+ql.set_option('scheduler', 'ALAP')
 ql.set_option('log_level', 'LOG_DEBUG')
 ql.set_option('decompose_toffoli', 'no')
 
@@ -76,43 +76,79 @@ def test_loop():
     config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
     platform  = ql.Platform('platform_none', config_fn)
     num_qubits = 5
+
     p = ql.Program('test_loop', num_qubits, platform)
+    sp1 = ql.Program('subprogram1', num_qubits, platform)
+    sp2 = ql.Program('subprogram2', num_qubits, platform)
 
-    k = ql.Kernel('aKernel', platform)
+    k1 = ql.Kernel('aKernel1', platform)
+    k2 = ql.Kernel('aKernel2', platform)
 
-    k.gate('x', [0])
-    k.gate('x', [0])
-    k.gate('cz', [0, 1])
-    k.gate('cz', [2, 3])
-    k.gate('measure', [0])
+    k1.gate('x', [0])
+    k1.gate('x', [0])
+    k1.gate('measure', [0])
+
+    k2.gate('cz', [0, 1])
+    k2.gate('cz', [2, 3])
+    k2.gate('measure', [0])
+
+    # sp.add_kernel(k)
+    # sp.add_kernel(k)
+    # p.add_program(sp)
+
 
     classical_reg = 0
 
-    # what if the following calls return label
-    # these labels can then be utilized to create nested loops
-    # this idea can also be extended to branch to even arbitrary places
-    # in the code for instance by returning labels from k.gate() as well.
+    # no control flow
+    # p.add_kernel(k)
 
-    # a kernel should have:
-    # - prologue (can be used for if/for)
-    # - Kernel   (used for all kernels)
-    # - epilogue (can be used for while)
+    # simple if
+    # p.add_if(k1, classical_reg)
 
-    p.add_kernel(k)
-    p.add_if(k, classical_reg)
-    p.add_if_else(k, k, classical_reg)
-    p.add_while(k, classical_reg)
+    # nested if
+    # sp1.add_kernel(k1)
+    # sp1.add_kernel(k2)    
+    # p.add_if(sp1, classical_reg)
+
+    # simple if/else
+    # p.add_if_else(k1, k2, classical_reg)
+
+    # nested if/else
+    # sp1.add_kernel(k1)
+    # sp2.add_kernel(k2)
+    # p.add_if_else(sp1, sp2, classical_reg)
+
+    # simple while
+    # p.add_while(k1, classical_reg)
+
+    # nested while
+    # sp1.add_while(k1, classical_reg)
+    # sp2.add_while(sp1, classical_reg)
+    # p.add_program(sp2)
+
+    # nesting while inside if
+    # sp1.add_while(k1, classical_reg)
+    # sp2.add_if(sp1, classical_reg)
+    # p.add_program(sp2)
+
+    # simple for
+    # p.add_for(k1, 10)
+
+    # nested for
+    sp1.add_for(k1, 10)
+    sp2.add_for(sp1, 20)
+    p.add_program(sp2)
 
     p.compile()
+
 
 if __name__ == '__main__':
     test_loop()
 
 
-    # LOG_NOTHING,
-    # LOG_CRITICAL,
-    # LOG_ERROR,
-    # LOG_WARNING,
-    # LOG_INFO,
-    # LOG_DEBUG
-
+# LOG_NOTHING,
+# LOG_CRITICAL,
+# LOG_ERROR,
+# LOG_WARNING,
+# LOG_INFO,
+# LOG_DEBUG

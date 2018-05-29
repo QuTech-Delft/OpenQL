@@ -667,7 +667,6 @@ ql::ir::bundles_t cc_light_schedule_rc( std::string prog_name, size_t nqubits, q
     resource_manager_t rm(platform);
     Scheduler sched;
     sched.Init(nqubits, ckt, platform);
-    // sched.PrintDot();
     ql::ir::bundles_t bundles1 = sched.schedule_asap(rm, platform);
 
     // combine parallel instrcutions of same type from different sections
