@@ -135,9 +135,14 @@ def test_loop():
     # p.add_for(k1, 10)
 
     # nested for
-    sp1.add_for(k1, 10)
-    sp2.add_for(sp1, 20)
-    p.add_program(sp2)
+    # sp1.add_for(k1, 10)
+    # sp2.add_for(sp1, 20)
+    # p.add_program(sp2)
+
+    # classical operations
+    k1.classical('not', [0,1])
+    k1.classical('add', [0,1,2])
+    p.add_kernel(k1)
 
     p.compile()
 

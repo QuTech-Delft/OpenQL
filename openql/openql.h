@@ -192,6 +192,11 @@ public:
         ql_kernel->gate(name, qubits, duration, angle);
     }
 
+    void classical(std::string name, std::vector<size_t> qubits)
+    {
+        ql_kernel->classical(name, qubits);
+    }
+
     void controlled(Kernel &k,
         std::vector<size_t> control_qubits,
         std::vector<size_t> ancilla_qubits)
@@ -210,8 +215,6 @@ public:
     }
 };
 
-class If;
-class While;
 
 /**
  * quantum program interface

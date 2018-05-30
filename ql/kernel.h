@@ -17,6 +17,7 @@
 #include "ql/utils.h"
 #include "ql/options.h"
 #include "ql/gate.h"
+#include "ql/classical.h"
 #include "ql/optimizer.h"
 #include "ql/ir.h"
 
@@ -839,6 +840,16 @@ public:
         ss << get_epilogue();
 
         return  ss.str();
+    }
+
+    void classical(std::string operation, std::vector<size_t> operands)
+    {
+        // TODO for now qubit_number is used, actually it should be creg count
+        std::vector<size_t> total_coperands(5);
+        // std::vector<size_t> total_coperands(creg_number); TODO Fix
+        std::iota(total_coperands.begin(), total_coperands.end(), 0);
+        c.push_back(new ql::wait(total_coperands, 0, 0));
+        c.push_back(new ql::classical(operation, operands));
     }
 
     /**

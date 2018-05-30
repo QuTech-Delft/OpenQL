@@ -83,7 +83,8 @@ typedef enum __gate_type_t
     __nop_gate__,
     __dummy_gate__,
     __swap_gate__,
-    __wait_gate__
+    __wait_gate__,
+    __classical_gate__
 } gate_type_t;
 
 #define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
@@ -1543,9 +1544,6 @@ public:
         return m;
     }
 };
-
-
-
 
 } // end ql namespace
 
