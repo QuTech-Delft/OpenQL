@@ -52,11 +52,12 @@ public:
     quantum_kernel(std::string name) : 
         name(name), iterations(1), type(kernel_type_t::STATIC) {}
 
-    quantum_kernel(std::string name, ql::quantum_platform& platform) : 
-        name(name), iterations(1), type(kernel_type_t::STATIC)
+    quantum_kernel(std::string name, ql::quantum_platform& platform,
+        size_t qcount, size_t ccount) : 
+        name(name), iterations(1), type(kernel_type_t::STATIC),
+        qubit_count(qcount), creg_count(ccount)
     {
         gate_definition = platform.instruction_map;
-        qubit_number = platform.qubit_number;
         cycle_time = platform.cycle_time;
     }
 
@@ -703,10 +704,10 @@ public:
         for(auto & qno : qubits)
         {
             DOUT("qno : " << qno);
-            if( qno >= qubit_number )
+            if( qno >= qubit_count )
             {
-                EOUT("Number of qubits in platform: " << std::to_string(qubit_number) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
-                throw ql::exception("[x] error : ql::kernel::gate() : Number of qubits in platform: "+std::to_string(qubit_number)+", specified qubit numbers out of range for gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" !",false);
+                EOUT("Number of qubits in platform: " << std::to_string(qubit_count) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+                throw ql::exception("[x] error : ql::kernel::gate() : Number of qubits in platform: "+std::to_string(qubit_count)+", specified qubit numbers out of range for gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" !",false);
             }
         }
 
@@ -844,9 +845,16 @@ public:
 
     void classical(std::string operation, std::vector<size_t> operands, int ival=0)
     {
-        // TODO for now qubit_number is used, actually it should be creg count
-        std::vector<size_t> total_coperands(5);
-        // std::vector<size_t> total_coperands(creg_number); TODO Fix
+        for(auto & cno : operands)
+        {
+            if( cno >= creg_count )
+            {
+                EOUT("Out of range operands for gate: '" << operation << "' with " << ql::utils::to_string(operands,"creg operands") );
+                throw ql::exception("Out of range operands for : '"+operation+"' with " +ql::utils::to_string(operands,"creg operands")+" !",false);
+            }
+        }
+
+        std::vector<size_t> total_coperands(creg_count);
         std::iota(total_coperands.begin(), total_coperands.end(), 0);
         c.push_back(new ql::wait(total_coperands, 0, 0));
         c.push_back(new ql::classical(operation, operands, ival));
@@ -915,7 +923,7 @@ public:
 
             ql::quantum_kernel toff_kernel("toff_kernel");
             toff_kernel.gate_definition = gate_definition;
-            toff_kernel.qubit_number = qubit_number;
+            toff_kernel.qubit_count = qubit_count;
             toff_kernel.cycle_time = cycle_time;
 
             if( __toffoli_gate__ == gtype )
@@ -1628,7 +1636,8 @@ public:
     circuit       c;
     size_t        iterations;
     size_t        condition_variable;
-    size_t        qubit_number;
+    size_t        qubit_count;
+    size_t        creg_count;
     size_t        cycle_time;
     kernel_type_t type;
     std::map<std::string,custom_gate*> gate_definition;

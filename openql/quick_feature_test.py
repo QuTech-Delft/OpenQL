@@ -15,7 +15,7 @@ def test_cclight():
     config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
     platform  = ql.Platform('seven_qubits_chip', config_fn)
     num_qubits = 7
-    p = ql.Program('test_cclight', num_qubits, platform)
+    p = ql.Program('test_cclight', platform, num_qubits)
     sweep_points = [1,2]
     p.set_sweep_points(sweep_points, len(sweep_points))
 
@@ -38,7 +38,7 @@ def test_none():
     config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
     platform  = ql.Platform('platform_none', config_fn)
     num_qubits = 5
-    p = ql.Program('test_none', num_qubits, platform)
+    p = ql.Program('test_none', platform, num_qubits)
 
     k = ql.Kernel('aKernel', platform)
 
@@ -56,7 +56,7 @@ def test_qx():
     config_fn = os.path.join(curdir, '../tests/hardware_config_qx.json')
     platform  = ql.Platform('platform_qx', config_fn)
     num_qubits = 5
-    p = ql.Program('test_qx', num_qubits, platform)
+    p = ql.Program('test_qx', platform, num_qubits)
 
     k = ql.Kernel('aKernel', platform)
 
@@ -76,13 +76,14 @@ def test_loop():
     config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
     platform  = ql.Platform('platform_none', config_fn)
     num_qubits = 5
+    num_cregs = 5
 
-    p = ql.Program('test_loop', num_qubits, platform)
-    sp1 = ql.Program('subprogram1', num_qubits, platform)
-    sp2 = ql.Program('subprogram2', num_qubits, platform)
+    p = ql.Program('test_loop', platform, num_qubits, num_cregs)
+    sp1 = ql.Program('subprogram1', platform, num_qubits, num_cregs)
+    sp2 = ql.Program('subprogram2', platform, num_qubits, num_cregs)
 
-    k1 = ql.Kernel('aKernel1', platform)
-    k2 = ql.Kernel('aKernel2', platform)
+    k1 = ql.Kernel('aKernel1', platform, num_qubits, num_cregs)
+    k2 = ql.Kernel('aKernel2', platform, num_qubits, num_cregs)
 
     k1.gate('x', [0])
     k1.gate('x', [0])
@@ -144,6 +145,8 @@ def test_loop():
     k1.classical('not', [0,1])
     k1.classical('add', [0,1,2])
     k1.classical('inc', [1])
+    # k1.classical('set', [5], 10) # out of range operand
+    # k1.classical('set', [7], 10) # out of range operand
     p.add_kernel(k1)
 
     p.compile()
