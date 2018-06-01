@@ -93,17 +93,18 @@ class quantum_program
 
       void add(ql::quantum_kernel &k)
       {
-         // check sanity of supplied qubit numbers for each gate
+         // check sanity of supplied qubit/classical operands for each gate
          ql::circuit& kc = k.get_circuit();
          for( auto & g : kc )
          {
             auto & gate_operands = g->operands;
             auto & gname = g->name;
             auto gtype = g->type();
-            for(auto & qno : gate_operands)
+            for(auto & op : gate_operands)
             {
-               if( ((gtype == __classical_gate__) && (qno >= creg_count)) ||
-                   ((gtype != __classical_gate__) && (qno >= qubit_count))
+               if(
+                  ((gtype == __classical_gate__) && (op >= creg_count)) ||
+                  ((gtype != __classical_gate__) && (op >= qubit_count))
                  )
                {   
                    EOUT("Out of range operand for operation: '" << gname << "'");
@@ -523,7 +524,7 @@ class quantum_program
          {
             std::string kernel_sched_qasm;
             std::string kernel_sched_dot;
-            k.schedule(qubit_count, platform, kernel_sched_qasm, kernel_sched_dot);
+            k.schedule(platform, kernel_sched_qasm, kernel_sched_dot);
             sched_qasm += kernel_sched_qasm + '\n';
             // disabled generation of dot file for each kernel
             // string fname = ql::options::get("output_dir") + "/" + k.get_name() + scheduler + ".dot";

@@ -604,7 +604,7 @@ ql::ir::bundles_t cc_light_schedule(  std::string prog_name, size_t nqubits, ql:
 {
     IOUT("Scheduling CC-Light instructions ...");
     Scheduler sched;
-    sched.Init(nqubits, ckt, platform);
+    sched.Init(ckt, platform, nqubits, 0); //TODO creg_count is 0 for now
     // sched.PrintDot();
     ql::ir::bundles_t bundles1 = sched.schedule_asap();
 
@@ -666,7 +666,7 @@ ql::ir::bundles_t cc_light_schedule_rc( std::string prog_name, size_t nqubits, q
     IOUT("Resource constraint scheduling of CC-Light instructions ...");
     resource_manager_t rm(platform);
     Scheduler sched;
-    sched.Init(nqubits, ckt, platform);
+    sched.Init(ckt, platform, nqubits, 0); //TODO creg_count is 0 for now
     ql::ir::bundles_t bundles1 = sched.schedule_asap(rm, platform);
 
     // combine parallel instrcutions of same type from different sections

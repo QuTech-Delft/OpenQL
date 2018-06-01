@@ -845,18 +845,6 @@ public:
 
     void classical(std::string operation, std::vector<size_t> operands, int ival=0)
     {
-        for(auto & cno : operands)
-        {
-            if( cno >= creg_count )
-            {
-                EOUT("Out of range operands for gate: '" << operation << "' with " << ql::utils::to_string(operands,"creg operands") );
-                throw ql::exception("Out of range operands for : '"+operation+"' with " +ql::utils::to_string(operands,"creg operands")+" !",false);
-            }
-        }
-
-        std::vector<size_t> total_coperands(creg_count);
-        std::iota(total_coperands.begin(), total_coperands.end(), 0);
-        c.push_back(new ql::wait(total_coperands, 0, 0));
         c.push_back(new ql::classical(operation, operands, ival));
     }
 
@@ -948,16 +936,29 @@ public:
         DOUT("decompose_toffoli() [Done] ");
     }
 
-    void schedule(size_t qubits, quantum_platform platform, std::string& sched_qasm, std::string& sched_dot)
+    void schedule(quantum_platform platform, std::string& sched_qasm, std::string& sched_dot)
     {
         std::string scheduler = ql::options::get("scheduler");
         std::string kqasm("");
 
+
 #ifndef __disable_lemon__
         IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
 
+        // // add bias to classical operands
+        // for (size_t i=0; i<c.size(); ++i)
+        // {
+        //     if (c[i]->type() == __classical_gate__)
+        //     {
+        //         for(auto & op : c[i]->operands)
+        //         {
+        //             op += qubit_count;
+        //         }
+        //     }
+        // }
+
         Scheduler sched;
-        sched.Init(qubits, c, platform);
+        sched.Init(c, platform, qubit_count, creg_count);
         // sched.Print();
         // sched.PrintMatrix();
         // sched.PrintDot();

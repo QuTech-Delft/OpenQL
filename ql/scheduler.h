@@ -34,7 +34,9 @@ private:
     ListDigraph::NodeMap<ql::gate*> instruction;
     ListDigraph::NodeMap<std::string> name;
     ListDigraph::ArcMap<int> weight;
-    ListDigraph::ArcMap<int> cause;
+    //TODO it might be more readable to change 'cause' to string 
+    //   to accomodate/print both r0, q0 operands as cause
+    ListDigraph::ArcMap<int> cause; 
     ListDigraph::ArcMap<int> depType;
 
     ListDigraph::NodeMap<double> dist;
@@ -44,16 +46,19 @@ private:
     size_t cycle_time;
     std::map< std::pair<std::string,std::string>, size_t> buffer_cycles_map;
 
-    size_t num_qubits;
+    size_t qubit_count;
+    size_t creg_count;
 
 public:
     Scheduler(): instruction(graph), name(graph), weight(graph),
         cause(graph), depType(graph), dist(graph) {}
 
-    void Init( size_t nQubits, ql::circuit& ckt, ql::quantum_platform platform)
+    void Init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
     {
         DOUT("Scheduler initialization ...");
-        num_qubits = nQubits;
+        qubit_count = qcount;
+        creg_count = ccount;
+        size_t qubit_creg_count = qubit_count + creg_count;
         cycle_time = platform.cycle_time;
 
         // populate buffer map
@@ -87,10 +92,10 @@ public:
 
         typedef vector<int> ReadersListType;
         vector<ReadersListType> LastReaders;
-        LastReaders.resize(nQubits);
+        LastReaders.resize(qubit_creg_count);
 
         int srcID = graph.id(srcNode);
-        vector<int> LastWriter(nQubits,srcID);
+        vector<int> LastWriter(qubit_creg_count,srcID);
 
         for( auto ins : ckt )
         {
@@ -104,7 +109,7 @@ public:
 
             // Add edges
             auto operands = ins->operands;
-            size_t operandCount = operands.size();
+            size_t op_count = operands.size();
             size_t operandNo=0;
 
             if(ins->name == "wait")
@@ -196,7 +201,7 @@ public:
             }
             else if(ins->name == "display")
             {
-                std::vector<size_t> qubits(num_qubits);
+                std::vector<size_t> qubits(qubit_creg_count);
                 std::iota(qubits.begin(), qubits.end(), 0);
                 for( auto operand : qubits )
                 {
@@ -228,12 +233,46 @@ public:
                     LastWriter[operand] = consID;
                 }
             }
+            else if(ins->type() == ql::gate_type_t::__classical_gate__)
+            {
+                std::vector<size_t> all_operands(qubit_creg_count);
+                std::iota(all_operands.begin(), all_operands.end(), 0);
+                for( auto operand : all_operands )
+                {
+                    { // WAW dependencies
+                        int prodID = LastWriter[operand];
+                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
+                        cause[arc] = operand;
+                        depType[arc] = WAW;
+                    }
+
+                    { // WAR dependencies
+                        ReadersListType readers = LastReaders[operand];
+                        for(auto & readerID : readers)
+                        {
+                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+                            cause[arc1] = operand;
+                            depType[arc1] = WAR;
+                        }
+                    }
+                }
+
+                // now update LastWriter
+                for( auto operand : operands )
+                {
+                    LastWriter[operand+qubit_count] = consID;
+                }
+            }
             else
             {
                 for( auto operand : operands )
                 {
                     // DOUT("Operand: " << operand);
-                    if( operandNo < operandCount-1 )
+                    if( operandNo < op_count-1 )
                     {
                         // RAW dependencies
                         int prodID = LastWriter[operand];
