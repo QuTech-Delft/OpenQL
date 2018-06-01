@@ -192,9 +192,9 @@ public:
         ql_kernel->gate(name, qubits, duration, angle);
     }
 
-    void classical(std::string name, std::vector<size_t> qubits)
+    void classical(std::string name, std::vector<size_t> qubits, int imm_value=0)
     {
-        ql_kernel->classical(name, qubits);
+        ql_kernel->classical(name, qubits, imm_value);
     }
 
     void controlled(Kernel &k,
@@ -223,18 +223,20 @@ class Program
 {
 public:
     std::string name;
-    size_t qubits;
     Platform platf;
+    size_t nqubits;
+    size_t ncregs;
     ql::quantum_program *prog;
 
     Program() {}
 
-    Program(std::string pname, size_t nqubits, Platform & platform)
+    Program(std::string prog_name, Platform & platform, size_t num_qubits, size_t num_classical_regs=0)
     {
-        name = pname;
-        qubits = nqubits;
+        name = prog_name;
+        nqubits = num_qubits;
+        ncregs = num_classical_regs;
         platf = platform;
-        prog = new ql::quantum_program(pname, nqubits, *(platform.ql_platform));
+        prog = new ql::quantum_program(prog_name, *(platform.ql_platform), num_qubits, num_classical_regs);
     }
 
     void set_sweep_points( std::vector<float> sweep_points, size_t num_sweep_points)

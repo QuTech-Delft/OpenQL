@@ -140,8 +140,10 @@ def test_loop():
     # p.add_program(sp2)
 
     # classical operations
+    k1.classical('set', [0], 10)
     k1.classical('not', [0,1])
     k1.classical('add', [0,1,2])
+    k1.classical('inc', [1])
     p.add_kernel(k1)
 
     p.compile()
