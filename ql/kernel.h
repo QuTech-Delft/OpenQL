@@ -215,7 +215,7 @@ public:
 
     void wait(std::vector<size_t> qubits, size_t duration)
     {
-        gate("wait", qubits, duration );
+        gate("wait", qubits, {}, duration );
     }
 
     void display()
@@ -328,7 +328,7 @@ public:
     }
 
     bool add_default_gate_if_available(std::string gname, std::vector<size_t> qubits,
-        size_t duration=0, double angle=0.0)
+        std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
     	bool result=false;
 
@@ -396,7 +396,15 @@ public:
         else if( gname == "ry90" )       { c.push_back(new ql::ry90(qubits[0]) ); result = true; }
         else if( gname == "mry90" )      { c.push_back(new ql::mry90(qubits[0]) ); result = true; }
         else if( gname == "ry180" )      { c.push_back(new ql::ry180(qubits[0]) ); result = true; }
-        else if( gname == "measure" )    { c.push_back(new ql::measure(qubits[0]) ); result = true; }
+        else if( gname == "measure" )    
+        {
+            if(cregs.empty())
+                c.push_back(new ql::measure(qubits[0]) );
+            else
+                c.push_back(new ql::measure(qubits[0], cregs[0]) );
+
+            result = true; 
+        }
         else if( gname == "prepz" )      { c.push_back(new ql::prepz(qubits[0]) ); result = true; }
     	else if( gname == "cnot" )       { c.push_back(new ql::cnot(qubits[0], qubits[1]) ); result = true; }
     	else if( gname == "cz" || gname == "cphase" )
@@ -416,10 +424,11 @@ public:
     	return result;
     }
 
-    bool add_custom_gate_if_available(std::string & gname, std::vector<size_t> qubits, 
-        size_t duration=0, double angle=0.0)
+    bool add_custom_gate_if_available(std::string & gname, std::vector<size_t> qubits,
+        std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
         bool added = false;
+
         // first check if a specialized custom gate is available
         std::string instr = gname + " ";
         if(qubits.size() > 0)
@@ -436,6 +445,8 @@ public:
             custom_gate* g = new custom_gate(*(it->second));
             for(auto & qubit : qubits)
                 g->operands.push_back(qubit);
+            for(auto & cop : cregs)
+                g->creg_operands.push_back(cop);
             if(duration>0) g->duration = duration;
             g->angle = angle;
             added = true;
@@ -450,6 +461,8 @@ public:
                 custom_gate* g = new custom_gate(*(it->second));
                 for(auto & qubit : qubits)
                     g->operands.push_back(qubit);
+                for(auto & cop : cregs)
+                    g->creg_operands.push_back(cop);
                 if(duration>0) g->duration = duration;
                 g->angle = angle;
                 added = true;
@@ -489,7 +502,8 @@ public:
         }
     }
 
-    bool add_spec_decomposed_gate_if_available(std::string gate_name, std::vector<size_t> all_qubits)
+    bool add_spec_decomposed_gate_if_available(std::string gate_name, 
+        std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
         bool added = false;
         DOUT("Checking if specialized decomposition is available for " << gate_name);
@@ -550,14 +564,14 @@ public:
                 DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
                 // custom gate check
-                bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits);
+                bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
                 if(!custom_added)
                 {
                     if(ql::options::get("use_default_gates") == "yes")
                     {
                         // default gate check
                         DOUT("adding default gate for " << sub_ins_name);
-                        bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits);
+                        bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
                         if( default_available )
                         {
                             WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
@@ -586,7 +600,8 @@ public:
     }
 
 
-    bool add_param_decomposed_gate_if_available(std::string gate_name, std::vector<size_t> all_qubits)
+    bool add_param_decomposed_gate_if_available(std::string gate_name, 
+        std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
         bool added = false;
         DOUT("Checking if parameterized decomposition is available for " << gate_name);
@@ -644,14 +659,14 @@ public:
                 DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
                 // custom gate check
-                bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits);
+                bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
                 if(!custom_added)
                 {
                     if(ql::options::get("use_default_gates") == "yes")
                     {
                         // default gate check
                         DOUT("adding default gate for " << sub_ins_name);
-                        bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits);
+                        bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
                         if( default_available )
                         {
                             WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
@@ -699,15 +714,24 @@ public:
     /**
      * custom gate with arbitrary number of operands
      */
-    void gate(std::string gname, std::vector<size_t> qubits = {}, size_t duration=0, double angle = 0.0)
+    void gate(std::string gname, std::vector<size_t> qubits = {}, 
+        std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
     {
         for(auto & qno : qubits)
         {
-            DOUT("qno : " << qno);
             if( qno >= qubit_count )
             {
                 EOUT("Number of qubits in platform: " << std::to_string(qubit_count) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
                 throw ql::exception("[x] error : ql::kernel::gate() : Number of qubits in platform: "+std::to_string(qubit_count)+", specified qubit numbers out of range for gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" !",false);
+            }
+        }
+
+        for(auto & cno : cregs)
+        {
+            if( cno >= creg_count )
+            {
+                EOUT("Out of range creg operand for gate: '" << gname << "' with " << ql::utils::to_string(cregs,"cregs") );
+                throw ql::exception("Out of range creg operand for gate '"+gname+"' with " +ql::utils::to_string(cregs,"cregs")+" !",false);
             }
         }
 
@@ -741,7 +765,7 @@ public:
             {
                 // specialized/parameterized custom gate check
                 DOUT("adding custom gate for " << gname);
-                bool custom_added = add_custom_gate_if_available(gname, qubits, duration, angle);
+                bool custom_added = add_custom_gate_if_available(gname, qubits, cregs, duration, angle);
                 if(!custom_added)
                 {
                     if(ql::options::get("use_default_gates") == "yes")
@@ -749,7 +773,7 @@ public:
                         // default gate check (which is always parameterized)
                     	DOUT("adding default gate for " << gname);
 
-        				bool default_available = add_default_gate_if_available(gname, qubits, duration);
+        				bool default_available = add_default_gate_if_available(gname, qubits, cregs, duration);
         				if( default_available )
                         {
                             WOUT("default gate added for " << gname);
@@ -778,7 +802,8 @@ public:
     std::string get_prologue()
     {
         std::stringstream ss;
-        ss << name << ":\n";
+        ss << "." << name << "\n";
+        // ss << name << ":\n";
 
         if(type == kernel_type_t::IF_START)
         {
@@ -941,21 +966,8 @@ public:
         std::string scheduler = ql::options::get("scheduler");
         std::string kqasm("");
 
-
 #ifndef __disable_lemon__
         IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
-
-        // // add bias to classical operands
-        // for (size_t i=0; i<c.size(); ++i)
-        // {
-        //     if (c[i]->type() == __classical_gate__)
-        //     {
-        //         for(auto & op : c[i]->operands)
-        //         {
-        //             op += qubit_count;
-        //         }
-        //     }
-        // }
 
         Scheduler sched;
         sched.Init(c, platform, qubit_count, creg_count);
@@ -1537,91 +1549,91 @@ public:
             DOUT("Type : " << gtype);            
             if( __pauli_x_gate__ == gtype  || __rx180_gate__ == gtype )
             {
-                gate("x", g->operands, g->duration, g->angle);
+                gate("x", g->operands, {}, g->duration, g->angle);
             }
             else if( __pauli_y_gate__ == gtype  || __ry180_gate__ == gtype )
             {
-                gate("y", g->operands, g->duration, g->angle);
+                gate("y", g->operands, {}, g->duration, g->angle);
             }
             else if( __pauli_z_gate__ == gtype )
             {
-                gate("z", g->operands, g->duration, g->angle);
+                gate("z", g->operands, {}, g->duration, g->angle);
             }
             else if( __hadamard_gate__ == gtype )
             {
-                gate("hadamard", g->operands, g->duration, g->angle);
+                gate("hadamard", g->operands, {}, g->duration, g->angle);
             }
             else if( __identity_gate__ == gtype )
             {
-                gate("identity", g->operands, g->duration, g->angle);
+                gate("identity", g->operands, {}, g->duration, g->angle);
             }
             else if( __t_gate__ == gtype )
             {
-                gate("tdag", g->operands, g->duration, g->angle);
+                gate("tdag", g->operands, {}, g->duration, g->angle);
             }
             else if( __tdag_gate__ == gtype )
             {
-                gate("t", g->operands, g->duration, g->angle);
+                gate("t", g->operands, {}, g->duration, g->angle);
             }
             else if( __phase_gate__ == gtype )
             {
-                gate("sdag", g->operands, g->duration, g->angle);
+                gate("sdag", g->operands, {}, g->duration, g->angle);
             }
             else if( __phasedag_gate__ == gtype )
             {
-                gate("s", g->operands, g->duration, g->angle);
+                gate("s", g->operands, {}, g->duration, g->angle);
             }
             else if( __cnot_gate__ == gtype )
             {
-                gate("cnot", g->operands, g->duration, g->angle);
+                gate("cnot", g->operands, {}, g->duration, g->angle);
             }
             else if( __swap_gate__ == gtype )
             {
-                gate("swap", g->operands, g->duration, g->angle);
+                gate("swap", g->operands, {}, g->duration, g->angle);
             }
             else if( __rx_gate__ == gtype )
             {
-                gate("rx", g->operands, g->duration, -(g->angle) );
+                gate("rx", g->operands, {}, g->duration, -(g->angle) );
             }
             else if( __ry_gate__ == gtype )
             {
-                gate("ry", g->operands, g->duration, -(g->angle) );
+                gate("ry", g->operands, {}, g->duration, -(g->angle) );
             }
             else if( __rz_gate__ == gtype )
             {
-                gate("rz", g->operands, g->duration, -(g->angle) );
+                gate("rz", g->operands, {}, g->duration, -(g->angle) );
             }
             else if( __rx90_gate__ == gtype )
             {
-                gate("mrx90", g->operands, g->duration, g->angle);
+                gate("mrx90", g->operands, {}, g->duration, g->angle);
             }
             else if( __mrx90_gate__ == gtype )
             {
-                gate("rx90", g->operands, g->duration, g->angle);
+                gate("rx90", g->operands, {}, g->duration, g->angle);
             }
             else if( __rx180_gate__ == gtype )
             {
-                gate("x", g->operands, g->duration, g->angle);
+                gate("x", g->operands, {}, g->duration, g->angle);
             }
             else if( __ry90_gate__ == gtype )
             {
-                gate("mry90", g->operands, g->duration, g->angle);
+                gate("mry90", g->operands, {}, g->duration, g->angle);
             }
             else if( __mry90_gate__ == gtype )
             {
-                gate("ry90", g->operands, g->duration, g->angle);
+                gate("ry90", g->operands, {}, g->duration, g->angle);
             }
             else if( __ry180_gate__ == gtype )
             {
-                gate("y", g->operands, g->duration, g->angle);
+                gate("y", g->operands, {}, g->duration, g->angle);
             }
             else if( __cphase_gate__ == gtype )
             {
-                gate("cphase", g->operands, g->duration, g->angle);
+                gate("cphase", g->operands, {}, g->duration, g->angle);
             }
             else if( __toffoli_gate__ == gtype )
             {
-                gate("toffoli", g->operands, g->duration, g->angle);
+                gate("toffoli", g->operands, {}, g->duration, g->angle);
             }
             else
             {

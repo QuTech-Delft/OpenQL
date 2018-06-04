@@ -189,9 +189,10 @@ public:
         kernel_->display();
     }
 
-    void gate(std::string name, std::vector<size_t> qubits, size_t duration=0, double angle=0.0)
+    void gate(std::string name, std::vector<size_t> qubits, 
+        std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
-        kernel_->gate(name, qubits, duration, angle);
+        kernel_->gate(name, qubits, cregs, duration, angle);
     }
 
     void classical(std::string name, std::vector<size_t> qubits, int imm_value=0)
@@ -246,7 +247,7 @@ public:
 
     void add_kernel(Kernel& k)
     {
-        program_->add_for( *(k.kernel_), 1);
+        program_->add( *(k.kernel_));
     }
 
     void add_program(Program& p)

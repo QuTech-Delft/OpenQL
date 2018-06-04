@@ -19,12 +19,12 @@ class Test_quantumsim(unittest.TestCase):
         config_fn = os.path.join(curdir, 'test_cfg_quantumsim.json')
         platform = ql.Platform('platform_quantumsim', config_fn)
         num_qubits = 2
-        p = ql.Program('aProgram', num_qubits, platform)
+        p = ql.Program('aProgram', platform, num_qubits)
         sweep_points = [1, 2]
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         # create a kernel
-        k = ql.Kernel('aKernel', platform)
+        k = ql.Kernel('aKernel', platform, num_qubits)
 
         # populate kernel using default gates
         k.gate("hadamard",[0])

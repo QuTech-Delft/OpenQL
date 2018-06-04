@@ -10,6 +10,7 @@ ql.set_option('optimize', 'no')
 ql.set_option('scheduler', 'ALAP')
 ql.set_option('log_level', 'LOG_DEBUG')
 ql.set_option('decompose_toffoli', 'no')
+ql.set_option('use_default_gates', 'yes')
 
 def test_cclight():
     config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
@@ -87,11 +88,15 @@ def test_loop():
 
     k1.gate('x', [0])
     k1.gate('x', [0])
-    k1.gate('measure', [0])
+    k1.gate('cnot', [0, 1])
+    k1.gate('measure', [0], [2])
+    k1.gate('measure', [1], [2])
+    k1.gate('measure', [2], [2])
+    k1.classical('inc', [2])
 
     k2.gate('cz', [0, 1])
     k2.gate('cz', [2, 3])
-    k2.gate('measure', [0])
+    # k2.gate('measure', [0])
 
     # sp.add_kernel(k)
     # sp.add_kernel(k)

@@ -19,11 +19,11 @@ class Test_basic(unittest.TestCase):
         platf = ql.Platform("starmon", config_fn)
         sweep_points = [1]
         nqubits = 2
-        p = ql.Program("basic", nqubits, platf)
+        p = ql.Program("basic", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate kernel
-        k = ql.Kernel("first_kernel", platf)
+        k = ql.Kernel("first_kernel", platf, nqubits)
         # k.prepz(0)
         k.gate("prepz", [0])
         # k.x(0)
@@ -31,7 +31,7 @@ class Test_basic(unittest.TestCase):
         k.gate("measure", [0])
         p.add_kernel(k)
 
-        k = ql.Kernel("second_kernel", platf)
+        k = ql.Kernel("second_kernel", platf, nqubits)
         # k.prepz(0)
         k.gate("prepz", [0])
         k.gate('rx90', [0])

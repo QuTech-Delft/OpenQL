@@ -21,7 +21,8 @@ class Test_kernel(unittest.TestCase):
         pass
 
     def test_allowed_operations(self):
-        k = ql.Kernel("kernel1", platf)
+        nqubits = 3
+        k = ql.Kernel("kernel1", platf, nqubits)
         # The following operations can be executed using a kernel
         operations = [
             # SPAM
@@ -41,11 +42,13 @@ class Test_kernel(unittest.TestCase):
 
     def test_kernel_name(self):
         name = "kernel1"
-        k = ql.Kernel(name, platf)
-        self.assertEqual(k.name, name)
+        nqubits = 3
+        k = ql.Kernel(name, platf, nqubits)
+        self.assertEqual(k.name_, name)
 
     def test_simple_kernel(self):
-        k = ql.Kernel("kernel1", platf)
+        nqubits = 3
+        k = ql.Kernel("kernel1", platf, nqubits)
         k.prepz(0)
         k.prepz(1)
         k.x(0)
@@ -60,8 +63,10 @@ class Test_kernel(unittest.TestCase):
         # to the qubits. However, it is not clear how to view this
 
     def test_multi_kernel(self):
+        sweep_points = [2]
+        nqubits = 3
 
-        k1 = ql.Kernel("kernel1", platf)
+        k1 = ql.Kernel("kernel1", platf, nqubits)
         k1.prepz(0)
         k1.prepz(1)
         k1.x(0)
@@ -72,7 +77,7 @@ class Test_kernel(unittest.TestCase):
         k1.clifford(2, 0)
         k1.measure(2)
 
-        k2 = ql.Kernel("kernel2", platf)
+        k2 = ql.Kernel("kernel2", platf, nqubits)
         k2.prepz(0)
         k2.prepz(1)
         k2.x(0)
@@ -83,11 +88,7 @@ class Test_kernel(unittest.TestCase):
         k2.clifford(2, 0)
         k2.measure(2)
 
-        sweep_points = [2]
-        num_circuits = 1
-        nqubits = 3
-
-        p = ql.Program("aProgram", nqubits, platf)
+        p = ql.Program("aProgram", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k1)
         p.add_kernel(k2)
@@ -98,37 +99,6 @@ class Test_kernel(unittest.TestCase):
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
         qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
-
-        for qasm_file in qasm_files:
-           qasm_reader = ql.QASM_Loader(qasm_file)
-           errors = qasm_reader.load()
-           self.assertTrue(errors == 0)
-
-    def test_kernel_iterations(self):
-
-        k = ql.Kernel("akernel", platf)
-        k.prepz(0)
-        k.prepz(1)
-        k.x(0)
-        k.y(1)
-        k.cnot(0, 1)
-        k.measure(0)
-        k.measure(1)
-
-        sweep_points = [2]
-        num_circuits = 1
-        nqubits = 3
-
-        p = ql.Program("test_kernel_iterations", nqubits, platf)
-        p.set_sweep_points(sweep_points, len(sweep_points))
-        p.add_kernel(k,5)
-
-        p.compile()
-
-        # load qasm
-        qasm_files = []
-        qasm_files.append(os.path.join(output_dir, 'test_kernel_iterations.qasm'))
-        qasm_files.append(os.path.join(output_dir, 'test_kernel_iterations_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)

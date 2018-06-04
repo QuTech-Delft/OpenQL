@@ -144,6 +144,67 @@ public:
                     LastWriter[operand] = consID;
                 }
             }
+            else if(ins->name == "measure")
+            {
+                for( auto operand : operands )
+                {
+                    { // WAW dependencies
+                        int prodID = LastWriter[operand];
+                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
+                        cause[arc] = operand;
+                        depType[arc] = WAW;
+                    }
+
+                    { // WAR dependencies
+                        ReadersListType readers = LastReaders[operand];
+                        for(auto & readerID : readers)
+                        {
+                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+                            cause[arc1] = operand;
+                            depType[arc1] = WAR;
+                        }
+                    }
+                }
+
+                ql::measure * mins = (ql::measure*)ins;
+                for( auto operand : mins->creg_operands )
+                {
+                    { // WAW dependencies
+                        int prodID = LastWriter[qubit_count+operand];
+                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
+                        cause[arc] = operand;
+                        depType[arc] = WAW;
+                    }
+
+                    { // WAR dependencies
+                        ReadersListType readers = LastReaders[qubit_count+operand];
+                        for(auto & readerID : readers)
+                        {
+                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+                            cause[arc1] = operand;
+                            depType[arc1] = WAR;
+                        }
+                    }
+                }
+
+                // now update LastWriter
+                for( auto operand : operands )
+                {
+                    LastWriter[operand] = consID;
+                }
+                for( auto operand : mins->creg_operands )
+                {
+                    LastWriter[operand] = consID;
+                }
+            }
             else if(ins->name == "swap" )
             {
                 for( auto operand : operands )

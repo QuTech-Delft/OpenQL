@@ -2,8 +2,8 @@
 qubits 1
 
 .aKernel
-   prepz q0
-   x q0
-   y q0
-   rx90 q0
-   measure q0
+    prepz q0
+    x q0
+    y q0
+    rx90 q0
+    measure q0

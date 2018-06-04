@@ -19,10 +19,10 @@ class Test_controlled_kernel(unittest.TestCase):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform  = ql.Platform('platform_none', config_fn)
         num_qubits = 3
-        p = ql.Program('test_controlled_single_qubit_gates', num_qubits, platform)
+        p = ql.Program('test_controlled_single_qubit_gates', platform, num_qubits)
 
-        k = ql.Kernel('kernel1', platform)
-        ck = ql.Kernel('controlled_kernel1', platform)
+        k = ql.Kernel('kernel1', platform, num_qubits)
+        ck = ql.Kernel('controlled_kernel1', platform, num_qubits)
 
         k.gate("x", [0])
         k.gate("y", [0])
@@ -46,10 +46,10 @@ class Test_controlled_kernel(unittest.TestCase):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform  = ql.Platform('platform_none', config_fn)
         num_qubits = 3
-        p = ql.Program('test_controlled_rotations', num_qubits, platform)
+        p = ql.Program('test_controlled_rotations', platform, num_qubits)
 
-        k = ql.Kernel('kernel1', platform)
-        ck = ql.Kernel('controlled_kernel1', platform)
+        k = ql.Kernel('kernel1', platform, num_qubits)
+        ck = ql.Kernel('controlled_kernel1', platform, num_qubits)
 
         k.gate("rx", [0], angle=(np.pi)/4 )
         k.gate("ry", [0], angle=(np.pi)/4 )
@@ -69,10 +69,10 @@ class Test_controlled_kernel(unittest.TestCase):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform  = ql.Platform('platform_none', config_fn)
         num_qubits = 4
-        p = ql.Program('test_controlled_two_qubit_gates', num_qubits, platform)
+        p = ql.Program('test_controlled_two_qubit_gates', platform, num_qubits)
 
-        k = ql.Kernel('kernel1', platform)
-        ck = ql.Kernel('controlled_kernel1', platform)
+        k = ql.Kernel('kernel1', platform, num_qubits)
+        ck = ql.Kernel('controlled_kernel1', platform, num_qubits)
 
         k.gate("swap", [0, 1])
 
@@ -90,10 +90,10 @@ class Test_controlled_kernel(unittest.TestCase):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform  = ql.Platform('platform_none', config_fn)
         num_qubits = 12
-        p = ql.Program('test_multi_controlled', num_qubits, platform)
+        p = ql.Program('test_multi_controlled', platform, num_qubits)
 
-        k = ql.Kernel('kernel1', platform)
-        ck = ql.Kernel('controlled_kernel1', platform)
+        k = ql.Kernel('kernel1', platform, num_qubits)
+        ck = ql.Kernel('controlled_kernel1', platform, num_qubits)
 
         k.gate('x', [0])
         k.gate('cnot', [0, 1])
@@ -116,8 +116,8 @@ class Test_controlled_kernel(unittest.TestCase):
         platform  = ql.Platform('platform_none', config_fn)
         num_qubits = 4
 
-        p = ql.Program('test_decompose_toffoli', num_qubits, platform)
-        k = ql.Kernel('kernel1', platform)
+        p = ql.Program('test_decompose_toffoli', platform, num_qubits)
+        k = ql.Kernel('kernel1', platform, num_qubits)
 
         k.hadamard(2)
         k.toffoli(0, 1, 2)

@@ -30,7 +30,10 @@ def file_compare(fn1, fn2):
 class Test_qubits(unittest.TestCase):
 
     def test_1_qubit(self):
-        k = ql.Kernel("aKernel", platf)
+        nqubits = 1
+        sweep_points = [2]
+
+        k = ql.Kernel("aKernel", platf, nqubits)
 
         # populate kernel
         k.prepz(0)
@@ -39,23 +42,21 @@ class Test_qubits(unittest.TestCase):
         k.rx90(0)
         k.measure(0)
 
-        nqubits = 1
-        sweep_points = [2]
-        num_circuits = 1
-        p = ql.Program("1_qubit_program", nqubits, platf)
+        p = ql.Program("1_qubit_program", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         p.add_kernel(k)  # add kernel to program
         p.compile()
 
         gold_fn = rootDir + '/golden/test_1_qubit.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        qasm_fn = os.path.join(output_dir, p.name_+'.qasm')
 
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_2_qubit(self):
-
-        k = ql.Kernel("aKernel", platf)
+        nqubits = 3
+        sweep_points = [2]
+        k = ql.Kernel("aKernel", platf, nqubits)
 
         # populate kernel
         k.prepz(0)
@@ -65,22 +66,22 @@ class Test_qubits(unittest.TestCase):
         k.clifford(1, 2)
         k.measure(2)
 
-        nqubits = 3
-        sweep_points = [2]
-        num_circuits = 1
-        p = ql.Program("2_qubit_program", nqubits, platf)
+        p = ql.Program("2_qubit_program", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         p.add_kernel(k)  # add kernel to program
         p.compile()
 
         gold_fn = rootDir + '/golden/test_2_qubit.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        qasm_fn = os.path.join(output_dir, p.name_+'.qasm')
 
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_3_qubit(self):
-        k = ql.Kernel("aKernel", platf)
+        nqubits = 3
+        sweep_points = [2]
+
+        k = ql.Kernel("aKernel", platf, nqubits)
 
         # populate kernel
         k.prepz(0)
@@ -89,10 +90,7 @@ class Test_qubits(unittest.TestCase):
         k.toffoli(0, 1, 2)
         k.measure(2)
 
-        nqubits = 3
-        sweep_points = [2]
-        num_circuits = 1
-        p = ql.Program("3_qubit_program", nqubits, platf)
+        p = ql.Program("3_qubit_program", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         p.add_kernel(k)  # add kernel to program
@@ -101,7 +99,7 @@ class Test_qubits(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/test_3_qubit.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        qasm_fn = os.path.join(output_dir, p.name_+'.qasm')
 
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 

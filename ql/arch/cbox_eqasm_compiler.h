@@ -168,7 +168,7 @@ namespace ql
                      size_t parameters = instruction_settings[id]["qubits"].size();
                      if (!instruction_settings[id]["qubits"].is_null())
                      {
-                        println("instr : " << id);
+                        // println("instr : " << id);
                         for (size_t i=0; i<parameters; ++i)
                         {
                            std::string qid = instruction_settings[id]["qubits"][i];
@@ -178,7 +178,7 @@ namespace ql
                               throw ql::exception("[x] error : ql::cbox_eqasm_compiler() : error while loading instruction '" + id + "' : attribute 'qubits' : invalid qubit id !", false);
                            }
                            used_qubits.push_back(qubit_id(qid));
-                           println("qubit id: " << qubit_id(qid));
+                           // println("qubit id: " << qubit_id(qid));
                         }
                      }
                      // instruction type processing
@@ -550,12 +550,12 @@ namespace ql
                      }
                   }
 
-                  println("- instr : " << instr->qasm_label);
+                  // println("- instr : " << instr->qasm_label);
 
                   // qubit deps
                   for (size_t q : qu_res) // qubits used by the instr
                   {
-                     println("uq : " << q);
+                     // println("uq : " << q);
                      size_t rbuf  = buffer_size(qu_res_op[q],type);
                      buf_qu       = ((rbuf > buf_qu) ? rbuf : buf_qu);
                      latest_qu    = (qu_res_av[q] > latest_qu ? qu_res_av[q] : latest_qu);
