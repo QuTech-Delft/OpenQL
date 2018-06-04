@@ -892,6 +892,15 @@ public:
             ql::ir::bundles_t bundles = sched.schedule_alap();
             sched_qasm = ql::ir::qasm(bundles);
         }
+        else if("UNIFORM" == scheduler)
+        {
+            // sched.PrintScheduleUNIFORM();
+            // sched.PrintDotScheduleUNIFORM();
+            // sched_dot = sched.GetDotScheduleUNIFORM();
+            // sched.PrintQASMScheduledUNIFORM();
+            ql::ir::bundles_t bundles = sched.schedule_uniform();
+            sched_qasm = ql::ir::qasm(bundles);
+        }
         else
         {
             EOUT("Unknown scheduler");

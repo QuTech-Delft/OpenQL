@@ -2,7 +2,7 @@
  * @file   scheduler.h
  * @date   01/2017
  * @author Imran Ashraf
- * @brief  ASAP/AlAP scheduling
+ * @brief  ASAP/ALAP/UNIFORM scheduling
  */
 
 #ifndef _SCHEDULER_H
@@ -74,7 +74,7 @@ public:
                 {
                     buffer_cycles_map[ bpair ] = std::ceil( static_cast<float>(platform.hardware_settings[bname]) / cycle_time);
                 }
-                DOUT("Initializing " << bname << ": "<< buffer_cycles_map[bpair]);
+                // DOUT("Initializing " << bname << ": "<< buffer_cycles_map[bpair]);
             }
         }
 
@@ -480,11 +480,12 @@ public:
 
     void TopologicalSort(std::vector<ListDigraph::Node> & order)
     {
-        DOUT("Performing Topological sort.");
+        // DOUT("Performing Topological sort.");
         ListDigraph::NodeMap<int> rorder(graph);
         if( !dag(graph) )
             EOUT("This digraph is not a DAG.");
 
+	// result is in reverse topological order!
         topologicalSort(graph, rorder);
 
 #ifdef DEBUG
@@ -499,6 +500,11 @@ public:
         {
             order.push_back(it);
         }
+        // DOUT("Nodes in Topological order:");
+        for ( std::vector<ListDigraph::Node>::reverse_iterator it = order.rbegin(); it != order.rend(); ++it)
+        {
+            // DOUT(name[*it]);
+        }
     }
 
     void PrintTopologicalOrder()
@@ -512,6 +518,8 @@ public:
             std::cout << name[*it] << std::endl;
         }
     }
+
+// =========== asap
 
     void schedule_asap_(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
     {
@@ -844,6 +852,7 @@ public:
         return bundles;
     }
 
+// =========== alap
 
     void schedule_alap_(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
     {
@@ -1069,6 +1078,267 @@ public:
             }
         }
         DOUT("Scheduling ALAP to get bundles [DONE]");
+        return bundles;
+    }
+
+// =========== uniform
+
+    void compute_alap_cycle(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order, size_t max_cycle)
+    {
+	// DOUT("Computing alap_cycle");
+        std::vector<ListDigraph::Node>::iterator currNode = order.begin();
+        cycle[*currNode]=max_cycle;
+        ++currNode;
+        while( currNode != order.end() )
+        {
+            // DOUT("Scheduling " << name[*currNode]);
+            size_t currCycle=max_cycle;
+            for( ListDigraph::OutArcIt arc(graph,*currNode); arc != INVALID; ++arc )
+            {
+                ListDigraph::Node targetNode  = graph.target(arc);
+                size_t targetCycle = cycle[targetNode];
+                if(currCycle > (targetCycle-weight[arc]) )
+                {
+                    currCycle = targetCycle - weight[arc];
+                }
+            }
+            cycle[*currNode]=currCycle;
+            ++currNode;
+        }
+    }
+
+    void compute_asap_cycle(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
+    {
+	// DOUT("Computing asap_cycle");
+        std::vector<ListDigraph::Node>::reverse_iterator currNode = order.rbegin();
+        cycle[*currNode]=0; // src dummy in cycle 0
+        ++currNode;
+        while(currNode != order.rend() )
+        {
+            size_t currCycle=0;
+            // DOUT("Scheduling " << name[*currNode]);
+            for( ListDigraph::InArcIt arc(graph,*currNode); arc != INVALID; ++arc )
+            {
+                ListDigraph::Node srcNode  = graph.source(arc);
+                size_t srcCycle = cycle[srcNode];
+                if(currCycle < (srcCycle + weight[arc]))
+                {
+                    currCycle = srcCycle + weight[arc];
+                }
+            }
+            cycle[*currNode]=currCycle;
+            ++currNode;
+        }
+    }
+
+
+    void schedule_uniform_(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
+    {
+	// algorithm based on "Balanced Scheduling and Operation Chaining in High-Level Synthesis for FPGA Designs"
+	// by David C. Zaretsky, Gaurav Mittal, Robert P. Dick, and Prith Banerjee
+	// Figure 3. Balanced scheduling algorithm
+	// Modifications:
+	// - dependency analysis in article figure 2 is O(n^2) because of set union
+	//	this has been left out, using our own linear dependency analysis creating a digraph
+	//	and using the alap values as measure instead of the dep set size computed in article's D[n]
+	// - balanced scheduling algorithm dominates with its O(n^2) when it cannot find a node to forward
+	//	no test has been devised yet to break the loop (figure 3, line 14-35)
+
+	DOUT("Performing UNIFORM Scheduling");
+	// order becomes a reversed topological order of the nodes
+	// don't know why it is done, since the nodes already are in topological order
+	// that they are is a consequence of dep graph computation which is based on this original order
+        TopologicalSort(order);
+
+        // compute cycle itself as asap as first approximation of result
+	// when schedule is already uniform, nothing changes
+	// this actually is schedule_asap_(cycle, order) but without topological sort
+	compute_asap_cycle(cycle, order);
+	size_t	cycle_count = cycle[*( order.begin() )];// order is reversed asap, so starts at cycle_count
+
+        // compute alap_cycle
+	// when making asap bundles uniform in size in backward scan
+	// fill them by moving instructions from earlier bundles (lower cycle values)
+	// prefer to move those with highest alap (because that maximizes freedom)
+        ListDigraph::NodeMap<size_t> alap_cycle(graph);
+	compute_alap_cycle(alap_cycle, order, cycle_count);
+
+	// compute average load to become target size of each bundle
+	// DOUT("Computing avg_gates_per_cycle");
+	size_t	gate_count = 0;
+	double	avg_gates_per_cycle = 0.0;
+        std::vector<ListDigraph::Node>::iterator it;
+        for ( it = order.begin(); it != order.end(); ++it)
+	{
+	    gate_count++;
+	}
+	avg_gates_per_cycle = std::max((double(gate_count) / cycle_count), 1.0);
+	IOUT("... gate_count=" << gate_count << " cycle_count=" << cycle_count << " avg_gates_per_cycle=" << avg_gates_per_cycle);
+
+	// DOUT("Creating nodes_per_cycle");
+	// create nodes_per_cycle[cycle] = list of nodes at cycle
+	// this is the basic map to be operated upon by the uniforming scheduler below
+        std::map<size_t,std::list<ListDigraph::Node>> nodes_per_cycle;
+        for ( it = order.begin(); it != order.end(); ++it)
+	{
+            nodes_per_cycle[ cycle[*it] ].push_back( *it );
+	}
+
+	// DOUT("... nodes_per_cycle before uniforming:");
+	size_t	max_gates_per_cycle = 0;
+	size_t	number_non_empty_cycles = 0;
+	double	sum_lengths_cycles = 0.0;
+	for (size_t curr_cycle = 0; curr_cycle != cycle_count; curr_cycle++)
+	{
+	    max_gates_per_cycle = std::max(max_gates_per_cycle, nodes_per_cycle[curr_cycle].size());
+	    if (int(nodes_per_cycle[curr_cycle].size()) != 0) number_non_empty_cycles++;
+	    sum_lengths_cycles += nodes_per_cycle[curr_cycle].size();
+#ifdef debug
+	    for ( auto n : nodes_per_cycle[curr_cycle] )
+	    {
+	        // DOUT(curr_cycle << ": " << name[n] << " alap=" << alap_cycle[n]);
+	    }
+#endif
+	}
+	IOUT("... before uniforming: max_gates_per_cycle=" << max_gates_per_cycle << "; avg_gates_per_non_empty_cycle=" << sum_lengths_cycles/number_non_empty_cycles);
+
+	// backward make bundles max avg_gates_per_cycle long
+	// DOUT("Backward scan uniforming ILP");
+	for (size_t curr_cycle = cycle_count; curr_cycle != 0; curr_cycle--)	// QUESTION: gate at cycle 0?
+	{
+	    // Backward with pred_cycle from curr_cycle, look for node(s) to extend current too small bundle.
+	    // This assumes that current bundle is never too long, excess having been moved away earlier.
+	    // When such a node cannot be found, this loop scans the whole circuit for each original node to extend
+	    // and this creates a O(n^2) time complexity;
+	    // a test to break this prematurely based on the current data structure, wasn't devised yet.
+	    // A sulution is to use the dep graph instead to find a node to extend the current node with,
+	    // i.e. maintain a so-called "heap" of nodes free to schedule, as in conventional scheduling algorithms,
+	    // which is not hard at all but which is not according to the published algorithm.
+	    // When the complexity becomes a problem, it is proposed to rewrite the algorithm accordingly.
+	    long pred_cycle = curr_cycle - 1;	// signed because can become negative
+	    while ( double(nodes_per_cycle[curr_cycle].size()) < avg_gates_per_cycle && pred_cycle >= 0 )
+	    {
+	    	size_t		  max_alap_cycle = 0;
+		ListDigraph::Node best_n;
+		bool		  best_n_found = false;
+
+		// COUT("... At cycle=" << curr_cycle << " number of gates=" << nodes_per_cycle[curr_cycle].size() << "; checking cycle=" << pred_cycle << " for node to move");
+		// scan bundle at pred_cycle to find suitable candidate to move forward to curr_cycle
+		for ( auto n : nodes_per_cycle[pred_cycle] )
+		{
+		    bool	      forward_n = true;
+        	    size_t	      n_completion_cycle;
+
+		    // candidate's result, when moved, must be ready before end-of-circuit and before used
+		    n_completion_cycle = curr_cycle + std::ceil(static_cast<float>(instruction[n]->duration)/cycle_time);
+		    if (n_completion_cycle > cycle_count) 
+		    {
+		        forward_n = false;
+		    }
+            	    for ( ListDigraph::OutArcIt arc(graph,n); arc != INVALID; ++arc )
+            	    {
+                        ListDigraph::Node targetNode  = graph.target(arc);
+                        size_t targetCycle = cycle[targetNode];
+                        if(n_completion_cycle > targetCycle)
+                        {
+                            forward_n = false;
+                        }
+            	    }
+
+		    // when multiple nodes in bundle qualify, take the one with highest alap cycle
+		    if (forward_n && alap_cycle[n] > max_alap_cycle)
+		    {
+		        max_alap_cycle = alap_cycle[n];
+			best_n_found = true;
+		        best_n = n;
+		    }
+		}
+
+		// when candidate was found in this bundle, move it, and search for more in this bundle, if needed
+		// otherwise, continue scanning backward
+		if (best_n_found)
+		{
+		    nodes_per_cycle[pred_cycle].remove(best_n);
+
+		    cycle[best_n] = curr_cycle;
+		    nodes_per_cycle[curr_cycle].push_back(best_n);
+		    // COUT("... moved " << name[best_n] << " with alap=" << alap_cycle[best_n] << " from cycle=" << pred_cycle << " to cycle=" << curr_cycle);
+		}
+		else
+		{
+		    pred_cycle --;
+		}
+	    }
+	}
+
+	// DOUT("... nodes_per_cycle after uniforming:");
+	max_gates_per_cycle = 0;
+	number_non_empty_cycles = 0;
+	sum_lengths_cycles = 0.0;
+	for (size_t curr_cycle = 0; curr_cycle != cycle_count; curr_cycle++)
+	{
+	    max_gates_per_cycle = std::max(max_gates_per_cycle, nodes_per_cycle[curr_cycle].size());
+	    if (int(nodes_per_cycle[curr_cycle].size()) != 0) number_non_empty_cycles++;
+	    sum_lengths_cycles += nodes_per_cycle[curr_cycle].size();
+#ifdef debug
+	    for ( auto n : nodes_per_cycle[curr_cycle] )
+	    {
+	        // DOUT(curr_cycle << ": " << name[n] << " alap=" << alap_cycle[n]);
+	    }
+#endif
+	}
+	COUT("... after uniforming: max_gates_per_cycle=" << max_gates_per_cycle << "; avg_gates_per_non_empty_cycle=" << sum_lengths_cycles/number_non_empty_cycles);
+	DOUT("Performing UNIFORM Scheduling [DONE]");
+    }
+
+    ql::ir::bundles_t schedule_uniform()
+    {
+        DOUT("Scheduling UNIFORM to get bundles ...");
+        ql::ir::bundles_t bundles;
+        ListDigraph::NodeMap<size_t> cycle(graph);
+        std::vector<ListDigraph::Node> order;
+        schedule_uniform_(cycle, order);
+
+        typedef std::vector<ql::gate*> insInOneCycle;
+        std::map<size_t,insInOneCycle> insInAllCycles;
+
+        std::vector<ListDigraph::Node>::reverse_iterator rit;
+        for ( rit = order.rbegin(); rit != order.rend(); ++rit)
+        {
+            if( instruction[*rit]->type() != ql::gate_type_t::__wait_gate__ )
+                insInAllCycles[ cycle[*rit] ].push_back( instruction[*rit] );
+        }
+
+        size_t TotalCycles = 0;
+        if( ! order.empty() )
+        {
+            TotalCycles =  cycle[ *( order.begin() ) ];
+        }
+
+        for(size_t currCycle=1; currCycle<TotalCycles; ++currCycle)
+        {
+            auto it = insInAllCycles.find(currCycle);
+            ql::ir::bundle_t abundle;
+            abundle.start_cycle = currCycle;
+            size_t bduration = 0;
+            if( it != insInAllCycles.end() )
+            {
+                auto nInsThisCycle = insInAllCycles[currCycle].size();
+                for(size_t i=0; i<nInsThisCycle; ++i )
+                {
+                    ql::ir::section_t asec;
+                    auto & ins = insInAllCycles[currCycle][i];
+                    asec.push_back(ins);
+                    abundle.parallel_sections.push_back(asec);
+                    size_t iduration = ins->duration;
+                    bduration = std::max(bduration, iduration);
+                }
+                abundle.duration_in_cycles = std::ceil(static_cast<float>(bduration)/cycle_time);
+                bundles.push_back(abundle);
+            }
+        }
+
+        DOUT("Scheduling UNIFORM to get bundles [DONE]");
         return bundles;
     }
 
