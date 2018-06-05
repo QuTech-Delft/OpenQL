@@ -11,6 +11,13 @@
 #include "ql/openql.h"
 #include "ql/utils.h"
 
+// a simple first test
+// the x gates serve to separate the cnot gates wrt dependences
+// this creates big bundles with 7 x gates
+// and small bundles with just a cnot
+// after uniform scheduling, one or more x gates
+// should have been moved next to the cnot
+// those will move that do not have operands that overlap those of the cnot
 void
 test_0( std::string scheduler)
 {
@@ -38,6 +45,8 @@ test_0( std::string scheduler)
     prog.compile( );
 }
 
+// just as the previous one
+// but then more of the same
 void
 test_1( std::string scheduler)
 {
@@ -58,6 +67,7 @@ test_1( std::string scheduler)
     for (int j=0; j<7; j++)
         k.gate("x", j);
     k.gate("cnot", 1,4);
+
     for (int j=0; j<7; j++)
         k.gate("x", j);
     k.gate("cnot", 2,5);
@@ -94,6 +104,11 @@ test_1( std::string scheduler)
     prog.compile( );
 }
 
+// big bundles with x gates
+// alternated with cnot bundles
+// these cnots were chosen to be mutually independent
+// so will be going all 3 in one bundle
+// the single independent x will be moved with it
 void
 test_2( std::string scheduler)
 {
@@ -134,6 +149,10 @@ test_2( std::string scheduler)
     prog.compile( );
 }
 
+// again big bundles with x gates
+// alternated with cnot bundles;
+// these cnots were chosen to be largely dependent
+// this already creates smaller bundles but more of them
 void
 test_3( std::string scheduler)
 {
@@ -178,6 +197,10 @@ test_3( std::string scheduler)
     prog.compile( );
 }
 
+// as with test 3 but now without the big x bundles
+// just the cnots in lexicographic order
+// the worst you can imagine,
+// creating the smallest bundles
 void
 test_4( std::string scheduler)
 {
@@ -217,7 +240,8 @@ test_4( std::string scheduler)
 
 int main(int argc, char ** argv)
 {
-    ql::utils::logger::set_log_level("LOG_DEBUG");
+    // ql::utils::logger::set_log_level("LOG_DEBUG");
+    ql::utils::logger::set_log_level("LOG_INFO");
 
     test_0("ASAP");
     test_0("UNIFORM");

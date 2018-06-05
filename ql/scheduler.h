@@ -1172,11 +1172,12 @@ public:
 	{
 	    gate_count++;
 	}
-	avg_gates_per_cycle = std::max((double(gate_count) / cycle_count), 1.0);
+	avg_gates_per_cycle = double(gate_count) / cycle_count;
 	IOUT("... gate_count=" << gate_count << " cycle_count=" << cycle_count << " avg_gates_per_cycle=" << avg_gates_per_cycle);
+	avg_gates_per_cycle = std::max(avg_gates_per_cycle, 1.0);
 
 	// DOUT("Creating nodes_per_cycle");
-	// create nodes_per_cycle[cycle] = list of nodes at cycle
+	// create nodes_per_cycle[cycle] = for each cycle the list of nodes at cycle cycle
 	// this is the basic map to be operated upon by the uniforming scheduler below
         std::map<size_t,std::list<ListDigraph::Node>> nodes_per_cycle;
         for ( it = order.begin(); it != order.end(); ++it)
@@ -1185,6 +1186,10 @@ public:
 	}
 
 	// DOUT("... nodes_per_cycle before uniforming:");
+	// to compute how well the algorithm is doing, two measures are computed:
+	// - the largest number of gates in a cycle in the circuit,
+	// - and the average number of gates in non-empty cycles
+	// this is done before and after uniform scheduling, and printed
 	size_t	max_gates_per_cycle = 0;
 	size_t	number_non_empty_cycles = 0;
 	double	sum_lengths_cycles = 0.0;
@@ -1200,21 +1205,23 @@ public:
 	    }
 #endif
 	}
-	IOUT("... before uniforming: max_gates_per_cycle=" << max_gates_per_cycle << "; avg_gates_per_non_empty_cycle=" << sum_lengths_cycles/number_non_empty_cycles);
+	IOUT("... before uniform scheduling: max_gates_per_cycle=" << max_gates_per_cycle << "; avg_gates_per_non_empty_cycle=" << sum_lengths_cycles/number_non_empty_cycles);
 
 	// backward make bundles max avg_gates_per_cycle long
-	// DOUT("Backward scan uniforming ILP");
+	// DOUT("Backward scan uniform scheduling ILP");
 	for (size_t curr_cycle = cycle_count; curr_cycle != 0; curr_cycle--)	// QUESTION: gate at cycle 0?
 	{
-	    // Backward with pred_cycle from curr_cycle, look for node(s) to extend current too small bundle.
+	    // Backward with pred_cycle from curr_cycle-1, look for node(s) to extend current too small bundle.
 	    // This assumes that current bundle is never too long, excess having been moved away earlier.
 	    // When such a node cannot be found, this loop scans the whole circuit for each original node to extend
-	    // and this creates a O(n^2) time complexity;
-	    // a test to break this prematurely based on the current data structure, wasn't devised yet.
+	    // and this creates a O(n^2) time complexity.
+	    //
+	    // A test to break this prematurely based on the current data structure, wasn't devised yet.
 	    // A sulution is to use the dep graph instead to find a node to extend the current node with,
 	    // i.e. maintain a so-called "heap" of nodes free to schedule, as in conventional scheduling algorithms,
 	    // which is not hard at all but which is not according to the published algorithm.
 	    // When the complexity becomes a problem, it is proposed to rewrite the algorithm accordingly.
+
 	    long pred_cycle = curr_cycle - 1;	// signed because can become negative
 	    while ( double(nodes_per_cycle[curr_cycle].size()) < avg_gates_per_cycle && pred_cycle >= 0 )
 	    {
@@ -1271,7 +1278,7 @@ public:
 	    }
 	}
 
-	// DOUT("... nodes_per_cycle after uniforming:");
+	// DOUT("... nodes_per_cycle after uniform scheduling:");
 	max_gates_per_cycle = 0;
 	number_non_empty_cycles = 0;
 	sum_lengths_cycles = 0.0;
@@ -1287,7 +1294,8 @@ public:
 	    }
 #endif
 	}
-	COUT("... after uniforming: max_gates_per_cycle=" << max_gates_per_cycle << "; avg_gates_per_non_empty_cycle=" << sum_lengths_cycles/number_non_empty_cycles);
+	IOUT("... after uniform scheduling: max_gates_per_cycle=" << max_gates_per_cycle << "; avg_gates_per_non_empty_cycle=" << sum_lengths_cycles/number_non_empty_cycles);
+
 	DOUT("Performing UNIFORM Scheduling [DONE]");
     }
 
