@@ -272,74 +272,6 @@ void PrintBundles(ql::ir::bundles_t & bundles)
     }
 }
 
-
-void WriteCCLightQasm(std::string prog_name, size_t num_qubits, ql::ir::bundles_t & bundles)
-{
-    IOUT("Writing Recourse-contraint scheduled CC-Light QASM");
-    ofstream fout;
-    string qasmfname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
-    IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << qasmfname);
-    fout.open( qasmfname, ios::binary);
-    if ( fout.fail() )
-    {
-        EOUT("opening file " << qasmfname << std::endl
-                 << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
-        return;
-    }
-
-    size_t curr_cycle=1;
-    fout <<"qubits " << num_qubits << "\n\n"
-         << ".fused_kernels";
-    for ( ql::ir::bundle_t & abundle : bundles)
-    {
-        auto bcycle = abundle.start_cycle;
-        auto delta = bcycle - curr_cycle;
-        if(delta>1)
-            fout << "\n    qwait " << delta-1 << "\n";
-        else
-            fout << "\n";
-
-        std::stringstream ssbundles;
-        size_t icount=0;
-        for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
-        {
-            for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
-            {
-                ssbundles << (*insIt)->qasm();
-                if( std::next(insIt) != secIt->end() )
-                {
-                    ssbundles << " | ";
-                }
-                icount++;
-            }
-            if( std::next(secIt) != abundle.parallel_sections.end() )
-            {
-                ssbundles << " | ";
-            }
-        }
-
-        if (icount > 1) 
-        {
-            fout << "    { ";
-            fout << ssbundles.str();
-            fout << " }"; 
-        }
-        else
-        {
-            fout << "    " << ssbundles.str();
-        }
-        curr_cycle+=delta;
-    }
-
-    auto & lastBundle = bundles.back();
-    int lbduration = lastBundle.duration_in_cycles;
-    if( lbduration>1 )
-        fout << "\n    qwait " << lbduration -1 << '\n';
-
-    fout.close();
-    IOUT("Writing Recourse-contraint scheduled CC-Light QASM [Done]");
-}
-
 std::string get_cc_light_instruction_name(std::string & id, ql::quantum_platform & platform)
 {
     std::string cc_light_instr_name;
@@ -363,26 +295,14 @@ std::string get_cc_light_instruction_name(std::string & id, ql::quantum_platform
     return cc_light_instr_name;
 }
 
-void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
-    ql::ir::bundles_t & bundles)
+std::string bundles2qisa(ql::ir::bundles_t & bundles,
+    ql::quantum_platform & platform, MaskManager & gMaskManager)
 {
     IOUT("Generating CC-Light QISA");
 
-    ofstream fout;
-    string qisafname( ql::options::get("output_dir") + "/" + prog_name + ".qisa");
-    fout.open( qisafname, ios::binary);
-    if ( fout.fail() )
-    {
-        EOUT("opening file " << qisafname << std::endl
-                 << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
-        return;
-    }
-
-
     std::stringstream ssbundles;
-    size_t curr_cycle=0; // first instruction should be with pre-interval 1, 'bs 1'
+    size_t curr_cycle=0;
 
-    ssbundles << "start:" << "\n";
     for (ql::ir::bundle_t & abundle : bundles)
     {
         auto bcycle = abundle.start_cycle;
@@ -476,15 +396,36 @@ void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, Ma
     int lbduration = lastBundle.duration_in_cycles;
     if( lbduration>1 )
         ssbundles << "    qwait " << lbduration << "\n";
+
+    IOUT("Generating CC-Light QISA [Done]");
+    return ssbundles.str();
+}
+
+void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
+    ql::ir::bundles_t & bundles)
+{
+    IOUT("Generating CC-Light QISA");
+
+    ofstream fout;
+    string qisafname( ql::options::get("output_dir") + "/" + prog_name + ".qisa");
+    fout.open( qisafname, ios::binary);
+    if ( fout.fail() )
+    {
+        EOUT("opening file " << qisafname << std::endl
+                 << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
+        return;
+    }
+
+
+    std::stringstream ssbundles;
+    size_t curr_cycle=0; // first instruction should be with pre-interval 1, 'bs 1'
+
+    ssbundles << "start:" << "\n";
+    ssbundles << bundles2qisa(bundles, platform, gMaskManager);   
     ssbundles << "    br always, start" << "\n"
               << "    nop \n"
               << "    nop" << endl;
 
-    // if(verbose)
-    // {
-    //     COUT("Printing CC-Light QISA");
-    //     std::cout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
-    // }
 
     IOUT("Writing CC-Light QISA to " << qisafname);
     fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
@@ -599,8 +540,8 @@ void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & p
 }
 
 
-ql::ir::bundles_t cc_light_schedule(  std::string prog_name, size_t nqubits, ql::circuit & ckt,
-                            ql::quantum_platform & platform)
+ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt, 
+    ql::quantum_platform & platform, size_t nqubits)
 {
     IOUT("Scheduling CC-Light instructions ...");
     Scheduler sched;
@@ -660,8 +601,8 @@ ql::ir::bundles_t cc_light_schedule(  std::string prog_name, size_t nqubits, ql:
 }
 
 
-ql::ir::bundles_t cc_light_schedule_rc( std::string prog_name, size_t nqubits, ql::circuit & ckt,
-                              ql::quantum_platform & platform)
+ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt, 
+    ql::quantum_platform & platform, size_t nqubits)
 {
     IOUT("Resource constraint scheduling of CC-Light instructions ...");
     resource_manager_t rm(platform);

@@ -81,7 +81,7 @@ namespace ql
         /**
         * write content to the file <file_name>
         */
-        void write_file(std::string file_name, std::string& content)
+        void write_file(std::string file_name, const std::string& content)
         {
             std::ofstream file;
             file.open(file_name);

@@ -47,8 +47,8 @@ class quantum_program
 
 
    public:
-      quantum_program(std::string name, quantum_platform platform, size_t nqubits, size_t ncregs) 
-            : name(name), platform(platform), qubit_count(nqubits), creg_count(ncregs)
+      quantum_program(std::string n, quantum_platform platf, size_t nqubits, size_t ncregs) 
+            : name(n), platform(platf), qubit_count(nqubits), creg_count(ncregs)
       {
          default_config = true;
          eqasm_compiler_name = platform.eqasm_compiler_name;
@@ -375,7 +375,7 @@ class quantum_program
          return ss.str();
       }
 
-      void set_platform(quantum_platform platform)
+      void set_platform(quantum_platform & platform)
       {
          this->platform = platform;
       }
@@ -437,45 +437,68 @@ class quantum_program
             WOUT("no eqasm compiler has been specified in the configuration file, only qasm code has been compiled.");
             return 0;
          }
-
-         IOUT("fusing quantum kernels...");
-         ql::circuit fused;
-         for (size_t k=0; k<kernels.size(); ++k)
+         else
          {
-            ql::circuit& kc = kernels[k].get_circuit();
-            for(size_t i=0; i<kernels[k].iterations; i++)
+            if (eqasm_compiler_name == "cc_light_compiler" )
             {
-               fused.insert(fused.end(), kc.begin(), kc.end());
+               #if 1
+               backend_compiler->compile(kernels, platform);
+               #else
+               // this is used for the time-being to test existing pipeline
+               IOUT("fusing quantum kernels...");
+               ql::circuit fused;
+               for (size_t k=0; k<kernels.size(); ++k)
+               {
+                  ql::circuit& kc = kernels[k].get_circuit();
+                  for(size_t i=0; i<kernels[k].iterations; i++)
+                  {
+                     fused.insert(fused.end(), kc.begin(), kc.end());
+                  }
+               }
+
+               try
+               {
+                  IOUT("compiling eqasm code...");
+                  backend_compiler->compile(name, fused, platform);
+               }
+               catch (ql::exception e)
+               {
+                  EOUT("[x] error : eqasm_compiler.compile() : compilation interrupted due to fatal error.");
+                  throw e;
+               }
+               #endif               
+            }
+            else
+            {
+               IOUT("fusing quantum kernels...");
+               ql::circuit fused;
+               for (size_t k=0; k<kernels.size(); ++k)
+               {
+                  ql::circuit& kc = kernels[k].get_circuit();
+                  for(size_t i=0; i<kernels[k].iterations; i++)
+                  {
+                     fused.insert(fused.end(), kc.begin(), kc.end());
+                  }
+               }
+
+               try
+               {
+                  IOUT("compiling eqasm code...");
+                  backend_compiler->compile(name, fused, platform);
+               }
+               catch (ql::exception e)
+               {
+                  EOUT("[x] error : eqasm_compiler.compile() : compilation interrupted due to fatal error.");
+                  throw e;
+               }
+
+               IOUT("writing eqasm code to '" << ( ql::options::get("output_dir") + "/" + name+".asm"));
+               backend_compiler->write_eqasm( ql::options::get("output_dir") + "/" + name + ".asm");
+
+               IOUT("writing traces to '" << ( ql::options::get("output_dir") + "/trace.dat"));
+               backend_compiler->write_traces( ql::options::get("output_dir") + "/trace.dat");
             }
          }
-
-      	try
-      	{
-      	   IOUT("compiling eqasm code...");
-      	   backend_compiler->compile(name, fused, platform);
-      	}
-      	catch (ql::exception e)
-      	{
-      	   EOUT("[x] error : eqasm_compiler.compile() : compilation interrupted due to fatal error.");
-      	   throw e;
-      	}
-
-         IOUT("writing eqasm code to '" << ( ql::options::get("output_dir") + "/" + name+".asm"));
-         backend_compiler->write_eqasm( ql::options::get("output_dir") + "/" + name + ".asm");
-
-         IOUT("writing traces to '" << ( ql::options::get("output_dir") + "/trace.dat"));
-         backend_compiler->write_traces( ql::options::get("output_dir") + "/trace.dat");
-
-         // deprecated hardcoded microcode generation 
-
-         /*
-         std::stringstream ss_asm;
-         ss_asm << output_path << name << ".asm";
-         std::string uc = microcode();
-
-         IOUT("writing transmon micro-code to '" << ss_asm.str() << "' ...");
-         ql::utils::write_file(ss_asm.str(),uc);
-         */
 
          if (sweep_points.size())
          {

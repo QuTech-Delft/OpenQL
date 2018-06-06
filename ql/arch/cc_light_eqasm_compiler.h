@@ -1,7 +1,7 @@
 /**
  * @file   cc_light_eqasm_compiler.h
  * @date   08/2017
- * @author Nader Khammassi
+ * @author Imran Ashraf, Nader Khammassi
  * @brief  cclighteqasm compiler implementation
  */
 
@@ -9,6 +9,7 @@
 #define QL_CC_LIGHT_EQASM_COMPILER_H
 
 #include <ql/platform.h>
+#include <ql/kernel.h>
 #include <ql/ir.h>
 #include <ql/eqasm_compiler.h>
 #include <ql/arch/cc_light_eqasm.h>
@@ -39,242 +40,49 @@ public:
 
 public:
 
+
     /*
      * compile qasm to cc_light_eqasm
      */
-    // eqasm_t
-    void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& platform) throw (ql::exception)
+    void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform) throw (ql::exception)
     {
         IOUT("[-] compiling qasm code ...");
-        if (c.empty())
+        if (ckt.empty())
         {
             EOUT("empty circuit, eqasm compilation aborted !");
             return;
         }
-        IOUT("[-] loading circuit (" <<  c.size() << " gates)...");
-        eqasm_t eqasm_code;
-        // ql::instruction_map_t& instr_map = platform.instruction_map;
-        json& instruction_settings       = platform.instruction_settings;
+        IOUT("[-] loading circuit (" <<  ckt.size() << " gates)...");
 
-        std::string params[] = { "qubit_number", "cycle_time", "mw_mw_buffer", "mw_flux_buffer", "mw_readout_buffer", "flux_mw_buffer",
-                                 "flux_flux_buffer", "flux_readout_buffer", "readout_mw_buffer", "readout_flux_buffer", "readout_readout_buffer"
-                               };
-        size_t p = 0;
+        load_hw_settings(platform);
 
-        try
-        {
-            num_qubits                                      = platform.hardware_settings[params[p++]];
-            ns_per_cycle                                    = platform.hardware_settings[params[p++]];
-
-            buffer_matrix[__rf__][__rf__]                   = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-            buffer_matrix[__rf__][__flux__]                 = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-            buffer_matrix[__rf__][__measurement__]          = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-            buffer_matrix[__flux__][__rf__]                 = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-            buffer_matrix[__flux__][__flux__]               = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-            buffer_matrix[__flux__][__measurement__]        = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-            buffer_matrix[__measurement__][__rf__]          = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-            buffer_matrix[__measurement__][__flux__]        = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-            buffer_matrix[__measurement__][__measurement__] = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-        }
-        catch (json::exception e)
-        {
-            throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter '"+params[p-1]+"'\n\t"+ std::string(e.what()),false);
-        }
+        generate_opcode_cs_files(platform);
 
 
-        std::stringstream qisa;
+        // schedule
+        // ql::ir sched_ir = cc_light_schedule(ckt, platform, num_qubits);
 
-        qisa << "# Classic instructions (single instruction format)\n";
-        qisa << "def_opcode[\"nop\"]      = 0x00\n";
-        qisa << "def_opcode[\"br\"]       = 0x01\n";
-        qisa << "def_opcode[\"stop\"]     = 0x08\n";
-        qisa << "def_opcode[\"cmp\"]      = 0x0d\n";
-        qisa << "def_opcode[\"ldi\"]      = 0x16\n";
-        qisa << "def_opcode[\"ldui\"]     = 0x17\n";
-        qisa << "def_opcode[\"or\"]       = 0x18\n";
-        qisa << "def_opcode[\"xor\"]      = 0x19\n";
-        qisa << "def_opcode[\"and\"]      = 0x1a\n";
-        qisa << "def_opcode[\"not\"]      = 0x1b\n";
-        qisa << "def_opcode[\"add\"]      = 0x1e\n";
-        qisa << "def_opcode[\"sub\"]      = 0x1f\n";
-        qisa << "# quantum-classical mixed instructions (single instruction format)\n";
-        qisa << "def_opcode[\"fbr\"]      = 0x14\n";
-        qisa << "def_opcode[\"fmr\"]      = 0x15\n";
-        qisa << "# quantum instructions (single instruction format)\n";
-        qisa << "def_opcode[\"smis\"]     = 0x20\n";
-        qisa << "def_opcode[\"smit\"]     = 0x28\n";
-        qisa << "def_opcode[\"qwait\"]    = 0x30\n";
-        qisa << "def_opcode[\"qwaitr\"]   = 0x38\n";
-        qisa << "# quantum instructions (double instruction format)\n";
-        qisa << "# no arguments\n";
-        qisa << "def_q_arg_none[\"qnop\"] = 0x00\n";
+        // schedule with platform resource constraints
+        ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, num_qubits);
 
-        std::stringstream control_store;
-
-        control_store << "         Condition  OpTypeLeft  CW_Left  OpTypeRight  CW_Right\n";
-        control_store << "     0:      0          0          0          0           0    \n";
-
-        std::map<std::string,size_t> instr_name_2_opcode;
-        std::set<size_t> opcode_set;
-        size_t opcode=0;
-        for (auto i : instruction_settings)
-        {
-            std::string instr_name = i["cc_light_instr"];
-            if (i["cc_light_opcode"].is_null())
-                throw ql::exception("[x] error : ql::eqasm_compiler::compile() : missing opcode for instruction '"+instr_name,false);
-            else
-                opcode = i["cc_light_opcode"];
-
-            auto mapit = instr_name_2_opcode.find(instr_name);
-            if( mapit != instr_name_2_opcode.end() )
-            {
-                // found
-                if( opcode != mapit->second )
-                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : multiple opcodes for instruction '"+instr_name,false);
-            }
-            else
-            {
-                // not found
-                instr_name_2_opcode[instr_name] = opcode;
-            }
-
-            if (i["cc_light_instr_type"] == "single_qubit_gate")
-            {
-                if (opcode_set.find(opcode) != opcode_set.end())
-                    continue;
-
-                // opcode range check
-                if (i["type"] == "readout")
-                {
-                    if (opcode < 0x4 || opcode > 0x7)
-                        throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for measure instruction '"+instr_name+"' : should be in [0x04..0x07] range : current opcode: "+std::to_string(opcode),false);
-                }
-                else if (opcode < 1 || opcode > 127)
-                {
-                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for single qubit gate instruction '"+instr_name+"' : should be in [1..127] range : current opcode: "+std::to_string(opcode),false);
-                }
-                opcode_set.insert(opcode);
-                size_t condition  = (i["cc_light_cond"].is_null() ? 0 : i["cc_light_cond"].get<size_t>());
-                if (i["cc_light_instr"].is_null())
-                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
-                qisa << "def_q_arg_st[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
-                auto optype     = (i["type"] == "mw" ? 1 : (i["type"] == "flux" ? 2 : ((i["type"] == "readout" ? 3 : 0))));
-                auto codeword   = i["cc_light_codeword"];
-                control_store << "     " << i["cc_light_opcode"] << ":     " << condition << "          " << optype << "          " << codeword << "          0          0\n";
-            }
-            else if (i["cc_light_instr_type"] == "two_qubit_gate")
-            {
-                size_t opcode     = i["cc_light_opcode"];
-                if (opcode_set.find(opcode) != opcode_set.end())
-                    continue;
-                if (opcode < 127 || opcode > 255)
-                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for two qubits gate instruction '"+instr_name+"' : should be in [128..255] range : current opcode: "+std::to_string(opcode),false);
-                opcode_set.insert(opcode);
-                // size_t condition  = 0;
-                size_t condition  = (i["cc_light_cond"].is_null() ? 0 : i["cc_light_cond"].get<size_t>());
-                if (i["cc_light_instr"].is_null())
-                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
-                // qisa << "def_opcode[" << i["cc_light_instr"] << "]\t= " << opcode << "\n";
-                qisa << "def_q_arg_tt[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
-                auto optype     = (i["type"] == "mw" ? 1 : (i["type"] == "flux" ? 2 : ((i["type"] == "readout" ? 3 : 0))));
-                auto codeword_l = i["cc_light_left_codeword"];
-                auto codeword_r = i["cc_light_right_codeword"];
-                control_store << "     " << i["cc_light_opcode"] << ":     " << condition << "          " << optype << "          " << codeword_l << "          " << optype << "          " << codeword_r << "\n";
-            }
-            else
-                throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : invalid 'cc_light_instr_type' for instruction !",false);
-            // println("\n" << control_store.str());
-            // println("\n" << qisa.str());
-        }
-
-        std::string cs_filename = ql::options::get("output_dir") + "/cs.txt";
-        std::string im_filename = ql::options::get("output_dir") + "/qisa_opcodes.qmap"; // "/qisa_instructions.dbpd";
-        IOUT("writing control store file to '" << cs_filename << "' ...");
-        IOUT("writing qisa instruction file to '" << im_filename << "' ...");
-        std::string s = control_store.str();
-        ql::utils::write_file(cs_filename,s);
-        s = qisa.str();
-        ql::utils::write_file(im_filename,s);
-
-        /*
-        for (ql::gate * g : c)
-        {
-            std::string id = g->qasm(); // g->name;
-            str::lower_case(id);
-            str::replace_all(id,"  ","");
-            std::string cc_light_eqasm;
-            std::string operation;
-            if (!instruction_settings[id].is_null())
-            {
-                if (instruction_settings[id]["cc_light_instr"].is_null())
-                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : 'cc_light_instr' for instruction '"+id+"' is not specified !",false);
-
-                operation             = instruction_settings[id]["cc_light_instr"];
-                size_t duration       = __ns_to_cycle((size_t)instruction_settings[id]["duration"]);
-                size_t latency        = 0;
-
-                if (!instruction_settings[id]["latency"].is_null())
-                    latency = __ns_to_cycle((size_t)instruction_settings[id]["latency"]);
-                else
-                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter 'latency' of instruction '"+id+"' not specified !",false);
-
-                // used qubits
-                qubit_set_t used_qubits;
-                // instruction type processing
-                if (instruction_settings[id]["type"].is_null())
-                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter 'type' of instruction '"+id+"' not specified !",false);
-                operation_type_t type = operation_type(instruction_settings[id]["type"]);
-                if (type == __unknown_operation__)
-                {
-                    EOUT("unknow operation type of the instruction '" << id << "' !");
-                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : the type of instruction '"+id+"' is unknown !",false);
-                }
-
-                if (instruction_settings[id]["cc_light_instr_type"].is_null())
-                {
-                    EOUT("unknown operation type of the instruction '" << id << "' !");
-                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : the type of instruction '"+id+"' is unknown !",false);
-                }
-
-                std::string instr_type = instruction_settings[id]["cc_light_instr_type"];
-
-                if (instr_type == "single_qubit_gate")
-                {
-                    cc_light_single_qubit_gate * instr = new cc_light_single_qubit_gate(operation,single_qubit_mask(g->operands[0]));
-                    cc_light_eqasm_instructions.push_back(instr);
-                }
-                else if (instr_type == "two_qubit_gate")
-                {
-                    cc_light_two_qubit_gate * instr = new cc_light_two_qubit_gate(operation,two_qubit_mask(qubit_pair_t(g->operands[0],g->operands[1])));
-                    cc_light_eqasm_instructions.push_back(instr);
-                }
-                else   // unknown type of operation
-                {
-                    EOUT("unknown instruction type of the instruction '" << id << "' (should be single or two qubit gates) !");
-                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : the type of instruction '"+id+"' is unknown !",false);
-                }
-            }
-            else
-            {
-                EOUT("cc_light_eqasm_compiler : instruction '" << id << "' not supported by the target platform !");
-                throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : the instruction '"+id+"' is not supported by the target platform !",false);
-            }
-        }
-        */
-
-        // schedule with platform constraints
-        // ql::ir sched_ir = cc_light_schedule(prog_name, num_qubits, c, platform);
-        ql::ir::bundles_t bundles = cc_light_schedule_rc(prog_name, num_qubits, c, platform);
-
-        // print scheduled bundles with parallelism
-        WriteCCLightQasm(prog_name, num_qubits, bundles);
+        // write RC scheduled bundles with parallelism as simple QASM file
+        std::stringstream sched_qasm;
+        sched_qasm <<"qubits " << num_qubits << "\n\n"
+                   << ".fused_kernels";
+        string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
+        IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << fname);
+        sched_qasm << ql::ir::qasm(bundles);
+        ql::utils::write_file(fname, sched_qasm.str());
 
         MaskManager mask_manager;
-        // print scheduled bundles with parallelism in cc-light syntax
+        // write scheduled bundles with parallelism in cc-light syntax
         WriteCCLightQisa(prog_name, platform, mask_manager, bundles);
 
-        // print scheduled bundles with parallelism in cc-light syntax with time-stamps
+        // write scheduled bundles with parallelism in cc-light syntax with time-stamps
         WriteCCLightQisaTimeStamped(prog_name, platform, mask_manager, bundles);
+
+
+
 
         // time analysis
         // total_exec_time = time_analysis();
@@ -296,9 +104,43 @@ public:
         // insert waits
 
         emit_eqasm();
-        // return eqasm_code;
     }
 
+    void compile(std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
+    {
+        DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");
+
+        load_hw_settings(platform);
+        generate_opcode_cs_files(platform);
+        MaskManager mask_manager;
+
+        std::stringstream ssqisa, sskernels_qisa;
+        sskernels_qisa << "start:" << std::endl;
+        for(auto &kernel : kernels)
+        {
+            IOUT("Compiling kernel: " << kernel.name);
+            ql::circuit& ckt = kernel.c;
+            if (! ckt.empty())
+            {
+                // schedule with platform resource constraints
+                ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, num_qubits);
+
+                // std::cout << "QASM" << std::endl;
+                // std::cout << ql::ir::qasm(bundles) << std::endl;
+                sskernels_qisa << "\n" << kernel.name << ":" << std::endl;
+                sskernels_qisa << bundles2qisa(bundles, platform, mask_manager);
+            }
+        }
+
+        sskernels_qisa << "\n    br always, start" << "\n"
+                  << "    nop \n"
+                  << "    nop" << std::endl;
+
+        ssqisa << mask_manager.getMaskInstructions() << sskernels_qisa.str();
+        std::cout << ssqisa.str();
+
+        DOUT("Compiling CCLight eQASM [Done]");
+    }
 
     /**
      * display instruction and start time
@@ -499,6 +341,167 @@ public:
 
 
 private:
+
+    void load_hw_settings(ql::quantum_platform& platform)
+    {
+        std::string params[] = { "qubit_number", "cycle_time", "mw_mw_buffer", "mw_flux_buffer", "mw_readout_buffer", "flux_mw_buffer",
+                                 "flux_flux_buffer", "flux_readout_buffer", "readout_mw_buffer", "readout_flux_buffer", "readout_readout_buffer"
+                               };
+        size_t p = 0;
+
+        DOUT("Loading hardware settings ...");
+        try
+        {
+            num_qubits                                      = platform.hardware_settings[params[p++]];
+            ns_per_cycle                                    = platform.hardware_settings[params[p++]];
+
+            buffer_matrix[__rf__][__rf__]                   = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+            buffer_matrix[__rf__][__flux__]                 = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+            buffer_matrix[__rf__][__measurement__]          = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+            buffer_matrix[__flux__][__rf__]                 = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+            buffer_matrix[__flux__][__flux__]               = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+            buffer_matrix[__flux__][__measurement__]        = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+            buffer_matrix[__measurement__][__rf__]          = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+            buffer_matrix[__measurement__][__flux__]        = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+            buffer_matrix[__measurement__][__measurement__] = __ns_to_cycle(platform.hardware_settings[params[p++]]);
+        }
+        catch (json::exception e)
+        {
+            throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter '"+params[p-1]+"'\n\t"+ std::string(e.what()),false);
+        }
+    }
+
+    void generate_opcode_cs_files(ql::quantum_platform& platform)
+    {
+        DOUT("Generating opcode file ...");
+        json& instruction_settings       = platform.instruction_settings;
+
+        std::stringstream opcode_ss;
+
+        opcode_ss << "# Classic instructions (single instruction format)\n";
+        opcode_ss << "def_opcode[\"nop\"]      = 0x00\n";
+        opcode_ss << "def_opcode[\"br\"]       = 0x01\n";
+        opcode_ss << "def_opcode[\"stop\"]     = 0x08\n";
+        opcode_ss << "def_opcode[\"cmp\"]      = 0x0d\n";
+        opcode_ss << "def_opcode[\"ldi\"]      = 0x16\n";
+        opcode_ss << "def_opcode[\"ldui\"]     = 0x17\n";
+        opcode_ss << "def_opcode[\"or\"]       = 0x18\n";
+        opcode_ss << "def_opcode[\"xor\"]      = 0x19\n";
+        opcode_ss << "def_opcode[\"and\"]      = 0x1a\n";
+        opcode_ss << "def_opcode[\"not\"]      = 0x1b\n";
+        opcode_ss << "def_opcode[\"add\"]      = 0x1e\n";
+        opcode_ss << "def_opcode[\"sub\"]      = 0x1f\n";
+        opcode_ss << "# quantum-classical mixed instructions (single instruction format)\n";
+        opcode_ss << "def_opcode[\"fbr\"]      = 0x14\n";
+        opcode_ss << "def_opcode[\"fmr\"]      = 0x15\n";
+        opcode_ss << "# quantum instructions (single instruction format)\n";
+        opcode_ss << "def_opcode[\"smis\"]     = 0x20\n";
+        opcode_ss << "def_opcode[\"smit\"]     = 0x28\n";
+        opcode_ss << "def_opcode[\"qwait\"]    = 0x30\n";
+        opcode_ss << "def_opcode[\"qwaitr\"]   = 0x38\n";
+        opcode_ss << "# quantum instructions (double instruction format)\n";
+        opcode_ss << "# no arguments\n";
+        opcode_ss << "def_q_arg_none[\"qnop\"] = 0x00\n";
+
+        DOUT("Generating control store file ...");
+        std::stringstream control_store;
+
+        control_store << "         Condition  OpTypeLeft  CW_Left  OpTypeRight  CW_Right\n";
+        control_store << "     0:      0          0          0          0           0    \n";
+
+        std::map<std::string,size_t> instr_name_2_opcode;
+        std::set<size_t> opcode_set;
+        size_t opcode=0;
+        for (json & i : instruction_settings)
+        {
+            std::string instr_name;
+            if (i["cc_light_instr"].is_null())
+            {
+                std::cout << i << std::endl;                
+                COUT("SHOULD NOT BE NULL, FIX IT Later"); // TODO Fix it why null entry is picked up
+                continue;
+            }
+            else
+            {
+                instr_name = i["cc_light_instr"];
+            }
+
+            if (i["cc_light_opcode"].is_null())
+                throw ql::exception("[x] error : ql::eqasm_compiler::compile() : missing opcode for instruction '"+instr_name,false);
+            else
+                opcode = i["cc_light_opcode"];
+
+
+            auto mapit = instr_name_2_opcode.find(instr_name);
+            if( mapit != instr_name_2_opcode.end() )
+            {
+                // found
+                if( opcode != mapit->second )
+                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : multiple opcodes for instruction '"+instr_name,false);
+            }
+            else
+            {
+                // not found
+                instr_name_2_opcode[instr_name] = opcode;
+            }
+
+            if (i["cc_light_instr_type"] == "single_qubit_gate")
+            {
+                if (opcode_set.find(opcode) != opcode_set.end())
+                    continue;
+
+                // opcode range check
+                if (i["type"] == "readout")
+                {
+                    if (opcode < 0x4 || opcode > 0x7)
+                        throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for measure instruction '"+instr_name+"' : should be in [0x04..0x07] range : current opcode: "+std::to_string(opcode),false);
+                }
+                else if (opcode < 1 || opcode > 127)
+                {
+                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for single qubit gate instruction '"+instr_name+"' : should be in [1..127] range : current opcode: "+std::to_string(opcode),false);
+                }
+                opcode_set.insert(opcode);
+                size_t condition  = (i["cc_light_cond"].is_null() ? 0 : i["cc_light_cond"].get<size_t>());
+                if (i["cc_light_instr"].is_null())
+                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
+                opcode_ss << "def_q_arg_st[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
+                auto optype     = (i["type"] == "mw" ? 1 : (i["type"] == "flux" ? 2 : ((i["type"] == "readout" ? 3 : 0))));
+                auto codeword   = i["cc_light_codeword"];
+                control_store << "     " << i["cc_light_opcode"] << ":     " << condition << "          " << optype << "          " << codeword << "          0          0\n";
+            }
+            else if (i["cc_light_instr_type"] == "two_qubit_gate")
+            {
+                size_t opcode     = i["cc_light_opcode"];
+                if (opcode_set.find(opcode) != opcode_set.end())
+                    continue;
+                if (opcode < 127 || opcode > 255)
+                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for two qubits gate instruction '"+instr_name+"' : should be in [128..255] range : current opcode: "+std::to_string(opcode),false);
+                opcode_set.insert(opcode);
+                // size_t condition  = 0;
+                size_t condition  = (i["cc_light_cond"].is_null() ? 0 : i["cc_light_cond"].get<size_t>());
+                if (i["cc_light_instr"].is_null())
+                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
+                // opcode_ss << "def_opcode[" << i["cc_light_instr"] << "]\t= " << opcode << "\n";
+                opcode_ss << "def_q_arg_tt[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
+                auto optype     = (i["type"] == "mw" ? 1 : (i["type"] == "flux" ? 2 : ((i["type"] == "readout" ? 3 : 0))));
+                auto codeword_l = i["cc_light_left_codeword"];
+                auto codeword_r = i["cc_light_right_codeword"];
+                control_store << "     " << i["cc_light_opcode"] << ":     " << condition << "          " << optype << "          " << codeword_l << "          " << optype << "          " << codeword_r << "\n";
+            }
+            else
+                throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : invalid 'cc_light_instr_type' for instruction !",false);
+            // println("\n" << control_store.str());
+            // println("\n" << opcode_ss.str());
+        }
+
+        std::string cs_filename = ql::options::get("output_dir") + "/cs.txt";
+        IOUT("writing control store file to '" << cs_filename << "' ...");
+        ql::utils::write_file(cs_filename, control_store.str());
+
+        std::string im_filename = ql::options::get("output_dir") + "/qisa_opcodes.qmap";
+        IOUT("writing qisa instruction file to '" << im_filename << "' ...");        
+        ql::utils::write_file(im_filename, opcode_ss.str());
+    }
 
     /**
      * emit qasm code

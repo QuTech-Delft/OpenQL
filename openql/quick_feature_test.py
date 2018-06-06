@@ -74,12 +74,16 @@ def test_qx():
 
 
 def test_loop():
-    config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
+    # config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
+    config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
     platform  = ql.Platform('platform_none', config_fn)
     num_qubits = 5
     num_cregs = 5
 
-    p = ql.Program('test_loop', platform, num_qubits, num_cregs)
+    p = ql.Program('test_hybrid', platform, num_qubits, num_cregs)
+    sweep_points = [1,2]
+    p.set_sweep_points(sweep_points, len(sweep_points))
+    
     sp1 = ql.Program('subprogram1', platform, num_qubits, num_cregs)
     sp2 = ql.Program('subprogram2', platform, num_qubits, num_cregs)
 
@@ -87,23 +91,35 @@ def test_loop():
     k2 = ql.Kernel('aKernel2', platform, num_qubits, num_cregs)
 
     k1.gate('x', [0])
-    k1.gate('x', [0])
-    k1.gate('cnot', [0, 1])
-    k1.gate('measure', [0], [2])
-    k1.gate('measure', [1], [2])
-    k1.gate('measure', [2], [2])
-    k1.classical('inc', [2])
+    k1.gate('cz', [0, 2])
 
-    k2.gate('cz', [0, 1])
-    k2.gate('cz', [2, 3])
-    # k2.gate('measure', [0])
+    k2.gate('y', [0])
+    k2.gate('cz', [0, 2])
+
+    p.add_kernel(k1)
+    p.add_kernel(k2)
+    p.compile()
+
+
+
+    # k1.gate('cnot', [0, 2])
+    # k1.classical('inc', [2])
+    # k1.gate('measure', [0], [2])
+    # k1.gate('measure', [1], [2])
+    # k1.gate('measure', [2], [2])
+
+
+
+    # k2 = ql.Kernel('aKernel2', platform, num_qubits, num_cregs)
+    # k2.gate('cz', [0, 1])
+    # k2.gate('cz', [2, 3])
 
     # sp.add_kernel(k)
     # sp.add_kernel(k)
     # p.add_program(sp)
 
 
-    classical_reg = 0
+    # classical_reg = 0
 
     # no control flow
     # p.add_kernel(k)
@@ -145,14 +161,14 @@ def test_loop():
     # sp2.add_for(sp1, 20)
     # p.add_program(sp2)
 
-    # classical operations
-    k1.classical('set', [0], 10)
-    k1.classical('not', [0,1])
-    k1.classical('add', [0,1,2])
-    k1.classical('inc', [1])
-    # k1.classical('set', [5], 10) # out of range operand
-    # k1.classical('set', [7], 10) # out of range operand
-    p.add_kernel(k1)
+    # # classical operations
+    # k1.classical('set', [0], 10)
+    # k1.classical('not', [0,1])
+    # k1.classical('add', [0,1,2])
+    # k1.classical('inc', [1])
+    # # k1.classical('set', [5], 10) # out of range operand
+    # # k1.classical('set', [7], 10) # out of range operand
+    # p.add_kernel(k1)
 
     p.compile()
 

@@ -13,6 +13,7 @@
 #include <fstream>
 
 #include <ql/circuit.h>
+#include <ql/kernel.h>
 #include <ql/platform.h>
 
 typedef std::vector<std::string> eqasm_t; 
@@ -33,8 +34,17 @@ namespace ql
 
     /*
 	  * compile must be implemented by all compilation backends.
+    * compiles a single (fused) circuit
 	  */
 	 virtual void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& p) = 0;
+
+   /*
+   * compiles multiple kernels to a single eQASM
+   */
+   virtual void compile(std::vector<quantum_kernel> kernels, ql::quantum_platform& plat)
+   {
+
+   }
 
 	 /**
 	  * write eqasm code to file/stdout
