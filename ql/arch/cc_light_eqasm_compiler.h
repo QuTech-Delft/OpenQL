@@ -120,13 +120,18 @@ public:
         {
             IOUT("Compiling kernel: " << kernel.name);
             ql::circuit& ckt = kernel.c;
+            ql::circuit decomp_ckt;
             if (! ckt.empty())
             {
+                // decompose meta-instructions
+                decompose_instructions(ckt, decomp_ckt);
+
                 // schedule with platform resource constraints
-                ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, num_qubits);
+                ql::ir::bundles_t bundles = cc_light_schedule_rc(decomp_ckt, platform, num_qubits);
 
                 // std::cout << "QASM" << std::endl;
                 // std::cout << ql::ir::qasm(bundles) << std::endl;
+
                 sskernels_qisa << "\n" << kernel.name << ":" << std::endl;
                 sskernels_qisa << bundles2qisa(bundles, platform, mask_manager);
             }
@@ -142,6 +147,64 @@ public:
         DOUT("Compiling CCLight eQASM [Done]");
     }
 
+/*
+(name == "eq") | (name == "ne") | (name == "lt") | (name == "gt") | (name == "le") | (name == "ge")
+(name == "inc") | (name == "dec")
+*/
+
+    /**
+     * decompose
+     */
+    void decompose_instructions(ql::circuit& ckt, ql::circuit& decomp_ckt)
+    {
+        DOUT("decomposing instructions...");
+        for( auto ins : ckt )
+        {
+            auto & iname =  ins->name;
+            auto & iopers = ins->operands;
+            int iopers_count = iopers.size();
+            auto itype = ins->type();
+            if(__classical_gate__ == itype)
+            {
+                COUT("decomposing classical instruction: " << iname);
+
+                if( (iname == "add") | (iname == "sub") | 
+                    (iname == "and") | (iname == "or") | (iname == "xor") | (iname == "not")
+                  )
+                {
+                    decomp_ckt.push_back(ins);
+                }
+                else if(iname == "set")
+                {
+                    auto imval = ((ql::classical*)ins)->imm_value;
+                    decomp_ckt.push_back(new ql::classical("ldi", iopers, imval));
+                }
+                else
+                {
+                    EOUT("Unknown decomposition of classical operation '" << iname << "' with '" << iopers_count << "' operands!");
+                    throw ql::exception("Unknown classical operation'"+iname+"' with'"+std::to_string(iopers_count)+"' operands!", false);
+                }
+            }
+            else
+            {
+                decomp_ckt.push_back(ins);
+            }
+        }        
+
+        /*
+        cc_light_eqasm_program_t decomposed;
+        for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
+        {
+        cc_light_eqasm_program_t dec = instr->decompose();
+          for (cc_light_eqasm_instruction * i : dec)
+             decomposed.push_back(i);
+            }
+            cc_light_eqasm_instructions.swap(decomposed);
+        */
+        DOUT("decomposing instructions...[Done]");
+    }
+
+
     /**
      * display instruction and start time
      */
@@ -153,25 +216,6 @@ public:
             size_t t = instr->start;
             std::cout << t << " : " << instr->code() << std::endl;
         }
-    }
-
-
-    /**
-     * decompose
-     */
-    void decompose_instructions(bool verbose=false)
-    {
-        /*
-        IOUT("decomposing instructions...");
-        cc_light_eqasm_program_t decomposed;
-        for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
-        {
-        cc_light_eqasm_program_t dec = instr->decompose();
-          for (cc_light_eqasm_instruction * i : dec)
-             decomposed.push_back(i);
-            }
-            cc_light_eqasm_instructions.swap(decomposed);
-            */
     }
 
 

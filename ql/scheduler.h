@@ -323,9 +323,9 @@ public:
                 }
 
                 // now update LastWriter
-                for( auto operand : operands )
+                for( auto operand : all_operands )
                 {
-                    LastWriter[operand+qubit_count] = consID;
+                    LastWriter[operand] = consID;
                 }
             }
             else

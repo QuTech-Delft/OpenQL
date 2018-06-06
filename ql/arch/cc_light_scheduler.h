@@ -295,6 +295,38 @@ std::string get_cc_light_instruction_name(std::string & id, ql::quantum_platform
     return cc_light_instr_name;
 }
 
+std::string classical_instruction2qisa(ql::classical* classical_ins)
+{
+    std::stringstream ssclassical;
+    auto & iname =  classical_ins->name;
+    auto & iopers = classical_ins->operands;
+    int iopers_count = iopers.size();
+
+    if(  (iname == "add") | (iname == "sub") |
+         (iname == "and") | (iname == "or") | (iname == "not") | (iname == "xor") |
+         (iname == "ldi")
+      )
+    {
+        ssclassical << iname;
+        for(int i=0; i<iopers_count; ++i)
+        {
+            if(i==iopers_count-1)
+                ssclassical << " r" + std::to_string(iopers[i]);
+            else
+                ssclassical << " r" + std::to_string(iopers[i]) + ",";
+        }
+        if(iname == "ldi")
+            ssclassical << ", " + std::to_string(classical_ins->imm_value);
+    }
+    else
+    {
+        EOUT("Unknown CClight classical operation '" << iname << "' with '" << iopers_count << "' operands!");
+        throw ql::exception("Unknown classical operation'"+iname+"' with'"+std::to_string(iopers_count)+"' operands!", false);
+    }
+
+    return ssclassical.str();
+}
+
 std::string bundles2qisa(ql::ir::bundles_t & bundles,
     ql::quantum_platform & platform, MaskManager & gMaskManager)
 {
@@ -319,73 +351,81 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
             qubit_set_t squbits;
             qubit_pair_set_t dqubits;
             auto firstInsIt = secIt->begin();
-
-            auto id = (*(firstInsIt))->name;
-            std::string cc_light_instr_name;
-            auto it = platform.instruction_map.find(id);
-            if (it != platform.instruction_map.end())
-            {
-                custom_gate* g = it->second;
-                cc_light_instr_name = g->arch_operation_name;
-                if(cc_light_instr_name.empty())
-                {
-                    EOUT("cc_light_instr not defined for instruction: " << id << " !");
-                    throw ql::exception("Error : cc_light_instr not defined for instruction: "+id+" !",false);
-                }                    
-                // DOUT("cc_light_instr name: " << cc_light_instr_name);
-            }
-            else
-            {
-                EOUT("custom instruction not found for : " << id << " !");
-                throw ql::exception("Error : custom instruction not found for : "+id+" !",false);
-            }
-
+            auto iname = (*(firstInsIt))->name;
             auto itype = (*(firstInsIt))->type();
-            auto nOperands = ((*firstInsIt)->operands).size();
-            if( itype == __nop_gate__ )
+
+            if(__classical_gate__ == itype)
             {
-                ssbundles << cc_light_instr_name;
+                ssbundles << classical_instruction2qisa( (ql::classical *)(*firstInsIt) );
             }
             else
             {
-                for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
+                auto id = iname;
+                std::string cc_light_instr_name;
+                auto it = platform.instruction_map.find(id);
+                if (it != platform.instruction_map.end())
                 {
+                    custom_gate* g = it->second;
+                    cc_light_instr_name = g->arch_operation_name;
+                    if(cc_light_instr_name.empty())
+                    {
+                        EOUT("cc_light_instr not defined for instruction: " << id << " !");
+                        throw ql::exception("Error : cc_light_instr not defined for instruction: "+id+" !",false);
+                    }                    
+                    // DOUT("cc_light_instr name: " << cc_light_instr_name);
+                }
+                else
+                {
+                    EOUT("custom instruction not found for : " << id << " !");
+                    throw ql::exception("Error : custom instruction not found for : "+id+" !",false);
+                }
+
+                auto nOperands = ((*firstInsIt)->operands).size();
+                if( itype == __nop_gate__ )
+                {
+                    ssbundles << cc_light_instr_name;
+                }
+                else
+                {
+                    for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
+                    {
+                        if( 1 == nOperands )
+                        {
+                            auto & op = (*insIt)->operands[0];
+                            squbits.push_back(op);
+                        }
+                        else if( 2 == nOperands )
+                        {
+                            auto & op1 = (*insIt)->operands[0];
+                            auto & op2 = (*insIt)->operands[1];
+                            dqubits.push_back( qubit_pair_t(op1,op2) );
+                        }
+                        else
+                        {
+                            throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
+                        }
+                    }
+                    std::string rname;
                     if( 1 == nOperands )
                     {
-                        auto & op = (*insIt)->operands[0];
-                        squbits.push_back(op);
+                        rname = gMaskManager.getRegName(squbits);
                     }
                     else if( 2 == nOperands )
                     {
-                        auto & op1 = (*insIt)->operands[0];
-                        auto & op2 = (*insIt)->operands[1];
-                        dqubits.push_back( qubit_pair_t(op1,op2) );
+                        rname = gMaskManager.getRegName(dqubits);
                     }
                     else
                     {
                         throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
                     }
-                }
-                std::string rname;
-                if( 1 == nOperands )
-                {
-                    rname = gMaskManager.getRegName(squbits);
-                }
-                else if( 2 == nOperands )
-                {
-                    rname = gMaskManager.getRegName(dqubits);
-                }
-                else
-                {
-                    throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
+
+                    ssbundles << cc_light_instr_name << " " << rname;
                 }
 
-                ssbundles << cc_light_instr_name << " " << rname;
-            }
-
-            if( std::next(secIt) != abundle.parallel_sections.end() )
-            {
-                ssbundles << " | ";
+                if( std::next(secIt) != abundle.parallel_sections.end() )
+                {
+                    ssbundles << " | ";
+                }
             }
         }
         curr_cycle+=delta;
@@ -553,27 +593,39 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
     // into a single section
     for (ql::ir::bundle_t & abundle : bundles1)
     {
-        for( auto secIt1 = abundle.parallel_sections.begin(); secIt1 != abundle.parallel_sections.end(); ++secIt1 )
+        auto secIt1 = abundle.parallel_sections.begin();
+        auto firstInsIt = secIt1->begin();
+        auto itype = (*(firstInsIt))->type();
+        
+        // TODO check it again
+        if(__classical_gate__ == itype)
         {
-            for( auto secIt2 = std::next(secIt1); secIt2 != abundle.parallel_sections.end(); ++secIt2)
+            continue;
+        }
+        else
+        {
+            for( ; secIt1 != abundle.parallel_sections.end(); ++secIt1 )
             {
-                auto insIt1 = secIt1->begin();
-                auto insIt2 = secIt2->begin();
-                if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
+                for( auto secIt2 = std::next(secIt1); secIt2 != abundle.parallel_sections.end(); ++secIt2)
                 {
-                    auto id1 = (*insIt1)->name;
-                    auto id2 = (*insIt2)->name;
-                    auto n1 = get_cc_light_instruction_name(id1, platform);
-                    auto n2 = get_cc_light_instruction_name(id2, platform);
-                    if( n1 == n2 )
+                    auto insIt1 = secIt1->begin();
+                    auto insIt2 = secIt2->begin();
+                    if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
                     {
-                        // DOUT("splicing " << n1 << " and " << n2);
-                        (*secIt1).splice(insIt1, (*secIt2) );
+                        auto id1 = (*insIt1)->name;
+                        auto id2 = (*insIt2)->name;
+                        auto n1 = get_cc_light_instruction_name(id1, platform);
+                        auto n2 = get_cc_light_instruction_name(id2, platform);
+                        if( n1 == n2 )
+                        {
+                            // DOUT("splicing " << n1 << " and " << n2);
+                            (*secIt1).splice(insIt1, (*secIt2) );
+                        }
+                        // else
+                        // {
+                        //     DOUT("Not splicing " << n1 << " and " << n2);
+                        // }
                     }
-                    // else
-                    // {
-                    //     DOUT("Not splicing " << n1 << " and " << n2);
-                    // }
                 }
             }
         }
@@ -614,26 +666,37 @@ ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
     // into a single section
     for (ql::ir::bundle_t & abundle : bundles1)
     {
-        for( auto secIt1 = abundle.parallel_sections.begin(); secIt1 != abundle.parallel_sections.end(); ++secIt1 )
+        auto secIt1 = abundle.parallel_sections.begin();
+        auto firstInsIt = secIt1->begin();
+        auto itype = (*(firstInsIt))->type();
+
+        if(__classical_gate__ == itype)
         {
-            for( auto secIt2 = std::next(secIt1); secIt2 != abundle.parallel_sections.end(); ++secIt2)
+            continue;
+        }
+        else
+        {
+            for( ; secIt1 != abundle.parallel_sections.end(); ++secIt1 )
             {
-                auto insIt1 = secIt1->begin();
-                auto insIt2 = secIt2->begin();
-                if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
+                for( auto secIt2 = std::next(secIt1); secIt2 != abundle.parallel_sections.end(); ++secIt2)
                 {
-                    auto id1 = (*insIt1)->name;
-                    auto id2 = (*insIt2)->name;
-                    auto n1 = get_cc_light_instruction_name(id1, platform);
-                    auto n2 = get_cc_light_instruction_name(id2, platform);
-                    if( n1 == n2 )
+                    auto insIt1 = secIt1->begin();
+                    auto insIt2 = secIt2->begin();
+                    if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
                     {
-                        DOUT("splicing " << n1 << " and " << n2);
-                        (*secIt1).splice(insIt1, (*secIt2) );
-                    }
-                    else
-                    {
-                        DOUT("Not splicing " << n1 << " and " << n2);
+                        auto id1 = (*insIt1)->name;
+                        auto id2 = (*insIt2)->name;
+                        auto n1 = get_cc_light_instruction_name(id1, platform);
+                        auto n2 = get_cc_light_instruction_name(id2, platform);
+                        if( n1 == n2 )
+                        {
+                            DOUT("splicing " << n1 << " and " << n2);
+                            (*secIt1).splice(insIt1, (*secIt2) );
+                        }
+                        else
+                        {
+                            DOUT("Not splicing " << n1 << " and " << n2);
+                        }
                     }
                 }
             }

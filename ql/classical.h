@@ -48,11 +48,13 @@ public:
         {
             DOUT("Adding 2 operand operation: " << name);
         }
-        else if(((name == "inc") | (name == "dec") | (name == "set")) && (sz == 1))
+        else if( ( (name == "inc") | (name == "dec") |
+                   (name == "set") | (name == "ldi")
+                 ) && (sz == 1)
+               )
         {
-            if(name == "set")
+            if(name == "set" | name == "ldi")
             {
-                name = "ldi";
                 imm_value = ivalue;
             }
             DOUT("Adding 1 operand operation: " << name);
@@ -66,18 +68,23 @@ public:
 
     instruction_t qasm()
     {
-        std::string ins = name;
+        std::string iopers;
         int sz = operands.size();
         for(int i=0; i<sz; ++i)
         {
             if(i==sz-1)
-                ins += " r" + std::to_string(operands[i]);
+                iopers += " r" + std::to_string(operands[i]);
             else
-                ins += " r" + std::to_string(operands[i]) + ",";
-            if(name == "ldi")
-                ins += ", " + std::to_string(imm_value);
+                iopers += " r" + std::to_string(operands[i]) + ",";
         }
-        return ins;
+
+        if(name == "set")
+        {
+            iopers += ", " + std::to_string(imm_value);
+            return "set" + iopers;
+        }
+        else
+            return name + iopers;
     }
 
     instruction_t micro_code()
