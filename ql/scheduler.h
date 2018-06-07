@@ -1163,27 +1163,23 @@ public:
         ListDigraph::NodeMap<size_t> alap_cycle(graph);
 	compute_alap_cycle(alap_cycle, order, cycle_count);
 
-	// compute average load to become target size of each bundle
-	// DOUT("Computing avg_gates_per_cycle");
-	size_t	gate_count = 0;
-	double	avg_gates_per_cycle = 0.0;
-        std::vector<ListDigraph::Node>::iterator it;
-        for ( it = order.begin(); it != order.end(); ++it)
-	{
-	    gate_count++;
-	}
-	avg_gates_per_cycle = double(gate_count) / cycle_count;
-	IOUT("... gate_count=" << gate_count << " cycle_count=" << cycle_count << " avg_gates_per_cycle=" << avg_gates_per_cycle);
-	avg_gates_per_cycle = std::max(avg_gates_per_cycle, 1.0);
-
 	// DOUT("Creating nodes_per_cycle");
 	// create nodes_per_cycle[cycle] = for each cycle the list of nodes at cycle cycle
-	// this is the basic map to be operated upon by the uniforming scheduler below
+	// this is the basic map to be operated upon by the uniforming scheduler below;
+	// gate_count is computed to compute the target bundle size later
         std::map<size_t,std::list<ListDigraph::Node>> nodes_per_cycle;
+        std::vector<ListDigraph::Node>::iterator it;
+	size_t	gate_count = 0;
         for ( it = order.begin(); it != order.end(); ++it)
 	{
             nodes_per_cycle[ cycle[*it] ].push_back( *it );
+	    gate_count++;
 	}
+
+	// DOUT("Computing avg_gates_per_cycle for reporting only");
+	double	avg_gates_per_cycle = 0.0;
+	avg_gates_per_cycle = double(gate_count) / cycle_count;
+	IOUT("... gate_count=" << gate_count << " cycle_count=" << cycle_count << " initial avg_gates_per_cycle=" << avg_gates_per_cycle);
 
 	// DOUT("... nodes_per_cycle before uniforming:");
 	// to compute how well the algorithm is doing, two measures are computed:
@@ -1209,7 +1205,7 @@ public:
 
 	// backward make bundles max avg_gates_per_cycle long
 	// DOUT("Backward scan uniform scheduling ILP");
-	for (size_t curr_cycle = cycle_count; curr_cycle != 0; curr_cycle--)	// QUESTION: gate at cycle 0?
+	for (size_t curr_cycle = cycle_count-1; curr_cycle != 0; curr_cycle--)	// QUESTION: gate at cycle 0?
 	{
 	    // Backward with pred_cycle from curr_cycle-1, look for node(s) to extend current too small bundle.
 	    // This assumes that current bundle is never too long, excess having been moved away earlier.
@@ -1223,6 +1219,11 @@ public:
 	    // When the complexity becomes a problem, it is proposed to rewrite the algorithm accordingly.
 
 	    long pred_cycle = curr_cycle - 1;	// signed because can become negative
+
+	    // average load is target size of each bundle
+	    // it is readjusted to cater for dips in bundle size caused by local dependence chains
+	    avg_gates_per_cycle = std::max(double(gate_count) / curr_cycle, 1.0);
+
 	    while ( double(nodes_per_cycle[curr_cycle].size()) < avg_gates_per_cycle && pred_cycle >= 0 )
 	    {
 	    	size_t		  max_alap_cycle = 0;
@@ -1276,6 +1277,7 @@ public:
 		    pred_cycle --;
 		}
 	    }
+	    gate_count -= nodes_per_cycle[curr_cycle].size();
 	}
 
 	// DOUT("... nodes_per_cycle after uniform scheduling:");
