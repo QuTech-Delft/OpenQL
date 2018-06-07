@@ -1143,6 +1143,9 @@ public:
 	//	and using the alap values as measure instead of the dep set size computed in article's D[n]
 	// - balanced scheduling algorithm dominates with its O(n^2) when it cannot find a node to forward
 	//	no test has been devised yet to break the loop (figure 3, line 14-35)
+	// - targeted bundle size is adjusted each cycle and is number_of_gates_to_go/number_of_non_empty_bundles_to_go
+	//	this is more greedy, preventing oscillation around a target size based on all bundles,
+	//	because local variations caused by local dep chains create small bundles and thus leave more gates still to go
 
 	DOUT("Performing UNIFORM Scheduling");
 	// order becomes a reversed topological order of the nodes
@@ -1167,33 +1170,26 @@ public:
 	// create nodes_per_cycle[cycle] = for each cycle the list of nodes at cycle cycle
 	// this is the basic map to be operated upon by the uniforming scheduler below;
 	// gate_count is computed to compute the target bundle size later
-        std::map<size_t,std::list<ListDigraph::Node>> nodes_per_cycle;
-        std::vector<ListDigraph::Node>::iterator it;
-	size_t	gate_count = 0;
+        std::map<size_t,std::list<ListDigraph::Node>>	nodes_per_cycle;
+        std::vector<ListDigraph::Node>::iterator	it;
         for ( it = order.begin(); it != order.end(); ++it)
 	{
             nodes_per_cycle[ cycle[*it] ].push_back( *it );
-	    gate_count++;
 	}
 
-	// DOUT("Computing avg_gates_per_cycle for reporting only");
-	double	avg_gates_per_cycle = 0.0;
-	avg_gates_per_cycle = double(gate_count) / cycle_count;
-	IOUT("... gate_count=" << gate_count << " cycle_count=" << cycle_count << " initial avg_gates_per_cycle=" << avg_gates_per_cycle);
-
-	// DOUT("... nodes_per_cycle before uniforming:");
+	// DOUT("Displaying circuit and bundle statistics");
 	// to compute how well the algorithm is doing, two measures are computed:
 	// - the largest number of gates in a cycle in the circuit,
 	// - and the average number of gates in non-empty cycles
 	// this is done before and after uniform scheduling, and printed
 	size_t	max_gates_per_cycle = 0;
-	size_t	number_non_empty_cycles = 0;
-	double	sum_lengths_cycles = 0.0;
+	size_t	non_empty_bundle_count = 0;
+	size_t	gate_count = 0;
 	for (size_t curr_cycle = 0; curr_cycle != cycle_count; curr_cycle++)
 	{
 	    max_gates_per_cycle = std::max(max_gates_per_cycle, nodes_per_cycle[curr_cycle].size());
-	    if (int(nodes_per_cycle[curr_cycle].size()) != 0) number_non_empty_cycles++;
-	    sum_lengths_cycles += nodes_per_cycle[curr_cycle].size();
+	    if (int(nodes_per_cycle[curr_cycle].size()) != 0) non_empty_bundle_count++;
+	    gate_count += nodes_per_cycle[curr_cycle].size();
 #ifdef debug
 	    for ( auto n : nodes_per_cycle[curr_cycle] )
 	    {
@@ -1201,7 +1197,15 @@ public:
 	    }
 #endif
 	}
-	IOUT("... before uniform scheduling: max_gates_per_cycle=" << max_gates_per_cycle << "; avg_gates_per_non_empty_cycle=" << sum_lengths_cycles/number_non_empty_cycles);
+	IOUT("... before uniform scheduling:"
+		<< " cycle_count=" << cycle_count
+		<< "; gate_count=" << gate_count
+		<< "; non_empty_bundle_count=" << non_empty_bundle_count
+		);
+	IOUT("... and max_gates_per_cycle=" << max_gates_per_cycle
+		<< "; avg_gates_per_cycle=" << double(gate_count)/cycle_count
+		<< "; avg_gates_per_non_empty_cycle=" << double(gate_count)/non_empty_bundle_count
+		);
 
 	// backward make bundles max avg_gates_per_cycle long
 	// DOUT("Backward scan uniform scheduling ILP");
@@ -1219,11 +1223,12 @@ public:
 	    // When the complexity becomes a problem, it is proposed to rewrite the algorithm accordingly.
 
 	    long pred_cycle = curr_cycle - 1;	// signed because can become negative
-
-	    // average load is target size of each bundle
+	   
+	    // target size of each bundle is number of gates to go divided by number of non-empty cycles to go
+	    // it averages over non-empty bundles instead of all bundles because the latter would be very strict
 	    // it is readjusted to cater for dips in bundle size caused by local dependence chains
 	    // it is rounded to create room caused by local variations and to smooth the effective integral readjustments
-	    avg_gates_per_cycle = std::ceil(double(gate_count) / curr_cycle);
+	    double avg_gates_per_cycle = std::ceil(double(gate_count)/non_empty_bundle_count);
 
 	    while ( double(nodes_per_cycle[curr_cycle].size()) < avg_gates_per_cycle && pred_cycle >= 0 )
 	    {
@@ -1268,7 +1273,17 @@ public:
 		if (best_n_found)
 		{
 		    nodes_per_cycle[pred_cycle].remove(best_n);
+	            if (nodes_per_cycle[pred_cycle].size() == 0)
+		    {
+		        // created an empty bundle
+			non_empty_bundle_count++;
+		    }
 
+	            if (nodes_per_cycle[curr_cycle].size() == 0)
+		    {
+		        // filling an empty bundle
+			non_empty_bundle_count--;
+		    }
 		    cycle[best_n] = curr_cycle;
 		    nodes_per_cycle[curr_cycle].push_back(best_n);
 		    // COUT("... moved " << name[best_n] << " with alap=" << alap_cycle[best_n] << " from cycle=" << pred_cycle << " to cycle=" << curr_cycle);
@@ -1281,15 +1296,15 @@ public:
 	    gate_count -= nodes_per_cycle[curr_cycle].size();
 	}
 
-	// DOUT("... nodes_per_cycle after uniform scheduling:");
 	max_gates_per_cycle = 0;
-	number_non_empty_cycles = 0;
-	sum_lengths_cycles = 0.0;
+	non_empty_bundle_count = 0;
+	gate_count = 0;
+	// cycle_count was not changed
 	for (size_t curr_cycle = 0; curr_cycle != cycle_count; curr_cycle++)
 	{
 	    max_gates_per_cycle = std::max(max_gates_per_cycle, nodes_per_cycle[curr_cycle].size());
-	    if (int(nodes_per_cycle[curr_cycle].size()) != 0) number_non_empty_cycles++;
-	    sum_lengths_cycles += nodes_per_cycle[curr_cycle].size();
+	    if (int(nodes_per_cycle[curr_cycle].size()) != 0) non_empty_bundle_count++;
+	    gate_count += nodes_per_cycle[curr_cycle].size();
 #ifdef debug
 	    for ( auto n : nodes_per_cycle[curr_cycle] )
 	    {
@@ -1297,7 +1312,15 @@ public:
 	    }
 #endif
 	}
-	IOUT("... after uniform scheduling: max_gates_per_cycle=" << max_gates_per_cycle << "; avg_gates_per_non_empty_cycle=" << sum_lengths_cycles/number_non_empty_cycles);
+	IOUT("... after uniform scheduling:"
+		<< " cycle_count=" << cycle_count
+		<< "; gate_count=" << gate_count
+		<< "; non_empty_bundle_count=" << non_empty_bundle_count
+		);
+	IOUT("... and max_gates_per_cycle=" << max_gates_per_cycle
+		<< "; avg_gates_per_cycle=" << double(gate_count)/cycle_count
+		<< "; avg_gates_per_non_empty_cycle=" << double(gate_count)/non_empty_bundle_count
+		);
 
 	DOUT("Performing UNIFORM Scheduling [DONE]");
     }
