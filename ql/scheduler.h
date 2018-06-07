@@ -1293,7 +1293,13 @@ public:
 		    pred_cycle --;
 		}
 	    }
+
+	    // curr_cycle ready, take out from future still to go
 	    gate_count -= nodes_per_cycle[curr_cycle].size();
+	    if (nodes_per_cycle[curr_cycle].size() != 0)
+	    {
+		non_empty_bundle_count--;
+	    }
 	}
 
 	max_gates_per_cycle = 0;
