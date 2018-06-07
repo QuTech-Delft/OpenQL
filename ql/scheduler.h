@@ -1222,7 +1222,8 @@ public:
 
 	    // average load is target size of each bundle
 	    // it is readjusted to cater for dips in bundle size caused by local dependence chains
-	    avg_gates_per_cycle = std::max(double(gate_count) / curr_cycle, 1.0);
+	    // it is rounded to create room caused by local variations and to smooth the effective integral readjustments
+	    avg_gates_per_cycle = std::ceil(double(gate_count) / curr_cycle);
 
 	    while ( double(nodes_per_cycle[curr_cycle].size()) < avg_gates_per_cycle && pred_cycle >= 0 )
 	    {
