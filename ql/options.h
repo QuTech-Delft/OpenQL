@@ -29,6 +29,7 @@ namespace ql
           opt_name2opt_val["log_level"] = "LOG_NOTHING";
           opt_name2opt_val["output_dir"] = "test_output";
           opt_name2opt_val["optimize"] = "no";
+          opt_name2opt_val["mapper"] = "no";
           opt_name2opt_val["scheduler"] = "ASAP";
           opt_name2opt_val["use_default_gates"] = "yes";
           opt_name2opt_val["optimize"] = "no";
@@ -38,6 +39,7 @@ namespace ql
           app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"], 
             {"LOG_NOTHING", "LOG_CRITICAL", "LOG_ERROR", "LOG_WARNING", "LOG_INFO", "LOG_DEBUG"}, "Log levels", true);
           app->add_option("--output_dir", opt_name2opt_val["output_dir"], "Name of output directory", true);
+          app->add_set_ignore_case("--mapper", opt_name2opt_val["mapper"], {"no", "initial", "circuit"}, "Mapper type", true);
           app->add_set_ignore_case("--scheduler", opt_name2opt_val["scheduler"], {"ASAP", "ALAP"}, "scheduler type", true);
           app->add_set_ignore_case("--use_default_gates", opt_name2opt_val["use_default_gates"], {"yes", "no"}, "Use default gates or not", true);
           app->add_set_ignore_case("--optimize", opt_name2opt_val["optimize"], {"yes", "no"}, "optimize or not", true);
@@ -46,8 +48,10 @@ namespace ql
 
       void print_current_values()
       {
-          std::cout << "optimize: " << opt_name2opt_val["optimize"] << std::endl
-                    << "scheduler: " << opt_name2opt_val["scheduler"] << std::endl;
+          std::cout << "optimize: "  << opt_name2opt_val["optimize"] << std::endl
+                    << "mapper: "    << opt_name2opt_val["mapper"] << std::endl
+                    << "scheduler: " << opt_name2opt_val["scheduler"] << std::endl
+	  ;
       }
 
       void help()

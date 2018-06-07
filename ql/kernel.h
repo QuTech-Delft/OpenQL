@@ -23,6 +23,7 @@
 #define PI M_PI
 
 #ifndef __disable_lemon__
+#include "mapper.h"
 #include "scheduler.h"
 
 #endif // __disable_lemon__
@@ -858,6 +859,16 @@ public:
             }
         }
         DOUT("decompose_toffoli() [Done] ");
+    }
+
+    void map(size_t qubits, quantum_platform platform)
+    {
+#ifndef __disable_lemon__
+        Mapper mapper(qubits, c, platform);
+
+        mapper.Init();
+        mapper.MapCircuit();
+#endif // __disable_lemon__
     }
 
     void schedule(size_t qubits, quantum_platform platform, std::string& sched_qasm, std::string& sched_dot)

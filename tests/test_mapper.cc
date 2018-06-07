@@ -12,15 +12,15 @@
 #include "ql/utils.h"
 
 void
-test_4( std::string scheduler)
+test_0()
 {
     // create and set platform
     ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_4_" + scheduler), 7, starmon);
-    ql::quantum_kernel k("kernel7",starmon);
+    ql::quantum_program prog(("test_0_"), 7, starmon);
+    ql::quantum_kernel k("kernel_0",starmon);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -44,7 +44,7 @@ test_4( std::string scheduler)
 
     prog.add(k);
 
-    ql::options::set("scheduler", scheduler);
+    ql::options::set("mapper", "circuit");
     prog.compile( );
 }
 
@@ -52,7 +52,7 @@ int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_DEBUG");
 
-    test_4("ASAP");
+    test_0();
 
     return 0;
 }

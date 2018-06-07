@@ -208,6 +208,7 @@ class quantum_program
                kernels[k].optimize();
          }
 
+
          auto tdopt = ql::options::get("decompose_toffoli");
          if( tdopt == "AM" || tdopt == "NC" )
          {
@@ -225,20 +226,18 @@ class quantum_program
             throw ql::exception("Error: Unknown option '"+tdopt+"' set for decompose_toffoli !",false);
          }
 
-         std::stringstream ss_qasm;
-         ss_qasm << ql::options::get("output_dir") << "/" << name << ".qasm";
-         std::string s = qasm();
 
-         IOUT("writing un-scheduled qasm to '" << ss_qasm.str() << "' ...");
-         ql::utils::write_file(ss_qasm.str(),s);
+	 map();
 
          schedule();
+
 
          if (backend_compiler == NULL)
          {
             WOUT("no eqasm compiler has been specified in the configuration file, only qasm code has been compiled.");
             return 0;
          }
+
 
          IOUT("fusing quantum kernels...");
          ql::circuit fused;
@@ -314,10 +313,32 @@ class quantum_program
          return 0;
       }
 
+      void map()
+      {
+         auto mapopt = ql::options::get("mapper");
+	 if (mapopt == "initial" || mapopt == "circuit")
+	 {
+             IOUT("Mapping the quantum program");
+
+             for (auto k : kernels)
+             {
+                k.map(qubits, platform);
+	     }
+	 }
+	 else if (mapopt == "no" )
+	 {
+	    IOUT("Not mapping the quantum program");
+	 }
+	 else
+	 {
+            EOUT("Unknown option '" << mapopt << "' set for mapper");
+            throw ql::exception("Error: Unknown option '"+mapopt+"' set for mapper !",false);
+         }
+      }
+
       void schedule()
       {
          std::string sched_qasm;
-         sched_qasm += "qubits " + std::to_string(qubits) + "\n";
 
          IOUT("scheduling the quantum program");
 
