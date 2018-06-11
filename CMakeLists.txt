@@ -56,7 +56,7 @@ ENDIF(MSVC)
 IF("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -Wfatal-errors -ggdb")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -Wall -Wfatal-errors -Wno-unused-local-typedef -ggdb")
-ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+ENDIF("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
 ADD_SUBDIRECTORY(programs)
 ADD_SUBDIRECTORY(tests)
