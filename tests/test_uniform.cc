@@ -27,7 +27,7 @@ test_0( std::string scheduler)
 
     // create program
     ql::quantum_program prog(("test_0_" + scheduler), 7, starmon);
-    ql::quantum_kernel k("kernel7",starmon);
+    ql::quantum_kernel k("kernel7.0",starmon);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -56,7 +56,7 @@ test_1( std::string scheduler)
 
     // create program
     ql::quantum_program prog(("test_1_" + scheduler), 7, starmon);
-    ql::quantum_kernel k("kernel7",starmon);
+    ql::quantum_kernel k("kernel7.1",starmon);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -118,7 +118,7 @@ test_2( std::string scheduler)
 
     // create program
     ql::quantum_program prog(("test_2_" + scheduler), 7, starmon);
-    ql::quantum_kernel k("kernel7",starmon);
+    ql::quantum_kernel k("kernel7.2",starmon);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -162,7 +162,7 @@ test_3( std::string scheduler)
 
     // create program
     ql::quantum_program prog(("test_3_" + scheduler), 7, starmon);
-    ql::quantum_kernel k("kernel7",starmon);
+    ql::quantum_kernel k("kernel7.3",starmon);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -210,7 +210,7 @@ test_4( std::string scheduler)
 
     // create program
     ql::quantum_program prog(("test_4_" + scheduler), 7, starmon);
-    ql::quantum_kernel k("kernel7",starmon);
+    ql::quantum_kernel k("kernel7.4",starmon);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -238,6 +238,102 @@ test_4( std::string scheduler)
     prog.compile( );
 }
 
+void
+test_5( std::string scheduler)
+{
+    // create and set platform
+    ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
+    ql::set_platform(starmon);
+
+    // create program
+    ql::quantum_program prog(("test_5_" + scheduler), 7, starmon);
+    ql::quantum_kernel k("kernel7.5",starmon);
+
+    // empty kernel
+
+    prog.add(k);
+
+    ql::options::set("scheduler", scheduler);
+    prog.compile( );
+}
+
+// code with a lot of preps at the start, meas at the end and some work in the middle
+// all is equally critical so gain here
+void
+test_6( std::string scheduler)
+{
+    // create and set platform
+    ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
+    ql::set_platform(starmon);
+
+    // create program
+    ql::quantum_program prog(("test_6_" + scheduler), 7, starmon);
+    ql::quantum_kernel k("kernel7.6",starmon);
+
+    k.gate("prepz", 0);
+    k.gate("prepz", 1);
+    k.gate("prepz", 2);
+    k.gate("prepz", 3);
+    k.gate("prepz", 4);
+    k.gate("prepz", 5);
+    k.gate("prepz", 6);
+
+    k.gate("t", 0);
+    k.gate("t", 1);
+    k.gate("t", 2);
+    k.gate("t", 3);
+    k.gate("t", 4);
+    k.gate("t", 5);
+    k.gate("t", 6);
+
+    k.gate("measz", 0);
+    k.gate("measz", 1);
+    k.gate("measz", 2);
+    k.gate("measz", 3);
+    k.gate("measz", 4);
+    k.gate("measz", 5);
+    k.gate("measz", 6);
+
+    prog.add(k);
+
+    ql::options::set("scheduler", scheduler);
+    prog.compile( );
+}
+
+// code with a lot of preps at the start
+void
+test_7( std::string scheduler)
+{
+    // create and set platform
+    ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
+    ql::set_platform(starmon);
+
+    // create program
+    ql::quantum_program prog(("test_7_" + scheduler), 7, starmon);
+    ql::quantum_kernel k("kernel7.7",starmon);
+
+    k.gate("prepz", 0);
+    k.gate("prepz", 1);
+    k.gate("prepz", 2);
+    k.gate("prepz", 3);
+    k.gate("prepz", 4);
+    k.gate("prepz", 5);
+    k.gate("prepz", 6);
+
+    k.gate("h", 0);
+    k.gate("t", 1);
+    k.gate("h", 2);
+    k.gate("t", 3);
+    k.gate("h", 4);
+    k.gate("t", 5);
+    k.gate("h", 6);
+
+    prog.add(k);
+
+    ql::options::set("scheduler", scheduler);
+    prog.compile( );
+}
+
 int main(int argc, char ** argv)
 {
     // ql::utils::logger::set_log_level("LOG_DEBUG");
@@ -253,6 +349,12 @@ int main(int argc, char ** argv)
     test_3("UNIFORM");
     test_4("ASAP");
     test_4("UNIFORM");
+    test_5("ASAP");
+    test_5("UNIFORM");
+    test_6("ASAP");
+    test_6("UNIFORM");
+    test_7("ASAP");
+    test_7("UNIFORM");
 
     return 0;
 }
