@@ -124,7 +124,7 @@ public:
             if (! ckt.empty())
             {
                 // decompose meta-instructions
-                decompose_instructions(ckt, decomp_ckt);
+                decompose_instructions(ckt, decomp_ckt, platform);
 
                 // schedule with platform resource constraints
                 ql::ir::bundles_t bundles = cc_light_schedule_rc(decomp_ckt, platform, num_qubits);
@@ -155,7 +155,7 @@ public:
     /**
      * decompose
      */
-    void decompose_instructions(ql::circuit& ckt, ql::circuit& decomp_ckt)
+    void decompose_instructions(ql::circuit& ckt, ql::circuit& decomp_ckt, ql::quantum_platform& platform)
     {
         DOUT("decomposing instructions...");
         for( auto ins : ckt )
@@ -169,7 +169,8 @@ public:
                 COUT("decomposing classical instruction: " << iname);
 
                 if( (iname == "add") | (iname == "sub") | 
-                    (iname == "and") | (iname == "or") | (iname == "xor") | (iname == "not")
+                    (iname == "and") | (iname == "or") | (iname == "xor") |
+                    (iname == "not") | (iname == "nop")
                   )
                 {
                     decomp_ckt.push_back(ins);
@@ -187,7 +188,35 @@ public:
             }
             else
             {
-                decomp_ckt.push_back(ins);
+                json& instruction_settings = platform.instruction_settings;
+                std::string operation_type = platform.instruction_settings[iname]["type"];
+                bool is_measure = (operation_type == "readout");
+                if(is_measure)
+                {
+                    // insert measure
+                    auto qop = iopers[0];
+                    // decomp_ckt.push_back(new ql::measure(qop));
+                    decomp_ckt.push_back(ins);
+                    if( ql::gate_type_t::__custom_gate__ == itype )
+                    {
+                        auto mins = (ql::measure*) ins;
+                        auto cop = mins->creg_operands[0];
+                        // insert 3 nops between meas and fmr based on cclight requirements
+                        decomp_ckt.push_back(new ql::classical("nop", {}));
+                        decomp_ckt.push_back(new ql::classical("nop", {}));
+                        decomp_ckt.push_back(new ql::classical("nop", {}));
+                        decomp_ckt.push_back(new ql::classical("fmr", {cop, qop}));
+                    }
+                    else
+                    {
+                        EOUT("Unknown decomposition of measure/readout operation: '" << iname << "!");
+                        throw ql::exception("Unknown decomposition of measure/readout operation '"+iname+"'!", false);
+                    }
+                }
+                else
+                {
+                    decomp_ckt.push_back(ins);
+                }
             }
         }        
 

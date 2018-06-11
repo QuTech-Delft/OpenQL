@@ -44,7 +44,7 @@ public:
         {
             DOUT("Adding 3 operand operation: " << name);
         }
-        else if(((name == "not")) && (sz == 2))
+        else if(((name == "not") | (name == "fmr")) && (sz == 2))
         {
             DOUT("Adding 2 operand operation: " << name);
         }
@@ -58,6 +58,10 @@ public:
                 imm_value = ivalue;
             }
             DOUT("Adding 1 operand operation: " << name);
+        }
+        else if( (name == "nop") && (sz == 0) )
+        {
+            DOUT("Adding 0 operand operation: " << name);
         }
         else
         {
@@ -82,6 +86,11 @@ public:
         {
             iopers += ", " + std::to_string(imm_value);
             return "set" + iopers;
+        }
+        else if(name == "fmr")
+        {
+            return name + " r" + std::to_string(operands[0]) +
+                          ", q" + std::to_string(operands[1]);
         }
         else
             return name + iopers;

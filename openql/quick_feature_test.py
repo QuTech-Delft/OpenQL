@@ -90,16 +90,24 @@ def test_loop():
     k1 = ql.Kernel('aKernel1', platform, num_qubits, num_cregs)
     k2 = ql.Kernel('aKernel2', platform, num_qubits, num_cregs)
 
+    # quanutm operations
     k1.gate('x', [0])
     k1.gate('cz', [0, 2])
 
     # add/sub/and/or/xor
     k1.classical('add', [0,1,2])
 
+    # nop
+    k1.classical('nop', [])
+
     # not
     k1.classical('not', [1,2])
 
+    # initialize
     k1.classical('set', [0], 10)
+
+    # measure
+    k1.gate('measure', [0], [2])
 
     k2.gate('y', [0])
     k2.gate('cz', [0, 2])
@@ -107,7 +115,6 @@ def test_loop():
     p.add_kernel(k1)
     p.add_kernel(k2)
     p.compile()
-
 
 
     # k1.gate('cnot', [0, 2])

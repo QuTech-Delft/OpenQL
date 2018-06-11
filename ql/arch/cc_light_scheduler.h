@@ -304,19 +304,26 @@ std::string classical_instruction2qisa(ql::classical* classical_ins)
 
     if(  (iname == "add") | (iname == "sub") |
          (iname == "and") | (iname == "or") | (iname == "not") | (iname == "xor") |
-         (iname == "ldi")
+         (iname == "ldi") | (iname == "fmr") | (iname == "nop")
       )
     {
         ssclassical << iname;
-        for(int i=0; i<iopers_count; ++i)
+        if(iname == "fmr")
         {
-            if(i==iopers_count-1)
-                ssclassical << " r" + std::to_string(iopers[i]);
-            else
-                ssclassical << " r" + std::to_string(iopers[i]) + ",";
+            ssclassical << " r" << iopers[0] << ", q" << iopers[1];
         }
-        if(iname == "ldi")
-            ssclassical << ", " + std::to_string(classical_ins->imm_value);
+        else
+        {
+            for(int i=0; i<iopers_count; ++i)
+            {
+                if(i==iopers_count-1)
+                    ssclassical << " r" <<  iopers[i];
+                else
+                    ssclassical << " r" << iopers[i] << ",";
+            }
+            if(iname == "ldi")
+                ssclassical << ", " + std::to_string(classical_ins->imm_value);
+        }
     }
     else
     {
@@ -361,6 +368,7 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
             else
             {
                 auto id = iname;
+                DOUT("get cclight instr name for : " << id);
                 std::string cc_light_instr_name;
                 auto it = platform.instruction_map.find(id);
                 if (it != platform.instruction_map.end())
