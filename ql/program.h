@@ -229,8 +229,7 @@ class quantum_program
 
 	 map();
 
-         schedule();
-
+         // schedule();
 
          if (backend_compiler == NULL)
          {
@@ -315,10 +314,12 @@ class quantum_program
 
       void map()
       {
+         DOUT("program.map");
+
          auto mapopt = ql::options::get("mapper");
+         DOUT("mapping option=" << mapopt);
 	 if (mapopt == "initial" || mapopt == "circuit")
 	 {
-             IOUT("Mapping the quantum program");
 
              for (auto k : kernels)
              {
@@ -334,6 +335,8 @@ class quantum_program
             EOUT("Unknown option '" << mapopt << "' set for mapper");
             throw ql::exception("Error: Unknown option '"+mapopt+"' set for mapper !",false);
          }
+
+         DOUT("program.map [DONE]");
       }
 
       void schedule()
