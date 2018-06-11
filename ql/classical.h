@@ -113,6 +113,15 @@ public:
 
 };
 
+class condition
+{
+public:
+    std::string comparison;
+    size_t lhs;
+    size_t rhs;
+    condition(std::string comp, size_t l, size_t r): comparison(comp), lhs(l), rhs (r) {}
+};
+
 }
 
 #endif // _CLASSICAL_H

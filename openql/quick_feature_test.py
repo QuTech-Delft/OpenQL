@@ -112,8 +112,18 @@ def test_loop():
     k2.gate('y', [0])
     k2.gate('cz', [0, 2])
 
-    p.add_kernel(k1)
+    # p.add_kernel(k1)
+    # p.add_kernel(k2)
+
+    classical_reg = 4
+
+    # simple if
+    p.add_if(k1, classical_reg)
     p.add_kernel(k2)
+
+    # p.add_while(k1, classical_reg)
+    # p.add_kernel(k2)
+    
     p.compile()
 
 
@@ -144,7 +154,7 @@ def test_loop():
 
     # nested if
     # sp1.add_kernel(k1)
-    # sp1.add_kernel(k2)    
+    # sp1.add_kernel(k2)
     # p.add_if(sp1, classical_reg)
 
     # simple if/else

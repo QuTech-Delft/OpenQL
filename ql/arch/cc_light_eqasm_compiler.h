@@ -106,6 +106,54 @@ public:
         emit_eqasm();
     }
 
+    std::string get_prologue(ql::quantum_kernel &k)
+    {
+        std::stringstream ss;
+
+        if(k.type == kernel_type_t::IF_START)
+        {
+            ss << "    bz r" << k.condition_variable <<", " << k.name << "_end\n";
+        }
+
+        if(k.type == kernel_type_t::ELSE_START)
+        {
+            ss << "    bnz r" << k.condition_variable <<", " << k.name << "_end\n";
+        }
+
+        if(k.type == kernel_type_t::FOR_START)
+        {
+            // for now r1 is used, fix it
+            ss << "    ldi r1" <<", " << k.iterations << "\n";
+        }
+
+        return ss.str();
+    }
+
+    std::string get_epilogue(ql::quantum_kernel &k)
+    {
+        std::stringstream ss;
+
+        if(k.type == kernel_type_t::WHILE_END)
+        {
+            ss << "    bnz r" << k.condition_variable <<", " << k.name << "_start\n";
+        }
+
+        if(k.type == kernel_type_t::FOR_END)
+        {
+            std::string kname(k.name);
+            std::replace( kname.begin(), kname.end(), '_', ' ');
+            std::istringstream iss(kname);
+            std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
+                                             std::istream_iterator<std::string>{} };
+
+            // for now r1 is used, fix it
+            ss << "    dec r1\n";
+            ss << "    bnz r1, " << tokens[0] << "\n";
+        }
+
+        return ss.str();
+    }
+
     void compile(std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
     {
         DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");
@@ -119,8 +167,10 @@ public:
         for(auto &kernel : kernels)
         {
             IOUT("Compiling kernel: " << kernel.name);
-            ql::circuit& ckt = kernel.c;
+            sskernels_qisa << "\n" << kernel.name << ":" << std::endl;
+            sskernels_qisa << get_prologue(kernel);
             ql::circuit decomp_ckt;
+            ql::circuit& ckt = kernel.c;
             if (! ckt.empty())
             {
                 // decompose meta-instructions
@@ -132,9 +182,9 @@ public:
                 // std::cout << "QASM" << std::endl;
                 // std::cout << ql::ir::qasm(bundles) << std::endl;
 
-                sskernels_qisa << "\n" << kernel.name << ":" << std::endl;
                 sskernels_qisa << bundles2qisa(bundles, platform, mask_manager);
             }
+            sskernels_qisa << get_epilogue(kernel);
         }
 
         sskernels_qisa << "\n    br always, start" << "\n"

@@ -1648,11 +1648,12 @@ public:
     std::string   name;
     circuit       c;
     size_t        iterations;
-    size_t        condition_variable;
+    // size_t        condition_variable;
     size_t        qubit_count;
     size_t        creg_count;
     size_t        cycle_time;
     kernel_type_t type;
+    condition     br_condition;
     std::map<std::string,custom_gate*> gate_definition;
 };
 
