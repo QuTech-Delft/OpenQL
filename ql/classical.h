@@ -25,48 +25,153 @@
 namespace ql
 {
 
+enum class operation_type_t
+{
+    ARITHMATIC, RELATIONAL, BITWISE
+};
+
+class operation
+{
+public:
+    std::string operation_name;
+    std::string inv_operation_name;
+    operation_type_t operation_type;
+    std::vector<size_t> operands;
+
+    operation() {}
+    operation(size_t l, std::string op, size_t r)
+    {
+        operands.push_back(l);
+        operands.push_back(r);
+        if(op == "+")
+        {
+            operation_name = "add";
+            operation_type = ql::operation_type_t::ARITHMATIC;
+        }
+        else if(op == "-")
+        {
+            operation_name = "sub";
+            operation_type = ql::operation_type_t::ARITHMATIC;
+        }
+        else if(op == "&")
+        {
+            operation_name = "and";
+            operation_type = ql::operation_type_t::BITWISE;
+        }
+        else if(op == "|")
+        {
+            operation_name = "or";
+            operation_type = ql::operation_type_t::BITWISE;
+        }
+        else if(op == "^")
+        {
+            operation_name = "xor";
+            operation_type = ql::operation_type_t::BITWISE;
+        }
+        else if(op == "==")
+        {
+            operation_name = "eq";
+            inv_operation_name = "ne";
+            operation_type = ql::operation_type_t::RELATIONAL;
+        }
+        else if(op == "!=")
+        {
+            operation_name = "ne";
+            inv_operation_name = "eq";
+            operation_type = ql::operation_type_t::RELATIONAL;
+        }
+        else if(op == "<")
+        {
+            operation_name = "lt";
+            inv_operation_name = "ge";
+            operation_type = ql::operation_type_t::RELATIONAL;
+        }
+        else if(op == ">")
+        {
+            operation_name = "gt";
+            inv_operation_name = "le";
+            operation_type = ql::operation_type_t::RELATIONAL;
+        }
+        else if(op == "<=")
+        {
+            operation_name = "le";
+            inv_operation_name = "gt";
+            operation_type = ql::operation_type_t::RELATIONAL;
+        }
+        else if(op == ">=")
+        {
+            operation_name = "ge";
+            inv_operation_name = "lt";
+            operation_type = ql::operation_type_t::RELATIONAL;
+        }
+        else
+        {
+            EOUT("Unknown binary operation '" << op );
+            throw ql::exception("Unknown binary operation '"+op+"' !", false);
+        }
+    }
+
+    // used for assign
+    operation(size_t l)
+    {
+        operation_name = "assign";
+        operation_type = ql::operation_type_t::ARITHMATIC;
+        operands.push_back(l);
+    }
+
+    // // used for initializing with an imm 
+    // operation(int val): lop(0), rop(0)
+    // {
+    //     operation_name = "assign_imm";
+    //     operation_type = ql::operation_type_t::ARITHMATIC;
+    // }
+
+    operation(std::string op, size_t r)
+    {
+        if(op == "~")
+        {
+            operation_name = "not";
+            operation_type = ql::operation_type_t::BITWISE;
+            operands.push_back(r);
+        }
+        else
+        {
+            EOUT("Unknown unary operation '" << op );
+            throw ql::exception("Unknown unary operation '"+op+"' !", false);
+        }
+    }
+
+};
+
+
 class classical : public gate
 {
 public:
     cmat_t m;
     int imm_value;
-    classical(std::string operation, std::vector<size_t> opers, int ivalue=0)
+
+    classical(size_t dest, operation & oper)
+    {
+        name = oper.operation_name;
+        duration = 20;
+        operands.push_back(dest);
+        for(auto & op : oper.operands)
+            operands.push_back(op);
+    }
+
+    classical(std::string operation)
     {
         str::lower_case(operation);
         name=operation;
-        operands=opers;
         duration = 20;
-        int sz = operands.size();
-        if(((name == "add") | (name == "sub") | (name == "mul") | (name == "div") | 
-           (name == "and") | (name == "or") | (name == "xor") |
-           (name == "eq") | (name == "ne") | (name == "lt") | (name == "gt") |
-           (name == "le") | (name == "ge")) && (sz == 3))
-        {
-            DOUT("Adding 3 operand operation: " << name);
-        }
-        else if(((name == "not") | (name == "fmr")) && (sz == 2))
-        {
-            DOUT("Adding 2 operand operation: " << name);
-        }
-        else if( ( (name == "inc") | (name == "dec") |
-                   (name == "set") | (name == "ldi")
-                 ) && (sz == 1)
-               )
-        {
-            if(name == "set" | name == "ldi")
-            {
-                imm_value = ivalue;
-            }
-            DOUT("Adding 1 operand operation: " << name);
-        }
-        else if( (name == "nop") && (sz == 0) )
+        if( (name == "nop") )
         {
             DOUT("Adding 0 operand operation: " << name);
         }
         else
         {
-            EOUT("Unknown classical operation '" << name << "' with '" << sz << "' operands!");
-            throw ql::exception("Unknown classical operation'"+name+"' with'"+std::to_string(sz)+"' operands!", false);
+            EOUT("Unknown classical operation '" << name << "' with '0' operands!");
+            throw ql::exception("Unknown classical operation'"+name+"' with'0' operands!", false);
         }
     }
 
@@ -82,7 +187,11 @@ public:
                 iopers += " r" + std::to_string(operands[i]) + ",";
         }
 
-        if(name == "set")
+        if(name == "assign")
+        {
+            return "mov" + iopers;
+        }
+        else if(name == "assign_imm")
         {
             iopers += ", " + std::to_string(imm_value);
             return "set" + iopers;
@@ -113,14 +222,6 @@ public:
 
 };
 
-class condition
-{
-public:
-    std::string comparison;
-    size_t lhs;
-    size_t rhs;
-    condition(std::string comp, size_t l, size_t r): comparison(comp), lhs(l), rhs (r) {}
-};
 
 }
 

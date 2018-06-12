@@ -16,6 +16,7 @@
 #include <time.h>
 
 #include <ql/openql.h>
+#include <ql/classical.h>
 #include <ql/qasm_loader.h>
 
 void set_option(std::string option_name, std::string option_value)
@@ -51,6 +52,28 @@ public:
     size_t get_qubit_number()
     {
         return platform_->get_qubit_number();
+    }
+};
+
+class Operation
+{
+public:
+    ql::operation * operation_;
+    Operation(size_t lop, std::string op, size_t rop)
+    {
+        operation_ = new ql::operation(lop, op, rop);
+    }
+    Operation(std::string op, size_t rop)
+    {
+        operation_ = new ql::operation(op, rop);
+    }
+    Operation(size_t lop)
+    {
+        operation_ = new ql::operation(lop);
+    }
+    ~Operation()
+    {
+        delete(operation_);
     }
 };
 
@@ -195,9 +218,14 @@ public:
         kernel_->gate(name, qubits, cregs, duration, angle);
     }
 
-    void classical(std::string name, std::vector<size_t> qubits, int imm_value=0)
+    void classical(size_t destination, Operation& operation)
     {
-        kernel_->classical(name, qubits, imm_value);
+        kernel_->classical(destination, *(operation.operation_));
+    }
+
+    void classical(std::string operation)
+    {
+        kernel_->classical(operation);
     }
 
     void controlled(Kernel &k,
@@ -255,34 +283,34 @@ public:
         program_->add_program(*(p.program_));
     }
 
-    void add_if(Kernel& k, size_t condition_variable)
+    void add_if(Kernel& k, Operation& operation)
     {
-        program_->add_if( *(k.kernel_), condition_variable);
+        program_->add_if( *(k.kernel_), *(operation.operation_));
     }
 
-    void add_if(Program& p, size_t condition_variable)
+    void add_if(Program& p, Operation& operation)
     {
-        program_->add_if( *(p.program_), condition_variable);
+        program_->add_if( *(p.program_), *(operation.operation_));
     }
 
-    void add_if_else(Kernel& k_if, Kernel& k_else, size_t condition_variable)
+    void add_if_else(Kernel& k_if, Kernel& k_else, Operation& operation)
     {
-        program_->add_if_else( *(k_if.kernel_), *(k_else.kernel_), condition_variable);
+        program_->add_if_else( *(k_if.kernel_), *(k_else.kernel_), *(operation.operation_));
     }
 
-    void add_if_else(Program& p_if, Program& p_else, size_t condition_variable)
+    void add_if_else(Program& p_if, Program& p_else, Operation& operation)
     {
-        program_->add_if_else( *(p_if.program_), *(p_else.program_), condition_variable);
+        program_->add_if_else( *(p_if.program_), *(p_else.program_), *(operation.operation_));
     }
 
-    void add_while(Kernel& k, size_t condition_variable)
+    void add_do_while(Kernel& k, Operation& operation)
     {
-        program_->add_while( *(k.kernel_), condition_variable );
+        program_->add_do_while( *(k.kernel_), *(operation.operation_));
     }
 
-    void add_while(Program& p, size_t condition_variable)
+    void add_do_while(Program& p, Operation& operation)
     {
-        program_->add_while( *(p.program_), condition_variable);
+        program_->add_do_while( *(p.program_), *(operation.operation_));
     }
 
     void add_for(Kernel& k, size_t iterations)
@@ -290,9 +318,9 @@ public:
         program_->add_for( *(k.kernel_), iterations);
     }
 
-    void add_for(Program& p, size_t count)
+    void add_for(Program& p, size_t iterations)
     {
-        program_->add_for( *(p.program_), count);
+        program_->add_for( *(p.program_), iterations);
     }
 
     void compile()

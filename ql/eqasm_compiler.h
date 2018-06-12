@@ -41,7 +41,7 @@ namespace ql
    /*
    * compiles multiple kernels to a single eQASM
    */
-   virtual void compile(std::vector<quantum_kernel> kernels, ql::quantum_platform& plat)
+   virtual void compile(std::string prog_name, std::vector<quantum_kernel> kernels, ql::quantum_platform& plat)
    {
 
    }

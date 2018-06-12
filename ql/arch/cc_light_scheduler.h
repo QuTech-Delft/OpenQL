@@ -302,9 +302,9 @@ std::string classical_instruction2qisa(ql::classical* classical_ins)
     auto & iopers = classical_ins->operands;
     int iopers_count = iopers.size();
 
-    if(  (iname == "add") | (iname == "sub") |
-         (iname == "and") | (iname == "or") | (iname == "not") | (iname == "xor") |
-         (iname == "ldi") | (iname == "fmr") | (iname == "nop")
+    if(  (iname == "add") || (iname == "sub") ||
+         (iname == "and") || (iname == "or") || (iname == "not") || (iname == "xor") ||
+         (iname == "ldi") || (iname == "nop") || (iname == "cmp")
       )
     {
         ssclassical << iname;
@@ -324,6 +324,34 @@ std::string classical_instruction2qisa(ql::classical* classical_ins)
             if(iname == "ldi")
                 ssclassical << ", " + std::to_string(classical_ins->imm_value);
         }
+    }
+    else if(iname == "fmr")
+    {
+        ssclassical << "fmr r" << iopers[0] << ", q" << iopers[1];
+    }
+    else if(iname == "fbr_eq")
+    {
+        ssclassical << "fbr " << "EQ, r" << iopers[0];
+    }
+    else if(iname == "fbr_ne")
+    {
+        ssclassical << "fbr " << "NE, r" << iopers[0];
+    }
+    else if(iname == "fbr_lt")
+    {
+        ssclassical << "fbr " << "LT, r" << iopers[0];
+    }
+    else if(iname == "fbr_gt")
+    {
+        ssclassical << "fbr " << "GT, r" << iopers[0];
+    }
+    else if(iname == "fbr_le")
+    {
+        ssclassical << "fbr " << "LE, r" << iopers[0];
+    }
+    else if(iname == "fbr_ge")
+    {
+        ssclassical << "fbr " << "GE, r" << iopers[0];
     }
     else
     {
@@ -466,8 +494,6 @@ void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, Ma
 
 
     std::stringstream ssbundles;
-    size_t curr_cycle=0; // first instruction should be with pre-interval 1, 'bs 1'
-
     ssbundles << "start:" << "\n";
     ssbundles << bundles2qisa(bundles, platform, gMaskManager);   
     ssbundles << "    br always, start" << "\n"

@@ -107,8 +107,8 @@ class quantum_program
                   ((gtype != __classical_gate__) && (op >= qubit_count))
                  )
                {   
-                   EOUT("Out of range operand for operation: '" << gname << "'");
-                   throw ql::exception("Out of range operand for operation: '"+gname+"' !",false);
+                   EOUT("Out of range operand(s) for operation: '" << gname << "'");
+                   throw ql::exception("Out of range operand(s) for operation: '"+gname+"' !",false);
                }
             }
          }
@@ -125,12 +125,12 @@ class quantum_program
          }
       }
 
-      void add_if(ql::quantum_kernel &k, size_t var)
+      void add_if(ql::quantum_kernel &k, ql::operation & cond)
       {
          // phi node
          ql::quantum_kernel kphi1(k.name+"_if", platform, qubit_count, creg_count);
          kphi1.set_kernel_type(ql::kernel_type_t::IF_START);
-         kphi1.set_condition_variable(var);
+         kphi1.set_condition(cond);
          kernels.push_back(kphi1);
 
          add(k);
@@ -138,16 +138,16 @@ class quantum_program
          // phi node
          ql::quantum_kernel kphi2(k.name+"_if_end", platform, qubit_count, creg_count);
          kphi2.set_kernel_type(ql::kernel_type_t::IF_END);
-         kphi2.set_condition_variable(var);
+         kphi2.set_condition(cond);
          kernels.push_back(kphi2);
       }
 
-      void add_if(ql::quantum_program p, size_t var)
+      void add_if(ql::quantum_program p, ql::operation & cond)
       {
          // phi node
          ql::quantum_kernel kphi1(p.name+"_if", platform, qubit_count, creg_count);
          kphi1.set_kernel_type(ql::kernel_type_t::IF_START);
-         kphi1.set_condition_variable(var);
+         kphi1.set_condition(cond);
          kernels.push_back(kphi1);
 
          add_program(p);
@@ -155,15 +155,15 @@ class quantum_program
          // phi node
          ql::quantum_kernel kphi2(p.name+"_if_end", platform, qubit_count, creg_count);
          kphi2.set_kernel_type(ql::kernel_type_t::IF_END);
-         kphi2.set_condition_variable(var);
+         kphi2.set_condition(cond);
          kernels.push_back(kphi2);
       }
 
-      void add_if_else(ql::quantum_kernel &k_if, ql::quantum_kernel &k_else, size_t var)
+      void add_if_else(ql::quantum_kernel &k_if, ql::quantum_kernel &k_else, ql::operation & cond)
       {
          ql::quantum_kernel kphi1(k_if.name+"_if"+ std::to_string(phi_node_count), platform, qubit_count, creg_count);
          kphi1.set_kernel_type(ql::kernel_type_t::IF_START);
-         kphi1.set_condition_variable(var);
+         kphi1.set_condition(cond);
          kernels.push_back(kphi1);
 
          add(k_if);
@@ -171,14 +171,14 @@ class quantum_program
          // phi node
          ql::quantum_kernel kphi2(k_if.name+"_if"+ std::to_string(phi_node_count) +"_end", platform, qubit_count, creg_count);
          kphi2.set_kernel_type(ql::kernel_type_t::IF_END);
-         kphi2.set_condition_variable(var);
+         kphi2.set_condition(cond);
          kernels.push_back(kphi2);
 
 
          // phi node
          ql::quantum_kernel kphi3(k_else.name+"_else" + std::to_string(phi_node_count), platform, qubit_count, creg_count);
          kphi3.set_kernel_type(ql::kernel_type_t::ELSE_START);
-         kphi3.set_condition_variable(var);
+         kphi3.set_condition(cond);
          kernels.push_back(kphi3);
 
          add(k_else);
@@ -186,17 +186,17 @@ class quantum_program
          // phi node
          ql::quantum_kernel kphi4(k_else.name+"_else" + std::to_string(phi_node_count)+"_end", platform, qubit_count, creg_count);
          kphi4.set_kernel_type(ql::kernel_type_t::ELSE_END);
-         kphi4.set_condition_variable(var);
+         kphi4.set_condition(cond);
          kernels.push_back(kphi4);
 
          phi_node_count++;
       }
 
-      void add_if_else(ql::quantum_program &p_if, ql::quantum_program &p_else, size_t var)
+      void add_if_else(ql::quantum_program &p_if, ql::quantum_program &p_else, ql::operation & cond)
       {
          ql::quantum_kernel kphi1(p_if.name+"_if"+ std::to_string(phi_node_count), platform, qubit_count, creg_count);
          kphi1.set_kernel_type(ql::kernel_type_t::IF_START);
-         kphi1.set_condition_variable(var);
+         kphi1.set_condition(cond);
          kernels.push_back(kphi1);
 
          add_program(p_if);
@@ -204,14 +204,14 @@ class quantum_program
          // phi node
          ql::quantum_kernel kphi2(p_if.name+"_if"+ std::to_string(phi_node_count) +"_end", platform, qubit_count, creg_count);
          kphi2.set_kernel_type(ql::kernel_type_t::IF_END);
-         kphi2.set_condition_variable(var);
+         kphi2.set_condition(cond);
          kernels.push_back(kphi2);
 
 
          // phi node
          ql::quantum_kernel kphi3(p_else.name+"_else" + std::to_string(phi_node_count), platform, qubit_count, creg_count);
          kphi3.set_kernel_type(ql::kernel_type_t::ELSE_START);
-         kphi3.set_condition_variable(var);
+         kphi3.set_condition(cond);
          kernels.push_back(kphi3);
 
          add_program(p_else);
@@ -219,44 +219,44 @@ class quantum_program
          // phi node
          ql::quantum_kernel kphi4(p_else.name+"_else" + std::to_string(phi_node_count)+"_end", platform, qubit_count, creg_count);
          kphi4.set_kernel_type(ql::kernel_type_t::ELSE_END);
-         kphi4.set_condition_variable(var);
+         kphi4.set_condition(cond);
          kernels.push_back(kphi4);
 
          phi_node_count++;
       }
 
-      void add_while(ql::quantum_kernel &k, size_t var)
+      void add_do_while(ql::quantum_kernel &k, ql::operation & cond)
       {
          // phi node
-         ql::quantum_kernel kphi1(k.name+"_while"+ std::to_string(phi_node_count) +"_start", platform, qubit_count, creg_count);
-         kphi1.set_kernel_type(ql::kernel_type_t::WHILE_START);
-         kphi1.set_condition_variable(var);
+         ql::quantum_kernel kphi1(k.name+"_do_while"+ std::to_string(phi_node_count) +"_start", platform, qubit_count, creg_count);
+         kphi1.set_kernel_type(ql::kernel_type_t::DO_WHILE_START);
+         kphi1.set_condition(cond);
          kernels.push_back(kphi1);
 
          add(k);
 
          // phi node
-         ql::quantum_kernel kphi2(k.name+"_while" + std::to_string(phi_node_count), platform, qubit_count, creg_count);
-         kphi2.set_kernel_type(ql::kernel_type_t::WHILE_END);
-         kphi2.set_condition_variable(var);
+         ql::quantum_kernel kphi2(k.name+"_do_while" + std::to_string(phi_node_count), platform, qubit_count, creg_count);
+         kphi2.set_kernel_type(ql::kernel_type_t::DO_WHILE_END);
+         kphi2.set_condition(cond);
          kernels.push_back(kphi2);
          phi_node_count++;
       }
 
-      void add_while(ql::quantum_program p, size_t var)
+      void add_do_while(ql::quantum_program p, ql::operation & cond)
       {
          // phi node
-         ql::quantum_kernel kphi1(p.name+"_while"+ std::to_string(phi_node_count) +"_start", platform, qubit_count, creg_count);
-         kphi1.set_kernel_type(ql::kernel_type_t::WHILE_START);
-         kphi1.set_condition_variable(var);
+         ql::quantum_kernel kphi1(p.name+"_do_while"+ std::to_string(phi_node_count) +"_start", platform, qubit_count, creg_count);
+         kphi1.set_kernel_type(ql::kernel_type_t::DO_WHILE_START);
+         kphi1.set_condition(cond);
          kernels.push_back(kphi1);
 
          add_program(p);
 
          // phi node
-         ql::quantum_kernel kphi2(p.name+"_while" + std::to_string(phi_node_count), platform, qubit_count, creg_count);
-         kphi2.set_kernel_type(ql::kernel_type_t::WHILE_END);
-         kphi2.set_condition_variable(var);
+         ql::quantum_kernel kphi2(p.name+"_do_while" + std::to_string(phi_node_count), platform, qubit_count, creg_count);
+         kphi2.set_kernel_type(ql::kernel_type_t::DO_WHILE_END);
+         kphi2.set_condition(cond);
          kernels.push_back(kphi2);
          phi_node_count++;
       }
@@ -281,24 +281,39 @@ class quantum_program
 
       void add_for(ql::quantum_program p, size_t iterations)
       {
-         // phi node
-         ql::quantum_kernel kphi1(p.name+"_for"+ std::to_string(phi_node_count) +"_start", platform, qubit_count, creg_count);
-         kphi1.set_kernel_type(ql::kernel_type_t::FOR_START);
-         kphi1.iterations = iterations;
-         kernels.push_back(kphi1);
+         bool nested_for = false;
+         for(auto & k : p.kernels)
+         {
+            if(k.type == ql::kernel_type_t::FOR_START)
+               nested_for = true;
+         }
+         if(nested_for)
+         {
+            EOUT("Nested for not yet implemented !");
+            throw ql::exception("Error: Nested for not yet implemented !",false);
+         }
 
-         // phi node
-         ql::quantum_kernel kphi2(p.name, platform, qubit_count, creg_count);
-         kphi2.set_kernel_type(ql::kernel_type_t::STATIC);
-         kernels.push_back(kphi2);
+         if(iterations>0) // as otherwise it will be optimized away
+         {
+            // phi node
+            ql::quantum_kernel kphi1(p.name+"_for"+ std::to_string(phi_node_count) +"_start", platform, qubit_count, creg_count);
+            kphi1.set_kernel_type(ql::kernel_type_t::FOR_START);
+            kphi1.iterations = iterations;
+            kernels.push_back(kphi1);
 
-         add_program(p);
+            // phi node
+            ql::quantum_kernel kphi2(p.name, platform, qubit_count, creg_count);
+            kphi2.set_kernel_type(ql::kernel_type_t::STATIC);
+            kernels.push_back(kphi2);
 
-         // phi node
-         ql::quantum_kernel kphi3(p.name+"_for" + std::to_string(phi_node_count) +"_end", platform, qubit_count, creg_count);
-         kphi3.set_kernel_type(ql::kernel_type_t::FOR_END);
-         kernels.push_back(kphi3);
-         phi_node_count++;
+            add_program(p);
+
+            // phi node
+            ql::quantum_kernel kphi3(p.name+"_for" + std::to_string(phi_node_count) +"_end", platform, qubit_count, creg_count);
+            kphi3.set_kernel_type(ql::kernel_type_t::FOR_END);
+            kernels.push_back(kphi3);
+            phi_node_count++;
+         }
       }
 
       void set_config_file(std::string file_name)
@@ -441,32 +456,7 @@ class quantum_program
          {
             if (eqasm_compiler_name == "cc_light_compiler" )
             {
-               #if 1
-               backend_compiler->compile(kernels, platform);
-               #else
-               // this is used for the time-being to test existing pipeline
-               IOUT("fusing quantum kernels...");
-               ql::circuit fused;
-               for (size_t k=0; k<kernels.size(); ++k)
-               {
-                  ql::circuit& kc = kernels[k].get_circuit();
-                  for(size_t i=0; i<kernels[k].iterations; i++)
-                  {
-                     fused.insert(fused.end(), kc.begin(), kc.end());
-                  }
-               }
-
-               try
-               {
-                  IOUT("compiling eqasm code...");
-                  backend_compiler->compile(name, fused, platform);
-               }
-               catch (ql::exception e)
-               {
-                  EOUT("[x] error : eqasm_compiler.compile() : compilation interrupted due to fatal error.");
-                  throw e;
-               }
-               #endif               
+               backend_compiler->compile(name, kernels, platform);
             }
             else
             {

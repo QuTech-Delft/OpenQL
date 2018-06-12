@@ -1400,7 +1400,7 @@ public:
     /**
      * load instruction from json map
      */
-    void load(json& instr) throw (ql::exception)
+    void load(json& instr)
     {
         // DOUT("loading instruction '" << name << "'...");
         std::string l_attr = "qubits";

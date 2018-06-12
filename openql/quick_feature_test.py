@@ -73,12 +73,12 @@ def test_qx():
     p.compile()
 
 
-def test_loop():
+def test_hybrid():
     # config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
     config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
     platform  = ql.Platform('platform_none', config_fn)
     num_qubits = 5
-    num_cregs = 5
+    num_cregs = 10
 
     p = ql.Program('test_hybrid', platform, num_qubits, num_cregs)
     sweep_points = [1,2]
@@ -95,19 +95,26 @@ def test_loop():
     k1.gate('cz', [0, 2])
 
     # add/sub/and/or/xor
-    k1.classical('add', [0,1,2])
-
-    # nop
-    k1.classical('nop', [])
+    k1.classical(0, ql.Operation(1, '+', 2))
 
     # not
-    k1.classical('not', [1,2])
+    k1.classical(1, ql.Operation('~', 2))
 
-    # initialize
-    k1.classical('set', [0], 10)
+    # comparison
+    k1.classical(0, ql.Operation(3, '==', 4))
+
+    # nop
+    k1.classical('nop')
+
+    # assign (r1 = r2)
+    k1.classical(1, ql.Operation(2))
+
+    # initialize (r1 = 2) ? should be possible after Creg() implementation
+    # k1.classical(1, ql.Operation(2))
 
     # measure
     k1.gate('measure', [0], [2])
+
 
     k2.gate('y', [0])
     k2.gate('cz', [0, 2])
@@ -115,76 +122,43 @@ def test_loop():
     # p.add_kernel(k1)
     # p.add_kernel(k2)
 
-    classical_reg = 4
-
     # simple if
-    p.add_if(k1, classical_reg)
-    p.add_kernel(k2)
-
-    # p.add_while(k1, classical_reg)
+    # p.add_if(k1, ql.Condition(3, '==', 4))
     # p.add_kernel(k2)
-    
-    p.compile()
 
-
-    # k1.gate('cnot', [0, 2])
-    # k1.classical('inc', [2])
-    # k1.gate('measure', [0], [2])
-    # k1.gate('measure', [1], [2])
-    # k1.gate('measure', [2], [2])
-
-
-
-    # k2 = ql.Kernel('aKernel2', platform, num_qubits, num_cregs)
-    # k2.gate('cz', [0, 1])
-    # k2.gate('cz', [2, 3])
-
-    # sp.add_kernel(k)
-    # sp.add_kernel(k)
-    # p.add_program(sp)
-
-
-    # classical_reg = 0
-
-    # no control flow
-    # p.add_kernel(k)
-
-    # simple if
-    # p.add_if(k1, classical_reg)
+    # simple if/else
+    # p.add_if_else(k1, k2, ql.Condition(3, '==', 4))
+    # p.add_kernel(k2)
 
     # nested if
     # sp1.add_kernel(k1)
     # sp1.add_kernel(k2)
-    # p.add_if(sp1, classical_reg)
-
-    # simple if/else
-    # p.add_if_else(k1, k2, classical_reg)
-
-    # nested if/else
-    # sp1.add_kernel(k1)
-    # sp2.add_kernel(k2)
-    # p.add_if_else(sp1, sp2, classical_reg)
+    # p.add_if(sp1, ql.Condition(3, '!=', 4))
 
     # simple while
-    # p.add_while(k1, classical_reg)
+    p.add_do_while(k1, ql.Operation(3, '<', 4))
+    p.add_kernel(k2)
 
     # nested while
-    # sp1.add_while(k1, classical_reg)
-    # sp2.add_while(sp1, classical_reg)
-    # p.add_program(sp2)
-
-    # nesting while inside if
-    # sp1.add_while(k1, classical_reg)
-    # sp2.add_if(sp1, classical_reg)
+    # sp1.add_do_while(k1, ql.Condition(3, '>', 4))
+    # sp2.add_do_while(sp1, ql.Condition(5, '<=', 6))
     # p.add_program(sp2)
 
     # simple for
     # p.add_for(k1, 10)
+    # p.add_kernel(k2)
 
     # nested for
-    # sp1.add_for(k1, 10)
-    # sp2.add_for(sp1, 20)
+    # sp1.add_while(k1, ql.Condition(3, '>=', 4))
+    # sp2.add_for(sp1, 100)
     # p.add_program(sp2)
+
+    # nesting while inside if
+    # sp1.add_while(k1, ql.Condition(3, '==', 4))
+    # sp2.add_if(sp1, ql.Condition(5, '!=', 6))
+    # p.add_program(sp2)
+
+    p.compile()
 
     # # classical operations
     # k1.classical('set', [0], 10)
@@ -196,7 +170,7 @@ def test_loop():
     # p.add_kernel(k1)
 
 if __name__ == '__main__':
-    test_loop()
+    test_hybrid()
 
 
 # LOG_NOTHING,

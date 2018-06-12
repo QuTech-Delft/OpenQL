@@ -10,6 +10,7 @@
 
 #include <ql/platform.h>
 #include <ql/kernel.h>
+#include <ql/gate.h>
 #include <ql/ir.h>
 #include <ql/eqasm_compiler.h>
 #include <ql/arch/cc_light_eqasm.h>
@@ -23,6 +24,94 @@ namespace ql
 {
 namespace arch
 {
+
+class classical_cc : public gate
+{
+public:
+    cmat_t m;
+    int imm_value;
+    classical_cc(std::string operation, std::vector<size_t> opers, int ivalue=0)
+    {
+        str::lower_case(operation);
+        name=operation;
+        operands=opers;
+        duration = 20;
+        int sz = operands.size();
+        if((   (name == "add") || (name == "sub") 
+            || (name == "and") || (name == "or") || (name == "xor")
+           ) && (sz == 3))
+        {
+            DOUT("Adding 3 operand operation: " << name);
+        }
+        else if(((name == "not") || (name == "fmr") || (name == "cmp")) && (sz == 2))
+        {
+            DOUT("Adding 2 operand operation: " << name);
+        }
+        else if( ( (name == "ldi") ||
+            (name == "fbr_eq") || (name == "fbr_ne") || (name == "fbr_lt") ||
+            (name == "fbr_gt") || (name == "fbr_le") || (name == "fbr_ge")
+            ) && (sz == 1) )
+        {
+            if( (name == "ldi") )
+            {
+                imm_value = ivalue;
+            }
+            DOUT("Adding 1 operand operation: " << name);
+        }
+        else if( (name == "nop") && (sz == 0) )
+        {
+            DOUT("Adding 0 operand operation: " << name);
+        }
+        else
+        {
+            EOUT("Unknown cclight classical operation '" << name << "' with '" << sz << "' operands!");
+            throw ql::exception("Unknown cclight classical operation'"+name+"' with'"+std::to_string(sz)+"' operands!", false);
+        }
+    }
+
+    instruction_t qasm()
+    {
+        std::string iopers;
+        int sz = operands.size();
+        for(int i=0; i<sz; ++i)
+        {
+            if(i==sz-1)
+                iopers += " r" + std::to_string(operands[i]);
+            else
+                iopers += " r" + std::to_string(operands[i]) + ",";
+        }
+
+        if(name == "ldi")
+        {
+            iopers += ", " + std::to_string(imm_value);
+            return "ldi" + iopers;
+        }
+        else if(name == "fmr")
+        {
+            return name + " r" + std::to_string(operands[0]) +
+                          ", q" + std::to_string(operands[1]);
+        }
+        else
+            return name + iopers;
+    }
+
+    instruction_t micro_code()
+    {
+        return ql::dep_instruction_map["nop"];
+    }
+
+    gate_type_t type()
+    {
+        return __classical_gate__;
+    }
+
+    cmat_t mat()
+    {
+        return m;
+    }
+
+};
+
 /**
  * cclight eqasm compiler
  */
@@ -44,7 +133,7 @@ public:
     /*
      * compile qasm to cc_light_eqasm
      */
-    void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform) throw (ql::exception)
+    void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform)
     {
         IOUT("[-] compiling qasm code ...");
         if (ckt.empty())
@@ -112,18 +201,23 @@ public:
 
         if(k.type == kernel_type_t::IF_START)
         {
-            ss << "    bz r" << k.condition_variable <<", " << k.name << "_end\n";
+            ss << "    b" << k.br_condition.operation_name 
+               <<" r" << k.br_condition.operands[0] <<", r" << k.br_condition.operands[1] 
+               << ", " << k.name << "_end\n";
         }
 
         if(k.type == kernel_type_t::ELSE_START)
         {
-            ss << "    bnz r" << k.condition_variable <<", " << k.name << "_end\n";
+            ss << "    b" << k.br_condition.inv_operation_name <<" r" << k.br_condition.operands[0]
+               <<", r" << k.br_condition.operands[1] << ", " << k.name << "_end\n";
         }
 
         if(k.type == kernel_type_t::FOR_START)
         {
-            // for now r1 is used, fix it
-            ss << "    ldi r1" <<", " << k.iterations << "\n";
+            // for now r29, r30, r31 are used as temporaries
+            ss << "    ldi r29" <<", " << k.iterations << "\n";
+            ss << "    ldi r30" <<", " << 1 << "\n";
+            ss << "    ldi r31" <<", " << 0 << "\n";
         }
 
         return ss.str();
@@ -133,9 +227,10 @@ public:
     {
         std::stringstream ss;
 
-        if(k.type == kernel_type_t::WHILE_END)
+        if(k.type == kernel_type_t::DO_WHILE_END)
         {
-            ss << "    bnz r" << k.condition_variable <<", " << k.name << "_start\n";
+            ss << "    b" << k.br_condition.operation_name <<" r" << k.br_condition.operands[0]
+               <<", r" << k.br_condition.operands[1] << ", " << k.name << "_start\n";
         }
 
         if(k.type == kernel_type_t::FOR_END)
@@ -146,15 +241,15 @@ public:
             std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
                                              std::istream_iterator<std::string>{} };
 
-            // for now r1 is used, fix it
-            ss << "    dec r1\n";
-            ss << "    bnz r1, " << tokens[0] << "\n";
+            // for now r29, r30, r31 are used
+            ss << "    add r31, r30\n";
+            ss << "    blt r31, r29, " << tokens[0] << "\n";
         }
 
         return ss.str();
     }
 
-    void compile(std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
+    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
     {
         DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");
 
@@ -192,15 +287,25 @@ public:
                   << "    nop" << std::endl;
 
         ssqisa << mask_manager.getMaskInstructions() << sskernels_qisa.str();
-        std::cout << ssqisa.str();
+        // std::cout << ssqisa.str();
+
+        // write qisa file
+        std::ofstream fout;
+        std::string qisafname( ql::options::get("output_dir") + "/" + prog_name + ".qisa");
+        IOUT("Writing CC-Light QISA to " << qisafname);
+        fout.open( qisafname, ios::binary);
+        if ( fout.fail() )
+        {
+            EOUT("opening file " << qisafname << std::endl
+                     << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
+            return;
+        }
+
+        fout << ssqisa.str() << endl;
+        fout.close();
 
         DOUT("Compiling CCLight eQASM [Done]");
     }
-
-/*
-(name == "eq") | (name == "ne") | (name == "lt") | (name == "gt") | (name == "le") | (name == "ge")
-(name == "inc") | (name == "dec")
-*/
 
     /**
      * decompose
@@ -218,17 +323,30 @@ public:
             {
                 COUT("decomposing classical instruction: " << iname);
 
-                if( (iname == "add") | (iname == "sub") | 
-                    (iname == "and") | (iname == "or") | (iname == "xor") |
-                    (iname == "not") | (iname == "nop")
+                if( (iname == "add") || (iname == "sub") ||
+                    (iname == "and") || (iname == "or") || (iname == "xor") ||
+                    (iname == "not") || (iname == "nop")
                   )
                 {
                     decomp_ckt.push_back(ins);
                 }
-                else if(iname == "set")
+                else if( (iname == "eq") || (iname == "ne") || (iname == "lt") ||
+                         (iname == "gt") || (iname == "le") || (iname == "ge")
+                       )
+                {
+                    decomp_ckt.push_back(new ql::arch::classical_cc("cmp", {iopers[1], iopers[2]}));
+                    decomp_ckt.push_back(new ql::arch::classical_cc("fbr_"+iname, {iopers[0]}));
+                }
+                else if(iname == "assign")
+                {
+                    // r28 is used as temp
+                    decomp_ckt.push_back(new ql::arch::classical_cc("ldi", {28}, 0));
+                    decomp_ckt.push_back(new ql::arch::classical_cc("add", {iopers[0], iopers[1], 28}));
+                }
+                else if(iname == "assign_imm")
                 {
                     auto imval = ((ql::classical*)ins)->imm_value;
-                    decomp_ckt.push_back(new ql::classical("ldi", iopers, imval));
+                    decomp_ckt.push_back(new ql::arch::classical_cc("ldi", iopers, imval));
                 }
                 else
                 {
@@ -239,7 +357,7 @@ public:
             else
             {
                 json& instruction_settings = platform.instruction_settings;
-                std::string operation_type = platform.instruction_settings[iname]["type"];
+                std::string operation_type = instruction_settings[iname]["type"];
                 bool is_measure = (operation_type == "readout");
                 if(is_measure)
                 {
@@ -252,10 +370,10 @@ public:
                         auto mins = (ql::measure*) ins;
                         auto cop = mins->creg_operands[0];
                         // insert 3 nops between meas and fmr based on cclight requirements
-                        decomp_ckt.push_back(new ql::classical("nop", {}));
-                        decomp_ckt.push_back(new ql::classical("nop", {}));
-                        decomp_ckt.push_back(new ql::classical("nop", {}));
-                        decomp_ckt.push_back(new ql::classical("fmr", {cop, qop}));
+                        decomp_ckt.push_back(new ql::arch::classical_cc("nop", {}));
+                        decomp_ckt.push_back(new ql::arch::classical_cc("nop", {}));
+                        decomp_ckt.push_back(new ql::arch::classical_cc("nop", {}));
+                        decomp_ckt.push_back(new ql::arch::classical_cc("fmr", {cop, qop}));
                     }
                     else
                     {
@@ -540,9 +658,8 @@ private:
             std::string instr_name;
             if (i["cc_light_instr"].is_null())
             {
-                std::cout << i << std::endl;                
-                COUT("SHOULD NOT BE NULL, FIX IT Later"); // TODO Fix it why null entry is picked up
-                continue;
+                EOUT("cc_light_instr not found for " << i);
+                throw ql::exception("cc_light_instr not found", false);
             }
             else
             {

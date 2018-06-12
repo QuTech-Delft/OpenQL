@@ -37,7 +37,7 @@ enum class kernel_type_t
 {
     STATIC, 
     FOR_START, FOR_END,
-    WHILE_START, WHILE_END,
+    DO_WHILE_START, DO_WHILE_END,
     IF_START, IF_END, 
     ELSE_START, ELSE_END
 };
@@ -54,8 +54,8 @@ public:
 
     quantum_kernel(std::string name, ql::quantum_platform& platform,
         size_t qcount, size_t ccount) : 
-        name(name), iterations(1), type(kernel_type_t::STATIC),
-        qubit_count(qcount), creg_count(ccount)
+        name(name), iterations(1), qubit_count(qcount),
+        creg_count(ccount), type(kernel_type_t::STATIC)
     {
         gate_definition = platform.instruction_map;
         cycle_time = platform.cycle_time;
@@ -66,9 +66,21 @@ public:
         iterations = it;
     }
 
-    void set_condition_variable(size_t var)
+    void set_condition(operation & oper)
     {
-        condition_variable = var;
+        if(oper.operands[0] >= creg_count || oper.operands[1] >= creg_count)
+        {
+            EOUT("Out of range operand(s) for '" << oper.operation_name);
+            throw ql::exception("Out of range operand(s) for '"+oper.operation_name+"' !",false);
+        }
+
+        if(oper.operation_type != ql::operation_type_t::RELATIONAL)
+        {
+            EOUT("Relational operator not used for conditional '" << oper.operation_name);
+            throw ql::exception("Relational operator not used for conditional '"+oper.operation_name+"' !",false);
+        }
+
+        br_condition = oper;
     }
 
     void set_kernel_type(kernel_type_t typ)
@@ -730,8 +742,8 @@ public:
         {
             if( cno >= creg_count )
             {
-                EOUT("Out of range creg operand for gate: '" << gname << "' with " << ql::utils::to_string(cregs,"cregs") );
-                throw ql::exception("Out of range creg operand for gate '"+gname+"' with " +ql::utils::to_string(cregs,"cregs")+" !",false);
+                EOUT("Out of range operand(s) for '" << gname << "' with " << ql::utils::to_string(cregs,"cregs") );
+                throw ql::exception("Out of range operand(s) for '"+gname+"' with " +ql::utils::to_string(cregs,"cregs")+" !",false);
             }
         }
 
@@ -807,18 +819,22 @@ public:
 
         if(type == kernel_type_t::IF_START)
         {
-            ss << "    bz r" << condition_variable <<", " << name << "_end\n";
+            ss << "    b" << br_condition.operation_name <<" r" << br_condition.operands[0]
+               <<", r" << br_condition.operands[1] << ", " << name << "_end\n";
         }
 
         if(type == kernel_type_t::ELSE_START)
         {
-            ss << "    bnz r" << condition_variable <<", " << name << "_end\n";
+            ss << "    b" << br_condition.inv_operation_name <<" r" << br_condition.operands[0]
+               <<", r" << br_condition.operands[1] << ", " << name << "_end\n";
         }
 
         if(type == kernel_type_t::FOR_START)
         {
-            // for now r1 is used, fix it
-            ss << "    ldi r1" <<", " << iterations << "\n";
+            // TODO for now r29, r30, r31 are used, fix it
+            ss << "    ldi r29" <<", " << iterations << "\n";
+            ss << "    ldi r30" <<", " << 1 << "\n";
+            ss << "    ldi r31" <<", " << 0 << "\n";
         }
 
         return ss.str();
@@ -828,9 +844,10 @@ public:
     {
         std::stringstream ss;
 
-        if(type == kernel_type_t::WHILE_END)
+        if(type == kernel_type_t::DO_WHILE_END)
         {
-            ss << "    bnz r" << condition_variable <<", " << name << "_start\n";
+            ss << "    b" << br_condition.operation_name <<" r" << br_condition.operands[0]
+               <<", r" << br_condition.operands[1] << ", " << name << "_start\n";
         }
 
         if(type == kernel_type_t::FOR_END)
@@ -841,9 +858,9 @@ public:
             std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
                                              std::istream_iterator<std::string>{} };
 
-            // for now r1 is used, fix it
-            ss << "    dec r1\n";
-            ss << "    bnz r1, " << tokens[0] << "\n";
+            // TODO for now r29, r30, r31 are used, fix it
+            ss << "    add r31, r30\n";
+            ss << "    blt r31, r29, " << tokens[0] << "\n";
         }
 
         return ss.str();
@@ -868,9 +885,28 @@ public:
         return  ss.str();
     }
 
-    void classical(std::string operation, std::vector<size_t> operands, int ival=0)
+    void classical(size_t destination, operation & oper)
     {
-        c.push_back(new ql::classical(operation, operands, ival));
+        if(destination >= creg_count)
+        {
+            EOUT("Out of range operand(s) for '" << oper.operation_name);
+            throw ql::exception("Out of range operand(s) for '"+oper.operation_name+"' !",false);
+        }
+        for(auto op : oper.operands)
+        {
+            if(op >= creg_count)
+            {
+                EOUT("Out of range operand(s) for '" << oper.operation_name);
+                throw ql::exception("Out of range operand(s) for '"+oper.operation_name+"' !",false);
+            }
+        }
+
+        c.push_back(new ql::classical(destination, oper));
+    }
+
+    void classical(std::string operation)
+    {
+        c.push_back(new ql::classical(operation));
     }
 
     /**
@@ -1648,12 +1684,11 @@ public:
     std::string   name;
     circuit       c;
     size_t        iterations;
-    // size_t        condition_variable;
     size_t        qubit_count;
     size_t        creg_count;
     size_t        cycle_time;
     kernel_type_t type;
-    condition     br_condition;
+    operation     br_condition;
     std::map<std::string,custom_gate*> gate_definition;
 };
 
