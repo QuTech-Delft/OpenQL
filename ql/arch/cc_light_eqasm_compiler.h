@@ -202,14 +202,14 @@ public:
         if(k.type == kernel_type_t::IF_START)
         {
             ss << "    b" << k.br_condition.operation_name 
-               <<" r" << k.br_condition.operands[0] <<", r" << k.br_condition.operands[1] 
+               <<" r" << (k.br_condition.operands[0])->id <<", r" << (k.br_condition.operands[1])->id
                << ", " << k.name << "_end\n";
         }
 
         if(k.type == kernel_type_t::ELSE_START)
         {
-            ss << "    b" << k.br_condition.inv_operation_name <<" r" << k.br_condition.operands[0]
-               <<", r" << k.br_condition.operands[1] << ", " << k.name << "_end\n";
+            ss << "    b" << k.br_condition.inv_operation_name <<" r" << (k.br_condition.operands[0])->id
+               <<", r" << (k.br_condition.operands[1])->id << ", " << k.name << "_end\n";
         }
 
         if(k.type == kernel_type_t::FOR_START)
@@ -229,8 +229,8 @@ public:
 
         if(k.type == kernel_type_t::DO_WHILE_END)
         {
-            ss << "    b" << k.br_condition.operation_name <<" r" << k.br_condition.operands[0]
-               <<", r" << k.br_condition.operands[1] << ", " << k.name << "_start\n";
+            ss << "    b" << k.br_condition.operation_name <<" r" << (k.br_condition.operands[0])->id
+               <<", r" << (k.br_condition.operands[1])->id << ", " << k.name << "_start\n";
         }
 
         if(k.type == kernel_type_t::FOR_END)
@@ -242,7 +242,7 @@ public:
                                              std::istream_iterator<std::string>{} };
 
             // for now r29, r30, r31 are used
-            ss << "    add r31, r30\n";
+            ss << "    add r31, r31, r30\n";
             ss << "    blt r31, r29, " << tokens[0] << "\n";
         }
 
@@ -337,13 +337,13 @@ public:
                     decomp_ckt.push_back(new ql::arch::classical_cc("cmp", {iopers[1], iopers[2]}));
                     decomp_ckt.push_back(new ql::arch::classical_cc("fbr_"+iname, {iopers[0]}));
                 }
-                else if(iname == "assign")
+                else if(iname == "mov")
                 {
-                    // r28 is used as temp
+                    // r28 is used as temp, TODO use creg properly to create temporary
                     decomp_ckt.push_back(new ql::arch::classical_cc("ldi", {28}, 0));
                     decomp_ckt.push_back(new ql::arch::classical_cc("add", {iopers[0], iopers[1], 28}));
                 }
-                else if(iname == "assign_imm")
+                else if(iname == "ldi")
                 {
                     auto imval = ((ql::classical*)ins)->imm_value;
                     decomp_ckt.push_back(new ql::arch::classical_cc("ldi", iopers, imval));

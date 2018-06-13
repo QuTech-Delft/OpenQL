@@ -94,54 +94,61 @@ def test_hybrid():
     k1.gate('x', [0])
     k1.gate('cz', [0, 2])
 
+    # # create classical registers
+    rd = ql.CReg()
+    rs1 = ql.CReg()
+    rs2 = ql.CReg()
+
     # add/sub/and/or/xor
-    k1.classical(0, ql.Operation(1, '+', 2))
+    k1.classical(rd, ql.Operation(rs1, '+', rs2))
 
     # not
-    k1.classical(1, ql.Operation('~', 2))
+    # k1.classical(rd, ql.Operation('~', rs2))
 
     # comparison
-    k1.classical(0, ql.Operation(3, '==', 4))
+    # k1.classical(rd, ql.Operation(rs1, '==', rs2))
 
     # nop
-    k1.classical('nop')
+    # k1.classical('nop')
 
     # assign (r1 = r2)
-    k1.classical(1, ql.Operation(2))
+    # k1.classical(rs1, ql.Operation(rs2))
 
-    # initialize (r1 = 2) ? should be possible after Creg() implementation
-    # k1.classical(1, ql.Operation(2))
+    # initialize (r1 = 2)
+    # k1.classical(rs1, ql.Operation(2))
 
     # measure
-    k1.gate('measure', [0], [2])
-
+    # k1.gate('measure', [0], [2])
 
     k2.gate('y', [0])
     k2.gate('cz', [0, 2])
 
-    # p.add_kernel(k1)
-    # p.add_kernel(k2)
+    # add simple kernels
+    p.add_kernel(k1)
+    p.add_kernel(k2)
 
     # simple if
-    # p.add_if(k1, ql.Condition(3, '==', 4))
+    # p.add_if(k1, ql.Operation(rs1, '==', rs2))
     # p.add_kernel(k2)
 
     # simple if/else
-    # p.add_if_else(k1, k2, ql.Condition(3, '==', 4))
+    # p.add_if_else(k1, k2, ql.Operation(rs1, '==', rs2))
     # p.add_kernel(k2)
 
     # nested if
     # sp1.add_kernel(k1)
     # sp1.add_kernel(k2)
-    # p.add_if(sp1, ql.Condition(3, '!=', 4))
+    # p.add_if(sp1, ql.Operation(rs1, '!=', rs2))
 
     # simple while
-    p.add_do_while(k1, ql.Operation(3, '<', 4))
-    p.add_kernel(k2)
+    # p.add_do_while(k1, ql.Operation(rs1, '<', rs2))
+    # p.add_kernel(k2)
 
     # nested while
-    # sp1.add_do_while(k1, ql.Condition(3, '>', 4))
-    # sp2.add_do_while(sp1, ql.Condition(5, '<=', 6))
+    # rs3 = ql.CReg()
+    # rs4 = ql.CReg()
+    # sp1.add_do_while(k1, ql.Operation(rs1, '>', rs2))
+    # sp2.add_do_while(sp1, ql.Operation(rs3, '<=', rs4))
     # p.add_program(sp2)
 
     # simple for
@@ -149,28 +156,52 @@ def test_hybrid():
     # p.add_kernel(k2)
 
     # nested for
-    # sp1.add_while(k1, ql.Condition(3, '>=', 4))
+    # sp1.add_do_while(k1, ql.Operation(rs1, '>=', rs2))
     # sp2.add_for(sp1, 100)
     # p.add_program(sp2)
 
     # nesting while inside if
-    # sp1.add_while(k1, ql.Condition(3, '==', 4))
-    # sp2.add_if(sp1, ql.Condition(5, '!=', 6))
+    # rs3 = ql.CReg()
+    # rs4 = ql.CReg()
+    # sp1.add_do_while(k1, ql.Operation(rs1, '==', rs2))
+    # sp2.add_if(sp1, ql.Operation(rs3, '!=', rs4))
     # p.add_program(sp2)
 
     p.compile()
 
-    # # classical operations
-    # k1.classical('set', [0], 10)
-    # k1.classical('not', [0,1])
-    # k1.classical('add', [0,1,2])
-    # k1.classical('inc', [1])
-    # # k1.classical('set', [5], 10) # out of range operand
-    # # k1.classical('set', [7], 10) # out of range operand
-    # p.add_kernel(k1)
+def test_fig10():
+    # config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
+    config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
+    platform  = ql.Platform('platform_none', config_fn)
+    num_qubits = 5
+    num_cregs = 5
+
+    p = ql.Program('test_fig10', platform, num_qubits, num_cregs)
+    sweep_points = [1,2]
+    p.set_sweep_points(sweep_points, len(sweep_points))
+    
+    k0 = ql.Kernel('aKernel0', platform, num_qubits, num_cregs)
+    k1 = ql.Kernel('aKernel1', platform, num_qubits, num_cregs)
+    k2 = ql.Kernel('aKernel2', platform, num_qubits, num_cregs)
+
+    # create classical registers
+    value_one = ql.CReg()
+    measured_q1 = ql.CReg()
+
+    k0.classical(value_one, ql.Operation(1)) # value_one = 1
+    k0.gate('measure', [1], [1])
+    p.add_kernel(k0)
+
+    k1.gate('x', [0])
+    k2.gate('y', [0])    
+
+    # simple if/else
+    p.add_if_else(k1, k2, ql.Operation(value_one, '==', measured_q1))
+
+    p.compile()
 
 if __name__ == '__main__':
-    test_hybrid()
+    test_fig10()
 
 
 # LOG_NOTHING,

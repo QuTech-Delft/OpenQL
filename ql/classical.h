@@ -15,6 +15,7 @@
 #include <string>
 #include <sstream>
 #include <map>
+#include <stack>
 
 #include <ql/utils.h>
 #include <ql/str.h>
@@ -29,6 +30,100 @@ enum class operation_type_t
 {
     ARITHMATIC, RELATIONAL, BITWISE
 };
+enum class operand_type_t
+{
+    CREG, CVAL
+};
+
+
+class ids
+{
+public:
+    int max_id;
+    std::stack<int> available_ids;
+    ids(int max = 32)
+    {
+        max_id = max;
+        for(int i=max_id-1; i>=0; i--)
+            available_ids.push(i);
+    }
+
+    int get()
+    {
+        if(available_ids.empty())
+        {
+            EOUT("No id available");
+        }
+        int id = available_ids.top();
+        available_ids.pop();
+        return id;
+    }
+    void free(int id)
+    {
+        available_ids.push(id);
+    }
+};
+
+static ids creg_ids;
+
+class coperand
+{
+public:
+    size_t id;
+    int value;
+    virtual ql::operand_type_t type() = 0;
+    virtual void print() = 0;
+    virtual ~coperand(){}
+};
+
+
+class cval: public coperand
+{
+public:
+    cval(int val)
+    {
+        value=val;
+    }
+    cval(const cval &cv)
+    {
+        value = cv.value;
+    }
+    ql::operand_type_t type() { return operand_type_t::CVAL;}
+    void print()
+    {
+        COUT("cval with value: " << value);
+    }
+    ~cval() {}
+};
+
+class creg: public coperand
+{
+public:
+    creg()
+    {
+        id = creg_ids.get();
+        DOUT("creg default constructor, creted id: " << id);
+    }
+
+    creg(const creg &c)
+    {
+        id = c.id;
+        DOUT("creg copy constructor, used id: " << id);
+    }
+
+    ql::operand_type_t type() { return operand_type_t::CREG;}
+
+    void print()
+    {
+        COUT("creg with id: " << id);
+    }
+
+    ~creg()
+    {
+        creg_ids.free(id);
+        DOUT("freed creg : " << id);
+    }
+};
 
 class operation
 {
@@ -36,13 +131,13 @@ public:
     std::string operation_name;
     std::string inv_operation_name;
     operation_type_t operation_type;
-    std::vector<size_t> operands;
+    std::vector<coperand*> operands;
 
     operation() {}
-    operation(size_t l, std::string op, size_t r)
+    operation(creg& l, std::string op, creg& r)
     {
-        operands.push_back(l);
-        operands.push_back(r);
+        operands.push_back(new ql::creg(l));
+        operands.push_back(new ql::creg(r));
         if(op == "+")
         {
             operation_name = "add";
@@ -112,27 +207,36 @@ public:
     }
 
     // used for assign
-    operation(size_t l)
+    operation(creg& l)
     {
-        operation_name = "assign";
+        operation_name = "mov";
         operation_type = ql::operation_type_t::ARITHMATIC;
-        operands.push_back(l);
+        operands.push_back(new ql::creg(l));
     }
 
-    // // used for initializing with an imm 
-    // operation(int val): lop(0), rop(0)
-    // {
-    //     operation_name = "assign_imm";
-    //     operation_type = ql::operation_type_t::ARITHMATIC;
-    // }
+    // used for initializing with an imm 
+    operation(cval & v)
+    {
+        operation_name = "ldi";
+        operation_type = ql::operation_type_t::ARITHMATIC;
+        operands.push_back(new ql::cval(v));
+    }
 
-    operation(std::string op, size_t r)
+    // used for initializing with an imm 
+    operation(int val)
+    {
+        operation_name = "ldi";
+        operation_type = ql::operation_type_t::ARITHMATIC;
+        operands.push_back(new ql::cval(val));
+    }
+
+    operation(std::string op, creg& r)
     {
         if(op == "~")
         {
             operation_name = "not";
             operation_type = ql::operation_type_t::BITWISE;
-            operands.push_back(r);
+            operands.push_back(new ql::creg(r));
         }
         else
         {
@@ -140,23 +244,31 @@ public:
             throw ql::exception("Unknown unary operation '"+op+"' !", false);
         }
     }
-
 };
 
 
 class classical : public gate
 {
 public:
-    cmat_t m;
     int imm_value;
+    cmat_t m;
 
-    classical(size_t dest, operation & oper)
+    classical(creg& dest, operation & oper)
     {
         name = oper.operation_name;
         duration = 20;
-        operands.push_back(dest);
-        for(auto & op : oper.operands)
-            operands.push_back(op);
+        operands.push_back(dest.id);
+        if(name == "ldi")
+        {
+            imm_value = (oper.operands[0])->value;
+        }
+        else
+        {
+            for(auto & op : oper.operands)
+            {
+                operands.push_back(op->id);
+            }
+        }
     }
 
     classical(std::string operation)
@@ -187,19 +299,9 @@ public:
                 iopers += " r" + std::to_string(operands[i]) + ",";
         }
 
-        if(name == "assign")
+        if(name == "ldi")
         {
-            return "mov" + iopers;
-        }
-        else if(name == "assign_imm")
-        {
-            iopers += ", " + std::to_string(imm_value);
-            return "set" + iopers;
-        }
-        else if(name == "fmr")
-        {
-            return name + " r" + std::to_string(operands[0]) +
-                          ", q" + std::to_string(operands[1]);
+            return "ldi" + iopers + ", " + std::to_string(imm_value);
         }
         else
             return name + iopers;

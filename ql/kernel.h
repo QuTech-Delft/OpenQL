@@ -68,7 +68,7 @@ public:
 
     void set_condition(operation & oper)
     {
-        if(oper.operands[0] >= creg_count || oper.operands[1] >= creg_count)
+        if( (oper.operands[0])->id >= creg_count || (oper.operands[1])->id >= creg_count)
         {
             EOUT("Out of range operand(s) for '" << oper.operation_name);
             throw ql::exception("Out of range operand(s) for '"+oper.operation_name+"' !",false);
@@ -819,14 +819,14 @@ public:
 
         if(type == kernel_type_t::IF_START)
         {
-            ss << "    b" << br_condition.operation_name <<" r" << br_condition.operands[0]
-               <<", r" << br_condition.operands[1] << ", " << name << "_end\n";
+            ss << "    b" << br_condition.operation_name <<" r" << (br_condition.operands[0])->id
+               <<", r" << (br_condition.operands[1])->id << ", " << name << "_end\n";
         }
 
         if(type == kernel_type_t::ELSE_START)
         {
-            ss << "    b" << br_condition.inv_operation_name <<" r" << br_condition.operands[0]
-               <<", r" << br_condition.operands[1] << ", " << name << "_end\n";
+            ss << "    b" << br_condition.inv_operation_name <<" r" << (br_condition.operands[0])->id
+               <<", r" << (br_condition.operands[1])->id << ", " << name << "_end\n";
         }
 
         if(type == kernel_type_t::FOR_START)
@@ -846,8 +846,8 @@ public:
 
         if(type == kernel_type_t::DO_WHILE_END)
         {
-            ss << "    b" << br_condition.operation_name <<" r" << br_condition.operands[0]
-               <<", r" << br_condition.operands[1] << ", " << name << "_start\n";
+            ss << "    b" << br_condition.operation_name <<" r" << (br_condition.operands[0])->id
+               <<", r" << (br_condition.operands[1])->id << ", " << name << "_start\n";
         }
 
         if(type == kernel_type_t::FOR_END)
@@ -859,7 +859,7 @@ public:
                                              std::istream_iterator<std::string>{} };
 
             // TODO for now r29, r30, r31 are used, fix it
-            ss << "    add r31, r30\n";
+            ss << "    add r31, r31, r30\n";
             ss << "    blt r31, r29, " << tokens[0] << "\n";
         }
 
@@ -885,19 +885,25 @@ public:
         return  ss.str();
     }
 
-    void classical(size_t destination, operation & oper)
+    void classical(creg& destination, operation & oper)
     {
-        if(destination >= creg_count)
+        // check sanity of destination
+        if(destination.id >= creg_count)
         {
             EOUT("Out of range operand(s) for '" << oper.operation_name);
             throw ql::exception("Out of range operand(s) for '"+oper.operation_name+"' !",false);
         }
-        for(auto op : oper.operands)
+
+        // check sanity of other operands
+        for(auto &op : oper.operands)
         {
-            if(op >= creg_count)
+            if(op->type() == operand_type_t::CREG)
             {
-                EOUT("Out of range operand(s) for '" << oper.operation_name);
-                throw ql::exception("Out of range operand(s) for '"+oper.operation_name+"' !",false);
+                if(op->id >= creg_count)
+                {
+                    EOUT("Out of range operand(s) for '" << oper.operation_name);
+                    throw ql::exception("Out of range operand(s) for '"+oper.operation_name+"' !",false);
+                }
             }
         }
 

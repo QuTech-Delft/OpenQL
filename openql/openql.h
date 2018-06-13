@@ -55,21 +55,39 @@ public:
     }
 };
 
+class CReg
+{
+public:
+    ql::creg* creg_;
+    CReg()
+    {
+        creg_ = new ql::creg();
+    }
+    ~CReg()
+    {
+        delete(creg_);
+    }
+};
+
 class Operation
 {
 public:
     ql::operation * operation_;
-    Operation(size_t lop, std::string op, size_t rop)
+    Operation(CReg& lop, std::string op, CReg& rop)
     {
-        operation_ = new ql::operation(lop, op, rop);
+        operation_ = new ql::operation(*(lop.creg_), op, *(rop.creg_));
     }
-    Operation(std::string op, size_t rop)
+    Operation(std::string op, CReg& rop)
     {
-        operation_ = new ql::operation(op, rop);
+        operation_ = new ql::operation(op, *(rop.creg_));
     }
-    Operation(size_t lop)
+    Operation(CReg& lop)
     {
-        operation_ = new ql::operation(lop);
+        operation_ = new ql::operation(*(lop.creg_));
+    }
+    Operation(int val)
+    {
+        operation_ = new ql::operation(val);
     }
     ~Operation()
     {
@@ -218,9 +236,9 @@ public:
         kernel_->gate(name, qubits, cregs, duration, angle);
     }
 
-    void classical(size_t destination, Operation& operation)
+    void classical(CReg & destination, Operation& operation)
     {
-        kernel_->classical(destination, *(operation.operation_));
+        kernel_->classical(*(destination.creg_), *(operation.operation_));
     }
 
     void classical(std::string operation)
