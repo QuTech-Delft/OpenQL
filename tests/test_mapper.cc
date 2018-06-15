@@ -48,11 +48,43 @@ test_0()
     prog.compile( );
 }
 
+void
+test_1()
+{
+    int n = 7;
+
+    // create and set platform
+    ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
+    ql::set_platform(starmon);
+
+    // create program
+    ql::quantum_program prog(("test_1_"), 7, starmon);
+    ql::quantum_kernel k("kernel_1",starmon);
+
+    for (int j=0; j<n; j++)
+        k.gate("x", j);
+
+    for (int i=0; i<n; i++)
+        for (int j=0; j<n; j++)
+	    if (i != j)
+		k.gate("cnot", i,j);
+
+    for (int j=0; j<n; j++)
+        k.gate("x", j);
+
+    prog.add(k);
+
+    ql::options::set("mapper", "circuit");
+    prog.compile( );
+}
+
 int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_DEBUG");
 
-    test_0();
+    // test_0();
+
+    test_1();
 
     return 0;
 }
