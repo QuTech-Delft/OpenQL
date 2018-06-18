@@ -819,13 +819,13 @@ public:
 
         if(type == kernel_type_t::IF_START)
         {
-            ss << "    b" << br_condition.operation_name <<" r" << (br_condition.operands[0])->id
+            ss << "    b" << br_condition.inv_operation_name <<" r" << (br_condition.operands[0])->id
                <<", r" << (br_condition.operands[1])->id << ", " << name << "_end\n";
         }
 
         if(type == kernel_type_t::ELSE_START)
         {
-            ss << "    b" << br_condition.inv_operation_name <<" r" << (br_condition.operands[0])->id
+            ss << "    b" << br_condition.operation_name <<" r" << (br_condition.operands[0])->id
                <<", r" << (br_condition.operands[1])->id << ", " << name << "_end\n";
         }
 

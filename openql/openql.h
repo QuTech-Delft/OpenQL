@@ -231,9 +231,14 @@ public:
     }
 
     void gate(std::string name, std::vector<size_t> qubits, 
-        std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
+        size_t duration=0, double angle=0.0)
     {
-        kernel_->gate(name, qubits, cregs, duration, angle);
+        kernel_->gate(name, qubits, {1}, duration, angle);
+    }
+
+    void gate(std::string name, std::vector<size_t> qubits, CReg & destination)
+    {
+        kernel_->gate(name, qubits, {(destination.creg_)->id} );
     }
 
     void classical(CReg & destination, Operation& operation)

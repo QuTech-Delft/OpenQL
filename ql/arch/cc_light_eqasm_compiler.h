@@ -1,7 +1,8 @@
 /**
  * @file   cc_light_eqasm_compiler.h
  * @date   08/2017
- * @author Imran Ashraf, Nader Khammassi
+ * @author Imran Ashraf
+ *         Nader Khammassi
  * @brief  cclighteqasm compiler implementation
  */
 
@@ -24,6 +25,219 @@ namespace ql
 {
 namespace arch
 {
+
+typedef std::vector<size_t>        qubit_set_t;
+typedef std::pair<size_t,size_t>   qubit_pair_t;
+typedef std::vector<qubit_pair_t>  qubit_pair_set_t;
+
+const size_t MAX_S_REG =32;
+const size_t MAX_T_REG =64;
+
+size_t CurrSRegCount=0;
+size_t CurrTRegCount=0;
+
+class Mask
+{
+public:
+    size_t regNo;
+    std::string regName;
+    qubit_set_t squbits;
+    qubit_pair_set_t dqubits;
+
+    Mask() {}
+
+    Mask(qubit_set_t & qs) : squbits(qs)
+    {
+        
+        if(CurrSRegCount < MAX_S_REG)
+        {
+            regNo = CurrSRegCount++;
+            regName = "s" + std::to_string(regNo);
+        }
+        else
+        {
+            COUT(" !!!! Handle cases requiring more registers");
+        }
+    }
+
+    Mask(std::string rn, qubit_set_t & qs ) : regName(rn), squbits(qs)
+    { 
+        if(CurrSRegCount < MAX_S_REG)
+        {
+            regNo = CurrSRegCount++;
+        }
+        else
+        {
+            COUT(" !!!! Handle cases requiring more registers");
+        }
+    }
+
+    Mask(qubit_pair_set_t & qps) : dqubits(qps) 
+    { 
+        if(CurrTRegCount < MAX_T_REG)
+        {
+            regNo = CurrTRegCount++;
+            regName = "t" + std::to_string(regNo);
+        }
+        else
+        {
+            COUT(" !!!! Handle cases requiring more registers");
+        }
+    }
+
+};
+
+class MaskManager
+{
+private:
+    std::map<size_t,Mask> SReg2Mask;
+    std::map<qubit_set_t,Mask> QS2Mask;
+
+    std::map<size_t,Mask> TReg2Mask;
+    std::map<qubit_pair_set_t,Mask> QPS2Mask;
+
+public:
+    MaskManager()
+    {
+        // add pre-defined smis
+        for(size_t i=0; i<7; ++i)
+        {
+            qubit_set_t qs;
+            qs.push_back(i);
+            Mask m(qs);
+            QS2Mask[qs] = m;
+            SReg2Mask[m.regNo] = m;
+        }
+
+        // add some common single qubit masks
+        {
+            qubit_set_t qs;
+            for(auto i=0; i<7; i++) qs.push_back(i);
+            Mask m(qs); // TODO add proper support for:  Mask m(qs, "all_qubits");
+            QS2Mask[qs] = m;
+            SReg2Mask[m.regNo] = m;
+        }
+
+        {
+            qubit_set_t qs;
+            qs.push_back(0); qs.push_back(1); qs.push_back(5); qs.push_back(6);
+            Mask m(qs); // TODO add proper support for:  Mask m(qs, "data_qubits");
+            QS2Mask[qs] = m;
+            SReg2Mask[m.regNo] = m;
+        }
+
+        {
+            qubit_set_t qs;
+            qs.push_back(2); qs.push_back(3); qs.push_back(4);
+            Mask m(qs); // TODO add proper support for:  Mask m(qs, "ancilla_qubits");
+            QS2Mask[qs] = m;
+            SReg2Mask[m.regNo] = m;
+        }
+
+
+        // qubit_pair_set_t pre_defined_edges = { {2,0}, {0,3}, {3,1}, {1,4}, {2,5}, {5,3}, {3,6}, {6,4},
+        //                                {0,2}, {3,0}, {1,3}, {4,1}, {5,2}, {3,5}, {6,3}, {4,6} };
+        // // add smit
+        // for(auto & p : pre_defined_edges)
+        // {
+        //     qubit_pair_set_t qps;
+        //     qps.push_back(p);
+        //     Mask m(qps);
+        //     QPS2Mask[qps] = m;
+        //     TReg2Mask[m.regNo] = m;
+        // }
+
+    }
+
+    size_t getRegNo( qubit_set_t & qs )
+    {
+        auto it = QS2Mask.find(qs);
+        if( it == QS2Mask.end() )
+        {
+            Mask m(qs);
+            QS2Mask[qs] = m;
+            SReg2Mask[m.regNo] = m;
+        }
+        return QS2Mask[qs].regNo;
+    }
+
+    size_t getRegNo( qubit_pair_set_t & qps )
+    {
+        auto it = QPS2Mask.find(qps);
+        if( it == QPS2Mask.end() )
+        {
+            Mask m(qps);
+            QPS2Mask[qps] = m;
+            TReg2Mask[m.regNo] = m;
+        }
+        return QPS2Mask[qps].regNo;
+    }
+
+    std::string getRegName( qubit_set_t & qs )
+    {
+        auto it = QS2Mask.find(qs);
+        if( it == QS2Mask.end() )
+        {
+            Mask m(qs);
+            QS2Mask[qs] = m;
+            SReg2Mask[m.regNo] = m;
+        }
+        return QS2Mask[qs].regName;
+    }
+
+    std::string getRegName( qubit_pair_set_t & qps )
+    {
+        auto it = QPS2Mask.find(qps);
+        if( it == QPS2Mask.end() )
+        {
+            Mask m(qps);
+            QPS2Mask[qps] = m;
+            TReg2Mask[m.regNo] = m;
+        }
+        return QPS2Mask[qps].regName;
+    }
+
+    std::string getMaskInstructions()
+    {
+        std::stringstream ssmasks;
+        for(size_t r=0; r<CurrSRegCount; ++r)
+        {
+            auto & m = SReg2Mask[r];
+            ssmasks << "smis " << m.regName << ", {";
+            for(auto it = m.squbits.begin(); it != m.squbits.end(); ++it)
+            {
+                ssmasks << *it;
+                if( std::next(it) != m.squbits.end() )
+                    ssmasks << ", ";
+            }
+            ssmasks << "} \n";
+        }
+
+        for(size_t r=0; r<CurrTRegCount; ++r)
+        {
+            auto & m = TReg2Mask[r];
+            ssmasks << "smit " << m.regName << ", {";
+            for(auto it = m.dqubits.begin(); it != m.dqubits.end(); ++it)
+            {
+                ssmasks << "(" << it->first << ", " << it->second << ")";
+                if( std::next(it) != m.dqubits.end() )
+                    ssmasks << ", ";
+            }
+            ssmasks << "} \n";
+        }
+
+        return ssmasks.str();
+    }
+
+    ~MaskManager()
+    {
+        CurrSRegCount=0;
+        CurrTRegCount=0;
+    }
+
+};
+
+
 
 class classical_cc : public gate
 {
@@ -55,6 +269,7 @@ public:
             if( (name == "ldi") )
             {
                 imm_value = ivalue;
+                DOUT("imm_value: " << imm_value);
             }
             DOUT("Adding 1 operand operation: " << name);
         }
@@ -111,6 +326,338 @@ public:
     }
 
 };
+
+std::string classical_instruction2qisa(ql::arch::classical_cc* classical_ins)
+{
+    std::stringstream ssclassical;
+    auto & iname =  classical_ins->name;
+    auto & iopers = classical_ins->operands;
+    int iopers_count = iopers.size();
+
+    if(  (iname == "add") || (iname == "sub") ||
+         (iname == "and") || (iname == "or") || (iname == "not") || (iname == "xor") ||
+         (iname == "ldi") || (iname == "nop") || (iname == "cmp")
+      )
+    {
+        ssclassical << iname;
+        if(iname == "fmr")
+        {
+            ssclassical << " r" << iopers[0] << ", q" << iopers[1];
+        }
+        else
+        {
+            for(int i=0; i<iopers_count; ++i)
+            {
+                if(i==iopers_count-1)
+                    ssclassical << " r" <<  iopers[i];
+                else
+                    ssclassical << " r" << iopers[i] << ",";
+            }
+            if(iname == "ldi")
+            {
+                DOUT("imm_value: " << (classical_ins->imm_value) );
+                ssclassical << ", " + std::to_string(classical_ins->imm_value);
+            }
+        }
+    }
+    else if(iname == "fmr")
+    {
+        ssclassical << "fmr r" << iopers[0] << ", q" << iopers[1];
+    }
+    else if(iname == "fbr_eq")
+    {
+        ssclassical << "fbr " << "EQ, r" << iopers[0];
+    }
+    else if(iname == "fbr_ne")
+    {
+        ssclassical << "fbr " << "NE, r" << iopers[0];
+    }
+    else if(iname == "fbr_lt")
+    {
+        ssclassical << "fbr " << "LT, r" << iopers[0];
+    }
+    else if(iname == "fbr_gt")
+    {
+        ssclassical << "fbr " << "GT, r" << iopers[0];
+    }
+    else if(iname == "fbr_le")
+    {
+        ssclassical << "fbr " << "LE, r" << iopers[0];
+    }
+    else if(iname == "fbr_ge")
+    {
+        ssclassical << "fbr " << "GE, r" << iopers[0];
+    }
+    else
+    {
+        EOUT("Unknown CClight classical operation '" << iname << "' with '" << iopers_count << "' operands!");
+        throw ql::exception("Unknown classical operation'"+iname+"' with'"+std::to_string(iopers_count)+"' operands!", false);
+    }
+
+    return ssclassical.str();
+}
+
+std::string bundles2qisa(ql::ir::bundles_t & bundles,
+    ql::quantum_platform & platform, MaskManager & gMaskManager)
+{
+    IOUT("Generating CC-Light QISA");
+
+    std::stringstream ssbundles, sspre, ssinst;
+    size_t curr_cycle=0;
+
+    for (ql::ir::bundle_t & abundle : bundles)
+    {
+        std::stringstream sspre, ssinst;
+        auto bcycle = abundle.start_cycle;
+        auto delta = bcycle - curr_cycle;
+        bool classical_bundle=false;
+        if(delta < 8)
+            sspre << "    " << delta << ",    ";
+        else
+            sspre << "    qwait " << delta-1 << "\n"
+                  << "    1,    ";
+
+        for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
+        {
+            qubit_set_t squbits;
+            qubit_pair_set_t dqubits;
+            auto firstInsIt = secIt->begin();
+            auto iname = (*(firstInsIt))->name;
+            auto itype = (*(firstInsIt))->type();
+
+            if(__classical_gate__ == itype)
+            {
+                classical_bundle = true;
+                ssinst << classical_instruction2qisa( (ql::arch::classical_cc *)(*firstInsIt) );
+            }
+            else
+            {
+                auto id = iname;
+                DOUT("get cclight instr name for : " << id);
+                std::string cc_light_instr_name;
+                auto it = platform.instruction_map.find(id);
+                if (it != platform.instruction_map.end())
+                {
+                    custom_gate* g = it->second;
+                    cc_light_instr_name = g->arch_operation_name;
+                    if(cc_light_instr_name.empty())
+                    {
+                        EOUT("cc_light_instr not defined for instruction: " << id << " !");
+                        throw ql::exception("Error : cc_light_instr not defined for instruction: "+id+" !",false);
+                    }                    
+                    // DOUT("cc_light_instr name: " << cc_light_instr_name);
+                }
+                else
+                {
+                    EOUT("custom instruction not found for : " << id << " !");
+                    throw ql::exception("Error : custom instruction not found for : "+id+" !",false);
+                }
+
+                auto nOperands = ((*firstInsIt)->operands).size();
+                if( itype == __nop_gate__ )
+                {
+                    ssinst << cc_light_instr_name;
+                }
+                else
+                {
+                    for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
+                    {
+                        if( 1 == nOperands )
+                        {
+                            auto & op = (*insIt)->operands[0];
+                            squbits.push_back(op);
+                        }
+                        else if( 2 == nOperands )
+                        {
+                            auto & op1 = (*insIt)->operands[0];
+                            auto & op2 = (*insIt)->operands[1];
+                            dqubits.push_back( qubit_pair_t(op1,op2) );
+                        }
+                        else
+                        {
+                            throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
+                        }
+                    }
+                    std::string rname;
+                    if( 1 == nOperands )
+                    {
+                        rname = gMaskManager.getRegName(squbits);
+                    }
+                    else if( 2 == nOperands )
+                    {
+                        rname = gMaskManager.getRegName(dqubits);
+                    }
+                    else
+                    {
+                        throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
+                    }
+
+                    ssinst << cc_light_instr_name << " " << rname;
+                }
+
+                if( std::next(secIt) != abundle.parallel_sections.end() )
+                {
+                    ssinst << " | ";
+                }
+            }
+        }
+        curr_cycle+=delta;
+        if(classical_bundle)
+        {
+            ssbundles << "    " << ssinst.str() << "\n";
+        }
+        else
+        {
+            ssbundles << sspre.str() << ssinst.str() << "\n";
+        }
+    }
+
+    auto & lastBundle = bundles.back();
+    int lbduration = lastBundle.duration_in_cycles;
+    if( lbduration>1 )
+        ssbundles << "    qwait " << lbduration << "\n";
+
+    IOUT("Generating CC-Light QISA [Done]");
+    return ssbundles.str();
+}
+
+void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
+    ql::ir::bundles_t & bundles)
+{
+    IOUT("Generating CC-Light QISA");
+
+    ofstream fout;
+    string qisafname( ql::options::get("output_dir") + "/" + prog_name + ".qisa");
+    fout.open( qisafname, ios::binary);
+    if ( fout.fail() )
+    {
+        EOUT("opening file " << qisafname << std::endl
+                 << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
+        return;
+    }
+
+
+    std::stringstream ssbundles;
+    ssbundles << "start:" << "\n";
+    ssbundles << bundles2qisa(bundles, platform, gMaskManager);
+    ssbundles << "    br always, start" << "\n"
+              << "    nop \n"
+              << "    nop" << endl;
+
+
+    IOUT("Writing CC-Light QISA to " << qisafname);
+    fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
+    fout.close();
+    IOUT("Generating CC-Light QISA [Done]");
+}
+
+
+void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
+    ql::ir::bundles_t & bundles)
+{
+    IOUT("Generating Time-stamped CC-Light QISA");
+    ofstream fout;
+    string qisafname( ql::options::get("output_dir") + "/" + prog_name + ".tqisa");
+    fout.open( qisafname, ios::binary);
+    if ( fout.fail() )
+    {
+        EOUT("opening file " << qisafname << std::endl
+                 << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
+        return;
+    }
+
+
+    std::stringstream ssbundles;
+    size_t curr_cycle=0; // first instruction should be with pre-interval 1, 'bs 1'
+    ssbundles << "start:" << "\n";
+    for (ql::ir::bundle_t & abundle : bundles)
+    {
+        auto bcycle = abundle.start_cycle;
+        auto delta = bcycle - curr_cycle;
+
+        if(delta < 8)
+            ssbundles << std::setw(8) << curr_cycle << ":    bs " << delta << "    ";
+        else
+            ssbundles << std::setw(8) << curr_cycle << ":    qwait " << delta-1 << "\n"
+                      << std::setw(8) << curr_cycle + (delta-1) << ":    bs 1    ";
+
+        for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
+        {
+            qubit_set_t squbits;
+            qubit_pair_set_t dqubits;
+            auto firstInsIt = secIt->begin();
+
+            auto id = (*(firstInsIt))->name;
+            std::string cc_light_instr_name = get_cc_light_instruction_name(id, platform);
+            auto itype = (*(firstInsIt))->type();
+            auto nOperands = ((*firstInsIt)->operands).size();
+            if( itype == __nop_gate__ )
+            {
+                ssbundles << cc_light_instr_name;
+            }
+            else
+            {
+                for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
+                {
+                    if( 1 == nOperands )
+                    {
+                        auto & op = (*insIt)->operands[0];
+                        squbits.push_back(op);
+                    }
+                    else if( 2 == nOperands )
+                    {
+                        auto & op1 = (*insIt)->operands[0];
+                        auto & op2 = (*insIt)->operands[1];
+                        dqubits.push_back( qubit_pair_t(op1,op2) );
+                    }
+                    else
+                    {
+                        throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
+                    }
+                }
+                std::string rname;
+                if( 1 == nOperands )
+                {
+                    rname = gMaskManager.getRegName(squbits);
+                }
+                else if( 2 == nOperands )
+                {
+                    rname = gMaskManager.getRegName(dqubits);
+                }
+                else
+                {
+                    throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
+                }
+
+                ssbundles << cc_light_instr_name << " " << rname;
+            }
+
+            if( std::next(secIt) != abundle.parallel_sections.end() )
+            {
+                ssbundles << " | ";
+            }
+        }
+        curr_cycle+=delta;
+        ssbundles << "\n";
+    }
+
+    auto & lastBundle = bundles.back();
+    int lbduration = lastBundle.duration_in_cycles;
+    if( lbduration>1 )
+        ssbundles << std::setw(8) << curr_cycle   << ":    qwait " << lbduration << "\n";
+    curr_cycle+=lbduration;
+    ssbundles << std::setw(8) << curr_cycle++ << ":    br always, start" << "\n";
+    ssbundles << std::setw(8) << curr_cycle++ << ":    nop \n";
+    ssbundles << std::setw(8) << curr_cycle++ << ":    nop" << endl;
+
+    IOUT("Writing Time-stamped CC-Light QISA to " << qisafname);
+    fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
+    fout.close();
+
+    IOUT("Generating Time-stamped CC-Light QISA [Done]");
+}
+
+
 
 /**
  * cclight eqasm compiler
@@ -201,14 +748,14 @@ public:
 
         if(k.type == kernel_type_t::IF_START)
         {
-            ss << "    b" << k.br_condition.operation_name 
+            ss << "    b" << k.br_condition.inv_operation_name 
                <<" r" << (k.br_condition.operands[0])->id <<", r" << (k.br_condition.operands[1])->id
                << ", " << k.name << "_end\n";
         }
 
         if(k.type == kernel_type_t::ELSE_START)
         {
-            ss << "    b" << k.br_condition.inv_operation_name <<" r" << (k.br_condition.operands[0])->id
+            ss << "    b" << k.br_condition.operation_name <<" r" << (k.br_condition.operands[0])->id
                <<", r" << (k.br_condition.operands[1])->id << ", " << k.name << "_end\n";
         }
 
@@ -328,7 +875,8 @@ public:
                     (iname == "not") || (iname == "nop")
                   )
                 {
-                    decomp_ckt.push_back(ins);
+                    // decomp_ckt.push_back(ins);
+                    decomp_ckt.push_back(new ql::arch::classical_cc(iname, iopers));
                 }
                 else if( (iname == "eq") || (iname == "ne") || (iname == "lt") ||
                          (iname == "gt") || (iname == "le") || (iname == "ge")
@@ -346,6 +894,7 @@ public:
                 else if(iname == "ldi")
                 {
                     auto imval = ((ql::classical*)ins)->imm_value;
+                    DOUT("imval: " << imval);
                     decomp_ckt.push_back(new ql::arch::classical_cc("ldi", iopers, imval));
                 }
                 else
@@ -363,7 +912,6 @@ public:
                 {
                     // insert measure
                     auto qop = iopers[0];
-                    // decomp_ckt.push_back(new ql::measure(qop));
                     decomp_ckt.push_back(ins);
                     if( ql::gate_type_t::__custom_gate__ == itype )
                     {

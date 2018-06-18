@@ -274,10 +274,10 @@ public:
     classical(std::string operation)
     {
         str::lower_case(operation);
-        name=operation;
-        duration = 20;
-        if( (name == "nop") )
+        if((operation == "nop"))
         {
+            name=operation;
+            duration = 20;            
             DOUT("Adding 0 operand operation: " << name);
         }
         else

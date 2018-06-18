@@ -118,7 +118,7 @@ def test_hybrid():
     # k1.classical(rs1, ql.Operation(2))
 
     # measure
-    # k1.gate('measure', [0], [2])
+    k1.gate('measure', [0], rs1)
 
     k2.gate('y', [0])
     k2.gate('cz', [0, 2])
@@ -140,7 +140,7 @@ def test_hybrid():
     # sp1.add_kernel(k2)
     # p.add_if(sp1, ql.Operation(rs1, '!=', rs2))
 
-    # simple while
+    # simple do-while
     # p.add_do_while(k1, ql.Operation(rs1, '<', rs2))
     # p.add_kernel(k2)
 
@@ -180,28 +180,30 @@ def test_fig10():
     sweep_points = [1,2]
     p.set_sweep_points(sweep_points, len(sweep_points))
     
-    k0 = ql.Kernel('aKernel0', platform, num_qubits, num_cregs)
-    k1 = ql.Kernel('aKernel1', platform, num_qubits, num_cregs)
-    k2 = ql.Kernel('aKernel2', platform, num_qubits, num_cregs)
+    k_init = ql.Kernel('k_init', platform, num_qubits, num_cregs)
+    k_if = ql.Kernel('k_if', platform, num_qubits, num_cregs)
+    k_else = ql.Kernel('k_else', platform, num_qubits, num_cregs)
 
     # create classical registers
+    q0, q1 = 0, 1
     value_one = ql.CReg()
-    measured_q1 = ql.CReg()
+    meas_value_q1 = ql.CReg()
 
-    k0.classical(value_one, ql.Operation(1)) # value_one = 1
-    k0.gate('measure', [1], [1])
-    p.add_kernel(k0)
+    k_init.classical(value_one, ql.Operation(1)) # value_one = 1
+    k_init.gate('measure', [q1], meas_value_q1)
+    p.add_kernel(k_init)
 
-    k1.gate('x', [0])
-    k2.gate('y', [0])    
+    k_if.gate('x', [q0])
+    k_else.gate('y', [q0])
 
     # simple if/else
-    p.add_if_else(k1, k2, ql.Operation(value_one, '==', measured_q1))
+    p.add_if_else(k_if, k_else, ql.Operation(value_one, '==', meas_value_q1))
 
     p.compile()
 
 if __name__ == '__main__':
-    test_fig10()
+    # test_fig10()
+    test_hybrid()
 
 
 # LOG_NOTHING,
