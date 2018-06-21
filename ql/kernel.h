@@ -880,9 +880,9 @@ public:
 
 #ifndef __disable_lemon__
         IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
-	DOUT("Qasm at start of kernel::schedule size=" << c.size() << ":");
-	DOUT(qasm());
-	DOUT("Qasm at start of kernel::schedule END");
+	// DOUT("Qasm at start of kernel::schedule size=" << c.size() << ":");
+	// DOUT(qasm());
+	// DOUT("Qasm at start of kernel::schedule END");
 
         Scheduler sched;
         sched.Init(qubits, c, platform);

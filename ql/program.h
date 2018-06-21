@@ -352,9 +352,9 @@ class quantum_program
             std::string kernel_sched_qasm;
             std::string kernel_sched_dot;
 
-	    DOUT("Qasm at start of program::schedule size=" << k.c.size() << ":");
-	    DOUT(k.qasm());
-	    DOUT("Qasm at start of program::schedule END");
+	    // DOUT("Qasm at start of program::schedule size=" << k.c.size() << ":");
+	    // DOUT(k.qasm());
+	    // DOUT("Qasm at start of program::schedule END");
 
             k.schedule(qubits, platform, kernel_sched_qasm, kernel_sched_dot);
             if( k.iterations > 1 )
