@@ -24,8 +24,7 @@ class Mapper
 private:
 
     size_t nQbits;
-                                            // typedef std::vector<gate*> circuit; (see circuit.h)
-    ql::circuit& inCirc;                // ref to input gate stream, not mapped; at end updated
+    // typedef std::vector<gate*> circuit; (see circuit.h)
     size_t cycle_time;
     ql::quantum_platform platform;
 
@@ -35,7 +34,7 @@ private:
     std::map<size_t,size_t> y;                // y[i] is y coordinate of qubit i
     typedef std::list<size_t> neighbors_t; // neighbors is a list of qubits
     std::map<size_t,neighbors_t> nb;        // nb[i] is neighbors of qubit i, a list of qubits
-                                        // one-step reachable (over an edge) qubits from qubit i
+    // one-step reachable (over an edge) qubits from qubit i
 
     std::vector<size_t> virt2Real;        // virt2Real[virtual qubit index] -> real qubit index
 
@@ -51,7 +50,7 @@ private:
     }
 
     // r0 and r1 are real qubit indices
-    // after a swap(r0,r1) their states were exchanged, 
+    // after a swap(r0,r1) their states were exchanged,
     // so when v0 was in r0 and v1 was in r1, now v0 is in r1 and v1 is in r0
     // update virt2Real accordingly
     void virt2RealSwap(size_t r0, size_t r1)
@@ -89,15 +88,15 @@ private:
     size_t distance(size_t from, size_t to)
     {
         return std::max(
-                std::abs( ptrdiff_t(x[to]) - ptrdiff_t(x[from]) ),
-                std::abs( ptrdiff_t(y[to]) - ptrdiff_t(y[from]) ));
+                   std::abs( ptrdiff_t(x[to]) - ptrdiff_t(x[from]) ),
+                   std::abs( ptrdiff_t(y[to]) - ptrdiff_t(y[from]) ));
     }
 
 public:
     // Mapper constructor initializes program-wide data, e.g. grid related
     // Mapper.Init initializes data to map a particular kernel
-    Mapper( size_t nqbits, ql::circuit& ckt, ql::quantum_platform pf) :
-        nQbits(nqbits), inCirc(ckt), cycle_time(platform.cycle_time), platform(pf)
+    Mapper( size_t nqbits, ql::quantum_platform pf) :
+        nQbits(nqbits), cycle_time(platform.cycle_time), platform(pf)
     {
         DOUT("==================================");
         DOUT("Mapper creation ...");
@@ -159,13 +158,13 @@ public:
         DOUT("Mapper initialization [DONE]");
     }
 
-    void MapCircuit()
+    void MapCircuit(ql::circuit& inCirc)
     {
         DOUT("Mapping circuit ...");
         printVirt2Real("starting mapping");
         ql::circuit outCirc;        // output gate stream, mapped; will be swapped with inCirc on return
 
-        for( auto g : inCirc )
+        for( auto &g : inCirc )
         {
             auto& q = g->operands;
             size_t operandCount = q.size();
@@ -211,7 +210,11 @@ public:
         printVirt2Real("end mapping");
 
         DOUT("... swapping outCirc with inCirc");
+
         inCirc.swap(outCirc);
+        // inCirc.clear();
+        // for(auto & g: outCirc)
+        //     inCirc.push_back(g);
 
         DOUT("... Start circuit (size=" << inCirc.size() << ") after mapping:");
         for( auto g : inCirc )
