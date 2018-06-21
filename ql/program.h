@@ -325,9 +325,9 @@ class quantum_program
 	     }
              for (auto k : kernels)
              {
-		DOUT("At end of program::map: ...");
+		DOUT("Qasm at end of program::map size=" << k.c.size() << ":");
                 DOUT(k.qasm());
-		DOUT("End qasm at end of program::map: ...");
+		DOUT("Qasm at end of program::map END");
 	     }
 	 }
 	 else if (mapopt == "no" )
@@ -353,9 +353,9 @@ class quantum_program
             std::string kernel_sched_qasm;
             std::string kernel_sched_dot;
 
-	    DOUT("At start of program::schedule: ...");
-            DOUT(k.qasm());
-	    DOUT("End qasm at start of program::schedule");
+	    DOUT("Qasm at start of program::schedule size=" << k.c.size() << ":");
+	    DOUT(k.qasm());
+	    DOUT("Qasm at start of program::schedule END");
 
             k.schedule(qubits, platform, kernel_sched_qasm, kernel_sched_dot);
             if( k.iterations > 1 )
