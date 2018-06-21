@@ -213,7 +213,7 @@ public:
         DOUT("... swapping outCirc with inCirc");
 	inCirc.swap(outCirc);
 
-        DOUT("... Start circuit after mapping:");
+        DOUT("... Start circuit (size=" << inCirc.size() << ") after mapping:");
         for( auto g : inCirc )
 	{
             DOUT("\t" << g->qasm() );

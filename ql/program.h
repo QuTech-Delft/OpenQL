@@ -316,12 +316,18 @@ class quantum_program
       {
          auto mapopt = ql::options::get("mapper");
          // DOUT("mapping option=" << mapopt);
-	 if (mapopt == "initial" || mapopt == "circuit")
+	 if (mapopt == "base")
 	 {
 
              for (auto k : kernels)
              {
                 k.map(qubits, platform);
+	     }
+             for (auto k : kernels)
+             {
+		DOUT("At end of program::map: ...");
+                DOUT(k.qasm());
+		DOUT("End qasm at end of program::map: ...");
 	     }
 	 }
 	 else if (mapopt == "no" )
@@ -346,6 +352,11 @@ class quantum_program
          {
             std::string kernel_sched_qasm;
             std::string kernel_sched_dot;
+
+	    DOUT("At start of program::schedule: ...");
+            DOUT(k.qasm());
+	    DOUT("End qasm at start of program::schedule");
+
             k.schedule(qubits, platform, kernel_sched_qasm, kernel_sched_dot);
             if( k.iterations > 1 )
                sched_qasm += "\n." + k.get_name() + "("+ std::to_string(k.iterations) + ")";

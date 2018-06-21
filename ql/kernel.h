@@ -868,6 +868,9 @@ public:
 
         mapper.Init();
         mapper.MapCircuit();
+        DOUT("... circuit after MapCircuit, size=" << c.size());
+	DOUT(qasm());
+	DOUT("END QASM");
 #endif // __disable_lemon__
     }
 
@@ -877,6 +880,8 @@ public:
 
 #ifndef __disable_lemon__
         IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
+        DOUT("... circuit before entry, size=" << c.size());
+	DOUT(qasm());
 
         Scheduler sched;
         sched.Init(qubits, c, platform);

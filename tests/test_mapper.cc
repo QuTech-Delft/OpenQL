@@ -11,6 +11,7 @@
 #include "ql/openql.h"
 #include "ql/utils.h"
 
+// all cnots with operands that are neighbors in s7
 void
 test_0()
 {
@@ -25,6 +26,7 @@ test_0()
     for (int j=0; j<7; j++)
         k.gate("x", j);
 
+    // a list of all cnots that are ok in trivial mapping
     k.gate("cnot", 0,2);
     k.gate("cnot", 0,3);
     k.gate("cnot", 1,3);
@@ -44,12 +46,41 @@ test_0()
 
     prog.add(k);
 
-    ql::options::set("mapper", "circuit");
+    ql::options::set("mapper", "base");
     prog.compile( );
 }
 
+// one cnot with operands that are at distance 4 in s7
 void
 test_1()
+{
+    // create and set platform
+    ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
+    ql::set_platform(starmon);
+
+    // create program
+    ql::quantum_program prog(("test_1_"), 7, starmon);
+    ql::quantum_kernel k("kernel_1",starmon);
+
+    for (int j=0; j<7; j++)
+        k.gate("x", j);
+
+    // one cnot, but needs several swaps
+    k.gate("cnot", 2,4);
+
+    for (int j=0; j<7; j++)
+        k.gate("x", j);
+
+    prog.add(k);
+
+    ql::options::set("mapper", "base");
+    prog.compile( );
+}
+
+// all possible cnots in s7, in lexicographic order
+// requires many swaps
+void
+test_3()
 {
     int n = 7;
 
@@ -58,8 +89,8 @@ test_1()
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_1_"), 7, starmon);
-    ql::quantum_kernel k("kernel_1",starmon);
+    ql::quantum_program prog(("test_3_"), 7, starmon);
+    ql::quantum_kernel k("kernel_3",starmon);
 
     for (int j=0; j<n; j++)
         k.gate("x", j);
@@ -74,7 +105,7 @@ test_1()
 
     prog.add(k);
 
-    ql::options::set("mapper", "circuit");
+    ql::options::set("mapper", "base");
     prog.compile( );
 }
 
@@ -85,6 +116,8 @@ int main(int argc, char ** argv)
     // test_0();
 
     test_1();
+
+    // test_3();
 
     return 0;
 }
