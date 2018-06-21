@@ -227,7 +227,7 @@ class quantum_program
          }
 
 
-	 map();
+         map();
 
          schedule();
 
@@ -314,31 +314,30 @@ class quantum_program
 
       void map()
       {
-         auto mapopt = ql::options::get("mapper");
-         // DOUT("mapping option=" << mapopt);
-	 if (mapopt == "base")
-	 {
-
+          auto mapopt = ql::options::get("mapper");
+          // DOUT("mapping option=" << mapopt);
+          if (mapopt == "base")
+          {
              for (auto k : kernels)
              {
                 k.map(qubits, platform);
-	     }
+             }
              for (auto k : kernels)
              {
-		DOUT("Qasm at end of program::map size=" << k.c.size() << ":");
+                DOUT("Qasm at end of program::map size=" << k.c.size() << ":");
                 DOUT(k.qasm());
-		DOUT("Qasm at end of program::map END");
-	     }
-	 }
-	 else if (mapopt == "no" )
-	 {
-	    IOUT("Not mapping the quantum program");
-	 }
-	 else
-	 {
-            EOUT("Unknown option '" << mapopt << "' set for mapper");
-            throw ql::exception("Error: Unknown option '"+mapopt+"' set for mapper !",false);
-         }
+                DOUT("Qasm at end of program::map END");
+             }
+          }
+          else if (mapopt == "no" )
+          {
+             IOUT("Not mapping the quantum program");
+          }
+          else
+          {
+             EOUT("Unknown option '" << mapopt << "' set for mapper");
+             throw ql::exception("Error: Unknown option '"+mapopt+"' set for mapper !",false);
+          }
       }
 
       void schedule()
