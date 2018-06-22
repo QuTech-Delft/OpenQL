@@ -19,14 +19,14 @@
 // should have been moved next to the cnot
 // those will move that do not have operands that overlap those of the cnot
 void
-test_0( std::string scheduler)
+test_0( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_0_" + scheduler), 7, starmon);
+    ql::quantum_program prog(("test_0_" + scheduler + "_uniform_" + scheduler_uniform), 7, starmon);
     ql::quantum_kernel k("kernel7.0",starmon);
 
     for (int j=0; j<7; j++)
@@ -42,20 +42,21 @@ test_0( std::string scheduler)
     prog.add(k);
 
     ql::options::set("scheduler", scheduler);
+    ql::options::set("scheduler_uniform", scheduler_uniform);
     prog.compile( );
 }
 
 // just as the previous one
 // but then more of the same
 void
-test_1( std::string scheduler)
+test_1( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_1_" + scheduler), 7, starmon);
+    ql::quantum_program prog(("test_1_" + scheduler + "_uniform_" + scheduler_uniform), 7, starmon);
     ql::quantum_kernel k("kernel7.1",starmon);
 
     for (int j=0; j<7; j++)
@@ -101,6 +102,7 @@ test_1( std::string scheduler)
     prog.add(k);
 
     ql::options::set("scheduler", scheduler);
+    ql::options::set("scheduler_uniform", scheduler_uniform);
     prog.compile( );
 }
 
@@ -110,14 +112,14 @@ test_1( std::string scheduler)
 // so will be going all 3 in one bundle
 // the single independent x will be moved with it
 void
-test_2( std::string scheduler)
+test_2( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_2_" + scheduler), 7, starmon);
+    ql::quantum_program prog(("test_2_" + scheduler + "_uniform_" + scheduler_uniform), 7, starmon);
     ql::quantum_kernel k("kernel7.2",starmon);
 
     for (int j=0; j<7; j++)
@@ -146,6 +148,7 @@ test_2( std::string scheduler)
     prog.add(k);
 
     ql::options::set("scheduler", scheduler);
+    ql::options::set("scheduler_uniform", scheduler_uniform);
     prog.compile( );
 }
 
@@ -154,14 +157,14 @@ test_2( std::string scheduler)
 // these cnots were chosen to be largely dependent
 // this already creates smaller bundles but more of them
 void
-test_3( std::string scheduler)
+test_3( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_3_" + scheduler), 7, starmon);
+    ql::quantum_program prog(("test_3_" + scheduler + "_uniform_" + scheduler_uniform), 7, starmon);
     ql::quantum_kernel k("kernel7.3",starmon);
 
     for (int j=0; j<7; j++)
@@ -194,6 +197,7 @@ test_3( std::string scheduler)
     prog.add(k);
 
     ql::options::set("scheduler", scheduler);
+    ql::options::set("scheduler_uniform", scheduler_uniform);
     prog.compile( );
 }
 
@@ -202,14 +206,14 @@ test_3( std::string scheduler)
 // the worst you can imagine,
 // creating the smallest bundles
 void
-test_4( std::string scheduler)
+test_4( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_4_" + scheduler), 7, starmon);
+    ql::quantum_program prog(("test_4_" + scheduler + "_uniform_" + scheduler_uniform), 7, starmon);
     ql::quantum_kernel k("kernel7.4",starmon);
 
     for (int j=0; j<7; j++)
@@ -235,18 +239,19 @@ test_4( std::string scheduler)
     prog.add(k);
 
     ql::options::set("scheduler", scheduler);
+    ql::options::set("scheduler_uniform", scheduler_uniform);
     prog.compile( );
 }
 
 void
-test_5( std::string scheduler)
+test_5( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_5_" + scheduler), 7, starmon);
+    ql::quantum_program prog(("test_5_" + scheduler + "_uniform_" + scheduler_uniform), 7, starmon);
     ql::quantum_kernel k("kernel7.5",starmon);
 
     // empty kernel
@@ -254,20 +259,21 @@ test_5( std::string scheduler)
     prog.add(k);
 
     ql::options::set("scheduler", scheduler);
+    ql::options::set("scheduler_uniform", scheduler_uniform);
     prog.compile( );
 }
 
 // code with a lot of preps at the start, meas at the end and some work in the middle
 // all is equally critical so gain here
 void
-test_6( std::string scheduler)
+test_6( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_6_" + scheduler), 7, starmon);
+    ql::quantum_program prog(("test_6_" + scheduler + "_uniform_" + scheduler_uniform), 7, starmon);
     ql::quantum_kernel k("kernel7.6",starmon);
 
     k.gate("prepz", 0);
@@ -297,19 +303,20 @@ test_6( std::string scheduler)
     prog.add(k);
 
     ql::options::set("scheduler", scheduler);
+    ql::options::set("scheduler_uniform", scheduler_uniform);
     prog.compile( );
 }
 
 // code with a lot of preps at the start
 void
-test_7( std::string scheduler)
+test_7( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_7_" + scheduler), 7, starmon);
+    ql::quantum_program prog(("test_7_" + scheduler + "_uniform_" + scheduler_uniform), 7, starmon);
     ql::quantum_kernel k("kernel7.7",starmon);
 
     k.gate("prepz", 0);
@@ -320,17 +327,23 @@ test_7( std::string scheduler)
     k.gate("prepz", 5);
     k.gate("prepz", 6);
 
+    k.gate("h", 0);	// qubit 0 critical
+    k.gate("t", 0);
     k.gate("h", 0);
-    k.gate("t", 1);
-    k.gate("h", 2);
-    k.gate("t", 3);
-    k.gate("h", 4);
-    k.gate("t", 5);
-    k.gate("h", 6);
+    k.gate("t", 0);
+
+    k.gate("h", 2);	// qubit 2 loaded
+    k.gate("t", 2);
+
+    k.gate("h", 4);	// qubit 4 medium loaded
+
+    for (int j=0; j<7; j++)	// all qubits some load at the end
+        k.gate("x", j);
 
     prog.add(k);
 
     ql::options::set("scheduler", scheduler);
+    ql::options::set("scheduler_uniform", scheduler_uniform);
     prog.compile( );
 }
 
@@ -339,22 +352,22 @@ int main(int argc, char ** argv)
     // ql::utils::logger::set_log_level("LOG_DEBUG");
     ql::utils::logger::set_log_level("LOG_INFO");
 
-    test_0("ASAP");
-    test_0("UNIFORM");
-    test_1("ASAP");
-    test_1("UNIFORM");
-    test_2("ASAP");
-    test_2("UNIFORM");
-    test_3("ASAP");
-    test_3("UNIFORM");
-    test_4("ASAP");
-    test_4("UNIFORM");
-    test_5("ASAP");
-    test_5("UNIFORM");
-    test_6("ASAP");
-    test_6("UNIFORM");
-    test_7("ASAP");
-    test_7("UNIFORM");
+    test_0("ALAP", "no");
+    test_0("ALAP", "yes");
+    test_1("ALAP", "no");
+    test_1("ALAP", "yes");
+    test_2("ALAP", "no");
+    test_2("ALAP", "yes");
+    test_3("ALAP", "no");
+    test_3("ALAP", "yes");
+    test_4("ALAP", "no");
+    test_4("ALAP", "yes");
+    test_5("ALAP", "no");
+    test_5("ALAP", "yes");
+    test_6("ALAP", "no");
+    test_6("ALAP", "yes");
+    test_7("ALAP", "no");
+    test_7("ALAP", "yes");
 
     return 0;
 }

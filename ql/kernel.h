@@ -863,6 +863,7 @@ public:
     void schedule(size_t qubits, quantum_platform platform, std::string& sched_qasm, std::string& sched_dot)
     {
         std::string scheduler = ql::options::get("scheduler");
+        std::string scheduler_uniform = ql::options::get("scheduler_uniform");
 
 #ifndef __disable_lemon__
         IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
@@ -875,31 +876,44 @@ public:
 
         if("ASAP" == scheduler)
         {
-            // sched.PrintScheduleASAP();
-            // sched.PrintDotScheduleASAP();
-            // sched_dot = sched.GetDotScheduleASAP();
-            // sched.PrintQASMScheduledASAP();
-            ql::ir::bundles_t bundles = sched.schedule_asap();
-            sched_qasm = ql::ir::qasm(bundles);
-
+            if ("yes" == scheduler_uniform)
+            {
+	        EOUT("Uniform scheduling not supported with ASAP; please turn on ALAP to perform uniform scheduling");
+	    }
+	    else if ("no" == scheduler_uniform)
+	    {
+	        // sched.PrintScheduleASAP();
+                // sched.PrintDotScheduleASAP();
+                // sched_dot = sched.GetDotScheduleASAP();
+                // sched.PrintQASMScheduledASAP();
+                ql::ir::bundles_t bundles = sched.schedule_asap();
+                sched_qasm = ql::ir::qasm(bundles);
+	    }
+	    else
+            {
+               EOUT("Unknown scheduler_uniform option value");
+            }
         }
         else if("ALAP" == scheduler)
         {
-            // sched.PrintScheduleALAP();
-            // sched.PrintDotScheduleALAP();
-            // sched_dot = sched.GetDotScheduleALAP();
-            // sched.PrintQASMScheduledALAP();
-            ql::ir::bundles_t bundles = sched.schedule_alap();
-            sched_qasm = ql::ir::qasm(bundles);
-        }
-        else if("UNIFORM" == scheduler)
-        {
-            // sched.PrintScheduleUNIFORM();
-            // sched.PrintDotScheduleUNIFORM();
-            // sched_dot = sched.GetDotScheduleUNIFORM();
-            // sched.PrintQASMScheduledUNIFORM();
-            ql::ir::bundles_t bundles = sched.schedule_uniform();
-            sched_qasm = ql::ir::qasm(bundles);
+            if ("yes" == scheduler_uniform)
+            {
+                ql::ir::bundles_t bundles = sched.schedule_alap_uniform();
+                sched_qasm = ql::ir::qasm(bundles);
+	    }
+	    else if ("no" == scheduler_uniform)
+	    {
+                // sched.PrintScheduleALAP();
+                // sched.PrintDotScheduleALAP();
+                // sched_dot = sched.GetDotScheduleALAP();
+                // sched.PrintQASMScheduledALAP();
+                ql::ir::bundles_t bundles = sched.schedule_alap();
+                sched_qasm = ql::ir::qasm(bundles);
+	    }
+	    else
+            {
+               EOUT("Unknown scheduler_uniform option value");
+            }
         }
         else
         {

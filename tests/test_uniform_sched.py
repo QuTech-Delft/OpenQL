@@ -12,7 +12,8 @@ class Test_uniform_scheduler(unittest.TestCase):
     def test_uniform_scheduler_0(self):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
-        ql.set_option("scheduler", "UNIFORM");
+        ql.set_option('scheduler', 'ALAP');
+        ql.set_option('scheduler_uniform', 'yes');
         ql.set_option('log_level', 'LOG_WARNING')
 
         config_fn = os.path.join(curdir, 'test_cfg_none_s7.json')
@@ -51,7 +52,8 @@ class Test_uniform_scheduler(unittest.TestCase):
     def test_uniform_scheduler_1(self):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
-        ql.set_option("scheduler", "UNIFORM");
+        ql.set_option('scheduler', 'ALAP');
+        ql.set_option('scheduler_uniform', 'yes');
         ql.set_option('log_level', 'LOG_WARNING')
 
         config_fn = os.path.join(curdir, 'test_cfg_none_s7.json')
@@ -121,7 +123,8 @@ class Test_uniform_scheduler(unittest.TestCase):
     def test_uniform_scheduler_2(self):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
-        ql.set_option("scheduler", "UNIFORM");
+        ql.set_option('scheduler', 'ALAP');
+        ql.set_option('scheduler_uniform', 'yes');
         ql.set_option('log_level', 'LOG_WARNING')
 
         config_fn = os.path.join(curdir, 'test_cfg_none_s7.json')
@@ -174,7 +177,8 @@ class Test_uniform_scheduler(unittest.TestCase):
     def test_uniform_scheduler_3(self):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
-        ql.set_option("scheduler", "UNIFORM");
+        ql.set_option('scheduler', 'ALAP');
+        ql.set_option('scheduler_uniform', 'yes');
         ql.set_option('log_level', 'LOG_WARNING')
 
         config_fn = os.path.join(curdir, 'test_cfg_none_s7.json')
@@ -224,7 +228,8 @@ class Test_uniform_scheduler(unittest.TestCase):
     def test_uniform_scheduler_4(self):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
-        ql.set_option("scheduler", "UNIFORM");
+        ql.set_option('scheduler', 'ALAP');
+        ql.set_option('scheduler_uniform', 'yes');
         ql.set_option('log_level', 'LOG_WARNING')
 
         config_fn = os.path.join(curdir, 'test_cfg_none_s7.json')

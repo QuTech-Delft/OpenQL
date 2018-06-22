@@ -1132,7 +1132,7 @@ public:
     }
 
 
-    void schedule_uniform_(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
+    void schedule_alap_uniform_(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
     {
 	// algorithm based on "Balanced Scheduling and Operation Chaining in High-Level Synthesis for FPGA Designs"
 	// by David C. Zaretsky, Gaurav Mittal, Robert P. Dick, and Prith Banerjee
@@ -1147,7 +1147,7 @@ public:
 	//	this is more greedy, preventing oscillation around a target size based on all bundles,
 	//	because local variations caused by local dep chains create small bundles and thus leave more gates still to go
 
-	DOUT("Performing UNIFORM Scheduling");
+	DOUT("Performing ALAP UNIFORM Scheduling");
 	// order becomes a reversed topological order of the nodes
 	// don't know why it is done, since the nodes already are in topological order
 	// that they are is a consequence of dep graph computation which is based on this original order
@@ -1228,7 +1228,9 @@ public:
 	    // it averages over non-empty bundles instead of all bundles because the latter would be very strict
 	    // it is readjusted to cater for dips in bundle size caused by local dependence chains
 	    // it is rounded to create room caused by local variations and to smooth the effective integral readjustments
+            if (non_empty_bundle_count == 0) break;
 	    double avg_gates_per_cycle = std::ceil(double(gate_count)/non_empty_bundle_count);
+            DOUT("Cycle=" << curr_cycle << " number of gates=" << nodes_per_cycle[curr_cycle].size() << "; avg_gates_per_cycle=" << avg_gates_per_cycle);
 
 	    while ( double(nodes_per_cycle[curr_cycle].size()) < avg_gates_per_cycle && pred_cycle >= 0 )
 	    {
@@ -1236,7 +1238,6 @@ public:
 		ListDigraph::Node best_n;
 		bool		  best_n_found = false;
 
-		// COUT("... At cycle=" << curr_cycle << " number of gates=" << nodes_per_cycle[curr_cycle].size() << "; checking cycle=" << pred_cycle << " for node to move");
 		// scan bundle at pred_cycle to find suitable candidate to move forward to curr_cycle
 		for ( auto n : nodes_per_cycle[pred_cycle] )
 		{
@@ -1275,32 +1276,38 @@ public:
 		    nodes_per_cycle[pred_cycle].remove(best_n);
 	            if (nodes_per_cycle[pred_cycle].size() == 0)
 		    {
-		        // created an empty bundle
-			non_empty_bundle_count++;
+		        // bundle was non-empty, now it is empty
+			non_empty_bundle_count--;
 		    }
 
 	            if (nodes_per_cycle[curr_cycle].size() == 0)
 		    {
-		        // filling an empty bundle
-			non_empty_bundle_count--;
+		        // bundle was empty, now it will be non_empty
+			non_empty_bundle_count++;
 		    }
 		    cycle[best_n] = curr_cycle;
 		    nodes_per_cycle[curr_cycle].push_back(best_n);
-		    // COUT("... moved " << name[best_n] << " with alap=" << alap_cycle[best_n] << " from cycle=" << pred_cycle << " to cycle=" << curr_cycle);
+                    if (non_empty_bundle_count == 0) break;
+	            avg_gates_per_cycle = std::ceil(double(gate_count)/non_empty_bundle_count);
+		    DOUT("... moved " << name[best_n] << " with alap=" << alap_cycle[best_n] << " from cycle=" << pred_cycle << " to cycle=" << curr_cycle
+			 << "; new avg_gates_per_cycle=" << avg_gates_per_cycle);
 		}
 		else
 		{
 		    pred_cycle --;
 		}
-	    }
+	    }   // end for finding a bundle to forward a node from to the current cycle
 
-	    // curr_cycle ready, take out from future still to go
+	    // curr_cycle ready, recompute goal for remaining cycles
 	    gate_count -= nodes_per_cycle[curr_cycle].size();
 	    if (nodes_per_cycle[curr_cycle].size() != 0)
 	    {
+                // bundle is non-empty
 		non_empty_bundle_count--;
 	    }
-	}
+            if (non_empty_bundle_count == 0) break;
+	    avg_gates_per_cycle = std::ceil(double(gate_count)/non_empty_bundle_count);
+	}   // end curr_cycle loop; curr_cycle is bundle which must be enlarged when too small
 
 	max_gates_per_cycle = 0;
 	non_empty_bundle_count = 0;
@@ -1328,16 +1335,16 @@ public:
 		<< "; avg_gates_per_non_empty_cycle=" << double(gate_count)/non_empty_bundle_count
 		);
 
-	DOUT("Performing UNIFORM Scheduling [DONE]");
+	DOUT("Performing ALAP UNIFORM Scheduling [DONE]");
     }
 
-    ql::ir::bundles_t schedule_uniform()
+    ql::ir::bundles_t schedule_alap_uniform()
     {
-        DOUT("Scheduling UNIFORM to get bundles ...");
+        DOUT("Scheduling ALAP UNIFORM to get bundles ...");
         ql::ir::bundles_t bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
-        schedule_uniform_(cycle, order);
+        schedule_alap_uniform_(cycle, order);
 
         typedef std::vector<ql::gate*> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
@@ -1378,7 +1385,7 @@ public:
             }
         }
 
-        DOUT("Scheduling UNIFORM to get bundles [DONE]");
+        DOUT("Scheduling ALAP UNIFORM to get bundles [DONE]");
         return bundles;
     }
 
