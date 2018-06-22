@@ -340,24 +340,17 @@ std::string classical_instruction2qisa(ql::arch::classical_cc* classical_ins)
       )
     {
         ssclassical << iname;
-        if(iname == "fmr")
+        for(int i=0; i<iopers_count; ++i)
         {
-            ssclassical << " r" << iopers[0] << ", q" << iopers[1];
+            if(i==iopers_count-1)
+                ssclassical << " r" <<  iopers[i];
+            else
+                ssclassical << " r" << iopers[i] << ",";
         }
-        else
+        if(iname == "ldi")
         {
-            for(int i=0; i<iopers_count; ++i)
-            {
-                if(i==iopers_count-1)
-                    ssclassical << " r" <<  iopers[i];
-                else
-                    ssclassical << " r" << iopers[i] << ",";
-            }
-            if(iname == "ldi")
-            {
-                DOUT("imm_value: " << (classical_ins->imm_value) );
-                ssclassical << ", " + std::to_string(classical_ins->imm_value);
-            }
+            DOUT("imm_value: " << (classical_ins->imm_value) );
+            ssclassical << ", " + std::to_string(classical_ins->imm_value);
         }
     }
     else if(iname == "fmr")
@@ -407,6 +400,7 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
 
     for (ql::ir::bundle_t & abundle : bundles)
     {
+        std::string iname;
         std::stringstream sspre, ssinst;
         auto bcycle = abundle.start_cycle;
         auto delta = bcycle - curr_cycle;
@@ -422,7 +416,7 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
             qubit_set_t squbits;
             qubit_pair_set_t dqubits;
             auto firstInsIt = secIt->begin();
-            auto iname = (*(firstInsIt))->name;
+            iname = (*(firstInsIt))->name;
             auto itype = (*(firstInsIt))->type();
 
             if(__classical_gate__ == itype)
@@ -501,15 +495,35 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
                 }
             }
         }
-        curr_cycle+=delta;
         if(classical_bundle)
         {
+            if(iname == "fmr")
+            {
+                // based on cclight requirements (section 4.7 eqasm manual),
+                // two extra instructions need to be added between meas and fmr
+                if(delta > 2)
+                {
+                    ssbundles << "    qwait " << 1 << "\n";
+                    ssbundles << "    qwait " << delta-1 << "\n";
+                }                    
+                else
+                {
+                    ssbundles << "    qwait " << 1 << "\n";
+                    ssbundles << "    qwait " << 1 << "\n";
+                }
+            }
+            else
+            {
+                if(delta > 1)
+                    ssbundles << "    qwait " << delta << "\n";
+            }
             ssbundles << "    " << ssinst.str() << "\n";
         }
         else
         {
             ssbundles << sspre.str() << ssinst.str() << "\n";
         }
+        curr_cycle+=delta;        
     }
 
     auto & lastBundle = bundles.back();
@@ -883,6 +897,7 @@ public:
                        )
                 {
                     decomp_ckt.push_back(new ql::arch::classical_cc("cmp", {iopers[1], iopers[2]}));
+                    decomp_ckt.push_back(new ql::arch::classical_cc("nop", {}));
                     decomp_ckt.push_back(new ql::arch::classical_cc("fbr_"+iname, {iopers[0]}));
                 }
                 else if(iname == "mov")
@@ -917,10 +932,6 @@ public:
                     {
                         auto mins = (ql::measure*) ins;
                         auto cop = mins->creg_operands[0];
-                        // insert 3 nops between meas and fmr based on cclight requirements
-                        decomp_ckt.push_back(new ql::arch::classical_cc("nop", {}));
-                        decomp_ckt.push_back(new ql::arch::classical_cc("nop", {}));
-                        decomp_ckt.push_back(new ql::arch::classical_cc("nop", {}));
                         decomp_ckt.push_back(new ql::arch::classical_cc("fmr", {cop, qop}));
                     }
                     else

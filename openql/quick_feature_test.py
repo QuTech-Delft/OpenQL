@@ -106,7 +106,7 @@ def test_hybrid():
     # k1.classical(rd, ql.Operation('~', rs2))
 
     # comparison
-    # k1.classical(rd, ql.Operation(rs1, '==', rs2))
+    k1.classical(rd, ql.Operation(rs1, '==', rs2))
 
     # nop
     # k1.classical('nop')
@@ -124,12 +124,12 @@ def test_hybrid():
     k2.gate('cz', [0, 2])
 
     # add simple kernels
-    p.add_kernel(k1)
-    p.add_kernel(k2)
+    # p.add_kernel(k1)
+    # p.add_kernel(k2)
 
     # simple if
-    # p.add_if(k1, ql.Operation(rs1, '==', rs2))
-    # p.add_kernel(k2)
+    p.add_if(k1, ql.Operation(rs1, '==', rs2))
+    p.add_kernel(k2)
 
     # simple if/else
     # p.add_if_else(k1, k2, ql.Operation(rs1, '==', rs2))
