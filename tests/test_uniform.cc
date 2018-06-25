@@ -349,8 +349,8 @@ test_7( std::string scheduler, std::string scheduler_uniform)
 
 int main(int argc, char ** argv)
 {
-    // ql::utils::logger::set_log_level("LOG_DEBUG");
-    ql::utils::logger::set_log_level("LOG_INFO");
+    // ql::utils::logger::set_log_level("LOG_INFO");
+    ql::utils::logger::set_log_level("LOG_DEBUG");
 
     test_0("ALAP", "no");
     test_0("ALAP", "yes");

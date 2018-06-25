@@ -2,7 +2,7 @@
  * @file   scheduler.h
  * @date   01/2017
  * @author Imran Ashraf
- * @brief  ASAP/ALAP/UNIFORM scheduling
+ * @brief  ASAP/ALAP and UNIFORM scheduling
  */
 
 #ifndef _SCHEDULER_H
@@ -1146,6 +1146,11 @@ public:
 	// - targeted bundle size is adjusted each cycle and is number_of_gates_to_go/number_of_non_empty_bundles_to_go
 	//	this is more greedy, preventing oscillation around a target size based on all bundles,
 	//	because local variations caused by local dep chains create small bundles and thus leave more gates still to go
+        //
+	// Oddly enough, it starts off with an ASAP schedule.
+	// After this, it moves nodes up at most to their ALAP cycle to fill small bundles to the targeted uniform length.
+	// It does this in a backward scan (as ALAP scheduling would do), so bundles at the highest cycles are filled first.
+	// Hence, the result resembles an ALAP schedule with excess bundle lengths solved by moving nodes down ("dough rolling").
 
 	DOUT("Performing ALAP UNIFORM Scheduling");
 	// order becomes a reversed topological order of the nodes
@@ -1190,21 +1195,17 @@ public:
 	    max_gates_per_cycle = std::max(max_gates_per_cycle, nodes_per_cycle[curr_cycle].size());
 	    if (int(nodes_per_cycle[curr_cycle].size()) != 0) non_empty_bundle_count++;
 	    gate_count += nodes_per_cycle[curr_cycle].size();
-#ifdef debug
-	    for ( auto n : nodes_per_cycle[curr_cycle] )
-	    {
-	        // DOUT(curr_cycle << ": " << name[n] << " alap=" << alap_cycle[n]);
-	    }
-#endif
 	}
+	double avg_gates_per_cycle = double(gate_count)/cycle_count;
+	double avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
 	IOUT("... before uniform scheduling:"
 		<< " cycle_count=" << cycle_count
 		<< "; gate_count=" << gate_count
 		<< "; non_empty_bundle_count=" << non_empty_bundle_count
 		);
 	IOUT("... and max_gates_per_cycle=" << max_gates_per_cycle
-		<< "; avg_gates_per_cycle=" << double(gate_count)/cycle_count
-		<< "; avg_gates_per_non_empty_cycle=" << double(gate_count)/non_empty_bundle_count
+		<< "; avg_gates_per_cycle=" << avg_gates_per_cycle
+		<< "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
 		);
 
 	// backward make bundles max avg_gates_per_cycle long
@@ -1227,12 +1228,12 @@ public:
 	    // target size of each bundle is number of gates to go divided by number of non-empty cycles to go
 	    // it averages over non-empty bundles instead of all bundles because the latter would be very strict
 	    // it is readjusted to cater for dips in bundle size caused by local dependence chains
-	    // it is rounded to create room caused by local variations and to smooth the effective integral readjustments
             if (non_empty_bundle_count == 0) break;
-	    double avg_gates_per_cycle = std::ceil(double(gate_count)/non_empty_bundle_count);
-            DOUT("Cycle=" << curr_cycle << " number of gates=" << nodes_per_cycle[curr_cycle].size() << "; avg_gates_per_cycle=" << avg_gates_per_cycle);
+	    avg_gates_per_cycle = double(gate_count)/curr_cycle;
+	    avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
+            DOUT("Cycle=" << curr_cycle << " number of gates=" << nodes_per_cycle[curr_cycle].size() << "; avg_gates_per_cycle=" << avg_gates_per_cycle << "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle);
 
-	    while ( double(nodes_per_cycle[curr_cycle].size()) < avg_gates_per_cycle && pred_cycle >= 0 )
+	    while ( double(nodes_per_cycle[curr_cycle].size()) < avg_gates_per_non_empty_cycle && pred_cycle >= 0 )
 	    {
 	    	size_t		  max_alap_cycle = 0;
 		ListDigraph::Node best_n;
@@ -1288,9 +1289,12 @@ public:
 		    cycle[best_n] = curr_cycle;
 		    nodes_per_cycle[curr_cycle].push_back(best_n);
                     if (non_empty_bundle_count == 0) break;
-	            avg_gates_per_cycle = std::ceil(double(gate_count)/non_empty_bundle_count);
+	            avg_gates_per_cycle = double(gate_count)/curr_cycle;
+	            avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
 		    DOUT("... moved " << name[best_n] << " with alap=" << alap_cycle[best_n] << " from cycle=" << pred_cycle << " to cycle=" << curr_cycle
-			 << "; new avg_gates_per_cycle=" << avg_gates_per_cycle);
+			 << "; new avg_gates_per_cycle=" << avg_gates_per_cycle
+			 << "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
+                        );
 		}
 		else
 		{
@@ -1298,17 +1302,16 @@ public:
 		}
 	    }   // end for finding a bundle to forward a node from to the current cycle
 
-	    // curr_cycle ready, recompute goal for remaining cycles
+	    // curr_cycle ready, mask it from the counts and recompute counts for remaining cycles
 	    gate_count -= nodes_per_cycle[curr_cycle].size();
 	    if (nodes_per_cycle[curr_cycle].size() != 0)
 	    {
                 // bundle is non-empty
 		non_empty_bundle_count--;
 	    }
-            if (non_empty_bundle_count == 0) break;
-	    avg_gates_per_cycle = std::ceil(double(gate_count)/non_empty_bundle_count);
 	}   // end curr_cycle loop; curr_cycle is bundle which must be enlarged when too small
 
+        // Recompute and print statistics reporting on uniform scheduling performance
 	max_gates_per_cycle = 0;
 	non_empty_bundle_count = 0;
 	gate_count = 0;
@@ -1318,21 +1321,17 @@ public:
 	    max_gates_per_cycle = std::max(max_gates_per_cycle, nodes_per_cycle[curr_cycle].size());
 	    if (int(nodes_per_cycle[curr_cycle].size()) != 0) non_empty_bundle_count++;
 	    gate_count += nodes_per_cycle[curr_cycle].size();
-#ifdef debug
-	    for ( auto n : nodes_per_cycle[curr_cycle] )
-	    {
-	        // DOUT(curr_cycle << ": " << name[n] << " alap=" << alap_cycle[n]);
-	    }
-#endif
 	}
+	avg_gates_per_cycle = double(gate_count)/cycle_count;
+	avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
 	IOUT("... after uniform scheduling:"
 		<< " cycle_count=" << cycle_count
 		<< "; gate_count=" << gate_count
 		<< "; non_empty_bundle_count=" << non_empty_bundle_count
 		);
 	IOUT("... and max_gates_per_cycle=" << max_gates_per_cycle
-		<< "; avg_gates_per_cycle=" << double(gate_count)/cycle_count
-		<< "; avg_gates_per_non_empty_cycle=" << double(gate_count)/non_empty_bundle_count
+		<< "; avg_gates_per_cycle=" << avg_gates_per_cycle
+		<< "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
 		);
 
 	DOUT("Performing ALAP UNIFORM Scheduling [DONE]");
