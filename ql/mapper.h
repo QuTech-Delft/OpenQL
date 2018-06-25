@@ -57,7 +57,7 @@ private:
     {
         size_t v0 = real2Virt(r0);
         size_t v1 = real2Virt(r1);
-        DOUT("... remap("<< v0<<"->"<<r0<<","<<v1<<"->"<<r1<<")->("<<v0<<"->"<<r1<<","<<v1<<"->"<<r0<<" )");
+        DOUT("... remap from ("<< v0<<"->"<<r0<<","<<v1<<"->"<<r1<<") to ("<<v0<<"->"<<r1<<","<<v1<<"->"<<r0<<" )");
         virt2Real[v0] = r1;
         virt2Real[v1] = r0;
     }
@@ -93,8 +93,7 @@ private:
     }
 
 public:
-    // Mapper constructor initializes program-wide data, e.g. grid related
-    // Mapper.Init initializes data to map a particular kernel
+    // Mapper constructor initializes constant program-wide data, e.g. grid related
     Mapper( size_t nqbits, ql::quantum_platform pf) :
         nQbits(nqbits), cycle_time(platform.cycle_time), platform(pf)
     {
@@ -104,7 +103,7 @@ public:
 
         nx = platform.topology["x_size"];
         ny = platform.topology["y_size"];
-        DOUT("nx=" << nx << "; ny=" << ny);
+        DOUT("... nx=" << nx << "; ny=" << ny);
 
         for (auto & aqbit : platform.topology["qubits"] )
         {
@@ -143,25 +142,31 @@ public:
         }
 #endif        // debug
 
-        DOUT("... Mapper creation [DONE]");
+        DOUT("Mapper creation [DONE]");
     }
 
-    void Init()
+    // initialize program-wide data that is passed around between kernels
+    // initial program-wide mapping could be computed here
+    void MapInit()
     {
-        DOUT("Initialize mapper data: map(virtual->real)");
-        // DOUT("... start with trivial mapping (virtual==real), nQbits=" << nQbits);
+        DOUT("Mapping initialization ...");
+        DOUT("... Initialize map(virtual->real)");
+        DOUT("... with trivial mapping (virtual==real), nQbits=" << nQbits);
         virt2Real.resize(nQbits);
         for (size_t i=0; i<nQbits; i++)
         {
             virt2Real[i] = i;
         }
-        DOUT("Mapper initialization [DONE]");
+        printVirt2Real("starting mapping");
+        DOUT("Mapping initialization [DONE]");
     }
 
+    // map kernel's circuit in current mapping context as left by initialization and earlier kernels
     void MapCircuit(ql::circuit& inCirc)
     {
         DOUT("Mapping circuit ...");
-        printVirt2Real("starting mapping");
+        printVirt2Real("start mapping");
+
         ql::circuit outCirc;        // output gate stream, mapped; will be swapped with inCirc on return
 
         for( auto &g : inCirc )
@@ -170,18 +175,17 @@ public:
             size_t operandCount = q.size();
             if (operandCount == 1)
             {
-                DOUT(" gate: " << g->qasm() << " (virt " << q[0] << ")");
+                DOUT(" gate: " << g->qasm() );
                 q[0] = virt2Real[q[0]];
-                DOUT(" ... mapped gate: " << g->qasm() << " (real " << g->operands[0] << ")");
+                DOUT(" ... mapped gate: " << g->qasm() );
                 outCirc.push_back(g);
             }
-            else
+            else if (operandCount == 2)
             {
                 size_t rq0 = virt2Real[q[0]];
                 size_t rq1 = virt2Real[q[1]];
-                DOUT(" gate: " << g->qasm() << " (virt " << q[0] << ", virt " << q[1] << ") in (real " << rq0 << ", real " << rq1 << ")" );
                 size_t d = distance(rq0,rq1);
-                // DOUT(" ... distance(real " << rq0 << ", real " << rq1 << ")=" << d);
+                DOUT(" gate: " << g->qasm() << " in real (q" << rq0 << ",q" << rq1 << ") at distance=" << d );
                 while (d > 1)
                 {
                     for( auto rq0nb : nb[rq0] )
@@ -202,9 +206,14 @@ public:
                 }
                 q[0] = virt2Real[q[0]];
                 q[1] = virt2Real[q[1]];
-                DOUT(" ... mapped gate: " << g->qasm() << " (real " << g->operands[0] << ", real " << g->operands[1] << ")");
+                DOUT(" ... mapped gate: " << g->qasm() );
                 outCirc.push_back(g);
             }
+            else
+	    {
+	        EOUT(" gate: " << g->qasm() << " has more than 2 operand qubits; this is not supported by the mapper.");
+                throw ql::exception("Error: gates with more than 2 operand qubits not supported by mapper.", false);
+	    }
         } // end of instruction for
 
         printVirt2Real("end mapping");
@@ -212,16 +221,13 @@ public:
         DOUT("... swapping outCirc with inCirc");
 
         inCirc.swap(outCirc);
-        // inCirc.clear();
-        // for(auto & g: outCirc)
-        //     inCirc.push_back(g);
 
-        DOUT("... Start circuit (size=" << inCirc.size() << ") after mapping:");
-        for( auto g : inCirc )
-        {
-            DOUT("\t" << g->qasm() );
-        }
-        DOUT("... End circuit after mapping");
+        // DOUT("... Start circuit (size=" << inCirc.size() << ") after mapping:");
+        // for( auto& g : inCirc )
+        // {
+            // DOUT("\t" << g->qasm() );
+        // }
+        // DOUT("... End circuit after mapping");
         DOUT("Mapping circuit [DONE]");
         DOUT("==================================");
     }

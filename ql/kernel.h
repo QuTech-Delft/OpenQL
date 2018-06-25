@@ -22,10 +22,10 @@
 
 #define PI M_PI
 
-#ifndef __disable_lemon__
 #include "mapper.h"
-#include "scheduler.h"
 
+#ifndef __disable_lemon__
+#include "scheduler.h"
 #endif // __disable_lemon__
 
 namespace ql
@@ -952,18 +952,13 @@ public:
         DOUT("decompose_toffoli() [Done] ");
     }
 
-    void map(size_t qubits, quantum_platform platform)
+    void map(Mapper& mapper, std::string& map_in_qasm, std::string& map_out_qasm)
     {
-#ifndef __disable_lemon__
-        Mapper mapper(qubits, platform);
+        DOUT("Mapping kernel: " << name);
 
-        mapper.Init();
-        mapper.MapCircuit(c);
-        // DOUT("address of ckt: " << &c);
-        DOUT("Qasm at end of kernel::map size=" << c.size() << ":");
-        DOUT(qasm());
-        DOUT("Qasm at end of kernel::map END");
-#endif // __disable_lemon__
+        map_in_qasm += qasm();
+        mapper.MapCircuit(c);                // maps circuit in current context
+        map_out_qasm += qasm();
     }
 
     void schedule(size_t qubits, quantum_platform platform, std::string& sched_qasm, std::string& sched_dot)
@@ -972,9 +967,9 @@ public:
 
 #ifndef __disable_lemon__
         IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
-        DOUT("Qasm at start of kernel::schedule size=" << c.size() << ":");
-        DOUT(qasm());
-        DOUT("Qasm at start of kernel::schedule END");
+        // DOUT("Qasm at start of kernel::schedule size=" << c.size() << ":");
+        // DOUT(qasm());
+        // DOUT("Qasm at start of kernel::schedule END");
 
         Scheduler sched;
         sched.Init(qubits, c, platform);

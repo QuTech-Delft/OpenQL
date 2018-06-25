@@ -13,6 +13,7 @@
 #include <ql/options.h>
 #include <ql/platform.h>
 #include <ql/kernel.h>
+#include <ql/mapper.h>
 #include <ql/interactionMatrix.h>
 #include <ql/eqasm_compiler.h>
 #include <ql/arch/cbox_eqasm_compiler.h>
@@ -314,19 +315,27 @@ public:
 
     void map()
     {
+        std::string mapper_in_qasm;
+        std::string mapper_out_qasm;
+
         auto mapopt = ql::options::get("mapper");
-        // DOUT("mapping option=" << mapopt);
         if (mapopt == "base")
         {
-            for (auto &k : kernels)
+            Mapper mapper(qubits, platform);	// mapper creation with constant initialization of grid
+            mapper.MapInit();			// creates and initializes data passed on between kernels
+
+            for (auto& k : kernels)
             {
-               // DOUT("address of ckt: " << &(k.c));
-               k.map(qubits, platform);
-               // DOUT("address of ckt: " << &(k.c));
-               DOUT("Qasm at end of program::map size=" << k.c.size() << ":");
-               std::cout << k.qasm() << std::endl;
-               DOUT("Qasm at end of program::map END");
+		k.map(mapper, mapper_in_qasm, mapper_out_qasm);	// map kernel in current mapper context
             }
+
+            string fname_in = ql::options::get("output_dir") + "/" + name + "_mapper_in.qasm";
+            IOUT("writing mapper input qasm to '" << fname_in << "' ...");
+            ql::utils::write_file(fname_in, mapper_in_qasm);
+
+            string fname_out = ql::options::get("output_dir") + "/" + name + "_mapper_out.qasm";
+            IOUT("writing mapper_output qasm to '" << fname_out << "' ...");
+            ql::utils::write_file(fname_out, mapper_out_qasm);
         }
         else if (mapopt == "no" )
         {
