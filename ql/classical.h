@@ -41,7 +41,7 @@ class ids
 public:
     int max_id;
     std::stack<int> available_ids;
-    ids(int max = 32)
+    ids(int max = 28)
     {
         max_id = max;
         for(int i=max_id-1; i>=0; i--)

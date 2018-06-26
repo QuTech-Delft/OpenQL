@@ -233,7 +233,7 @@ public:
     void gate(std::string name, std::vector<size_t> qubits, 
         size_t duration=0, double angle=0.0)
     {
-        kernel_->gate(name, qubits, {1}, duration, angle);
+        kernel_->gate(name, qubits, {}, duration, angle);
     }
 
     void gate(std::string name, std::vector<size_t> qubits, CReg & destination)

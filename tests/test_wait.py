@@ -38,7 +38,7 @@ class Test_wait(unittest.TestCase):
         k = ql.Kernel('aKernel', platform, num_qubits)
 
         k.gate("x", [0])
-        k.gate("wait", [0], [], 40) # OR k.wait([0], 40)
+        k.gate("wait", [0], 40) # OR k.wait([0], 40)
         k.gate("x", [0])
 
         p.add_kernel(k)
@@ -61,7 +61,7 @@ class Test_wait(unittest.TestCase):
 
         # wait should not be in parallel with another gate
         k.gate("x", [0])
-        k.gate("wait", [1], [], 20) # OR k.wait([0], 20)
+        k.gate("wait", [1], 20) # OR k.wait([0], 20)
         k.gate("x", [1])
 
         p.add_kernel(k)
@@ -87,15 +87,15 @@ class Test_wait(unittest.TestCase):
             k.prepz(qubit_idx)
 
             k.gate('rx90', [qubit_idx])
-            k.gate("wait", [qubit_idx], [], wait_nanoseconds)
+            k.gate("wait", [qubit_idx], wait_nanoseconds)
 
             k.gate('rx180', [qubit_idx])
-            k.gate("wait", [qubit_idx], [], wait_nanoseconds)
+            k.gate("wait", [qubit_idx], wait_nanoseconds)
 
             k.gate('rx90', [qubit_idx])
-            k.gate("wait", [qubit_idx], [], wait_nanoseconds)
+            k.gate("wait", [qubit_idx], wait_nanoseconds)
 
-            k.measure(qubit_idx)
+            k.gate('measure', [qubit_idx])
 
             # add the kernel to the program
             p.add_kernel(k)
@@ -120,7 +120,7 @@ class Test_wait(unittest.TestCase):
         for i in range(4):
             k.gate("x", [i])
 
-        k.gate("wait", [0, 1, 2, 3], [], 40)
+        k.gate("wait", [0, 1, 2, 3], 40)
         k.wait([0, 1, 2, 3], 40)
 
         for i in range(4):
@@ -146,7 +146,7 @@ class Test_wait(unittest.TestCase):
         k.gate("x", [0])
         k.gate("x", [1])
         k.gate("y", [0])
-        k.gate("wait", [0, 1], [], 0) # this will serve as barrier
+        k.gate("wait", [0, 1], 0) # this will serve as barrier
         k.gate("measure", [0])
         k.gate("measure", [1])
 

@@ -74,8 +74,8 @@ def test_qx():
 
 
 def test_hybrid():
-    # config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
-    config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
+    config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
+    # config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
     platform  = ql.Platform('platform_none', config_fn)
     num_qubits = 5
     num_cregs = 10
@@ -128,8 +128,8 @@ def test_hybrid():
     # p.add_kernel(k2)
 
     # simple if
-    p.add_if(k1, ql.Operation(rs1, '==', rs2))
-    p.add_kernel(k2)
+    # p.add_if(k1, ql.Operation(rs1, '==', rs2))
+    # p.add_kernel(k2)
 
     # simple if/else
     # p.add_if_else(k1, k2, ql.Operation(rs1, '==', rs2))
@@ -144,7 +144,7 @@ def test_hybrid():
     # p.add_do_while(k1, ql.Operation(rs1, '<', rs2))
     # p.add_kernel(k2)
 
-    # nested while
+    # nested do-while
     # rs3 = ql.CReg()
     # rs4 = ql.CReg()
     # sp1.add_do_while(k1, ql.Operation(rs1, '>', rs2))
@@ -183,13 +183,13 @@ def test_fig10():
     k_init = ql.Kernel('k_init', platform, num_qubits, num_cregs)
     k_if = ql.Kernel('k_if', platform, num_qubits, num_cregs)
     k_else = ql.Kernel('k_else', platform, num_qubits, num_cregs)
+    q0, q1 = 0, 1
 
     # create classical registers
-    q0, q1 = 0, 1
     value_one = ql.CReg()
     meas_value_q1 = ql.CReg()
 
-    k_init.classical(value_one, ql.Operation(1)) # value_one = 1
+    k_init.classical(value_one, ql.Operation(1))
     k_init.gate('measure', [q1], meas_value_q1)
     p.add_kernel(k_init)
 
@@ -202,8 +202,8 @@ def test_fig10():
     p.compile()
 
 if __name__ == '__main__':
-    # test_fig10()
-    test_hybrid()
+    test_fig10()
+    # test_hybrid()
 
 
 # LOG_NOTHING,

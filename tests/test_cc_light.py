@@ -176,7 +176,7 @@ class Test_basic(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_smis_all_bundled', platform, num_qubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -255,7 +255,7 @@ class Test_basic(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_smit_all_bundled', platform, num_qubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         # populate kernel using default gates
@@ -694,7 +694,7 @@ class Test_advance(unittest.TestCase):
             platform  = ql.Platform('seven_qubits_chip', config_fn)
             sweep_points = [1,2]
             num_qubits = 7
-            p = ql.Program('aProgram', platform, num_qubits)
+            p = ql.Program('test_ccl_buffers'+str(testNo), platform, num_qubits)
             p.set_sweep_points(sweep_points, len(sweep_points))
             k = ql.Kernel('aKernel', platform, num_qubits)
 
@@ -706,8 +706,8 @@ class Test_advance(unittest.TestCase):
 
             # load qasm
             qasm_files = []
-            qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
-            qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
+            qasm_files.append(os.path.join(output_dir, p.name_+'.qasm'))
+            qasm_files.append(os.path.join(output_dir, p.name_+'_scheduled.qasm'))
 
             for qasm_file in qasm_files:
                qasm_reader = ql.QASM_Loader(qasm_file)
@@ -745,7 +745,7 @@ class Test_advance(unittest.TestCase):
             platform  = ql.Platform('seven_qubits_chip', config_fn)
             sweep_points = [1,2]
             num_qubits = 7
-            p = ql.Program('aProgram', platform, num_qubits)
+            p = ql.Program('test_ccl_latencies'+str(testNo), platform, num_qubits)
             p.set_sweep_points(sweep_points, len(sweep_points))
             k = ql.Kernel('aKernel', platform, num_qubits)
 
@@ -757,8 +757,8 @@ class Test_advance(unittest.TestCase):
 
             # load qasm
             qasm_files = []
-            qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
-            qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
+            qasm_files.append(os.path.join(output_dir, p.name_+'.qasm'))
+            qasm_files.append(os.path.join(output_dir, p.name_+'_scheduled.qasm'))
 
             for qasm_file in qasm_files:
                qasm_reader = ql.QASM_Loader(qasm_file)

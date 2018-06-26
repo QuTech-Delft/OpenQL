@@ -51,9 +51,9 @@ class Test_controlled_kernel(unittest.TestCase):
         k = ql.Kernel('kernel1', platform, num_qubits)
         ck = ql.Kernel('controlled_kernel1', platform, num_qubits)
 
-        k.gate("rx", [0], angle=(np.pi)/4 )
-        k.gate("ry", [0], angle=(np.pi)/4 )
-        k.gate("rz", [0], angle=(np.pi)/4 )
+        k.gate("rx", [0], 0, (np.pi)/4 ) # duration = 0 uses default value of duration
+        k.gate("ry", [0], 0, (np.pi)/4 ) # duration = 0 uses default value of duration
+        k.gate("rz", [0], 0, (np.pi)/4 ) # duration = 0 uses default value of duration
 
         # generate controlled version of k.
         # qubit 1 is used as control qubit

@@ -3,7 +3,13 @@ import os
 
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_output_dir(output_dir)
+
+ql.set_option('output_dir', output_dir)
+ql.set_option('optimize', 'no')
+ql.set_option('scheduler', 'ALAP')
+ql.set_option('log_level', 'LOG_INFO')
+ql.set_option('decompose_toffoli', 'no')
+ql.set_option('use_default_gates', 'yes')
 
 def hello_openql():
     # if you copy this example somewhere else, make sure to provide
@@ -17,32 +23,29 @@ def hello_openql():
     nqubits = 3
 
     # create a program
-    p = ql.Program("aProgram", nqubits, platform)
+    p = ql.Program("aProgram", platform, nqubits)
 
     # set sweep points
     p.set_sweep_points(sweep_points, len(sweep_points))
 
     # create a kernel
-    k = ql.Kernel("aKernel", platform)
+    k = ql.Kernel("aKernel", platform, nqubits)
 
     # populate kernel using default and custom gates
     for i in range(nqubits):
         k.prepz(i)
 
-    k.gate('x', 0)
-    k.gate('h', 1)
+    k.gate('x', [0])
+    k.gate('h', [1])
     k.gate('cz', [2, 0])
-    k.gate('measure', 0)
-    k.gate('measure', 1)
+    k.gate('measure', [0])
+    k.gate('measure', [1])
 
     # add the kernel to the program
     p.add_kernel(k)
 
     # compile the program
-    p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
-
-    print('Output files are generated in {0}'.format(output_dir))
-
+    p.compile()
 
 if __name__ == '__main__':
     hello_openql()

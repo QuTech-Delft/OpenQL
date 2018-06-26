@@ -58,11 +58,11 @@ std::string get_cc_light_instruction_name(std::string & id, ql::quantum_platform
 
 
 ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt, 
-    ql::quantum_platform & platform, size_t nqubits)
+    ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Scheduling CC-Light instructions ...");
     Scheduler sched;
-    sched.Init(ckt, platform, nqubits, 0); //TODO creg_count is 0 for now
+    sched.Init(ckt, platform, nqubits, ncreg);
     // sched.PrintDot();
     ql::ir::bundles_t bundles1 = sched.schedule_asap();
 
@@ -74,7 +74,6 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
         auto firstInsIt = secIt1->begin();
         auto itype = (*(firstInsIt))->type();
         
-        // TODO check it again
         if(__classical_gate__ == itype)
         {
             continue;
@@ -131,12 +130,12 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
 
 
 ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt, 
-    ql::quantum_platform & platform, size_t nqubits)
+    ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Resource constraint scheduling of CC-Light instructions ...");
     resource_manager_t rm(platform);
     Scheduler sched;
-    sched.Init(ckt, platform, nqubits, 0); //TODO creg_count is 0 for now
+    sched.Init(ckt, platform, nqubits, ncreg);
     ql::ir::bundles_t bundles1 = sched.schedule_asap(rm, platform);
 
     // combine parallel instrcutions of same type from different sections

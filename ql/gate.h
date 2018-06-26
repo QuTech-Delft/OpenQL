@@ -212,6 +212,7 @@ public:
     bool optimization_enabled = true;
     std::string name = "";
     std::vector<size_t> operands;
+    std::vector<size_t> creg_operands;
     size_t duration;                         // to do change attribute name "duration" to "duration" (duration is used to describe hardware duration)
     double angle;                            // for arbitrary rotations
     virtual instruction_t qasm()       = 0;
@@ -922,7 +923,6 @@ class measure : public gate
 {
 public:
     cmat_t m;
-    std::vector<size_t> creg_operands;
 
     measure(size_t q) : m(identity_c)
     {
@@ -1295,7 +1295,6 @@ class custom_gate : public gate
 {
 public:
     cmat_t              m;                // matrix representation
-    std::vector<size_t> creg_operands;
     size_t              parameters;       // number of parameters : single qubit, two qubits ... etc
     ucode_sequence_t    qumis;            // microcode sequence
     instruction_type_t  operation_type;   // operation type : rf/flux

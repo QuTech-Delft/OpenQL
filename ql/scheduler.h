@@ -2,7 +2,7 @@
  * @file   scheduler.h
  * @date   01/2017
  * @author Imran Ashraf
- * @brief  ASAP/AlAP scheduling
+ * @brief  ASAP/AlAP  scheduling with and without resource constraint
  */
 
 #ifndef _SCHEDULER_H

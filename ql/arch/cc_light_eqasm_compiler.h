@@ -246,10 +246,11 @@ public:
     int imm_value;
     classical_cc(std::string operation, std::vector<size_t> opers, int ivalue=0)
     {
+        DOUT("adding classical_cc " << operation);
         str::lower_case(operation);
         name=operation;
-        operands=opers;
         duration = 20;
+        operands=opers;
         int sz = operands.size();
         if((   (name == "add") || (name == "sub") 
             || (name == "and") || (name == "or") || (name == "xor")
@@ -269,7 +270,6 @@ public:
             if( (name == "ldi") )
             {
                 imm_value = ivalue;
-                DOUT("imm_value: " << imm_value);
             }
             DOUT("Adding 1 operand operation: " << name);
         }
@@ -282,6 +282,7 @@ public:
             EOUT("Unknown cclight classical operation '" << name << "' with '" << sz << "' operands!");
             throw ql::exception("Unknown cclight classical operation'"+name+"' with'"+std::to_string(sz)+"' operands!", false);
         }
+        DOUT("adding classical_cc [DONE]");
     }
 
     instruction_t qasm()
@@ -349,7 +350,6 @@ std::string classical_instruction2qisa(ql::arch::classical_cc* classical_ins)
         }
         if(iname == "ldi")
         {
-            DOUT("imm_value: " << (classical_ins->imm_value) );
             ssclassical << ", " + std::to_string(classical_ins->imm_value);
         }
     }
@@ -439,7 +439,6 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
                         EOUT("cc_light_instr not defined for instruction: " << id << " !");
                         throw ql::exception("Error : cc_light_instr not defined for instruction: "+id+" !",false);
                     }                    
-                    // DOUT("cc_light_instr name: " << cc_light_instr_name);
                 }
                 else
                 {
@@ -692,7 +691,7 @@ public:
 
 
     /*
-     * compile qasm to cc_light_eqasm
+     * program-level compilaation of qasm to cc_light_eqasm
      */
     void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform)
     {
@@ -762,15 +761,36 @@ public:
 
         if(k.type == kernel_type_t::IF_START)
         {
+            #if 0
+            // Branching macros are not yet supported by assembler,
+            // so for now the following can not be used
             ss << "    b" << k.br_condition.inv_operation_name 
                <<" r" << (k.br_condition.operands[0])->id <<", r" << (k.br_condition.operands[1])->id
                << ", " << k.name << "_end\n";
+            #else
+            ss  <<"    cmp r" << (k.br_condition.operands[0])->id 
+                <<", r" << (k.br_condition.operands[1])->id << '\n';
+            ss  <<"    nop\n";
+            ss  <<"    br " << k.br_condition.inv_operation_name << ", "
+                << k.name << "_end\n";
+            #endif
+
         }
 
         if(k.type == kernel_type_t::ELSE_START)
         {
+            #if 0
+            // Branching macros are not yet supported by assembler,
+            // so for now the following can not be used
             ss << "    b" << k.br_condition.operation_name <<" r" << (k.br_condition.operands[0])->id
                <<", r" << (k.br_condition.operands[1])->id << ", " << k.name << "_end\n";
+            #else
+            ss  <<"    cmp r" << (k.br_condition.operands[0])->id 
+                <<", r" << (k.br_condition.operands[1])->id << '\n';
+            ss  <<"    nop\n";
+            ss  <<"    br " << k.br_condition.operation_name << ", "
+                << k.name << "_end\n";
+            #endif
         }
 
         if(k.type == kernel_type_t::FOR_START)
@@ -790,8 +810,18 @@ public:
 
         if(k.type == kernel_type_t::DO_WHILE_END)
         {
+            #if 0
+            // Branching macros are not yet supported by assembler,
+            // so for now the following can not be used
             ss << "    b" << k.br_condition.operation_name <<" r" << (k.br_condition.operands[0])->id
                <<", r" << (k.br_condition.operands[1])->id << ", " << k.name << "_start\n";
+            #else
+            ss  <<"    cmp r" << (k.br_condition.operands[0])->id 
+                <<", r" << (k.br_condition.operands[1])->id << '\n';
+            ss  <<"    nop\n";
+            ss  <<"    br " << k.br_condition.operation_name << ", "
+                << k.name << "_start\n";
+            #endif
         }
 
         if(k.type == kernel_type_t::FOR_END)
@@ -804,12 +834,21 @@ public:
 
             // for now r29, r30, r31 are used
             ss << "    add r31, r31, r30\n";
+            #if 0
+            // Branching macros are not yet supported by assembler,
+            // so for now the following can not be used
             ss << "    blt r31, r29, " << tokens[0] << "\n";
+            #else
+            ss  <<"    cmp r31, r29\n";
+            ss  <<"    nop\n";
+            ss  <<"    br lt, " << tokens[0] << "\n";
+            #endif
         }
 
         return ss.str();
     }
 
+    // kernel level compilation
     void compile(std::string prog_name, std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
     {
         DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");
@@ -827,13 +866,14 @@ public:
             sskernels_qisa << get_prologue(kernel);
             ql::circuit decomp_ckt;
             ql::circuit& ckt = kernel.c;
+            auto num_creg = kernel.creg_count;
             if (! ckt.empty())
             {
                 // decompose meta-instructions
                 decompose_instructions(ckt, decomp_ckt, platform);
 
                 // schedule with platform resource constraints
-                ql::ir::bundles_t bundles = cc_light_schedule_rc(decomp_ckt, platform, num_qubits);
+                ql::ir::bundles_t bundles = cc_light_schedule_rc(decomp_ckt, platform, num_qubits, num_creg);
 
                 // std::cout << "QASM" << std::endl;
                 // std::cout << ql::ir::qasm(bundles) << std::endl;
@@ -877,12 +917,14 @@ public:
         for( auto ins : ckt )
         {
             auto & iname =  ins->name;
+            str::lower_case(iname);
+            DOUT("decomposing instruction " << iname << "...");            
             auto & iopers = ins->operands;
             int iopers_count = iopers.size();
             auto itype = ins->type();
             if(__classical_gate__ == itype)
             {
-                COUT("decomposing classical instruction: " << iname);
+                DOUT("    classical instruction");
 
                 if( (iname == "add") || (iname == "sub") ||
                     (iname == "and") || (iname == "or") || (iname == "xor") ||
@@ -909,40 +951,67 @@ public:
                 else if(iname == "ldi")
                 {
                     auto imval = ((ql::classical*)ins)->imm_value;
-                    DOUT("imval: " << imval);
                     decomp_ckt.push_back(new ql::arch::classical_cc("ldi", iopers, imval));
                 }
                 else
                 {
                     EOUT("Unknown decomposition of classical operation '" << iname << "' with '" << iopers_count << "' operands!");
-                    throw ql::exception("Unknown classical operation'"+iname+"' with'"+std::to_string(iopers_count)+"' operands!", false);
+                    throw ql::exception("Unknown classical operation '"+iname+"' with'"+std::to_string(iopers_count)+"' operands!", false);
                 }
             }
             else
             {
-                json& instruction_settings = platform.instruction_settings;
-                std::string operation_type = instruction_settings[iname]["type"];
-                bool is_measure = (operation_type == "readout");
-                if(is_measure)
+                if(iname == "wait")
                 {
-                    // insert measure
-                    auto qop = iopers[0];
+                    DOUT("    wait instruction ");
                     decomp_ckt.push_back(ins);
-                    if( ql::gate_type_t::__custom_gate__ == itype )
-                    {
-                        auto mins = (ql::measure*) ins;
-                        auto cop = mins->creg_operands[0];
-                        decomp_ckt.push_back(new ql::arch::classical_cc("fmr", {cop, qop}));
-                    }
-                    else
-                    {
-                        EOUT("Unknown decomposition of measure/readout operation: '" << iname << "!");
-                        throw ql::exception("Unknown decomposition of measure/readout operation '"+iname+"'!", false);
-                    }
                 }
                 else
                 {
-                    decomp_ckt.push_back(ins);
+                    json& instruction_settings = platform.instruction_settings;
+                    std::string operation_type;
+                    if (instruction_settings.find(iname) != instruction_settings.end())
+                    {
+                        operation_type = instruction_settings[iname]["type"];
+                    }
+                    else
+                    {
+                        EOUT("instruction settings not found for '" << iname << "' with '" << iopers_count << "' operands!");
+                        throw ql::exception("instruction settings not found for '"+iname+"' with'"+std::to_string(iopers_count)+"' operands!", false);
+                    }
+                    bool is_measure = (operation_type == "readout");
+                    if(is_measure)
+                    {
+                        // insert measure
+                        DOUT("    readout instruction ");
+                        auto qop = iopers[0];
+                        decomp_ckt.push_back(ins);
+                        if( ql::gate_type_t::__custom_gate__ == itype )
+                        {
+                            auto & coperands = ins->creg_operands;
+                            if(!coperands.empty())
+                            {
+                                auto cop = coperands[0];
+                                decomp_ckt.push_back(new ql::arch::classical_cc("fmr", {cop, qop}));
+                            }
+                            else
+                            {
+                                WOUT("Unknown classical operand for measure/readout operation: '" << iname <<
+                                    ". This will soon be depricated in favour of measure instruction with fmr" <<
+                                    " to store measurement outcome to classical register.");
+                            }
+                        }
+                        else
+                        {
+                            EOUT("Unknown decomposition of measure/readout operation: '" << iname << "!");
+                            throw ql::exception("Unknown decomposition of measure/readout operation '"+iname+"'!", false);
+                        }
+                    }
+                    else
+                    {
+                        DOUT("    quantum instruction ");
+                        decomp_ckt.push_back(ins);
+                    }
                 }
             }
         }        
