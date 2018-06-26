@@ -21,13 +21,13 @@ def hello_openql():
     nqubits = 3
 
     # create a program
-    p = ql.Program("aProgram", nqubits, platform)
+    p = ql.Program("aProgram", platform, nqubits)
 
     # set sweep points
     p.set_sweep_points(sweep_points, len(sweep_points))
 
     # create a kernel
-    k = ql.Kernel("aKernel", platform)
+    k = ql.Kernel("aKernel", platform, nqubits)
 
     # populate kernel using default and custom gates
     for i in range(nqubits):
@@ -44,10 +44,6 @@ def hello_openql():
 
     # compile the program
     p.compile()
-
-    # print a friendly message to indicate location of output files
-    print('Output files are generated in {0}'.format(output_dir))
-
 
 if __name__ == '__main__':
     hello_openql()

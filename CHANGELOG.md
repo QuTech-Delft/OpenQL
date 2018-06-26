@@ -4,16 +4,19 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [ 0.5 ] - [ 2018-xx-xx ]
 ### Added
--
+- support for classical instructions
+- support for flow control (selection and repetition)
+- classical register manager implementation
 
 ### Changed
--
+- measure instruction updated to support classical target register
+- kernels are not any more fused to generate a single qisa program
 
 ### Removed
-- 
+- kernel does not recieve iteration count, deprecated in favor of for-loop
 
 ### Fixed
--
+- qisa format (pre-interval syntax updated)
 
 ## [ 0.4.1 ] - [ 2018-05-31 ]
 ### Added

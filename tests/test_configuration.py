@@ -15,15 +15,14 @@ class Test_Configuration(unittest.TestCase):
     def test_case_insensitivity(self):
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
-        p = ql.Program(pname="aProgram", nqubits=platform.get_qubit_number(), platform=platform)
+        p = ql.Program("aProgram", platform, platform.get_qubit_number())
         sweep_points = [1,2]
         p.set_sweep_points(sweep_points, len(sweep_points))
 
-        k = ql.Kernel('aKernel', platform)
-        k.gate('rx180', [0])  # in the configuartion its name is rX180 q0
+        k = ql.Kernel('aKernel', platform, platform.get_qubit_number())
+        k.gate('Rx180', [0])  # in the configuartion its name is rx180 q0
         k.gate('rX180', [2])  # in the configuartion its name is rx180 q2
-        k.gate('cZ', [2, 0])  # in the configuartion its name is CZ q2, q0 
-                            # (Note space in q2, q0)
+        k.gate('CZ', [2, 0])  # in the configuartion its name is cz q2, q0 
 
         # add the kernel to the program
         p.add_kernel(k)
@@ -46,11 +45,11 @@ class Test_Configuration(unittest.TestCase):
     def test_missing_instr(self):
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
-        p = ql.Program(pname="aProgram", nqubits=platform.get_qubit_number(), platform=platform)
+        p = ql.Program("aProgram", platform, platform.get_qubit_number())
         sweep_points = [1,2]
         p.set_sweep_points(sweep_points, len(sweep_points))
 
-        k = ql.Kernel('aKernel', platform)
+        k = ql.Kernel('aKernel', platform, platform.get_qubit_number())
         k.gate('rx180', [0])  # available
 
         try:
@@ -82,11 +81,11 @@ class Test_Configuration(unittest.TestCase):
     def test_missing_cc_light_instr(self):
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
-        p = ql.Program(pname="aProgram", nqubits=platform.get_qubit_number(), platform=platform)
+        p = ql.Program("aProgram", platform, platform.get_qubit_number())
         sweep_points = [1,2]
         p.set_sweep_points(sweep_points, len(sweep_points))
 
-        k = ql.Kernel('aKernel', platform)
+        k = ql.Kernel('aKernel', platform, platform.get_qubit_number())
 
         k.gate('rx180', [0])  # fine
 

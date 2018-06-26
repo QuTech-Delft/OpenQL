@@ -47,7 +47,7 @@ public:
      * load
      */
     void load(ql::instruction_map_t& instruction_map, json& instruction_settings, json& hardware_settings,
-              json& resources, json& topology, json& aliases ) throw (ql::exception)
+              json& resources, json& topology, json& aliases )
     {
         json config;
         try

@@ -8,69 +8,95 @@ smis s6, {6}
 smis s7, {0, 1, 2, 3, 4, 5, 6} 
 smis s8, {0, 1, 5, 6} 
 smis s9, {2, 3, 4} 
-
 start:
-    bs 1    prepz s0
-    bs 2    x90 s0
-    bs 3    x s0
-    bs 3    x90 s0
-    bs 3    measz s0
-    bs 2    prepz s0
-    bs 2    x90 s0
-    bs 4    x s0
-    bs 4    x90 s0
-    bs 4    measz s0
-    bs 2    prepz s0
-    bs 2    x90 s0
-    bs 5    x s0
-    bs 5    x90 s0
-    bs 5    measz s0
-    bs 2    prepz s0
-    bs 2    x90 s0
-    bs 7    x s0
-    bs 7    x90 s0
-    bs 7    measz s0
-    bs 2    prepz s0
-    bs 2    x90 s0
-    qwait 11
-    bs 1    x s0
-    qwait 11
-    bs 1    x90 s0
-    qwait 11
-    bs 1    measz s0
-    bs 2    prepz s0
-    bs 2    x90 s0
-    qwait 21
-    bs 1    x s0
-    qwait 21
-    bs 1    x90 s0
-    qwait 21
-    bs 1    measz s0
-    bs 2    prepz s0
-    bs 2    x90 s0
-    qwait 41
-    bs 1    x s0
-    qwait 41
-    bs 1    x90 s0
-    qwait 41
-    bs 1    measz s0
-    bs 2    prepz s0
-    bs 2    x90 s0
-    qwait 51
-    bs 1    x s0
-    qwait 51
-    bs 1    x90 s0
-    qwait 51
-    bs 1    measz s0
-    bs 2    prepz s0
-    bs 2    x90 s0
-    qwait 101
-    bs 1    x s0
-    qwait 101
-    bs 1    x90 s0
-    qwait 101
-    bs 1    measz s0
+
+kernel_0:
+    1,    prepz s0
+    2,    x90 s0
+    3,    x s0
+    3,    x90 s0
+    3,    measz s0
     qwait 2
+
+kernel_1:
+    1,    prepz s0
+    2,    x90 s0
+    4,    x s0
+    4,    x90 s0
+    4,    measz s0
+    qwait 2
+
+kernel_2:
+    1,    prepz s0
+    2,    x90 s0
+    5,    x s0
+    5,    x90 s0
+    5,    measz s0
+    qwait 2
+
+kernel_3:
+    1,    prepz s0
+    2,    x90 s0
+    7,    x s0
+    7,    x90 s0
+    7,    measz s0
+    qwait 2
+
+kernel_4:
+    1,    prepz s0
+    2,    x90 s0
+    qwait 11
+    1,    x s0
+    qwait 11
+    1,    x90 s0
+    qwait 11
+    1,    measz s0
+    qwait 2
+
+kernel_5:
+    1,    prepz s0
+    2,    x90 s0
+    qwait 21
+    1,    x s0
+    qwait 21
+    1,    x90 s0
+    qwait 21
+    1,    measz s0
+    qwait 2
+
+kernel_6:
+    1,    prepz s0
+    2,    x90 s0
+    qwait 41
+    1,    x s0
+    qwait 41
+    1,    x90 s0
+    qwait 41
+    1,    measz s0
+    qwait 2
+
+kernel_7:
+    1,    prepz s0
+    2,    x90 s0
+    qwait 51
+    1,    x s0
+    qwait 51
+    1,    x90 s0
+    qwait 51
+    1,    measz s0
+    qwait 2
+
+kernel_8:
+    1,    prepz s0
+    2,    x90 s0
+    qwait 101
+    1,    x s0
+    qwait 101
+    1,    x90 s0
+    qwait 101
+    1,    measz s0
+    qwait 2
+
     br always, start
     nop 
     nop

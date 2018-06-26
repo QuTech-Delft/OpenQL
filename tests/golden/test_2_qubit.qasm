@@ -2,10 +2,10 @@
 qubits 3
 
 .aKernel
-   prepz q0
-   prepz q1
-   prepz q2
-   cz q0,q1
-   ry90 q2
-   rx90 q2
-   measure q2
+    prepz q0
+    prepz q1
+    prepz q2
+    cz q0,q1
+    ry90 q2
+    rx90 q2
+    measure q2

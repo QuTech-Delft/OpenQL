@@ -81,7 +81,7 @@ namespace ql
         /**
         * write content to the file <file_name>
         */
-        void write_file(std::string file_name, std::string& content)
+        void write_file(std::string file_name, const std::string& content)
         {
             std::ofstream file;
             file.open(file_name);
@@ -106,8 +106,10 @@ namespace ql
             size_t sz = v.size();
             if(sz > 0)
             {
-                for (size_t i=0; i<sz-1; ++i)
+                size_t i;
+                for (i=0; i<sz-1; ++i)
                     ss << v[i] << elem_sep;
+                ss << v[i];
             }
 
             ss << "]";

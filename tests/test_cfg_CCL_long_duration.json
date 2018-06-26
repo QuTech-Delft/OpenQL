@@ -827,7 +827,7 @@
             "cc_light_codeword": 0,
             "cc_light_opcode": 30
         },
-        "rX180 q0": {
+        "rx180 q0": {
             "duration": 20,
             "latency": 0,
             "qubits": [
@@ -10251,7 +10251,7 @@
             "cc_light_codeword": 31,
             "cc_light_opcode": 61
         },
-        "CZ q2, q0": {
+        "cz q2,q0": {
             "duration": 80,
             "latency": 0,
             "qubits": [
@@ -10284,7 +10284,7 @@
             "cc_light_left_codeword": 2,
             "cc_light_opcode": 128
         },
-        "CZ q0, q2": {
+        "cz q0,q2": {
             "duration": 80,
             "latency": 0,
             "qubits": [
@@ -10317,7 +10317,7 @@
             "cc_light_left_codeword": 2,
             "cc_light_opcode": 128
         },
-        "CZ q0, q3": {
+        "cz q0,q3": {
             "duration": 80,
             "latency": 0,
             "qubits": [
@@ -10350,7 +10350,7 @@
             "cc_light_left_codeword": 2,
             "cc_light_opcode": 128
         },
-        "CZ q3, q0": {
+        "cz q3,q0": {
             "duration": 80,
             "latency": 0,
             "qubits": [
@@ -10383,7 +10383,7 @@
             "cc_light_left_codeword": 2,
             "cc_light_opcode": 128
         },
-        "CZ q3, q1": {
+        "cz q3,q1": {
             "duration": 80,
             "latency": 0,
             "qubits": [
@@ -10416,7 +10416,7 @@
             "cc_light_left_codeword": 2,
             "cc_light_opcode": 128
         },
-        "CZ q1, q3": {
+        "cz q1,q3": {
             "duration": 80,
             "latency": 0,
             "qubits": [
@@ -10449,7 +10449,7 @@
             "cc_light_left_codeword": 2,
             "cc_light_opcode": 128
         },
-        "CZ q1, q4": {
+        "cz q1,q4": {
             "duration": 80,
             "latency": 0,
             "qubits": [
@@ -10482,7 +10482,7 @@
             "cc_light_left_codeword": 2,
             "cc_light_opcode": 128
         },
-        "CZ q4, q1": {
+        "cz q4,q1": {
             "duration": 80,
             "latency": 0,
             "qubits": [
@@ -10515,7 +10515,7 @@
             "cc_light_left_codeword": 2,
             "cc_light_opcode": 128
         },
-        "CZ q2, q5": {
+        "cz q2,q5": {
             "duration": 80,
             "latency": 0,
             "qubits": [
@@ -10548,7 +10548,7 @@
             "cc_light_left_codeword": 2,
             "cc_light_opcode": 128
         },
-        "CZ q5, q2": {
+        "cz q5,q2": {
             "duration": 80,
             "latency": 0,
             "qubits": [
@@ -10581,7 +10581,7 @@
             "cc_light_left_codeword": 2,
             "cc_light_opcode": 128
         },
-        "CZ q5, q3": {
+        "cz q5,q3": {
             "duration": 80,
             "latency": 0,
             "qubits": [
@@ -10614,7 +10614,7 @@
             "cc_light_left_codeword": 2,
             "cc_light_opcode": 128
         },
-        "CZ q3, q5": {
+        "cz q3,q5": {
             "duration": 80,
             "latency": 0,
             "qubits": [
@@ -10647,7 +10647,7 @@
             "cc_light_left_codeword": 2,
             "cc_light_opcode": 128
         },
-        "CZ q3, q6": {
+        "cz q3,q6": {
             "duration": 80,
             "latency": 0,
             "qubits": [
@@ -10680,7 +10680,7 @@
             "cc_light_left_codeword": 2,
             "cc_light_opcode": 128
         },
-        "CZ q6, q3": {
+        "cz q6,q3": {
             "duration": 80,
             "latency": 0,
             "qubits": [
@@ -10713,7 +10713,7 @@
             "cc_light_left_codeword": 2,
             "cc_light_opcode": 128
         },
-        "CZ q6, q4": {
+        "cz q6,q4": {
             "duration": 80,
             "latency": 0,
             "qubits": [
@@ -10746,7 +10746,7 @@
             "cc_light_left_codeword": 2,
             "cc_light_opcode": 128
         },
-        "CZ q4, q6": {
+        "cz q4,q6": {
             "duration": 80,
             "latency": 0,
             "qubits": [

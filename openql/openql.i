@@ -4,7 +4,7 @@
  * @brief  swig interface file
  */
 %define DOCSTRING
-"`OpenQL` is a C++/Python framework for high-level quantum programming. The framework provide a compiler for compiling and optimizing quantum code. The compiler produce the intermediate quantum assembly language and the compiled micro-code for various target platforms. While the microcode is platform-specific, the quantum assembly code (qasm) is hardware-agnostic and can be simulated on the QX simulator."
+"`OpenQL` is a C++/Python framework for high-level quantum programming. The framework provides a compiler for compiling and optimizing quantum code. The compiler produces the intermediate quantum assembly language and the compiled eQASM (executable QASM) for various target platforms. While the eQASM is platform-specific, the quantum assembly code (QASM) is hardware-agnostic and can be simulated on the QX simulator."
 %enddef
 
 %module(docstring=DOCSTRING) openql
@@ -137,6 +137,78 @@ int
 """
 
 
+%feature("docstring") CReg
+""" Classical register class."""
+
+
+%feature("docstring") CReg::CReg
+""" Constructs a classical register which can be source/destination for classical operations.
+
+Parameters
+----------
+None
+
+Returns
+-------
+CReg
+    classical register object
+
+"""
+
+
+
+
+
+
+%feature("docstring") Operation
+""" Operation class representing classical operations."""
+
+%feature("docstring") Operation::Operation
+""" Constructs an Operation object (Binary operation).
+
+Parameters
+----------
+arg1 : CReg
+    left hand side operand
+arg2 : str
+    classical binary operation (+, -, &, |, ^, ==, !=, <, >, <=, >=)
+arg3 : CReg
+    right hand side operand
+"""
+
+%feature("docstring") Operation::Operation
+""" Constructs an Operation object (Unary operation).
+
+Parameters
+----------
+arg1 : str
+    classical unary operation (~)
+arg2 : CReg
+    right hand side operand
+"""
+
+%feature("docstring") Operation::Operation
+""" Constructs an Operation object (used for assignment).
+
+Parameters
+----------
+arg1 : CReg
+    operand
+"""
+
+
+%feature("docstring") Operation::Operation
+""" Constructs an Operation object (used for initializing with immediate values).
+
+Parameters
+----------
+arg1 : int
+    immediate value
+"""
+
+
+
+
 %feature("docstring") Kernel
 """ Kernel class which contains various quantum instructions."""
 
@@ -150,6 +222,10 @@ arg1 : str
     name of the Kernel
 arg2 : Platform
     target platform for which the kernel will be compiled
+arg3 : int
+    qubit count
+arg4 : int
+    classical register count
 """
 
 
@@ -391,6 +467,42 @@ arg3 : double
     angle of roation, used internally only for roations (rx, ry and rz)
 """
 
+%feature("docstring") Kernel::gate
+""" adds custom/default gates to kernel.
+
+Parameters
+----------
+arg1 : str
+    name of gate
+arg2 : []
+    list of qubits
+arg3 : CReg
+    classical destination register for measure operation.
+"""
+
+
+
+%feature("docstring") Kernel::classical
+""" adds classical operation kernel.
+
+Parameters
+----------
+arg1 : str
+    name of operation (used for inserting nop)
+"""
+
+
+%feature("docstring") Kernel::classical
+""" adds classical operation kernel.
+
+Parameters
+----------
+arg1 : CReg
+    destination register for classical operation.
+arg2 : Operation
+    classical operation.
+"""
+
 
 %feature("docstring") Kernel::controlled
 """ generates controlled version of the kernel from the input kernel.
@@ -439,12 +551,14 @@ None
 
 Parameters
 ----------
-pname : str
+arg1 : str
     name of the program
-nqubits : int
-    number of qubits the program will use
-p       : Platform
+arg2 : Platform
     instance of an OpenQL Platform
+arg3 : int
+    number of qubits the program will use
+arg4 : int
+    number of classical registers the program will use (default: 0)
 """
 
 %feature("docstring") Program::set_sweep_points
@@ -466,6 +580,102 @@ Parameters
 arg1 : kernel
     kernel to be added
 """
+
+
+%feature("docstring") Program::add_if
+""" Adds specified kernel to a program which will be executed if specified condition is true.
+
+Parameters
+----------
+arg1 : kernel
+    kernel to be executed
+arg2: Operation
+    classical relational operation (<, >, <=, >=, ==, !=)
+"""
+
+%feature("docstring") Program::add_if
+""" Adds specified sub-program to a program which will be executed if specified condition is true. This allows nesting of operations.
+
+Parameters
+----------
+arg1 : Program
+    program to be executed
+arg2: Operation
+    classical relational operation (<, >, <=, >=, ==, !=)
+"""
+
+%feature("docstring") Program::add_if_else
+""" Adds specified kernels to a program. First kernel will be executed if specified condition is true. Second kernel will be executed if specified condition is false.
+
+Parameters
+----------
+arg1 : kernel
+    kernel to be executed when specified condition is true (if part).
+arg2 : kernel
+    kernel to be executed when specified condition is false (else part).
+arg3: Operation
+    classical relational operation (<, >, <=, >=, ==, !=)
+"""
+
+%feature("docstring") Program::add_if_else
+""" Adds specified sub-programs to a program. First sub-program will be executed if specified condition is true. Second sub-program will be executed if specified condition is false.
+
+Parameters
+----------
+arg1 : Program
+    program to be executed when specified condition is true (if part).
+arg2 : Program
+    program to be executed when specified condition is false (else part).
+arg3: Operation
+    classical relational operation (<, >, <=, >=, ==, !=)
+"""
+
+
+%feature("docstring") Program::add_do_while
+""" Adds specified kernel to a program which will be repeatedly executed while specified condition is true.
+
+Parameters
+----------
+arg1 : kernel
+    kernel to be executed
+arg2: Operation
+    classical relational operation (<, >, <=, >=, ==, !=)
+"""
+
+%feature("docstring") Program::add_do_while
+""" Adds specified sub-program to a program which will be repeatedly executed while specified condition is true.
+
+Parameters
+----------
+arg1 : Program
+    program to be executed repeatedly
+arg2: Operation
+    classical relational operation (<, >, <=, >=, ==, !=)
+"""
+
+
+%feature("docstring") Program::add_for
+""" Adds specified kernel to a program which will be executed for specified iterations.
+
+Parameters
+----------
+arg1 : Kernel
+    program to be executed repeatedly
+arg2: int
+    iteration count
+"""
+
+%feature("docstring") Program::add_for
+""" Adds specified sub-program to a program which will be executed for specified iterations.
+
+Parameters
+----------
+arg1 : Program
+    sub-program to be executed repeatedly
+arg2: int
+    iteration count
+"""
+
 
 %feature("docstring") Program::compile
 """ Compiles the program.

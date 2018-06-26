@@ -61,10 +61,13 @@ namespace ql
                 curr_cycle+=delta;
             }
 
-            auto & last_bundle = bundles.back();
-            int lsduration = last_bundle.duration_in_cycles;
-            if( lsduration > 1 )
-                ssqasm << "\n    qwait " << lsduration -1 << '\n';
+            if( !bundles.empty() )
+            {
+                auto & last_bundle = bundles.back();
+                int lsduration = last_bundle.duration_in_cycles;
+                if( lsduration > 1 )
+                    ssqasm << "\n    qwait " << lsduration -1 << '\n';
+            }
 
             return ssqasm.str();
         }

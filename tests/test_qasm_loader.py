@@ -23,10 +23,10 @@ class Test_QASM_Loader(unittest.TestCase):
         num_circuits = 2
         nqubits = 2
         sweep_points = [1,2]
-        p = ql.Program("sequential_program", nqubits, platf)
+        p = ql.Program("sequential_program", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
         # populate kernel using default gates
-        k = ql.Kernel("kernel_1", platf)
+        k = ql.Kernel("kernel_1", platf, nqubits)
         k.prepz(0)
         k.prepz(0)
         k.ry90(0)
@@ -38,7 +38,7 @@ class Test_QASM_Loader(unittest.TestCase):
         p.add_kernel(k)
 
         # populate a second kernel using both custom and default gates
-        k = ql.Kernel("kernel_2", platf)
+        k = ql.Kernel("kernel_2", platf, nqubits)
         k.gate("prepz", [0]) 
         k.gate('rx180', [0])
         k.rx180(0)
@@ -65,10 +65,10 @@ class Test_QASM_Loader(unittest.TestCase):
         num_circuits = 2
         nqubits = 2
         sweep_points = [1,2]
-        p = ql.Program("parallel_program", nqubits, platf)
+        p = ql.Program("parallel_program", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
         # populate kernel using default gates
-        k = ql.Kernel("kernel_1", platf)
+        k = ql.Kernel("kernel_1", platf, nqubits)
         k.prepz(0)
         k.prepz(1)
         k.ry90(0)
@@ -81,7 +81,7 @@ class Test_QASM_Loader(unittest.TestCase):
         p.add_kernel(k)
 
         # populate a second kernel using both custom and default gates
-        k = ql.Kernel("kernel_2", platf)
+        k = ql.Kernel("kernel_2", platf, nqubits)
         k.gate("prepz", [0]) 
         k.gate('rx180', [0])
         k.rx180(0)

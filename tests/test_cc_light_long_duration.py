@@ -25,7 +25,7 @@ class Test_CCL_long_duration(unittest.TestCase):
         """
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platf  = ql.Platform('seven_qubits_chip', config_fn)
-        p = ql.Program(pname="AllXYLongDuration", nqubits=platf.get_qubit_number(), platform=platf)
+        p = ql.Program("AllXYLongDuration", platf, platf.get_qubit_number())
 
         allXY = [ ['i', 'i'], ['rx180', 'ry180'], ['ry180', 'rx180'] ]
                 # ,
@@ -41,7 +41,7 @@ class Test_CCL_long_duration(unittest.TestCase):
         p.set_sweep_points(np.arange(len(allXY), dtype=float), len(allXY))
         qubit_idx=0
         for i, xy in enumerate(allXY):
-            k = ql.Kernel("AllXY_"+str(i), platform=platf)
+            k = ql.Kernel("AllXY_"+str(i), platf, platf.get_qubit_number())
             k.prepz(qubit_idx)
             k.gate(xy[0], [qubit_idx])
             k.gate(xy[1], [qubit_idx])

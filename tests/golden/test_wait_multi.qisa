@@ -9,11 +9,13 @@ smis s7, {0, 1, 2, 3, 4, 5, 6}
 smis s8, {0, 1, 5, 6} 
 smis s9, {2, 3, 4} 
 smis s10, {0, 1, 2, 3} 
-
 start:
-    bs 1    x s10
-    bs 6    measz s10
+
+aKernel:
+    1,    x s10
+    6,    measz s10
     qwait 2
+
     br always, start
     nop 
     nop

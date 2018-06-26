@@ -59,7 +59,7 @@ def read(fname):
 
 
 setup(name='openql',
-      version='0.4.1',
+      version='0.5.0',
       description='OpenQL Python Package',
       long_description=read('README.md'),
       author='Nader Khammassi and Imran Ashraf',

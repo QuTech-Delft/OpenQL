@@ -15,6 +15,8 @@ Note: please fill your contributions in this file
 
 
 - **[Imran Ashraf](https://github.com/imranashraf)**
+    -   support for hybrid classical/quantum compilation
+    -   support for control flow (selection and repitition)
     -   kernel un-compute/conjugation feature
     -   multi-qubit control decomposition
     -   toffoli decompositions

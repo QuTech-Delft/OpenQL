@@ -16,7 +16,8 @@ ql.set_option('output_dir', output_dir)
 
 class Test_single_qubit_seqs_CBox(unittest.TestCase):
     def test_allxy(self):
-        p = Program(pname="AllXY", nqubits=1, platform=platf)
+        nqubits = 1
+        p = Program("AllXY", platf, nqubits)
         # uppercase lowercase problems
 
         allXY = [['i', 'i'], ['rx180', 'rx180'], ['ry180', 'ry180'],
@@ -31,7 +32,7 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         p.set_sweep_points(np.arange(len(allXY), dtype=float), len(allXY))
 
         for i, xy in enumerate(allXY):
-            k = Kernel("allXY"+str(i), platform=platf)
+            k = Kernel("allXY"+str(i), platform=platf, qubit_count=nqubits)
             k.prepz(0)
             k.gate(xy[0], [0])
             k.gate(xy[1], [0])
@@ -41,11 +42,12 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        qumis_fn = os.path.join(output_dir, p.name+'.asm')
+        qumis_fn = os.path.join(output_dir, p.name_+'.asm')
         Assembler(qumis_fn).convert_to_instructions()
 
     def test_qasm_seq_echo(self):
-        p = Program(pname="Echo", nqubits=1, platform=platf)
+        nqubits=1
+        p = Program("Echo", platf, nqubits)
         times = np.linspace(0, 20e3, 61)  # in ns
         # To prevent superslow workaround
         times = np.linspace(0, 60, 61)  # in ns
@@ -56,7 +58,7 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
             # and will produce and invalid qasm
             n = 'echo_tau_{}ns'.format(tau) 
             n = n.replace(".","_")
-            k = Kernel(n, platform=platf)
+            k = Kernel(n, platform=platf, qubit_count=nqubits)
             k.prepz(0)
             k.rx90(0)
             # This is a dirty hack that repeats the I gate
@@ -71,13 +73,14 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        qumis_fn = os.path.join(output_dir, p.name+'.asm')
+        qumis_fn = os.path.join(output_dir, p.name_+'.asm')
         Assembler(qumis_fn).convert_to_instructions()
 
     def test_qasm_seq_butterfly(self):
-        p = Program(pname="Butterfly", nqubits=1, platform=platf)
+        nqubits=1
+        p = Program("Butterfly", platf, nqubits)
 
-        k = Kernel('0', platform=platf)
+        k = Kernel('0', platf, nqubits)
         k.prepz(0)
         k.measure(0)
         k.measure(0)
@@ -86,7 +89,7 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         # what is the post measuremnet state
         p.add_kernel(k)
 
-        k = Kernel('1', platform=platf)
+        k = Kernel('1', platf, nqubits)
         k.prepz(0)
         k.measure(0)
         k.x(0)
@@ -96,5 +99,5 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        qumis_fn = os.path.join(output_dir, p.name+'.asm')
+        qumis_fn = os.path.join(output_dir, p.name_+'.asm')
         Assembler(qumis_fn).convert_to_instructions()

@@ -13,8 +13,6 @@
 #include <sstream>
 #include <bitset>
 
-// #include <ql/arch/instruction_scheduler.h>
-
 namespace ql
 {
 namespace arch
@@ -30,7 +28,7 @@ typedef std::vector<cc_light_eqasm_instruction *> cc_light_eqasm_program_t;
 // instruction type
 typedef enum
 {
-    // classical instruction
+    // classical instructions
 
     __cc_light_eqasm_add__      ,
     __cc_light_eqasm_sub__      ,
@@ -50,7 +48,7 @@ typedef enum
     __cc_light_eqasm_smis__     ,
     __cc_light_eqasm_smit__     ,
 
-    // quantum instruction
+    // quantum instructions
 
     __cc_light_eqasm_i__        ,
     __cc_light_eqasm_x__        ,
