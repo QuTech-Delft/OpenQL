@@ -264,8 +264,8 @@ void MapCircuit(ql::circuit& inCirc)
         }
         else
         {
-            EOUT(" gate: " << g->qasm() << " has more than 2 operand qubits; this is not supported by the mapper.");
-            throw ql::exception("Error: gates with more than 2 operand qubits not supported by mapper.", false);
+            EOUT(" gate: " << g->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
+            throw ql::exception("Error: gate with more than 2 operand qubits; please decompose such gates first before mapping.", false);
         }
     }   // end for all instructions in circuit
 

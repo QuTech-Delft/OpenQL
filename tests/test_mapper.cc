@@ -80,7 +80,7 @@ test_1()
 // all possible cnots in s7, in lexicographic order
 // requires many swaps
 void
-test_3()
+test_2()
 {
     int n = 7;
 
@@ -89,8 +89,8 @@ test_3()
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_3_"), 7, starmon);
-    ql::quantum_kernel k("kernel_3",starmon);
+    ql::quantum_program prog(("test_2_"), 7, starmon);
+    ql::quantum_kernel k("kernel_2",starmon);
 
     for (int j=0; j<n; j++)
         k.gate("x", j);
@@ -117,7 +117,7 @@ int main(int argc, char ** argv)
 
     test_1();
 
-    test_3();
+    test_2();
 
     return 0;
 }
