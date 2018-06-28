@@ -113,11 +113,11 @@ int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_DEBUG");
 
-    // test_0();
+    test_0();
 
     test_1();
 
-    // test_3();
+    test_3();
 
     return 0;
 }
