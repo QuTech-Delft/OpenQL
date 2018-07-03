@@ -25,20 +25,19 @@ class Test_sweep_points(unittest.TestCase):
 
             
     def test_sweep_points(self):
+        sweep_points = [0.25, 1, 1.5, 2, 2.25]
+        nqubits = 1
+
         # create a kernel
-        k = ql.Kernel("aKernel", self.__class__.platf)
+        k = ql.Kernel("aKernel", self.__class__.platf, nqubits)
 
         # populate a kernel
         k.prepz(0)
         k.identity(0)
         k.measure(0)
 
-        sweep_points = [0.25, 1, 1.5, 2, 2.25]
-        num_circuits = 1
-        nqubits = 1
-
         # create a program
-        p = ql.Program("aProgram", nqubits, self.__class__.platf)
+        p = ql.Program("aProgram", self.__class__.platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         # add kernel to program

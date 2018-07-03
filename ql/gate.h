@@ -83,7 +83,8 @@ typedef enum __gate_type_t
     __nop_gate__,
     __dummy_gate__,
     __swap_gate__,
-    __wait_gate__
+    __wait_gate__,
+    __classical_gate__
 } gate_type_t;
 
 #define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
@@ -211,6 +212,7 @@ public:
     bool optimization_enabled = true;
     std::string name = "";
     std::vector<size_t> operands;
+    std::vector<size_t> creg_operands;
     size_t duration;                         // to do change attribute name "duration" to "duration" (duration is used to describe hardware duration)
     double angle;                            // for arbitrary rotations
     virtual instruction_t qasm()       = 0;
@@ -929,10 +931,23 @@ public:
         operands.push_back(q);
     }
 
+    measure(size_t q, size_t c) : m(identity_c)
+    {
+        name = "measure";
+        duration = 40;
+        operands.push_back(q);
+        creg_operands.push_back(c);
+    }
+
     instruction_t qasm()
     {
-        return instruction_t("measure q" + std::to_string(operands[0]) );
-        // + "\n   display_binary\n");
+        std::stringstream ss;
+        ss << "measure ";
+        ss << "q" << operands[0];
+        if(!creg_operands.empty())
+            ss << ", r" << creg_operands[0];
+
+        return instruction_t(ss.str());
     }
 
     instruction_t micro_code()
@@ -1279,12 +1294,12 @@ public:
 class custom_gate : public gate
 {
 public:
-    cmat_t             m;                // matrix representation
-    size_t             parameters;       // number of parameters : single qubit, two qubits ... etc
-    ucode_sequence_t   qumis;            // microcode sequence
-    instruction_type_t operation_type;   // operation type : rf/flux
-    strings_t          used_hardware;    // used hardware
-    std::string        arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
+    cmat_t              m;                // matrix representation
+    size_t              parameters;       // number of parameters : single qubit, two qubits ... etc
+    ucode_sequence_t    qumis;            // microcode sequence
+    instruction_type_t  operation_type;   // operation type : rf/flux
+    strings_t           used_hardware;    // used hardware
+    std::string         arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
 
 public:
 
@@ -1302,6 +1317,7 @@ public:
     custom_gate(const custom_gate& g)
     {
         name = g.name;
+        creg_operands = g.creg_operands;
         parameters = g.parameters;
         qumis.assign(g.qumis.begin(), g.qumis.end());
         operation_type = g.operation_type;
@@ -1318,9 +1334,8 @@ public:
      */
     custom_gate(string_t& name, cmat_t& m,
                 size_t parameters, size_t duration, size_t latency,
-                instruction_type_t& operation_type, ucode_sequence_t& qumis, strings_t hardware) : m(m),
-        parameters(parameters),
-        qumis(qumis), operation_type(operation_type)
+                instruction_type_t& operation_type, ucode_sequence_t& qumis, strings_t hardware) :
+                m(m), parameters(parameters), qumis(qumis), operation_type(operation_type)
     {
         this->name = name;
         this->duration = duration;
@@ -1384,7 +1399,7 @@ public:
     /**
      * load instruction from json map
      */
-    void load(json& instr) throw (ql::exception)
+    void load(json& instr)
     {
         // DOUT("loading instruction '" << name << "'...");
         std::string l_attr = "qubits";
@@ -1426,7 +1441,6 @@ public:
         if ( !instr["cc_light_instr"].is_null() )
         {
             arch_operation_name = instr["cc_light_instr"];
-            // DOUT("loaded cc_light_instr name : " << arch_operation_name)            ;
         }
     }
 
@@ -1450,17 +1464,30 @@ public:
         std::string gate_name = name.substr(0,p);
         if (operands.size() == 0)
             ss << gate_name;
-        // ss << "   " << gate_name;
         else if (operands.size() == 1)
             ss << gate_name << " q" << operands[0];
-        // ss << "   " << gate_name << " q" << operands[0];
         else
         {
-            // ss << "   " << gate_name << " q" << operands[0];
             ss << gate_name << " q" << operands[0];
             for (size_t i=1; i<operands.size(); i++)
                 ss << ",q" << operands[i];
         }
+
+        if(creg_operands.size() == 0)
+        {
+
+        }
+        else if(creg_operands.size() == 1)
+        {
+            ss << ",r" << creg_operands[0];
+        }
+        else
+        {
+            ss << ",r" << creg_operands[0];
+            for (size_t i=1; i<creg_operands.size(); i++)
+                ss << ",r" << creg_operands[i];
+        }
+
         return instruction_t(ss.str());
     }
 
@@ -1543,9 +1570,6 @@ public:
         return m;
     }
 };
-
-
-
 
 } // end ql namespace
 

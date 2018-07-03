@@ -6,16 +6,19 @@ _curdir_ = os.path.dirname(__file__)
 #-------------------------------------------------------------------------------
 
 def first_example():
+    output_dir = os.path.join(_curdir_, 'test_output')
+    ql.set_option('output_dir', output_dir)
+
     # You can specify a config location, here we use a default config
     config_fn = os.path.join(_curdir_, 'spin_demo_2811.json')
     platform = ql.Platform("spin_qubit_demo", config_fn)
     sweep_points = [1, 2]
     num_qubits = 2
-    p = ql.Program("program", num_qubits, platform)
+    p = ql.Program("program", platform, num_qubits)
     p.set_sweep_points(sweep_points, len(sweep_points))
 
     # populate kernel using default gates
-    k = ql.Kernel("kernel", platform)
+    k = ql.Kernel("kernel", platform, num_qubits)
     #k.prepz(0)
 
 #####
@@ -35,7 +38,7 @@ def first_example():
     p.add_kernel(k)
 
     # compile the program
-    p.compile(optimize=False, scheduler='ALAP', log_level='LOG_WARNING')
+    p.compile()
 
 #-------------------------------------------------------------------------------
 

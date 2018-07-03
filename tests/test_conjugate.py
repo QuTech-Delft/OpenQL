@@ -25,16 +25,16 @@ def file_compare(fn1, fn2):
     return isSame
 
 
-class Test_controlled_kernel(unittest.TestCase):
+class Test_conjugated_kernel(unittest.TestCase):
 
     def test_conjugate(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform  = ql.Platform('platform_none', config_fn)
         num_qubits = 3
-        p = ql.Program('test_conjugate', num_qubits, platform)
+        p = ql.Program('test_conjugate', platform, num_qubits)
 
-        k = ql.Kernel('kernel_orignal', platform)
-        ck = ql.Kernel('kernel_conjugate', platform)
+        k = ql.Kernel('kernel_orignal', platform, num_qubits)
+        ck = ql.Kernel('kernel_conjugate', platform, num_qubits)
 
         k.gate("x", [0])
         k.gate("y", [0])
@@ -61,7 +61,7 @@ class Test_controlled_kernel(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/test_conjugate.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        qasm_fn = os.path.join(output_dir, p.name_+'.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 if __name__ == '__main__':

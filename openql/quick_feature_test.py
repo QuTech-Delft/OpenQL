@@ -7,32 +7,30 @@ output_dir = os.path.join(curdir, 'test_output')
 
 ql.set_option('output_dir', output_dir)
 ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ASAP')
+ql.set_option('scheduler', 'ALAP')
 ql.set_option('log_level', 'LOG_DEBUG')
 ql.set_option('decompose_toffoli', 'no')
+ql.set_option('use_default_gates', 'yes')
 
 def test_cclight():
     config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
     platform  = ql.Platform('seven_qubits_chip', config_fn)
     num_qubits = 7
-    p = ql.Program('test_cclight', num_qubits, platform)
+    p = ql.Program('test_cclight', platform, num_qubits)
     sweep_points = [1,2]
     p.set_sweep_points(sweep_points, len(sweep_points))
 
     k = ql.Kernel('aKernel', platform)
 
     for i in range(4):
-        k.prepz(i)
+        k.gate('prepz', [i])
 
-    k.x(2)
-    k.gate("wait", [1,2], 100)
-    k.x(2)
-    k.x(3)
-    k.cnot(2, 0)
-    k.cnot(1, 4)
+    k.gate('x', [2])
+    k.gate('cnot', [2, 0])
+    k.gate('cnot', [1, 4])
 
     for i in range(4):
-        k.measure(i)
+        k.gate('measure', [i])
 
     p.add_kernel(k)
     p.compile()
@@ -41,12 +39,12 @@ def test_none():
     config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
     platform  = ql.Platform('platform_none', config_fn)
     num_qubits = 5
-    p = ql.Program('test_none', num_qubits, platform)
+    p = ql.Program('test_none', platform, num_qubits)
 
     k = ql.Kernel('aKernel', platform)
 
-    k.gate("x",0)
-    k.gate("x",0)
+    k.gate("x", [0])
+    k.gate("x", [0])
     k.gate("cz", [0, 1])
     k.gate("cz", [2, 3])
     k.gate("display", [])
@@ -54,86 +52,12 @@ def test_none():
     p.add_kernel(k)
     p.compile()
 
-def test_controlled_kernel():
-    config_fn = os.path.join(curdir, '../tests/test_cfg_none_simple.json')
-    platform  = ql.Platform('platform_none', config_fn)
-    num_qubits = 12
-    p = ql.Program('test_controlled_kernel', num_qubits, platform)
-
-    k = ql.Kernel('kernel1', platform)
-    ck = ql.Kernel('controlled_kernel1', platform)
-
-    # k.gate("toffoli", [1,2,3] )
-    # ql.set_option('decompose_toffoli', 'NC')
-
-    # k.gate("x", [1])
-    # k.gate("y", [1])
-    # k.gate("z", [1])
-    # k.gate("h", [1])
-    # k.gate("i", [1])
-    # k.gate("s", [1])
-    # k.gate("t", [1])
-    # k.gate("sdag", [1])
-    # k.gate("tdag", [1])
-
-    # generate controlled version of k. qubit 2 is used as control qubit
-    # ck.controlled(k, [2])
-
-    k.gate("x", [1])
-    # k.gate('cnot', [1,2])
-
-    # generate controlled version of k. qubit 3 is used as control qubit
-    # ck.controlled(k, [3]) # Error
-    # ck.controlled(k, [3], [7])
-    # ck.controlled(k, [3,4], [7,8])
-    # ck.controlled(k, [3,4,5], [7,8,9])
-    ck.controlled(k, [3,4,5,6], [7,8,9,10])
-
-    p.add_kernel(k)
-    p.add_kernel(ck)
-
-    p.compile()
-
-def test_conjugate():
-    config_fn = os.path.join(curdir, '../tests/test_cfg_none_simple.json')
-    platform  = ql.Platform('platform_none', config_fn)
-    num_qubits = 3
-    p = ql.Program('test_controlled_kernel', num_qubits, platform)
-
-    k = ql.Kernel('kernel1', platform)
-    ck = ql.Kernel('conjugate_kernel1', platform)
-
-    k.gate("x", [0])
-    k.gate("y", [0])
-    k.gate("z", [0])
-    k.gate("h", [0])
-    k.gate("i", [0])
-    k.gate("s", [0])
-    k.gate("t", [0])
-    k.gate("sdag", [0])
-    k.gate("tdag", [0])
-
-    k.gate('cnot', [0,1])
-    k.gate('cphase', [1,2])
-    k.gate('swap', [2,0])
-
-    k.gate('toffoli', [0,1,2])
-
-    # generate conjugate
-    ck.conjugate(k)
-
-    p.add_kernel(k)
-    p.add_kernel(ck)
-
-    # ql.set_option('decompose_toffoli', 'NC')
-
-    p.compile()
 
 def test_qx():
     config_fn = os.path.join(curdir, '../tests/hardware_config_qx.json')
     platform  = ql.Platform('platform_qx', config_fn)
     num_qubits = 5
-    p = ql.Program('test_qx', num_qubits, platform)
+    p = ql.Program('test_qx', platform, num_qubits)
 
     k = ql.Kernel('aKernel', platform)
 
@@ -149,16 +73,142 @@ def test_qx():
     p.compile()
 
 
-def test():
-    ql.set_option('optimize', 'yes')
+def test_hybrid():
+    config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
+    # config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
+    platform  = ql.Platform('platform_none', config_fn)
+    num_qubits = 5
+    num_cregs = 10
+
+    p = ql.Program('test_hybrid', platform, num_qubits, num_cregs)
+    sweep_points = [1,2]
+    p.set_sweep_points(sweep_points, len(sweep_points))
+    
+    sp1 = ql.Program('subprogram1', platform, num_qubits, num_cregs)
+    sp2 = ql.Program('subprogram2', platform, num_qubits, num_cregs)
+
+    k1 = ql.Kernel('aKernel1', platform, num_qubits, num_cregs)
+    k2 = ql.Kernel('aKernel2', platform, num_qubits, num_cregs)
+
+    # quanutm operations
+    k1.gate('x', [0])
+    k1.gate('cz', [0, 2])
+
+    # # create classical registers
+    rd = ql.CReg()
+    rs1 = ql.CReg()
+    rs2 = ql.CReg()
+
+    # add/sub/and/or/xor
+    k1.classical(rd, ql.Operation(rs1, '+', rs2))
+
+    # not
+    # k1.classical(rd, ql.Operation('~', rs2))
+
+    # comparison
+    k1.classical(rd, ql.Operation(rs1, '==', rs2))
+
+    # nop
+    # k1.classical('nop')
+
+    # assign (r1 = r2)
+    # k1.classical(rs1, ql.Operation(rs2))
+
+    # initialize (r1 = 2)
+    # k1.classical(rs1, ql.Operation(2))
+
+    # measure
+    k1.gate('measure', [0], rs1)
+
+    k2.gate('y', [0])
+    k2.gate('cz', [0, 2])
+
+    # add simple kernels
+    # p.add_kernel(k1)
+    # p.add_kernel(k2)
+
+    # simple if
+    # p.add_if(k1, ql.Operation(rs1, '==', rs2))
+    # p.add_kernel(k2)
+
+    # simple if/else
+    # p.add_if_else(k1, k2, ql.Operation(rs1, '==', rs2))
+    # p.add_kernel(k2)
+
+    # nested if
+    # sp1.add_kernel(k1)
+    # sp1.add_kernel(k2)
+    # p.add_if(sp1, ql.Operation(rs1, '!=', rs2))
+
+    # simple do-while
+    # p.add_do_while(k1, ql.Operation(rs1, '<', rs2))
+    # p.add_kernel(k2)
+
+    # nested do-while
+    # rs3 = ql.CReg()
+    # rs4 = ql.CReg()
+    # sp1.add_do_while(k1, ql.Operation(rs1, '>', rs2))
+    # sp2.add_do_while(sp1, ql.Operation(rs3, '<=', rs4))
+    # p.add_program(sp2)
+
+    # simple for
+    # p.add_for(k1, 10)
+    # p.add_kernel(k2)
+
+    # nested for
+    # sp1.add_do_while(k1, ql.Operation(rs1, '>=', rs2))
+    # sp2.add_for(sp1, 100)
+    # p.add_program(sp2)
+
+    # nesting while inside if
+    # rs3 = ql.CReg()
+    # rs4 = ql.CReg()
+    # sp1.add_do_while(k1, ql.Operation(rs1, '==', rs2))
+    # sp2.add_if(sp1, ql.Operation(rs3, '!=', rs4))
+    # p.add_program(sp2)
+
+    p.compile()
+
+def test_fig10():
+    # config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
+    config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
+    platform  = ql.Platform('platform_none', config_fn)
+    num_qubits = 5
+    num_cregs = 5
+
+    p = ql.Program('test_fig10', platform, num_qubits, num_cregs)
+    sweep_points = [1,2]
+    p.set_sweep_points(sweep_points, len(sweep_points))
+    
+    k_init = ql.Kernel('k_init', platform, num_qubits, num_cregs)
+    k_if = ql.Kernel('k_if', platform, num_qubits, num_cregs)
+    k_else = ql.Kernel('k_else', platform, num_qubits, num_cregs)
+    q0, q1 = 0, 1
+
+    # create classical registers
+    value_one = ql.CReg()
+    meas_value_q1 = ql.CReg()
+
+    k_init.classical(value_one, ql.Operation(1))
+    k_init.gate('measure', [q1], meas_value_q1)
+    p.add_kernel(k_init)
+
+    k_if.gate('x', [q0])
+    k_else.gate('y', [q0])
+
+    # simple if/else
+    p.add_if_else(k_if, k_else, ql.Operation(value_one, '==', meas_value_q1))
+
+    p.compile()
 
 if __name__ == '__main__':
-    test_conjugate()
+    test_fig10()
+    # test_hybrid()
 
 
-    # LOG_NOTHING,
-    # LOG_CRITICAL,
-    # LOG_ERROR,
-    # LOG_WARNING,
-    # LOG_INFO,
-    # LOG_DEBUG
+# LOG_NOTHING,
+# LOG_CRITICAL,
+# LOG_ERROR,
+# LOG_WARNING,
+# LOG_INFO,
+# LOG_DEBUG

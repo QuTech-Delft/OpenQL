@@ -25,9 +25,9 @@ ql.set_option('log_level', 'LOG_WARNING')
 class Test_single_qubit_seqs_CCL(unittest.TestCase):
 
     def test_bug(self):
-        p = Program(pname="bug", nqubits=1, platform=platf)
+        p = Program("bug", platf, 1)
 
-        k = Kernel("bugKernel", platform=platf)
+        k = Kernel("bugKernel", platform=platf, qubit_count=1)
         k.gate('rx180', [0])
         k.gate('measure', [0])
 
@@ -35,11 +35,11 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
         assemble(QISA_fn)
 
     def test_allxy(self):
-        p = Program(pname="AllXY", nqubits=1, platform=platf)
+        p = Program("AllXY", platf, 1)
         # uppercase lowercase problems
 
         allXY = [['i', 'i'], ['rx180', 'rx180'], ['ry180', 'ry180'],
@@ -54,7 +54,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         p.set_sweep_points(np.arange(len(allXY), dtype=float), len(allXY))
 
         for i, xy in enumerate(allXY):
-            k = Kernel("allXY"+str(i), platform=platf)
+            k = Kernel("allXY"+str(i), platf, 1)
             k.prepz(0)
             k.gate(xy[0], [0])
             k.gate(xy[1], [0])
@@ -64,11 +64,12 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
         assemble(QISA_fn)
 
     def test_qasm_seq_echo(self):
-        p = Program(pname="Echo", nqubits=1, platform=platf)
+        nqubits = 1
+        p = Program("Echo", platf, nqubits)
         times = np.linspace(0, 20e3, 61)  # in ns
         # To prevent superslow workaround
         times = np.linspace(0, 60, 61)  # in ns
@@ -79,7 +80,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
             # and will produce and invalid qasm
             n = 'echo_tau_{}ns'.format(tau)
             n = n.replace(".","_")
-            k = Kernel(n, platform=platf)
+            k = Kernel(n, platf, nqubits)
             k.prepz(0)
             k.rx90(0)
             # This is a dirty hack that repeats the I gate
@@ -95,13 +96,14 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
         assemble(QISA_fn)
 
     def test_qasm_seq_butterfly(self):
-        p = Program(pname="Butterfly", nqubits=1, platform=platf)
+        nqubits = 1
+        p = Program("Butterfly", platf, nqubits)
 
-        k = Kernel('0', platform=platf)
+        k = Kernel('0', platf, nqubits)
         k.prepz(0)
         k.measure(0)
         k.measure(0)
@@ -110,7 +112,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         # what is the post measuremnet state
         p.add_kernel(k)
 
-        k = Kernel('1', platform=platf)
+        k = Kernel('1', platf, nqubits)
         k.prepz(0)
         k.measure(0)
         k.x(0)
@@ -120,7 +122,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
         assemble(QISA_fn)
 
 if __name__ == '__main__':

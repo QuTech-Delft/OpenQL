@@ -16,12 +16,11 @@ class Tester(unittest.TestCase):
         config_fn = os.path.join(curdir, 'test_cfg_none.json')
         platform  = ql.Platform('platform_none', config_fn)
         sweep_points = [1,2]
-        num_circuits = 1
         num_qubits = 17
-        p = ql.Program('aProgram', num_qubits, platform)
+        p = ql.Program('aProgram', platform, num_qubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
-        k = ql.Kernel('aKernel', platform)
+        k = ql.Kernel('aKernel', platform, num_qubits)
 
         k.x(0) # x will be dcomposed
         k.gate("x", [0]); # x will be dcomposed
