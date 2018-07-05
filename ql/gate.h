@@ -509,7 +509,7 @@ public:
     t(size_t q) : m(t_c)
     {
         name = "t";
-        duration = 40;
+        duration = 120;
         operands.push_back(q);
     }
 
@@ -546,7 +546,7 @@ public:
     tdag(size_t q) : m(tdag_c)
     {
         name = "tdag";
-        duration = 40;
+        duration = 120;
         operands.push_back(q);
     }
 
@@ -1000,7 +1000,7 @@ public:
     cnot(size_t q1, size_t q2) : m(cnot_c)
     {
         name = "cnot";
-        duration = 80;
+        duration = 160;
         operands.push_back(q1);
         operands.push_back(q2);
     }
@@ -1130,7 +1130,7 @@ public:
     swap(size_t q1, size_t q2) : m(swap_c)
     {
         name = "swap";
-        duration = 80;
+        duration = 400;
         operands.push_back(q1);
         operands.push_back(q2);
     }

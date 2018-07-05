@@ -16,7 +16,7 @@ void
 test_0()
 {
     // create and set platform
-    ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
+    ql::quantum_platform starmon("starmon","test_mapper.json");
     ql::set_platform(starmon);
 
     // create program
@@ -55,7 +55,7 @@ void
 test_1()
 {
     // create and set platform
-    ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
+    ql::quantum_platform starmon("starmon","test_mapper.json");
     ql::set_platform(starmon);
 
     // create program
@@ -85,7 +85,7 @@ test_2()
     int n = 7;
 
     // create and set platform
-    ql::quantum_platform starmon("starmon","test_cfg_none_s7.json");
+    ql::quantum_platform starmon("starmon","test_mapper.json");
     ql::set_platform(starmon);
 
     // create program

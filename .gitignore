@@ -16,3 +16,4 @@ lab
 *.cache
 openql/openql.py
 */test_output/*
+.pytest_cache

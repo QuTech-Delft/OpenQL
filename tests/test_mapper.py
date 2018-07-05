@@ -15,7 +15,7 @@ class Test_mapper(unittest.TestCase):
         ql.set_option('scheduler', 'ASAP')
         ql.set_option('log_level', 'LOG_WARNING')
 
-        config_fn = os.path.join(curdir, 'test_cfg_none_s7.json')
+        config_fn = os.path.join(curdir, 'test_mapper.json')
         platform  = ql.Platform('starmon', config_fn)
 
         num_qubits = 7
@@ -57,7 +57,7 @@ class Test_mapper(unittest.TestCase):
         ql.set_option('scheduler', 'ASAP')
         ql.set_option('log_level', 'LOG_WARNING')
 
-        config_fn = os.path.join(curdir, 'test_cfg_none_s7.json')
+        config_fn = os.path.join(curdir, 'test_mapper.json')
         platform  = ql.Platform('starmon', config_fn)
 
         num_qubits = 7
@@ -86,7 +86,7 @@ class Test_mapper(unittest.TestCase):
         ql.set_option('scheduler', 'ASAP')
         ql.set_option('log_level', 'LOG_WARNING')
 
-        config_fn = os.path.join(curdir, 'test_cfg_none_s7.json')
+        config_fn = os.path.join(curdir, 'test_mapper.json')
         platform  = ql.Platform('starmon', config_fn)
 
         num_qubits = 7
