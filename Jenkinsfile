@@ -25,7 +25,7 @@ pipeline {
             steps {
                 sh '''
                         . ./env/bin/activate &&
-                        pytest -k-test_QISA_assembler_present'
+                        pytest -k-test_QISA_assembler_present
                    '''
             }
         }
