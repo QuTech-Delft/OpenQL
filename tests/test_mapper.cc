@@ -46,7 +46,7 @@ test_0()
 
     prog.add(k);
 
-    ql::options::set("mapper", "base");
+    ql::options::set("mapper", "minextend");
     prog.compile( );
 }
 
@@ -73,24 +73,28 @@ test_1()
 
     prog.add(k);
 
-    ql::options::set("mapper", "base");
+    ql::options::set("mapper", "minextend");
     prog.compile( );
 }
 
 // all possible cnots in s7, in lexicographic order
 // requires many swaps
 void
-test_2()
+test_2(std::string v, std::string mapopt, std::string schedopt)
 {
     int n = 7;
+    std::string prog_name;
+    std::string kernel_name;
 
     // create and set platform
     ql::quantum_platform starmon("starmon","test_mapper.json");
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_2_"), 7, starmon);
-    ql::quantum_kernel k("kernel_2",starmon);
+    prog_name = "test_" + v + "_" + mapopt + "_" + schedopt;
+    kernel_name = "kernel_" + v + "_" + mapopt + "_" + schedopt;
+    ql::quantum_program prog(prog_name, n, starmon);
+    ql::quantum_kernel k(kernel_name, starmon);
 
     for (int j=0; j<n; j++)
         k.gate("x", j);
@@ -105,7 +109,8 @@ test_2()
 
     prog.add(k);
 
-    ql::options::set("mapper", "base");
+    ql::options::set("mapper", mapopt);
+    ql::options::set("scheduler", schedopt);
     prog.compile( );
 }
 
@@ -117,7 +122,9 @@ int main(int argc, char ** argv)
 
     test_1();
 
-    test_2();
+    test_2("2", "base", "ASAP");
+    test_2("2", "minextend", "ASAP");
+    test_2("2", "minextend", "no");
 
     return 0;
 }

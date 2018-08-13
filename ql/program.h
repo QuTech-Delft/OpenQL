@@ -319,14 +319,14 @@ public:
         std::string mapper_out_qasm;
 
         auto mapopt = ql::options::get("mapper");
-        if (mapopt == "base")
+        if (mapopt == "base" || mapopt == "minextend" )
         {
             Mapper mapper(qubits, platform);	// mapper creation with constant initialization of grid
             mapper.MapInit();			// creates and initializes data passed on between kernels
 
             for (auto& k : kernels)
             {
-		k.map(mapper, mapper_in_qasm, mapper_out_qasm);	// map kernel in current mapper context
+		        k.map(mapper, mapper_in_qasm, mapper_out_qasm);	// map kernel in current mapper context
             }
 
             string fname_in = ql::options::get("output_dir") + "/" + name + "_mapper_in.qasm";

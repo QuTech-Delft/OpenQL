@@ -977,7 +977,11 @@ public:
         // sched.PrintMatrix();
         // sched.PrintDot();
 
-        if("ASAP" == scheduler)
+        if("no" == scheduler)
+        {
+            sched_qasm = "";
+        }
+        else if("ASAP" == scheduler)
         {
             // sched.PrintScheduleASAP();
             // sched.PrintDotScheduleASAP();
