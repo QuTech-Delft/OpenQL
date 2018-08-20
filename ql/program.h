@@ -319,7 +319,11 @@ public:
         std::string mapper_out_qasm;
 
         auto mapopt = ql::options::get("mapper");
-        if (mapopt == "base" || mapopt == "minextend" )
+        if (mapopt == "no" )
+        {
+            IOUT("Not mapping the quantum program");
+        }
+        else
         {
             Mapper mapper(qubits, platform);	// mapper creation with constant initialization of grid
             mapper.MapInit();			// creates and initializes data passed on between kernels
@@ -336,15 +340,6 @@ public:
             string fname_out = ql::options::get("output_dir") + "/" + name + "_mapper_out.qasm";
             IOUT("writing mapper_output qasm to '" << fname_out << "' ...");
             ql::utils::write_file(fname_out, mapper_out_qasm);
-        }
-        else if (mapopt == "no" )
-        {
-            IOUT("Not mapping the quantum program");
-        }
-        else
-        {
-            EOUT("Unknown option '" << mapopt << "' set for mapper");
-            throw ql::exception("Error: Unknown option '"+mapopt+"' set for mapper !",false);
         }
     }
 

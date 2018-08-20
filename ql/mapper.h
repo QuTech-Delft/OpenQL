@@ -15,9 +15,21 @@
 #include "ql/circuit.h"
 #include "ql/ir.h"
 // #include "ql/scheduler.h"
-// #include "ql/arch/cc_light_resource_manager.h"
+#include "ql/arch/cc_light_resource_manager.h"
 
 // using namespace std;
+
+// Note on the use of constructors and Init functions for classes of the mapper
+// -----------------------------------------------------------------------------
+// Several local classes of the mapper have members that require initialization
+// using a value that was passed on to the Mapper.Init function as a parameter (i.e. platform, cycle_time).
+// Dealing with those initializations in the nested constructors was cumbersome.
+// Hence, the constructors create just skeleton objects which need explicit initialization before use.
+// Such initialization is provided by a class local Init function when creating a virgin object,
+// or by copying an existing object to it.
+// Construction of skeleton objects requires the used classes to provide such (non-parameterized) constructors;
+// therefore, such a constructor was added to class resource_manager_t in cc_light_resource_manager.h
+
 
 // =========================================================================================
 // Virt2Real: map of a virtual qubit index to its real qubit index
@@ -42,8 +54,7 @@ private:
 public:
 
 // expand to desired size and initialize to trivial (1-1) mapping
-void
-Init(size_t n)
+void Init(size_t n)
 {
     // DOUT("Virt2Real::Init(n=" << n << "), initializing 1-1 mapping");
     nq = n;
@@ -125,7 +136,7 @@ void Print(std::string s)
 // on which path causes the latency of the whole circuit to be extended the least;
 // this latency extension is measured from the data in the FreeCycle map;
 // so a FreeCycle map is part of each path of swaps that is evaluated for a particular non-NN 2-qubit gate
-// next to a FreeCycle map that is part of the output stream
+// next to a FreeCycle map that is part of the output stream (the main past)
 //
 // since gate durations are in nano-seconds, and one cycle is some fixed number of nano-seconds,
 // the duration is converted to a rounded-up number of cycles when computing the added latency
@@ -133,18 +144,26 @@ class FreeCycle
 {
 private:
 
-    size_t              nq;     // size of the map; after initialization, will always be the same
-    size_t              ct;     // multiplication factor from cycles to nano-seconds (unit of duration)
-    std::vector<size_t> fc;     // fc[real qubit index i]: qubit i is free from this cycle on
+    size_t                  nq;     // size of the map; after initialization, will always be the same
+    size_t                  ct;     // multiplication factor from cycles to nano-seconds (unit of duration)
+    ql::quantum_platform   *platformp;   // with resource descriptions for scheduling
+    std::vector<size_t>     fc;     // fc[real qubit index i]: qubit i is free from this cycle on
+    ql::arch::resource_manager_t rm;// actual resources occupied by scheduled gates
 
 public:
 
-void Init(size_t n, size_t c)
+void Init(size_t n, size_t c, ql::quantum_platform *p)
 {
     // DOUT("FreeCycle::Init(n=" << n << ", c=" << c << "), initializing to all 0 cycles");
+    ql::arch::resource_manager_t lrm(*p);   // allocated here and copied below to rm because of platform parameter
+    // DOUT("... created local resource manager");
     nq = n;
     ct = c;
+    platformp = p;
     fc.resize(n, 0);
+    // DOUT("... about to copy local resource manager to FreeCycle member rm");
+    rm = lrm;
+    // DOUT("... done copy local resource manager to FreeCycle member rm");
 }
 
 // access free cycle value of qubit i
@@ -155,6 +174,7 @@ size_t& operator[] (size_t i)
 
 // depth of the FreeCycle map
 // equals the max of all entries minus the min of all entries
+// not used yet; would be used to compute the max size of a top window on the past
 size_t Depth()
 {
     size_t  minFreeCycle = SIZE_MAX;
@@ -197,32 +217,103 @@ void Print(std::string s)
         std::cout << " " << v;
     }
     std::cout << std::endl;
+    // rm.Print("... in FreeCycle: ");
 }
 
-// schedule gate g in the FreeCycle map; return its start cycle
-// gate operands are real qubit indices
-size_t Add(ql::gate *g)
+static void GetGateParameters(std::string id, ql::quantum_platform *platformp, std::string& operation_name, std::string& operation_type, std::string& instruction_type)
 {
-    size_t  startCycle;
-    auto& q = g->operands;
-    size_t operandCount = q.size();
+    if ( !platformp->instruction_settings[id]["cc_light_instr"].is_null() )
+    {
+        operation_name = platformp->instruction_settings[id]["cc_light_instr"];
+    }
+    if ( !platformp->instruction_settings[id]["type"].is_null() )
+    {
+        operation_type = platformp->instruction_settings[id]["type"];
+    }
+    if ( !platformp->instruction_settings[id]["cc_light_instr_type"].is_null() )
+    {
+        instruction_type = platformp->instruction_settings[id]["cc_light_instr_type"];
+    }
+}
+
+// when we would schedule gate g, what would be its start cycle? return it
+// gate operands are real qubit indices
+size_t StartCycle(ql::gate *g)
+{
+    auto&       id = g->name;
+    std::string operation_name(id);
+    std::string operation_type;
+    std::string instruction_type;
+
+    auto&       q = g->operands;
+    size_t      operandCount = q.size();
+
+    size_t      startCycle;
     if (operandCount == 1)
     {
         startCycle = fc[q[0]];
-        fc[q[0]] = startCycle + (g->duration+ct-1)/ct;   // rounded-up unsigned integer division 
     }
     else // if (operandCount == 2)
     {
         startCycle = std::max<size_t>(fc[q[0]], fc[q[1]]);
-        fc[q[0]] = startCycle + (g->duration+ct-1)/ct;   // rounded-up unsigned integer division
+    }
+    
+    size_t      duration = (g->duration+ct-1)/ct;   // rounded-up unsigned integer division
+    auto        mapopt = ql::options::get("mapper");
+    if (mapopt == "minextendrc")
+    {
+        GetGateParameters(id, platformp, operation_name, operation_type, instruction_type);
+	    while (startCycle < SIZE_MAX)
+	    {
+	        if (rm.available(startCycle, g, operation_name, operation_type, instruction_type, duration))
+	        {
+	            break;
+	        }   
+	        else
+	        {
+                DOUT(" ... [" << startCycle << "] Busy resource for " << g->qasm());
+	            startCycle++;
+	        }
+	    }
+    }
+    assert (startCycle < SIZE_MAX);
+
+    return startCycle;
+}
+
+// schedule gate g in the FreeCycle (and resource) map
+// gate operands are real qubit indices
+void Add(ql::gate *g)
+{
+    auto&       id = g->name;
+    std::string operation_name(id);
+    std::string operation_type;
+    std::string instruction_type;
+
+    auto&       q = g->operands;
+    size_t      operandCount = q.size();
+
+    size_t      startCycle;
+
+    startCycle = StartCycle(g);
+
+    size_t      duration = (g->duration+ct-1)/ct;   // rounded-up unsigned integer division
+    auto        mapopt = ql::options::get("mapper");
+    if (mapopt == "minextendrc")
+    {
+        GetGateParameters(id, platformp, operation_name, operation_type, instruction_type);
+        rm.reserve(startCycle, g, operation_name, operation_type, instruction_type, duration);
+    }
+
+    if (operandCount == 1)
+    {
+        fc[q[0]] = startCycle + duration;
+    }
+    else // if (operandCount == 2)
+    {
+        fc[q[0]] = startCycle + duration;
         fc[q[1]] = fc[q[0]];
     }
-    // else
-    // {
-    //     assert(0);  // has already been checked when reading mapper input
-    // }
-    // DOUT(" gate: " << g->qasm() << " FreeCycle=" << startCycle);
-    return startCycle;
 }
 
 };  // end class FreeCycle
@@ -278,23 +369,27 @@ private:
 
 	size_t                  nq;         // width of Past in qubits
 	size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
+    ql::quantum_platform   *platformp;  // platform describing resources for scheduling
 	Virt2Real               v2r;        // Virt2Real map applying to this Past
 	FreeCycle               fc;         // FreeCycle map applying to this Past
 	typedef ql::gate *      gate_p;
-	std::list<gate_p>       lg;         // list of gates in this Past, ordered by their (start) cycle values
+	std::list<gate_p>       waitinglg;  // list of gates in this Past, waiting to be scheduled in
+	std::list<gate_p>       lg;         // list of gates in this Past, scheduled by their (start) cycle values
 	std::map<gate_p,size_t> cycle;      // gate to cycle map, cycle value of each gate in lg: cycle[g]
     ql::circuit             *outCircp;  // output stream after past
 
 public:
 
 // past initializer sets nq and ct and initializes all (default-constructed) composite members
-void Init(size_t n, size_t c)
+void Init(size_t n, size_t c, ql::quantum_platform *pf)
 {
     // DOUT("past::Init(n=" << n << ", c=" << c << ") ");
     nq = n;
     ct = c;
+    platformp = pf;
     v2r.Init(n);
-    fc.Init(n,c);
+    fc.Init(n,c,pf);
+    // waitinglg is initialized to empty list
     // lg is initialized to empty list
     // cycle is initialized to empty map
 }
@@ -304,6 +399,11 @@ void Print(std::string s)
     std::cout << "... Past " << s << ":";
     v2r.Print("");
     fc.Print("");
+    // DOUT("... list of gates in past");
+    for ( auto & gp: lg)
+    {
+        DOUT("[" << cycle[gp] << "] " << gp->qasm());
+    }
 }
 
 void Output(ql::circuit& ct)
@@ -311,61 +411,107 @@ void Output(ql::circuit& ct)
     outCircp = &ct;
 }
 
-void AddSwap(size_t r0, size_t r1)
+// all gates in past.waitinglg are scheduled into past.lg
+void Schedule()
 {
-    gate_p  gp;
+    // DOUT("Schedule ...");
 
-    gp = new ql::swap(r0,r1);
-    gp->duration = 400;
-    // DOUT("... swap(q" << r0 << ",q" << r1 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
-    v2r.Swap(r0,r1);
-    Add(gp);
+    assert (!waitinglg.empty());
+
+    do
+    {
+        size_t  startCycle = SIZE_MAX;
+        gate_p  gp;
+
+        // find the gate with the minimum startCycle
+        for (auto & trygp : waitinglg)
+        {
+            size_t tryStartCycle = fc.StartCycle(trygp);
+
+            if (tryStartCycle < startCycle)
+            {
+                startCycle = tryStartCycle;
+                gp = trygp;
+            }
+        }
+
+        // add this gate to the maps
+	    // DOUT("... add " << gp->qasm() << " startcycle=" << startCycle << " cycles=" << ((gp->duration+ct-1)/ct) );
+	    fc.Add(gp);
+	    cycle[gp] = startCycle;
+	
+	    // insert gate in lg, the list of gates, in cycle order, and in this order, as late as possible
+	    //
+	    // reverse iterate because the insertion is near the end of the list
+	    // insert so that cycle values are in order afterwards and the new one is nearest to the end
+	    std::list<gate_p>::reverse_iterator rigp = lg.rbegin();
+	    for (; rigp != lg.rend(); rigp++)
+	    {
+	        if (cycle[*rigp] <= startCycle)
+	        {
+	            // base because insert doesn't work with reverse iteration
+	            // rigp.base points after the element that rigp is pointing at
+	            // which is luckly because insert only inserts before the given element
+	            // the end effect is inserting after rigp
+	            lg.insert(rigp.base(), gp);
+	            break;
+	        }
+	    }
+	    // when list was empty or no element was found, just put it in front
+	    if (rigp == lg.rend())
+	    {
+	        lg.push_front(gp);
+	    }
+	
+        // and remove it then from the waiting list
+        waitinglg.remove(gp);
+    }
+    while (!waitinglg.empty());
+    Print("Schedule:");
 }
 
 void Add(gate_p gp)
 {
-    size_t startCycle = fc.Add(gp);
-    cycle[gp] = startCycle;
-    // DOUT("... add " << gp->qasm() << " startcycle=" << startCycle << " cycles=" << ((gp->duration+ct-1)/ct) );
+    waitinglg.push_back(gp);
+}
 
-    // insert gate in lg, the list of gates, in cycle order, and in this order, as late as possible
-    //
-    // reverse iterate because the insertion is near the end of the list
-    // insert so that cycle values are in order afterwards and the new one is nearest to the end
-    std::list<gate_p>::reverse_iterator rigp = lg.rbegin();
-    for (; rigp != lg.rend(); rigp++)
-    {
-        if (cycle[*rigp] <= startCycle)
-        {
-            // base because insert doesn't work with reverse iteration
-            // rigp.base points after the element that rigp is pointing at
-            // which is luckly because insert only inserts before the given element
-            // the end effect is inserting after rigp
-            lg.insert(rigp.base(), gp);
-            break;
-        }
-    }
-    // when list was empty or no element was found, just put it in front
-    if (rigp == lg.rend())
-    {
-        lg.push_front(gp);
-    }
+void AddSwap(size_t r0, size_t r1)
+{
+    gate_p  gp;
 
-#if debug
-    std::cout << "... new schedule: ";
-    for (auto & g2p : lg)
-    {
-        if (g2p == gp)
-        {
-            std::cout << "[" << cycle[g2p] << "] ";
-        }
-        else
-        {
-            std::cout << "" << cycle[g2p] << " ";
-        }
-    }
-    std::cout << std::endl;
-#endif
+    DOUT("... Adding decomposition of swap(q" << r0 << ",q" << r1 << ") ... " );
+
+    gp = new ql::mry90(r1); Add(gp);
+    // DOUT("... mry90(q" << r1 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
+    gp = new ql::cphase(r0,r1); Add(gp);
+    // DOUT("... cphase(q" << r0 << ",q" << r1 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
+    gp = new ql::ry90(r1);  Add(gp);
+    // DOUT("... ry90(q" << r1 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
+
+    gp = new ql::mry90(r0); Add(gp);
+    // DOUT("... mry90(q" << r0 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
+    gp = new ql::cphase(r1,r0); Add(gp);
+    // DOUT("... cphase(q" << r1 << ",q" << r0 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
+    gp = new ql::ry90(r0);  Add(gp);
+    // DOUT("... ry90(q" << r0 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
+
+    gp = new ql::mry90(r1); Add(gp);
+    // DOUT("... mry90(q" << r1 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
+    gp = new ql::cphase(r0,r1); Add(gp);
+    // DOUT("... cphase(q" << r0 << ",q" << r1 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
+    gp = new ql::ry90(r1);  Add(gp);
+    // DOUT("... ry90(q" << r1 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
+
+    //  gp = new ql::swap(r0,r1); gp->duration = 400; Add(gp);
+    // DOUT("... swap(q" << r0 << ",q" << r1 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
+
+    v2r.Swap(r0,r1);
+}
+
+void AddAndSchedule(gate_p gp)
+{
+    Add(gp);
+    Schedule();
 }
 
 size_t Map(size_t v)
@@ -428,6 +574,7 @@ private:
 
 	size_t                  nq;         // width of Past in qubits
 	size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
+    ql::quantum_platform   *platformp;  // descriptions of resources for scheduling
 
     std::vector<size_t>     total;      // full path, including source and target nodes
     std::vector<size_t>     fromSource; // partial path after split, starting at source
@@ -474,6 +621,7 @@ void Print(std::string s)
     partialPrint("\ttotal", total);
     partialPrint("\tfromSource", fromSource);
     partialPrint("\tfromTarget", fromTarget);
+    past.Print("past in Path");
 }
 
 static
@@ -501,13 +649,14 @@ void listPrint(std::string s, std::list<NNPath> & lp)
 // Init is used because making the default constructor parameterized on n and c and
 // passing these on to the constructors of the members, is not doable.
 // So a default constructed NNPath should be followed by an Init on it.
-void Init(size_t n, size_t c)
+void Init(size_t n, size_t c, ql::quantum_platform* p)
 {
     // DOUT("path::Init(n=" << n << ", c=" << c << ") ");
     nq = n;
     ct = c;
+    platformp = p;
     // total, fromSource and fromTarget start as empty vectors
-    past.Init(n,c);             // initializes past to empty
+    past.Init(n,c,p);           // initializes past to empty
     cycleExtend = SIZE_MAX;     // means undefined
 }
 
@@ -525,19 +674,8 @@ void Add(size_t q)
     total.insert(total.begin(), q); // hopelessly inefficient
 }
 
-// compute cycle extension of the path relative to the given basePast
-// do this by adding the swaps described by the path to a local copy of the past and compare cycles
-// store the extension relative to the base in cycleExtend and return it
-size_t Extend(Past basePast)
-{
-    past = basePast;   // explicitly a path-local copy of this basePast!
-    AddSwaps(past);
-    cycleExtend = past.MaxFreeCycle() - basePast.MaxFreeCycle();
-    return cycleExtend;
-}
-
 // add swap gates for the current path to the given past
-// this past can be the path-local one or the main past
+// this past can be a path-local one or the main past
 void AddSwaps(Past & past)
 {
     size_t  fromQ;
@@ -559,6 +697,18 @@ void AddSwaps(Past & past)
     }
 }
 
+// compute cycle extension of the path relative to the given basePast
+// do this by adding the swaps described by the path to a local copy of the past and compare cycles
+// store the extension relative to the base in cycleExtend and return it
+size_t Extend(Past basePast)
+{
+    past = basePast;   // explicitly a path-local copy of this basePast!
+    AddSwaps(past);
+    past.Schedule();
+    cycleExtend = past.MaxFreeCycle() - basePast.MaxFreeCycle();
+    return cycleExtend;
+}
+
 // split the path
 // starting from the representation in the total attribute,
 // generate all split path variations where each path is split once at any hop in it
@@ -576,6 +726,7 @@ void Split(std::list<NNPath> & reslp)
         // leftopi is the index in total that holds the qubit that becomes the left operand of the gate
         // fromSource will contain the path with qubits at indices 0 to leftopi
         // fromTarget will contain the path with qubits at indices leftopi+1 to length-1, reversed
+        //      reversal of fromTarget is done since swaps need to be generated starting at the target
 
         NNPath    np;
         np = *this;            // np is local copy of the current path, including total
@@ -649,7 +800,7 @@ void GridInit()
 {
     nx = platform.topology["x_size"];
     ny = platform.topology["y_size"];
-    DOUT("... nx=" << nx << "; ny=" << ny);
+    // DOUT("... nx=" << nx << "; ny=" << ny);
 
     for (auto & aqbit : platform.topology["qubits"] )
     {
@@ -716,7 +867,7 @@ void GridInit()
 }
 
 // distance between two qubits
-// implementation is for "cross" and "star" grids and assumes bidirectional edges and convex grid
+// implementation is for "cross" and "star" grids and assumes bidirectional edges and convex grid;
 // for "plus" grids, replace "std::max" by "+"
 size_t GridDistance(size_t from, size_t to)
 {
@@ -736,15 +887,24 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
     assert (reslp.empty());
 
 	if (src == tgt) {
-        NNPath  p;
-
 		// found target
         // create a virgin path and initialize it to become an empty path
 		// add src to this path (so that it becomes a distance 0 path with one qubit, src)
         // and add the path to the result list 
-        p.Init(nqbits, cycle_time);
+        // DOUT("GenShortestPaths ... about to allocate local virgin path");
+        NNPath  p;
+
+        // DOUT("... done allocate local virgin path; now init it");
+        p.Init(nqbits, cycle_time, &platform);
+        // DOUT("... done init path; now add src to it, converting it to an empty path");
         p.Add(src);
+        // DOUT("... done adding src; now add this empty path to result list");
+        // p.Print("... path before adding to result list");
         reslp.push_back(p);
+        // DOUT("... done adding empty path to result list; will print the list now");
+        // p.Print("... path after adding to result list");
+        // NNPath::listPrint("... result list after adding path", reslp);
+        // DOUT("... will return now");
         return;
 	}
 
@@ -766,18 +926,22 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
 
 		// get list of all possible paths from n to tgt in genlp
 		GenShortestPaths(n, tgt, genlp);
+        // DOUT("... GenShortestPaths, returning from recursive call in: " << "src=" << src << " tgt=" << tgt);
 
 		// accumulate all results
         reslp.splice(reslp.end(), genlp);   // moves all of genlp to reslp; makes genlp empty
+        // DOUT("... did splice, i.e. moved any results from recursion to current level results");
         assert (genlp.empty());
 	}
     // reslp contains all paths starting from a neighbor of src, to tgt
 
+    // add src to front of all to-be-returned paths from src's neighbors to tgt
     for (auto & p : reslp)
     {
-        // add src to front of all to-be-returned paths from src's neighbors to tgt
+        // DOUT("... GenShortestPaths, about to add src=" << src << "in front of path");
         p.Add(src);
     }
+    // DOUT("... GenShortestPaths, returning from call of: " << "src=" << src << " tgt=" << tgt);
 }
 
 // split each path in the argument old path list
@@ -836,6 +1000,7 @@ void MapMinExtend(ql::gate* gp, size_t src, size_t tgt)
 
         resp.Print("... the minimally extending path is:");
         resp.AddSwaps(mainPast);    // add swaps, as described by resp, to mainPast
+        mainPast.Schedule();        // and schedule them in
     }
 }
 
@@ -853,6 +1018,7 @@ void MapBase(ql::gate* gp, size_t src, size_t tgt)
             {
                 // DOUT(" ... distance(real " << n << ", real " << tgt << ")=" << dnb);
                 mainPast.AddSwap(src, n);
+                mainPast.Schedule();
                 mainPast.Print("mapping after swap");
                 src = n;
                 break;
@@ -875,7 +1041,7 @@ void MapGate(ql::gate* gp)
     {
         q[0] = mainPast.Map(q[0]);
         //DOUT(" ... mapped gate: " << gp->qasm() );
-        mainPast.Add(gp);
+        mainPast.AddAndSchedule(gp);
     }
     else if (operandCount == 2)
     {
@@ -883,22 +1049,22 @@ void MapGate(ql::gate* gp)
         size_t rq1 = mainPast.Map(q[1]);
         
         auto mapopt = ql::options::get("mapper");
-        if (mapopt == "minextend")
-        {
-            MapMinExtend(gp, rq0, rq1);
-        }
-        else if (mapopt == "base")
+        if (mapopt == "base")
         {
             MapBase(gp, rq0, rq1);
         }
+        else if (mapopt == "minextend" || mapopt == "minextendrc")
+        {
+            MapMinExtend(gp, rq0, rq1);
+        }
         else
         {
-            assert(0);
+            assert(0);  // see options.h
         }
         q[0] = mainPast.Map(q[0]);
         q[1] = mainPast.Map(q[1]);
         DOUT(" ... mapped gate: " << gp->qasm() );
-        mainPast.Add(gp);
+        mainPast.AddAndSchedule(gp);
     }
     else
     {
@@ -910,36 +1076,37 @@ void MapGate(ql::gate* gp)
 public:
 
 // Mapper constructor initializes constant program-wide data, e.g. grid related
-Mapper( size_t nq, ql::quantum_platform pf) :
-    nqbits(nq), cycle_time(pf.cycle_time), platform(pf)
+Mapper( size_t nq, ql::quantum_platform& p) :
+    nqbits(nq), cycle_time(p.cycle_time), platform(p)
 {
-    DOUT("==================================");
-    DOUT("Mapper creation ...");
-    DOUT("... nqbits=" << nqbits << ", cycle_time=" << cycle_time);
-    DOUT("... Grid initialization: qubits->coordinates, ->neighbors, distance ...");
+    // DOUT("==================================");
+    // DOUT("Mapper creation ...");
+    // DOUT("... nqbits=" << nqbits << ", cycle_time=" << cycle_time);
+    // DOUT("... Grid initialization: qubits->coordinates, ->neighbors, distance ...");
 
     GridInit();
 
-    DOUT("Mapper creation [DONE]");
+    // DOUT("Mapper creation [DONE]");
 }
 
 // initialize program-wide data that is passed around between kernels
 // initial program-wide mapping could be computed here
 void MapInit()
 {
-    DOUT("Mapping initialization ...");
-    DOUT("... Initialize map(virtual->real)");
-    DOUT("... with trivial mapping (virtual==real), nqbits=" << nqbits);
-    mainPast.Init(nqbits, cycle_time);
+    // DOUT("Mapping initialization ...");
+    // DOUT("... Initialize map(virtual->real)");
+    // DOUT("... with trivial mapping (virtual==real), nqbits=" << nqbits);
+    mainPast.Init(nqbits, cycle_time, &platform);
     //mainPast.Print("initial mapping");
-    DOUT("Mapping initialization [DONE]");
+    // DOUT("Mapping initialization [DONE]");
 }
 
 // map kernel's circuit in current mapping context as left by initialization and earlier kernels
 void MapCircuit(ql::circuit& inCirc)
 {
+    DOUT("==================================");
     DOUT("Mapping circuit ...");
-    //mainPast.Print("start mapping");
+    // mainPast.Print("start mapping");
 
     ql::circuit outCirc;        // output gate stream, mapped; will be swapped with inCirc on return
     mainPast.Output(outCirc);       // past window will flush into outCirc
@@ -965,7 +1132,10 @@ void MapCircuit(ql::circuit& inCirc)
     mainPast.Flush();
 
     mainPast.Print("end mapping");
-    DOUT("... swapping outCirc with inCirc");
+
+    // replace inCirc (the IR's main circuit) by the newly computed outCirc
+    // outCirc gets the old inCirc and is destroyed when leaving scope
+    // DOUT("... swapping outCirc with inCirc");
     inCirc.swap(outCirc);
 
     // DOUT("... Start circuit (size=" << inCirc.size() << ") after mapping:");

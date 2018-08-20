@@ -28,18 +28,29 @@ public:
 
     resource_t(std::string n) : name(n)
     {
-        DOUT("constructing resource : " << n);
     }
+
     virtual bool available(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
         std::string & operation_type, std::string & instruction_type, size_t operation_duration)=0;
     virtual void reserve(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
         std::string & operation_type, std::string & instruction_type, size_t operation_duration)=0;
     virtual ~resource_t() {}
+    virtual resource_t* clone() const & = 0;
+    virtual resource_t* clone() && = 0;
+
+    void Print(std::string s)
+    {
+        DOUT(s);
+        DOUT("resource name=" << name << "; count=" << count );
+    }
 };
 
 class qubit_resource_t : public resource_t
 {
 public:
+    qubit_resource_t* clone() const & { return new qubit_resource_t(*this);}
+    qubit_resource_t* clone() && { return new qubit_resource_t(std::move(*this)); }
+
     std::vector<size_t> state; // is busy till cycle
     qubit_resource_t(ql::quantum_platform & platform) : resource_t("qubits")
     {
@@ -56,15 +67,14 @@ public:
     {
         for( auto q : ins->operands )
         {
-            DOUT(" available? curr op_start_cycle: " << op_start_cycle << "  qubit: " << q 
-                << " is busy till cycle : " << state[q]);
+            // DOUT(" available? op_start_cycle: " << op_start_cycle << "  qubit: " << q << " is busy till cycle : " << state[q]);
             if( op_start_cycle < state[q] )
             {
-                DOUT("    qubit resource busy ...");
+                // DOUT("    qubit resource busy ...");
                 return false;
             }
         }
-        DOUT("    qubit resource available ...");
+        // DOUT("    qubit resource available ...");
         return true;
     }
 
@@ -74,8 +84,7 @@ public:
         for( auto q : ins->operands )
         {
             state[q]  = op_start_cycle + operation_duration;
-            DOUT("reserved. curr op_start_cycle: " << op_start_cycle << " qubit: " << q 
-                << " reserved till cycle: " << state[q]);
+            // DOUT("reserved. op_start_cycle: " << op_start_cycle << " qubit: " << q << " reserved till cycle: " << state[q]);
         }
     }
     ~qubit_resource_t() {}
@@ -85,6 +94,9 @@ public:
 class qwg_resource_t : public resource_t
 {
 public:
+    qwg_resource_t* clone() const & { return new qwg_resource_t(*this);}
+    qwg_resource_t* clone() && { return new qwg_resource_t(std::move(*this)); }
+
     std::vector<size_t> state; // is busy till cycle
     std::vector<std::string> operations;
     std::map<size_t,size_t> qubit2qwg;
@@ -119,20 +131,18 @@ public:
         {
             for( auto q : ins->operands )
             {
-                DOUT(" available? curr op_start_cycle: " << op_start_cycle << "  qwg: " << qubit2qwg[q] 
-                       << " is busy till op_start_cycle : " << state[ qubit2qwg[q] ] 
-                       << " for operation: " << operations[ qubit2qwg[q] ]);
+                // DOUT(" available? op_start_cycle: " << op_start_cycle << "  qwg: " << qubit2qwg[q] << " is busy till cycle : " << state[ qubit2qwg[q] ] << " for operation: " << operations[ qubit2qwg[q] ]);
                 if( op_start_cycle < state[ qubit2qwg[q] ] )
                 {
                     if( operations[ qubit2qwg[q] ] != operation_name )
                     {
-                        DOUT("    qwg resource busy ");
+                        // DOUT("    qwg resource busy ");
                         return false;
                     }
                 }
             }
         }
-        DOUT("    qwg resource available ...");
+        // DOUT("    qwg resource available ...");
         return true;
     }
 
@@ -147,9 +157,7 @@ public:
                 if( state[ qubit2qwg[q] ] < op_start_cycle + operation_duration)
                     state[ qubit2qwg[q] ]  = op_start_cycle + operation_duration;
                 operations[ qubit2qwg[q] ] = operation_name;
-                DOUT("reserved. curr op_start_cycle: " << op_start_cycle << " qwg: " << qubit2qwg[q] 
-                    << " reserved till cycle: " << state[ qubit2qwg[q] ] 
-                    << " for operation: " << operations[ qubit2qwg[q] ] );
+                // DOUT("reserved. op_start_cycle: " << op_start_cycle << " qwg: " << qubit2qwg[q] << " reserved till cycle: " << state[ qubit2qwg[q] ] << " for operation: " << operations[ qubit2qwg[q] ] );
             }
         }
     }
@@ -159,6 +167,9 @@ public:
 class meas_resource_t : public resource_t
 {
 public:
+    meas_resource_t* clone() const & { return new meas_resource_t(*this);}
+    meas_resource_t* clone() && { return new meas_resource_t(std::move(*this)); }
+
     std::vector<size_t> start_cycle; // last measurement start cycle
     std::vector<size_t> state; // is busy till cycle
     std::map<size_t,size_t> qubit2meas;
@@ -193,20 +204,19 @@ public:
         {
             for(auto q : ins->operands)
             {
-                DOUT(" available? curr op_start_cycle: " << op_start_cycle << "  meas: " << qubit2meas[q] 
-                          << " is busy till cycle : " << state[ qubit2meas[q] ] );
+                // DOUT(" available? op_start_cycle: " << op_start_cycle << "  meas: " << qubit2meas[q] << " is busy till cycle : " << state[ qubit2meas[q] ] );
                 if( op_start_cycle != start_cycle[ qubit2meas[q] ] )
                 {
                     // If current measurement on same measurement-unit does not start in the
                     // same cycle, then it should wait for current measurement to finish
                     if( op_start_cycle < state[ qubit2meas[q] ] )
                     {
-                        DOUT("    measure resource busy ");
+                        // DOUT("    measure resource busy ");
                         return false;
                     }
                 }
             }
-            DOUT("    measure resource available ...");
+            // DOUT("    measure resource available ...");
         }
         return true;
     }
@@ -221,8 +231,7 @@ public:
             {
                 start_cycle[ qubit2meas[q] ] = op_start_cycle;
                 state[ qubit2meas[q] ] = op_start_cycle + operation_duration;
-                DOUT("reserved. curr op_start_cycle: " << op_start_cycle << " meas: " << qubit2meas[q] 
-                    << " reserved till cycle: " << state[ qubit2meas[q] ] );
+                // DOUT("reserved. op_start_cycle: " << op_start_cycle << " meas: " << qubit2meas[q] << " reserved till cycle: " << state[ qubit2meas[q] ] );
             }
         }
     }
@@ -232,6 +241,9 @@ public:
 class edge_resource_t : public resource_t
 {
 public:
+    edge_resource_t* clone() const & { return new edge_resource_t(*this);}
+    edge_resource_t* clone() && { return new edge_resource_t(std::move(*this)); }
+
     std::vector<size_t> state; // is busy till cycle
     typedef std::pair<size_t,size_t> qubits_pair_t;
     std::map< qubits_pair_t, size_t > qubits2edge;
@@ -292,8 +304,7 @@ public:
             {
                 auto edge_no = qubits2edge[aqpair];
 
-                DOUT(" available? curr op_start_cycle: " << op_start_cycle << ", edge: " << edge_no
-                          << " is busy till cycle : " << state[edge_no] << " for operation: cz");
+                // DOUT(" available? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " is busy till cycle : " << state[edge_no] << " for operation: " << ins->name);
 
                 std::vector<size_t> edges2check(edge2edges[edge_no]);
                 edges2check.push_back(edge_no);
@@ -301,11 +312,11 @@ public:
                 {
                     if( op_start_cycle < state[e] )
                     {
-                        DOUT("    edge resource busy ");
+                        // DOUT("    edge resource busy ");
                         return false;
                     }
                 }
-                DOUT("    edge resource available ...");
+                // DOUT("    edge resource available ...");
             }
             else
             {
@@ -333,9 +344,7 @@ public:
                 state[e] = op_start_cycle + operation_duration;
             }
 
-            DOUT("reserved. curr op_start_cycle: " << op_start_cycle << " edge: " << edge_no 
-                << " reserved till cycle: " << state[ edge_no ] 
-                << " for operation: " << ins->name);
+            // DOUT("reserved. op_start_cycle: " << op_start_cycle << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] << " for operation: " << ins->name);
         }
     }
     ~edge_resource_t() {}
@@ -347,9 +356,17 @@ class resource_manager_t
 public:
     std::vector<resource_t*> resource_ptrs;
 
+    // constructor needed by mapper::FreeCycle to bridge time from its construction to its Init
+    // see the note on the use of constructors and Init functions at the start of mapper.h
+    resource_manager_t()
+    {
+        // DOUT("Constructing virgin resouce_manager_t");
+    }
+
     resource_manager_t( ql::quantum_platform & platform )
     {
-        // COUT("No of resources : " << platform.resources.size());
+        // DOUT("Constructing inited resouce_manager_t");
+        COUT("No of resources : " << platform.resources.size());
         for (json::iterator it = platform.resources.begin(); it != platform.resources.end(); ++it)
         {
             // COUT(it.key() << " : " << it.value() << "\n";
@@ -383,6 +400,52 @@ public:
         }
     }
 
+    void Print(std::string s)
+    {
+        DOUT(s);
+    }
+
+    // destructor destroying deep resource_t's
+    // runs before shallow destruction using synthesized resource_manager_t destructor
+    ~resource_manager_t()
+    {
+        // DOUT("Destroying resouce_manager_t");
+        for(auto rptr : resource_ptrs)
+        {
+            delete rptr;
+        }
+    }
+
+    // copy constructor doing a deep copy
+    // *orgrptr->clone() does the trick to create a copy of the actual derived class' object
+    resource_manager_t(const resource_manager_t& org)
+    {
+        // DOUT("Copy constructing resouce_manager_t");
+        resource_ptrs.clear();
+        for(auto orgrptr : org.resource_ptrs)
+        {
+            resource_ptrs.push_back( orgrptr->clone() );
+        }
+    }
+
+    // copy-assignment operator
+    // follow pattern to use tmp copy to allow self-assignment and to be exception safe
+    resource_manager_t& operator=(const resource_manager_t& rhs)
+    {
+        // DOUT("Copy assigning resouce_manager_t");
+        std::vector<resource_t*> new_resource_ptrs;
+        for(auto orgrptr : rhs.resource_ptrs)
+        {
+            new_resource_ptrs.push_back( orgrptr->clone() );
+        }
+        for(auto rptr : resource_ptrs)
+        {
+            delete rptr;
+        }
+        resource_ptrs = new_resource_ptrs;
+        return *this;
+    }
+
     bool available(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
         std::string & operation_type, std::string & instruction_type, size_t operation_duration)
     {
@@ -390,7 +453,9 @@ public:
         for(auto rptr : resource_ptrs)
         {
             if( rptr->available(op_start_cycle, ins, operation_name, operation_type, instruction_type, operation_duration) == false)
+            {
                 return false;
+            }
         }
         return true;
     }
@@ -404,12 +469,6 @@ public:
             rptr->reserve(op_start_cycle, ins, operation_name, operation_type, instruction_type, operation_duration);
         }
     }
-    ~resource_manager_t()
-    {
-        for(auto rptr : resource_ptrs)
-            delete rptr;
-    }
-
 };
 
 } // end of namespace arch
