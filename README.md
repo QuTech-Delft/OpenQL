@@ -67,7 +67,17 @@ pip install  -e .
 
 ## Running the tests
 
-In order to pass all the tests, `qisa-as` should be installed first. Follow [these instructions](https://github.com/DiCarloLab-Delft/ElecPrj_CCLight/tree/development/qisa-as) to install python interface of `qisa-as`. Once `qisa-as` is installed, you can run `py.test -v` to run all the tests to check the installation.
+In order to pass all the tests, `qisa-as` should be installed first. Follow [these instructions](https://github.com/DiCarloLab-Delft/ElecPrj_CCLight/tree/development/qisa-as) to install python interface of `qisa-as`. Once `qisa-as` is installed, you can run all the tests by:
+
+```
+py.test -v
+```
+
+Or
+
+```
+python -m pytest
+```
 
 
 # Compiling C++ OpenQL tests and programs
@@ -113,6 +123,30 @@ These can be executed as 'python tests/simplePyTest.py'.
 
 # Getting started 
 
-After installing OpenQL a good place to get started is by looking at the files in the "tests" directory. Here you can find commented examples on how to use OpenQL. For instance, `programs/getting_started.py` could be a good starting point. `doc` directory as well as the Wiki page documents various aspects.
+After installing OpenQL a good place to get started is by looking at the files
+in the "tests" directory. Here you can find commented examples on how to use OpenQL.
+For instance, `programs/getting_started.py` could be a good starting point.
+`doc` directory as well as the Wiki page documents various aspects.
 
 N.B. gates in OpenQL are *case insensitive*. 
+
+# Changelog
+
+Please read [CHANGELOG.md](CHANGELOG.md) for more details.
+
+
+# Contributing
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
+Typically you will be need to perform the following steps to contribute:
+
+1. `Fork` this repository
+1. Create a `branch`
+1. `Commit` your changes
+1. `Push` your `commits` to the `branch`
+1. Submit a `pull request`
+
+You can find more information about Pull Requests [here](https://help.github.com/categories/collaborating-on-projects-using-pull-requests/)
+
+# Contributors
+Please see [CONTRIBUTORS.md](CONTRIBUTORS.md).

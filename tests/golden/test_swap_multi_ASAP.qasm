@@ -1,6 +1,6 @@
 qubits 5
-
 .aKernel
+
     { x q0 | x q1 }
     qwait 7
     swap q0,q1

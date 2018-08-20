@@ -29,7 +29,7 @@ public:
     /*
      * compile qasm to quantumsim
      */
-    void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& platform) throw (ql::exception)
+    void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& platform)
     {
         IOUT("Compiling qasm code ...");
         if (c.empty())
@@ -64,7 +64,7 @@ private:
     {
         IOUT("Scheduling Quantumsim instructions ...");
         Scheduler sched;
-        sched.Init(nqubits, ckt, platform);
+        sched.Init(ckt, platform, nqubits, 0); //no creg in quantumsim, so creg_count = 0
         ql::ir::bundles_t bundles = sched.schedule_asap();
 
         IOUT("Scheduling Quantumsim instructions [Done].");

@@ -32,10 +32,10 @@ class Test_wait(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('test_wait_simple', num_qubits, platform)
+        p = ql.Program('test_wait_simple', platform, num_qubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
-        k = ql.Kernel('aKernel', platform)
+        k = ql.Kernel('aKernel', platform, num_qubits)
 
         k.gate("x", [0])
         k.gate("wait", [0], 40) # OR k.wait([0], 40)
@@ -44,7 +44,7 @@ class Test_wait(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_simple.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
@@ -54,10 +54,10 @@ class Test_wait(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('test_wait_parallel', num_qubits, platform)
+        p = ql.Program('test_wait_parallel', platform, num_qubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
-        k = ql.Kernel('aKernel', platform)
+        k = ql.Kernel('aKernel', platform, num_qubits)
 
         # wait should not be in parallel with another gate
         k.gate("x", [0])
@@ -67,7 +67,7 @@ class Test_wait(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_parallel.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
@@ -76,13 +76,13 @@ class Test_wait(unittest.TestCase):
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
         num_qubits = 7
-        p = ql.Program('test_wait_sweep', num_qubits, platform)
+        p = ql.Program('test_wait_sweep', platform, num_qubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         qubit_idx = 0
         waits = [20, 40, 60, 100, 200, 400, 800, 1000, 2000]
         for kno, wait_nanoseconds in enumerate(waits):
-            k = ql.Kernel("kernel_"+str(kno), platform)
+            k = ql.Kernel("kernel_"+str(kno), platform, num_qubits)
 
             k.prepz(qubit_idx)
 
@@ -95,7 +95,7 @@ class Test_wait(unittest.TestCase):
             k.gate('rx90', [qubit_idx])
             k.gate("wait", [qubit_idx], wait_nanoseconds)
 
-            k.measure(qubit_idx)
+            k.gate('measure', [qubit_idx])
 
             # add the kernel to the program
             p.add_kernel(k)
@@ -103,7 +103,7 @@ class Test_wait(unittest.TestCase):
         # compile the program
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_sweep.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
@@ -112,10 +112,10 @@ class Test_wait(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('test_wait_multi', num_qubits, platform)
+        p = ql.Program('test_wait_multi', platform, num_qubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
-        k = ql.Kernel('aKernel', platform)
+        k = ql.Kernel('aKernel', platform, num_qubits)
 
         for i in range(4):
             k.gate("x", [i])
@@ -129,7 +129,7 @@ class Test_wait(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_multi.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
@@ -138,10 +138,10 @@ class Test_wait(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('test_wait_barrier', num_qubits, platform)
+        p = ql.Program('test_wait_barrier', platform, num_qubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
-        k = ql.Kernel('aKernel', platform)
+        k = ql.Kernel('aKernel', platform, num_qubits)
 
         k.gate("x", [0])
         k.gate("x", [1])
@@ -153,7 +153,7 @@ class Test_wait(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_barrier.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
@@ -162,10 +162,10 @@ class Test_wait(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('test_barrier', num_qubits, platform)
+        p = ql.Program('test_barrier', platform, num_qubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
-        k = ql.Kernel('aKernel', platform)
+        k = ql.Kernel('aKernel', platform, num_qubits)
 
         k.gate("x", [0])
         k.gate("x", [1])
@@ -181,7 +181,7 @@ class Test_wait(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
         gold_fn = rootDir + '/golden/test_barrier.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 

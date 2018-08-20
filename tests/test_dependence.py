@@ -34,9 +34,9 @@ class Test_dependence(unittest.TestCase):
     # @unittest.skip
     def test_independent(self):
         set_ql_options()
-
+        nqubits = 4
         # populate kernel
-        k = ql.Kernel("aKernel", platf)
+        k = ql.Kernel("aKernel", platf, nqubits)
 
         for i in range(4):
             k.prepz(i)
@@ -49,17 +49,15 @@ class Test_dependence(unittest.TestCase):
         k.measure(1)
 
         sweep_points = [2]
-        num_circuits = 1
-        nqubits = 4
 
-        p = ql.Program("independent", nqubits, platf)
+        p = ql.Program("independent", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         p.compile()
 
         gold_fn = rootDir + '/golden/test_independence.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
+        qasm_fn = os.path.join(output_dir, p.name_+'_scheduled.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
         # load qasm
         qasm_files = []
@@ -77,8 +75,9 @@ class Test_dependence(unittest.TestCase):
     def test_WAW(self):
         set_ql_options()
 
+        nqubits = 4
         # populate kernel
-        k = ql.Kernel("aKernel", platf)
+        k = ql.Kernel("aKernel", platf, nqubits)
 
         for i in range(4):
             k.prepz(i)
@@ -91,16 +90,14 @@ class Test_dependence(unittest.TestCase):
         k.measure(1)
 
         sweep_points = [2]
-        num_circuits = 1
-        nqubits = 4
 
-        p = ql.Program("WAW", nqubits, platf)
+        p = ql.Program("WAW", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         p.compile()
 
         gold_fn = rootDir + '/golden/test_WAW_ASAP.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        qasm_fn = os.path.join(output_dir, p.name_+'_scheduled.qasm')
         
         print(gold_fn)
         print(qasm_fn)
@@ -109,8 +106,8 @@ class Test_dependence(unittest.TestCase):
 
         # load qasm
         qasm_files = []
-        qasm_files.append(os.path.join(output_dir, p.name+'.qasm'))
-        qasm_files.append(os.path.join(output_dir, p.name+'_scheduled.qasm'))
+        qasm_files.append(os.path.join(output_dir, p.name_+'.qasm'))
+        qasm_files.append(os.path.join(output_dir, p.name_+'_scheduled.qasm'))
 
         for qasm_file in qasm_files:
            qasm_reader = ql.QASM_Loader(qasm_file)
@@ -121,9 +118,10 @@ class Test_dependence(unittest.TestCase):
     # @unittest.skip
     def test_RAR_Control(self):
         set_ql_options()
+        nqubits = 4
 
         # populate kernel
-        k = ql.Kernel("aKernel", platf)
+        k = ql.Kernel("aKernel", platf, nqubits)
 
         for i in range(4):
             k.prepz(i)
@@ -136,16 +134,14 @@ class Test_dependence(unittest.TestCase):
         k.measure(1)
 
         sweep_points = [2]
-        num_circuits = 1
-        nqubits = 4
 
-        p = ql.Program("RAR", nqubits, platf)
+        p = ql.Program("RAR", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         p.compile()
 
         gold_fn = rootDir + '/golden/test_RAR_Control_ASAP.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        qasm_fn = os.path.join(output_dir, p.name_+'_scheduled.qasm')
 
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
@@ -164,9 +160,10 @@ class Test_dependence(unittest.TestCase):
     # @unittest.skip
     def test_RAW(self):
         set_ql_options()
+        nqubits = 4
 
         # populate kernel
-        k = ql.Kernel("aKernel", platf)
+        k = ql.Kernel("aKernel", platf, nqubits)
 
         for i in range(4):
             k.prepz(i)
@@ -179,16 +176,14 @@ class Test_dependence(unittest.TestCase):
         k.measure(1)
 
         sweep_points = [2]
-        num_circuits = 1
-        nqubits = 4
 
-        p = ql.Program("RAW", nqubits, platf)
+        p = ql.Program("RAW", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         p.compile()
 
         gold_fn = rootDir + '/golden/test_RAW_ASAP.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        qasm_fn = os.path.join(output_dir, p.name_+'_scheduled.qasm')
         
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
@@ -207,9 +202,10 @@ class Test_dependence(unittest.TestCase):
     # @unittest.skip
     def test_WAR(self):
         set_ql_options()
+        nqubits = 4
 
         # populate kernel
-        k = ql.Kernel("aKernel", platf)
+        k = ql.Kernel("aKernel", platf, nqubits)
 
         for i in range(4):
             k.prepz(i)
@@ -222,16 +218,14 @@ class Test_dependence(unittest.TestCase):
         k.measure(1)
 
         sweep_points = [2]
-        num_circuits = 1
-        nqubits = 4
 
-        p = ql.Program("WAR", nqubits, platf)
+        p = ql.Program("WAR", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         p.compile()
 
         gold_fn = rootDir + '/golden/test_WAR_ASAP.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        qasm_fn = os.path.join(output_dir, p.name_+'_scheduled.qasm')
         
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
@@ -249,25 +243,24 @@ class Test_dependence(unittest.TestCase):
     # @unittest.skip
     def test_swap_single(self):
         set_ql_options()
+        nqubits = 4
 
         # populate kernel
-        k = ql.Kernel("aKernel", platf)
+        k = ql.Kernel("aKernel", platf, nqubits)
 
         k.gate("x", [0]);
         k.gate("swap", [0, 1])
         k.gate("x", [0])
 
         sweep_points = [2]
-        num_circuits = 1
-        nqubits = 4
 
-        p = ql.Program("swap_single", nqubits, platf)
+        p = ql.Program("swap_single", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         p.compile()
 
         gold_fn = rootDir + '/golden/test_swap_single_ASAP.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        qasm_fn = os.path.join(output_dir, p.name_+'_scheduled.qasm')
 
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
@@ -284,9 +277,10 @@ class Test_dependence(unittest.TestCase):
     # @unittest.skip
     def test_swap_multi(self):
         set_ql_options()
+        nqubits = 5
 
         # populate kernel
-        k = ql.Kernel("aKernel", platf)
+        k = ql.Kernel("aKernel", platf, nqubits)
 
         # swap test with 2 qubit gates
         k.gate("x", [0])
@@ -296,16 +290,14 @@ class Test_dependence(unittest.TestCase):
         k.gate("cz", [1, 4])
 
         sweep_points = [2]
-        num_circuits = 1
-        nqubits = 5
 
-        p = ql.Program("swap_multi", nqubits, platf)
+        p = ql.Program("swap_multi", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         p.compile()
 
         gold_fn = rootDir + '/golden/test_swap_multi_ASAP.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        qasm_fn = os.path.join(output_dir, p.name_+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
         # load qasm

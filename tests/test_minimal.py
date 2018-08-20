@@ -13,11 +13,10 @@ ql.set_option('output_dir', output_dir)
 class Test_kernel(unittest.TestCase):
 
     def minimal(self):
-        # set global options kernel
-        ql.init()
+        nqubits = 1
 
         # create a kernel
-        k = ql.Kernel("aKernel", platf)
+        k = ql.Kernel("aKernel", platf, nqubits)
 
         # populate a kernel
         k.prepz(0)
@@ -25,18 +24,16 @@ class Test_kernel(unittest.TestCase):
         k.measure(0)
 
         sweep_points = [2]
-        num_circuits = 1
-        nqubits = 1
 
         # create a program
-        p = ql.Program("aProgram", nqubits, platf)
+        p = ql.Program("aProgram", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         # add kernel to program
         p.add_kernel(k)
 
         # compile  the program
-        p.compile(optimize=False, scheduler='ALAP', log_level='LOG_INFO')
+        p.compile()
         # all the outputs are generated in 'output' dir
 
 if __name__ == '__main__':

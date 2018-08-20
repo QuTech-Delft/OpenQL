@@ -4,7 +4,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 
     <title>openql.openql API documentation</title>
-    <meta name="description" content="`OpenQL` is a C++ framework for high-level quantum programming. The framework provide a compiler for..." />
+    <meta name="description" content="`OpenQL` is a C++/Python framework for high-level quantum programming. The framework provides a comp..." />
 
   <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300' rel='stylesheet' type='text/css'>
   
@@ -1044,7 +1044,9 @@ table {
     <li class="set"><h3><a href="#header-functions">Functions</a></h3>
       
   <ul>
+    <li class="mono"><a href="#openql.openql.CReg_swigregister">CReg_swigregister</a></li>
     <li class="mono"><a href="#openql.openql.Kernel_swigregister">Kernel_swigregister</a></li>
+    <li class="mono"><a href="#openql.openql.Operation_swigregister">Operation_swigregister</a></li>
     <li class="mono"><a href="#openql.openql.Platform_swigregister">Platform_swigregister</a></li>
     <li class="mono"><a href="#openql.openql.Program_swigregister">Program_swigregister</a></li>
     <li class="mono"><a href="#openql.openql.QASM_Loader_swigregister">QASM_Loader_swigregister</a></li>
@@ -1063,14 +1065,25 @@ table {
     <li class="set"><h3><a href="#header-classes">Classes</a></h3>
       <ul>
         <li class="mono">
+        <span class="class_name"><a href="#openql.openql.CReg">CReg</a></span>
+        
+          
+  <ul>
+    <li class="mono"><a href="#openql.openql.CReg.__init__">__init__</a></li>
+  </ul>
+
+        </li>
+        <li class="mono">
         <span class="class_name"><a href="#openql.openql.Kernel">Kernel</a></span>
         
           
   <ul>
     <li class="mono"><a href="#openql.openql.Kernel.__init__">__init__</a></li>
     <li class="mono"><a href="#openql.openql.Kernel.barrier">barrier</a></li>
+    <li class="mono"><a href="#openql.openql.Kernel.classical">classical</a></li>
     <li class="mono"><a href="#openql.openql.Kernel.clifford">clifford</a></li>
     <li class="mono"><a href="#openql.openql.Kernel.cnot">cnot</a></li>
+    <li class="mono"><a href="#openql.openql.Kernel.conjugate">conjugate</a></li>
     <li class="mono"><a href="#openql.openql.Kernel.controlled">controlled</a></li>
     <li class="mono"><a href="#openql.openql.Kernel.cphase">cphase</a></li>
     <li class="mono"><a href="#openql.openql.Kernel.cz">cz</a></li>
@@ -1103,6 +1116,15 @@ table {
 
         </li>
         <li class="mono">
+        <span class="class_name"><a href="#openql.openql.Operation">Operation</a></span>
+        
+          
+  <ul>
+    <li class="mono"><a href="#openql.openql.Operation.__init__">__init__</a></li>
+  </ul>
+
+        </li>
+        <li class="mono">
         <span class="class_name"><a href="#openql.openql.Platform">Platform</a></span>
         
           
@@ -1118,7 +1140,12 @@ table {
           
   <ul>
     <li class="mono"><a href="#openql.openql.Program.__init__">__init__</a></li>
+    <li class="mono"><a href="#openql.openql.Program.add_do_while">add_do_while</a></li>
+    <li class="mono"><a href="#openql.openql.Program.add_for">add_for</a></li>
+    <li class="mono"><a href="#openql.openql.Program.add_if">add_if</a></li>
+    <li class="mono"><a href="#openql.openql.Program.add_if_else">add_if_else</a></li>
     <li class="mono"><a href="#openql.openql.Program.add_kernel">add_kernel</a></li>
+    <li class="mono"><a href="#openql.openql.Program.add_program">add_program</a></li>
     <li class="mono"><a href="#openql.openql.Program.compile">compile</a></li>
     <li class="mono"><a href="#openql.openql.Program.microcode">microcode</a></li>
     <li class="mono"><a href="#openql.openql.Program.print_interaction_matrix">print_interaction_matrix</a></li>
@@ -1295,7 +1322,7 @@ table {
 
   <header id="section-intro">
   <h1 class="title"><span class="name">openql.openql</span> module</h1>
-  <p><code>OpenQL</code> is a C++ framework for high-level quantum programming. The framework provide a compiler for compiling and optimizing quantum code. The compiler produce the intermediate quantum assembly language and the compiled micro-code for various target platforms. While the microcode is platform-specific, the quantum assembly code (qasm) is hardware-agnostic and can be simulated on the QX simulator.</p>
+  <p><code>OpenQL</code> is a C++/Python framework for high-level quantum programming. The framework provides a compiler for compiling and optimizing quantum code. The compiler produces the intermediate quantum assembly language and the compiled eQASM (executable QASM) for various target platforms. While the eQASM is platform-specific, the quantum assembly code (QASM) is hardware-agnostic and can be simulated on the QX simulator.</p>
   
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql', this);">Show source &equiv;</a></p>
   <div id="source-openql.openql" class="source">
@@ -1305,7 +1332,7 @@ table {
 <span class="c1"># Do not make changes to this file unless you know what you are doing--modify</span>
 <span class="c1"># the SWIG interface file instead.</span>
 
-<span class="sd">&quot;&quot;&quot;`OpenQL` is a C++ framework for high-level quantum programming. The framework provide a compiler for compiling and optimizing quantum code. The compiler produce the intermediate quantum assembly language and the compiled micro-code for various target platforms. While the microcode is platform-specific, the quantum assembly code (qasm) is hardware-agnostic and can be simulated on the QX simulator.&quot;&quot;&quot;</span>
+<span class="sd">&quot;&quot;&quot;`OpenQL` is a C++/Python framework for high-level quantum programming. The framework provides a compiler for compiling and optimizing quantum code. The compiler produces the intermediate quantum assembly language and the compiled eQASM (executable QASM) for various target platforms. While the eQASM is platform-specific, the quantum assembly code (QASM) is hardware-agnostic and can be simulated on the QX simulator.&quot;&quot;&quot;</span>
 
 
 <span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">version_info</span> <span class="k">as</span> <span class="n">_swig_python_version_info</span>
@@ -1960,11 +1987,11 @@ table {
 
     <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
     <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">ql_platform</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_ql_platform_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_ql_platform_set</span><span class="p">)</span>
-    <span class="n">p_name</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_p_name_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_p_name_set</span><span class="p">)</span>
-    <span class="n">config_file</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_config_file_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_config_file_set</span><span class="p">)</span>
+    <span class="n">name_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_name__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_name__set</span><span class="p">)</span>
+    <span class="n">config_file_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_config_file__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_config_file__set</span><span class="p">)</span>
+    <span class="n">platform_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_platform__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_platform__set</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">config_file</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         Constructs a Platform object.</span>
 
@@ -1976,7 +2003,7 @@ table {
 <span class="sd">            name of the configuration file specifying the platform</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Platform</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">config_file</span><span class="p">)</span>
+        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Platform</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
@@ -2003,15 +2030,77 @@ table {
 <span class="n">Platform_swigregister</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_swigregister</span>
 <span class="n">Platform_swigregister</span><span class="p">(</span><span class="n">Platform</span><span class="p">)</span>
 
+<span class="k">class</span> <span class="nc">CReg</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Classical register class.&quot;&quot;&quot;</span>
+
+    <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
+    <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
+    <span class="n">creg_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">CReg_creg__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">CReg_creg__set</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Constructs a classical register which can be source/destination for classical operations.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        CReg</span>
+<span class="sd">            classical register object</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_CReg</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">this</span> <span class="o">=</span> <span class="n">this</span>
+    <span class="n">__swig_destroy__</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">delete_CReg</span>
+    <span class="fm">__del__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">None</span>
+<span class="n">CReg_swigregister</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">CReg_swigregister</span>
+<span class="n">CReg_swigregister</span><span class="p">(</span><span class="n">CReg</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Operation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Operation class representing classical operations.&quot;&quot;&quot;</span>
+
+    <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
+    <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
+    <span class="n">operation_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Operation_operation__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Operation_operation__set</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Constructs an Operation object (used for initializing with immediate values).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        arg1 : int</span>
+<span class="sd">            immediate value</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Operation</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">this</span> <span class="o">=</span> <span class="n">this</span>
+    <span class="n">__swig_destroy__</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">delete_Operation</span>
+    <span class="fm">__del__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">None</span>
+<span class="n">Operation_swigregister</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Operation_swigregister</span>
+<span class="n">Operation_swigregister</span><span class="p">(</span><span class="n">Operation</span><span class="p">)</span>
+
 <span class="k">class</span> <span class="nc">Kernel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Kernel class which contains various quantum instructions.&quot;&quot;&quot;</span>
 
     <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
     <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_name_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_name_set</span><span class="p">)</span>
-    <span class="n">ql_kernel</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_ql_kernel_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_ql_kernel_set</span><span class="p">)</span>
+    <span class="n">name_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_name__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_name__set</span><span class="p">)</span>
+    <span class="n">platform_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_platform__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_platform__set</span><span class="p">)</span>
+    <span class="n">qubit_count_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_qubit_count__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_qubit_count__set</span><span class="p">)</span>
+    <span class="n">creg_count_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_creg_count__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_creg_count__set</span><span class="p">)</span>
+    <span class="n">kernel_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_kernel__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_kernel__set</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kname</span><span class="p">,</span> <span class="n">platform</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernel_name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         Constructs a Kernel object.</span>
 
@@ -2021,9 +2110,13 @@ table {
 <span class="sd">            name of the Kernel</span>
 <span class="sd">        arg2 : Platform</span>
 <span class="sd">            target platform for which the kernel will be compiled</span>
+<span class="sd">        arg3 : int</span>
+<span class="sd">            qubit count</span>
+<span class="sd">        arg4 : int</span>
+<span class="sd">            classical register count</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Kernel</span><span class="p">(</span><span class="n">kname</span><span class="p">,</span> <span class="n">platform</span><span class="p">)</span>
+        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Kernel</span><span class="p">(</span><span class="n">kernel_name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
@@ -2341,7 +2434,7 @@ table {
         <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_display</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         adds custom/default gates to kernel.</span>
 
@@ -2351,33 +2444,70 @@ table {
 <span class="sd">            name of gate</span>
 <span class="sd">        arg2 : []</span>
 <span class="sd">            list of qubits</span>
-<span class="sd">        arg3 : int</span>
-<span class="sd">            duration in ns (at the moment it is only supported for wait instruction, in the future it will be extended to override duration of any gate)</span>
-<span class="sd">        arg3 : double</span>
-<span class="sd">            angle of roation, used internally only for roations (rx, ry and rz)</span>
+<span class="sd">        arg3 : CReg</span>
+<span class="sd">            classical destination register for measure operation.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">classical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">         generate controlled version of the kernel.</span>
+<span class="sd">         adds classical operation kernel.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        arg1 : CReg</span>
+<span class="sd">            destination register for classical operation.</span>
+<span class="sd">        arg2 : Operation</span>
+<span class="sd">            classical operation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_classical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         generates controlled version of the kernel from the input kernel.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
 <span class="sd">        arg1 : ql::Kernel</span>
 <span class="sd">            input kernel. Except measure, Kernel to be controlled may contain any of the default gates as well custom gates which are not specialized for a specific qubits.</span>
+
 <span class="sd">        arg2 : []</span>
-<span class="sd">            list of control qubits. At the moment only single qubit control is possible. This will be extended to support multi-qubit control.</span>
+<span class="sd">            list of control qubits.</span>
+
+<span class="sd">        arg3 : []</span>
+<span class="sd">            list of ancilla qubits. Number of ancilla qubits should be equal to number of control qubits.</span>
+
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        ql::Kernel</span>
-<span class="sd">            controlled version of the kernel</span>
+<span class="sd">        None</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">qubits</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">conjugate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         generates conjugate version of the kernel from the input kernel.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        arg1 : ql::Kernel</span>
+<span class="sd">            input kernel. Except measure, Kernel to be conjugated.</span>
+
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_conjugate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
 
     <span class="n">__swig_destroy__</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">delete_Kernel</span>
     <span class="fm">__del__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">None</span>
@@ -2389,23 +2519,29 @@ table {
 
     <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
     <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_name_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_name_set</span><span class="p">)</span>
+    <span class="n">name_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_name__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_name__set</span><span class="p">)</span>
+    <span class="n">platform_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_platform__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_platform__set</span><span class="p">)</span>
+    <span class="n">qubit_count_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_qubit_count__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_qubit_count__set</span><span class="p">)</span>
+    <span class="n">creg_count_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_creg_count__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_creg_count__set</span><span class="p">)</span>
+    <span class="n">program_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_program__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_program__set</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pname</span><span class="p">,</span> <span class="n">nqubits</span><span class="p">,</span> <span class="n">platform</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         Constructs a program object.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        pname : str</span>
+<span class="sd">        arg1 : str</span>
 <span class="sd">            name of the program</span>
-<span class="sd">        nqubits : int</span>
-<span class="sd">            number of qubits the program will use</span>
-<span class="sd">        p       : Platform</span>
+<span class="sd">        arg2 : Platform</span>
 <span class="sd">            instance of an OpenQL Platform</span>
+<span class="sd">        arg3 : int</span>
+<span class="sd">            number of qubits the program will use</span>
+<span class="sd">        arg4 : int</span>
+<span class="sd">            number of classical registers the program will use (default: 0)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Program</span><span class="p">(</span><span class="n">pname</span><span class="p">,</span> <span class="n">nqubits</span><span class="p">,</span> <span class="n">platform</span><span class="p">)</span>
+        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Program</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
@@ -2437,6 +2573,71 @@ table {
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">add_program</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_program</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_if</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Adds specified sub-program to a program which will be executed if specified condition is true. This allows nesting of operations.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        arg1 : Program</span>
+<span class="sd">            program to be executed</span>
+<span class="sd">        arg2: Operation</span>
+<span class="sd">            classical relational operation (&lt;, &gt;, &lt;=, &gt;=, ==, !=)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_if</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">add_if_else</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Adds specified sub-programs to a program. First sub-program will be executed if specified condition is true. Second sub-program will be executed if specified condition is false.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        arg1 : Program</span>
+<span class="sd">            program to be executed when specified condition is true (if part).</span>
+<span class="sd">        arg2 : Program</span>
+<span class="sd">            program to be executed when specified condition is false (else part).</span>
+<span class="sd">        arg3: Operation</span>
+<span class="sd">            classical relational operation (&lt;, &gt;, &lt;=, &gt;=, ==, !=)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_if_else</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">add_do_while</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Adds specified sub-program to a program which will be repeatedly executed while specified condition is true.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        arg1 : Program</span>
+<span class="sd">            program to be executed repeatedly</span>
+<span class="sd">        arg2: Operation</span>
+<span class="sd">            classical relational operation (&lt;, &gt;, &lt;=, &gt;=, ==, !=)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_do_while</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">add_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Adds specified sub-program to a program which will be executed for specified iterations.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        arg1 : Program</span>
+<span class="sd">            sub-program to be executed repeatedly</span>
+<span class="sd">        arg2: int</span>
+<span class="sd">            iteration count</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
 
     <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -2521,8 +2722,36 @@ table {
     <h2 class="section-title" id="header-functions">Functions</h2>
       
   <div class="item">
+    <div class="name def" id="openql.openql.CReg_swigregister">
+    <p>def <span class="ident">CReg_swigregister</span>(</p><p>...)</p>
+    </div>
+    
+
+    
+  
+  <div class="source_cont">
+</div>
+
+  </div>
+  
+      
+  <div class="item">
     <div class="name def" id="openql.openql.Kernel_swigregister">
     <p>def <span class="ident">Kernel_swigregister</span>(</p><p>...)</p>
+    </div>
+    
+
+    
+  
+  <div class="source_cont">
+</div>
+
+  </div>
+  
+      
+  <div class="item">
+    <div class="name def" id="openql.openql.Operation_swigregister">
+    <p>def <span class="ident">Operation_swigregister</span>(</p><p>...)</p>
     </div>
     
 
@@ -2785,6 +3014,143 @@ arg2 : str
     <h2 class="section-title" id="header-classes">Classes</h2>
       
       <div class="item">
+      <p id="openql.openql.CReg" class="name">class <span class="ident">CReg</span></p>
+      
+  
+    <div class="desc"><p>Classical register class.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.CReg', this);">Show source &equiv;</a></p>
+  <div id="source-openql.openql.CReg" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">CReg</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Classical register class.&quot;&quot;&quot;</span>
+
+    <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
+    <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
+    <span class="n">creg_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">CReg_creg__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">CReg_creg__set</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Constructs a classical register which can be source/destination for classical operations.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        CReg</span>
+<span class="sd">            classical register object</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_CReg</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">this</span> <span class="o">=</span> <span class="n">this</span>
+    <span class="n">__swig_destroy__</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">delete_CReg</span>
+    <span class="fm">__del__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">None</span>
+</pre></div>
+
+  </div>
+</div>
+
+
+      <div class="class">
+          <h3>Ancestors (in MRO)</h3>
+          <ul class="class_list">
+          <li><a href="#openql.openql.CReg">CReg</a></li>
+          <li>builtins.object</li>
+          </ul>
+          <h3>Class variables</h3>
+            <div class="item">
+            <p id="openql.openql.CReg.creg_" class="name">var <span class="ident">creg_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.CReg.thisown" class="name">var <span class="ident">thisown</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+          <h3>Static methods</h3>
+            
+  <div class="item">
+    <div class="name def" id="openql.openql.CReg.__init__">
+    <p>def <span class="ident">__init__</span>(</p><p>self)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Constructs a classical register which can be source/destination for classical operations.</p>
+<h2>Parameters</h2>
+<p>None</p>
+<h2>Returns</h2>
+<p>CReg
+    classical register object</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.CReg.__init__', this);">Show source &equiv;</a></p>
+  <div id="source-openql.openql.CReg.__init__" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Constructs a classical register which can be source/destination for classical operations.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    None</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    CReg</span>
+<span class="sd">        classical register object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_CReg</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">this</span> <span class="o">=</span> <span class="n">this</span>
+</pre></div>
+
+  </div>
+</div>
+
+  </div>
+  
+          <h3>Instance variables</h3>
+            <div class="item">
+            <p id="openql.openql.CReg.creg_" class="name">var <span class="ident">creg_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.CReg.thisown" class="name">var <span class="ident">thisown</span></p>
+            
+
+            
+  
+    <div class="desc"><p>The membership flag</p></div>
+  <div class="source_cont">
+</div>
+
+            </div>
+      </div>
+      </div>
+      
+      <div class="item">
       <p id="openql.openql.Kernel" class="name">class <span class="ident">Kernel</span></p>
       
   
@@ -2797,10 +3163,13 @@ arg2 : str
 
     <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
     <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_name_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_name_set</span><span class="p">)</span>
-    <span class="n">ql_kernel</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_ql_kernel_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_ql_kernel_set</span><span class="p">)</span>
+    <span class="n">name_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_name__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_name__set</span><span class="p">)</span>
+    <span class="n">platform_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_platform__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_platform__set</span><span class="p">)</span>
+    <span class="n">qubit_count_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_qubit_count__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_qubit_count__set</span><span class="p">)</span>
+    <span class="n">creg_count_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_creg_count__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_creg_count__set</span><span class="p">)</span>
+    <span class="n">kernel_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_kernel__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_kernel__set</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kname</span><span class="p">,</span> <span class="n">platform</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernel_name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         Constructs a Kernel object.</span>
 
@@ -2810,9 +3179,13 @@ arg2 : str
 <span class="sd">            name of the Kernel</span>
 <span class="sd">        arg2 : Platform</span>
 <span class="sd">            target platform for which the kernel will be compiled</span>
+<span class="sd">        arg3 : int</span>
+<span class="sd">            qubit count</span>
+<span class="sd">        arg4 : int</span>
+<span class="sd">            classical register count</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Kernel</span><span class="p">(</span><span class="n">kname</span><span class="p">,</span> <span class="n">platform</span><span class="p">)</span>
+        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Kernel</span><span class="p">(</span><span class="n">kernel_name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
@@ -3130,7 +3503,7 @@ arg2 : str
         <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_display</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         adds custom/default gates to kernel.</span>
 
@@ -3140,33 +3513,70 @@ arg2 : str
 <span class="sd">            name of gate</span>
 <span class="sd">        arg2 : []</span>
 <span class="sd">            list of qubits</span>
-<span class="sd">        arg3 : int</span>
-<span class="sd">            duration in ns (at the moment it is only supported for wait instruction, in the future it will be extended to override duration of any gate)</span>
-<span class="sd">        arg3 : double</span>
-<span class="sd">            angle of roation, used internally only for roations (rx, ry and rz)</span>
+<span class="sd">        arg3 : CReg</span>
+<span class="sd">            classical destination register for measure operation.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">classical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">         generate controlled version of the kernel.</span>
+<span class="sd">         adds classical operation kernel.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        arg1 : CReg</span>
+<span class="sd">            destination register for classical operation.</span>
+<span class="sd">        arg2 : Operation</span>
+<span class="sd">            classical operation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_classical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         generates controlled version of the kernel from the input kernel.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
 <span class="sd">        arg1 : ql::Kernel</span>
 <span class="sd">            input kernel. Except measure, Kernel to be controlled may contain any of the default gates as well custom gates which are not specialized for a specific qubits.</span>
+
 <span class="sd">        arg2 : []</span>
-<span class="sd">            list of control qubits. At the moment only single qubit control is possible. This will be extended to support multi-qubit control.</span>
+<span class="sd">            list of control qubits.</span>
+
+<span class="sd">        arg3 : []</span>
+<span class="sd">            list of ancilla qubits. Number of ancilla qubits should be equal to number of control qubits.</span>
+
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        ql::Kernel</span>
-<span class="sd">            controlled version of the kernel</span>
+<span class="sd">        None</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">qubits</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">conjugate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         generates conjugate version of the kernel from the input kernel.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        arg1 : ql::Kernel</span>
+<span class="sd">            input kernel. Except measure, Kernel to be conjugated.</span>
+
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_conjugate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
 
     <span class="n">__swig_destroy__</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">delete_Kernel</span>
     <span class="fm">__del__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">None</span>
@@ -3184,7 +3594,7 @@ arg2 : str
           </ul>
           <h3>Class variables</h3>
             <div class="item">
-            <p id="openql.openql.Kernel.name" class="name">var <span class="ident">name</span></p>
+            <p id="openql.openql.Kernel.creg_count_" class="name">var <span class="ident">creg_count_</span></p>
             
 
             
@@ -3194,7 +3604,37 @@ arg2 : str
 
             </div>
             <div class="item">
-            <p id="openql.openql.Kernel.ql_kernel" class="name">var <span class="ident">ql_kernel</span></p>
+            <p id="openql.openql.Kernel.kernel_" class="name">var <span class="ident">kernel_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.Kernel.name_" class="name">var <span class="ident">name_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.Kernel.platform_" class="name">var <span class="ident">platform_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.Kernel.qubit_count_" class="name">var <span class="ident">qubit_count_</span></p>
             
 
             
@@ -3217,7 +3657,7 @@ arg2 : str
             
   <div class="item">
     <div class="name def" id="openql.openql.Kernel.__init__">
-    <p>def <span class="ident">__init__</span>(</p><p>self, kname, platform)</p>
+    <p>def <span class="ident">__init__</span>(</p><p>self, kernel_name, platform, qubit_count, creg_count=0)</p>
     </div>
     
 
@@ -3228,11 +3668,15 @@ arg2 : str
 <p>arg1 : str
     name of the Kernel
 arg2 : Platform
-    target platform for which the kernel will be compiled</p></div>
+    target platform for which the kernel will be compiled
+arg3 : int
+    qubit count
+arg4 : int
+    classical register count</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Kernel.__init__', this);">Show source &equiv;</a></p>
   <div id="source-openql.openql.Kernel.__init__" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kname</span><span class="p">,</span> <span class="n">platform</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernel_name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">     Constructs a Kernel object.</span>
 <span class="sd">    Parameters</span>
@@ -3241,8 +3685,12 @@ arg2 : Platform
 <span class="sd">        name of the Kernel</span>
 <span class="sd">    arg2 : Platform</span>
 <span class="sd">        target platform for which the kernel will be compiled</span>
+<span class="sd">    arg3 : int</span>
+<span class="sd">        qubit count</span>
+<span class="sd">    arg4 : int</span>
+<span class="sd">        classical register count</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Kernel</span><span class="p">(</span><span class="n">kname</span><span class="p">,</span> <span class="n">platform</span><span class="p">)</span>
+    <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Kernel</span><span class="p">(</span><span class="n">kernel_name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
@@ -3268,6 +3716,42 @@ arg2 : Platform
   <div id="source-openql.openql.Kernel.barrier" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">)</span>
+</pre></div>
+
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="openql.openql.Kernel.classical">
+    <p>def <span class="ident">classical</span>(</p><p>self, *args)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>adds classical operation kernel.</p>
+<h2>Parameters</h2>
+<p>arg1 : CReg
+    destination register for classical operation.
+arg2 : Operation
+    classical operation.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Kernel.classical', this);">Show source &equiv;</a></p>
+  <div id="source-openql.openql.Kernel.classical" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">classical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     adds classical operation kernel.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    arg1 : CReg</span>
+<span class="sd">        destination register for classical operation.</span>
+<span class="sd">    arg2 : Operation</span>
+<span class="sd">        classical operation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_classical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
 </pre></div>
 
   </div>
@@ -3399,40 +3883,79 @@ arg2 : int
   
             
   <div class="item">
-    <div class="name def" id="openql.openql.Kernel.controlled">
-    <p>def <span class="ident">controlled</span>(</p><p>self, k, qubits)</p>
+    <div class="name def" id="openql.openql.Kernel.conjugate">
+    <p>def <span class="ident">conjugate</span>(</p><p>self, k)</p>
     </div>
     
 
     
   
-    <div class="desc"><p>generate controlled version of the kernel.</p>
+    <div class="desc"><p>generates conjugate version of the kernel from the input kernel.</p>
 <h2>Parameters</h2>
 <p>arg1 : ql::Kernel
-    input kernel. Except measure, Kernel to be controlled may contain any of the default gates as well custom gates which are not specialized for a specific qubits.
-arg2 : []
-    list of control qubits. At the moment only single qubit control is possible. This will be extended to support multi-qubit control.</p>
+    input kernel. Except measure, Kernel to be conjugated.</p>
 <h2>Returns</h2>
-<p>ql::Kernel
-    controlled version of the kernel</p></div>
+<p>None</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Kernel.conjugate', this);">Show source &equiv;</a></p>
+  <div id="source-openql.openql.Kernel.conjugate" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">conjugate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     generates conjugate version of the kernel from the input kernel.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    arg1 : ql::Kernel</span>
+<span class="sd">        input kernel. Except measure, Kernel to be conjugated.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_conjugate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+</pre></div>
+
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="openql.openql.Kernel.controlled">
+    <p>def <span class="ident">controlled</span>(</p><p>self, k, control_qubits, ancilla_qubits)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>generates controlled version of the kernel from the input kernel.</p>
+<h2>Parameters</h2>
+<p>arg1 : ql::Kernel
+    input kernel. Except measure, Kernel to be controlled may contain any of the default gates as well custom gates which are not specialized for a specific qubits.</p>
+<p>arg2 : []
+    list of control qubits.</p>
+<p>arg3 : []
+    list of ancilla qubits. Number of ancilla qubits should be equal to number of control qubits.</p>
+<h2>Returns</h2>
+<p>None</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Kernel.controlled', this);">Show source &equiv;</a></p>
   <div id="source-openql.openql.Kernel.controlled" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">     generate controlled version of the kernel.</span>
+<span class="sd">     generates controlled version of the kernel from the input kernel.</span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    arg1 : ql::Kernel</span>
 <span class="sd">        input kernel. Except measure, Kernel to be controlled may contain any of the default gates as well custom gates which are not specialized for a specific qubits.</span>
 <span class="sd">    arg2 : []</span>
-<span class="sd">        list of control qubits. At the moment only single qubit control is possible. This will be extended to support multi-qubit control.</span>
+<span class="sd">        list of control qubits.</span>
+<span class="sd">    arg3 : []</span>
+<span class="sd">        list of ancilla qubits. Number of ancilla qubits should be equal to number of control qubits.</span>
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    ql::Kernel</span>
-<span class="sd">        controlled version of the kernel</span>
+<span class="sd">    None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">qubits</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_controlled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">ancilla_qubits</span><span class="p">)</span>
 </pre></div>
 
   </div>
@@ -3535,7 +4058,7 @@ arg2 : int
             
   <div class="item">
     <div class="name def" id="openql.openql.Kernel.gate">
-    <p>def <span class="ident">gate</span>(</p><p>self, *args, **kwargs)</p>
+    <p>def <span class="ident">gate</span>(</p><p>self, *args)</p>
     </div>
     
 
@@ -3547,14 +4070,12 @@ arg2 : int
     name of gate
 arg2 : []
     list of qubits
-arg3 : int
-    duration in ns (at the moment it is only supported for wait instruction, in the future it will be extended to override duration of any gate)
-arg3 : double
-    angle of roation, used internally only for roations (rx, ry and rz)</p></div>
+arg3 : CReg
+    classical destination register for measure operation.</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Kernel.gate', this);">Show source &equiv;</a></p>
   <div id="source-openql.openql.Kernel.gate" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">     adds custom/default gates to kernel.</span>
 <span class="sd">    Parameters</span>
@@ -3563,12 +4084,10 @@ arg3 : double
 <span class="sd">        name of gate</span>
 <span class="sd">    arg2 : []</span>
 <span class="sd">        list of qubits</span>
-<span class="sd">    arg3 : int</span>
-<span class="sd">        duration in ns (at the moment it is only supported for wait instruction, in the future it will be extended to override duration of any gate)</span>
-<span class="sd">    arg3 : double</span>
-<span class="sd">        angle of roation, used internally only for roations (rx, ry and rz)</span>
+<span class="sd">    arg3 : CReg</span>
+<span class="sd">        classical destination register for measure operation.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
 </pre></div>
 
   </div>
@@ -4232,7 +4751,7 @@ arg2 : int
   
           <h3>Instance variables</h3>
             <div class="item">
-            <p id="openql.openql.Kernel.name" class="name">var <span class="ident">name</span></p>
+            <p id="openql.openql.Kernel.creg_count_" class="name">var <span class="ident">creg_count_</span></p>
             
 
             
@@ -4242,7 +4761,37 @@ arg2 : int
 
             </div>
             <div class="item">
-            <p id="openql.openql.Kernel.ql_kernel" class="name">var <span class="ident">ql_kernel</span></p>
+            <p id="openql.openql.Kernel.kernel_" class="name">var <span class="ident">kernel_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.Kernel.name_" class="name">var <span class="ident">name_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.Kernel.platform_" class="name">var <span class="ident">platform_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.Kernel.qubit_count_" class="name">var <span class="ident">qubit_count_</span></p>
             
 
             
@@ -4253,6 +4802,133 @@ arg2 : int
             </div>
             <div class="item">
             <p id="openql.openql.Kernel.thisown" class="name">var <span class="ident">thisown</span></p>
+            
+
+            
+  
+    <div class="desc"><p>The membership flag</p></div>
+  <div class="source_cont">
+</div>
+
+            </div>
+      </div>
+      </div>
+      
+      <div class="item">
+      <p id="openql.openql.Operation" class="name">class <span class="ident">Operation</span></p>
+      
+  
+    <div class="desc"><p>Operation class representing classical operations.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Operation', this);">Show source &equiv;</a></p>
+  <div id="source-openql.openql.Operation" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">Operation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Operation class representing classical operations.&quot;&quot;&quot;</span>
+
+    <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
+    <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
+    <span class="n">operation_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Operation_operation__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Operation_operation__set</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Constructs an Operation object (used for initializing with immediate values).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        arg1 : int</span>
+<span class="sd">            immediate value</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Operation</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">this</span> <span class="o">=</span> <span class="n">this</span>
+    <span class="n">__swig_destroy__</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">delete_Operation</span>
+    <span class="fm">__del__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">None</span>
+</pre></div>
+
+  </div>
+</div>
+
+
+      <div class="class">
+          <h3>Ancestors (in MRO)</h3>
+          <ul class="class_list">
+          <li><a href="#openql.openql.Operation">Operation</a></li>
+          <li>builtins.object</li>
+          </ul>
+          <h3>Class variables</h3>
+            <div class="item">
+            <p id="openql.openql.Operation.operation_" class="name">var <span class="ident">operation_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.Operation.thisown" class="name">var <span class="ident">thisown</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+          <h3>Static methods</h3>
+            
+  <div class="item">
+    <div class="name def" id="openql.openql.Operation.__init__">
+    <p>def <span class="ident">__init__</span>(</p><p>self, *args)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Constructs an Operation object (used for initializing with immediate values).</p>
+<h2>Parameters</h2>
+<p>arg1 : int
+    immediate value</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Operation.__init__', this);">Show source &equiv;</a></p>
+  <div id="source-openql.openql.Operation.__init__" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Constructs an Operation object (used for initializing with immediate values).</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    arg1 : int</span>
+<span class="sd">        immediate value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Operation</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">this</span> <span class="o">=</span> <span class="n">this</span>
+</pre></div>
+
+  </div>
+</div>
+
+  </div>
+  
+          <h3>Instance variables</h3>
+            <div class="item">
+            <p id="openql.openql.Operation.operation_" class="name">var <span class="ident">operation_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.Operation.thisown" class="name">var <span class="ident">thisown</span></p>
             
 
             
@@ -4278,11 +4954,11 @@ arg2 : int
 
     <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
     <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">ql_platform</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_ql_platform_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_ql_platform_set</span><span class="p">)</span>
-    <span class="n">p_name</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_p_name_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_p_name_set</span><span class="p">)</span>
-    <span class="n">config_file</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_config_file_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_config_file_set</span><span class="p">)</span>
+    <span class="n">name_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_name__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_name__set</span><span class="p">)</span>
+    <span class="n">config_file_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_config_file__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_config_file__set</span><span class="p">)</span>
+    <span class="n">platform_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_platform__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_platform__set</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">config_file</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         Constructs a Platform object.</span>
 
@@ -4294,7 +4970,7 @@ arg2 : int
 <span class="sd">            name of the configuration file specifying the platform</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Platform</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">config_file</span><span class="p">)</span>
+        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Platform</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
@@ -4332,7 +5008,7 @@ arg2 : int
           </ul>
           <h3>Class variables</h3>
             <div class="item">
-            <p id="openql.openql.Platform.config_file" class="name">var <span class="ident">config_file</span></p>
+            <p id="openql.openql.Platform.config_file_" class="name">var <span class="ident">config_file_</span></p>
             
 
             
@@ -4342,7 +5018,7 @@ arg2 : int
 
             </div>
             <div class="item">
-            <p id="openql.openql.Platform.p_name" class="name">var <span class="ident">p_name</span></p>
+            <p id="openql.openql.Platform.name_" class="name">var <span class="ident">name_</span></p>
             
 
             
@@ -4352,7 +5028,7 @@ arg2 : int
 
             </div>
             <div class="item">
-            <p id="openql.openql.Platform.ql_platform" class="name">var <span class="ident">ql_platform</span></p>
+            <p id="openql.openql.Platform.platform_" class="name">var <span class="ident">platform_</span></p>
             
 
             
@@ -4375,7 +5051,7 @@ arg2 : int
             
   <div class="item">
     <div class="name def" id="openql.openql.Platform.__init__">
-    <p>def <span class="ident">__init__</span>(</p><p>self, name, config_file)</p>
+    <p>def <span class="ident">__init__</span>(</p><p>self, *args)</p>
     </div>
     
 
@@ -4390,7 +5066,7 @@ arg2 : str
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Platform.__init__', this);">Show source &equiv;</a></p>
   <div id="source-openql.openql.Platform.__init__" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">config_file</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">     Constructs a Platform object.</span>
 <span class="sd">    Parameters</span>
@@ -4400,7 +5076,7 @@ arg2 : str
 <span class="sd">    arg2 : str</span>
 <span class="sd">        name of the configuration file specifying the platform</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Platform</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">config_file</span><span class="p">)</span>
+    <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Platform</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
@@ -4451,7 +5127,7 @@ arg2 : str
   
           <h3>Instance variables</h3>
             <div class="item">
-            <p id="openql.openql.Platform.config_file" class="name">var <span class="ident">config_file</span></p>
+            <p id="openql.openql.Platform.config_file_" class="name">var <span class="ident">config_file_</span></p>
             
 
             
@@ -4461,7 +5137,7 @@ arg2 : str
 
             </div>
             <div class="item">
-            <p id="openql.openql.Platform.p_name" class="name">var <span class="ident">p_name</span></p>
+            <p id="openql.openql.Platform.name_" class="name">var <span class="ident">name_</span></p>
             
 
             
@@ -4471,7 +5147,7 @@ arg2 : str
 
             </div>
             <div class="item">
-            <p id="openql.openql.Platform.ql_platform" class="name">var <span class="ident">ql_platform</span></p>
+            <p id="openql.openql.Platform.platform_" class="name">var <span class="ident">platform_</span></p>
             
 
             
@@ -4507,23 +5183,29 @@ arg2 : str
 
     <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
     <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_name_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_name_set</span><span class="p">)</span>
+    <span class="n">name_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_name__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_name__set</span><span class="p">)</span>
+    <span class="n">platform_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_platform__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_platform__set</span><span class="p">)</span>
+    <span class="n">qubit_count_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_qubit_count__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_qubit_count__set</span><span class="p">)</span>
+    <span class="n">creg_count_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_creg_count__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_creg_count__set</span><span class="p">)</span>
+    <span class="n">program_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_program__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_program__set</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pname</span><span class="p">,</span> <span class="n">nqubits</span><span class="p">,</span> <span class="n">platform</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         Constructs a program object.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        pname : str</span>
+<span class="sd">        arg1 : str</span>
 <span class="sd">            name of the program</span>
-<span class="sd">        nqubits : int</span>
-<span class="sd">            number of qubits the program will use</span>
-<span class="sd">        p       : Platform</span>
+<span class="sd">        arg2 : Platform</span>
 <span class="sd">            instance of an OpenQL Platform</span>
+<span class="sd">        arg3 : int</span>
+<span class="sd">            number of qubits the program will use</span>
+<span class="sd">        arg4 : int</span>
+<span class="sd">            number of classical registers the program will use (default: 0)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Program</span><span class="p">(</span><span class="n">pname</span><span class="p">,</span> <span class="n">nqubits</span><span class="p">,</span> <span class="n">platform</span><span class="p">)</span>
+        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Program</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
@@ -4555,6 +5237,71 @@ arg2 : str
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">add_program</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_program</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_if</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Adds specified sub-program to a program which will be executed if specified condition is true. This allows nesting of operations.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        arg1 : Program</span>
+<span class="sd">            program to be executed</span>
+<span class="sd">        arg2: Operation</span>
+<span class="sd">            classical relational operation (&lt;, &gt;, &lt;=, &gt;=, ==, !=)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_if</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">add_if_else</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Adds specified sub-programs to a program. First sub-program will be executed if specified condition is true. Second sub-program will be executed if specified condition is false.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        arg1 : Program</span>
+<span class="sd">            program to be executed when specified condition is true (if part).</span>
+<span class="sd">        arg2 : Program</span>
+<span class="sd">            program to be executed when specified condition is false (else part).</span>
+<span class="sd">        arg3: Operation</span>
+<span class="sd">            classical relational operation (&lt;, &gt;, &lt;=, &gt;=, ==, !=)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_if_else</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">add_do_while</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Adds specified sub-program to a program which will be repeatedly executed while specified condition is true.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        arg1 : Program</span>
+<span class="sd">            program to be executed repeatedly</span>
+<span class="sd">        arg2: Operation</span>
+<span class="sd">            classical relational operation (&lt;, &gt;, &lt;=, &gt;=, ==, !=)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_do_while</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">add_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Adds specified sub-program to a program which will be executed for specified iterations.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        arg1 : Program</span>
+<span class="sd">            sub-program to be executed repeatedly</span>
+<span class="sd">        arg2: int</span>
+<span class="sd">            iteration count</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
 
     <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -4620,7 +5367,47 @@ arg2 : str
           </ul>
           <h3>Class variables</h3>
             <div class="item">
-            <p id="openql.openql.Program.name" class="name">var <span class="ident">name</span></p>
+            <p id="openql.openql.Program.creg_count_" class="name">var <span class="ident">creg_count_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.Program.name_" class="name">var <span class="ident">name_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.Program.platform_" class="name">var <span class="ident">platform_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.Program.program_" class="name">var <span class="ident">program_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.Program.qubit_count_" class="name">var <span class="ident">qubit_count_</span></p>
             
 
             
@@ -4643,7 +5430,7 @@ arg2 : str
             
   <div class="item">
     <div class="name def" id="openql.openql.Program.__init__">
-    <p>def <span class="ident">__init__</span>(</p><p>self, pname, nqubits, platform)</p>
+    <p>def <span class="ident">__init__</span>(</p><p>self, *args)</p>
     </div>
     
 
@@ -4651,32 +5438,184 @@ arg2 : str
   
     <div class="desc"><p>Constructs a program object.</p>
 <h2>Parameters</h2>
-<p>pname : str
+<p>arg1 : str
     name of the program
-nqubits : int
+arg2 : Platform
+    instance of an OpenQL Platform
+arg3 : int
     number of qubits the program will use
-p       : Platform
-    instance of an OpenQL Platform</p></div>
+arg4 : int
+    number of classical registers the program will use (default: 0)</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Program.__init__', this);">Show source &equiv;</a></p>
   <div id="source-openql.openql.Program.__init__" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pname</span><span class="p">,</span> <span class="n">nqubits</span><span class="p">,</span> <span class="n">platform</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">     Constructs a program object.</span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    pname : str</span>
+<span class="sd">    arg1 : str</span>
 <span class="sd">        name of the program</span>
-<span class="sd">    nqubits : int</span>
-<span class="sd">        number of qubits the program will use</span>
-<span class="sd">    p       : Platform</span>
+<span class="sd">    arg2 : Platform</span>
 <span class="sd">        instance of an OpenQL Platform</span>
+<span class="sd">    arg3 : int</span>
+<span class="sd">        number of qubits the program will use</span>
+<span class="sd">    arg4 : int</span>
+<span class="sd">        number of classical registers the program will use (default: 0)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Program</span><span class="p">(</span><span class="n">pname</span><span class="p">,</span> <span class="n">nqubits</span><span class="p">,</span> <span class="n">platform</span><span class="p">)</span>
+    <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Program</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">this</span> <span class="o">=</span> <span class="n">this</span>
+</pre></div>
+
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="openql.openql.Program.add_do_while">
+    <p>def <span class="ident">add_do_while</span>(</p><p>self, *args)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Adds specified sub-program to a program which will be repeatedly executed while specified condition is true.</p>
+<h2>Parameters</h2>
+<p>arg1 : Program
+    program to be executed repeatedly
+arg2: Operation
+    classical relational operation (&lt;, &gt;, &lt;=, &gt;=, ==, !=)</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Program.add_do_while', this);">Show source &equiv;</a></p>
+  <div id="source-openql.openql.Program.add_do_while" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">add_do_while</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Adds specified sub-program to a program which will be repeatedly executed while specified condition is true.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    arg1 : Program</span>
+<span class="sd">        program to be executed repeatedly</span>
+<span class="sd">    arg2: Operation</span>
+<span class="sd">        classical relational operation (&lt;, &gt;, &lt;=, &gt;=, ==, !=)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_do_while</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</pre></div>
+
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="openql.openql.Program.add_for">
+    <p>def <span class="ident">add_for</span>(</p><p>self, *args)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Adds specified sub-program to a program which will be executed for specified iterations.</p>
+<h2>Parameters</h2>
+<p>arg1 : Program
+    sub-program to be executed repeatedly
+arg2: int
+    iteration count</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Program.add_for', this);">Show source &equiv;</a></p>
+  <div id="source-openql.openql.Program.add_for" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">add_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Adds specified sub-program to a program which will be executed for specified iterations.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    arg1 : Program</span>
+<span class="sd">        sub-program to be executed repeatedly</span>
+<span class="sd">    arg2: int</span>
+<span class="sd">        iteration count</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</pre></div>
+
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="openql.openql.Program.add_if">
+    <p>def <span class="ident">add_if</span>(</p><p>self, *args)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Adds specified sub-program to a program which will be executed if specified condition is true. This allows nesting of operations.</p>
+<h2>Parameters</h2>
+<p>arg1 : Program
+    program to be executed
+arg2: Operation
+    classical relational operation (&lt;, &gt;, &lt;=, &gt;=, ==, !=)</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Program.add_if', this);">Show source &equiv;</a></p>
+  <div id="source-openql.openql.Program.add_if" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">add_if</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Adds specified sub-program to a program which will be executed if specified condition is true. This allows nesting of operations.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    arg1 : Program</span>
+<span class="sd">        program to be executed</span>
+<span class="sd">    arg2: Operation</span>
+<span class="sd">        classical relational operation (&lt;, &gt;, &lt;=, &gt;=, ==, !=)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_if</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</pre></div>
+
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="openql.openql.Program.add_if_else">
+    <p>def <span class="ident">add_if_else</span>(</p><p>self, *args)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Adds specified sub-programs to a program. First sub-program will be executed if specified condition is true. Second sub-program will be executed if specified condition is false.</p>
+<h2>Parameters</h2>
+<p>arg1 : Program
+    program to be executed when specified condition is true (if part).
+arg2 : Program
+    program to be executed when specified condition is false (else part).
+arg3: Operation
+    classical relational operation (&lt;, &gt;, &lt;=, &gt;=, ==, !=)</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Program.add_if_else', this);">Show source &equiv;</a></p>
+  <div id="source-openql.openql.Program.add_if_else" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">add_if_else</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Adds specified sub-programs to a program. First sub-program will be executed if specified condition is true. Second sub-program will be executed if specified condition is false.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    arg1 : Program</span>
+<span class="sd">        program to be executed when specified condition is true (if part).</span>
+<span class="sd">    arg2 : Program</span>
+<span class="sd">        program to be executed when specified condition is false (else part).</span>
+<span class="sd">    arg3: Operation</span>
+<span class="sd">        classical relational operation (&lt;, &gt;, &lt;=, &gt;=, ==, !=)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_if_else</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
 </pre></div>
 
   </div>
@@ -4709,6 +5648,27 @@ p       : Platform
 <span class="sd">        kernel to be added</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+</pre></div>
+
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
+    <div class="name def" id="openql.openql.Program.add_program">
+    <p>def <span class="ident">add_program</span>(</p><p>self, p)</p>
+    </div>
+    
+
+    
+  
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Program.add_program', this);">Show source &equiv;</a></p>
+  <div id="source-openql.openql.Program.add_program" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">add_program</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_add_program</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
 </pre></div>
 
   </div>
@@ -4902,7 +5862,47 @@ arg1 : int
   
           <h3>Instance variables</h3>
             <div class="item">
-            <p id="openql.openql.Program.name" class="name">var <span class="ident">name</span></p>
+            <p id="openql.openql.Program.creg_count_" class="name">var <span class="ident">creg_count_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.Program.name_" class="name">var <span class="ident">name_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.Program.platform_" class="name">var <span class="ident">platform_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.Program.program_" class="name">var <span class="ident">program_</span></p>
+            
+
+            
+  
+  <div class="source_cont">
+</div>
+
+            </div>
+            <div class="item">
+            <p id="openql.openql.Program.qubit_count_" class="name">var <span class="ident">qubit_count_</span></p>
             
 
             

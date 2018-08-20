@@ -24,15 +24,14 @@ class Test_program(unittest.TestCase):
     def test_program_name(self):
         name = "program1"
         nqubits=1
-        p = ql.Program(name, nqubits, platf)
-        # Program does not have a name attribute at this moment
-        self.assertEqual(p.name, name)
+        p = ql.Program(name, platf, nqubits)
+        self.assertEqual(p.name_, name)
 
     def test_add_kernel(self):
         # test that this does not raise any error
-        k = ql.Kernel("kernel1", platf)
         nqubits=5
-        p = ql.Program('program1', nqubits, platf)
+        k = ql.Kernel("kernel1", platf, nqubits)
+        p = ql.Program('program1', platf, nqubits)
         p.add_kernel(k)
 
         # there should be a check here to see if k was indeed added
@@ -41,7 +40,7 @@ class Test_program(unittest.TestCase):
     def test_program_methods(self):
         # This tests for the existence of the right methods in the wrapping
         nqubits=5
-        p = ql.Program('program1', nqubits, platf)
+        p = ql.Program('program1', platf, nqubits)
         program_methods = [
             'add_kernel',
             'compile',
@@ -51,19 +50,18 @@ class Test_program(unittest.TestCase):
         self.assertTrue(set(program_methods).issubset(dir(p)))
 
     def test_simple_program(self):
-
-        k = ql.Kernel("kernel1", platf)
+        nqubits = 2
+        k = ql.Kernel("kernel1", platf, nqubits)
         k.prepz(0)
         k.prepz(1)
         k.x(0)
-        k.cnot(0, 1)
+        k.gate('cnot', [0, 1])
         k.gate("rx90", [1])
         k.clifford(1, 0)
         k.measure(0)
+
         sweep_points = [2]
-        num_circuits = 1
-        nqubits = 2
-        p = ql.Program("rb_program", nqubits, platf)
+        p = ql.Program("rb_program", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
         print( p.qasm() )
@@ -85,15 +83,16 @@ class Test_program(unittest.TestCase):
     def test_5qubit_program(self):
 
         nqubits=5
-        p = ql.Program("a_program", nqubits, platf)
-        k = ql.Kernel("a_kernel", platf)
+        p = ql.Program("a_program", platf, nqubits)
+        k = ql.Kernel("a_kernel", platf, nqubits)
 
         # populate kernel
         for i in range(2):
             k.prepz(i)
         for i in range(2):
             k.hadamard(i)
-        k.cnot(0, 1)
+        # k.cnot(0, 1)
+        k.gate('cnot', [0, 1])
         k.cphase(0, 1)
 
         # sweep points is not specified the program does not work but don't
@@ -107,8 +106,8 @@ class Test_program(unittest.TestCase):
     def test_allxy_program(self):
 
         nqubits=7
-        p = ql.Program('AllXY', nqubits,platf)
-        k = ql.Kernel('AllXY_q0', platf)
+        p = ql.Program('AllXY', platf, nqubits)
+        k = ql.Kernel('AllXY_q0', platf, nqubits)
 
         q = 0  # target qubit
 

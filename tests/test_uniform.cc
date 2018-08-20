@@ -26,8 +26,8 @@ test_0( std::string scheduler, std::string scheduler_uniform)
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_0_" + scheduler + "_uniform_" + scheduler_uniform), 7, starmon);
-    ql::quantum_kernel k("kernel7.0",starmon);
+    ql::quantum_program prog(("test_0_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 0);
+    ql::quantum_kernel k("kernel7.0", starmon, 7, 0);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -56,8 +56,8 @@ test_1( std::string scheduler, std::string scheduler_uniform)
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_1_" + scheduler + "_uniform_" + scheduler_uniform), 7, starmon);
-    ql::quantum_kernel k("kernel7.1",starmon);
+    ql::quantum_program prog(("test_1_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 0);
+    ql::quantum_kernel k("kernel7.1", starmon, 7, 0);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -119,8 +119,8 @@ test_2( std::string scheduler, std::string scheduler_uniform)
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_2_" + scheduler + "_uniform_" + scheduler_uniform), 7, starmon);
-    ql::quantum_kernel k("kernel7.2",starmon);
+    ql::quantum_program prog(("test_2_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 0);
+    ql::quantum_kernel k("kernel7.2", starmon, 7, 0);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -164,8 +164,8 @@ test_3( std::string scheduler, std::string scheduler_uniform)
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_3_" + scheduler + "_uniform_" + scheduler_uniform), 7, starmon);
-    ql::quantum_kernel k("kernel7.3",starmon);
+    ql::quantum_program prog(("test_3_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 0);
+    ql::quantum_kernel k("kernel7.3", starmon, 7, 0);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -213,8 +213,8 @@ test_4( std::string scheduler, std::string scheduler_uniform)
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_4_" + scheduler + "_uniform_" + scheduler_uniform), 7, starmon);
-    ql::quantum_kernel k("kernel7.4",starmon);
+    ql::quantum_program prog(("test_4_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 0);
+    ql::quantum_kernel k("kernel7.4", starmon, 7, 0);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -251,8 +251,8 @@ test_5( std::string scheduler, std::string scheduler_uniform)
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_5_" + scheduler + "_uniform_" + scheduler_uniform), 7, starmon);
-    ql::quantum_kernel k("kernel7.5",starmon);
+    ql::quantum_program prog(("test_5_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 0);
+    ql::quantum_kernel k("kernel7.5", starmon, 7, 0);
 
     // empty kernel
 
@@ -273,8 +273,8 @@ test_6( std::string scheduler, std::string scheduler_uniform)
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_6_" + scheduler + "_uniform_" + scheduler_uniform), 7, starmon);
-    ql::quantum_kernel k("kernel7.6",starmon);
+    ql::quantum_program prog(("test_6_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 0);
+    ql::quantum_kernel k("kernel7.6", starmon, 7, 0);
 
     k.gate("prepz", 0);
     k.gate("prepz", 1);
@@ -316,8 +316,8 @@ test_7( std::string scheduler, std::string scheduler_uniform)
     ql::set_platform(starmon);
 
     // create program
-    ql::quantum_program prog(("test_7_" + scheduler + "_uniform_" + scheduler_uniform), 7, starmon);
-    ql::quantum_kernel k("kernel7.7",starmon);
+    ql::quantum_program prog(("test_7_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 0);
+    ql::quantum_kernel k("kernel7.7", starmon, 7, 0);
 
     k.gate("prepz", 0);
     k.gate("prepz", 1);

@@ -33,313 +33,6 @@ namespace ql
 namespace arch
 {
 
-typedef std::vector<size_t>        qubit_set_t;
-typedef std::pair<size_t,size_t>   qubit_pair_t;
-typedef std::vector<qubit_pair_t>  qubit_pair_set_t;
-
-const size_t MAX_S_REG =32;
-const size_t MAX_T_REG =64;
-
-size_t CurrSRegCount=0;
-size_t CurrTRegCount=0;
-
-class Mask
-{
-public:
-    size_t regNo;
-    std::string regName;
-    qubit_set_t squbits;
-    qubit_pair_set_t dqubits;
-
-    Mask() {}
-
-    Mask(qubit_set_t & qs) : squbits(qs)
-    {
-        
-        if(CurrSRegCount < MAX_S_REG)
-        {
-            regNo = CurrSRegCount++;
-            regName = "s" + std::to_string(regNo);
-        }
-        else
-        {
-            COUT(" !!!! Handle cases requiring more registers");
-        }
-    }
-
-    Mask(std::string rn, qubit_set_t & qs ) : regName(rn), squbits(qs)
-    { 
-        if(CurrSRegCount < MAX_S_REG)
-        {
-            regNo = CurrSRegCount++;
-        }
-        else
-        {
-            COUT(" !!!! Handle cases requiring more registers");
-        }
-    }
-
-    Mask(qubit_pair_set_t & qps) : dqubits(qps) 
-    { 
-        if(CurrTRegCount < MAX_T_REG)
-        {
-            regNo = CurrTRegCount++;
-            regName = "t" + std::to_string(regNo);
-        }
-        else
-        {
-            COUT(" !!!! Handle cases requiring more registers");
-        }
-    }
-
-};
-
-class MaskManager
-{
-private:
-    std::map<size_t,Mask> SReg2Mask;
-    std::map<qubit_set_t,Mask> QS2Mask;
-
-    std::map<size_t,Mask> TReg2Mask;
-    std::map<qubit_pair_set_t,Mask> QPS2Mask;
-
-public:
-    MaskManager()
-    {
-        // add pre-defined smis
-        for(size_t i=0; i<7; ++i)
-        {
-            qubit_set_t qs;
-            qs.push_back(i);
-            Mask m(qs);
-            QS2Mask[qs] = m;
-            SReg2Mask[m.regNo] = m;
-        }
-
-        // add some common single qubit masks
-        {
-            qubit_set_t qs;
-            for(auto i=0; i<7; i++) qs.push_back(i);
-            Mask m(qs); // TODO add proper support for:  Mask m(qs, "all_qubits");
-            QS2Mask[qs] = m;
-            SReg2Mask[m.regNo] = m;
-        }
-
-        {
-            qubit_set_t qs;
-            qs.push_back(0); qs.push_back(1); qs.push_back(5); qs.push_back(6);
-            Mask m(qs); // TODO add proper support for:  Mask m(qs, "data_qubits");
-            QS2Mask[qs] = m;
-            SReg2Mask[m.regNo] = m;
-        }
-
-        {
-            qubit_set_t qs;
-            qs.push_back(2); qs.push_back(3); qs.push_back(4);
-            Mask m(qs); // TODO add proper support for:  Mask m(qs, "ancilla_qubits");
-            QS2Mask[qs] = m;
-            SReg2Mask[m.regNo] = m;
-        }
-
-
-        // qubit_pair_set_t pre_defined_edges = { {2,0}, {0,3}, {3,1}, {1,4}, {2,5}, {5,3}, {3,6}, {6,4},
-        //                                {0,2}, {3,0}, {1,3}, {4,1}, {5,2}, {3,5}, {6,3}, {4,6} };
-        // // add smit
-        // for(auto & p : pre_defined_edges)
-        // {
-        //     qubit_pair_set_t qps;
-        //     qps.push_back(p);
-        //     Mask m(qps);
-        //     QPS2Mask[qps] = m;
-        //     TReg2Mask[m.regNo] = m;
-        // }
-
-    }
-
-    size_t getRegNo( qubit_set_t & qs )
-    {
-        auto it = QS2Mask.find(qs);
-        if( it == QS2Mask.end() )
-        {
-            Mask m(qs);
-            QS2Mask[qs] = m;
-            SReg2Mask[m.regNo] = m;
-        }
-        return QS2Mask[qs].regNo;
-    }
-
-    size_t getRegNo( qubit_pair_set_t & qps )
-    {
-        auto it = QPS2Mask.find(qps);
-        if( it == QPS2Mask.end() )
-        {
-            Mask m(qps);
-            QPS2Mask[qps] = m;
-            TReg2Mask[m.regNo] = m;
-        }
-        return QPS2Mask[qps].regNo;
-    }
-
-    std::string getRegName( qubit_set_t & qs )
-    {
-        auto it = QS2Mask.find(qs);
-        if( it == QS2Mask.end() )
-        {
-            Mask m(qs);
-            QS2Mask[qs] = m;
-            SReg2Mask[m.regNo] = m;
-        }
-        return QS2Mask[qs].regName;
-    }
-
-    std::string getRegName( qubit_pair_set_t & qps )
-    {
-        auto it = QPS2Mask.find(qps);
-        if( it == QPS2Mask.end() )
-        {
-            Mask m(qps);
-            QPS2Mask[qps] = m;
-            TReg2Mask[m.regNo] = m;
-        }
-        return QPS2Mask[qps].regName;
-    }
-
-    std::string getMaskInstructions()
-    {
-        std::stringstream ssmasks;
-        for(size_t r=0; r<CurrSRegCount; ++r)
-        {
-            auto & m = SReg2Mask[r];
-            ssmasks << "smis " << m.regName << ", {";
-            for(auto it = m.squbits.begin(); it != m.squbits.end(); ++it)
-            {
-                ssmasks << *it;
-                if( std::next(it) != m.squbits.end() )
-                    ssmasks << ", ";
-            }
-            ssmasks << "} \n";
-        }
-
-        for(size_t r=0; r<CurrTRegCount; ++r)
-        {
-            auto & m = TReg2Mask[r];
-            ssmasks << "smit " << m.regName << ", {";
-            for(auto it = m.dqubits.begin(); it != m.dqubits.end(); ++it)
-            {
-                ssmasks << "(" << it->first << ", " << it->second << ")";
-                if( std::next(it) != m.dqubits.end() )
-                    ssmasks << ", ";
-            }
-            ssmasks << "} \n";
-        }
-
-        return ssmasks.str();
-    }
-
-    ~MaskManager()
-    {
-        CurrSRegCount=0;
-        CurrTRegCount=0;
-    }
-
-};
-
-
-void PrintBundles(ql::ir::bundles_t & bundles)
-{
-    COUT("Printing simplified CC-Light QISA");
-
-    for (ql::ir::bundle_t & abundle : bundles)
-    {
-        std::cout << abundle.start_cycle << "  ";
-
-        for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
-        {
-            for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
-            {
-                std::cout << (*insIt)->qasm();
-                if( std::next(insIt) != secIt->end() )
-                {
-                    std::cout << " , ";
-                }
-            }
-            if( std::next(secIt) != abundle.parallel_sections.end() )
-            {
-                std::cout << " | ";
-            }
-        }
-        std::cout << "\n";
-    }
-}
-
-
-void WriteCCLightQasm(std::string prog_name, size_t num_qubits, ql::ir::bundles_t & bundles)
-{
-    IOUT("Writing Recourse-contraint scheduled CC-Light QASM");
-    ofstream fout;
-    string qasmfname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
-    IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << qasmfname);
-    fout.open( qasmfname, ios::binary);
-    if ( fout.fail() )
-    {
-        EOUT("opening file " << qasmfname << std::endl
-                 << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
-        return;
-    }
-
-    size_t curr_cycle=1;
-    fout <<"qubits " << num_qubits << "\n\n"
-         << ".fused_kernels";
-    for ( ql::ir::bundle_t & abundle : bundles)
-    {
-        auto bcycle = abundle.start_cycle;
-        auto delta = bcycle - curr_cycle;
-        if(delta>1)
-            fout << "\n    qwait " << delta-1 << "\n";
-        else
-            fout << "\n";
-
-        std::stringstream ssbundles;
-        size_t icount=0;
-        for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
-        {
-            for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
-            {
-                ssbundles << (*insIt)->qasm();
-                if( std::next(insIt) != secIt->end() )
-                {
-                    ssbundles << " | ";
-                }
-                icount++;
-            }
-            if( std::next(secIt) != abundle.parallel_sections.end() )
-            {
-                ssbundles << " | ";
-            }
-        }
-
-        if (icount > 1) 
-        {
-            fout << "    { ";
-            fout << ssbundles.str();
-            fout << " }"; 
-        }
-        else
-        {
-            fout << "    " << ssbundles.str();
-        }
-        curr_cycle+=delta;
-    }
-
-    auto & lastBundle = bundles.back();
-    int lbduration = lastBundle.duration_in_cycles;
-    if( lbduration>1 )
-        fout << "\n    qwait " << lbduration -1 << '\n';
-
-    fout.close();
-    IOUT("Writing Recourse-contraint scheduled CC-Light QASM [Done]");
-}
-
 std::string get_cc_light_instruction_name(std::string & id, ql::quantum_platform & platform)
 {
     std::string cc_light_instr_name;
@@ -363,248 +56,13 @@ std::string get_cc_light_instruction_name(std::string & id, ql::quantum_platform
     return cc_light_instr_name;
 }
 
-void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
-    ql::ir::bundles_t & bundles)
-{
-    IOUT("Generating CC-Light QISA");
 
-    ofstream fout;
-    string qisafname( ql::options::get("output_dir") + "/" + prog_name + ".qisa");
-    fout.open( qisafname, ios::binary);
-    if ( fout.fail() )
-    {
-        EOUT("opening file " << qisafname << std::endl
-                 << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
-        return;
-    }
-
-
-    std::stringstream ssbundles;
-    size_t curr_cycle=0; // first instruction should be with pre-interval 1, 'bs 1'
-
-    ssbundles << "start:" << "\n";
-    for (ql::ir::bundle_t & abundle : bundles)
-    {
-        auto bcycle = abundle.start_cycle;
-        auto delta = bcycle - curr_cycle;
-
-        if(delta < 8)
-            ssbundles << "    bs " << delta << "    ";
-        else
-            ssbundles << "    qwait " << delta-1 << "\n"
-                      << "    bs 1    ";
-
-        for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
-        {
-            qubit_set_t squbits;
-            qubit_pair_set_t dqubits;
-            auto firstInsIt = secIt->begin();
-
-            auto id = (*(firstInsIt))->name;
-            std::string cc_light_instr_name;
-            auto it = platform.instruction_map.find(id);
-            if (it != platform.instruction_map.end())
-            {
-                custom_gate* g = it->second;
-                cc_light_instr_name = g->arch_operation_name;
-                if(cc_light_instr_name.empty())
-                {
-                    EOUT("cc_light_instr not defined for instruction: " << id << " !");
-                    throw ql::exception("Error : cc_light_instr not defined for instruction: "+id+" !",false);
-                }                    
-                // DOUT("cc_light_instr name: " << cc_light_instr_name);
-            }
-            else
-            {
-                EOUT("custom instruction not found for : " << id << " !");
-                throw ql::exception("Error : custom instruction not found for : "+id+" !",false);
-            }
-
-            auto itype = (*(firstInsIt))->type();
-            auto nOperands = ((*firstInsIt)->operands).size();
-            if( itype == __nop_gate__ )
-            {
-                ssbundles << cc_light_instr_name;
-            }
-            else
-            {
-                for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
-                {
-                    if( 1 == nOperands )
-                    {
-                        auto & op = (*insIt)->operands[0];
-                        squbits.push_back(op);
-                    }
-                    else if( 2 == nOperands )
-                    {
-                        auto & op1 = (*insIt)->operands[0];
-                        auto & op2 = (*insIt)->operands[1];
-                        dqubits.push_back( qubit_pair_t(op1,op2) );
-                    }
-                    else
-                    {
-                        throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
-                    }
-                }
-                std::string rname;
-                if( 1 == nOperands )
-                {
-                    rname = gMaskManager.getRegName(squbits);
-                }
-                else if( 2 == nOperands )
-                {
-                    rname = gMaskManager.getRegName(dqubits);
-                }
-                else
-                {
-                    throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
-                }
-
-                ssbundles << cc_light_instr_name << " " << rname;
-            }
-
-            if( std::next(secIt) != abundle.parallel_sections.end() )
-            {
-                ssbundles << " | ";
-            }
-        }
-        curr_cycle+=delta;
-        ssbundles << "\n";
-    }
-
-    auto & lastBundle = bundles.back();
-    int lbduration = lastBundle.duration_in_cycles;
-    if( lbduration>1 )
-        ssbundles << "    qwait " << lbduration << "\n";
-    ssbundles << "    br always, start" << "\n"
-              << "    nop \n"
-              << "    nop" << endl;
-
-    // if(verbose)
-    // {
-    //     COUT("Printing CC-Light QISA");
-    //     std::cout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
-    // }
-
-    IOUT("Writing CC-Light QISA to " << qisafname);
-    fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
-    fout.close();
-    IOUT("Generating CC-Light QISA [Done]");
-}
-
-
-void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
-    ql::ir::bundles_t & bundles)
-{
-    IOUT("Generating Time-stamped CC-Light QISA");
-    ofstream fout;
-    string qisafname( ql::options::get("output_dir") + "/" + prog_name + ".tqisa");
-    fout.open( qisafname, ios::binary);
-    if ( fout.fail() )
-    {
-        EOUT("opening file " << qisafname << std::endl
-                 << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
-        return;
-    }
-
-
-    std::stringstream ssbundles;
-    size_t curr_cycle=0; // first instruction should be with pre-interval 1, 'bs 1'
-    ssbundles << "start:" << "\n";
-    for (ql::ir::bundle_t & abundle : bundles)
-    {
-        auto bcycle = abundle.start_cycle;
-        auto delta = bcycle - curr_cycle;
-
-        if(delta < 8)
-            ssbundles << std::setw(8) << curr_cycle << ":    bs " << delta << "    ";
-        else
-            ssbundles << std::setw(8) << curr_cycle << ":    qwait " << delta-1 << "\n"
-                      << std::setw(8) << curr_cycle + (delta-1) << ":    bs 1    ";
-
-        for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
-        {
-            qubit_set_t squbits;
-            qubit_pair_set_t dqubits;
-            auto firstInsIt = secIt->begin();
-
-            auto id = (*(firstInsIt))->name;
-            std::string cc_light_instr_name = get_cc_light_instruction_name(id, platform);
-            auto itype = (*(firstInsIt))->type();
-            auto nOperands = ((*firstInsIt)->operands).size();
-            if( itype == __nop_gate__ )
-            {
-                ssbundles << cc_light_instr_name;
-            }
-            else
-            {
-                for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
-                {
-                    if( 1 == nOperands )
-                    {
-                        auto & op = (*insIt)->operands[0];
-                        squbits.push_back(op);
-                    }
-                    else if( 2 == nOperands )
-                    {
-                        auto & op1 = (*insIt)->operands[0];
-                        auto & op2 = (*insIt)->operands[1];
-                        dqubits.push_back( qubit_pair_t(op1,op2) );
-                    }
-                    else
-                    {
-                        throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
-                    }
-                }
-                std::string rname;
-                if( 1 == nOperands )
-                {
-                    rname = gMaskManager.getRegName(squbits);
-                }
-                else if( 2 == nOperands )
-                {
-                    rname = gMaskManager.getRegName(dqubits);
-                }
-                else
-                {
-                    throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
-                }
-
-                ssbundles << cc_light_instr_name << " " << rname;
-            }
-
-            if( std::next(secIt) != abundle.parallel_sections.end() )
-            {
-                ssbundles << " | ";
-            }
-        }
-        curr_cycle+=delta;
-        ssbundles << "\n";
-    }
-
-    auto & lastBundle = bundles.back();
-    int lbduration = lastBundle.duration_in_cycles;
-    if( lbduration>1 )
-        ssbundles << std::setw(8) << curr_cycle   << ":    qwait " << lbduration << "\n";
-    curr_cycle+=lbduration;
-    ssbundles << std::setw(8) << curr_cycle++ << ":    br always, start" << "\n";
-    ssbundles << std::setw(8) << curr_cycle++ << ":    nop \n";
-    ssbundles << std::setw(8) << curr_cycle++ << ":    nop" << endl;
-
-    IOUT("Writing Time-stamped CC-Light QISA to " << qisafname);
-    fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
-    fout.close();
-
-    IOUT("Generating Time-stamped CC-Light QISA [Done]");
-}
-
-
-ql::ir::bundles_t cc_light_schedule(  std::string prog_name, size_t nqubits, ql::circuit & ckt,
-                            ql::quantum_platform & platform)
+ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt, 
+    ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Scheduling CC-Light instructions ...");
     Scheduler sched;
-    sched.Init(nqubits, ckt, platform);
+    sched.Init(ckt, platform, nqubits, ncreg);
     // sched.PrintDot();
     ql::ir::bundles_t bundles1 = sched.schedule_asap();
 
@@ -612,27 +70,38 @@ ql::ir::bundles_t cc_light_schedule(  std::string prog_name, size_t nqubits, ql:
     // into a single section
     for (ql::ir::bundle_t & abundle : bundles1)
     {
-        for( auto secIt1 = abundle.parallel_sections.begin(); secIt1 != abundle.parallel_sections.end(); ++secIt1 )
+        auto secIt1 = abundle.parallel_sections.begin();
+        auto firstInsIt = secIt1->begin();
+        auto itype = (*(firstInsIt))->type();
+        
+        if(__classical_gate__ == itype)
         {
-            for( auto secIt2 = std::next(secIt1); secIt2 != abundle.parallel_sections.end(); ++secIt2)
+            continue;
+        }
+        else
+        {
+            for( ; secIt1 != abundle.parallel_sections.end(); ++secIt1 )
             {
-                auto insIt1 = secIt1->begin();
-                auto insIt2 = secIt2->begin();
-                if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
+                for( auto secIt2 = std::next(secIt1); secIt2 != abundle.parallel_sections.end(); ++secIt2)
                 {
-                    auto id1 = (*insIt1)->name;
-                    auto id2 = (*insIt2)->name;
-                    auto n1 = get_cc_light_instruction_name(id1, platform);
-                    auto n2 = get_cc_light_instruction_name(id2, platform);
-                    if( n1 == n2 )
+                    auto insIt1 = secIt1->begin();
+                    auto insIt2 = secIt2->begin();
+                    if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
                     {
-                        // DOUT("splicing " << n1 << " and " << n2);
-                        (*secIt1).splice(insIt1, (*secIt2) );
+                        auto id1 = (*insIt1)->name;
+                        auto id2 = (*insIt2)->name;
+                        auto n1 = get_cc_light_instruction_name(id1, platform);
+                        auto n2 = get_cc_light_instruction_name(id2, platform);
+                        if( n1 == n2 )
+                        {
+                            // DOUT("splicing " << n1 << " and " << n2);
+                            (*secIt1).splice(insIt1, (*secIt2) );
+                        }
+                        // else
+                        // {
+                        //     DOUT("Not splicing " << n1 << " and " << n2);
+                        // }
                     }
-                    // else
-                    // {
-                    //     DOUT("Not splicing " << n1 << " and " << n2);
-                    // }
                 }
             }
         }
@@ -660,40 +129,50 @@ ql::ir::bundles_t cc_light_schedule(  std::string prog_name, size_t nqubits, ql:
 }
 
 
-ql::ir::bundles_t cc_light_schedule_rc( std::string prog_name, size_t nqubits, ql::circuit & ckt,
-                              ql::quantum_platform & platform)
+ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt, 
+    ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Resource constraint scheduling of CC-Light instructions ...");
     resource_manager_t rm(platform);
     Scheduler sched;
-    sched.Init(nqubits, ckt, platform);
-    // sched.PrintDot();
+    sched.Init(ckt, platform, nqubits, ncreg);
     ql::ir::bundles_t bundles1 = sched.schedule_asap(rm, platform);
 
     // combine parallel instrcutions of same type from different sections
     // into a single section
     for (ql::ir::bundle_t & abundle : bundles1)
     {
-        for( auto secIt1 = abundle.parallel_sections.begin(); secIt1 != abundle.parallel_sections.end(); ++secIt1 )
+        auto secIt1 = abundle.parallel_sections.begin();
+        auto firstInsIt = secIt1->begin();
+        auto itype = (*(firstInsIt))->type();
+
+        if(__classical_gate__ == itype)
         {
-            for( auto secIt2 = std::next(secIt1); secIt2 != abundle.parallel_sections.end(); ++secIt2)
+            continue;
+        }
+        else
+        {
+            for( ; secIt1 != abundle.parallel_sections.end(); ++secIt1 )
             {
-                auto insIt1 = secIt1->begin();
-                auto insIt2 = secIt2->begin();
-                if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
+                for( auto secIt2 = std::next(secIt1); secIt2 != abundle.parallel_sections.end(); ++secIt2)
                 {
-                    auto id1 = (*insIt1)->name;
-                    auto id2 = (*insIt2)->name;
-                    auto n1 = get_cc_light_instruction_name(id1, platform);
-                    auto n2 = get_cc_light_instruction_name(id2, platform);
-                    if( n1 == n2 )
+                    auto insIt1 = secIt1->begin();
+                    auto insIt2 = secIt2->begin();
+                    if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
                     {
-                        DOUT("splicing " << n1 << " and " << n2);
-                        (*secIt1).splice(insIt1, (*secIt2) );
-                    }
-                    else
-                    {
-                        DOUT("Not splicing " << n1 << " and " << n2);
+                        auto id1 = (*insIt1)->name;
+                        auto id2 = (*insIt2)->name;
+                        auto n1 = get_cc_light_instruction_name(id1, platform);
+                        auto n2 = get_cc_light_instruction_name(id2, platform);
+                        if( n1 == n2 )
+                        {
+                            DOUT("splicing " << n1 << " and " << n2);
+                            (*secIt1).splice(insIt1, (*secIt2) );
+                        }
+                        else
+                        {
+                            DOUT("Not splicing " << n1 << " and " << n2);
+                        }
                     }
                 }
             }

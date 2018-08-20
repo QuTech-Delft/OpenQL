@@ -20,8 +20,8 @@ class Test_uniform_scheduler(unittest.TestCase):
         platform  = ql.Platform('starmon', config_fn)
 
         num_qubits = 7
-        p = ql.Program('test_uniform_scheduler_0', num_qubits, platform)
-        k = ql.Kernel('kernel_0', platform)
+        p = ql.Program('test_uniform_scheduler_0', platform, num_qubits, 0)
+        k = ql.Kernel('kernel_0', platform, num_qubits, 0)
 
 	# a simple first test
 	# the x gates serve to separate the cnot gates wrt dependences
@@ -60,8 +60,8 @@ class Test_uniform_scheduler(unittest.TestCase):
         platform  = ql.Platform('starmon', config_fn)
 
         num_qubits = 7
-        p = ql.Program('test_uniform_scheduler_1', num_qubits, platform)
-        k = ql.Kernel('kernel_1', platform)
+        p = ql.Program('test_uniform_scheduler_1', platform, num_qubits, 0)
+        k = ql.Kernel('kernel_1', platform, num_qubits, 0)
 
 	# just as the previous one
 	# but then more of the same
@@ -131,8 +131,8 @@ class Test_uniform_scheduler(unittest.TestCase):
         platform  = ql.Platform('starmon', config_fn)
 
         num_qubits = 7
-        p = ql.Program('test_uniform_scheduler_2', num_qubits, platform)
-        k = ql.Kernel('kernel_2', platform)
+        p = ql.Program('test_uniform_scheduler_2', platform, num_qubits, 0)
+        k = ql.Kernel('kernel_2', platform, num_qubits, 0)
 
 	# again big bundles with x gates
 	# alternated with non-trivial cnot bundles;
@@ -185,8 +185,8 @@ class Test_uniform_scheduler(unittest.TestCase):
         platform  = ql.Platform('starmon', config_fn)
 
         num_qubits = 7
-        p = ql.Program('test_uniform_scheduler_3', num_qubits, platform)
-        k = ql.Kernel('kernel_3', platform)
+        p = ql.Program('test_uniform_scheduler_3', platform, num_qubits, 0)
+        k = ql.Kernel('kernel_3', platform, num_qubits, 0)
 
 	# as with test 2 but now the cnots are not mutually independent anymore
 	# this already creates smaller bundles but more of them
@@ -236,8 +236,8 @@ class Test_uniform_scheduler(unittest.TestCase):
         platform  = ql.Platform('starmon', config_fn)
 
         num_qubits = 7
-        p = ql.Program('test_uniform_scheduler_4', num_qubits, platform)
-        k = ql.Kernel('kernel_4', platform)
+        p = ql.Program('test_uniform_scheduler_4', platform, num_qubits, 0)
+        k = ql.Kernel('kernel_4', platform, num_qubits, 0)
 
 	# as with test 3 but now without the big x bundles
 	# just the cnots in lexicographic order

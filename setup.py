@@ -59,12 +59,12 @@ def read(fname):
 
 
 setup(name='openql',
-      version='0.3.1',
+      version='0.5.0',
       description='OpenQL Python Package',
       long_description=read('README.md'),
       author='Nader Khammassi and Imran Ashraf',
       author_email='nader.khammassi@gmail.com, iimran.aashraf@gmail.com',
-      url="https://github.com/DiCarloLab-Delft/OpenQL",
+      url='https://github.com/QE-Lab/OpenQL',
       packages=['openql'],
       include_package_data=True,
       package_data={'openql': [clib]},

@@ -22,7 +22,7 @@
 size_t MAX_CYCLE = std::numeric_limits<int>::max();
 
 #if defined(_WIN32)
-
+#include <direct.h>
 #else 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -38,7 +38,7 @@ namespace ql
         void make_output_dir(std::string dir)
         {
             #if defined(_WIN32)
-            _mkdir(strPath.c_str());
+            _mkdir(dir.c_str());
             #else 
             mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
             #endif
@@ -81,7 +81,7 @@ namespace ql
         /**
         * write content to the file <file_name>
         */
-        void write_file(std::string file_name, std::string& content)
+        void write_file(std::string file_name, const std::string& content)
         {
             std::ofstream file;
             file.open(file_name);
@@ -106,8 +106,10 @@ namespace ql
             size_t sz = v.size();
             if(sz > 0)
             {
-                for (size_t i=0; i<sz-1; ++i)
+                size_t i;
+                for (i=0; i<sz-1; ++i)
                     ss << v[i] << elem_sep;
+                ss << v[i];
             }
 
             ss << "]";
