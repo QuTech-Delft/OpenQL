@@ -13,7 +13,6 @@
 #include <ql/options.h>
 #include <ql/platform.h>
 #include <ql/kernel.h>
-#include <ql/mapper.h>
 #include <ql/interactionMatrix.h>
 #include <ql/eqasm_compiler.h>
 #include <ql/arch/cbox_eqasm_compiler.h>

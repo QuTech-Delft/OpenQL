@@ -108,6 +108,7 @@ namespace ql
             {
                 for (size_t i=0; i<sz-1; ++i)
                     ss << v[i] << elem_sep;
+                ss << v[sz-1];
             }
 
             ss << "]";

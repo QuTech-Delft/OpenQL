@@ -366,7 +366,7 @@ public:
     resource_manager_t( ql::quantum_platform & platform )
     {
         // DOUT("Constructing inited resouce_manager_t");
-        COUT("No of resources : " << platform.resources.size());
+        COUT("New one with no of resources : " << platform.resources.size());
         for (json::iterator it = platform.resources.begin(); it != platform.resources.end(); ++it)
         {
             // COUT(it.key() << " : " << it.value() << "\n";

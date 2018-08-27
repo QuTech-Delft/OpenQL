@@ -2,22 +2,16 @@
  * @file   mapper.h
  * @date   07/2018
  * @author Hans van Someren
- * @brief  mapping qubits
+ * @brief  openql mapping
  */
 
-#ifndef _MAPPER_H
-#define _MAPPER_H
-
-// #include <assert.h>
+#ifndef QL_MAPPER_H
+#define QL_MAPPER_H
 
 #include "ql/utils.h"
-#include "ql/gate.h"
-#include "ql/circuit.h"
-#include "ql/ir.h"
-// #include "ql/scheduler.h"
+#include "ql/platform.h"
 #include "ql/arch/cc_light_resource_manager.h"
-
-// using namespace std;
+#include "ql/gate.h"
 
 // Note on the use of constructors and Init functions for classes of the mapper
 // -----------------------------------------------------------------------------
@@ -51,6 +45,20 @@ private:
     size_t              nq;                // size of the map; after initialization, will always be the same
     std::vector<size_t> v2rMap;            // v2rMap[virtual qubit index] -> real qubit index
 
+
+// map real qubit to the virtual qubit index that is mapped to it (i.e. backward map)
+// a second vector next to v2rMap (i.e. an r2vMap) would speed this up
+size_t GetVirt(size_t r)
+{
+    for (size_t v=0; v<nq; v++)
+    {
+        if (v2rMap[v] == r) return v;
+    }
+    assert(0);
+    return 0;
+}
+
+
 public:
 
 // expand to desired size and initialize to trivial (1-1) mapping
@@ -69,17 +77,6 @@ void Init(size_t n)
 size_t& operator[] (size_t v)
 {
     return v2rMap[v];
-}
-
-// map real qubit to the virtual qubit index that is mapped to it (i.e. backward map)
-size_t GetVirt(size_t r)
-{
-    for (size_t v=0; v<nq; v++)
-    {
-        if (v2rMap[v] == r) return v;
-    }
-    assert(0);
-    return 0;
 }
 
 // r0 and r1 are real qubit indices
@@ -144,11 +141,18 @@ class FreeCycle
 {
 private:
 
-    size_t                  nq;     // size of the map; after initialization, will always be the same
-    size_t                  ct;     // multiplication factor from cycles to nano-seconds (unit of duration)
+    size_t                  nq;      // size of the map; after initialization, will always be the same
+    size_t                  ct;      // multiplication factor from cycles to nano-seconds (unit of duration)
     ql::quantum_platform   *platformp;   // with resource descriptions for scheduling
-    std::vector<size_t>     fc;     // fc[real qubit index i]: qubit i is free from this cycle on
-    ql::arch::resource_manager_t rm;// actual resources occupied by scheduled gates
+    std::vector<size_t>     fcv;     // fcv[real qubit index i]: qubit i is free from this cycle on
+    ql::arch::resource_manager_t rm; // actual resources occupied by scheduled gates
+
+
+// access free cycle value of qubit i
+size_t& operator[] (size_t i)
+{
+    return fcv[i];
+}
 
 public:
 
@@ -160,18 +164,13 @@ void Init(size_t n, size_t c, ql::quantum_platform *p)
     nq = n;
     ct = c;
     platformp = p;
-    fc.resize(n, 0);
+    fcv.resize(n, 1);   // this 1 implies that cycle of first gate will be 1 and not 0; OpenQL convention!?!?
     // DOUT("... about to copy local resource manager to FreeCycle member rm");
     rm = lrm;
     // DOUT("... done copy local resource manager to FreeCycle member rm");
 }
 
-// access free cycle value of qubit i
-size_t& operator[] (size_t i)
-{
-    return fc[i];
-}
-
+#ifdef used
 // depth of the FreeCycle map
 // equals the max of all entries minus the min of all entries
 // not used yet; would be used to compute the max size of a top window on the past
@@ -179,7 +178,7 @@ size_t Depth()
 {
     size_t  minFreeCycle = SIZE_MAX;
     size_t  maxFreeCycle = 0;
-    for (auto& v : fc)
+    for (auto& v : fcv)
     {
         if (v < minFreeCycle)
         {
@@ -192,13 +191,14 @@ size_t Depth()
     }
     return maxFreeCycle - minFreeCycle;
 }
+#endif
 
 // max of the FreeCycle map
 // equals the max of all entries
 size_t Max()
 {
     size_t  maxFreeCycle = 0;
-    for (auto& v : fc)
+    for (auto& v : fcv)
     {
         if (maxFreeCycle < v)
         {
@@ -213,7 +213,7 @@ void Print(std::string s)
     std::cout << "... FreeCycle " << s << ":";
     for (size_t i=0; i<nq; i++)
     {
-        size_t v = fc[i];
+        size_t v = fcv[i];
         std::cout << " " << v;
     }
     std::cout << std::endl;
@@ -238,6 +238,7 @@ static void GetGateParameters(std::string id, ql::quantum_platform *platformp, s
 
 // when we would schedule gate g, what would be its start cycle? return it
 // gate operands are real qubit indices
+// is purely functional, doesn't affect state
 size_t StartCycle(ql::gate *g)
 {
     auto&       id = g->name;
@@ -251,17 +252,18 @@ size_t StartCycle(ql::gate *g)
     size_t      startCycle;
     if (operandCount == 1)
     {
-        startCycle = fc[q[0]];
+        startCycle = fcv[q[0]];
     }
     else // if (operandCount == 2)
     {
-        startCycle = std::max<size_t>(fc[q[0]], fc[q[1]]);
+        startCycle = std::max<size_t>(fcv[q[0]], fcv[q[1]]);
     }
     
     size_t      duration = (g->duration+ct-1)/ct;   // rounded-up unsigned integer division
     auto        mapopt = ql::options::get("mapper");
     if (mapopt == "minextendrc")
     {
+        size_t  baseStartCycle = startCycle;
         GetGateParameters(id, platformp, operation_name, operation_type, instruction_type);
 	    while (startCycle < SIZE_MAX)
 	    {
@@ -271,48 +273,59 @@ size_t StartCycle(ql::gate *g)
 	        }   
 	        else
 	        {
-                DOUT(" ... [" << startCycle << "] Busy resource for " << g->qasm());
+                // DOUT(" ... [" << startCycle << "] Busy resource for " << g->qasm());
 	            startCycle++;
 	        }
 	    }
+        if (baseStartCycle != startCycle)
+        {
+            // DOUT(" ... from [" << baseStartCycle << "] to [" << startCycle-1 << "] busy resource(s) for " << g->qasm());
+        }
     }
     assert (startCycle < SIZE_MAX);
 
     return startCycle;
 }
 
-// schedule gate g in the FreeCycle (and resource) map
+// schedule gate g in the FreeCycle map
 // gate operands are real qubit indices
-void Add(ql::gate *g)
+// the FreeCycle map is updated, not the resource map
+// this is done, because AddNoRc is used to represent just gate dependences, avoiding a build of a dep graph
+void AddNoRc(ql::gate *g, size_t startCycle)
 {
-    auto&       id = g->name;
-    std::string operation_name(id);
-    std::string operation_type;
-    std::string instruction_type;
-
     auto&       q = g->operands;
     size_t      operandCount = q.size();
-
-    size_t      startCycle;
-
-    startCycle = StartCycle(g);
-
     size_t      duration = (g->duration+ct-1)/ct;   // rounded-up unsigned integer division
-    auto        mapopt = ql::options::get("mapper");
-    if (mapopt == "minextendrc")
-    {
-        GetGateParameters(id, platformp, operation_name, operation_type, instruction_type);
-        rm.reserve(startCycle, g, operation_name, operation_type, instruction_type, duration);
-    }
 
     if (operandCount == 1)
     {
-        fc[q[0]] = startCycle + duration;
+        fcv[q[0]] = startCycle + duration;
     }
     else // if (operandCount == 2)
     {
-        fc[q[0]] = startCycle + duration;
-        fc[q[1]] = fc[q[0]];
+        fcv[q[0]] = startCycle + duration;
+        fcv[q[1]] = fcv[q[0]];
+    }
+}
+
+// schedule gate g in the FreeCycle and resource map
+// gate operands are real qubit indices
+// both the FreeCycle map and the resource map are updated
+void Add(ql::gate *g, size_t startCycle)
+{
+    AddNoRc(g, startCycle);
+
+    auto        mapopt = ql::options::get("mapper");
+    if (mapopt == "minextendrc")
+    {
+	    auto&       id = g->name;
+	    std::string operation_name(id);
+	    std::string operation_type;
+	    std::string instruction_type;
+	    size_t      duration = (g->duration+ct-1)/ct;   // rounded-up unsigned integer division
+
+        GetGateParameters(id, platformp, operation_name, operation_type, instruction_type);
+        rm.reserve(startCycle, g, operation_name, operation_type, instruction_type, duration);
     }
 }
 
@@ -372,10 +385,11 @@ private:
     ql::quantum_platform   *platformp;  // platform describing resources for scheduling
 	Virt2Real               v2r;        // Virt2Real map applying to this Past
 	FreeCycle               fc;         // FreeCycle map applying to this Past
+
 	typedef ql::gate *      gate_p;
-	std::list<gate_p>       waitinglg;  // list of gates in this Past, waiting to be scheduled in
+	std::list<gate_p>       waitinglg;  // list of gates in this Past, top order, waiting to be scheduled in
 	std::list<gate_p>       lg;         // list of gates in this Past, scheduled by their (start) cycle values
-	std::map<gate_p,size_t> cycle;      // gate to cycle map, cycle value of each gate in lg: cycle[g]
+	std::map<gate_p,size_t> cycle;      // gate to cycle map, startCycle value of each past gatecycle[gp]
     ql::circuit             *outCircp;  // output stream after past
 
 public:
@@ -412,6 +426,9 @@ void Output(ql::circuit& ct)
 }
 
 // all gates in past.waitinglg are scheduled into past.lg
+// note that these gates all are mapped and so have real operand qubit indices
+// the FreeCycle map reflects for each qubit the first free cycle
+// all new gates, now in waitinglist, get such a cycle assigned below, increased gradually, until definitive
 void Schedule()
 {
     // DOUT("Schedule ...");
@@ -420,13 +437,23 @@ void Schedule()
 
     do
     {
-        size_t  startCycle = SIZE_MAX;
-        gate_p  gp;
+        size_t      startCycle = SIZE_MAX;
+        gate_p      gp;
 
         // find the gate with the minimum startCycle
+        //
+        // IMPORTANT: this assumes that the waitinglg gates list is in topological order,
+        // which is ok because the pair of swap lists use distict qubits and
+        // the gates of each are added to the back of the list in the order of execution.
+        // So, using AddNoRc, the tryfc (try FreeCycle map) reflects the earliest startCycle per qubit,
+        // and so dependences are respected, so we can find the gate that can start first ...
+        // This is really a hack to avoid the construction of a dependence graph.
+        // We should use a copy of fc and not fc itself, since the latter reflects the really scheduled gates.
+        FreeCycle   tryfc = fc;
         for (auto & trygp : waitinglg)
         {
-            size_t tryStartCycle = fc.StartCycle(trygp);
+            size_t tryStartCycle = tryfc.StartCycle(trygp);
+            tryfc.AddNoRc(trygp, tryStartCycle);
 
             if (tryStartCycle < startCycle)
             {
@@ -435,10 +462,11 @@ void Schedule()
             }
         }
 
-        // add this gate to the maps
+        // add this gate to the maps, scheduling the gate (doing the cycle assignment)
 	    // DOUT("... add " << gp->qasm() << " startcycle=" << startCycle << " cycles=" << ((gp->duration+ct-1)/ct) );
-	    fc.Add(gp);
+	    fc.Add(gp, startCycle);
 	    cycle[gp] = startCycle;
+        gp->cycle = startCycle;
 	
 	    // insert gate in lg, the list of gates, in cycle order, and in this order, as late as possible
 	    //
@@ -467,47 +495,127 @@ void Schedule()
         waitinglg.remove(gp);
     }
     while (!waitinglg.empty());
-    Print("Schedule:");
+
+    // Print("Schedule:");
 }
 
+// add the mapped gate to the current past's waiting list
 void Add(gate_p gp)
 {
     waitinglg.push_back(gp);
 }
 
+ql::custom_gate* NewCustomGate(std::string gname, std::vector<size_t> qubits, size_t duration=0, double angle=0.0)
+{
+    ql::custom_gate* g;
+
+    // DOUT("NewCustomGate " << gname);
+    // first check if a specialized custom gate is available
+    std::string instr = gname + " ";
+    if(qubits.size() > 0)
+    {
+        for (size_t i=0; i<(qubits.size()-1); ++i)
+            instr += "q" + std::to_string(qubits[i]) + ",";
+        if(qubits.size() >= 1) // to make if work with gates without operands
+            instr += "q" + std::to_string(qubits[qubits.size()-1]);
+    }
+
+    ql::instruction_map_t        gate_definition = platformp->instruction_map;
+    // DOUT("... NewCustomGate find " << instr);
+    std::map<std::string,ql::custom_gate*>::iterator it = gate_definition.find(instr);
+    if (it != gate_definition.end())
+    {
+        g = new ql::custom_gate(*(it->second));
+        for(auto & qubit : qubits)
+            g->operands.push_back(qubit);
+        if(duration>0) g->duration = duration;
+        g->angle = angle;
+        // DOUT("... NewCustomGate find instr DONE");
+    }
+    else
+    {
+        // otherwise, check if there is a parameterized custom gate (i.e. not specialized for arguments)
+        // DOUT("... NewCustomGate find parameterized " << gname);
+        it = gate_definition.find(gname);
+        if (it != gate_definition.end())
+        {
+            g = new ql::custom_gate(*(it->second));
+            for(auto & qubit : qubits)
+                g->operands.push_back(qubit);
+            if(duration>0) g->duration = duration;
+            g->angle = angle;
+            // DOUT("... NewCustomGate find parameterized instr DONE");
+        }
+        else
+        {
+            EOUT("FATAL: in mapper, custom gate not added for " << gname);
+            assert(0);
+            g = nullptr;
+        }
+    }
+    // DOUT("NewCustomGate " << gname << " DONE");
+    return g;
+}
+
+// create a new y90
+ql::custom_gate* NewY90(size_t r0)
+{
+    ql::custom_gate*  gp;
+    // DOUT("... new ry90(q" << r0 << ")");
+    std::vector<size_t> qubits; qubits.resize(1); qubits[0] = r0;
+    gp = NewCustomGate("ry90", qubits);
+    // DOUT("... done ry90(q" << r0 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
+    return gp;
+}
+
+// create a new ym90
+ql::custom_gate* NewYm90(size_t r0)
+{
+    ql::custom_gate*  gp;
+    // DOUT("... ym90(q" << r0 << ")");
+    std::vector<size_t> qubits; qubits.resize(1); qubits[0] = r0;
+    gp = NewCustomGate("ym90", qubits);
+    // DOUT("... done ym90(q" << r0 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
+    return gp;
+}
+
+// create a new cz
+ql::custom_gate* NewCz(size_t r0, size_t r1)
+{
+    ql::custom_gate*  gp;
+    // DOUT("... cz(q" << r0 << ",q" << r1 << ")");
+    std::vector<size_t> qubits; qubits.resize(2); qubits[0] = r0; qubits[1] = r1;
+    gp = NewCustomGate("cz", qubits);
+    // DOUT("... done cz(q" << r0 << ",q" << r1 << ") duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
+    return gp;
+}
+
+// generate a single swap with real operands and add it to the current past's waiting list
 void AddSwap(size_t r0, size_t r1)
 {
     gate_p  gp;
+    // DOUT("... adding swap(q" << r0 << ",q" << r1 << ") ... " );
 
-    DOUT("... Adding decomposition of swap(q" << r0 << ",q" << r1 << ") ... " );
+    gp = NewYm90(r1);  Add(gp);
+    gp = NewCz(r0,r1); Add(gp);
+    gp = NewY90(r1);   Add(gp);
 
-    gp = new ql::mry90(r1); Add(gp);
-    // DOUT("... mry90(q" << r1 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
-    gp = new ql::cphase(r0,r1); Add(gp);
-    // DOUT("... cphase(q" << r0 << ",q" << r1 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
-    gp = new ql::ry90(r1);  Add(gp);
-    // DOUT("... ry90(q" << r1 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
+    gp = NewYm90(r0);  Add(gp);
+    gp = NewCz(r1,r0); Add(gp);
+    gp = NewY90(r0);   Add(gp);
 
-    gp = new ql::mry90(r0); Add(gp);
-    // DOUT("... mry90(q" << r0 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
-    gp = new ql::cphase(r1,r0); Add(gp);
-    // DOUT("... cphase(q" << r1 << ",q" << r0 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
-    gp = new ql::ry90(r0);  Add(gp);
-    // DOUT("... ry90(q" << r0 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
+    gp = NewYm90(r1);  Add(gp);
+    gp = NewCz(r0,r1); Add(gp);
+    gp = NewY90(r1);   Add(gp);
 
-    gp = new ql::mry90(r1); Add(gp);
-    // DOUT("... mry90(q" << r1 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
-    gp = new ql::cphase(r0,r1); Add(gp);
-    // DOUT("... cphase(q" << r0 << ",q" << r1 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
-    gp = new ql::ry90(r1);  Add(gp);
-    // DOUT("... ry90(q" << r1 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
-
-    //  gp = new ql::swap(r0,r1); gp->duration = 400; Add(gp);
+    // new ql::swap(r0,r1); gp->duration = 400; Add(gp);
     // DOUT("... swap(q" << r0 << ",q" << r1 << ") with duration=" << gp->duration << ", cycles=" << ((gp->duration+ct-1)/ct) );
 
     v2r.Swap(r0,r1);
 }
 
+// add the mapped gate (with real qubit indices as operands) to the past
+// by adding it to the waitinglist and scheduling it into the past
 void AddAndSchedule(gate_p gp)
 {
     Add(gp);
@@ -583,8 +691,6 @@ private:
     Past                    past;       // cloned main past, extended with swaps from this path
     size_t                  cycleExtend;// latency extension caused by the path
 
-public:
-
 // printing facilities of Paths
 void partialPrint(std::string hd, std::vector<size_t> & pp)
 {
@@ -611,6 +717,8 @@ void partialPrint(std::string hd, std::vector<size_t> & pp)
     }
 }
 
+public:
+
 void Print(std::string s)
 {
     std::cout << s;
@@ -618,10 +726,10 @@ void Print(std::string s)
     {
         std::cout << ": cycleExtend=" << cycleExtend << std::endl;
     }
-    partialPrint("\ttotal", total);
-    partialPrint("\tfromSource", fromSource);
-    partialPrint("\tfromTarget", fromTarget);
-    past.Print("past in Path");
+    partialPrint("\ttotal path", total);
+    partialPrint("\tpath from source", fromSource);
+    partialPrint("\tpath from target", fromTarget);
+    // past.Print("past in Path");
 }
 
 static
@@ -984,7 +1092,7 @@ void MapMinExtend(ql::gate* gp, size_t src, size_t tgt)
 {
     size_t d = GridDistance(src, tgt);
     assert (d >= 1);
-    DOUT("MapMinExtend: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
+    DOUT("... MapMinExtend: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
 
     if (d > 1)
     {
@@ -998,7 +1106,7 @@ void MapMinExtend(ql::gate* gp, size_t src, size_t tgt)
         GenSplitPaths(genlp, splitlp);   // 2q gate can be put anywhere in each path
         MinimalExtendingPath(splitlp, resp);// from all these, find path that minimally extends mainPast
 
-        resp.Print("... the minimally extending path is:");
+        resp.Print("... the minimally extending path with swaps is");
         resp.AddSwaps(mainPast);    // add swaps, as described by resp, to mainPast
         mainPast.Schedule();        // and schedule them in
     }
@@ -1008,7 +1116,7 @@ void MapMinExtend(ql::gate* gp, size_t src, size_t tgt)
 void MapBase(ql::gate* gp, size_t src, size_t tgt)
 {
     size_t d = GridDistance(src, tgt);
-    DOUT("MapBase: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
+    DOUT("... MapBase: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
     while (d > 1)
     {
         for( auto & n : nbs[src] )
@@ -1019,7 +1127,7 @@ void MapBase(ql::gate* gp, size_t src, size_t tgt)
                 // DOUT(" ... distance(real " << n << ", real " << tgt << ")=" << dnb);
                 mainPast.AddSwap(src, n);
                 mainPast.Schedule();
-                mainPast.Print("mapping after swap");
+                // mainPast.Print("mapping after swap");
                 src = n;
                 break;
             }
@@ -1074,6 +1182,53 @@ void MapGate(ql::gate* gp)
 }
 
 public:
+
+// alternative bundler using gate->cycle attribute instead of lemon's cycle map
+// it assumes that the gate->cycle attribute reflect the cycle assignment of a particular schedule
+ql::ir::bundles_t Bundler(ql::circuit& inCirc)
+{
+    ql::ir::bundles_t bundles;
+
+    typedef std::vector<ql::gate*> insInOneCycle;
+    std::map<size_t,insInOneCycle> insInAllCycles;
+
+    DOUT("Bundler ...");
+    size_t TotalCycles = 0;
+    for ( auto & gp : inCirc)
+    {
+        if( gp->type() != ql::gate_type_t::__wait_gate__ )
+        {
+            insInAllCycles[gp->cycle].push_back( gp );
+            TotalCycles = std::max(TotalCycles, gp->cycle);
+        }
+    }
+
+    for(size_t currCycle=0; currCycle<=TotalCycles; ++currCycle)
+    {
+        auto it = insInAllCycles.find(currCycle);
+        ql::ir::bundle_t abundle;
+        abundle.start_cycle = currCycle;
+        size_t bduration = 0;
+        if( it != insInAllCycles.end() )
+        {
+            auto nInsThisCycle = insInAllCycles[currCycle].size();
+            for(size_t i=0; i<nInsThisCycle; ++i )
+            {
+                ql::ir::section_t asec;
+                auto & ins = insInAllCycles[currCycle][i];
+                asec.push_back(ins);
+                abundle.parallel_sections.push_back(asec);
+                size_t iduration = ins->duration;
+                bduration = std::max(bduration, iduration);
+            }
+            abundle.duration_in_cycles = (bduration+cycle_time-1)/cycle_time; 
+            bundles.push_back(abundle);
+        }
+    }
+
+    DOUT("Bundler [DONE]");
+    return bundles;
+}
 
 // Mapper constructor initializes constant program-wide data, e.g. grid related
 Mapper( size_t nq, ql::quantum_platform& p) :
@@ -1131,7 +1286,7 @@ void MapCircuit(ql::circuit& inCirc)
     }
     mainPast.Flush();
 
-    mainPast.Print("end mapping");
+    // mainPast.Print("end mapping");
 
     // replace inCirc (the IR's main circuit) by the newly computed outCirc
     // outCirc gets the old inCirc and is destroyed when leaving scope
@@ -1144,7 +1299,7 @@ void MapCircuit(ql::circuit& inCirc)
         // DOUT("\t" << g->qasm() );
     // }
     // DOUT("... End circuit after mapping");
-    IOUT("Mapped circuit depth=" << mainPast.MaxFreeCycle());
+    IOUT("Mapped circuit depth=" << mainPast.MaxFreeCycle()-1 << ", circuit starting at cycle " << inCirc[0]->cycle);
     DOUT("Mapping circuit [DONE]");
     DOUT("==================================");
 }   // end MapCircuit

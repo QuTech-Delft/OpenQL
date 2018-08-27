@@ -568,7 +568,7 @@ public:
         {
             for(i=0; i<all_qubits.size()-1; i++)
             {
-                instr_parameterized += "q" + std::to_string(all_qubits[i]) + " ";
+                instr_parameterized += "q" + std::to_string(all_qubits[i]) + ",";   //OK this ,?
             }
             if(all_qubits.size() >= 1)
             {
@@ -957,8 +957,9 @@ public:
         DOUT("Mapping kernel: " << name);
 
         map_in_qasm += qasm();
-        mapper.MapCircuit(c);                // maps circuit in current context
-        map_out_qasm += qasm();
+        mapper.MapCircuit(c);
+        ql::ir::bundles_t bundles = mapper.Bundler(c);
+        map_out_qasm += ql::ir::qasm(bundles);
     }
 
     void schedule(size_t qubits, quantum_platform platform, std::string& sched_qasm, std::string& sched_dot)

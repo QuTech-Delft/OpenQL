@@ -8,24 +8,18 @@
 
 #include <time.h>
 
-#include "ql/openql.h"
-#include "ql/utils.h"
+#include <ql/openql.h>
 
-// test resource constraints mapping
+// test qwg resource constraints mapping
 void
-test_rm(std::string v, std::string mapopt, std::string schedopt)
+test_qwg(std::string v, std::string mapopt, std::string schedopt)
 {
     int n = 7;
-    std::string prog_name;
-    std::string kernel_name;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
 
-    // create and set platform
     ql::quantum_platform starmon("starmon","test_mapper.json");
     ql::set_platform(starmon);
-
-    // create program
-    prog_name = "test_" + v + "_" + mapopt + "_" + schedopt;
-    kernel_name = "kernel_" + v + "_" + mapopt + "_" + schedopt;
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
 
@@ -34,7 +28,62 @@ test_rm(std::string v, std::string mapopt, std::string schedopt)
     k.gate("y", 1);
 
     prog.add(k);
+    ql::options::set("mapper", mapopt);
+    ql::options::set("scheduler", schedopt);
+    prog.compile( );
+}
 
+// demo single dimension resource constraint representation
+void
+test_singledim(std::string v, std::string mapopt, std::string schedopt)
+{
+    int n = 7;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
+
+    ql::quantum_platform starmon("starmon","test_mapper.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, n, starmon);
+    ql::quantum_kernel k(kernel_name, starmon);
+
+    // independent gates but stacking qwg unit use
+    // in s7, q2, q3 and q4 all use qwg1
+    // the y q3 must be in an other cycle than the x's because x conflicts with y in qwg1
+    // the x q2 and x q4 can be in parallel but the y q3 in between prohibits this
+    // because the qwg1 resource in single dimensional:
+    // after x q2 it is busy on x in cycle 0,
+    // then it only looks at the y q3, which requires to go to cycle 1,
+    // and then the x q4 only looks at the current cycle (cycle 1),
+    // in which qwg1 is busy with the y, so for the x it is busy,
+    // and the only option is to go for cycle 2
+    k.gate("x", 2);
+    k.gate("y", 3);
+    k.gate("x", 4);
+
+    prog.add(k);
+    ql::options::set("mapper", mapopt);
+    ql::options::set("scheduler", schedopt);
+    prog.compile( );
+}
+
+// test edge resource constraints mapping
+void
+test_edge(std::string v, std::string mapopt, std::string schedopt)
+{
+    int n = 7;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
+
+    ql::quantum_platform starmon("starmon","test_mapper.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, n, starmon);
+    ql::quantum_kernel k(kernel_name, starmon);
+
+    // no dependency, only a conflict in edge resource
+    k.gate("cz", 1,4);
+    k.gate("cz", 0,3);
+
+    prog.add(k);
     ql::options::set("mapper", mapopt);
     ql::options::set("scheduler", schedopt);
     prog.compile( );
@@ -45,16 +94,11 @@ void
 test_0(std::string v, std::string mapopt, std::string schedopt)
 {
     int n = 7;
-    std::string prog_name;
-    std::string kernel_name;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
 
-    // create and set platform
     ql::quantum_platform starmon("starmon","test_mapper.json");
     ql::set_platform(starmon);
-
-    // create program
-    prog_name = "test_" + v + "_" + mapopt + "_" + schedopt;
-    kernel_name = "kernel_" + v + "_" + mapopt + "_" + schedopt;
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
 
@@ -79,16 +123,11 @@ void
 test_1(std::string v, std::string mapopt, std::string schedopt)
 {
     int n = 7;
-    std::string prog_name;
-    std::string kernel_name;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
 
-    // create and set platform
     ql::quantum_platform starmon("starmon","test_mapper.json");
     ql::set_platform(starmon);
-
-    // create program
-    prog_name = "test_" + v + "_" + mapopt + "_" + schedopt;
-    kernel_name = "kernel_" + v + "_" + mapopt + "_" + schedopt;
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
 
@@ -128,16 +167,11 @@ void
 test_2(std::string v, std::string mapopt, std::string schedopt)
 {
     int n = 7;
-    std::string prog_name;
-    std::string kernel_name;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
 
-    // create and set platform
     ql::quantum_platform starmon("starmon","test_mapper.json");
     ql::set_platform(starmon);
-
-    // create program
-    prog_name = "test_" + v + "_" + mapopt + "_" + schedopt;
-    kernel_name = "kernel_" + v + "_" + mapopt + "_" + schedopt;
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
 
@@ -162,16 +196,11 @@ void
 test_3(std::string v, std::string mapopt, std::string schedopt)
 {
     int n = 7;
-    std::string prog_name;
-    std::string kernel_name;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
 
-    // create and set platform
     ql::quantum_platform starmon("starmon","test_mapper.json");
     ql::set_platform(starmon);
-
-    // create program
-    prog_name = "test_" + v + "_" + mapopt + "_" + schedopt;
-    kernel_name = "kernel_" + v + "_" + mapopt + "_" + schedopt;
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
 
@@ -197,16 +226,11 @@ void
 test_4(std::string v, std::string mapopt, std::string schedopt)
 {
     int n = 7;
-    std::string prog_name;
-    std::string kernel_name;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
 
-    // create and set platform
     ql::quantum_platform starmon("starmon","test_mapper.json");
     ql::set_platform(starmon);
-
-    // create program
-    prog_name = "test_" + v + "_" + mapopt + "_" + schedopt;
-    kernel_name = "kernel_" + v + "_" + mapopt + "_" + schedopt;
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
 
@@ -232,7 +256,10 @@ int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_DEBUG");
 
-//    test_rm("rm", "minextendrc", "no");
+    test_singledim("singledim", "minextendrc", "no");
+
+    test_qwg("qwg", "minextendrc", "no");
+    test_edge("edge", "minextendrc", "no");
 
 //    test_0("0", "base", "ASAP");
 //    test_0("0", "minextend", "ASAP");
@@ -256,6 +283,8 @@ int main(int argc, char ** argv)
 
 //    test_4("4", "base", "ASAP");
 //    test_4("4", "minextend", "ASAP");
+
+    test_4("4", "base", "no");
     test_4("4", "minextend", "no");
     test_4("4", "minextendrc", "no");
 
