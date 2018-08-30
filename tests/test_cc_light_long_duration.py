@@ -54,10 +54,11 @@ class Test_CCL_long_duration(unittest.TestCase):
         qasm_files = []
         qasm_files.append(os.path.join(output_dir, 'AllXYLongDuration.qasm'))
 
-        for qasm_file in qasm_files:
-           qasm_reader = ql.QASM_Loader(qasm_file)
-           errors = qasm_reader.load()
-           self.assertTrue(errors == 0)
+        # TODO use new cqasm v1.0 interface
+        # for qasm_file in qasm_files:
+        #    qasm_reader = ql.QASM_Loader(qasm_file)
+        #    errors = qasm_reader.load()
+        #    self.assertTrue(errors == 0)
 
 
 

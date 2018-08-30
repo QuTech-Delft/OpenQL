@@ -11,6 +11,7 @@
 #include <ql/platform.h>
 #include <ql/eqasm_compiler.h>
 #include <ql/arch/qumis.h>
+#include <ql/utils.h>
 
 // eqasm code : set of qumis instructions
 typedef std::vector<ql::arch::qumis_instr_t> eqasm_t;
@@ -141,7 +142,12 @@ namespace ql
 
                for (ql::gate * g : c)
                {
-                  std::string id = g->qasm(); // g->name;
+                  // COUT( g->name );
+                  // COUT( g->qasm() );
+                  // COUT( ql::utils::to_string(g->operands, "qubits") );
+                  // std::string id = g->qasm(); // g->name;
+                  std::string id = g->name;
+
                   str::lower_case(id);
                   str::replace_all(id,"  ","");
                   std::string qumis;
