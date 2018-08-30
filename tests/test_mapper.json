@@ -3,7 +3,7 @@
 
    "hardware_settings": {
 	 "qubit_number": 7,
-	 "cycle_time" : 40,  
+	 "cycle_time" : 20,  
 	 "mw_mw_buffer": 0,
 	 "mw_flux_buffer": 0,
 	 "mw_readout_buffer": 0,
@@ -102,7 +102,7 @@
 
    "instructions": {
    "prepx": {
-      "duration": 720,
+      "duration": 360,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -111,7 +111,7 @@
       "cc_light_instr": "prepx"
    },
    "cprepz": {
-      "duration": 680,
+      "duration": 340,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -121,7 +121,7 @@
       "cc_light_cond" : 1
    },
    "measx": {
-      "duration": 640,
+      "duration": 320,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -130,7 +130,7 @@
       "cc_light_instr": "measx"
    },
    "measure": {
-      "duration": 640,
+      "duration": 320,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -139,7 +139,7 @@
       "cc_light_instr": "measz"
    },
    "i": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -148,7 +148,7 @@
       "cc_light_instr": "i"
    },
    "x": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -157,7 +157,7 @@
       "cc_light_instr": "x"
    },
    "y": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -166,7 +166,7 @@
       "cc_light_instr": "y"
    },
    "z": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -175,7 +175,7 @@
       "cc_light_instr": "z"
    },
    "h": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -184,7 +184,7 @@
       "cc_light_instr": "h"
    },
    "s": {
-      "duration": 120,
+      "duration": 60,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -193,7 +193,7 @@
       "cc_light_instr": "s"
    },
    "sdag": {
-      "duration": 120,
+      "duration": 60,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -202,7 +202,7 @@
       "cc_light_instr": "sdag"
    },
    "rx90": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -211,7 +211,7 @@
       "cc_light_instr": "x90"
    },
    "xm90": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -220,7 +220,7 @@
       "cc_light_instr": "xm90"
    },
    "ry90": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -229,7 +229,7 @@
       "cc_light_instr": "y90"
    },
    "ym90": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -238,7 +238,7 @@
       "cc_light_instr": "ym90"
    },
    "t": {
-      "duration": 120,
+      "duration": 60,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -247,7 +247,7 @@
       "cc_light_instr": "t"
    },
    "tdag": {
-      "duration": 120,
+      "duration": 60,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -256,7 +256,7 @@
       "cc_light_instr": "tdag"
    },
    "x45": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -265,7 +265,7 @@
       "cc_light_instr": "x45"
    },
    "xm45": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -274,7 +274,7 @@
       "cc_light_instr": "xm45"
    },
    "ry180": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
@@ -282,8 +282,8 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "ry180"
    },
-   "cnot": {
-      "duration": 160,
+   "cnot_not_decomposed": {
+      "duration": 80,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": true,
@@ -292,7 +292,7 @@
       "cc_light_instr": "cnot"
    },
    "cz": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": true,
@@ -301,7 +301,7 @@
       "cc_light_instr": "cz"
    },
    "swap": {
-      "duration": 400,
+      "duration": 200,
       "latency": 0,
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": true,
@@ -309,5 +309,9 @@
       "cc_light_instr_type": "two_qubit_gate",
       "cc_light_instr": "swap"
    }
+   },
+
+   "gate_decomposition": {
+        "cnot %0,%1" : ["ym90 %1","cz %0,%1","ry90 %1"]
    }
 }

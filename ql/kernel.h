@@ -305,6 +305,11 @@ public:
         }
     }
 
+    // a default gate is the last resort of user gate resolution and is of a build-in form, as below in the code;
+    // the "using_default_gates" option can be used to enable ("yes") or disable ("no") default gates;
+    // the use of default gates is deprecated; use the .json configuration file instead;
+    //
+    // if a default gate definition is available for the given gate name and qubits, add it to circuit and return true
     bool add_default_gate_if_available(std::string gname, std::vector<size_t> qubits,
                                        size_t duration=0, double angle=0.0)
     {
@@ -485,6 +490,10 @@ public:
         return result;
     }
 
+    // if a specialized custom gate ("cz q0 q4") is available, add it to circuit and return true
+    // if a parameterized custom gate ("cz") is available, add it to circuit and return true
+    //
+    // note that there is no check for the found gate being a composite gate; this is in HvS's opinion, a flaw
     bool add_custom_gate_if_available(std::string & gname, std::vector<size_t> qubits,
                                       size_t duration=0, double angle=0.0)
     {
@@ -502,6 +511,7 @@ public:
         std::map<std::string,custom_gate*>::iterator it = gate_definition.find(instr);
         if (it != gate_definition.end())
         {
+            // a specialized custom gate is of the form: "cz q0 q3"
             custom_gate* g = new custom_gate(*(it->second));
             for(auto & qubit : qubits)
                 g->operands.push_back(qubit);
@@ -513,6 +523,7 @@ public:
         else
         {
             // otherwise, check if there is a parameterized custom gate (i.e. not specialized for arguments)
+            // this one is of the form: "cz", i.e. just the gate's name
             std::map<std::string,custom_gate*>::iterator it = gate_definition.find(gname);
             if (it != gate_definition.end())
             {
@@ -538,6 +549,8 @@ public:
         return added;
     }
 
+    // return the subinstructions of a composite gate
+    // while doing, test whether the subinstructions have a definition (so they cannot be specialized or default ones!)
     void get_decomposed_ins( ql::composite_gate * gptr, std::vector<std::string> & sub_instructons )
     {
         auto & sub_gates = gptr->gs;
@@ -558,6 +571,10 @@ public:
         }
     }
 
+    // if specialized composed gate: "cz q0,q3" available, with composition of subinstructions, return true
+    //      also check each subinstruction for presence of a custom_gate (or a default gate)
+    // otherwise, return false
+    // don't add anything to circuit
     bool add_spec_decomposed_gate_if_available(std::string gate_name, std::vector<size_t> all_qubits)
     {
         bool added = false;
@@ -568,7 +585,7 @@ public:
         {
             for(i=0; i<all_qubits.size()-1; i++)
             {
-                instr_parameterized += "q" + std::to_string(all_qubits[i]) + ",";   //OK this ,?
+                instr_parameterized += "q" + std::to_string(all_qubits[i]) + " ";
             }
             if(all_qubits.size() >= 1)
             {
@@ -619,6 +636,7 @@ public:
                 DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
                 // custom gate check
+                // when found, custom_added is true, and the expanded subinstruction was added to the circuit
                 bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits);
                 if(!custom_added)
                 {
@@ -655,6 +673,10 @@ public:
     }
 
 
+    // if composite gate: "cz %0 %1" available, return true;
+    //      also check each subinstruction for availability as a custom gate (or default gate)
+    // if not, return false
+    // don't add anything to circuit
     bool add_param_decomposed_gate_if_available(std::string gate_name, std::vector<size_t> all_qubits)
     {
         bool added = false;
@@ -713,6 +735,7 @@ public:
                 DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
                 // custom gate check
+                // when found, custom_added is true, and the expanded subinstruction was added to the circuit
                 bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits);
                 if(!custom_added)
                 {
@@ -768,6 +791,29 @@ public:
     /**
      * custom gate with arbitrary number of operands
      */
+    // terminology:
+    // - composite/custom/default (in decreasing order of priority during lookup in the gate definition):
+    //      - composite gate: a gate definition with subinstructions; when matched, decompose and add the subinstructions
+    //      - custom gate: a fully configurable gate definition, with all kinds of attributes; there is no decomposition
+    //      - default gate: a gate definition build-in in this compiler; see above for the definition
+    //          deprecated; setting option "use_default_gates" from "yes" to "no" turns it off
+    // - specialized/parameterized (in decreasing order of priority during lookup in the gate definition)
+    //      - specialized: a gate definition that is special for its operands, i.e. the operand qubits must match
+    //      - parameterized: a gate definition that can be used for all possible qubit operands
+    //
+    // the following order of checks is used below:
+    // check if specialized composite gate is available
+    //      "cz q0,q3" available as composite gate, where subinstructions are available as custom gates
+    // if not, check if parameterized composite gate is available
+    //      "cz %0 %1" in gate_definition, where subinstructions are available as custom gates
+    // if not, check if a specialized custom gate is available
+    //      "cz q0,q3" available as non-composite gate
+    // if not, check if a parameterized custom gate is available
+    //      "cz" in gate_definition as non-composite gate
+    // if not, check if a default gate is available
+    //      "cz" available as default gate
+    // if not, then error
+
     void gate(std::string gname, std::vector<size_t> qubits = {}, size_t duration=0, double angle = 0.0)
     {
         for(auto & qno : qubits)
@@ -779,13 +825,6 @@ public:
                 throw ql::exception("[x] error : ql::kernel::gate() : Number of qubits in platform: "+std::to_string(qubit_number)+", specified qubit numbers out of range for gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" !",false);
             }
         }
-
-        // check if specialized composite gate is available
-        // if not, check if parameterized composite gate is available
-        // if not, check if a specialized custom gate is available
-        // if not, check if a parameterized custom gate is available
-        // if not, check if a default gate is available
-        // if not, then error
 
         str::lower_case(gname);
         DOUT("Adding gate : " << gname << " with " << ql::utils::to_string(qubits,"qubits"));
@@ -810,6 +849,7 @@ public:
             {
                 // specialized/parameterized custom gate check
                 DOUT("adding custom gate for " << gname);
+                // when found, custom_added is true, and the gate was added to the circuit
                 bool custom_added = add_custom_gate_if_available(gname, qubits, duration, angle);
                 if(!custom_added)
                 {

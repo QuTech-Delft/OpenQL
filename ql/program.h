@@ -304,7 +304,7 @@ public:
         }
         else
         {
-            EOUT("cannot write sweepoint file : sweep point array is empty !");
+            EOUT("cannot write sweeppoint file : sweep point array is empty !");
         }
 
         IOUT("compilation of program '" << name << "' done.");

@@ -33,7 +33,7 @@ test_qwg(std::string v, std::string mapopt, std::string schedopt)
     prog.compile( );
 }
 
-// demo single dimension resource constraint representation
+// demo single dimension resource constraint representation simple
 void
 test_singledim(std::string v, std::string mapopt, std::string schedopt)
 {
@@ -80,8 +80,8 @@ test_edge(std::string v, std::string mapopt, std::string schedopt)
     ql::quantum_kernel k(kernel_name, starmon);
 
     // no dependency, only a conflict in edge resource
-    k.gate("cz", 1,4);
-    k.gate("cz", 0,3);
+    k.gate("cz_v", 1,4);
+    k.gate("cz_v", 0,3);
 
     prog.add(k);
     ql::options::set("mapper", mapopt);
@@ -106,7 +106,7 @@ test_0(std::string v, std::string mapopt, std::string schedopt)
     k.gate("x", 2);
 
     // one cnot that is ok in trivial mapping
-    k.gate("cnot", 0,2);
+    k.gate("cnot_v", 0,2);
 
     k.gate("x", 0);
     k.gate("x", 2);
@@ -135,22 +135,22 @@ test_1(std::string v, std::string mapopt, std::string schedopt)
         k.gate("x", j);
 
     // a list of all cnots that are ok in trivial mapping
-    k.gate("cnot", 0,2);
-    k.gate("cnot", 0,3);
-    k.gate("cnot", 1,3);
-    k.gate("cnot", 1,4);
-    k.gate("cnot", 2,0);
-    k.gate("cnot", 2,5);
-    k.gate("cnot", 3,0);
-    k.gate("cnot", 3,1);
-    k.gate("cnot", 3,5);
-    k.gate("cnot", 3,6);
-    k.gate("cnot", 4,1);
-    k.gate("cnot", 4,6);
-    k.gate("cnot", 5,2);
-    k.gate("cnot", 5,3);
-    k.gate("cnot", 6,3);
-    k.gate("cnot", 6,4);
+    k.gate("cnot_v", 0,2);
+    k.gate("cnot_v", 0,3);
+    k.gate("cnot_v", 1,3);
+    k.gate("cnot_v", 1,4);
+    k.gate("cnot_v", 2,0);
+    k.gate("cnot_v", 2,5);
+    k.gate("cnot_v", 3,0);
+    k.gate("cnot_v", 3,1);
+    k.gate("cnot_v", 3,5);
+    k.gate("cnot_v", 3,6);
+    k.gate("cnot_v", 4,1);
+    k.gate("cnot_v", 4,6);
+    k.gate("cnot_v", 5,2);
+    k.gate("cnot_v", 5,3);
+    k.gate("cnot_v", 6,3);
+    k.gate("cnot_v", 6,4);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -179,7 +179,7 @@ test_2(std::string v, std::string mapopt, std::string schedopt)
         k.gate("x", j);
 
     // one cnot, but needs one swap
-    k.gate("cnot", 2,3);
+    k.gate("cnot_v", 2,3);
 
     for (int j=0; j<n; j++)
         k.gate("x", j);
@@ -208,7 +208,7 @@ test_3(std::string v, std::string mapopt, std::string schedopt)
         k.gate("x", j);
 
     // one cnot, but needs several swaps
-    k.gate("cnot", 2,4);
+    k.gate("cnot_v", 2,4);
 
     for (int j=0; j<n; j++)
         k.gate("x", j);
@@ -240,7 +240,7 @@ test_4(std::string v, std::string mapopt, std::string schedopt)
     for (int i=0; i<n; i++)
         for (int j=0; j<n; j++)
 	    if (i != j)
-		k.gate("cnot", i,j);
+		k.gate("cnot_v", i,j);
 
     for (int j=0; j<n; j++)
         k.gate("x", j);
@@ -256,10 +256,10 @@ int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_DEBUG");
 
-    test_singledim("singledim", "minextendrc", "no");
+//    test_singledim("singledim", "minextendrc", "no");
 
-    test_qwg("qwg", "minextendrc", "no");
-    test_edge("edge", "minextendrc", "no");
+//    test_qwg("qwg", "minextendrc", "no");
+//    test_edge("edge", "minextendrc", "no");
 
 //    test_0("0", "base", "ASAP");
 //    test_0("0", "minextend", "ASAP");
@@ -286,6 +286,7 @@ int main(int argc, char ** argv)
 
     test_4("4", "base", "no");
     test_4("4", "minextend", "no");
+//    test_4("4", "baserc", "no");
     test_4("4", "minextendrc", "no");
 
     return 0;
