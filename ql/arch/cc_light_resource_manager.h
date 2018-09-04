@@ -2,6 +2,7 @@
  * @file   cc_light_resource_manager.h
  * @date   09/2017
  * @author Imran Ashraf
+ * @author Hans van Someren
  * @brief  Resource mangement for cc light platform
  */
 
@@ -51,7 +52,7 @@ public:
     qubit_resource_t* clone() const & { return new qubit_resource_t(*this);}
     qubit_resource_t* clone() && { return new qubit_resource_t(std::move(*this)); }
 
-    std::vector<size_t> state; // is busy till cycle
+    std::vector<size_t> state; // qubit q is busy till cycle=state[q]
     qubit_resource_t(ql::quantum_platform & platform) : resource_t("qubits")
     {
         count = platform.resources[name]["count"];
@@ -97,9 +98,9 @@ public:
     qwg_resource_t* clone() const & { return new qwg_resource_t(*this);}
     qwg_resource_t* clone() && { return new qwg_resource_t(std::move(*this)); }
 
-    std::vector<size_t> state; // is busy till cycle
-    std::vector<std::string> operations;
-    std::map<size_t,size_t> qubit2qwg;
+    std::vector<size_t> state;              // qubit q is busy till cycle==state[q]
+    std::vector<std::string> operations;    // with operation_name==operations[q]
+    std::map<size_t,size_t> qubit2qwg;      // on qwg==qubit2qwg[q]
 
     qwg_resource_t(ql::quantum_platform & platform) : resource_t("qwgs")
     {
@@ -154,6 +155,7 @@ public:
         {
             for( auto q : ins->operands )
             {
+                // op_start_cycle >= state[qubit2qwg[q]] || operations[qubit2qwg[q]] == operation_name
                 if( state[ qubit2qwg[q] ] < op_start_cycle + operation_duration)
                     state[ qubit2qwg[q] ]  = op_start_cycle + operation_duration;
                 operations[ qubit2qwg[q] ] = operation_name;
@@ -350,6 +352,195 @@ public:
     ~edge_resource_t() {}
 };
 
+// A two-qubit flux gate lowers the frequency of its source qubit to get near the freq of its target qubit.
+// Any two qubits which have near frequencies execute a two-qubit flux gate.
+// To prevent any neighbor qubit of the source qubit that has the same frequency as the target qubit
+// to interact as well, those neighbors must have their frequency detuned (lowered out of the way).
+// A detuned qubit cannot execute a single-qubit rotation.
+// An edge is a pair of qubits which can execute a two-qubit flux gate.
+// The detuned_qubits resource describes for each edge doing a two-qubit gate which qubits it detunes.
+//
+// A two-qubit flux gate must check whether the qubits it would detune are not busy with a rotation.
+// A one-qubit rotation gate must check whether its operand qubit is not detuned (busy with a flux gate).
+//
+// A two-qubit flux gate must set the qubits it would detune to detuned, busy with a flux gate.
+// A one-qubit rotation gate must set its operand qubit to busy, busy with a rotation.
+//
+// The resource state machine maintains:
+// - state[q]: qubit q is busy till cycle state[q], state[q] is the first free cycle
+// - operations[q]: when busy, qubit q is busy with a "flux" or "mw" ("" is initial value different from these two)
+// - starting[q]: when busy, qubit q switched to the current operation type (as in operations[q]) in cycle starting[q]
+// The latter is needed since a qubit can be busy with multiple "flux"s (i.e. being the detuned qubit for several "flux"s),
+// so the second, etc. of these can be scheduled in parallel to the first but not further back in the past than starting[q],
+// since till that cycle is was likely to be busy with "mw", which doesn't allow a "flux" in parallel.
+// The other members contain internal copies of the resource description and grid configuration of the json file.
+class detuned_qubits_resource_t : public resource_t
+{
+public:
+    detuned_qubits_resource_t* clone() const & { return new detuned_qubits_resource_t(*this);}
+    detuned_qubits_resource_t* clone() && { return new detuned_qubits_resource_t(std::move(*this)); }
+
+    std::vector<size_t> state;                                  // qubit q is busy till state[q]
+    std::vector<std::string> operations;                        // with operation_type==operations[q]
+    std::vector<size_t> starting;                               // from cycle starting[q]
+
+    typedef std::pair<size_t,size_t> qubits_pair_t;
+    std::map< qubits_pair_t, size_t > qubitpair2edge;           // map: pair of qubits to edge (from grid configuration)
+    std::map<size_t, std::vector<size_t> > edge_detunes_qubits; // map: edge to vector of qubits that edge detunes (resource desc.)
+
+    detuned_qubits_resource_t(ql::quantum_platform & platform) : resource_t("detuned_qubits")
+    {
+        count = platform.resources[name]["count"];
+        state.resize(count);
+        operations.resize(count);
+        starting.resize(count);
+
+        // initialize resource state machine to be free for all qubits
+        for(size_t i=0; i<count; i++)
+        {
+            state[i] = 0;
+            operations[i] = "";
+            starting[i] = 0;
+        }
+
+        // initialize qubitpair2edge map from json description; this is a constant map
+        for( auto & anedge : platform.topology["edges"] )
+        {
+            size_t s = anedge["src"];
+            size_t d = anedge["dst"];
+            size_t e = anedge["id"];
+
+            qubits_pair_t aqpair(s,d);
+            auto it = qubitpair2edge.find(aqpair);
+            if( it != qubitpair2edge.end() )
+            {
+                EOUT("re-defining edge " << s <<"->" << d << " !");
+                throw ql::exception("[x] Error : re-defining edge !",false);
+            }
+            else
+            {
+                qubitpair2edge[aqpair] = e;
+            }
+        }
+
+        // initialize edge_detunes_qubits map from json description; this is a constant map
+        auto & constraints = platform.resources[name]["connection_map"];
+        for (json::iterator it = constraints.begin(); it != constraints.end(); ++it)
+        {
+            // COUT(it.key() << " : " << it.value() << "\n";
+            size_t edgeNo = stoi( it.key() );
+            auto & detuned_qubits = it.value();
+            for(auto & q : detuned_qubits)
+                edge_detunes_qubits[edgeNo].push_back(q);
+        }
+    }
+
+    // When a two-qubit flux gate, check whether the qubits it would detune are not busy with a rotation.
+    // When a one-qubit rotation, check whether the qubit is not detuned (busy with a flux gate).
+    bool available(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
+        std::string & operation_type, std::string & instruction_type, size_t operation_duration)
+    {
+        auto gname = ins->name;
+        bool is_flux = (operation_type == "flux");
+        if( is_flux )
+        {
+            auto q0 = ins->operands[0];
+            auto q1 = ins->operands[1];
+            qubits_pair_t aqpair(q0, q1);
+            auto it = qubitpair2edge.find(aqpair);
+            if( it != qubitpair2edge.end() )
+            {
+                auto edge_no = qubitpair2edge[aqpair];
+
+                std::vector<size_t> qubits2check(edge_detunes_qubits[edge_no]);
+                for(auto & q : qubits2check)
+                {
+                    // DOUT(" available detuned_qubits? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " detuning qubit: " << q << " for operation: " << ins->name << " busy till: " << state[q] << " with operation_type: " << operation_type);
+                    if( op_start_cycle < state[q] )
+                    {
+                        if( operations[q] != operation_type || op_start_cycle < starting[q] )
+                        {
+                            // DOUT("    detuned_qubits resource busy for a flux");
+                            return false;
+                        }
+                    }
+                    // state[q] <= op_start_cycle || operations[q] == operation_type && starting[q] <= op_start_cycle
+                }
+            }
+            else
+            {
+                EOUT("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
+                throw ql::exception("[x] Error : Use of illegal edge"+std::to_string(q0)+"->"+std::to_string(q1)+"in operation:"+ins->name+" !",false);
+            }
+        }
+        bool is_mw = (operation_type == "mw");
+        if ( is_mw )
+        {
+            for( auto q : ins->operands )
+            {
+                // DOUT(" available detuned_qubits? op_start_cycle: " << op_start_cycle << ", qubit: " << q << " for operation: " << ins->name << " busy till: " << state[q] << " with operation_type: " << operation_type);
+                if( op_start_cycle < state[q] )
+                {
+                    if( operations[q] != operation_type || op_start_cycle < starting[q] )
+                    {
+                        // DOUT("    detuned_qubits resource busy for a rotation");
+                        return false;
+                    }
+                }
+                // state[q] <= op_start_cycle || operations[q] == operation_type && starting[q] <= op_start_cycle
+            }
+        }
+        // DOUT("    detuned_qubits resource available ...");
+        return true;
+    }
+
+    // A two-qubit flux gate must set the qubits it would detune to detuned, busy with a flux gate.
+    // A one-qubit rotation gate must set its operand qubit to busy, busy with a rotation.
+    void reserve(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
+        std::string & operation_type, std::string & instruction_type, size_t operation_duration)
+    {
+        auto gname = ins->name;
+        bool is_flux = (operation_type == "flux");
+        if( is_flux )
+        {
+            auto q0 = ins->operands[0];
+            auto q1 = ins->operands[1];
+            qubits_pair_t aqpair(q0, q1);
+            auto edge_no = qubitpair2edge[aqpair];
+
+            std::vector<size_t> qubits2check(edge_detunes_qubits[edge_no]);
+            for(auto & q : qubits2check)
+            {
+                // state[q] <= op_start_cycle || operations[q] == operation_type && starting[q] <= op_start_cycle
+                state[q] = std::max(op_start_cycle + operation_duration, state[q]);
+                if (operations[q] != operation_type)
+                {
+                    starting[q] = op_start_cycle;
+                    operations[q] = operation_type;
+                }
+                // op_start_cycle + operation_duration <= state[q] && operations[q] == operation_type && starting[q] <= op_start_cycle
+                // DOUT("reserved detuned_qubits. op_start_cycle: " << op_start_cycle << " edge: " << edge_no << " detunes qubit: " << q << " reserved till cycle: " << state[q] << " for operation: " << ins->name);
+            }
+        }
+        bool is_mw = (operation_type == "mw");
+        if ( is_mw )
+        {
+            for( auto q : ins->operands )
+            {
+                // state[q] <= op_start_cycle || operations[q] == operation_type && starting[q] <= op_start_cycle
+                state[q] = std::max(op_start_cycle + operation_duration, state[q]);
+                if (operations[q] != operation_type)
+                {
+                    starting[q] = op_start_cycle;
+                    operations[q] = operation_type;
+                }
+                // op_start_cycle + operation_duration <= state[q] && operations[q] == operation_type && starting[q] <= op_start_cycle
+                // DOUT("reserved detuned_qubits. op_start_cycle: " << op_start_cycle << " for qubit: " << q << " reserved till cycle: " << state[q] << " for operation: " << ins->name);
+            }
+        }
+    }
+    ~detuned_qubits_resource_t() {}
+};
 
 class resource_manager_t
 {
@@ -366,7 +557,7 @@ public:
     resource_manager_t( ql::quantum_platform & platform )
     {
         // DOUT("Constructing inited resouce_manager_t");
-        COUT("New one with no of resources : " << platform.resources.size());
+        // COUT("New one with no of resources : " << platform.resources.size());
         for (json::iterator it = platform.resources.begin(); it != platform.resources.end(); ++it)
         {
             // COUT(it.key() << " : " << it.value() << "\n";
@@ -392,6 +583,11 @@ public:
                 resource_t * ares = new edge_resource_t(platform);
                 resource_ptrs.push_back( ares );
             }
+            else if( n == "detuned_qubits")
+            {
+                resource_t * ares = new detuned_qubits_resource_t(platform);
+                resource_ptrs.push_back( ares );
+            }
             else
             {
                 COUT("Error : Un-modelled resource: " << n );
@@ -409,7 +605,7 @@ public:
     // runs before shallow destruction using synthesized resource_manager_t destructor
     ~resource_manager_t()
     {
-        // DOUT("Destroying resouce_manager_t");
+        // DOUT("Destroying resource_manager_t");
         for(auto rptr : resource_ptrs)
         {
             delete rptr;

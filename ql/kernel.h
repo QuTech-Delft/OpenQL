@@ -997,7 +997,7 @@ public:
         DOUT("Mapping kernel: " << name);
 
         map_in_qasm += qasm();
-        mapper.MapCircuit(c);
+        mapper.MapCircuit(c, name);
         ql::ir::bundles_t bundles = mapper.Bundler(c);
         map_out_qasm += ql::ir::qasm(bundles);
     }

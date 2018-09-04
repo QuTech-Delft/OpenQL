@@ -390,6 +390,7 @@ private:
 	typedef ql::gate *      gate_p;
 	std::list<gate_p>       waitinglg;  // list of gates in this Past, top order, waiting to be scheduled in
 	std::list<gate_p>       lg;         // list of gates in this Past, scheduled by their (start) cycle values
+    size_t                  nswapsadded;// number of swaps added to this past
 	std::map<gate_p,size_t> cycle;      // gate to cycle map, startCycle value of each past gatecycle[gp]
     ql::circuit             *outCircp;  // output stream after past
 
@@ -407,6 +408,7 @@ void Init(size_t n, size_t c, ql::quantum_platform *pf)
     fc.Init(n,c,pf);
     // waitinglg is initialized to empty list
     // lg is initialized to empty list
+    nswapsadded = 0;
     // cycle is initialized to empty map
 }
 
@@ -830,18 +832,26 @@ void new_gate(std::string gname, std::vector<size_t> qubits, ql::circuit& circ, 
     // DOUT("new: ");
 }
 
+// return number of swaps added to this past
+size_t NumberOfSwapsAdded()
+{
+    return nswapsadded;
+}
+
 // generate a single swap with real operands and add it to the current past's waiting list
+// note that the swap may be implemented by a series of gates
 void AddSwap(size_t r0, size_t r1)
 {
     ql::circuit circ;
 
-    DOUT("... adding swap(q" << r0 << ",q" << r1 << ") ... " );
+    // DOUT("... adding/trying swap(q" << r0 << ",q" << r1 << ") ... " );
 
-    new_gate("swap", {r0,r1}, circ);
+    new_gate("swap", {r0,r1}, circ);    // gates implementing swap returned in circ
     for (auto &gp : circ)
     {
         Add(gp);
     }
+    nswapsadded++;                       // for reporting at the end
     // DOUT("... swap(q" << r0 << ",q" << r1 << ")");
 
     v2r.Swap(r0,r1);
@@ -1416,6 +1426,7 @@ void MapBase(ql::gate* gp)
             {
                 // DOUT(" ... distance(real " << n << ", real " << tgt << ")=" << dnb);
                 mainPast.AddSwap(src, n);
+                DOUT(" ... adding swap(q" << src << ",q" << n << ")");
                 mainPast.Schedule();
                 // mainPast.Print("mapping after swap");
                 src = n;
@@ -1538,12 +1549,12 @@ void MapInit()
     // DOUT("... Initialize map(virtual->real)");
     // DOUT("... with trivial mapping (virtual==real), nqbits=" << nqbits);
     mainPast.Init(nqbits, cycle_time, &platform);
-    //mainPast.Print("initial mapping");
+    // mainPast.Print("initial mapping");
     // DOUT("Mapping initialization [DONE]");
 }
 
 // map kernel's circuit in current mapping context as left by initialization and earlier kernels
-void MapCircuit(ql::circuit& inCirc)
+void MapCircuit(ql::circuit& inCirc, std::string& kernel_name)
 {
     DOUT("==================================");
     DOUT("Mapping circuit ...");
@@ -1585,7 +1596,8 @@ void MapCircuit(ql::circuit& inCirc)
         // DOUT("\t" << g->qasm() );
     // }
     // DOUT("... End circuit after mapping");
-    IOUT("Mapped circuit depth=" << mainPast.MaxFreeCycle()-1 << ", circuit starting at cycle " << inCirc[0]->cycle);
+    // depth is max free cycle - cycle of first instruction
+    IOUT("Mapped " << kernel_name << " depth=" << mainPast.MaxFreeCycle()-inCirc[0]->cycle << " swaps_added=" << mainPast.NumberOfSwapsAdded());
     DOUT("Mapping circuit [DONE]");
     DOUT("==================================");
 }   // end MapCircuit

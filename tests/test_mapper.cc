@@ -89,6 +89,36 @@ test_edge(std::string v, std::string mapopt, std::string schedopt)
     prog.compile( );
 }
 
+// test detuned_qubits resource constraints mapping
+// no swaps generated
+void
+test_detuned(std::string v, std::string mapopt, std::string schedopt)
+{
+    int n = 7;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_schedopt=" + schedopt;
+
+    ql::quantum_platform starmon("starmon","test_mapper.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, n, starmon);
+    ql::quantum_kernel k(kernel_name, starmon);
+
+    // preferably cz's parallel, but not with x 3
+    k.gate("cz_v", 0,2);
+    k.gate("cz_v", 1,4);
+    k.gate("x", 3);
+
+    // likewise, while y 3, no cz on 0,2 or 1,4
+    k.gate("y", 3);
+    k.gate("cz_v", 0,2);
+    k.gate("cz_v", 1,4);
+
+    prog.add(k);
+    ql::options::set("mapper", mapopt);
+    ql::options::set("scheduler", schedopt);
+    prog.compile( );
+}
+
 // one cnot with operands that are neighbors in s7
 void
 test_0(std::string v, std::string mapopt, std::string schedopt)
@@ -260,6 +290,7 @@ int main(int argc, char ** argv)
 
 //    test_qwg("qwg", "minextendrc", "no");
 //    test_edge("edge", "minextendrc", "no");
+//    test_detuned("detuned", "minextendrc", "no");
 
 //    test_0("0", "base", "ASAP");
 //    test_0("0", "minextend", "ASAP");
@@ -278,6 +309,8 @@ int main(int argc, char ** argv)
 
 //    test_3("3", "base", "ASAP");
 //    test_3("3", "minextend", "ASAP");
+
+//    test_3("3", "base", "no");
 //    test_3("3", "minextend", "no");
 //    test_3("3", "minextendrc", "no");
 
