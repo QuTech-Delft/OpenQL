@@ -2,7 +2,7 @@
    "eqasm_compiler" : "qx",
 
    "hardware_settings": {
-	 "qubit_number": 10,
+	 "qubit_number": 120,
 	 "cycle_time" : 20
    },
 
