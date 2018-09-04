@@ -995,9 +995,14 @@ public:
     void map(Mapper& mapper, std::string& map_in_qasm, std::string& map_out_qasm)
     {
         DOUT("Mapping kernel: " << name);
+        std::string mapdecomposeropt = ql::options::get("mapdecomposer");
 
         map_in_qasm += qasm();
         mapper.MapCircuit(c, name);
+        if("yes" == mapdecomposeropt)
+        {
+            mapper.MapDecomposer(c);
+        }
         ql::ir::bundles_t bundles = mapper.Bundler(c);
         map_out_qasm += ql::ir::qasm(bundles);
     }

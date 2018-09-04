@@ -164,6 +164,7 @@ void Init(size_t n, size_t c, ql::quantum_platform *p)
     nq = n;
     ct = c;
     platformp = p;
+    fcv.clear();
     fcv.resize(n, 1);   // this 1 implies that cycle of first gate will be 1 and not 0; OpenQL convention!?!?
     // DOUT("... about to copy local resource manager to FreeCycle member rm");
     rm = lrm;
@@ -406,10 +407,10 @@ void Init(size_t n, size_t c, ql::quantum_platform *pf)
     gate_definitionp = &pf->instruction_map;
     v2r.Init(n);
     fc.Init(n,c,pf);
-    // waitinglg is initialized to empty list
-    // lg is initialized to empty list
+    waitinglg.clear();  // waitinglg is initialized to empty list
+    lg.clear();         // lg is initialized to empty list
     nswapsadded = 0;
-    // cycle is initialized to empty map
+    cycle.clear();      // cycle is initialized to empty map
 }
 
 void Print(std::string s)
@@ -875,7 +876,7 @@ size_t MapQubit(size_t v)
 // assume gp points to a virtual gate with virtual qubit indices as operands
 // map it:
 // - optionally update the name:
-//   when the gate name ends in "_v", create a new gate with a name with this "_v" stripped off
+//   when the gate name ends in "_virt", create a new gate with a name with this "_virt" stripped off
 //   (an alternative would be to provide this mapping in the .json file, the old name is then default)
 // - replace the virtual qubit index operands by the corresponding real qubit indices
 // since creating a new gate may result in a decomposition to several gates, the result is returned in the vector
@@ -888,7 +889,7 @@ void Map(ql::gate* gp, ql::circuit& circ)
     }
 
     std::string gname = gp->name;   // a copy!
-    std::string postfix ("_v");
+    std::string postfix ("_virt");
     std::size_t found = gname.find(postfix, (gname.length()-postfix.length())); // i.e. postfix ends gname
 
     if (found != std::string::npos)
@@ -899,6 +900,29 @@ void Map(ql::gate* gp, ql::circuit& circ)
     else
     {
         gp->operands = qubits;
+        circ.push_back(gp);
+    }
+}
+
+// as mapper after-burner
+// decompose all gates with names ending in _prim
+// by replacing it by a new copy of this gate with as name _prim replaced by _dprim
+// and decomposing it according to the .json file gate decomposition
+void Decompose(ql::gate* gp, ql::circuit& circ)
+{
+    std::string gname = gp->name;   // a copy!
+    std::string postfix ("_prim");
+    std::size_t found = gname.find(postfix, (gname.length()-postfix.length())); // i.e. postfix ends gname
+
+    if (found != std::string::npos)
+    {
+        // decompose gates with _prim postfix to equivalent with _dprim
+        DOUT("... Decompose: " << gp->qasm());
+        gname.replace(found, postfix.length(), "_dprim"); 
+        new_gate(gname, gp->operands, circ);
+    }
+    else
+    {
         circ.push_back(gp);
     }
 }
@@ -1601,6 +1625,37 @@ void MapCircuit(ql::circuit& inCirc, std::string& kernel_name)
     DOUT("Mapping circuit [DONE]");
     DOUT("==================================");
 }   // end MapCircuit
+
+// as mapper after-burner
+// decompose all gates with names ending in _prim
+// by replacing it by a new copy of this gate with as name _prim replaced by _dprim
+// and decomposing it according to the .json file gate decomposition
+//
+// so:  this decomposes swap_prim to whatever is specified in .json gate decomposition behind swap_dprim
+// and: this decomposes cnot_prim to whatever is specified in .json gate decomposition behind cnot_dprim
+void MapDecomposer(ql::circuit& inCirc)
+{
+    DOUT("Decompose circuit ...");
+    mainPast.Init(nqbits, cycle_time, &platform);
+
+    ql::circuit outCirc;        // output gate stream
+    mainPast.Output(outCirc);   // past window will flush into outCirc
+    for( auto & gp : inCirc )
+    {
+        ql::circuit tmpCirc;
+        mainPast.Decompose(gp, tmpCirc);
+        for (auto newgp : tmpCirc)
+        {
+            mainPast.AddAndSchedule(newgp);
+        }
+    }
+    mainPast.Flush();
+
+    inCirc.swap(outCirc);
+
+    DOUT("Decompose circuit [DONE]");
+    DOUT("==================================");
+}   // end MapAfterDecompose
 
 };  // end class Mapper
 
