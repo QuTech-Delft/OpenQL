@@ -67,7 +67,7 @@ pip install  -e .
 
 ## Running the tests
 
-In order to pass all the tests, `qisa-as` should be installed first. Follow [these instructions](https://github.com/DiCarloLab-Delft/ElecPrj_CCLight/tree/development/qisa-as) to install python interface of `qisa-as`. Once `qisa-as` is installed, you can run all the tests by:
+In order to pass all the tests, `qisa-as` and `libqasm` should be installed first. Follow [qisa-as](https://github.com/QE-Lab/eQASM_Assembler) and [libqasm](https://github.com/QE-Lab/libqasm) instructions to install python interfaces of these modules. Once `qisa-as` and `libqasm` are installed, you can run all the tests by:
 
 ```
 py.test -v
