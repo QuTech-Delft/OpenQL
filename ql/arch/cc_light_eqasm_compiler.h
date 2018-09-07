@@ -406,10 +406,10 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
         auto delta = bcycle - curr_cycle;
         bool classical_bundle=false;
         if(delta < 8)
-            sspre << "    " << delta << ",    ";
+            sspre << "    " << delta << "    ";
         else
             sspre << "    qwait " << delta-1 << "\n"
-                  << "    1,    ";
+                  << "    1    ";
 
         for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
         {
