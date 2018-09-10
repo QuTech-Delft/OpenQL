@@ -1,8 +1,8 @@
 /**
  * @file   mapper.h
- * @date   07/2018
+ * @date   09/2018
  * @author Hans van Someren
- * @brief  openql mapping
+ * @brief  openql virtual to real qubit mapping and routing
  */
 
 #ifndef QL_MAPPER_H
@@ -453,7 +453,7 @@ void Schedule()
         // So, using AddNoRc, the tryfc (try FreeCycle map) reflects the earliest startCycle per qubit,
         // and so dependences are respected, so we can find the gate that can start first ...
         // This is really a hack to avoid the construction of a dependence graph.
-        // We should use a copy of fc and not fc itself, since the latter reflects the really scheduled gates.
+        // We use a copy of fc and not fc itself, since the latter reflects the really scheduled gates.
         FreeCycle   tryfc = fc;
         for (auto & trygp : waitinglg)
         {
@@ -1185,49 +1185,38 @@ void Split(std::list<NNPath> & reslp)
 };  // end class NNPath
 
 
-
 // =========================================================================================
-// Mapper: map operands of gates and insert swaps so that two-qubit gate operands are NN
-// all gates must be unary or two-qubit gates
-//
-// Do this mapping in the context of a grid of qubits defined by the given platform.
-// Maintain several local mappings to ease navigating in the grid; these are constant after initialization.
-//
-// The Mapper's main entry is MapCircuit which manages the input and output streams of QASM instructions,
-// selects the quantum gates from it, and maps these in the context of what was mapped before (the Past).
-// Each gate is separately mapped in MapGate in the main Past's context.
-class Mapper
+// Grid: definition and access functions to the grid of qubits that supports the real qubits
+class Grid
 {
 private:
-
-                                        // OpenQL wide configuration, all constant after initialization
     size_t nqbits;                      // number of qubits in the system
-    size_t cycle_time;                  // length in ns of a single cycle;
-                                        // is divisor of duration in ns to convert it to cycles
-    ql::quantum_platform platform;      // current platform: topology and gate definitions
-
+    ql::quantum_platform* platformp;    // current platform: topology
                                         // Grid configuration, all constant after initialization
-                                        // could be factored out into a separate class
     size_t nx;                          // length of x dimension (x coordinates count 0..nx-1)
     size_t ny;                          // length of y dimension (y coordinates count 0..ny-1)
     std::map<size_t,size_t> x;          // x[i] is x coordinate of qubit i
     std::map<size_t,size_t> y;          // y[i] is y coordinate of qubit i
+
+public:
     typedef std::list<size_t> neighbors_t;  // neighbors is a list of qubits
     std::map<size_t,neighbors_t> nbs;   // nbs[i] is list of neighbor qubits of qubit i
 
-                                        // Mapper dynamic state
-    Past   mainPast;                    // main past window; all path alternatives start off as clones of it
 
-
+// Grid initializer
 // initialize mapper internal grid maps from configuration
 // this remains constant over multiple kernels on the same platform
-void GridInit()
+void Init(size_t n, ql::quantum_platform* p)
 {
-    nx = platform.topology["x_size"];
-    ny = platform.topology["y_size"];
+    // DOUT("Grid::Init(n=" << n << ")");
+    nqbits = n;
+    platformp = p;
+
+    nx = platformp->topology["x_size"];
+    ny = platformp->topology["y_size"];
     // DOUT("... nx=" << nx << "; ny=" << ny);
 
-    for (auto & aqbit : platform.topology["qubits"] )
+    for (auto & aqbit : platformp->topology["qubits"] )
     {
         size_t qi = aqbit["id"];
         size_t qx = aqbit["x"];
@@ -1252,7 +1241,7 @@ void GridInit()
             throw ql::exception("Error: qbit with unsupported y.", false);
         }
     }
-    for (auto & anedge : platform.topology["edges"] )
+    for (auto & anedge : platformp->topology["edges"] )
     {
         size_t es = anedge["src"];
         size_t ed = anedge["dst"];
@@ -1294,12 +1283,40 @@ void GridInit()
 // distance between two qubits
 // implementation is for "cross" and "star" grids and assumes bidirectional edges and convex grid;
 // for "plus" grids, replace "std::max" by "+"
-size_t GridDistance(size_t from, size_t to)
+size_t Distance(size_t from, size_t to)
 {
     return std::max(
                std::abs( ptrdiff_t(x[to]) - ptrdiff_t(x[from]) ),
                std::abs( ptrdiff_t(y[to]) - ptrdiff_t(y[from]) ));
 }
+
+
+};  // end class Grid
+
+// =========================================================================================
+// Mapper: map operands of gates and insert swaps so that two-qubit gate operands are NN
+// all gates must be unary or two-qubit gates
+//
+// Do this mapping in the context of a grid of qubits defined by the given platform.
+// Maintain several local mappings to ease navigating in the grid; these are constant after initialization.
+//
+// The Mapper's main entry is MapCircuit which manages the input and output streams of QASM instructions,
+// selects the quantum gates from it, and maps these in the context of what was mapped before (the Past).
+// Each gate is separately mapped in MapGate in the main Past's context.
+class Mapper
+{
+private:
+
+                                        // OpenQL wide configuration, all constant after initialization
+    size_t  nqbits;                     // number of qubits in the system
+    size_t  cycle_time;                 // length in ns of a single cycle;
+                                        // is divisor of duration in ns to convert it to cycles
+    ql::quantum_platform platform;      // current platform: topology and gate definitions
+    Grid    grid;                       // current grid
+
+                                        // Mapper dynamic state
+    Past   mainPast;                    // main past window; all path alternatives start off as clones of it
+
 
 // initial path finder
 // generate all paths with source src and target tgt as a list of path into reslp
@@ -1335,13 +1352,13 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
 
 	// start looking around at neighbors for serious paths
     // assume that distance is not approximate but exact and can be met
-	size_t d = GridDistance(src, tgt);
+	size_t d = grid.Distance(src, tgt);
 	assert (d >= 1);
 
     // loop over all neighbors of src
-    for (auto & n : nbs[src])
+    for (auto & n : grid.nbs[src])
     {
-		size_t dn = GridDistance(n, tgt);
+		size_t dn = grid.Distance(n, tgt);
 
 		if (dn >= d)
         {
@@ -1410,7 +1427,7 @@ void MapMinExtend(ql::gate* gp)
     auto&   q = gp->operands;
     size_t  src = mainPast.MapQubit(q[0]);
     size_t  tgt = mainPast.MapQubit(q[1]);
-    size_t  d = GridDistance(src, tgt);
+    size_t  d = grid.Distance(src, tgt);
     assert (d >= 1);
     DOUT("... MapMinExtend: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
 
@@ -1439,13 +1456,13 @@ void MapBase(ql::gate* gp)
     size_t src = mainPast.MapQubit(q[0]);
     size_t tgt = mainPast.MapQubit(q[1]);
         
-    size_t d = GridDistance(src, tgt);
+    size_t d = grid.Distance(src, tgt);
     DOUT("... MapBase: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
     while (d > 1)
     {
-        for( auto & n : nbs[src] )
+        for( auto & n : grid.nbs[src] )
         {
-            size_t dnb = GridDistance(n, tgt);
+            size_t dnb = grid.Distance(n, tgt);
             if (dnb < d)
             {
                 // DOUT(" ... distance(real " << n << ", real " << tgt << ")=" << dnb);
@@ -1457,7 +1474,7 @@ void MapBase(ql::gate* gp)
                 break;
             }
         }
-        d = GridDistance(src, tgt);
+        d = grid.Distance(src, tgt);
         // DOUT(" ... new distance(real " << src << ", real " << tgt << ")=" << d);
     }
 }
@@ -1559,17 +1576,16 @@ Mapper( size_t nq, ql::quantum_platform& p) :
     // DOUT("==================================");
     // DOUT("Mapper creation ...");
     // DOUT("... nqbits=" << nqbits << ", cycle_time=" << cycle_time);
-    // DOUT("... Grid initialization: qubits->coordinates, ->neighbors, distance ...");
-    GridInit();
-
     // DOUT("Mapper creation [DONE]");
 }
 
 // initialize program-wide data that is passed around between kernels
 // initial program-wide mapping could be computed here
-void MapInit()
+void Init()
 {
     // DOUT("Mapping initialization ...");
+    // DOUT("... Grid initialization: qubits->coordinates, ->neighbors, distance ...");
+    grid.Init(nqbits, &platform);
     // DOUT("... Initialize map(virtual->real)");
     // DOUT("... with trivial mapping (virtual==real), nqbits=" << nqbits);
     mainPast.Init(nqbits, cycle_time, &platform);

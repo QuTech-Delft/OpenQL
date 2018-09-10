@@ -325,7 +325,7 @@ public:
         else
         {
             Mapper mapper(qubits, platform);	// mapper creation with constant initialization of grid
-            mapper.MapInit();			// creates and initializes data passed on between kernels
+            mapper.Init();			            // creates and initializes data passed on between kernels
 
             for (auto& k : kernels)
             {
