@@ -13,9 +13,9 @@ smit t1, {(4, 6), (2, 5), (3, 0)}
 start:
 
 aKernel:
-    1,    prepz s7
-    2,    cz t0
-    4,    cz t1
+    1    prepz s7
+    2    cz t0
+    4    cz t1
     qwait 4
 
     br always, start

@@ -12,9 +12,9 @@ smis s10, {0, 1}
 start:
 
 aKernel:
-    1,    x s10
-    2,    y s0
-    2,    measz s10
+    1    x s10
+    2    y s0
+    2    measz s10
     qwait 2
 
     br always, start
