@@ -15,9 +15,15 @@
 #include <cassert>
 #include <time.h>
 
+#include <ql/version.h>
 #include <ql/openql.h>
 #include <ql/classical.h>
 #include <ql/qasm_loader.h>
+
+static std::string get_version()
+{
+    return OPENQL_VERSION_STRING;
+}
 
 void set_option(std::string option_name, std::string option_value)
 {

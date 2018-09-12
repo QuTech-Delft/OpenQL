@@ -1052,6 +1052,7 @@ table {
     <li class="mono"><a href="#openql.openql.QASM_Loader_swigregister">QASM_Loader_swigregister</a></li>
     <li class="mono"><a href="#openql.openql.SwigPyIterator_swigregister">SwigPyIterator_swigregister</a></li>
     <li class="mono"><a href="#openql.openql.get_option">get_option</a></li>
+    <li class="mono"><a href="#openql.openql.get_version">get_version</a></li>
     <li class="mono"><a href="#openql.openql.print_options">print_options</a></li>
     <li class="mono"><a href="#openql.openql.set_option">set_option</a></li>
     <li class="mono"><a href="#openql.openql.vectord_swigregister">vectord_swigregister</a></li>
@@ -1322,7 +1323,7 @@ table {
 
   <header id="section-intro">
   <h1 class="title"><span class="name">openql.openql</span> module</h1>
-  <p><code>OpenQL</code> is a C++/Python framework for high-level quantum programming. The framework provides a compiler for compiling and optimizing quantum code. The compiler produces the intermediate quantum assembly language and the compiled eQASM (executable QASM) for various target platforms. While the eQASM is platform-specific, the quantum assembly code (QASM) is hardware-agnostic and can be simulated on the QX simulator.</p>
+  <p><code>OpenQL</code> is a C++/Python framework for high-level quantum programming. The framework provides a compiler for compiling and optimizing quantum code. The compiler produces the intermediate quantum assembly language in cQASM (Common QASM) and the compiled eQASM (executable QASM) for various target platforms. While the eQASM is platform-specific, the quantum assembly code (QASM) is hardware-agnostic and can be simulated on the QX simulator.</p>
   
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql', this);">Show source &equiv;</a></p>
   <div id="source-openql.openql" class="source">
@@ -1332,7 +1333,7 @@ table {
 <span class="c1"># Do not make changes to this file unless you know what you are doing--modify</span>
 <span class="c1"># the SWIG interface file instead.</span>
 
-<span class="sd">&quot;&quot;&quot;`OpenQL` is a C++/Python framework for high-level quantum programming. The framework provides a compiler for compiling and optimizing quantum code. The compiler produces the intermediate quantum assembly language and the compiled eQASM (executable QASM) for various target platforms. While the eQASM is platform-specific, the quantum assembly code (QASM) is hardware-agnostic and can be simulated on the QX simulator.&quot;&quot;&quot;</span>
+<span class="sd">&quot;&quot;&quot;`OpenQL` is a C++/Python framework for high-level quantum programming. The framework provides a compiler for compiling and optimizing quantum code. The compiler produces the intermediate quantum assembly language in cQASM (Common QASM) and the compiled eQASM (executable QASM) for various target platforms. While the eQASM is platform-specific, the quantum assembly code (QASM) is hardware-agnostic and can be simulated on the QX simulator.&quot;&quot;&quot;</span>
 
 
 <span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">version_info</span> <span class="k">as</span> <span class="n">_swig_python_version_info</span>
@@ -1928,6 +1929,22 @@ table {
 <span class="n">vectord_swigregister</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">vectord_swigregister</span>
 <span class="n">vectord_swigregister</span><span class="p">(</span><span class="n">vectord</span><span class="p">)</span>
 
+
+<span class="k">def</span> <span class="nf">get_version</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Returns OpenQL version</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    None</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        version number as a string</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">get_version</span><span class="p">()</span>
 
 <span class="k">def</span> <span class="nf">set_option</span><span class="p">(</span><span class="n">option_name</span><span class="p">,</span> <span class="n">option_value</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -2867,6 +2884,46 @@ table {
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">get_option</span><span class="p">(</span><span class="n">option_name</span><span class="p">)</span>
+</pre></div>
+
+  </div>
+</div>
+
+  </div>
+  
+      
+  <div class="item">
+    <div class="name def" id="openql.openql.get_version">
+    <p>def <span class="ident">get_version</span>(</p><p>)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Returns OpenQL version</p>
+<h2>Parameters</h2>
+<p>None</p>
+<h2>Returns</h2>
+<p>str
+    version number as a string</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.get_version', this);">Show source &equiv;</a></p>
+  <div id="source-openql.openql.get_version" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">get_version</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Returns OpenQL version</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    None</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        version number as a string</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">get_version</span><span class="p">()</span>
 </pre></div>
 
   </div>

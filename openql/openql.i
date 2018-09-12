@@ -4,7 +4,7 @@
  * @brief  swig interface file
  */
 %define DOCSTRING
-"`OpenQL` is a C++/Python framework for high-level quantum programming. The framework provides a compiler for compiling and optimizing quantum code. The compiler produces the intermediate quantum assembly language and the compiled eQASM (executable QASM) for various target platforms. While the eQASM is platform-specific, the quantum assembly code (QASM) is hardware-agnostic and can be simulated on the QX simulator."
+"`OpenQL` is a C++/Python framework for high-level quantum programming. The framework provides a compiler for compiling and optimizing quantum code. The compiler produces the intermediate quantum assembly language in cQASM (Common QASM) and the compiled eQASM (executable QASM) for various target platforms. While the eQASM is platform-specific, the quantum assembly code (QASM) is hardware-agnostic and can be simulated on the QX simulator."
 %enddef
 
 %module(docstring=DOCSTRING) openql
@@ -58,6 +58,20 @@ try
     }
 }
 
+
+
+%feature("docstring") get_version
+""" Returns OpenQL version
+
+Parameters
+----------
+None
+
+Returns
+-------
+str
+    version number as a string
+"""
 
 
 %feature("docstring") set_option
