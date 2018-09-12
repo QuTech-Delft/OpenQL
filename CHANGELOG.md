@@ -2,7 +2,19 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [ 0.5 ] - [ 2018-xx-xx ]
+## [ 0.5.1 ] - [ 2018-09-12 ]
+### Added
+- API to obtain version number
+
+### Changed
+
+### Removed
+
+### Fixed
+- qisa format (removed comma)
+
+
+## [ 0.5 ] - [ 2018-06-26 ]
 ### Added
 - support for classical instructions
 - support for flow control (selection and repetition)

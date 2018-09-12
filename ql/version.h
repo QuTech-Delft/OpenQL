@@ -2,7 +2,7 @@
 
 #define OPENQL_MINOR_VERSION 5
 
-#define OPENQL_PATCH_VERSION 0
+#define OPENQL_PATCH_VERSION 1
 
 // Make it easier to check for QISA version dependencies.
 // This assumes the PATCH and MINOR version will not exceed 99
