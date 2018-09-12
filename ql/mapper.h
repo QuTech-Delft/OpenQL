@@ -266,18 +266,18 @@ size_t StartCycle(ql::gate *g)
     {
         size_t  baseStartCycle = startCycle;
         GetGateParameters(id, platformp, operation_name, operation_type, instruction_type);
-	    while (startCycle < SIZE_MAX)
-	    {
-	        if (rm.available(startCycle, g, operation_name, operation_type, instruction_type, duration))
-	        {
-	            break;
-	        }   
-	        else
-	        {
+        while (startCycle < SIZE_MAX)
+        {
+            if (rm.available(startCycle, g, operation_name, operation_type, instruction_type, duration))
+            {
+                break;
+            }   
+            else
+            {
                 // DOUT(" ... [" << startCycle << "] Busy resource for " << g->qasm());
-	            startCycle++;
-	        }
-	    }
+                startCycle++;
+            }
+        }
         if (baseStartCycle != startCycle)
         {
             // DOUT(" ... from [" << baseStartCycle << "] to [" << startCycle-1 << "] busy resource(s) for " << g->qasm());
@@ -319,11 +319,11 @@ void Add(ql::gate *g, size_t startCycle)
     auto        mapopt = ql::options::get("mapper");
     if (mapopt == "baserc" || mapopt == "minextendrc")
     {
-	    auto&       id = g->name;
-	    std::string operation_name(id);
-	    std::string operation_type;
-	    std::string instruction_type;
-	    size_t      duration = (g->duration+ct-1)/ct;   // rounded-up unsigned integer division
+        auto&       id = g->name;
+        std::string operation_name(id);
+        std::string operation_type;
+        std::string instruction_type;
+        size_t      duration = (g->duration+ct-1)/ct;   // rounded-up unsigned integer division
 
         GetGateParameters(id, platformp, operation_name, operation_type, instruction_type);
         rm.reserve(startCycle, g, operation_name, operation_type, instruction_type, duration);
@@ -381,18 +381,18 @@ class Past
 {
 private:
 
-	size_t                  nq;         // width of Past in qubits
-	size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
+    size_t                  nq;         // width of Past in qubits
+    size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
     ql::quantum_platform   *platformp;  // platform describing resources for scheduling
     std::map<std::string,ql::custom_gate*> *gate_definitionp; // gate definitions from platform's .json file
-	Virt2Real               v2r;        // Virt2Real map applying to this Past
-	FreeCycle               fc;         // FreeCycle map applying to this Past
+    Virt2Real               v2r;        // Virt2Real map applying to this Past
+    FreeCycle               fc;         // FreeCycle map applying to this Past
 
-	typedef ql::gate *      gate_p;
-	std::list<gate_p>       waitinglg;  // list of gates in this Past, top order, waiting to be scheduled in
-	std::list<gate_p>       lg;         // list of gates in this Past, scheduled by their (start) cycle values
+    typedef ql::gate *      gate_p;
+    std::list<gate_p>       waitinglg;  // list of gates in this Past, top order, waiting to be scheduled in
+    std::list<gate_p>       lg;         // list of gates in this Past, scheduled by their (start) cycle values
     size_t                  nswapsadded;// number of swaps added to this past
-	std::map<gate_p,size_t> cycle;      // gate to cycle map, startCycle value of each past gatecycle[gp]
+    std::map<gate_p,size_t> cycle;      // gate to cycle map, startCycle value of each past gatecycle[gp]
     ql::circuit             *outCircp;  // output stream after past
 
 public:
@@ -428,6 +428,16 @@ void Print(std::string s)
 void Output(ql::circuit& ct)
 {
     outCircp = &ct;
+}
+
+void GetV2r(Virt2Real& argv2r)
+{
+    argv2r = v2r;
+}
+
+void SetV2r(Virt2Real& newv2r)
+{
+    v2r = newv2r;
 }
 
 // all gates in past.waitinglg are scheduled into past.lg
@@ -468,35 +478,35 @@ void Schedule()
         }
 
         // add this gate to the maps, scheduling the gate (doing the cycle assignment)
-	    // DOUT("... add " << gp->qasm() << " startcycle=" << startCycle << " cycles=" << ((gp->duration+ct-1)/ct) );
-	    fc.Add(gp, startCycle);
-	    cycle[gp] = startCycle;
+        // DOUT("... add " << gp->qasm() << " startcycle=" << startCycle << " cycles=" << ((gp->duration+ct-1)/ct) );
+        fc.Add(gp, startCycle);
+        cycle[gp] = startCycle;
         gp->cycle = startCycle;
-	    // DOUT("... set " << gp->qasm() << " at cycle " << startCycle);
-	
-	    // insert gate in lg, the list of gates, in cycle order, and in this order, as late as possible
-	    //
-	    // reverse iterate because the insertion is near the end of the list
-	    // insert so that cycle values are in order afterwards and the new one is nearest to the end
-	    std::list<gate_p>::reverse_iterator rigp = lg.rbegin();
-	    for (; rigp != lg.rend(); rigp++)
-	    {
-	        if (cycle[*rigp] <= startCycle)
-	        {
-	            // base because insert doesn't work with reverse iteration
-	            // rigp.base points after the element that rigp is pointing at
-	            // which is luckly because insert only inserts before the given element
-	            // the end effect is inserting after rigp
-	            lg.insert(rigp.base(), gp);
-	            break;
-	        }
-	    }
-	    // when list was empty or no element was found, just put it in front
-	    if (rigp == lg.rend())
-	    {
-	        lg.push_front(gp);
-	    }
-	
+        // DOUT("... set " << gp->qasm() << " at cycle " << startCycle);
+    
+        // insert gate in lg, the list of gates, in cycle order, and in this order, as late as possible
+        //
+        // reverse iterate because the insertion is near the end of the list
+        // insert so that cycle values are in order afterwards and the new one is nearest to the end
+        std::list<gate_p>::reverse_iterator rigp = lg.rbegin();
+        for (; rigp != lg.rend(); rigp++)
+        {
+            if (cycle[*rigp] <= startCycle)
+            {
+                // base because insert doesn't work with reverse iteration
+                // rigp.base points after the element that rigp is pointing at
+                // which is luckly because insert only inserts before the given element
+                // the end effect is inserting after rigp
+                lg.insert(rigp.base(), gp);
+                break;
+            }
+        }
+        // when list was empty or no element was found, just put it in front
+        if (rigp == lg.rend())
+        {
+            lg.push_front(gp);
+        }
+    
         // and remove it then from the waiting list
         waitinglg.remove(gp);
     }
@@ -880,7 +890,7 @@ size_t MapQubit(size_t v)
 //   (an alternative would be to provide this mapping in the .json file, the old name is then default)
 // - replace the virtual qubit index operands by the corresponding real qubit indices
 // since creating a new gate may result in a decomposition to several gates, the result is returned in the vector
-void Map(ql::gate* gp, ql::circuit& circ)
+void DeVirtualize(ql::gate* gp, ql::circuit& circ)
 {
     std::vector<size_t> qubits  = gp->operands; // a copy!
     for (auto& qi : qubits)
@@ -980,8 +990,8 @@ class NNPath
 
 private:
 
-	size_t                  nq;         // width of Past in qubits
-	size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
+    size_t                  nq;         // width of Past in qubits
+    size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
     ql::quantum_platform   *platformp;  // descriptions of resources for scheduling
 
     std::vector<size_t>     total;      // full path, including source and target nodes
@@ -1203,6 +1213,16 @@ public:
     std::map<size_t,neighbors_t> nbs;   // nbs[i] is list of neighbor qubits of qubit i
 
 
+// distance between two qubits
+// implementation is for "cross" and "star" grids and assumes bidirectional edges and convex grid;
+// for "plus" grids, replace "std::max" by "+"
+size_t Distance(size_t from_realqbit, size_t to_realqbit)
+{
+    return std::max(
+               std::abs( ptrdiff_t(x[to_realqbit]) - ptrdiff_t(x[from_realqbit]) ),
+               std::abs( ptrdiff_t(y[to_realqbit]) - ptrdiff_t(y[from_realqbit]) ));
+}
+
 // Grid initializer
 // initialize mapper internal grid maps from configuration
 // this remains constant over multiple kernels on the same platform
@@ -1261,7 +1281,7 @@ void Init(size_t n, ql::quantum_platform* p)
     }
 
 #ifdef debug
-    for (size_t i=0; i<nqbits; i++)
+    for (int i=0; i<nqbits; i++)
     {
         DOUT("qubit[" << i << "]: x=" << x[i] << "; y=" << y[i]);
         std::cout << "... connects to ";
@@ -1271,27 +1291,225 @@ void Init(size_t n, ql::quantum_platform* p)
         }
         std::cout << std::endl;
         std::cout << "... distance(" << i << ",j)=";
-        for (size_t j=0; j<nqbits; j++)
+        for (int j=0; j<nqbits; j++)
         {
-            std::cout << distance(i,j) << " ";
+            std::cout << Distance(i,j) << " ";
         }
         std::cout << std::endl;
     }
 #endif        // debug
 }
 
-// distance between two qubits
-// implementation is for "cross" and "star" grids and assumes bidirectional edges and convex grid;
-// for "plus" grids, replace "std::max" by "+"
-size_t Distance(size_t from, size_t to)
-{
-    return std::max(
-               std::abs( ptrdiff_t(x[to]) - ptrdiff_t(x[from]) ),
-               std::abs( ptrdiff_t(y[to]) - ptrdiff_t(y[from]) ));
-}
-
 
 };  // end class Grid
+
+// =========================================================================================
+// InitialPlace: initial placement solved as an MIP, mixed integer linear program
+// the initial placement is modelled as a Quadratic Assignment Problem
+// by Lingling Lao in her mapping paper:
+//  
+// variables:
+//     forall i: forall k: x[i][k], x[i][k] is integral and 0 or 1, meaning qubit i is in location k
+// objective:
+//     min z = sum i: sum j: sum k: sum l: refcount[i][j] * distance(k,l) * x[i][k] * x[j][l]
+// subject to:
+//     forall k: ( sum i: x[i][k] == 1 )
+//     forall i: ( sum k: x[i][k] == 1 )
+//  
+// the article "An algorithm for the quadratic assignment problem using Benders' decomposition"
+// by L. Kaufman and F. Broeckx, transforms this problem by introducing w[i][k] as follows:
+//  
+// forall i: forall k: w[i][k] =  x[i][k] * ( sum j: sum l: refcount[i][j] * distance(k,l) * x[j][l] )
+//  
+// to the following mixed integer linear problem:
+//  
+//  precompute:
+//      forall i: forall k: costmax[i][k] = sum j: sum l: refcount[i][j] * distance(k,l)
+//      (note: each of these costmax[][] is >= 0, so the "max(this,0)" around this is not needed)
+//  variables:
+//      forall i: forall k: x[i][k], x[i][k] is integral and 0 or 1
+//      forall i: forall k: w[i][k], w[i][k] is real and >= 0
+//  objective:
+//      min z = sum i: sum k: w[i][k]
+//  subject to:
+//      forall k: ( sum i: x[i][k] == 1 )
+//      forall i: ( sum k: x[i][k] == 1 )
+//      forall i: forall k: costmax[i][k] * x[i][k]
+//          + ( sum j: sum l: refcount[i][j]*distance(k,l)*x[j][l] ) - w[i][k] <= costmax[i][k]
+
+#include <lemon/lp.h>
+using namespace lemon;
+
+class InitialPlace
+{
+private:
+    // parameters
+    size_t                  nqbits;     // number of facilities, virtual qubits; index variables i and j
+    size_t                  nlocs;      // number of locations, real qubits; index variables k and l
+    Grid                   *gridp;      // current grid with Distance function
+
+public:
+
+void Init(size_t n, Grid* g)
+{
+    nqbits = n;
+    nlocs = nqbits;
+    gridp = g;
+}
+
+// find an initial placement of the virtual qubits for the given circuit
+// the resulting placement is put in the provided virt2real map
+void Place( ql::circuit& circ, Virt2Real& v2r)
+{
+    DOUT("InitialPlace circuit ...");
+    // precompute refcount by scanning circuit
+    // refcount[i][j] = count of two-qubit gates between virtual qubits i and j in current circuit
+    std::vector<std::vector<size_t>>  refcount;
+    refcount.resize(nqbits); for (size_t i=0; i<nqbits; i++) refcount[i].resize(nqbits,0);
+    for ( auto& gp : circ )
+    {
+        auto&   q = gp->operands;
+        if (q.size() > 2)
+        {
+            EOUT(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
+            throw ql::exception("Error: gate with more than 2 operand qubits; please decompose such gates first before mapping.", false);
+        }
+        if (q.size() == 2)
+        {
+            refcount[q[0]][q[1]] += 1;
+        }
+    }
+
+    // precompute costmax by applying formula
+    // costmax[i][k] = sum j: sum l: refcount[i][j] * distance(k,l) for qubit i in location k
+    std::vector<std::vector<size_t>>  costmax;   
+    costmax.resize(nqbits); for (size_t i=0; i<nqbits; i++) costmax[i].resize(nlocs,0);
+    for ( size_t i=0; i<nqbits; i++ )
+    {
+        for ( size_t k=0; k<nlocs; k++ )
+        {
+            for ( size_t j=0; j<nqbits; j++ )
+            {
+                for ( size_t l=0; l<nlocs; l++ )
+                {
+                    costmax[i][k] += refcount[i][j] * gridp->Distance(k,l);
+                }
+            }
+        }
+    }
+    
+    // the problem
+    // mixed integer programming
+    Mip  mip;
+    
+    // variables (columns)
+    //  x[i][k] are integral, values 0 or 1
+    //      x[i][k] represents whether virtual qubit i is in real qubit k
+    //  w[i][k] are real, values >= 0
+    //      w[i][k] represents x[i][k] * sum j: sum l: refcount[i][j] * distance(k,l) * x[j][l]
+    //       i.e. if qubit i not in location k then 0
+    //       else for all qubits j in its location l sum refcount[i][j] * distance(k,l)
+    std::vector<std::vector<Mip::Col>> x;
+        x.resize(nqbits); for (size_t i=0; i<nqbits; i++) x[i].resize(nlocs);
+    std::vector<std::vector<Mip::Col>> w;
+        w.resize(nqbits); for (size_t i=0; i<nqbits; i++) w[i].resize(nlocs);
+    for ( size_t i=0; i<nqbits; i++ )
+    {
+        for ( size_t k=0; k<nlocs; k++ )
+        {
+            x[i][k] = mip.addCol();
+            mip.colLowerBound(x[i][k], 0);          // 0 <= x[i][k]
+            mip.colUpperBound(x[i][k], 1);          //      x[i][k] <= 1
+            mip.colType(x[i][k], Mip::INTEGER);     // int
+    
+            w[i][k] = mip.addCol();
+            mip.colLowerBound(w[i][k], 0);          // 0 <= w[i][k]
+            mip.colType(w[i][k], Mip::REAL);        // real
+        }
+    }
+    
+    // constraints (rows)
+    //  forall i: ( sum k: x[i][k] == 1 )
+    for ( size_t i=0; i<nqbits; i++ )
+    {
+        Mip::Expr   sum;
+        for ( size_t k=0; k<nlocs; k++ )
+        {
+            sum += x[i][k];
+        }
+        mip.addRow(sum == 1);
+    }
+    
+    // constraints (rows)
+    //  forall k: ( sum i: x[i][k] == 1 )
+    for ( size_t k=0; k<nlocs; k++ )
+    {
+        Mip::Expr   sum;
+        for ( size_t i=0; i<nqbits; i++ )
+        {
+            sum += x[i][k];
+        }
+        mip.addRow(sum == 1);
+    }
+    
+    // constraints (rows)
+    //  forall i, k: costmax[i][k] * x[i][k]
+    //          + sum j sum l refcount[i][j]*distance[k][l]*x[j][l] - w[i][k] <= costmax[i][k]
+    for ( size_t i=0; i<nqbits; i++ )
+    {
+        for ( size_t k=0; k<nlocs; k++ )
+        {
+            Mip::Expr   left = costmax[i][k] * x[i][k];
+            for ( size_t j=0; j<nqbits; j++ )
+            {
+                for ( size_t l=0; l<nlocs; l++ )
+                {
+                    left += refcount[i][j] * gridp->Distance(k,l) * x[j][l];
+                }
+            }
+            left -= w[i][k];
+            Mip::Expr   right = costmax[i][k];
+            mip.addRow(left <= right);
+        }
+    }
+    
+    // objective
+    Mip::Expr   objective;
+    mip.min();
+    for ( size_t i=0; i<nqbits; i++ )
+    {
+        for ( size_t k=0; k<nlocs; k++ )
+        {
+            objective += w[i][k];
+        }
+    }
+    mip.obj(objective);
+    
+    // solve the problem
+    Mip::SolveExitStatus s = mip.solve();
+    Mip::ProblemType pt = mip.type();
+    if (s != Mip::SOLVED || pt != Mip::OPTIMAL)
+    {
+        EOUT("Initial placement: no (optimal) solution found; solve returned:"<< s << "; type returned:" << pt);
+        throw ql::exception("Initial placement: no (optimal) solution found", false);
+    }
+
+    // get the results
+    for ( size_t i=0; i<nqbits; i++ )
+    {
+        for ( size_t k=0; k<nlocs; k++ )
+        {
+            if (mip.sol(x[i][k]) == 1)
+            {
+                v2r[i] = k;
+            }
+        }
+    }
+    DOUT("InitialPlace circuit [DONE]");
+}
+    
+};  // end class InitialPlace
+
 
 // =========================================================================================
 // Mapper: map operands of gates and insert swaps so that two-qubit gate operands are NN
@@ -1313,6 +1531,7 @@ private:
                                         // is divisor of duration in ns to convert it to cycles
     ql::quantum_platform platform;      // current platform: topology and gate definitions
     Grid    grid;                       // current grid
+    InitialPlace    ip;                 // initial placer facility
 
                                         // Mapper dynamic state
     Past   mainPast;                    // main past window; all path alternatives start off as clones of it
@@ -1328,10 +1547,10 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
     // DOUT("GenShortestPaths: " << "src=" << src << " tgt=" << tgt);
     assert (reslp.empty());
 
-	if (src == tgt) {
-		// found target
+    if (src == tgt) {
+        // found target
         // create a virgin path and initialize it to become an empty path
-		// add src to this path (so that it becomes a distance 0 path with one qubit, src)
+        // add src to this path (so that it becomes a distance 0 path with one qubit, src)
         // and add the path to the result list 
         // DOUT("GenShortestPaths ... about to allocate local virgin path");
         NNPath  p;
@@ -1348,33 +1567,33 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
         // NNPath::listPrint("... result list after adding path", reslp);
         // DOUT("... will return now");
         return;
-	}
+    }
 
-	// start looking around at neighbors for serious paths
+    // start looking around at neighbors for serious paths
     // assume that distance is not approximate but exact and can be met
-	size_t d = grid.Distance(src, tgt);
-	assert (d >= 1);
+    size_t d = grid.Distance(src, tgt);
+    assert (d >= 1);
 
     // loop over all neighbors of src
     for (auto & n : grid.nbs[src])
     {
-		size_t dn = grid.Distance(n, tgt);
+        size_t dn = grid.Distance(n, tgt);
 
-		if (dn >= d)
+        if (dn >= d)
         {
             // not closer, looking for shortest path, so ignore this neighbor
-			continue;
-		}
+            continue;
+        }
 
-		// get list of all possible paths from n to tgt in genlp
-		GenShortestPaths(n, tgt, genlp);
+        // get list of all possible paths from n to tgt in genlp
+        GenShortestPaths(n, tgt, genlp);
         // DOUT("... GenShortestPaths, returning from recursive call in: " << "src=" << src << " tgt=" << tgt);
 
-		// accumulate all results
+        // accumulate all results
         reslp.splice(reslp.end(), genlp);   // moves all of genlp to reslp; makes genlp empty
         // DOUT("... did splice, i.e. moved any results from recursion to current level results");
         assert (genlp.empty());
-	}
+    }
     // reslp contains all paths starting from a neighbor of src, to tgt
 
     // add src to front of all to-be-returned paths from src's neighbors to tgt
@@ -1493,6 +1712,8 @@ void MapGate(ql::gate* gp)
         EOUT(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
         throw ql::exception("Error: gate with more than 2 operand qubits; please decompose such gates first before mapping.", false);
     }
+
+    // for each two-qubit gate, make the mapping right, if necessary by inserting swaps
     if (operandCount == 2)
     {
         auto mapopt = ql::options::get("mapper");
@@ -1511,8 +1732,13 @@ void MapGate(ql::gate* gp)
         }
     }
 
-    ql::circuit circ;
-    mainPast.Map(gp, circ);
+    // with mapping done, insert the gate itself
+    // devirtualization of this gate maps its qubit operands and optionally updates its gate name
+    // when the gate name was updated, a new gate with that name is created;
+    // when that new gate is a composite gate, it is decomposed
+    // the resulting gate/expansion (anyhow a sequence of gates) is caught in circ
+    ql::circuit circ;   // result of devirtualization
+    mainPast.DeVirtualize(gp, circ);
     for (auto newgp : circ)
     {
         // DOUT(" ... mapped gate: " << newgp->qasm() );
@@ -1520,11 +1746,85 @@ void MapGate(ql::gate* gp)
     }
 }
 
+// map the circuit's gates in the provided context (v2r and fc maps)
+void MapGates(ql::circuit& circ, std::string& kernel_name)
+{
+    // mainPast.Print("start mapping");
+
+    ql::circuit outCirc;        // output gate stream, mapped; will be swapped with circ on return
+    mainPast.Output(outCirc);       // past window will flush into outCirc
+
+    for( auto & gp : circ )
+    {
+        // Currently a gate can only be a quantum gate,
+        // but an embedded wait or classical instruction should be handled here as well.
+        // When so, the past should be flushed first before these are appended to outCirc;
+        // the past only contains quantum gates.
+        // Note that some classical instructions might refer to a qubit; that should also be mapped!
+
+        // if (*gp is a quantum gate) ...
+        // {
+            MapGate(gp);
+        // }
+        // else
+        // {
+        //  mainPast.Flush();
+        //  deal with *gp
+        // }
+    }
+    mainPast.Flush();
+
+    // mainPast.Print("end mapping");
+
+    // replace circ (the IR's main circuit) by the newly computed outCirc
+    // outCirc gets the old circ and is destroyed when leaving scope
+    // DOUT("... swapping outCirc with circ");
+    circ.swap(outCirc);
+
+    // DOUT("... Start circuit (size=" << circ.size() << ") after mapping:");
+    // for( auto& g : circ )
+    // {
+        // DOUT("\t" << g->qasm() );
+    // }
+    // DOUT("... End circuit after mapping");
+    // depth is max free cycle - cycle of first instruction
+    IOUT("Mapped " << kernel_name << " depth=" << mainPast.MaxFreeCycle()-circ[0]->cycle << " swaps_added=" << mainPast.NumberOfSwapsAdded());
+}
+
+// decompose all gates with names ending in _prim
+// by replacing it by a new copy of this gate with as name _prim replaced by _dprim
+// and decomposing it according to the .json file gate decomposition
+//
+// so:  this decomposes swap_prim to whatever is specified in .json gate decomposition behind swap_dprim
+// and: this decomposes cnot_prim to whatever is specified in .json gate decomposition behind cnot_dprim
+void Decomposer(ql::circuit& circ)
+{
+    DOUT("Decompose circuit ...");
+    mainPast.Init(nqbits, cycle_time, &platform);
+
+    ql::circuit outCirc;        // output gate stream
+    mainPast.Output(outCirc);   // past window will flush into outCirc
+    for( auto & gp : circ )
+    {
+        ql::circuit tmpCirc;
+        mainPast.Decompose(gp, tmpCirc);
+        for (auto newgp : tmpCirc)
+        {
+            mainPast.AddAndSchedule(newgp);
+        }
+    }
+    mainPast.Flush();
+
+    circ.swap(outCirc);
+
+    DOUT("Decompose circuit [DONE]");
+}   // end Decomposer
+
 public:
 
 // alternative bundler using gate->cycle attribute instead of lemon's cycle map
 // it assumes that the gate->cycle attribute reflect the cycle assignment of a particular schedule
-ql::ir::bundles_t Bundler(ql::circuit& inCirc)
+ql::ir::bundles_t Bundler(ql::circuit& circ)
 {
     ql::ir::bundles_t bundles;
 
@@ -1533,7 +1833,7 @@ ql::ir::bundles_t Bundler(ql::circuit& inCirc)
 
     DOUT("Bundler ...");
     size_t TotalCycles = 0;
-    for ( auto & gp : inCirc)
+    for ( auto & gp : circ)
     {
         if( gp->type() != ql::gate_type_t::__wait_gate__ )
         {
@@ -1573,7 +1873,6 @@ ql::ir::bundles_t Bundler(ql::circuit& inCirc)
 Mapper( size_t nq, ql::quantum_platform& p) :
     nqbits(nq), cycle_time(p.cycle_time), platform(p)
 {
-    // DOUT("==================================");
     // DOUT("Mapper creation ...");
     // DOUT("... nqbits=" << nqbits << ", cycle_time=" << cycle_time);
     // DOUT("Mapper creation [DONE]");
@@ -1588,90 +1887,36 @@ void Init()
     grid.Init(nqbits, &platform);
     // DOUT("... Initialize map(virtual->real)");
     // DOUT("... with trivial mapping (virtual==real), nqbits=" << nqbits);
+    ip.Init(nqbits, &grid);
     mainPast.Init(nqbits, cycle_time, &platform);
     // mainPast.Print("initial mapping");
     // DOUT("Mapping initialization [DONE]");
 }
 
 // map kernel's circuit in current mapping context as left by initialization and earlier kernels
-void MapCircuit(ql::circuit& inCirc, std::string& kernel_name)
+void MapCircuit(ql::circuit& circ, std::string& kernel_name)
 {
     DOUT("==================================");
     DOUT("Mapping circuit ...");
-    // mainPast.Print("start mapping");
-
-    ql::circuit outCirc;        // output gate stream, mapped; will be swapped with inCirc on return
-    mainPast.Output(outCirc);       // past window will flush into outCirc
-
-    for( auto & gp : inCirc )
+    
+    std::string mapinitialplaceopt = ql::options::get("mapinitialplace");
+    if("yes" == mapinitialplaceopt)
     {
-        // Currently a gate can only be a quantum gate,
-        // but an embedded wait or classical instruction should be handled here as well.
-        // When so, the past should be flushed first before these are appended to outCirc;
-        // the past only contains quantum gates.
-        // Note that some classical instructions might refer to a qubit; that should also be mapped!
-
-        // if (*gp is a quantum gate) ...
-        // {
-            MapGate(gp);
-        // }
-        // else
-        // {
-        //  mainPast.Flush();
-        //  deal with *gp
-        // }
+        Virt2Real   v2r;
+        mainPast.GetV2r(v2r);
+        ip.Place(circ, v2r);
+        mainPast.SetV2r(v2r);
     }
-    mainPast.Flush();
+    MapGates(circ, kernel_name);
+    std::string mapdecomposeropt = ql::options::get("mapdecomposer");
+    if("yes" == mapdecomposeropt)
+    {
+        Decomposer(circ);
+    }
 
-    // mainPast.Print("end mapping");
-
-    // replace inCirc (the IR's main circuit) by the newly computed outCirc
-    // outCirc gets the old inCirc and is destroyed when leaving scope
-    // DOUT("... swapping outCirc with inCirc");
-    inCirc.swap(outCirc);
-
-    // DOUT("... Start circuit (size=" << inCirc.size() << ") after mapping:");
-    // for( auto& g : inCirc )
-    // {
-        // DOUT("\t" << g->qasm() );
-    // }
-    // DOUT("... End circuit after mapping");
-    // depth is max free cycle - cycle of first instruction
-    IOUT("Mapped " << kernel_name << " depth=" << mainPast.MaxFreeCycle()-inCirc[0]->cycle << " swaps_added=" << mainPast.NumberOfSwapsAdded());
     DOUT("Mapping circuit [DONE]");
     DOUT("==================================");
 }   // end MapCircuit
-
-// as mapper after-burner
-// decompose all gates with names ending in _prim
-// by replacing it by a new copy of this gate with as name _prim replaced by _dprim
-// and decomposing it according to the .json file gate decomposition
-//
-// so:  this decomposes swap_prim to whatever is specified in .json gate decomposition behind swap_dprim
-// and: this decomposes cnot_prim to whatever is specified in .json gate decomposition behind cnot_dprim
-void MapDecomposer(ql::circuit& inCirc)
-{
-    DOUT("Decompose circuit ...");
-    mainPast.Init(nqbits, cycle_time, &platform);
-
-    ql::circuit outCirc;        // output gate stream
-    mainPast.Output(outCirc);   // past window will flush into outCirc
-    for( auto & gp : inCirc )
-    {
-        ql::circuit tmpCirc;
-        mainPast.Decompose(gp, tmpCirc);
-        for (auto newgp : tmpCirc)
-        {
-            mainPast.AddAndSchedule(newgp);
-        }
-    }
-    mainPast.Flush();
-
-    inCirc.swap(outCirc);
-
-    DOUT("Decompose circuit [DONE]");
-    DOUT("==================================");
-}   // end MapAfterDecompose
 
 };  // end class Mapper
 

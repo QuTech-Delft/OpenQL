@@ -370,6 +370,7 @@ int main(int argc, char ** argv)
     ql::utils::logger::set_log_level("LOG_DEBUG");
 
     ql::options::set("scheduler", "no");        // still run rc cc_light scheduler afterwards!
+    ql::options::set("mapinitialplace", "yes");  // testing initial placement
 
 //    test_singledim("singledim", "minextendrc", "yes");
 
@@ -385,7 +386,7 @@ int main(int argc, char ** argv)
 //    test_1("1", "minextend", "yes");
 //    test_1("1", "minextendrc", "yes");
 
-//    test_2("2", "base", "yes");
+    test_2("2", "base", "yes");
 //    test_2("2", "minextend", "yes");
 //    test_2("2", "minextendrc", "yes");
 
@@ -399,9 +400,9 @@ int main(int argc, char ** argv)
 //    test_4("4", "minextend", "yes");
 //    test_4("4", "minextendrc", "yes");
 
-    test_5("5", "base", "yes");
-    test_5("5", "minextend", "yes");
-    test_5("5", "minextendrc", "yes");
+//    test_5("5", "base", "yes");
+//    test_5("5", "minextend", "yes");
+//    test_5("5", "minextendrc", "yes");
 
     return 0;
 }
