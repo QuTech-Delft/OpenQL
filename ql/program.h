@@ -312,6 +312,9 @@ public:
         return 0;
     }
 
+    std::string deslash(std::string& s)
+    { std::string r = s; for (size_t i=0; i<r.size(); i++) { if (r[i]=='/') { r[i]='_'; } } return r;}
+
     void map()
     {
         std::string mapper_in_qasm;
@@ -332,11 +335,11 @@ public:
 		        k.map(mapper, mapper_in_qasm, mapper_out_qasm);	// map kernel in current mapper context
             }
 
-            string fname_in = ql::options::get("output_dir") + "/" + name + "_mapper_in.qasm";
+            string fname_in = ql::options::get("output_dir") + "/" + deslash(name) + "_mapper_in.qasm";
             IOUT("writing mapper input qasm to '" << fname_in << "' ...");
             ql::utils::write_file(fname_in, mapper_in_qasm);
 
-            string fname_out = ql::options::get("output_dir") + "/" + name + "_mapper_out.qasm";
+            string fname_out = ql::options::get("output_dir") + "/" + deslash(name) + "_mapper_out.qasm";
             IOUT("writing mapper_output qasm to '" << fname_out << "' ...");
             ql::utils::write_file(fname_out, mapper_out_qasm);
         }
@@ -366,7 +369,7 @@ public:
             // ql::utils::write_file(fname, kernel_sched_dot);
         }
 
-        string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
+        string fname = ql::options::get("output_dir") + "/" + deslash(name) + "_scheduled.qasm";
         IOUT("writing scheduled qasm to '" << fname << "' ...");
         ql::utils::write_file(fname, sched_qasm);
     }

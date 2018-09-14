@@ -80,8 +80,8 @@ test_edge(std::string v, std::string mapopt, std::string mapdecomposeropt, std::
     ql::quantum_kernel k(kernel_name, starmon);
 
     // no dependency, only a conflict in edge resource
-    k.gate("cz_virt", 1,4);
-    k.gate("cz_virt", 0,3);
+    k.gate("cz", 1,4);
+    k.gate("cz", 0,3);
 
     prog.add(k);
     ql::options::set("mapper", mapopt);
@@ -104,14 +104,14 @@ test_detuned(std::string v, std::string mapopt, std::string mapdecomposeropt, st
     ql::quantum_kernel k(kernel_name, starmon);
 
     // preferably cz's parallel, but not with x 3
-    k.gate("cz_virt", 0,2);
-    k.gate("cz_virt", 1,4);
+    k.gate("cz", 0,2);
+    k.gate("cz", 1,4);
     k.gate("x", 3);
 
     // likewise, while y 3, no cz on 0,2 or 1,4
     k.gate("y", 3);
-    k.gate("cz_virt", 0,2);
-    k.gate("cz_virt", 1,4);
+    k.gate("cz", 0,2);
+    k.gate("cz", 1,4);
 
     prog.add(k);
     ql::options::set("mapper", mapopt);
@@ -136,7 +136,7 @@ test_0(std::string v, std::string mapopt, std::string mapdecomposeropt, std::str
     k.gate("x", 2);
 
     // one cnot that is ok in trivial mapping
-    k.gate("cnot_virt", 0,2);
+    k.gate("cnot", 0,2);
 
     k.gate("x", 0);
     k.gate("x", 2);
@@ -164,22 +164,22 @@ test_1(std::string v, std::string mapopt, std::string mapdecomposeropt, std::str
     for (int j=0; j<7; j++) { k.gate("x", j); }
 
     // a list of all cnots that are ok in trivial mapping
-    k.gate("cnot_virt", 0,2);
-    k.gate("cnot_virt", 0,3);
-    k.gate("cnot_virt", 1,3);
-    k.gate("cnot_virt", 1,4);
-    k.gate("cnot_virt", 2,0);
-    k.gate("cnot_virt", 2,5);
-    k.gate("cnot_virt", 3,0);
-    k.gate("cnot_virt", 3,1);
-    k.gate("cnot_virt", 3,5);
-    k.gate("cnot_virt", 3,6);
-    k.gate("cnot_virt", 4,1);
-    k.gate("cnot_virt", 4,6);
-    k.gate("cnot_virt", 5,2);
-    k.gate("cnot_virt", 5,3);
-    k.gate("cnot_virt", 6,3);
-    k.gate("cnot_virt", 6,4);
+    k.gate("cnot", 0,2);
+    k.gate("cnot", 0,3);
+    k.gate("cnot", 1,3);
+    k.gate("cnot", 1,4);
+    k.gate("cnot", 2,0);
+    k.gate("cnot", 2,5);
+    k.gate("cnot", 3,0);
+    k.gate("cnot", 3,1);
+    k.gate("cnot", 3,5);
+    k.gate("cnot", 3,6);
+    k.gate("cnot", 4,1);
+    k.gate("cnot", 4,6);
+    k.gate("cnot", 5,2);
+    k.gate("cnot", 5,3);
+    k.gate("cnot", 6,3);
+    k.gate("cnot", 6,4);
 
     for (int j=0; j<7; j++) { k.gate("x", j); }
 
@@ -207,7 +207,7 @@ test_2(std::string v, std::string mapopt, std::string mapdecomposeropt, std::str
     k.gate("x", 3);
 
     // one cnot, but needs one swap
-    k.gate("cnot_virt", 2,3);
+    k.gate("cnot", 2,3);
 
     k.gate("x", 2);
     k.gate("x", 3);
@@ -236,7 +236,7 @@ test_3(std::string v, std::string mapopt, std::string mapdecomposeropt, std::str
     k.gate("x", 4);
 
     // one cnot, but needs several swaps
-    k.gate("cnot_virt", 2,4);
+    k.gate("cnot", 2,4);
 
     k.gate("x", 2);
     k.gate("x", 4);
@@ -264,7 +264,7 @@ test_4(std::string v, std::string mapopt, std::string mapdecomposeropt, std::str
 
     for (int j=0; j<n; j++) { k.gate("x", j); }
 
-    for (int i=0; i<n; i++) { for (int j=0; j<n; j++) { if (i != j) { k.gate("cnot_virt", i,j); } } }
+    for (int i=0; i<n; i++) { for (int j=0; j<n; j++) { if (i != j) { k.gate("cnot", i,j); } } }
 
     for (int j=0; j<n; j++) { k.gate("x", j); }
 
@@ -293,68 +293,68 @@ test_5(std::string v, std::string mapopt, std::string mapdecomposeropt, std::str
 
     for (int j=0; j<n; j++) { k.gate("x", j); }
 
-	k.gate("cnot_virt", 0,3);
-	k.gate("cnot_virt", 3,0);
+	k.gate("cnot", 0,3);
+	k.gate("cnot", 3,0);
 
-	k.gate("cnot_virt", 6,4);
-	k.gate("cnot_virt", 4,6);
+	k.gate("cnot", 6,4);
+	k.gate("cnot", 4,6);
 
-	k.gate("cnot_virt", 3,1);
-	k.gate("cnot_virt", 1,3);
+	k.gate("cnot", 3,1);
+	k.gate("cnot", 1,3);
 
-	k.gate("cnot_virt", 5,2);
-	k.gate("cnot_virt", 2,5);
+	k.gate("cnot", 5,2);
+	k.gate("cnot", 2,5);
 
-	k.gate("cnot_virt", 1,4);
-	k.gate("cnot_virt", 4,1);
+	k.gate("cnot", 1,4);
+	k.gate("cnot", 4,1);
 
-	k.gate("cnot_virt", 3,5);
-	k.gate("cnot_virt", 5,3);
+	k.gate("cnot", 3,5);
+	k.gate("cnot", 5,3);
 
-	k.gate("cnot_virt", 6,3);
-	k.gate("cnot_virt", 3,6);
+	k.gate("cnot", 6,3);
+	k.gate("cnot", 3,6);
 
-	k.gate("cnot_virt", 2,0);
-	k.gate("cnot_virt", 0,2);
+	k.gate("cnot", 2,0);
+	k.gate("cnot", 0,2);
 
-	k.gate("cnot_virt", 0,1);
-	k.gate("cnot_virt", 1,0);
+	k.gate("cnot", 0,1);
+	k.gate("cnot", 1,0);
 
-	k.gate("cnot_virt", 3,4);
-	k.gate("cnot_virt", 4,3);
+	k.gate("cnot", 3,4);
+	k.gate("cnot", 4,3);
 
-	k.gate("cnot_virt", 1,6);
-	k.gate("cnot_virt", 6,1);
+	k.gate("cnot", 1,6);
+	k.gate("cnot", 6,1);
 
-	k.gate("cnot_virt", 6,5);
-	k.gate("cnot_virt", 5,6);
+	k.gate("cnot", 6,5);
+	k.gate("cnot", 5,6);
 
-	k.gate("cnot_virt", 3,2);
-	k.gate("cnot_virt", 2,3);
+	k.gate("cnot", 3,2);
+	k.gate("cnot", 2,3);
 
-	k.gate("cnot_virt", 5,0);
-	k.gate("cnot_virt", 0,5);
+	k.gate("cnot", 5,0);
+	k.gate("cnot", 0,5);
 
-	k.gate("cnot_virt", 0,6);
-	k.gate("cnot_virt", 6,0);
+	k.gate("cnot", 0,6);
+	k.gate("cnot", 6,0);
 
-	k.gate("cnot_virt", 1,5);
-	k.gate("cnot_virt", 5,1);
+	k.gate("cnot", 1,5);
+	k.gate("cnot", 5,1);
 
-	k.gate("cnot_virt", 0,4);
-	k.gate("cnot_virt", 4,0);
+	k.gate("cnot", 0,4);
+	k.gate("cnot", 4,0);
 
-	k.gate("cnot_virt", 6,2);
-	k.gate("cnot_virt", 2,6);
+	k.gate("cnot", 6,2);
+	k.gate("cnot", 2,6);
 
-	k.gate("cnot_virt", 2,1);
-	k.gate("cnot_virt", 1,2);
+	k.gate("cnot", 2,1);
+	k.gate("cnot", 1,2);
 
-	k.gate("cnot_virt", 5,4);
-	k.gate("cnot_virt", 4,5);
+	k.gate("cnot", 5,4);
+	k.gate("cnot", 4,5);
 
-	k.gate("cnot_virt", 2,4);
-	k.gate("cnot_virt", 4,2);
+	k.gate("cnot", 2,4);
+	k.gate("cnot", 4,2);
 
     for (int j=0; j<n; j++) { k.gate("x", j); }
 
@@ -392,7 +392,7 @@ int main(int argc, char ** argv)
 
 //    test_qwg("qwg", "minextendrc", "yes", configfile);
 //    test_edge("edge", "minextendrc", "yes", configfile);
-    test_detuned("detuned", "minextendrc", "yes", configfile);
+//    test_detuned("detuned", "minextendrc", "yes", configfile);
 
 //    test_0("0", "base", "yes", configfile);
 //    test_0("0", "minextend", "yes", configfile);
@@ -408,13 +408,11 @@ int main(int argc, char ** argv)
 
 //    test_3("3", "base", "yes", configfile);
 //    test_3("3", "minextend", "yes", configfile);
-
-//    test_3("3", "base", "yes", configfile);
 //    test_3("3", "minextendrc", "yes", configfile);
 
 //    test_4("4", "base", "yes", configfile);
 //    test_4("4", "minextend", "yes", configfile);
-//    test_4("4", "minextendrc", "yes", configfile);
+    test_4("4", "minextendrc", "yes", configfile);
 
 //    test_5("5", "base", "yes", configfile);
 //    test_5("5", "minextend", "yes", configfile);
