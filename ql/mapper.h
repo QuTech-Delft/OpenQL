@@ -1,3 +1,4 @@
+#define INITIALPLACE 1
 /**
  * @file   mapper.h
  * @date   09/2018
@@ -1337,6 +1338,7 @@ void Init(size_t n, ql::quantum_platform* p)
 //      forall i: forall k: costmax[i][k] * x[i][k]
 //          + ( sum j: sum l: refcount[i][j]*distance(k,l)*x[j][l] ) - w[i][k] <= costmax[i][k]
 
+#ifdef INITIALPLACE
 #include <lemon/lp.h>
 using namespace lemon;
 
@@ -1509,6 +1511,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r)
 }
     
 };  // end class InitialPlace
+#endif
 
 
 // =========================================================================================
@@ -1531,8 +1534,9 @@ private:
                                         // is divisor of duration in ns to convert it to cycles
     ql::quantum_platform platform;      // current platform: topology and gate definitions
     Grid    grid;                       // current grid
+#ifdef INITIALPLACE
     InitialPlace    ip;                 // initial placer facility
-
+#endif
                                         // Mapper dynamic state
     Past   mainPast;                    // main past window; all path alternatives start off as clones of it
 
@@ -1885,9 +1889,11 @@ void Init()
     // DOUT("Mapping initialization ...");
     // DOUT("... Grid initialization: qubits->coordinates, ->neighbors, distance ...");
     grid.Init(nqbits, &platform);
+#ifdef INITIALPLACE
+    ip.Init(nqbits, &grid);
+#endif
     // DOUT("... Initialize map(virtual->real)");
     // DOUT("... with trivial mapping (virtual==real), nqbits=" << nqbits);
-    ip.Init(nqbits, &grid);
     mainPast.Init(nqbits, cycle_time, &platform);
     // mainPast.Print("initial mapping");
     // DOUT("Mapping initialization [DONE]");
@@ -1904,7 +1910,10 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name)
     {
         Virt2Real   v2r;
         mainPast.GetV2r(v2r);
+#ifdef INITIALPLACE
+        // replace initial mapping of mainPast by any result of initial placement
         ip.Place(circ, v2r);
+#endif
         mainPast.SetV2r(v2r);
     }
     MapGates(circ, kernel_name);

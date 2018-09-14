@@ -12,13 +12,13 @@
 
 // test qwg resource constraints mapping
 void
-test_qwg(std::string v, std::string mapopt, std::string mapdecomposeropt)
+test_qwg(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
-    ql::quantum_platform starmon("starmon","test_mapper.json");
+    ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
@@ -35,13 +35,13 @@ test_qwg(std::string v, std::string mapopt, std::string mapdecomposeropt)
 
 // demo single dimension resource constraint representation simple
 void
-test_singledim(std::string v, std::string mapopt, std::string mapdecomposeropt)
+test_singledim(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
-    ql::quantum_platform starmon("starmon","test_mapper.json");
+    ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
@@ -68,13 +68,13 @@ test_singledim(std::string v, std::string mapopt, std::string mapdecomposeropt)
 
 // test edge resource constraints mapping
 void
-test_edge(std::string v, std::string mapopt, std::string mapdecomposeropt)
+test_edge(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
-    ql::quantum_platform starmon("starmon","test_mapper.json");
+    ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
@@ -92,13 +92,13 @@ test_edge(std::string v, std::string mapopt, std::string mapdecomposeropt)
 // test detuned_qubits resource constraints mapping
 // no swaps generated
 void
-test_detuned(std::string v, std::string mapopt, std::string mapdecomposeropt)
+test_detuned(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
-    ql::quantum_platform starmon("starmon","test_mapper.json");
+    ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
@@ -121,13 +121,13 @@ test_detuned(std::string v, std::string mapopt, std::string mapdecomposeropt)
 
 // one cnot with operands that are neighbors in s7
 void
-test_0(std::string v, std::string mapopt, std::string mapdecomposeropt)
+test_0(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
-    ql::quantum_platform starmon("starmon","test_mapper.json");
+    ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
@@ -150,13 +150,13 @@ test_0(std::string v, std::string mapopt, std::string mapdecomposeropt)
 
 // all cnots with operands that are neighbors in s7
 void
-test_1(std::string v, std::string mapopt, std::string mapdecomposeropt)
+test_1(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
-    ql::quantum_platform starmon("starmon","test_mapper.json");
+    ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
@@ -192,13 +192,13 @@ test_1(std::string v, std::string mapopt, std::string mapdecomposeropt)
 
 // one cnot with operands that are at distance 2 in s7
 void
-test_2(std::string v, std::string mapopt, std::string mapdecomposeropt)
+test_2(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
-    ql::quantum_platform starmon("starmon","test_mapper.json");
+    ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
@@ -221,13 +221,13 @@ test_2(std::string v, std::string mapopt, std::string mapdecomposeropt)
 
 // one cnot with operands that are at distance 4 in s7
 void
-test_3(std::string v, std::string mapopt, std::string mapdecomposeropt)
+test_3(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
-    ql::quantum_platform starmon("starmon","test_mapper.json");
+    ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
@@ -251,13 +251,13 @@ test_3(std::string v, std::string mapopt, std::string mapdecomposeropt)
 // all possible cnots in s7, in lexicographic order
 // requires many swaps
 void
-test_4(std::string v, std::string mapopt, std::string mapdecomposeropt)
+test_4(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
-    ql::quantum_platform starmon("starmon","test_mapper.json");
+    ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
@@ -280,13 +280,13 @@ test_4(std::string v, std::string mapopt, std::string mapdecomposeropt)
 // - from low distance to high distance
 // - each time as much as possible in opposite sides of the circuit
 void
-test_5(std::string v, std::string mapopt, std::string mapdecomposeropt)
+test_5(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
-    ql::quantum_platform starmon("starmon","test_mapper.json");
+    ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
@@ -367,42 +367,58 @@ test_5(std::string v, std::string mapopt, std::string mapdecomposeropt)
 
 int main(int argc, char ** argv)
 {
+    auto    configfile = ql::options::get("configuration_file");
+    if ("" == configfile)
+    {
+        // perhaps from Python, the above options work from a command line, from C++ they don't hence the following lines ...
+        if (argc >= 2)
+        {
+            // bluntly assume first argument (if any) is the name of the configuration file
+            // don't test, don't take the '/'s out, ...
+            configfile = argv[1];
+        }
+        else
+        {
+            configfile = "test_mapper.json";
+        }
+    }
+
     ql::utils::logger::set_log_level("LOG_DEBUG");
-
     ql::options::set("scheduler", "no");        // still run rc cc_light scheduler afterwards!
-    ql::options::set("mapinitialplace", "yes");  // testing initial placement
+    ql::options::set("mapinitialplace", "no");  // testing initial placement
 
-//    test_singledim("singledim", "minextendrc", "yes");
+//    test_singledim("singledim", "no", "no", configfile);
+//    test_singledim("singledim", "minextendrc", "yes", configfile);
 
-//    test_qwg("qwg", "minextendrc", "yes");
-//    test_edge("edge", "minextendrc", "yes");
-//    test_detuned("detuned", "minextendrc", "yes");
+//    test_qwg("qwg", "minextendrc", "yes", configfile);
+//    test_edge("edge", "minextendrc", "yes", configfile);
+    test_detuned("detuned", "minextendrc", "yes", configfile);
 
-//    test_0("0", "base", "yes");
-//    test_0("0", "minextend", "yes");
-//    test_0("0", "minextendrc", "yes");
+//    test_0("0", "base", "yes", configfile);
+//    test_0("0", "minextend", "yes", configfile);
+//    test_0("0", "minextendrc", "yes", configfile);
 
-//    test_1("1", "base", "yes");
-//    test_1("1", "minextend", "yes");
-//    test_1("1", "minextendrc", "yes");
+//    test_1("1", "base", "yes", configfile);
+//    test_1("1", "minextend", "yes", configfile);
+//    test_1("1", "minextendrc", "yes", configfile);
 
-    test_2("2", "base", "yes");
-//    test_2("2", "minextend", "yes");
-//    test_2("2", "minextendrc", "yes");
+//    test_2("2", "base", "yes", configfile);
+//    test_2("2", "minextend", "yes", configfile);
+//    test_2("2", "minextendrc", "yes", configfile);
 
-//    test_3("3", "base", "yes");
-//    test_3("3", "minextend", "yes");
+//    test_3("3", "base", "yes", configfile);
+//    test_3("3", "minextend", "yes", configfile);
 
-//    test_3("3", "base", "yes");
-//    test_3("3", "minextendrc", "yes");
+//    test_3("3", "base", "yes", configfile);
+//    test_3("3", "minextendrc", "yes", configfile);
 
-//    test_4("4", "base", "yes");
-//    test_4("4", "minextend", "yes");
-//    test_4("4", "minextendrc", "yes");
+//    test_4("4", "base", "yes", configfile);
+//    test_4("4", "minextend", "yes", configfile);
+//    test_4("4", "minextendrc", "yes", configfile);
 
-//    test_5("5", "base", "yes");
-//    test_5("5", "minextend", "yes");
-//    test_5("5", "minextendrc", "yes");
+//    test_5("5", "base", "yes", configfile);
+//    test_5("5", "minextend", "yes", configfile);
+//    test_5("5", "minextendrc", "yes", configfile);
 
     return 0;
 }
