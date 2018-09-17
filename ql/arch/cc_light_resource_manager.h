@@ -18,6 +18,13 @@ using json = nlohmann::json;
 
 namespace ql
 {
+
+typedef
+enum {
+    forward_scheduling = 0,
+    backward_scheduling = 1
+} scheduling_direction_t;
+
 namespace arch
 {
 
@@ -26,8 +33,9 @@ class resource_t
 public:
     std::string name;
     size_t count;
+    scheduling_direction_t    direction;
 
-    resource_t(std::string n) : name(n)
+    resource_t(std::string n, scheduling_direction_t dir) : name(n), direction(dir)
     {
     }
 
@@ -53,8 +61,9 @@ public:
     qubit_resource_t* clone() && { return new qubit_resource_t(std::move(*this)); }
 
     std::vector<size_t> state; // qubit q is busy till cycle=state[q]
-    qubit_resource_t(ql::quantum_platform & platform) : resource_t("qubits")
+    qubit_resource_t(ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("qubits", dir)
     {
+        // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
         state.resize(count);
         for(size_t i=0; i<count; i++)
@@ -71,11 +80,11 @@ public:
             // DOUT(" available? op_start_cycle: " << op_start_cycle << "  qubit: " << q << " is busy till cycle : " << state[q]);
             if( op_start_cycle < state[q] )
             {
-                // DOUT("    qubit resource busy ...");
+                // DOUT("    " << name << " resource busy ...");
                 return false;
             }
         }
-        // DOUT("    qubit resource available ...");
+        // DOUT("    " << name << " resource available ...");
         return true;
     }
 
@@ -102,8 +111,9 @@ public:
     std::vector<std::string> operations;    // with operation_name==operations[q]
     std::map<size_t,size_t> qubit2qwg;      // on qwg==qubit2qwg[q]
 
-    qwg_resource_t(ql::quantum_platform & platform) : resource_t("qwgs")
+    qwg_resource_t(ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("qwgs", dir)
     {
+        // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
         state.resize(count);
         operations.resize(count);
@@ -116,7 +126,7 @@ public:
         auto & constraints = platform.resources[name]["connection_map"];
         for (json::iterator it = constraints.begin(); it != constraints.end(); ++it)
         {
-            // DOUT(it.key() << " : " << it.value() );
+            // COUT(it.key() << " : " << it.value() );
             size_t qwgNo = stoi( it.key() );
             auto & connected_qubits = it.value();
             for(auto & q : connected_qubits)
@@ -137,13 +147,13 @@ public:
                 {
                     if( operations[ qubit2qwg[q] ] != operation_name )
                     {
-                        // DOUT("    qwg resource busy ");
+                        // DOUT("    " << name << " resource busy ...");
                         return false;
                     }
                 }
             }
         }
-        // DOUT("    qwg resource available ...");
+        // DOUT("    " << name << " resource available ...");
         return true;
     }
 
@@ -176,8 +186,9 @@ public:
     std::vector<size_t> state; // is busy till cycle
     std::map<size_t,size_t> qubit2meas;
 
-    meas_resource_t(ql::quantum_platform & platform) : resource_t("meas_units")
+    meas_resource_t(ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("meas_units", dir)
     {
+        // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
         state.resize(count);
         start_cycle.resize(count);
@@ -213,12 +224,12 @@ public:
                     // same cycle, then it should wait for current measurement to finish
                     if( op_start_cycle < state[ qubit2meas[q] ] )
                     {
-                        // DOUT("    measure resource busy ");
+                        // DOUT("    " << name << " resource busy ...");
                         return false;
                     }
                 }
             }
-            // DOUT("    measure resource available ...");
+            // DOUT("    " << name << " resource available ...");
         }
         return true;
     }
@@ -251,8 +262,9 @@ public:
     std::map< qubits_pair_t, size_t > qubits2edge;
     std::map<size_t, std::vector<size_t> > edge2edges;
 
-    edge_resource_t(ql::quantum_platform & platform) : resource_t("edges")
+    edge_resource_t(ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("edges", dir)
     {
+        // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
         state.resize(count);
 
@@ -283,7 +295,7 @@ public:
         auto & constraints = platform.resources[name]["connection_map"];
         for (json::iterator it = constraints.begin(); it != constraints.end(); ++it)
         {
-            // COUT(it.key() << " : " << it.value() << "\n";
+            // COUT(it.key() << " : " << it.value() << "\n");
             size_t edgeNo = stoi( it.key() );
             auto & connected_edges = it.value();
             for(auto & e : connected_edges)
@@ -314,11 +326,11 @@ public:
                 {
                     if( op_start_cycle < state[e] )
                     {
-                        // DOUT("    edge resource busy ");
+                        // DOUT("    " << name << " resource busy ...");
                         return false;
                     }
                 }
-                // DOUT("    edge resource available ...");
+                // DOUT("    " << name << " resource available ...");
             }
             else
             {
@@ -388,8 +400,9 @@ public:
     std::map< qubits_pair_t, size_t > qubitpair2edge;           // map: pair of qubits to edge (from grid configuration)
     std::map<size_t, std::vector<size_t> > edge_detunes_qubits; // map: edge to vector of qubits that edge detunes (resource desc.)
 
-    detuned_qubits_resource_t(ql::quantum_platform & platform) : resource_t("detuned_qubits")
+    detuned_qubits_resource_t(ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("detuned_qubits", dir)
     {
+        // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
         state.resize(count);
         operations.resize(count);
@@ -427,7 +440,7 @@ public:
         auto & constraints = platform.resources[name]["connection_map"];
         for (json::iterator it = constraints.begin(); it != constraints.end(); ++it)
         {
-            // COUT(it.key() << " : " << it.value() << "\n";
+            // COUT(it.key() << " : " << it.value() << "\n");
             size_t edgeNo = stoi( it.key() );
             auto & detuned_qubits = it.value();
             for(auto & q : detuned_qubits)
@@ -460,7 +473,7 @@ public:
                     {
                         if( operations[q] != operation_type || op_start_cycle < starting[q] )
                         {
-                            // DOUT("    detuned_qubits resource busy for a flux");
+                            // DOUT("    " << name << " resource busy for a two-qubit gate...");
                             return false;
                         }
                     }
@@ -483,14 +496,14 @@ public:
                 {
                     if( operations[q] != operation_type || op_start_cycle < starting[q] )
                     {
-                        // DOUT("    detuned_qubits resource busy for a rotation");
+                        // DOUT("    " << name << " resource busy for a rotation ...");
                         return false;
                     }
                 }
                 // state[q] <= op_start_cycle || operations[q] == operation_type && starting[q] <= op_start_cycle
             }
         }
-        // DOUT("    detuned_qubits resource available ...");
+        // DOUT("    " << name << " resource available ...");
         return true;
     }
 
@@ -545,47 +558,52 @@ public:
 class resource_manager_t
 {
 public:
+
     std::vector<resource_t*> resource_ptrs;
 
     // constructor needed by mapper::FreeCycle to bridge time from its construction to its Init
     // see the note on the use of constructors and Init functions at the start of mapper.h
     resource_manager_t()
     {
-        // DOUT("Constructing virgin resouce_manager_t");
+        DOUT("Constructing virgin resouce_manager_t");
     }
 
-    resource_manager_t( ql::quantum_platform & platform )
+    // backward compatible delegating constructor, only doing forward_scheduling
+    resource_manager_t( ql::quantum_platform & platform) : resource_manager_t( platform, forward_scheduling) {}
+
+    resource_manager_t( ql::quantum_platform & platform, scheduling_direction_t dir )
     {
-        // DOUT("Constructing inited resouce_manager_t");
-        // COUT("New one with no of resources : " << platform.resources.size());
+        DOUT("Constructing inited resouce_manager_t");
+        DOUT("New one for direction " << dir << " with no of resources : " << platform.resources.size() );
         for (json::iterator it = platform.resources.begin(); it != platform.resources.end(); ++it)
         {
-            // COUT(it.key() << " : " << it.value() << "\n";
+            // COUT(it.key() << " : " << it.value() << "\n");
             std::string n = it.key();
 
+            // DOUT("... about to create " << n << " resource");
             if( n == "qubits")
             {
-                resource_t * ares = new qubit_resource_t(platform);
+                resource_t * ares = new qubit_resource_t(platform, dir);
                 resource_ptrs.push_back( ares );
             }
             else if( n == "qwgs")
             {
-                resource_t * ares = new qwg_resource_t(platform);
+                resource_t * ares = new qwg_resource_t(platform, dir);
                 resource_ptrs.push_back( ares );
             }
             else if( n == "meas_units")
             {
-                resource_t * ares = new meas_resource_t(platform);
+                resource_t * ares = new meas_resource_t(platform, dir);
                 resource_ptrs.push_back( ares );
             }
             else if( n == "edges")
             {
-                resource_t * ares = new edge_resource_t(platform);
+                resource_t * ares = new edge_resource_t(platform, dir);
                 resource_ptrs.push_back( ares );
             }
             else if( n == "detuned_qubits")
             {
-                resource_t * ares = new detuned_qubits_resource_t(platform);
+                resource_t * ares = new detuned_qubits_resource_t(platform, dir);
                 resource_ptrs.push_back( ares );
             }
             else
@@ -594,6 +612,7 @@ public:
                 throw ql::exception("[x] Error : Un-modelled resource: "+n+" !",false);
             }
         }
+        // DOUT("Done constructing inited resouce_manager_t");
     }
 
     void Print(std::string s)
@@ -605,7 +624,7 @@ public:
     // runs before shallow destruction using synthesized resource_manager_t destructor
     ~resource_manager_t()
     {
-        // DOUT("Destroying resource_manager_t");
+        DOUT("Destroying resource_manager_t");
         for(auto rptr : resource_ptrs)
         {
             delete rptr;
@@ -645,25 +664,30 @@ public:
     bool available(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
         std::string & operation_type, std::string & instruction_type, size_t operation_duration)
     {
-        // COUT("checking availablility of resources for: " << ins->qasm());
+        // DOUT("checking availability of resources for: " << ins->qasm());
         for(auto rptr : resource_ptrs)
         {
+            // DOUT("... checking availability for resource " << rptr->name);
             if( rptr->available(op_start_cycle, ins, operation_name, operation_type, instruction_type, operation_duration) == false)
             {
+                // DOUT("... resource " << rptr->name << "not available");
                 return false;
             }
         }
+        // DOUT("all resources available for: " << ins->qasm());
         return true;
     }
 
     void reserve(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
         std::string & operation_type, std::string & instruction_type, size_t operation_duration)
     {
-        // COUT("reserving resources for: " << ins->qasm());
+        // DOUT("reserving resources for: " << ins->qasm());
         for(auto rptr : resource_ptrs)
         {
+            // DOUT("... reserving resource " << rptr->name);
             rptr->reserve(op_start_cycle, ins, operation_name, operation_type, instruction_type, operation_duration);
         }
+        // DOUT("all resources reserved for: " << ins->qasm());
     }
 };
 

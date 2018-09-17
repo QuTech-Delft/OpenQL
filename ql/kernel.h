@@ -1004,47 +1004,50 @@ public:
     void schedule(size_t qubits, quantum_platform platform, std::string& sched_qasm, std::string& sched_dot)
     {
         std::string scheduler = ql::options::get("scheduler");
-
-#ifndef __disable_lemon__
-        IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
-        // DOUT("Qasm at start of kernel::schedule size=" << c.size() << ":");
-        // DOUT(qasm());
-        // DOUT("Qasm at start of kernel::schedule END");
-
-        Scheduler sched;
-        sched.Init(qubits, c, platform);
-        // sched.Print();
-        // sched.PrintMatrix();
-        // sched.PrintDot();
-
         if("no" == scheduler)
         {
+            IOUT( " skipping scheduling the quantum kernel '" << name << "'...");
             sched_qasm = "";
-        }
-        else if("ASAP" == scheduler)
-        {
-            // sched.PrintScheduleASAP();
-            // sched.PrintDotScheduleASAP();
-            // sched_dot = sched.GetDotScheduleASAP();
-            // sched.PrintQASMScheduledASAP();
-            ql::ir::bundles_t bundles = sched.schedule_asap();
-            sched_qasm = ql::ir::qasm(bundles);
-
-        }
-        else if("ALAP" == scheduler)
-        {
-            // sched.PrintScheduleALAP();
-            // sched.PrintDotScheduleALAP();
-            // sched_dot = sched.GetDotScheduleALAP();
-            // sched.PrintQASMScheduledALAP();
-            ql::ir::bundles_t bundles = sched.schedule_alap();
-            sched_qasm = ql::ir::qasm(bundles);
         }
         else
         {
-            EOUT("Unknown scheduler");
-        }
+#ifndef __disable_lemon__
+	        IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
+	        // DOUT("Qasm at start of kernel::schedule size=" << c.size() << ":");
+	        // DOUT(qasm());
+	        // DOUT("Qasm at start of kernel::schedule END");
+	
+	        Scheduler sched;
+	        sched.Init(qubits, c, platform);
+	        // sched.Print();
+	        // sched.PrintMatrix();
+	        // sched.PrintDot();
+	
+	        if("ASAP" == scheduler)
+	        {
+	            // sched.PrintScheduleASAP();
+	            // sched.PrintDotScheduleASAP();
+	            // sched_dot = sched.GetDotScheduleASAP();
+	            // sched.PrintQASMScheduledASAP();
+	            ql::ir::bundles_t bundles = sched.schedule_asap();
+	            sched_qasm = ql::ir::qasm(bundles);
+	
+	        }
+	        else if("ALAP" == scheduler)
+	        {
+	            // sched.PrintScheduleALAP();
+	            // sched.PrintDotScheduleALAP();
+	            // sched_dot = sched.GetDotScheduleALAP();
+	            // sched.PrintQASMScheduledALAP();
+	            ql::ir::bundles_t bundles = sched.schedule_alap();
+	            sched_qasm = ql::ir::qasm(bundles);
+	        }
+	        else
+	        {
+	            EOUT("Unknown scheduler");
+	        }
 #endif // __disable_lemon__
+        }
     }
 
     std::vector<circuit*> split_circuit(circuit x)
