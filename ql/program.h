@@ -18,6 +18,7 @@
 #include <ql/arch/cbox_eqasm_compiler.h>
 #include <ql/arch/cc_light_eqasm_compiler.h>
 #include <ql/arch/quantumsim_eqasm_compiler.h>
+#include <ql/arch/cc/eqasm_backend_cc.h>
 
 static unsigned long phi_node_count = 0;
 
@@ -37,8 +38,8 @@ class quantum_program
       std::vector<float>          sweep_points;
       std::vector<quantum_kernel> kernels;
 
-   public: 
-      std::string           name;      
+   public:
+      std::string           name;
       ql::quantum_platform  platform;
       size_t                qubit_count;
       size_t                creg_count;
@@ -47,7 +48,7 @@ class quantum_program
 
 
    public:
-      quantum_program(std::string n, quantum_platform platf, size_t nqubits, size_t ncregs) 
+      quantum_program(std::string n, quantum_platform platf, size_t nqubits, size_t ncregs)
             : name(n), platform(platf), qubit_count(nqubits), creg_count(ncregs)
       {
          default_config = true;
@@ -78,6 +79,10 @@ class quantum_program
          {
             backend_compiler = new ql::arch::quantumsim_eqasm_compiler();
          }
+         else if (eqasm_compiler_name == "eqasm_backend_cc" )
+         {
+            backend_compiler = new ql::arch::eqasm_backend_cc();
+         }
          else
          {
             EOUT("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
@@ -106,7 +111,7 @@ class quantum_program
                   ((gtype == __classical_gate__) && (op >= creg_count)) ||
                   ((gtype != __classical_gate__) && (op >= qubit_count))
                  )
-               {   
+               {
                    EOUT("Out of range operand(s) for operation: '" << gname << "'");
                    throw ql::exception("Out of range operand(s) for operation: '"+gname+"' !",false);
                }
