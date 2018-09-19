@@ -18,7 +18,7 @@
 #include "ql/gate.h"
 #include "ql/circuit.h"
 #include "ql/ir.h"
-#include "ql/arch/cc_light_resource_manager.h"
+#include "ql/arch/cc_light/cc_light_resource_manager.h"     // FIXME(WJV): uses specific backend code (is it really specific to cc_light?)
 
 using namespace std;
 using namespace lemon;
@@ -34,9 +34,9 @@ private:
     ListDigraph::NodeMap<ql::gate*> instruction;
     ListDigraph::NodeMap<std::string> name;
     ListDigraph::ArcMap<int> weight;
-    //TODO it might be more readable to change 'cause' to string 
+    //TODO it might be more readable to change 'cause' to string
     //   to accomodate/print both r0, q0 operands as cause
-    ListDigraph::ArcMap<int> cause; 
+    ListDigraph::ArcMap<int> cause;
     ListDigraph::ArcMap<int> depType;
 
     ListDigraph::NodeMap<double> dist;
@@ -1324,7 +1324,7 @@ public:
 	    // When the complexity becomes a problem, it is proposed to rewrite the algorithm accordingly.
 
 	    long pred_cycle = curr_cycle - 1;	// signed because can become negative
-	   
+
 	    // target size of each bundle is number of gates to go divided by number of non-empty cycles to go
 	    // it averages over non-empty bundles instead of all bundles because the latter would be very strict
 	    // it is readjusted to cater for dips in bundle size caused by local dependence chains
@@ -1347,7 +1347,7 @@ public:
 
 		    // candidate's result, when moved, must be ready before end-of-circuit and before used
 		    n_completion_cycle = curr_cycle + std::ceil(static_cast<float>(instruction[n]->duration)/cycle_time);
-		    if (n_completion_cycle > cycle_count) 
+		    if (n_completion_cycle > cycle_count)
 		    {
 		        forward_n = false;
 		    }

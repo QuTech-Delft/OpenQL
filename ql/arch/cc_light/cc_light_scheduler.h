@@ -19,7 +19,7 @@
 #include <ql/ir.h>
 #include <ql/circuit.h>
 #include <ql/scheduler.h>
-#include <ql/arch/cc_light_resource_manager.h>
+#include <ql/arch/cc_light/cc_light_resource_manager.h>
 
 #include <iomanip>
 #include <map>
@@ -45,7 +45,7 @@ std::string get_cc_light_instruction_name(std::string & id, ql::quantum_platform
         {
             EOUT("cc_light_instr not defined for instruction: " << id << " !");
             throw ql::exception("Error : cc_light_instr not defined for instruction: "+id+" !",false);
-        }                    
+        }
         // DOUT("cc_light_instr name: " << cc_light_instr_name);
     }
     else
@@ -57,7 +57,7 @@ std::string get_cc_light_instruction_name(std::string & id, ql::quantum_platform
 }
 
 
-ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt, 
+ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
     ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Scheduling CC-Light instructions ...");
@@ -73,7 +73,7 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
         auto secIt1 = abundle.parallel_sections.begin();
         auto firstInsIt = secIt1->begin();
         auto itype = (*(firstInsIt))->type();
-        
+
         if(__classical_gate__ == itype)
         {
             continue;
@@ -129,7 +129,7 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
 }
 
 
-ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt, 
+ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
     ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Resource constraint scheduling of CC-Light instructions ...");
