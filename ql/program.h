@@ -15,7 +15,7 @@
 #include <ql/kernel.h>
 #include <ql/interactionMatrix.h>
 #include <ql/eqasm_compiler.h>
-#include <ql/arch/cbox_eqasm_compiler.h>
+#include <ql/arch/cbox/cbox_eqasm_compiler.h>
 #include <ql/arch/cc_light_eqasm_compiler.h>
 #include <ql/arch/quantumsim_eqasm_compiler.h>
 #include <ql/arch/cc/eqasm_backend_cc.h>
