@@ -138,7 +138,7 @@ ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
     sched.Init(ckt, platform, nqubits, ncreg);
     ql::ir::bundles_t bundles1 = sched.schedule_asap(rm, platform);
 
-    // combine parallel instrcutions of same type from different sections
+    // combine parallel instructions of same type from different sections
     // into a single section
     for (ql::ir::bundle_t & abundle : bundles1)
     {

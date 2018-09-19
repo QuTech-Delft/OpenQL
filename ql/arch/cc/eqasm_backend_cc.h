@@ -1,8 +1,9 @@
 /**
- * @file   quantumsim_eqasm_compiler.h
- * @date   03/2018
- * @author Imran Ashraf
- * @brief  quantumsim compiler implementation
+ * @file   eqasm_backend_cc
+ * @date   201807
+ * @author
+ * @brief  eqasm backend for the Central Controller
+ * Based on quantumsim_eqasm_compiler.h by Imran Ashraf and cc_light_eqasm_compiler.h
  */
 
 #ifndef QL_ARCH_CC_EQASM_BACKEND_CC_H
@@ -13,6 +14,7 @@
 #include <ql/circuit.h>
 #include <ql/scheduler.h>
 #include <ql/eqasm_compiler.h>
+#include <ql/arch/cc_light/cc_light_resource_manager.h>
 
 namespace ql
 {
@@ -27,10 +29,68 @@ public:
 
 public:
     /*
-     * compile qasm to cc
+     * compile qasm to Central Controller
+     * NB: based on cc_light_scheduler.h, commit f34c0d9
      */
-    void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& platform)
+    void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform)
     {
+        IOUT("[-] compiling qasm code ...");
+        if (ckt.empty())
+        {
+            EOUT("empty circuit, eqasm compilation aborted !");
+            return;
+        }
+        IOUT("[-] loading circuit (" <<  ckt.size() << " gates)...");
+
+//        load_hw_settings(platform);
+//        generate_opcode_cs_files(platform);
+
+
+        // schedule
+        // ql::ir sched_ir = cc_light_schedule(ckt, platform, num_qubits);
+
+        // schedule with platform resource constraints
+        ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, num_qubits);
+
+        // write RC scheduled bundles with parallelism as simple QASM file
+        std::stringstream sched_qasm;
+        sched_qasm <<"qubits " << num_qubits << "\n\n"
+                   << ".fused_kernels";
+        string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
+        IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << fname);
+        sched_qasm << ql::ir::qasm(bundles);
+        ql::utils::write_file(fname, sched_qasm.str());
+
+        MaskManager mask_manager;
+        // write scheduled bundles with parallelism in cc-light syntax
+        WriteCCLightQisa(prog_name, platform, mask_manager, bundles);
+
+        // write scheduled bundles with parallelism in cc-light syntax with time-stamps
+        WriteCCLightQisaTimeStamped(prog_name, platform, mask_manager, bundles);
+
+        // time analysis
+        // total_exec_time = time_analysis();
+
+        // compensate for latencies
+        // compensate_latency();
+
+        // reschedule
+        // resechedule();
+
+        // dump_instructions();
+
+        // decompose meta-instructions
+        // decompose_instructions();
+
+        // reorder instructions
+        // reorder_instructions();
+
+        // insert waits
+
+        emit_eqasm();
+    }
+
+#if 0   // from quantumsim
         IOUT("Compiling qasm code ...");
         if (c.empty())
         {
@@ -56,15 +116,19 @@ public:
 
         // write scheduled bundles for quantumsim
         write_quantumsim_program(prog_name, num_qubits, bundles, platform);
+#endif
     }
 
 private:
+
+
+#if 0   // from quantumsim
     ql::ir::bundles_t quantumsim_schedule(  std::string prog_name, size_t nqubits,
             ql::circuit & ckt, ql::quantum_platform & platform)
     {
         IOUT("Scheduling Quantumsim instructions ...");
         Scheduler sched;
-        sched.Init(ckt, platform, nqubits, 0); //no creg in quantumsim, so creg_count = 0
+        sched.Init(ckt, platform, nqubits, 0); // no creg in quantumsim, so creg_count = 0
         ql::ir::bundles_t bundles = sched.schedule_asap();
 
         IOUT("Scheduling Quantumsim instructions [Done].");
@@ -166,6 +230,7 @@ private:
         fout.close();
         IOUT("Writing scheduled Quantumsim program [Done]");
     }
+#endif
 };
 
 } // arch

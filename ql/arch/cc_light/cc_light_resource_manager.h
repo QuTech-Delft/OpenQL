@@ -2,7 +2,7 @@
  * @file   cc_light_resource_manager.h
  * @date   09/2017
  * @author Imran Ashraf
- * @brief  Resource mangement for cc light platform
+ * @brief  Resource management for cc light platform
  */
 
 #ifndef _cclight_resource_manager_h
@@ -56,7 +56,7 @@ public:
     {
         for( auto q : ins->operands )
         {
-            DOUT(" available? curr op_start_cycle: " << op_start_cycle << "  qubit: " << q 
+            DOUT(" available? curr op_start_cycle: " << op_start_cycle << "  qubit: " << q
                 << " is busy till cycle : " << state[q]);
             if( op_start_cycle < state[q] )
             {
@@ -74,7 +74,7 @@ public:
         for( auto q : ins->operands )
         {
             state[q]  = op_start_cycle + operation_duration;
-            DOUT("reserved. curr op_start_cycle: " << op_start_cycle << " qubit: " << q 
+            DOUT("reserved. curr op_start_cycle: " << op_start_cycle << " qubit: " << q
                 << " reserved till cycle: " << state[q]);
         }
     }
@@ -119,8 +119,8 @@ public:
         {
             for( auto q : ins->operands )
             {
-                DOUT(" available? curr op_start_cycle: " << op_start_cycle << "  qwg: " << qubit2qwg[q] 
-                       << " is busy till op_start_cycle : " << state[ qubit2qwg[q] ] 
+                DOUT(" available? curr op_start_cycle: " << op_start_cycle << "  qwg: " << qubit2qwg[q]
+                       << " is busy till op_start_cycle : " << state[ qubit2qwg[q] ]
                        << " for operation: " << operations[ qubit2qwg[q] ]);
                 if( op_start_cycle < state[ qubit2qwg[q] ] )
                 {
@@ -147,8 +147,8 @@ public:
                 if( state[ qubit2qwg[q] ] < op_start_cycle + operation_duration)
                     state[ qubit2qwg[q] ]  = op_start_cycle + operation_duration;
                 operations[ qubit2qwg[q] ] = operation_name;
-                DOUT("reserved. curr op_start_cycle: " << op_start_cycle << " qwg: " << qubit2qwg[q] 
-                    << " reserved till cycle: " << state[ qubit2qwg[q] ] 
+                DOUT("reserved. curr op_start_cycle: " << op_start_cycle << " qwg: " << qubit2qwg[q]
+                    << " reserved till cycle: " << state[ qubit2qwg[q] ]
                     << " for operation: " << operations[ qubit2qwg[q] ] );
             }
         }
@@ -193,7 +193,7 @@ public:
         {
             for(auto q : ins->operands)
             {
-                DOUT(" available? curr op_start_cycle: " << op_start_cycle << "  meas: " << qubit2meas[q] 
+                DOUT(" available? curr op_start_cycle: " << op_start_cycle << "  meas: " << qubit2meas[q]
                           << " is busy till cycle : " << state[ qubit2meas[q] ] );
                 if( op_start_cycle != start_cycle[ qubit2meas[q] ] )
                 {
@@ -221,7 +221,7 @@ public:
             {
                 start_cycle[ qubit2meas[q] ] = op_start_cycle;
                 state[ qubit2meas[q] ] = op_start_cycle + operation_duration;
-                DOUT("reserved. curr op_start_cycle: " << op_start_cycle << " meas: " << qubit2meas[q] 
+                DOUT("reserved. curr op_start_cycle: " << op_start_cycle << " meas: " << qubit2meas[q]
                     << " reserved till cycle: " << state[ qubit2meas[q] ] );
             }
         }
@@ -333,8 +333,8 @@ public:
                 state[e] = op_start_cycle + operation_duration;
             }
 
-            DOUT("reserved. curr op_start_cycle: " << op_start_cycle << " edge: " << edge_no 
-                << " reserved till cycle: " << state[ edge_no ] 
+            DOUT("reserved. curr op_start_cycle: " << op_start_cycle << " edge: " << edge_no
+                << " reserved till cycle: " << state[ edge_no ]
                 << " for operation: " << ins->name);
         }
     }

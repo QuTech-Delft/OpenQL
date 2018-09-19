@@ -690,7 +690,7 @@ public:
 
 
     /*
-     * program-level compilaation of qasm to cc_light_eqasm
+     * program-level compilation of qasm to cc_light_eqasm
      */
     void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform)
     {

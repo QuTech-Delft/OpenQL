@@ -35,7 +35,7 @@ private:
     ListDigraph::NodeMap<std::string> name;
     ListDigraph::ArcMap<int> weight;
     //TODO it might be more readable to change 'cause' to string
-    //   to accomodate/print both r0, q0 operands as cause
+    //   to accommodate/print both r0, q0 operands as cause
     ListDigraph::ArcMap<int> cause;
     ListDigraph::ArcMap<int> depType;
 
