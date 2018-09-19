@@ -19,3 +19,12 @@ openql/openql.py
 tests/cc/test_output
 .ipynb_checkpoints
 doc/notebooks/test_output
+
+.pytest_cache
+
+# Sphinx generated files
+doc/source/.doctrees
+doc/source/_autosummary
+
+# JetBrains IDEs settings
+.idea
