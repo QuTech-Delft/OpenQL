@@ -17,7 +17,10 @@ pipeline {
                 sh '''
                         . ./env/bin/activate && 
                         pip3 --cache-dir /var/pip_cache install pytest numpy &&
-                        pip3 install -e .
+                        pip3 install -e . &&
+                        git clone git@github.com:QE-Lab/eQASM_Assembler.git &&
+                        cd qisa-as &&
+                        pip3 install .
                    '''
             }
         }
