@@ -10,6 +10,7 @@ Welcome to OpenQL's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   configuration_specification
    reference
 
 Indices and tables

@@ -148,7 +148,7 @@ Based on this, `k.gate('rx180', 3)` will be decomposed to x(q3). Simmilarly, mul
 ## Appendix: Device channel to qubit mapping
 A mapping is required to map the user-defined qubit name into a physical qubit address. The physical qubit address and the directed edge address are defined in the following figure and table:
 
-![Qubit and edge number definition](qubit_number.png)
+![Qubit and edge number definition](fig/qubit_number.png)
 
 | edge address| left qubit address | right qubit address|
 |----|:------:|:------------:|
