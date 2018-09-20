@@ -145,6 +145,34 @@ test_detuned(std::string v, std::string scheduler)
     prog.compile( );
 }
 
+// test detuned_qubits resource constraints mapping
+void
+test_detuned2(std::string v, std::string scheduler)
+{
+    // create and set platform
+    std::string prog_name = "test_" + v + "_scheduler=" + scheduler;
+    std::string kernel_name = "kernel_" + v + "_scheduler=" + scheduler;
+
+    ql::quantum_platform starmon("starmon","test_alap_rc_schedule.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, 7, 0);
+    ql::quantum_kernel k(kernel_name, starmon, 7, 0);
+
+    // preferably cz's parallel, but not with x 3
+    k.gate("cz", 0,2);
+    k.gate("cz", 1,4);
+    k.gate("x", 3);
+
+    // likewise, while y 3, no cz on 0,2 or 1,4
+    k.gate("y", 3);
+    k.gate("cz", 2,5);
+    k.gate("cz", 4,6);
+
+    prog.add(k);
+    ql::options::set("scheduler", scheduler);
+    prog.compile( );
+}
+
 // one cnot with operands that are neighbors in s7
 void
 test_0(std::string v, std::string scheduler)
@@ -261,13 +289,23 @@ int main(int argc, char ** argv)
     ql::utils::logger::set_log_level("LOG_DEBUG");
 
     test_qwg("qwg", "ASAP");
+    test_qwg("qwg", "ALAP");
     test_qwg2("qwg2", "ASAP");
+    test_qwg2("qwg2", "ALAP");
     test_singledim("singledim", "ASAP");
+    test_singledim("singledim", "ALAP");
     test_edge("edge", "ASAP");
+    test_edge("edge", "ALAP");
     test_detuned("detuned", "ASAP");
+    test_detuned("detuned", "ALAP");
+    test_detuned2("detuned2", "ASAP");
+    test_detuned2("detuned2", "ALAP");
     test_0("0", "ASAP");
+    test_0("0", "ALAP");
     test_1("1", "ASAP");
+    test_1("1", "ALAP");
     test_7("7", "ASAP");
+    test_7("7", "ALAP");
 
     return 0;
 }
