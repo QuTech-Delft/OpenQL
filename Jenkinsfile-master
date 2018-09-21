@@ -13,7 +13,6 @@ pipeline {
                 sh 'pwd'
                 sh 'rm -rf eQASM_Assembler'
                 sh 'GIT_SSH_COMMAND="ssh -i /var/jenkins_home/.ssh/jenkins_eqasm_assembler_deploy" git clone git@github.com:QE-Lab/eQASM_Assembler.git'
-                git@github.com:QE-Lab/libqasm.git
             }
         }
         stage('Checkout libqasm'){
@@ -23,8 +22,8 @@ pipeline {
                 }
                 sh 'pwd'
                 sh 'rm -rf libqasm'
-                sh 'GIT_SSH_COMMAND="ssh -i /var/jenkins_home/.ssh/jenkins_eqasm_assembler_deploy" git clone git@github.com:QE-Lab/libqasm.git'
-                sh 'cd libqasm && GIT_SSH_COMMAND="ssh -i /var/jenkins_home/.ssh/jenkins_eqasm_assembler_deploy"git submodule update --init --recursive'
+                sh 'GIT_SSH_COMMAND="ssh -i /var/jenkins_home/.ssh/jenkins_libqasm_deploy_id_rsa" git clone git@github.com:QE-Lab/libqasm.git'
+                sh 'cd libqasm && GIT_SSH_COMMAND="ssh -i /var/jenkins_home/.ssh/jenkins_libqasm_deploy_id_rsa" git submodule update --init --recursive'
             }
         }
         stage('Build') {
@@ -45,7 +44,7 @@ pipeline {
                             . ./env/bin/activate &&
                             pip3 --cache-dir /var/pip_cache install pytest numpy &&
                             pip3 install -e . &&
-                            python3 libqasm/qasm_flex_bison/setup.py --install --user
+                            python3 libqasm/qasm_flex_bison/setup.py install
                             pip3 install eQASM_Assembler/qisa-as
                        '''
                 }
