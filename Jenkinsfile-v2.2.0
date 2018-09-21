@@ -1,0 +1,59 @@
+pipeline {
+    agent any
+    environment {
+       PERSIST_WORKSPACE = ""
+   }
+
+    stages {
+        stage('Checkout eQASM_Assembler'){
+            steps {
+                script {
+                    PERSIST_WORKSPACE = WORKSPACE
+                }
+                sh 'pwd'
+                sh 'rm -rf eQASM_Assembler'
+                sh 'GIT_SSH_COMMAND="ssh -i /var/jenkins_home/.ssh/jenkins_eqasm_assembler_deploy" git clone --branch v2.2.0 git@github.com:QE-Lab/eQASM_Assembler.git'
+            }
+        }
+        stage('Build') {
+            agent {
+                dockerfile {
+                    filename 'Dockerfile.build'
+                }
+            }
+            steps {
+                dir(PERSIST_WORKSPACE) {
+                    sh 'pwd'
+                    sh 'rm -Rf cbuild'
+                    sh 'mkdir cbuild'
+                    sh 'cd cbuild/ && cmake .. && make'
+                    sh 'rm -Rf env'
+                    sh 'python3 -m venv env'
+                    sh '''
+                            . ./env/bin/activate &&
+                            pip3 --cache-dir /var/pip_cache install pytest numpy &&
+                            pip3 install -e . &&
+                            cd eQASM_Assembler/qisa-as &&
+                            pip3 install .
+                       '''
+                }
+           }
+        }
+        stage('Test') {
+            agent {
+                dockerfile {
+                    filename 'Dockerfile.build'
+                }
+            }
+            steps {
+                dir(PERSIST_WORKSPACE) {
+                    sh '''
+                            . ./env/bin/activate &&
+                            pytest --ignore=eQASM_Assembler/
+                       '''
+                }
+            }
+        }
+
+    }
+}
