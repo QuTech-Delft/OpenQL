@@ -17,7 +17,10 @@ pipeline {
                 sh '''
                         . ./env/bin/activate && 
                         pip3 --cache-dir /var/pip_cache install pytest numpy &&
-                        pip3 install -e .
+                        pip3 install -e . &&
+                        sh 'GIT_SSH_COMMAND="ssh -i /var/jenkins_home/.ssh/jenkins_eqasm_assembler_deploy" git clone --branch v2.2.0 git@github.com:QE-Lab/eQASM_Assembler.git' &&
+                        cd qisa-as &&
+                        pip3 install .
                    '''
             }
         }
