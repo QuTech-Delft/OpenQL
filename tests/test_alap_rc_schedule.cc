@@ -34,6 +34,7 @@ test_qwg(std::string v, std::string scheduler)
 }
 
 // test qwg concurrency
+// already shows issue 179
 void
 test_qwg2(std::string v, std::string scheduler)
 {
@@ -61,10 +62,10 @@ test_qwg2(std::string v, std::string scheduler)
     prog.compile( );
 }
 
-// demo single dimension resource constraint representation simple
-// this is a suboptimality that can be improved
+// issue #179
+// resource constrained scheduling misses opportunities for parallel execution
 void
-test_singledim(std::string v, std::string scheduler)
+test_issue179(std::string v, std::string scheduler)
 {
     // create and set platform
     std::string prog_name = "test_" + v + "_scheduler=" + scheduler;
@@ -117,7 +118,9 @@ test_edge(std::string v, std::string scheduler)
     prog.compile( );
 }
 
-// test detuned_qubits resource constraints mapping
+// issue #180
+// resource constrained scheduling lacks constraints on detuning effects
+// test cz blocking rotation and vice-versa
 void
 test_detuned(std::string v, std::string scheduler)
 {
@@ -145,7 +148,9 @@ test_detuned(std::string v, std::string scheduler)
     prog.compile( );
 }
 
-// test detuned_qubits resource constraints mapping
+// issue #180
+// resource constrained scheduling lacks constraints on detuning effects
+// test cz blocking rotation but not always
 void
 test_detuned2(std::string v, std::string scheduler)
 {
@@ -173,9 +178,11 @@ test_detuned2(std::string v, std::string scheduler)
     prog.compile( );
 }
 
-// one cnot with operands that are neighbors in s7
+// issue #166
+// scheduling ALAP not working as expected [Blocking] #166
+// test alap, example from Adriaan
 void
-test_0(std::string v, std::string scheduler)
+test_adriaan(std::string v, std::string scheduler)
 {
     // create and set platform
     std::string prog_name = "test_" + v + "_scheduler=" + scheduler;
@@ -186,22 +193,23 @@ test_0(std::string v, std::string scheduler)
     ql::quantum_program prog(prog_name, starmon, 7, 0);
     ql::quantum_kernel k(kernel_name, starmon, 7, 0);
 
-    k.gate("x", 0);
-    k.gate("x", 2);
+    k.gate("prepz", 0);
+    k.gate("prepz", 2);
+    for (int i=0; i<10; i++)
+        k.gate("x", 0);
 
-    // one cnot that is ok in trivial mapping
-    k.gate("cnot", 0,2);
-
-    k.gate("x", 0);
-    k.gate("x", 2);
+    for (int i=0; i<6; i++)
+        k.gate("rx90", 2);
+    k.gate("measure", 2);
+    k.gate("measure", 0);
 
     prog.add(k);
-
     ql::options::set("scheduler", scheduler);
     prog.compile( );
 }
 
-// all cnots with operands that are neighbors in s7
+// all cnots with operands that are neighbors in s7, so no mapping required
+// asap is different from alap in some details
 void
 test_1(std::string v, std::string scheduler)
 {
@@ -242,7 +250,7 @@ test_1(std::string v, std::string scheduler)
     prog.compile( );
 }
 
-// code with a lot of preps at the start
+// code with a lot of preps at the start and measures at the end
 // significant difference between ASAP and ALAP
 void
 test_7( std::string v, std::string scheduler)
@@ -263,19 +271,27 @@ test_7( std::string v, std::string scheduler)
     k.gate("prepz", 4);
     k.gate("prepz", 5);
     k.gate("prepz", 6);
+    // preps all end at same time, is the base of ASAP
 
-    k.gate("h", 0);	// qubit 0 critical
+    // rotations on q0, q2 and q5, mutually independent, also wrt resource use
+    k.gate("h", 0);	// qubit 0 in qwg0 10 cycles rotations
     k.gate("t", 0);
     k.gate("h", 0);
     k.gate("t", 0);
 
-    k.gate("h", 2);	// qubit 2 loaded
+    k.gate("h", 2);	// qubit 2 in qwg1 5 cycles rotations
     k.gate("t", 2);
 
-    k.gate("h", 4);	// qubit 4 medium loaded
+    k.gate("h", 5);	// qubit 4 in qwg2 2 cycles rotations
 
-    for (int j=0; j<7; j++)	// all qubits some load at the end
-        k.gate("x", j);
+    // measures all start at same time, is the horizon for ALAP
+    k.gate("measure", 0);
+    k.gate("measure", 1);
+    k.gate("measure", 2);
+    k.gate("measure", 3);
+    k.gate("measure", 4);
+    k.gate("measure", 5);
+    k.gate("measure", 6);
 
     prog.add(k);
 
@@ -292,16 +308,16 @@ int main(int argc, char ** argv)
     test_qwg("qwg", "ALAP");
     test_qwg2("qwg2", "ASAP");
     test_qwg2("qwg2", "ALAP");
-    test_singledim("singledim", "ASAP");
-    test_singledim("singledim", "ALAP");
+    test_issue179("issue179", "ASAP");
+    test_issue179("issue179", "ALAP");
     test_edge("edge", "ASAP");
     test_edge("edge", "ALAP");
     test_detuned("detuned", "ASAP");
     test_detuned("detuned", "ALAP");
     test_detuned2("detuned2", "ASAP");
     test_detuned2("detuned2", "ALAP");
-    test_0("0", "ASAP");
-    test_0("0", "ALAP");
+    test_adriaan("adriaan", "ASAP");
+    test_adriaan("adriaan", "ALAP");
     test_1("1", "ASAP");
     test_1("1", "ALAP");
     test_7("7", "ASAP");
