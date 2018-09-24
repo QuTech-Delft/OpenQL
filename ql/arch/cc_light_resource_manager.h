@@ -758,7 +758,7 @@ public:
             }
             else
             {
-                COUT("Error : Un-modelled resource: " << n );
+                COUT("Error : Un-modelled resource: '" << n << "'");
                 throw ql::exception("[x] Error : Un-modelled resource: "+n+" !",false);
             }
         }
