@@ -20,7 +20,6 @@ test_qwg(std::string v, std::string scheduler)
     std::string kernel_name = "kernel_" + v + "_scheduler=" + scheduler;
 
     ql::quantum_platform starmon("starmon","test_alap_rc_schedule.json");
-    ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, 7, 0);
     ql::quantum_kernel k(kernel_name, starmon, 7, 0);
 
@@ -43,7 +42,6 @@ test_qwg2(std::string v, std::string scheduler)
     std::string kernel_name = "kernel_" + v + "_scheduler=" + scheduler;
 
     ql::quantum_platform starmon("starmon","test_alap_rc_schedule.json");
-    ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, 7, 0);
     ql::quantum_kernel k(kernel_name, starmon, 7, 0);
 
@@ -72,7 +70,6 @@ test_issue179(std::string v, std::string scheduler)
     std::string kernel_name = "kernel_" + v + "_scheduler=" + scheduler;
 
     ql::quantum_platform starmon("starmon","test_alap_rc_schedule.json");
-    ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, 7, 0);
     ql::quantum_kernel k(kernel_name, starmon, 7, 0);
 
@@ -104,7 +101,6 @@ test_edge(std::string v, std::string scheduler)
     std::string kernel_name = "kernel_" + v + "_scheduler=" + scheduler;
 
     ql::quantum_platform starmon("starmon","test_alap_rc_schedule.json");
-    ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, 7, 0);
     ql::quantum_kernel k(kernel_name, starmon, 7, 0);
 
@@ -129,7 +125,6 @@ test_detuned(std::string v, std::string scheduler)
     std::string kernel_name = "kernel_" + v + "_scheduler=" + scheduler;
 
     ql::quantum_platform starmon("starmon","test_alap_rc_schedule.json");
-    ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, 7, 0);
     ql::quantum_kernel k(kernel_name, starmon, 7, 0);
 
@@ -159,7 +154,6 @@ test_detuned2(std::string v, std::string scheduler)
     std::string kernel_name = "kernel_" + v + "_scheduler=" + scheduler;
 
     ql::quantum_platform starmon("starmon","test_alap_rc_schedule.json");
-    ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, 7, 0);
     ql::quantum_kernel k(kernel_name, starmon, 7, 0);
 
@@ -189,7 +183,6 @@ test_adriaan(std::string v, std::string scheduler)
     std::string kernel_name = "kernel_" + v + "_scheduler=" + scheduler;
 
     ql::quantum_platform starmon("starmon","test_alap_rc_schedule.json");
-    ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, 7, 0);
     ql::quantum_kernel k(kernel_name, starmon, 7, 0);
 
@@ -218,7 +211,6 @@ test_1(std::string v, std::string scheduler)
     std::string kernel_name = "kernel_" + v + "_scheduler=" + scheduler;
 
     ql::quantum_platform starmon("starmon","test_alap_rc_schedule.json");
-    ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, 7, 0);
     ql::quantum_kernel k(kernel_name, starmon, 7, 0);
 
@@ -260,7 +252,6 @@ test_7( std::string v, std::string scheduler)
     std::string kernel_name = "kernel_" + v + "_scheduler=" + scheduler;
 
     ql::quantum_platform starmon("starmon","test_alap_rc_schedule.json");
-    ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, 7, 0);
     ql::quantum_kernel k(kernel_name, starmon, 7, 0);
 
