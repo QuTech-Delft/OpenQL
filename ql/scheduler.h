@@ -34,9 +34,9 @@ private:
     ListDigraph::NodeMap<ql::gate*> instruction;
     ListDigraph::NodeMap<std::string> name;
     ListDigraph::ArcMap<int> weight;
-    //TODO it might be more readable to change 'cause' to string 
+    //TODO it might be more readable to change 'cause' to string
     //   to accomodate/print both r0, q0 operands as cause
-    ListDigraph::ArcMap<int> cause; 
+    ListDigraph::ArcMap<int> cause;
     ListDigraph::ArcMap<int> depType;
 
     ListDigraph::NodeMap<double> dist;
@@ -585,7 +585,7 @@ public:
         if( !dag(graph) )
             EOUT("This digraph is not a DAG.");
 
-	// result is in reverse topological order!
+        // result is in reverse topological order!
         topologicalSort(graph, rorder);
 
 #ifdef DEBUG
@@ -1344,7 +1344,6 @@ public:
             }
         }
 
-
         // insert buffer - buffer delays
         DOUT("buffer-buffer delay insertion ... ");
         std::vector<std::string> operations_prev_bundle;
@@ -1391,7 +1390,7 @@ public:
 
     void compute_alap_cycle(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order, size_t max_cycle)
     {
-	// DOUT("Computing alap_cycle");
+        // DOUT("Computing alap_cycle");
         std::vector<ListDigraph::Node>::iterator currNode = order.begin();
         cycle[*currNode]=max_cycle;
         ++currNode;
@@ -1415,7 +1414,7 @@ public:
 
     void compute_asap_cycle(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
     {
-	// DOUT("Computing asap_cycle");
+        // DOUT("Computing asap_cycle");
         std::vector<ListDigraph::Node>::reverse_iterator currNode = order.rbegin();
         cycle[*currNode]=0; // src dummy in cycle 0
         ++currNode;
@@ -1440,207 +1439,209 @@ public:
 
     void schedule_alap_uniform_(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
     {
-	// algorithm based on "Balanced Scheduling and Operation Chaining in High-Level Synthesis for FPGA Designs"
-	// by David C. Zaretsky, Gaurav Mittal, Robert P. Dick, and Prith Banerjee
-	// Figure 3. Balanced scheduling algorithm
-	// Modifications:
-	// - dependency analysis in article figure 2 is O(n^2) because of set union
-	//	this has been left out, using our own linear dependency analysis creating a digraph
-	//	and using the alap values as measure instead of the dep set size computed in article's D[n]
-	// - balanced scheduling algorithm dominates with its O(n^2) when it cannot find a node to forward
-	//	no test has been devised yet to break the loop (figure 3, line 14-35)
-	// - targeted bundle size is adjusted each cycle and is number_of_gates_to_go/number_of_non_empty_bundles_to_go
-	//	this is more greedy, preventing oscillation around a target size based on all bundles,
-	//	because local variations caused by local dep chains create small bundles and thus leave more gates still to go
+        // algorithm based on "Balanced Scheduling and Operation Chaining in High-Level Synthesis for FPGA Designs"
+        // by David C. Zaretsky, Gaurav Mittal, Robert P. Dick, and Prith Banerjee
+        // Figure 3. Balanced scheduling algorithm
+        // Modifications:
+        // - dependency analysis in article figure 2 is O(n^2) because of set union
+        //   this has been left out, using our own linear dependency analysis creating a digraph
+        //   and using the alap values as measure instead of the dep set size computed in article's D[n]
+        // - balanced scheduling algorithm dominates with its O(n^2) when it cannot find a node to forward
+        //   no test has been devised yet to break the loop (figure 3, line 14-35)
+        // - targeted bundle size is adjusted each cycle and is number_of_gates_to_go/number_of_non_empty_bundles_to_go
+        //   this is more greedy, preventing oscillation around a target size based on all bundles,
+        //   because local variations caused by local dep chains create small bundles and thus leave more gates still to go
         //
-	// Oddly enough, it starts off with an ASAP schedule.
-	// After this, it moves nodes up at most to their ALAP cycle to fill small bundles to the targeted uniform length.
-	// It does this in a backward scan (as ALAP scheduling would do), so bundles at the highest cycles are filled first.
-	// Hence, the result resembles an ALAP schedule with excess bundle lengths solved by moving nodes down ("dough rolling").
+        // Oddly enough, it starts off with an ASAP schedule.
+        // After this, it moves nodes up at most to their ALAP cycle to fill small bundles to the targeted uniform length.
+        // It does this in a backward scan (as ALAP scheduling would do), so bundles at the highest cycles are filled first.
+        // Hence, the result resembles an ALAP schedule with excess bundle lengths solved by moving nodes down ("dough rolling").
 
-	DOUT("Performing ALAP UNIFORM Scheduling");
-	// order becomes a reversed topological order of the nodes
-	// don't know why it is done, since the nodes already are in topological order
-	// that they are is a consequence of dep graph computation which is based on this original order
+        DOUT("Performing ALAP UNIFORM Scheduling");
+        // order becomes a reversed topological order of the nodes
+        // don't know why it is done, since the nodes already are in topological order
+        // that they are is a consequence of dep graph computation which is based on this original order
         TopologicalSort(order);
 
         // compute cycle itself as asap as first approximation of result
-	// when schedule is already uniform, nothing changes
-	// this actually is schedule_asap_(cycle, order) but without topological sort
-	compute_asap_cycle(cycle, order);
-	size_t	cycle_count = cycle[*( order.begin() )];// order is reversed asap, so starts at cycle_count
+        // when schedule is already uniform, nothing changes
+        // this actually is schedule_asap_(cycle, order) but without topological sort
+        compute_asap_cycle(cycle, order);
+        size_t   cycle_count = cycle[*( order.begin() )];// order is reversed asap, so starts at cycle_count
 
         // compute alap_cycle
-	// when making asap bundles uniform in size in backward scan
-	// fill them by moving instructions from earlier bundles (lower cycle values)
-	// prefer to move those with highest alap (because that maximizes freedom)
+        // when making asap bundles uniform in size in backward scan
+        // fill them by moving instructions from earlier bundles (lower cycle values)
+        // prefer to move those with highest alap (because that maximizes freedom)
         ListDigraph::NodeMap<size_t> alap_cycle(graph);
-	compute_alap_cycle(alap_cycle, order, cycle_count);
+        compute_alap_cycle(alap_cycle, order, cycle_count);
 
-	// DOUT("Creating nodes_per_cycle");
-	// create nodes_per_cycle[cycle] = for each cycle the list of nodes at cycle cycle
-	// this is the basic map to be operated upon by the uniforming scheduler below;
-	// gate_count is computed to compute the target bundle size later
-        std::map<size_t,std::list<ListDigraph::Node>>	nodes_per_cycle;
-        std::vector<ListDigraph::Node>::iterator	it;
+        // DOUT("Creating nodes_per_cycle");
+        // create nodes_per_cycle[cycle] = for each cycle the list of nodes at cycle cycle
+        // this is the basic map to be operated upon by the uniforming scheduler below;
+        // gate_count is computed to compute the target bundle size later
+        std::map<size_t,std::list<ListDigraph::Node>> nodes_per_cycle;
+        std::vector<ListDigraph::Node>::iterator it;
         for ( it = order.begin(); it != order.end(); ++it)
-	{
+        {
             nodes_per_cycle[ cycle[*it] ].push_back( *it );
-	}
+        }
 
-	// DOUT("Displaying circuit and bundle statistics");
-	// to compute how well the algorithm is doing, two measures are computed:
-	// - the largest number of gates in a cycle in the circuit,
-	// - and the average number of gates in non-empty cycles
-	// this is done before and after uniform scheduling, and printed
-	size_t	max_gates_per_cycle = 0;
-	size_t	non_empty_bundle_count = 0;
-	size_t	gate_count = 0;
-	for (size_t curr_cycle = 0; curr_cycle != cycle_count; curr_cycle++)
-	{
-	    max_gates_per_cycle = std::max(max_gates_per_cycle, nodes_per_cycle[curr_cycle].size());
-	    if (int(nodes_per_cycle[curr_cycle].size()) != 0) non_empty_bundle_count++;
-	    gate_count += nodes_per_cycle[curr_cycle].size();
-	}
-	double avg_gates_per_cycle = double(gate_count)/cycle_count;
-	double avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
-	IOUT("... before uniform scheduling:"
-		<< " cycle_count=" << cycle_count
-		<< "; gate_count=" << gate_count
-		<< "; non_empty_bundle_count=" << non_empty_bundle_count
-		);
-	IOUT("... and max_gates_per_cycle=" << max_gates_per_cycle
-		<< "; avg_gates_per_cycle=" << avg_gates_per_cycle
-		<< "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
-		);
+        // DOUT("Displaying circuit and bundle statistics");
+        // to compute how well the algorithm is doing, two measures are computed:
+        // - the largest number of gates in a cycle in the circuit,
+        // - and the average number of gates in non-empty cycles
+        // this is done before and after uniform scheduling, and printed
+        size_t max_gates_per_cycle = 0;
+        size_t non_empty_bundle_count = 0;
+        size_t gate_count = 0;
+        for (size_t curr_cycle = 0; curr_cycle != cycle_count; curr_cycle++)
+        {
+            max_gates_per_cycle = std::max(max_gates_per_cycle, nodes_per_cycle[curr_cycle].size());
+            if (int(nodes_per_cycle[curr_cycle].size()) != 0) non_empty_bundle_count++;
+            gate_count += nodes_per_cycle[curr_cycle].size();
+        }
+        double avg_gates_per_cycle = double(gate_count)/cycle_count;
+        double avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
+        IOUT("... before uniform scheduling:"
+            << " cycle_count=" << cycle_count
+            << "; gate_count=" << gate_count
+            << "; non_empty_bundle_count=" << non_empty_bundle_count
+            );
+        IOUT("... and max_gates_per_cycle=" << max_gates_per_cycle
+            << "; avg_gates_per_cycle=" << avg_gates_per_cycle
+            << "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
+            );
 
-	// backward make bundles max avg_gates_per_cycle long
-	// DOUT("Backward scan uniform scheduling ILP");
-	for (size_t curr_cycle = cycle_count-1; curr_cycle != 0; curr_cycle--)	// QUESTION: gate at cycle 0?
-	{
-	    // Backward with pred_cycle from curr_cycle-1, look for node(s) to extend current too small bundle.
-	    // This assumes that current bundle is never too long, excess having been moved away earlier.
-	    // When such a node cannot be found, this loop scans the whole circuit for each original node to extend
-	    // and this creates a O(n^2) time complexity.
-	    //
-	    // A test to break this prematurely based on the current data structure, wasn't devised yet.
-	    // A sulution is to use the dep graph instead to find a node to extend the current node with,
-	    // i.e. maintain a so-called "heap" of nodes free to schedule, as in conventional scheduling algorithms,
-	    // which is not hard at all but which is not according to the published algorithm.
-	    // When the complexity becomes a problem, it is proposed to rewrite the algorithm accordingly.
+        // backward make bundles max avg_gates_per_cycle long
+        // DOUT("Backward scan uniform scheduling ILP");
+        for (size_t curr_cycle = cycle_count-1; curr_cycle != 0; curr_cycle--)    // QUESTION: gate at cycle 0?
+        {
+            // Backward with pred_cycle from curr_cycle-1, look for node(s) to extend current too small bundle.
+            // This assumes that current bundle is never too long, excess having been moved away earlier.
+            // When such a node cannot be found, this loop scans the whole circuit for each original node to extend
+            // and this creates a O(n^2) time complexity.
+            //
+            // A test to break this prematurely based on the current data structure, wasn't devised yet.
+            // A sulution is to use the dep graph instead to find a node to extend the current node with,
+            // i.e. maintain a so-called "heap" of nodes free to schedule, as in conventional scheduling algorithms,
+            // which is not hard at all but which is not according to the published algorithm.
+            // When the complexity becomes a problem, it is proposed to rewrite the algorithm accordingly.
 
-	    long pred_cycle = curr_cycle - 1;	// signed because can become negative
-	   
-	    // target size of each bundle is number of gates to go divided by number of non-empty cycles to go
-	    // it averages over non-empty bundles instead of all bundles because the latter would be very strict
-	    // it is readjusted to cater for dips in bundle size caused by local dependence chains
+            long pred_cycle = curr_cycle - 1;    // signed because can become negative
+
+            // target size of each bundle is number of gates to go divided by number of non-empty cycles to go
+            // it averages over non-empty bundles instead of all bundles because the latter would be very strict
+            // it is readjusted to cater for dips in bundle size caused by local dependence chains
             if (non_empty_bundle_count == 0) break;
-	    avg_gates_per_cycle = double(gate_count)/curr_cycle;
-	    avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
-            DOUT("Cycle=" << curr_cycle << " number of gates=" << nodes_per_cycle[curr_cycle].size() << "; avg_gates_per_cycle=" << avg_gates_per_cycle << "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle);
+            avg_gates_per_cycle = double(gate_count)/curr_cycle;
+            avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
+            DOUT("Cycle=" << curr_cycle << " number of gates=" << nodes_per_cycle[curr_cycle].size()
+                << "; avg_gates_per_cycle=" << avg_gates_per_cycle
+                << "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle);
 
-	    while ( double(nodes_per_cycle[curr_cycle].size()) < avg_gates_per_non_empty_cycle && pred_cycle >= 0 )
-	    {
-	    	size_t		  max_alap_cycle = 0;
-		ListDigraph::Node best_n;
-		bool		  best_n_found = false;
+            while ( double(nodes_per_cycle[curr_cycle].size()) < avg_gates_per_non_empty_cycle && pred_cycle >= 0 )
+            {
+                size_t          max_alap_cycle = 0;
+                ListDigraph::Node best_n;
+                bool          best_n_found = false;
 
-		// scan bundle at pred_cycle to find suitable candidate to move forward to curr_cycle
-		for ( auto n : nodes_per_cycle[pred_cycle] )
-		{
-		    bool	      forward_n = true;
-        	    size_t	      n_completion_cycle;
+                // scan bundle at pred_cycle to find suitable candidate to move forward to curr_cycle
+                for ( auto n : nodes_per_cycle[pred_cycle] )
+                {
+                    bool          forward_n = true;
+                    size_t          n_completion_cycle;
 
-		    // candidate's result, when moved, must be ready before end-of-circuit and before used
-		    n_completion_cycle = curr_cycle + std::ceil(static_cast<float>(instruction[n]->duration)/cycle_time);
-		    if (n_completion_cycle > cycle_count) 
-		    {
-		        forward_n = false;
-		    }
-            	    for ( ListDigraph::OutArcIt arc(graph,n); arc != INVALID; ++arc )
-            	    {
+                    // candidate's result, when moved, must be ready before end-of-circuit and before used
+                    n_completion_cycle = curr_cycle + std::ceil(static_cast<float>(instruction[n]->duration)/cycle_time);
+                    if (n_completion_cycle > cycle_count)
+                    {
+                        forward_n = false;
+                    }
+                    for ( ListDigraph::OutArcIt arc(graph,n); arc != INVALID; ++arc )
+                    {
                         ListDigraph::Node targetNode  = graph.target(arc);
                         size_t targetCycle = cycle[targetNode];
                         if(n_completion_cycle > targetCycle)
                         {
                             forward_n = false;
                         }
-            	    }
+                    }
 
-		    // when multiple nodes in bundle qualify, take the one with highest alap cycle
-		    if (forward_n && alap_cycle[n] > max_alap_cycle)
-		    {
-		        max_alap_cycle = alap_cycle[n];
-			best_n_found = true;
-		        best_n = n;
-		    }
-		}
+                    // when multiple nodes in bundle qualify, take the one with highest alap cycle
+                    if (forward_n && alap_cycle[n] > max_alap_cycle)
+                    {
+                        max_alap_cycle = alap_cycle[n];
+                        best_n_found = true;
+                        best_n = n;
+                    }
+                }
 
-		// when candidate was found in this bundle, move it, and search for more in this bundle, if needed
-		// otherwise, continue scanning backward
-		if (best_n_found)
-		{
-		    nodes_per_cycle[pred_cycle].remove(best_n);
-	            if (nodes_per_cycle[pred_cycle].size() == 0)
-		    {
-		        // bundle was non-empty, now it is empty
-			non_empty_bundle_count--;
-		    }
-
-	            if (nodes_per_cycle[curr_cycle].size() == 0)
-		    {
-		        // bundle was empty, now it will be non_empty
-			non_empty_bundle_count++;
-		    }
-		    cycle[best_n] = curr_cycle;
-		    nodes_per_cycle[curr_cycle].push_back(best_n);
+                // when candidate was found in this bundle, move it, and search for more in this bundle, if needed
+                // otherwise, continue scanning backward
+                if (best_n_found)
+                {
+                    nodes_per_cycle[pred_cycle].remove(best_n);
+                    if (nodes_per_cycle[pred_cycle].size() == 0)
+                    {
+                        // bundle was non-empty, now it is empty
+                        non_empty_bundle_count--;
+                    }
+                    if (nodes_per_cycle[curr_cycle].size() == 0)
+                    {
+                        // bundle was empty, now it will be non_empty
+                        non_empty_bundle_count++;
+                    }
+                    cycle[best_n] = curr_cycle;
+                    nodes_per_cycle[curr_cycle].push_back(best_n);
                     if (non_empty_bundle_count == 0) break;
-	            avg_gates_per_cycle = double(gate_count)/curr_cycle;
-	            avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
-		    DOUT("... moved " << name[best_n] << " with alap=" << alap_cycle[best_n] << " from cycle=" << pred_cycle << " to cycle=" << curr_cycle
-			 << "; new avg_gates_per_cycle=" << avg_gates_per_cycle
-			 << "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
+                    avg_gates_per_cycle = double(gate_count)/curr_cycle;
+                    avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
+                    DOUT("... moved " << name[best_n] << " with alap=" << alap_cycle[best_n]
+                        << " from cycle=" << pred_cycle << " to cycle=" << curr_cycle
+                        << "; new avg_gates_per_cycle=" << avg_gates_per_cycle
+                        << "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
                         );
-		}
-		else
-		{
-		    pred_cycle --;
-		}
-	    }   // end for finding a bundle to forward a node from to the current cycle
+                }
+                else
+                {
+                    pred_cycle --;
+                }
+            }   // end for finding a bundle to forward a node from to the current cycle
 
-	    // curr_cycle ready, mask it from the counts and recompute counts for remaining cycles
-	    gate_count -= nodes_per_cycle[curr_cycle].size();
-	    if (nodes_per_cycle[curr_cycle].size() != 0)
-	    {
+            // curr_cycle ready, mask it from the counts and recompute counts for remaining cycles
+            gate_count -= nodes_per_cycle[curr_cycle].size();
+            if (nodes_per_cycle[curr_cycle].size() != 0)
+            {
                 // bundle is non-empty
-		non_empty_bundle_count--;
-	    }
-	}   // end curr_cycle loop; curr_cycle is bundle which must be enlarged when too small
+                non_empty_bundle_count--;
+            }
+        }   // end curr_cycle loop; curr_cycle is bundle which must be enlarged when too small
 
         // Recompute and print statistics reporting on uniform scheduling performance
-	max_gates_per_cycle = 0;
-	non_empty_bundle_count = 0;
-	gate_count = 0;
-	// cycle_count was not changed
-	for (size_t curr_cycle = 0; curr_cycle != cycle_count; curr_cycle++)
-	{
-	    max_gates_per_cycle = std::max(max_gates_per_cycle, nodes_per_cycle[curr_cycle].size());
-	    if (int(nodes_per_cycle[curr_cycle].size()) != 0) non_empty_bundle_count++;
-	    gate_count += nodes_per_cycle[curr_cycle].size();
-	}
-	avg_gates_per_cycle = double(gate_count)/cycle_count;
-	avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
-	IOUT("... after uniform scheduling:"
-		<< " cycle_count=" << cycle_count
-		<< "; gate_count=" << gate_count
-		<< "; non_empty_bundle_count=" << non_empty_bundle_count
-		);
-	IOUT("... and max_gates_per_cycle=" << max_gates_per_cycle
-		<< "; avg_gates_per_cycle=" << avg_gates_per_cycle
-		<< "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
-		);
+        max_gates_per_cycle = 0;
+        non_empty_bundle_count = 0;
+        gate_count = 0;
+        // cycle_count was not changed
+        for (size_t curr_cycle = 0; curr_cycle != cycle_count; curr_cycle++)
+        {
+            max_gates_per_cycle = std::max(max_gates_per_cycle, nodes_per_cycle[curr_cycle].size());
+            if (int(nodes_per_cycle[curr_cycle].size()) != 0) non_empty_bundle_count++;
+            gate_count += nodes_per_cycle[curr_cycle].size();
+        }
+        avg_gates_per_cycle = double(gate_count)/cycle_count;
+        avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
+        IOUT("... after uniform scheduling:"
+            << " cycle_count=" << cycle_count
+            << "; gate_count=" << gate_count
+            << "; non_empty_bundle_count=" << non_empty_bundle_count
+            );
+        IOUT("... and max_gates_per_cycle=" << max_gates_per_cycle
+            << "; avg_gates_per_cycle=" << avg_gates_per_cycle
+            << "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
+            );
 
-	DOUT("Performing ALAP UNIFORM Scheduling [DONE]");
+        DOUT("Performing ALAP UNIFORM Scheduling [DONE]");
     }
 
     ql::ir::bundles_t schedule_alap_uniform()

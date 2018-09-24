@@ -1903,7 +1903,7 @@
    "cnot q3,q6": {
       "duration": 80,
       "latency": 0,
-      "qubits": ["q4","q6"],
+      "qubits": ["q3","q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": true,
       "type": "flux",

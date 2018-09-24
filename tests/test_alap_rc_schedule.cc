@@ -306,22 +306,22 @@ int main(int argc, char ** argv)
 
     test_qwg("qwg", "ASAP");
     test_qwg("qwg", "ALAP");
-    test_qwg2("qwg2", "ASAP");
-    test_qwg2("qwg2", "ALAP");
     test_issue179("issue179", "ASAP");
     test_issue179("issue179", "ALAP");
     test_edge("edge", "ASAP");
     test_edge("edge", "ALAP");
-    test_detuned("detuned", "ASAP");
-    test_detuned("detuned", "ALAP");
-    test_detuned2("detuned2", "ASAP");
-    test_detuned2("detuned2", "ALAP");
     test_adriaan("adriaan", "ASAP");
     test_adriaan("adriaan", "ALAP");
-    test_1("1", "ASAP");
-    test_1("1", "ALAP");
+    test_detuned2("detuned2", "ASAP");
+    test_detuned2("detuned2", "ALAP");
+    test_detuned("detuned", "ASAP");
+    test_detuned("detuned", "ALAP");
     test_7("7", "ASAP");
     test_7("7", "ALAP");
+    test_qwg2("qwg2", "ASAP");
+    test_qwg2("qwg2", "ALAP");
+    test_1("1", "ASAP");
+    test_1("1", "ALAP");
 
     return 0;
 }
