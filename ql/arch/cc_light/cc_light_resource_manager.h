@@ -386,7 +386,7 @@ public:
     bool available(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
         std::string & operation_type, std::string & instruction_type, size_t operation_duration)
     {
-        // COUT("checking availablility of resources for: " << ins->qasm());
+        // COUT("checking availability of resources for: " << ins->qasm());
         for(auto rptr : resource_ptrs)
         {
             if( rptr->available(op_start_cycle, ins, operation_name, operation_type, instruction_type, operation_duration) == false)
