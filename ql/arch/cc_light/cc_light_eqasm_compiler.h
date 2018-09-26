@@ -754,6 +754,7 @@ public:
         emit_eqasm();
     }
 
+    // FIXME: should be private
     std::string get_prologue(ql::quantum_kernel &k)
     {
         std::stringstream ss;

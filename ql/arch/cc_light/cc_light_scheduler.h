@@ -66,7 +66,7 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
     // sched.PrintDot();
     ql::ir::bundles_t bundles1 = sched.schedule_asap();
 
-    // combine parallel instrcutions of same type from different sections
+    // combine parallel instructions of same type from different sections
     // into a single section
     for (ql::ir::bundle_t & abundle : bundles1)
     {

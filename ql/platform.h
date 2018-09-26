@@ -86,6 +86,7 @@ public:
         qubit_number = hardware_settings["qubit_number"];
         cycle_time = hardware_settings["cycle_time"];
 
+        // FIXME(WJV): now in program.h, cleanup
         // if (eqasm_compiler_name == "qumis_compiler")
         // {
         //    backend_compiler = new ql::arch::cbox_eqasm_compiler();
@@ -124,4 +125,4 @@ public:
 
 }
 
-#endif // PLATFORM_H
+#endif // QL_PLATFORM_H

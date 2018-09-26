@@ -25,7 +25,6 @@
 
 #ifndef __disable_lemon__
 #include "scheduler.h"
-
 #endif // __disable_lemon__
 
 namespace ql
@@ -35,10 +34,10 @@ namespace ql
 
 enum class kernel_type_t
 {
-    STATIC, 
+    STATIC,
     FOR_START, FOR_END,
     DO_WHILE_START, DO_WHILE_END,
-    IF_START, IF_END, 
+    IF_START, IF_END,
     ELSE_START, ELSE_END
 };
 
@@ -49,11 +48,11 @@ class quantum_kernel
 {
 public:
 
-    quantum_kernel(std::string name) : 
+    quantum_kernel(std::string name) :
         name(name), iterations(1), type(kernel_type_t::STATIC) {}
 
     quantum_kernel(std::string name, ql::quantum_platform& platform,
-        size_t qcount, size_t ccount) : 
+        size_t qcount, size_t ccount) :
         name(name), iterations(1), qubit_count(qcount),
         creg_count(ccount), type(kernel_type_t::STATIC)
     {
@@ -345,21 +344,21 @@ public:
     	bool result=false;
 
         bool is_one_qubit_gate = (gname == "identity") || (gname == "i")
-                || (gname == "hadamard") || (gname == "h") 
+                || (gname == "hadamard") || (gname == "h")
                 || (gname == "pauli_x") || (gname == "pauli_y") || (gname == "pauli_z")
                 || (gname == "x") || (gname == "y") || (gname == "z")
                 || (gname == "s") || (gname == "sdag")
-                || (gname == "t") || (gname == "tdag") 
+                || (gname == "t") || (gname == "tdag")
                 || (gname == "rx") || (gname == "ry") || (gname == "rz")
                 || (gname == "rx90") || (gname == "mrx90") || (gname == "rx180")
                 || (gname == "ry90") || (gname == "mry90") || (gname == "ry180")
                 || (gname == "measure") || (gname == "prepz");
 
-        bool is_two_qubit_gate = (gname == "cnot") 
-            || (gname == "cz") || (gname == "cphase") 
+        bool is_two_qubit_gate = (gname == "cnot")
+            || (gname == "cz") || (gname == "cphase")
             || (gname == "swap");
 
-        bool is_multi_qubit_gate = (gname == "toffoli") 
+        bool is_multi_qubit_gate = (gname == "toffoli")
             || (gname == "wait") || (gname == "barrier");
 
         if(is_one_qubit_gate)
@@ -408,14 +407,14 @@ public:
         else if( gname == "ry90" )       { c.push_back(new ql::ry90(qubits[0]) ); result = true; }
         else if( gname == "mry90" )      { c.push_back(new ql::mry90(qubits[0]) ); result = true; }
         else if( gname == "ry180" )      { c.push_back(new ql::ry180(qubits[0]) ); result = true; }
-        else if( gname == "measure" )    
+        else if( gname == "measure" )
         {
             if(cregs.empty())
                 c.push_back(new ql::measure(qubits[0]) );
             else
                 c.push_back(new ql::measure(qubits[0], cregs[0]) );
 
-            result = true; 
+            result = true;
         }
         else if( gname == "prepz" )      { c.push_back(new ql::prepz(qubits[0]) ); result = true; }
     	else if( gname == "cnot" )       { c.push_back(new ql::cnot(qubits[0], qubits[1]) ); result = true; }
@@ -449,7 +448,7 @@ public:
                 instr += "q" + std::to_string(qubits[i]) + ",";
             if(qubits.size() >= 1) // to make if work with gates without operands
                 instr += "q" + std::to_string(qubits[qubits.size()-1]);
-        }        
+        }
 
         std::map<std::string,custom_gate*>::iterator it = gate_definition.find(instr);
         if (it != gate_definition.end())
@@ -514,7 +513,7 @@ public:
         }
     }
 
-    bool add_spec_decomposed_gate_if_available(std::string gate_name, 
+    bool add_spec_decomposed_gate_if_available(std::string gate_name,
         std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
         bool added = false;
@@ -612,14 +611,14 @@ public:
     }
 
 
-    bool add_param_decomposed_gate_if_available(std::string gate_name, 
+    bool add_param_decomposed_gate_if_available(std::string gate_name,
         std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
         bool added = false;
         DOUT("Checking if parameterized decomposition is available for " << gate_name);
         std::string instr_parameterized = gate_name + " ";
         size_t i;
-        if(all_qubits.size() > 0)        
+        if(all_qubits.size() > 0)
         {
             for(i=0; i<all_qubits.size()-1; i++)
             {
@@ -726,7 +725,7 @@ public:
     /**
      * custom gate with arbitrary number of operands
      */
-    void gate(std::string gname, std::vector<size_t> qubits = {}, 
+    void gate(std::string gname, std::vector<size_t> qubits = {},
         std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
     {
         for(auto & qno : qubits)
@@ -811,6 +810,7 @@ public:
         DOUT("");
     }
 
+#if 1   // FIXME: architecture dependent
     std::string get_prologue()
     {
         std::stringstream ss;
@@ -865,6 +865,7 @@ public:
 
         return ss.str();
     }
+#endif
 
     /**
      * qasm
@@ -1027,11 +1028,11 @@ public:
 	    else if ("no" == scheduler_uniform)
 	    {
 	        // sched.PrintScheduleASAP();
-                // sched.PrintDotScheduleASAP();
-                // sched_dot = sched.GetDotScheduleASAP();
-                // sched.PrintQASMScheduledASAP();
-                ql::ir::bundles_t bundles = sched.schedule_asap();
-                kqasm = ql::ir::qasm(bundles);
+            // sched.PrintDotScheduleASAP();
+            // sched_dot = sched.GetDotScheduleASAP();
+            // sched.PrintQASMScheduledASAP();
+            ql::ir::bundles_t bundles = sched.schedule_asap();
+            kqasm = ql::ir::qasm(bundles);
 	    }
 	    else
             {
@@ -1047,12 +1048,12 @@ public:
 	    }
 	    else if ("no" == scheduler_uniform)
 	    {
-                // sched.PrintScheduleALAP();
-                // sched.PrintDotScheduleALAP();
-                // sched_dot = sched.GetDotScheduleALAP();
-                // sched.PrintQASMScheduledALAP();
-                ql::ir::bundles_t bundles = sched.schedule_alap();
-                kqasm = ql::ir::qasm(bundles);
+            // sched.PrintScheduleALAP();
+            // sched.PrintDotScheduleALAP();
+            // sched_dot = sched.GetDotScheduleALAP();
+            // sched.PrintQASMScheduledALAP();
+            ql::ir::bundles_t bundles = sched.schedule_alap();
+            kqasm = ql::ir::qasm(bundles);
 	    }
 	    else
             {
@@ -1181,15 +1182,15 @@ public:
 
     void controlled_x(size_t tq, size_t cq)
     {
-        // from: https://arxiv.org/pdf/1206.0758v3.pdf        
-        // A meet-in-the-middle algorithm for fast synthesis 
+        // from: https://arxiv.org/pdf/1206.0758v3.pdf
+        // A meet-in-the-middle algorithm for fast synthesis
         // of depth-optimal quantum circuits
         cnot(cq, tq);
     }
     void controlled_y(size_t tq, size_t cq)
     {
-        // from: https://arxiv.org/pdf/1206.0758v3.pdf        
-        // A meet-in-the-middle algorithm for fast synthesis 
+        // from: https://arxiv.org/pdf/1206.0758v3.pdf
+        // A meet-in-the-middle algorithm for fast synthesis
         // of depth-optimal quantum circuits
         sdag(tq);
         cnot(cq, tq);
@@ -1197,8 +1198,8 @@ public:
     }
     void controlled_z(size_t tq, size_t cq)
     {
-        // from: https://arxiv.org/pdf/1206.0758v3.pdf        
-        // A meet-in-the-middle algorithm for fast synthesis 
+        // from: https://arxiv.org/pdf/1206.0758v3.pdf
+        // A meet-in-the-middle algorithm for fast synthesis
         // of depth-optimal quantum circuits
         hadamard(tq);
         cnot(cq, tq);
@@ -1206,8 +1207,8 @@ public:
     }
     void controlled_h(size_t tq, size_t cq)
     {
-        // from: https://arxiv.org/pdf/1206.0758v3.pdf        
-        // A meet-in-the-middle algorithm for fast synthesis 
+        // from: https://arxiv.org/pdf/1206.0758v3.pdf
+        // A meet-in-the-middle algorithm for fast synthesis
         // of depth-optimal quantum circuits
         s(tq); hadamard(tq); t(tq);
         cnot(cq, tq);
@@ -1223,7 +1224,7 @@ public:
         // cphase(cq, tq);
 
         // from: https://arxiv.org/pdf/1206.0758v3.pdf
-        // A meet-in-the-middle algorithm for fast synthesis 
+        // A meet-in-the-middle algorithm for fast synthesis
         // of depth-optimal quantum circuits
 
         cnot(tq, cq);
@@ -1236,7 +1237,7 @@ public:
     void controlled_sdag(size_t tq, size_t cq)
     {
         // based on: https://arxiv.org/pdf/1206.0758v3.pdf
-        // A meet-in-the-middle algorithm for fast synthesis 
+        // A meet-in-the-middle algorithm for fast synthesis
         // of depth-optimal quantum circuits
 
         tdag(cq);
@@ -1252,7 +1253,7 @@ public:
         WOUT("At the moment, Qubit 0 is used as ancilla");
         WOUT("This will change when Qubit allocater is implemented");
         // from: https://arxiv.org/pdf/1206.0758v3.pdf
-        // A meet-in-the-middle algorithm for fast synthesis 
+        // A meet-in-the-middle algorithm for fast synthesis
         // of depth-optimal quantum circuits
         cnot(cq, tq); hadamard(aq);
         sdag(cq); cnot(tq, aq);
@@ -1281,8 +1282,8 @@ public:
         WOUT("Controlled-Tdag implementation requires an ancilla");
         WOUT("At the moment, Qubit 0 is used as ancilla");
         WOUT("This will change when Qubit allocater is implemented");
-        // from: https://arxiv.org/pdf/1206.0758v3.pdf        
-        // A meet-in-the-middle algorithm for fast synthesis 
+        // from: https://arxiv.org/pdf/1206.0758v3.pdf
+        // A meet-in-the-middle algorithm for fast synthesis
         // of depth-optimal quantum circuits
         h(aq);
         cnot(cq, tq);
@@ -1309,24 +1310,24 @@ public:
     void controlled_ix(size_t tq, size_t cq)
     {
         // from: https://arxiv.org/pdf/1210.0974.pdf
-        // Quantum circuits of T-depth one 
+        // Quantum circuits of T-depth one
         cnot(cq, tq);
         s(cq);
     }
 
     // toffoli decomposition
     // from: https://arxiv.org/pdf/1210.0974.pdf
-    // Quantum circuits of T-depth one 
+    // Quantum circuits of T-depth one
     void controlled_cnot_AM(size_t tq, size_t cq1, size_t cq2)
     {
         h(tq);
-        t(cq1); t(cq2); t(tq); 
+        t(cq1); t(cq2); t(tq);
         cnot(cq2, cq1);
         cnot(tq, cq2);
         cnot(cq1, tq);
         tdag(cq2);
         cnot(cq1, cq2);
-        tdag(cq1); tdag(cq2); tdag(tq); 
+        tdag(cq1); tdag(cq2); tdag(tq);
         cnot(tq, cq2);
         cnot(cq1, tq);
         cnot(cq2, cq1);
@@ -1334,7 +1335,7 @@ public:
     }
 
     // toffoli decomposition
-    // Neilsen and Chuang    
+    // Neilsen and Chuang
     void controlled_cnot_NC(size_t tq, size_t cq1, size_t cq2)
     {
         h(tq);
@@ -1366,7 +1367,7 @@ public:
         tdag(tq1);
         cnot(cq, tq2);
         cnot(tq2, tq1);
-        t(tq1); h(tq2); 
+        t(tq1); h(tq2);
         cnot(tq2, tq1);
     }
     void controlled_rx(size_t tq, size_t cq, double theta)
@@ -1401,7 +1402,7 @@ public:
             ql::gate_type_t gtype = g->type();
             std::vector<size_t> goperands = g->operands;
             DOUT("Generating controlled gate for " << gname);
-            DOUT("Type : " << gtype);            
+            DOUT("Type : " << gtype);
             if( __pauli_x_gate__ == gtype  || __rx180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
@@ -1549,7 +1550,7 @@ public:
         }
     }
 
-    void controlled(ql::quantum_kernel *k, 
+    void controlled(ql::quantum_kernel *k,
         std::vector<size_t> control_qubits,
         std::vector<size_t> ancilla_qubits
         )
@@ -1612,7 +1613,7 @@ public:
             std::string gname = g->name;
             ql::gate_type_t gtype = g->type();
             DOUT("Generating conjugate gate for " << gname);
-            DOUT("Type : " << gtype);            
+            DOUT("Type : " << gtype);
             if( __pauli_x_gate__ == gtype  || __rx180_gate__ == gtype )
             {
                 gate("x", g->operands, {}, g->duration, g->angle);

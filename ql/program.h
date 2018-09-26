@@ -113,6 +113,7 @@ class quantum_program
                  )
                {
                    EOUT("Out of range operand(s) for operation: '" << gname << "'");
+                   EOUT("FIXME: creg_count=" << creg_count << ", qubit_count" << qubit_count);
                    throw ql::exception("Out of range operand(s) for operation: '"+gname+"' !",false);
                }
             }
@@ -465,6 +466,10 @@ class quantum_program
             }
             else
             {
+               // FIXME(WJV): I would suggest to move the fusing to a backend that wants it, and then:
+               // - always call:  backend_compiler->compile(name, kernels, platform);
+               // - remove from eqasm_compiler.h: compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& p);
+
                IOUT("fusing quantum kernels...");
                ql::circuit fused;
                for (size_t k=0; k<kernels.size(); ++k)
