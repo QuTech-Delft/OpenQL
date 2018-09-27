@@ -1244,13 +1244,14 @@ size_t Distance(size_t from_realqbit, size_t to_realqbit)
 // this remains constant over multiple kernels on the same platform
 void Init(ql::quantum_platform* p)
 {
-    // DOUT("Grid::Init(n=" << n << ")");
+    DOUT("Grid::Init");
     platformp = p;
     nqbits = platformp->qubit_number;
+    DOUT("... number of real qbits=" << nqbits);
 
     nx = platformp->topology["x_size"];
     ny = platformp->topology["y_size"];
-    // DOUT("... nx=" << nx << "; ny=" << ny);
+    DOUT("... nx=" << nx << "; ny=" << ny);
 
     // init x, y and nbs maps
     for (auto & aqbit : platformp->topology["qubits"] )

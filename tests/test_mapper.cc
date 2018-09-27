@@ -14,7 +14,7 @@
 void
 test_qwg(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
-    int n = 7;
+    int n = 2;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
@@ -37,7 +37,7 @@ test_qwg(std::string v, std::string mapopt, std::string mapdecomposeropt, std::s
 void
 test_singledim(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
-    int n = 7;
+    int n = 5;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
@@ -70,7 +70,7 @@ test_singledim(std::string v, std::string mapopt, std::string mapdecomposeropt, 
 void
 test_edge(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
-    int n = 7;
+    int n = 5;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
@@ -94,7 +94,7 @@ test_edge(std::string v, std::string mapopt, std::string mapdecomposeropt, std::
 void
 test_detuned(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
-    int n = 7;
+    int n = 5;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
@@ -123,7 +123,7 @@ test_detuned(std::string v, std::string mapopt, std::string mapdecomposeropt, st
 void
 test_oneNN(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
-    int n = 7;
+    int n = 3;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
@@ -194,7 +194,7 @@ test_manyNN(std::string v, std::string mapopt, std::string mapdecomposeropt, std
 void
 test_oneD2(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
-    int n = 7;
+    int n = 4;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
@@ -223,7 +223,7 @@ test_oneD2(std::string v, std::string mapopt, std::string mapdecomposeropt, std:
 void
 test_oneD4(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
-    int n = 7;
+    int n = 5;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
 
@@ -421,7 +421,7 @@ int main(int argc, char ** argv)
 
     ql::utils::logger::set_log_level("LOG_DEBUG");
     ql::options::set("scheduler", "no");        // still run rc cc_light scheduler afterwards!
-    ql::options::set("mapinitialplace", "yes");  // testing initial placement
+    ql::options::set("mapinitialplace", "no");  // testing initial placement
 
 //    test_singledim("singledim", "no", "no", configfile);
 //    test_singledim("singledim", "minextendrc", "yes", configfile);
@@ -438,23 +438,23 @@ int main(int argc, char ** argv)
 //    test_manyNN("manyNN", "minextend", "yes", configfile);
 //    test_manyNN("manyNN", "minextendrc", "yes", configfile);
     
-//    test_oneD2("oneD2", "base", "yes", configfile);
-//    test_oneD2("oneD2", "minextend", "yes", configfile);
-//    test_oneD2("oneD2", "minextendrc", "yes", configfile);
+    test_oneD2("oneD2", "base", "yes", configfile);
+    test_oneD2("oneD2", "minextend", "yes", configfile);
+    test_oneD2("oneD2", "minextendrc", "yes", configfile);
 
 //    test_oneD4("oneD4", "base", "yes", configfile);
 //    test_oneD4("oneD4", "minextend", "yes", configfile);
 //    test_oneD4("oneD4", "minextendrc", "yes", configfile);
 
 //    test_allD("allD", "base", "yes", configfile);
-    test_allD("allD", "minextend", "yes", configfile);
-    test_allD("allD", "minextendrc", "yes", configfile);
+//    test_allD("allD", "minextend", "yes", configfile);
+//    test_allD("allD", "minextendrc", "yes", configfile);
 
 //    test_allDopt("allDopt", "base", "yes", configfile);
 //    test_allDopt("allDopt", "minextend", "yes", configfile);
 //    test_allDopt("allDopt", "minextendrc", "yes", configfile);
 
-    test_string("string", "base", "yes", configfile);
+//    test_string("string", "base", "yes", configfile);
 //    test_string("string", "minextend", "yes", configfile);
 //    test_string("string", "minextendrc", "yes", configfile);
 
