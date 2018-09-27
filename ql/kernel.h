@@ -810,7 +810,8 @@ public:
         DOUT("");
     }
 
-#if 1   // FIXME: architecture dependent
+    // FIXME: is this really QASM, or CC-light eQASM?
+    // FIXME: create a separate QASM backend?
     std::string get_prologue()
     {
         std::stringstream ss;
@@ -865,7 +866,6 @@ public:
 
         return ss.str();
     }
-#endif
 
     /**
      * qasm
