@@ -25,7 +25,7 @@ class Test_program(unittest.TestCase):
         name = "program1"
         nqubits=1
         p = ql.Program(name, platf, nqubits)
-        self.assertEqual(p.name_, name)
+        self.assertEqual(p.name, name)
 
     def test_add_kernel(self):
         # test that this does not raise any error

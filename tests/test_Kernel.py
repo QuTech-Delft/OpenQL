@@ -44,7 +44,7 @@ class Test_kernel(unittest.TestCase):
         name = "kernel1"
         nqubits = 3
         k = ql.Kernel(name, platf, nqubits)
-        self.assertEqual(k.name_, name)
+        self.assertEqual(k.name, name)
 
     def test_simple_kernel(self):
         nqubits = 3
