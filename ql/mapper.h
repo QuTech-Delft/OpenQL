@@ -1372,6 +1372,7 @@ public:
 
 void Init(size_t n, Grid* g, ql::quantum_platform *p)
 {
+    DOUT("InitialPlace Init ...");
     nvq = n;
     nlocs = p->qubit_number;
     gridp = g;
@@ -1384,6 +1385,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r)
     DOUT("InitialPlace circuit ...");
     // precompute refcount by scanning circuit
     // refcount[i][j] = count of two-qubit gates between virtual qubits i and j in current circuit
+    DOUT("... compute refcount by scanning circuit");
     std::vector<std::vector<size_t>>  refcount;
     refcount.resize(nvq); for (size_t i=0; i<nvq; i++) refcount[i].resize(nvq,0);
     for ( auto& gp : circ )
@@ -1402,6 +1404,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r)
 
     // precompute costmax by applying formula
     // costmax[i][k] = sum j: sum l: refcount[i][j] * distance(k,l) for qubit i in location k
+    DOUT("... precompute costmax by combining refcount and distances");
     std::vector<std::vector<size_t>>  costmax;   
     costmax.resize(nvq); for (size_t i=0; i<nvq; i++) costmax[i].resize(nlocs,0);
     for ( size_t i=0; i<nvq; i++ )
@@ -1429,10 +1432,13 @@ void Place( ql::circuit& circ, Virt2Real& v2r)
     //      w[i][k] represents x[i][k] * sum j: sum l: refcount[i][j] * distance(k,l) * x[j][l]
     //       i.e. if qubit i not in location k then 0
     //       else for all qubits j in its location l sum refcount[i][j] * distance(k,l)
+    DOUT("... allocate x column variable");
     std::vector<std::vector<Mip::Col>> x;
         x.resize(nvq); for (size_t i=0; i<nvq; i++) x[i].resize(nlocs);
+    DOUT("... allocate w column variable");
     std::vector<std::vector<Mip::Col>> w;
         w.resize(nvq); for (size_t i=0; i<nvq; i++) w[i].resize(nlocs);
+    DOUT("... add/initialize x and w column variables with trivial constraints and type");
     for ( size_t i=0; i<nvq; i++ )
     {
         for ( size_t k=0; k<nlocs; k++ )
@@ -1450,6 +1456,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r)
     
     // constraints (rows)
     //  forall i: ( sum k: x[i][k] == 1 )
+    DOUT("... add/initialize sum to 1 constraint rows");
     for ( size_t i=0; i<nvq; i++ )
     {
         Mip::Expr   sum;
@@ -1475,6 +1482,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r)
     // constraints (rows)
     //  forall i, k: costmax[i][k] * x[i][k]
     //          + sum j sum l refcount[i][j]*distance[k][l]*x[j][l] - w[i][k] <= costmax[i][k]
+    DOUT("... add/initialize nvq x nlocs constraint rows based on nvq x nlocs column combinations");
     for ( size_t i=0; i<nvq; i++ )
     {
         for ( size_t k=0; k<nlocs; k++ )
@@ -1495,6 +1503,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r)
     
     // objective
     Mip::Expr   objective;
+    DOUT("... add/initialize objective");
     mip.min();
     for ( size_t i=0; i<nvq; i++ )
     {
@@ -1506,7 +1515,9 @@ void Place( ql::circuit& circ, Virt2Real& v2r)
     mip.obj(objective);
     
     // solve the problem
+    DOUT("... solve the problem");
     Mip::SolveExitStatus s = mip.solve();
+    DOUT("... determine result of solving");
     Mip::ProblemType pt = mip.type();
     if (s != Mip::SOLVED || pt != Mip::OPTIMAL)
     {
@@ -1515,6 +1526,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r)
     }
 
     // get the results
+    DOUT("... interpret result and copy to Virt2Real");
     for ( size_t i=0; i<nvq; i++ )
     {
         for ( size_t k=0; k<nlocs; k++ )
@@ -1525,6 +1537,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r)
             }
         }
     }
+    v2r.Print("... result Virt2Real map of InitialPlace");
     DOUT("InitialPlace circuit [DONE]");
 }
     
@@ -1930,11 +1943,13 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name)
     if("yes" == mapinitialplaceopt)
     {
         Virt2Real   v2r;
+        DOUT("InitialPlace copy in current Virt2Real mapping ...");
         mainPast.GetV2r(v2r);
 #ifdef INITIALPLACE
         // replace initial mapping of mainPast by any result of initial placement
         ip.Place(circ, v2r);
 #endif
+        DOUT("InitialPlace copy back resulting Virt2Real mapping ...");
         mainPast.SetV2r(v2r);
     }
     MapGates(circ, kernel_name);

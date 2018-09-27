@@ -121,7 +121,7 @@ test_detuned(std::string v, std::string mapopt, std::string mapdecomposeropt, st
 
 // one cnot with operands that are neighbors in s7
 void
-test_0(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_oneNN(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
     int n = 7;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
@@ -150,7 +150,7 @@ test_0(std::string v, std::string mapopt, std::string mapdecomposeropt, std::str
 
 // all cnots with operands that are neighbors in s7
 void
-test_1(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_manyNN(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
     int n = 7;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
@@ -192,7 +192,7 @@ test_1(std::string v, std::string mapopt, std::string mapdecomposeropt, std::str
 
 // one cnot with operands that are at distance 2 in s7
 void
-test_2(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_oneD2(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
     int n = 7;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
@@ -221,7 +221,7 @@ test_2(std::string v, std::string mapopt, std::string mapdecomposeropt, std::str
 
 // one cnot with operands that are at distance 4 in s7
 void
-test_3(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_oneD4(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
     int n = 7;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
@@ -251,7 +251,7 @@ test_3(std::string v, std::string mapopt, std::string mapdecomposeropt, std::str
 // all possible cnots in s7, in lexicographic order
 // requires many swaps
 void
-test_4(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_allD(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
     int n = 7;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
@@ -280,7 +280,7 @@ test_4(std::string v, std::string mapopt, std::string mapdecomposeropt, std::str
 // - from low distance to high distance
 // - each time as much as possible in opposite sides of the circuit
 void
-test_5(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_allDopt(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
 {
     int n = 7;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
@@ -365,6 +365,42 @@ test_5(std::string v, std::string mapopt, std::string mapdecomposeropt, std::str
     prog.compile( );
 }
 
+// longest string of cnots with operands that could be at distance 1 in s7
+// matches intel NISQ application
+// tests initial placement
+void
+test_string(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+{
+    int n = 7;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+
+    ql::quantum_platform starmon("starmon",configfile);
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, n, starmon);
+    ql::quantum_kernel k(kernel_name, starmon);
+
+
+    for (int j=0; j<7; j++) { k.gate("x", j); }
+
+    // string of cnots, a good initial placement prevents any swap
+    k.gate("cnot", 0,1);
+    k.gate("cnot", 1,2);
+    k.gate("cnot", 2,3);
+    k.gate("cnot", 3,4);
+    k.gate("cnot", 4,5);
+    k.gate("cnot", 5,6);
+
+    for (int j=0; j<7; j++) { k.gate("x", j); }
+
+    prog.add(k);
+
+    ql::options::set("mapper", mapopt);
+    ql::options::set("mapdecomposer", mapdecomposeropt);
+    prog.compile( );
+}
+
+
 int main(int argc, char ** argv)
 {
     auto    configfile = ql::options::get("configuration_file");
@@ -385,7 +421,7 @@ int main(int argc, char ** argv)
 
     ql::utils::logger::set_log_level("LOG_DEBUG");
     ql::options::set("scheduler", "no");        // still run rc cc_light scheduler afterwards!
-    ql::options::set("mapinitialplace", "no");  // testing initial placement
+    ql::options::set("mapinitialplace", "yes");  // testing initial placement
 
 //    test_singledim("singledim", "no", "no", configfile);
 //    test_singledim("singledim", "minextendrc", "yes", configfile);
@@ -394,29 +430,33 @@ int main(int argc, char ** argv)
 //    test_edge("edge", "minextendrc", "yes", configfile);
 //    test_detuned("detuned", "minextendrc", "yes", configfile);
 
-//    test_0("0", "base", "yes", configfile);
-//    test_0("0", "minextend", "yes", configfile);
-//    test_0("0", "minextendrc", "yes", configfile);
+//    test_oneNN("oneNN", "base", "yes", configfile);
+//    test_oneNN("oneNN", "minextend", "yes", configfile);
+//    test_oneNN("oneNN", "minextendrc", "yes", configfile);
 
-//    test_1("1", "base", "yes", configfile);
-//    test_1("1", "minextend", "yes", configfile);
-//    test_1("1", "minextendrc", "yes", configfile);
+//    test_manyNN("manyNN", "base", "yes", configfile);
+//    test_manyNN("manyNN", "minextend", "yes", configfile);
+//    test_manyNN("manyNN", "minextendrc", "yes", configfile);
+    
+//    test_oneD2("oneD2", "base", "yes", configfile);
+//    test_oneD2("oneD2", "minextend", "yes", configfile);
+//    test_oneD2("oneD2", "minextendrc", "yes", configfile);
 
-//    test_2("2", "base", "yes", configfile);
-//    test_2("2", "minextend", "yes", configfile);
-//    test_2("2", "minextendrc", "yes", configfile);
+//    test_oneD4("oneD4", "base", "yes", configfile);
+//    test_oneD4("oneD4", "minextend", "yes", configfile);
+//    test_oneD4("oneD4", "minextendrc", "yes", configfile);
 
-//    test_3("3", "base", "yes", configfile);
-//    test_3("3", "minextend", "yes", configfile);
-//    test_3("3", "minextendrc", "yes", configfile);
+//    test_allD("allD", "base", "yes", configfile);
+    test_allD("allD", "minextend", "yes", configfile);
+    test_allD("allD", "minextendrc", "yes", configfile);
 
-//    test_4("4", "base", "yes", configfile);
-      test_4("4", "minextend", "yes", configfile);
-      test_4("4", "minextendrc", "yes", configfile);
+//    test_allDopt("allDopt", "base", "yes", configfile);
+//    test_allDopt("allDopt", "minextend", "yes", configfile);
+//    test_allDopt("allDopt", "minextendrc", "yes", configfile);
 
-//    test_5("5", "base", "yes", configfile);
-//    test_5("5", "minextend", "yes", configfile);
-//    test_5("5", "minextendrc", "yes", configfile);
+    test_string("string", "base", "yes", configfile);
+//    test_string("string", "minextend", "yes", configfile);
+//    test_string("string", "minextendrc", "yes", configfile);
 
     return 0;
 }
