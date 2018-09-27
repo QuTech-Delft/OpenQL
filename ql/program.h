@@ -327,12 +327,18 @@ public:
         }
         else
         {
-            Mapper mapper(qubits, platform);	// mapper creation with constant initialization of grid
-            mapper.Init();			            // creates and initializes data passed on between kernels
+            Mapper mapper;                      // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
+            mapper.Init(qubits, platform);      // qubits is number of virtual qubits, i.e. qubits in the program (max of circuits!)
+                                                // platform specifies number of real qubits, i.e. locations for virtual qubits
+                                                // Init creates and initializes data that is program wide, e.g. initialization of grid,
+                                                // that exists independent of kernels and their circuits
+                                                // or that facilitates the matching of mappings between kernels in a CFG
 
             for (auto& k : kernels)
             {
-		        k.map(mapper, mapper_in_qasm, mapper_out_qasm);	// map kernel in current mapper context
+                // map kernel in mapper context
+                // in current version, each kernel is independently mapped
+                k.map(mapper, mapper_in_qasm, mapper_out_qasm);
             }
 
             string fname_in = ql::options::get("output_dir") + "/" + deslash(name) + "_mapper_in.qasm";

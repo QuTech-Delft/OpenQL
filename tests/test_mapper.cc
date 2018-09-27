@@ -387,12 +387,12 @@ int main(int argc, char ** argv)
     ql::options::set("scheduler", "no");        // still run rc cc_light scheduler afterwards!
     ql::options::set("mapinitialplace", "no");  // testing initial placement
 
-    test_singledim("singledim", "no", "no", configfile);
-    test_singledim("singledim", "minextendrc", "yes", configfile);
+//    test_singledim("singledim", "no", "no", configfile);
+//    test_singledim("singledim", "minextendrc", "yes", configfile);
 
-    test_qwg("qwg", "minextendrc", "yes", configfile);
-    test_edge("edge", "minextendrc", "yes", configfile);
-    test_detuned("detuned", "minextendrc", "yes", configfile);
+//    test_qwg("qwg", "minextendrc", "yes", configfile);
+//    test_edge("edge", "minextendrc", "yes", configfile);
+//    test_detuned("detuned", "minextendrc", "yes", configfile);
 
 //    test_0("0", "base", "yes", configfile);
 //    test_0("0", "minextend", "yes", configfile);
@@ -411,8 +411,8 @@ int main(int argc, char ** argv)
 //    test_3("3", "minextendrc", "yes", configfile);
 
 //    test_4("4", "base", "yes", configfile);
-//    test_4("4", "minextend", "yes", configfile);
-//    test_4("4", "minextendrc", "yes", configfile);
+      test_4("4", "minextend", "yes", configfile);
+      test_4("4", "minextendrc", "yes", configfile);
 
 //    test_5("5", "base", "yes", configfile);
 //    test_5("5", "minextend", "yes", configfile);

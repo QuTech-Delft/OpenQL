@@ -992,6 +992,9 @@ public:
         DOUT("decompose_toffoli() [Done] ");
     }
 
+    // per kernel mapping of the circuit
+    // must take care that qubit mapping between kernels matches
+    // by importing and exporting mappings
     void map(Mapper& mapper, std::string& map_in_qasm, std::string& map_out_qasm)
     {
         DOUT("Mapping kernel: " << name);
