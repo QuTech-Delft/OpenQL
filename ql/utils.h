@@ -23,7 +23,7 @@ size_t MAX_CYCLE = std::numeric_limits<int>::max();
 
 #if defined(_WIN32)
 #include <direct.h>
-#else 
+#else
 #include <sys/types.h>
 #include <sys/stat.h>
 #endif
@@ -39,7 +39,7 @@ namespace ql
         {
             #if defined(_WIN32)
             _mkdir(dir.c_str());
-            #else 
+            #else
             mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
             #endif
         }
@@ -194,6 +194,11 @@ namespace ql
 
 #define COUT(content) \
         std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" "<< content << std::endl
+
+#define FATAL(s) \
+        {   EOUT(s); \
+            throw ql::exception(std::string("Error : ")+s, false); \
+        }
 
 #endif //QL_UTILS_H
 
