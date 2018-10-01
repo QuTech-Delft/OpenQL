@@ -357,8 +357,22 @@ public:
     void schedule()
     {
         std::string sched_qasm;
+        std::string schedin_qasm;
 
         IOUT("scheduling the quantum program");
+
+        schedin_qasm = "qubits " + std::to_string(qubits) + "\n";
+        string fname = ql::options::get("output_dir") + "/" + deslash(name) + ".qasm";
+        for (auto k : kernels)
+        {
+            if( k.iterations > 1 )
+                schedin_qasm += "\n." + k.get_name() + "("+ std::to_string(k.iterations) + ")";
+            else
+                schedin_qasm += "\n." + k.get_name();
+            schedin_qasm += k.qasm() + '\n';
+        }
+        IOUT("writing non-scheduled qasm to '" << fname << "' ...");
+        ql::utils::write_file(fname, schedin_qasm);
 
         sched_qasm = "qubits " + std::to_string(qubits) + "\n";
         for (auto k : kernels)
@@ -378,7 +392,7 @@ public:
             // ql::utils::write_file(fname, kernel_sched_dot);
         }
 
-        string fname = ql::options::get("output_dir") + "/" + deslash(name) + "_scheduled.qasm";
+        fname = ql::options::get("output_dir") + "/" + deslash(name) + "_scheduled.qasm";
         IOUT("writing scheduled qasm to '" << fname << "' ...");
         ql::utils::write_file(fname, sched_qasm);
     }

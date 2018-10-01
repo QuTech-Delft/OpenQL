@@ -107,10 +107,6 @@ public:
             auto operands = ins->operands;
             size_t operandCount = operands.size();
             size_t operandNo=0;
-            for ( auto o : operands)
-            {
-                // DOUT("... operand: " << o);
-            }
 
             if(ins->name == "wait")
             {

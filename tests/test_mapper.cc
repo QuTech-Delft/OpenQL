@@ -442,7 +442,7 @@ int main(int argc, char ** argv)
     }
 
     ql::utils::logger::set_log_level("LOG_DEBUG");
-    ql::options::set("scheduler", "ASAP");        // still run rc cc_light scheduler afterwards!
+    ql::options::set("scheduler", "no");        // still run rc cc_light scheduler afterwards!
     ql::options::set("mapdecomposer", "yes");   // always decompose to primitives
 
 //    test_singledim("singledim", "minextendrc", "yes", configfile);
