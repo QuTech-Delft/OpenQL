@@ -296,7 +296,7 @@ public:
         program = new ql::quantum_program(name, *(platform.platform), qubit_count, creg_count);
     }
 
-    void set_sweep_points( std::vector<float> sweep_points, size_t num_sweep_points)
+    void set_sweep_points(std::vector<float> sweep_points, size_t num_sweep_points)
     {
         float* sp = &sweep_points[0];
         program->set_sweep_points(sp, num_sweep_points);
