@@ -292,7 +292,7 @@ void WriteCCLightQasm(std::string prog_name, size_t num_qubits, ql::ir::bundles_
 
     size_t curr_cycle=1;
     fout <<"qubits " << num_qubits << "\n\n"
-         << ".fused_kernels";
+         << "." << deslash(prog_name);
     for ( ql::ir::bundle_t & abundle : bundles)
     {
         auto bcycle = abundle.start_cycle;
