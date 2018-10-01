@@ -55,6 +55,7 @@ public:
         DOUT("Scheduler initialization ...");
         num_qubits = nQubits;
         cycle_time = platform.cycle_time;
+        DOUT("... num_qubits: " << nQubits << " cycle_time: " << cycle_time);
 
         // populate buffer map
         // 'none' type is a dummy type and 0 buffer cycles will be inserted for
