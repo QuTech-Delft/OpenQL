@@ -1,4 +1,4 @@
-#define INITIALPLACE 1
+//#define INITIALPLACE 1
 /**
  * @file   mapper.h
  * @date   09/2018

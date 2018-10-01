@@ -17,11 +17,13 @@ test_qwg(std::string v, std::string mapopt, std::string initialplaceopt, std::st
     int n = 2;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
     // no dependency, only a conflict in qwg resource
     k.gate("x", 0);
@@ -40,11 +42,13 @@ test_singledim(std::string v, std::string mapopt, std::string initialplaceopt, s
     int n = 5;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
     // independent gates but stacking qwg unit use
     // in s7, q2, q3 and q4 all use qwg1
@@ -73,11 +77,13 @@ test_edge(std::string v, std::string mapopt, std::string initialplaceopt, std::s
     int n = 5;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
     // no dependency, only a conflict in edge resource
     k.gate("cz", 1,4);
@@ -97,11 +103,13 @@ test_detuned(std::string v, std::string mapopt, std::string initialplaceopt, std
     int n = 5;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
     // preferably cz's parallel, but not with x 3
     k.gate("cz", 0,2);
@@ -126,11 +134,13 @@ test_oneNN(std::string v, std::string mapopt, std::string initialplaceopt, std::
     int n = 3;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
     k.gate("x", 0);
     k.gate("x", 2);
@@ -155,11 +165,13 @@ test_manyNN(std::string v, std::string mapopt, std::string initialplaceopt, std:
     int n = 7;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
     for (int j=0; j<7; j++) { k.gate("x", j); }
 
@@ -197,11 +209,13 @@ test_oneD2(std::string v, std::string mapopt, std::string initialplaceopt, std::
     int n = 4;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
     k.gate("x", 2);
     k.gate("x", 3);
@@ -226,11 +240,13 @@ test_oneD4(std::string v, std::string mapopt, std::string initialplaceopt, std::
     int n = 5;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
     k.gate("x", 2);
     k.gate("x", 4);
@@ -256,11 +272,13 @@ test_allD(std::string v, std::string mapopt, std::string initialplaceopt, std::s
     int n = 7;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
     for (int j=0; j<n; j++) { k.gate("x", j); }
 
@@ -285,11 +303,13 @@ test_allDopt(std::string v, std::string mapopt, std::string initialplaceopt, std
     int n = 7;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
     for (int j=0; j<n; j++) { k.gate("x", j); }
 
@@ -374,11 +394,13 @@ test_string(std::string v, std::string mapopt, std::string initialplaceopt, std:
     int n = 7;
     std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
     std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, n, starmon);
     ql::quantum_kernel k(kernel_name, starmon);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
 
     for (int j=0; j<7; j++) { k.gate("x", j); }
@@ -420,22 +442,22 @@ int main(int argc, char ** argv)
     }
 
     ql::utils::logger::set_log_level("LOG_DEBUG");
-    ql::options::set("scheduler", "no");        // still run rc cc_light scheduler afterwards!
+    ql::options::set("scheduler", "ASAP");        // still run rc cc_light scheduler afterwards!
     ql::options::set("mapdecomposer", "yes");   // always decompose to primitives
 
-    test_singledim("singledim", "minextendrc", "yes", configfile);
+//    test_singledim("singledim", "minextendrc", "yes", configfile);
 
-    test_qwg("qwg", "minextendrc", "yes", configfile);
-    test_edge("edge", "minextendrc", "yes", configfile);
-    test_detuned("detuned", "minextendrc", "yes", configfile);
+//    test_qwg("qwg", "minextendrc", "yes", configfile);
+//    test_edge("edge", "minextendrc", "yes", configfile);
+//    test_detuned("detuned", "minextendrc", "yes", configfile);
 
-    test_oneNN("oneNN", "base", "yes", configfile);
-    test_oneNN("oneNN", "minextend", "yes", configfile);
-    test_oneNN("oneNN", "minextendrc", "yes", configfile);
+//    test_oneNN("oneNN", "base", "yes", configfile);
+//    test_oneNN("oneNN", "minextend", "yes", configfile);
+//    test_oneNN("oneNN", "minextendrc", "yes", configfile);
 
-    test_manyNN("manyNN", "base", "yes", configfile);
-    test_manyNN("manyNN", "minextend", "yes", configfile);
-    test_manyNN("manyNN", "minextendrc", "yes", configfile);
+//    test_manyNN("manyNN", "base", "yes", configfile);
+//    test_manyNN("manyNN", "minextend", "yes", configfile);
+//    test_manyNN("manyNN", "minextendrc", "yes", configfile);
     
 //    test_oneD2("oneD2", "base", "yes", configfile);
 //    test_oneD2("oneD2", "minextend", "yes", configfile);
@@ -449,9 +471,9 @@ int main(int argc, char ** argv)
 //    test_string("string", "minextend", "yes", configfile);
 //    test_string("string", "minextendrc", "yes", configfile);
 
-//    test_allD("allD", "base", "yes", configfile);
-//    test_allD("allD", "minextend", "yes", configfile);
-//    test_allD("allD", "minextendrc", "yes", configfile);
+    test_allD("allD", "base", "yes", configfile);
+    test_allD("allD", "minextend", "yes", configfile);
+    test_allD("allD", "minextendrc", "yes", configfile);
 
 //    test_allDopt("allDopt", "base", "yes", configfile);
 //    test_allDopt("allDopt", "minextend", "yes", configfile);
