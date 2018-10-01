@@ -1381,14 +1381,16 @@ void Init(size_t n, Grid* g, ql::quantum_platform *p)
 
 // find an initial placement of the virtual qubits for the given circuit
 // the resulting placement is put in the provided virt2real map
-void Place( ql::circuit& circ, Virt2Real& v2r)
+void Place( ql::circuit& circ, Virt2Real& v2r, bool &ok)
 {
+    ok = false;
     DOUT("InitialPlace circuit ...");
     // precompute refcount by scanning circuit
     // refcount[i][j] = count of two-qubit gates between virtual qubits i and j in current circuit
     DOUT("... compute refcount by scanning circuit");
     std::vector<std::vector<size_t>>  refcount;
     refcount.resize(nvq); for (size_t i=0; i<nvq; i++) refcount[i].resize(nvq,0);
+    bool trivial = true;
     for ( auto& gp : circ )
     {
         auto&   q = gp->operands;
@@ -1399,8 +1401,15 @@ void Place( ql::circuit& circ, Virt2Real& v2r)
         }
         if (q.size() == 2)
         {
+            trivial = false;
             refcount[q[0]][q[1]] += 1;
         }
+    }
+    if (trivial)
+    {
+        DOUT("Initial placement: no two-qubit gates found, so no constraints, and every mapping is ok");
+        DOUT("InitialPlace circuit [DONE]");
+        return;
     }
 
     // precompute costmax by applying formula
@@ -1520,25 +1529,29 @@ void Place( ql::circuit& circ, Virt2Real& v2r)
     Mip::SolveExitStatus s = mip.solve();
     DOUT("... determine result of solving");
     Mip::ProblemType pt = mip.type();
-    if (s != Mip::SOLVED || pt != Mip::OPTIMAL)
+    if (s == Mip::SOLVED && pt == Mip::OPTIMAL)
     {
-        EOUT("Initial placement: no (optimal) solution found; solve returned:"<< s << "; type returned:" << pt);
-        throw ql::exception("Initial placement: no (optimal) solution found", false);
-    }
-
-    // get the results
-    DOUT("... interpret result and copy to Virt2Real");
-    for ( size_t i=0; i<nvq; i++ )
-    {
-        for ( size_t k=0; k<nlocs; k++ )
+        ok = true;
+        // get the results
+        DOUT("... interpret result and copy to Virt2Real");
+        for ( size_t i=0; i<nvq; i++ )
         {
-            if (mip.sol(x[i][k]) == 1)
+            for ( size_t k=0; k<nlocs; k++ )
             {
-                v2r[i] = k;
+                if (mip.sol(x[i][k]) == 1)
+                {
+                    v2r[i] = k;
+                }
             }
         }
+        v2r.Print("... result Virt2Real map of InitialPlace");
     }
-    v2r.Print("... result Virt2Real map of InitialPlace");
+    else
+    {
+        DOUT("Initial placement: no (optimal) solution found; solve returned:"<< s << " type returned:" << pt);
+        EOUT("Initial placement: no (optimal) solution found; solve returned:"<< s << " type returned:" << pt);
+        // throw ql::exception("Initial placement: no (optimal) solution found", false);
+    }
     DOUT("InitialPlace circuit [DONE]");
 }
     
@@ -1940,19 +1953,28 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name)
     DOUT("==================================");
     DOUT("Mapping circuit ...");
     
-    std::string mapinitialplaceopt = ql::options::get("mapinitialplace");
-    if("yes" == mapinitialplaceopt)
+#ifdef INITIALPLACE
+    std::string initialplaceopt = ql::options::get("initialplace");
+    if("yes" == initialplaceopt)
     {
         Virt2Real   v2r;
         DOUT("InitialPlace copy in current Virt2Real mapping ...");
         mainPast.GetV2r(v2r);
-#ifdef INITIALPLACE
-        // replace initial mapping of mainPast by any result of initial placement
-        ip.Place(circ, v2r);
-#endif
-        DOUT("InitialPlace copy back resulting Virt2Real mapping ...");
-        mainPast.SetV2r(v2r);
+        // compute mapping using ip model, may fail
+        bool        ipok = true;
+        ip.Place(circ, v2r, ipok);
+        if (ipok)
+        {
+            DOUT("InitialPlace copy back resulting Virt2Real mapping ...");
+            // replace initial mapping of mainPast by any result of initial placement
+            mainPast.SetV2r(v2r);
+        }
+        else
+        {
+            DOUT("InitialPlace: use trivial mapping because IP model failed ...");
+        }
     }
+#endif
     MapGates(circ, kernel_name);
     std::string mapdecomposeropt = ql::options::get("mapdecomposer");
     if("yes" == mapdecomposeropt)

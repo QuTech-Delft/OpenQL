@@ -12,11 +12,11 @@
 
 // test qwg resource constraints mapping
 void
-test_qwg(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_qwg(std::string v, std::string mapopt, std::string initialplaceopt, std::string configfile)
 {
     int n = 2;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
@@ -29,17 +29,17 @@ test_qwg(std::string v, std::string mapopt, std::string mapdecomposeropt, std::s
 
     prog.add(k);
     ql::options::set("mapper", mapopt);
-    ql::options::set("mapdecomposer", mapdecomposeropt);
+    ql::options::set("initialplace", initialplaceopt);
     prog.compile( );
 }
 
 // demo single dimension resource constraint representation simple
 void
-test_singledim(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_singledim(std::string v, std::string mapopt, std::string initialplaceopt, std::string configfile)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
@@ -62,17 +62,17 @@ test_singledim(std::string v, std::string mapopt, std::string mapdecomposeropt, 
 
     prog.add(k);
     ql::options::set("mapper", mapopt);
-    ql::options::set("mapdecomposer", mapdecomposeropt);
+    ql::options::set("initialplace", initialplaceopt);
     prog.compile( );
 }
 
 // test edge resource constraints mapping
 void
-test_edge(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_edge(std::string v, std::string mapopt, std::string initialplaceopt, std::string configfile)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
@@ -85,18 +85,18 @@ test_edge(std::string v, std::string mapopt, std::string mapdecomposeropt, std::
 
     prog.add(k);
     ql::options::set("mapper", mapopt);
-    ql::options::set("mapdecomposer", mapdecomposeropt);
+    ql::options::set("initialplace", initialplaceopt);
     prog.compile( );
 }
 
 // test detuned_qubits resource constraints mapping
 // no swaps generated
 void
-test_detuned(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_detuned(std::string v, std::string mapopt, std::string initialplaceopt, std::string configfile)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
@@ -115,17 +115,17 @@ test_detuned(std::string v, std::string mapopt, std::string mapdecomposeropt, st
 
     prog.add(k);
     ql::options::set("mapper", mapopt);
-    ql::options::set("mapdecomposer", mapdecomposeropt);
+    ql::options::set("initialplace", initialplaceopt);
     prog.compile( );
 }
 
 // one cnot with operands that are neighbors in s7
 void
-test_oneNN(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_oneNN(std::string v, std::string mapopt, std::string initialplaceopt, std::string configfile)
 {
     int n = 3;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
@@ -144,17 +144,17 @@ test_oneNN(std::string v, std::string mapopt, std::string mapdecomposeropt, std:
     prog.add(k);
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("mapdecomposer", mapdecomposeropt);
+    ql::options::set("initialplace", initialplaceopt);
     prog.compile( );
 }
 
 // all cnots with operands that are neighbors in s7
 void
-test_manyNN(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_manyNN(std::string v, std::string mapopt, std::string initialplaceopt, std::string configfile)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
@@ -186,17 +186,17 @@ test_manyNN(std::string v, std::string mapopt, std::string mapdecomposeropt, std
     prog.add(k);
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("mapdecomposer", mapdecomposeropt);
+    ql::options::set("initialplace", initialplaceopt);
     prog.compile( );
 }
 
 // one cnot with operands that are at distance 2 in s7
 void
-test_oneD2(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_oneD2(std::string v, std::string mapopt, std::string initialplaceopt, std::string configfile)
 {
     int n = 4;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
@@ -215,17 +215,17 @@ test_oneD2(std::string v, std::string mapopt, std::string mapdecomposeropt, std:
     prog.add(k);
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("mapdecomposer", mapdecomposeropt);
+    ql::options::set("initialplace", initialplaceopt);
     prog.compile( );
 }
 
 // one cnot with operands that are at distance 4 in s7
 void
-test_oneD4(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_oneD4(std::string v, std::string mapopt, std::string initialplaceopt, std::string configfile)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
@@ -244,18 +244,18 @@ test_oneD4(std::string v, std::string mapopt, std::string mapdecomposeropt, std:
     prog.add(k);
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("mapdecomposer", mapdecomposeropt);
+    ql::options::set("initialplace", initialplaceopt);
     prog.compile( );
 }
 
 // all possible cnots in s7, in lexicographic order
 // requires many swaps
 void
-test_allD(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_allD(std::string v, std::string mapopt, std::string initialplaceopt, std::string configfile)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
@@ -271,7 +271,7 @@ test_allD(std::string v, std::string mapopt, std::string mapdecomposeropt, std::
     prog.add(k);
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("mapdecomposer", mapdecomposeropt);
+    ql::options::set("initialplace", initialplaceopt);
     prog.compile( );
 }
 
@@ -280,11 +280,11 @@ test_allD(std::string v, std::string mapopt, std::string mapdecomposeropt, std::
 // - from low distance to high distance
 // - each time as much as possible in opposite sides of the circuit
 void
-test_allDopt(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_allDopt(std::string v, std::string mapopt, std::string initialplaceopt, std::string configfile)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
@@ -361,7 +361,7 @@ test_allDopt(std::string v, std::string mapopt, std::string mapdecomposeropt, st
     prog.add(k);
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("mapdecomposer", mapdecomposeropt);
+    ql::options::set("initialplace", initialplaceopt);
     prog.compile( );
 }
 
@@ -369,11 +369,11 @@ test_allDopt(std::string v, std::string mapopt, std::string mapdecomposeropt, st
 // matches intel NISQ application
 // tests initial placement
 void
-test_string(std::string v, std::string mapopt, std::string mapdecomposeropt, std::string configfile)
+test_string(std::string v, std::string mapopt, std::string initialplaceopt, std::string configfile)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
-    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_mapdec=" + mapdecomposeropt + "_json=" + configfile;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
+    std::string kernel_name = "kernel_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_json=" + configfile;
 
     ql::quantum_platform starmon("starmon",configfile);
     ql::set_platform(starmon);
@@ -396,7 +396,7 @@ test_string(std::string v, std::string mapopt, std::string mapdecomposeropt, std
     prog.add(k);
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("mapdecomposer", mapdecomposeropt);
+    ql::options::set("initialplace", initialplaceopt);
     prog.compile( );
 }
 
@@ -421,30 +421,33 @@ int main(int argc, char ** argv)
 
     ql::utils::logger::set_log_level("LOG_DEBUG");
     ql::options::set("scheduler", "no");        // still run rc cc_light scheduler afterwards!
-    ql::options::set("mapinitialplace", "no");  // testing initial placement
+    ql::options::set("mapdecomposer", "yes");   // always decompose to primitives
 
-//    test_singledim("singledim", "no", "no", configfile);
-//    test_singledim("singledim", "minextendrc", "yes", configfile);
+    test_singledim("singledim", "minextendrc", "yes", configfile);
 
-//    test_qwg("qwg", "minextendrc", "yes", configfile);
-//    test_edge("edge", "minextendrc", "yes", configfile);
-//    test_detuned("detuned", "minextendrc", "yes", configfile);
+    test_qwg("qwg", "minextendrc", "yes", configfile);
+    test_edge("edge", "minextendrc", "yes", configfile);
+    test_detuned("detuned", "minextendrc", "yes", configfile);
 
-//    test_oneNN("oneNN", "base", "yes", configfile);
-//    test_oneNN("oneNN", "minextend", "yes", configfile);
-//    test_oneNN("oneNN", "minextendrc", "yes", configfile);
+    test_oneNN("oneNN", "base", "yes", configfile);
+    test_oneNN("oneNN", "minextend", "yes", configfile);
+    test_oneNN("oneNN", "minextendrc", "yes", configfile);
 
-//    test_manyNN("manyNN", "base", "yes", configfile);
-//    test_manyNN("manyNN", "minextend", "yes", configfile);
-//    test_manyNN("manyNN", "minextendrc", "yes", configfile);
+    test_manyNN("manyNN", "base", "yes", configfile);
+    test_manyNN("manyNN", "minextend", "yes", configfile);
+    test_manyNN("manyNN", "minextendrc", "yes", configfile);
     
-    test_oneD2("oneD2", "base", "yes", configfile);
-    test_oneD2("oneD2", "minextend", "yes", configfile);
-    test_oneD2("oneD2", "minextendrc", "yes", configfile);
+//    test_oneD2("oneD2", "base", "yes", configfile);
+//    test_oneD2("oneD2", "minextend", "yes", configfile);
+//    test_oneD2("oneD2", "minextendrc", "yes", configfile);
 
 //    test_oneD4("oneD4", "base", "yes", configfile);
 //    test_oneD4("oneD4", "minextend", "yes", configfile);
 //    test_oneD4("oneD4", "minextendrc", "yes", configfile);
+
+//    test_string("string", "base", "yes", configfile);
+//    test_string("string", "minextend", "yes", configfile);
+//    test_string("string", "minextendrc", "yes", configfile);
 
 //    test_allD("allD", "base", "yes", configfile);
 //    test_allD("allD", "minextend", "yes", configfile);
@@ -453,10 +456,6 @@ int main(int argc, char ** argv)
 //    test_allDopt("allDopt", "base", "yes", configfile);
 //    test_allDopt("allDopt", "minextend", "yes", configfile);
 //    test_allDopt("allDopt", "minextendrc", "yes", configfile);
-
-//    test_string("string", "base", "yes", configfile);
-//    test_string("string", "minextend", "yes", configfile);
-//    test_string("string", "minextendrc", "yes", configfile);
 
     return 0;
 }

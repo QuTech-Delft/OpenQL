@@ -30,7 +30,7 @@ namespace ql
           opt_name2opt_val["configuration_file"] = "";
           opt_name2opt_val["output_dir"] = "test_output";
           opt_name2opt_val["mapper"] = "no";
-          opt_name2opt_val["mapinitialplace"] = "no";
+          opt_name2opt_val["initialplace"] = "no";
           opt_name2opt_val["mapdecomposer"] = "yes";
           opt_name2opt_val["scheduler"] = "ASAP";
           opt_name2opt_val["use_default_gates"] = "no";
@@ -43,7 +43,7 @@ namespace ql
           app->add_option("--configuration_file", opt_name2opt_val["configuration_file"], "Name of configuration file", true);
           app->add_option("--output_dir", opt_name2opt_val["output_dir"], "Name of output directory", true);
           app->add_set_ignore_case("--mapper", opt_name2opt_val["mapper"], {"no", "base", "baserc", "minextend", "minextendrc"}, "Mapper heuristic", true);
-          app->add_set_ignore_case("--mapinitialplace", opt_name2opt_val["mapinitialplace"], {"no", "yes"}, "Initialplace qubits before mapping", true);
+          app->add_set_ignore_case("--initialplace", opt_name2opt_val["initialplace"], {"no", "yes"}, "Initialplace qubits before mapping", true);
           app->add_set_ignore_case("--mapdecomposer", opt_name2opt_val["mapdecomposer"], {"no", "yes"}, "Decompose after mapper", true);
           app->add_set_ignore_case("--scheduler", opt_name2opt_val["scheduler"], {"no", "ASAP", "ALAP"}, "Scheduler heuristic", true);
           app->add_set_ignore_case("--use_default_gates", opt_name2opt_val["use_default_gates"], {"yes", "no"}, "Use default gates or not", true);
@@ -55,7 +55,7 @@ namespace ql
       {
           std::cout << "optimize: "         << opt_name2opt_val["optimize"] << std::endl
                     << "mapper: "           << opt_name2opt_val["mapper"] << std::endl
-                    << "mapinitialplace: "  << opt_name2opt_val["mapinitialplace"] << std::endl
+                    << "initialplace: "     << opt_name2opt_val["initialplace"] << std::endl
                     << "mapdecomposer: "    << opt_name2opt_val["mapdecomposer"] << std::endl
                     << "scheduler: "        << opt_name2opt_val["scheduler"] << std::endl
 	  ;
