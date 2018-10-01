@@ -278,20 +278,29 @@ public:
                         // WAR dependencies
                         DOUT("... starting WAR for operand:" << operand);
                         ReadersListType readers = LastReaders[operand];
+                        DOUT("... 1");
                         for(auto & readerID : readers)
                         {
+                        DOUT("... 2");
                             ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                        DOUT("... 3");
                             ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                        DOUT("... 4");
                             weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+                        DOUT("... 5");
                             cause[arc1] = operand;
+                        DOUT("... 6");
                             depType[arc1] = WAR;
+                        DOUT("... 7");
                         }
 
                         // clear LastReaders for this operand
                         LastReaders[operand].clear();
+                        DOUT("... 8");
 
                         // update LastWriter for this operand
                         LastWriter[operand] = consID;
+                        DOUT("... 9");
                     }
                     operandNo++;
                 } // end of operand for
