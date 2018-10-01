@@ -349,8 +349,10 @@ public:
             IOUT("writing mapper_output qasm to '" << fname_out << "' ...");
             ql::utils::write_file(fname_out, mapper_out_qasm);
 
-            DOUT("After mapping: change program.qubits from meaning number of virtual qubits (" << qubits << ")to number of real qubits (" << platform.qubit_number << ")");
-            qubits = platform.qubit_number;
+            size_t  nused;
+            mapper.NumberOfQubitsUsed(nused);
+            DOUT("After mapping: change program.qubits from meaning number of virtual qubits (" << qubits << ") to number of real qubits used (" << nused << ")");
+            qubits = nused;
         }
     }
 

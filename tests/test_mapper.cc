@@ -453,7 +453,7 @@ int main(int argc, char ** argv)
 
 //    test_oneNN("oneNN", "base", "yes", configfile);
 //    test_oneNN("oneNN", "minextend", "yes", configfile);
-//    test_oneNN("oneNN", "minextendrc", "yes", configfile);
+    test_oneNN("oneNN", "minextendrc", "yes", configfile);
 
 //    test_manyNN("manyNN", "base", "yes", configfile);
 //    test_manyNN("manyNN", "minextend", "yes", configfile);
@@ -461,15 +461,15 @@ int main(int argc, char ** argv)
     
 //    test_oneD2("oneD2", "base", "yes", configfile);
 //    test_oneD2("oneD2", "minextend", "yes", configfile);
-//    test_oneD2("oneD2", "minextendrc", "yes", configfile);
+    test_oneD2("oneD2", "minextendrc", "yes", configfile);
 
 //    test_oneD4("oneD4", "base", "yes", configfile);
 //    test_oneD4("oneD4", "minextend", "yes", configfile);
-//    test_oneD4("oneD4", "minextendrc", "yes", configfile);
+    test_oneD4("oneD4", "minextendrc", "yes", configfile);
 
 //    test_string("string", "base", "yes", configfile);
 //    test_string("string", "minextend", "yes", configfile);
-//    test_string("string", "minextendrc", "yes", configfile);
+    test_string("string", "minextendrc", "yes", configfile);
 
     test_allD("allD", "base", "yes", configfile);
     test_allD("allD", "minextend", "yes", configfile);

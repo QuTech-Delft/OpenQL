@@ -1585,6 +1585,7 @@ private:
 #endif
                                         // Mapper dynamic state
     Past   mainPast;                    // main past window; all path alternatives start off as clones of it
+    std::vector<size_t> use_count;      // use_count[real qubit index], number of times the real qubit was used
 
 
 public:
@@ -1611,6 +1612,7 @@ void Init( size_t n, ql::quantum_platform& p)
     // DOUT("... with trivial mapping (virtual==real), number of virtual qubits=" << nvq);
     mainPast.Init(nvq, &platform);
     // mainPast.Print("initial mapping");
+    use_count.resize(nqbits,0);
     // DOUT("Mapping initialization [DONE]");
 }
 
@@ -1869,6 +1871,34 @@ void MapGates(ql::circuit& circ, std::string& kernel_name)
     IOUT("Mapped " << kernel_name << " depth=" << mainPast.MaxFreeCycle()-circ[0]->cycle << " swaps_added=" << mainPast.NumberOfSwapsAdded());
 }
 
+public:
+// update counts which qubits are used in this circuit
+void UseCount(ql::circuit& circ)
+{
+    DOUT("UseCount circuit ...");
+    for( auto gp : circ )
+    {
+        for ( auto q : gp->operands)
+        {
+            use_count[q]++;
+        }
+    }
+    DOUT("UseCount circuit [DONE]");
+} 
+
+// inspect counters and update number of qubits actually used
+void NumberOfQubitsUsed(size_t & nused)
+{
+    nused = 0;
+    for (size_t i=0; i < platform.qubit_number; i++)
+    {
+        if (use_count[i] != 0)
+        {
+            nused++;
+        }
+    }
+}
+
 // decompose all gates with names ending in _prim
 // by replacing it by a new copy of this gate with as name _prim replaced by _dprim
 // and decomposing it according to the .json file gate decomposition
@@ -1897,8 +1927,6 @@ void Decomposer(ql::circuit& circ)
 
     DOUT("Decompose circuit [DONE]");
 }   // end Decomposer
-
-public:
 
 // alternative bundler using gate->cycle attribute instead of lemon's cycle map
 // it assumes that the gate->cycle attribute reflect the cycle assignment of a particular schedule
@@ -1979,8 +2007,9 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name)
     std::string mapdecomposeropt = ql::options::get("mapdecomposer");
     if("yes" == mapdecomposeropt)
     {
-        Decomposer(circ);
+        Decomposer(circ);   // decompose to primitives as specified in the config file
     }
+    UseCount(circ);         // add counts of real qubits in this circuit to total of the program
 
     DOUT("Mapping circuit [DONE]");
     DOUT("==================================");
