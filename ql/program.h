@@ -348,6 +348,9 @@ public:
             string fname_out = ql::options::get("output_dir") + "/" + deslash(name) + "_mapper_out.qasm";
             IOUT("writing mapper_output qasm to '" << fname_out << "' ...");
             ql::utils::write_file(fname_out, mapper_out_qasm);
+
+            DOUT("After mapping: change program.qubits from meaning number of virtual qubits (" << qubits << ")to number of real qubits (" << platform.qubit_number << ")");
+            qubits = platform.qubit_number;
         }
     }
 

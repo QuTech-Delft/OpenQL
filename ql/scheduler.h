@@ -95,7 +95,7 @@ public:
 
         for( auto ins : ckt )
         {
-            DOUT("Current instruction : " << ins->qasm());
+            // DOUT("Current instruction : " << ins->qasm());
 
             // Add nodes
             ListDigraph::Node consNode = graph.addNode();
@@ -109,9 +109,8 @@ public:
             size_t operandNo=0;
             for ( auto o : operands)
             {
-                DOUT("... operand: " << o);
+                // DOUT("... operand: " << o);
             }
-            DOUT("... operandNo: " << operandNo << " operandCount: " << operandCount);
 
             if(ins->name == "wait")
             {
@@ -238,11 +237,11 @@ public:
             {
                 for( auto operand : operands )
                 {
-                    DOUT("Operand: " << operand << " operandNo: " << operandNo << " operandCount: " << operandCount);
+                    // DOUT("Operand: " << operand << " operandNo: " << operandNo << " operandCount: " << operandCount);
                     if( operandNo < operandCount-1 )
                     {
                         // RAW dependencies
-                        DOUT("... starting RAW for operand:" << operand);
+                        // DOUT("... starting RAW for operand:" << operand);
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
@@ -251,7 +250,7 @@ public:
                         depType[arc] = RAW;
 
                         // RAR dependencies
-                        DOUT("... starting RAR for operand:" << operand);
+                        // DOUT("... starting RAR for operand:" << operand);
                         ReadersListType readers = LastReaders[operand];
                         for(auto & readerID : readers)
                         {
@@ -268,7 +267,7 @@ public:
                     else
                     {
                         // WAW dependencies
-                        DOUT("... starting WAW for operand:" << operand);
+                        // DOUT("... starting WAW for operand:" << operand);
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
@@ -277,31 +276,22 @@ public:
                         depType[arc] = WAW;
 
                         // WAR dependencies
-                        DOUT("... starting WAR for operand:" << operand);
+                        // DOUT("... starting WAR for operand:" << operand);
                         ReadersListType readers = LastReaders[operand];
-                        DOUT("... 1");
                         for(auto & readerID : readers)
                         {
-                        DOUT("... 2");
                             ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-                        DOUT("... 3");
                             ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                        DOUT("... 4");
                             weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-                        DOUT("... 5");
                             cause[arc1] = operand;
-                        DOUT("... 6");
                             depType[arc1] = WAR;
-                        DOUT("... 7");
                         }
 
                         // clear LastReaders for this operand
                         LastReaders[operand].clear();
-                        DOUT("... 8");
 
                         // update LastWriter for this operand
                         LastWriter[operand] = consID;
-                        DOUT("... 9");
                     }
                     operandNo++;
                 } // end of operand for
