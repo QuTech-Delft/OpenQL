@@ -106,6 +106,11 @@ public:
             auto operands = ins->operands;
             size_t operandCount = operands.size();
             size_t operandNo=0;
+            for ( auto o : operands)
+            {
+                DOUT("... operand: " << o);
+            }
+            DOUT("... operandNo: " << operandNo << " operandCount: " << operandCount);
 
             if(ins->name == "wait")
             {
@@ -232,7 +237,7 @@ public:
             {
                 for( auto operand : operands )
                 {
-                    DOUT("Operand: " << operand);
+                    DOUT("Operand: " << operand << " operandNo: " << operandNo << " operandCount: " << operandCount);
                     if( operandNo < operandCount-1 )
                     {
                         // RAW dependencies
