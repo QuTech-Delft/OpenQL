@@ -425,6 +425,7 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
             }
             else
             {
+                // FIXME: use platform.h::get_instruction_name or get_cc_light_instruction_name
                 auto id = iname;
                 DOUT("get cclight instr name for : " << id);
                 std::string cc_light_instr_name;
@@ -800,8 +801,6 @@ public:
             ss << "    ldi r30" <<", " << 1 << "\n";
             ss << "    ldi r31" <<", " << 0 << "\n";
         }
-
-        // FIXME: DO_WHILE_START
 
         return ss.str();
     }

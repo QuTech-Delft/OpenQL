@@ -121,6 +121,35 @@ public:
         return qubit_number;
     }
 
+
+    /**
+     * @brief   Find architecture instruction name for a particular instruction
+     *
+     * @param   iname Name of instruction, e.g. "x q5"
+     * @return  value of 'arch_operation_name', e.g. "x"
+     * @note    On CC-light, arch_operation_name is set from JSON field cc_light_instr
+     * @note    Based on cc_light_scheduler.h::get_cc_light_instruction_name()
+     */
+    std::string get_instruction_name(std::string &iname)
+    {
+        std::string instr_name;
+        auto it = instruction_map.find(iname);
+        if (it != instruction_map.end())
+        {
+            custom_gate* g = it->second;
+            instr_name = g->arch_operation_name;
+            if(instr_name.empty())
+            {
+                FATAL("arch_operation_name not defined for instruction: " << iname << " !");
+            }
+            // DOUT("arch_operation_name: " << instr_name);
+        }
+        else
+        {
+            FATAL("custom instruction not found for : " << iname << " !");
+        }
+        return instr_name;
+    }
 };
 
 }

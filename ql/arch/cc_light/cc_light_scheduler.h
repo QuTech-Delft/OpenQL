@@ -33,6 +33,7 @@ namespace ql
 namespace arch
 {
 
+// FIXME: superseded by platform.h::get_instruction_name()
 std::string get_cc_light_instruction_name(std::string & id, ql::quantum_platform & platform)
 {
     std::string cc_light_instr_name;

@@ -1,5 +1,5 @@
 {
-    "_comment_author" : "wouter Vlothuizen",
+    "_comment_author" : "Wouter Vlothuizen",
     "_comment_notes" : "based on '../test_cfg_none_s7.json'",
 
    "eqasm_compiler" : "eqasm_backend_cc",
@@ -15,7 +15,11 @@
      "flux_readout_buffer": 0,
      "readout_mw_buffer": 0,
      "readout_flux_buffer": 0,
-     "readout_readout_buffer": 0
+     "readout_readout_buffer": 0,
+
+    "eqasm_backend_cc": {
+        "test": "OK"
+    }
    },
 
   "resources":
@@ -67,6 +71,7 @@
       }
     }
   },
+
   "topology" :
   {
     "x_size": 5,
@@ -99,7 +104,6 @@
       { "id": 13,  "src": 3, "dst": 5 },
       { "id": 14,  "src": 6, "dst": 3 },
       { "id": 15,  "src": 4, "dst": 6 }
-
     ]
   },
 

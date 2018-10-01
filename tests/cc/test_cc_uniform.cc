@@ -495,8 +495,8 @@ int main(int argc, char ** argv)
     test_classical("ALAP", "no");
     test_do_while_nested_for("ALAP", "no");
 
-#if 0
     test_0("ALAP", "no");
+#if 0
     test_0("ALAP", "yes");
     test_1("ALAP", "no");
     test_1("ALAP", "yes");

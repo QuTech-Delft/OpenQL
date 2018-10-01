@@ -1,7 +1,7 @@
 /**
  * @file   eqasm_backend_cc
- * @date   201807
- * @author
+ * @date   201809xx
+ * @author Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief  eqasm backend for the Central Controller
  * @remark based on cc_light_eqasm_compiler.h
  */
@@ -17,9 +17,6 @@
 #include <ql/arch/cc_light/cc_light_resource_manager.h>
 
 
-// helper makro for emit(): stringstream to string
-// based on https://stackoverflow.com/questions/21924156/how-to-initialize-a-stdstringstream
-#define SS2S(VALUES) std::string(static_cast<std::ostringstream&&>(std::ostringstream() << VALUES).str())
 
 namespace ql
 {
@@ -35,6 +32,7 @@ private:
     size_t buffer_matrix[__operation_types_num__][__operation_types_num__];
 
     size_t total_exec_time = 0;
+    bool verbose = true;    // output extra comments in generated code
 
 public:
     /*
@@ -44,8 +42,13 @@ public:
 
     void compile(std::string prog_name, std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
     {
+#if 1   // FIXME: patch for issue #164, should be in caller
+        if(kernels.size() == 0) {
+            FATAL("Trying to compile empty kernel");
+        }
+#endif
         DOUT("Compiling " << kernels.size() << " kernels to generate CCCODE ... ");
-
+        load_backend_settings(platform);
         load_hw_settings(platform);
 
         // generate program header
@@ -57,7 +60,7 @@ public:
         // generate code for all kernels
         for(auto &kernel : kernels) {
             IOUT("Compiling kernel: " << kernel.name);
-            cccode << "# Kernel:  " << kernel.name << std::endl;
+            if(verbose) cccode << "# Kernel:  " << kernel.name << std::endl;
             cccode << get_prologue(kernel);
 
             ql::circuit& ckt = kernel.c;
@@ -96,7 +99,7 @@ public:
 
     void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform)
     {
-        throw ql::exception("circuit compilation not implemented, because it does not support classical kernel operations");
+        FATAL("circuit compilation not implemented, because it does not support classical kernel operations");
     }
 
 
@@ -128,7 +131,6 @@ public:
 
 private:
     // some helpers to ease nice assembly formatting
-    // Parameters
     void emit(std::stringstream &ss, const char *labelOrComment, const char *instr="")
     {
         ss << std::left;    // FIXME
@@ -143,13 +145,37 @@ private:
         }
     }
 
-    // label must include trailing ":"
-    // comment must include leading "#"
+    // @param   label       must include trailing ":"
+    // @param   comment     must include leading "#"
     void emit(std::stringstream &ss, const char *label, const char *instr, std::string ops, const char *comment="")
     {
         ss << std::left;    // FIXME
         ss << std::setw(8) << label << std::setw(8) << instr << std::setw(16) << ops << comment << std::endl;
     }
+
+
+    void load_backend_settings(ql::quantum_platform& platform)
+    {
+        // FIXME: we would like to have a top level setting, or one below "backends"
+        // it is however not easy to create new top level stuff and read it from the backend
+        try
+        {
+            auto backendSettings = platform.hardware_settings["eqasm_backend_cc"];
+            auto test = backendSettings["test"];
+            DOUT("load_backend_settings read key 'test:'" << test);
+        }
+        catch (json::exception e)
+        {
+#if 0
+            throw ql::exception(
+                "[x] error : ql::eqasm_compiler::compile() : error while reading backend settings : parameter '"
+//                + hw_settings[i].name
+                + "'\n\t"
+                + std::string(e.what()), false);
+#endif
+        }
+    }
+
 
     // based on: cc_light_eqasm_compiler.h::load_hw_settings
     void load_hw_settings(ql::quantum_platform& platform)
@@ -269,7 +295,7 @@ private:
                     }
                     else
                     {
-                        FATAL("instruction settings not found for '"+iname+"' with'"+std::to_string(iopers_count)+"' operands!");
+                        FATAL("instruction settings not found for '" << iname << "' with'" << iopers_count << "' operands!");
                     }
                     bool is_measure = (operation_type == "readout");
                     if(is_measure)
@@ -295,7 +321,7 @@ private:
                         }
                         else
                         {
-                            FATAL("Unknown decomposition of measure/readout operation '"+iname+"'!");
+                            FATAL("Unknown decomposition of measure/readout operation '" << iname << "'!");
                         }
                     }
                     else
@@ -324,7 +350,6 @@ private:
     // based on cc_light_eqasm_compiler.h::classical_instruction2qisa
     // NB: input instructions defined in classical.h::classical (also in JSON???)
     // also see cc_light_eqasm_compiler.h::decompose_instructions(), which produces "fmr" and friends
-    // FIXME: classical_cc is part of cc_light. Replaced by ql::gate, maybe use ql::classical?
     std::string classical_instruction2cccode(ql::gate *classical_ins)
     {
         std::stringstream ssclassical;
@@ -364,7 +389,7 @@ private:
 #endif
         else
         {
-            FATAL("Unknown classical operation'"+iname+"' with'"+std::to_string(iopers_count)+"' operands!");
+            FATAL("Unknown classical operation'" << iname << "' with'" << iopers_count << "' operands!");
         }
 
         return ssclassical.str();
@@ -390,30 +415,24 @@ private:
     std::string get_prologue(ql::quantum_kernel &k)
     {
         std::stringstream ss;
-#if 0   // SEGV
-        // some shorthand
-        auto op0 = k.br_condition.operands[0]->id;
-        auto op1 = k.br_condition.operands[1]->id;
-        auto opName = k.br_condition.operation_name;
-#endif
 
         switch(k.type) {
             case kernel_type_t::IF_START:
             {
-        auto op0 = k.br_condition.operands[0]->id;
-        auto op1 = k.br_condition.operands[1]->id;
-        auto opName = k.br_condition.operation_name;
-                ss << "# IF_START(R" << op0 << " " << opName << " R" << op1 << ")" << std::endl;
+                auto op0 = k.br_condition.operands[0]->id;
+                auto op1 = k.br_condition.operands[1]->id;
+                auto opName = k.br_condition.operation_name;
+                if(verbose) ss << "# IF_START(R" << op0 << " " << opName << " R" << op1 << ")" << std::endl;
                 // FIXME: implement
                 break;
             }
 
             case kernel_type_t::ELSE_START:
             {
-        auto op0 = k.br_condition.operands[0]->id;
-        auto op1 = k.br_condition.operands[1]->id;
-        auto opName = k.br_condition.operation_name;
-                ss << "# ELSE_START(R" << op0 << " " << opName << " R" << op1 << ")" << std::endl;
+                auto op0 = k.br_condition.operands[0]->id;
+                auto op1 = k.br_condition.operands[1]->id;
+                auto opName = k.br_condition.operation_name;
+                if(verbose) ss << "# ELSE_START(R" << op0 << " " << opName << " R" << op1 << ")" << std::endl;
                 // FIXME: implement
                 break;
             }
@@ -421,7 +440,7 @@ private:
             case kernel_type_t::FOR_START:
             {
                 std::string label = kernelLabel(k);
-                ss << "# FOR_START(" << k.iterations << ")" << std::endl;
+                if(verbose) ss << "# FOR_START(" << k.iterations << ")" << std::endl;
                 emit(ss, (label+":").c_str(), "move", SS2S(k.iterations << ",R63"), "# R63 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
                 break;
             }
@@ -429,7 +448,7 @@ private:
             case kernel_type_t::DO_WHILE_START:
             {
                 std::string label = kernelLabel(k);
-                ss << "# DO_WHILE_START" << std::endl;
+                if(verbose) ss << "# DO_WHILE_START" << std::endl;
                 // FIXME: implement: emit label
                 break;
             }
@@ -442,7 +461,6 @@ private:
     }
 
 
-
     // based on cc_light_eqasm_compiler.h::get_epilogue
     std::string get_epilogue(ql::quantum_kernel &k)
     {
@@ -452,56 +470,26 @@ private:
             case kernel_type_t::FOR_END:
             {
                 std::string label = kernelLabel(k);
-                emit(ss, "# FOR_END");
+                if(verbose) emit(ss, "# FOR_END");
                 emit(ss, "", "loop", SS2S("R63,@" << label), "# R63 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
                 break;
             }
 
             case kernel_type_t::DO_WHILE_END:
-{
-        // some shorthand
-        auto op0 = k.br_condition.operands[0]->id;
-        auto op1 = k.br_condition.operands[1]->id;
-        auto opName = k.br_condition.operation_name;
-                ss << "# DO_WHILE_END(R" << op0 << " " << opName << " R" << op1 << ")" << std::endl;
+            {
+                auto op0 = k.br_condition.operands[0]->id;
+                auto op1 = k.br_condition.operands[1]->id;
+                auto opName = k.br_condition.operation_name;
+                if(verbose) ss << "# DO_WHILE_END(R" << op0 << " " << opName << " R" << op1 << ")" << std::endl;
                 // FIXME: implement
                 break;
-}
+            }
 
             default:
                 // nothing to do for other types
                 break;
         }
         return ss.str();
-    }
-
-
-    // translate instruction name (e.g. "x q5") to the contents of JSON field "cc_light_instr" (e.g. "x")
-    // extracted from cc_light_eqasm_compiler.h::bundles2qisa().
-    // FIXME: move to generic place
-    // FIXME: give more generic name (also to the JSON field)
-    std::string get_cc_light_instr(std::string iname, ql::quantum_platform &platform)
-    {
-        DOUT("get cc_light_instr for : " << iname);
-        std::string cc_light_instr;
-        auto it = platform.instruction_map.find(iname);
-        if(it != platform.instruction_map.end())
-        {
-            custom_gate* g = it->second;
-            cc_light_instr = g->arch_operation_name;    // NB: assigned in gate.h::load(json& instr)
-            if(cc_light_instr.empty())
-            {
-                FATAL("Error : cc_light_instr not defined for instruction: "+iname+" !");
-            }
-#if 1   // FIXME
-            else {
-                DOUT("and it is: " << cc_light_instr);
-            }
-#endif
-        } else {
-            FATAL("custom instruction not found for : "+iname+" !");
-        }
-        return cc_light_instr;
     }
 
 
@@ -519,6 +507,7 @@ private:
             bool classical_bundle = false;
             std::stringstream sspre, ssinst;
 
+            // generate bindle header
 #if 0   // FIXME: later. Is it necessary to split sspre and ssinst?
             // delay start of bundle
             if(delta < 8)
@@ -528,42 +517,62 @@ private:
                       << "    1    ";
 #endif
 
+            // generate code for this bundle
             for(auto section = bundle.parallel_sections.begin(); section != bundle.parallel_sections.end(); ++section ) {
+                // check whether section defines classical gate
                 ql::gate *firstInstr = *section->begin();
-                auto itype = firstInstr->type();
-                std::string iname = firstInstr->name;
-                qubit_set_t squbits;
-                qubit_pair_set_t dqubits;
-
-                if(itype == __classical_gate__) {
+                auto firstInstrType = firstInstr->type();
+                if(firstInstrType == __classical_gate__) {
+                    if(section->size() != 1) {
+                        FATAL("Inconsistency detected: classical gate with parallel sections");
+                    }
                     classical_bundle = true;
                     ssinst << classical_instruction2cccode(firstInstr);
                 } else {
-                    std::string cc_light_instr = get_cc_light_instr(iname, platform);
-                    auto nOperands = (firstInstr->operands).size();
-                    if(itype == __nop_gate__)       // a quantum "nop", see gate.h
-                    {
-                        //FIXME: does a __nop_gate__ ever get a cc_light_instr (which are defined in JSON)?
-                        ssinst << cc_light_instr;
-                    } else {    // 'normal' gate
-                        // iterate over all instructions in section to get their operands.
-                        // We assume that all have the same name/type/#operands (FIXME: should we check?)
-                        for(auto insIt = section->begin(); insIt != section->end(); ++insIt) {
+                    /* iterate over all instructions in section.
+                     * NB: strategy differs from cc_light_eqasm_compiler, we have no special treatment of first instruction,
+                     * and don't require all instructions to be identical
+                     */
+                    for(auto insIt = section->begin(); insIt != section->end(); ++insIt) {
+                        ql::gate *instr = *insIt;
+                        auto itype = instr->type();
+                        std::string iname = instr->name;
+                        std::string instr_name = platform.get_instruction_name(iname);
+
+                        if(itype == __nop_gate__)       // a quantum "nop", see gate.h
+                        {
+                            //FIXME: does a __nop_gate__ ever get a cc_light_instr (which are defined in JSON)?
+                            ssinst << instr_name;
+                        } else if(itype == __classical_gate__) {
+                            FATAL("Inconsistency detected: classical gate found after first section");
+                        // FIXME: do we need to test for other itype?
+                        } else {    // 'normal' gate
+                            auto nOperands = instr->operands.size();
+
                             if(1 == nOperands) {
-                                auto &op = (*insIt)->operands[0];
-                                squbits.push_back(op);
+                                auto &op0 = instr->operands[0];
+                                if(verbose) emit(ssinst, SS2S("# " << instr_name << " " << op0).c_str());
+//                                squbits.push_back(op);
+
+                                /* we may have an "x" on 0:
+                                   - that implies an "x' on AWGx channelGroup y
+                                   - and an enable on VSM channel z
+                                */
+
+
                             } else if(2 == nOperands) {
-                                auto &op1 = (*insIt)->operands[0];
-                                auto &op2 = (*insIt)->operands[1];
-                                dqubits.push_back(qubit_pair_t(op1, op2));
+                                auto &op0 = instr->operands[0];
+                                auto &op1 = instr->operands[1];
+                                if(verbose) emit(ssinst, SS2S("# " << instr_name << " " << op0 << "," << op1).c_str());
+//                                dqubits.push_back(qubit_pair_t(op1, op2));
                             } else {
-                                throw ql::exception("Error : only 1 and 2 operand instructions are supported !", false);
+                                FATAL("Only 1 and 2 operand instructions are supported !");
                             }
                         }
 
 
-                        std::string rname;
 #if 0   // FIXME: cc_light SMIS/SMIT handling
+                        std::string rname;
                         if( 1 == nOperands )
                         {
                             rname = gMaskManager.getRegName(squbits);
@@ -576,16 +585,21 @@ private:
                         {
                             throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
                         }
+                        ssinst << instr_name << " " << rname;
 #endif
-                        ssinst << cc_light_instr << " " << rname;
                     }
 
+
+#if 0
                     if(std::next(section) != bundle.parallel_sections.end()) {
                         ssinst << " | ";
                     }
+#endif
                 }
             }
 
+
+            // generate bundle trailer
 #if 0   // insert qwaits
             if(classical_bundle)
             {
@@ -612,18 +626,20 @@ private:
                 ssbundles << "    " << ssinst.str() << "\n";
             }
             else
+#endif
             {
                 ssbundles << sspre.str() << ssinst.str() << "\n";
             }
-#endif
 
             curr_cycle += delta;
         }
 
-        auto & lastBundle = bundles.back();
+#if 0   // FIXME: CC-light
+        auto &lastBundle = bundles.back();
         int lbduration = lastBundle.duration_in_cycles;
         if(lbduration > 1)
             ssbundles << "    qwait " << lbduration << "\n";
+#endif
 
         IOUT("Generating CCCODE for bundles [Done]");
         return ssbundles.str();

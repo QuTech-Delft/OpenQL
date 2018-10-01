@@ -195,9 +195,13 @@ namespace ql
 #define COUT(content) \
         std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" "<< content << std::endl
 
-#define FATAL(s) \
-        {   EOUT(s); \
-            throw ql::exception(std::string("Error : ")+s, false); \
+// helper makro: stringstream to string
+// based on https://stackoverflow.com/questions/21924156/how-to-initialize-a-stdstringstream
+#define SS2S(VALUES) std::string(static_cast<std::ostringstream&&>(std::ostringstream() << VALUES).str())
+
+#define FATAL(content) \
+        {   EOUT(content); \
+            throw ql::exception(SS2S("Error : " << content), false); \
         }
 
 #endif //QL_UTILS_H
