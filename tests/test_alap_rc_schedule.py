@@ -77,16 +77,16 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         prog = ql.Program(prog_name, starmon, 7, 0)
         k = ql.Kernel(kernel_name, starmon, 7, 0)
 
-        # // independent gates but stacking qwg unit use
-        # // in s7, q2, q3 and q4 all use qwg1
-        # // the y q3 must be in an other cycle than the x's because x conflicts with y in qwg1
-        # // the x q2 and x q4 can be in parallel but the y q3 in between prohibits this
-        # // because the qwg1 resource in single dimensional:
-        # // after x q2 it is busy on x in cycle 0,
-        # // then it only looks at the y q3, which requires to go to cycle 1,
-        # // and then the x q4 only looks at the current cycle (cycle 1),
-        # // in which qwg1 is busy with the y, so for the x it is busy,
-        # // and the only option is to go for cycle 2
+        # independent gates but stacking qwg unit use
+        # in s7, q2, q3 and q4 all use qwg1
+        # the y q3 must be in an other cycle than the x's because x conflicts with y in qwg1
+        # the x q2 and x q4 can be in parallel but the y q3 in between prohibits this
+        # because the qwg1 resource in single dimensional:
+        # after x q2 it is busy on x in cycle 0,
+        # then it only looks at the y q3, which requires to go to cycle 1,
+        # and then the x q4 only looks at the current cycle (cycle 1),
+        # in which qwg1 is busy with the y, so for the x it is busy,
+        # and the only option is to go for cycle 2
         k.gate("x", [2])
         k.gate("y", [3])
         k.gate("x", [4])
@@ -101,7 +101,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         scheduler = self._SCHEDULER
         config = os.path.join(rootDir, "test_alap_rc_schedule.json")
 
-        # // create and set platform
+        # create and set platform
         prog_name = "test_" + v + "_scheduler=" + scheduler
         kernel_name = "kernel_" + v + "_scheduler=" + scheduler
 
@@ -109,7 +109,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         prog = ql.Program(prog_name, starmon, 7, 0)
         k = ql.Kernel(kernel_name, starmon, 7, 0)
 
-        # // no dependency, only a conflict in edge resource between the first two czs
+        # no dependency, only a conflict in edge resource between the first two czs
         k.gate("cz", [1, 4])
         k.gate("cz", [0, 3])
         k.gate("cz", [2, 5])
@@ -124,7 +124,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         scheduler = self._SCHEDULER
         config = os.path.join(rootDir, "test_alap_rc_schedule.json")
 
-        # // create and set platform
+        # create and set platform
         prog_name = "test_" + v + "_scheduler=" + scheduler
         kernel_name = "kernel_" + v + "_scheduler=" + scheduler
 
@@ -132,12 +132,12 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         prog = ql.Program(prog_name, starmon, 7, 0)
         k = ql.Kernel(kernel_name, starmon, 7, 0)
 
-        # // preferably cz's parallel, but not with x 3
+        # preferably cz's parallel, but not with x 3
         k.gate("cz", [0, 2])
         k.gate("cz", [1, 4])
         k.gate("x", [3])
 
-        # // likewise, while y 3, no cz on 0,2 or 1,4
+        # likewise, while y 3, no cz on 0,2 or 1,4
         k.gate("y", [3])
         k.gate("cz", [0, 2])
         k.gate("cz", [1, 4])
@@ -152,7 +152,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         scheduler = self._SCHEDULER
         config = os.path.join(rootDir, "test_alap_rc_schedule.json")
 
-        # // create and set platform
+        # create and set platform
         prog_name = "test_" + v + "_scheduler=" + scheduler
         kernel_name = "kernel_" + v + "_scheduler=" + scheduler
 
@@ -160,12 +160,12 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         prog = ql.Program(prog_name, starmon, 7, 0)
         k = ql.Kernel(kernel_name, starmon, 7, 0)
 
-        # // preferably cz's parallel, but not with x 3
+        # preferably cz's parallel, but not with x 3
         k.gate("cz", [0, 2])
         k.gate("cz", [1, 4])
         k.gate("x", [3])
 
-        # // likewise, while y 3, no cz on 0,2 or 1,4
+        # likewise, while y 3, no cz on 0,2 or 1,4
         k.gate("y", [3])
         k.gate("cz", [2, 5])
         k.gate("cz", [4, 6])
@@ -180,7 +180,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         scheduler = self._SCHEDULER
         config = os.path.join(rootDir, "test_alap_rc_schedule.json")
 
-        # // create and set platform
+        # create and set platform
         prog_name = "test_" + v + "_scheduler=" + scheduler
         kernel_name = "kernel_" + v + "_scheduler=" + scheduler
 
@@ -208,7 +208,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         scheduler = self._SCHEDULER
         config = os.path.join(rootDir, "test_alap_rc_schedule.json")
 
-        # // create and set platform
+        # create and set platform
         prog_name = "test_" + v + "_scheduler=" + scheduler
         kernel_name = "kernel_" + v + "_scheduler=" + scheduler
 
@@ -219,7 +219,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         for j in range(7):
             k.gate("x", [j])
 
-        # // a list of all cnots that are ok in trivial mapping
+        # a list of all cnots that are ok in trivial mapping
         k.gate("cnot", [0, 2])
         k.gate("cnot", [0, 3])
         k.gate("cnot", [1, 3])
@@ -237,8 +237,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         k.gate("cnot", [6, 3])
         k.gate("cnot", [6, 4])
 
-        # // for (int j=0; j<7; j++) { k.gate("x", j); }
-
         prog.add_kernel(k)
 
         ql.set_option("scheduler", scheduler)
@@ -250,7 +248,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         scheduler = self._SCHEDULER
         config = os.path.join(rootDir, "test_alap_rc_schedule.json")
 
-        # // create and set platform
+        # create and set platform
         prog_name = "test_" + v + "_scheduler=" + scheduler
         kernel_name = "kernel_" + v + "_scheduler=" + scheduler
 
@@ -265,20 +263,20 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         k.gate("prepz", [4])
         k.gate("prepz", [5])
         k.gate("prepz", [6])
-        # // preps all end at same time, is the base of ASAP
+        # preps all end at same time, is the base of ASAP
 
-        # // rotations on q0, q2 and q5, mutually independent, also wrt resource use
-        k.gate("h", [0])  # // qubit 0 in qwg0 10 cycles rotations
+        # rotations on q0, q2 and q5, mutually independent, also wrt resource use
+        k.gate("h", [0])  # qubit 0 in qwg0 10 cycles rotations
         k.gate("t", [0])
         k.gate("h", [0])
         k.gate("t", [0])
 
-        k.gate("h", [2])  # // qubit 2 in qwg1 5 cycles rotations
+        k.gate("h", [2])  # qubit 2 in qwg1 5 cycles rotations
         k.gate("t", [2])
 
-        k.gate("h", [5])  # // qubit 4 in qwg2 2 cycles rotations
+        k.gate("h", [5])  # qubit 4 in qwg2 2 cycles rotations
 
-        # // measures all start at same time, is the horizon for ALAP
+        # measures all start at same time, is the horizon for ALAP
         k.gate("measure", [0])
         k.gate("measure", [1])
         k.gate("measure", [2])

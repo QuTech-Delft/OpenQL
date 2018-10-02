@@ -8,10 +8,11 @@ rootDir = os.path.dirname(os.path.realpath(__file__))
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
 
-ql.set_option('output_dir', output_dir)
-ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ALAP')
-ql.set_option('log_level', 'LOG_WARNING')
+def set_options():
+    ql.set_option('output_dir', output_dir)
+    ql.set_option('optimize', 'no')
+    ql.set_option('scheduler', 'ASAP')
+    ql.set_option('log_level', 'LOG_WARNING')
 
 def file_compare(fn1, fn2):
     isSame = False
@@ -31,6 +32,7 @@ class Test_basic(unittest.TestCase):
     # @unittest.expectedFailure
     # @unittest.skip
     def test_smis(self):
+        set_options()
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
@@ -76,6 +78,7 @@ class Test_basic(unittest.TestCase):
     # single qubit mask generation test with custom gates
     # @unittest.skip
     def test_smis_with_custom_gates(self):
+        set_options()
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
@@ -117,6 +120,7 @@ class Test_basic(unittest.TestCase):
     # gates)
     # @unittest.skip
     def test_smis_multi_kernel(self):
+        set_options()
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
@@ -171,6 +175,7 @@ class Test_basic(unittest.TestCase):
         assemble(QISA_fn)
 
     def test_smis_all_bundled(self):
+        set_options()
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
@@ -204,6 +209,7 @@ class Test_basic(unittest.TestCase):
     # two qubit mask generation test
     # @unittest.skip
     def test_smit(self):
+        set_options()
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
@@ -250,6 +256,7 @@ class Test_basic(unittest.TestCase):
         assemble(QISA_fn)
 
     def test_smit_all_bundled(self):
+        set_options()
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
@@ -287,6 +294,7 @@ class Test_basic(unittest.TestCase):
 class Test_advance(unittest.TestCase):
 	# @unittest.skip
     def test_qubit_busy(self):
+        set_options()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -321,6 +329,7 @@ class Test_advance(unittest.TestCase):
 
 	# @unittest.skip
     def test_qwg_available_01(self):
+        set_options()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -355,6 +364,7 @@ class Test_advance(unittest.TestCase):
 
 	# @unittest.skip
     def test_qwg_available_02(self):
+        set_options()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -389,6 +399,7 @@ class Test_advance(unittest.TestCase):
 
 	# @unittest.skip
     def test_qwg_busy(self):
+        set_options()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -420,6 +431,7 @@ class Test_advance(unittest.TestCase):
 
 	# @unittest.skip
     def test_measure_available01(self):
+        set_options()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -455,6 +467,7 @@ class Test_advance(unittest.TestCase):
 
 	# @unittest.skip
     def test_measure_available02(self):
+        set_options()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -488,6 +501,7 @@ class Test_advance(unittest.TestCase):
 
 	# @unittest.skip
     def test_measure_busy(self):
+        set_options()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -525,6 +539,7 @@ class Test_advance(unittest.TestCase):
 
 	# @unittest.skip
     def test_edge_available(self):
+        set_options()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -556,6 +571,7 @@ class Test_advance(unittest.TestCase):
 
 	# @unittest.skip
     def test_edge_busy(self):
+        set_options()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -590,6 +606,7 @@ class Test_advance(unittest.TestCase):
 
 	# @unittest.skip
     def test_edge_illegal(self):
+        set_options()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -627,6 +644,7 @@ class Test_advance(unittest.TestCase):
     # @unittest.expectedFailure
     # @unittest.skip
     def test_fast_feedback(self):
+        set_options()
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
@@ -662,7 +680,7 @@ class Test_advance(unittest.TestCase):
 
 
     def test_ccl_buffers(self):
-
+        set_options()
         tests = [
                 # mw - mw buffer (same qubit and of course same awg channel is involved)
                             (0, [ ("x",[0]), ("y",[0]) ]),
@@ -723,7 +741,7 @@ class Test_advance(unittest.TestCase):
 
 
     def test_ccl_latencies(self):
-
+        set_options()
         tests = [
                 # 'y q3' has a latency of 0 ns
                             (0, [("x", [0]), ("y", [3])]),
