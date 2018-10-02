@@ -27,7 +27,6 @@ namespace ql
 
           // default values
           opt_name2opt_val["log_level"] = "LOG_NOTHING";
-          opt_name2opt_val["configuration_file"] = "";
           opt_name2opt_val["output_dir"] = "test_output";
           opt_name2opt_val["mapper"] = "no";
           opt_name2opt_val["initialplace"] = "no";
@@ -40,7 +39,6 @@ namespace ql
           // add options with default values and list of possible values
           app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"], 
             {"LOG_NOTHING", "LOG_CRITICAL", "LOG_ERROR", "LOG_WARNING", "LOG_INFO", "LOG_DEBUG"}, "Log levels", true);
-          app->add_option("--configuration_file", opt_name2opt_val["configuration_file"], "Name of configuration file", true);
           app->add_option("--output_dir", opt_name2opt_val["output_dir"], "Name of output directory", true);
           app->add_set_ignore_case("--mapper", opt_name2opt_val["mapper"], {"no", "base", "baserc", "minextend", "minextendrc"}, "Mapper heuristic", true);
           app->add_set_ignore_case("--initialplace", opt_name2opt_val["initialplace"], {"no", "yes"}, "Initialplace qubits before mapping", true);

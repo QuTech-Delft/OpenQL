@@ -1,4 +1,4 @@
-//#define INITIALPLACE 1
+#define INITIALPLACE 1
 /**
  * @file   mapper.h
  * @date   09/2018
@@ -1333,8 +1333,8 @@ void Init(ql::quantum_platform* p)
 // objective:
 //     min z = sum i: sum j: sum k: sum l: refcount[i][j] * distance(k,l) * x[i][k] * x[j][l]
 // subject to:
-//     forall k: ( sum i: x[i][k] == 1 )
-//     forall i: ( sum k: x[i][k] == 1 )
+//     forall k: ( sum i: x[i][k] <= 1 )        allow more locations than qubits
+//     forall i: ( sum k: x[i][k] == 1 )        but each qubit must have one locations
 //  
 // the article "An algorithm for the quadratic assignment problem using Benders' decomposition"
 // by L. Kaufman and F. Broeckx, transforms this problem by introducing w[i][k] as follows:
@@ -1352,7 +1352,7 @@ void Init(ql::quantum_platform* p)
 //  objective:
 //      min z = sum i: sum k: w[i][k]
 //  subject to:
-//      forall k: ( sum i: x[i][k] == 1 )
+//      forall k: ( sum i: x[i][k] <= 1 )
 //      forall i: ( sum k: x[i][k] == 1 )
 //      forall i: forall k: costmax[i][k] * x[i][k]
 //          + ( sum j: sum l: refcount[i][j]*distance(k,l)*x[j][l] ) - w[i][k] <= costmax[i][k]
@@ -1364,33 +1364,63 @@ using namespace lemon;
 class InitialPlace
 {
 private:
-    // parameters
-    size_t                  nvq;        // number of facilities, virtual qubits; index variables i and j
+                                        // parameters, constant for a program
+    size_t                  nvq;        // number of virtual qubits as specified by programmer
     size_t                  nlocs;      // number of locations, real qubits; index variables k and l
     Grid                   *gridp;      // current grid with Distance function
 
+                                        // remaining attributes are computed per circuit
+    size_t                  nfac;       // number of facilities, actually used virtual qubits; index variables i and j
+
 public:
 
+// program-once initialization
 void Init(size_t n, Grid* g, ql::quantum_platform *p)
 {
     DOUT("InitialPlace Init ...");
     nvq = n;
     nlocs = p->qubit_number;
+    DOUT("... number of virtual qubits: " << nvq << " number of real qubits (locations): " << nlocs);
     gridp = g;
 }
 
 // find an initial placement of the virtual qubits for the given circuit
 // the resulting placement is put in the provided virt2real map
+// ok indicates whether initial placement was successful
 void Place( ql::circuit& circ, Virt2Real& v2r, bool &ok)
 {
     ok = false;
+
     DOUT("InitialPlace circuit ...");
+    DOUT("... compute usecount by scanning circuit");
+    std::vector<size_t>  usecount;  // usecount[v] = count of use of virtual qubit v in current circuit
+    usecount.resize(nvq,0);
+    std::vector<size_t> v2i;        // v2i[virtual qubit index v] -> index of used qubit i
+    v2i.resize(nvq,SIZE_MAX);       // SIZE_MAX means undefined, virtual qubit v not used by circuit as operand o of gate g
+    for ( auto& gp : circ )
+    {
+        for ( auto v : gp->operands)
+        {
+            usecount[v] += 1;
+        }
+    }
+    nfac = 0;
+    for (size_t v=0; v < nvq; v++)
+    {
+        if (usecount[v] != 0)
+        {
+            v2i[v] = nfac;
+            nfac += 1;
+        }
+    }
+    DOUT("... number of facilities: " << nfac << " while number of virtual qubits is: " << nvq);
+
     // precompute refcount by scanning circuit
-    // refcount[i][j] = count of two-qubit gates between virtual qubits i and j in current circuit
+    // refcount[i][j] = count of two-qubit gates between used qubits i and j in current circuit
     DOUT("... compute refcount by scanning circuit");
     std::vector<std::vector<size_t>>  refcount;
-    refcount.resize(nvq); for (size_t i=0; i<nvq; i++) refcount[i].resize(nvq,0);
-    bool trivial = true;
+    refcount.resize(nfac); for (size_t i=0; i<nfac; i++) refcount[i].resize(nfac,0);
+    bool trivial = true;    // true when all refcounts are 0
     for ( auto& gp : circ )
     {
         auto&   q = gp->operands;
@@ -1402,7 +1432,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r, bool &ok)
         if (q.size() == 2)
         {
             trivial = false;
-            refcount[q[0]][q[1]] += 1;
+            refcount[v2i[q[0]]][v2i[q[1]]] += 1;
         }
     }
     if (trivial)
@@ -1413,15 +1443,15 @@ void Place( ql::circuit& circ, Virt2Real& v2r, bool &ok)
     }
 
     // precompute costmax by applying formula
-    // costmax[i][k] = sum j: sum l: refcount[i][j] * distance(k,l) for qubit i in location k
+    // costmax[i][k] = sum j: sum l: refcount[i][j] * distance(k,l) for used qubit i in location k
     DOUT("... precompute costmax by combining refcount and distances");
     std::vector<std::vector<size_t>>  costmax;   
-    costmax.resize(nvq); for (size_t i=0; i<nvq; i++) costmax[i].resize(nlocs,0);
-    for ( size_t i=0; i<nvq; i++ )
+    costmax.resize(nfac); for (size_t i=0; i<nfac; i++) costmax[i].resize(nlocs,0);
+    for ( size_t i=0; i<nfac; i++ )
     {
         for ( size_t k=0; k<nlocs; k++ )
         {
-            for ( size_t j=0; j<nvq; j++ )
+            for ( size_t j=0; j<nfac; j++ )
             {
                 for ( size_t l=0; l<nlocs; l++ )
                 {
@@ -1437,19 +1467,19 @@ void Place( ql::circuit& circ, Virt2Real& v2r, bool &ok)
     
     // variables (columns)
     //  x[i][k] are integral, values 0 or 1
-    //      x[i][k] represents whether virtual qubit i is in location k
+    //      x[i][k] represents whether used qubit i is in location k
     //  w[i][k] are real, values >= 0
     //      w[i][k] represents x[i][k] * sum j: sum l: refcount[i][j] * distance(k,l) * x[j][l]
-    //       i.e. if qubit i not in location k then 0
-    //       else for all qubits j in its location l sum refcount[i][j] * distance(k,l)
+    //       i.e. if used qubit i not in location k then 0
+    //       else for all used qubits j in its location l sum refcount[i][j] * distance(k,l)
     DOUT("... allocate x column variable");
     std::vector<std::vector<Mip::Col>> x;
-        x.resize(nvq); for (size_t i=0; i<nvq; i++) x[i].resize(nlocs);
+        x.resize(nfac); for (size_t i=0; i<nfac; i++) x[i].resize(nlocs);
     DOUT("... allocate w column variable");
     std::vector<std::vector<Mip::Col>> w;
-        w.resize(nvq); for (size_t i=0; i<nvq; i++) w[i].resize(nlocs);
+        w.resize(nfac); for (size_t i=0; i<nfac; i++) w[i].resize(nlocs);
     DOUT("... add/initialize x and w column variables with trivial constraints and type");
-    for ( size_t i=0; i<nvq; i++ )
+    for ( size_t i=0; i<nfac; i++ )
     {
         for ( size_t k=0; k<nlocs; k++ )
         {
@@ -1457,72 +1487,121 @@ void Place( ql::circuit& circ, Virt2Real& v2r, bool &ok)
             mip.colLowerBound(x[i][k], 0);          // 0 <= x[i][k]
             mip.colUpperBound(x[i][k], 1);          //      x[i][k] <= 1
             mip.colType(x[i][k], Mip::INTEGER);     // int
+            DOUT("x[" << i << "][" << k << "] INTEGER >= 0 and <= 1");
     
             w[i][k] = mip.addCol();
             mip.colLowerBound(w[i][k], 0);          // 0 <= w[i][k]
             mip.colType(w[i][k], Mip::REAL);        // real
+            DOUT("w[" << i << "][" << k << "] REAL >= 0");
         }
     }
     
     // constraints (rows)
     //  forall i: ( sum k: x[i][k] == 1 )
     DOUT("... add/initialize sum to 1 constraint rows");
-    for ( size_t i=0; i<nvq; i++ )
+    for ( size_t i=0; i<nfac; i++ )
     {
         Mip::Expr   sum;
+        std::string s = "";
+        bool started = false;
         for ( size_t k=0; k<nlocs; k++ )
         {
             sum += x[i][k];
+            if (started) s += "+ "; else started = true;
+            s += "x[";
+            s += std::to_string(i);
+            s += "][";
+            s += std::to_string(k);
+            s += "]";
         }
         mip.addRow(sum == 1);
+        s += " == 1";
+        DOUT(s);
     }
     
     // constraints (rows)
-    //  forall k: ( sum i: x[i][k] == 1 )
+    //  forall k: ( sum i: x[i][k] <= 1 )
     for ( size_t k=0; k<nlocs; k++ )
     {
         Mip::Expr   sum;
-        for ( size_t i=0; i<nvq; i++ )
+        std::string s = "";
+        bool started = false;
+        for ( size_t i=0; i<nfac; i++ )
         {
             sum += x[i][k];
+            if (started) s += "+ "; else started = true;
+            s += "x[";
+            s += std::to_string(i);
+            s += "]["; 
+            s += std::to_string(k); 
+            s += "]";
         }
-        mip.addRow(sum == 1);
+        mip.addRow(sum <= 1);
+        s += " <= 1";
+        DOUT(s);
     }
     
     // constraints (rows)
     //  forall i, k: costmax[i][k] * x[i][k]
     //          + sum j sum l refcount[i][j]*distance[k][l]*x[j][l] - w[i][k] <= costmax[i][k]
-    DOUT("... add/initialize nvq x nlocs constraint rows based on nvq x nlocs column combinations");
-    for ( size_t i=0; i<nvq; i++ )
+    DOUT("... add/initialize nfac x nlocs constraint rows based on nfac x nlocs column combinations");
+    for ( size_t i=0; i<nfac; i++ )
     {
         for ( size_t k=0; k<nlocs; k++ )
         {
             Mip::Expr   left = costmax[i][k] * x[i][k];
-            for ( size_t j=0; j<nvq; j++ )
+            std::string lefts = "";
+            bool started = false;
+            for ( size_t j=0; j<nfac; j++ )
             {
                 for ( size_t l=0; l<nlocs; l++ )
                 {
                     left += refcount[i][j] * gridp->Distance(k,l) * x[j][l];
+                    if (refcount[i][j] * gridp->Distance(k,l) != 0)
+                    {
+                        if (started) lefts += " + "; else started = true;
+                        lefts += std::to_string(refcount[i][j] * gridp->Distance(k,l));
+                        lefts += " * x[";
+                        lefts += std::to_string(j);
+                        lefts += "][";
+                        lefts += std::to_string(l);
+                        lefts += "]";
+                    }
                 }
             }
             left -= w[i][k];
+            lefts += "- w[";
+            lefts += std::to_string(i);
+            lefts += "][";
+            lefts += std::to_string(k);
+            lefts += "]";
             Mip::Expr   right = costmax[i][k];
             mip.addRow(left <= right);
+            DOUT(lefts << " <= " << costmax[i][k]);
         }
     }
     
     // objective
     Mip::Expr   objective;
     DOUT("... add/initialize objective");
+    std::string objs = "";
+    bool started = false;
     mip.min();
-    for ( size_t i=0; i<nvq; i++ )
+    for ( size_t i=0; i<nfac; i++ )
     {
         for ( size_t k=0; k<nlocs; k++ )
         {
             objective += w[i][k];
+            if (started) objs += "+ "; else started = true;
+            objs += "w[";
+            objs += std::to_string(i);
+            objs += "][";
+            objs += std::to_string(k);
+            objs += "]";
         }
     }
     mip.obj(objective);
+    DOUT("MINIMIZE " << objs);
     
     // solve the problem
     DOUT("... solve the problem");
@@ -1534,13 +1613,26 @@ void Place( ql::circuit& circ, Virt2Real& v2r, bool &ok)
         ok = true;
         // get the results
         DOUT("... interpret result and copy to Virt2Real");
-        for ( size_t i=0; i<nvq; i++ )
+        for (size_t v=0; v<nvq; v++)
+        {
+            v2r[v] = SIZE_MAX;      // i.e. undefined
+        }
+        for ( size_t i=0; i<nfac; i++ )
         {
             for ( size_t k=0; k<nlocs; k++ )
             {
                 if (mip.sol(x[i][k]) == 1)
                 {
-                    v2r[i] = k;
+                    // map used qubit i to location k
+                    // use v2i backward to convert i to its corresponding virtual qubit v
+                    // and to fill v2r[v]
+                    for (size_t v=0; v<nvq; v++)
+                    {
+                        if (v2i[v] == i)
+                        {
+                            v2r[v] = k;
+                        }
+                    }
                 }
             }
         }
