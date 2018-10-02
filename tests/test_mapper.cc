@@ -429,39 +429,56 @@ int main(int argc, char ** argv)
     ql::options::set("scheduler", "ASAP");
     ql::options::set("mapdecomposer", "yes");   // always decompose to primitives
 
-    test_singledim("singledim", "minextendrc", "yes");
+//  test_singledim("singledim", "minextendrc", "yes");
 
-    test_qwg("qwg", "minextendrc", "yes");
-    test_edge("edge", "minextendrc", "yes");
-    test_detuned("detuned", "minextendrc", "yes");
+//  test_qwg("qwg", "minextendrc", "yes");
+//  test_edge("edge", "minextendrc", "yes");
+//  test_detuned("detuned", "minextendrc", "yes");
 
-//    test_oneNN("oneNN", "base", "yes");
-//    test_oneNN("oneNN", "minextend", "yes");
+//  test_oneNN("oneNN", "base", "yes");
+//  test_oneNN("oneNN", "minextend", "yes");
+    test_oneNN("oneNN", "minextendrc", "no");
     test_oneNN("oneNN", "minextendrc", "yes");
 
-//    test_manyNN("manyNN", "base", "yes");
-//    test_manyNN("manyNN", "minextend", "yes");
-//    test_manyNN("manyNN", "minextendrc", "yes");
+//  test_manyNN("manyNN", "base", "yes");
+//  test_manyNN("manyNN", "minextend", "yes");
+    test_manyNN("manyNN", "minextendrc", "no");
+    test_manyNN("manyNN", "minextendrc", "yes");
     
-//    test_oneD2("oneD2", "base", "yes");
-//    test_oneD2("oneD2", "minextend", "yes");
+    test_oneD2("oneD2", "base", "no");
+    test_oneD2("oneD2", "base", "yes");
+    test_oneD2("oneD2", "minextend", "no");
+    test_oneD2("oneD2", "minextend", "yes");
+    test_oneD2("oneD2", "minextendrc", "no");
     test_oneD2("oneD2", "minextendrc", "yes");
 
-//    test_oneD4("oneD4", "base", "yes");
-//    test_oneD4("oneD4", "minextend", "yes");
+    test_oneD4("oneD4", "base", "no");
+    test_oneD4("oneD4", "base", "yes");
+    test_oneD4("oneD4", "minextend", "no");
+    test_oneD4("oneD4", "minextend", "yes");
+    test_oneD4("oneD4", "minextendrc", "no");
     test_oneD4("oneD4", "minextendrc", "yes");
 
-//    test_string("string", "base", "yes");
-//    test_string("string", "minextend", "yes");
+    test_string("string", "base", "no");
+    test_string("string", "base", "yes");
+    test_string("string", "minextend", "no");
+    test_string("string", "minextend", "yes");
+    test_string("string", "minextendrc", "no");
     test_string("string", "minextendrc", "yes");
 
+    test_allD("allD", "base", "no");
     test_allD("allD", "base", "yes");
+    test_allD("allD", "minextend", "no");
     test_allD("allD", "minextend", "yes");
+    test_allD("allD", "minextendrc", "no");
     test_allD("allD", "minextendrc", "yes");
 
-//    test_allDopt("allDopt", "base", "yes");
-//    test_allDopt("allDopt", "minextend", "yes");
-//    test_allDopt("allDopt", "minextendrc", "yes");
+    test_allDopt("allDopt", "base", "no");
+    test_allDopt("allDopt", "base", "yes");
+    test_allDopt("allDopt", "minextend", "no");
+    test_allDopt("allDopt", "minextend", "yes");
+    test_allDopt("allDopt", "minextendrc", "no");
+    test_allDopt("allDopt", "minextendrc", "yes");
 
     return 0;
 }

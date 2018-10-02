@@ -1361,6 +1361,15 @@ void Init(ql::quantum_platform* p)
 #include <lemon/lp.h>
 using namespace lemon;
 
+typedef
+enum InitialPlaceResults
+{
+    ipr_any,            // any mapping will do because there are no two-qubit gates in the circuit
+    ipr_current,        // current mapping will do because all two-qubit gates are NN
+    ipr_newmap,         // initial placement solution found a mapping
+    ipr_failed          // initial placement solution failed
+} ipr_t;
+
 class InitialPlace
 {
 private:
@@ -1386,11 +1395,9 @@ void Init(size_t n, Grid* g, ql::quantum_platform *p)
 
 // find an initial placement of the virtual qubits for the given circuit
 // the resulting placement is put in the provided virt2real map
-// ok indicates whether initial placement was successful
-void Place( ql::circuit& circ, Virt2Real& v2r, bool &ok)
+// result indicates one of the result indicators (ipr_t, see above)
+void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
 {
-    ok = false;
-
     DOUT("InitialPlace circuit ...");
     DOUT("... compute usecount by scanning circuit");
     std::vector<size_t>  usecount;  // usecount[v] = count of use of virtual qubit v in current circuit
@@ -1420,7 +1427,8 @@ void Place( ql::circuit& circ, Virt2Real& v2r, bool &ok)
     DOUT("... compute refcount by scanning circuit");
     std::vector<std::vector<size_t>>  refcount;
     refcount.resize(nfac); for (size_t i=0; i<nfac; i++) refcount[i].resize(nfac,0);
-    bool trivial = true;    // true when all refcounts are 0
+    bool anymap = true;    // true when all refcounts are 0
+    bool currmap = true;   // true when in current map all two-qubit gates are NN
     for ( auto& gp : circ )
     {
         auto&   q = gp->operands;
@@ -1431,14 +1439,27 @@ void Place( ql::circuit& circ, Virt2Real& v2r, bool &ok)
         }
         if (q.size() == 2)
         {
-            trivial = false;
+            anymap = false;
             refcount[v2i[q[0]]][v2i[q[1]]] += 1;
+            
+            if (gridp->Distance(v2r[q[0]], v2r[q[1]]) > 1)
+            {
+                currmap = false;
+            }
         }
     }
-    if (trivial)
+    if (anymap)
     {
-        DOUT("Initial placement: no two-qubit gates found, so no constraints, and every mapping is ok");
-        DOUT("InitialPlace circuit [DONE]");
+        DOUT("Initial placement: no two-qubit gates found, so no constraints, and any mapping is ok");
+        DOUT("InitialPlace circuit [ANY]");
+        result = ipr_any;
+        return;
+    }
+    if (currmap)
+    {
+        DOUT("Initial placement: in current map, all two-qubit gates are nearest neighbor, so current map is ok");
+        DOUT("InitialPlace circuit [CURRENT]");
+        result = ipr_current;
         return;
     }
 
@@ -1472,13 +1493,13 @@ void Place( ql::circuit& circ, Virt2Real& v2r, bool &ok)
     //      w[i][k] represents x[i][k] * sum j: sum l: refcount[i][j] * distance(k,l) * x[j][l]
     //       i.e. if used qubit i not in location k then 0
     //       else for all used qubits j in its location l sum refcount[i][j] * distance(k,l)
-    DOUT("... allocate x column variable");
+    // DOUT("... allocate x column variable");
     std::vector<std::vector<Mip::Col>> x;
         x.resize(nfac); for (size_t i=0; i<nfac; i++) x[i].resize(nlocs);
-    DOUT("... allocate w column variable");
+    // DOUT("... allocate w column variable");
     std::vector<std::vector<Mip::Col>> w;
         w.resize(nfac); for (size_t i=0; i<nfac; i++) w[i].resize(nlocs);
-    DOUT("... add/initialize x and w column variables with trivial constraints and type");
+    // DOUT("... add/initialize x and w column variables with trivial constraints and type");
     for ( size_t i=0; i<nfac; i++ )
     {
         for ( size_t k=0; k<nlocs; k++ )
@@ -1487,18 +1508,18 @@ void Place( ql::circuit& circ, Virt2Real& v2r, bool &ok)
             mip.colLowerBound(x[i][k], 0);          // 0 <= x[i][k]
             mip.colUpperBound(x[i][k], 1);          //      x[i][k] <= 1
             mip.colType(x[i][k], Mip::INTEGER);     // int
-            DOUT("x[" << i << "][" << k << "] INTEGER >= 0 and <= 1");
+            // DOUT("x[" << i << "][" << k << "] INTEGER >= 0 and <= 1");
     
             w[i][k] = mip.addCol();
             mip.colLowerBound(w[i][k], 0);          // 0 <= w[i][k]
             mip.colType(w[i][k], Mip::REAL);        // real
-            DOUT("w[" << i << "][" << k << "] REAL >= 0");
+            // DOUT("w[" << i << "][" << k << "] REAL >= 0");
         }
     }
     
     // constraints (rows)
     //  forall i: ( sum k: x[i][k] == 1 )
-    DOUT("... add/initialize sum to 1 constraint rows");
+    // DOUT("... add/initialize sum to 1 constraint rows");
     for ( size_t i=0; i<nfac; i++ )
     {
         Mip::Expr   sum;
@@ -1516,7 +1537,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r, bool &ok)
         }
         mip.addRow(sum == 1);
         s += " == 1";
-        DOUT(s);
+        // DOUT(s);
     }
     
     // constraints (rows)
@@ -1538,13 +1559,13 @@ void Place( ql::circuit& circ, Virt2Real& v2r, bool &ok)
         }
         mip.addRow(sum <= 1);
         s += " <= 1";
-        DOUT(s);
+        // DOUT(s);
     }
     
     // constraints (rows)
     //  forall i, k: costmax[i][k] * x[i][k]
     //          + sum j sum l refcount[i][j]*distance[k][l]*x[j][l] - w[i][k] <= costmax[i][k]
-    DOUT("... add/initialize nfac x nlocs constraint rows based on nfac x nlocs column combinations");
+    // DOUT("... add/initialize nfac x nlocs constraint rows based on nfac x nlocs column combinations");
     for ( size_t i=0; i<nfac; i++ )
     {
         for ( size_t k=0; k<nlocs; k++ )
@@ -1577,13 +1598,13 @@ void Place( ql::circuit& circ, Virt2Real& v2r, bool &ok)
             lefts += "]";
             Mip::Expr   right = costmax[i][k];
             mip.addRow(left <= right);
-            DOUT(lefts << " <= " << costmax[i][k]);
+            // DOUT(lefts << " <= " << costmax[i][k]);
         }
     }
     
     // objective
     Mip::Expr   objective;
-    DOUT("... add/initialize objective");
+    // DOUT("... add/initialize objective");
     std::string objs = "";
     bool started = false;
     mip.min();
@@ -1601,49 +1622,51 @@ void Place( ql::circuit& circ, Virt2Real& v2r, bool &ok)
         }
     }
     mip.obj(objective);
-    DOUT("MINIMIZE " << objs);
+    // DOUT("MINIMIZE " << objs);
     
     // solve the problem
+    WOUT("... solve the initial placement model, this may take a while ...");
     DOUT("... solve the problem");
     Mip::SolveExitStatus s = mip.solve();
     DOUT("... determine result of solving");
     Mip::ProblemType pt = mip.type();
-    if (s == Mip::SOLVED && pt == Mip::OPTIMAL)
-    {
-        ok = true;
-        // get the results
-        DOUT("... interpret result and copy to Virt2Real");
-        for (size_t v=0; v<nvq; v++)
-        {
-            v2r[v] = SIZE_MAX;      // i.e. undefined
-        }
-        for ( size_t i=0; i<nfac; i++ )
-        {
-            for ( size_t k=0; k<nlocs; k++ )
-            {
-                if (mip.sol(x[i][k]) == 1)
-                {
-                    // map used qubit i to location k
-                    // use v2i backward to convert i to its corresponding virtual qubit v
-                    // and to fill v2r[v]
-                    for (size_t v=0; v<nvq; v++)
-                    {
-                        if (v2i[v] == i)
-                        {
-                            v2r[v] = k;
-                        }
-                    }
-                }
-            }
-        }
-        v2r.Print("... result Virt2Real map of InitialPlace");
-    }
-    else
+    if (s != Mip::SOLVED || pt != Mip::OPTIMAL)
     {
         DOUT("Initial placement: no (optimal) solution found; solve returned:"<< s << " type returned:" << pt);
         EOUT("Initial placement: no (optimal) solution found; solve returned:"<< s << " type returned:" << pt);
         // throw ql::exception("Initial placement: no (optimal) solution found", false);
+        result = ipr_failed;
+        DOUT("InitialPlace circuit [FAILED]");
+        return;
     }
+
+    // get the results
+    DOUT("... interpret result and copy to Virt2Real");
+    for (size_t v=0; v<nvq; v++)
+    {
+        v2r[v] = SIZE_MAX;      // i.e. undefined
+    }
+    for ( size_t i=0; i<nfac; i++ )
+    {
+        for ( size_t k=0; k<nlocs; k++ )
+        {
+            if (mip.sol(x[i][k]) == 1)
+            {
+                // map used qubit i to location k
+                // use v2i backward to convert i to its corresponding virtual qubit v
+                // and to fill v2r[v]
+                for (size_t v=0; v<nvq; v++)
+                {
+                    if (v2i[v] == i)
+                    {
+                        v2r[v] = k;
+                    }
+                }
+            }
+        }
+    }
+    v2r.Print("... result Virt2Real map of InitialPlace");
+    result = ipr_newmap;
     DOUT("InitialPlace circuit [DONE]");
 }
     
@@ -2083,17 +2106,17 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name)
         DOUT("InitialPlace copy in current Virt2Real mapping ...");
         mainPast.GetV2r(v2r);
         // compute mapping using ip model, may fail
-        bool        ipok = true;
+        ipr_t ipok;
         ip.Place(circ, v2r, ipok);
-        if (ipok)
+        if (ipok == ipr_newmap)
         {
-            DOUT("InitialPlace copy back resulting Virt2Real mapping ...");
-            // replace initial mapping of mainPast by any result of initial placement
+            DOUT("InitialPlace result is used to update Virt2Real mapping");
+            // replace current mapping of mainPast by the result of initial placement
             mainPast.SetV2r(v2r);
         }
         else
         {
-            DOUT("InitialPlace: use trivial mapping because IP model failed ...");
+            DOUT("InitialPlace: don't use result; continue with current mapping");
         }
     }
 #endif
