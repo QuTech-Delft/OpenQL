@@ -35,7 +35,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     def test_allxy(self):
@@ -64,7 +64,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     def test_qasm_seq_echo(self):
@@ -96,7 +96,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     def test_qasm_seq_butterfly(self):
@@ -122,7 +122,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
 if __name__ == '__main__':

@@ -46,7 +46,7 @@ class Test_wait(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_simple.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
@@ -70,7 +70,7 @@ class Test_wait(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_parallel.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
@@ -107,7 +107,7 @@ class Test_wait(unittest.TestCase):
         # compile the program
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_sweep.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
@@ -134,7 +134,7 @@ class Test_wait(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_multi.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
@@ -159,7 +159,7 @@ class Test_wait(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_barrier.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
@@ -188,7 +188,7 @@ class Test_wait(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_barrier.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
