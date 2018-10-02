@@ -70,7 +70,7 @@ class Test_basic(unittest.TestCase):
            errors = qasm_reader.load()
            self.assertTrue(errors == 0)
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     # single qubit mask generation test with custom gates
@@ -110,7 +110,7 @@ class Test_basic(unittest.TestCase):
            errors = qasm_reader.load()
            self.assertTrue(errors == 0)
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     # single qubit mask generation multi-kernel test (custom with non-custom
@@ -167,7 +167,7 @@ class Test_basic(unittest.TestCase):
            errors = qasm_reader.load()
            self.assertTrue(errors == 0)
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     def test_smis_all_bundled(self):
@@ -193,7 +193,7 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         GOLD_fn = rootDir + '/golden/test_smis_all_bundled.qisa'
 
         assemble(QISA_fn)
@@ -246,7 +246,7 @@ class Test_basic(unittest.TestCase):
            errors = qasm_reader.load()
            self.assertTrue(errors == 0)
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     def test_smit_all_bundled(self):
@@ -277,7 +277,7 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         GOLD_fn = rootDir + '/golden/test_smit_all_bundled.qisa'
 
         assemble(QISA_fn)
@@ -316,7 +316,7 @@ class Test_advance(unittest.TestCase):
            errors = qasm_reader.load()
            self.assertTrue(errors == 0)
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
 	# @unittest.skip
@@ -350,7 +350,7 @@ class Test_advance(unittest.TestCase):
            errors = qasm_reader.load()
            self.assertTrue(errors == 0)
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
 	# @unittest.skip
@@ -384,7 +384,7 @@ class Test_advance(unittest.TestCase):
            errors = qasm_reader.load()
            self.assertTrue(errors == 0)
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
 	# @unittest.skip
@@ -440,7 +440,7 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
         # load qasm
@@ -510,7 +510,7 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
         # load qasm
@@ -575,7 +575,7 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
         # load qasm
@@ -648,7 +648,7 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
         # load qasm
@@ -706,15 +706,15 @@ class Test_advance(unittest.TestCase):
 
             # load qasm
             qasm_files = []
-            qasm_files.append(os.path.join(output_dir, p.name_+'.qasm'))
-            qasm_files.append(os.path.join(output_dir, p.name_+'_scheduled.qasm'))
+            qasm_files.append(os.path.join(output_dir, p.name+'.qasm'))
+            qasm_files.append(os.path.join(output_dir, p.name+'_scheduled.qasm'))
 
             for qasm_file in qasm_files:
                qasm_reader = ql.QASM_Loader(qasm_file)
                errors = qasm_reader.load()
                self.assertTrue(errors == 0)
 
-            QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+            QISA_fn = os.path.join(output_dir, p.name+'.qisa')
             gold_fn = rootDir + '/golden/test_ccl_buffers_'+str(testNo)+'.qisa'        
 
             assemble(QISA_fn)
@@ -757,15 +757,15 @@ class Test_advance(unittest.TestCase):
 
             # load qasm
             qasm_files = []
-            qasm_files.append(os.path.join(output_dir, p.name_+'.qasm'))
-            qasm_files.append(os.path.join(output_dir, p.name_+'_scheduled.qasm'))
+            qasm_files.append(os.path.join(output_dir, p.name+'.qasm'))
+            qasm_files.append(os.path.join(output_dir, p.name+'_scheduled.qasm'))
 
             for qasm_file in qasm_files:
                qasm_reader = ql.QASM_Loader(qasm_file)
                errors = qasm_reader.load()
                self.assertTrue(errors == 0)
 
-            QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+            QISA_fn = os.path.join(output_dir, p.name+'.qisa')
             gold_fn = rootDir + '/golden/test_ccl_latencies_'+str(testNo)+'.qisa'        
 
             assemble(QISA_fn)

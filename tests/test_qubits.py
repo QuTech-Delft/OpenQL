@@ -49,7 +49,7 @@ class Test_qubits(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/test_1_qubit.qasm'
-        qasm_fn = os.path.join(output_dir, p.name_+'.qasm')
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
 
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
@@ -73,7 +73,7 @@ class Test_qubits(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/test_2_qubit.qasm'
-        qasm_fn = os.path.join(output_dir, p.name_+'.qasm')
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
 
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
@@ -99,7 +99,7 @@ class Test_qubits(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/test_3_qubit.qasm'
-        qasm_fn = os.path.join(output_dir, p.name_+'.qasm')
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
 
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
