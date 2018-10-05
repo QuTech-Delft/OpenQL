@@ -29,7 +29,7 @@ public:
     /*
      * compile qasm to quantumsim
      */
-    void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& platform) throw (ql::exception)
+    void compile(std::string prog_name, ql::circuit& c, size_t qubit_count, ql::quantum_platform& platform) throw (ql::exception)
     {
         IOUT("Compiling qasm code ...");
         if (c.empty())

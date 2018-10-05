@@ -12,6 +12,7 @@
 #include <sstream>
 #include <algorithm>
 #include <iterator>
+#include <cmath>
 
 #include "ql/json.h"
 #include "ql/utils.h"
@@ -20,13 +21,13 @@
 #include "ql/optimizer.h"
 #include "ql/ir.h"
 
-#include "mapper.h"
-
 #ifndef __disable_lemon__
 #include "scheduler.h"
 #endif // __disable_lemon__
 
-#define PI M_PI
+//#ifndef M_PI
+//#define M_PI M_M_PI
+//#endif
 
 namespace ql
 {
@@ -992,18 +993,6 @@ public:
         DOUT("decompose_toffoli() [Done] ");
     }
 
-    // per kernel mapping of the circuit
-    // must take care that qubit mapping between kernels matches
-    // by importing and exporting mappings
-    void map(Mapper& mapper, std::string& map_in_qasm, std::string& map_out_qasm)
-    {
-        DOUT("Mapping kernel: " << name);
-        map_in_qasm += qasm();
-        mapper.MapCircuit(c, name);
-        ql::ir::bundles_t bundles = mapper.Bundler(c);
-        map_out_qasm += ql::ir::qasm(bundles);
-    }
-
     void schedule(size_t qubits, quantum_platform platform, std::string& sched_qasm, std::string& sched_dot)
     {
         std::string scheduler = ql::options::get("scheduler");
@@ -1519,38 +1508,38 @@ public:
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubits[0];
-                controlled_rx(tq, cq, PI/2);
+                controlled_rx(tq, cq, M_PI/2);
             }
             else if( __mrx90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubits[0];
-                controlled_rx(tq, cq, -1*PI/2);
+                controlled_rx(tq, cq, -1*M_PI/2);
             }
             else if( __rx180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubits[0];
-                controlled_rx(tq, cq, PI);
+                controlled_rx(tq, cq, M_PI);
                 // controlled_x(tq, cq);
             }
             else if( __ry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubits[0];
-                controlled_ry(tq, cq, PI/4);
+                controlled_ry(tq, cq, M_PI/4);
             }
             else if( __mry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubits[0];
-                controlled_ry(tq, cq, -1*PI/4);
+                controlled_ry(tq, cq, -1*M_PI/4);
             }
             else if( __ry180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubits[0];
-                controlled_ry(tq, cq, PI);
+                controlled_ry(tq, cq, M_PI);
                 // controlled_y(tq, cq);
             }
             else

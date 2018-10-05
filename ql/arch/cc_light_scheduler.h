@@ -273,14 +273,11 @@ void PrintBundles(ql::ir::bundles_t & bundles)
 }
 
 
-std::string deslash(std::string& s)
-{ std::string r = s; for (size_t i=0; i<r.size(); i++) { if (r[i]=='/') { r[i]='_'; } } return r;}
-
 void WriteCCLightQasm(std::string prog_name, size_t num_qubits, ql::ir::bundles_t & bundles)
 {
     IOUT("Writing Recourse-contraint scheduled CC-Light QASM");
     ofstream fout;
-    string qasmfname( ql::options::get("output_dir") + "/" + deslash(prog_name) + "_scheduled_rc.qasm");
+    string qasmfname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
     IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << qasmfname);
     fout.open( qasmfname, ios::binary);
     if ( fout.fail() )
@@ -292,7 +289,7 @@ void WriteCCLightQasm(std::string prog_name, size_t num_qubits, ql::ir::bundles_
 
     size_t curr_cycle=1;
     fout <<"qubits " << num_qubits << "\n\n"
-         << "." << deslash(prog_name);
+         << "." << prog_name;
     for ( ql::ir::bundle_t & abundle : bundles)
     {
         auto bcycle = abundle.start_cycle;
@@ -372,7 +369,7 @@ void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, Ma
     IOUT("Generating CC-Light QISA");
 
     ofstream fout;
-    string qisafname( ql::options::get("output_dir") + "/" + deslash(prog_name) + ".qisa");
+    string qisafname( ql::options::get("output_dir") + "/" + prog_name + ".qisa");
     fout.open( qisafname, ios::binary);
     if ( fout.fail() )
     {
@@ -501,7 +498,7 @@ void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & p
 {
     IOUT("Generating Time-stamped CC-Light QISA");
     ofstream fout;
-    string qisafname( ql::options::get("output_dir") + "/" + deslash(prog_name) + ".tqisa");
+    string qisafname( ql::options::get("output_dir") + "/" + prog_name + ".tqisa");
     fout.open( qisafname, ios::binary);
     if ( fout.fail() )
     {

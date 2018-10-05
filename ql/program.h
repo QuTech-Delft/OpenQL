@@ -226,9 +226,6 @@ public:
             throw ql::exception("Error: Unknown option '"+tdopt+"' set for decompose_toffoli !",false);
         }
 
-
-        map();
-
         schedule();
 
         if (backend_compiler == NULL)
@@ -236,7 +233,6 @@ public:
             WOUT("no eqasm compiler has been specified in the configuration file, only qasm code has been compiled.");
             return 0;
         }
-
 
         IOUT("fusing quantum kernels...");
         ql::circuit fused;
@@ -252,7 +248,7 @@ public:
         try
         {
             IOUT("compiling eqasm code...");
-            backend_compiler->compile(name, fused, platform);
+            backend_compiler->compile(name, fused, qubits, platform);   // qubits addition is a hack until merging with develop
         }
         catch (ql::exception e)
         {
@@ -312,50 +308,6 @@ public:
         return 0;
     }
 
-    std::string deslash(std::string& s)
-    { std::string r = s; for (size_t i=0; i<r.size(); i++) { if (r[i]=='/') { r[i]='_'; } } return r;}
-
-    void map()
-    {
-        std::string mapper_in_qasm;
-        std::string mapper_out_qasm;
-
-        auto mapopt = ql::options::get("mapper");
-        if (mapopt == "no" )
-        {
-            IOUT("Not mapping the quantum program");
-        }
-        else
-        {
-            Mapper mapper;                      // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
-            mapper.Init(qubits, platform);      // qubits is number of virtual qubits, i.e. qubits in the program (max of circuits!)
-                                                // platform specifies number of real qubits, i.e. locations for virtual qubits
-                                                // Init creates and initializes data that is program wide, e.g. initialization of grid,
-                                                // that exists independent of kernels and their circuits
-                                                // or that facilitates the matching of mappings between kernels in a CFG
-
-            for (auto& k : kernels)
-            {
-                // map kernel in mapper context
-                // in current version, each kernel is independently mapped
-                k.map(mapper, mapper_in_qasm, mapper_out_qasm);
-            }
-
-            string fname_in = ql::options::get("output_dir") + "/" + deslash(name) + "_mapper_in.qasm";
-            IOUT("writing mapper input qasm to '" << fname_in << "' ...");
-            ql::utils::write_file(fname_in, mapper_in_qasm);
-
-            string fname_out = ql::options::get("output_dir") + "/" + deslash(name) + "_mapper_out.qasm";
-            IOUT("writing mapper_output qasm to '" << fname_out << "' ...");
-            ql::utils::write_file(fname_out, mapper_out_qasm);
-
-            size_t  nused;
-            mapper.NumberOfQubitsUsed(nused);
-            DOUT("After mapping: change program.qubits from meaning number of virtual qubits (" << qubits << ") to number of real qubits used (" << nused << ")");
-            qubits = nused;
-        }
-    }
-
     void schedule()
     {
         std::string sched_qasm;
@@ -364,7 +316,7 @@ public:
         IOUT("scheduling the quantum program");
 
         schedin_qasm = "qubits " + std::to_string(qubits) + "\n";
-        string fname = ql::options::get("output_dir") + "/" + deslash(name) + ".qasm";
+        string fname = ql::options::get("output_dir") + "/" + name + ".qasm";
         for (auto k : kernels)
         {
             if( k.iterations > 1 )
@@ -394,7 +346,7 @@ public:
             // ql::utils::write_file(fname, kernel_sched_dot);
         }
 
-        fname = ql::options::get("output_dir") + "/" + deslash(name) + "_scheduled.qasm";
+        fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
         IOUT("writing scheduled qasm to '" << fname << "' ...");
         ql::utils::write_file(fname, sched_qasm);
     }

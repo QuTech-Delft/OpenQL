@@ -63,7 +63,7 @@ namespace ql
              * compile qasm to qumis
              */
             // eqasm_t
-            void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& platform) throw (ql::exception)
+            void compile(std::string prog_name, ql::circuit& c, size_t qubit_count, ql::quantum_platform& platform) throw (ql::exception)
             {
                IOUT("[-] compiling qasm code ...");
                if (c.empty())

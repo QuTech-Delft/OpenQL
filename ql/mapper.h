@@ -1373,7 +1373,7 @@ enum InitialPlaceResults
 class InitialPlace
 {
 private:
-                                        // parameters, constant for a program
+                                        // parameters, constant for a kernel
     size_t                  nvq;        // number of virtual qubits as specified by programmer
     size_t                  nlocs;      // number of locations, real qubits; index variables k and l
     Grid                   *gridp;      // current grid with Distance function
@@ -1383,7 +1383,7 @@ private:
 
 public:
 
-// program-once initialization
+// kernel-once initialization
 void Init(size_t n, Grid* g, ql::quantum_platform *p)
 {
     DOUT("InitialPlace Init ...");
@@ -1689,7 +1689,6 @@ class Mapper
 private:
 
                                         // OpenQL wide configuration, all constant after initialization
-    size_t  nvq;                        // number of qubits in the program, number of virtual qubits
     ql::quantum_platform platform;      // current platform: topology and gate definitions
     size_t  nqbits;                     // number of qubits in the platform, number of real qubits
     size_t  cycle_time;                 // length in ns of a single cycle of the platform
@@ -1698,7 +1697,8 @@ private:
 #ifdef INITIALPLACE
     InitialPlace    ip;                 // initial placer facility
 #endif
-                                        // Mapper dynamic state
+                                        // Mapper dynamic state, for each kernel
+    size_t  nvq;                        // number of qubits in the kernel, number of virtual qubits
     Past   mainPast;                    // main past window; all path alternatives start off as clones of it
     std::vector<size_t> use_count;      // use_count[real qubit index], number of times the real qubit was used
 
@@ -1706,14 +1706,14 @@ private:
 public:
 // Mapper constructor is default syntesized
 
-// initialize program-wide data that is passed around between kernels
-// initial program-wide mapping could be computed here
+// initialize mapper for this kernel
+// lots could be split off for the whole program, once that is needed
 void Init( size_t n, ql::quantum_platform& p)
 {
     // DOUT("Mapping initialization ...");
     // DOUT("... Grid initialization: platform qubits->coordinates, ->neighbors, distance ...");
     nvq = n;
-    // DOUT("... program/virtual number of qubits=" << nvq << ");
+    // DOUT("... kernel/virtual number of qubits=" << nvq << ");
     platform = p;
     nqbits = p.qubit_number;
     // DOUT("... platform/real number of qubits=" << nqbits << ");
@@ -2092,11 +2092,40 @@ ql::ir::bundles_t Bundler(ql::circuit& circ)
     return bundles;
 }
 
+/**
+ * qasm
+ * copied and shrunk from develop kernel.h
+ */
+std::string qasm(ql::circuit& c, size_t nqubits, std::string& name)
+{
+    std::stringstream ss;
+    ss << "version 2.0\n";
+    ss << "qubits " << nqubits << "\n";
+    ss << "." << name << "\n";
+
+    for(size_t i=0; i<c.size(); ++i)
+    {
+        ss << "    " << c[i]->qasm() << "\n";
+    }
+
+    return ss.str();
+}
+
 // map kernel's circuit in current mapping context as left by initialization and earlier kernels
 void MapCircuit(ql::circuit& circ, std::string& kernel_name)
 {
     DOUT("==================================");
     DOUT("Mapping circuit ...");
+
+    std::string mapper_in_qasm;
+    std::string mapper_out_qasm;
+
+// next lines moved from cc_light_compiler code to here because kernel is not in the interface
+// has to be moved back once kernel is there after merging with develop
+    string fname_in = ql::options::get("output_dir") + "/" + kernel_name + "_mapper_in.qasm";
+    IOUT("writing mapper input qasm to '" << fname_in << "' ...");
+    mapper_in_qasm += qasm(circ, nvq, kernel_name);
+    ql::utils::write_file(fname_in, mapper_in_qasm);
     
 #ifdef INITIALPLACE
     std::string initialplaceopt = ql::options::get("initialplace");
@@ -2126,7 +2155,12 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name)
     {
         Decomposer(circ);   // decompose to primitives as specified in the config file
     }
-    UseCount(circ);         // add counts of real qubits in this circuit to total of the program
+    UseCount(circ);         // add counts of real qubits in this circuit to total of the kernel
+
+//    string fname_out = ql::options::get("output_dir") + "/" + kernel_name + "_mapper_out.qasm";
+//    IOUT("writing mapper_output qasm to '" << fname_out << "' ...");
+//    mapper_out_qasm += ql::ir::qasm(bundles);
+//    ql::utils::write_file(fname_out, mapper_out_qasm);
 
     DOUT("Mapping circuit [DONE]");
     DOUT("==================================");

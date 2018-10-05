@@ -15,6 +15,8 @@
 
 #include <ql/arch/cc_light_scheduler.h>
 
+#include <ql/mapper.h>
+
 // eqasm code : set of cc_light_eqasm instructions
 typedef std::vector<ql::arch::cc_light_eqasm_instr_t> eqasm_t;
 
@@ -39,11 +41,53 @@ public:
 
 public:
 
+    // mapping of the circuit, having virtual_qubit_count qubits, on indicated platform
+    void map(std::string prog_name, ql::circuit& c, size_t& virtual_qubit_count, quantum_platform& platform)
+    {
+        IOUT("mapping the quantum program");
+
+//        std::string mapper_in_qasm;
+        std::string mapper_out_qasm;
+
+        auto mapopt = ql::options::get("mapper");
+        if (mapopt == "no" )
+        {
+            IOUT("Not mapping kernel");
+            return;
+        }
+
+        DOUT("Mapping program: " << prog_name);
+
+        Mapper mapper;                      // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
+        mapper.Init(virtual_qubit_count, platform);
+                                            // virtual_qubit_count is number of virtual qubits, i.e. highest indexed qubit minus 1
+                                            // platform specifies number of real qubits, i.e. locations for virtual qubits
+
+//        string fname_in = ql::options::get("output_dir") + "/" + prog_name + "_mapper_in.qasm";
+//        IOUT("writing mapper input qasm to '" << fname_in << "' ...");
+//        mapper_in_qasm += qasm();
+//        ql::utils::write_file(fname_in, mapper_in_qasm);
+
+        mapper.MapCircuit(c, prog_name);
+        ql::ir::bundles_t bundles = mapper.Bundler(c);
+
+        string fname_out = ql::options::get("output_dir") + "/" + prog_name + "_mapper_out.qasm";
+        IOUT("writing mapper_output qasm to '" << fname_out << "' ...");
+        mapper_out_qasm += ql::ir::qasm(bundles);
+        ql::utils::write_file(fname_out, mapper_out_qasm);
+
+        size_t  nused;
+        mapper.NumberOfQubitsUsed(nused);
+        DOUT("After mapping: change kernel.qubit_number from meaning number of virtual qubits (" << virtual_qubit_count << ") to number of real qubits used (" << nused << ")");
+        // qubit_number = nused;
+        IOUT("mapping the quantum program [DONE]");
+    }
+
     /*
      * compile qasm to cc_light_eqasm
      */
     // eqasm_t
-    void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& platform) throw (ql::exception)
+    void compile(std::string prog_name, ql::circuit& c, size_t virtual_qubit_count, ql::quantum_platform& platform) throw (ql::exception)
     {
         IOUT("[-] compiling qasm code ...");
         if (c.empty())
@@ -261,6 +305,9 @@ public:
             }
         }
         */
+
+        // map
+        map(prog_name, c, virtual_qubit_count, platform);  // virtual_qubit_count is updated to number of real qubits needed in platform
 
         // schedule with platform constraints
         // ql::ir sched_ir = cc_light_schedule(prog_name, num_qubits, c, platform);
@@ -555,4 +602,3 @@ private:
 }
 
 #endif // QL_CC_LIGHT_EQASM_COMPILER_H
-

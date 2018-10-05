@@ -1453,14 +1453,14 @@ public:
             ss << gate_name;
         // ss << "   " << gate_name;
         else if (operands.size() == 1)
-            ss << gate_name << " q" << operands[0];
+            ss << gate_name << " q[" << operands[0] << "]";
         // ss << "   " << gate_name << " q" << operands[0];
         else
         {
             // ss << "   " << gate_name << " q" << operands[0];
-            ss << gate_name << " q" << operands[0];
+            ss << gate_name << " q[" << operands[0] << "]";
             for (size_t i=1; i<operands.size(); i++)
-                ss << ",q" << operands[i];
+                ss << ",q[" << operands[i] << "]";
         }
         return instruction_t(ss.str());
     }
