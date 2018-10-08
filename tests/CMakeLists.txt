@@ -4,9 +4,11 @@ INCLUDE_DIRECTORIES(
   ${CMAKE_SOURCE_DIR}/tests
 )
 
+# ADD_EXECUTABLE(test_uniform test_uniform.cc )
+# TARGET_LINK_LIBRARIES(test_uniform ${LEMON_LIBRARIES} )
 
-ADD_EXECUTABLE(test_uniform test_uniform.cc )
-TARGET_LINK_LIBRARIES(test_uniform ${LEMON_LIBRARIES} )
+ADD_EXECUTABLE(test_mapper test_mapper.cc )
+TARGET_LINK_LIBRARIES(test_mapper ${LEMON_LIBRARIES} )
 
 #ADD_EXECUTABLE(simple2input_test simple2input_test.cc )
 #TARGET_LINK_LIBRARIES(simple2input_test ${LEMON_LIBRARIES} )

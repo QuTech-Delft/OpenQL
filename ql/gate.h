@@ -23,6 +23,7 @@
 
 #include <ql/openql.h>
 #include <ql/exception.h>
+#include <ql/options.h>
 
 using json = nlohmann::json;
 
@@ -215,6 +216,7 @@ public:
     std::vector<size_t> creg_operands;
     size_t duration;                         // to do change attribute name "duration" to "duration" (duration is used to describe hardware duration)
     double angle;                            // for arbitrary rotations
+    size_t  cycle = SIZE_MAX;                // cycle after scheduling; SIZE_MAX indicates undefined
     virtual instruction_t qasm()       = 0;
     virtual instruction_t micro_code() = 0;  // to do : deprecated
     virtual gate_type_t   type()       = 0;
@@ -511,7 +513,7 @@ public:
     t(size_t q) : m(t_c)
     {
         name = "t";
-        duration = 40;
+        duration = 120;
         operands.push_back(q);
     }
 
@@ -548,7 +550,7 @@ public:
     tdag(size_t q) : m(tdag_c)
     {
         name = "tdag";
-        duration = 40;
+        duration = 120;
         operands.push_back(q);
     }
 
@@ -1015,7 +1017,7 @@ public:
     cnot(size_t q1, size_t q2) : m(cnot_c)
     {
         name = "cnot";
-        duration = 80;
+        duration = 160;
         operands.push_back(q1);
         operands.push_back(q2);
     }
@@ -1145,7 +1147,7 @@ public:
     swap(size_t q1, size_t q2) : m(swap_c)
     {
         name = "swap";
-        duration = 80;
+        duration = 400;
         operands.push_back(q1);
         operands.push_back(q2);
     }
@@ -1462,15 +1464,38 @@ public:
         std::stringstream ss;
         size_t p = name.find(" ");
         std::string gate_name = name.substr(0,p);
-        if (operands.size() == 0)
-            ss << gate_name;
-        else if (operands.size() == 1)
-            ss << gate_name << " q" << operands[0];
+
+        std::string output_qasm_versionopt = ql::options::get("output_qasm_version");
+        if(output_qasm_versionopt == "1")
+        {
+            if (operands.size() == 0)
+                ss << gate_name;
+            else if (operands.size() == 1)
+                ss << gate_name << " q" << operands[0];
+            else
+            {
+                ss << gate_name << " q" << operands[0];
+                for (size_t i=1; i<operands.size(); i++)
+                    ss << ",q" << operands[i];
+            }
+        }
+        else if(output_qasm_versionopt == "2")
+        {
+            if (operands.size() == 0)
+                ss << gate_name;
+            else if (operands.size() == 1)
+                ss << gate_name << " q[" << operands[0] << "]";
+            else
+            {
+                ss << gate_name << " q[" << operands[0] << "]";
+                for (size_t i=1; i<operands.size(); i++)
+                    ss << ",q[" << operands[i] << "]";
+            }
+        }
         else
         {
-            ss << gate_name << " q" << operands[0];
-            for (size_t i=1; i<operands.size(); i++)
-                ss << ",q" << operands[i];
+            EOUT("non-supported output_qasm_version:" << output_qasm_versionopt);
+            throw ql::exception("[x] error while printing instruction: " + name + " non-supported output_qasm_version: " + output_qasm_versionopt, false);
         }
 
         if(creg_operands.size() == 0)

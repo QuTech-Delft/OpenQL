@@ -12,6 +12,7 @@
 #include <sstream>
 #include <algorithm>
 #include <iterator>
+#include <cmath>
 
 #include "ql/json.h"
 #include "ql/utils.h"
@@ -21,11 +22,8 @@
 #include "ql/optimizer.h"
 #include "ql/ir.h"
 
-#define PI M_PI
-
 #ifndef __disable_lemon__
 #include "scheduler.h"
-
 #endif // __disable_lemon__
 
 namespace ql
@@ -339,28 +337,33 @@ public:
         }
     }
 
+    // a default gate is the last resort of user gate resolution and is of a build-in form, as below in the code;
+    // the "using_default_gates" option can be used to enable ("yes") or disable ("no") default gates;
+    // the use of default gates is deprecated; use the .json configuration file instead;
+    //
+    // if a default gate definition is available for the given gate name and qubits, add it to circuit and return true
     bool add_default_gate_if_available(std::string gname, std::vector<size_t> qubits,
         std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
-    	bool result=false;
+        bool result=false;
 
         bool is_one_qubit_gate = (gname == "identity") || (gname == "i")
-                || (gname == "hadamard") || (gname == "h") 
-                || (gname == "pauli_x") || (gname == "pauli_y") || (gname == "pauli_z")
-                || (gname == "x") || (gname == "y") || (gname == "z")
-                || (gname == "s") || (gname == "sdag")
-                || (gname == "t") || (gname == "tdag") 
-                || (gname == "rx") || (gname == "ry") || (gname == "rz")
-                || (gname == "rx90") || (gname == "mrx90") || (gname == "rx180")
-                || (gname == "ry90") || (gname == "mry90") || (gname == "ry180")
-                || (gname == "measure") || (gname == "prepz");
+                                 || (gname == "hadamard") || (gname == "h")
+                                 || (gname == "pauli_x") || (gname == "pauli_y") || (gname == "pauli_z")
+                                 || (gname == "x") || (gname == "y") || (gname == "z")
+                                 || (gname == "s") || (gname == "sdag")
+                                 || (gname == "t") || (gname == "tdag")
+                                 || (gname == "rx") || (gname == "ry") || (gname == "rz")
+                                 || (gname == "rx90") || (gname == "mrx90") || (gname == "rx180")
+                                 || (gname == "ry90") || (gname == "mry90") || (gname == "ry180")
+                                 || (gname == "measure") || (gname == "prepz");
 
-        bool is_two_qubit_gate = (gname == "cnot") 
-            || (gname == "cz") || (gname == "cphase") 
-            || (gname == "swap");
+        bool is_two_qubit_gate = (gname == "cnot")
+                                 || (gname == "cz") || (gname == "cphase")
+                                 || (gname == "swap");
 
-        bool is_multi_qubit_gate = (gname == "toffoli") 
-            || (gname == "wait") || (gname == "barrier");
+        bool is_multi_qubit_gate = (gname == "toffoli")
+                                   || (gname == "wait") || (gname == "barrier");
 
         if(is_one_qubit_gate)
         {
@@ -384,19 +387,37 @@ public:
         }
 
         if( gname == "identity" || gname == "i" )
-            { c.push_back(new ql::identity(qubits[0]) ); result = true; }
+        {
+            c.push_back(new ql::identity(qubits[0]) );
+            result = true;
+        }
         else if( gname == "hadamard" || gname == "h" )
-            { c.push_back(new ql::hadamard(qubits[0]) ); result = true; }
+        {
+            c.push_back(new ql::hadamard(qubits[0]) );
+            result = true;
+        }
         else if( gname == "pauli_x" || gname == "x" )
-            { c.push_back(new ql::pauli_x(qubits[0]) ); result = true; }
+        {
+            c.push_back(new ql::pauli_x(qubits[0]) );
+            result = true;
+        }
         else if( gname == "pauli_y" || gname == "y" )
-            { c.push_back(new ql::pauli_y(qubits[0]) ); result = true; }
+        {
+            c.push_back(new ql::pauli_y(qubits[0]) );
+            result = true;
+        }
         else if( gname == "pauli_z" || gname == "z" )
-            { c.push_back(new ql::pauli_z(qubits[0]) ); result = true; }
+        {
+            c.push_back(new ql::pauli_z(qubits[0]) );
+            result = true;
+        }
         else if( gname == "s" || gname == "phase" )
-            { c.push_back(new ql::phase(qubits[0]) ); result = true; }
+        {
+            c.push_back(new ql::phase(qubits[0]) );
+            result = true;
+        }
         else if( gname == "sdag" || gname == "phasedag" )
-            { c.push_back(new ql::phasedag(qubits[0]) ); result = true; }
+                                         { c.push_back(new ql::phasedag(qubits[0]) ); result = true; }
         else if( gname == "t" )          { c.push_back(new ql::t(qubits[0]) ); result = true; }
         else if( gname == "tdag" )       { c.push_back(new ql::tdag(qubits[0]) ); result = true; }
         else if( gname == "rx" )         { c.push_back(new ql::rx(qubits[0], angle)); result = true; }
@@ -420,11 +441,22 @@ public:
         else if( gname == "prepz" )      { c.push_back(new ql::prepz(qubits[0]) ); result = true; }
     	else if( gname == "cnot" )       { c.push_back(new ql::cnot(qubits[0], qubits[1]) ); result = true; }
     	else if( gname == "cz" || gname == "cphase" )
-            { c.push_back(new ql::cphase(qubits[0], qubits[1]) ); result = true; }
+                                         { c.push_back(new ql::cphase(qubits[0], qubits[1]) ); result = true; }
         else if( gname == "toffoli" )
-            { c.push_back(new ql::toffoli(qubits[0], qubits[1], qubits[2]) ); result = true; }
-        else if( gname == "swap" )       { c.push_back(new ql::swap(qubits[0], qubits[1]) ); result = true; }
-        else if( gname == "barrier")     { c.push_back(new ql::wait(qubits, 0, 0)); result = true; }
+        {
+            c.push_back(new ql::toffoli(qubits[0], qubits[1], qubits[2]) );
+            result = true;
+        }
+        else if( gname == "swap" )
+        {
+            c.push_back(new ql::swap(qubits[0], qubits[1]) );
+            result = true;
+        }
+        else if( gname == "barrier")
+        {
+            c.push_back(new ql::wait(qubits, 0, 0));
+            result = true;
+        }
         else if( gname == "wait")
         {
             size_t duration_in_cycles = std::ceil(static_cast<float>(duration)/cycle_time);
@@ -433,9 +465,13 @@ public:
         }
         else result = false;
 
-    	return result;
+        return result;
     }
 
+    // if a specialized custom gate ("e.g. cz q0 q4") is available, add it to circuit and return true
+    // if a parameterized custom gate ("e.g. cz") is available, add it to circuit and return true
+    //
+    // note that there is no check for the found gate being a composite gate
     bool add_custom_gate_if_available(std::string & gname, std::vector<size_t> qubits,
         std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
@@ -449,11 +485,12 @@ public:
                 instr += "q" + std::to_string(qubits[i]) + ",";
             if(qubits.size() >= 1) // to make if work with gates without operands
                 instr += "q" + std::to_string(qubits[qubits.size()-1]);
-        }        
+        }
 
         std::map<std::string,custom_gate*>::iterator it = gate_definition.find(instr);
         if (it != gate_definition.end())
         {
+            // a specialized custom gate is of the form: "cz q0 q3"
             custom_gate* g = new custom_gate(*(it->second));
             for(auto & qubit : qubits)
                 g->operands.push_back(qubit);
@@ -467,6 +504,7 @@ public:
         else
         {
             // otherwise, check if there is a parameterized custom gate (i.e. not specialized for arguments)
+            // this one is of the form: "cz", i.e. just the gate's name
             std::map<std::string,custom_gate*>::iterator it = gate_definition.find(gname);
             if (it != gate_definition.end())
             {
@@ -494,6 +532,8 @@ public:
         return added;
     }
 
+    // return the subinstructions of a composite gate
+    // while doing, test whether the subinstructions have a definition (so they cannot be specialized or default ones!)
     void get_decomposed_ins( ql::composite_gate * gptr, std::vector<std::string> & sub_instructons )
     {
         auto & sub_gates = gptr->gs;
@@ -514,6 +554,10 @@ public:
         }
     }
 
+    // if specialized composed gate: "e.g. cz q0,q3" available, with composition of subinstructions, return true
+    //      also check each subinstruction for presence of a custom_gate (or a default gate)
+    // otherwise, return false
+    // don't add anything to circuit
     bool add_spec_decomposed_gate_if_available(std::string gate_name, 
         std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
@@ -576,6 +620,7 @@ public:
                 DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
                 // custom gate check
+                // when found, custom_added is true, and the expanded subinstruction was added to the circuit
                 bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
                 if(!custom_added)
                 {
@@ -612,6 +657,10 @@ public:
     }
 
 
+    // if composite gate: "e.g. cz %0 %1" available, return true;
+    //      also check each subinstruction for availability as a custom gate (or default gate)
+    // if not, return false
+    // don't add anything to circuit
     bool add_param_decomposed_gate_if_available(std::string gate_name, 
         std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
@@ -619,7 +668,7 @@ public:
         DOUT("Checking if parameterized decomposition is available for " << gate_name);
         std::string instr_parameterized = gate_name + " ";
         size_t i;
-        if(all_qubits.size() > 0)        
+        if(all_qubits.size() > 0)
         {
             for(i=0; i<all_qubits.size()-1; i++)
             {
@@ -671,6 +720,7 @@ public:
                 DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
                 // custom gate check
+                // when found, custom_added is true, and the expanded subinstruction was added to the circuit
                 bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
                 if(!custom_added)
                 {
@@ -726,6 +776,28 @@ public:
     /**
      * custom gate with arbitrary number of operands
      */
+    // terminology:
+    // - composite/custom/default (in decreasing order of priority during lookup in the gate definition):
+    //      - composite gate: a gate definition with subinstructions; when matched, decompose and add the subinstructions
+    //      - custom gate: a fully configurable gate definition, with all kinds of attributes; there is no decomposition
+    //      - default gate: a gate definition build-in in this compiler; see above for the definition
+    //          deprecated; setting option "use_default_gates" from "yes" to "no" turns it off
+    // - specialized/parameterized (in decreasing order of priority during lookup in the gate definition)
+    //      - specialized: a gate definition that is special for its operands, i.e. the operand qubits must match
+    //      - parameterized: a gate definition that can be used for all possible qubit operands
+    //
+    // the following order of checks is used below:
+    // check if specialized composite gate is available
+    //      e.g. whether "cz q0,q3" is available as composite gate, where subinstructions are available as custom gates
+    // if not, check if parameterized composite gate is available
+    //      e.g. whether "cz %0 %1" is in gate_definition, where subinstructions are available as custom gates
+    // if not, check if a specialized custom gate is available
+    //      e.g. whether "cz q0,q3" is available as non-composite gate
+    // if not, check if a parameterized custom gate is available
+    //      e.g. whether "cz" is in gate_definition as non-composite gate
+    // if not, check if a default gate is available
+    //      e.g. whether "cz" is available as default gate
+    // if not, then error
     void gate(std::string gname, std::vector<size_t> qubits = {}, 
         std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
     {
@@ -746,13 +818,6 @@ public:
                 throw ql::exception("Out of range operand(s) for '"+gname+"' with " +ql::utils::to_string(cregs,"cregs")+" !",false);
             }
         }
-
-        // check if specialized composite gate is available
-        // if not, check if parameterized composite gate is available
-        // if not, check if a specialized custom gate is available
-        // if not, check if a parameterized custom gate is available
-        // if not, check if a default gate is available
-        // if not, then error
 
         str::lower_case(gname);
         DOUT("Adding gate : " << gname << " with " << ql::utils::to_string(qubits,"qubits"));
@@ -777,13 +842,14 @@ public:
             {
                 // specialized/parameterized custom gate check
                 DOUT("adding custom gate for " << gname);
+                // when found, custom_added is true, and the gate was added to the circuit
                 bool custom_added = add_custom_gate_if_available(gname, qubits, cregs, duration, angle);
                 if(!custom_added)
                 {
                     if(ql::options::get("use_default_gates") == "yes")
                     {
                         // default gate check (which is always parameterized)
-                    	DOUT("adding default gate for " << gname);
+                        DOUT("adding default gate for " << gname);
 
         				bool default_available = add_default_gate_if_available(gname, qubits, cregs, duration);
         				if( default_available )
@@ -792,8 +858,8 @@ public:
                         }
                         else
                         {
-                        	EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
-                        	throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
+                            EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+                            throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
                         }
                     }
                     else
@@ -1022,20 +1088,20 @@ public:
         {
             if ("yes" == scheduler_uniform)
             {
-	        EOUT("Uniform scheduling not supported with ASAP; please turn on ALAP to perform uniform scheduling");
-	    }
-	    else if ("no" == scheduler_uniform)
-	    {
-	        // sched.PrintScheduleASAP();
+	             EOUT("Uniform scheduling not supported with ASAP; please turn on ALAP to perform uniform scheduling");
+	        }
+	        else if ("no" == scheduler_uniform)
+	        {
+	            // sched.PrintScheduleASAP();
                 // sched.PrintDotScheduleASAP();
                 // sched_dot = sched.GetDotScheduleASAP();
                 // sched.PrintQASMScheduledASAP();
                 ql::ir::bundles_t bundles = sched.schedule_asap();
                 kqasm = ql::ir::qasm(bundles);
-	    }
-	    else
+	        }
+	        else
             {
-               EOUT("Unknown scheduler_uniform option value");
+                EOUT("Unknown scheduler_uniform option value");
             }
         }
         else if("ALAP" == scheduler)
@@ -1044,19 +1110,19 @@ public:
             {
                 ql::ir::bundles_t bundles = sched.schedule_alap_uniform();
                 kqasm = ql::ir::qasm(bundles);
-	    }
-	    else if ("no" == scheduler_uniform)
-	    {
+	        }
+	        else if ("no" == scheduler_uniform)
+	        {
                 // sched.PrintScheduleALAP();
                 // sched.PrintDotScheduleALAP();
                 // sched_dot = sched.GetDotScheduleALAP();
                 // sched.PrintQASMScheduledALAP();
                 ql::ir::bundles_t bundles = sched.schedule_alap();
                 kqasm = ql::ir::qasm(bundles);
-	    }
-	    else
+	        }
+	        else
             {
-               EOUT("Unknown scheduler_uniform option value");
+                EOUT("Unknown scheduler_uniform option value");
             }
         }
         else
@@ -1066,7 +1132,6 @@ public:
         }
 
         sched_qasm = get_prologue() + kqasm + get_epilogue();
-
 #endif // __disable_lemon__
     }
 
@@ -1181,15 +1246,15 @@ public:
 
     void controlled_x(size_t tq, size_t cq)
     {
-        // from: https://arxiv.org/pdf/1206.0758v3.pdf        
-        // A meet-in-the-middle algorithm for fast synthesis 
+        // from: https://arxiv.org/pdf/1206.0758v3.pdf
+        // A meet-in-the-middle algorithm for fast synthesis
         // of depth-optimal quantum circuits
         cnot(cq, tq);
     }
     void controlled_y(size_t tq, size_t cq)
     {
-        // from: https://arxiv.org/pdf/1206.0758v3.pdf        
-        // A meet-in-the-middle algorithm for fast synthesis 
+        // from: https://arxiv.org/pdf/1206.0758v3.pdf
+        // A meet-in-the-middle algorithm for fast synthesis
         // of depth-optimal quantum circuits
         sdag(tq);
         cnot(cq, tq);
@@ -1197,8 +1262,8 @@ public:
     }
     void controlled_z(size_t tq, size_t cq)
     {
-        // from: https://arxiv.org/pdf/1206.0758v3.pdf        
-        // A meet-in-the-middle algorithm for fast synthesis 
+        // from: https://arxiv.org/pdf/1206.0758v3.pdf
+        // A meet-in-the-middle algorithm for fast synthesis
         // of depth-optimal quantum circuits
         hadamard(tq);
         cnot(cq, tq);
@@ -1206,12 +1271,16 @@ public:
     }
     void controlled_h(size_t tq, size_t cq)
     {
-        // from: https://arxiv.org/pdf/1206.0758v3.pdf        
-        // A meet-in-the-middle algorithm for fast synthesis 
+        // from: https://arxiv.org/pdf/1206.0758v3.pdf
+        // A meet-in-the-middle algorithm for fast synthesis
         // of depth-optimal quantum circuits
-        s(tq); hadamard(tq); t(tq);
+        s(tq);
+        hadamard(tq);
+        t(tq);
         cnot(cq, tq);
-        tdag(tq); hadamard(tq); sdag(tq);
+        tdag(tq);
+        hadamard(tq);
+        sdag(tq);
     }
     void controlled_i(size_t tq, size_t cq)
     {
@@ -1223,7 +1292,7 @@ public:
         // cphase(cq, tq);
 
         // from: https://arxiv.org/pdf/1206.0758v3.pdf
-        // A meet-in-the-middle algorithm for fast synthesis 
+        // A meet-in-the-middle algorithm for fast synthesis
         // of depth-optimal quantum circuits
 
         cnot(tq, cq);
@@ -1236,7 +1305,7 @@ public:
     void controlled_sdag(size_t tq, size_t cq)
     {
         // based on: https://arxiv.org/pdf/1206.0758v3.pdf
-        // A meet-in-the-middle algorithm for fast synthesis 
+        // A meet-in-the-middle algorithm for fast synthesis
         // of depth-optimal quantum circuits
 
         tdag(cq);
@@ -1252,26 +1321,31 @@ public:
         WOUT("At the moment, Qubit 0 is used as ancilla");
         WOUT("This will change when Qubit allocater is implemented");
         // from: https://arxiv.org/pdf/1206.0758v3.pdf
-        // A meet-in-the-middle algorithm for fast synthesis 
+        // A meet-in-the-middle algorithm for fast synthesis
         // of depth-optimal quantum circuits
         cnot(cq, tq); hadamard(aq);
         sdag(cq); cnot(tq, aq);
         cnot(aq, cq);
-        t(cq); tdag(aq);
+        t(cq);
+        tdag(aq);
         cnot(tq, cq);
         cnot(tq, aq);
-        t(cq); tdag(aq);
+        t(cq);
+        tdag(aq);
         cnot(aq, cq);
         h(cq);
         t(cq);
         h(cq);
         cnot(aq, cq);
-        tdag(cq); t(aq);
+        tdag(cq);
+        t(aq);
         cnot(tq, aq);
-        cnot(tq, cq); t(aq);
+        cnot(tq, cq);
+        t(aq);
         tdag(cq);
         cnot(aq, cq);
-        s(cq); cnot(tq, aq);
+        s(cq);
+        cnot(tq, aq);
         cnot(cq, tq);
         h(aq);
     }
@@ -1281,52 +1355,63 @@ public:
         WOUT("Controlled-Tdag implementation requires an ancilla");
         WOUT("At the moment, Qubit 0 is used as ancilla");
         WOUT("This will change when Qubit allocater is implemented");
-        // from: https://arxiv.org/pdf/1206.0758v3.pdf        
-        // A meet-in-the-middle algorithm for fast synthesis 
+        // from: https://arxiv.org/pdf/1206.0758v3.pdf
+        // A meet-in-the-middle algorithm for fast synthesis
         // of depth-optimal quantum circuits
         h(aq);
         cnot(cq, tq);
-        sdag(cq); cnot(tq, aq);
+        sdag(cq);
+        cnot(tq, aq);
         cnot(aq, cq);
         t(cq);
-        cnot(tq, cq); tdag(aq);
+        cnot(tq, cq);
+        tdag(aq);
         cnot(tq, aq);
-        t(cq); tdag(aq);
+        t(cq);
+        tdag(aq);
         cnot(aq, cq);
         h(cq);
         tdag(cq);
         h(cq);
         cnot(aq, cq);
-        tdag(cq); t(aq);
+        tdag(cq);
+        t(aq);
         cnot(tq, aq);
         cnot(tq, cq);
-        tdag(cq); t(aq);
+        tdag(cq);
+        t(aq);
         cnot(aq, cq);
-        s(cq); cnot(tq, aq);
-        cnot(cq, tq); hadamard(aq);
+        s(cq);
+        cnot(tq, aq);
+        cnot(cq, tq);
+        hadamard(aq);
     }
 
     void controlled_ix(size_t tq, size_t cq)
     {
         // from: https://arxiv.org/pdf/1210.0974.pdf
-        // Quantum circuits of T-depth one 
+        // Quantum circuits of T-depth one
         cnot(cq, tq);
         s(cq);
     }
 
     // toffoli decomposition
     // from: https://arxiv.org/pdf/1210.0974.pdf
-    // Quantum circuits of T-depth one 
+    // Quantum circuits of T-depth one
     void controlled_cnot_AM(size_t tq, size_t cq1, size_t cq2)
     {
         h(tq);
-        t(cq1); t(cq2); t(tq); 
+        t(cq1);
+        t(cq2);
+        t(tq);
         cnot(cq2, cq1);
         cnot(tq, cq2);
         cnot(cq1, tq);
         tdag(cq2);
         cnot(cq1, cq2);
-        tdag(cq1); tdag(cq2); tdag(tq); 
+        tdag(cq1);
+        tdag(cq2);
+        tdag(tq);
         cnot(tq, cq2);
         cnot(cq1, tq);
         cnot(cq2, cq1);
@@ -1334,7 +1419,7 @@ public:
     }
 
     // toffoli decomposition
-    // Neilsen and Chuang    
+    // Neilsen and Chuang
     void controlled_cnot_NC(size_t tq, size_t cq1, size_t cq2)
     {
         h(tq);
@@ -1345,11 +1430,14 @@ public:
         cnot(cq2,tq);
         tdag(tq);
         cnot(cq1,tq);
-        tdag(cq2); t(tq);
-        cnot(cq1,cq2); h(tq);
+        tdag(cq2);
+        t(tq);
+        cnot(cq1,cq2);
+        h(tq);
         tdag(cq2);
         cnot(cq1,cq2);
-        t(cq1); s(cq2);
+        t(cq1);
+        s(cq2);
     }
 
     void controlled_swap(size_t tq1, size_t tq2, size_t cq)
@@ -1357,16 +1445,21 @@ public:
         // from: https://arxiv.org/pdf/1210.0974.pdf
         // Quantum circuits of T-depth one
         cnot(tq2, tq1);
-        cnot(cq, tq1); h(tq2);
-        t(cq); tdag(tq1); t(tq2);
+        cnot(cq, tq1);
+        h(tq2);
+        t(cq);
+        tdag(tq1);
+        t(tq2);
         cnot(tq2, tq1);
         cnot(cq, tq2);
         t(tq1);
-        cnot(cq, tq1); tdag(tq2);
+        cnot(cq, tq1);
+        tdag(tq2);
         tdag(tq1);
         cnot(cq, tq2);
         cnot(tq2, tq1);
-        t(tq1); h(tq2); 
+        t(tq1);
+        h(tq2);
         cnot(tq2, tq1);
     }
     void controlled_rx(size_t tq, size_t cq, double theta)
@@ -1401,7 +1494,7 @@ public:
             ql::gate_type_t gtype = g->type();
             std::vector<size_t> goperands = g->operands;
             DOUT("Generating controlled gate for " << gname);
-            DOUT("Type : " << gtype);            
+            DOUT("Type : " << gtype);
             if( __pauli_x_gate__ == gtype  || __rx180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
@@ -1507,38 +1600,38 @@ public:
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, PI/2);
+                controlled_rx(tq, cq, M_PI/2);
             }
             else if( __mrx90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, -1*PI/2);
+                controlled_rx(tq, cq, -1*M_PI/2);
             }
             else if( __rx180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, PI);
+                controlled_rx(tq, cq, M_PI);
                 // controlled_x(tq, cq);
             }
             else if( __ry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, PI/4);
+                controlled_ry(tq, cq, M_PI/4);
             }
             else if( __mry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, -1*PI/4);
+                controlled_ry(tq, cq, -1*M_PI/4);
             }
             else if( __ry180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, PI);
+                controlled_ry(tq, cq, M_PI);
                 // controlled_y(tq, cq);
             }
             else

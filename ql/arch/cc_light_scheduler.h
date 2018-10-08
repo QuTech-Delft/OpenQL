@@ -196,6 +196,8 @@ ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
         bundles2.push_back(abundle2);
     }
 
+    size_t  depth=bundles2.back().start_cycle + bundles2.back().duration_in_cycles - bundles2.front().start_cycle;
+    IOUT("Resource constraint scheduling resulted in real circuit depth=" << depth);
     IOUT("Resource constraint scheduling of CC-Light instructions [Done].");
     return bundles2;
 }

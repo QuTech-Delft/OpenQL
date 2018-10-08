@@ -60,6 +60,7 @@ public:
         creg_count = ccount;
         size_t qubit_creg_count = qubit_count + creg_count;
         cycle_time = platform.cycle_time;
+        DOUT("... num_qubits: " << qcount << " cycle_time: " << cycle_time);
 
         // populate buffer map
         // 'none' type is a dummy type and 0 buffer cycles will be inserted for
@@ -332,10 +333,11 @@ public:
             {
                 for( auto operand : operands )
                 {
-                    // DOUT("Operand: " << operand);
+                    // DOUT("Operand: " << operand << " operandNo: " << operandNo << " op_count: " << op_count);
                     if( operandNo < op_count-1 )
                     {
                         // RAW dependencies
+                        // DOUT("... starting RAW for operand:" << operand);
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
@@ -344,6 +346,7 @@ public:
                         depType[arc] = RAW;
 
                         // RAR dependencies
+                        // DOUT("... starting RAR for operand:" << operand);
                         ReadersListType readers = LastReaders[operand];
                         for(auto & readerID : readers)
                         {
@@ -360,6 +363,7 @@ public:
                     else
                     {
                         // WAW dependencies
+                        // DOUT("... starting WAW for operand:" << operand);
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
@@ -368,6 +372,7 @@ public:
                         depType[arc] = WAW;
 
                         // WAR dependencies
+                        // DOUT("... starting WAR for operand:" << operand);
                         ReadersListType readers = LastReaders[operand];
                         for(auto & readerID : readers)
                         {
