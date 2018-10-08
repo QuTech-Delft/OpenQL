@@ -204,5 +204,8 @@ namespace ql
             throw ql::exception(SS2S("Error : " << content), false); \
         }
 
+// get the number of elements in an array
+#define ELEM_CNT(x) (sizeof(x)/sizeof(x[0]))
+
 #endif //QL_UTILS_H
 
