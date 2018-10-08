@@ -181,7 +181,7 @@ void Init(ql::quantum_platform *p)
 // not used yet; would be used to compute the max size of a top window on the past
 size_t Depth()
 {
-    size_t  minFreeCycle = SIZE_MAX;
+    size_t  minFreeCycle = MAX_CYCLE;
     size_t  maxFreeCycle = 0;
     for (auto& v : fcv)
     {
@@ -270,7 +270,7 @@ size_t StartCycle(ql::gate *g)
     {
         size_t  baseStartCycle = startCycle;
         GetGateParameters(id, platformp, operation_name, operation_type, instruction_type);
-        while (startCycle < SIZE_MAX)
+        while (startCycle < MAX_CYCLE)
         {
             if (rm.available(startCycle, g, operation_name, operation_type, instruction_type, duration))
             {
@@ -287,7 +287,7 @@ size_t StartCycle(ql::gate *g)
             // DOUT(" ... from [" << baseStartCycle << "] to [" << startCycle-1 << "] busy resource(s) for " << g->qasm());
         }
     }
-    assert (startCycle < SIZE_MAX);
+    assert (startCycle < MAX_CYCLE);
 
     return startCycle;
 }
@@ -449,7 +449,7 @@ void Schedule()
 
     do
     {
-        size_t      startCycle = SIZE_MAX;
+        size_t      startCycle = MAX_CYCLE;
         gate_p      gp;
 
         // find the gate with the minimum startCycle
@@ -1033,7 +1033,7 @@ void Init(size_t n, ql::quantum_platform* p)
     ct = platformp->cycle_time;
     // total, fromSource and fromTarget start as empty vectors
     past.Init(nv, platformp);           // initializes past to empty
-    cycleExtend = SIZE_MAX;             // means undefined
+    cycleExtend = MAX_CYCLE;             // means undefined
 }
 
 // printing facilities of Paths
@@ -1074,7 +1074,7 @@ void partialPrint(std::string hd, std::vector<size_t> & pp)
 void Print(std::string s)
 {
     std::cout << s;
-    if (cycleExtend != SIZE_MAX)
+    if (cycleExtend != MAX_CYCLE)
     {
         std::cout << ": cycleExtend=" << cycleExtend << std::endl;
     }
@@ -1403,7 +1403,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     std::vector<size_t>  usecount;  // usecount[v] = count of use of virtual qubit v in current circuit
     usecount.resize(nvq,0);
     std::vector<size_t> v2i;        // v2i[virtual qubit index v] -> index of used qubit i
-    v2i.resize(nvq,SIZE_MAX);       // SIZE_MAX means undefined, virtual qubit v not used by circuit as operand o of gate g
+    v2i.resize(nvq,MAX_CYCLE);      // MAX_CYCLE means undefined, virtual qubit v not used by circuit as operand o of gate g
     for ( auto& gp : circ )
     {
         for ( auto v : gp->operands)
@@ -1644,7 +1644,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     DOUT("... interpret result and copy to Virt2Real");
     for (size_t v=0; v<nvq; v++)
     {
-        v2r[v] = SIZE_MAX;      // i.e. undefined
+        v2r[v] = MAX_CYCLE;      // i.e. undefined
     }
     for ( size_t i=0; i<nfac; i++ )
     {
@@ -1816,7 +1816,7 @@ void GenSplitPaths(std::list<NNPath> & oldlp, std::list<NNPath> & reslp)
 // return path from list of paths with minimal cycle extension of mainPast
 void MinimalExtendingPath(std::list<NNPath>& lp, NNPath & resp)
 {
-    size_t  minExtension = SIZE_MAX;
+    size_t  minExtension = MAX_CYCLE;
     NNPath  minp;
 
     // DOUT("MinimalExtendingPath");

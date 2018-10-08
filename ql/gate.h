@@ -216,7 +216,7 @@ public:
     std::vector<size_t> creg_operands;
     size_t duration;                         // to do change attribute name "duration" to "duration" (duration is used to describe hardware duration)
     double angle;                            // for arbitrary rotations
-    size_t  cycle = SIZE_MAX;                // cycle after scheduling; SIZE_MAX indicates undefined
+    size_t  cycle = MAX_CYCLE;               // cycle after scheduling; MAX_CYCLE indicates undefined
     virtual instruction_t qasm()       = 0;
     virtual instruction_t micro_code() = 0;  // to do : deprecated
     virtual gate_type_t   type()       = 0;

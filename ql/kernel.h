@@ -1131,6 +1131,12 @@ public:
             throw ql::exception("Unknown scheduler!", false);
         }
 
+        // schedulers assigned gatep->cycle; sort circuit on this
+        typedef ql::gate *      gate_p;
+        std::sort(c.begin(), c.end(),
+                [&](gate_p g1, gate_p g2) { return g1->cycle < g2->cycle; }
+        );
+
         sched_qasm = get_prologue() + kqasm + get_epilogue();
 #endif // __disable_lemon__
     }

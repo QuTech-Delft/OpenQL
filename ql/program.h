@@ -439,7 +439,9 @@ class quantum_program
             throw ql::exception("Error: Unknown option '"+tdopt+"' set for decompose_toffoli !",false);
         }
 
-        schedule();
+        std::stringstream ss_qasm;
+        ss_qasm << ql::options::get("output_dir") << "/" << name << ".qasm";
+        std::string s = qasm();
 
          IOUT("writing un-scheduled qasm to '" << ss_qasm.str() << "' ...");
          ql::utils::write_file(ss_qasm.str(), s);
@@ -459,6 +461,12 @@ class quantum_program
             }
             else
             {
+               // fusing below doesn't take care of cycle attribute of each gate to increase per kernel
+               // also the backend_compile interface for mapping only supports the multiple kernel interface
+               // so stop here until this is supported
+               EOUT("backend compiler not suited for mapping");
+               throw std::exception();
+
                IOUT("fusing quantum kernels...");
                ql::circuit fused;
                for (size_t k=0; k<kernels.size(); ++k)
@@ -526,8 +534,7 @@ class quantum_program
 
       void schedule()
       {
-         std::string sched_qasm;
-         sched_qasm += "qubits " + std::to_string(qubit_count) + "\n";
+        std::string sched_qasm;
 
         IOUT("scheduling the quantum program");
 
@@ -544,7 +551,7 @@ class quantum_program
             // ql::utils::write_file(fname, kernel_sched_dot);
         }
 
-        fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
+        string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
         IOUT("writing scheduled qasm to '" << fname << "' ...");
         ql::utils::write_file(fname, sched_qasm);
     }

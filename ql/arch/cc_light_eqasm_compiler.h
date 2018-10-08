@@ -697,6 +697,11 @@ public:
      */
     void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform)
     {
+        // this backend_compile interface is not implemented for mapping
+        // so stop here until this is supported
+        EOUT("this backend compiler interface not suited for mapping");
+        throw std::exception();
+
         IOUT("[-] compiling qasm code ...");
         if (ckt.empty())
         {
@@ -921,7 +926,7 @@ public:
                 map(kernel, platform);
 
                 // schedule with platform resource constraints
-                ql::ir::bundles_t bundles = cc_light_schedule_rc(decomp_ckt, platform, num_qubits, num_creg);
+                ql::ir::bundles_t bundles = cc_light_schedule_rc(kernel.c, platform, num_qubits, num_creg);
 
                 // std::cout << "QASM" << std::endl;
                 // std::cout << ql::ir::qasm(bundles) << std::endl;
