@@ -1,27 +1,37 @@
+import numpy as np
+from openql import openql as ql
 import os
 import unittest
-from openql import openql as ql
-import numpy as np
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
 
+def file_compare(fn1, fn2):
+    isSame = False
+    with open(fn1, 'r') as f1:
+        with open(fn2, 'r') as f2:
+            a = f1.read()
+            b = f2.read()
+            f1.close()
+            f2.close()
+            isSame = (a==b)
+    return isSame
 
 class Test_Alap_Rc_Schedule(unittest.TestCase):
     _SCHEDULER = 'ALAP'
+    config = os.path.join(rootDir, "hardware_config_cc_light.json")
 
     def test_qwg(self):
         # parameters
         v = 'qwg'
         scheduler = self._SCHEDULER
-        config = os.path.join(rootDir, "test_alap_rc_schedule.json")
 
         # create and set platform
-        prog_name = "test_" + v + "_scheduler=" + scheduler
-        kernel_name = "kernel_" + v + "_scheduler=" + scheduler
+        prog_name = "test_" + v + "_" + scheduler
+        kernel_name = "kernel_" + v + "_" + scheduler
 
-        starmon = ql.Platform("starmon", config)
+        starmon = ql.Platform("starmon", self.config)
         prog = ql.Program(prog_name, starmon, 7, 0)
         k = ql.Kernel(kernel_name, starmon, 7, 0)
 
@@ -33,17 +43,22 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+
+
     def test_qwg2(self):
         # parameters
         v = 'qwg2'
         scheduler = self._SCHEDULER
-        config = os.path.join(rootDir, "test_alap_rc_schedule.json")
 
         # create and set platform
-        prog_name = "test_" + v + "_scheduler=" + scheduler
-        kernel_name = "kernel_" + v + "_scheduler=" + scheduler
+        prog_name = "test_" + v + "_" + scheduler
+        kernel_name = "kernel_" + v + "_" + scheduler
 
-        starmon = ql.Platform("starmon", config)
+        starmon = ql.Platform("starmon", self.config)
         prog = ql.Program(prog_name, starmon, 7, 0)
         k = ql.Kernel(kernel_name, starmon, 7, 0)
 
@@ -63,17 +78,22 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+
+
     def test_issue179(self):
         # parameters
         v = 'issue179'
         scheduler = self._SCHEDULER
-        config = os.path.join(rootDir, "test_alap_rc_schedule.json")
 
         # create and set platform
-        prog_name = "test_" + v + "_scheduler=" + scheduler
-        kernel_name = "kernel_" + v + "_scheduler=" + scheduler
+        prog_name = "test_" + v + '_' + scheduler
+        kernel_name = "kernel_" + v + '_' + scheduler
 
-        starmon = ql.Platform("starmon", config)
+        starmon = ql.Platform("starmon", self.config)
         prog = ql.Program(prog_name, starmon, 7, 0)
         k = ql.Kernel(kernel_name, starmon, 7, 0)
 
@@ -95,17 +115,22 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+
+
     def test_edge(self):
         # parameters
         v = 'edge'
         scheduler = self._SCHEDULER
-        config = os.path.join(rootDir, "test_alap_rc_schedule.json")
 
         # create and set platform
-        prog_name = "test_" + v + "_scheduler=" + scheduler
-        kernel_name = "kernel_" + v + "_scheduler=" + scheduler
+        prog_name = "test_" + v + '_' + scheduler
+        kernel_name = "kernel_" + v + '_' + scheduler
 
-        starmon = ql.Platform("starmon", config)
+        starmon = ql.Platform("starmon", self.config)
         prog = ql.Program(prog_name, starmon, 7, 0)
         k = ql.Kernel(kernel_name, starmon, 7, 0)
 
@@ -118,17 +143,21 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+
     def test_detuned(self):
         # parameters
         v = 'detuned'
         scheduler = self._SCHEDULER
-        config = os.path.join(rootDir, "test_alap_rc_schedule.json")
 
         # create and set platform
-        prog_name = "test_" + v + "_scheduler=" + scheduler
-        kernel_name = "kernel_" + v + "_scheduler=" + scheduler
+        prog_name = "test_" + v + '_' + scheduler
+        kernel_name = "kernel_" + v + '_' + scheduler
 
-        starmon = ql.Platform("starmon", config)
+        starmon = ql.Platform("starmon", self.config)
         prog = ql.Program(prog_name, starmon, 7, 0)
         k = ql.Kernel(kernel_name, starmon, 7, 0)
 
@@ -146,17 +175,21 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+
     def test_detuned2(self):
         # parameters
         v = 'detuned2'
         scheduler = self._SCHEDULER
-        config = os.path.join(rootDir, "test_alap_rc_schedule.json")
 
         # create and set platform
-        prog_name = "test_" + v + "_scheduler=" + scheduler
-        kernel_name = "kernel_" + v + "_scheduler=" + scheduler
+        prog_name = "test_" + v + '_' + scheduler
+        kernel_name = "kernel_" + v + '_' + scheduler
 
-        starmon = ql.Platform("starmon", config)
+        starmon = ql.Platform("starmon", self.config)
         prog = ql.Program(prog_name, starmon, 7, 0)
         k = ql.Kernel(kernel_name, starmon, 7, 0)
 
@@ -174,17 +207,21 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+
     def test_adriaan(self):
         # parameters
         v = 'adriaan'
         scheduler = self._SCHEDULER
-        config = os.path.join(rootDir, "test_alap_rc_schedule.json")
 
         # create and set platform
-        prog_name = "test_" + v + "_scheduler=" + scheduler
-        kernel_name = "kernel_" + v + "_scheduler=" + scheduler
+        prog_name = "test_" + v + '_' + scheduler
+        kernel_name = "kernel_" + v + '_' + scheduler
 
-        starmon = ql.Platform("starmon", config)
+        starmon = ql.Platform("starmon", self.config)
         prog = ql.Program(prog_name, starmon, 7, 0)
         k = ql.Kernel(kernel_name, starmon, 7, 0)
 
@@ -202,17 +239,21 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+
     def test_1(self):
         # parameters
         v = '1'
         scheduler = self._SCHEDULER
-        config = os.path.join(rootDir, "test_alap_rc_schedule.json")
 
         # create and set platform
-        prog_name = "test_" + v + "_scheduler=" + scheduler
-        kernel_name = "kernel_" + v + "_scheduler=" + scheduler
+        prog_name = "test_" + v + '_' + scheduler
+        kernel_name = "kernel_" + v + '_' + scheduler
 
-        starmon = ql.Platform("starmon", config)
+        starmon = ql.Platform("starmon", self.config)
         prog = ql.Program(prog_name, starmon, 7, 0)
         k = ql.Kernel(kernel_name, starmon, 7, 0)
 
@@ -242,17 +283,21 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+
     def test_7(self):
         # parameters
         v = '7'
         scheduler = self._SCHEDULER
-        config = os.path.join(rootDir, "test_alap_rc_schedule.json")
 
         # create and set platform
-        prog_name = "test_" + v + "_scheduler=" + scheduler
-        kernel_name = "kernel_" + v + "_scheduler=" + scheduler
+        prog_name = "test_" + v + '_' + scheduler
+        kernel_name = "kernel_" + v + '_' + scheduler
 
-        starmon = ql.Platform("starmon", config)
+        starmon = ql.Platform("starmon", self.config)
         prog = ql.Program(prog_name, starmon, 7, 0)
         k = ql.Kernel(kernel_name, starmon, 7, 0)
 
@@ -290,9 +335,11 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-class Test_Asap_Rc_Schedule(Test_Alap_Rc_Schedule):
-    _SCHEDULER = 'ASAP'
+        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+
 
 
 if __name__ == '__main__':
