@@ -1,12 +1,15 @@
 import numpy as np
 from openql import openql as ql
 import os
+from test_QISA_assembler_present import assemble
 import unittest
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
 
+ql.set_option('output_dir', output_dir)
+    
 def file_compare(fn1, fn2):
     isSame = False
     with open(fn1, 'r') as f1:
@@ -46,6 +49,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
+        assemble(QISA_fn)
         self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
 
 
@@ -81,6 +85,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
+        assemble(QISA_fn)
         self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
 
 
@@ -118,6 +123,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
+        assemble(QISA_fn)
         self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
 
 
@@ -146,6 +152,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
+        assemble(QISA_fn)
         self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
 
     def test_detuned(self):
@@ -178,6 +185,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
+        assemble(QISA_fn)
         self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
 
     def test_detuned2(self):
@@ -210,6 +218,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
+        assemble(QISA_fn)
         self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
 
     def test_adriaan(self):
@@ -242,6 +251,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
+        assemble(QISA_fn)
         self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
 
     def test_1(self):
@@ -286,6 +296,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
+        assemble(QISA_fn)
         self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
 
     def test_7(self):
@@ -338,6 +349,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
+        assemble(QISA_fn)
         self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
 
 
