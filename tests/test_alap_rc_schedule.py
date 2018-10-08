@@ -8,8 +8,6 @@ rootDir = os.path.dirname(os.path.realpath(__file__))
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
 
-ql.set_option('output_dir', output_dir)
-    
 def file_compare(fn1, fn2):
     isSame = False
     with open(fn1, 'r') as f1:
@@ -25,14 +23,17 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
     _SCHEDULER = 'ALAP'
     config = os.path.join(rootDir, "hardware_config_cc_light.json")
 
+    def setUp(self):
+        ql.set_option('scheduler', self._SCHEDULER)
+        ql.set_option('output_dir', output_dir)
+
     def test_qwg(self):
         # parameters
         v = 'qwg'
-        scheduler = self._SCHEDULER
 
         # create and set platform
-        prog_name = "test_" + v + "_" + scheduler
-        kernel_name = "kernel_" + v + "_" + scheduler
+        prog_name = "test_" + v + "_" + self._SCHEDULER
+        kernel_name = "kernel_" + v + "_" + self._SCHEDULER
 
         starmon = ql.Platform("starmon", self.config)
         prog = ql.Program(prog_name, starmon, 7, 0)
@@ -43,7 +44,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         k.gate("y", [1])
 
         prog.add_kernel(k)
-        ql.set_option("scheduler", scheduler)
         prog.compile()
 
         GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
