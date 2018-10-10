@@ -2,6 +2,18 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [ 0.5.2 ] - [ 2018-10-10 ]
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+- wrong target qubits in the configuration files
+- Jenkins test build profile to test against assembler
+
+
 ## [ 0.5.1 ] - [ 2018-09-12 ]
 ### Added
 - API to obtain version number
