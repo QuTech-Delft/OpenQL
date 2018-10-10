@@ -38,11 +38,11 @@
 				"awg": [
 					{	"name": "qutech-qwg",
 						"channels": 4,
-						"codeword-groups": [4]
+						"control-group-sizes": [4]
 					},
 					{	"name": "zi-hdawg",
 						"channels": 8,
-						"codeword-groups": [2, 4, 8]
+						"control-group-sizes": [1, 4, 8]
 					}
 				],
 				"measure": [
@@ -52,6 +52,37 @@
 				]
 			},
 
+			// Modes to control instruments. These define which bits are used to
+			// control a group of channels
+			"control-modes": [
+				{	"name": "awg8-mw-vsm",
+					"control-group-count": 2,
+					"control-bits": [],
+					"triggers": [32]
+				},
+				{	"name": "awg8-mw-direct-iq",
+					"control-group-count": 4,
+					"control-bits": [],
+					"triggers": [32]
+				},
+				{	"name": "awg8-flux",
+					"control-group-count": 2,
+					"control-bits": [],
+					"triggers": [32]
+				},
+				{	"name": "uhfqc-9ch",
+					"control-group-count": 9,
+					"control-bits": [],
+					"result-bits": [],
+					"triggers": [32]
+				},
+				{	"name": "vsm-32ch",
+					"control-group-count": 32,
+					"control-bits": [],
+					"triggers": []
+				}
+			],
+
 			// Instruments used in this setup, their configuration and connectivity.
 			// The keys correspond to "name" fields defined in section "instrument-definitions"
 			"instruments": {
@@ -60,65 +91,47 @@
 						"ccio": [
 							{	"slot": 0,
 								"io_module": "cc-conn-dio-diff",
-//								"driven-instrument": "awg8-mw-0",
-								"code-word-mode": "cw8x3bits"
+								"control-instrument": "awg8-mw-0"
 							},
 							{	"slot": 1,
 								"io_module": "cc-conn-dio-diff",
-//								"driven-instrument": "awg8-flux-0",
-								"code-word-mode": "cw8x3bits"
+								"control-instrument": "awg8-flux-0"
 							},
 							{	"slot": 2,
 								"io_module": "cc-conn-dio",
-//								"driven-instrument": "uhfqc-0",
-								"code-word-mode": "mask10bits",
-								"result": "mask10bits"
+								"control-instrument": "uhfqc-0"
 							},
 							{	"slot": 3,
 								"io_module": "cc-conn-vsm",
-//								"driven-instrument": "vsm-0",
-								"code-word-mode": "mask32bits"
+								"control-instrument": "vsm-0"
 							}
 						]
 					}
 				],
 				"zi-hdawg": [
 					{	"name": "awg8-mw-0",
-						"signal-type": "mw",
-						"channels-per-group": 4,
-						"next-instrument": "vsm-0"
-						// FIXME":"channel assignment, which output to which VSM"
+						"control-mode": "awg8-mw-vsm",
+//						"signal-type": "mw",
+						"qubits": [[0, 1, 2, 3], [4, 5, 6, 7]]
 					},
 					{	"name": "awg8-flux-0",
-						"signal-type": "flux",
-						"channels-per-group": 1,
-						"qubits": [0, 1, 2, 3, 4, 5, 6, 7, 8]
+						"control-mode": "awg8-flux",
+//						"signal-type": "flux",
+						"qubits": [0, 1, 2, 3, 4, 5, 6, 7, -1]
 					}
 				],
 				"zi-uhfqc": [
 					{	"name": "uhfqc-0",
-						"channels-per-group": 1,
-						"qubits": [0, 1, 2, 3, 4, 5, 6, 7, 8]
+						"control-mode": "uhfqc-9ch",
+						"qubits": [0, 1, 2, 3, 4, 5, 6, 7, -1]
 					}
 				],
 				"qutech-vsm": [
 					{	"name": "vsm-0",
-						"channels-per-group": 1,
+						"control-mode": "vsm-32ch",
 						"qubits": [0, 1, 2, 3, 4, 5, 6, 7, 8]
 					}
 				]
-			},
-
-			//
-			"gates": {
-//				"x": {
-//					"duration": 20,
-//					"mw": ["gauss-{awg}-i", "gauss-{awg}-q", "derGauss-{awg}-i, derGauss-{awg}-q"],
-//					"flux": [],
-//					"measure": [],	// specify output and weight?
-//				}
-//				"cnot": {
-//					how to specify flux dance
 			}
 		}
 	},
@@ -278,7 +291,23 @@
 			"disable_optimization": false,
 			"type": "mw",
 			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "x"
+			"cc_light_instr": "x",
+			"cc": {
+				"sig": {
+					"mw": [
+						"{gateName}-gauss-{instrumentName}-i",
+						"{gateName}-gauss-{instrumentName}-q",
+						"{gateName}-derGauss-{instrumentName}-i",
+						"{gateName}-derGauss-{instrumentName}-q"],	// FIXME: {instrumentName} should evaluate to proper channel group
+					"switch": ["{q}"]
+//					"flux": [],
+//					"measure": [],	// specify output and weight?
+				}
+//				}
+//				"cnot": {
+//					how to specify flux dance
+
+			}
 		},
 		"y": {
 			"duration": 20,

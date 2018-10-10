@@ -343,6 +343,7 @@ private:
         Well, it appears that when using a ql:gate.name for iname, it contains the correct JSON key (e.g. either "x" or "x q0:)
      */
     // FIXME: move to generic location
+    // FISME: also create findInstructionSetting
     std::string findInstructionType(ql::quantum_platform &platform, std::string iname)
     {
         // walk the JSON defined instructions
@@ -473,63 +474,80 @@ private:
                         std::string iname = instr->name;
                         std::string instr_name = platform.get_instruction_name(iname);      // FIXME: function only valid for gates specified in JSON?
 
-                        if(itype == __nop_gate__)       // a quantum "nop", see gate.h
-                        {
-                            //FIXME: does a __nop_gate__ ever get a cc_light_instr (which are defined in JSON)?
-                            codegen.nop(ssinst);
-                        } else if(itype == __classical_gate__) {
-                            FATAL("Inconsistency detected: classical gate found after first section");
-                        // FIXME: do we also need to test for other itype like __measure_gate__, __display__??
-                        } else {    // 'normal' gate. FIXME: code below assumes __custom_gate ??
-                            auto nOperands = instr->operands.size();
-                            auto nCoperands = instr->creg_operands.size();
-#if 1
-                            std::string tmp = findInstructionType(platform, iname);
-                            DOUT("XXXX: iname='" << iname << "', instructionType='" << tmp << "'");
-#endif
-                            // handle readout (extracted from decompose_instructions)
-                            if("readout" == findInstructionType(platform, iname))
+                        switch(itype) {
+                            case __nop_gate__:       // a quantum "nop", see gate.h
+                                //FIXME: does a __nop_gate__ ever get a cc_light_instr (which are defined in JSON)?
+                                codegen.nop(ssinst);
+                                break;
+
+                            case __classical_gate__:
+                                FATAL("Inconsistency detected: classical gate found after first section");
+                                break;
+
+                            case __custom_gate__:
                             {
-                                DOUT("    readout instruction ");
-                                if(itype != __custom_gate__) {
-                                    FATAL("Readout instruction '" << iname << "' must be a custom gate"); // FIXME: unclear message
-                                }
-                                if(nCoperands != 1) {
-                                    FATAL("Readout instruction requires exactly 1 classical operand");
-                                }
-                                if(nOperands != 1) {
-                                    FATAL("Readout instruction requires exactly 1 qubit operand");
-                                }
+                                auto nOperands = instr->operands.size();
+                                auto nCoperands = instr->creg_operands.size();
+#if 1
+                                std::string tmp = findInstructionType(platform, iname);
+                                DOUT("XXXX: iname='" << iname << "', instructionType='" << tmp << "'");
+#endif
+                                // handle readout (extracted from decompose_instructions)
+                                if("readout" == findInstructionType(platform, iname))
+                                {
+                                    DOUT("    readout instruction ");
+                                    if(itype != __custom_gate__) {  // FIXME: it is by definition now
+                                        FATAL("Readout instruction '" << iname << "' must be a custom gate"); // FIXME: unclear message
+                                    }
+                                    if(nCoperands != 1) {
+                                        FATAL("Readout instruction requires exactly 1 classical operand, not " << nCoperands);
+                                    }
+                                    if(nOperands != 1) {
+                                        FATAL("Readout instruction requires exactly 1 qubit operand, not " << nOperands);
+                                    }
 
-                                auto &op0 = instr->operands[0];
-                                auto &cop0 = instr->creg_operands[0];
-                                codegen.readout(ssinst, cop0, op0);
-                            } else { // handle all other instruction types
-                                if(1 == nOperands) {
                                     auto &op0 = instr->operands[0];
-                                    if(verboseCode) emit(ssinst, SS2S("# " << instr_name << " " << op0).c_str());
-    //                                squbits.push_back(op);
+                                    auto &cop0 = instr->creg_operands[0];
+                                    codegen.readout(ssinst, cop0, op0);
+                                } else { // handle all other instruction types
+                                    if(1 == nOperands) {
+                                        auto &op0 = instr->operands[0];
+                                        if(verboseCode) emit(ssinst, SS2S("# " << instr_name << " " << op0).c_str());
+        //                                squbits.push_back(op);
 
-                                    /* we may have an "x" on 0:
-                                       - that implies an "x" [gauss-r, gauss-i, derGauss-r, derGauss-i] on AWGx channelGroup y. Identical for several qubits, depending on topology
-                                       - or without a VSM: [gauss-0, derGauss-0]
-                                       - and an enable on VSM channel z
-                                       or a "cnot" on 2,3
-                                       - that implies a "cnot-src-1" on 1 and a cnot-dst-3" on 3 on AWGx
-                                        Note that we can use a QWG (4 channels) or a pair of QWG, or a AWG-8, in different codeword modes
-                                    */
+                                        /* we may have an "x" on 0:
+                                           - that implies an "x" [gauss-r, gauss-i, derGauss-r, derGauss-i] on AWGx channelGroup y. Identical for several qubits, depending on topology
+                                           - or without a VSM: [gauss-0, derGauss-0]
+                                           - and an enable on VSM channel z
+                                           or a "cnot" on 2,3
+                                           - that implies a "cnot-src-1" on 1 and a cnot-dst-3" on 3 on AWGx
+                                            Note that we can use a QWG (4 channels) or a pair of QWG, or a AWG-8, in different codeword modes
+                                        */
 
 
-                                } else if(2 == nOperands) {
-                                    auto &op0 = instr->operands[0];
-                                    auto &op1 = instr->operands[1];
-                                    if(verboseCode) emit(ssinst, SS2S("# " << instr_name << " " << op0 << "," << op1).c_str());
-    //                                dqubits.push_back(qubit_pair_t(op1, op2));
-                                } else {
-                                    FATAL("Only 1 and 2 operand instructions are supported !");
+                                    } else if(2 == nOperands) {
+                                        auto &op0 = instr->operands[0];
+                                        auto &op1 = instr->operands[1];
+                                        if(verboseCode) emit(ssinst, SS2S("# " << instr_name << " " << op0 << "," << op1).c_str());
+        //                                dqubits.push_back(qubit_pair_t(op1, op2));
+                                    } else {
+                                        FATAL("Only 1 and 2 operand instructions are supported !");
+                                    }
                                 }
-                            }
-                        }
+                                break;
+                            }   // __custom_gate__
+
+                            case __measure_gate__:
+                                FATAL("__measure_gate__ not supported");    // FIXME: should we. Probably not, because there is no way to define CC-specifics
+                                break;
+
+                            case __display__:
+                                FATAL("__display__ not supported");
+                                break;
+
+                            default:
+                                FATAL("unsupported gate type" << itype);
+                        }   // switch(itype)
 
 
 #if 0   // FIXME: cc_light SMIS/SMIT handling
@@ -548,7 +566,7 @@ private:
                         }
                         ssinst << instr_name << " " << rname;
 #endif
-                    }
+                    } // for(section...)
 
 
 #if 0

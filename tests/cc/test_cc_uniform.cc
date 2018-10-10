@@ -35,9 +35,9 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
     // quantum operations
     for (int j=0; j<7; j++)
         k.gate("x", j);
-    k.gate("cnot", 0,2);
-    k.gate("cnot", 6,3);
-    k.gate("cnot", 1,4);
+    k.gate("cnot", 0, 2);
+    k.gate("cnot", 6, 3);
+    k.gate("cnot", 1, 4);
 
     // create classical registers
     ql::creg rd;    // destination register
@@ -66,6 +66,9 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
     // measure
     k.gate("measure", [0], rs1)
 #endif
+
+    k.gate("measure", std::vector<size_t>(0) , std::vector<size_t>(0));
+
 
     prog.add(k);
 
