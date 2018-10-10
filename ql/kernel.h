@@ -56,7 +56,7 @@ public:
         name(name), iterations(1), qubit_count(qcount),
         creg_count(ccount), type(kernel_type_t::STATIC)
     {
-        gate_definition = platform.instruction_map;
+        gate_definition = platform.instruction_map;     // FIXME: confusing name change
         cycle_time = platform.cycle_time;
     }
 

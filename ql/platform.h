@@ -129,6 +129,7 @@ public:
      * @return  value of 'arch_operation_name', e.g. "x"
      * @note    On CC-light, arch_operation_name is set from JSON field cc_light_instr
      * @note    Based on cc_light_scheduler.h::get_cc_light_instruction_name()
+     * FIXME: this only works for instructions defined in JSON, and only for 'specialized custom gate'
      */
     std::string get_instruction_name(std::string &iname)
     {

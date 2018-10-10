@@ -127,7 +127,7 @@ public:
             cccode << get_epilogue(kernel);
         }
 
-        codegen.finish(cccode);
+        codegen.program_trailer(cccode);
 
         // write CCCODE to file
         std::string file_name(ql::options::get("output_dir") + "/" + prog_name + ".cccode");
@@ -336,6 +336,12 @@ private:
 
 
     // find operation type for custom gate
+    /* FIXME: this looks in instruction_settings (i.e. the JSON file) for a gate name, i.e. a 'specialized custom gate'. So
+        we could use 'parameterized custom gate' in the JSON definition, but could then never find it.
+        It would be nice if the JSON reference for the gate used was remembered
+
+        Well, it appears that when using a ql:gate.name for iname, it contains the correct JSON key (e.g. either "x" or "x q0:)
+     */
     // FIXME: move to generic location
     std::string findInstructionType(ql::quantum_platform &platform, std::string iname)
     {
@@ -440,17 +446,10 @@ private:
         {
             auto delta = bundle.start_cycle - curr_cycle;
             bool classical_bundle = false;
-            std::stringstream sspre, ssinst;
+            std::stringstream sspre, ssinst;    // FIXME: Is it necessary to split sspre and ssinst?
 
             // generate bundle header
-#if 0   // FIXME: later. Is it necessary to split sspre and ssinst?
-            // delay start of bundle
-            if(delta < 8)
-                sspre << "    " << delta << "    ";
-            else
-                sspre << "    qwait " << delta-1 << "\n"
-                      << "    1    ";
-#endif
+            codegen.bundle_header(sspre, delta);
 
             // generate code for this bundle
             for(auto section = bundle.parallel_sections.begin(); section != bundle.parallel_sections.end(); ++section ) {
@@ -472,7 +471,7 @@ private:
                         ql::gate *instr = *insIt;
                         ql::gate_type_t itype = instr->type();
                         std::string iname = instr->name;
-                        std::string instr_name = platform.get_instruction_name(iname);
+                        std::string instr_name = platform.get_instruction_name(iname);      // FIXME: function only valid for gates specified in JSON?
 
                         if(itype == __nop_gate__)       // a quantum "nop", see gate.h
                         {
@@ -481,10 +480,13 @@ private:
                         } else if(itype == __classical_gate__) {
                             FATAL("Inconsistency detected: classical gate found after first section");
                         // FIXME: do we also need to test for other itype like __measure_gate__, __display__??
-                        } else {    // 'normal' gate
+                        } else {    // 'normal' gate. FIXME: code below assumes __custom_gate ??
                             auto nOperands = instr->operands.size();
                             auto nCoperands = instr->creg_operands.size();
-
+#if 1
+                            std::string tmp = findInstructionType(platform, iname);
+                            DOUT("XXXX: iname='" << iname << "', instructionType='" << tmp << "'");
+#endif
                             // handle readout (extracted from decompose_instructions)
                             if("readout" == findInstructionType(platform, iname))
                             {
@@ -559,33 +561,7 @@ private:
 
 
             // generate bundle trailer
-#if 0   // insert qwaits
-            if(classical_bundle)
-            {
-                if(iname == "fmr")  // FIXME: this is cc_light instruction
-                {
-                    // based on cclight requirements (section 4.7 eqasm manual),
-                    // two extra instructions need to be added between meas and fmr
-                    if(delta > 2)
-                    {
-                        ret << "    qwait " << 1 << "\n";
-                        ret << "    qwait " << delta-1 << "\n";
-                    }
-                    else
-                    {
-                        ret << "    qwait " << 1 << "\n";
-                        ret << "    qwait " << 1 << "\n";
-                    }
-                }
-                else
-                {
-                    if(delta > 1)
-                        ret << "    qwait " << delta << "\n";
-                }
-                ret << "    " << ssinst.str() << "\n";
-            }
-            else
-#endif
+            codegen.bundle_trailer(sspre, delta);
             {
                 ret << sspre.str() << ssinst.str() << "\n";
             }

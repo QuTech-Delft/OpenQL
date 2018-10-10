@@ -7,6 +7,7 @@
 
 // FIXME: this should be the only backend specific code
 // FIXME: check call structure of if_start here? Better in caller?
+// FIXME: manage stringstream here
 
 
 #ifndef QL_ARCH_CC_CODEGEN_CC_H
@@ -20,6 +21,10 @@ namespace arch
 class codegen_cc
 {
 public:
+    /*
+     *  generic
+     */
+
     void program_header(std::stringstream &s, std::string prog_name)
     {
         s << "# Program: '" << prog_name << "'" << std::endl;
@@ -27,10 +32,60 @@ public:
         s << "#" << std::endl;
     }
 
-    void finish(std::stringstream &s)
+    void program_trailer(std::stringstream &s)
     {
         emit(s, "", "stop");                                  // FIXME: cc_light loops whole program indefinitely
     }
+
+    void bundle_header(std::stringstream &s, int delta)
+    {
+#if 0   // FIXME: from CClight
+            // delay start of bundle
+            if(delta < 8)
+                sspre << "    " << delta << "    ";
+            else
+                sspre << "    qwait " << delta-1 << "\n"
+                      << "    1    ";
+#endif
+    }
+
+
+    void bundle_trailer(std::stringstream &s, int delta)
+    {
+#if 0   // FIXME: from CClight: insert qwaits
+            if(classical_bundle)
+            {
+                if(iname == "fmr")  // FIXME: this is cc_light instruction
+                {
+                    // based on cclight requirements (section 4.7 eqasm manual),
+                    // two extra instructions need to be added between meas and fmr
+                    if(delta > 2)
+                    {
+                        ret << "    qwait " << 1 << "\n";
+                        ret << "    qwait " << delta-1 << "\n";
+                    }
+                    else
+                    {
+                        ret << "    qwait " << 1 << "\n";
+                        ret << "    qwait " << 1 << "\n";
+                    }
+                }
+                else
+                {
+                    if(delta > 1)
+                        ret << "    qwait " << delta << "\n";
+                }
+                ret << "    " << ssinst.str() << "\n";
+            }
+            else
+#endif
+    }
+
+    void comment(std::stringstream &s)
+    {
+    }
+
+
 
     /*
      *  quantum instructions
