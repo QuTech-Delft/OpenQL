@@ -2,6 +2,18 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [ 0.5.3 ] - [ 2018-10-11 ]
+### Added
+- added detuning constraints for cclight
+
+### Changed
+
+### Removed
+
+### Fixed
+- alap scheduling for cclight
+
+
 ## [ 0.5.2 ] - [ 2018-10-10 ]
 ### Added
 
