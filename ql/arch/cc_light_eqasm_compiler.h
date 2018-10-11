@@ -872,10 +872,10 @@ public:
 
         DOUT("Mapping kernel: " << kernel.name);
 
-        Mapper mapper;                      // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
+        Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
         mapper.Init(kernel.qubit_count, platform);
-                                            // kernel.qubit_count is number of virtual qubits, i.e. highest indexed qubit minus 1
-                                            // platform specifies number of real qubits, i.e. locations for virtual qubits
+                        // kernel.qubit_count is number of virtual qubits, i.e. highest indexed qubit minus 1
+                        // platform specifies number of real qubits, i.e. locations for virtual qubits
 
         string fname_in = ql::options::get("output_dir") + "/" + kernel.name + "_mapper_in.qasm";
         IOUT("writing mapper input qasm to '" << fname_in << "' ...");
