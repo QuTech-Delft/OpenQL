@@ -38,7 +38,7 @@ public:
 
     resource_t(std::string n, scheduling_direction_t dir) : name(n), direction(dir)
     {
-        // DOUT("constructing resource: " << n << " for direction (0:fwd,1:bwd): " << dir);
+        DOUT("constructing resource: " << n << " for direction (0:fwd,1:bwd): " << dir);
     }
 
     virtual bool available(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
@@ -758,7 +758,7 @@ public:
             }
             else
             {
-                COUT("Error : Un-modelled resource: " << n );
+                COUT("Error : Un-modelled resource: '" << n << "'");
                 throw ql::exception("[x] Error : Un-modelled resource: "+n+" !",false);
             }
         }
