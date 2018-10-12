@@ -691,77 +691,6 @@ public:
 
 public:
 
-
-    /*
-     * program-level compilaation of qasm to cc_light_eqasm
-     */
-    void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform)
-    {
-        // this backend_compile interface is not implemented for mapping
-        // so stop here until this is supported
-        EOUT("this backend compiler interface not suited for mapping");
-        throw std::exception();
-
-        IOUT("[-] compiling qasm code ...");
-        if (ckt.empty())
-        {
-            EOUT("empty circuit, eqasm compilation aborted !");
-            return;
-        }
-        IOUT("[-] loading circuit (" <<  ckt.size() << " gates)...");
-
-        load_hw_settings(platform);
-
-        generate_opcode_cs_files(platform);
-
-        // map
-        WOUT("NOT MAPPING");
-        // map(prog_name, ckt, virtual_qubit_count, platform);  // virtual_qubit_count is updated to number of real qubits needed in platform
-
-        // schedule
-        // ql::ir sched_ir = cc_light_schedule(ckt, platform, num_qubits);
-
-        // schedule with platform resource constraints
-        ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, num_qubits);
-
-        // write RC scheduled bundles with parallelism as simple QASM file
-        std::stringstream sched_qasm;
-        sched_qasm <<"qubits " << num_qubits << "\n\n"
-                   << ".fused_kernels";
-        string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
-        IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << fname);
-        sched_qasm << ql::ir::qasm(bundles);
-        ql::utils::write_file(fname, sched_qasm.str());
-
-        MaskManager mask_manager;
-        // write scheduled bundles with parallelism in cc-light syntax
-        WriteCCLightQisa(prog_name, platform, mask_manager, bundles);
-
-        // write scheduled bundles with parallelism in cc-light syntax with time-stamps
-        WriteCCLightQisaTimeStamped(prog_name, platform, mask_manager, bundles);
-
-        // time analysis
-        // total_exec_time = time_analysis();
-
-        // compensate for latencies
-        // compensate_latency();
-
-        // reschedule
-        // resechedule();
-
-        // dump_instructions();
-
-        // decompose meta-instructions
-        // decompose_instructions();
-
-        // reorder instructions
-        // reorder_instructions();
-
-        // insert waits
-
-        emit_eqasm();
-    }
-
     std::string get_prologue(ql::quantum_kernel &k)
     {
         std::stringstream ss;
@@ -855,86 +784,93 @@ public:
         return ss.str();
     }
 
-    // mapping of the kernel on indicated platform
-    void map(quantum_kernel& kernel, quantum_platform& platform)
-    {
-        IOUT("mapping the quantum kernel");
-
-        std::string mapper_in_qasm;
-        std::string mapper_out_qasm;
-
-        auto mapopt = ql::options::get("mapper");
-        if (mapopt == "no" )
-        {
-            IOUT("Not mapping kernel");
-            return;
-        }
-
-        DOUT("Mapping kernel: " << kernel.name);
-
-        Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
-        mapper.Init(kernel.qubit_count, platform);
-                        // kernel.qubit_count is number of virtual qubits, i.e. highest indexed qubit minus 1
-                        // platform specifies number of real qubits, i.e. locations for virtual qubits
-
-        string fname_in = ql::options::get("output_dir") + "/" + kernel.name + "_mapper_in.qasm";
-        IOUT("writing mapper input qasm to '" << fname_in << "' ...");
-        mapper_in_qasm += kernel.qasm();
-        ql::utils::write_file(fname_in, mapper_in_qasm);
-
-        mapper.MapCircuit(kernel.c, kernel.name);
-        ql::ir::bundles_t bundles = mapper.Bundler(kernel.c);
-
-        string fname_out = ql::options::get("output_dir") + "/" + kernel.name + "_mapper_out.qasm";
-        IOUT("writing mapper_output qasm to '" << fname_out << "' ...");
-        mapper_out_qasm += ql::ir::qasm(bundles);
-        ql::utils::write_file(fname_out, mapper_out_qasm);
-
-        size_t  nused;
-        mapper.NumberOfQubitsUsed(nused);
-        DOUT("After mapping: change kernel.qubit_number from meaning number of virtual qubits (" << kernel.qubit_count << ") to number of real qubits used (" << nused << ")");
-        kernel.qubit_count = nused;
-        IOUT("mapping the quantum program [DONE]");
-    }
-
-    // kernel level compilation
+    // program level compilation
     void compile(std::string prog_name, std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
     {
         DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");
 
-        load_hw_settings(platform);
+        load_hw_settings(platform);     // sets num_qubits and ns_per_cycle, platform parameters
         generate_opcode_cs_files(platform);
         MaskManager mask_manager;
+
+        for(auto &kernel : kernels)
+        {
+            IOUT("Decomposing kernel: " << kernel.name);
+            if (! kernel.c.empty())
+            {
+                // decompose meta-instructions
+                ql::circuit decomposed_ckt;
+                decompose_instructions(kernel.c, decomposed_ckt, platform);
+                kernel.c = decomposed_ckt;
+            }
+        }
+
+        std::stringstream mapper_in_fname;
+        mapper_in_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_in.qasm";
+        std::stringstream mapper_in_qasm;
+        for (size_t k=0; k<kernels.size(); ++k)
+        {
+            mapper_in_qasm << "qubits " << kernels[k].qubit_count << "\n" << kernels[k].qasm();
+        }
+        IOUT("writing mapper input qasm to '" << mapper_in_fname.str() << "' ...");
+        ql::utils::write_file(mapper_in_fname.str(), mapper_in_qasm.str());
+
+        std::stringstream mapper_out_fname;
+        mapper_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_out.qasm";
+        std::stringstream mapper_out_qasm;
+        for(auto &kernel : kernels)
+        {
+            auto mapopt = ql::options::get("mapper");
+            if (mapopt == "no" )
+            {
+                IOUT("Not mapping kernel");
+                continue;;
+            }
+            IOUT("Mapping kernel: " << kernel.name);
+            if (! kernel.c.empty())
+            {
+                Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
+                mapper.Init(kernel.qubit_count, platform);
+                                // kernel.qubit_count is number of virtual qubits, i.e. highest indexed qubit minus 1
+                                // platform specifies qubit_number as number of real qubits, i.e. locations for virtual qubits
+                mapper.MapCircuit(kernel.c, kernel.name);
+                kernel.bundles = mapper.Bundler(kernel.c);
+                mapper_out_qasm << ql::ir::qasm(kernel.bundles) << std::endl;
+
+                size_t  highest_index;
+                mapper.HighestQubitIndex(highest_index);
+                kernel.qubit_count = highest_index;
+            }
+        }
+        IOUT("writing mapper output qasm to '" << mapper_out_fname.str() << "' ...");
+        ql::utils::write_file(mapper_out_fname.str(), mapper_out_qasm.str());
+
+        std::stringstream rcscheduler_out_fname;
+        rcscheduler_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_rcscheduled.qasm";
+        std::stringstream rcscheduler_out_qasm;
 
         std::stringstream ssqisa, sskernels_qisa;
         sskernels_qisa << "start:" << std::endl;
         for(auto &kernel : kernels)
         {
-            IOUT("Compiling kernel: " << kernel.name);
+            IOUT("Scheduling kernel: " << kernel.name);
             sskernels_qisa << "\n" << kernel.name << ":" << std::endl;
             sskernels_qisa << get_prologue(kernel);
-            ql::circuit decomp_ckt;
-            ql::circuit& ckt = kernel.c;
-            auto num_creg = kernel.creg_count;
-            if (! ckt.empty())
+            if (! kernel.c.empty())
             {
-                // decompose meta-instructions
-                decompose_instructions(ckt, decomp_ckt, platform);
-                kernel.c = decomp_ckt;
-
-                // map on platform topology
-                map(kernel, platform);
-
-                // schedule with platform resource constraints
-                ql::ir::bundles_t bundles = cc_light_schedule_rc(kernel.c, platform, num_qubits, num_creg);
+                auto num_creg = kernel.creg_count;
+                kernel.bundles = cc_light_schedule_rc(kernel.c, platform, num_qubits, num_creg);
+                rcscheduler_out_qasm << ql::ir::qasm(kernel.bundles) << std::endl;
 
                 // std::cout << "QASM" << std::endl;
-                // std::cout << ql::ir::qasm(bundles) << std::endl;
+                // std::cout << ql::ir::qasm(kernel.bundles) << std::endl;
 
-                sskernels_qisa << bundles2qisa(bundles, platform, mask_manager);
+                sskernels_qisa << bundles2qisa(kernel.bundles, platform, mask_manager);
             }
             sskernels_qisa << get_epilogue(kernel);
         }
+        IOUT("writing rcscheduler output qasm to '" << rcscheduler_out_fname.str() << "' ...");
+        ql::utils::write_file(rcscheduler_out_fname.str(), rcscheduler_out_qasm.str());
 
         sskernels_qisa << "\n    br always, start" << "\n"
                   << "    nop \n"

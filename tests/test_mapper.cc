@@ -422,6 +422,34 @@ test_string(std::string v, std::string mapopt, std::string initialplaceopt)
     prog.compile( );
 }
 
+// printing of kernels
+void
+test_daniel(std::string v, std::string mapopt, std::string initialplaceopt)
+{
+    int n = 2;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
+    float sweep_points[] = { 1 };
+
+    ql::quantum_platform starmon("starmon", "test_mapper.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, n, n);
+
+    ql::quantum_kernel k0("entanglement", starmon, n, 0);
+    k0.gate("h", 0);
+    k0.gate("cnot", 0,1);
+    prog.add(k0);
+
+    ql::quantum_kernel k1("measurement", starmon, n, n);
+    k1.gate("measure", std::vector<size_t>{0}, std::vector<size_t>{0});
+    k1.gate("measure", std::vector<size_t>{1}, std::vector<size_t>{1});
+    prog.add(k1);
+
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
+    ql::options::set("mapper", mapopt);
+    ql::options::set("initialplace", initialplaceopt);
+    prog.compile( );
+}
 
 int main(int argc, char ** argv)
 {
@@ -445,40 +473,42 @@ int main(int argc, char ** argv)
 //  test_manyNN("manyNN", "minextendrc", "no");
 //  test_manyNN("manyNN", "minextendrc", "yes");
     
-    test_oneD2("oneD2", "base", "no");
-    test_oneD2("oneD2", "base", "yes");
-    test_oneD2("oneD2", "minextend", "no");
-    test_oneD2("oneD2", "minextend", "yes");
-    test_oneD2("oneD2", "minextendrc", "no");
-    test_oneD2("oneD2", "minextendrc", "yes");
+    test_daniel("daniel", "minextendrc", "yes");
 
-    test_oneD4("oneD4", "base", "no");
-    test_oneD4("oneD4", "base", "yes");
-    test_oneD4("oneD4", "minextend", "no");
-    test_oneD4("oneD4", "minextend", "yes");
-    test_oneD4("oneD4", "minextendrc", "no");
-    test_oneD4("oneD4", "minextendrc", "yes");
+//  test_oneD2("oneD2", "base", "no");
+//  test_oneD2("oneD2", "base", "yes");
+//  test_oneD2("oneD2", "minextend", "no");
+//  test_oneD2("oneD2", "minextend", "yes");
+//  test_oneD2("oneD2", "minextendrc", "no");
+//  test_oneD2("oneD2", "minextendrc", "yes");
 
-    test_string("string", "base", "no");
-    test_string("string", "base", "yes");
-    test_string("string", "minextend", "no");
-    test_string("string", "minextend", "yes");
-    test_string("string", "minextendrc", "no");
-    test_string("string", "minextendrc", "yes");
+//  test_oneD4("oneD4", "base", "no");
+//  test_oneD4("oneD4", "base", "yes");
+//  test_oneD4("oneD4", "minextend", "no");
+//  test_oneD4("oneD4", "minextend", "yes");
+//  test_oneD4("oneD4", "minextendrc", "no");
+//  test_oneD4("oneD4", "minextendrc", "yes");
 
-    test_allD("allD", "base", "no");
-    test_allD("allD", "base", "yes");
-    test_allD("allD", "minextend", "no");
-    test_allD("allD", "minextend", "yes");
-    test_allD("allD", "minextendrc", "no");
-    test_allD("allD", "minextendrc", "yes");
+//  test_string("string", "base", "no");
+//  test_string("string", "base", "yes");
+//  test_string("string", "minextend", "no");
+//  test_string("string", "minextend", "yes");
+//  test_string("string", "minextendrc", "no");
+//  test_string("string", "minextendrc", "yes");
 
-    test_allDopt("allDopt", "base", "no");
-    test_allDopt("allDopt", "base", "yes");
-    test_allDopt("allDopt", "minextend", "no");
-    test_allDopt("allDopt", "minextend", "yes");
-    test_allDopt("allDopt", "minextendrc", "no");
-    test_allDopt("allDopt", "minextendrc", "yes");
+//  test_allD("allD", "base", "no");
+//  test_allD("allD", "base", "yes");
+//  test_allD("allD", "minextend", "no");
+//  test_allD("allD", "minextend", "yes");
+//  test_allD("allD", "minextendrc", "no");
+//  test_allD("allD", "minextendrc", "yes");
+
+//  test_allDopt("allDopt", "base", "no");
+//  test_allDopt("allDopt", "base", "yes");
+//  test_allDopt("allDopt", "minextend", "no");
+//  test_allDopt("allDopt", "minextend", "yes");
+//  test_allDopt("allDopt", "minextendrc", "no");
+//  test_allDopt("allDopt", "minextendrc", "yes");
 
     return 0;
 }

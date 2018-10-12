@@ -2001,17 +2001,15 @@ void UseCount(ql::circuit& circ)
     DOUT("UseCount circuit [DONE]");
 } 
 
-// inspect counters and update number of qubits actually used
-// in effect, this is the highest index plus 1,
-// since that is how qx interprets the number of qubits at the start of cqasm
-void NumberOfQubitsUsed(size_t & nused)
+// inspect counters and update highest qubit index
+void HighestQubitIndex(size_t & highest_index)
 {
-    nused = 0;
+    highest_index = 0;
     for (size_t i=0; i < platform.qubit_number; i++)
     {
         if (use_count[i] != 0)
         {
-            nused = std::max(nused, i+1);
+            highest_index = std::max(highest_index, i);
         }
     }
 }

@@ -61,6 +61,7 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
     ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Scheduling CC-Light instructions ...");
+
     Scheduler sched;
     sched.Init(ckt, platform, nqubits, ncreg);
     // sched.PrintDot();
@@ -148,6 +149,7 @@ ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
     ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Resource constraint scheduling of CC-Light instructions ...");
+
     scheduling_direction_t  direction;
     std::string schedopt = ql::options::get("scheduler");
     if ("ASAP" == schedopt)

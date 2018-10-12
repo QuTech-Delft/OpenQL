@@ -1096,7 +1096,7 @@ public:
                 // sched.PrintDotScheduleASAP();
                 // sched_dot = sched.GetDotScheduleASAP();
                 // sched.PrintQASMScheduledASAP();
-                ql::ir::bundles_t bundles = sched.schedule_asap();
+                bundles = sched.schedule_asap();
                 kqasm = ql::ir::qasm(bundles);
 	        }
 	        else
@@ -1108,7 +1108,7 @@ public:
         {
             if ("yes" == scheduler_uniform)
             {
-                ql::ir::bundles_t bundles = sched.schedule_alap_uniform();
+                bundles = sched.schedule_alap_uniform();
                 kqasm = ql::ir::qasm(bundles);
 	        }
 	        else if ("no" == scheduler_uniform)
@@ -1117,7 +1117,7 @@ public:
                 // sched.PrintDotScheduleALAP();
                 // sched_dot = sched.GetDotScheduleALAP();
                 // sched.PrintQASMScheduledALAP();
-                ql::ir::bundles_t bundles = sched.schedule_alap();
+                bundles = sched.schedule_alap();
                 kqasm = ql::ir::qasm(bundles);
 	        }
 	        else
@@ -1812,6 +1812,7 @@ public:
 public:
     std::string   name;
     circuit       c;
+    ql::ir::bundles_t bundles;
     size_t        iterations;
     size_t        qubit_count;
     size_t        creg_count;

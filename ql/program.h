@@ -66,18 +66,18 @@ class quantum_program
         {
             // at the moment no qx specific thing is done
         }
-        else if (eqasm_compiler_name == "qumis_compiler")
-        {
-            backend_compiler = new ql::arch::cbox_eqasm_compiler();
-        }
+//      else if (eqasm_compiler_name == "qumis_compiler")
+//      {
+//          backend_compiler = new ql::arch::cbox_eqasm_compiler();
+//      }
         else if (eqasm_compiler_name == "cc_light_compiler" )
         {
             backend_compiler = new ql::arch::cc_light_eqasm_compiler();
         }
-        else if (eqasm_compiler_name == "quantumsim_compiler" )
-        {
-            backend_compiler = new ql::arch::quantumsim_eqasm_compiler();
-        }
+//      else if (eqasm_compiler_name == "quantumsim_compiler" )
+//      {
+//          backend_compiler = new ql::arch::quantumsim_eqasm_compiler();
+//      }
         else
         {
             EOUT("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
@@ -464,6 +464,8 @@ class quantum_program
                // fusing below doesn't take care of cycle attribute of each gate to increase per kernel
                // also the backend_compile interface for mapping only supports the multiple kernel interface
                // so stop here until this is supported
+               //
+               // please also note the commented out call to compile below
                EOUT("backend compiler not suited for mapping");
                throw std::exception();
 
@@ -481,7 +483,8 @@ class quantum_program
                try
                {
                   IOUT("compiling eqasm code...");
-                  backend_compiler->compile(name, fused, platform);
+                  // REPAIR THIS
+                  // backend_compiler->compile(name, fused, platform);
                }
                catch (ql::exception e)
                {
