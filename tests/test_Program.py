@@ -8,18 +8,15 @@ platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
 
-ql.set_option('output_dir', output_dir)
-ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ALAP')
-ql.set_option('log_level', 'LOG_WARNING')
-ql.set_option('use_default_gates', 'no')
-
-
 class Test_program(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        pass
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ALAP')
+        ql.set_option('log_level', 'LOG_WARNING')
+        ql.set_option('use_default_gates', 'no')
 
     def test_program_name(self):
         name = "program1"

@@ -3,16 +3,18 @@ import unittest
 import os
 
 curdir = os.path.dirname(__file__)
+output_dir = os.path.join(curdir, 'test_output')
 
 class Test_basic(unittest.TestCase):
 
-    def test_compilation(self):
-        # set global options kernel
-        output_dir = os.path.join(curdir, 'test_output')
+    @classmethod
+    def setUpClass(self):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('log_level', 'LOG_WARNING')
+
+    def test_compilation(self):
 
         print('output dir : {}'.format( ql.get_option('output_dir') ) )
         config_fn = os.path.join(curdir, 'test_cfg_cbox.json')

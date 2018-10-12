@@ -11,9 +11,14 @@ config_fn = os.path.join(curdir, 'test_config_default.json')
 platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_option('output_dir', output_dir)
+
 
 class Test_bugs(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(self):
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('use_default_gates', 'yes')
 
     # @unittest.expectedFailure
     # @unittest.skip

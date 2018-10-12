@@ -8,17 +8,14 @@ platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
 
-ql.set_option('output_dir', output_dir)
-ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ASAP')
-ql.set_option('log_level', 'LOG_WARNING')
-
-
 class Test_kernel(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        pass
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ASAP')
+        ql.set_option('log_level', 'LOG_WARNING')
 
     def test_kernel_name(self):
         name = "kernel1"

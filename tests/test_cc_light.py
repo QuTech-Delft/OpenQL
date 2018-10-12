@@ -22,7 +22,8 @@ def file_compare(fn1, fn2):
 
 class Test_basic(unittest.TestCase):
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ASAP')

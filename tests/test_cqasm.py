@@ -23,17 +23,20 @@ def file_compare(fn1, fn2):
             isSame = (a==b)
     return isSame
 
-def set_options():
-    ql.set_option('output_dir', output_dir)
-    ql.set_option('optimize', 'no')
-    ql.set_option('scheduler', 'ASAP')
-    ql.set_option('log_level', 'LOG_INFO')
-    ql.set_option('use_default_gates', 'yes')
-
 class Test_cqasm(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(self):
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ASAP')
+        ql.set_option('log_level', 'LOG_INFO')
+
+
     def test_cqasm_default_gates(self):
-        set_options()
+
+        ql.set_option('use_default_gates', 'yes')
+
         nqubits = 4
 
         k = ql.Kernel("aKernel", platf, nqubits)
@@ -69,8 +72,8 @@ class Test_cqasm(unittest.TestCase):
         p.compile()
 
         qasm_files = []
-        qasm_files.append(os.path.join(output_dir, p.name_+'.qasm'))
-        qasm_files.append(os.path.join(output_dir, p.name_+'_scheduled.qasm'))
+        qasm_files.append(os.path.join(output_dir, p.name+'.qasm'))
+        qasm_files.append(os.path.join(output_dir, p.name+'_scheduled.qasm'))
 
         for qasm_file in qasm_files:
             # print('assembling: {}'.format(qasm_file))
@@ -78,7 +81,7 @@ class Test_cqasm(unittest.TestCase):
 
     # @unittest.skip
     def test_cqasm_custom_gates(self):
-        set_options()
+
         ql.set_option('use_default_gates', 'no')
 
         nqubits = 4
@@ -116,8 +119,8 @@ class Test_cqasm(unittest.TestCase):
         p.compile()
 
         qasm_files = []
-        qasm_files.append(os.path.join(output_dir, p.name_+'.qasm'))
-        qasm_files.append(os.path.join(output_dir, p.name_+'_scheduled.qasm'))
+        qasm_files.append(os.path.join(output_dir, p.name+'.qasm'))
+        qasm_files.append(os.path.join(output_dir, p.name+'_scheduled.qasm'))
 
         for qasm_file in qasm_files:
             # print('assembling: {}'.format(qasm_file))
