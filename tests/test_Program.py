@@ -21,12 +21,24 @@ class Test_program(unittest.TestCase):
     def setUpClass(self):
         pass
 
-    # @unittest.skip('NotImplemented')
     def test_program_name(self):
         name = "program1"
         nqubits=1
         p = ql.Program(name, platf, nqubits)
-        self.assertEqual(p.name_, name)
+        self.assertEqual(p.name, name)
+
+    def test_program_qubit_count(self):
+        name = "program1"
+        nqubits=3
+        p = ql.Program(name, platf, nqubits)
+        self.assertEqual(p.qubit_count, nqubits)
+
+    def test_program_creg_count(self):
+        name = "program1"
+        nqubits=2
+        ncreg = 3
+        p = ql.Program(name, platf, nqubits, ncreg)
+        self.assertEqual(p.creg_count, ncreg)
 
     def test_add_kernel(self):
         # test that this does not raise any error
@@ -44,6 +56,13 @@ class Test_program(unittest.TestCase):
         p = ql.Program('program1', platf, nqubits)
         program_methods = [
             'add_kernel',
+            'add_program',
+            'add_if',
+            'add_if_else',
+            'add_do_while',
+            'add_for',
+            'print_interaction_matrix',
+            'write_interaction_matrix',
             'compile',
             'microcode',
             'qasm',

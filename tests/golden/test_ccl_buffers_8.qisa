@@ -11,9 +11,9 @@ smis s9, {2, 3, 4}
 start:
 
 aKernel:
-    1,    measz s0
+    1    measz s0
     qwait 10
-    1,    measz s0
+    1    measz s0
     qwait 2
 
     br always, start

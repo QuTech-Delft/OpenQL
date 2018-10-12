@@ -1,12 +1,12 @@
 {
-   "eqasm_compiler" : "cc_light_compiler",
+   "eqasm_compiler" : "none",
 
    "hardware_settings": {
 	 "qubit_number": 7,
-	 "cycle_time" : 5,  
+	 "cycle_time" : 20,  
 	 "mw_mw_buffer": 0,
 	 "mw_flux_buffer": 0,
-	 "mw_readout_buffer": 20,
+	 "mw_readout_buffer": 0,
 	 "flux_mw_buffer": 0,
 	 "flux_flux_buffer": 0,
 	 "flux_readout_buffer": 0,
@@ -15,23 +15,94 @@
 	 "readout_readout_buffer": 0
    },
 
-   "instructions": {
-   "cx q0": {
-      "duration": 40,
-      "latency": 0,
-      "qubits": ["q0"],
-      "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-      "disable_optimization": false,
-      "type": "mw",
-      "cc_light_instr_type": "single_qubit_gate",
-      "cc_light_instr": "prepx",
-      "cc_light_codeword": 10,
-      "cc_light_opcode": 99,
-      "cc_light_cond": 1
-   },
+  "resources":
+   {
+    "qubits":
+    {
+      "count": 7
+    },
+    "qwgs" :
+    {
+      "count": 3,
+      "connection_map":
+      {
+        "0" : [0, 1],
+        "1" : [2, 3, 4],
+        "2" : [5, 6]
+      }
+    },
+    "meas_units" :
+    {
+      "count": 2,
+      "connection_map":
+      {
+        "0" : [0, 2, 3, 5, 6],
+        "1" : [1, 4]
+      }
+    },
+    "edges":
+    {
+      "count": 16,
+      "connection_map":
+      {
+        "0": [2, 10], 
+        "1": [3, 11],
+        "2": [0, 8],
+        "3": [1, 9],
+        "4": [6, 14],
+        "5": [7, 15],
+        "6": [4, 12],
+        "7": [5, 13],
+        "8": [2, 10],
+        "9": [3, 11],
+        "10": [0, 8],
+        "11": [1, 9],
+        "12": [6, 14],
+        "13": [7, 15],
+        "14": [4, 12],
+        "15": [5, 13]
+      }
+    }
+  },
+  "topology" : 
+  {
+    "x_size": 5,
+    "y_size": 3,
+    "qubits": 
+    [ 
+      { "id": 0,  "x": 1, "y": 2 },
+      { "id": 1,  "x": 3, "y": 2 },
+      { "id": 2,  "x": 0, "y": 1 },
+      { "id": 3,  "x": 2, "y": 1 },
+      { "id": 4,  "x": 4, "y": 1 },
+      { "id": 5,  "x": 1, "y": 0 },
+      { "id": 6,  "x": 3, "y": 0 }
+    ],
+    "edges": 
+    [
+      { "id": 0,  "src": 2, "dst": 0 },
+      { "id": 1,  "src": 0, "dst": 3 },
+      { "id": 2,  "src": 3, "dst": 1 },
+      { "id": 3,  "src": 1, "dst": 4 },
+      { "id": 4,  "src": 2, "dst": 5 },
+      { "id": 5,  "src": 5, "dst": 3 },
+      { "id": 6,  "src": 3, "dst": 6 },
+      { "id": 7,  "src": 6, "dst": 4 },
+      { "id": 8,  "src": 0, "dst": 2 },
+      { "id": 9,  "src": 3, "dst": 0 },
+      { "id": 10,  "src": 1, "dst": 3 },
+      { "id": 11,  "src": 4, "dst": 1 },
+      { "id": 12,  "src": 5, "dst": 2 },
+      { "id": 13,  "src": 3, "dst": 5 },
+      { "id": 14,  "src": 6, "dst": 3 },
+      { "id": 15,  "src": 4, "dst": 6 }
 
+    ]
+  },
+
+   "instructions": {
    "prepx q0": {
-      "duration": 40,
+      "duration": 320,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -43,7 +114,7 @@
       "cc_light_opcode": 1
    },
    "prepx q1": {
-      "duration": 40,
+      "duration": 320,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -55,7 +126,7 @@
       "cc_light_opcode": 1
    },
    "prepx q2": {
-      "duration": 40,
+      "duration": 320,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -67,7 +138,7 @@
       "cc_light_opcode": 1
    },
    "prepx q3": {
-      "duration": 40,
+      "duration": 320,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -79,7 +150,7 @@
       "cc_light_opcode": 1
    },
    "prepx q4": {
-      "duration": 40,
+      "duration": 320,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -91,7 +162,7 @@
       "cc_light_opcode": 1
    },
    "prepx q5": {
-      "duration": 40,
+      "duration": 320,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -103,7 +174,7 @@
       "cc_light_opcode": 1
    },
    "prepx q6": {
-      "duration": 40,
+      "duration": 320,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -115,91 +186,104 @@
       "cc_light_opcode": 1
    },
    "prepz q0": {
-      "duration": 40,
+      "duration": 320,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "none",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "prepz",
       "cc_light_codeword": 20,
       "cc_light_opcode": 2
    },
    "prepz q1": {
-      "duration": 40,
+      "duration": 320,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "none",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "prepz",
       "cc_light_codeword": 21,
       "cc_light_opcode": 2
    },
    "prepz q2": {
-      "duration": 40,
+      "duration": 320,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "none",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "prepz",
       "cc_light_codeword": 22,
       "cc_light_opcode": 2
    },
    "prepz q3": {
-      "duration": 40,
+      "duration": 320,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "none",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "prepz",
       "cc_light_codeword": 23,
       "cc_light_opcode": 2
    },
    "prepz q4": {
-      "duration": 40,
+      "duration": 320,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "none",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "prepz",
       "cc_light_codeword": 24,
       "cc_light_opcode": 2
    },
    "prepz q5": {
-      "duration": 40,
+      "duration": 320,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "none",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "prepz",
       "cc_light_codeword": 25,
       "cc_light_opcode": 2
    },
    "prepz q6": {
-      "duration": 40,
+      "duration": 320,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": false,
-      "type": "mw",
+      "type": "none",
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "prepz",
       "cc_light_codeword": 26,
       "cc_light_opcode": 2
    },
+   "cprepz q1": {
+      "duration": 320,
+      "latency": 0,
+      "qubits": ["q1"],
+      "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+      "disable_optimization": false,
+      "type": "mw",
+      "cc_light_instr_type": "single_qubit_gate",
+      "cc_light_instr": "cprepz",
+      "cc_light_codeword": 27,
+      "cc_light_opcode": 75,
+      "cc_light_cond" : 1
+   },
    "measx q0": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -211,7 +295,7 @@
       "cc_light_opcode": 4
    },
    "measx q1": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -223,7 +307,7 @@
       "cc_light_opcode": 4
    },
    "measx q2": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -235,7 +319,7 @@
       "cc_light_opcode": 4
    },
    "measx q3": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -247,7 +331,7 @@
       "cc_light_opcode": 4
    },
    "measx q4": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -259,7 +343,7 @@
       "cc_light_opcode": 4
    },
    "measx q5": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -271,7 +355,7 @@
       "cc_light_opcode": 4
    },
    "measx q6": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -283,7 +367,7 @@
       "cc_light_opcode": 4
    },
    "measz q0": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -292,10 +376,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 40,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 4
    },
    "measz q1": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -304,10 +388,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 41,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 4
    },
    "measz q2": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -316,10 +400,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 42,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 4
    },
    "measz q3": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -328,10 +412,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 43,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 4
    },
    "measz q4": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -340,10 +424,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 44,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 4
    },
    "measz q5": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -352,10 +436,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 45,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 4
    },
    "measz q6": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -364,10 +448,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 46,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 4
    },
    "measure q0": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -376,10 +460,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 40,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 4
    },
    "measure q1": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -388,10 +472,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 41,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 4
    },
    "measure q2": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -400,10 +484,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 42,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 4
    },
    "measure q3": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -412,10 +496,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 43,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 4
    },
    "measure q4": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -424,10 +508,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 44,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 4
    },
    "measure q5": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -436,10 +520,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 45,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 4
    },
    "measure q6": {
-      "duration": 40,
+      "duration": 300,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -448,10 +532,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "measz",
       "cc_light_codeword": 46,
-      "cc_light_opcode": 5
+      "cc_light_opcode": 4
    },
    "i q0": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -460,10 +544,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "i",
       "cc_light_codeword": 50,
-      "cc_light_opcode": 100
+      "cc_light_opcode": 5
    },
    "i q1": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -472,10 +556,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "i",
       "cc_light_codeword": 51,
-      "cc_light_opcode": 100
+      "cc_light_opcode": 5
    },
    "i q2": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -484,10 +568,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "i",
       "cc_light_codeword": 52,
-      "cc_light_opcode": 100
+      "cc_light_opcode": 5
    },
    "i q3": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -496,10 +580,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "i",
       "cc_light_codeword": 53,
-      "cc_light_opcode": 100
+      "cc_light_opcode": 5
    },
    "i q4": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -508,10 +592,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "i",
       "cc_light_codeword": 54,
-      "cc_light_opcode": 100
+      "cc_light_opcode": 5
    },
    "i q5": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -520,10 +604,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "i",
       "cc_light_codeword": 55,
-      "cc_light_opcode": 100
+      "cc_light_opcode": 5
    },
    "i q6": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -532,10 +616,10 @@
       "cc_light_instr_type": "single_qubit_gate",
       "cc_light_instr": "i",
       "cc_light_codeword": 56,
-      "cc_light_opcode": 100
+      "cc_light_opcode": 5
    },
    "x q0": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -547,7 +631,7 @@
       "cc_light_opcode": 6
    },
    "x q1": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -559,7 +643,7 @@
       "cc_light_opcode": 6
    },
    "x q2": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -571,7 +655,7 @@
       "cc_light_opcode": 6
    },
    "x q3": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -583,7 +667,7 @@
       "cc_light_opcode": 6
    },
    "x q4": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -595,7 +679,7 @@
       "cc_light_opcode": 6
    },
    "x q5": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -607,7 +691,7 @@
       "cc_light_opcode": 6
    },
    "x q6": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -619,7 +703,7 @@
       "cc_light_opcode": 6
    },
    "y q0": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -631,7 +715,7 @@
       "cc_light_opcode": 7
    },
    "y q1": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -643,7 +727,7 @@
       "cc_light_opcode": 7
    },
    "y q2": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -655,7 +739,7 @@
       "cc_light_opcode": 7
    },
    "y q3": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -667,7 +751,7 @@
       "cc_light_opcode": 7
    },
    "y q4": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -679,7 +763,7 @@
       "cc_light_opcode": 7
    },
    "y q5": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -691,7 +775,7 @@
       "cc_light_opcode": 7
    },
    "y q6": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -703,7 +787,7 @@
       "cc_light_opcode": 7
    },
    "z q0": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -715,7 +799,7 @@
       "cc_light_opcode": 8
    },
    "z q1": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -727,7 +811,7 @@
       "cc_light_opcode": 8
    },
    "z q2": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -739,7 +823,7 @@
       "cc_light_opcode": 8
    },
    "z q3": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -751,7 +835,7 @@
       "cc_light_opcode": 8
    },
    "z q4": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -763,7 +847,7 @@
       "cc_light_opcode": 8
    },
    "z q5": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -775,7 +859,7 @@
       "cc_light_opcode": 8
    },
    "z q6": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -787,7 +871,7 @@
       "cc_light_opcode": 8
    },
    "h q0": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -799,7 +883,7 @@
       "cc_light_opcode": 9
    },
    "h q1": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -811,7 +895,7 @@
       "cc_light_opcode": 9
    },
    "h q2": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -823,7 +907,7 @@
       "cc_light_opcode": 9
    },
    "h q3": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -835,7 +919,7 @@
       "cc_light_opcode": 9
    },
    "h q4": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -847,7 +931,7 @@
       "cc_light_opcode": 9
    },
    "h q5": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -859,7 +943,7 @@
       "cc_light_opcode": 9
    },
    "h q6": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -871,7 +955,7 @@
       "cc_light_opcode": 9
    },
    "s q0": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -883,7 +967,7 @@
       "cc_light_opcode": 10
    },
    "s q1": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -895,7 +979,7 @@
       "cc_light_opcode": 10
    },
    "s q2": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -907,7 +991,7 @@
       "cc_light_opcode": 10
    },
    "s q3": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -919,7 +1003,7 @@
       "cc_light_opcode": 10
    },
    "s q4": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -931,7 +1015,7 @@
       "cc_light_opcode": 10
    },
    "s q5": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -943,7 +1027,7 @@
       "cc_light_opcode": 10
    },
    "s q6": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -955,7 +1039,7 @@
       "cc_light_opcode": 10
    },
    "sdag q0": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -967,7 +1051,7 @@
       "cc_light_opcode": 11
    },
    "sdag q1": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -979,7 +1063,7 @@
       "cc_light_opcode": 11
    },
    "sdag q2": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -991,7 +1075,7 @@
       "cc_light_opcode": 11
    },
    "sdag q3": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1003,7 +1087,7 @@
       "cc_light_opcode": 11
    },
    "sdag q4": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1015,7 +1099,7 @@
       "cc_light_opcode": 11
    },
    "sdag q5": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1027,7 +1111,7 @@
       "cc_light_opcode": 11
    },
    "sdag q6": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1039,7 +1123,7 @@
       "cc_light_opcode": 11
    },
    "rx90 q0": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1051,7 +1135,7 @@
       "cc_light_opcode": 12
    },
    "rx90 q1": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1063,7 +1147,7 @@
       "cc_light_opcode": 12
    },
    "rx90 q2": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1075,7 +1159,7 @@
       "cc_light_opcode": 12
    },
    "rx90 q3": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1087,7 +1171,7 @@
       "cc_light_opcode": 12
    },
    "rx90 q4": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1099,7 +1183,7 @@
       "cc_light_opcode": 12
    },
    "rx90 q5": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1111,7 +1195,7 @@
       "cc_light_opcode": 12
    },
    "rx90 q6": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1123,7 +1207,7 @@
       "cc_light_opcode": 12
    },
    "xm90 q0": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1135,7 +1219,7 @@
       "cc_light_opcode": 13
    },
    "xm90 q1": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1147,7 +1231,7 @@
       "cc_light_opcode": 13
    },
    "xm90 q2": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1159,7 +1243,7 @@
       "cc_light_opcode": 13
    },
    "xm90 q3": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1171,7 +1255,7 @@
       "cc_light_opcode": 13
    },
    "xm90 q4": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1183,7 +1267,7 @@
       "cc_light_opcode": 13
    },
    "xm90 q5": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1195,7 +1279,7 @@
       "cc_light_opcode": 13
    },
    "xm90 q6": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1207,7 +1291,7 @@
       "cc_light_opcode": 13
    },
    "ry90 q0": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1219,7 +1303,7 @@
       "cc_light_opcode": 14
    },
    "ry90 q1": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1231,7 +1315,7 @@
       "cc_light_opcode": 14
    },
    "ry90 q2": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1243,7 +1327,7 @@
       "cc_light_opcode": 14
    },
    "ry90 q3": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1255,7 +1339,7 @@
       "cc_light_opcode": 14
    },
    "ry90 q4": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1267,7 +1351,7 @@
       "cc_light_opcode": 14
    },
    "ry90 q5": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1279,7 +1363,7 @@
       "cc_light_opcode": 14
    },
    "ry90 q6": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1291,7 +1375,7 @@
       "cc_light_opcode": 14
    },
    "ym90 q0": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1303,7 +1387,7 @@
       "cc_light_opcode": 15
    },
    "ym90 q1": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1315,7 +1399,7 @@
       "cc_light_opcode": 15
    },
    "ym90 q2": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1327,7 +1411,7 @@
       "cc_light_opcode": 15
    },
    "ym90 q3": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1339,7 +1423,7 @@
       "cc_light_opcode": 15
    },
    "ym90 q4": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1351,7 +1435,7 @@
       "cc_light_opcode": 15
    },
    "ym90 q5": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1363,7 +1447,7 @@
       "cc_light_opcode": 15
    },
    "ym90 q6": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1375,7 +1459,7 @@
       "cc_light_opcode": 15
    },
    "t q0": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1387,7 +1471,7 @@
       "cc_light_opcode": 16
    },
    "t q1": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1399,7 +1483,7 @@
       "cc_light_opcode": 16
    },
    "t q2": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1411,7 +1495,7 @@
       "cc_light_opcode": 16
    },
    "t q3": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1423,7 +1507,7 @@
       "cc_light_opcode": 16
    },
    "t q4": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1435,7 +1519,7 @@
       "cc_light_opcode": 16
    },
    "t q5": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1447,7 +1531,7 @@
       "cc_light_opcode": 16
    },
    "t q6": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1459,7 +1543,7 @@
       "cc_light_opcode": 16
    },
    "tdag q0": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1471,7 +1555,7 @@
       "cc_light_opcode": 17
    },
    "tdag q1": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1483,7 +1567,7 @@
       "cc_light_opcode": 17
    },
    "tdag q2": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1495,7 +1579,7 @@
       "cc_light_opcode": 17
    },
    "tdag q3": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1507,7 +1591,7 @@
       "cc_light_opcode": 17
    },
    "tdag q4": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1519,7 +1603,7 @@
       "cc_light_opcode": 17
    },
    "tdag q5": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1531,7 +1615,7 @@
       "cc_light_opcode": 17
    },
    "tdag q6": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1543,7 +1627,7 @@
       "cc_light_opcode": 17
    },
    "x45 q0": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1555,7 +1639,7 @@
       "cc_light_opcode": 18
    },
    "x45 q1": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1567,7 +1651,7 @@
       "cc_light_opcode": 18
    },
    "x45 q2": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1579,7 +1663,7 @@
       "cc_light_opcode": 18
    },
    "x45 q3": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1591,7 +1675,7 @@
       "cc_light_opcode": 18
    },
    "x45 q4": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1603,7 +1687,7 @@
       "cc_light_opcode": 18
    },
    "x45 q5": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1615,7 +1699,7 @@
       "cc_light_opcode": 18
    },
    "x45 q6": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1627,7 +1711,7 @@
       "cc_light_opcode": 18
    },
    "xm45 q0": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1639,7 +1723,7 @@
       "cc_light_opcode": 19
    },
    "xm45 q1": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1651,7 +1735,7 @@
       "cc_light_opcode": 19
    },
    "xm45 q2": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1663,7 +1747,7 @@
       "cc_light_opcode": 19
    },
    "xm45 q3": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1675,7 +1759,7 @@
       "cc_light_opcode": 19
    },
    "xm45 q4": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1687,7 +1771,7 @@
       "cc_light_opcode": 19
    },
    "xm45 q5": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1699,7 +1783,7 @@
       "cc_light_opcode": 19
    },
    "xm45 q6": {
-      "duration": 40,
+      "duration": 20,
       "latency": 0,
       "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1709,6 +1793,18 @@
       "cc_light_instr": "xm45",
       "cc_light_codeword": 196,
       "cc_light_opcode": 19
+   },
+   "ry180 q0": {
+      "duration": 20,
+      "latency": 0,
+      "qubits": ["q0"],
+      "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+      "disable_optimization": false,
+      "type": "mw",
+      "cc_light_instr_type": "single_qubit_gate",
+      "cc_light_instr": "ry180",
+      "cc_light_codeword": 198,
+      "cc_light_opcode": 35
    },
    "cnot q2,q0": {
       "duration": 80,
@@ -1919,7 +2015,7 @@
       "cc_light_opcode": 128
    },
    "cz q2,q0": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "qubits": ["q2","q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1932,7 +2028,7 @@
       "cc_light_opcode": 129
    },
    "cz q0,q3": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "qubits": ["q0","q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1945,7 +2041,7 @@
       "cc_light_opcode": 129
    },
    "cz q3,q1": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "qubits": ["q3","q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1958,7 +2054,7 @@
       "cc_light_opcode": 129
    },
    "cz q1,q4": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "qubits": ["q1","q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1971,7 +2067,7 @@
       "cc_light_opcode": 129
    },
    "cz q2,q5": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "qubits": ["q2","q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1984,7 +2080,7 @@
       "cc_light_opcode": 129
    },
    "cz q5,q3": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "qubits": ["q5","q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -1997,7 +2093,7 @@
       "cc_light_opcode": 129
    },
    "cz q3,q6": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "qubits": ["q4","q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -2010,7 +2106,7 @@
       "cc_light_opcode": 129
    },
    "cz q6,q4": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "qubits": ["q6","q4"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -2023,7 +2119,7 @@
       "cc_light_opcode": 129
    },
    "cz q0,q2": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "qubits": ["q0","q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -2036,7 +2132,7 @@
       "cc_light_opcode": 129
    },
    "cz q3,q0": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "qubits": ["q3","q0"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -2049,7 +2145,7 @@
       "cc_light_opcode": 129
    },
    "cz q1,q3": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "qubits": ["q1","q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -2062,7 +2158,7 @@
       "cc_light_opcode": 129
    },
    "cz q4,q1": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "qubits": ["q4","q1"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -2075,7 +2171,7 @@
       "cc_light_opcode": 129
    },
    "cz q5,q2": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "qubits": ["q5","q2"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -2088,7 +2184,7 @@
       "cc_light_opcode": 129
    },
    "cz q3,q5": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "qubits": ["q3","q5"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -2101,7 +2197,7 @@
       "cc_light_opcode": 129
    },
    "cz q6,q3": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "qubits": ["q6","q3"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -2114,7 +2210,7 @@
       "cc_light_opcode": 129
    },
    "cz q4,q6": {
-      "duration": 80,
+      "duration": 40,
       "latency": 0,
       "qubits": ["q4","q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -2126,18 +2222,5 @@
       "cc_light_left_codeword": 152,
       "cc_light_opcode": 129
    }
-   },
-
-
-   "gate_decomposition": {
-      "measure_all" : ["measure q0", "measure q1", "measure q2", "measure q3", "measure q4", "measure q5", "measure q6"],
-      "y q0" : ["x q0", "y q0"],
-      "z q0" : ["z q0"],
-      "h q0" : ["ry90 q0"],
-      "t q0" : ["t q0"],
-      "tdag q0" : ["tdag q0"],
-      "s q0" : ["s q0"],
-      "sdag q0" : ["sdag q0"],
-      "cnot q0,q1" : ["ry90 q1","cz q2,q0","ry90 q1"]
    }
 }

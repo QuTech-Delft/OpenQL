@@ -71,7 +71,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
         p.add_kernel(k1)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
 
@@ -103,7 +103,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     def test_if_else(self):
@@ -133,7 +133,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
 
@@ -164,7 +164,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     def test_do_while(self):
@@ -194,7 +194,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
     def test_do_while_nested_for(self):
@@ -228,7 +228,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
 if __name__ == '__main__':

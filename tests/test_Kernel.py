@@ -20,6 +20,26 @@ class Test_kernel(unittest.TestCase):
     def setUpClass(self):
         pass
 
+    def test_kernel_name(self):
+        name = "kernel1"
+        nqubits = 3
+        k = ql.Kernel(name, platf, nqubits)
+        self.assertEqual(k.name, name)
+
+    def test_kernel_qubit_count(self):
+        name = "kernel1"
+        nqubits=3
+        k = ql.Kernel(name, platf, nqubits)
+        self.assertEqual(k.qubit_count, nqubits)
+
+    def test_kernel_creg_count(self):
+        name = "kernel1"
+        nqubits=2
+        ncreg = 3
+        k = ql.Kernel(name, platf, nqubits, ncreg)
+        self.assertEqual(k.creg_count, ncreg)
+
+
     def test_allowed_operations(self):
         nqubits = 3
         k = ql.Kernel("kernel1", platf, nqubits)
@@ -32,19 +52,18 @@ class Test_kernel(unittest.TestCase):
             # Single qubit cliffords
             'clifford',
             # 2 qubit gates
-            'cnot', 'cphase',
+            'cnot', 'cphase', 'cz',
             # Theorist gates
-            'identity', 'hadamard', 's', 'sdag', 'toffoli',
+            'identity', 'hadamard', 's', 'sdag', 't', 'tdag', 'toffoli',
             # pauli operators
-            'x', 'y', 'z']
+            'x', 'y', 'z',
+            # arbitrary rotations
+            'rx', 'ry', 'rz',
+            # synchronization
+            'wait', 'barrier'
+            ]
         # Test that these operations exist as methods of the kernel
         self.assertTrue(set(operations).issubset(dir(k)))
-
-    def test_kernel_name(self):
-        name = "kernel1"
-        nqubits = 3
-        k = ql.Kernel(name, platf, nqubits)
-        self.assertEqual(k.name_, name)
 
     def test_simple_kernel(self):
         nqubits = 3

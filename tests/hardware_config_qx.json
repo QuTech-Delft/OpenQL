@@ -225,9 +225,18 @@
         "matrix": [ [0.0,1.0], [1.0,0.0], 
                     [1.0,0.0], [0.0,0.0] ],
         "disable_optimization": true
-        }
+        },
+
+   "display_binary": {
+      "duration": 20,
+      "qubits": [],
+      "matrix": [ [0.0,1.0], [1.0,0.0],
+                  [1.0,0.0], [0.0,0.0] ],
+      "disable_optimization": true
+      }
 
    },
+
 
    "gate_decomposition": {
    }

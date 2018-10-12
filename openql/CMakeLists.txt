@@ -21,7 +21,11 @@ SET_PROPERTY(SOURCE openql.i PROPERTY SWIG_FLAGS -castmode -modern -keyword)
 SWIG_ADD_MODULE(openql python openql.i)
 # SWIG_ADD_LIBRARY(openql LANGUAGE python SOURCES openql.i TYPE SHARED)
 
-SWIG_LINK_LIBRARIES(openql ${PYTHON_LIBRARIES} ${LEMON_LIBRARIES})
-
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    SWIG_LINK_LIBRARIES(openql ${LEMON_LIBRARIES})
+    set_target_properties(_openql PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+else ()
+    SWIG_LINK_LIBRARIES(openql ${PYTHON_LIBRARIES} ${LEMON_LIBRARIES})
+endif()
 # ADD_EXECUTABLE(apiTest test.cc)
 # TARGET_LINK_LIBRARIES(apiTest _openql.so)

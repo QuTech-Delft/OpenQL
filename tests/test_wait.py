@@ -8,11 +8,6 @@ rootDir = os.path.dirname(os.path.realpath(__file__))
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
 
-ql.set_option('output_dir', output_dir)
-ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ALAP')
-ql.set_option('log_level', 'LOG_WARNING')
-
 def file_compare(fn1, fn2):
     isSame = False
     with open(fn1, 'r') as f1:
@@ -27,7 +22,14 @@ def file_compare(fn1, fn2):
 
 class Test_wait(unittest.TestCase):
 
+    def setUp(self):
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ASAP')
+        ql.set_option('log_level', 'LOG_WARNING')
+
     def test_wait_simple(self):
+
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
@@ -44,12 +46,13 @@ class Test_wait(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_simple.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
 
     def test_wait_parallel(self):
+
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
@@ -67,11 +70,12 @@ class Test_wait(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_parallel.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
     def test_wait_sweep(self):
+
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -103,11 +107,12 @@ class Test_wait(unittest.TestCase):
         # compile the program
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_sweep.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
     def test_wait_multi(self):
+
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
@@ -129,11 +134,12 @@ class Test_wait(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_multi.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
     def test_wait_barrier(self):
+
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
@@ -153,11 +159,12 @@ class Test_wait(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_wait_barrier.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
     def test_barrier(self):
+
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
@@ -181,7 +188,7 @@ class Test_wait(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         gold_fn = rootDir + '/golden/test_barrier.qisa'        
         self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
