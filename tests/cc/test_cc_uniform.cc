@@ -67,7 +67,7 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
     k.gate("measure", [0], rs1)
 #endif
 
-    k.gate("measure", std::vector<size_t>(0) , std::vector<size_t>(0));
+    k.gate("measure", std::vector<size_t>(1) , std::vector<size_t>(1));
 
 
     prog.add(k);

@@ -1,135 +1,147 @@
 {
-	"_comment_author" : "Wouter Vlothuizen",
-	"_comment_notes" : "based on '../test_cfg_none_s7.json'",
+	// author: 	Wouter Vlothuizen
+	// notes: 	based on '../test_cfg_none_s7.json'
 
-	"file_type" : "OpenQL-config",
-	"file_version" : "2.0",
+	"file_type": "OpenQL-config",
+	"file_version": "2.0",
+	"min_version_openql": "0.1",
+	"min_version_backend": "0.1",
 
 	"eqasm_compiler" : "eqasm_backend_cc",
 
 	"hardware_settings": {
 		"qubit_number": 7,
 		"cycle_time" : 20,
-		"mw_mw_buffer": 0,
-		"mw_flux_buffer": 0,
-		"mw_readout_buffer": 0,
-		"flux_mw_buffer": 0,
-		"flux_flux_buffer": 0,
-		"flux_readout_buffer": 0,
-		"readout_mw_buffer": 0,
-		"readout_flux_buffer": 0,
-		"readout_readout_buffer": 0,
+		// "mw_mw_buffer": 0,
+		// "mw_flux_buffer": 0,
+		// "mw_readout_buffer": 0,
+		// "flux_mw_buffer": 0,
+		// "flux_flux_buffer": 0,
+		// "flux_readout_buffer": 0,
+		// "readout_mw_buffer": 0,
+		// "readout_flux_buffer": 0,
+		// "readout_readout_buffer": 0,
 
 		// FIXME: we put this key inside "hardware_settings" for now, but it should be below "backend" or so
 		"eqasm_backend_cc": {
-			// Immutable properties of instruments. The keys "cc", "switch", "awg"
-			// and "measure" are built-in
-			"instrument-definitions": {
+			// Immutable properties of instruments.
+			// The keys "cc", "switch", "awg" and "measure" are built-in instrument types
+			"instrument_definitions": {
 				"cc": [
 					{	"name": "qutech-cc",
 						"slots": 12
 					}
 				],
-				"switch": [
-					{	"name": "qutech-vsm",
-						"channels": 32
-					}
-				],
+				// FIXME: discern awg-mw and awg-flux?, or leave out keys (what would we use them for?) and just use signal_type everywhere
 				"awg": [
 					{	"name": "qutech-qwg",
 						"channels": 4,
-						"control-group-sizes": [4]
+						"control_group_sizes": [4]
 					},
 					{	"name": "zi-hdawg",
 						"channels": 8,
-						"control-group-sizes": [1, 4, 8]
+						"control_group_sizes": [1, 4, 8]
+					}
+				],
+				"switch": [
+					{	"name": "qutech-vsm",
+						"channels": 32,
+						"control_group_sizes": [1]
 					}
 				],
 				"measure": [
 					{	"name": "zi-uhfqc",
-						"channels": 9
+						"channels": 9,
+						"control_group_sizes": [1]
 					}
 				]
 			},
 
 			// Modes to control instruments. These define which bits are used to
 			// control a group of channels
-			"control-modes": [
+			"control_modes": [
 				{	"name": "awg8-mw-vsm",
-					"control-group-count": 2,
-					"control-bits": [],
+					"control_group_count": 2,
+					"control_bits": [],
 					"triggers": [32]
 				},
 				{	"name": "awg8-mw-direct-iq",
-					"control-group-count": 4,
-					"control-bits": [],
+					"control_group_count": 4,
+					"control_bits": [],
 					"triggers": [32]
 				},
 				{	"name": "awg8-flux",
-					"control-group-count": 2,
-					"control-bits": [],
+					"control_group_count": 2,
+					"control_bits": [],
 					"triggers": [32]
 				},
 				{	"name": "uhfqc-9ch",
-					"control-group-count": 9,
-					"control-bits": [],
+					"control_group_count": 9,
+					"control_bits": [],
 					"result-bits": [],
 					"triggers": [32]
 				},
 				{	"name": "vsm-32ch",
-					"control-group-count": 32,
-					"control-bits": [],
+					"control_group_count": 32,
+					"control_bits": [],
 					"triggers": []
 				}
 			],
 
 			// Instruments used in this setup, their configuration and connectivity.
-			// The keys correspond to "name" fields defined in section "instrument-definitions"
+			// The keys correspond to "name" fields defined in section "instrument_definitions". All
+			// of those must be present here, but they may be empty
 			"instruments": {
 				"qutech-cc": [
 					{	"name": "cc",
 						"ccio": [
 							{	"slot": 0,
 								"io_module": "cc-conn-dio-diff",
-								"control-instrument": "awg8-mw-0"
+								"control_instrument": "awg8-mw-0"
 							},
 							{	"slot": 1,
 								"io_module": "cc-conn-dio-diff",
-								"control-instrument": "awg8-flux-0"
+								"control_instrument": "awg8-flux-0"
 							},
 							{	"slot": 2,
 								"io_module": "cc-conn-dio",
-								"control-instrument": "uhfqc-0"
+								"control_instrument": "uhfqc-0"
 							},
 							{	"slot": 3,
 								"io_module": "cc-conn-vsm",
-								"control-instrument": "vsm-0"
+								"control_instrument": "vsm-0"
 							}
 						]
 					}
 				],
+				"qutech-qwg": [
+					{	"name": "foo"
+					}
+				],
 				"zi-hdawg": [
 					{	"name": "awg8-mw-0",
-						"control-mode": "awg8-mw-vsm",
-//						"signal-type": "mw",
+						"control_mode": "awg8-mw-vsm",
+						"signal_type": "mw",
 						"qubits": [[0, 1, 2, 3], [4, 5, 6, 7]]
 					},
 					{	"name": "awg8-flux-0",
-						"control-mode": "awg8-flux",
-//						"signal-type": "flux",
-						"qubits": [0, 1, 2, 3, 4, 5, 6, 7, -1]
-					}
-				],
-				"zi-uhfqc": [
-					{	"name": "uhfqc-0",
-						"control-mode": "uhfqc-9ch",
+						"control_mode": "awg8-flux",
+						"signal_type": "flux",
 						"qubits": [0, 1, 2, 3, 4, 5, 6, 7, -1]
 					}
 				],
 				"qutech-vsm": [
 					{	"name": "vsm-0",
-						"control-mode": "vsm-32ch",
+						"control_mode": "vsm-32ch",
+						"signal_type": "switch",
 						"qubits": [0, 1, 2, 3, 4, 5, 6, 7, 8]
+					}
+				],
+				"zi-uhfqc": [
+					{	"name": "uhfqc-0",
+						"control_mode": "uhfqc-9ch",
+						"signal_type": "measure",
+						"qubits": [0, 1, 2, 3, 4, 5, 6, 7, -1]
 					}
 				]
 			}
@@ -211,11 +223,37 @@
 		]
 	},
 
+	// FIXME: allow AWG8 setPrecompClear with wave
+	// FIXME: remove instructions we don't/cannot use
 	"instructions": {
+		// additions from 'CC-software-implementation.docx':
+		"park_cz" : { // park signal with same length as cz gate
+			"duration" : 40,
+			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],	// FIXME: required
+			"cc": {
+				"sig": {
+					"flux": {
+						"qubit": "q%0",	// FIXME: necessary, or implicit from parameters we get at runtime. Let's look at cz
+						"wave": ["{gateName}-{instrumentName}"]
+					}
+//					"flux,<codeword>,%q" // %q assumes same codeword for all qubits
+				}
+			}
+		},
+		"park_measure" : { // park signal with same length as measurement
+			"duration" : 300,
+			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],	// FIXME: required
+			"cc": {
+				"sig": {
+//					"flux,<codeword>,%q" // %q assumes same codeword for all qubits
+				}
+			}
+		},
+
+		// gate set from 'test_cfg_none_s7.json':
 		"prepx": {
 			"duration": 320,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -225,7 +263,6 @@
 		"prepz": {
 			"duration": 320,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "none",
@@ -235,7 +272,6 @@
 		"cprepz": {
 			"duration": 320,
 			"latency": 0,
-//			"qubits": ["q1"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -246,7 +282,6 @@
 		"measx": {
 			"duration": 300,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "readout",
@@ -256,7 +291,6 @@
 		"measz": {
 			"duration": 300,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "readout",
@@ -266,7 +300,6 @@
 		"measure": {
 			"duration": 300,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "readout",
@@ -276,7 +309,6 @@
 		"i": {
 			"duration": 20,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -286,7 +318,6 @@
 		"x": {
 			"duration": 20,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -298,7 +329,8 @@
 						"{gateName}-gauss-{instrumentName}-i",
 						"{gateName}-gauss-{instrumentName}-q",
 						"{gateName}-derGauss-{instrumentName}-i",
-						"{gateName}-derGauss-{instrumentName}-q"],	// FIXME: {instrumentName} should evaluate to proper channel group
+						"{gateName}-derGauss-{instrumentName}-q"	// FIXME: {instrumentName} should evaluate to proper channel group
+					],
 					"switch": ["{q}"]
 //					"flux": [],
 //					"measure": [],	// specify output and weight?
@@ -312,7 +344,6 @@
 		"y": {
 			"duration": 20,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -322,7 +353,6 @@
 		"z": {
 			"duration": 20,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -332,7 +362,6 @@
 		"h": {
 			"duration": 20,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -342,7 +371,6 @@
 		"s": {
 			"duration": 20,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -352,7 +380,6 @@
 		"sdag": {
 			"duration": 20,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -362,7 +389,6 @@
 		"rx90": {
 			"duration": 20,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -372,7 +398,6 @@
 		"xm90": {
 			"duration": 20,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -382,7 +407,6 @@
 		"ry90 q0": {
 			"duration": 20,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -392,7 +416,6 @@
 		"ym90": {
 			"duration": 20,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -402,7 +425,6 @@
 		"t": {
 			"duration": 20,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -412,7 +434,6 @@
 		"tdag": {
 			"duration": 20,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -422,7 +443,6 @@
 		"x45": {
 			"duration": 20,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -432,7 +452,6 @@
 		"xm45": {
 			"duration": 20,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -442,7 +461,6 @@
 		"ry180": {
 			"duration": 20,
 			"latency": 0,
-//			"qubits": ["q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
@@ -452,7 +470,6 @@
 		"cnot": {
 			"duration": 80,
 			"latency": 0,
-//			"qubits": ["q2","q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": true,
 			"type": "flux",
@@ -462,12 +479,20 @@
 		"cz": {
 			"duration": 40,
 			"latency": 0,
-//			"qubits": ["q2","q0"],
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": true,
 			"type": "flux",
 			"cc_light_instr_type": "two_qubit_gate",
-			"cc_light_instr": "cz"
+			"cc_light_instr": "cz",
+			"cc": {
+				"sig": {
+					"flux": {
+						"qubit": "q%0",	// FIXME: necessary, or implicit from parameters we get at runtime. Let's look at cz
+						"wave": ["{gateName}-{instrumentName}"]
+					}
+//					"flux,<codeword>,%q" // %q assumes same codeword for all qubits
+				}
+			}
 		}
 	}	// end of "instructions"
 }

@@ -195,30 +195,67 @@ private:
         s << std::setw(8) << label << std::setw(8) << instr << std::setw(16) << ops << comment << std::endl;
     }
 
+/*
+    typedef struct {
+        std::string instrumentName;
+        int group;
+        // ccio
+    } tResourceDescr;
+
+    qubit2resource(size_t qubit, std::string instrumentType, std::string signalType)
+    {
+    }
+
+
+*/
+
 
     void load_backend_settings(ql::quantum_platform& platform)
     {
+        // parts of JSON syntax
+        const char *instrumentTypes[] = {"cc", "switch", "awg", "measure"};
+        const char *signalTypes[] = {"mw", "flux"};                             // types of AWG signals
+
         // FIXME: we would like to have a top level setting, or one below "backends"
         // it is however not easy to create new top level stuff and read it from the backend
 //        try
         {
-            auto backendSettings = platform.hardware_settings["eqasm_backend_cc"];
+            json &backendSettings = platform.hardware_settings["eqasm_backend_cc"];
 
             // read instrument definitions
-            auto instrumentDefinitions = backendSettings["instrument-definitions"];
-            const char *knownInstrDef[] = {"cc", "switch", "awg", "measure"};
-            for(int i=0; i<ELEM_CNT(knownInstrDef); i++)
+            json &instrumentDefinitions = backendSettings["instrument_definitions"];
+            json &instruments = backendSettings["instruments"];
+
+            for(int i=0; i<ELEM_CNT(instrumentTypes); i++)
             {
-                auto id = instrumentDefinitions[knownInstrDef[i]];
+                json &id = instrumentDefinitions[instrumentTypes[i]];
+                //for(auto& x : id.items())
+                // x.key()  x.value()
                 for(int j=0; j<id.size(); j++)
                 {
-                    auto name = id[j]["name"];
-                    DOUT("found instrument definition for '" << name <<"'");
+                    json &name = id[j]["name"];
+                    DOUT("found instrument definition:  type='" << instrumentTypes[i] << "', name='" << name <<"'");
+
+#if 0
+                    // list instruments
+                    std::string insName = nlohmann::basic_json::at(name);
+                    for(int k=0; k<instruments[insName].size; k++) {
+                        DOUT("found instrument: name='" << instruments[insName][k]["name"] << "'");
+                    }
+#endif
                 }
             }
 
-            // read instruments
-            auto instruments = backendSettings["instruments"];
+            // read control modes
+            json &controlModes = backendSettings["control_modes"];
+            for(int i=0; i<controlModes.size(); i++)
+            {
+                json &name = controlModes[i]["name"];
+                DOUT("found control mode '" << name <<"'");
+            }
+
+
+
         }
 #if 0
         catch (json::exception e)
