@@ -65,7 +65,22 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
     Scheduler sched;
     sched.Init(ckt, platform, nqubits, ncreg);
     // sched.PrintDot();
-    ql::ir::bundles_t bundles1 = sched.schedule_asap();
+    ql::ir::bundles_t bundles1;
+    std::string schedopt = ql::options::get("scheduler");
+    if ("ASAP" == schedopt)
+    {
+        bundles1 = sched.schedule_asap();
+    }
+    else if ("ALAP" == schedopt)
+    {
+        bundles1 = sched.schedule_alap();
+    }
+    else
+    {
+        EOUT("Unknown scheduler");
+        throw ql::exception("Unknown scheduler!", false);
+
+    }
 
     // combine parallel instructions of same type from different sections
     // into a single section
@@ -134,10 +149,41 @@ ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
     ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Resource constraint scheduling of CC-Light instructions ...");
-    resource_manager_t rm(platform);
+    scheduling_direction_t  direction;
+    std::string schedopt = ql::options::get("scheduler");
+    if ("ASAP" == schedopt)
+    {
+        direction = forward_scheduling;
+    }
+    else if ("ALAP" == schedopt)
+    {
+        direction = backward_scheduling;
+    }
+    else
+    {
+        EOUT("Unknown scheduler");
+        throw ql::exception("Unknown scheduler!", false);
+
+    }
+    resource_manager_t rm(platform, direction);
+
     Scheduler sched;
     sched.Init(ckt, platform, nqubits, ncreg);
-    ql::ir::bundles_t bundles1 = sched.schedule_asap(rm, platform);
+    ql::ir::bundles_t bundles1;
+    if ("ASAP" == schedopt)
+    {
+        bundles1 = sched.schedule_asap(rm, platform);
+    }
+    else if ("ALAP" == schedopt)
+    {
+        bundles1 = sched.schedule_alap(rm, platform);
+    }
+    else
+    {
+        EOUT("Unknown scheduler");
+        throw ql::exception("Unknown scheduler!", false);
+
+    }
 
     // combine parallel instructions of same type from different sections
     // into a single section
