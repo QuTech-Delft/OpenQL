@@ -27,8 +27,8 @@ namespace ql
 
           // default values
           opt_name2opt_val["log_level"] = "LOG_NOTHING";
-          opt_name2opt_val["output_qasm_version"] = "1";
           opt_name2opt_val["output_dir"] = "test_output";
+          opt_name2opt_val["optimize"] = "no";
           opt_name2opt_val["scheduler"] = "ASAP";
           opt_name2opt_val["scheduler_uniform"] = "no";
           opt_name2opt_val["use_default_gates"] = "no";
@@ -42,7 +42,6 @@ namespace ql
           app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"], 
             {"LOG_NOTHING", "LOG_CRITICAL", "LOG_ERROR", "LOG_WARNING", "LOG_INFO", "LOG_DEBUG"}, "Log levels", true);
           app->add_option("--output_dir", opt_name2opt_val["output_dir"], "Name of output directory", true);
-          app->add_set_ignore_case("--output_qasm_version", opt_name2opt_val["output_qasm_version"], {"1", "2"}, "Version of printed qasm", true);
           app->add_set_ignore_case("--scheduler", opt_name2opt_val["scheduler"], {"ASAP", "ALAP"}, "scheduler type", true);
           app->add_set_ignore_case("--scheduler_uniform", opt_name2opt_val["scheduler_uniform"], {"yes", "no"}, "Do uniform scheduling or not", true);
           app->add_set_ignore_case("--use_default_gates", opt_name2opt_val["use_default_gates"], {"yes", "no"}, "Use default gates or not", true);
@@ -56,7 +55,6 @@ namespace ql
       void print_current_values()
       {
           std::cout << "optimize: " << opt_name2opt_val["optimize"] << std::endl
-                    << "output_qasm_version: " << opt_name2opt_val["output_qasm_version"] << std::endl
                     << "scheduler: " << opt_name2opt_val["scheduler"] << std::endl
                     << "scheduler_uniform: " << opt_name2opt_val["scheduler_uniform"] << std::endl
                     << "mapper: "           << opt_name2opt_val["mapper"] << std::endl

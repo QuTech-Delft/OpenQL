@@ -35,14 +35,16 @@ namespace ql
             std::stringstream ssqasm;
             size_t curr_cycle=1;
 
+            auto busy = 0;
             for (bundle_t & abundle : bundles)
             {
                 auto st_cycle = abundle.start_cycle;
                 auto delta = st_cycle - curr_cycle;
-                if(delta>1)
-                    ssqasm << "\n    qwait " << delta-1 << '\n';
-                else
+                if (busy)
                     ssqasm << '\n';
+                busy = 1;
+                if(delta>1)
+                    ssqasm << "    wait " << delta-1 << '\n';
 
                 ssqasm << "    ";
                 if (abundle.parallel_sections.size() > 1) ssqasm << "{ "; 
@@ -66,7 +68,7 @@ namespace ql
                 auto & last_bundle = bundles.back();
                 int lsduration = last_bundle.duration_in_cycles;
                 if( lsduration > 1 )
-                    ssqasm << "\n    qwait " << lsduration -1 << '\n';
+                    ssqasm << "\n    wait " << lsduration -1 << '\n';
             }
 
             return ssqasm.str();

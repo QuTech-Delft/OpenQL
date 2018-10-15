@@ -1688,19 +1688,20 @@ class Mapper
 {
 private:
 
-                                        // OpenQL wide configuration, all constant after initialization
-    ql::quantum_platform platform;      // current platform: topology and gate definitions
-    size_t  nqbits;                     // number of qubits in the platform, number of real qubits
-    size_t  cycle_time;                 // length in ns of a single cycle of the platform
-                                        // is divisor of duration in ns to convert it to cycles
-    Grid    grid;                       // current grid
+                                    // OpenQL wide configuration, all constant after initialization
+    ql::quantum_platform platform;  // current platform: topology and gate definitions
+    size_t          nqbits;         // number of qubits in the platform, number of real qubits
+    size_t          cycle_time;     // length in ns of a single cycle of the platform
+                                    // is divisor of duration in ns to convert it to cycles
+    Grid            grid;           // current grid
 #ifdef INITIALPLACE
-    InitialPlace    ip;                 // initial placer facility
+    InitialPlace    ip;             // initial placer facility
 #endif
-                                        // Mapper dynamic state, for each kernel
-    size_t  nvq;                        // number of qubits in the kernel, number of virtual qubits
-    Past   mainPast;                    // main past window; all path alternatives start off as clones of it
-    std::vector<size_t> use_count;      // use_count[real qubit index], number of times the real qubit was used
+                                    // Mapper dynamic state, for each kernel
+    size_t          nvq;            // number of qubits in the kernel, number of virtual qubits
+    Past            mainPast;       // main past window; all path alternatives start off as clones of it
+    std::vector<size_t> use_count;  // use_count[real qubit index], number of times the real qubit was used
+    size_t          swaps_added;    // number of swaps added, for reporting
 
 
 public:
@@ -1951,21 +1952,20 @@ void MapGates(ql::circuit& circ, std::string& kernel_name)
 
     for( auto & gp : circ )
     {
-        // Currently a gate can only be a quantum gate,
-        // but an embedded wait or classical instruction should be handled here as well.
-        // When so, the past should be flushed first before these are appended to outCirc;
-        // the past only contains quantum gates.
-        // Note that some classical instructions might refer to a qubit; that should also be mapped!
-
-        // if (*gp is a quantum gate) ...
-        // {
+        switch(gp->type())
+        {
+        case ql::__classical_gate__:
+            // flush past first because past should only contain quantum gates
+            mainPast.Flush();
+            // map qubit use of any classical instruction????
+            outCirc.push_back(gp);
+            break;
+        case ql::__wait_gate__:
+            break;
+        default:    // quantum gate
             MapGate(gp);
-        // }
-        // else
-        // {
-        //  mainPast.Flush();
-        //  deal with *gp
-        // }
+            break;
+        }
     }
     mainPast.Flush();
 
@@ -1976,14 +1976,7 @@ void MapGates(ql::circuit& circ, std::string& kernel_name)
     // DOUT("... swapping outCirc with circ");
     circ.swap(outCirc);
 
-    // DOUT("... Start circuit (size=" << circ.size() << ") after mapping:");
-    // for( auto& g : circ )
-    // {
-        // DOUT("\t" << g->qasm() );
-    // }
-    // DOUT("... End circuit after mapping");
-    // depth is max free cycle - cycle of first instruction
-    IOUT("Mapped " << kernel_name << " depth=" << mainPast.MaxFreeCycle()-circ[0]->cycle << " swaps_added=" << mainPast.NumberOfSwapsAdded());
+    swaps_added = mainPast.NumberOfSwapsAdded();
 }
 
 public:
@@ -2001,8 +1994,14 @@ void UseCount(ql::circuit& circ)
     DOUT("UseCount circuit [DONE]");
 } 
 
+// retrieve number of swaps added
+void GetNumberOfSwapsAdded(size_t & sa)
+{
+    sa = swaps_added;
+}
+
 // inspect counters and update highest qubit index
-void HighestQubitIndex(size_t & highest_index)
+void GetHighestQubitIndex(size_t & highest_index)
 {
     highest_index = 0;
     for (size_t i=0; i < platform.qubit_number; i++)

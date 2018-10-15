@@ -439,9 +439,12 @@ test_daniel(std::string v, std::string mapopt, std::string initialplaceopt)
     k0.gate("cnot", 0,1);
     prog.add(k0);
 
-    ql::quantum_kernel k1("measurement", starmon, n, n);
-    k1.gate("measure", std::vector<size_t>{0}, std::vector<size_t>{0});
-    k1.gate("measure", std::vector<size_t>{1}, std::vector<size_t>{1});
+    ql::quantum_kernel k1("measurement", starmon, n, 0);
+    // ql::quantum_kernel k1("measurement", starmon, n, n);
+    k1.gate("measure", 0);
+    k1.gate("measure", 1);
+    // k1.gate("measure", std::vector<size_t>{0}, std::vector<size_t>{0});
+    // k1.gate("measure", std::vector<size_t>{1}, std::vector<size_t>{1});
     prog.add(k1);
 
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
