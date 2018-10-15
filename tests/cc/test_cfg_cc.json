@@ -335,10 +335,6 @@
 //					"flux": [],
 //					"measure": [],	// specify output and weight?
 				}
-//				}
-//				"cnot": {
-//					how to specify flux dance
-
 			}
 		},
 		"y": {
@@ -476,6 +472,10 @@
 			"cc_light_instr_type": "two_qubit_gate",
 			"cc_light_instr": "cnot"
 		},
+
+		// should handle:
+		// https://github.com/QE-Lab/OpenQL/issues/166
+		// https://github.com/QE-Lab/OpenQL/issues/180
 		"cz": {
 			"duration": 40,
 			"latency": 0,
