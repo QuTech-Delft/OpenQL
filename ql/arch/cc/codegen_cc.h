@@ -1,5 +1,5 @@
 /**
- * @file   codegen_cc
+ * @file   codegen_cc.h
  * @date   201810xx
  * @author Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief  code generator backend for the Central Controller
@@ -24,6 +24,9 @@ public:
     /*
      *  generic
      */
+    void init(ql::quantum_platform& platform)
+    {
+    }
 
     void program_header(std::stringstream &s, std::string prog_name)
     {
@@ -34,11 +37,13 @@ public:
 
     void program_trailer(std::stringstream &s)
     {
-        emit(s, "", "stop");                                  // FIXME: cc_light loops whole program indefinitely
+        emit(s, "", "stop");                                  // NB: cc_light loops whole program indefinitely
     }
 
     void bundle_header(std::stringstream &s, int delta)
     {
+        // init data structure of slots/groups/outputs/waveforms
+
 #if 0   // FIXME: from CClight
             // delay start of bundle
             if(delta < 8)
@@ -52,6 +57,8 @@ public:
 
     void bundle_trailer(std::stringstream &s, int delta)
     {
+
+
 #if 0   // FIXME: from CClight: insert qwaits
             if(classical_bundle)
             {
@@ -91,7 +98,7 @@ public:
      *  quantum instructions
      */
 
-    void nop(std::stringstream &s)
+    void nop_gate(std::stringstream &s)
     {
         if(verboseCode) emit(s, "# NOP gate");
         // FIXME: implement
@@ -165,6 +172,7 @@ public:
 private:
     bool verboseCode = true;    // output extra comments in generated code
 
+
     // some helpers to ease nice assembly formatting
     void emit(std::stringstream &s, const char *labelOrComment, const char *instr="")
     {
@@ -187,9 +195,6 @@ private:
         s << std::left;    // FIXME
         s << std::setw(8) << label << std::setw(8) << instr << std::setw(16) << ops << comment << std::endl;
     }
-
-
-
 }; // class
 
 } // arch
