@@ -100,7 +100,7 @@ public:
 
         for( auto ins : ckt )
         {
-            // DOUT("Current instruction : " << ins->qasm());
+            DOUT("Current instruction : " << ins->qasm());
 
             // Add nodes
             ListDigraph::Node consNode = graph.addNode();
@@ -668,10 +668,12 @@ private:
         size_t currCycle=0;
         cycle[*currNode]=currCycle; // source node
         instruction[*currNode]->cycle = currCycle;
+        DOUT("Source instruction: " << instruction[*currNode]->qasm());
         ++currNode;
         while(currNode != order.rend() )
         {
             DOUT("");
+            DOUT("Current instruction: " << instruction[*currNode]->qasm());
             auto & curr_ins = instruction[*currNode];
             auto & id = curr_ins->name;
 
@@ -884,12 +886,14 @@ public:
         std::map<size_t,insInOneCycle> insInAllCycles;
 
         std::vector<ListDigraph::Node>::iterator it;
+        DOUT("After rc scheduling, collecting cycles for bundling");
         for ( it = order.begin(); it != order.end(); ++it)
         {
             if ( instruction[*it]->type() != ql::gate_type_t::__wait_gate__ &&
                  instruction[*it]->type() != ql::gate_type_t::__dummy_gate__
                )
             {
+                DOUT("Instruction: " << instruction[*it]->qasm());
                 insInAllCycles[ cycle[*it] ].push_back( instruction[*it] );
             }
         }
@@ -905,21 +909,26 @@ public:
             auto it = insInAllCycles.find(currCycle);
             if( it != insInAllCycles.end() )
             {
+                DOUT("Bundling at cycle: " << currCycle);
                 ql::ir::bundle_t abundle;
                 size_t bduration = 0;
                 auto nInsThisCycle = insInAllCycles[currCycle].size();
+                DOUT("... nInsThisCycle: " << nInsThisCycle);
                 for(size_t i=0; i<nInsThisCycle; ++i )
                 {
                     ql::ir::section_t aparsec;
                     auto & ins = insInAllCycles[currCycle][i];
                     aparsec.push_back(ins);
                     abundle.parallel_sections.push_back(aparsec);
+                    DOUT("... ins: " << ins->qasm() << " in private parallel section");
                     size_t iduration = ins->duration;
                     bduration = std::max(bduration, iduration);
                 }
                 abundle.start_cycle = currCycle;
                 abundle.duration_in_cycles = std::ceil(static_cast<float>(bduration)/cycle_time);
+                DOUT("... bundel duration in cycles: " << abundle.duration_in_cycles);
                 bundles.push_back(abundle);
+                DOUT("... ready with bundle");
             }
         }
 

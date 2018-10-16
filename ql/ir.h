@@ -35,32 +35,35 @@ namespace ql
             std::stringstream ssqasm;
             size_t curr_cycle=1;
 
-            auto busy = 0;
             for (bundle_t & abundle : bundles)
             {
                 auto st_cycle = abundle.start_cycle;
                 auto delta = st_cycle - curr_cycle;
-                if (busy)
-                    ssqasm << '\n';
-                busy = 1;
+                // DOUT("Printing bundle with st_cycle: " << st_cycle);
                 if(delta>1)
                     ssqasm << "    wait " << delta-1 << '\n';
 
                 ssqasm << "    ";
-                if (abundle.parallel_sections.size() > 1) ssqasm << "{ "; 
+                auto ngates = 0;
                 for( auto sec_it = abundle.parallel_sections.begin(); sec_it != abundle.parallel_sections.end(); ++sec_it )
                 {
-                    auto first_ins_it = sec_it->begin();
-                    auto insqasm = (*(first_ins_it))->qasm();
-                    ssqasm << insqasm;
-
-                    if( std::next(sec_it) != abundle.parallel_sections.end() )
+                    ngates += sec_it->size();
+                }
+                if (ngates > 1) ssqasm << "{ "; 
+                auto isfirst = 1;
+                for( auto sec_it = abundle.parallel_sections.begin(); sec_it != abundle.parallel_sections.end(); ++sec_it )
+                {
+                    for ( auto gp : (*sec_it))
                     {
-                        ssqasm << " | ";
+                        if (isfirst == 0)
+                            ssqasm << " | ";
+                        ssqasm << gp->qasm();
+                        isfirst = 0;
                     }
                 }
-                if (abundle.parallel_sections.size() > 1) ssqasm << " }"; 
+                if (ngates > 1) ssqasm << " }"; 
                 curr_cycle+=delta;
+                ssqasm << "\n";
             }
 
             if( !bundles.empty() )
@@ -68,7 +71,7 @@ namespace ql
                 auto & last_bundle = bundles.back();
                 int lsduration = last_bundle.duration_in_cycles;
                 if( lsduration > 1 )
-                    ssqasm << "\n    wait " << lsduration -1 << '\n';
+                    ssqasm << "    wait " << lsduration -1 << '\n';
             }
 
             return ssqasm.str();

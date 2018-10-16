@@ -56,6 +56,24 @@ std::string get_cc_light_instruction_name(std::string & id, ql::quantum_platform
     return cc_light_instr_name;
 }
 
+void DebugBundles(std::string at, ql::ir::bundles_t& bundles)
+{
+    DOUT("DebugBundles at: " << at << " showing " << bundles.size() << " bundles");
+    for (ql::ir::bundle_t & abundle : bundles)
+    {
+        DOUT("... quantum bundle with nsections: " << abundle.parallel_sections.size());
+        for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
+        {
+            DOUT("... section with ngates: " << secIt->size());
+            for ( auto gp : (*secIt))
+            {
+                // auto n = get_cc_light_instruction_name(gp->name, platform);
+                DOUT("... ... gate: " << gp->qasm() << " name: " << gp->name << " cc_light_iname: " << "?");
+            }
+        }
+    }
+}
+
 
 ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt, 
     ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
@@ -81,6 +99,8 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
         throw ql::exception("Unknown scheduler!", false);
 
     }
+
+    // DebugBundles("After scheduling", bundles1);
 
     // combine parallel instrcutions of same type from different sections
     // into a single section
@@ -123,6 +143,8 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
         }
     }
 
+    // DebugBundles("After combining", bundles1);
+
     // remove empty sections
     ql::ir::bundles_t bundles2;
     for (ql::ir::bundle_t & abundle1 : bundles1)
@@ -140,10 +162,11 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
         bundles2.push_back(abundle2);
     }
 
+    // DebugBundles("After removing empty sections", bundles2);
+
     IOUT("Scheduling CC-Light instructions [Done].");
     return bundles2;
 }
-
 
 ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt, 
     ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
@@ -186,6 +209,8 @@ ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
 
     }
 
+    // DebugBundles("After scheduling_rc", bundles1);
+
     // combine parallel instrcutions of same type from different sections
     // into a single section
     for (ql::ir::bundle_t & abundle : bundles1)
@@ -226,6 +251,7 @@ ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
             }
         }
     }
+    // DebugBundles("After combinging", bundles1);
 
     // remove empty sections
     ql::ir::bundles_t bundles2;
@@ -243,9 +269,8 @@ ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
         }
         bundles2.push_back(abundle2);
     }
+    // DebugBundles("After removing empty sections", bundles2);
 
-    size_t  depth=bundles2.back().start_cycle + bundles2.back().duration_in_cycles - bundles2.front().start_cycle;
-    IOUT("Resource constraint scheduling resulted in real circuit depth=" << depth);
     IOUT("Resource constraint scheduling of CC-Light instructions [Done].");
     return bundles2;
 }

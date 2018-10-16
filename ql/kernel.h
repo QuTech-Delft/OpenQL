@@ -855,12 +855,49 @@ public:
         DOUT("");
     }
 
-    size_t  get_depth()
+    size_t  get_classical_operations()
     {
+        size_t classical_operations = 0;
         for (auto & gp: c)
         {
-            DOUT("Cycle=" << gp->cycle << " Qasm=" << gp->qasm() << "\n");
+            switch(gp->type())
+            {
+            case __classical_gate__:
+                classical_operations++;
+            case __wait_gate__:
+                break;
+            default:    // quantum gate
+                break;
+            }
         }
+        return classical_operations;
+    }
+
+    size_t  get_quantum_gates()
+    {
+        size_t quantum_gates = 0;
+        for (auto & gp: c)
+        {
+            switch(gp->type())
+            {
+            case __classical_gate__:
+                break;
+            case __wait_gate__:
+                break;
+            default:    // quantum gate
+                quantum_gates++;
+                break;
+            }
+        }
+        return quantum_gates;
+    }
+
+    size_t  get_depth()
+    {
+        // for (auto & gp: c)
+        // {
+        //     DOUT("Cycle=" << gp->cycle << " Qasm=" << gp->qasm() << "\n");
+        // }
         if (c.back()->cycle == MAX_CYCLE)
             return 0;
         return c.back()->cycle + (c.back()->duration+cycle_time-1)/cycle_time - c.front()->cycle;
@@ -870,7 +907,6 @@ public:
     {
         std::stringstream ss;
         ss << "." << name << "\n";
-        // ss << name << ":\n";
 
         if(type == kernel_type_t::IF_START)
         {
@@ -918,26 +954,9 @@ public:
             ss << "    blt r31, r29, " << tokens[0] << "\n";
         }
 
-        size_t  classical_operations = 0;
-        size_t  quantum_gates = 0;
-        for (auto & gp: c)
-        {
-            switch(gp->type())
-            {
-            case __classical_gate__:
-                classical_operations++;
-                break;
-            case __wait_gate__:
-                break;
-            default:    // quantum gate
-                quantum_gates++;
-                break;
-            }
-        }
-
         ss << "# ----- depth: " << get_depth() << "\n";
-        ss << "# ----- quantum gates: " << quantum_gates << "\n";
-        ss << "# ----- classical operations: " << classical_operations << "\n";
+        ss << "# ----- quantum gates: " << get_quantum_gates() << "\n";
+        ss << "# ----- classical operations: " << get_classical_operations() << "\n";
         ss << "# ----- swaps added: " << swaps_added << "\n";
         return ss.str();
     }
@@ -1079,11 +1098,10 @@ public:
         DOUT("decompose_toffoli() [Done] ");
     }
 
-    void schedule(quantum_platform platform, std::string& sched_qasm, std::string& sched_dot)
+    void schedule(quantum_platform platform, std::string& sched_dot)
     {
         std::string scheduler = ql::options::get("scheduler");
         std::string scheduler_uniform = ql::options::get("scheduler_uniform");
-        std::string kqasm("");
 
 #ifndef __disable_lemon__
         IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
@@ -1107,7 +1125,6 @@ public:
                 // sched_dot = sched.GetDotScheduleASAP();
                 // sched.PrintQASMScheduledASAP();
                 bundles = sched.schedule_asap();
-                kqasm = ql::ir::qasm(bundles);
 	        }
 	        else
             {
@@ -1119,7 +1136,6 @@ public:
             if ("yes" == scheduler_uniform)
             {
                 bundles = sched.schedule_alap_uniform();
-                kqasm = ql::ir::qasm(bundles);
 	        }
 	        else if ("no" == scheduler_uniform)
 	        {
@@ -1128,7 +1144,6 @@ public:
                 // sched_dot = sched.GetDotScheduleALAP();
                 // sched.PrintQASMScheduledALAP();
                 bundles = sched.schedule_alap();
-                kqasm = ql::ir::qasm(bundles);
 	        }
 	        else
             {
@@ -1146,8 +1161,6 @@ public:
         std::sort(c.begin(), c.end(),
                 [&](gate_p g1, gate_p g2) { return g1->cycle < g2->cycle; }
         );
-
-        sched_qasm = get_prologue() + kqasm + get_epilogue();
 #endif // __disable_lemon__
     }
 
