@@ -13,29 +13,17 @@ ql.set_option('optimize', 'no')
 ql.set_option('scheduler', 'ALAP')
 ql.set_option('log_level', 'LOG_WARNING')
 
-def file_compare(fn1, fn2):
-    isSame = False
-    with open(fn1, 'r') as f1:
-        with open(fn2, 'r') as f2:
-            a = f1.read()
-            b = f2.read()
-            f1.close()
-            f2.close()
-            isSame = (a==b)
-    return isSame
-
-
 
 class Test_hybrid_classical_quantum(unittest.TestCase):
 
     def test_classical(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform  = ql.Platform('seven_qubits_chip', config_fn)
+        platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
         num_cregs = 10
 
         p = ql.Program('test_classical', platform, num_qubits, num_cregs)
-        sweep_points = [1,2]
+        sweep_points = [1, 2]
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         k1 = ql.Kernel('aKernel1', platform, num_qubits, num_cregs)
@@ -74,15 +62,14 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
-
     def test_if(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform  = ql.Platform('seven_qubits_chip', config_fn)
+        platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
         num_cregs = 10
 
         p = ql.Program('test_if', platform, num_qubits, num_cregs)
-        sweep_points = [1,2]
+        sweep_points = [1, 2]
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         k1 = ql.Kernel('aKernel1', platform, num_qubits, num_cregs)
@@ -108,12 +95,12 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
     def test_if_else(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform  = ql.Platform('seven_qubits_chip', config_fn)
+        platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
         num_cregs = 10
 
         p = ql.Program('test_if_else', platform, num_qubits, num_cregs)
-        sweep_points = [1,2]
+        sweep_points = [1, 2]
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         k1 = ql.Kernel('aKernel1', platform, num_qubits, num_cregs)
@@ -136,15 +123,14 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
-
     def test_for(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform  = ql.Platform('seven_qubits_chip', config_fn)
+        platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
         num_cregs = 10
 
         p = ql.Program('test_for', platform, num_qubits, num_cregs)
-        sweep_points = [1,2]
+        sweep_points = [1, 2]
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         k1 = ql.Kernel('aKernel1', platform, num_qubits, num_cregs)
@@ -169,12 +155,12 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
     def test_do_while(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform  = ql.Platform('seven_qubits_chip', config_fn)
+        platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
         num_cregs = 10
 
         p = ql.Program('test_do_while', platform, num_qubits, num_cregs)
-        sweep_points = [1,2]
+        sweep_points = [1, 2]
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         k1 = ql.Kernel('aKernel1', platform, num_qubits, num_cregs)
@@ -199,12 +185,13 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
     def test_do_while_nested_for(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform  = ql.Platform('seven_qubits_chip', config_fn)
+        platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
         num_cregs = 10
 
-        p = ql.Program('test_do_while_nested_for', platform, num_qubits, num_cregs)
-        sweep_points = [1,2]
+        p = ql.Program('test_do_while_nested_for',
+                       platform, num_qubits, num_cregs)
+        sweep_points = [1, 2]
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         sp1 = ql.Program('subprogram1', platform, num_qubits, num_cregs)
@@ -230,6 +217,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
+
 
 if __name__ == '__main__':
     unittest.main()

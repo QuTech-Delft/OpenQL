@@ -1,5 +1,5 @@
 import os
-import filecmp
+from utils import file_compare
 import unittest
 from openql import openql as ql
 
@@ -16,16 +16,6 @@ ql.set_option('optimize', 'no')
 ql.set_option('scheduler', 'ALAP')
 ql.set_option('log_level', 'LOG_WARNING')
 
-def file_compare(fn1, fn2):
-    isSame = False
-    with open(fn1, 'r') as f1:
-        with open(fn2, 'r') as f2:
-            a = f1.read()
-            b = f2.read()
-            f1.close()
-            f2.close()
-            isSame = (a==b)
-    return isSame
 
 class Test_qubits(unittest.TestCase):
 
