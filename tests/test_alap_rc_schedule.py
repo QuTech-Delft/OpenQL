@@ -1,23 +1,14 @@
-import numpy as np
 from openql import openql as ql
 import os
 from test_QISA_assembler_present import assemble
 import unittest
+from utils import file_compare
+
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
 
-def file_compare(fn1, fn2):
-    isSame = False
-    with open(fn1, 'r') as f1:
-        with open(fn2, 'r') as f2:
-            a = f1.read()
-            b = f2.read()
-            f1.close()
-            f2.close()
-            isSame = (a==b)
-    return isSame
 
 class Test_Alap_Rc_Schedule(unittest.TestCase):
     _SCHEDULER = 'ALAP'
@@ -50,8 +41,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
-
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_qwg2(self):
         # parameters
@@ -86,8 +76,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
-
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_issue179(self):
         # parameters
@@ -124,8 +113,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
-
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_edge(self):
         # parameters
@@ -153,7 +141,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_detuned(self):
         # parameters
@@ -186,7 +174,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_detuned2(self):
         # parameters
@@ -219,7 +207,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_adriaan(self):
         # parameters
@@ -252,7 +240,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_1(self):
         # parameters
@@ -297,7 +285,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_7(self):
         # parameters
@@ -350,8 +338,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
-
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
 if __name__ == '__main__':

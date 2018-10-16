@@ -1,5 +1,5 @@
 import os
-import filecmp
+from utils import file_compare
 import unittest
 from openql import openql as ql
 
@@ -11,16 +11,6 @@ platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
 
-def file_compare(fn1, fn2):
-    isSame = False
-    with open(fn1, 'r') as f1:
-        with open(fn2, 'r') as f2:
-            a = f1.read()
-            b = f2.read()
-            f1.close()
-            f2.close()
-            isSame = (a==b)
-    return isSame
 
 class Test_qubits(unittest.TestCase):
 
@@ -50,9 +40,9 @@ class Test_qubits(unittest.TestCase):
         p.add_kernel(k)  # add kernel to program
         p.compile()
 
-        # gold_fn = rootDir + '/golden/test_1_qubit.qasm'
-        # qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
+        gold_fn = rootDir + '/golden/test_1_qubit.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_2_qubit(self):
         nqubits = 3
@@ -73,9 +63,9 @@ class Test_qubits(unittest.TestCase):
         p.add_kernel(k)  # add kernel to program
         p.compile()
 
-        # gold_fn = rootDir + '/golden/test_2_qubit.qasm'
-        # qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
+        gold_fn = rootDir + '/golden/test_2_qubit.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_3_qubit(self):
         nqubits = 3
@@ -98,9 +88,9 @@ class Test_qubits(unittest.TestCase):
         ql.set_option('decompose_toffoli', 'no')
         p.compile()
 
-        # gold_fn = rootDir + '/golden/test_3_qubit.qasm'
-        # qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
+        gold_fn = rootDir + '/golden/test_3_qubit.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 if __name__ == '__main__':
     unittest.main()

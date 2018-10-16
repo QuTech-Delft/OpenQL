@@ -1,5 +1,5 @@
 import os
-import filecmp
+from utils import file_compare
 import unittest
 from openql import openql as ql
 
@@ -11,16 +11,6 @@ platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
 
-def file_compare(fn1, fn2):
-    isSame = False
-    with open(fn1, 'r') as f1:
-        with open(fn2, 'r') as f2:
-            a = f1.read()
-            b = f2.read()
-            f1.close()
-            f2.close()
-            isSame = (a==b)
-    return isSame
 
 class Test_dependence(unittest.TestCase):
 
@@ -57,20 +47,9 @@ class Test_dependence(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        # gold_fn = rootDir + '/golden/test_independence.qasm'
-        # qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
-
-        # # load qasm
-        # qasm_files = []
-        # qasm_files.append(os.path.join(output_dir, 'independent.qasm'))
-        # qasm_files.append(os.path.join(output_dir, 'independent_scheduled.qasm'))
-
-        # for qasm_file in qasm_files:
-        #    qasm_reader = ql.QASM_Loader(qasm_file)
-        #    errors = qasm_reader.load()
-        #    self.assertTrue(errors == 0)
-
+        gold_fn = rootDir + '/golden/test_independence.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 
     # @unittest.skip
@@ -98,19 +77,10 @@ class Test_dependence(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        # gold_fn = rootDir + '/golden/test_WAW_ASAP.qasm'
-        # qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
+        gold_fn = rootDir + '/golden/test_WAW_ASAP.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
 
-        # # load qasm
-        # qasm_files = []
-        # qasm_files.append(os.path.join(output_dir, p.name+'.qasm'))
-        # qasm_files.append(os.path.join(output_dir, p.name+'_scheduled.qasm'))
-
-        # for qasm_file in qasm_files:
-        #    qasm_reader = ql.QASM_Loader(qasm_file)
-        #    errors = qasm_reader.load()
-        #    self.assertTrue(errors == 0)
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 
     # @unittest.skip
@@ -138,20 +108,9 @@ class Test_dependence(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        # gold_fn = rootDir + '/golden/test_RAR_Control_ASAP.qasm'
-        # qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
-
-        # # load qasm
-        # qasm_files = []
-        # qasm_files.append(os.path.join(output_dir, 'RAR.qasm'))
-        # qasm_files.append(os.path.join(output_dir, 'RAR_scheduled.qasm'))
-
-        # for qasm_file in qasm_files:
-        #    qasm_reader = ql.QASM_Loader(qasm_file)
-        #    errors = qasm_reader.load()
-        #    self.assertTrue(errors == 0)
-
+        gold_fn = rootDir + '/golden/test_RAR_Control_ASAP.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 
     # @unittest.skip
@@ -179,20 +138,10 @@ class Test_dependence(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        # gold_fn = rootDir + '/golden/test_RAW_ASAP.qasm'
-        # qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
+        gold_fn = rootDir + '/golden/test_RAW_ASAP.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
 
-        # # load qasm
-        # qasm_files = []
-        # qasm_files.append(os.path.join(output_dir, 'RAW.qasm'))
-        # qasm_files.append(qasm_fn)
-
-        # for qasm_file in qasm_files:
-        #    qasm_reader = ql.QASM_Loader(qasm_file)
-        #    errors = qasm_reader.load()
-        #    self.assertTrue(errors == 0)
-
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 
     # @unittest.skip
@@ -220,19 +169,10 @@ class Test_dependence(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        # gold_fn = rootDir + '/golden/test_WAR_ASAP.qasm'
-        # qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
+        gold_fn = rootDir + '/golden/test_WAR_ASAP.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
 
-        # # load qasm
-        # qasm_files = []
-        # qasm_files.append(os.path.join(output_dir, 'WAR.qasm'))
-        # qasm_files.append(qasm_fn)
-
-        # for qasm_file in qasm_files:
-        #    qasm_reader = ql.QASM_Loader(qasm_file)
-        #    errors = qasm_reader.load()
-        #    self.assertTrue(errors == 0)
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 
     # @unittest.skip
@@ -254,19 +194,10 @@ class Test_dependence(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        # gold_fn = rootDir + '/golden/test_swap_single_ASAP.qasm'
-        # qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
+        gold_fn = rootDir + '/golden/test_swap_single_ASAP.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
-        # # load qasm
-        # qasm_files = []
-        # qasm_files.append(os.path.join(output_dir, 'swap_single.qasm'))
-        # qasm_files.append(qasm_fn)
-
-        # for qasm_file in qasm_files:
-        #    qasm_reader = ql.QASM_Loader(qasm_file)
-        #    errors = qasm_reader.load()
-        #    self.assertTrue(errors == 0)
 
     # @unittest.skip
     def test_swap_multi(self):
@@ -290,19 +221,9 @@ class Test_dependence(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        # gold_fn = rootDir + '/golden/test_swap_multi_ASAP.qasm'
-        # qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
-
-        # # load qasm
-        # qasm_files = []
-        # qasm_files.append(os.path.join(output_dir, 'swap_multi.qasm'))
-        # qasm_files.append(qasm_fn)
-
-        # for qasm_file in qasm_files:
-        #    qasm_reader = ql.QASM_Loader(qasm_file)
-        #    errors = qasm_reader.load()
-        #    self.assertTrue(errors == 0)
+        gold_fn = rootDir + '/golden/test_swap_multi_ASAP.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 
 if __name__ == '__main__':
