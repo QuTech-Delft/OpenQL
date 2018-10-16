@@ -111,16 +111,6 @@ class Test_kernel(unittest.TestCase):
 
         p.compile()
 
-        # load qasm
-        qasm_files = []
-        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
-        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
-
-        # TODO use new cqasm v1.0 interface
-        # for qasm_file in qasm_files:
-        #    qasm_reader = ql.QASM_Loader(qasm_file)
-        #    errors = qasm_reader.load()
-        #    self.assertTrue(errors == 0)
 
 if __name__ == '__main__':
     unittest.main()

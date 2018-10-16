@@ -1,6 +1,7 @@
 from openql import openql as ql
 import unittest
 import os
+from test_QASM_assembler_present import assemble
 
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
@@ -13,11 +14,12 @@ class Test_basic(unittest.TestCase):
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('log_level', 'LOG_WARNING')
+        ql.set_option('use_default_gates', 'no')
 
     def test_compilation(self):
 
         print('output dir : {}'.format( ql.get_option('output_dir') ) )
-        config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
+        config_fn = os.path.join(curdir, 'hardware_config_qx.json')
         platf = ql.Platform("starmon", config_fn)
         sweep_points = [1]
         nqubits = 2
@@ -26,20 +28,18 @@ class Test_basic(unittest.TestCase):
 
         # populate kernel
         k = ql.Kernel("first_kernel", platf, nqubits, nqubits)
-        k.prepz(0)
-        k.gate("prepz", [0])
-        k.x(0)
-        k.gate('rx180', [0])
-        k.gate("measure", [0])
+
+        k.gate('prep_z', [0])
+        k.gate('x', [0])
+        k.gate('x90', [0])
+        k.gate('measure', [0])
         p.add_kernel(k)
 
         k = ql.Kernel("second_kernel", platf, nqubits, nqubits)
-        # k.prepz(0)
-        k.gate("prepz", [0])
-        k.gate('rx90', [0])
-        k.gate('rx180', [1])
+        k.gate('prep_z', [0])
+        k.gate('x90', [0])
         k.gate('cz', [0, 1])
-        k.gate('rx90', [0])
+        k.gate('x90', [0])
         k.gate("measure", [0])
         p.add_kernel(k)
 
@@ -50,11 +50,9 @@ class Test_basic(unittest.TestCase):
         qasm_files.append(os.path.join(output_dir, 'basic.qasm'))
         qasm_files.append(os.path.join(output_dir, 'basic_scheduled.qasm'))
 
-        # TODO use new cqasm v1.0 interface
-        # for qasm_file in qasm_files:
-        #    qasm_reader = ql.QASM_Loader(qasm_file)
-        #    errors = qasm_reader.load()
-        #    self.assertTrue(errors == 0)
+        for qasm_file in qasm_files:
+            print('assembling: {}'.format(qasm_file))
+            assemble(qasm_file)
 
 if __name__ == '__main__':
     unittest.main()

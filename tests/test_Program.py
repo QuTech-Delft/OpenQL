@@ -84,19 +84,6 @@ class Test_program(unittest.TestCase):
         print( p.qasm() )
         p.compile()
 
-        # load qasm
-        qasm_files = []
-        qasm_files.append(os.path.join(output_dir, 'rb_program.qasm'))
-        qasm_files.append(os.path.join(output_dir, 'rb_program_scheduled.qasm'))
-
-        # TODO use new cqasm v1.0 interface
-        # for qasm_file in qasm_files:
-        #    qasm_reader = ql.QASM_Loader(qasm_file)
-        #    errors = qasm_reader.load()
-        #    self.assertTrue(errors == 0)
-
-
-
 
     def test_5qubit_program(self):
 
@@ -152,17 +139,6 @@ class Test_program(unittest.TestCase):
         p.set_sweep_points( [nr_sweep_pts], nr_sweep_pts)
 
         p.compile()
-
-        # load qasm
-        qasm_files = []
-        qasm_files.append(os.path.join(output_dir, 'AllXY.qasm'))
-        qasm_files.append(os.path.join(output_dir, 'AllXY_scheduled.qasm'))
-
-        # TODO use new cqasm v1.0 interface
-        # for qasm_file in qasm_files:
-        #    qasm_reader = ql.QASM_Loader(qasm_file)
-        #    errors = qasm_reader.load()
-        #    self.assertTrue(errors == 0)
 
 
 if __name__ == '__main__':

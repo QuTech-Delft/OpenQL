@@ -123,7 +123,7 @@ class Test_cqasm(unittest.TestCase):
         qasm_files.append(os.path.join(output_dir, p.name+'_scheduled.qasm'))
 
         for qasm_file in qasm_files:
-            # print('assembling: {}'.format(qasm_file))
+            print('assembling: {}'.format(qasm_file))
             assemble(qasm_file)
 
 if __name__ == '__main__':
