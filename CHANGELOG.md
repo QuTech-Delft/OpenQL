@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [ 0.5.4 ] - [ 2018-10-17 ]
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+- qubit ordering in SMIS and SMIT instructions
+
+
 ## [ 0.5.3 ] - [ 2018-10-11 ]
 ### Added
 - added detuning constraints for cclight

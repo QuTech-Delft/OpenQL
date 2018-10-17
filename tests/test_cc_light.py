@@ -2,22 +2,12 @@ import os
 import unittest
 from openql import openql as ql
 from test_QISA_assembler_present import assemble
+from utils import file_compare
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
 
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
-
-def file_compare(fn1, fn2):
-    isSame = False
-    with open(fn1, 'r') as f1:
-        with open(fn2, 'r') as f2:
-            a = f1.read()
-            b = f2.read()
-            f1.close()
-            f2.close()
-            isSame = (a==b)
-    return isSame
 
 
 class Test_basic(unittest.TestCase):
@@ -733,7 +723,7 @@ class Test_advance(unittest.TestCase):
                self.assertTrue(errors == 0)
 
             QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-            gold_fn = rootDir + '/golden/test_ccl_buffers_'+str(testNo)+'.qisa'        
+            gold_fn = rootDir + '/golden/test_ccl_buffers_'+str(testNo)+'.qisa'
 
             assemble(QISA_fn)
 
@@ -784,7 +774,7 @@ class Test_advance(unittest.TestCase):
                self.assertTrue(errors == 0)
 
             QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-            gold_fn = rootDir + '/golden/test_ccl_latencies_'+str(testNo)+'.qisa'        
+            gold_fn = rootDir + '/golden/test_ccl_latencies_'+str(testNo)+'.qisa'
 
             assemble(QISA_fn)
 

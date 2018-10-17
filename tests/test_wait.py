@@ -1,23 +1,12 @@
 import os
 import unittest
 from openql import openql as ql
-from test_QISA_assembler_present import assemble
+from utils import file_compare
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
 
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
-
-def file_compare(fn1, fn2):
-    isSame = False
-    with open(fn1, 'r') as f1:
-        with open(fn2, 'r') as f2:
-            a = f1.read()
-            b = f2.read()
-            f1.close()
-            f2.close()
-            isSame = (a==b)
-    return isSame
 
 
 class Test_wait(unittest.TestCase):
@@ -40,16 +29,15 @@ class Test_wait(unittest.TestCase):
         k = ql.Kernel('aKernel', platform, num_qubits)
 
         k.gate("x", [0])
-        k.gate("wait", [0], 40) # OR k.wait([0], 40)
+        k.gate("wait", [0], 40)  # OR k.wait([0], 40)
         k.gate("x", [0])
 
         p.add_kernel(k)
         p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        gold_fn = rootDir + '/golden/test_wait_simple.qisa'        
-        self.assertTrue( file_compare(QISA_fn, gold_fn) )
-
+        gold_fn = rootDir + '/golden/test_wait_simple.qisa'
+        self.assertTrue(file_compare(QISA_fn, gold_fn))
 
     def test_wait_parallel(self):
 
@@ -64,21 +52,21 @@ class Test_wait(unittest.TestCase):
 
         # wait should not be in parallel with another gate
         k.gate("x", [0])
-        k.gate("wait", [1], 20) # OR k.wait([0], 20)
+        k.gate("wait", [1], 20)  # OR k.wait([0], 20)
         k.gate("x", [1])
 
         p.add_kernel(k)
         p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        gold_fn = rootDir + '/golden/test_wait_parallel.qisa'        
-        self.assertTrue( file_compare(QISA_fn, gold_fn) )
+        gold_fn = rootDir + '/golden/test_wait_parallel.qisa'
+        self.assertTrue(file_compare(QISA_fn, gold_fn))
 
     def test_wait_sweep(self):
 
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
-        platform  = ql.Platform('seven_qubits_chip', config_fn)
-        sweep_points = [1,2]
+        platform = ql.Platform('seven_qubits_chip', config_fn)
+        sweep_points = [1, 2]
         num_qubits = 7
         p = ql.Program('test_wait_sweep', platform, num_qubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
@@ -108,8 +96,8 @@ class Test_wait(unittest.TestCase):
         p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        gold_fn = rootDir + '/golden/test_wait_sweep.qisa'        
-        self.assertTrue( file_compare(QISA_fn, gold_fn) )
+        gold_fn = rootDir + '/golden/test_wait_sweep.qisa'
+        self.assertTrue(file_compare(QISA_fn, gold_fn))
 
     def test_wait_multi(self):
 
@@ -129,14 +117,14 @@ class Test_wait(unittest.TestCase):
         k.wait([0, 1, 2, 3], 40)
 
         for i in range(4):
-                k.gate("measure", [i])
+            k.gate("measure", [i])
 
         p.add_kernel(k)
         p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        gold_fn = rootDir + '/golden/test_wait_multi.qisa'        
-        self.assertTrue( file_compare(QISA_fn, gold_fn) )
+        gold_fn = rootDir + '/golden/test_wait_multi.qisa'
+        self.assertTrue(file_compare(QISA_fn, gold_fn))
 
     def test_wait_barrier(self):
 
@@ -152,7 +140,7 @@ class Test_wait(unittest.TestCase):
         k.gate("x", [0])
         k.gate("x", [1])
         k.gate("y", [0])
-        k.gate("wait", [0, 1], 0) # this will serve as barrier
+        k.gate("wait", [0, 1], 0)  # this will serve as barrier
         k.gate("measure", [0])
         k.gate("measure", [1])
 
@@ -160,8 +148,8 @@ class Test_wait(unittest.TestCase):
         p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        gold_fn = rootDir + '/golden/test_wait_barrier.qisa'        
-        self.assertTrue( file_compare(QISA_fn, gold_fn) )
+        gold_fn = rootDir + '/golden/test_wait_barrier.qisa'
+        self.assertTrue(file_compare(QISA_fn, gold_fn))
 
     def test_barrier(self):
 
@@ -179,7 +167,7 @@ class Test_wait(unittest.TestCase):
         k.gate("y", [0])
 
         # k.barrier([0, 1])
-        # OR 
+        # OR
         k.gate("barrier", [0, 1])
 
         k.gate("measure", [0])
@@ -189,8 +177,9 @@ class Test_wait(unittest.TestCase):
         p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        gold_fn = rootDir + '/golden/test_barrier.qisa'        
-        self.assertTrue( file_compare(QISA_fn, gold_fn) )
+        gold_fn = rootDir + '/golden/test_barrier.qisa'
+        self.assertTrue(file_compare(QISA_fn, gold_fn))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -16,6 +16,9 @@
 #include <iterator>
 #include <string>
 #include <sstream>
+#include <utility>
+#include <vector>
+
 
 #define println(x) std::cout << "[OPENQL] "<< x << std::endl
 
@@ -138,6 +141,17 @@ namespace ql
             return ( str.find(token) != std::string::npos);
         }
 
+        // Helper function to sort the vector of pairs.
+        // Pairs are sorted by first element of pairs and then by second element
+        bool sort_pair_helper(const std::pair<size_t,size_t> &a, const std::pair<size_t,size_t> &b) 
+        { 
+            if(a.first < b.first)
+                return true;
+            else if (a.first == b.first)
+                return (a.second < b.second); 
+            else
+                return false;
+        } 
 
         namespace logger
         {

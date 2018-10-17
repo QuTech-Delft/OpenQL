@@ -9,6 +9,7 @@
 #ifndef QL_CC_LIGHT_EQASM_COMPILER_H
 #define QL_CC_LIGHT_EQASM_COMPILER_H
 
+#include <ql/utils.h>
 #include <ql/platform.h>
 #include <ql/kernel.h>
 #include <ql/gate.h>
@@ -150,6 +151,9 @@ public:
 
     size_t getRegNo( qubit_set_t & qs )
     {
+        // sort qubit operands to avoid variation in order
+        sort(qs.begin(), qs.end());
+
         auto it = QS2Mask.find(qs);
         if( it == QS2Mask.end() )
         {
@@ -162,6 +166,9 @@ public:
 
     size_t getRegNo( qubit_pair_set_t & qps )
     {
+        // sort qubit operands pair to avoid variation in order
+        sort(qps.begin(), qps.end(), ql::utils::sort_pair_helper);
+
         auto it = QPS2Mask.find(qps);
         if( it == QPS2Mask.end() )
         {
@@ -174,6 +181,9 @@ public:
 
     std::string getRegName( qubit_set_t & qs )
     {
+        // sort qubit operands to avoid variation in order
+        sort(qs.begin(), qs.end());
+
         auto it = QS2Mask.find(qs);
         if( it == QS2Mask.end() )
         {
@@ -186,6 +196,9 @@ public:
 
     std::string getRegName( qubit_pair_set_t & qps )
     {
+        // sort qubit operands pair to avoid variation in order
+        sort(qps.begin(), qps.end(), ql::utils::sort_pair_helper);
+
         auto it = QPS2Mask.find(qps);
         if( it == QPS2Mask.end() )
         {
@@ -471,6 +484,10 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
                             throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
                         }
                     }
+
+                    //TODO:ORDER sort squbits here
+                    //TODO:ORDER sort dqubits here
+
                     std::string rname;
                     if( 1 == nOperands )
                     {

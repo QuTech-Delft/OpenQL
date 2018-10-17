@@ -1,5 +1,5 @@
 import os
-import filecmp
+from utils import file_compare
 import unittest
 from openql import openql as ql
 
@@ -17,16 +17,7 @@ def set_ql_options():
     ql.set_option('scheduler', 'ASAP')
     ql.set_option('log_level', 'LOG_INFO')
 
-def file_compare(fn1, fn2):
-    isSame = False
-    with open(fn1, 'r') as f1:
-        with open(fn2, 'r') as f2:
-            a = f1.read()
-            b = f2.read()
-            f1.close()
-            f2.close()
-            isSame = (a==b)
-    return isSame
+
 
 class Test_dependence(unittest.TestCase):
 
@@ -98,7 +89,7 @@ class Test_dependence(unittest.TestCase):
 
         gold_fn = rootDir + '/golden/test_WAW_ASAP.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
-        
+
         print(gold_fn)
         print(qasm_fn)
 
@@ -184,7 +175,7 @@ class Test_dependence(unittest.TestCase):
 
         gold_fn = rootDir + '/golden/test_RAW_ASAP.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
-        
+
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
         # load qasm
@@ -226,7 +217,7 @@ class Test_dependence(unittest.TestCase):
 
         gold_fn = rootDir + '/golden/test_WAR_ASAP.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
-        
+
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
         # load qasm
