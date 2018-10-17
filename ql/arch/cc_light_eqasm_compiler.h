@@ -429,7 +429,7 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
             else
             {
                 auto id = iname;
-                DOUT("get cclight instr name for : " << id);
+                // DOUT("get cclight instr name for : " << id);
                 std::string cc_light_instr_name;
                 auto it = platform.instruction_map.find(id);
                 if (it != platform.instruction_map.end())
@@ -795,12 +795,19 @@ public:
         out_qasm << "qubits " << platform.qubit_number << "\n";
         for(auto &kernel : kernels)
         {
-            out_qasm << "\n" << kernel.get_prologue();
-            out_qasm << ql::ir::qasm(kernel.bundles);
+            if (kernel.bundles.empty())
+            {
+                out_qasm << kernel.qasm();
+            }
+            else
+            {
+                out_qasm << "\n" << kernel.get_prologue();
+                out_qasm << ql::ir::qasm(kernel.bundles);
+                out_qasm << kernel.get_epilogue();
+            }
             total_depth += kernel.get_depth();
             total_classical_operations += kernel.get_classical_operations();
             total_quantum_gates += kernel.get_quantum_gates();
-            out_qasm << kernel.get_epilogue();
         }
         out_qasm << "\n";
         out_qasm << "# Total depth: " << total_depth << "\n";
@@ -821,6 +828,7 @@ public:
 
         for(auto &kernel : kernels)
         {
+            kernel.bundles.clear();         // so that write_qasm prints the circuit instead of the bundles
             IOUT("Decomposing kernel: " << kernel.name);
             if (! kernel.c.empty())
             {
@@ -831,6 +839,13 @@ public:
             }
         }
 
+        std::stringstream mapper_in_fname;
+        mapper_in_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_in.qasm";
+        IOUT("writing mapper input qasm to '" << mapper_in_fname.str() << "' ...");
+        write_qasm(mapper_in_fname, kernels, platform);
+
+        Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
+        mapper.Init(platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
         for(auto &kernel : kernels)
         {
             auto mapopt = ql::options::get("mapper");
@@ -840,16 +855,10 @@ public:
                 continue;;
             }
             IOUT("Mapping kernel: " << kernel.name);
-            Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
-            mapper.Init(kernel.qubit_count, platform);
+            mapper.MapCircuit(kernel.qubit_count, kernel.c, kernel.name);
                             // kernel.qubit_count is number of virtual qubits, i.e. highest indexed qubit minus 1
-                            // platform specifies qubit_number as number of real qubits, i.e. locations for virtual qubits
-            mapper.MapCircuit(kernel.c, kernel.name);
+                            // and kernel.qubit_count is updated to real highest index used minus -1
             kernel.bundles = mapper.Bundler(kernel.c);
-
-            size_t HighestQubitIndex;
-            mapper.GetHighestQubitIndex(HighestQubitIndex);
-            kernel.qubit_count = HighestQubitIndex+1;
             mapper.GetNumberOfSwapsAdded(kernel.swaps_added);
         }
         std::stringstream mapper_out_fname;
@@ -872,6 +881,11 @@ public:
             }
             sskernels_qisa << get_epilogue(kernel);
         }
+        std::stringstream rcscheduler_out_fname;
+        rcscheduler_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_rcscheduler_out.qasm";
+        IOUT("writing rcscheduler output qasm to '" << rcscheduler_out_fname.str() << "' ...");
+        write_qasm(rcscheduler_out_fname, kernels, platform);
+
         sskernels_qisa << "\n    br always, start" << "\n"
                   << "    nop \n"
                   << "    nop" << std::endl;
@@ -891,11 +905,6 @@ public:
         }
         fout << ssqisa.str() << endl;
         fout.close();
-
-        std::stringstream rcscheduler_out_fname;
-        rcscheduler_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_rcscheduler_out.qasm";
-        IOUT("writing rcscheduler output qasm to '" << rcscheduler_out_fname.str() << "' ...");
-        write_qasm(rcscheduler_out_fname, kernels, platform);
 
         DOUT("Compiling CCLight eQASM [Done]");
     }

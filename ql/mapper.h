@@ -1687,50 +1687,27 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
 class Mapper
 {
 private:
-
+                                    // Initialized by Mapper.Init
                                     // OpenQL wide configuration, all constant after initialization
     ql::quantum_platform platform;  // current platform: topology and gate definitions
     size_t          nqbits;         // number of qubits in the platform, number of real qubits
     size_t          cycle_time;     // length in ns of a single cycle of the platform
                                     // is divisor of duration in ns to convert it to cycles
     Grid            grid;           // current grid
+
+                                    // Initialized by Mapper.MapCircuit
 #ifdef INITIALPLACE
     InitialPlace    ip;             // initial placer facility
 #endif
-                                    // Mapper dynamic state, for each kernel
     size_t          nvq;            // number of qubits in the kernel, number of virtual qubits
     Past            mainPast;       // main past window; all path alternatives start off as clones of it
-    std::vector<size_t> use_count;  // use_count[real qubit index], number of times the real qubit was used
+//  std::vector<size_t> use_count;  // use_count[real qubit index], number of times the real qubit was used
     size_t          swaps_added;    // number of swaps added, for reporting
 
+    Virt2Real       init_v2r;       // mapping left over from previous kernel, or initial mapping
 
-public:
-// Mapper constructor is default syntesized
 
-// initialize mapper for this kernel
-// lots could be split off for the whole program, once that is needed
-void Init( size_t n, ql::quantum_platform& p)
-{
-    // DOUT("Mapping initialization ...");
-    // DOUT("... Grid initialization: platform qubits->coordinates, ->neighbors, distance ...");
-    nvq = n;
-    // DOUT("... kernel/virtual number of qubits=" << nvq << ");
-    platform = p;
-    nqbits = p.qubit_number;
-    // DOUT("... platform/real number of qubits=" << nqbits << ");
-    cycle_time = p.cycle_time;
-
-    grid.Init(&platform);
-#ifdef INITIALPLACE
-    ip.Init(nvq, &grid, &platform);
-#endif
-    // DOUT("... Initialize map(virtual->real)");
-    // DOUT("... with trivial mapping (virtual==real), number of virtual qubits=" << nvq);
-    mainPast.Init(nvq, &platform);
-    // mainPast.Print("initial mapping");
-    use_count.resize(nqbits,0);
-    // DOUT("Mapping initialization [DONE]");
-}
+// Mapper constructor is default synthesized
 
 private:
 // initial path finder
@@ -1955,7 +1932,7 @@ void MapGates(ql::circuit& circ, std::string& kernel_name)
         switch(gp->type())
         {
         case ql::__classical_gate__:
-            // flush past first because past should only contain quantum gates
+            // flush Past first because Past should only contain quantum gates
             mainPast.Flush();
             // map qubit use of any classical instruction????
             outCirc.push_back(gp);
@@ -1979,38 +1956,36 @@ void MapGates(ql::circuit& circ, std::string& kernel_name)
     swaps_added = mainPast.NumberOfSwapsAdded();
 }
 
-public:
-// update counts which qubits are used in this circuit
-void UseCount(ql::circuit& circ)
-{
-    DOUT("UseCount circuit ...");
-    for( auto gp : circ )
-    {
-        for ( auto q : gp->operands)
-        {
-            use_count[q]++;
-        }
-    }
-    DOUT("UseCount circuit [DONE]");
-} 
+// // update counts which qubits are used in this circuit
+// void UseCount(ql::circuit& circ)
+// {
+//     for( auto gp : circ )
+//     {
+//         for ( auto q : gp->operands)
+//         {
+//             use_count[q]++;
+//         }
+//     }
+// } 
+// 
+// // inspect counters and update highest qubit index
+// void GetHighestQubitIndex(size_t & highest_index)
+// {
+//     highest_index = 0;
+//     for (size_t i=0; i < platform.qubit_number; i++)
+//     {
+//         if (use_count[i] != 0)
+//         {
+//             highest_index = std::max(highest_index, i);
+//         }
+//     }
+// }
 
+public:
 // retrieve number of swaps added
 void GetNumberOfSwapsAdded(size_t & sa)
 {
     sa = swaps_added;
-}
-
-// inspect counters and update highest qubit index
-void GetHighestQubitIndex(size_t & highest_index)
-{
-    highest_index = 0;
-    for (size_t i=0; i < platform.qubit_number; i++)
-    {
-        if (use_count[i] != 0)
-        {
-            highest_index = std::max(highest_index, i);
-        }
-    }
 }
 
 // decompose all gates with names ending in _prim
@@ -2109,25 +2084,39 @@ std::string qasm(ql::circuit& c, size_t nqubits, std::string& name)
 }
 
 // map kernel's circuit in current mapping context as left by initialization and earlier kernels
-void MapCircuit(ql::circuit& circ, std::string& kernel_name)
+void MapCircuit(size_t& kernel_qubits, ql::circuit& circ, std::string& kernel_name)
 {
     DOUT("==================================");
     DOUT("Mapping circuit ...");
+    DOUT("... kernel virtual number of qubits=" << kernel_qubits);
+    if (nvq != 0 && nvq != kernel_qubits)
+    {
+        // kernel_qubits of all kernels should be the same to allow passing on v2r maps
+        EOUT("Number of qubits " << kernel_qubits << " in kernel: " << kernel_name << ", doesn't match program number of qubits: " << nvq);
 
-//  std::string mapper_in_qasm;
-//  std::string mapper_out_qasm;
+        throw ql::exception("[x] error : Number of qubits in kernel: "+kernel_name+", doesn't match program number of qubits" ,false);
+    }
 
-// next lines moved from cc_light_compiler code to here because kernel is not in the interface
-// has to be moved back once kernel is there after merging with develop
-//  string fname_in = ql::options::get("output_dir") + "/" + kernel_name + "_mapper_in.qasm";
-//  IOUT("writing mapper input qasm to '" << fname_in << "' ...");
-//  mapper_in_qasm += qasm(circ, nvq, kernel_name);
-//  ql::utils::write_file(fname_in, mapper_in_qasm);
-    
+    if (nvq == 0)
+    {
+        // first kernel
+        nvq = kernel_qubits;
+        DOUT("... Initialize init_v2r with trivial mapping (virtual==real), number of virtual qubits=" << nvq);
+        init_v2r.Init(nvq);
+    }
+
+    // should initialize Past.v2r to init_v2r
+    // note other pasts: of a path: as clone, ...
+    mainPast.Init(nvq, &platform);      // HERE
+    // mainPast.Print("initial mapping");
+    // use_count.resize(nqbits,0);
+
 #ifdef INITIALPLACE
     std::string initialplaceopt = ql::options::get("initialplace");
     if("yes" == initialplaceopt)
     {
+        ip.Init(nvq, &grid, &platform);
+
         Virt2Real   v2r;
         DOUT("InitialPlace copy in current Virt2Real mapping ...");
         mainPast.GetV2r(v2r);
@@ -2152,16 +2141,32 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name)
     {
         Decomposer(circ);   // decompose to primitives as specified in the config file
     }
-    UseCount(circ);         // add counts of real qubits in this circuit to total of the kernel
-
-//    string fname_out = ql::options::get("output_dir") + "/" + kernel_name + "_mapper_out.qasm";
-//    IOUT("writing mapper_output qasm to '" << fname_out << "' ...");
-//    mapper_out_qasm += ql::ir::qasm(bundles);
-//    ql::utils::write_file(fname_out, mapper_out_qasm);
+    // UseCount(circ);
+    // size_t HighestQubitIndex;
+    // GetHighestQubitIndex(HighestQubitIndex);
+    kernel_qubits = nqbits; // bluntly, so that all kernels get the same qubit_count
 
     DOUT("Mapping circuit [DONE]");
     DOUT("==================================");
 }   // end MapCircuit
+
+// initialize mapper for whole program
+// lots could be split off for the whole program, once that is needed
+void Init(ql::quantum_platform& p)
+{
+    // DOUT("Mapping initialization ...");
+    // DOUT("... Grid initialization: platform qubits->coordinates, ->neighbors, distance ...");
+    platform = p;
+    nqbits = p.qubit_number;
+    // DOUT("... platform/real number of qubits=" << nqbits << ");
+    cycle_time = p.cycle_time;
+
+    grid.Init(&platform);
+
+    nvq = 0;    // signal to first MapCircuit call that it is mapping the first kernel
+    // DOUT("Mapping initialization [DONE]");
+}   // end Init
+
 
 };  // end class Mapper
 

@@ -332,7 +332,7 @@ class quantum_program
          ss << "qubits " << qubit_count << "\n";
          for (size_t k=0; k<kernels.size(); ++k)
          {
-            ss <<'\n' << kernels[k].qasm();
+            ss << kernels[k].qasm();
             total_classical_operations += kernels[k].get_classical_operations();
             total_quantum_gates += kernels[k].get_quantum_gates();
          }
@@ -469,6 +469,10 @@ class quantum_program
             {
                backend_compiler->compile(name, kernels, platform);
             }
+//          else if (eqasm_compiler_name == "quantumsim" )
+//          {
+//             backend_compiler->compile(name, kernels, platform);
+//          }
             else
             {
                // fusing below doesn't take care of cycle attribute of each gate to increase per kernel

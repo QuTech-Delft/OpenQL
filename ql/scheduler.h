@@ -893,7 +893,7 @@ public:
                  instruction[*it]->type() != ql::gate_type_t::__dummy_gate__
                )
             {
-                DOUT("Instruction: " << instruction[*it]->qasm());
+                // DOUT("Instruction: " << instruction[*it]->qasm());
                 insInAllCycles[ cycle[*it] ].push_back( instruction[*it] );
             }
         }
@@ -909,26 +909,26 @@ public:
             auto it = insInAllCycles.find(currCycle);
             if( it != insInAllCycles.end() )
             {
-                DOUT("Bundling at cycle: " << currCycle);
+                // DOUT("Bundling at cycle: " << currCycle);
                 ql::ir::bundle_t abundle;
                 size_t bduration = 0;
                 auto nInsThisCycle = insInAllCycles[currCycle].size();
-                DOUT("... nInsThisCycle: " << nInsThisCycle);
+                // DOUT("... nInsThisCycle: " << nInsThisCycle);
                 for(size_t i=0; i<nInsThisCycle; ++i )
                 {
                     ql::ir::section_t aparsec;
                     auto & ins = insInAllCycles[currCycle][i];
                     aparsec.push_back(ins);
                     abundle.parallel_sections.push_back(aparsec);
-                    DOUT("... ins: " << ins->qasm() << " in private parallel section");
+                    // DOUT("... ins: " << ins->qasm() << " in private parallel section");
                     size_t iduration = ins->duration;
                     bduration = std::max(bduration, iduration);
                 }
                 abundle.start_cycle = currCycle;
                 abundle.duration_in_cycles = std::ceil(static_cast<float>(bduration)/cycle_time);
-                DOUT("... bundel duration in cycles: " << abundle.duration_in_cycles);
+                // DOUT("... bundel duration in cycles: " << abundle.duration_in_cycles);
                 bundles.push_back(abundle);
-                DOUT("... ready with bundle");
+                // DOUT("... ready with bundle");
             }
         }
 

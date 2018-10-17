@@ -968,7 +968,7 @@ public:
     {
         std::stringstream ss;
 
-        ss << get_prologue();
+        ss << "\n" << get_prologue();
 
         for(size_t i=0; i<c.size(); ++i)
         {
