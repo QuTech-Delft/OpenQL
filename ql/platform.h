@@ -123,13 +123,14 @@ public:
 
 
     /**
-     * @brief   Find architecture instruction name for a particular instruction
+     * @brief   Find architecture instruction name for a custom gate
      *
-     * @param   iname Name of instruction, e.g. "x q5"
+     * @param   iname   Name of instruction, e.g. "x q5" ('specialized custom gate') or "x" ('parameterized custom gate')
      * @return  value of 'arch_operation_name', e.g. "x"
      * @note    On CC-light, arch_operation_name is set from JSON field cc_light_instr
      * @note    Based on cc_light_scheduler.h::get_cc_light_instruction_name()
-     * FIXME: this only works for instructions defined in JSON, and only for 'specialized custom gate'
+     * @note    Only works for custom instructions defined in JSON
+       FIXME:   it may be more useful to get the information directly from JSON, because arch_operation_name is not really generic
      */
     std::string get_instruction_name(std::string &iname)
     {
@@ -151,6 +152,30 @@ public:
         }
         return instr_name;
     }
+
+
+    // find settings for custom gate, preventing JSON exceptions
+    json &find_instruction(std::string iname)
+    {
+        // search the JSON defined instructions, to prevent JSON exception if key does not exist
+        if (instruction_settings.find(iname) == instruction_settings.end())
+        {
+            FATAL("instruction settings not found for '" << iname << "'!");
+        }
+
+        return instruction_settings[iname];
+    }
+
+
+    // find instruction type for custom gate
+    std::string find_instruction_type(std::string iname)
+    {
+        json &instruction = find_instruction(iname);
+        return instruction["type"];
+    }
+
+
+
 };
 
 }

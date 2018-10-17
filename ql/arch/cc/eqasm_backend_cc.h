@@ -3,7 +3,7 @@
  * @date   201809xx
  * @author Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
  * @brief  eqasm backend for the Central Controller
- * @remark based on cc_light_eqasm_compiler.h
+ * @remark based on cc_light_eqasm_compiler.h, commit f34c0d9
  */
 
 #ifndef QL_ARCH_CC_EQASM_BACKEND_CC_H
@@ -68,8 +68,6 @@ namespace arch
 class eqasm_backend_cc : public eqasm_compiler
 {
 private:
-    bool verboseCode = true;    // output extra comments in generated code. FIXME: being moved to codegen
-
     codegen_cc codegen;
     size_t total_exec_time = 0;
 
@@ -78,18 +76,9 @@ private:
     size_t cycle_time;      // ns_per_cycle;
     size_t buffer_matrix[__operation_types_num__][__operation_types_num__];
 
-    // information extracted from JSON file:
-    typedef std::string tSignalType;
-    typedef std::vector<json> tInstrumentList;
-    typedef std::map<tSignalType, tInstrumentList> tMapSignalTypeToInstrumentList;
-    tMapSignalTypeToInstrumentList mapSignalTypeToInstrumentList;
-
 public:
-    /*
-     * compile for Central Controller (CCCODE)
-     * NB: based on cc_light_eqasm_compiler.h, commit f34c0d9
-     */
 
+    // compile for Central Controller (CCCODE)
     void compile(std::string prog_name, std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
     {
 #if 1   // FIXME: patch for issue #164, should be moved to caller
@@ -98,23 +87,22 @@ public:
         }
 #endif
         DOUT("Compiling " << kernels.size() << " kernels to generate CCCODE ... ");
-        load_backend_settings(platform);
+
         load_hw_settings(platform);
+        codegen.init(platform);
 
         // generate program header
         std::stringstream cccode;
-        codegen.init(ql::quantum_platform& platform);
         codegen.program_header(cccode, prog_name);
 
         // generate code for all kernels
         for(auto &kernel : kernels) {
             IOUT("Compiling kernel: " << kernel.name);
-            if(verboseCode) cccode << "# Kernel:  " << kernel.name << std::endl;
-            cccode << get_prologue(kernel);
+            cccode << codegen_kernel_prologue(kernel);
 
             ql::circuit& ckt = kernel.c;
             if (!ckt.empty()) {
-                auto creg_count = kernel.creg_count;                        // FIXME: also take platform into account
+                auto creg_count = kernel.creg_count;                        // FIXME: also take platform into account. We get qubit_number from JSON
                 ql::circuit decomp_ckt;
 
 //                decompose_instructions(ckt, decomp_ckt, platform);          // decompose meta-instructions
@@ -125,16 +113,16 @@ public:
 #else
                 // schedule with platform resource constraints
 //                ql::ir::bundles_t bundles = cc_light_schedule_rc(decomp_ckt, platform, qubit_number, creg_count);
-                // FIXME: we removed decompose_instructions, but can cc_light_schedule_rc live with that? Apparently it's not to bad
+                // FIXME: we removed decompose_instructions, but can cc_light_schedule_rc live with that? Apparently it's not too bad
                 ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, qubit_number, creg_count);
                 // FIXME: cc_light* is just available here because everything is in header files
 #endif
-                cccode << bundles2cccode(bundles, platform);
+                cccode << codegen_bundles(bundles, platform);
             } else {
                 DOUT("Empty kernel: " << kernel.name);                      // NB: normal situation for kernels with classical control
             }
 
-            cccode << get_epilogue(kernel);
+            cccode << codegen_kernel_epilogue(kernel);
         }
 
         codegen.program_trailer(cccode);
@@ -181,186 +169,9 @@ public:
 
 
 private:
-    // FIXME: being moved to codegen
-    // some helpers to ease nice assembly formatting
-    void emit(std::stringstream &s, const char *labelOrComment, const char *instr="")
-    {
-        s << std::left;    // FIXME
-        if(!labelOrComment || strlen(labelOrComment)==0) {  // no label
-            s << "        " << instr << std::endl;
-        } else if(strlen(labelOrComment)<8) {               // label fits before instr
-            s << std::setw(8) << labelOrComment << instr << std::endl;
-        } else if(strlen(instr)==0) {                       // no instr
-            s << labelOrComment << std::endl;
-        } else {
-            s << labelOrComment << std::endl << "        " << instr << std::endl;
-        }
-    }
-
-    // @param   label       must include trailing ":"
-    // @param   comment     must include leading "#"
-    void emit(std::stringstream &s, const char *label, const char *instr, std::string ops, const char *comment="")
-    {
-        s << std::left;    // FIXME
-        s << std::setw(8) << label << std::setw(8) << instr << std::setw(16) << ops << comment << std::endl;
-    }
-
-#if 0   // FIXME: WIP
-    typedef struct {
-        std::string instrumentName;
-        int group;
-        // ccio
-    } tResourceDescr;
-
-    qubit2resource(size_t qubit, std::string instrumentType, std::string signalType)
-    {
-    }
-#endif
-
-
-    // find settings for custom gate, i.e. a 'specialized custom gate' (e.g. "x q0") or a 'parameterized custom gate' (e.g. "x").
-    // FIXME: move to generic location
-    json &findInstruction(ql::quantum_platform &platform, std::string iname)
-    {
-        // search the JSON defined instructions, to prevent JSON exception if key does not exist
-        json& instruction_settings = platform.instruction_settings;
-        if (instruction_settings.find(iname) == instruction_settings.end())
-        {
-            FATAL("instruction settings not found for '" << iname << "'!");
-        }
-
-        return instruction_settings[iname];
-    }
-
-
-    // find operation type for custom gate
-    // FIXME: move to generic location
-    std::string findInstructionType(ql::quantum_platform &platform, std::string iname)
-    {
-        json &node = findInstruction(platform, iname);
-        return node["type"];
-    }
-
-
-    void load_backend_settings(ql::quantum_platform& platform)
-    {
-        // parts of JSON syntax
-        const char *instrumentTypes[] = {"cc", "switch", "awg", "measure"};
-
-        // FIXME: we would like to have a top level setting, or one below "backends"
-        // it is however not easy to create new top level stuff and read it from the backend
-//        try
-        {
-            json &backendSettings = platform.hardware_settings["eqasm_backend_cc"];
-
-            // read instrument definitions
-            json &instrumentDefinitions = backendSettings["instrument_definitions"];
-
-            for(int i=0; i<ELEM_CNT(instrumentTypes); i++)
-            {
-                json &ids = instrumentDefinitions[instrumentTypes[i]];
-                // FIXME: the following requires json>v3.1.0:  for(auto& id : ids.items()) {
-                for(int j=0; j<ids.size(); j++) {
-                    std::string idName = ids[j]["name"];        // NB: uses type conversion to get node value
-                    DOUT("found instrument definition:  type='" << instrumentTypes[i] << "', name='" << idName <<"'");
-                }
-            }
-
-            // read control modes
-            json &controlModes = backendSettings["control_modes"];
-            for(int i=0; i<controlModes.size(); i++)
-            {
-                json &name = controlModes[i]["name"];
-                DOUT("found control mode '" << name <<"'");
-            }
-
-
-            // read instruments
-            json &instrumentSetup = backendSettings["instrument_setup"];
-            json &isType = instrumentSetup["type"];     // FIXME: must be a root device, e.g. cc
-
-            // CC specific
-            json &isSlots = instrumentSetup["slots"];
-            for(int slot=0; slot<isSlots.size(); slot++) {
-                json instrument = isSlots[slot]["instrument"];     // NB: don't use reference, because we want to put in std::vector
-                std::string instrName = instrument["name"];
-                std::string signalType = instrument["signal_type"];
-
-#if 1   // FIXME: make into class
-                // insert into map, so we can easily retrieve which instruments provide "signal_type"
-                tMapSignalTypeToInstrumentList::iterator it = mapSignalTypeToInstrumentList.find(signalType);
-                if(it != mapSignalTypeToInstrumentList.end()) {    // key exists
-                    tInstrumentList &instrumentList = it->second;
-                    instrumentList.push_back(instrument);
-                } else { // new key
-                    std::pair<tMapSignalTypeToInstrumentList::iterator,bool> rslt;
-                    tInstrumentList instrumentList;
-                    instrumentList.push_back(instrument);
-                    rslt = mapSignalTypeToInstrumentList.insert(std::make_pair(signalType, instrumentList));
-                }
-#endif
-
-                DOUT("found instrument: name='" << instrName << "signal type='" << signalType << "'");
-            }
-        }
-#if 0
-        catch (json::exception e)
-        {
-            throw ql::exception(
-                "[x] error : ql::eqasm_compiler::compile() : error while reading backend settings : parameter '"
-//                + hw_settings[i].name
-                + "'\n\t"
-                + std::string(e.what()), false);
-        }
-#endif
-    }
-
-
-    // based on: cc_light_eqasm_compiler.h::load_hw_settings
-    void load_hw_settings(ql::quantum_platform& platform)
-    {
-        const struct {
-            size_t  *var;
-            std::string name;
-        } hw_settings[] = {
-            { &qubit_number,            "qubit_number"},
-            { &cycle_time,              "cycle_time" },
-#if 0   // FIXME: unused. Convert to cycle
-            { &mw_mw_buffer,            "mw_mw_buffer" },
-            { &mw_flux_buffer,          "mw_flux_buffer" },
-            { &mw_readout_buffer,       "mw_readout_buffer" },
-            { &flux_mw_buffer,          "flux_mw_buffer" },
-            { &flux_flux_buffer,        "flux_flux_buffer" },
-            { &flux_readout_buffer,     "flux_readout_buffer" },
-            { &readout_mw_buffer,       "readout_mw_buffer" },
-            { &readout_flux_buffer,     "readout_flux_buffer" },
-            { &readout_readout_buffer,  "readout_readout_buffer" }
-#endif
-        };
-
-        DOUT("Loading hardware settings ...");
-        int i=0;
-        try
-        {
-            for(i=0; i<ELEM_CNT(hw_settings); i++) {
-                size_t val = platform.hardware_settings[hw_settings[i].name];
-                *hw_settings[i].var = val;
-            }
-        }
-        catch (json::exception e)
-        {
-            throw ql::exception(
-                "[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter '"
-                + hw_settings[i].name
-                + "'\n\t"
-                + std::string(e.what()), false);
-        }
-    }
-
-
     // based on cc_light_eqasm_compiler.h::classical_instruction2qisa/decompose_instructions
     // NB: input instructions defined in classical.h::classical (also in JSON???)
-    std::string classical_instruction2cccode(ql::gate *classical_ins)
+    std::string codegen_classical_instruction(ql::gate *classical_ins)
     {
         std::stringstream ret;
         auto & iname =  classical_ins->name;
@@ -419,9 +230,10 @@ private:
 
 
     // based on cc_light_eqasm_compiler.h::get_prologue
-    std::string get_prologue(ql::quantum_kernel &k)
+    std::string codegen_kernel_prologue(ql::quantum_kernel &k)
     {
         std::stringstream ret;
+        codegen.comment(ret, SS2S("# Kernel:  " << k.name));
 
         switch(k.type) {
             case kernel_type_t::IF_START:
@@ -465,7 +277,7 @@ private:
 
 
     // based on cc_light_eqasm_compiler.h::get_epilogue
-    std::string get_epilogue(ql::quantum_kernel &k)
+    std::string codegen_kernel_epilogue(ql::quantum_kernel &k)
     {
         std::stringstream ret;
 
@@ -496,7 +308,7 @@ private:
 
 
     // based on cc_light_eqasm_compiler.h::bundles2qisa()
-    std::string bundles2cccode(ql::ir::bundles_t &bundles, ql::quantum_platform &platform)
+    std::string codegen_bundles(ql::ir::bundles_t &bundles, ql::quantum_platform &platform)
     {
         IOUT("Generating CCCODE for bundles");
         std::stringstream ret;
@@ -521,17 +333,16 @@ private:
                         FATAL("Inconsistency detected: classical gate with parallel sections");
                     }
                     classical_bundle = true;
-                    ssinst << classical_instruction2cccode(firstInstr);
+                    ssinst << codegen_classical_instruction(firstInstr);
                 } else {
                     /* iterate over all instructions in section.
-                     * NB: strategy differs from cc_light_eqasm_compiler, we have no special treatment of first instruction
+                     * NB: our strategy differs from cc_light_eqasm_compiler, we have no special treatment of first instruction
                      * and don't require all instructions to be identical
                      */
                     for(auto insIt = section->begin(); insIt != section->end(); ++insIt) {
                         ql::gate *instr = *insIt;
                         ql::gate_type_t itype = instr->type();
                         std::string iname = instr->name;
-                        std::string instr_name = platform.get_instruction_name(iname);      // FIXME: function only valid for gates specified in JSON?
 
                         switch(itype) {
                             case __nop_gate__:       // a quantum "nop", see gate.h
@@ -539,7 +350,7 @@ private:
                                 break;
 
                             case __classical_gate__:
-                                FATAL("Inconsistency detected: classical gate found after first section");
+                                FATAL("Inconsistency detected: classical gate found after first section (which itself was non-classical)");
                                 break;
 
                             case __custom_gate__:
@@ -548,7 +359,7 @@ private:
                                 auto nCoperands = instr->creg_operands.size();
 
                                 // handle readout (NB: extracted from decompose_instructions)
-                                if("readout" == findInstructionType(platform, iname))   // FIXME: we only use the "readout" value and don't care about the rest because the terms "mw" and "flux" don't fully cover gate functionality. It would be nice if custom gates could mimic ql::gate_type_t
+                                if("readout" == platform.find_instruction_type(iname))   // FIXME: we only use the "readout" value and don't care about the rest because the terms "mw" and "flux" don't fully cover gate functionality. It would be nice if custom gates could mimic ql::gate_type_t
                                 {
                                     DOUT("    readout instruction ");
                                     if(nCoperands != 1) {
@@ -564,58 +375,11 @@ private:
                                 } else { // handle all other instruction types
                                     if(1 == nOperands) {
                                         auto &op0 = instr->operands[0];
-                                        if(verboseCode) emit(ssinst, SS2S("# " << instr_name << " " << op0).c_str());
-
-//                                        codegen.custom_gate(ssinst, iname, op0);
-
-#if 1   // FIXME: WIP, move to codegen
-//                                       qubit2resource(op0, std::string instrumentType, signalType)
-                                        json &instruction = findInstruction(platform, iname);
-
-                                        json &signal = instruction["cc"]["signal"];
-                                        for(int s=0; s<signal.size(); s++) {
-                                            tSignalType signalType = signal[s]["type"];
-                                            DOUT("signal: type='" << signalType << "', value='" << signal[s]["value"] << "'");
-
-#if 1
-                                            // instruments providing these. FIXME: create function
-                                            // FIXME: just walk the CC slots?
-                                            tMapSignalTypeToInstrumentList::iterator it = mapSignalTypeToInstrumentList.find(signalType);
-                                            if(it != mapSignalTypeToInstrumentList.end()) {    // key exists
-                                                tInstrumentList &instrumentList = it->second;
-                                                for(int i=0; i<instrumentList.size(); i++) {
-#else
-
-#endif
-                                                    json &qubits = instrumentList[i]["qubits"];
-                                                    for(int group=0; group<qubits.size(); group++) {
-                                                        bool present = false;
-                                                        for(int j=0; j<qubits[group].size(); j++) {
-                                                            if(qubits[group][j] == op0) {
-                                                                present = true;
-                                                                break;
-                                                            }
-                                                        }
-                                                        if(present) {
-                                                            DOUT("qubit " << op0 <<
-                                                                 " driven by group " << group <<
-                                                                 " of instrument '" << instrumentList[i]["name"] << "'");
-
-                                                            // FIXME: determine slot
-                                                            // FIXME: assign codeword
-                                                        }
-                                                    }
-                                                }
-                                            } else {
-                                                FATAL("No instruments found providing signal type '" << signalType << "'");     // FIXME: clarify for user
-                                            }
-                                        }
-#endif
+                                        codegen.custom_gate(ssinst, iname, op0, platform);
                                     } else if(2 == nOperands) {
                                         auto &op0 = instr->operands[0];
                                         auto &op1 = instr->operands[1];
-                                        if(verboseCode) emit(ssinst, SS2S("# " << instr_name << " " << op0 << "," << op1).c_str());
-        //                                dqubits.push_back(qubit_pair_t(op1, op2));
+                                        codegen.custom_gate(ssinst, iname, op0, op1, platform);
                                     } else {
                                         FATAL("Only 1 and 2 operand instructions are supported !");
                                     }
@@ -683,6 +447,49 @@ private:
         IOUT("Generating CCCODE for bundles [Done]");
         return ret.str();
     }
+
+
+    // based on: cc_light_eqasm_compiler.h::load_hw_settings
+    void load_hw_settings(ql::quantum_platform& platform)
+    {
+        const struct {
+            size_t  *var;
+            std::string name;
+        } hw_settings[] = {
+            { &qubit_number,            "qubit_number"},
+            { &cycle_time,              "cycle_time" },
+#if 0   // FIXME: unused. Convert to cycle
+            { &mw_mw_buffer,            "mw_mw_buffer" },
+            { &mw_flux_buffer,          "mw_flux_buffer" },
+            { &mw_readout_buffer,       "mw_readout_buffer" },
+            { &flux_mw_buffer,          "flux_mw_buffer" },
+            { &flux_flux_buffer,        "flux_flux_buffer" },
+            { &flux_readout_buffer,     "flux_readout_buffer" },
+            { &readout_mw_buffer,       "readout_mw_buffer" },
+            { &readout_flux_buffer,     "readout_flux_buffer" },
+            { &readout_readout_buffer,  "readout_readout_buffer" }
+#endif
+        };
+
+        DOUT("Loading hardware settings ...");
+        size_t i=0;
+        try
+        {
+            for(i=0; i<ELEM_CNT(hw_settings); i++) {
+                size_t val = platform.hardware_settings[hw_settings[i].name];
+                *hw_settings[i].var = val;
+            }
+        }
+        catch (json::exception e)
+        {
+            throw ql::exception(
+                "[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter '"
+                + hw_settings[i].name
+                + "'\n\t"
+                + std::string(e.what()), false);
+        }
+    }
+
 }; // class
 
 } // arch

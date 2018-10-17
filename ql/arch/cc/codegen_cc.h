@@ -18,14 +18,28 @@ namespace ql
 namespace arch
 {
 
+
 class codegen_cc
 {
 public:
+
+    codegen_cc()
+    {
+    }
+
+
+    ~codegen_cc()
+    {
+    }
+
+
     /*
      *  generic
      */
     void init(ql::quantum_platform& platform)
     {
+//FIXME        this->platform = platform;
+        load_backend_settings(platform);
     }
 
     void program_header(std::stringstream &s, std::string prog_name)
@@ -88,8 +102,9 @@ public:
 #endif
     }
 
-    void comment(std::stringstream &s)
+    void comment(std::stringstream &s, std::string c)
     {
+        if(verboseCode) emit(s, c.c_str());
     }
 
 
@@ -100,8 +115,73 @@ public:
 
     void nop_gate(std::stringstream &s)
     {
-        if(verboseCode) emit(s, "# NOP gate");
+        comment(s, "# NOP gate");
         // FIXME: implement
+    }
+
+    // single qubit gate
+    void custom_gate(std::stringstream &ssinst, std::string iname, size_t op0, ql::quantum_platform& platform)
+    {
+        std::string instr_name = platform.get_instruction_name(iname);  // FIXME: refers to cclight
+        comment(ssinst, SS2S("# " << instr_name << " " << op0).c_str());
+
+        // iterate over signals defined in instruction
+        json &instruction = platform.find_instruction(iname);
+        json &signal = instruction["cc"]["signal"];
+        for(size_t s=0; s<signal.size(); s++) {
+            std::string instructionSignalType = signal[s]["type"];
+            json &instructionSignalValue = signal[s]["value"];
+
+            // find instrument/group/slot providing instructionSignalType for qubit op0
+            bool signalTypeFound = false;
+            bool qubitFound = false;
+            json &instrumentSetupSlots = instrumentSetup["slots"];
+            for(size_t slotIdx=0; slotIdx<instrumentSetupSlots.size(); slotIdx++) {
+                json &instrumentSetupSlot = instrumentSetupSlots[slotIdx];
+                json &instrument = instrumentSetupSlot["instrument"];
+                std::string instrumentSignalType = instrument["signal_type"];
+                if(instrumentSignalType == instructionSignalType) {
+                    signalTypeFound = true;
+                    std::string instrumentName = instrument["name"];
+                    json &qubits = instrument["qubits"];
+                    // FIXME: verify group size
+                    // FIXME: verify signal dimensions
+
+                    // anyone connected to qubit?
+                    for(size_t group=0; group<qubits.size(); group++) {
+                        for(size_t j=0; j<qubits[group].size(); j++) {
+                            if(qubits[group][j] == op0) {
+                                qubitFound = true;
+                                break;
+                            }
+                        }
+                        if(qubitFound) {
+                            DOUT("qubit " << op0 <<
+                                 " signal type '" << instructionSignalType <<
+                                 "' driven by instrument '" << instrumentName <<
+                                 "' group " << group <<
+                                 " in CC slot " << instrumentSetupSlot["slot"]);
+
+                            // NB: most info is in instrumentSetupSlot
+                            // FIXME: assign codeword
+                        }
+                    }
+                }
+            }
+            if(!signalTypeFound) {
+                FATAL("No instruments found providing signal type '" << instructionSignalType << "'");     // FIXME: clarify for user
+            }
+            if(!qubitFound) {
+                FATAL("No instruments found driving qubit " << op0 << " for signal type '" << instructionSignalType << "'");     // FIXME: clarify for user
+            }
+        }
+    }
+
+    // two qubit gate
+    void custom_gate(std::stringstream &ssinst, std::string iname, size_t op0, size_t op1, ql::quantum_platform& platform)
+    {
+        std::string instr_name = platform.get_instruction_name(iname);  // FIXME: refers to cclight
+        comment(ssinst, SS2S("# " << instr_name << " " << op0 << "," << op1).c_str());
     }
 
 
@@ -111,7 +191,7 @@ public:
 
     void readout(std::stringstream &s, size_t cop, size_t qop)
     {
-        if(verboseCode) emit(s, SS2S("# READOUT(c" << cop << ",q" << qop << ")").c_str());
+        comment(s, SS2S("# READOUT(c" << cop << ",q" << qop << ")"));
     }
 
 
@@ -121,37 +201,37 @@ public:
 
     void if_start(std::stringstream &s, size_t op0, std::string opName, size_t op1)
     {
-        if(verboseCode) s << "# IF_START(R" << op0 << " " << opName << " R" << op1 << ")" << std::endl;
+        comment(s, SS2S("# IF_START(R" << op0 << " " << opName << " R" << op1 << ")"));
         // FIXME: implement
     }
 
     void else_start(std::stringstream &s, size_t op0, std::string opName, size_t op1)
     {
-        if(verboseCode) s << "# ELSE_START(R" << op0 << " " << opName << " R" << op1 << ")" << std::endl;
+        comment(s, SS2S("# ELSE_START(R" << op0 << " " << opName << " R" << op1 << ")"));
         // FIXME: implement
     }
 
     void for_start(std::stringstream &s, std::string label, int iterations)
     {
-        if(verboseCode) s << "# FOR_START(" << iterations << ")" << std::endl;
+        comment(s, SS2S("# FOR_START(" << iterations << ")"));
         emit(s, (label+":").c_str(), "move", SS2S(iterations << ",R63"), "# R63 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
     }
 
     void for_end(std::stringstream &s, std::string label)
     {
-        if(verboseCode) emit(s, "# FOR_END");
+        comment(s, "# FOR_END");
         emit(s, "", "loop", SS2S("R63,@" << label), "# R63 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
     }
 
     void do_while_start(std::stringstream &s, std::string label)
     {
-        if(verboseCode) s << "# DO_WHILE_START" << std::endl;
+        comment(s, "# DO_WHILE_START");
         // FIXME: implement: emit label
     }
 
     void do_while_end(std::stringstream &s, size_t op0, std::string opName, size_t op1)
     {
-        if(verboseCode) s << "# DO_WHILE_END(R" << op0 << " " << opName << " R" << op1 << ")" << std::endl;
+        comment(s, SS2S("# DO_WHILE_END(R" << op0 << " " << opName << " R" << op1 << ")"));
         // FIXME: implement
     }
 
@@ -171,7 +251,12 @@ public:
 
 private:
     bool verboseCode = true;    // output extra comments in generated code
+//FIXME    ql::quantum_platform &platform;
 
+    json backendSettings;
+    json instrumentDefinitions;
+    json controlModes;
+    json instrumentSetup;
 
     // some helpers to ease nice assembly formatting
     void emit(std::stringstream &s, const char *labelOrComment, const char *instr="")
@@ -195,10 +280,102 @@ private:
         s << std::left;    // FIXME
         s << std::setw(8) << label << std::setw(8) << instr << std::setw(16) << ops << comment << std::endl;
     }
+
+
+    void load_backend_settings(ql::quantum_platform& platform)
+    {
+        // parts of JSON syntax
+        const char *instrumentTypes[] = {"cc", "switch", "awg", "measure"};
+
+        // FIXME: we would like to have a top level setting, or one below "backends"
+        // it is however not easy to create new top level stuff and read it from the backend
+//        try
+        {
+            // remind some main JSON areas
+            backendSettings = platform.hardware_settings["eqasm_backend_cc"];
+            instrumentDefinitions = backendSettings["instrument_definitions"];
+            controlModes = backendSettings["control_modes"];
+            instrumentSetup = backendSettings["instrument_setup"];
+
+
+            // read instrument definitions
+            for(size_t i=0; i<ELEM_CNT(instrumentTypes); i++)
+            {
+                json &ids = instrumentDefinitions[instrumentTypes[i]];
+                // FIXME: the following requires json>v3.1.0:  for(auto& id : ids.items()) {
+                for(size_t j=0; j<ids.size(); j++) {
+                    std::string idName = ids[j]["name"];        // NB: uses type conversion to get node value
+                    DOUT("found instrument definition:  type='" << instrumentTypes[i] << "', name='" << idName <<"'");
+                }
+            }
+
+            // read control modes
+            for(size_t i=0; i<controlModes.size(); i++)
+            {
+                json &name = controlModes[i]["name"];
+                DOUT("found control mode '" << name <<"'");
+            }
+
+
+            // read instruments
+            json &instrumentSetupType = instrumentSetup["type"];     // FIXME: must be a root device, e.g. cc
+
+            // CC specific
+            json &instrumentSetupSlots = instrumentSetup["slots"];   // FIXME: check against instrumentDefinitions
+            for(size_t slot=0; slot<instrumentSetupSlots.size(); slot++) {
+                json instrument = instrumentSetupSlots[slot]["instrument"];     // NB: don't use reference, because we want to put in std::vector
+                std::string instrumentName = instrument["name"];
+                std::string signalType = instrument["signal_type"];
+
+                DOUT("found instrument: name='" << instrumentName << "signal type='" << signalType << "'");
+            }
+        }
+#if 0
+        catch (json::exception e)
+        {
+            throw ql::exception(
+                "[x] error : ql::eqasm_compiler::compile() : error while reading backend settings : parameter '"
+//                + hw_settings[i].name
+                + "'\n\t"
+                + std::string(e.what()), false);
+        }
+#endif
+    }
 }; // class
 
 } // arch
 } // ql
 
+
+
+#if 0   // FIXME: old code that may me useful
+    // information extracted from JSON file:
+    typedef std::string tSignalType;
+    typedef std::vector<json> tInstrumentList;
+    typedef std::map<tSignalType, tInstrumentList> tMapSignalTypeToInstrumentList;
+    tMapSignalTypeToInstrumentList mapSignalTypeToInstrumentList;
+
+
+    // insert into map, so we can easily retrieve which instruments provide "signal_type"
+    tMapSignalTypeToInstrumentList::iterator it = mapSignalTypeToInstrumentList.find(signalType);
+    if(it != mapSignalTypeToInstrumentList.end()) {    // key exists
+        tInstrumentList &instrumentList = it->second;
+        instrumentList.push_back(instrument);
+    } else { // new key
+        std::pair<tMapSignalTypeToInstrumentList::iterator,bool> rslt;
+        tInstrumentList instrumentList;
+        instrumentList.push_back(instrument);
+        rslt = mapSignalTypeToInstrumentList.insert(std::make_pair(signalType, instrumentList));
+    }
+
+
+    // instruments providing these signal type
+    // FIXME: just walk the CC slots?
+    tMapSignalTypeToInstrumentList::iterator it = mapSignalTypeToInstrumentList.find(signalType);
+    if(it != mapSignalTypeToInstrumentList.end()) {    // key exists
+        tInstrumentList &instrumentList = it->second;
+        for(size_t i=0; i<instrumentList.size(); i++) {
+
+#endif
 
 #endif  // ndef QL_ARCH_CC_CODEGEN_CC_H
