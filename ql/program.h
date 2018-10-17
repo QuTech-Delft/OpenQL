@@ -52,7 +52,7 @@ class quantum_program
       {
          default_config = true;
          eqasm_compiler_name = platform.eqasm_compiler_name;
-	      backend_compiler    = NULL;
+         backend_compiler    = NULL;
          if (eqasm_compiler_name =="")
          {
             EOUT("eqasm compiler name must be specified in the hardware configuration file !");
@@ -74,10 +74,10 @@ class quantum_program
         {
             backend_compiler = new ql::arch::cc_light_eqasm_compiler();
         }
-//      else if (eqasm_compiler_name == "quantumsim_compiler" )
-//      {
-//          backend_compiler = new ql::arch::quantumsim_eqasm_compiler();
-//      }
+        else if (eqasm_compiler_name == "quantumsim_compiler" )
+        {
+            backend_compiler = new ql::arch::quantumsim_eqasm_compiler();
+        }
         else
         {
             EOUT("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
@@ -465,53 +465,10 @@ class quantum_program
          }
          else
          {
-            if (eqasm_compiler_name == "cc_light_compiler" )
-            {
-               backend_compiler->compile(name, kernels, platform);
-            }
-//          else if (eqasm_compiler_name == "quantumsim" )
-//          {
-//             backend_compiler->compile(name, kernels, platform);
-//          }
-            else
-            {
-               // fusing below doesn't take care of cycle attribute of each gate to increase per kernel
-               // also the backend_compile interface for mapping only supports the multiple kernel interface
-               // so stop here until this is supported
-               //
-               // please also note the commented out call to compile below
-               EOUT("backend compiler not suited for mapping");
-               throw std::exception();
+            backend_compiler->compile(name, kernels, platform);
 
-               IOUT("fusing quantum kernels...");
-               ql::circuit fused;
-               for (size_t k=0; k<kernels.size(); ++k)
-               {
-                  ql::circuit& kc = kernels[k].get_circuit();
-                  for(size_t i=0; i<kernels[k].iterations; i++)
-                  {
-                     fused.insert(fused.end(), kc.begin(), kc.end());
-                  }
-               }
-
-               try
-               {
-                  IOUT("compiling eqasm code...");
-                  // REPAIR THIS
-                  // backend_compiler->compile(name, fused, platform);
-               }
-               catch (ql::exception e)
-               {
-                  EOUT("[x] error : eqasm_compiler.compile() : compilation interrupted due to fatal error.");
-                  throw e;
-               }
-
-               IOUT("writing eqasm code to '" << ( ql::options::get("output_dir") + "/" + name+".asm"));
-               backend_compiler->write_eqasm( ql::options::get("output_dir") + "/" + name + ".asm");
-
-               IOUT("writing traces to '" << ( ql::options::get("output_dir") + "/trace.dat"));
-               backend_compiler->write_traces( ql::options::get("output_dir") + "/trace.dat");
-            }
+            IOUT("writing eqasm code to '" << ( ql::options::get("output_dir") + "/" + name+".asm"));
+            backend_compiler->write_eqasm( ql::options::get("output_dir") + "/" + name + ".asm");
          }
 
          if (sweep_points.size())
@@ -544,7 +501,7 @@ class quantum_program
             EOUT("cannot write sweepoint file : sweep point array is empty !");
          }
 
-	      IOUT("compilation of program '" << name << "' done.");
+         IOUT("compilation of program '" << name << "' done.");
 
          return 0;
       }
