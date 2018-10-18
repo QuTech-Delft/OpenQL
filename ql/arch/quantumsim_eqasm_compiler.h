@@ -220,27 +220,47 @@ private:
 
         DOUT("Adding qubits to Quantumsim program");
         fout << "\n# add qubits\n";
-        for (json::iterator it = platform.resources.begin(); it != platform.resources.end(); ++it)
+        json config;
+        try
         {
-            std::string n = it.key();
-            if( n == "qubits")
+            config = load_json(platform.configuration_file_name);
+        }
+        catch (json::exception e)
+        {
+            throw ql::exception("[x] error : ql::quantumsim_compiler::load() :  failed to load the hardware config file : malformed json file ! : \n\t"+
+                                std::string(e.what()),false);
+        }
+
+        // load qubit attributes
+        json qubit_attributes = config["qubit_attributes"];
+        if (qubit_attributes.is_null())
+        {
+            EOUT("qubit_attributes is not specified in the hardware config file !");
+            throw ql::exception("[x] error: quantumsim_compiler: qubit_attributes is not specified in the hardware config file !",false);
+        }
+        json relaxation_times = qubit_attributes["relaxation_times"];
+        if (relaxation_times.is_null())
+        {
+            EOUT("relaxation_times is not specified in the hardware config file !");
+            throw ql::exception("[x] error: quantumsim_compiler: relaxation_times is not specified in the hardware config file !",false);
+        }
+        size_t count =  platform.hardware_settings["qubit_number"];
+
+        for (json::iterator it = relaxation_times.begin(); it != relaxation_times.end(); ++it)
+        {
+            size_t q = stoi(it.key());
+            if (q >= count)
             {
-                size_t count =  platform.resources["qubits"]["count"];
-                if(count > num_qubits)
-                {
-                    EOUT("qubit count is more than the qubits available in the platform");
-                    throw ql::exception("[x] error : qubit count is more than the qubits available in the platform",false);
-                }
-                // TODO similarly, check also if the qubits used in program are less than or equal to count
-
-                auto & T1s = platform.resources["qubits"]["T1"];
-                auto & T2s = platform.resources["qubits"]["T2"];
-
-                for( size_t q=0; q<num_qubits; q++ ) // TODO should be for qubits used in program
-                {
-                    fout << "c.add_qubit(\"q" << q <<"\", " << T1s[q] << ", " << T2s[q] << ")\n" ;
-                }
+                EOUT("qubit_attribute.relaxation_time.qubit number is not in qubits available in the platform");
+                throw ql::exception("[x] error: qubit_attribute.relaxation_time.qubit number is not in qubits available in the platform",false);
             }
+            auto & rt = it.value();
+            if (rt.size() < 2)
+            {
+                EOUT("each qubit must have at least two relaxation times");
+                throw ql::exception("[x] error: each qubit must have at least two relaxation times",false);
+            }
+            fout << "c.add_qubit(\"q" << q <<"\", " << rt[0] << ", " << rt[1] << ")\n" ;
         }
 
         DOUT("Adding Gates to Quantumsim program");
