@@ -817,26 +817,13 @@ public:
         ql::utils::write_file(fname.str(), out_qasm.str());
     }
 
-    // program level compilation
-    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
+    void map(std::string prog_name, std::vector<quantum_kernel>& kernels, ql::quantum_platform& platform)
     {
-        DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");
-
-        load_hw_settings(platform);     // sets num_qubits and ns_per_cycle, platform parameters
-        generate_opcode_cs_files(platform);
-        MaskManager mask_manager;
-
         for(auto &kernel : kernels)
         {
-            kernel.bundles.clear();         // so that write_qasm prints the circuit instead of the bundles
-            IOUT("Decomposing kernel: " << kernel.name);
-            if (! kernel.c.empty())
-            {
-                // decompose meta-instructions
-                ql::circuit decomposed_ckt;
-                decompose_instructions(kernel.c, decomposed_ckt, platform);
-                kernel.c = decomposed_ckt;
-            }
+            // don't trust the cycle fields in the instructions
+            // and let write_qasm print the circuit instead of the bundles
+            kernel.bundles.clear();
         }
 
         std::stringstream mapper_in_fname;
@@ -865,26 +852,63 @@ public:
         mapper_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_out.qasm";
         IOUT("writing mapper output qasm to '" << mapper_out_fname.str() << "' ...");
         write_qasm(mapper_out_fname, kernels, platform);
+    }
 
-        std::stringstream ssqisa, sskernels_qisa;
-        sskernels_qisa << "start:" << std::endl;
+    void schedule(std::string prog_name, std::vector<quantum_kernel>& kernels, ql::quantum_platform& platform)
+    {
         for(auto &kernel : kernels)
         {
             IOUT("Scheduling kernel: " << kernel.name);
-            sskernels_qisa << "\n" << kernel.name << ":" << std::endl;
-            sskernels_qisa << get_prologue(kernel);
             if (! kernel.c.empty())
             {
                 auto num_creg = kernel.creg_count;
                 kernel.bundles = cc_light_schedule_rc(kernel.c, platform, num_qubits, num_creg);
-                sskernels_qisa << bundles2qisa(kernel.bundles, platform, mask_manager);
             }
-            sskernels_qisa << get_epilogue(kernel);
         }
         std::stringstream rcscheduler_out_fname;
         rcscheduler_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_rcscheduler_out.qasm";
         IOUT("writing rcscheduler output qasm to '" << rcscheduler_out_fname.str() << "' ...");
         write_qasm(rcscheduler_out_fname, kernels, platform);
+    }
+
+    // program level compilation
+    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
+    {
+        DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");
+
+        load_hw_settings(platform);     // sets num_qubits and ns_per_cycle, platform parameters
+        generate_opcode_cs_files(platform);
+        MaskManager mask_manager;
+
+        for(auto &kernel : kernels)
+        {
+            kernel.bundles.clear();         // so that write_qasm prints the circuit instead of the bundles
+            IOUT("Decomposing kernel: " << kernel.name);
+            if (! kernel.c.empty())
+            {
+                // decompose meta-instructions
+                ql::circuit decomposed_ckt;
+                decompose_instructions(kernel.c, decomposed_ckt, platform);
+                kernel.c = decomposed_ckt;
+            }
+        }
+
+        map(prog_name, kernels, platform);
+
+        schedule(prog_name, kernels, platform);
+
+        std::stringstream ssqisa, sskernels_qisa;
+        sskernels_qisa << "start:" << std::endl;
+        for(auto &kernel : kernels)
+        {
+            sskernels_qisa << "\n" << kernel.name << ":" << std::endl;
+            sskernels_qisa << get_prologue(kernel);
+            if (! kernel.c.empty())
+            {
+                sskernels_qisa << bundles2qisa(kernel.bundles, platform, mask_manager);
+            }
+            sskernels_qisa << get_epilogue(kernel);
+        }
 
         sskernels_qisa << "\n    br always, start" << "\n"
                   << "    nop \n"

@@ -63,6 +63,13 @@ private:
 
     void map(std::string& prog_name, std::vector<quantum_kernel>& kernels, ql::quantum_platform& platform)
     {
+        for(auto &kernel : kernels)
+        {
+            // don't trust the cycle fields in the instructions
+            // and let write_qasm print the circuit instead of the bundles
+            kernel.bundles.clear();
+        }
+
         std::stringstream mapper_in_fname;
         mapper_in_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_in.qasm";
         IOUT("writing mapper input qasm to '" << mapper_in_fname.str() << "' ...");
@@ -116,14 +123,14 @@ private:
     
         Scheduler sched;
         sched.Init(ckt, platform, nqubits, ncreg);
-        ql::ir::bundles_t bundles1;
+        ql::ir::bundles_t bundles;
         if ("ASAP" == schedopt)
         {
-            bundles1 = sched.schedule_asap(rm, platform);
+            bundles = sched.schedule_asap(rm, platform);
         }
         else if ("ALAP" == schedopt)
         {
-            bundles1 = sched.schedule_alap(rm, platform);
+            bundles = sched.schedule_alap(rm, platform);
         }
         else
         {
@@ -133,7 +140,7 @@ private:
         }
     
         IOUT("Resource constraint scheduling for quantumsim [Done].");
-        return bundles1;
+        return bundles;
     }
 
     void schedule(std::string& prog_name, std::vector<quantum_kernel>& kernels, ql::quantum_platform& platform)
