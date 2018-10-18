@@ -27,7 +27,7 @@ public:
     size_t num_qubits;
     size_t ns_per_cycle;
 
-public:
+private:
     void write_qasm(std::stringstream& fname, std::vector<quantum_kernel>& kernels, ql::quantum_platform& platform)
     {
         size_t total_depth = 0;
@@ -61,39 +61,8 @@ public:
         ql::utils::write_file(fname.str(), out_qasm.str());
     }
 
-    /*
-     * compile qasm to quantumsim
-     */
-    // program level compilation
-    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
+    void map(std::string& prog_name, std::vector<quantum_kernel>& kernels, ql::quantum_platform& platform)
     {
-        IOUT("Compiling " << kernels.size() << " kernels to generate quantumsim eQASM ... ");
-
-        std::string params[] = { "qubit_number", "cycle_time" };
-        size_t p = 0;
-        try
-        {
-            num_qubits      = platform.hardware_settings[params[p++]];
-            ns_per_cycle    = platform.hardware_settings[params[p++]];
-        }
-        catch (json::exception e)
-        {
-            throw ql::exception("[x] error : ql::quantumsim::compile() : error while reading hardware settings : parameter '"+params[p-1]+"'\n\t"+ std::string(e.what()),false);
-        }
-
-//      for(auto &kernel : kernels)
-//      {
-//          kernel.bundles.clear();         // so that write_qasm prints the circuit instead of the bundles
-//          IOUT("Decomposing kernel: " << kernel.name);
-//          if (! kernel.c.empty())
-//          {
-//              // decompose meta-instructions
-//              ql::circuit decomposed_ckt;
-//              decompose_instructions(kernel.c, decomposed_ckt, platform);
-//              kernel.c = decomposed_ckt;
-//          }
-//      }
-
         std::stringstream mapper_in_fname;
         mapper_in_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_in.qasm";
         IOUT("writing mapper input qasm to '" << mapper_in_fname.str() << "' ...");
@@ -120,28 +89,6 @@ public:
         mapper_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_out.qasm";
         IOUT("writing mapper output qasm to '" << mapper_out_fname.str() << "' ...");
         write_qasm(mapper_out_fname, kernels, platform);
-
-        for(auto &kernel : kernels)
-        {
-            IOUT("Scheduling kernel: " << kernel.name);
-            if (! kernel.c.empty())
-            {
-                auto num_creg = 0;  // quantumsim
-                kernel.bundles = quantumsim_schedule_rc(kernel.c, platform, num_qubits, num_creg);
-            }
-        }
-        std::stringstream rcscheduler_out_fname;
-        rcscheduler_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_rcscheduler_out.qasm";
-        IOUT("writing rcscheduler output qasm to '" << rcscheduler_out_fname.str() << "' ...");
-        write_qasm(rcscheduler_out_fname, kernels, platform);
-
-        // write scheduled bundles for quantumsim
-        for(auto &kernel : kernels)
-        {
-            write_quantumsim_program(prog_name, num_qubits, kernel.bundles, platform);
-        }
-
-        DOUT("Compiling CCLight eQASM [Done]");
     }
 
     ql::ir::bundles_t quantumsim_schedule_rc(ql::circuit & ckt, 
@@ -189,9 +136,58 @@ public:
         return bundles1;
     }
 
+    void schedule(std::string& prog_name, std::vector<quantum_kernel>& kernels, ql::quantum_platform& platform)
+    {
+        for(auto &kernel : kernels)
+        {
+            IOUT("Scheduling kernel: " << kernel.name);
+            if (! kernel.c.empty())
+            {
+                auto num_creg = 0;  // quantumsim
+                kernel.bundles = quantumsim_schedule_rc(kernel.c, platform, num_qubits, num_creg);
+            }
+        }
+        std::stringstream rcscheduler_out_fname;
+        rcscheduler_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_rcscheduler_out.qasm";
+        IOUT("writing rcscheduler output qasm to '" << rcscheduler_out_fname.str() << "' ...");
+        write_qasm(rcscheduler_out_fname, kernels, platform);
+    }
+
+public:
+    /*
+     * compile qasm to quantumsim
+     */
+    // program level compilation
+    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
+    {
+        IOUT("Compiling " << kernels.size() << " kernels to generate quantumsim eQASM ... ");
+
+        std::string params[] = { "qubit_number", "cycle_time" };
+        size_t p = 0;
+        try
+        {
+            num_qubits      = platform.hardware_settings[params[p++]];
+            ns_per_cycle    = platform.hardware_settings[params[p++]];
+        }
+        catch (json::exception e)
+        {
+            throw ql::exception("[x] error : ql::quantumsim::compile() : error while reading hardware settings : parameter '"+params[p-1]+"'\n\t"+ std::string(e.what()),false);
+        }
+
+        map(prog_name, kernels, platform);
+
+        schedule(prog_name, kernels, platform);
+
+        // write scheduled bundles for quantumsim
+        write_quantumsim_program(prog_name, num_qubits, kernels, platform);
+
+        DOUT("Compiling CCLight eQASM [Done]");
+    }
+
 private:
+    // write scheduled bundles for quantumsim
     void write_quantumsim_program( std::string prog_name, size_t num_qubits,
-        ql::ir::bundles_t & bundles, ql::quantum_platform & platform)
+        std::vector<quantum_kernel>& kernels, ql::quantum_platform & platform)
     {
         IOUT("Writing scheduled Quantumsim program");
         ofstream fout;
@@ -206,7 +202,7 @@ private:
         }
 
         fout << "# Quantumsim program generated OpenQL\n"
-             << "# Please modify at your wil to obtain extra information from Quantumsim\n\n"
+             << "# Please modify at your will to obtain extra information from Quantumsim\n\n"
              << "import numpy as np\n"
              << "from quantumsim.circuit import Circuit\n"
              << "from quantumsim.circuit import uniform_noisy_sampler\n"
@@ -228,7 +224,7 @@ private:
                     EOUT("qubit count is more than the qubits available in the platform");
                     throw ql::exception("[x] error : qubit count is more than the qubits available in the platform",false);
                 }
-                // TODO simmilarly, check also if the qubits used in program are less than or equal to count
+                // TODO similarly, check also if the qubits used in program are less than or equal to count
 
                 auto & T1s = platform.resources["qubits"]["T1"];
                 auto & T2s = platform.resources["qubits"]["T2"];
@@ -242,44 +238,47 @@ private:
 
         DOUT("Adding Gates to Quantumsim program");
         fout << "\n# add gates\n";
-        for ( ql::ir::bundle_t & abundle : bundles)
+        for(auto &kernel : kernels)
         {
-            auto bcycle = abundle.start_cycle;
-
-            std::stringstream ssbundles;
-            for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
+            for ( ql::ir::bundle_t & abundle : kernel.bundles)
             {
-                for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
+                auto bcycle = abundle.start_cycle;
+    
+                std::stringstream ssbundles;
+                for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
                 {
-                    auto & iname = (*insIt)->name;
-                    auto & operands = (*insIt)->operands;
-                    if( iname == "measure")
+                    for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
                     {
-                        auto op = operands.back();
-                        ssbundles << "\nsampler = uniform_noisy_sampler(readout_error=0.03, seed=42)\n";
-                        ssbundles << "c.add_qubit(\"m" << op <<"\")\n";
-                        ssbundles << "c.add_measurement("
-                                  << "\"q" << op <<"\", "
-                                  << "time=" << bcycle << ", "
-                                  << "output_bit=\"m" << op <<"\", "
-                                  << "sampler=sampler"
-                                  << ")\n" ;
-                    }
-                    else
-                    {
-                        ssbundles <<  "c.add_"<< iname << "(" ;
-                        size_t noperands = operands.size();
-                        if( noperands > 0 )
+                        auto & iname = (*insIt)->name;
+                        auto & operands = (*insIt)->operands;
+                        if( iname == "measure")
                         {
-                            for(auto opit = operands.begin(); opit != operands.end()-1; opit++ )
-                                ssbundles << "\"q" << *opit <<"\", ";
-                            ssbundles << "\"q" << operands.back()<<"\"";
+                            auto op = operands.back();
+                            ssbundles << "\nsampler = uniform_noisy_sampler(readout_error=0.03, seed=42)\n";
+                            ssbundles << "c.add_qubit(\"m" << op <<"\")\n";
+                            ssbundles << "c.add_measurement("
+                                      << "\"q" << op <<"\", "
+                                      << "time=" << bcycle << ", "
+                                      << "output_bit=\"m" << op <<"\", "
+                                      << "sampler=sampler"
+                                      << ")\n" ;
                         }
-                        ssbundles << ", time=" << bcycle << ")" << endl;
+                        else
+                        {
+                            ssbundles <<  "c.add_"<< iname << "(" ;
+                            size_t noperands = operands.size();
+                            if( noperands > 0 )
+                            {
+                                for(auto opit = operands.begin(); opit != operands.end()-1; opit++ )
+                                    ssbundles << "\"q" << *opit <<"\", ";
+                                ssbundles << "\"q" << operands.back()<<"\"";
+                            }
+                            ssbundles << ", time=" << bcycle << ")" << endl;
+                        }
                     }
                 }
+                fout << ssbundles.str();
             }
-            fout << ssbundles.str();
         }
 
         fout.close();
