@@ -92,7 +92,7 @@
 			],
 
 			// Instruments used in this setup, their configuration and connectivity.
-			"instrument_setup": {
+			"cc_setup": {
 				"type": "qutech-cc",
 				"name": "cc",
 				"slots": [
@@ -174,6 +174,24 @@
 				// 		"qubits": [0, 1, 2, 3, 4, 5, 6, 7, -1]
 				// 	}
 				// ]
+			},
+
+			"signals": {
+				"single-qubit": [
+					{	"type": "mw",
+						"operand": 0,
+						"value": [
+							"{gateName}-gauss-{instrumentName}-i",
+							"{gateName}-gauss-{instrumentName}-q",
+							"{gateName}-derGauss-{instrumentName}-i",
+							"{gateName}-derGauss-{instrumentName}-q"	// FIXME: {instrumentName} should evaluate to proper channel group
+						]
+					},
+					{	"type": "switch",
+						"operand": 0,
+						"value": ["{q}"]
+					}
+				]
 			}
 		}
 	},
@@ -354,9 +372,10 @@
 			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "x",
 			"cc": {
+				//"signal": {"$ref": "#/hardware_settings/eqasm_backend_cc/signals/single-qubit"}
 				"signal": [
 					{	"type": "mw",
-						"operand": 0,
+						"operand_idx": 0,
 						"value": [
 							"{gateName}-gauss-{instrumentName}-i",
 							"{gateName}-gauss-{instrumentName}-q",
@@ -506,7 +525,19 @@
 			"disable_optimization": true,
 			"type": "flux",
 			"cc_light_instr_type": "two_qubit_gate",
-			"cc_light_instr": "cnot"
+			"cc_light_instr": "cnot",
+			"cc": {
+				"signal": [
+					{	"type": "flux",
+						"operand_idx": 0,		// control, or target?
+						"value": ["flux-0-{q}"]
+					},
+					{	"type": "flux",
+						"operand_idx": 1,		// control, or target?
+						"value": ["flux-1-{q}"]
+					}
+				]
+			}
 		},
 
 		// should handle:
@@ -519,16 +550,7 @@
 			"disable_optimization": true,
 			"type": "flux",
 			"cc_light_instr_type": "two_qubit_gate",
-			"cc_light_instr": "cz",
-			"cc": {
-				"sig": {
-					"flux": {
-						"qubit": "q%0",	// FIXME: necessary, or implicit from parameters we get at runtime. Let's look at cz
-						"wave": ["{gateName}-{instrumentName}"]
-					}
-//					"flux,<codeword>,%q" // %q assumes same codeword for all qubits
-				}
-			}
+			"cc_light_instr": "cz"
 		}
 	}	// end of "instructions"
 }

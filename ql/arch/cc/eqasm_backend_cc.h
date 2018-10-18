@@ -69,7 +69,7 @@ class eqasm_backend_cc : public eqasm_compiler
 {
 private:
     codegen_cc codegen;
-    size_t total_exec_time = 0;
+    int bundleIdx;
 
     // parameters from JSON file:
     size_t qubit_number;    // num_qubits;
@@ -77,6 +77,13 @@ private:
     size_t buffer_matrix[__operation_types_num__][__operation_types_num__];
 
 public:
+    eqasm_backend_cc()
+    {
+    }
+
+    ~eqasm_backend_cc()
+    {
+    }
 
     // compile for Central Controller (CCCODE)
     void compile(std::string prog_name, std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
@@ -88,17 +95,18 @@ public:
 #endif
         DOUT("Compiling " << kernels.size() << " kernels to generate CCCODE ... ");
 
+        // init
         load_hw_settings(platform);
         codegen.init(platform);
+        bundleIdx = 0;
 
         // generate program header
-        std::stringstream cccode;
-        codegen.program_header(cccode, prog_name);
+        codegen.program_header(prog_name);
 
         // generate code for all kernels
         for(auto &kernel : kernels) {
             IOUT("Compiling kernel: " << kernel.name);
-            cccode << codegen_kernel_prologue(kernel);
+            codegen_kernel_prologue(kernel);
 
             ql::circuit& ckt = kernel.c;
             if (!ckt.empty()) {
@@ -117,20 +125,20 @@ public:
                 ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, qubit_number, creg_count);
                 // FIXME: cc_light* is just available here because everything is in header files
 #endif
-                cccode << codegen_bundles(bundles, platform);
+                codegen_bundles(bundles, platform);
             } else {
                 DOUT("Empty kernel: " << kernel.name);                      // NB: normal situation for kernels with classical control
             }
 
-            cccode << codegen_kernel_epilogue(kernel);
+            codegen_kernel_epilogue(kernel);
         }
 
-        codegen.program_trailer(cccode);
+        codegen.program_trailer();
 
         // write CCCODE to file
         std::string file_name(ql::options::get("output_dir") + "/" + prog_name + ".cccode");
         IOUT("Writing CCCODE to " << file_name);
-        ql::utils::write_file(file_name, cccode.str());
+        ql::utils::write_file(file_name, codegen.getCode());
 
         DOUT("Compiling CCCODE [Done]");
     }
@@ -170,12 +178,11 @@ public:
 
 private:
     // based on cc_light_eqasm_compiler.h::classical_instruction2qisa/decompose_instructions
-    // NB: input instructions defined in classical.h::classical (also in JSON???)
-    std::string codegen_classical_instruction(ql::gate *classical_ins)
+    // NB: input instructions defined in classical.h::classical
+    void codegen_classical_instruction(ql::gate *classical_ins)
     {
-        std::stringstream ret;
-        auto & iname =  classical_ins->name;
-        auto & iopers = classical_ins->operands;
+        auto &iname =  classical_ins->name;
+        auto &iopers = classical_ins->operands;
         int iopers_count = iopers.size();
 
         if(  (iname == QASM_ADD) || (iname == QASM_SUB) ||
@@ -183,8 +190,9 @@ private:
              (iname == QASM_LDI) || (iname == QASM_MOV) ||
              (iname == QASM_NOP)
           )
-        // FIXME: adapt for CC, this is still CC-light
+
         {
+#if 0   // FIXME: adapt for CC, this is still CC-light
             ret << iname;
             for(int i=0; i<iopers_count; ++i)
             {
@@ -197,6 +205,7 @@ private:
             {
 //                ret << ", " + std::to_string(classical_ins->imm_value);
             }
+#endif
         }
 
         // inserted from decompose_instructions
@@ -209,8 +218,6 @@ private:
         {
             FATAL("Unknown classical operation'" << iname << "' with'" << iopers_count << "' operands!");
         }
-
-        return ret.str();
     }
 
 
@@ -230,10 +237,9 @@ private:
 
 
     // based on cc_light_eqasm_compiler.h::get_prologue
-    std::string codegen_kernel_prologue(ql::quantum_kernel &k)
+    void codegen_kernel_prologue(ql::quantum_kernel &k)
     {
-        std::stringstream ret;
-        codegen.comment(ret, SS2S("# Kernel:  " << k.name));
+        codegen.comment(SS2S("### Kernel: '" << k.name << "'"));
 
         switch(k.type) {
             case kernel_type_t::IF_START:
@@ -241,7 +247,7 @@ private:
                 auto op0 = k.br_condition.operands[0]->id;
                 auto op1 = k.br_condition.operands[1]->id;
                 auto opName = k.br_condition.operation_name;
-                codegen.if_start(ret, op0, opName, op1);
+                codegen.if_start(op0, opName, op1);
                 break;
             }
 
@@ -250,21 +256,21 @@ private:
                 auto op0 = k.br_condition.operands[0]->id;
                 auto op1 = k.br_condition.operands[1]->id;
                 auto opName = k.br_condition.operation_name;
-                codegen.else_start(ret, op0, opName, op1);
+                codegen.else_start(op0, opName, op1);
                 break;
             }
 
             case kernel_type_t::FOR_START:
             {
                 std::string label = kernelLabel(k);
-                codegen.for_start(ret, label, k.iterations);
+                codegen.for_start(label, k.iterations);
                 break;
             }
 
             case kernel_type_t::DO_WHILE_START:
             {
                 std::string label = kernelLabel(k);
-                codegen.do_while_start(ret, label);
+                codegen.do_while_start(label);
                 break;
             }
 
@@ -272,20 +278,17 @@ private:
                 // nothing to do for other types
                 break;
         }
-        return ret.str();
     }
 
 
     // based on cc_light_eqasm_compiler.h::get_epilogue
-    std::string codegen_kernel_epilogue(ql::quantum_kernel &k)
+    void codegen_kernel_epilogue(ql::quantum_kernel &k)
     {
-        std::stringstream ret;
-
         switch(k.type) {
             case kernel_type_t::FOR_END:
             {
                 std::string label = kernelLabel(k);
-                codegen.for_end(ret, label);
+                codegen.for_end(label);
                 break;
             }
 
@@ -294,7 +297,7 @@ private:
                 auto op0 = k.br_condition.operands[0]->id;
                 auto op1 = k.br_condition.operands[1]->id;
                 auto opName = k.br_condition.operation_name;
-                codegen.do_while_end(ret, op0, opName, op1);
+                codegen.do_while_end(op0, opName, op1);
                 break;
             }
 
@@ -303,25 +306,23 @@ private:
                 // FIXME: true for IF_END, ELSE_END?
                 break;
         }
-        return ret.str();
     }
 
 
     // based on cc_light_eqasm_compiler.h::bundles2qisa()
-    std::string codegen_bundles(ql::ir::bundles_t &bundles, ql::quantum_platform &platform)
+    void codegen_bundles(ql::ir::bundles_t &bundles, ql::quantum_platform &platform)
     {
         IOUT("Generating CCCODE for bundles");
-        std::stringstream ret;
         size_t curr_cycle = 0;
 
         for(ql::ir::bundle_t &bundle : bundles)
         {
             auto delta = bundle.start_cycle - curr_cycle;
             bool classical_bundle = false;
-            std::stringstream sspre, ssinst;    // FIXME: Is it necessary to split sspre and ssinst?
+//            std::stringstream sspre, ssinst;    // FIXME: Is it necessary to split sspre and ssinst?
 
             // generate bundle header
-            codegen.bundle_header(sspre, delta);
+            codegen.bundle_header(delta, SS2S("## Bundle " << bundleIdx++ << " (start_cycle=" << bundle.start_cycle << ", duration_in_cycles=" << bundle.duration_in_cycles << "):"));
 
             // generate code for this bundle
             for(auto section = bundle.parallel_sections.begin(); section != bundle.parallel_sections.end(); ++section ) {
@@ -333,7 +334,7 @@ private:
                         FATAL("Inconsistency detected: classical gate with parallel sections");
                     }
                     classical_bundle = true;
-                    ssinst << codegen_classical_instruction(firstInstr);
+                    codegen_classical_instruction(firstInstr);
                 } else {
                     /* iterate over all instructions in section.
                      * NB: our strategy differs from cc_light_eqasm_compiler, we have no special treatment of first instruction
@@ -346,7 +347,7 @@ private:
 
                         switch(itype) {
                             case __nop_gate__:       // a quantum "nop", see gate.h
-                                codegen.nop_gate(ssinst);
+                                codegen.nop_gate();
                                 break;
 
                             case __classical_gate__:
@@ -371,15 +372,15 @@ private:
 
                                     auto &op0 = instr->operands[0];
                                     auto &cop0 = instr->creg_operands[0];
-                                    codegen.readout(ssinst, cop0, op0);
+                                    codegen.readout(cop0, op0);
                                 } else { // handle all other instruction types
                                     if(1 == nOperands) {
                                         auto &op0 = instr->operands[0];
-                                        codegen.custom_gate(ssinst, iname, op0, platform);
+                                        codegen.custom_gate(iname, op0, platform);
                                     } else if(2 == nOperands) {
                                         auto &op0 = instr->operands[0];
                                         auto &op1 = instr->operands[1];
-                                        codegen.custom_gate(ssinst, iname, op0, op1, platform);
+                                        codegen.custom_gate(iname, op0, op1, platform);
                                     } else {
                                         FATAL("Only 1 and 2 operand instructions are supported !");
                                     }
@@ -429,10 +430,8 @@ private:
 
 
             // generate bundle trailer
-            codegen.bundle_trailer(sspre, delta);
-            {
-                ret << sspre.str() << ssinst.str() << "\n";
-            }
+            codegen.bundle_trailer(delta);
+            // FIXME    ret << sspre.str() << ssinst.str() << "\n";
 
             curr_cycle += delta;
         }
@@ -445,7 +444,6 @@ private:
 #endif
 
         IOUT("Generating CCCODE for bundles [Done]");
-        return ret.str();
     }
 
 
