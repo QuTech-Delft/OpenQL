@@ -78,7 +78,7 @@ public:
 
     void bundle_trailer(int delta)
     {
-
+        comment("");    // blank line to separate bundles
 
 #if 0   // FIXME: from CClight: insert qwaits
             if(classical_bundle)
@@ -124,30 +124,12 @@ public:
         // FIXME: implement
     }
 
-    // single qubit gate
-    void custom_gate(std::string iname, size_t op0, ql::quantum_platform& platform)
+    // single/two/N qubit gate
+    // FIXME: remove parameter platform
+    void custom_gate(std::string iname, std::vector<size_t> ops, ql::quantum_platform& platform)
     {
         std::string instr_name = platform.get_instruction_name(iname);  // FIXME: refers to cclight
-        comment(SS2S("# " << instr_name << " " << op0).c_str());
-
-        // iterate over signals defined in instruction
-        json &instruction = platform.find_instruction(iname);
-        json &signal = instruction["cc"]["signal"];
-        for(size_t s=0; s<signal.size(); s++) {
-            std::string instructionSignalType = signal[s]["type"];
-            // FIXME: handle "operand_idx"??
-            tSignalInfo si = findSignalInfoForQubit(instructionSignalType, op0);
-
-            //  json &instructionSignalValue = signal[s]["value"];
-            // FIXME:
-        }
-    }
-
-    // two qubit gate
-    void custom_gate(std::string iname, size_t op0, size_t op1, ql::quantum_platform& platform)
-    {
-        std::string instr_name = platform.get_instruction_name(iname);  // FIXME: refers to cclight
-        comment(SS2S("# " << instr_name << " " << op0 << "," << op1).c_str());
+// FIXME        comment(SS2S("# " << instr_name << " " << op0 << "," << op1).c_str());
 
         // iterate over signals defined in instruction
         json &instruction = platform.find_instruction(iname);
@@ -155,26 +137,24 @@ public:
         for(size_t s=0; s<signal.size(); s++) {
             std::string instructionSignalType = signal[s]["type"];
 
-            int operandIdx = signal[s]["operand_idx"];
-            tSignalInfo si0={0}, si1={0};
-            switch(operandIdx) {
-                case 0:
-                    si0 = findSignalInfoForQubit(instructionSignalType, op0);
-                    break;
-
-                case 1:
-                    si1 = findSignalInfoForQubit(instructionSignalType, op1);
-                    break;
-
-                default:
-                    FATAL("Illegal 'operand_idx'=" << operandIdx << " in instruction '" << iname << "'");
+            int operandIdx = signal[s]["operand_idx"];      // NB: cannot assign to size_t
+            if(operandIdx >= (int)ops.size()) {
+                FATAL("Illegal operand number " << operandIdx <<
+                      " in instruction '" << iname <<
+                      "' exceeds expected maximum of " <<
+                      ops.size())
             }
+            size_t qubit = ops[operandIdx];
 
-            //  json &instructionSignalValue = signal[s]["value"];
-            // FIXME:
+            tSignalInfo si = findSignalInfoForQubit(instructionSignalType, qubit);
+            json &instructionSignalValue = signal[s]["value"];
+            comment(SS2S("# instrument=" << (*si.ccSetupSlot)["instrument"]["name"] <<
+                         ", group=" << si.group <<
+                         ", signal=" << instructionSignalValue));
+
+            // FIXME: generate code
         }
     }
-
 
     /************************************************************************\
     | Readout
@@ -225,18 +205,12 @@ public:
         // FIXME: implement
     }
 
-
-
-
-    /*
-     *  classical arithmetic instructions
-     */
+    /************************************************************************\
+    | Classical arithmetic instructions
+    \************************************************************************/
 
     void add();
     // etc
-
-
-
 
 
 private:
@@ -251,7 +225,7 @@ private:
 
     std::stringstream cccode;
 
-    // some JSON references
+    // some JSON nodes we need access to. FIXME: use pointers for efficiency?
     json backendSettings;
     json instrumentDefinitions;
     json controlModes;

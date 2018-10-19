@@ -14,7 +14,7 @@
 #include <ql/circuit.h>
 #include <ql/scheduler.h>
 #include <ql/eqasm_compiler.h>
-#include <ql/arch/cc_light/cc_light_resource_manager.h>
+#include <ql/arch/cc_light/cc_light_resource_manager.h>     // FIXME
 
 #include "codegen_cc.h"
 
@@ -86,6 +86,7 @@ public:
     }
 
     // compile for Central Controller (CCCODE)
+    // FIXME: are we good for several calls
     void compile(std::string prog_name, std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
     {
 #if 1   // FIXME: patch for issue #164, should be moved to caller
@@ -319,10 +320,11 @@ private:
         {
             auto delta = bundle.start_cycle - curr_cycle;
             bool classical_bundle = false;
-//            std::stringstream sspre, ssinst;    // FIXME: Is it necessary to split sspre and ssinst?
 
             // generate bundle header
-            codegen.bundle_header(delta, SS2S("## Bundle " << bundleIdx++ << " (start_cycle=" << bundle.start_cycle << ", duration_in_cycles=" << bundle.duration_in_cycles << "):"));
+            codegen.bundle_header(delta, SS2S("## Bundle " << bundleIdx++ <<
+                                              " (start_cycle=" << bundle.start_cycle <<
+                                              ", duration_in_cycles=" << bundle.duration_in_cycles << "):"));   // FIXME: the cycle info looks crappy
 
             // generate code for this bundle
             for(auto section = bundle.parallel_sections.begin(); section != bundle.parallel_sections.end(); ++section ) {
@@ -331,7 +333,7 @@ private:
                 auto firstInstrType = firstInstr->type();
                 if(firstInstrType == __classical_gate__) {
                     if(section->size() != 1) {
-                        FATAL("Inconsistency detected: classical gate with parallel sections");
+                        FATAL("Inconsistency detected in bundle contents: classical gate with parallel sections");
                     }
                     classical_bundle = true;
                     codegen_classical_instruction(firstInstr);
@@ -351,13 +353,13 @@ private:
                                 break;
 
                             case __classical_gate__:
-                                FATAL("Inconsistency detected: classical gate found after first section (which itself was non-classical)");
+                                FATAL("Inconsistency detected in bundle contents: classical gate found after first section (which itself was non-classical)");
                                 break;
 
                             case __custom_gate__:
                             {
-                                auto nOperands = instr->operands.size();
-                                auto nCoperands = instr->creg_operands.size();
+                                size_t  nOperands = instr->operands.size();
+                                size_t  nCoperands = instr->creg_operands.size();
 
                                 // handle readout (NB: extracted from decompose_instructions)
                                 if("readout" == platform.find_instruction_type(iname))   // FIXME: we only use the "readout" value and don't care about the rest because the terms "mw" and "flux" don't fully cover gate functionality. It would be nice if custom gates could mimic ql::gate_type_t
@@ -370,34 +372,26 @@ private:
                                         FATAL("Readout instruction requires exactly 1 qubit operand, not " << nOperands);
                                     }
 
-                                    auto &op0 = instr->operands[0];
-                                    auto &cop0 = instr->creg_operands[0];
+                                    size_t op0 = instr->operands[0];
+                                    size_t cop0 = instr->creg_operands[0];
                                     codegen.readout(cop0, op0);
                                 } else { // handle all other instruction types
-                                    if(1 == nOperands) {
-                                        auto &op0 = instr->operands[0];
-                                        codegen.custom_gate(iname, op0, platform);
-                                    } else if(2 == nOperands) {
-                                        auto &op0 = instr->operands[0];
-                                        auto &op1 = instr->operands[1];
-                                        codegen.custom_gate(iname, op0, op1, platform);
-                                    } else {
-                                        FATAL("Only 1 and 2 operand instructions are supported !");
-                                    }
+                                    // NB: we don't have a particular limit for the number of operands
+                                    codegen.custom_gate(iname, instr->operands, platform);
                                 }
                                 break;
                             }   // __custom_gate__
 
                             case __measure_gate__:
-                                FATAL("__measure_gate__ not supported");    // FIXME: should we. Probably not, because there is no way to define CC-specifics
+                                FATAL("Gate type __measure_gate__ not supported");    // FIXME: should we. Probably not, because there is no way to define CC-specifics
                                 break;
 
                             case __display__:
-                                FATAL("__display__ not supported");
+                                FATAL("Gate type __display__ not supported");
                                 break;
 
                             default:
-                                FATAL("unsupported gate type" << itype);
+                                FATAL("Unsupported gate type" << itype);
                         }   // switch(itype)
 
 

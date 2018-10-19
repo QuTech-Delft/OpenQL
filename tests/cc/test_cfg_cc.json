@@ -179,7 +179,7 @@
 			"signals": {
 				"single-qubit": [
 					{	"type": "mw",
-						"operand": 0,
+						"operand_idx": 0,
 						"value": [
 							"{gateName}-gauss-{instrumentName}-i",
 							"{gateName}-gauss-{instrumentName}-q",
@@ -188,7 +188,7 @@
 						]
 					},
 					{	"type": "switch",
-						"operand": 0,
+						"operand_idx": 0,
 						"value": ["{q}"]
 					}
 				]
@@ -384,7 +384,7 @@
 						]
 					},
 					{	"type": "switch",
-						"operand": 0,
+						"operand_idx": 0,
 						"value": ["{q}"]
 					}
 //					"flux": [],
