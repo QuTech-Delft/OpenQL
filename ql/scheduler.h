@@ -71,18 +71,14 @@ public:
             {
                 auto bpair = std::pair<std::string,std::string>(buf1,buf2);
                 auto bname = buf1+ "_" + buf2 + "_buffer";
-                if( platform.hardware_settings[bname].is_null() )
+                if(platform.hardware_settings.count(bname) > 0)
                 {
-                    buffer_cycles_map[ bpair ] = 0;
-                }
-                else
-                {
-                    buffer_cycles_map[ bpair ] = std::ceil( static_cast<float>(platform.hardware_settings[bname]) / cycle_time);
+                    buffer_cycles_map[ bpair ] = std::ceil( 
+                        static_cast<float>(platform.hardware_settings[bname]) / cycle_time);
                 }
                 // DOUT("Initializing " << bname << ": "<< buffer_cycles_map[bpair]);
             }
         }
-
 
         // add dummy source node
         ListDigraph::Node srcNode = graph.addNode();
@@ -596,15 +592,16 @@ public:
         }
 #endif
 
-        for ( ListDigraph::NodeMap<int>::MapIt it(rorder); it != INVALID; ++it)
+        for (ListDigraph::NodeMap<int>::MapIt it(rorder); it != INVALID; ++it)
         {
             order.push_back(it);
         }
+
         // DOUT("Nodes in Topological order:");
-        for ( std::vector<ListDigraph::Node>::reverse_iterator it = order.rbegin(); it != order.rend(); ++it)
-        {
-            // DOUT(name[*it]);
-        }
+        // for ( std::vector<ListDigraph::Node>::reverse_iterator it = order.rbegin(); it != order.rend(); ++it)
+        // {
+        //     std::cout << name[*it] << std::endl;
+        // }
     }
 
     void PrintTopologicalOrder()
@@ -651,7 +648,7 @@ public:
 
     // with rc and latency compensation
     void schedule_asap_( ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order,
-                       ql::arch::resource_manager_t & rm, ql::quantum_platform & platform)
+                       ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
     {
         DOUT("Performing RC ASAP Scheduling");
         TopologicalSort(order);
@@ -665,24 +662,8 @@ public:
             DOUT("");
             auto & curr_ins = instruction[*currNode];
             auto & id = curr_ins->name;
+            COUT("id: " << id);
 
-            std::string operation_name(id);
-            std::string operation_type; // MW/FLUX/READOUT etc
-            std::string instruction_type; // single / two qubit
-            if ( !platform.instruction_settings[id]["cc_light_instr"].is_null() )
-            {
-                operation_name = platform.instruction_settings[id]["cc_light_instr"];
-            }
-            if ( !platform.instruction_settings[id]["type"].is_null() )
-            {
-                operation_type = platform.instruction_settings[id]["type"];
-            }
-            if ( !platform.instruction_settings[id]["cc_light_instr_type"].is_null() )
-            {
-                instruction_type = platform.instruction_settings[id]["cc_light_instr_type"];
-            }
-
-            size_t operation_duration = std::ceil( static_cast<float>(curr_ins->duration) / cycle_time);
             size_t op_start_cycle=0;
             DOUT("Scheduling " << name[*currNode]);
             for( ListDigraph::InArcIt arc(graph,*currNode); arc != INVALID; ++arc )
@@ -695,28 +676,59 @@ public:
                 }
             }
 
-            while(op_start_cycle < MAX_CYCLE)
+            if(curr_ins->type() == ql::gate_type_t::__dummy_gate__ ||
+               curr_ins->type() == ql::gate_type_t::__classical_gate__)
             {
-                DOUT("Trying to schedule: " << name[*currNode] << "  in cycle: " << op_start_cycle);
-                DOUT("current operation_duration: " << operation_duration);
-                if( rm.available(op_start_cycle, curr_ins, operation_name, operation_type, instruction_type, operation_duration) )
-                {
-                    DOUT("Resources available at cycle " << op_start_cycle << ", Scheduled.");
-
-                    rm.reserve(op_start_cycle, curr_ins, operation_name, operation_type, instruction_type, operation_duration);
-                    cycle[*currNode]=op_start_cycle;
-                    break;
-                }
-                else
-                {
-                    DOUT("Resources not available at cycle " << op_start_cycle << ", trying again ...");
-                    ++op_start_cycle;
-                }
+                cycle[*currNode]=op_start_cycle;
             }
-            if(op_start_cycle >= MAX_CYCLE)
+            else
             {
-                EOUT("Error: could not find schedule");
-                throw ql::exception("[x] Error : could not find schedule !",false);
+                std::string operation_name(id);
+                std::string operation_type; // MW/FLUX/READOUT etc
+                std::string instruction_type; // single / two qubit
+                size_t operation_duration = std::ceil( static_cast<float>(curr_ins->duration) / cycle_time);
+
+                if(platform.instruction_settings.count(id) > 0)
+                {
+                    COUT("New count logic, Found " << id);
+                    if(platform.instruction_settings[id].count("cc_light_instr") > 0)
+                    {
+                        operation_name = platform.instruction_settings[id]["cc_light_instr"];
+                    }
+                    if(platform.instruction_settings[id].count("type") > 0)
+                    {
+                        operation_type = platform.instruction_settings[id]["type"];
+                    }
+                    if(platform.instruction_settings[id].count("cc_light_instr_type") > 0)
+                    {
+                        instruction_type = platform.instruction_settings[id]["cc_light_instr_type"];
+                    }
+                }
+
+                while(op_start_cycle < MAX_CYCLE)
+                {
+                    DOUT("Trying to schedule: " << name[*currNode] << "  in cycle: " << op_start_cycle);
+                    DOUT("current operation_duration: " << operation_duration);
+                    if( rm.available(op_start_cycle, curr_ins, operation_name, operation_type, instruction_type, operation_duration) )
+                    {
+                        DOUT("Resources available at cycle " << op_start_cycle << ", Scheduled.");
+
+                        rm.reserve(op_start_cycle, curr_ins, operation_name, operation_type, instruction_type, operation_duration);
+                        cycle[*currNode]=op_start_cycle;
+                        break;
+                    }
+                    else
+                    {
+                        DOUT("Resources not available at cycle " << op_start_cycle << ", trying again ...");
+                        ++op_start_cycle;
+                    }
+                }
+
+                if(op_start_cycle >= MAX_CYCLE)
+                {
+                    EOUT("Error: could not find schedule");
+                    throw ql::exception("[x] Error : could not find schedule !",false);
+                }
             }
             ++currNode;
         }
@@ -729,21 +741,28 @@ public:
         // }
 
         // latency compensation
+        DOUT("Latency compensation ...");
         for ( auto it = order.begin(); it != order.end(); ++it)
         {
             auto & curr_ins = instruction[*it];
             auto & id = curr_ins->name;
+            // DOUT("Latency compensating instruction: " << id);
             long latency_cycles=0;
-            if ( !platform.instruction_settings[id]["latency"].is_null() )
+
+            if(platform.instruction_settings.count(id) > 0)
             {
-                float latency_ns = platform.instruction_settings[id]["latency"];
-                latency_cycles = (std::ceil( static_cast<float>(std::abs(latency_ns)) / cycle_time)) *
-                                        ql::utils::sign_of(latency_ns);
+                if(platform.instruction_settings[id].count("latency") > 0)
+                {
+                    float latency_ns = platform.instruction_settings[id]["latency"];
+                    latency_cycles = (std::ceil( static_cast<float>(std::abs(latency_ns)) / cycle_time)) *
+                                            ql::utils::sign_of(latency_ns);
+                }
             }
             cycle[*it] = cycle[*it] + latency_cycles;
             // DOUT( cycle[*it] << " <- " << name[*it] << latency_cycles );
         }
 
+        COUT("Re-ordering ...");
         // re-order
         std::sort
             (
@@ -859,7 +878,7 @@ public:
 
 
     // the following with rc and buffer-buffer delays
-    ql::ir::bundles_t schedule_asap( ql::arch::resource_manager_t & rm, ql::quantum_platform & platform )
+    ql::ir::bundles_t schedule_asap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
     {
         DOUT("RC Scheduling ASAP to get bundles ...");
         ql::ir::bundles_t bundles;
@@ -924,9 +943,12 @@ public:
                 {
                     auto & id = (*insIt)->name;
                     std::string op_type("none");
-                    if ( !platform.instruction_settings[id]["type"].is_null() )
+                    if(platform.instruction_settings.count(id) > 0)
                     {
-                        op_type = platform.instruction_settings[id]["type"];
+                        if(platform.instruction_settings[id].count("type") > 0)
+                        {
+                            op_type = platform.instruction_settings[id]["type"];
+                        }
                     }
                     operations_curr_bundle.push_back(op_type);
                 }
@@ -989,9 +1011,10 @@ public:
 
     // with rc and latency compensation
     void schedule_alap_( ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order,
-                       ql::arch::resource_manager_t & rm, ql::quantum_platform & platform)
+                       ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
     {
         DOUT("Performing RC ALAP Scheduling");
+
         TopologicalSort(order);
 
         std::vector<ListDigraph::Node>::iterator currNode = order.begin();
@@ -1003,23 +1026,6 @@ public:
             auto & curr_ins = instruction[*currNode];
             auto & id = curr_ins->name;
 
-            std::string operation_name(id);
-            std::string operation_type; // MW/FLUX/READOUT etc
-            std::string instruction_type; // single / two qubit
-            if ( !platform.instruction_settings[id]["cc_light_instr"].is_null() )
-            {
-                operation_name = platform.instruction_settings[id]["cc_light_instr"];
-            }
-            if ( !platform.instruction_settings[id]["type"].is_null() )
-            {
-                operation_type = platform.instruction_settings[id]["type"];
-            }
-            if ( !platform.instruction_settings[id]["cc_light_instr_type"].is_null() )
-            {
-                instruction_type = platform.instruction_settings[id]["cc_light_instr_type"];
-            }
-
-            size_t operation_duration = std::ceil( static_cast<float>(curr_ins->duration) / cycle_time);
             size_t op_start_cycle=MAX_CYCLE;
             DOUT("Scheduling " << name[*currNode]);
             for( ListDigraph::OutArcIt arc(graph,*currNode); arc != INVALID; ++arc )
@@ -1032,28 +1038,57 @@ public:
                 }
             }
 
-            while(op_start_cycle > 0)
+            if(curr_ins->type() == ql::gate_type_t::__dummy_gate__ ||
+               curr_ins->type() == ql::gate_type_t::__classical_gate__)
             {
-                DOUT("Trying to schedule: " << name[*currNode] << "  in cycle: " << op_start_cycle);
-                DOUT("current operation_duration: " << operation_duration);
-                if( rm.available(op_start_cycle, curr_ins, operation_name, operation_type, instruction_type, operation_duration) )
-                {
-                    DOUT("Resources available at cycle " << op_start_cycle << ", Scheduled.");
-
-                    rm.reserve(op_start_cycle, curr_ins, operation_name, operation_type, instruction_type, operation_duration);
-                    cycle[*currNode]=op_start_cycle;
-                    break;
-                }
-                else
-                {
-                    DOUT("Resources not available at cycle " << op_start_cycle << ", trying again ...");
-                    --op_start_cycle;
-                }
+                cycle[*currNode]=op_start_cycle;
             }
-            if(op_start_cycle <= 0)
+            else
             {
-                EOUT("Error: could not find schedule");
-                throw ql::exception("[x] Error : could not find schedule !",false);
+                std::string operation_name(id);
+                std::string operation_type; // MW/FLUX/READOUT etc
+                std::string instruction_type; // single / two qubit
+                size_t operation_duration = std::ceil( static_cast<float>(curr_ins->duration) / cycle_time);
+
+                if(platform.instruction_settings.count(id) > 0)
+                {
+                    if(platform.instruction_settings[id].count("cc_light_instr") > 0)
+                    {
+                        operation_name = platform.instruction_settings[id]["cc_light_instr"];
+                    }
+                    if(platform.instruction_settings[id].count("type") > 0)
+                    {
+                        operation_type = platform.instruction_settings[id]["type"];
+                    }
+                    if(platform.instruction_settings[id].count("cc_light_instr_type") > 0)
+                    {
+                        instruction_type = platform.instruction_settings[id]["cc_light_instr_type"];
+                    }
+                }
+
+                while(op_start_cycle > 0)
+                {
+                    DOUT("Trying to schedule: " << name[*currNode] << "  in cycle: " << op_start_cycle);
+                    DOUT("current operation_duration: " << operation_duration);
+                    if( rm.available(op_start_cycle, curr_ins, operation_name, operation_type, instruction_type, operation_duration) )
+                    {
+                        DOUT("Resources available at cycle " << op_start_cycle << ", Scheduled.");
+
+                        rm.reserve(op_start_cycle, curr_ins, operation_name, operation_type, instruction_type, operation_duration);
+                        cycle[*currNode]=op_start_cycle;
+                        break;
+                    }
+                    else
+                    {
+                        DOUT("Resources not available at cycle " << op_start_cycle << ", trying again ...");
+                        --op_start_cycle;
+                    }
+                }
+                if(op_start_cycle <= 0)
+                {
+                    EOUT("Error: could not find schedule");
+                    throw ql::exception("[x] Error : could not find schedule !",false);
+                }
             }
             ++currNode;
         }
@@ -1071,11 +1106,14 @@ public:
             auto & curr_ins = instruction[*it];
             auto & id = curr_ins->name;
             long latency_cycles=0;
-            if ( !platform.instruction_settings[id]["latency"].is_null() )
+            if(platform.instruction_settings.count(id) > 0)
             {
-                float latency_ns = platform.instruction_settings[id]["latency"];
-                latency_cycles = (std::ceil( static_cast<float>(std::abs(latency_ns)) / cycle_time)) *
-                                        ql::utils::sign_of(latency_ns);
+                if(platform.instruction_settings[id].count("latency") > 0)
+                {
+                    float latency_ns = platform.instruction_settings[id]["latency"];
+                    latency_cycles = (std::ceil( static_cast<float>(std::abs(latency_ns)) / cycle_time)) *
+                                            ql::utils::sign_of(latency_ns);
+                }
             }
             cycle[*it] = cycle[*it] + latency_cycles;
             // DOUT( cycle[*it] << " <- " << name[*it] << latency_cycles );
@@ -1293,7 +1331,9 @@ public:
         return bundles;
     }
 
-    ql::ir::bundles_t schedule_alap( ql::arch::resource_manager_t & rm, ql::quantum_platform & platform )
+    // the following with rc and buffer-buffer delays
+    ql::ir::bundles_t schedule_alap(ql::arch::resource_manager_t & rm, 
+        const ql::quantum_platform & platform)
     {
         DOUT("RC Scheduling ALAP to get bundles ...");
         ql::ir::bundles_t bundles;
@@ -1357,9 +1397,12 @@ public:
                 {
                     auto & id = (*insIt)->name;
                     std::string op_type("none");
-                    if ( !platform.instruction_settings[id]["type"].is_null() )
+                    if(platform.instruction_settings.count(id) > 0)
                     {
-                        op_type = platform.instruction_settings[id]["type"];
+                        if(platform.instruction_settings[id].count("type") > 0)
+                        {
+                            op_type = platform.instruction_settings[id]["type"];
+                        }
                     }
                     operations_curr_bundle.push_back(op_type);
                 }
@@ -1387,7 +1430,6 @@ public:
 
 
 // =========== uniform
-
     void compute_alap_cycle(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order, size_t max_cycle)
     {
         // DOUT("Computing alap_cycle");

@@ -61,7 +61,7 @@ public:
         }
 
         // load eqasm compiler backend
-        if (config["eqasm_compiler"].is_null())
+        if (config.count("eqasm_compiler") <= 0)
         {
             EOUT("eqasm compiler backend is not specified in the hardware config file !");
             // throw std::exception();
@@ -73,19 +73,18 @@ public:
         }
 
         // load hardware_settings
-        if (config["hardware_settings"].is_null())
+        if (config.count("hardware_settings") <= 0)
         {
             EOUT("'hardware_settings' section is not specified in the hardware config file !");
-            // throw std::exception();
             throw ql::exception("[x] error : ql::hardware_configuration::load() : 'hardware_settings' section is not specified in the hardware config file !",false);
         }
         else
         {
-            hardware_settings    = config["hardware_settings"];
+            hardware_settings = config["hardware_settings"];
         }
 
         // load instruction_settings
-        if (config["instructions"].is_null())
+        if (config.count("instructions") <= 0)
         {
             EOUT("'instructions' section is not specified in the hardware config file !");
             throw ql::exception("[x] error : ql::hardware_configuration::load() : 'instructions' section is not specified in the hardware config file !",false);
@@ -95,10 +94,8 @@ public:
             instruction_settings = config["instructions"];
         }
 
-        // create the control store
-
         // load platform resources
-        if (config["resources"].is_null())
+        if (config.count("resources") <= 0)
         {
             EOUT("'resources' section is not specified in the hardware config file !");
             throw ql::exception("[x] error : ql::hardware_configuration::load() : 'resources' section is not specified in the hardware config file !",false);
@@ -109,7 +106,7 @@ public:
         }
 
         // load platform topology
-        if (config["topology"].is_null())
+        if (config.count("topology") <= 0)
         {
             EOUT("'topology' section is not specified in the hardware config file !");
             throw ql::exception("[x] error : ql::hardware_configuration::load() : 'topology' section is not specified in the hardware config file !",false);
@@ -140,7 +137,7 @@ public:
         }
 
         // load gate decomposition
-        if (!config["gate_decomposition"].is_null())
+        if (config.count("gate_decomposition") > 0)
         {
             json gate_decomposition = config["gate_decomposition"];
             for (json::iterator it = gate_decomposition.begin(); it != gate_decomposition.end(); ++it)
@@ -198,7 +195,7 @@ public:
         }
 
         // // load aliases
-        // if (!config["aliases"].is_null())
+        // if (config.count("aliases") > 0)
         // {
         //    aliases = config["aliases"];
         //    for (json::iterator it = aliases.begin(); it != aliases.end(); ++it)
@@ -237,7 +234,7 @@ public:
     {
         custom_gate * g = new custom_gate(name);
         // skip alias fo now
-        if (!instr["alias"].is_null()) // != "null")
+        if (instr.count("alias") > 0)
         {
             // todo : look for the target aliased gate
             //        copy it with the new name

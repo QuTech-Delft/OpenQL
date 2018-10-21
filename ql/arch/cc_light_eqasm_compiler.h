@@ -404,7 +404,7 @@ std::string classical_instruction2qisa(ql::arch::classical_cc* classical_ins)
 }
 
 std::string bundles2qisa(ql::ir::bundles_t & bundles,
-    ql::quantum_platform & platform, MaskManager & gMaskManager)
+    const ql::quantum_platform & platform, MaskManager & gMaskManager)
 {
     IOUT("Generating CC-Light QISA");
 
@@ -440,7 +440,7 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
             else
             {
                 auto id = iname;
-                DOUT("get cclight instr name for : " << id);
+                // DOUT("get cclight instr name for : " << id);
                 std::string cc_light_instr_name;
                 auto it = platform.instruction_map.find(id);
                 if (it != platform.instruction_map.end())
@@ -485,15 +485,12 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
                         }
                     }
 
-                    //TODO:ORDER sort squbits here
-                    //TODO:ORDER sort dqubits here
-
                     std::string rname;
-                    if( 1 == nOperands )
+                    if(1 == nOperands)
                     {
                         rname = gMaskManager.getRegName(squbits);
                     }
-                    else if( 2 == nOperands )
+                    else if(2 == nOperands)
                     {
                         rname = gMaskManager.getRegName(dqubits);
                     }
@@ -544,7 +541,7 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
 
     auto & lastBundle = bundles.back();
     int lbduration = lastBundle.duration_in_cycles;
-    if( lbduration>1 )
+    if(lbduration>1)
         ssbundles << "    qwait " << lbduration << "\n";
 
     IOUT("Generating CC-Light QISA [Done]");
@@ -611,7 +608,7 @@ void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & p
             ssbundles << std::setw(8) << curr_cycle << ":    qwait " << delta-1 << "\n"
                       << std::setw(8) << curr_cycle + (delta-1) << ":    bs 1    ";
 
-        for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
+        for(auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt)
         {
             qubit_set_t squbits;
             qubit_pair_set_t dqubits;
@@ -621,7 +618,7 @@ void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & p
             std::string cc_light_instr_name = get_cc_light_instruction_name(id, platform);
             auto itype = (*(firstInsIt))->type();
             auto nOperands = ((*firstInsIt)->operands).size();
-            if( itype == __nop_gate__ )
+            if(itype == __nop_gate__)
             {
                 ssbundles << cc_light_instr_name;
             }
@@ -662,7 +659,7 @@ void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & p
                 ssbundles << cc_light_instr_name << " " << rname;
             }
 
-            if( std::next(secIt) != abundle.parallel_sections.end() )
+            if(std::next(secIt) != abundle.parallel_sections.end())
             {
                 ssbundles << " | ";
             }
@@ -708,7 +705,7 @@ public:
 
 
     /*
-     * program-level compilaation of qasm to cc_light_eqasm
+     * program-level compilation of qasm to cc_light_eqasm
      */
     void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform)
     {
@@ -746,8 +743,6 @@ public:
 
         // write scheduled bundles with parallelism in cc-light syntax with time-stamps
         WriteCCLightQisaTimeStamped(prog_name, platform, mask_manager, bundles);
-
-
 
 
         // time analysis
@@ -866,11 +861,27 @@ public:
     }
 
     // kernel level compilation
-    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
+    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, const ql::quantum_platform& platform)
     {
         DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");
 
         load_hw_settings(platform);
+
+        const json& instruction_settings = platform.instruction_settings;
+        for(const json & i : instruction_settings)
+        {
+            std::string instr_name;
+            if(i.count("cc_light_instr") <= 0)
+            {
+                EOUT("cc_light_instr not found for " << i);
+                throw ql::exception("cc_light_instr not found", false);
+            }
+            else
+            {
+                instr_name = i["cc_light_instr"];
+            }
+        }
+
         generate_opcode_cs_files(platform);
         MaskManager mask_manager;
 
@@ -928,7 +939,7 @@ public:
     /**
      * decompose
      */
-    void decompose_instructions(ql::circuit& ckt, ql::circuit& decomp_ckt, ql::quantum_platform& platform)
+    void decompose_instructions(ql::circuit& ckt, ql::circuit& decomp_ckt, const ql::quantum_platform& platform)
     {
         DOUT("decomposing instructions...");
         for( auto ins : ckt )
@@ -985,7 +996,7 @@ public:
                 }
                 else
                 {
-                    json& instruction_settings = platform.instruction_settings;
+                    const json& instruction_settings = platform.instruction_settings;
                     std::string operation_type;
                     if (instruction_settings.find(iname) != instruction_settings.end())
                     {
@@ -1228,7 +1239,7 @@ public:
 
 private:
 
-    void load_hw_settings(ql::quantum_platform& platform)
+    void load_hw_settings(const ql::quantum_platform& platform)
     {
         std::string params[] = { "qubit_number", "cycle_time", "mw_mw_buffer", "mw_flux_buffer", "mw_readout_buffer", "flux_mw_buffer",
                                  "flux_flux_buffer", "flux_readout_buffer", "readout_mw_buffer", "readout_flux_buffer", "readout_readout_buffer"
@@ -1257,10 +1268,10 @@ private:
         }
     }
 
-    void generate_opcode_cs_files(ql::quantum_platform& platform)
+    void generate_opcode_cs_files(const ql::quantum_platform& platform)
     {
         DOUT("Generating opcode file ...");
-        json& instruction_settings       = platform.instruction_settings;
+        const json& instruction_settings       = platform.instruction_settings;
 
         std::stringstream opcode_ss;
 
@@ -1298,24 +1309,24 @@ private:
         std::map<std::string,size_t> instr_name_2_opcode;
         std::set<size_t> opcode_set;
         size_t opcode=0;
-        for (json & i : instruction_settings)
+        for (const json & i : instruction_settings)
         {
             std::string instr_name;
-            if (i["cc_light_instr"].is_null())
+            // COUT("Looking for instruction: " << i);
+            if (i.count("cc_light_instr") <= 0)
             {
                 EOUT("cc_light_instr not found for " << i);
-                throw ql::exception("cc_light_instr not found", false);
+                throw ql::exception("cc_light_instr not found for <> ", false);
             }
             else
             {
                 instr_name = i["cc_light_instr"];
             }
 
-            if (i["cc_light_opcode"].is_null())
+            if (i.count("cc_light_opcode") <= 0)
                 throw ql::exception("[x] error : ql::eqasm_compiler::compile() : missing opcode for instruction '"+instr_name,false);
             else
                 opcode = i["cc_light_opcode"];
-
 
             auto mapit = instr_name_2_opcode.find(instr_name);
             if( mapit != instr_name_2_opcode.end() )
@@ -1346,9 +1357,12 @@ private:
                     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for single qubit gate instruction '"+instr_name+"' : should be in [1..127] range : current opcode: "+std::to_string(opcode),false);
                 }
                 opcode_set.insert(opcode);
-                size_t condition  = (i["cc_light_cond"].is_null() ? 0 : i["cc_light_cond"].get<size_t>());
-                if (i["cc_light_instr"].is_null())
+
+                size_t condition  = (i.count("cc_light_cond")<=0? 0 :i["cc_light_cond"].get<size_t>());
+
+                if (i.count("cc_light_instr") <=0 )
                     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
+
                 opcode_ss << "def_q_arg_st[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
                 auto optype     = (i["type"] == "mw" ? 1 : (i["type"] == "flux" ? 2 : ((i["type"] == "readout" ? 3 : 0))));
                 auto codeword   = i["cc_light_codeword"];
@@ -1362,9 +1376,10 @@ private:
                 if (opcode < 127 || opcode > 255)
                     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for two qubits gate instruction '"+instr_name+"' : should be in [128..255] range : current opcode: "+std::to_string(opcode),false);
                 opcode_set.insert(opcode);
-                // size_t condition  = 0;
-                size_t condition  = (i["cc_light_cond"].is_null() ? 0 : i["cc_light_cond"].get<size_t>());
-                if (i["cc_light_instr"].is_null())
+
+                size_t condition  = (i.count("cc_light_cond") <= 0? 0 :i["cc_light_cond"].get<size_t>());
+
+                if (i.count("cc_light_instr") <= 0)
                     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
                 // opcode_ss << "def_opcode[" << i["cc_light_instr"] << "]\t= " << opcode << "\n";
                 opcode_ss << "def_q_arg_tt[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
@@ -1375,8 +1390,6 @@ private:
             }
             else
                 throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : invalid 'cc_light_instr_type' for instruction !",false);
-            // println("\n" << control_store.str());
-            // println("\n" << opcode_ss.str());
         }
 
         std::string cs_filename = ql::options::get("output_dir") + "/cs.txt";

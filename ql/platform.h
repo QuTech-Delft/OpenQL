@@ -8,6 +8,7 @@
 #define QL_PLATFORM_H
 
 #include <string>
+#include <tuple>
 
 #include <ql/circuit.h>
 #include <ql/hardware_configuration.h>
@@ -78,13 +79,21 @@ public:
         hwc.load(instruction_map, instruction_settings, hardware_settings, resources, topology, aliases);
         eqasm_compiler_name = hwc.eqasm_compiler_name;
 
-        if (hardware_settings["qubit_number"].is_null())
+        if(hardware_settings.count("qubit_number") <=0)
         {
             EOUT("qubit number of the platform is not specified in the configuration file !");
             throw std::exception();
         }
-        qubit_number = hardware_settings["qubit_number"];
-        cycle_time = hardware_settings["cycle_time"];
+        else
+            qubit_number = hardware_settings["qubit_number"];
+
+        if(hardware_settings.count("cycle_time") <=0)
+        {
+            EOUT("cycle time of the platform is not specified in the configuration file !");
+            throw std::exception();
+        }
+        else
+            cycle_time = hardware_settings["cycle_time"];
 
         // if (eqasm_compiler_name == "qumis_compiler")
         // {
@@ -119,7 +128,6 @@ public:
     {
         return qubit_number;
     }
-
 };
 
 }
