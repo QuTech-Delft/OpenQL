@@ -25,14 +25,12 @@
 		"eqasm_backend_cc": {
 			// Immutable properties of instruments.
 			// FIXME: introduce 'controller_definitions'?
-			// The keys "cc", "switch", "awg" and "measure" are built-in instrument types
 			"instrument_definitions": {
 //				"cc": [
 //					{	"name": "qutech-cc",
 //						"slots": 12
 //					}
 //				],
-				// FIXME: discern awg-mw and awg-flux?, or leave out keys (what would we use them for?) and just use signal_type everywhere
 				"awg": [
 //					{	"name": "qutech-qwg",
 //						"channels": 4,
@@ -62,46 +60,63 @@
 
 			// Modes to control instruments. These define which bits are used to
 			// control a group of channels
-			"control_modes": [
-				{	"name": "awg8-mw-vsm",
-					"control_group_count": 2,
-					"control_bits": [],
-					"triggers": [32]
+			"control_modes": {
+				"awg8-mw-vsm": {						// ZI_HDAWG8.py::cfg_codeword_protocol() == 'microwave'
+					"control_bits": [
+						[7,6,5,4,3,2,1,0],
+						[15,14,13,12,11,10,9,8]
+					],
+					"triggers": [31]
 				},
-				{	"name": "awg8-mw-direct-iq",		// just I&Q to generate microwave without VSM
-					"control_group_count": 4,
-					"control_bits": [],
-					"triggers": [32]
+				"awg8-mw-direct-iq": {				// just I&Q to generate microwave without VSM
+					"control_bits": [
+						[6,5,4,3,2,1,0],				// FIXME: no official mode yet
+						[13,12,11,10,9,8,7],
+						[20,19,18,17,16,15,14],
+						[27,26,25,24,23,22,21]
+					],
+					"triggers": [31]
 				},
-				{	"name": "awg8-flux",
-					"control_group_count": 2,
-					"control_bits": [],
-					"triggers": [32]
+				"awg8-flux": {							// ZI_HDAWG8.py::cfg_codeword_protocol() == 'flux'
+					"control_bits": [
+						[2,1,0],
+						[5,4,3],
+						[8,7,6],
+						[11,10,9],
+						[14,13,12],
+						[17,16,15],
+						[20,19,18],
+						[23,22,21]
+					],
+					"triggers": [31]
 				},
-				{	"name": "uhfqc-9ch",
-					"control_group_count": 9,
-					"control_bits": [],
-					"result-bits": [],
-					"triggers": [32]
+				"uhfqc-9ch": {
+					"control_bits": [[25],[24],[23],[22],[21],[20],[19],[18],[17]],
+					"triggers": [16],
+					"result_bits": [[9],[8],[7],[6],[5],[4],[3],[2],[1]],
+					"data_valids": [0]
 				},
-				{	"name": "vsm-32ch",
-					"control_group_count": 32,
-					"control_bits": [],
-					"triggers": []
+				"vsm-32ch":{
+					"control_bits": [
+						[0],[1],[2],[3],[4],[5],[6],[7],
+						[8],[9],[10],[11],[12],[13],[14],[15],
+						[16],[17],[18],[19],[20],[21],[22],[23],
+						[24],[25],[26],[27],[28],[28],[30],[31]
+					],
+					"triggers": []						// no trigger
 				}
-			],
+			},
 
 			// Instruments used in this setup, their configuration and connectivity.
 			"cc_setup": {
-				"type": "qutech-cc",
 				"name": "cc",
+				"type": "qutech-cc",
 				"slots": [
 					{	"slot": 0,
 						"io_module": "cc-conn-dio-diff",
-						// "control_instrument": "awg8-mw-0"
 						"instrument": {
-							"type": "zi-hdawg",
 							"name": "awg8-mw-0",
+							"type": "zi-hdawg",
 							"control_mode": "awg8-mw-vsm",
 							"signal_type": "mw",
 							"qubits": [[0, 1, 2, 3], [4, 5, 6, 7]]
@@ -109,10 +124,9 @@
 					},
 					{	"slot": 5,
 						"io_module": "cc-conn-dio-diff",
-						// "control_instrument": "awg8-flux-0"
 						"instrument": {
-							"type": "zi-hdawg",
 							"name": "awg8-flux-0",
+							"type": "zi-hdawg",
 							"control_mode": "awg8-flux",
 							"signal_type": "flux",
 							"qubits": [[0], [1], [2], [3], [4], [5], [6], [7], []]
@@ -120,10 +134,9 @@
 					},
 					{	"slot": 7,
 						"io_module": "cc-conn-dio",
-						// "control_instrument": "uhfqc-0"
 						"instrument": {
-							"type": "zi-uhfqc",
 							"name": "uhfqc-0",
+							"type": "zi-uhfqc",
 							"control_mode": "uhfqc-9ch",
 							"signal_type": "measure",
 							"qubits": [[0], [1], [2], [3], [4], [5], [6], [7], []]
@@ -131,49 +144,15 @@
 					},
 					{	"slot": 11,
 						"io_module": "cc-conn-vsm",
-						// "control_instrument": "vsm-0"
 						"instrument": {
-							"type": "qutech-vsm",
 							"name": "vsm-0",
+							"type": "qutech-vsm",
 							"control_mode": "vsm-32ch",
 							"signal_type": "switch",
 							"qubits": [[0], [1], [2], [3], [4], [5], [6], [7], [8]]
 						}
 					}
 				]
-
-
-				// "qutech-qwg": [
-				// 	{	"name": "foo",
-				// 		"signal_type": "mw"
-				// 	}
-				// ],
-				// "zi-hdawg": [
-				// 	{	"name": "awg8-mw-0",
-				// 		"control_mode": "awg8-mw-vsm",
-				// 		"signal_type": "mw",
-				// 		"qubits": [[0, 1, 2, 3], [4, 5, 6, 7]]
-				// 	},
-				// 	{	"name": "awg8-flux-0",
-				// 		"control_mode": "awg8-flux",
-				// 		"signal_type": "flux",
-				// 		"qubits": [0, 1, 2, 3, 4, 5, 6, 7, -1]
-				// 	}
-				// ],
-				// "qutech-vsm": [
-				// 	{	"name": "vsm-0",
-				// 		"control_mode": "vsm-32ch",
-				// 		"signal_type": "switch",
-				// 		"qubits": [0, 1, 2, 3, 4, 5, 6, 7, 8]
-				// 	}
-				// ],
-				// "zi-uhfqc": [
-				// 	{	"name": "uhfqc-0",
-				// 		"control_mode": "uhfqc-9ch",
-				// 		"signal_type": "measure",
-				// 		"qubits": [0, 1, 2, 3, 4, 5, 6, 7, -1]
-				// 	}
-				// ]
 			},
 
 			"signals": {

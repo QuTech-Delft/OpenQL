@@ -102,7 +102,7 @@ public:
         bundleIdx = 0;
 
         // generate program header
-        codegen.program_header(prog_name);
+        codegen.program_start(prog_name);
 
         // generate code for all kernels
         for(auto &kernel : kernels) {
@@ -134,7 +134,7 @@ public:
             codegen_kernel_epilogue(kernel);
         }
 
-        codegen.program_trailer();
+        codegen.program_finish();
 
         // write CCCODE to file
         std::string file_name(ql::options::get("output_dir") + "/" + prog_name + ".cccode");
@@ -242,6 +242,9 @@ private:
     {
         codegen.comment(SS2S("### Kernel: '" << k.name << "'"));
 
+
+        // FIXME: insert waits to compensate latencies.
+
         switch(k.type) {
             case kernel_type_t::IF_START:
             {
@@ -285,6 +288,8 @@ private:
     // based on cc_light_eqasm_compiler.h::get_epilogue
     void codegen_kernel_epilogue(ql::quantum_kernel &k)
     {
+        // FIXME: insert waits to align kernel duration (in presence of latency compensation)
+
         switch(k.type) {
             case kernel_type_t::FOR_END:
             {
@@ -319,12 +324,11 @@ private:
         for(ql::ir::bundle_t &bundle : bundles)
         {
             auto delta = bundle.start_cycle - curr_cycle;
-            bool classical_bundle = false;
 
             // generate bundle header
-            codegen.bundle_header(delta, SS2S("## Bundle " << bundleIdx++ <<
-                                              " (start_cycle=" << bundle.start_cycle <<
-                                              ", duration_in_cycles=" << bundle.duration_in_cycles << "):"));   // FIXME: the cycle info looks crappy
+            codegen.bundle_start(delta, SS2S("## Bundle " << bundleIdx++ <<
+                                              " (start_cycle=" << bundle.start_cycle <<                             // FIXME: the start_cycle info looks crappy
+                                              ", duration_in_cycles=" << bundle.duration_in_cycles << "):"));
 
             // generate code for this bundle
             for(auto section = bundle.parallel_sections.begin(); section != bundle.parallel_sections.end(); ++section ) {
@@ -335,7 +339,6 @@ private:
                     if(section->size() != 1) {
                         FATAL("Inconsistency detected in bundle contents: classical gate with parallel sections");
                     }
-                    classical_bundle = true;
                     codegen_classical_instruction(firstInstr);
                 } else {
                     /* iterate over all instructions in section.
@@ -362,7 +365,7 @@ private:
                                 size_t  nCoperands = instr->creg_operands.size();
 
                                 // handle readout (NB: extracted from decompose_instructions)
-                                if("readout" == platform.find_instruction_type(iname))   // FIXME: we only use the "readout" value and don't care about the rest because the terms "mw" and "flux" don't fully cover gate functionality. It would be nice if custom gates could mimic ql::gate_type_t
+                                if("readout" == platform.find_instruction_type(iname))   // FIXME: we only use the "readout" instruction_type and don't care about the rest because the terms "mw" and "flux" don't fully cover gate functionality. It would be nice if custom gates could mimic ql::gate_type_t
                                 {
                                     DOUT("    readout instruction ");
                                     if(nCoperands != 1) {
@@ -424,7 +427,7 @@ private:
 
 
             // generate bundle trailer
-            codegen.bundle_trailer(delta);
+            codegen.bundle_finish(delta);
             // FIXME    ret << sspre.str() << ssinst.str() << "\n";
 
             curr_cycle += delta;
