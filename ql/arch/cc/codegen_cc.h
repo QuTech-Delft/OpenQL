@@ -61,25 +61,30 @@ public:
     void bundle_start(int delta, std::string cmnt)   // FIXME: do we need parameter delta
     {
         // empty the matrix of signal values
-        signalValues.assign(32, std::vector<string>(32, ""));    // FIXME: magic constants
+        size_t slotsUsed = ccSetup["slots"].size();
+        size_t maxGroups = 32;                     // FIXME: magic constant, enough for VSM
+        signalValues.assign(slotsUsed, std::vector<string>(maxGroups, ""));
 
         comment(cmnt);
     }
 
     void bundle_finish(int delta)   // FIXME: do we need parameter delta
     {
-        for(size_t slot=0; slot<signalValues.size(); slot++) {
+        json &ccSetupSlots = ccSetup["slots"];
+        for(size_t slotIdx=0; slotIdx<signalValues.size(); slotIdx++) {
+            json &ccSetupSlot = ccSetupSlots[slotIdx];
+            json &instrument = ccSetupSlot["instrument"];
+            int slot = ccSetupSlot["slot"];
             bool isSlotUsed = false;
-            for(size_t group=0; group<signalValues[slot].size(); group++) {
-                if(signalValues[slot][group] != "") {
+            for(size_t group=0; group<signalValues[slotIdx].size(); group++) {
+                if(signalValues[slotIdx][group] != "") {
                     isSlotUsed = true;
 
                     comment(SS2S("# slot=" << slot << ", group=" << group));
 
                     // find control mode
-                    json *instrument = findInstrumentForSlot(slot);
-                    std::string instrumentName = (*instrument)["name"];
-                    std::string controlModeName = (*instrument)["control_mode"];
+                    std::string instrumentName = instrument["name"];
+                    std::string controlModeName = instrument["control_mode"];
                     json &controlMode = controlModes[controlModeName];          // the control mode definition for our instrument
 
                     json &myControlBits = controlMode["control_bits"][group];
@@ -96,9 +101,10 @@ public:
 
                 // emit code for slot
 
+            } else {
+                // slot not used for this gate, generate delay
+
             }
-
-
         }
 
         comment("");    // blank line to separate bundles
@@ -137,6 +143,7 @@ public:
         json &instruction = platform.find_instruction(iname);
         json &signal = instruction["cc"]["signal"];
         for(size_t s=0; s<signal.size(); s++) {
+            // get the qubit to work on
             size_t operandIdx = signal[s]["operand_idx"];
             if(operandIdx >= ops.size()) {
                 FATAL("Illegal operand number " << operandIdx <<
@@ -148,11 +155,13 @@ public:
 
             // FIXME: check that gate duration fits within bundle
 
+            // get the instrument and group that generates the signal
             std::string instructionSignalType = signal[s]["type"];
             json &instructionSignalValue = signal[s]["value"];
             tSignalInfo si = findSignalInfoForQubit(instructionSignalType, qubit);
-            std::string instrumentName = (*si.ccSetupSlot)["instrument"]["name"];
-            int slot = (*si.ccSetupSlot)["slot"];
+            json &ccSetupSlot = ccSetup["slots"][si.slotIdx];
+            std::string instrumentName = ccSetupSlot["instrument"]["name"];
+//            int slot = ccSetupSlot["slot"];
             comment(SS2S("# instrument=" << instrumentName <<
                          ", group=" << si.group <<
                          ", signal=" << instructionSignalValue));
@@ -161,17 +170,17 @@ public:
             // check and store signal value
             std::string signalValueString = SS2S("" << instructionSignalValue);   // serialize instructionSignalValue into std::string
 
-            // make room
-// FIXME            signalValues.reserve(slot+1);
-//            signalValues[slot].reserve(si.group+1);
-            if(signalValues[slot][si.group] == "") {                          // not yet used
-                signalValues[slot][si.group] = signalValueString;
-            } else if(signalValues[slot][si.group] == signalValueString) {    // unchanged
+            // make room in signalValues matrix
+// FIXME            signalValues.reserve(si.slotIdx+1);
+//            signalValues[si.slotIdx].reserve(si.group+1);
+            if(signalValues[si.slotIdx][si.group] == "") {                          // not yet used
+                signalValues[si.slotIdx][si.group] = signalValueString;
+            } else if(signalValues[si.slotIdx][si.group] == signalValueString) {    // unchanged
                 // do nothing
             } else {
                 FATAL("Signal conflict on instrument=" << instrumentName <<
                       ", group=" << si.group <<
-                      ", between '" << signalValues[slot][si.group] <<
+                      ", between '" << signalValues[si.slotIdx][si.group] <<
                       "and '" << signalValueString << "'");
             }
 
@@ -208,12 +217,14 @@ public:
     void for_start(std::string label, int iterations)
     {
         comment(SS2S("# FOR_START(" << iterations << ")"));
+        // FIXME: reserve register
         emit((label+":").c_str(), "move", SS2S(iterations << ",R63"), "# R63 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
     }
 
     void for_end(std::string label)
     {
         comment("# FOR_END");
+        // FIXME: free register
         emit("", "loop", SS2S("R63,@" << label), "# R63 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
     }
 
@@ -242,7 +253,8 @@ public:
 
 private:
     typedef struct {
-        json *ccSetupSlot;
+//        json *ccSetupSlot;    FIXME
+        int slotIdx;    // index into cc_setup["slots"]
         int group;
     } tSignalInfo;
 
@@ -251,7 +263,7 @@ private:
     bool verboseCode = true;    // output extra comments in generated code
 
     std::stringstream cccode;   // the code generated for the CC
-    std::vector<std::vector<std::string>> signalValues;
+    std::vector<std::vector<std::string>> signalValues;         // matrix[slotIdx][group]
 
     // some JSON nodes we need access to. FIXME: use pointers for efficiency?
     json backendSettings;
@@ -351,22 +363,10 @@ private:
     }
 
 
-    json *findInstrumentForSlot(int slot)
-    {
-        json &ccSetupSlots = ccSetup["slots"];
-        for(size_t slotIdx=0; slotIdx<ccSetupSlots.size(); slotIdx++) {
-            json &ccSetupSlot = ccSetupSlots[slotIdx];
-            if(ccSetupSlots[slotIdx]["slot"] == slot) return &ccSetupSlots[slotIdx]["instrument"];
-        }
-        FATAL("Could not find instrument slot " << slot);
-        return NULL;
-    }
-
-
     // find instrument/group/slot providing instructionSignalType for qubit
     tSignalInfo findSignalInfoForQubit(std::string instructionSignalType, size_t qubit)
     {
-        tSignalInfo ret = {NULL, 0};
+        tSignalInfo ret = {-1, -1};
         bool signalTypeFound = false;
         bool qubitFound = false;
 
@@ -395,7 +395,7 @@ private:
                                  "' group " << group <<
                                  " in CC slot " << ccSetupSlot["slot"]);
 
-                            ret.ccSetupSlot = &ccSetupSlot;
+                            ret.slotIdx = slotIdx;
                             ret.group = group;
                         }
                     }
@@ -416,7 +416,6 @@ private:
 
 } // arch
 } // ql
-
 
 
 #if 0   // FIXME: old code that may me useful

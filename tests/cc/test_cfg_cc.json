@@ -59,7 +59,7 @@
 			},
 
 			// Modes to control instruments. These define which bits are used to
-			// control a group of channels
+			// control groups of channels
 			"control_modes": {
 				"awg8-mw-vsm": {						// ZI_HDAWG8.py::cfg_codeword_protocol() == 'microwave'
 					"control_bits": [
@@ -87,6 +87,12 @@
 						[17,16,15],
 						[20,19,18],
 						[23,22,21]
+					],
+					"triggers": [31]
+				},
+				"awg8-flux-vector": {				// single code word for 8 flux channels
+					"control_bits": [
+						[7,6,5,4,3,2,1,0]
 					],
 					"triggers": [31]
 				},
@@ -129,7 +135,7 @@
 							"type": "zi-hdawg",
 							"control_mode": "awg8-flux",
 							"signal_type": "flux",
-							"qubits": [[0], [1], [2], [3], [4], [5], [6], [7], []]
+							"qubits": [[0], [1], [2], [3], [4], [5], [6], [], [7]]
 						}
 					},
 					{	"slot": 7,

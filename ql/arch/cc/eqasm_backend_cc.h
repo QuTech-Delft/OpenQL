@@ -396,39 +396,12 @@ private:
                             default:
                                 FATAL("Unsupported gate type" << itype);
                         }   // switch(itype)
-
-
-#if 0   // FIXME: cc_light SMIS/SMIT handling
-                        std::string rname;
-                        if( 1 == nOperands )
-                        {
-                            rname = gMaskManager.getRegName(squbits);
-                        }
-                        else if( 2 == nOperands )
-                        {
-                            rname = gMaskManager.getRegName(dqubits);
-                        }
-                        else
-                        {
-                            throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
-                        }
-                        ssinst << instr_name << " " << rname;
-#endif
                     } // for(section...)
-
-
-#if 0
-                    if(std::next(section) != bundle.parallel_sections.end()) {
-                        ssinst << " | ";
-                    }
-#endif
                 }
             }
 
-
             // generate bundle trailer
             codegen.bundle_finish(delta);
-            // FIXME    ret << sspre.str() << ssinst.str() << "\n";
 
             curr_cycle += delta;
         }
