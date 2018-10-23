@@ -86,7 +86,7 @@ public:
     }
 
     // compile for Central Controller (CCCODE)
-    // FIXME: are we good for several calls
+    // FIXME: are we good for several calls?
     void compile(std::string prog_name, std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
     {
 #if 1   // FIXME: patch for issue #164, should be moved to caller
@@ -112,13 +112,16 @@ public:
             ql::circuit& ckt = kernel.c;
             if (!ckt.empty()) {
                 auto creg_count = kernel.creg_count;                        // FIXME: also take platform into account. We get qubit_number from JSON
+
+#if 0
                 ql::circuit decomp_ckt;
+                decompose_instructions(ckt, decomp_ckt, platform);          // decompose meta-instructions
+#endif
 
-//                decompose_instructions(ckt, decomp_ckt, platform);          // decompose meta-instructions
-
-#if 0   // FIXME: based on old code, disabled in cc_light_scheduler.h
+#if 1   // FIXME: based on old code, disabled in cc_light_scheduler.h
                 // schedule
-                ql::ir::bundles_t bundles = cc_light_schedule(decomp_ckt, platform, qubit_number, creg_count);
+//                ql::ir::bundles_t bundles = cc_light_schedule(decomp_ckt, platform, qubit_number, creg_count);
+                ql::ir::bundles_t bundles = cc_light_schedule(ckt, platform, qubit_number, creg_count);
 #else
                 // schedule with platform resource constraints
 //                ql::ir::bundles_t bundles = cc_light_schedule_rc(decomp_ckt, platform, qubit_number, creg_count);
@@ -327,7 +330,7 @@ private:
 
             // generate bundle header
             codegen.bundle_start(delta, SS2S("## Bundle " << bundleIdx++ <<
-                                              " (start_cycle=" << bundle.start_cycle <<                             // FIXME: the start_cycle info looks crappy
+                                              " (start_cycle=" << bundle.start_cycle <<             // FIXME: start_cycle seems to just increment by 1 per bundle
                                               ", duration_in_cycles=" << bundle.duration_in_cycles << "):"));
 
             // generate code for this bundle
@@ -401,7 +404,7 @@ private:
             }
 
             // generate bundle trailer
-            codegen.bundle_finish(delta);
+            codegen.bundle_finish(bundle.duration_in_cycles, delta);
 
             curr_cycle += delta;
         }

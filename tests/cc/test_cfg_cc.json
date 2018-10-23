@@ -504,7 +504,7 @@
 			"cc_light_instr": "ry180"
 		},
 		"cnot": {
-			"duration": 80,
+			"duration": 40,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": true,
