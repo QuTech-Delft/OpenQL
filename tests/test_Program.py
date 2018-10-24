@@ -68,6 +68,17 @@ class Test_program(unittest.TestCase):
             'set_sweep_points']
         self.assertTrue(set(program_methods).issubset(dir(p)))
 
+    def test_empty_program(self):
+        p = ql.Program("rb_program", platf, 2)
+        p.set_sweep_points([2,3], 2)
+        try:
+            p.compile()
+        except Exception as e:
+            self.assertNotEqual(e, 'Error: compiling a program with no kernels !')
+            pass
+        else:
+            raise Exception('Compiling empty program did not raise an exception!')
+
     def test_simple_program(self):
         nqubits = 2
         k = ql.Kernel("kernel1", platf, nqubits)
