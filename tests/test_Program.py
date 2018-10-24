@@ -49,6 +49,13 @@ class Test_program(unittest.TestCase):
         # there should be a check here to see if k was indeed added
         # p.kernel_list ==??
 
+    def test_sweep_points(self):
+        p = ql.Program("prog_name", platf, 1, 1)
+        lst = [2.0, 3.0, 4.0]
+        p.set_sweep_points(lst)
+        print(p.get_sweep_points())
+        self.assertEqual(p.get_sweep_points(), tuple(lst))
+
     def test_program_methods(self):
         # This tests for the existence of the right methods in the wrapping
         nqubits=5
@@ -65,7 +72,8 @@ class Test_program(unittest.TestCase):
             'compile',
             'microcode',
             'qasm',
-            'set_sweep_points']
+            'set_sweep_points',
+            'get_sweep_points']
         self.assertTrue(set(program_methods).issubset(dir(p)))
 
     def test_simple_program(self):
