@@ -22,5 +22,10 @@ class Test_options(unittest.TestCase):
         except:
             pass
 
+    def test_default_scheduler(self):
+        # tests if 'ALAP' is indeed the default scheduler policy
+        self.assertEqual('ALAP', ql.get_option('scheduler'),
+            'ALAP is not the default scheduler!')
+
 if __name__ == '__main__':
     unittest.main()
