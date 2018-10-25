@@ -17,12 +17,12 @@ kernel_adriaan_ALAP:
     2    x s0
     2    x s0
     2    x s0 | prepz s2
-    2    x90 s2 | x s0
-    2    x90 s2 | x s0
-    2    x90 s2 | x s0
     2    x s0 | x90 s2
-    2    x90 s2 | x s0
-    2    x90 s2 | x s0
+    2    x s0 | x90 s2
+    2    x s0 | x90 s2
+    2    x s0 | x90 s2
+    2    x s0 | x90 s2
+    2    x s0 | x90 s2
     2    measz s10
     qwait 2
 

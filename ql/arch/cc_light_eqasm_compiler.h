@@ -403,6 +403,7 @@ std::string classical_instruction2qisa(ql::arch::classical_cc* classical_ins)
     return ssclassical.str();
 }
 
+
 std::string bundles2qisa(ql::ir::bundles_t & bundles,
     ql::quantum_platform & platform, MaskManager & gMaskManager)
 {
@@ -410,6 +411,30 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
 
     std::stringstream ssbundles, sspre, ssinst;
     size_t curr_cycle=0;
+
+    // sort sections to get consistent output across multiple runs. The output
+    // is correct even without this sorting. Sorting is important to test the similarity
+    // of generated qisa against golden qisa files. For example, without sorting
+    // any of the following can be generated, which is correct but there will be
+    // differences reported by file_compare used for testing:
+    // x s0 | y s1
+    // OR
+    // y s1 | x s0
+    // However, with sorting it will always generate:
+    // x s0 | y s1
+    for (ql::ir::bundle_t & abundle : bundles)
+    {
+        // sorts instructions alphabetically
+        abundle.parallel_sections.sort( [] 
+            (const ql::ir::section_t & sec1, const ql::ir::section_t & sec2) -> bool
+            {
+                auto i1 = sec1.begin();
+                auto iname1 = (*(i1))->name;
+                auto i2 = sec2.begin();
+                auto iname2 = (*(i2))->name;
+                return iname2 < iname1;
+            });
+    }
 
     for (ql::ir::bundle_t & abundle : bundles)
     {
@@ -424,7 +449,8 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
             sspre << "    qwait " << delta-1 << "\n"
                   << "    1    ";
 
-        for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
+        for(auto secIt = abundle.parallel_sections.begin(); 
+            secIt != abundle.parallel_sections.end(); ++secIt )
         {
             qubit_set_t squbits;
             qubit_pair_set_t dqubits;
@@ -484,9 +510,6 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
                             throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
                         }
                     }
-
-                    //TODO:ORDER sort squbits here
-                    //TODO:ORDER sort dqubits here
 
                     std::string rname;
                     if( 1 == nOperands )
