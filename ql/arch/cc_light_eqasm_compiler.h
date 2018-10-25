@@ -424,7 +424,7 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
     // x s0 | y s1
     for (ql::ir::bundle_t & abundle : bundles)
     {
-        // abundle.parallel_sections.sort(section_comparator);
+        // sorts instructions alphabetically
         abundle.parallel_sections.sort( [] 
             (const ql::ir::section_t & sec1, const ql::ir::section_t & sec2) -> bool
             {
