@@ -338,6 +338,7 @@
 			"type": "readout",
 			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "measz"
+//					"measure": [],	// specify output and weight?
 		},
 		"i": {
 			"duration": 20,
@@ -370,10 +371,8 @@
 					},
 					{	"type": "switch",
 						"operand_idx": 0,
-						"value": ["{q}"]
+						"value": ["dummy"]	// NB: no actual signal is generated
 					}
-//					"flux": [],
-//					"measure": [],	// specify output and weight?
 				]
 			}
 		},

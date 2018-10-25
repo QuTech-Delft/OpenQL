@@ -74,13 +74,10 @@ public:
         comment(cmnt);
     }
 
-
-#define JSON_EXISTS(node, key)  (node.count(key) > 0)       // see PR #194
-
     void bundle_finish(int duration_in_cycles, int delta)   // FIXME: do we need parameter delta
     {
         json &ccSetupSlots = ccSetup["slots"];
-        for(size_t slotIdx=0; slotIdx<signalValues.size(); slotIdx++) {
+        for(size_t slotIdx=0; slotIdx<signalValues.size(); slotIdx++) {         // iterate over slot vector
             // collect info from JSON
             json &ccSetupSlot = ccSetupSlots[slotIdx];
             json &instrument = ccSetupSlot["instrument"];
@@ -90,53 +87,51 @@ public:
             bool isSlotUsed = false;
             uint32_t digOut = 0;
             size_t numGroups = signalValues[slotIdx].size();
-            for(size_t group=0; group<numGroups; group++) {
+            for(size_t group=0; group<numGroups; group++) {                     // iterate over groups used within slot
                 if(signalValues[slotIdx][group] != "") {
                     isSlotUsed = true;
-
-//                    comment(SS2S("# slot=" << slot << ", group=" << group));
 
                     // find control mode & bits
                     std::string controlModeName = instrument["control_mode"];
                     json &controlMode = controlModes[controlModeName];          // the control mode definition for our instrument
                     json &myControlBits = controlMode["control_bits"][group];
 
-                    // find or create codeword/mask fragment
-                    // FIXME allow single code word for vector of groups
-                    DOUT("bits for control: " << myControlBits);
+                    // find or create codeword/mask fragment for this group
+                    DOUT("instrumentName=" << instrumentName <<
+                         ", slot=" << slot <<
+                         ", group=" << group <<
+                        ", control bits: " << myControlBits);
                     size_t numBits = myControlBits.size();
                     if(numBits == 1) {      // single bit, implying this is a mask (not code word)
-                        digOut |= 1<<(int)myControlBits[0];
-                    } else {
-                        uint32_t codeWord = 0;
-
-                        DOUT("instrumentName=" << instrumentName << ", group=" << group);
+                        digOut |= 1<<(int)myControlBits[0];     // NB: we assume the mask is active high, which is correct for VSM and UHF-QC
+                    } else {                // > 1 bit, implying code word
+                        // FIXME allow single code word for vector of groups
                         // try to find code word
-                        std::string sigVal = signalValues[slotIdx][group];
+                        uint32_t codeWord = 0;
+                        std::string signalValue = signalValues[slotIdx][group];
 
-                        if(JSON_EXISTS(codewordTable, instrumentName) &&        // instrument exists
-                                        codewordTable[instrumentName].size() > group) {      // group exists
+                        if(JSON_EXISTS(codewordTable, instrumentName) &&                    // instrument exists
+                                        codewordTable[instrumentName].size() > group) {     // group exists
                             bool cwFound = false;
-                           // try to find sigVal
-                            for(codeWord=0; codeWord<codewordTable[instrumentName][group].size() && !cwFound; codeWord++) {   // NB: find() doesn't work for arrays
-                                if(codewordTable[instrumentName][group][codeWord] == sigVal) {
-                                    DOUT("value found at cw=" << codeWord);
+                           // try to find signalValue
+                            for(codeWord=0; codeWord<codewordTable[instrumentName][group].size() && !cwFound; codeWord++) {   // NB: JSON find() doesn't work for arrays
+                                if(codewordTable[instrumentName][group][codeWord] == signalValue) {
+                                    DOUT("signal value found at cw=" << codeWord);
                                     cwFound = true;
-                                    break;
                                 }
                             }
                             if(!cwFound) {
-                                DOUT("value '" << sigVal << "' not found in group " << group << ", which contains " << codewordTable[instrumentName][group]);
+                                DOUT("signal value '" << signalValue << "' not found in group " << group << ", which contains " << codewordTable[instrumentName][group]);
                                 // NB: codeWord already contains last used value + 1
                                 // FIXME: check that number is available
-                                codewordTable[instrumentName][group][codeWord] = sigVal;   // NB: structure created on demand
+                                codewordTable[instrumentName][group][codeWord] = signalValue;   // NB: structure created on demand
                             }
 
 //                            std::cout << std::setw(4) << codewordTable << std::endl; // FIXME
                         } else {    // new instrument/group
                             codeWord = 1;
                             codewordTable[instrumentName][group][0] = "";               // code word 0 is empty
-                            codewordTable[instrumentName][group][codeWord] = sigVal;    // NB: structure created on demand
+                            codewordTable[instrumentName][group][codeWord] = signalValue;    // NB: structure created on demand
 //                            std::cout << std::setw(4) << codewordTable << std::endl; // FIXME
                         }
 
@@ -147,7 +142,7 @@ public:
                         }
                     }
 
-                    // add trigger
+                    // add trigger to digOut
                     size_t triggersSize = controlMode["triggers"].size();
                     if(triggersSize == 0) {         // no trigger
                         // do nothing

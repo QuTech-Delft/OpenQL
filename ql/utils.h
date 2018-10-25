@@ -143,15 +143,15 @@ namespace ql
 
         // Helper function to sort the vector of pairs.
         // Pairs are sorted by first element of pairs and then by second element
-        bool sort_pair_helper(const std::pair<size_t,size_t> &a, const std::pair<size_t,size_t> &b) 
-        { 
+        bool sort_pair_helper(const std::pair<size_t,size_t> &a, const std::pair<size_t,size_t> &b)
+        {
             if(a.first < b.first)
                 return true;
             else if (a.first == b.first)
-                return (a.second < b.second); 
+                return (a.second < b.second);
             else
                 return false;
-        } 
+        }
 
         namespace logger
         {
@@ -209,9 +209,9 @@ namespace ql
 #define COUT(content) \
         std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" "<< content << std::endl
 
-// helper makro: stringstream to string
+// helper macro: stringstream to string
 // based on https://stackoverflow.com/questions/21924156/how-to-initialize-a-stdstringstream
-#define SS2S(VALUES) std::string(static_cast<std::ostringstream&&>(std::ostringstream() << VALUES).str())
+#define SS2S(values) std::string(static_cast<std::ostringstream&&>(std::ostringstream() << values).str())
 
 #define FATAL(content) \
         {   EOUT(content); \
@@ -220,6 +220,9 @@ namespace ql
 
 // get the number of elements in an array
 #define ELEM_CNT(x) (sizeof(x)/sizeof(x[0]))
+
+// check existence of JSON key within node, see PR #194
+#define JSON_EXISTS(node, key)  (node.count(key) > 0)
 
 #endif //QL_UTILS_H
 
