@@ -2,6 +2,18 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [ 0.5.5 ] - [ 2018-10-25 ]
+### Added
+
+### Changed
+- simplified interface of Program.set_sweep_points (Issue #184)
+### Removed
+
+### Fixed
+- instruction ordering to generate consistent qisa (Issue #190)
+- stateful behaviour in OpenQL (Issue #171)
+
+
 ## [ 0.5.4 ] - [ 2018-10-17 ]
 ### Added
 
