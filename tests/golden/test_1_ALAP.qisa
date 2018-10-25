@@ -35,16 +35,16 @@ start:
 
 kernel_1_ALAP:
     1    x s10
-    2    y90 s0 | x s2
+    2    x s2 | y90 s0
     2    cz t0
-    4    y90 s0 | x s3
+    4    x s3 | y90 s0
     2    cz t1
     2    x s4
     2    y90 s11
-    2    cz t2 | y90 s2
+    2    y90 s2 | cz t2
     2    y90 s2
-    2    cz t3 | y90 s1
-    2    cz t4 | y90 s3
+    2    y90 s1 | cz t3
+    2    y90 s3 | cz t4
     2    y90 s12
     2    cz t5
     4    x s5 | y90 s13
@@ -54,7 +54,7 @@ kernel_1_ALAP:
     2    cz t7
     2    y90 s4
     2    y90 s15
-    2    cz t8 | y90 s5
+    2    y90 s5 | cz t8
     2    y90 s5
     2    y90 s16 | cz t9
     2    cz t10

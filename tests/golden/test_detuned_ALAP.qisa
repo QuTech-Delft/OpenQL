@@ -13,7 +13,7 @@ start:
 
 kernel_detuned_ALAP:
     1    cz t0
-    4    cz t0 | x s3
+    4    x s3 | cz t0
     2    y s3
     qwait 2
 

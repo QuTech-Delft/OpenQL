@@ -121,7 +121,7 @@ public:
     ~creg()
     {
         creg_ids.free(id);
-        DOUT("freed creg : " << id);
+        // DOUT("freed creg : " << id);
     }
 };
 
