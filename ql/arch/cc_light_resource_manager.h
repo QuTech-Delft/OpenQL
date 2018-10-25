@@ -66,7 +66,7 @@ public:
     // bwd: qubit q is busy from cycle=state[q], i.e. all cycles >= state[q] it is busy, i.e. start_cycle+duration must be <= state[q]
     std::vector<size_t> state;
 
-    qubit_resource_t(ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("qubits", dir)
+    qubit_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("qubits", dir)
     {
         // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
@@ -135,7 +135,7 @@ public:
     std::vector<std::string> operations;    // with operation_name==operations[qwg]
     std::map<size_t,size_t> qubit2qwg;      // on qwg==qubit2qwg[q]
 
-    qwg_resource_t(ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("qwgs", dir)
+    qwg_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("qwgs", dir)
     {
         // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
@@ -150,7 +150,7 @@ public:
             operations[i] = "";
         }
         auto & constraints = platform.resources[name]["connection_map"];
-        for (json::iterator it = constraints.begin(); it != constraints.end(); ++it)
+        for (json::const_iterator it = constraints.begin(); it != constraints.end(); ++it)
         {
             // COUT(it.key() << " : " << it.value() );
             size_t qwgNo = stoi( it.key() );
@@ -244,7 +244,7 @@ public:
     std::vector<size_t> tocycle;    // is busy till cycle
     std::map<size_t,size_t> qubit2meas;
 
-    meas_resource_t(ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("meas_units", dir)
+    meas_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("meas_units", dir)
     {
         // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
@@ -257,7 +257,7 @@ public:
             tocycle[i] = (forward_scheduling == dir ? 0 : MAX_CYCLE);
         }
         auto & constraints = platform.resources[name]["connection_map"];
-        for (json::iterator it = constraints.begin(); it != constraints.end(); ++it)
+        for (json::const_iterator it = constraints.begin(); it != constraints.end(); ++it)
         {
             // COUT(it.key() << " : " << it.value());
             size_t measUnitNo = stoi( it.key() );
@@ -338,7 +338,7 @@ public:
     std::map< qubits_pair_t, size_t > qubits2edge;
     std::map<size_t, std::vector<size_t> > edge2edges;
 
-    edge_resource_t(ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("edges", dir)
+    edge_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("edges", dir)
     {
         // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
@@ -369,7 +369,7 @@ public:
         }
 
         auto & constraints = platform.resources[name]["connection_map"];
-        for (json::iterator it = constraints.begin(); it != constraints.end(); ++it)
+        for (json::const_iterator it = constraints.begin(); it != constraints.end(); ++it)
         {
             // COUT(it.key() << " : " << it.value() << "\n");
             size_t edgeNo = stoi( it.key() );
@@ -498,7 +498,7 @@ public:
     std::map< qubits_pair_t, size_t > qubitpair2edge;           // map: pair of qubits to edge (from grid configuration)
     std::map<size_t, std::vector<size_t> > edge_detunes_qubits; // map: edge to vector of qubits that edge detunes (resource desc.)
 
-    detuned_qubits_resource_t(ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("detuned_qubits", dir)
+    detuned_qubits_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("detuned_qubits", dir)
     {
         // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
@@ -515,7 +515,7 @@ public:
         }
 
         // initialize qubitpair2edge map from json description; this is a constant map
-        for( auto & anedge : platform.topology["edges"] )
+        for(auto & anedge : platform.topology["edges"])
         {
             size_t s = anedge["src"];
             size_t d = anedge["dst"];
@@ -536,7 +536,7 @@ public:
 
         // initialize edge_detunes_qubits map from json description; this is a constant map
         auto & constraints = platform.resources[name]["connection_map"];
-        for (json::iterator it = constraints.begin(); it != constraints.end(); ++it)
+        for (json::const_iterator it = constraints.begin(); it != constraints.end(); ++it)
         {
             // COUT(it.key() << " : " << it.value() << "\n");
             size_t edgeNo = stoi( it.key() );
@@ -719,13 +719,13 @@ public:
     }
 
     // backward compatible delegating constructor, only doing forward_scheduling
-    resource_manager_t( ql::quantum_platform & platform) : resource_manager_t( platform, forward_scheduling) {}
+    resource_manager_t(const ql::quantum_platform & platform) : resource_manager_t( platform, forward_scheduling) {}
 
-    resource_manager_t( ql::quantum_platform & platform, scheduling_direction_t dir )
+    resource_manager_t(const ql::quantum_platform & platform, scheduling_direction_t dir)
     {
         DOUT("Constructing inited resouce_manager_t");
         DOUT("New one for direction " << dir << " with no of resources : " << platform.resources.size() );
-        for (json::iterator it = platform.resources.begin(); it != platform.resources.end(); ++it)
+        for (json::const_iterator it = platform.resources.begin(); it != platform.resources.end(); ++it)
         {
             // COUT(it.key() << " : " << it.value() << "\n");
             std::string n = it.key();

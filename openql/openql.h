@@ -297,8 +297,19 @@ public:
 
     void set_sweep_points(std::vector<float> sweep_points, size_t num_sweep_points)
     {
+        WOUT("This will soon be deprecated in favor of set_sweep_points(sweep_points)");
         float* sp = &sweep_points[0];
         program->set_sweep_points(sp, num_sweep_points);
+    }
+
+    void set_sweep_points(std::vector<float> sweep_points)
+    {
+        program->sweep_points = sweep_points;
+    }
+
+    std::vector<float> get_sweep_points()
+    {
+        return program->sweep_points;
     }
 
     void add_kernel(Kernel& k)

@@ -582,9 +582,34 @@ Parameters
 ----------
 arg1 : []
     list of sweep points
-arg1 : int
+arg2 : int
 	number of sweep points
 """
+
+
+%feature("docstring") Program::set_sweep_points
+""" Sets sweep points for an experiment.
+
+Parameters
+----------
+arg1 : []
+    list of sweep points
+"""
+
+
+%feature("docstring") Program::get_sweep_points
+""" Returns sweep points for an experiment.
+
+Parameters
+----------
+None
+
+Returns
+-------
+[]
+    list of sweep points """
+
+
 
 %feature("docstring") Program::add_kernel
 """ Adds specified kernel to program.

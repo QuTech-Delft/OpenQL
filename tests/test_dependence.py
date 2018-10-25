@@ -11,21 +11,20 @@ platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
 
-
 class Test_dependence(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(self):
+    def setUp(self):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ASAP')
-        ql.set_option('log_level', 'LOG_INFO')
+        ql.set_option('log_level', 'LOG_WARNING')
 
+    def tearDown(self):
+        ql.set_option('scheduler', 'ALAP')
 
     # @unittest.expectedFailure
     # @unittest.skip
     def test_independent(self):
-
         nqubits = 4
         # populate kernel
         k = ql.Kernel("aKernel", platf, nqubits)
@@ -54,8 +53,6 @@ class Test_dependence(unittest.TestCase):
 
     # @unittest.skip
     def test_WAW(self):
-
-
         nqubits = 4
         # populate kernel
         k = ql.Kernel("aKernel", platf, nqubits)
@@ -85,7 +82,6 @@ class Test_dependence(unittest.TestCase):
 
     # @unittest.skip
     def test_RAR_Control(self):
-
         nqubits = 4
 
         # populate kernel

@@ -47,6 +47,13 @@ class Test_program(unittest.TestCase):
         # there should be a check here to see if k was indeed added
         # p.kernel_list ==??
 
+    def test_sweep_points(self):
+        p = ql.Program("prog_name", platf, 1, 1)
+        lst = [2.0, 3.0, 4.0]
+        p.set_sweep_points(lst)
+        print(p.get_sweep_points())
+        self.assertEqual(p.get_sweep_points(), tuple(lst))
+
     def test_program_methods(self):
         # This tests for the existence of the right methods in the wrapping
         nqubits=5
@@ -63,8 +70,20 @@ class Test_program(unittest.TestCase):
             'compile',
             'microcode',
             'qasm',
-            'set_sweep_points']
+            'set_sweep_points',
+            'get_sweep_points']
         self.assertTrue(set(program_methods).issubset(dir(p)))
+
+    # An empty program (with no kernels in it) when compiled, should raise an
+    # error. This test checks if an exception is indeed raised!
+    def test_empty_program(self):
+        p = ql.Program("rb_program", platf, 2)
+        p.set_sweep_points([2,3], 2)
+        with self.assertRaises(Exception) as cm:
+            p.compile()
+
+        self.assertEqual(str(cm.exception), 'Error: compiling a program with no kernels !')
+
 
     def test_simple_program(self):
         nqubits = 2
@@ -81,7 +100,7 @@ class Test_program(unittest.TestCase):
         p = ql.Program("rb_program", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
-        print( p.qasm() )
+        # print( p.qasm() )
         p.compile()
 
 

@@ -78,7 +78,7 @@ typedef enum __gate_type_t
     __custom_gate__,
     __composite_gate__,
     __measure_gate__,
-    __display__,         // TODO change it later such that it should be available from config file as custom gate
+    __display__,
     __display_binary__,
     __nop_gate__,
     __dummy_gate__,
@@ -1438,7 +1438,7 @@ public:
             throw ql::exception("[x] error : ql::custom_gate() : error while loading instruction '" + name + "' : attribute '" + l_attr + "' : \n\t" + e.what(), false);
         }
 
-        if ( !instr["cc_light_instr"].is_null() )
+        if ( instr.count("cc_light_instr") > 0)
         {
             arch_operation_name = instr["cc_light_instr"];
         }

@@ -34,11 +34,11 @@ class quantum_program
    protected:
       bool                        default_config;
       std::string                 config_file_name;
-      std::vector<float>          sweep_points;
       std::vector<quantum_kernel> kernels;
 
    public: 
-      std::string           name;      
+      std::string           name;
+      std::vector<float>    sweep_points;
       ql::quantum_platform  platform;
       size_t                qubit_count;
       size_t                creg_count;
@@ -413,7 +413,10 @@ class quantum_program
          IOUT("compiling ...");
 
          if (kernels.empty())
-            return -1;
+         {
+            EOUT("compiling a program with no kernels");
+            throw ql::exception("Error: compiling a program with no kernels !",false);
+         }
 
          if( ql::options::get("optimize") == "yes" )
          {
