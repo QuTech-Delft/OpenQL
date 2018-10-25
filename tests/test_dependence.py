@@ -11,20 +11,20 @@ platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
 
-def set_ql_options():
-    ql.set_option('output_dir', output_dir)
-    ql.set_option('optimize', 'no')
-    ql.set_option('scheduler', 'ASAP')
-    ql.set_option('log_level', 'LOG_INFO')
-
-
-
 class Test_dependence(unittest.TestCase):
+
+    def setUp(self):
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ASAP')
+        ql.set_option('log_level', 'LOG_WARNING')
+
+    def tearDown(self):
+        ql.set_option('scheduler', 'ALAP')
 
     # @unittest.expectedFailure
     # @unittest.skip
     def test_independent(self):
-        set_ql_options()
         nqubits = 4
         # populate kernel
         k = ql.Kernel("aKernel", platf, nqubits)
@@ -64,8 +64,6 @@ class Test_dependence(unittest.TestCase):
 
     # @unittest.skip
     def test_WAW(self):
-        set_ql_options()
-
         nqubits = 4
         # populate kernel
         k = ql.Kernel("aKernel", platf, nqubits)
@@ -108,7 +106,6 @@ class Test_dependence(unittest.TestCase):
 
     # @unittest.skip
     def test_RAR_Control(self):
-        set_ql_options()
         nqubits = 4
 
         # populate kernel
@@ -150,7 +147,7 @@ class Test_dependence(unittest.TestCase):
 
     # @unittest.skip
     def test_RAW(self):
-        set_ql_options()
+
         nqubits = 4
 
         # populate kernel
@@ -192,7 +189,7 @@ class Test_dependence(unittest.TestCase):
 
     # @unittest.skip
     def test_WAR(self):
-        set_ql_options()
+
         nqubits = 4
 
         # populate kernel
@@ -233,7 +230,7 @@ class Test_dependence(unittest.TestCase):
 
     # @unittest.skip
     def test_swap_single(self):
-        set_ql_options()
+
         nqubits = 4
 
         # populate kernel
@@ -267,7 +264,7 @@ class Test_dependence(unittest.TestCase):
 
     # @unittest.skip
     def test_swap_multi(self):
-        set_ql_options()
+
         nqubits = 5
 
         # populate kernel
