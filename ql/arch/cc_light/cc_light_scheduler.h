@@ -58,7 +58,7 @@ std::string get_cc_light_instruction_name(std::string & id, const ql::quantum_pl
 
 
 ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
-    ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
+    const ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Scheduling CC-Light instructions ...");
     Scheduler sched;

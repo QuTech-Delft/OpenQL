@@ -166,15 +166,15 @@
 					{	"type": "mw",
 						"operand_idx": 0,
 						"value": [
-							"{gateName}-gauss-{instrumentName}-i",
-							"{gateName}-gauss-{instrumentName}-q",
-							"{gateName}-derGauss-{instrumentName}-i",
-							"{gateName}-derGauss-{instrumentName}-q"	// FIXME: {instrumentName} should evaluate to proper channel group
+							"{gateName}-{instrumentName}-gi",
+							"{gateName}-{instrumentName}-gq",
+							"{gateName}-{instrumentName}-di",
+							"{gateName}-{instrumentName}-dq"	// FIXME: {instrumentName} should evaluate to proper channel group
 						]
 					},
 					{	"type": "switch",
 						"operand_idx": 0,
-						"value": ["{q}"]
+						"value": ["dummy"]	// NB: no actual signal is generated
 					}
 				]
 			}
@@ -359,21 +359,7 @@
 			"cc_light_instr": "x",
 			"cc": {
 				//"signal": {"$ref": "#/hardware_settings/eqasm_backend_cc/signals/single-qubit"}
-				"signal": [
-					{	"type": "mw",
-						"operand_idx": 0,
-						"value": [
-							"{gateName}-gauss-{instrumentName}-i",
-							"{gateName}-gauss-{instrumentName}-q",
-							"{gateName}-derGauss-{instrumentName}-i",
-							"{gateName}-derGauss-{instrumentName}-q"	// FIXME: {instrumentName} should evaluate to proper channel group
-						]
-					},
-					{	"type": "switch",
-						"operand_idx": 0,
-						"value": ["dummy"]	// NB: no actual signal is generated
-					}
-				]
+				"signal_ref": "single-qubit"		// NB: reference, instead of defining "signal" here
 			}
 		},
 		"y": {

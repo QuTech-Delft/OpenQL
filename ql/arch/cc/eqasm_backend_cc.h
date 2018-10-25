@@ -87,7 +87,7 @@ public:
 
     // compile for Central Controller (CCCODE)
     // FIXME: are we good for several calls?
-    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
+    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, const ql::quantum_platform& platform)
     {
 #if 1   // FIXME: patch for issue #164, should be moved to caller
         if(kernels.size() == 0) {
@@ -319,7 +319,7 @@ private:
 
 
     // based on cc_light_eqasm_compiler.h::bundles2qisa()
-    void codegen_bundles(ql::ir::bundles_t &bundles, ql::quantum_platform &platform)
+    void codegen_bundles(ql::ir::bundles_t &bundles, const ql::quantum_platform &platform)
     {
         IOUT("Generating CCCODE for bundles");
         size_t curr_cycle = 0;
@@ -421,7 +421,7 @@ private:
 
 
     // based on: cc_light_eqasm_compiler.h::load_hw_settings
-    void load_hw_settings(ql::quantum_platform& platform)
+    void load_hw_settings(const ql::quantum_platform& platform)
     {
         const struct {
             size_t  *var;

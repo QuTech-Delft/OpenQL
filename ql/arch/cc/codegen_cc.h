@@ -36,7 +36,7 @@ public:
     | Generic
     \************************************************************************/
 
-    void init(ql::quantum_platform& platform)
+    void init(const ql::quantum_platform& platform)
     {
         load_backend_settings(platform);
     }
@@ -189,7 +189,7 @@ public:
 
     // single/two/N qubit gate
     // FIXME: remove parameter platform
-    void custom_gate(std::string iname, std::vector<size_t> ops, ql::quantum_platform& platform)
+    void custom_gate(std::string iname, std::vector<size_t> ops, const ql::quantum_platform& platform)
     {
         // generate comment
         std::string instr_name = platform.get_instruction_name(iname);  // FIXME: refers to cclight
@@ -202,8 +202,15 @@ public:
         comment(cmnt.str());
 
         // iterate over signals defined in instruction
-        json &instruction = platform.find_instruction(iname);
-        json &signal = instruction["cc"]["signal"];
+        json instruction = platform.find_instruction(iname);
+        json *tmp;
+        if(JSON_EXISTS(instruction["cc"], "signal_ref")) {
+            std::string reference = instruction["cc"]["signal_ref"];
+            tmp = &ccSetup["signals"][reference];  // poor man's JSON pointer
+        } else {
+            tmp = &instruction["cc"]["signal"];
+        }
+        json &signal = *tmp;
         for(size_t s=0; s<signal.size(); s++) {
             // get the qubit to work on
             size_t operandIdx = signal[s]["operand_idx"];
@@ -365,7 +372,7 @@ private:
     | Functions processing JSON
     \************************************************************************/
 
-    void load_backend_settings(ql::quantum_platform& platform)
+    void load_backend_settings(const ql::quantum_platform& platform)
     {
         // parts of JSON syntax
         const char *instrumentTypes[] = {"cc", "switch", "awg", "measure"};

@@ -141,7 +141,7 @@ public:
      * @note    Only works for custom instructions defined in JSON
        FIXME:   it may be more useful to get the information directly from JSON, because arch_operation_name is not really generic
      */
-    std::string get_instruction_name(std::string &iname)
+    std::string get_instruction_name(std::string &iname) const
     {
         std::string instr_name;
         auto it = instruction_map.find(iname);
@@ -164,7 +164,8 @@ public:
 
 
     // find settings for custom gate, preventing JSON exceptions
-    json &find_instruction(std::string iname)
+    // NB: we cannot pass json& to backends that receive a 'const ql::quantum_platform& platform'
+    json find_instruction(std::string iname) const
     {
         // search the JSON defined instructions, to prevent JSON exception if key does not exist
         if (instruction_settings.find(iname) == instruction_settings.end())
@@ -177,9 +178,9 @@ public:
 
 
     // find instruction type for custom gate
-    std::string find_instruction_type(std::string iname)
+    std::string find_instruction_type(std::string iname) const
     {
-        json &instruction = find_instruction(iname);
+        json instruction = find_instruction(iname);
         return instruction["type"];
     }
 };
