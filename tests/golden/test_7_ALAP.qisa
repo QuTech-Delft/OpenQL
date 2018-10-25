@@ -16,7 +16,7 @@ kernel_7_ALAP:
     1    prepz s0
     2    h s0
     2    t s0 | prepz s2
-    2    h s10 | prepz s5
+    2    prepz s5 | h s10
     2    t s10 | prepz s11 | h s5
     2    measz s7
     qwait 2
