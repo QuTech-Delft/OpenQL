@@ -118,7 +118,7 @@ public:
                 decompose_instructions(ckt, decomp_ckt, platform);          // decompose meta-instructions
 #endif
 
-#if 1   // FIXME: based on old code, disabled in cc_light_scheduler.h
+#if 0   // FIXME: based on old code, disabled in cc_light_scheduler.h
                 // schedule
 //                ql::ir::bundles_t bundles = cc_light_schedule(decomp_ckt, platform, qubit_number, creg_count);
                 ql::ir::bundles_t bundles = cc_light_schedule(ckt, platform, qubit_number, creg_count);

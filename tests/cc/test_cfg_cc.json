@@ -125,7 +125,7 @@
 							"type": "zi-hdawg",
 							"control_mode": "awg8-mw-vsm",
 							"signal_type": "mw",
-							"qubits": [[0, 1, 2, 3], [4, 5, 6, 7]]
+							"qubits": [[0, 1, 2, 3], [4, 5, 6, 7]]		// FIXME: should match resources:qwg
 						}
 					},
 					{	"slot": 5,
@@ -161,22 +161,34 @@
 				]
 			},
 
+			// Signal library that gate definitions can refer to
 			"signals": {
 				"single-qubit": [
 					{	"type": "mw",
 						"operand_idx": 0,
 						"value": [
-							"{gateName}-{instrumentName}-gi",
-							"{gateName}-{instrumentName}-gq",
-							"{gateName}-{instrumentName}-di",
-							"{gateName}-{instrumentName}-dq"	// FIXME: {instrumentName} should evaluate to proper channel group
+							"{gateName}-{instrumentName}:{instrumentGroup}-gi",
+							"{gateName}-{instrumentName}:{instrumentGroup}-gq",
+							"{gateName}-{instrumentName}:{instrumentGroup}-di",
+							"{gateName}-{instrumentName}:{instrumentGroup}-dq"
 						]
 					},
 					{	"type": "switch",
 						"operand_idx": 0,
 						"value": ["dummy"]	// NB: no actual signal is generated
 					}
+				],
+				"two-qubit": [
+					{	"type": "flux",
+						"operand_idx": 0,		// FIXME: control, or target?
+						"value": ["flux-0-{qubit}"]
+					},
+					{	"type": "flux",
+						"operand_idx": 1,		// FIXME: control, or target?
+						"value": ["flux-1-{qubit}"]
+					}
 				]
+
 			}
 		}
 	},
@@ -188,9 +200,8 @@
 		"qwgs" : {
 			"count": 3,
 			"connection_map": {
-				"0" : [0, 1],
-				"1" : [2, 3, 4],
-				"2" : [5, 6]
+				"0" : [0, 1, 2, 3],
+				"1" : [4, 5, 6]
 			}
 		},
 		"meas_units" : {
@@ -256,13 +267,61 @@
 		]
 	},
 
+
+	// extracted from PyqQED_py3 'generate_CCL_cfg.py'
+  	"gate_decomposition": {
+// FIXME: needs work to function with rest of this file
+      "x %0": ["rx180 %0"],
+      "y %0": ["ry180 %0"],
+      "roty90 %0": ["ry90 %0"],
+      "cnot %0,%1": ["ry90 %1", "cz %0,%1", "ry90 %1"],
+
+      // To support other forms of writing the same gates
+      "x180 %0": ["rx180 %0"],
+      "y180 %0": ["ry180 %0"],
+      "y90 %0": ["ry90 %0"],
+      "x90 %0": ["rx90 %0"],
+      "my90 %0": ["rym90 %0"],
+      "mx90 %0": ["rxm90 %0"],
+
+      // Clifford decomposition per Epstein et al. Phys. Rev. A 89, 062321 (2014)
+      "cl_0 %0": ["i %0"],
+      "cl_1 %0": ["ry90 %0", "rx90 %0"],
+      "cl_2 %0": ["rxm90 %0", "rym90 %0"],
+      "cl_3 %0": ["rx180 %0"],
+      "cl_4 %0": ["rym90 %0", "rxm90 %0"],
+      "cl_5 %0": ["rx90 %0", "rym90 %0"],
+      "cl_6 %0": ["ry180 %0"],
+      "cl_7 %0": ["rym90 %0", "rx90 %0"],
+      "cl_8 %0": ["rx90 %0", "ry90 %0"],
+      "cl_9 %0": ["rx180 %0", "ry180 %0"],
+      "cl_10 %0": ["ry90 %0", "rxm90 %0"],
+      "cl_11 %0": ["rxm90 %0", "ry90 %0"],
+
+      "cl_12 %0": ["ry90 %0", "rx180 %0"],
+      "cl_13 %0": ["rxm90 %0"],
+      "cl_14 %0": ["rx90 %0", "rym90 %0", "rxm90 %0"],
+      "cl_15 %0": ["rym90 %0"],
+      "cl_16 %0": ["rx90 %0"],
+      "cl_17 %0": ["rx90 %0", "ry90 %0", "rx90 %0"],
+      "cl_18 %0": ["rym90 %0", "rx180 %0"],
+      "cl_19 %0": ["rx90 %0", "ry180 %0"],
+      "cl_20 %0": ["rx90 %0", "rym90 %0", "rx90 %0"],
+      "cl_21 %0": ["ry90 %0"],
+      "cl_22 %0": ["rxm90 %0", "ry180 %0"],
+      "cl_23 %0": ["rx90 %0", "ry90 %0", "rxm90 %0"]
+  	},
+
+
 	// FIXME: allow AWG8 setPrecompClear with wave
 	// FIXME: remove instructions we don't/cannot use
+	// FIXME: key 'matrix' is required, but does not contain useful information
 	"instructions": {
 		// additions from 'CC-software-implementation.docx':
 		"park_cz" : { // park signal with same length as cz gate
 			"duration" : 40,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],	// FIXME: required
+			"latency": 0,
+			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"cc": {
 				"sig": {
 					"flux": {
@@ -275,7 +334,8 @@
 		},
 		"park_measure" : { // park signal with same length as measurement
 			"duration" : 300,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],	// FIXME: required
+			"latency": 0,
+			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"cc": {
 				"sig": {
 //					"flux,<codeword>,%q" // %q assumes same codeword for all qubits
@@ -283,63 +343,42 @@
 			}
 		},
 
-		// gate set from 'test_cfg_none_s7.json':
-		"prepx": {
-			"duration": 320,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
-			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "prepx"
-		},
+
+
+
+		// based on PyqQED_py3 'generate_CCL_cfg.py':
 		"prepz": {
-			"duration": 320,
+			"duration": 200000,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
-			"type": "none",
+			"type": "readout",
 			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "prepz"
 		},
-		"cprepz": {
-			"duration": 320,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
-			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "cprepz",
-			"cc_light_cond" : 1
-		},
-		"measx": {
-			"duration": 300,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
-			"type": "readout",
-			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "measx"
-		},
-		"measz": {
-			"duration": 300,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
-			"type": "readout",
-			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "measz"
-		},
+
 		"measure": {
-			"duration": 300,
+			"duration": 800,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "readout",
 			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "measz"
-//					"measure": [],	// specify output and weight?
+			"cc_light_instr": "measz",
+			"cc": {
+				"signal": [
+					{	"type": "measure",
+						"operand_idx": 0,
+						"value": [
+							"FIXME"	// FIXME: specify output and weight?
+						]
+					}
+				]
+			}
 		},
+
+		// based on PyqQED_py3 'mw_lutman.py' and 'generate_CCL_cfg.py':
+		// FIXME: also add conditional single qubit gates?
 		"i": {
 			"duration": 20,
 			"latency": 0,
@@ -347,9 +386,12 @@
 			"disable_optimization": false,
 			"type": "mw",
 			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "i"
+			"cc_light_instr": "i",
+			"cc": {
+				"signal_ref": "single-qubit"
+			}
 		},
-		"x": {
+		"rx180": {
 			"duration": 20,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -362,50 +404,17 @@
 				"signal_ref": "single-qubit"		// NB: reference, instead of defining "signal" here
 			}
 		},
-		"y": {
+		"ry180": {
 			"duration": 20,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"disable_optimization": false,
 			"type": "mw",
 			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "y"
-		},
-		"z": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
-			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "z"
-		},
-		"h": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
-			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "h"
-		},
-		"s": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
-			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "s"
-		},
-		"sdag": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
-			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "sdag"
+			"cc_light_instr": "y",
+			"cc": {
+				"signal_ref": "single-qubit"
+			}
 		},
 		"rx90": {
 			"duration": 20,
@@ -414,101 +423,49 @@
 			"disable_optimization": false,
 			"type": "mw",
 			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "x90"
-		},
-		"xm90": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
-			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "xm90"
-		},
-		"ry90 q0": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
-			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "y90"
-		},
-		"ym90": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
-			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "ym90"
-		},
-		"t": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
-			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "t"
-		},
-		"tdag": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
-			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "tdag"
-		},
-		"x45": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
-			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "x45"
-		},
-		"xm45": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
-			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "xm45"
-		},
-		"ry180": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
-			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "ry180"
-		},
-		"cnot": {
-			"duration": 40,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": true,
-			"type": "flux",
-			"cc_light_instr_type": "two_qubit_gate",
-			"cc_light_instr": "cnot",
+			"cc_light_instr": "x90",
 			"cc": {
-				"signal": [
-					{	"type": "flux",
-						"operand_idx": 0,		// control, or target?
-						"value": ["flux-0-{q}"]
-					},
-					{	"type": "flux",
-						"operand_idx": 1,		// control, or target?
-						"value": ["flux-1-{q}"]
-					}
-				]
+				"signal_ref": "single-qubit"
 			}
 		},
+		"ry90": {
+			"duration": 20,
+			"latency": 0,
+			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+			"disable_optimization": false,
+			"type": "mw",
+			"cc_light_instr_type": "single_qubit_gate",
+			"cc_light_instr": "y90",
+			"cc": {
+				"signal_ref": "single-qubit"
+			}
+		},
+		"rxm90": {
+			"duration": 20,
+			"latency": 0,
+			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+			"disable_optimization": false,
+			"type": "mw",
+			"cc_light_instr_type": "single_qubit_gate",
+			"cc_light_instr": "xm90",
+			"cc": {
+				"signal_ref": "single-qubit"
+			}
+		},
+		"rym90": {
+			"duration": 20,
+			"latency": 0,
+			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+			"disable_optimization": false,
+			"type": "mw",
+			"cc_light_instr_type": "single_qubit_gate",
+			"cc_light_instr": "ym90",
+			"cc": {
+				"signal_ref": "single-qubit"
+			}
+		},
+
+
 
 		// should handle:
 		// https://github.com/QE-Lab/OpenQL/issues/166
@@ -520,7 +477,10 @@
 			"disable_optimization": true,
 			"type": "flux",
 			"cc_light_instr_type": "two_qubit_gate",
-			"cc_light_instr": "cz"
+			"cc_light_instr": "cz",
+			"cc": {
+				"signal_ref": "two-qubit"		// NB: reference, instead of defining "signal" here
+			}
 		}
 	}	// end of "instructions"
 }

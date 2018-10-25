@@ -19,6 +19,28 @@ namespace arch
 {
 
 
+// from: https://stackoverflow.com/questions/5878775/how-to-find-and-replace-string
+template <typename T, typename U>
+T &replace (
+          T &str,
+    const U &from,
+    const U &to)
+{
+    size_t pos;
+    size_t offset = 0;
+    const size_t increment = to.size();
+
+    while ((pos = str.find(from, offset)) != T::npos)
+    {
+        str.replace(pos, from.size(), to);
+        offset = pos + increment;
+    }
+
+    return str;
+}
+
+
+
 class codegen_cc
 {
 public:
@@ -192,25 +214,32 @@ public:
     void custom_gate(std::string iname, std::vector<size_t> ops, const ql::quantum_platform& platform)
     {
         // generate comment
-        std::string instr_name = platform.get_instruction_name(iname);  // FIXME: refers to cclight
+//        std::string instr_name = platform.get_instruction_name(iname);  // FIXME: refers to cclight
         std::stringstream cmnt;
-        cmnt << "# " << instr_name << " ";
+        cmnt << "# gate '" << iname << " ";
         for(size_t i=0; i<ops.size(); i++) {
             cmnt << ops[i];
             if(i<ops.size()-1) cmnt << ",";
         }
+        cmnt << "'";
         comment(cmnt.str());
 
-        // iterate over signals defined in instruction
+        // find signal definition for iname
         json instruction = platform.find_instruction(iname);
         json *tmp;
         if(JSON_EXISTS(instruction["cc"], "signal_ref")) {
-            std::string reference = instruction["cc"]["signal_ref"];
-            tmp = &ccSetup["signals"][reference];  // poor man's JSON pointer
+            std::string signalRef = instruction["cc"]["signal_ref"];
+            tmp = &signals[signalRef];  // poor man's JSON pointer
+            if(tmp->size() == 0) {
+                FATAL("signal_ref'" << signalRef << "' in instruction '" << iname << "' does not resolve");
+            }
         } else {
             tmp = &instruction["cc"]["signal"];
+            DOUT("signal for '" << instruction << "': " << *tmp);
         }
         json &signal = *tmp;
+
+        // iterate over signals defined in instruction
         for(size_t s=0; s<signal.size(); s++) {
             // get the qubit to work on
             size_t operandIdx = signal[s]["operand_idx"];
@@ -230,16 +259,20 @@ public:
             json &ccSetupSlot = ccSetup["slots"][si.slotIdx];
             std::string instrumentName = ccSetupSlot["instrument"]["name"];
             int slot = ccSetupSlot["slot"];
+
+            // expand macros in signalValue
+            std::string signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
+            replace(signalValueString, std::string("{gateName}"), iname);
+            replace(signalValueString, std::string("{instrumentName}"), instrumentName);
+            replace(signalValueString, std::string("{instrumentGroup}"), std::to_string(si.group));
+            replace(signalValueString, std::string("{qubit}"), std::to_string(qubit));
+
             comment(SS2S("# slot=" << slot <<
                          ", group=" << si.group <<
-                         ", instrument=" << instrumentName <<
-                         ", signal=" << instructionSignalValue));
-
+                         ", instrument='" << instrumentName <<
+                         "', signal='" << signalValueString << "'"));
 
             // check and store signal value
-            std::string signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
-            // FIXME: expand macros in string
-
             // make room in signalValues matrix
 // FIXME            signalValues.reserve(si.slotIdx+1);
 //            signalValues[si.slotIdx].reserve(si.group+1);
@@ -248,10 +281,11 @@ public:
             } else if(signalValues[si.slotIdx][si.group] == signalValueString) {    // unchanged
                 // do nothing
             } else {
-                FATAL("Signal conflict on instrument=" << instrumentName <<
-                      ", group=" << si.group <<
+                EOUT("Code so far:\n" << cccode.str());                    // FIXME: provide context to help finding reason
+                FATAL("Signal conflict on instrument='" << instrumentName <<
+                      "', group=" << si.group <<
                       ", between '" << signalValues[si.slotIdx][si.group] <<
-                      "and '" << signalValueString << "'");
+                      "' and '" << signalValueString << "'");
             }
 
             // NB: code is generated in bundle_finish()
@@ -341,6 +375,7 @@ private:
     json instrumentDefinitions;
     json controlModes;
     json ccSetup;
+    json signals;
 
     /************************************************************************\
     | Some helpers to ease nice assembly formatting
@@ -386,6 +421,7 @@ private:
             instrumentDefinitions = backendSettings["instrument_definitions"];
             controlModes = backendSettings["control_modes"];
             ccSetup = backendSettings["cc_setup"];
+            signals = backendSettings["signals"];
 
 
             // read instrument definitions
