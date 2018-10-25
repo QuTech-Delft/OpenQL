@@ -33,7 +33,7 @@ namespace ql
 namespace arch
 {
 
-std::string get_cc_light_instruction_name(std::string & id, ql::quantum_platform & platform)
+std::string get_cc_light_instruction_name(std::string & id, const ql::quantum_platform & platform)
 {
     std::string cc_light_instr_name;
     auto it = platform.instruction_map.find(id);
@@ -81,7 +81,7 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
 
     }
 
-    // combine parallel instrcutions of same type from different sections
+    // combine parallel instructions of same type from different sections
     // into a single section
     for (ql::ir::bundle_t & abundle : bundles1)
     {
@@ -145,7 +145,7 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
 
 
 ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt, 
-    ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
+    const ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Resource constraint scheduling of CC-Light instructions ...");
     scheduling_direction_t  direction;
@@ -184,6 +184,7 @@ ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
 
     }
 
+    IOUT("Combining parallel sections...");
     // combine parallel instrcutions of same type from different sections
     // into a single section
     for (ql::ir::bundle_t & abundle : bundles1)
@@ -225,6 +226,7 @@ ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
         }
     }
 
+    IOUT("Removing empty sections...");
     // remove empty sections
     ql::ir::bundles_t bundles2;
     for (ql::ir::bundle_t & abundle1 : bundles1)
