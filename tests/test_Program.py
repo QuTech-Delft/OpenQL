@@ -76,6 +76,17 @@ class Test_program(unittest.TestCase):
             'get_sweep_points']
         self.assertTrue(set(program_methods).issubset(dir(p)))
 
+    # An empty program (with no kernels in it) when compiled, should raise an
+    # error. This test checks if an exception is indeed raised!
+    def test_empty_program(self):
+        p = ql.Program("rb_program", platf, 2)
+        p.set_sweep_points([2,3], 2)
+        with self.assertRaises(Exception) as cm:
+            p.compile()
+
+        self.assertEqual(str(cm.exception), 'Error: compiling a program with no kernels !')
+
+
     def test_simple_program(self):
         nqubits = 2
         k = ql.Kernel("kernel1", platf, nqubits)
@@ -91,7 +102,7 @@ class Test_program(unittest.TestCase):
         p = ql.Program("rb_program", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
-        print( p.qasm() )
+        # print( p.qasm() )
         p.compile()
 
         # load qasm

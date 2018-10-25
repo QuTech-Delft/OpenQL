@@ -412,7 +412,10 @@ class quantum_program
          IOUT("compiling ...");
 
          if (kernels.empty())
-            return -1;
+         {
+            EOUT("compiling a program with no kernels");
+            throw ql::exception("Error: compiling a program with no kernels !",false);
+         }
 
          if( ql::options::get("optimize") == "yes" )
          {
