@@ -21,21 +21,17 @@
 		// "readout_flux_buffer": 0,
 		// "readout_readout_buffer": 0,
 
-		// FIXME: we put this key inside "hardware_settings" for now, but it should be below "backend" or so
+		// FIXME: we put this key inside "hardware_settings" for now, but it should preferably be below "backend" or so
 		"eqasm_backend_cc": {
 			// Immutable properties of instruments.
 			// FIXME: introduce 'controller_definitions'?
 			"instrument_definitions": {
-//				"cc": [
-//					{	"name": "qutech-cc",
-//						"slots": 12
-//					}
-//				],
 				"awg": [
-//					{	"name": "qutech-qwg",
-//						"channels": 4,
-//						"control_group_sizes": [4]
-//					},
+					{	"name": "qutech-qwg",
+						"channels": 4,
+						"control_group_sizes": [4],
+						"latency": 50		// FIXME: check
+					},
 					{	"name": "zi-hdawg",
 						"channels": 8,
 						"control_group_sizes": [1, 4, 8],
@@ -270,7 +266,6 @@
 
 	// extracted from PyqQED_py3 'generate_CCL_cfg.py'
   	"gate_decomposition": {
-// FIXME: needs work to function with rest of this file
       "x %0": ["rx180 %0"],
       "y %0": ["ry180 %0"],
       "roty90 %0": ["ry90 %0"],
@@ -314,7 +309,6 @@
 
 
 	// FIXME: allow AWG8 setPrecompClear with wave
-	// FIXME: remove instructions we don't/cannot use
 	// FIXME: key 'matrix' is required, but does not contain useful information
 	"instructions": {
 		// additions from 'CC-software-implementation.docx':
@@ -342,8 +336,6 @@
 				}
 			}
 		},
-
-
 
 
 		// based on PyqQED_py3 'generate_CCL_cfg.py':

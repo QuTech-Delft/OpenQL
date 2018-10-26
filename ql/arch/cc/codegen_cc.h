@@ -214,9 +214,8 @@ public:
     void custom_gate(std::string iname, std::vector<size_t> ops, const ql::quantum_platform& platform)
     {
         // generate comment
-//        std::string instr_name = platform.get_instruction_name(iname);  // FIXME: refers to cclight
         std::stringstream cmnt;
-        cmnt << "# gate '" << iname << " ";
+        cmnt << " # gate '" << iname << " ";
         for(size_t i=0; i<ops.size(); i++) {
             cmnt << ops[i];
             if(i<ops.size()-1) cmnt << ",";
@@ -225,7 +224,7 @@ public:
         comment(cmnt.str());
 
         // find signal definition for iname
-        json instruction = platform.find_instruction(iname);
+        json &instruction = platform.find_instruction(iname);
         json *tmp;
         if(JSON_EXISTS(instruction["cc"], "signal_ref")) {
             std::string signalRef = instruction["cc"]["signal_ref"];
@@ -267,7 +266,7 @@ public:
             replace(signalValueString, std::string("{instrumentGroup}"), std::to_string(si.group));
             replace(signalValueString, std::string("{qubit}"), std::to_string(qubit));
 
-            comment(SS2S("# slot=" << slot <<
+            comment(SS2S("  # slot=" << slot <<
                          ", group=" << si.group <<
                          ", instrument='" << instrumentName <<
                          "', signal='" << signalValueString << "'"));
