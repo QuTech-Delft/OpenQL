@@ -69,7 +69,7 @@ namespace ql
           {
             app->reset();
             EOUT("Un-known option:"<< e.what());
-            throw ql::exception("[x] Error parsing options. "+std::string(e.what())+" !",false);
+            throw ql::exception("Error parsing options. "+std::string(e.what())+" !",false);
           }
           app->reset();
       }
