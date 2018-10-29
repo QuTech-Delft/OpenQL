@@ -40,7 +40,7 @@ namespace ql
                 auto st_cycle = abundle.start_cycle;
                 auto delta = st_cycle - curr_cycle;
                 if(delta>1)
-                    ssqasm << "\n    qwait " << delta-1 << '\n';
+                    ssqasm << "\n    wait " << delta-1 << '\n';
                 else
                     ssqasm << '\n';
 
@@ -67,7 +67,7 @@ namespace ql
                 auto & last_bundle = bundles.back();
                 int lsduration = last_bundle.duration_in_cycles;
                 if( lsduration > 1 )
-                    ssqasm << "\n    qwait " << lsduration -1 << '\n';
+                    ssqasm << "\n    wait " << lsduration -1 << '\n';
             }
 
             return ssqasm.str();

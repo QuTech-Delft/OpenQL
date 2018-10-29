@@ -8,17 +8,14 @@ platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
 
-ql.set_option('output_dir', output_dir)
-ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ASAP')
-ql.set_option('log_level', 'LOG_WARNING')
-
-
 class Test_kernel(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        pass
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ASAP')
+        ql.set_option('log_level', 'LOG_WARNING')
 
     def test_kernel_name(self):
         name = "kernel1"
@@ -114,15 +111,6 @@ class Test_kernel(unittest.TestCase):
 
         p.compile()
 
-        # load qasm
-        qasm_files = []
-        qasm_files.append(os.path.join(output_dir, 'aProgram.qasm'))
-        qasm_files.append(os.path.join(output_dir, 'aProgram_scheduled.qasm'))
-
-        for qasm_file in qasm_files:
-           qasm_reader = ql.QASM_Loader(qasm_file)
-           errors = qasm_reader.load()
-           self.assertTrue(errors == 0)
 
 if __name__ == '__main__':
     unittest.main()

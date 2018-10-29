@@ -18,7 +18,6 @@
 #include <ql/version.h>
 #include <ql/openql.h>
 #include <ql/classical.h>
-#include <ql/qasm_loader.h>
 
 static std::string get_version()
 {
@@ -394,42 +393,5 @@ public:
         delete(program);
     }
 };
-
-
-/**
- * qasm code loader
- */
-class QASM_Loader
-{
-   public:
-      qx::qasm_loader      * loader;
-      std::string            file_name;
-
-      /**
-       * constructor
-       **/
-      QASM_Loader(std::string file_name) : file_name(file_name)
-      {
-         loader = new qx::qasm_loader(file_name);
-      }
-
-      /**
-       * read and parse the qasm file
-       * @return 0 if success else error code
-       **/
-      size_t load()
-      {
-         return loader->parse();
-      }
-
-      /**
-       * destructor
-       */
-      ~QASM_Loader()
-      {
-         delete loader;
-      }
-};
-
 
 #endif

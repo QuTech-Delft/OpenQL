@@ -4,19 +4,13 @@ from openql import openql as ql
 import numpy as np
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
-
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
 
-ql.set_option('output_dir', output_dir)
-ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ASAP')
-ql.set_option('log_level', 'LOG_CRITICAL')
 
 '''
   grover algorithm implementation
 '''
-
 
 def init(platform):
         init_k   = ql.Kernel('init', platform)
@@ -93,6 +87,11 @@ def grover(platform):
         
 
 def grover_algorithm():
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ASAP')
+        ql.set_option('log_level', 'LOG_CRITICAL')
+
         config_fn = os.path.join(curdir, 'hardware_config_qx.json')
         platform  = ql.Platform('platform_none', config_fn)
         num_qubits = 9

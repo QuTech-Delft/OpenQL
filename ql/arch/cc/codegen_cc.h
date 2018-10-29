@@ -224,8 +224,8 @@ public:
         comment(cmnt.str());
 
         // find signal definition for iname
-        json &instruction = platform.find_instruction(iname);
-        json *tmp;
+        const json &instruction = platform.find_instruction(iname);
+        const json *tmp;
         if(JSON_EXISTS(instruction["cc"], "signal_ref")) {
             std::string signalRef = instruction["cc"]["signal_ref"];
             tmp = &signals[signalRef];  // poor man's JSON pointer
@@ -236,7 +236,7 @@ public:
             tmp = &instruction["cc"]["signal"];
             DOUT("signal for '" << instruction << "': " << *tmp);
         }
-        json &signal = *tmp;
+        const json &signal = *tmp;
 
         // iterate over signals defined in instruction
         for(size_t s=0; s<signal.size(); s++) {
@@ -253,7 +253,7 @@ public:
 
             // get the instrument and group that generates the signal
             std::string instructionSignalType = signal[s]["type"];
-            json &instructionSignalValue = signal[s]["value"];
+            const json &instructionSignalValue = signal[s]["value"];
             tSignalInfo si = findSignalInfoForQubit(instructionSignalType, qubit);
             json &ccSetupSlot = ccSetup["slots"][si.slotIdx];
             std::string instrumentName = ccSetupSlot["instrument"]["name"];
@@ -356,7 +356,6 @@ public:
 
 private:
     typedef struct {
-//        json *ccSetupSlot;    FIXME
         int slotIdx;    // index into cc_setup["slots"]
         int group;
     } tSignalInfo;
@@ -400,7 +399,7 @@ private:
         cccode << std::setw(8) << label << std::setw(8) << instr << std::setw(24) << ops << comment << std::endl;
     }
 
-    // FIXME: also provide with std::string
+    // FIXME: also provide these with std::string parameters
 
     /************************************************************************\
     | Functions processing JSON
@@ -411,61 +410,46 @@ private:
         // parts of JSON syntax
         const char *instrumentTypes[] = {"cc", "switch", "awg", "measure"};
 
-        // FIXME: we would like to have a top level setting, or one below "backends"
-        // it is however not easy to create new top level stuff and read it from the backend
-//        try
+        // remind some main JSON areas
+        backendSettings = platform.hardware_settings["eqasm_backend_cc"];
+        instrumentDefinitions = backendSettings["instrument_definitions"];
+        controlModes = backendSettings["control_modes"];
+        ccSetup = backendSettings["cc_setup"];
+        signals = backendSettings["signals"];
+
+
+        // read instrument definitions
+        for(size_t i=0; i<ELEM_CNT(instrumentTypes); i++)
         {
-            // remind some main JSON areas
-            backendSettings = platform.hardware_settings["eqasm_backend_cc"];
-            instrumentDefinitions = backendSettings["instrument_definitions"];
-            controlModes = backendSettings["control_modes"];
-            ccSetup = backendSettings["cc_setup"];
-            signals = backendSettings["signals"];
-
-
-            // read instrument definitions
-            for(size_t i=0; i<ELEM_CNT(instrumentTypes); i++)
-            {
-                json &ids = instrumentDefinitions[instrumentTypes[i]];
-                // FIXME: the following requires json>v3.1.0:  for(auto& id : ids.items()) {
-                for(size_t j=0; j<ids.size(); j++) {
-                    std::string idName = ids[j]["name"];        // NB: uses type conversion to get node value
-                    DOUT("found instrument definition:  type='" << instrumentTypes[i] << "', name='" << idName <<"'");
-                }
+            json &ids = instrumentDefinitions[instrumentTypes[i]];
+            // FIXME: the following requires json>v3.1.0:  for(auto& id : ids.items()) {
+            for(size_t j=0; j<ids.size(); j++) {
+                std::string idName = ids[j]["name"];        // NB: uses type conversion to get node value
+                DOUT("found instrument definition:  type='" << instrumentTypes[i] << "', name='" << idName <<"'");
             }
+        }
 
-            // read control modes
+        // read control modes
 #if 0   // FIXME
-            for(size_t i=0; i<controlModes.size(); i++)
-            {
-                json &name = controlModes[i]["name"];
-                DOUT("found control mode '" << name <<"'");
-            }
-#endif
-
-            // read instruments
-            json &ccSetupType = ccSetup["type"];
-
-            // CC specific
-            json &ccSetupSlots = ccSetup["slots"];                      // FIXME: check against instrumentDefinitions
-            for(size_t slot=0; slot<ccSetupSlots.size(); slot++) {
-                json instrument = ccSetupSlots[slot]["instrument"];     // NB: don't use reference, because we want to put in std::vector. FIXME: no longer true
-                std::string instrumentName = instrument["name"];
-                std::string signalType = instrument["signal_type"];
-
-                DOUT("found instrument: name='" << instrumentName << "signal type='" << signalType << "'");
-            }
-        }
-#if 0
-        catch (json::exception e)
+        for(size_t i=0; i<controlModes.size(); i++)
         {
-            throw ql::exception(
-                "[x] error : ql::eqasm_compiler::compile() : error while reading backend settings : parameter '"
-//                + hw_settings[i].name
-                + "'\n\t"
-                + std::string(e.what()), false);
+            json &name = controlModes[i]["name"];
+            DOUT("found control mode '" << name <<"'");
         }
 #endif
+
+        // read instruments
+        json &ccSetupType = ccSetup["type"];
+
+        // CC specific
+        json &ccSetupSlots = ccSetup["slots"];                      // FIXME: check against instrumentDefinitions
+        for(size_t slot=0; slot<ccSetupSlots.size(); slot++) {
+            json &instrument = ccSetupSlots[slot]["instrument"];
+            std::string instrumentName = instrument["name"];
+            std::string signalType = instrument["signal_type"];
+
+            DOUT("found instrument: name='" << instrumentName << "signal type='" << signalType << "'");
+        }
     }
 
 

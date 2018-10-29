@@ -29,7 +29,7 @@ namespace ql
           opt_name2opt_val["log_level"] = "LOG_NOTHING";
           opt_name2opt_val["output_dir"] = "test_output";
           opt_name2opt_val["optimize"] = "no";
-          opt_name2opt_val["scheduler"] = "ASAP";
+          opt_name2opt_val["scheduler"] = "ALAP";
           opt_name2opt_val["scheduler_uniform"] = "no";
           opt_name2opt_val["use_default_gates"] = "yes";
           opt_name2opt_val["optimize"] = "no";
@@ -69,7 +69,7 @@ namespace ql
           {
             app->reset();
             EOUT("Un-known option:"<< e.what());
-            throw ql::exception("[x] Error parsing options. "+std::string(e.what())+" !",false);
+            throw ql::exception("Error parsing options. "+std::string(e.what())+" !",false);
           }
           app->reset();
       }

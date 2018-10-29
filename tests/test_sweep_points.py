@@ -4,40 +4,32 @@ import json
 from openql import openql as ql
 
 curdir = os.path.dirname(__file__)
+config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
+platf = ql.Platform("starmon", config_fn)
 output_dir = os.path.join(curdir, 'test_output')
-
-ql.set_option('output_dir', output_dir)
-ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ALAP')
-ql.set_option('log_level', 'LOG_WARNING')
 
 class Test_sweep_points(unittest.TestCase):
 
     @classmethod
-    def setUpClass(cls):
-        curdir = os.path.dirname(__file__)
-        config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
-        cls.platf = ql.Platform("starmon", config_fn)
-
-        cls.output_dir = os.path.join(curdir, 'test_output')
-        ql.set_option('output_dir', cls.output_dir)
-
-
+    def setUpClass(self):
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ALAP')
+        ql.set_option('log_level', 'LOG_WARNING')
             
     def test_sweep_points(self):
         sweep_points = [0.25, 1, 1.5, 2, 2.25]
         nqubits = 1
 
         # create a kernel
-        k = ql.Kernel("aKernel", self.__class__.platf, nqubits)
+        k = ql.Kernel("aKernel", platf, nqubits)
 
         # populate a kernel
         k.prepz(0)
-        k.identity(0)
         k.measure(0)
 
         # create a program
-        p = ql.Program("aProgram", self.__class__.platf, nqubits)
+        p = ql.Program("aProgram", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
 
         # add kernel to program
@@ -47,7 +39,7 @@ class Test_sweep_points(unittest.TestCase):
         p.compile()
 
         # all the outputs are generated in 'output' dir
-        with open(os.path.join(self.__class__.output_dir, 'aProgram_config.json')) as fp:
+        with open(os.path.join(output_dir, 'aProgram_config.json')) as fp:
             config = json.load(fp)
 
         self.assertTrue('measurement_points' in config.keys())

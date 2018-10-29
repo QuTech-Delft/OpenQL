@@ -238,7 +238,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("i q" + std::to_string(operands[0]) );
+        return instruction_t("i q[" + std::to_string(operands[0]) + "]");
     }
 
     instruction_t micro_code()
@@ -274,7 +274,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("h q" + std::to_string(operands[0]) );
+        return instruction_t("h q[" + std::to_string(operands[0]) + "]");
     }
 
     instruction_t micro_code()
@@ -312,7 +312,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("s q" + std::to_string(operands[0]) );
+        return instruction_t("s q[" + std::to_string(operands[0]) + "]");
     }
 
     instruction_t micro_code()
@@ -349,7 +349,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("sdag q" + std::to_string(operands[0]) );
+        return instruction_t("sdag q[" + std::to_string(operands[0]) + "]");
     }
 
     instruction_t micro_code()
@@ -392,7 +392,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("rx q" + std::to_string(operands[0]) + ", " + std::to_string(angle) );
+        return instruction_t("rx q[" + std::to_string(operands[0]) + "], " + std::to_string(angle) );
     }
 
     instruction_t micro_code()
@@ -435,7 +435,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("ry q" + std::to_string(operands[0]) + ", " + std::to_string(angle) );
+        return instruction_t("ry q[" + std::to_string(operands[0]) + "], " + std::to_string(angle) );
     }
 
     instruction_t micro_code()
@@ -478,7 +478,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("rz q" + std::to_string(operands[0]) + ", " + std::to_string(angle) );
+        return instruction_t("rz q[" + std::to_string(operands[0]) + "], " + std::to_string(angle) );
     }
 
     instruction_t micro_code()
@@ -517,7 +517,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("t q" + std::to_string(operands[0]) );
+        return instruction_t("t q[" + std::to_string(operands[0]) + "]");
     }
 
     instruction_t micro_code()
@@ -554,7 +554,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("tdag q" + std::to_string(operands[0]) );
+        return instruction_t("tdag q[" + std::to_string(operands[0]) + "]");
     }
 
     instruction_t micro_code()
@@ -592,7 +592,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("x q" + std::to_string(operands[0]) );
+        return instruction_t("x q[" + std::to_string(operands[0]) + "]");
     }
 
     instruction_t micro_code()
@@ -630,7 +630,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("y q" + std::to_string(operands[0]) );
+        return instruction_t("y q[" + std::to_string(operands[0]) + "]");
     }
 
     instruction_t micro_code()
@@ -669,7 +669,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("z q" + std::to_string(operands[0]) );
+        return instruction_t("z q[" + std::to_string(operands[0]) + "]");
     }
 
     instruction_t micro_code()
@@ -700,14 +700,14 @@ public:
 
     rx90(size_t q) : m(rx90_c)
     {
-        name = "rx90";
+        name = "x90";
         duration = 40;
         operands.push_back(q);
     }
 
     instruction_t qasm()
     {
-        return instruction_t("rx90 q" + std::to_string(operands[0]));
+        return instruction_t("x90 q[" + std::to_string(operands[0]) + "]");
     }
 
     instruction_t micro_code()
@@ -745,7 +745,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("mrx90 q" + std::to_string(operands[0]) );
+        return instruction_t("mx90 q[" + std::to_string(operands[0]) + "]");
     }
 
     instruction_t micro_code()
@@ -782,7 +782,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("rx180 q" + std::to_string(operands[0]) );
+        return instruction_t("x180 q[" + std::to_string(operands[0]) + "]");
     }
 
     instruction_t micro_code()
@@ -813,14 +813,14 @@ public:
 
     ry90(size_t q) : m(ry90_c)
     {
-        name = "ry90";
+        name = "y90";
         duration = 40;
         operands.push_back(q);
     }
 
     instruction_t qasm()
     {
-        return instruction_t("ry90 q" + std::to_string(operands[0]) );
+        return instruction_t("y90 q[" + std::to_string(operands[0]) + "]");
     }
 
     gate_type_t type()
@@ -858,7 +858,7 @@ public:
 
     instruction_t qasm()
     {
-        return instruction_t("mry90 q" + std::to_string(operands[0]) );
+        return instruction_t("my90 q[" + std::to_string(operands[0]) + "]");
     }
 
     instruction_t micro_code()
@@ -888,14 +888,14 @@ public:
 
     ry180(size_t q) : m(ry180_c)
     {
-        name = "ry180";
+        name = "y180";
         duration = 40;
         operands.push_back(q);
     }
 
     instruction_t qasm()
     {
-        return instruction_t("ry180 q" + std::to_string(operands[0]) );
+        return instruction_t("y180 q[" + std::to_string(operands[0]) + "]");
     }
 
     instruction_t micro_code()
@@ -943,9 +943,9 @@ public:
     {
         std::stringstream ss;
         ss << "measure ";
-        ss << "q" << operands[0];
+        ss << "q[" << operands[0] << "]";
         if(!creg_operands.empty())
-            ss << ", r" << creg_operands[0];
+            ss << ", r[" << creg_operands[0] << "]";
 
         return instruction_t(ss.str());
     }
@@ -968,7 +968,7 @@ public:
 };
 
 /**
- * prepz
+ * prep_z
  */
 class prepz : public gate
 {
@@ -977,20 +977,20 @@ public:
 
     prepz(size_t q) : m(identity_c)
     {
-        name = "prepz";
+        name = "prep_z";
         duration = 40;
         operands.push_back(q);
     }
 
     instruction_t qasm()
     {
-        return instruction_t("prepz q" + std::to_string(operands[0]) );
+        return instruction_t("prep_z q[" + std::to_string(operands[0]) +"]");
     }
 
     instruction_t micro_code()
     {
         return instruction_t("  waitreg r0\n     waitreg r0\n");
-        // return ql::dep_instruction_map["prepz"];
+        // return ql::dep_instruction_map["prep_z"];
     }
 
     gate_type_t type()
@@ -1021,8 +1021,8 @@ public:
     }
     instruction_t qasm()
     {
-        return instruction_t("cnot q" + std::to_string(operands[0])
-                             + ",q"  + std::to_string(operands[1]) );
+        return instruction_t("cnot q[" + std::to_string(operands[0]) + "]"
+                             + ",q["  + std::to_string(operands[1]) + "]");
     }
     instruction_t micro_code()
     {
@@ -1055,8 +1055,8 @@ public:
     }
     instruction_t qasm()
     {
-        return instruction_t("cz q" + std::to_string(operands[0])
-                             + ",q"  + std::to_string(operands[1]) );
+        return instruction_t("cz q[" + std::to_string(operands[0]) + "]"
+                             + ",q["  + std::to_string(operands[1]) + "]" );
     }
     instruction_t micro_code()
     {
@@ -1090,9 +1090,9 @@ public:
     }
     instruction_t qasm()
     {
-        return instruction_t("toffoli q" + std::to_string(operands[0])
-                             + ",q"  + std::to_string(operands[1])
-                             + ",q"  + std::to_string(operands[2]) );
+        return instruction_t("toffoli q[" + std::to_string(operands[0]) + "]"
+                             + ",q["  + std::to_string(operands[1]) + "]"
+                             + ",q["  + std::to_string(operands[2]) + "]");
     }
     instruction_t micro_code()
     {
@@ -1151,8 +1151,8 @@ public:
     }
     instruction_t qasm()
     {
-        return instruction_t("swap q" + std::to_string(operands[0])
-                             + ",q"  + std::to_string(operands[1]) );
+        return instruction_t("swap q[" + std::to_string(operands[0]) + "]"
+                             + ",q["  + std::to_string(operands[1]) + "]");
     }
     instruction_t micro_code()
     {
@@ -1187,7 +1187,7 @@ public:
     }
     instruction_t qasm()
     {
-        return instruction_t("qwait " + std::to_string(duration_in_cycles));
+        return instruction_t("wait " + std::to_string(duration_in_cycles));
     }
     instruction_t micro_code()
     {
@@ -1465,12 +1465,18 @@ public:
         if (operands.size() == 0)
             ss << gate_name;
         else if (operands.size() == 1)
-            ss << gate_name << " q" << operands[0];
+            ss << gate_name << " q[" << operands[0] << "]";
         else
         {
-            ss << gate_name << " q" << operands[0];
+            ss << gate_name << " q[" << operands[0] << "]";
             for (size_t i=1; i<operands.size(); i++)
-                ss << ",q" << operands[i];
+                ss << ",q[" << operands[i] << "]";
+        }
+
+        // deal with custom gates with argument, such as angle
+        if(gate_name == "rx" || gate_name == "ry" || gate_name == "rz")
+        {
+            ss << ", " << angle;
         }
 
         if(creg_operands.size() == 0)

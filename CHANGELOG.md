@@ -2,6 +2,37 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [ 0.6 ] - [ 2018-10-29 ]
+### Added
+- generated qasm code conforms to cQASM v1.0 specification
+- added libqasm to pytest to test conformance of generated qasm
+
+
+### Changed
+- ALAP scheduler is the default option (Issue #193)
+- compiling an empty program raises error (Issue #164)
+
+### Removed
+
+
+### Fixed
+- tests are added to test option setting/getting (Issue #190)
+
+
+
+## [ 0.5.5 ] - [ 2018-10-25 ]
+### Added
+
+### Changed
+- simplified interface of Program.set_sweep_points (Issue #184)
+
+### Removed
+
+### Fixed
+- instruction ordering to generate consistent qisa (Issue #190)
+- stateful behaviour in OpenQL (Issue #171)
+
+
 ## [ 0.5.4 ] - [ 2018-10-17 ]
 ### Added
 

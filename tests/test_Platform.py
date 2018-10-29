@@ -5,17 +5,14 @@ from openql import openql as ql
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
 
-ql.set_option('output_dir', output_dir)
-ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ALAP')
-ql.set_option('log_level', 'LOG_WARNING')
-
-
 class Test_platform(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        pass
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ALAP')
+        ql.set_option('log_level', 'LOG_WARNING')
 
     def test_platform_name(self):
         platf_name = 'starmon_platform'

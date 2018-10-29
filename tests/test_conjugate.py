@@ -4,17 +4,18 @@ from openql import openql as ql
 from utils import file_compare
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
-
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
 
-ql.set_option('output_dir', output_dir)
-ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ASAP')
-ql.set_option('log_level', 'LOG_WARNING')
-
 
 class Test_conjugated_kernel(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(self):
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ASAP')
+        ql.set_option('log_level', 'LOG_WARNING')
 
     def test_conjugate(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')

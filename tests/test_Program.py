@@ -8,17 +8,15 @@ platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
 
-ql.set_option('output_dir', output_dir)
-ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ALAP')
-ql.set_option('log_level', 'LOG_WARNING')
-
-
 class Test_program(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        pass
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ALAP')
+        ql.set_option('log_level', 'LOG_WARNING')
+        ql.set_option('use_default_gates', 'no')
 
     def test_program_name(self):
         name = "program1"
@@ -76,6 +74,17 @@ class Test_program(unittest.TestCase):
             'get_sweep_points']
         self.assertTrue(set(program_methods).issubset(dir(p)))
 
+    # An empty program (with no kernels in it) when compiled, should raise an
+    # error. This test checks if an exception is indeed raised!
+    def test_empty_program(self):
+        p = ql.Program("rb_program", platf, 2)
+        p.set_sweep_points([2,3], 2)
+        with self.assertRaises(Exception) as cm:
+            p.compile()
+
+        self.assertEqual(str(cm.exception), 'Error: compiling a program with no kernels !')
+
+
     def test_simple_program(self):
         nqubits = 2
         k = ql.Kernel("kernel1", platf, nqubits)
@@ -91,20 +100,8 @@ class Test_program(unittest.TestCase):
         p = ql.Program("rb_program", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
         p.add_kernel(k)
-        print( p.qasm() )
+        # print( p.qasm() )
         p.compile()
-
-        # load qasm
-        qasm_files = []
-        qasm_files.append(os.path.join(output_dir, 'rb_program.qasm'))
-        qasm_files.append(os.path.join(output_dir, 'rb_program_scheduled.qasm'))
-
-        for qasm_file in qasm_files:
-           qasm_reader = ql.QASM_Loader(qasm_file)
-           errors = qasm_reader.load()
-           self.assertTrue(errors == 0)
-
-
 
 
     def test_5qubit_program(self):
@@ -115,12 +112,12 @@ class Test_program(unittest.TestCase):
 
         # populate kernel
         for i in range(2):
-            k.prepz(i)
+            k.gate('prepz', [i])
         for i in range(2):
-            k.hadamard(i)
-        # k.cnot(0, 1)
+            k.gate('h', [i])
+
         k.gate('cnot', [0, 1])
-        k.cphase(0, 1)
+        k.gate('cz', [0, 1])
 
         # sweep points is not specified the program does not work but don't
         # know what it does...
@@ -161,16 +158,6 @@ class Test_program(unittest.TestCase):
         p.set_sweep_points( [nr_sweep_pts], nr_sweep_pts)
 
         p.compile()
-
-        # load qasm
-        qasm_files = []
-        qasm_files.append(os.path.join(output_dir, 'AllXY.qasm'))
-        qasm_files.append(os.path.join(output_dir, 'AllXY_scheduled.qasm'))
-
-        for qasm_file in qasm_files:
-           qasm_reader = ql.QASM_Loader(qasm_file)
-           errors = qasm_reader.load()
-           self.assertTrue(errors == 0)
 
 
 if __name__ == '__main__':
