@@ -230,7 +230,8 @@ public:
             std::string signalRef = instruction["cc"]["signal_ref"];
             tmp = &signals[signalRef];  // poor man's JSON pointer
             if(tmp->size() == 0) {
-                FATAL("signal_ref'" << signalRef << "' in instruction '" << iname << "' does not resolve");
+                FATAL("Error in JSON definition of instruction '" << iname <<
+                      "': signal_ref '" << signalRef << "' does not resolve");
             }
         } else {
             tmp = &instruction["cc"]["signal"];
@@ -243,8 +244,8 @@ public:
             // get the qubit to work on
             size_t operandIdx = signal[s]["operand_idx"];
             if(operandIdx >= ops.size()) {
-                FATAL("Illegal operand number " << operandIdx <<
-                      " in instruction '" << iname <<
+                FATAL("Error in JSON definition of instruction '" << iname <<
+                      "': illegal operand number " << operandIdx <<
                       "' exceeds expected maximum of " << ops.size())
             }
             size_t qubit = ops[operandIdx];
