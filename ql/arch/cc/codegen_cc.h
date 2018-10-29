@@ -98,11 +98,11 @@ public:
 
     void bundle_finish(int duration_in_cycles, int delta)   // FIXME: do we need parameter delta
     {
-        json &ccSetupSlots = ccSetup["slots"];
+        const json &ccSetupSlots = ccSetup["slots"];
         for(size_t slotIdx=0; slotIdx<signalValues.size(); slotIdx++) {         // iterate over slot vector
             // collect info from JSON
-            json &ccSetupSlot = ccSetupSlots[slotIdx];
-            json &instrument = ccSetupSlot["instrument"];
+            const json &ccSetupSlot = ccSetupSlots[slotIdx];
+            const json &instrument = ccSetupSlot["instrument"];
             std::string instrumentName = instrument["name"];
             int slot = ccSetupSlot["slot"];
 
@@ -115,8 +115,8 @@ public:
 
                     // find control mode & bits
                     std::string controlModeName = instrument["control_mode"];
-                    json &controlMode = controlModes[controlModeName];          // the control mode definition for our instrument
-                    json &myControlBits = controlMode["control_bits"][group];
+                    const json &controlMode = controlModes[controlModeName];    // the control mode definition for our instrument
+                    const json &myControlBits = controlMode["control_bits"][group];
 
                     // find or create codeword/mask fragment for this group
                     DOUT("instrumentName=" << instrumentName <<
@@ -255,7 +255,7 @@ public:
             std::string instructionSignalType = signal[s]["type"];
             const json &instructionSignalValue = signal[s]["value"];
             tSignalInfo si = findSignalInfoForQubit(instructionSignalType, qubit);
-            json &ccSetupSlot = ccSetup["slots"][si.slotIdx];
+            const json &ccSetupSlot = ccSetup["slots"][si.slotIdx];
             std::string instrumentName = ccSetupSlot["instrument"]["name"];
             int slot = ccSetupSlot["slot"];
 
@@ -421,7 +421,7 @@ private:
         // read instrument definitions
         for(size_t i=0; i<ELEM_CNT(instrumentTypes); i++)
         {
-            json &ids = instrumentDefinitions[instrumentTypes[i]];
+            const json &ids = instrumentDefinitions[instrumentTypes[i]];
             // FIXME: the following requires json>v3.1.0:  for(auto& id : ids.items()) {
             for(size_t j=0; j<ids.size(); j++) {
                 std::string idName = ids[j]["name"];        // NB: uses type conversion to get node value
@@ -433,18 +433,18 @@ private:
 #if 0   // FIXME
         for(size_t i=0; i<controlModes.size(); i++)
         {
-            json &name = controlModes[i]["name"];
+            const json &name = controlModes[i]["name"];
             DOUT("found control mode '" << name <<"'");
         }
 #endif
 
         // read instruments
-        json &ccSetupType = ccSetup["type"];
+        const json &ccSetupType = ccSetup["type"];
 
         // CC specific
-        json &ccSetupSlots = ccSetup["slots"];                      // FIXME: check against instrumentDefinitions
+        const json &ccSetupSlots = ccSetup["slots"];                      // FIXME: check against instrumentDefinitions
         for(size_t slot=0; slot<ccSetupSlots.size(); slot++) {
-            json &instrument = ccSetupSlots[slot]["instrument"];
+            const json &instrument = ccSetupSlots[slot]["instrument"];
             std::string instrumentName = instrument["name"];
             std::string signalType = instrument["signal_type"];
 
@@ -461,15 +461,15 @@ private:
         bool qubitFound = false;
 
         // iterate over CC slots
-        json &ccSetupSlots = ccSetup["slots"];
+        const json &ccSetupSlots = ccSetup["slots"];
         for(size_t slotIdx=0; slotIdx<ccSetupSlots.size(); slotIdx++) {
-            json &ccSetupSlot = ccSetupSlots[slotIdx];
-            json &instrument = ccSetupSlot["instrument"];
+            const json &ccSetupSlot = ccSetupSlots[slotIdx];
+            const json &instrument = ccSetupSlot["instrument"];
             std::string instrumentSignalType = instrument["signal_type"];
             if(instrumentSignalType == instructionSignalType) {
                 signalTypeFound = true;
                 std::string instrumentName = instrument["name"];
-                json &qubits = instrument["qubits"];
+                const json &qubits = instrument["qubits"];
                 // FIXME: verify group size
                 // FIXME: verify signal dimensions
 
