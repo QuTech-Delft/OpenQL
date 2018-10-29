@@ -11,13 +11,15 @@ platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
 
-ql.set_option('output_dir', output_dir)
-ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ALAP')
-ql.set_option('log_level', 'LOG_WARNING')
-
 
 class Test_qubits(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(self):
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ALAP')
+        ql.set_option('log_level', 'LOG_WARNING')
 
     def test_1_qubit(self):
         nqubits = 1
@@ -40,7 +42,6 @@ class Test_qubits(unittest.TestCase):
 
         gold_fn = rootDir + '/golden/test_1_qubit.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_2_qubit(self):
@@ -64,7 +65,6 @@ class Test_qubits(unittest.TestCase):
 
         gold_fn = rootDir + '/golden/test_2_qubit.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_3_qubit(self):
@@ -90,7 +90,6 @@ class Test_qubits(unittest.TestCase):
 
         gold_fn = rootDir + '/golden/test_3_qubit.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 if __name__ == '__main__':

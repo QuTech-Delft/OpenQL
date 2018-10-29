@@ -2,6 +2,7 @@ import numpy as np
 import os
 import unittest
 from openql import openql as ql
+from test_QISA_assembler_present import assemble
 
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
@@ -50,15 +51,8 @@ class Test_CCL_long_duration(unittest.TestCase):
 
         p.compile()
 
-        # load qasm
-        qasm_files = []
-        qasm_files.append(os.path.join(output_dir, 'AllXYLongDuration.qasm'))
-
-        for qasm_file in qasm_files:
-           qasm_reader = ql.QASM_Loader(qasm_file)
-           errors = qasm_reader.load()
-           self.assertTrue(errors == 0)
-
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        assemble(QISA_fn)
 
 
 if __name__ == '__main__':

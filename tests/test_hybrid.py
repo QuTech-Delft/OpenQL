@@ -8,13 +8,15 @@ rootDir = os.path.dirname(os.path.realpath(__file__))
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
 
-ql.set_option('output_dir', output_dir)
-ql.set_option('optimize', 'no')
-ql.set_option('scheduler', 'ALAP')
-ql.set_option('log_level', 'LOG_WARNING')
-
 
 class Test_hybrid_classical_quantum(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(self):
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ALAP')
+        ql.set_option('log_level', 'LOG_WARNING')
 
     def test_classical(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
@@ -61,6 +63,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
+
 
     def test_if(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
@@ -123,6 +126,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
+
     def test_for(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
@@ -153,6 +157,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
+
     def test_do_while(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
@@ -182,6 +187,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
+
 
     def test_do_while_nested_for(self):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')

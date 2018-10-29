@@ -7,10 +7,13 @@ config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
 platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_option('output_dir', output_dir)
 
 
 class Test_kernel(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(self):
+        ql.set_option('output_dir', output_dir)
 
     def minimal(self):
         nqubits = 1
