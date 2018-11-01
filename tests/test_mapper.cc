@@ -434,18 +434,14 @@ test_daniel(std::string v, std::string mapopt, std::string initialplaceopt)
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, n);
 
-    ql::quantum_kernel k0("entanglement", starmon, n, 0);
-    k0.gate("h", 0);
-    k0.gate("cnot", 0,1);
-    prog.add(k0);
-
-    ql::quantum_kernel k1("measurement", starmon, n, 0);
-    // ql::quantum_kernel k1("measurement", starmon, n, n);
-    k1.gate("measure", 0);
-    k1.gate("measure", 1);
-    // k1.gate("measure", std::vector<size_t>{0}, std::vector<size_t>{0});
-    // k1.gate("measure", std::vector<size_t>{1}, std::vector<size_t>{1});
-    prog.add(k1);
+    ql::quantum_kernel k("entanglement", starmon, n, 0);
+    k.gate("h", 0);
+    k.gate("cnot", 0,1);
+    k.gate("measure", 0);
+    k.gate("measure", 1);
+    // k.gate("measure", std::vector<size_t>{0}, std::vector<size_t>{0});
+    // k.gate("measure", std::vector<size_t>{1}, std::vector<size_t>{1});
+    prog.add(k);
 
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 

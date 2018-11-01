@@ -873,6 +873,58 @@ public:
         return classical_operations;
     }
 
+    size_t  get_non_single_qubit_quantum_gates()
+    {
+        size_t quantum_gates = 0;
+        for (auto & gp: c)
+        {
+            switch(gp->type())
+            {
+            case __classical_gate__:
+                break;
+            case __wait_gate__:
+                break;
+            default:    // quantum gate
+                if( gp->operands.size() > 1 )
+                {
+                    quantum_gates++;
+                }
+                break;
+            }
+        }
+        return quantum_gates;
+    }
+
+    size_t  get_qubit_usecount()
+    {
+        std::vector<size_t> usecount;
+        usecount.resize(qubit_count,0);
+        for (auto & gp: c)
+        {
+            switch(gp->type())
+            {
+            case __classical_gate__:
+            case __wait_gate__:
+                break;
+            default:    // quantum gate
+                for (auto v: gp->operands)
+                {
+                    usecount[v]++;
+                }
+                break;
+            }
+        }
+        size_t count = 0;
+        for (auto v: usecount)
+        {
+            if (v != 0)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
     size_t  get_quantum_gates()
     {
         size_t quantum_gates = 0;
@@ -956,8 +1008,10 @@ public:
 
         ss << "# ----- depth: " << get_depth() << "\n";
         ss << "# ----- quantum gates: " << get_quantum_gates() << "\n";
-        ss << "# ----- classical operations: " << get_classical_operations() << "\n";
+        ss << "# ----- non single qubit gates: " << get_non_single_qubit_quantum_gates() << "\n";
         ss << "# ----- swaps added: " << swaps_added << "\n";
+        ss << "# ----- classical operations: " << get_classical_operations() << "\n";
+        ss << "# ----- qubits used: " << get_qubit_usecount() << "\n";
         return ss.str();
     }
 

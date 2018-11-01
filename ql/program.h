@@ -506,6 +506,39 @@ class quantum_program
          return 0;
       }
 
+      size_t get_qubit_usecount()
+      {
+         std::vector<size_t> usecount;
+         usecount.resize(qubit_count, 0);
+         for (auto& k: kernels)
+         {
+            for (auto & gp: k.c)
+            {
+                switch(gp->type())
+                {
+                case __classical_gate__:
+                case __wait_gate__:
+                    break;
+                default:
+                    for (auto v: gp->operands)
+                    {
+                        usecount[v]++;
+                    }
+                    break;
+                }
+            }
+         }
+         size_t count= 0;
+         for (auto v: usecount)
+         {
+            if (v != 0)
+            {
+                count++;
+            }
+         }
+         return count;
+      }
+
       void schedule()
       {
          std::stringstream sched_qasm;
@@ -517,7 +550,8 @@ class quantum_program
          size_t total_depth = 0;
          size_t total_classical_operations = 0;
          size_t total_quantum_gates = 0;
-         for (auto k : kernels)
+         size_t total_non_single_qubit_gates= 0;
+         for (auto& k : kernels)
          {
             std::string kernel_sched_dot;
             k.schedule(platform, kernel_sched_dot);
@@ -529,11 +563,14 @@ class quantum_program
             total_depth += k.get_depth();
             total_classical_operations += k.get_classical_operations();
             total_quantum_gates += k.get_quantum_gates();
+            total_non_single_qubit_gates += k.get_non_single_qubit_quantum_gates();
          }
          sched_qasm << "\n";
          sched_qasm << "# Total depth: " << total_depth << "\n";
          sched_qasm << "# Total no. of quantum gates: " << total_quantum_gates << "\n";
+         sched_qasm << "# Total no. of non single qubit gates: " << total_non_single_qubit_gates << "\n";
          sched_qasm << "# Total no. of classical operations: " << total_classical_operations << "\n";
+         sched_qasm << "# Qubits used: " << get_qubit_usecount() << "\n";
          sched_qasm << "# No. kernels: " << kernels.size() << "\n";
 
          string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
@@ -545,7 +582,7 @@ class quantum_program
       {
          IOUT("printing interaction matrix...");
 
-         for (auto k : kernels)
+         for (auto& k : kernels)
          {
             InteractionMatrix imat( k.get_circuit(), qubit_count);
             string mstr = imat.getString();
@@ -555,7 +592,7 @@ class quantum_program
 
       void write_interaction_matrix()
       {
-         for (auto k : kernels)
+         for (auto& k : kernels)
          {
             InteractionMatrix imat( k.get_circuit(), qubit_count);
             string mstr = imat.getString();
