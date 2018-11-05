@@ -618,7 +618,10 @@ public:
                 }
             }
         }
-        if (is_flux || is_mw) DOUT("    " << name << " resource available ...");
+        if (is_flux || is_mw)
+        {
+            // DOUT("    " << name << " resource available ...");
+        }
         return true;
     }
 

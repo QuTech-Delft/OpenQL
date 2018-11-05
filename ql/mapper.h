@@ -14,6 +14,13 @@
 #include "ql/arch/cc_light_resource_manager.h"
 #include "ql/gate.h"
 
+void assert_fail(const char *f, int l, const char *s)
+{
+    EOUT("assert " << s << " failed in file " << f << " at line " << l);
+    throw ql::exception("assert failed",false);
+}
+#define MapperAssert(condition)   { if (!(condition)) { assert_fail(__FILE__, __LINE__, #condition); } }
+
 // Note on the use of constructors and Init functions for classes of the mapper
 // -----------------------------------------------------------------------------
 // Almost all classes of the mapper have one or more members that require initialization
@@ -41,6 +48,12 @@
 // so there is a Virt2Real attached to the output (the 'main' one)
 // and there is a Virt2Real for each experimental path to make one or more pairs of qubits NN;
 // in the latter case, these start off as copy of the main one
+//
+// it is wrong when nv is just the number of virtual qubits in the program
+// because when swapping through the grid, more real qubits might get involved
+// and then we're having more real than virtual qubits in use; and then the mapping is not 1-1 anymore;
+// so nv as size of Virt2Real maps should be the number of real qubits in the platform;
+// at the same time, each virtual qubit index should be < nv, or we need a v2i map as in initial placement
 class Virt2Real
 {
 private:
@@ -57,8 +70,8 @@ size_t GetVirt(size_t r)
     {
         if (v2rMap[v] == r) return v;
     }
-    assert(0);
-    return 0;
+    MapperAssert(0);
+    return MAX_CYCLE;
 }
 
 
@@ -79,6 +92,7 @@ void Init(size_t n)
 // map virtual qubit index to real qubit index
 size_t& operator[] (size_t v)
 {
+    MapperAssert(v < nv);
     return v2rMap[v];
 }
 
@@ -91,6 +105,10 @@ void Swap(size_t r0, size_t r1)
     size_t v0 = GetVirt(r0);
     size_t v1 = GetVirt(r1);
     // DOUT("... swap virtual indices from ("<< v0<<"->"<<r0<<","<<v1<<"->"<<r1<<") to ("<<v0<<"->"<<r1<<","<<v1<<"->"<<r0<<" )");
+    MapperAssert(v0 != v1);
+    MapperAssert(v0 < nv);
+    MapperAssert(v1 < nv);
+
     v2rMap[v0] = r1;
     v2rMap[v1] = r0;
 }
@@ -287,7 +305,7 @@ size_t StartCycle(ql::gate *g)
             // DOUT(" ... from [" << baseStartCycle << "] to [" << startCycle-1 << "] busy resource(s) for " << g->qasm());
         }
     }
-    assert (startCycle < MAX_CYCLE);
+    MapperAssert (startCycle < MAX_CYCLE);
 
     return startCycle;
 }
@@ -445,7 +463,7 @@ void Schedule()
 {
     // DOUT("Schedule ...");
 
-    assert (!waitinglg.empty());
+    MapperAssert (!waitinglg.empty());
 
     do
     {
@@ -1170,7 +1188,7 @@ void Split(std::list<NNPath> & reslp)
     // DOUT("Split ...");
 
     size_t length = total.size();
-    assert (length >= 3);   // distance > 1 so path at least: source -> intermediate -> target
+    MapperAssert (length >= 3);   // distance > 1 so path at least: source -> intermediate -> target
     for (size_t leftopi = 0; leftopi < length-1; leftopi++)
     {
         // DOUT("... leftopi=" << leftopi);
@@ -1380,6 +1398,7 @@ private:
 
                                         // remaining attributes are computed per circuit
     size_t                  nfac;       // number of facilities, actually used virtual qubits; index variables i and j
+                                        // nfac <= nvq: e.g. nvq == 6, but only v2 and v5 are used; nfac then is 2
 
 public:
 
@@ -1401,9 +1420,9 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     DOUT("InitialPlace circuit ...");
     DOUT("... compute usecount by scanning circuit");
     std::vector<size_t>  usecount;  // usecount[v] = count of use of virtual qubit v in current circuit
-    usecount.resize(nvq,0);
-    std::vector<size_t> v2i;        // v2i[virtual qubit index v] -> index of used qubit i
-    v2i.resize(nvq,MAX_CYCLE);      // MAX_CYCLE means undefined, virtual qubit v not used by circuit as operand o of gate g
+    usecount.resize(nvq,0);         // usecount is used to compute v2i which is used to compute nfac
+    std::vector<size_t> v2i;        // v2i[virtual qubit index v] -> index of facility i
+    v2i.resize(nvq,MAX_CYCLE);      // MAX_CYCLE means undefined, virtual qubit v not used by circuit as gate operand
     for ( auto& gp : circ )
     {
         for ( auto v : gp->operands)
@@ -1423,7 +1442,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     DOUT("... number of facilities: " << nfac << " while number of virtual qubits is: " << nvq);
 
     // precompute refcount by scanning circuit
-    // refcount[i][j] = count of two-qubit gates between used qubits i and j in current circuit
+    // refcount[i][j] = count of two-qubit gates between facilities i and j in current circuit
     DOUT("... compute refcount by scanning circuit");
     std::vector<std::vector<size_t>>  refcount;
     refcount.resize(nfac); for (size_t i=0; i<nfac; i++) refcount[i].resize(nfac,0);
@@ -1464,7 +1483,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     }
 
     // precompute costmax by applying formula
-    // costmax[i][k] = sum j: sum l: refcount[i][j] * distance(k,l) for used qubit i in location k
+    // costmax[i][k] = sum j: sum l: refcount[i][j] * distance(k,l) for facility i in location k
     DOUT("... precompute costmax by combining refcount and distances");
     std::vector<std::vector<size_t>>  costmax;   
     costmax.resize(nfac); for (size_t i=0; i<nfac; i++) costmax[i].resize(nlocs,0);
@@ -1488,11 +1507,11 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     
     // variables (columns)
     //  x[i][k] are integral, values 0 or 1
-    //      x[i][k] represents whether used qubit i is in location k
+    //      x[i][k] represents whether facility i is in location k
     //  w[i][k] are real, values >= 0
     //      w[i][k] represents x[i][k] * sum j: sum l: refcount[i][j] * distance(k,l) * x[j][l]
-    //       i.e. if used qubit i not in location k then 0
-    //       else for all used qubits j in its location l sum refcount[i][j] * distance(k,l)
+    //       i.e. if facility i not in location k then 0
+    //       else for all facilities j in its location l sum refcount[i][j] * distance(k,l)
     // DOUT("... allocate x column variable");
     std::vector<std::vector<Mip::Col>> x;
         x.resize(nfac); for (size_t i=0; i<nfac; i++) x[i].resize(nlocs);
@@ -1542,6 +1561,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     
     // constraints (rows)
     //  forall k: ( sum i: x[i][k] <= 1 )
+    //  < 1 (i.e. == 0) may apply for a k when location k doesn't contain a qubit in this solution
     for ( size_t k=0; k<nlocs; k++ )
     {
         Mip::Expr   sum;
@@ -1652,7 +1672,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
         {
             if (mip.sol(x[i][k]) == 1)
             {
-                // map used qubit i to location k
+                // map facility i to location k
                 // use v2i backward to convert i to its corresponding virtual qubit v
                 // and to fill v2r[v]
                 for (size_t v=0; v<nvq; v++)
@@ -1701,10 +1721,6 @@ private:
 #endif
     size_t          nvq;            // number of qubits in the kernel, number of virtual qubits
     Past            mainPast;       // main past window; all path alternatives start off as clones of it
-//  std::vector<size_t> use_count;  // use_count[real qubit index], number of times the real qubit was used
-    size_t          swaps_added;    // number of swaps added, for reporting
-
-    Virt2Real       init_v2r;       // mapping left over from previous kernel, or initial mapping
 
 
 // Mapper constructor is default synthesized
@@ -1718,7 +1734,7 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
     std::list<NNPath> genlp;    // list that will get the result of a recursive Gen call
 
     // DOUT("GenShortestPaths: " << "src=" << src << " tgt=" << tgt);
-    assert (reslp.empty());
+    MapperAssert (reslp.empty());
 
     if (src == tgt) {
         // found target
@@ -1745,7 +1761,7 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
     // start looking around at neighbors for serious paths
     // assume that distance is not approximate but exact and can be met
     size_t d = grid.Distance(src, tgt);
-    assert (d >= 1);
+    MapperAssert (d >= 1);
 
     // loop over all neighbors of src
     for (auto & n : grid.nbs[src])
@@ -1765,7 +1781,7 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
         // accumulate all results
         reslp.splice(reslp.end(), genlp);   // moves all of genlp to reslp; makes genlp empty
         // DOUT("... did splice, i.e. moved any results from recursion to current level results");
-        assert (genlp.empty());
+        MapperAssert (genlp.empty());
     }
     // reslp contains all paths starting from a neighbor of src, to tgt
 
@@ -1798,7 +1814,7 @@ void MinimalExtendingPath(std::list<NNPath>& lp, NNPath & resp)
     NNPath  minp;
 
     // DOUT("MinimalExtendingPath");
-    assert (!lp.empty());   // so there always is a result path
+    MapperAssert (!lp.empty());   // so there always is a result path
 
     for (auto & p : lp)
     {
@@ -1820,7 +1836,7 @@ void MapMinExtend(ql::gate* gp)
     size_t  src = mainPast.MapQubit(q[0]);
     size_t  tgt = mainPast.MapQubit(q[1]);
     size_t  d = grid.Distance(src, tgt);
-    assert (d >= 1);
+    MapperAssert (d >= 1);
     DOUT("... MapMinExtend: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
 
     if (d > 1)
@@ -1952,40 +1968,13 @@ void MapGates(ql::circuit& circ, std::string& kernel_name)
     // outCirc gets the old circ and is destroyed when leaving scope
     // DOUT("... swapping outCirc with circ");
     circ.swap(outCirc);
-
-    swaps_added = mainPast.NumberOfSwapsAdded();
 }
-
-// // update counts which qubits are used in this circuit
-// void UseCount(ql::circuit& circ)
-// {
-//     for( auto gp : circ )
-//     {
-//         for ( auto q : gp->operands)
-//         {
-//             use_count[q]++;
-//         }
-//     }
-// } 
-// 
-// // inspect counters and update highest qubit index
-// void GetHighestQubitIndex(size_t & highest_index)
-// {
-//     highest_index = 0;
-//     for (size_t i=0; i < platform.qubit_number; i++)
-//     {
-//         if (use_count[i] != 0)
-//         {
-//             highest_index = std::max(highest_index, i);
-//         }
-//     }
-// }
 
 public:
 // retrieve number of swaps added
 void GetNumberOfSwapsAdded(size_t & sa)
 {
-    sa = swaps_added;
+    sa = mainPast.NumberOfSwapsAdded();
 }
 
 // decompose all gates with names ending in _prim
@@ -2088,28 +2077,7 @@ void MapCircuit(size_t& kernel_qubits, ql::circuit& circ, std::string& kernel_na
 {
     DOUT("==================================");
     DOUT("Mapping circuit ...");
-    DOUT("... kernel virtual number of qubits=" << kernel_qubits);
-    if (nvq != 0 && nvq != kernel_qubits)
-    {
-        // kernel_qubits of all kernels should be the same to allow passing on v2r maps
-        EOUT("Number of qubits " << kernel_qubits << " in kernel: " << kernel_name << ", doesn't match program number of qubits: " << nvq);
-
-        throw ql::exception("[x] error : Number of qubits in kernel: "+kernel_name+", doesn't match program number of qubits" ,false);
-    }
-
-    if (nvq == 0)
-    {
-        // first kernel
-        nvq = kernel_qubits;
-        DOUT("... Initialize init_v2r with trivial mapping (virtual==real), number of virtual qubits=" << nvq);
-        init_v2r.Init(nvq);
-    }
-
-    // should initialize Past.v2r to init_v2r
-    // note other pasts: of a path: as clone, ...
-    mainPast.Init(nvq, &platform);      // HERE
-    // mainPast.Print("initial mapping");
-    // use_count.resize(nqbits,0);
+    DOUT("... kernel original virtual number of qubits=" << kernel_qubits);
 
 #ifdef INITIALPLACE
     std::string initialplaceopt = ql::options::get("initialplace");
@@ -2136,14 +2104,13 @@ void MapCircuit(size_t& kernel_qubits, ql::circuit& circ, std::string& kernel_na
     }
 #endif
     MapGates(circ, kernel_name);
+
     std::string mapdecomposeropt = ql::options::get("mapdecomposer");
     if("yes" == mapdecomposeropt)
     {
         Decomposer(circ);   // decompose to primitives as specified in the config file
     }
-    // UseCount(circ);
-    // size_t HighestQubitIndex;
-    // GetHighestQubitIndex(HighestQubitIndex);
+
     kernel_qubits = nqbits; // bluntly, so that all kernels get the same qubit_count
 
     DOUT("Mapping circuit [DONE]");
@@ -2163,7 +2130,9 @@ void Init(ql::quantum_platform& p)
 
     grid.Init(&platform);
 
-    nvq = 0;    // signal to first MapCircuit call that it is mapping the first kernel
+    nvq = p.qubit_number;   // same because Virt2Real mappings should be 1 to 1
+    mainPast.Init(nvq, &platform);
+
     // DOUT("Mapping initialization [DONE]");
 }   // end Init
 
