@@ -935,7 +935,7 @@ void DeVirtualize(ql::gate* gp, ql::circuit& circ)
     else
     {
         gp->operands = real_qubits;
-        DOUT("... DeVirtualize: keep gate after mapping qubit indices: " << gp->qasm());
+        // DOUT("... DeVirtualize: keep gate after mapping qubit indices: " << gp->qasm());
         circ.push_back(gp);
     }
 }
@@ -1418,9 +1418,14 @@ void Init(size_t n, Grid* g, ql::quantum_platform *p)
 void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
 {
     DOUT("InitialPlace circuit ...");
+
+    // compute usecount to know which virtual qubits are actually used
+    // use it to compute v2i, mapping virtual qubit indices to contiguous facility indices
+    // finally, nfac is set to the number of these facilities
+    // please note that nvq is just an upper bound on the virtual qubit index
     DOUT("... compute usecount by scanning circuit");
     std::vector<size_t>  usecount;  // usecount[v] = count of use of virtual qubit v in current circuit
-    usecount.resize(nvq,0);         // usecount is used to compute v2i which is used to compute nfac
+    usecount.resize(nvq,0);         // initially all 0
     std::vector<size_t> v2i;        // v2i[virtual qubit index v] -> index of facility i
     v2i.resize(nvq,MAX_CYCLE);      // MAX_CYCLE means undefined, virtual qubit v not used by circuit as gate operand
     for ( auto& gp : circ )
@@ -1443,6 +1448,9 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
 
     // precompute refcount by scanning circuit
     // refcount[i][j] = count of two-qubit gates between facilities i and j in current circuit
+    // at the same time, set anymap and currmap
+    // anymap = there are no two-qubit gates so any map will do
+    // currmap = in the current map, all two-qubit gates are NN so current map will do
     DOUT("... compute refcount by scanning circuit");
     std::vector<std::vector<size_t>>  refcount;
     refcount.resize(nfac); for (size_t i=0; i<nfac; i++) refcount[i].resize(nfac,0);
@@ -1660,32 +1668,70 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
         return;
     }
 
-    // get the results
+    // get the results: x[i][k] == 1 iff facility i is in location k (i.e. real qubit index k)
+    // use v2i to translate facilities back to virtual qubit indices
+    // and fill v2r with the found locations for the used virtual qubits;
+    // the unused virtual qubits are mapped to an arbitrary permutation of the remaining locations
+    // since these might get used by swap paths and thus must have a (fake) virtual qubit assigned for the mapper's logic
     DOUT("... interpret result and copy to Virt2Real");
     for (size_t v=0; v<nvq; v++)
     {
-        v2r[v] = MAX_CYCLE;      // i.e. undefined
+        v2r[v] = MAX_CYCLE;      // i.e. undefined, i.e. v is not an index of a used virtual qubit
     }
     for ( size_t i=0; i<nfac; i++ )
     {
-        for ( size_t k=0; k<nlocs; k++ )
+        size_t v;   // found virtual qubit index v represented by facility i
+        // use v2i backward to find virtual qubit v represented by facility i
+        for (v=0; v<nvq; v++)
+        {
+            if (v2i[v] == i)
+            {
+                break;
+            }
+        }
+        MapperAssert(v < nvq);  // for each facility there must be a virtual qubit
+        size_t k;   // location to which facility i and thus virtual qubit index v was allocated
+        for (k=0; k<nlocs; k++ )
         {
             if (mip.sol(x[i][k]) == 1)
             {
-                // map facility i to location k
-                // use v2i backward to convert i to its corresponding virtual qubit v
-                // and to fill v2r[v]
-                for (size_t v=0; v<nvq; v++)
-                {
-                    if (v2i[v] == i)
-                    {
-                        v2r[v] = k;
-                    }
-                }
+                v2r[v] = k;
+                break;
             }
         }
+        MapperAssert(k < nlocs);  // each facility i by definition represents a used qubit so must have got a location
     }
-    v2r.Print("... result Virt2Real map of InitialPlace");
+    v2r.Print("... result Virt2Real map of InitialPlace before adding unused virtual qubits and unused locations ");
+    // used virtual qubits v have got their location k filled in in v2r[v] == k
+    // unused virtual qubits still have location MAX_CYCLE, fill those with the remaining locations
+    for (size_t v=0; v<nvq; v++)
+    {
+        if (v2r[v] == MAX_CYCLE)
+        {
+            // v is unused; find an unused location k
+            size_t k;   // location k that is checked for having been allocated to some virtual qubit w
+            for (k=0; k<nlocs; k++ )
+            {
+                int found_this_k_use = 0;
+                for (size_t w=0; w<nvq; w++)
+                {
+                    if (v2r[w] == k)
+                    {
+                        found_this_k_use = 1;
+                        break;
+                    }
+                }
+                if (found_this_k_use == 0)
+                {
+                    break;     // k is an unused location
+                }
+                // k is a used location, so continue with next k to check whether it is hopefully unused
+            }
+            MapperAssert(k < nlocs);  // when a virtual qubit is not used, there must be a location that is not used
+            v2r[v] = k;
+        }
+    }
+    v2r.Print("... final result Virt2Real map of InitialPlace");
     result = ipr_newmap;
     DOUT("InitialPlace circuit [DONE]");
 }

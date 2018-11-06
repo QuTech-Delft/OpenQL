@@ -422,7 +422,8 @@ test_string(std::string v, std::string mapopt, std::string initialplaceopt)
     prog.compile( );
 }
 
-// printing of kernels
+// simple kernel originating from two kernel example of daniel
+// will be modified to two kernels when inter kernel control flow is supported
 void
 test_daniel(std::string v, std::string mapopt, std::string initialplaceopt)
 {
@@ -450,7 +451,9 @@ test_daniel(std::string v, std::string mapopt, std::string initialplaceopt)
     prog.compile( );
 }
 
-// printing of kernels
+// actual test kernel of daniel that failed once
+// because it caused use of a location that, before mapping heuristic was started, wasn't assigned to a used virtual qubit
+// i.e. a location that didn't appear in the v2r map as location where the v2r is the initial map of the heuristic
 void
 test_daniel2(std::string v, std::string mapopt, std::string initialplaceopt)
 {
@@ -732,7 +735,7 @@ int main(int argc, char ** argv)
 //  test_daniel("daniel", "minextendrc", "yes");
 //  test_daniel("daniel", "minextendrc", "no");
     test_daniel2("daniel2", "minextendrc", "yes");
-//  test_daniel2("daniel2", "minextendrc", "no");
+    test_daniel2("daniel2", "minextendrc", "no");
 
 //  test_oneD2("oneD2", "base", "no");
 //  test_oneD2("oneD2", "base", "yes");
