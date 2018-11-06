@@ -734,14 +734,14 @@ int main(int argc, char ** argv)
     
 //  test_daniel("daniel", "minextendrc", "yes");
 //  test_daniel("daniel", "minextendrc", "no");
-    test_daniel2("daniel2", "minextendrc", "yes");
-    test_daniel2("daniel2", "minextendrc", "no");
+//  test_daniel2("daniel2", "minextendrc", "yes");
+//  test_daniel2("daniel2", "minextendrc", "no");
 
 //  test_oneD2("oneD2", "base", "no");
 //  test_oneD2("oneD2", "base", "yes");
 //  test_oneD2("oneD2", "minextend", "no");
 //  test_oneD2("oneD2", "minextend", "yes");
-//  test_oneD2("oneD2", "minextendrc", "no");
+    test_oneD2("oneD2", "minextendrc", "no");
 //  test_oneD2("oneD2", "minextendrc", "yes");
 
 //  test_oneD4("oneD4", "base", "no");

@@ -57,6 +57,7 @@ public:
     {
         gate_definition = platform.instruction_map;
         cycle_time = platform.cycle_time;
+        DOUT("GETSWAP, kernel creation with swaps_added " <<  swaps_added);
     }
 
     void set_static_loop_count(size_t it)
@@ -1009,6 +1010,7 @@ public:
         ss << "# ----- depth: " << get_depth() << "\n";
         ss << "# ----- quantum gates: " << get_quantum_gates() << "\n";
         ss << "# ----- non single qubit gates: " << get_non_single_qubit_quantum_gates() << "\n";
+        DOUT("GETSWAP in get_epilogue, to add to string, ask for swaps_added " << swaps_added);
         ss << "# ----- swaps added: " << swaps_added << "\n";
         ss << "# ----- classical operations: " << get_classical_operations() << "\n";
         ss << "# ----- qubits used: " << get_qubit_usecount() << "\n";

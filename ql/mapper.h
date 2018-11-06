@@ -425,6 +425,7 @@ void Init(size_t n, ql::quantum_platform *p)
     waitinglg.clear();  // waitinglg is initialized to empty list
     lg.clear();         // lg is initialized to empty list
     nswapsadded = 0;
+    DOUT("GETSWAP Past.nswapsadded initialized to " << nswapsadded);
     cycle.clear();      // cycle is initialized to empty map
 }
 
@@ -866,6 +867,7 @@ bool new_gate(std::string gname, std::vector<size_t> qubits, ql::circuit& circ, 
 // return number of swaps added to this past
 size_t NumberOfSwapsAdded()
 {
+    DOUT("GETSWAP: NumberOfSwapsAdded called; will return nswapsadded " << nswapsadded);
     return nswapsadded;
 }
 
@@ -893,6 +895,7 @@ void AddSwap(size_t r0, size_t r1)
         Add(gp);
     }
     nswapsadded++;                       // for reporting at the end
+    DOUT("GETSWAP: incremented current past's nswapsadded to become " << nswapsadded);
     // DOUT("... swap(q" << r0 << ",q" << r1 << ")");
 
     v2r.Swap(r0,r1);
@@ -979,10 +982,15 @@ size_t MaxFreeCycle()
 
 void Flush()
 {
+    DOUT("GETSWAP Flush, partial init of Past: fc.Init, lg.clear and cycle.clear");
     for( auto & gp : lg )
     {
         outCircp->push_back(gp);
     }
+
+    fc.Init(platformp);
+    lg.clear();         // lg is initialized to empty list
+    cycle.clear();      // cycle is initialized to empty map
 }
 
 };  // end class Past
@@ -2032,13 +2040,15 @@ void GetNumberOfSwapsAdded(size_t & sa)
 void Decomposer(ql::circuit& circ)
 {
     DOUT("Decompose circuit ...");
-    mainPast.Init(nvq, &platform);
+    DOUT("GETSWAP mainPast.Init in Decomposer not doing it");
+    // mainPast.Init(nvq, &platform);
 
     ql::circuit outCirc;        // output gate stream
     mainPast.Output(outCirc);   // past window will flush into outCirc
     for( auto & gp : circ )
     {
         ql::circuit tmpCirc;
+        DOUT("mainPast.Init in Decomposer not doing it");
         mainPast.Decompose(gp, tmpCirc);
         for (auto newgp : tmpCirc)
         {
@@ -2106,7 +2116,7 @@ ql::ir::bundles_t Bundler(ql::circuit& circ)
 std::string qasm(ql::circuit& c, size_t nqubits, std::string& name)
 {
     std::stringstream ss;
-    ss << "version 2.0\n";
+    ss << "version 1.0\n";
     ss << "qubits " << nqubits << "\n";
     ss << "." << name << "\n";
 

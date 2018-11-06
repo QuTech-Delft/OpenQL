@@ -113,7 +113,9 @@ private:
         write_qasm(mapper_in_fname, kernels, platform);
 
         Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
+        DOUT("GETSWAP: mapper creation done");
         mapper.Init(platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
+        DOUT("GETSWAP: mapper Init done");
         for(auto &kernel : kernels)
         {
             auto mapopt = ql::options::get("mapper");
@@ -127,12 +129,15 @@ private:
                             // kernel.qubit_count is number of virtual qubits, i.e. highest indexed qubit minus 1
                             // and kernel.qubit_count is updated to real highest index used minus -1
             kernel.bundles = mapper.Bundler(kernel.c);
+            DOUT("GETSWAP: call to mapper.GetNumberOfSwapsAdded ...");
             mapper.GetNumberOfSwapsAdded(kernel.swaps_added);
+            DOUT("GETSWAP: call to mapper.GetNumberOfSwapsAdded, returned into kernel.swaps_added: " << kernel.swaps_added);
         }
         std::stringstream mapper_out_fname;
         mapper_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_out.qasm";
         IOUT("writing mapper output qasm to '" << mapper_out_fname.str() << "' ...");
         write_qasm(mapper_out_fname, kernels, platform);
+        DOUT("GETSWAP: mapper destruction pending");
     }
 
     ql::ir::bundles_t quantumsim_schedule_rc(ql::circuit & ckt, 
