@@ -393,8 +393,7 @@ class Past
 {
 private:
 
-    size_t                  nv;         // number of virtual qubits for Virt2Real map
-    size_t                  nq;         // width of Past in number of real qubits
+    size_t                  nq;         // width of Past and Virt2Real map in number of real qubits
     size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
     ql::quantum_platform   *platformp;  // platform describing resources for scheduling
     std::map<std::string,ql::custom_gate*> *gate_definitionp; // gate definitions from platform's .json file
@@ -411,21 +410,19 @@ private:
 public:
 
 // past initializer
-void Init(size_t n, ql::quantum_platform *p)
+void Init(ql::quantum_platform *p)
 {
-    // DOUT("Past::Init(number of virtual qubits=" << n);
-    nv = n;
+    // DOUT("Past::Init");
     platformp = p;
 
     nq = platformp->qubit_number;
     ct = platformp->cycle_time;
     gate_definitionp = &platformp->instruction_map;
-    v2r.Init(nv);
+    v2r.Init(nq);
     fc.Init(platformp);
     waitinglg.clear();  // waitinglg is initialized to empty list
     lg.clear();         // lg is initialized to empty list
     nswapsadded = 0;
-    DOUT("GETSWAP Past.nswapsadded initialized to " << nswapsadded);
     cycle.clear();      // cycle is initialized to empty map
 }
 
@@ -867,7 +864,6 @@ bool new_gate(std::string gname, std::vector<size_t> qubits, ql::circuit& circ, 
 // return number of swaps added to this past
 size_t NumberOfSwapsAdded()
 {
-    DOUT("GETSWAP: NumberOfSwapsAdded called; will return nswapsadded " << nswapsadded);
     return nswapsadded;
 }
 
@@ -895,7 +891,6 @@ void AddSwap(size_t r0, size_t r1)
         Add(gp);
     }
     nswapsadded++;                       // for reporting at the end
-    DOUT("GETSWAP: incremented current past's nswapsadded to become " << nswapsadded);
     // DOUT("... swap(q" << r0 << ",q" << r1 << ")");
 
     v2r.Swap(r0,r1);
@@ -982,7 +977,6 @@ size_t MaxFreeCycle()
 
 void Flush()
 {
-    DOUT("GETSWAP Flush, partial init of Past: fc.Init, lg.clear and cycle.clear");
     for( auto & gp : lg )
     {
         outCircp->push_back(gp);
@@ -1033,9 +1027,8 @@ class NNPath
 
 private:
 
-    size_t                  nv;         // number of virtual qubits for Virt2Real map
     ql::quantum_platform   *platformp;  // descriptions of resources for scheduling
-    size_t                  nq;         // width of Past is number of real qubits
+    size_t                  nq;         // width of Past and Virt2Real map is number of real qubits
     size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
 
     std::vector<size_t>     total;      // full path, including source and target nodes
@@ -1049,16 +1042,15 @@ private:
 public:
 // NNPath initializer
 // This should only be called after a virgin construction and not after cloning a path.
-void Init(size_t n, ql::quantum_platform* p)
+void Init(ql::quantum_platform* p)
 {
     // DOUT("path::Init(number of virtual qubits=" << n);
-    nv = n;
     platformp = p;
 
     nq = platformp->qubit_number;
     ct = platformp->cycle_time;
     // total, fromSource and fromTarget start as empty vectors
-    past.Init(nv, platformp);           // initializes past to empty
+    past.Init(platformp);                // initializes past to empty
     cycleExtend = MAX_CYCLE;             // means undefined
 }
 
@@ -1144,7 +1136,7 @@ void Single(size_t q)
 }
 
 // add a node to the path in front, extending its length with one
-void Add(size_t q)
+void Add2Front(size_t q)
 {
     total.insert(total.begin(), q); // hopelessly inefficient
 }
@@ -1400,23 +1392,25 @@ class InitialPlace
 {
 private:
                                         // parameters, constant for a kernel
-    size_t                  nvq;        // number of virtual qubits as specified by programmer
+    ql::quantum_platform   *platformp;  // platform
     size_t                  nlocs;      // number of locations, real qubits; index variables k and l
+    size_t                  nvq;        // same range as nlocs; when not, take set from config and create v2i earlier
     Grid                   *gridp;      // current grid with Distance function
 
                                         // remaining attributes are computed per circuit
     size_t                  nfac;       // number of facilities, actually used virtual qubits; index variables i and j
-                                        // nfac <= nvq: e.g. nvq == 6, but only v2 and v5 are used; nfac then is 2
+                                        // nfac <= nlocs: e.g. nlocs == 7, but only v2 and v5 are used; nfac then is 2
 
 public:
 
 // kernel-once initialization
-void Init(size_t n, Grid* g, ql::quantum_platform *p)
+void Init(Grid* g, ql::quantum_platform *p)
 {
     DOUT("InitialPlace Init ...");
-    nvq = n;
+    platformp = p;
     nlocs = p->qubit_number;
-    DOUT("... number of virtual qubits: " << nvq << " number of real qubits (locations): " << nlocs);
+    nvq = p->qubit_number;  // same range; when not, take set from config and create v2i earlier
+    DOUT("... number of real qubits (locations): " << nlocs);
     gridp = g;
 }
 
@@ -1430,7 +1424,6 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     // compute usecount to know which virtual qubits are actually used
     // use it to compute v2i, mapping virtual qubit indices to contiguous facility indices
     // finally, nfac is set to the number of these facilities
-    // please note that nvq is just an upper bound on the virtual qubit index
     DOUT("... compute usecount by scanning circuit");
     std::vector<size_t>  usecount;  // usecount[v] = count of use of virtual qubit v in current circuit
     usecount.resize(nvq,0);         // initially all 0
@@ -1751,6 +1744,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
 // =========================================================================================
 // Mapper: map operands of gates and insert swaps so that two-qubit gate operands are NN
 // all gates must be unary or two-qubit gates
+// The operands are virtual qubit indices, in the same range as the real qubit indices of the platform.
 //
 // Do this mapping in the context of a grid of qubits defined by the given platform.
 // Maintain several local mappings to ease navigating in the grid; these are constant after initialization.
@@ -1773,7 +1767,6 @@ private:
 #ifdef INITIALPLACE
     InitialPlace    ip;             // initial placer facility
 #endif
-    size_t          nvq;            // number of qubits in the kernel, number of virtual qubits
     Past            mainPast;       // main past window; all path alternatives start off as clones of it
 
 
@@ -1799,9 +1792,9 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
         NNPath  p;
 
         // DOUT("... done allocate local virgin path; now init it");
-        p.Init(nvq, &platform);
+        p.Init(&platform);
         // DOUT("... done init path; now add src to it, converting it to an empty path");
-        p.Add(src);
+        p.Add2Front(src);
         // DOUT("... done adding src; now add this empty path to result list");
         // p.Print("... path before adding to result list");
         reslp.push_back(p);
@@ -1843,7 +1836,7 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
     for (auto & p : reslp)
     {
         // DOUT("... GenShortestPaths, about to add src=" << src << "in front of path");
-        p.Add(src);
+        p.Add2Front(src);
     }
     // DOUT("... GenShortestPaths, returning from call of: " << "src=" << src << " tgt=" << tgt);
 }
@@ -1979,7 +1972,7 @@ void MapGate(ql::gate* gp)
     // devirtualization of this gate maps its qubit operands and optionally updates its gate name
     // when the gate name was updated, a new gate with that name is created;
     // when that new gate is a composite gate, it is decomposed
-    // the resulting gate/expansion (anyhow a sequence of gates) is caught in circ
+    // the resulting gate/expansion (anyhow a sequence of gates) is collected in circ
     ql::circuit circ;   // result of devirtualization
     mainPast.DeVirtualize(gp, circ);
     for (auto newgp : circ)
@@ -2040,8 +2033,6 @@ void GetNumberOfSwapsAdded(size_t & sa)
 void Decomposer(ql::circuit& circ)
 {
     DOUT("Decompose circuit ...");
-    DOUT("GETSWAP mainPast.Init in Decomposer not doing it");
-    // mainPast.Init(nvq, &platform);
 
     ql::circuit outCirc;        // output gate stream
     mainPast.Output(outCirc);   // past window will flush into outCirc
@@ -2139,7 +2130,7 @@ void MapCircuit(size_t& kernel_qubits, ql::circuit& circ, std::string& kernel_na
     std::string initialplaceopt = ql::options::get("initialplace");
     if("yes" == initialplaceopt)
     {
-        ip.Init(nvq, &grid, &platform);
+        ip.Init(&grid, &platform);
 
         Virt2Real   v2r;
         DOUT("InitialPlace copy in current Virt2Real mapping ...");
@@ -2186,8 +2177,7 @@ void Init(ql::quantum_platform& p)
 
     grid.Init(&platform);
 
-    nvq = p.qubit_number;   // same because Virt2Real mappings should be 1 to 1
-    mainPast.Init(nvq, &platform);
+    mainPast.Init(&platform);
 
     // DOUT("Mapping initialization [DONE]");
 }   // end Init
