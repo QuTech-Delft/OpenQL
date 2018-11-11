@@ -333,8 +333,8 @@ class quantum_program
          for (size_t k=0; k<kernels.size(); ++k)
          {
             ss << kernels[k].qasm();
-            total_classical_operations += kernels[k].get_classical_operations();
-            total_quantum_gates += kernels[k].get_quantum_gates();
+            total_classical_operations += kernels[k].get_classical_operations_count();
+            total_quantum_gates += kernels[k].get_quantum_gates_count();
          }
 	/*
          ss << ".cal0_1\n";
@@ -561,9 +561,9 @@ class quantum_program
             // IOUT("writing scheduled qasm to '" << fname << "' ...");
             // ql::utils::write_file(fname, kernel_sched_dot);
             total_depth += k.get_depth();
-            total_classical_operations += k.get_classical_operations();
-            total_quantum_gates += k.get_quantum_gates();
-            total_non_single_qubit_gates += k.get_non_single_qubit_quantum_gates();
+            total_classical_operations += k.get_classical_operations_count();
+            total_quantum_gates += k.get_quantum_gates_count();
+            total_non_single_qubit_gates += k.get_non_single_qubit_quantum_gates_count();
          }
          sched_qasm << "\n";
          sched_qasm << "# Total depth: " << total_depth << "\n";

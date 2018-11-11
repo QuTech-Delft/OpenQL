@@ -840,9 +840,9 @@ public:
                 out_qasm << kernel.get_epilogue();
             }
             total_depth += kernel.get_depth();
-            total_classical_operations += kernel.get_classical_operations();
-            total_quantum_gates += kernel.get_quantum_gates();
-            total_non_single_qubit_gates += kernel.get_non_single_qubit_quantum_gates();
+            total_classical_operations += kernel.get_classical_operations_count();
+            total_quantum_gates += kernel.get_quantum_gates_count();
+            total_non_single_qubit_gates += kernel.get_non_single_qubit_quantum_gates_count();
         }
         out_qasm << "\n";
         out_qasm << "# Total depth: " << total_depth << "\n";

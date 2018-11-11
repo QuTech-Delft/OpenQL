@@ -84,9 +84,9 @@ private:
                 out_qasm << kernel.get_epilogue();
             }
             total_depth += kernel.get_depth();
-            total_classical_operations += kernel.get_classical_operations();
-            total_quantum_gates += kernel.get_quantum_gates();
-            total_non_single_qubit_gates += kernel.get_non_single_qubit_quantum_gates();
+            total_classical_operations += kernel.get_classical_operations_count();
+            total_quantum_gates += kernel.get_quantum_gates_count();
+            total_non_single_qubit_gates += kernel.get_non_single_qubit_quantum_gates_count();
         }
         out_qasm << "\n";
         out_qasm << "# Total depth: " << total_depth << "\n";
@@ -262,9 +262,9 @@ private:
         for(auto &kernel : kernels)
         {
             total_depth += kernel.get_depth();
-            total_classical_operations += kernel.get_classical_operations();
-            total_quantum_gates += kernel.get_quantum_gates();
-            total_non_single_qubit_gates += kernel.get_non_single_qubit_quantum_gates();
+            total_classical_operations += kernel.get_classical_operations_count();
+            total_quantum_gates += kernel.get_quantum_gates_count();
+            total_non_single_qubit_gates += kernel.get_non_single_qubit_quantum_gates_count();
         }
         fout << "# Total depth: " << total_depth << "\n";
         fout << "# Total no. of quantum gates: " << total_quantum_gates << "\n";
@@ -332,7 +332,7 @@ private:
              << "def xm45(q, time):\n"                                                      
              << "    return rx(q, time, angle=-np.pi/4)\n"                                  
              << "\n"                                                                        
-             << "def prep_z(q, time):\n"                                                    
+             << "def prepz(q, time):\n"                                                    
              << "    return ResetGate(q, time, state=0)\n\n"                                
              << endl;
 

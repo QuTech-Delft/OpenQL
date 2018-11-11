@@ -397,6 +397,7 @@ private:
     size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
     ql::quantum_platform   *platformp;  // platform describing resources for scheduling
     std::map<std::string,ql::custom_gate*> *gate_definitionp; // gate definitions from platform's .json file
+                                        // to be able to create new gates
     Virt2Real               v2r;        // Virt2Real map applying to this Past
     FreeCycle               fc;         // FreeCycle map applying to this Past
 

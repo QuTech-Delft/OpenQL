@@ -57,7 +57,6 @@ public:
     {
         gate_definition = platform.instruction_map;
         cycle_time = platform.cycle_time;
-        DOUT("GETSWAP, kernel creation with swaps_added " <<  swaps_added);
     }
 
     void set_static_loop_count(size_t it)
@@ -856,7 +855,7 @@ public:
         DOUT("");
     }
 
-    size_t  get_classical_operations()
+    size_t  get_classical_operations_count()
     {
         size_t classical_operations = 0;
         for (auto & gp: c)
@@ -874,7 +873,7 @@ public:
         return classical_operations;
     }
 
-    size_t  get_non_single_qubit_quantum_gates()
+    size_t  get_non_single_qubit_quantum_gates_count()
     {
         size_t quantum_gates = 0;
         for (auto & gp: c)
@@ -926,7 +925,7 @@ public:
         return count;
     }
 
-    size_t  get_quantum_gates()
+    size_t  get_quantum_gates_count()
     {
         size_t quantum_gates = 0;
         for (auto & gp: c)
@@ -1008,11 +1007,10 @@ public:
         }
 
         ss << "# ----- depth: " << get_depth() << "\n";
-        ss << "# ----- quantum gates: " << get_quantum_gates() << "\n";
-        ss << "# ----- non single qubit gates: " << get_non_single_qubit_quantum_gates() << "\n";
-        DOUT("GETSWAP in get_epilogue, to add to string, ask for swaps_added " << swaps_added);
+        ss << "# ----- quantum gates: " << get_quantum_gates_count() << "\n";
+        ss << "# ----- non single qubit gates: " << get_non_single_qubit_quantum_gates_count() << "\n";
         ss << "# ----- swaps added: " << swaps_added << "\n";
-        ss << "# ----- classical operations: " << get_classical_operations() << "\n";
+        ss << "# ----- classical operations: " << get_classical_operations_count() << "\n";
         ss << "# ----- qubits used: " << get_qubit_usecount() << "\n";
         return ss.str();
     }
