@@ -61,7 +61,7 @@ private:
          return count;
       }
 
-    void write_qasm(std::stringstream& fname, std::vector<quantum_kernel>& kernels, ql::quantum_platform& platform)
+    void write_qasm(std::stringstream& fname, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
     {
         size_t total_depth = 0;
         size_t total_quantum_gates = 0;
@@ -98,7 +98,7 @@ private:
         ql::utils::write_file(fname.str(), out_qasm.str());
     }
 
-    void map(std::string& prog_name, std::vector<quantum_kernel>& kernels, ql::quantum_platform& platform)
+    void map(std::string& prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
     {
         for(auto &kernel : kernels)
         {
@@ -141,7 +141,7 @@ private:
     }
 
     ql::ir::bundles_t quantumsim_schedule_rc(ql::circuit & ckt, 
-        ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
+        const ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
     {
         IOUT("Resource constraint scheduling for quantumsim ...");
     
@@ -185,7 +185,7 @@ private:
         return bundles;
     }
 
-    void schedule(std::string& prog_name, std::vector<quantum_kernel>& kernels, ql::quantum_platform& platform)
+    void schedule(std::string& prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
     {
         for(auto &kernel : kernels)
         {
@@ -207,7 +207,7 @@ public:
      * compile qasm to quantumsim
      */
     // program level compilation
-    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, ql::quantum_platform& platform)
+    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, const ql::quantum_platform& platform)
     {
         IOUT("Compiling " << kernels.size() << " kernels to generate quantumsim eQASM ... ");
 
@@ -238,7 +238,7 @@ public:
 private:
     // write scheduled bundles for quantumsim
     void write_quantumsim_program( std::string prog_name, size_t num_qubits,
-        std::vector<quantum_kernel>& kernels, ql::quantum_platform & platform, std::string suffix)
+        std::vector<quantum_kernel>& kernels, const ql::quantum_platform & platform, std::string suffix)
     {
         IOUT("Writing scheduled Quantumsim program");
         ofstream fout;

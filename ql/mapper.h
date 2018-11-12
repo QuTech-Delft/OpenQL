@@ -2167,7 +2167,7 @@ void MapCircuit(size_t& kernel_qubits, ql::circuit& circ, std::string& kernel_na
 
 // initialize mapper for whole program
 // lots could be split off for the whole program, once that is needed
-void Init(ql::quantum_platform& p)
+void Init(const ql::quantum_platform& p)
 {
     // DOUT("Mapping initialization ...");
     // DOUT("... Grid initialization: platform qubits->coordinates, ->neighbors, distance ...");
