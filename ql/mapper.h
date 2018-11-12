@@ -404,7 +404,8 @@ private:
     typedef ql::gate *      gate_p;
     std::list<gate_p>       waitinglg;  // list of gates in this Past, top order, waiting to be scheduled in
     std::list<gate_p>       lg;         // list of gates in this Past, scheduled by their (start) cycle values
-    size_t                  nswapsadded;// number of swaps added to this past
+    size_t                  nswapsadded;// number of swaps (incl. moves) added to this past
+    size_t                  nmovesadded;// number of moves added to this past
     std::map<gate_p,size_t> cycle;      // gate to cycle map, startCycle value of each past gatecycle[gp]
     ql::circuit             *outCircp;  // output stream after past
 
@@ -424,6 +425,7 @@ void Init(ql::quantum_platform *p)
     waitinglg.clear();  // waitinglg is initialized to empty list
     lg.clear();         // lg is initialized to empty list
     nswapsadded = 0;
+    nmovesadded = 0;
     cycle.clear();      // cycle is initialized to empty map
 }
 
@@ -866,6 +868,12 @@ bool new_gate(std::string gname, std::vector<size_t> qubits, ql::circuit& circ, 
 size_t NumberOfSwapsAdded()
 {
     return nswapsadded;
+}
+
+// return number of moves added to this past
+size_t NumberOfMovesAdded()
+{
+    return nmovesadded;
 }
 
 // generate a single swap with real operands and add it to the current past's waiting list
@@ -2023,6 +2031,12 @@ public:
 void GetNumberOfSwapsAdded(size_t & sa)
 {
     sa = mainPast.NumberOfSwapsAdded();
+}
+
+// retrieve number of moves added
+void GetNumberOfMovesAdded(size_t & sa)
+{
+    sa = mainPast.NumberOfMovesAdded();
 }
 
 // decompose all gates with names ending in _prim

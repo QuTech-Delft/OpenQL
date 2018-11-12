@@ -48,12 +48,12 @@ class quantum_kernel
 public:
 
     quantum_kernel(std::string name) : 
-        name(name), iterations(1), type(kernel_type_t::STATIC), swaps_added(0) {}
+        name(name), iterations(1), type(kernel_type_t::STATIC), swaps_added(0), moves_added(0) {}
 
     quantum_kernel(std::string name, ql::quantum_platform& platform,
         size_t qcount, size_t ccount) : 
         name(name), iterations(1), qubit_count(qcount),
-        creg_count(ccount), type(kernel_type_t::STATIC), swaps_added(0)
+        creg_count(ccount), type(kernel_type_t::STATIC), swaps_added(0), moves_added(0)
     {
         gate_definition = platform.instruction_map;
         cycle_time = platform.cycle_time;
@@ -1010,6 +1010,7 @@ public:
         ss << "# ----- quantum gates: " << get_quantum_gates_count() << "\n";
         ss << "# ----- non single qubit gates: " << get_non_single_qubit_quantum_gates_count() << "\n";
         ss << "# ----- swaps added: " << swaps_added << "\n";
+        ss << "# ----- of which moves added: " << moves_added << "\n";
         ss << "# ----- classical operations: " << get_classical_operations_count() << "\n";
         ss << "# ----- qubits used: " << get_qubit_usecount() << "\n";
         return ss.str();
@@ -1870,6 +1871,7 @@ public:
     operation     br_condition;
     std::map<std::string,custom_gate*> gate_definition;
     size_t        swaps_added;
+    size_t        moves_added;
 };
 
 
