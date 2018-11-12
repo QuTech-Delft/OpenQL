@@ -62,6 +62,8 @@ private:
     std::vector<size_t> v2rMap;            // v2rMap[virtual qubit index] -> real qubit index
 
 
+public:
+
 // map real qubit to the virtual qubit index that is mapped to it (i.e. backward map)
 // a second vector next to v2rMap (i.e. an r2vMap) would speed this up
 size_t GetVirt(size_t r)
@@ -74,8 +76,6 @@ size_t GetVirt(size_t r)
     return MAX_CYCLE;
 }
 
-
-public:
 
 // expand to desired size and initialize to trivial (1-1) mapping
 void Init(size_t n)
@@ -115,6 +115,7 @@ void Swap(size_t r0, size_t r1)
 
 void Print(std::string s)
 {
+    DOUT("v2r.Print ...");
     std::cout << "... Virt2Real(v->r) " << s << ":";
     for (size_t v=0; v<nv; v++)
     {
@@ -393,11 +394,13 @@ class Past
 {
 private:
 
-    size_t                  nq;         // width of Past and Virt2Real map in number of real qubits
+    size_t                  nq;         // width of Past, Virt2Real, UseCount maps in number of real qubits
     size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
     ql::quantum_platform   *platformp;  // platform describing resources for scheduling
     std::map<std::string,ql::custom_gate*> *gate_definitionp; // gate definitions from platform's .json file
                                         // to be able to create new gates
+    std::vector<size_t>     usecount;   // usecount[virtual qubit index] -> use of qubit in circuit
+
     Virt2Real               v2r;        // Virt2Real map applying to this Past
     FreeCycle               fc;         // FreeCycle map applying to this Past
 
@@ -420,6 +423,8 @@ void Init(ql::quantum_platform *p)
     nq = platformp->qubit_number;
     ct = platformp->cycle_time;
     gate_definitionp = &platformp->instruction_map;
+    usecount.resize(nq, 0);
+
     v2r.Init(nq);
     fc.Init(platformp);
     waitinglg.clear();  // waitinglg is initialized to empty list
@@ -427,6 +432,21 @@ void Init(ql::quantum_platform *p)
     nswapsadded = 0;
     nmovesadded = 0;
     cycle.clear();      // cycle is initialized to empty map
+}
+
+void InitUseCount(ql::circuit& circ)
+{
+    for ( auto& gp : circ )
+    {
+        for ( auto v : gp->operands)
+        {
+            usecount[v] += 1;
+        }
+    }
+    for ( auto c : usecount )
+    {
+        DOUT("usecount: " << c);
+    }
 }
 
 void Print(std::string s)
@@ -880,27 +900,69 @@ size_t NumberOfMovesAdded()
 // note that the swap may be implemented by a series of gates
 void AddSwap(size_t r0, size_t r1)
 {
-    bool created;
+    int r0_isunused;
+    int r1_isunused;
+    bool created = false;
     ql::circuit circ;
 
-    // DOUT("... adding/trying swap(q" << r0 << ",q" << r1 << ") ... " );
+    DOUT("... adding/trying swap(q" << r0 << ",q" << r1 << ") ... " );
+    v2r.Print("... adding swap/move");
 
-    created = new_gate("swap_real", {r0,r1}, circ);    // gates implementing swap returned in circ
-    if (!created)
+    r0_isunused = ( usecount[v2r.GetVirt(r0)] == 0 );
+    DOUT("... r0_isunused= " << r0_isunused);
+    r1_isunused = ( usecount[v2r.GetVirt(r1)] == 0 );
+    DOUT("... r1_isunused= " << r1_isunused);
+    if (r0_isunused)
     {
-        created = new_gate("swap", {r0,r1}, circ);
+        MapperAssert (!r1_isunused);
+        created = new_gate("move_real", {r1,r0}, circ);    // gates implementing move returned in circ
         if (!created)
         {
-            EOUT("unknown gates 'swap(q" << r0 << ",q" << r1 << ")' and 'swap_real(...)'");
-            throw ql::exception("[x] error : ql::mapper::new_gate() : the gates 'swap' and 'swap_real' are not supported by the target platform !",false);
+            created = new_gate("move", {r1,r0}, circ);
+            if (!created)
+            {
+                EOUT("unknown gates 'move(q" << r1 << ",q" << r0 << ")' and 'move_real(...)'");
+                throw ql::exception("[x] error : ql::mapper::new_gate() : the gates 'move' and 'move_real' are not supported by the target platform !",false);
+            }
         }
+        nmovesadded++;                       // for reporting at the end
+        DOUT("... move(q" << r1 << ",q" << r0 << ") (i.e. reversed)");
+    }
+    else if (r1_isunused)
+    {
+        MapperAssert (!r0_isunused);
+        created = new_gate("move_real", {r0,r1}, circ);    // gates implementing move returned in circ
+        if (!created)
+        {
+            created = new_gate("move", {r0,r1}, circ);
+            if (!created)
+            {
+                EOUT("unknown gates 'move(q" << r0 << ",q" << r1 << ")' and 'move_real(...)'");
+                throw ql::exception("[x] error : ql::mapper::new_gate() : the gates 'move' and 'move_real' are not supported by the target platform !",false);
+            }
+        }
+        nmovesadded++;                       // for reporting at the end
+        DOUT("... move(q" << r0 << ",q" << r1 << ")");
+    }
+    else
+    {
+        created = new_gate("swap_real", {r0,r1}, circ);    // gates implementing swap returned in circ
+        if (!created)
+        {
+            created = new_gate("swap", {r0,r1}, circ);
+            if (!created)
+            {
+                EOUT("unknown gates 'swap(q" << r0 << ",q" << r1 << ")' and 'swap_real(...)'");
+                throw ql::exception("[x] error : ql::mapper::new_gate() : the gates 'swap' and 'swap_real' are not supported by the target platform !",false);
+            }
+        }
+        nswapsadded++;                       // for reporting at the end
+        DOUT("... swap(q" << r0 << ",q" << r1 << ")");
     }
     for (auto &gp : circ)
     {
         Add(gp);
     }
-    nswapsadded++;                       // for reporting at the end
-    // DOUT("... swap(q" << r0 << ",q" << r1 << ")");
 
     v2r.Swap(r0,r1);
 }
@@ -2054,7 +2116,6 @@ void Decomposer(ql::circuit& circ)
     for( auto & gp : circ )
     {
         ql::circuit tmpCirc;
-        DOUT("mainPast.Init in Decomposer not doing it");
         mainPast.Decompose(gp, tmpCirc);
         for (auto newgp : tmpCirc)
         {
@@ -2165,6 +2226,7 @@ void MapCircuit(size_t& kernel_qubits, ql::circuit& circ, std::string& kernel_na
         }
     }
 #endif
+    mainPast.InitUseCount(circ);
     MapGates(circ, kernel_name);
 
     std::string mapdecomposeropt = ql::options::get("mapdecomposer");
