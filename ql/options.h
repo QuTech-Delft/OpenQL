@@ -31,9 +31,12 @@ namespace ql
           opt_name2opt_val["optimize"] = "no";
           opt_name2opt_val["scheduler"] = "ALAP";
           opt_name2opt_val["scheduler_uniform"] = "no";
-          opt_name2opt_val["use_default_gates"] = "yes";
+          opt_name2opt_val["use_default_gates"] = "no";
           opt_name2opt_val["optimize"] = "no";
           opt_name2opt_val["decompose_toffoli"] = "no";
+          opt_name2opt_val["mapper"] = "no";
+          opt_name2opt_val["initialplace"] = "no";
+          opt_name2opt_val["mapdecomposer"] = "yes";
 
           // add options with default values and list of possible values
           app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"], 
@@ -44,13 +47,20 @@ namespace ql
           app->add_set_ignore_case("--use_default_gates", opt_name2opt_val["use_default_gates"], {"yes", "no"}, "Use default gates or not", true);
           app->add_set_ignore_case("--optimize", opt_name2opt_val["optimize"], {"yes", "no"}, "optimize or not", true);
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "MA"}, "Type of decomposition used for toffoli", true);
+          app->add_set_ignore_case("--mapper", opt_name2opt_val["mapper"], {"no", "base", "baserc", "minextend", "minextendrc"}, "Mapper heuristic", true);
+          app->add_set_ignore_case("--initialplace", opt_name2opt_val["initialplace"], {"no", "yes"}, "Initialplace qubits before mapping", true);
+          app->add_set_ignore_case("--mapdecomposer", opt_name2opt_val["mapdecomposer"], {"no", "yes"}, "Decompose after mapper", true);
       }
 
       void print_current_values()
       {
           std::cout << "optimize: " << opt_name2opt_val["optimize"] << std::endl
                     << "scheduler: " << opt_name2opt_val["scheduler"] << std::endl
-                    << "scheduler_uniform: " << opt_name2opt_val["scheduler_uniform"] << std::endl;
+                    << "scheduler_uniform: " << opt_name2opt_val["scheduler_uniform"] << std::endl
+                    << "mapper: "           << opt_name2opt_val["mapper"] << std::endl
+                    << "initialplace: "     << opt_name2opt_val["initialplace"] << std::endl
+                    << "mapdecomposer: "    << opt_name2opt_val["mapdecomposer"] << std::endl
+	  ;
       }
 
       void help()

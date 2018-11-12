@@ -12,6 +12,7 @@
 #include <sstream>
 #include <algorithm>
 #include <iterator>
+#include <cmath>
 
 #include "ql/json.h"
 #include "ql/utils.h"
@@ -21,11 +22,8 @@
 #include "ql/optimizer.h"
 #include "ql/ir.h"
 
-#define PI M_PI
-
 #ifndef __disable_lemon__
 #include "scheduler.h"
-
 #endif // __disable_lemon__
 
 namespace ql
@@ -50,12 +48,12 @@ class quantum_kernel
 public:
 
     quantum_kernel(std::string name) : 
-        name(name), iterations(1), type(kernel_type_t::STATIC) {}
+        name(name), iterations(1), type(kernel_type_t::STATIC), swaps_added(0) {}
 
     quantum_kernel(std::string name, ql::quantum_platform& platform,
         size_t qcount, size_t ccount) : 
         name(name), iterations(1), qubit_count(qcount),
-        creg_count(ccount), type(kernel_type_t::STATIC)
+        creg_count(ccount), type(kernel_type_t::STATIC), swaps_added(0)
     {
         gate_definition = platform.instruction_map;
         cycle_time = platform.cycle_time;
@@ -339,6 +337,11 @@ public:
         }
     }
 
+    // a default gate is the last resort of user gate resolution and is of a build-in form, as below in the code;
+    // the "using_default_gates" option can be used to enable ("yes") or disable ("no") default gates;
+    // the use of default gates is deprecated; use the .json configuration file instead;
+    //
+    // if a default gate definition is available for the given gate name and qubits, add it to circuit and return true
     bool add_default_gate_if_available(std::string gname, std::vector<size_t> qubits,
         std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
@@ -436,6 +439,10 @@ public:
     	return result;
     }
 
+    // if a specialized custom gate ("e.g. cz q0 q4") is available, add it to circuit and return true
+    // if a parameterized custom gate ("e.g. cz") is available, add it to circuit and return true
+    //
+    // note that there is no check for the found gate being a composite gate
     bool add_custom_gate_if_available(std::string & gname, std::vector<size_t> qubits,
         std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
@@ -454,6 +461,7 @@ public:
         std::map<std::string,custom_gate*>::iterator it = gate_definition.find(instr);
         if (it != gate_definition.end())
         {
+            // a specialized custom gate is of the form: "cz q0 q3"
             custom_gate* g = new custom_gate(*(it->second));
             for(auto & qubit : qubits)
                 g->operands.push_back(qubit);
@@ -467,6 +475,7 @@ public:
         else
         {
             // otherwise, check if there is a parameterized custom gate (i.e. not specialized for arguments)
+            // this one is of the form: "cz", i.e. just the gate's name
             std::map<std::string,custom_gate*>::iterator it = gate_definition.find(gname);
             if (it != gate_definition.end())
             {
@@ -494,6 +503,8 @@ public:
         return added;
     }
 
+    // return the subinstructions of a composite gate
+    // while doing, test whether the subinstructions have a definition (so they cannot be specialized or default ones!)
     void get_decomposed_ins( ql::composite_gate * gptr, std::vector<std::string> & sub_instructons )
     {
         auto & sub_gates = gptr->gs;
@@ -514,6 +525,10 @@ public:
         }
     }
 
+    // if specialized composed gate: "e.g. cz q0,q3" available, with composition of subinstructions, return true
+    //      also check each subinstruction for presence of a custom_gate (or a default gate)
+    // otherwise, return false
+    // don't add anything to circuit
     bool add_spec_decomposed_gate_if_available(std::string gate_name, 
         std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
@@ -576,6 +591,7 @@ public:
                 DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
                 // custom gate check
+                // when found, custom_added is true, and the expanded subinstruction was added to the circuit
                 bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
                 if(!custom_added)
                 {
@@ -612,6 +628,10 @@ public:
     }
 
 
+    // if composite gate: "e.g. cz %0 %1" available, return true;
+    //      also check each subinstruction for availability as a custom gate (or default gate)
+    // if not, return false
+    // don't add anything to circuit
     bool add_param_decomposed_gate_if_available(std::string gate_name, 
         std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
@@ -671,6 +691,7 @@ public:
                 DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
                 // custom gate check
+                // when found, custom_added is true, and the expanded subinstruction was added to the circuit
                 bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
                 if(!custom_added)
                 {
@@ -726,6 +747,28 @@ public:
     /**
      * custom gate with arbitrary number of operands
      */
+    // terminology:
+    // - composite/custom/default (in decreasing order of priority during lookup in the gate definition):
+    //      - composite gate: a gate definition with subinstructions; when matched, decompose and add the subinstructions
+    //      - custom gate: a fully configurable gate definition, with all kinds of attributes; there is no decomposition
+    //      - default gate: a gate definition build-in in this compiler; see above for the definition
+    //          deprecated; setting option "use_default_gates" from "yes" to "no" turns it off
+    // - specialized/parameterized (in decreasing order of priority during lookup in the gate definition)
+    //      - specialized: a gate definition that is special for its operands, i.e. the operand qubits must match
+    //      - parameterized: a gate definition that can be used for all possible qubit operands
+    //
+    // the following order of checks is used below:
+    // check if specialized composite gate is available
+    //      e.g. whether "cz q0,q3" is available as composite gate, where subinstructions are available as custom gates
+    // if not, check if parameterized composite gate is available
+    //      e.g. whether "cz %0 %1" is in gate_definition, where subinstructions are available as custom gates
+    // if not, check if a specialized custom gate is available
+    //      e.g. whether "cz q0,q3" is available as non-composite gate
+    // if not, check if a parameterized custom gate is available
+    //      e.g. whether "cz" is in gate_definition as non-composite gate
+    // if not, check if a default gate is available
+    //      e.g. whether "cz" is available as default gate
+    // if not, then error
     void gate(std::string gname, std::vector<size_t> qubits = {}, 
         std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
     {
@@ -777,6 +820,7 @@ public:
             {
                 // specialized/parameterized custom gate check
                 DOUT("adding custom gate for " << gname);
+                // when found, custom_added is true, and the gate was added to the circuit
                 bool custom_added = add_custom_gate_if_available(gname, qubits, cregs, duration, angle);
                 if(!custom_added)
                 {
@@ -811,11 +855,110 @@ public:
         DOUT("");
     }
 
+    size_t  get_classical_operations_count()
+    {
+        size_t classical_operations = 0;
+        for (auto & gp: c)
+        {
+            switch(gp->type())
+            {
+            case __classical_gate__:
+                classical_operations++;
+            case __wait_gate__:
+                break;
+            default:    // quantum gate
+                break;
+            }
+        }
+        return classical_operations;
+    }
+
+    size_t  get_non_single_qubit_quantum_gates_count()
+    {
+        size_t quantum_gates = 0;
+        for (auto & gp: c)
+        {
+            switch(gp->type())
+            {
+            case __classical_gate__:
+                break;
+            case __wait_gate__:
+                break;
+            default:    // quantum gate
+                if( gp->operands.size() > 1 )
+                {
+                    quantum_gates++;
+                }
+                break;
+            }
+        }
+        return quantum_gates;
+    }
+
+    size_t  get_qubit_usecount()
+    {
+        std::vector<size_t> usecount;
+        usecount.resize(qubit_count,0);
+        for (auto & gp: c)
+        {
+            switch(gp->type())
+            {
+            case __classical_gate__:
+            case __wait_gate__:
+                break;
+            default:    // quantum gate
+                for (auto v: gp->operands)
+                {
+                    usecount[v]++;
+                }
+                break;
+            }
+        }
+        size_t count = 0;
+        for (auto v: usecount)
+        {
+            if (v != 0)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    size_t  get_quantum_gates_count()
+    {
+        size_t quantum_gates = 0;
+        for (auto & gp: c)
+        {
+            switch(gp->type())
+            {
+            case __classical_gate__:
+                break;
+            case __wait_gate__:
+                break;
+            default:    // quantum gate
+                quantum_gates++;
+                break;
+            }
+        }
+        return quantum_gates;
+    }
+
+    size_t  get_depth()
+    {
+        // for (auto & gp: c)
+        // {
+        //     DOUT("Cycle=" << gp->cycle << " Qasm=" << gp->qasm() << "\n");
+        // }
+        if (c.back()->cycle == MAX_CYCLE)
+            return 0;
+        return c.back()->cycle + (c.back()->duration+cycle_time-1)/cycle_time - c.front()->cycle;
+    }
+
     std::string get_prologue()
     {
         std::stringstream ss;
         ss << "." << name << "\n";
-        // ss << name << ":\n";
 
         if(type == kernel_type_t::IF_START)
         {
@@ -863,6 +1006,12 @@ public:
             ss << "    blt r31, r29, " << tokens[0] << "\n";
         }
 
+        ss << "# ----- depth: " << get_depth() << "\n";
+        ss << "# ----- quantum gates: " << get_quantum_gates_count() << "\n";
+        ss << "# ----- non single qubit gates: " << get_non_single_qubit_quantum_gates_count() << "\n";
+        ss << "# ----- swaps added: " << swaps_added << "\n";
+        ss << "# ----- classical operations: " << get_classical_operations_count() << "\n";
+        ss << "# ----- qubits used: " << get_qubit_usecount() << "\n";
         return ss.str();
     }
 
@@ -873,7 +1022,7 @@ public:
     {
         std::stringstream ss;
 
-        ss << get_prologue();
+        ss << "\n" << get_prologue();
 
         for(size_t i=0; i<c.size(); ++i)
         {
@@ -1003,11 +1152,10 @@ public:
         DOUT("decompose_toffoli() [Done] ");
     }
 
-    void schedule(quantum_platform platform, std::string& sched_qasm, std::string& sched_dot)
+    void schedule(quantum_platform platform, std::string& sched_dot)
     {
         std::string scheduler = ql::options::get("scheduler");
         std::string scheduler_uniform = ql::options::get("scheduler_uniform");
-        std::string kqasm("");
 
 #ifndef __disable_lemon__
         IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
@@ -1022,41 +1170,38 @@ public:
         {
             if ("yes" == scheduler_uniform)
             {
-	        EOUT("Uniform scheduling not supported with ASAP; please turn on ALAP to perform uniform scheduling");
-	    }
-	    else if ("no" == scheduler_uniform)
-	    {
-	        // sched.PrintScheduleASAP();
+	             EOUT("Uniform scheduling not supported with ASAP; please turn on ALAP to perform uniform scheduling");
+	        }
+	        else if ("no" == scheduler_uniform)
+	        {
+	            // sched.PrintScheduleASAP();
                 // sched.PrintDotScheduleASAP();
                 // sched_dot = sched.GetDotScheduleASAP();
                 // sched.PrintQASMScheduledASAP();
-                ql::ir::bundles_t bundles = sched.schedule_asap();
-                kqasm = ql::ir::qasm(bundles);
-	    }
-	    else
+                bundles = sched.schedule_asap();
+	        }
+	        else
             {
-               EOUT("Unknown scheduler_uniform option value");
+                EOUT("Unknown scheduler_uniform option value");
             }
         }
         else if("ALAP" == scheduler)
         {
             if ("yes" == scheduler_uniform)
             {
-                ql::ir::bundles_t bundles = sched.schedule_alap_uniform();
-                kqasm = ql::ir::qasm(bundles);
-	    }
-	    else if ("no" == scheduler_uniform)
-	    {
+                bundles = sched.schedule_alap_uniform();
+	        }
+	        else if ("no" == scheduler_uniform)
+	        {
                 // sched.PrintScheduleALAP();
                 // sched.PrintDotScheduleALAP();
                 // sched_dot = sched.GetDotScheduleALAP();
                 // sched.PrintQASMScheduledALAP();
-                ql::ir::bundles_t bundles = sched.schedule_alap();
-                kqasm = ql::ir::qasm(bundles);
-	    }
-	    else
+                bundles = sched.schedule_alap();
+	        }
+	        else
             {
-               EOUT("Unknown scheduler_uniform option value");
+                EOUT("Unknown scheduler_uniform option value");
             }
         }
         else
@@ -1065,8 +1210,11 @@ public:
             throw ql::exception("Unknown scheduler!", false);
         }
 
-        sched_qasm = get_prologue() + kqasm + get_epilogue();
-
+        // schedulers assigned gatep->cycle; sort circuit on this
+        typedef ql::gate *      gate_p;
+        std::sort(c.begin(), c.end(),
+                [&](gate_p g1, gate_p g2) { return g1->cycle < g2->cycle; }
+        );
 #endif // __disable_lemon__
     }
 
@@ -1507,38 +1655,38 @@ public:
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, PI/2);
+                controlled_rx(tq, cq, M_PI/2);
             }
             else if( __mrx90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, -1*PI/2);
+                controlled_rx(tq, cq, -1*M_PI/2);
             }
             else if( __rx180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, PI);
+                controlled_rx(tq, cq, M_PI);
                 // controlled_x(tq, cq);
             }
             else if( __ry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, PI/4);
+                controlled_ry(tq, cq, M_PI/4);
             }
             else if( __mry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, -1*PI/4);
+                controlled_ry(tq, cq, -1*M_PI/4);
             }
             else if( __ry180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, PI);
+                controlled_ry(tq, cq, M_PI);
                 // controlled_y(tq, cq);
             }
             else
@@ -1713,6 +1861,7 @@ public:
 public:
     std::string   name;
     circuit       c;
+    ql::ir::bundles_t bundles;
     size_t        iterations;
     size_t        qubit_count;
     size_t        creg_count;
@@ -1720,6 +1869,7 @@ public:
     kernel_type_t type;
     operation     br_condition;
     std::map<std::string,custom_gate*> gate_definition;
+    size_t        swaps_added;
 };
 
 

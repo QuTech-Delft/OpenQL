@@ -60,6 +60,7 @@ public:
         creg_count = ccount;
         size_t qubit_creg_count = qubit_count + creg_count;
         cycle_time = platform.cycle_time;
+        DOUT("... num_qubits: " << qcount << " cycle_time: " << cycle_time);
 
         // populate buffer map
         // 'none' type is a dummy type and 0 buffer cycles will be inserted for
@@ -95,7 +96,7 @@ public:
 
         for( auto ins : ckt )
         {
-            // DOUT("Current instruction : " << ins->qasm());
+            DOUT("Current instruction : " << ins->qasm());
 
             // Add nodes
             ListDigraph::Node consNode = graph.addNode();
@@ -328,10 +329,11 @@ public:
             {
                 for( auto operand : operands )
                 {
-                    // DOUT("Operand: " << operand);
+                    // DOUT("Operand: " << operand << " operandNo: " << operandNo << " op_count: " << op_count);
                     if( operandNo < op_count-1 )
                     {
                         // RAW dependencies
+                        // DOUT("... starting RAW for operand:" << operand);
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
@@ -340,6 +342,7 @@ public:
                         depType[arc] = RAW;
 
                         // RAR dependencies
+                        // DOUT("... starting RAR for operand:" << operand);
                         ReadersListType readers = LastReaders[operand];
                         for(auto & readerID : readers)
                         {
@@ -356,6 +359,7 @@ public:
                     else
                     {
                         // WAW dependencies
+                        // DOUT("... starting WAW for operand:" << operand);
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
@@ -364,6 +368,7 @@ public:
                         depType[arc] = WAW;
 
                         // WAR dependencies
+                        // DOUT("... starting WAR for operand:" << operand);
                         ReadersListType readers = LastReaders[operand];
                         for(auto & readerID : readers)
                         {
@@ -618,6 +623,7 @@ public:
 
 // =========== asap
 
+private:
     void schedule_asap_(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
     {
         DOUT("Performing ASAP Scheduling");
@@ -625,6 +631,7 @@ public:
 
         std::vector<ListDigraph::Node>::reverse_iterator currNode = order.rbegin();
         cycle[*currNode]=0; // src dummy in cycle 0
+        instruction[*currNode]->cycle = 0;
         ++currNode;
         while(currNode != order.rend() )
         {
@@ -640,6 +647,7 @@ public:
                 }
             }
             cycle[*currNode]=currCycle;
+            instruction[*currNode]->cycle = currCycle;
             ++currNode;
         }
 
@@ -656,10 +664,13 @@ public:
         std::vector<ListDigraph::Node>::reverse_iterator currNode = order.rbegin();
         size_t currCycle=0;
         cycle[*currNode]=currCycle; // source node
+        instruction[*currNode]->cycle = currCycle;
+        DOUT("Source instruction: " << instruction[*currNode]->qasm());
         ++currNode;
         while(currNode != order.rend() )
         {
             DOUT("");
+            DOUT("Current instruction: " << instruction[*currNode]->qasm());
             auto & curr_ins = instruction[*currNode];
             auto & id = curr_ins->name;
             COUT("id: " << id);
@@ -715,6 +726,7 @@ public:
 
                         rm.reserve(op_start_cycle, curr_ins, operation_name, operation_type, instruction_type, operation_duration);
                         cycle[*currNode]=op_start_cycle;
+                        instruction[*currNode]->cycle = op_start_cycle;
                         break;
                     }
                     else
@@ -759,6 +771,7 @@ public:
                 }
             }
             cycle[*it] = cycle[*it] + latency_cycles;
+            instruction[*it]->cycle = cycle[*it];
             // DOUT( cycle[*it] << " <- " << name[*it] << latency_cycles );
         }
 
@@ -781,6 +794,7 @@ public:
         DOUT("Performing RC ASAP Scheduling [Done].");
     }
 
+public:
     // void PrintScheduleASAP()
     // {
     //     ListDigraph::NodeMap<size_t> cycle(graph);
@@ -884,18 +898,21 @@ public:
         ql::ir::bundles_t bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
+
         schedule_asap_(cycle, order, rm, platform);
 
         typedef std::vector<ql::gate*> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
 
         std::vector<ListDigraph::Node>::iterator it;
+        DOUT("After rc scheduling, collecting cycles for bundling");
         for ( it = order.begin(); it != order.end(); ++it)
         {
             if ( instruction[*it]->type() != ql::gate_type_t::__wait_gate__ &&
                  instruction[*it]->type() != ql::gate_type_t::__dummy_gate__
                )
             {
+                // DOUT("Instruction: " << instruction[*it]->qasm());
                 insInAllCycles[ cycle[*it] ].push_back( instruction[*it] );
             }
         }
@@ -911,21 +928,26 @@ public:
             auto it = insInAllCycles.find(currCycle);
             if( it != insInAllCycles.end() )
             {
+                // DOUT("Bundling at cycle: " << currCycle);
                 ql::ir::bundle_t abundle;
                 size_t bduration = 0;
                 auto nInsThisCycle = insInAllCycles[currCycle].size();
+                // DOUT("... nInsThisCycle: " << nInsThisCycle);
                 for(size_t i=0; i<nInsThisCycle; ++i )
                 {
                     ql::ir::section_t aparsec;
                     auto & ins = insInAllCycles[currCycle][i];
                     aparsec.push_back(ins);
                     abundle.parallel_sections.push_back(aparsec);
+                    // DOUT("... ins: " << ins->qasm() << " in private parallel section");
                     size_t iduration = ins->duration;
                     bduration = std::max(bduration, iduration);
                 }
                 abundle.start_cycle = currCycle;
                 abundle.duration_in_cycles = std::ceil(static_cast<float>(bduration)/cycle_time);
+                // DOUT("... bundel duration in cycles: " << abundle.duration_in_cycles);
                 bundles.push_back(abundle);
+                // DOUT("... ready with bundle");
             }
         }
 
@@ -976,6 +998,7 @@ public:
 
 // =========== alap
 
+private:
     void schedule_alap_(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
     {
         DOUT("Performing ALAP Scheduling");
@@ -983,6 +1006,7 @@ public:
 
         std::vector<ListDigraph::Node>::iterator currNode = order.begin();
         cycle[*currNode]=MAX_CYCLE;
+        instruction[*currNode]->cycle = MAX_CYCLE;
         ++currNode;
         while( currNode != order.end() )
         {
@@ -998,6 +1022,7 @@ public:
                 }
             }
             cycle[*currNode]=currCycle;
+            instruction[*currNode]->cycle = currCycle;
             ++currNode;
         }
         // DOUT("Printing ALAP Schedule");
@@ -1280,6 +1305,7 @@ public:
     // }
 
 
+public:
     // the following without rc and buffer-buffer delays
     ql::ir::bundles_t schedule_alap()
     {
@@ -1430,11 +1456,14 @@ public:
 
 
 // =========== uniform
+
+private:
     void compute_alap_cycle(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order, size_t max_cycle)
     {
         // DOUT("Computing alap_cycle");
         std::vector<ListDigraph::Node>::iterator currNode = order.begin();
         cycle[*currNode]=max_cycle;
+        instruction[*currNode]->cycle = max_cycle;
         ++currNode;
         while( currNode != order.end() )
         {
@@ -1450,6 +1479,7 @@ public:
                 }
             }
             cycle[*currNode]=currCycle;
+            instruction[*currNode]->cycle = currCycle;
             ++currNode;
         }
     }
@@ -1459,6 +1489,7 @@ public:
         // DOUT("Computing asap_cycle");
         std::vector<ListDigraph::Node>::reverse_iterator currNode = order.rbegin();
         cycle[*currNode]=0; // src dummy in cycle 0
+        instruction[*currNode]->cycle = 0;
         ++currNode;
         while(currNode != order.rend() )
         {
@@ -1474,6 +1505,7 @@ public:
                 }
             }
             cycle[*currNode]=currCycle;
+            instruction[*currNode]->cycle = currCycle;
             ++currNode;
         }
     }
@@ -1686,6 +1718,7 @@ public:
         DOUT("Performing ALAP UNIFORM Scheduling [DONE]");
     }
 
+public:
     ql::ir::bundles_t schedule_alap_uniform()
     {
         DOUT("Scheduling ALAP UNIFORM to get bundles ...");

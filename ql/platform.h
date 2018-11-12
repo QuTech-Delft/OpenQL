@@ -94,6 +94,7 @@ public:
         }
         else
             cycle_time = hardware_settings["cycle_time"];
+        DOUT("quantum_platform: qubit_number=" << qubit_number << ", cycle_time=" << cycle_time);
 
         // if (eqasm_compiler_name == "qumis_compiler")
         // {
@@ -117,6 +118,7 @@ public:
     {
         println("[+] platform name      : " << name);
         println("[+] qubit number       : " << qubit_number);
+        println("[+] cycle time         : " << cycle_time);
         println("[+] eqasm compiler     : " << eqasm_compiler_name);
         println("[+] configuration file : " << configuration_file_name);
         println("[+] supported instructions:");

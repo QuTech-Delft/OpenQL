@@ -4,7 +4,7 @@
  * @author Imran Ashraf
  * @date   09/2018
  * @author Hans van Someren
- * @brief  Resource mangement for cc light platform
+ * @brief  Resource management for cc light platform
  */
 
 #ifndef _cclight_resource_manager_h
@@ -68,7 +68,7 @@ public:
 
     qubit_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("qubits", dir)
     {
-        // DOUT("... creating " << name << " resource");
+        DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
         state.resize(count);
         for(size_t q=0; q<count; q++)
@@ -137,7 +137,7 @@ public:
 
     qwg_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("qwgs", dir)
     {
-        // DOUT("... creating " << name << " resource");
+        DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
         fromcycle.resize(count);
         tocycle.resize(count);
@@ -246,7 +246,7 @@ public:
 
     meas_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("meas_units", dir)
     {
-        // DOUT("... creating " << name << " resource");
+        DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
         fromcycle.resize(count);
         tocycle.resize(count);
@@ -278,29 +278,29 @@ public:
                 DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  meas: " << qubit2meas[q] << " is busy from cycle: " << fromcycle[ qubit2meas[q] ] << " to cycle: " << tocycle[qubit2meas[q]] );
                 if (forward_scheduling == direction)
                 {
-	                if( op_start_cycle != fromcycle[ qubit2meas[q] ] )
-	                {
-	                    // If current measurement on same measurement-unit does not start in the
-	                    // same cycle, then it should wait for current measurement to finish
-	                    if( op_start_cycle < tocycle[ qubit2meas[q] ] )
-	                    {
-	                        DOUT("    " << name << " resource busy ...");
-	                        return false;
-	                    }
-	                }
+                    if( op_start_cycle != fromcycle[ qubit2meas[q] ] )
+                    {
+                        // If current measurement on same measurement-unit does not start in the
+                        // same cycle, then it should wait for current measurement to finish
+                        if( op_start_cycle < tocycle[ qubit2meas[q] ] )
+                        {
+                            DOUT("    " << name << " resource busy ...");
+                            return false;
+                        }
+                    }
                 }
                 else
                 {
-	                if( op_start_cycle != fromcycle[ qubit2meas[q] ] )
-	                {
-	                    // If current measurement on same measurement-unit does not start in the
-	                    // same cycle, then it should wait until it would finish at start of or earlier than current measurement
-	                    if( op_start_cycle + operation_duration > fromcycle[ qubit2meas[q] ] )
-	                    {
-	                        DOUT("    " << name << " resource busy ...");
-	                        return false;
-	                    }
-	                }
+                    if( op_start_cycle != fromcycle[ qubit2meas[q] ] )
+                    {
+                        // If current measurement on same measurement-unit does not start in the
+                        // same cycle, then it should wait until it would finish at start of or earlier than current measurement
+                        if( op_start_cycle + operation_duration > fromcycle[ qubit2meas[q] ] )
+                        {
+                            DOUT("    " << name << " resource busy ...");
+                            return false;
+                        }
+                    }
                 }
             }
             DOUT("    " << name << " resource available ...");
@@ -340,7 +340,7 @@ public:
 
     edge_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("edges", dir)
     {
-        // DOUT("... creating " << name << " resource");
+        DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
         state.resize(count);
 
@@ -500,7 +500,7 @@ public:
 
     detuned_qubits_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("detuned_qubits", dir)
     {
-        // DOUT("... creating " << name << " resource");
+        DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
         fromcycle.resize(count);
         tocycle.resize(count);
@@ -618,7 +618,10 @@ public:
                 }
             }
         }
-        if (is_flux || is_mw) DOUT("    " << name << " resource available ...");
+        if (is_flux || is_mw)
+        {
+            DOUT("    " << name << " resource available ...");
+        }
         return true;
     }
 
@@ -723,14 +726,14 @@ public:
 
     resource_manager_t(const ql::quantum_platform & platform, scheduling_direction_t dir)
     {
-        DOUT("Constructing inited resouce_manager_t");
+        DOUT("Constructing inited resource_manager_t");
         DOUT("New one for direction " << dir << " with no of resources : " << platform.resources.size() );
         for (json::const_iterator it = platform.resources.begin(); it != platform.resources.end(); ++it)
         {
             // COUT(it.key() << " : " << it.value() << "\n");
             std::string n = it.key();
 
-            // DOUT("... about to create " << n << " resource");
+            DOUT("... about to create " << n << " resource");
             if( n == "qubits")
             {
                 resource_t * ares = new qubit_resource_t(platform, dir);
@@ -762,7 +765,7 @@ public:
                 throw ql::exception("[x] Error : Un-modelled resource: "+n+" !",false);
             }
         }
-        // DOUT("Done constructing inited resouce_manager_t");
+        DOUT("Done constructing inited resouce_manager_t");
     }
 
     void Print(std::string s)
@@ -806,14 +809,14 @@ public:
         // COUT("checking availability of resources for: " << ins->qasm());
         for(auto rptr : resource_ptrs)
         {
-            // DOUT("... checking availability for resource " << rptr->name);
+            DOUT("... checking availability for resource " << rptr->name);
             if( rptr->available(op_start_cycle, ins, operation_name, operation_type, instruction_type, operation_duration) == false)
             {
-                // DOUT("... resource " << rptr->name << "not available");
+                DOUT("... resource " << rptr->name << "not available");
                 return false;
             }
         }
-        // DOUT("all resources available for: " << ins->qasm());
+        DOUT("all resources available for: " << ins->qasm());
         return true;
     }
 
@@ -823,10 +826,10 @@ public:
         // COUT("reserving resources for: " << ins->qasm());
         for(auto rptr : resource_ptrs)
         {
-            // DOUT("... reserving resource " << rptr->name);
+            DOUT("... reserving resource " << rptr->name);
             rptr->reserve(op_start_cycle, ins, operation_name, operation_type, instruction_type, operation_duration);
         }
-        // DOUT("all resources reserved for: " << ins->qasm());
+        DOUT("all resources reserved for: " << ins->qasm());
     }
 
     // destructor destroying deep resource_t's
