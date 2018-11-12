@@ -558,6 +558,7 @@ class quantum_program
          size_t total_classical_operations = 0;
          size_t total_quantum_gates = 0;
          size_t total_non_single_qubit_gates= 0;
+         size_t total_swaps = 0;
          for (auto& k : kernels)
          {
             std::string kernel_sched_dot;
@@ -571,11 +572,13 @@ class quantum_program
             total_classical_operations += k.get_classical_operations_count();
             total_quantum_gates += k.get_quantum_gates_count();
             total_non_single_qubit_gates += k.get_non_single_qubit_quantum_gates_count();
+            total_swaps += k.swaps_added;
          }
          sched_qasm << "\n";
          sched_qasm << "# Total depth: " << total_depth << "\n";
          sched_qasm << "# Total no. of quantum gates: " << total_quantum_gates << "\n";
          sched_qasm << "# Total no. of non single qubit gates: " << total_non_single_qubit_gates << "\n";
+         sched_qasm << "# Total no. of swaps: " << total_swaps << "\n";
          sched_qasm << "# Total no. of classical operations: " << total_classical_operations << "\n";
          sched_qasm << "# Qubits used: " << get_qubit_usecount() << "\n";
          sched_qasm << "# No. kernels: " << kernels.size() << "\n";

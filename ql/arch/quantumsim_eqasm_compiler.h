@@ -255,24 +255,6 @@ private:
         fout << "# Quantumsim program generated OpenQL\n"
              << "# Please modify at your will to obtain extra information from Quantumsim\n\n";
 
-        size_t total_depth = 0;
-        size_t total_quantum_gates = 0;
-        size_t total_classical_operations = 0;
-        size_t total_non_single_qubit_gates= 0;
-        for(auto &kernel : kernels)
-        {
-            total_depth += kernel.get_depth();
-            total_classical_operations += kernel.get_classical_operations_count();
-            total_quantum_gates += kernel.get_quantum_gates_count();
-            total_non_single_qubit_gates += kernel.get_non_single_qubit_quantum_gates_count();
-        }
-        fout << "# Total depth: " << total_depth << "\n";
-        fout << "# Total no. of quantum gates: " << total_quantum_gates << "\n";
-        fout << "# Total no. of non single qubit gates: " << total_non_single_qubit_gates << "\n";
-        fout << "# Total no. of classical operations: " << total_classical_operations << "\n";
-        fout << "# Qubits used: " << get_qubit_usecount(kernels) << "\n";
-        fout << "# No. kernels: " << kernels.size() << "\n";
-
         fout << "import numpy as np\n"
              << "from quantumsim.circuit import Circuit\n"
              << "from quantumsim.circuit import uniform_noisy_sampler\n"
@@ -438,8 +420,36 @@ private:
                     }
                     fout << ssbundles.str();
                 }
+                fout << "# ----- depth: " << kernel.get_depth() << "\n";
+                fout << "# ----- quantum gates: " << kernel.get_quantum_gates_count() << "\n";
+                fout << "# ----- non single qubit gates: " << kernel.get_non_single_qubit_quantum_gates_count() << "\n";
+                fout << "# ----- swaps added: " << kernel.swaps_added << "\n";
+                fout << "# ----- classical operations: " << kernel.get_classical_operations_count() << "\n";
+                fout << "# ----- qubits used: " << kernel.get_qubit_usecount() << "\n";
             }
         }
+        size_t total_depth = 0;
+        size_t total_quantum_gates = 0;
+        size_t total_classical_operations = 0;
+        size_t total_non_single_qubit_gates= 0;
+        size_t total_swaps = 0;
+        for(auto &kernel : kernels)
+        {
+            total_depth += kernel.get_depth();
+            total_classical_operations += kernel.get_classical_operations_count();
+            total_quantum_gates += kernel.get_quantum_gates_count();
+            total_non_single_qubit_gates += kernel.get_non_single_qubit_quantum_gates_count();
+            total_swaps += kernel.swaps_added;
+        }
+        fout << "\n";
+        fout << "# Program-wide statistics:\n";
+        fout << "# Total depth: " << total_depth << "\n";
+        fout << "# Total no. of quantum gates: " << total_quantum_gates << "\n";
+        fout << "# Total no. of non single qubit gates: " << total_non_single_qubit_gates << "\n";
+        fout << "# Total no. of swaps: " << total_swaps << "\n";
+        fout << "# Total no. of classical operations: " << total_classical_operations << "\n";
+        fout << "# Qubits used: " << get_qubit_usecount(kernels) << "\n";
+        fout << "# No. kernels: " << kernels.size() << "\n";
 
         fout.close();
         IOUT("Writing scheduled Quantumsim program [Done]");
