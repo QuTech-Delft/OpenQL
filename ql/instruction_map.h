@@ -89,9 +89,39 @@ inline json load_json(std::string file_name)
     json j;
     if (fs.is_open())
     {
+        std::stringstream stripped;     // file contents with comments stripped
+        std::string line;
+
+        // strip comments
+        while (getline(fs, line))
+        {
+            std::string::size_type n = line.find("//");
+            if (n != std::string::npos) line.erase(n);
+            std::istringstream iss(line);
+            stripped << line;
+        }
+
         try
         {
-            fs >> j;
+            // pass stripped line to json
+            stripped >> j;
+        }
+        // treat parse errors separately to give the user a clue about what's wrong
+        catch (json::parse_error e)
+        {
+            EOUT("error parsing json file : \n\t" << e.what());
+            if(e.byte != 0)
+            {
+                int contextLen = 50;
+                int start = e.byte - contextLen;
+                if(start<0)
+                {
+                    contextLen += start;
+                    start = 0;
+                }
+                EOUT("JSON input before error: '" << stripped.str().substr(start, contextLen) << "'");    // FIXME: not fancy. Will this be seen by Python user?
+            }
+            throw (e);
         }
         catch (json::exception e)
         {

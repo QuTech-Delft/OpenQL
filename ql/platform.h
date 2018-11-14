@@ -95,6 +95,7 @@ public:
         else
             cycle_time = hardware_settings["cycle_time"];
 
+        // FIXME(WJV): now in program.h, cleanup
         // if (eqasm_compiler_name == "qumis_compiler")
         // {
         //    backend_compiler = new ql::arch::cbox_eqasm_compiler();
@@ -128,8 +129,61 @@ public:
     {
         return qubit_number;
     }
+
+
+    /**
+     * @brief   Find architecture instruction name for a custom gate
+     *
+     * @param   iname   Name of instruction, e.g. "x q5" ('specialized custom gate') or "x" ('parameterized custom gate')
+     * @return  value of 'arch_operation_name', e.g. "x"
+     * @note    On CC-light, arch_operation_name is set from JSON field cc_light_instr
+     * @note    Based on cc_light_scheduler.h::get_cc_light_instruction_name()
+     * @note    Only works for custom instructions defined in JSON
+       FIXME:   it may be more useful to get the information directly from JSON, because arch_operation_name is not really generic
+     */
+    std::string get_instruction_name(std::string &iname) const
+    {
+        std::string instr_name;
+        auto it = instruction_map.find(iname);
+        if (it != instruction_map.end())
+        {
+            custom_gate* g = it->second;
+            instr_name = g->arch_operation_name;
+            if(instr_name.empty())
+            {
+                FATAL("arch_operation_name not defined for instruction: " << iname << " !");
+            }
+            // DOUT("arch_operation_name: " << instr_name);
+        }
+        else
+        {
+            FATAL("custom instruction not found for : " << iname << " !");
+        }
+        return instr_name;
+    }
+
+
+    // find settings for custom gate, preventing JSON exceptions
+    const json& find_instruction(std::string iname) const
+    {
+        // search the JSON defined instructions, to prevent JSON exception if key does not exist
+        if (instruction_settings.find(iname) == instruction_settings.end())
+        {
+            FATAL("instruction settings not found for '" << iname << "'!");
+        }
+
+        return instruction_settings[iname];
+    }
+
+
+    // find instruction type for custom gate
+    std::string find_instruction_type(std::string iname) const
+    {
+        const json &instruction = find_instruction(iname);
+        return instruction["type"];
+    }
 };
 
 }
 
-#endif // PLATFORM_H
+#endif // QL_PLATFORM_H

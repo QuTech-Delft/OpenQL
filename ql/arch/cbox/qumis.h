@@ -11,7 +11,7 @@
 #include <string>
 #include <bitset>
 
-#include <ql/arch/instruction_scheduler.h>
+#include <ql/arch/cbox/instruction_scheduler.h>
 
 namespace ql
 {
@@ -23,7 +23,7 @@ namespace ql
       #define __awg_number__     (3)
       #define __resources__    \
               (__trigger_width__+__awg_number__)
-      
+
       const std::string channel_name[] = {"TRIG_0","TRIG_1","TRIG_2","TRIG_3","TRIG_4","TRIG_5","TRIG_6","TRIG_7","AWG_0","AWG_1","AWG_2"};
 
       // single qumis instruction
@@ -36,11 +36,11 @@ namespace ql
 
       typedef std::vector<qumis_instruction *> qumis_program_t;
 
-      typedef std::vector<size_t>  instr_schedule_t; 
+      typedef std::vector<size_t>  instr_schedule_t;
 
 
       // instruction type
-      typedef enum 
+      typedef enum
       {
          __qumis_trigger__       ,
          __qumis_pulse__         ,
@@ -53,14 +53,14 @@ namespace ql
       } qumis_instr_type_t;
 
       // operation type
-      typedef enum 
+      typedef enum
       {
          __none__       ,
          __rf__         ,
          __flux__       ,
          __measurement__,
          __wait__       ,
-         __unknown_operation__  
+         __unknown_operation__
       } operation_type_t;
 
       #define __operation_types_num__ (4)
@@ -75,7 +75,7 @@ namespace ql
       typedef std::vector<size_t>             qubit_set_t;
 
       /**
-       * qumis instruction interface  
+       * qumis instruction interface
        */
       class qumis_instruction
       {
@@ -85,7 +85,7 @@ namespace ql
             qubit_set_t         used_qubits;
 
             size_t              duration;
-            size_t              latency = 0; 
+            size_t              latency = 0;
             size_t              start = 0;
 
             qumis_instr_type_t  instruction_type;
@@ -98,7 +98,7 @@ namespace ql
          public:
 
             /**
-             * emit qumis code 
+             * emit qumis code
              */
             virtual qumis_instr_t code() = 0;
 
@@ -123,7 +123,7 @@ namespace ql
                   // println("[x] warning : latency of instruction '" << this << "' is already compensated !");
                   WOUT("latency of instruction '" << this << "' is already compensated !");
                }
-            }    
+            }
 
             /**
              * set used_qubits
@@ -157,7 +157,7 @@ namespace ql
              */
             virtual qumis_instr_type_t get_instruction_type()
             {
-               return instruction_type; 
+               return instruction_type;
             }
 
             /**
@@ -192,18 +192,18 @@ namespace ql
                this->duration          = duration;
                this->latency           = latency;
                latency_compensated     = false;
-               used_resources.set(__trigger_width__+awg);         
+               used_resources.set(__trigger_width__+awg);
             }
 
             /**
-             * generate code 
+             * generate code
              */
             qumis_instr_t code()
             {
                std::stringstream params;
                pulse_id_t pid = codeword;
                pid.set(__lut_id_width__-1);
-               params << (awg == 0 ? pid : 0) << ", " << (awg == 1 ? pid : 0) << ", " << (awg == 2 ? pid : 0); // << "\nwait " << duration; 
+               params << (awg == 0 ? pid : 0) << ", " << (awg == 1 ? pid : 0) << ", " << (awg == 2 ? pid : 0); // << "\nwait " << duration;
                qumis_instr_t instr = "pulse " + params.str();
                // println("[i] used resources : " << used_resources);
                return instr;
@@ -216,14 +216,14 @@ namespace ql
             {
                instruction_traces_t trs;
                size_t latent_start = (latency_compensated ? (start) : (start-latency));
-               std::string label   = qasm_label + " : " + code(); 
+               std::string label   = qasm_label + " : " + code();
                // println("pulse label : " << label);
                instruction_trace_t t  = { (__trigger_width__+awg), label, start, (start+duration), "#4567aa", __top_pos__};
                // instruction_trace_t tl = { (__trigger_width__+awg), "", start-latency, (start-latency+duration), "#403377", __bottom_pos__ }; // latent
                instruction_trace_t tl = { (__trigger_width__+awg), label, latent_start, latent_start+duration, "#808080", __bottom_pos__ }; // latent
                trs.push_back(t);
                trs.push_back(tl);
-               return trs; 
+               return trs;
             }
 #if 0
             /**
@@ -233,7 +233,7 @@ namespace ql
             {
                return __qumis_pulse__;
             }
-#endif 
+#endif
       };
 
       /**
@@ -250,7 +250,7 @@ namespace ql
             /**
              * ctor
              */
-            trigger(codeword_t codeword, size_t duration, ql::arch::operation_type_t operation_type, size_t latency=0) : codeword(codeword) 
+            trigger(codeword_t codeword, size_t duration, ql::arch::operation_type_t operation_type, size_t latency=0) : codeword(codeword)
             {
                this->operation_type    = operation_type   ;
                this->instruction_type  = __qumis_trigger__;
@@ -261,7 +261,7 @@ namespace ql
             }
 
             /**
-             * generate code 
+             * generate code
              */
             qumis_instr_t code()
             {
@@ -269,8 +269,8 @@ namespace ql
                std::bitset<__trigger_width__> cwr = codeword.to_ulong();
                // println("codeword  :\t" << codeword);
                std::bitset<7> cw  = cwr.to_ulong();
-               // params << codeword << ", " << duration; // << "\nwait " << duration; 
-               params << cw << ", " << duration; // << "\nwait " << duration; 
+               // params << codeword << ", " << duration; // << "\nwait " << duration;
+               params << cw << ", " << duration; // << "\nwait " << duration;
                qumis_instr_t instr = "trigger " + params.str();
                return instr;
             }
@@ -281,7 +281,7 @@ namespace ql
             instruction_traces_t trace()
             {
                instruction_traces_t trs;
-               std::string label   = qasm_label + " : " + code(); 
+               std::string label   = qasm_label + " : " + code();
                // println("trig label : " << label);
                for (size_t ch=0; ch<codeword.size(); ++ch)
                {
@@ -298,7 +298,7 @@ namespace ql
                      // println("latent start : " << latent_start);
                   }
                }
-               return trs; 
+               return trs;
             }
 
       };
@@ -324,11 +324,11 @@ namespace ql
                this->duration          = duration;
                this->latency           = latency;
                latency_compensated     = false;
-               used_resources.set(ch);         
+               used_resources.set(ch);
             }
 
             /**
-             * generate code 
+             * generate code
              */
             qumis_instr_t code()
             {
@@ -350,7 +350,7 @@ namespace ql
                instruction_trace_t tl = { (ch), "buffer", latent_start, latent_start+duration, "#808080", __bottom_pos__ }; // latent
                trs.push_back(t);
                trs.push_back(tl);
-               return trs; 
+               return trs;
             }
 
       };
@@ -367,16 +367,16 @@ namespace ql
             size_t     ready_bit_duration;
 
             // decompose
-            qumis_program_t instructions; 
+            qumis_program_t instructions;
 
          public:
 
             /**
              * ctor
              */
-            codeword_trigger(codeword_t codeword, size_t duration, 
-                  size_t ready_bit, size_t ready_bit_duration, 
-                  ql::arch::operation_type_t operation_type, size_t latency=0, std::string qasm_label="") : codeword(codeword), ready_bit(ready_bit), ready_bit_duration(ready_bit_duration) 
+            codeword_trigger(codeword_t codeword, size_t duration,
+                  size_t ready_bit, size_t ready_bit_duration,
+                  ql::arch::operation_type_t operation_type, size_t latency=0, std::string qasm_label="") : codeword(codeword), ready_bit(ready_bit), ready_bit_duration(ready_bit_duration)
          {
             this->operation_type    = operation_type   ;
             this->instruction_type  = __qumis_cw_trigger__;
@@ -398,7 +398,7 @@ namespace ql
          }
 
             /**
-             * decompose codeword trigger 
+             * decompose codeword trigger
              */
             qumis_program_t decompose()
             {
@@ -440,19 +440,19 @@ namespace ql
                {
                   println("[x] warning : latency of instruction '" << this << "' is already compensated !");
                }
-            }    
+            }
 
 
             /**
-             * generate code 
+             * generate code
              */
             qumis_instr_t code()
             {
                codeword_t ready_cw = 0;
                ready_cw.set(7-ready_bit);
                std::stringstream instr;
-               instr << "trigger " << codeword << ", " << duration << "\nwait 1\n"; 
-               instr << "trigger " << ready_cw << ", " << ready_bit_duration; //  << "\nwait " << (duration-1); 
+               instr << "trigger " << codeword << ", " << duration << "\nwait 1\n";
+               instr << "trigger " << ready_cw << ", " << ready_bit_duration; //  << "\nwait " << (duration-1);
                // println("[i] used resources : " << used_resources);
                return instr.str();
             }
@@ -464,7 +464,7 @@ namespace ql
             {
                instruction_traces_t trs;
                size_t latent_start = (latency_compensated ? (start) : (start-latency));
-               std::string label   = qasm_label + " : " + code(); 
+               std::string label   = qasm_label + " : " + code();
                // println("cw label : " << label);
                for (size_t ch=0; ch<codeword.size(); ++ch)
                {
@@ -480,7 +480,7 @@ namespace ql
                instruction_trace_t lt = { ready_bit, label, latent_start+1, (latent_start+1+ready_bit_duration), "#808080", __bottom_pos__ };
                trs.push_back(lt);
                trs.push_back(t);
-               return trs; 
+               return trs;
             }
 
             /**
@@ -508,7 +508,7 @@ namespace ql
             size_t     trig_channel;
 
             // decompose
-            qumis_program_t  instructions; 
+            qumis_program_t  instructions;
             instr_schedule_t instr_schedule;
 
          public:
@@ -516,17 +516,17 @@ namespace ql
             /**
              * ctor
              */
-            pulse_trigger(pulse_cw_t codeword, size_t trig_channel, size_t duration, 
-                  ql::arch::operation_type_t operation_type, 
-                  size_t latency=0, std::string qasm_label="") : codeword(codeword), 
-                                                                 trig_channel(trig_channel) 
+            pulse_trigger(pulse_cw_t codeword, size_t trig_channel, size_t duration,
+                  ql::arch::operation_type_t operation_type,
+                  size_t latency=0, std::string qasm_label="") : codeword(codeword),
+                                                                 trig_channel(trig_channel)
             {
                this->operation_type    = operation_type   ;
                this->instruction_type  = __qumis_pulse_trigger__;
                this->duration          = duration;
                this->latency           = latency;
                used_resources.set(trig_channel);
-               
+
                if (codeword.to_ulong() > 7)
                   println("[x] error : codeword cannot be greater than 7 (3 bits) !");
 
@@ -535,7 +535,7 @@ namespace ql
 
                // build external codeword trigger
                size_t cw = codeword.to_ulong();
-               switch (cw) 
+               switch (cw)
                {
                   case 0 :
                   {
@@ -657,7 +657,7 @@ namespace ql
             }
 
             /**
-             * decompose codeword trigger 
+             * decompose codeword trigger
              */
             qumis_program_t decompose()
             {
@@ -694,7 +694,7 @@ namespace ql
                {
                   println("[x] warning : latency of instruction '" << this << "' is already compensated !");
                }
-            }    
+            }
 
             /**
              * set used qubits
@@ -709,13 +709,13 @@ namespace ql
 
 
             /**
-             * generate code 
+             * generate code
              */
             qumis_instr_t code()
             {
                std::stringstream instr;
-               // instr << "trigger " << codeword << ", " << duration << "\nwait 1\n"; 
-               // instr << "trigger " << ready_cw << ", " << ready_bit_duration; //  << "\nwait " << (duration-1); 
+               // instr << "trigger " << codeword << ", " << duration << "\nwait 1\n";
+               // instr << "trigger " << ready_cw << ", " << ready_bit_duration; //  << "\nwait " << (duration-1);
                for (size_t i=0; i<instructions.size(); ++i)
                {
                   if (instr_schedule[i])
@@ -733,11 +733,11 @@ namespace ql
             {
                instruction_traces_t trs;
                size_t latent_start = (latency_compensated ? (start) : (start-latency));
-               std::string label   = qasm_label + " : " + code(); 
+               std::string label   = qasm_label + " : " + code();
                // println("qasm label   : " << label);
                // println("start        : " << start);
                // println("latent start : " << latent_start);
-               
+
                for (size_t i=0; i<instructions.size(); ++i)
                {
                   instruction_trace_t t  = { trig_channel, label, start+instr_schedule[i], (start+instr_schedule[i]+instructions[i]->duration), "#DD5437", __top_pos__ };
@@ -745,7 +745,7 @@ namespace ql
                   trs.push_back(lt);
                   trs.push_back(t);
                }
-               return trs; 
+               return trs;
             }
 
             /**
@@ -764,7 +764,7 @@ namespace ql
 
       /**
        * trigger_sequence
-       *   trigger sequence  
+       *   trigger sequence
        */
       class trigger_sequence : public qumis_instruction
       {
@@ -773,26 +773,26 @@ namespace ql
             size_t     trig_channel;
             size_t     trig_width;
 
-            qumis_program_t  instructions; 
+            qumis_program_t  instructions;
 
          public:
 
             /**
              * ctor
              */
-            trigger_sequence(size_t trig_channel, size_t trig_width, size_t duration, 
-                  ql::arch::operation_type_t operation_type, 
+            trigger_sequence(size_t trig_channel, size_t trig_width, size_t duration,
+                  ql::arch::operation_type_t operation_type,
                   size_t latency=0, std::string qasm_label="") : trig_channel(trig_channel), trig_width(trig_width)
-                                                                  
+
             {
                this->operation_type    = operation_type   ;
                this->instruction_type  = __qumis_trigger_seq__;
                this->duration          = duration;
                this->latency           = latency;
                this->start             = 0;
-               
+
                used_resources.set(trig_channel);
-               
+
                // already tested
                // if (trig_channel > 7)
                   // println("[x] trigger channel number cannot be greater than 7.");
@@ -855,16 +855,16 @@ namespace ql
                {
                   println("[x] warning : latency of instruction '" << this << "' is already compensated !");
                }
-            }    
+            }
 
 
             /**
-             * generate code 
+             * generate code
              */
             qumis_instr_t code()
             {
                std::stringstream instr;
-               instr << instructions[0]->code() << "\nwait " << duration+trig_width << "\n"; 
+               instr << instructions[0]->code() << "\nwait " << duration+trig_width << "\n";
                instr << instructions[1]->code() << "\nwait " << trig_width;
                return instr.str();
             }
@@ -876,11 +876,11 @@ namespace ql
             {
                instruction_traces_t trs;
                size_t latent_start = (latency_compensated ? (start) : (start-latency));
-               std::string label   = qasm_label + " : " + code(); 
+               std::string label   = qasm_label + " : " + code();
                // println("qasm label   : " << label);
                // println("start        : " << start);
                // println("latent start : " << latent_start);
-               
+
                for (size_t i=0; i<instructions.size(); ++i)
                {
                   instruction_trace_t t  = { trig_channel, label, start, (start+instructions[i]->duration), "#DD5437", __top_pos__ };
@@ -889,7 +889,7 @@ namespace ql
                   trs.push_back(t);
                }
 
-               return trs; 
+               return trs;
             }
 
             /**
@@ -910,7 +910,7 @@ namespace ql
 
 
       /**
-       * measure 
+       * measure
        */
       class measure : public qumis_instruction
       {
@@ -932,14 +932,14 @@ namespace ql
             }
 
             /**
-             * generate code 
+             * generate code
              */
             qumis_instr_t code()
             {
                std::stringstream inst;
                inst << instruction->code(); // << "\n";
-               // inst << "wait " << (duration-instruction->duration); 
-               return inst.str(); 
+               // inst << "wait " << (duration-instruction->duration);
+               return inst.str();
             }
 
             /**
@@ -967,7 +967,7 @@ namespace ql
             instruction_traces_t trace()
             {
                instruction_traces_t itrs = instruction->trace();
-               instruction_traces_t trs; 
+               instruction_traces_t trs;
                size_t latent_start = (latency_compensated ? (start) : (start-latency));
                bool   lt = true;
                for (instruction_trace_t t : itrs)
@@ -979,7 +979,7 @@ namespace ql
                   trs.push_back(t);
                   lt = !lt;
                }
-               return trs; 
+               return trs;
             }
 
 
@@ -997,16 +997,16 @@ namespace ql
       /**
        * qumis comparator
        */
-      bool qumis_comparator(qumis_instruction * i1, qumis_instruction * i2) 
-      { 
+      bool qumis_comparator(qumis_instruction * i1, qumis_instruction * i2)
+      {
          return (i1->start < i2->start);
       }
 
       /**
        * triggers comparator
        */
-      bool triggers_comparator(qumis_instruction * t1, qumis_instruction * t2) 
-      { 
+      bool triggers_comparator(qumis_instruction * t1, qumis_instruction * t2)
+      {
          return (t1->duration < t2->duration);
       }
 

@@ -10,7 +10,7 @@
 
 #include <ql/platform.h>
 #include <ql/eqasm_compiler.h>
-#include <ql/arch/qumis.h>
+#include <ql/arch/cbox/qumis.h>
 #include <ql/utils.h>
 
 // eqasm code : set of qumis instructions
@@ -25,7 +25,7 @@ namespace ql
       typedef std::pair<double,size_t>       segment_t;
       typedef std::vector<segment_t>         waveform_t;
 
-      typedef enum __phase_t 
+      typedef enum __phase_t
       { __initialization__ , __manip__ , __readout__ } phase_t;
 
       typedef std::pair<phase_t,size_t>  timed_phase_t;
@@ -37,7 +37,7 @@ namespace ql
        */
       bool tqasm_comparator(sch_qasm_t q1, sch_qasm_t q2)
       {
-         return (q1.second < q2.second); 
+         return (q1.second < q2.second);
       }
 
       /**
@@ -76,7 +76,7 @@ namespace ql
 
                iterations = 0;
 
-               try 
+               try
                {
                   iterations = platform.hardware_settings["iterations"];
                }
@@ -93,13 +93,13 @@ namespace ql
                // ql::instruction_map_t& instr_map = platform.instruction_map;
                json& instruction_settings       = platform.instruction_settings;
 
-               std::string params[] = { "qubit_number", "cycle_time", "mw_mw_buffer", "mw_flux_buffer", "mw_readout_buffer", "flux_mw_buffer", 
+               std::string params[] = { "qubit_number", "cycle_time", "mw_mw_buffer", "mw_flux_buffer", "mw_readout_buffer", "flux_mw_buffer",
                   "flux_flux_buffer", "flux_readout_buffer", "readout_mw_buffer", "readout_flux_buffer", "readout_readout_buffer" };
                size_t p = 0;
 
                IOUT("[-] loading hardware seetings...");
 
-               try 
+               try
                {
                   num_qubits                                      = platform.hardware_settings[params[p++]];
                   ns_per_cycle                                    = platform.hardware_settings[params[p++]];
@@ -137,7 +137,7 @@ namespace ql
                   for (size_t j=0; j<__operation_types_num__; ++j)
                   println("(" << i << "," << j << ") :" << buffer_matrix[i][j]);
                 */
-               
+
                IOUT("[-] loading instruction settings...");
 
                for (ql::gate * g : c)
@@ -278,7 +278,7 @@ namespace ql
                // split/merge concurrent triggers
                process_concurrent_triggers();
 
-               // emit eqasm 
+               // emit eqasm
                emit_eqasm();
 
                // dump timed eqasm code
@@ -406,14 +406,14 @@ namespace ql
             {
                if (qumis_instructions.empty())
                   return;
-               
+
                // find parallel sections
-               qumis_program_t              ps; 
+               qumis_program_t              ps;
                std::vector<qumis_program_t> parallel_sections;
                ps.push_back(qumis_instructions[0]);
                size_t st = qumis_instructions[0]->start;
                // group by start time
-               DOUT("clustering concurent instructions..."); 
+               DOUT("clustering concurent instructions...");
                for (size_t i=1; i<qumis_instructions.size(); ++i)
                {
                   if (qumis_instructions[i]->start != st)
@@ -440,16 +440,16 @@ namespace ql
                   for (qumis_instruction * instr : p)
                      println("\t(" << instr->start << ") : " << instr->code());
                }
-               #endif 
+               #endif
                // detect parallel triggers
-               DOUT("detecting concurent triggers..."); 
+               DOUT("detecting concurent triggers...");
                for (qumis_program_t& p : parallel_sections)
                {
                   qumis_program_t triggers;
                   for (qumis_instruction * instr : p)
                      if (instr->instruction_type == __qumis_trigger__)
                         triggers.push_back(instr);
-                  // process triggers ... 
+                  // process triggers ...
                   if (triggers.size() < 2)
                      continue;
                   // println("[+] merging triggers... ");
@@ -457,7 +457,7 @@ namespace ql
                   qumis_program_t merged_triggers;
                   size_t prev_duration = 0;
 
-                  DOUT("merging and splitting concurent triggers..."); 
+                  DOUT("merging and splitting concurent triggers...");
                   for (size_t i=0; i<triggers.size(); ++i)
                   {
                      // println("in : trigger " << i << " : " << triggers[i]->code());
@@ -498,7 +498,7 @@ namespace ql
                      // println("\t(" << instr->start << ") : " << instr->code());
                }
 
-               DOUT("updating qumis program..."); 
+               DOUT("updating qumis program...");
                qumis_instructions.clear();
                for (qumis_program_t p : parallel_sections)
                   for (qumis_instruction * instr : p)
@@ -616,7 +616,7 @@ namespace ql
                // println(">> sorted qasm schedule : ");
                // for (sch_qasm_t instr : qasm_schedule)
                //   println("[" << instr.first << " : " << instr.second << "]");
-               
+
                // const double init_level      = 0.1f;
                // const double operation_level = 0.2f;
                // const double readout_level   = 0.3f;
@@ -674,7 +674,7 @@ namespace ql
                   else if (p.first == __manip__)
                   {
                      waveform_t w = manip_wf;
-                     w[0].second  = (tps[i+1].second-p.second)*ns_per_cycle/__seg_unit__; 
+                     w[0].second  = (tps[i+1].second-p.second)*ns_per_cycle/__seg_unit__;
                      wfs.push_back(w);
                   }
                }
@@ -777,7 +777,7 @@ namespace ql
 
 
          private:
-           
+
             #define __max_wait__ (32767)
 
             /**
@@ -789,7 +789,7 @@ namespace ql
                eqasm_code.clear();
                timed_eqasm_code.clear();
                eqasm_code.push_back("wait 1");       // add wait 1 at the begining
-               eqasm_code.push_back("mov r12, 1");   // counter step 
+               eqasm_code.push_back("mov r12, 1");   // counter step
                eqasm_code.push_back("mov r13, 0");   // boundary
                if (iterations)
                eqasm_code.push_back("mov r14, "+std::to_string(iterations));   // 0: infinite loop
@@ -826,11 +826,11 @@ namespace ql
                eqasm_code.push_back("wait "+std::to_string(qumis_instructions.back()->duration));
                if (iterations)
                {
-                  eqasm_code.push_back("sub r14, r14, r12");  
-                  eqasm_code.push_back("bne r13, r14 start"); 
+                  eqasm_code.push_back("sub r14, r14, r12");
+                  eqasm_code.push_back("bne r13, r14 start");
                }
                else
-                  eqasm_code.push_back("beq r13, r13 start"); 
+                  eqasm_code.push_back("beq r13, r13 start");
                DOUT("eqasm compilation done.");
             }
 
@@ -949,7 +949,7 @@ namespace ql
                size_t cw              = j_params["codeword"];
                size_t trigger_channel = j_params["trigger_channel"];
 
-               pulse_cw_t codeword = cw;  
+               pulse_cw_t codeword = cw;
 
                // println("\ttrigger channel    : " << trigger_channel);
                // println("\tcodeword           : " << codeword.to_ulong());
@@ -994,7 +994,7 @@ namespace ql
                size_t trigger_channel = j_params["trigger_channel"];
 
                // println("\ttrigger channel    : " << trigger_channel);
-               // println("\ttrigger width      : " << trigger_width); 
+               // println("\ttrigger width      : " << trigger_width);
 
                if ((trigger_channel > (__trigger_width__-1)) || (trigger_channel == 0))
                {

@@ -45,8 +45,8 @@ namespace ql
                     ssqasm << '\n';
 
                 ssqasm << "    ";
-                if (abundle.parallel_sections.size() > 1) ssqasm << "{ "; 
-                for( auto sec_it = abundle.parallel_sections.begin(); 
+                if (abundle.parallel_sections.size() > 1) ssqasm << "{ ";
+                for( auto sec_it = abundle.parallel_sections.begin();
                      sec_it != abundle.parallel_sections.end(); ++sec_it )
                 {
                     auto first_ins_it = sec_it->begin();
@@ -58,7 +58,7 @@ namespace ql
                         ssqasm << " | ";
                     }
                 }
-                if (abundle.parallel_sections.size() > 1) ssqasm << " }"; 
+                if (abundle.parallel_sections.size() > 1) ssqasm << " }";
                 curr_cycle+=delta;
             }
 
@@ -89,6 +89,6 @@ namespace ql
             fout.close();
         }
     } // namespace ir
-} //namespace ir
+} //namespace ql
 
 #endif

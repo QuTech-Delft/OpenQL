@@ -15,9 +15,10 @@
 #include <ql/kernel.h>
 #include <ql/interactionMatrix.h>
 #include <ql/eqasm_compiler.h>
-#include <ql/arch/cbox_eqasm_compiler.h>
-#include <ql/arch/cc_light_eqasm_compiler.h>
+#include <ql/arch/cbox/cbox_eqasm_compiler.h>
+#include <ql/arch/cc_light/cc_light_eqasm_compiler.h>
 #include <ql/arch/quantumsim_eqasm_compiler.h>
+#include <ql/arch/cc/eqasm_backend_cc.h>
 
 static unsigned long phi_node_count = 0;
 
@@ -36,7 +37,7 @@ class quantum_program
       std::string                 config_file_name;
       std::vector<quantum_kernel> kernels;
 
-   public: 
+   public:
       std::string           name;
       std::vector<float>    sweep_points;
       ql::quantum_platform  platform;
@@ -47,7 +48,7 @@ class quantum_program
 
 
    public:
-      quantum_program(std::string n, quantum_platform platf, size_t nqubits, size_t ncregs) 
+      quantum_program(std::string n, quantum_platform platf, size_t nqubits, size_t ncregs)
             : name(n), platform(platf), qubit_count(nqubits), creg_count(ncregs)
       {
          default_config = true;
@@ -78,6 +79,10 @@ class quantum_program
          {
             backend_compiler = new ql::arch::quantumsim_eqasm_compiler();
          }
+         else if (eqasm_compiler_name == "eqasm_backend_cc" )
+         {
+            backend_compiler = new ql::arch::eqasm_backend_cc();
+         }
          else
          {
             EOUT("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
@@ -106,8 +111,9 @@ class quantum_program
                   ((gtype == __classical_gate__) && (op >= creg_count)) ||
                   ((gtype != __classical_gate__) && (op >= qubit_count))
                  )
-               {   
+               {
                    EOUT("Out of range operand(s) for operation: '" << gname << "'");
+                   EOUT("FIXME: creg_count=" << creg_count << ", qubit_count" << qubit_count);
                    throw ql::exception("Out of range operand(s) for operation: '"+gname+"' !",false);
                }
             }
@@ -458,12 +464,16 @@ class quantum_program
          }
          else
          {
-            if (eqasm_compiler_name == "cc_light_compiler" )
+            if (eqasm_compiler_name == "cc_light_compiler" || eqasm_compiler_name == "eqasm_backend_cc")
             {
                backend_compiler->compile(name, kernels, platform);
             }
             else
             {
+               // FIXME(WJV): I would suggest to move the fusing to a backend that wants it, and then:
+               // - always call:  backend_compiler->compile(name, kernels, platform);
+               // - remove from eqasm_compiler.h: compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& p);
+
                IOUT("fusing quantum kernels...");
                ql::circuit fused;
                for (size_t k=0; k<kernels.size(); ++k)

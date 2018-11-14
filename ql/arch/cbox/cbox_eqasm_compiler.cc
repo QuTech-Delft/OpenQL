@@ -1,8 +1,8 @@
 
 
 #include <ql/openql.h>
-#include <ql/arch/cbox_eqasm_compiler.h>
-#include <ql/arch/instruction_scheduler.h>
+#include <ql/arch/cbox/cbox_eqasm_compiler.h>
+#include <ql/arch/cbox/instruction_scheduler.h>
 
 
 
@@ -45,7 +45,7 @@ int main(int argc, char ** argv)
 */
 
 #if 0
-  // test pulse trigger 
+  // test pulse trigger
   kernel.gate("g1",0);
   kernel.gate("g1",1);
   kernel.gate("g2",0);
@@ -78,7 +78,7 @@ int main(int argc, char ** argv)
   kernel.prepz(1);
   kernel.rx180(1);   // 145ns,ch 4,cw 2
   kernel.measure(1);
- 
+
   // kernel.ry90(0);    // 145ns,ch 4,cw 3
   // kernel.mrx90(0);   // 145ns,ch 4,cw 2
   // kernel.mry90(0);   // 145ns,ch 4,cw 4
@@ -87,8 +87,8 @@ int main(int argc, char ** argv)
 #endif
 
   kernel.prepz(0);
-  kernel.ry90(0);    
-  kernel.ry180(1);   
+  kernel.ry90(0);
+  kernel.ry180(1);
   kernel.measure(0);
   // kernel.measure(1);
 

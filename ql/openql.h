@@ -10,7 +10,7 @@
 #include "instruction_map.h"
 #include "optimizer.h"
 #include "circuit.h"
-#include "transmon.h"
+//#include "transmon.h" FIXME(WJV): unused
 #include "program.h"
 
 #include <fstream>
@@ -34,7 +34,7 @@ typedef std::stringstream  str_t;
 /* static */ // ql_platform_t     target_platform;
 
 // target platform
-ql::quantum_platform           target_platform;          
+ql::quantum_platform           target_platform;
 
 
 // deprecated : for back compatibility

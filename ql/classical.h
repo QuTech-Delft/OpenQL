@@ -41,7 +41,7 @@ class ids
 public:
     int max_id;
     std::stack<int> available_ids;
-    ids(int max = 28)
+    ids(int max = 28)   // FIXME: random constant
     {
         max_id = max;
         for(int i=max_id-1; i>=0; i--)
@@ -102,7 +102,7 @@ public:
     creg()
     {
         id = creg_ids.get();
-        DOUT("creg default constructor, creted id: " << id);
+        DOUT("creg default constructor, created id: " << id);
     }
 
     creg(const creg &c)
@@ -214,7 +214,7 @@ public:
         operands.push_back(new ql::creg(l));
     }
 
-    // used for initializing with an imm 
+    // used for initializing with an imm
     operation(cval & v)
     {
         operation_name = "ldi";
@@ -222,7 +222,7 @@ public:
         operands.push_back(new ql::cval(v));
     }
 
-    // used for initializing with an imm 
+    // used for initializing with an imm
     operation(int val)
     {
         operation_name = "ldi";
@@ -277,7 +277,7 @@ public:
         if((operation == "nop"))
         {
             name=operation;
-            duration = 20;            
+            duration = 20;
             DOUT("Adding 0 operand operation: " << name);
         }
         else

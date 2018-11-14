@@ -15,9 +15,8 @@
 #include <ql/gate.h>
 #include <ql/ir.h>
 #include <ql/eqasm_compiler.h>
-#include <ql/arch/cc_light_eqasm.h>
-
-#include <ql/arch/cc_light_scheduler.h>
+#include <ql/arch/cc_light/cc_light_eqasm.h>
+#include <ql/arch/cc_light/cc_light_scheduler.h>
 
 // eqasm code : set of cc_light_eqasm instructions
 typedef std::vector<ql::arch::cc_light_eqasm_instr_t> eqasm_t;
@@ -49,7 +48,7 @@ public:
 
     Mask(qubit_set_t & qs) : squbits(qs)
     {
-        
+
         if(CurrSRegCount < MAX_S_REG)
         {
             regNo = CurrSRegCount++;
@@ -62,7 +61,7 @@ public:
     }
 
     Mask(std::string rn, qubit_set_t & qs ) : regName(rn), squbits(qs)
-    { 
+    {
         if(CurrSRegCount < MAX_S_REG)
         {
             regNo = CurrSRegCount++;
@@ -73,8 +72,8 @@ public:
         }
     }
 
-    Mask(qubit_pair_set_t & qps) : dqubits(qps) 
-    { 
+    Mask(qubit_pair_set_t & qps) : dqubits(qps)
+    {
         if(CurrTRegCount < MAX_T_REG)
         {
             regNo = CurrTRegCount++;
@@ -265,7 +264,7 @@ public:
         duration = 20;
         operands=opers;
         int sz = operands.size();
-        if((   (name == "add") || (name == "sub") 
+        if((   (name == "add") || (name == "sub")
             || (name == "and") || (name == "or") || (name == "xor")
            ) && (sz == 3))
         {
@@ -465,6 +464,7 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
             }
             else
             {
+                // FIXME: use platform.h::get_instruction_name or get_cc_light_instruction_name
                 auto id = iname;
                 // DOUT("get cclight instr name for : " << id);
                 std::string cc_light_instr_name;
@@ -477,7 +477,7 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
                     {
                         EOUT("cc_light_instr not defined for instruction: " << id << " !");
                         throw ql::exception("Error : cc_light_instr not defined for instruction: "+id+" !",false);
-                    }                    
+                    }
                 }
                 else
                 {
@@ -544,7 +544,7 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
                 {
                     ssbundles << "    qwait " << 1 << "\n";
                     ssbundles << "    qwait " << delta-1 << "\n";
-                }                    
+                }
                 else
                 {
                     ssbundles << "    qwait " << 1 << "\n";
@@ -562,7 +562,7 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
         {
             ssbundles << sspre.str() << ssinst.str() << "\n";
         }
-        curr_cycle+=delta;        
+        curr_cycle+=delta;
     }
 
     auto & lastBundle = bundles.back();
@@ -793,6 +793,7 @@ public:
         emit_eqasm();
     }
 
+    // FIXME: should be private
     std::string get_prologue(ql::quantum_kernel &k)
     {
         std::stringstream ss;
@@ -802,11 +803,11 @@ public:
             #if 0
             // Branching macros are not yet supported by assembler,
             // so for now the following can not be used
-            ss << "    b" << k.br_condition.inv_operation_name 
+            ss << "    b" << k.br_condition.inv_operation_name
                <<" r" << (k.br_condition.operands[0])->id <<", r" << (k.br_condition.operands[1])->id
                << ", " << k.name << "_end\n";
             #else
-            ss  <<"    cmp r" << (k.br_condition.operands[0])->id 
+            ss  <<"    cmp r" << (k.br_condition.operands[0])->id
                 <<", r" << (k.br_condition.operands[1])->id << '\n';
             ss  <<"    nop\n";
             ss  <<"    br " << k.br_condition.inv_operation_name << ", "
@@ -823,7 +824,7 @@ public:
             ss << "    b" << k.br_condition.operation_name <<" r" << (k.br_condition.operands[0])->id
                <<", r" << (k.br_condition.operands[1])->id << ", " << k.name << "_end\n";
             #else
-            ss  <<"    cmp r" << (k.br_condition.operands[0])->id 
+            ss  <<"    cmp r" << (k.br_condition.operands[0])->id
                 <<", r" << (k.br_condition.operands[1])->id << '\n';
             ss  <<"    nop\n";
             ss  <<"    br " << k.br_condition.operation_name << ", "
@@ -854,7 +855,7 @@ public:
             ss << "    b" << k.br_condition.operation_name <<" r" << (k.br_condition.operands[0])->id
                <<", r" << (k.br_condition.operands[1])->id << ", " << k.name << "_start\n";
             #else
-            ss  <<"    cmp r" << (k.br_condition.operands[0])->id 
+            ss  <<"    cmp r" << (k.br_condition.operands[0])->id
                 <<", r" << (k.br_condition.operands[1])->id << '\n';
             ss  <<"    nop\n";
             ss  <<"    br " << k.br_condition.operation_name << ", "
@@ -972,7 +973,7 @@ public:
         {
             auto & iname =  ins->name;
             str::lower_case(iname);
-            DOUT("decomposing instruction " << iname << "...");            
+            DOUT("decomposing instruction " << iname << "...");
             auto & iopers = ins->operands;
             int iopers_count = iopers.size();
             auto itype = ins->type();
@@ -1068,7 +1069,7 @@ public:
                     }
                 }
             }
-        }        
+        }
 
         /*
         cc_light_eqasm_program_t decomposed;
@@ -1423,7 +1424,7 @@ private:
         ql::utils::write_file(cs_filename, control_store.str());
 
         std::string im_filename = ql::options::get("output_dir") + "/qisa_opcodes.qmap";
-        IOUT("writing qisa instruction file to '" << im_filename << "' ...");        
+        IOUT("writing qisa instruction file to '" << im_filename << "' ...");
         ql::utils::write_file(im_filename, opcode_ss.str());
     }
 

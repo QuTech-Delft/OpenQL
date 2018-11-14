@@ -12,7 +12,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include <ql/arch/cbox_eqasm_compiler.h>
+#include <ql/arch/cbox/cbox_eqasm_compiler.h>
 
 namespace ql
 {
@@ -36,7 +36,7 @@ namespace ql
       typedef std::string              color_t;
       typedef std::vector<std::string> channels_t;
 
-      typedef enum 
+      typedef enum
       {
          __center_pos__,
          __top_pos__   ,
@@ -80,7 +80,7 @@ namespace ql
             }
 
             /**
-             * add trace 
+             * add trace
              */
             void add_trace(channel_t channel, size_t start, size_t end, std::string label="", color_t color= "#EEEEEE", position_t pos = __center_pos__)
             {
@@ -102,8 +102,8 @@ namespace ql
             void dump(std::string file_name="")
             {
                std::stringstream ss;
-               // chart properties 
-               ss << "{\"chart\":" << charts() << ",\n"; 
+               // chart properties
+               ss << "{\"chart\":" << charts() << ",\n";
                // categories
                ss << start_categories() << "\n";
                ss << categories() << "\n";
@@ -115,10 +115,10 @@ namespace ql
                size_t sz = traces.size()-1;
                for (instruction_trace_t t : traces)
                {
-                  json j; 
+                  json j;
                   to_json(j,t);
                   ss << j << (sz ? "," : "");
-                  sz--; 
+                  sz--;
                }
                ss << "]}}\n";  // end
                std::string trace_data = ss.str();
@@ -128,7 +128,7 @@ namespace ql
                   utils::write_file(file_name,trace_data);
             }
 
-            void to_json(json& j, const instruction_trace_t& t) 
+            void to_json(json& j, const instruction_trace_t& t)
             {
                j = {
                   { "processid" , std::string(channels.at(t.channel)) },
@@ -147,18 +147,18 @@ namespace ql
             std::string format_time(size_t time)
             {
                std::stringstream ss;
-               size_t hh = time/(3600); 
-               size_t mn = (time%(3600))/60; 
+               size_t hh = time/(3600);
+               size_t mn = (time%(3600))/60;
                size_t sc = time%60;
-               ss << std::setfill('0') << std::setw(2) << hh << ':' 
-                  << std::setfill('0') << std::setw(2) << mn << ':' 
+               ss << std::setfill('0') << std::setw(2) << hh << ':'
+                  << std::setfill('0') << std::setw(2) << mn << ':'
                   << std::setfill('0') << std::setw(2) << sc;
                return ss.str();
             }
 
             json charts()
             {
-               json js = { 
+               json js = {
                   { "dateformat" , "dd/mm/yyyy" },
                   { "outputdateformat" , "ss" },
                   { "caption" , "OpenQL Quantum Instructions Schedule" },
@@ -184,9 +184,9 @@ namespace ql
                   "}]" <<
                   "},{" <<
                   "\"align\": \"left\"," <<
-                  "\"category\": ["; 
+                  "\"category\": [";
                return ss.str();
-            } 
+            }
 
             std::string categories()
             {
@@ -240,4 +240,4 @@ namespace ql
 }
 
 #endif // QL_INSTRUCTION_SCHEDULER_H
- 
+
