@@ -12,11 +12,11 @@
 
 // test qwg resource constraints mapping
 void
-test_qwg(std::string v, std::string mapopt, std::string initialplaceopt)
+test_qwg(std::string v, std::string mapopt, std::string initialplaceopt, std::string mapusemovesopt)
 {
     int n = 2;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -32,16 +32,17 @@ test_qwg(std::string v, std::string mapopt, std::string initialplaceopt)
     prog.add(k);
     ql::options::set("mapper", mapopt);
     ql::options::set("initialplace", initialplaceopt);
+    ql::options::set("mapusemoves", mapusemovesopt);
     prog.compile( );
 }
 
 // demo single dimension resource constraint representation simple
 void
-test_singledim(std::string v, std::string mapopt, std::string initialplaceopt)
+test_singledim(std::string v, std::string mapopt, std::string initialplaceopt, std::string mapusemovesopt)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -67,16 +68,17 @@ test_singledim(std::string v, std::string mapopt, std::string initialplaceopt)
     prog.add(k);
     ql::options::set("mapper", mapopt);
     ql::options::set("initialplace", initialplaceopt);
+    ql::options::set("mapusemoves", mapusemovesopt);
     prog.compile( );
 }
 
 // test edge resource constraints mapping
 void
-test_edge(std::string v, std::string mapopt, std::string initialplaceopt)
+test_edge(std::string v, std::string mapopt, std::string initialplaceopt, std::string mapusemovesopt)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -92,17 +94,18 @@ test_edge(std::string v, std::string mapopt, std::string initialplaceopt)
     prog.add(k);
     ql::options::set("mapper", mapopt);
     ql::options::set("initialplace", initialplaceopt);
+    ql::options::set("mapusemoves", mapusemovesopt);
     prog.compile( );
 }
 
 // test detuned_qubits resource constraints mapping
 // no swaps generated
 void
-test_detuned(std::string v, std::string mapopt, std::string initialplaceopt)
+test_detuned(std::string v, std::string mapopt, std::string initialplaceopt, std::string mapusemovesopt)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -124,16 +127,17 @@ test_detuned(std::string v, std::string mapopt, std::string initialplaceopt)
     prog.add(k);
     ql::options::set("mapper", mapopt);
     ql::options::set("initialplace", initialplaceopt);
+    ql::options::set("mapusemoves", mapusemovesopt);
     prog.compile( );
 }
 
 // one cnot with operands that are neighbors in s7
 void
-test_oneNN(std::string v, std::string mapopt, std::string initialplaceopt)
+test_oneNN(std::string v, std::string mapopt, std::string initialplaceopt, std::string mapusemovesopt)
 {
     int n = 3;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -155,16 +159,17 @@ test_oneNN(std::string v, std::string mapopt, std::string initialplaceopt)
 
     ql::options::set("mapper", mapopt);
     ql::options::set("initialplace", initialplaceopt);
+    ql::options::set("mapusemoves", mapusemovesopt);
     prog.compile( );
 }
 
 // all cnots with operands that are neighbors in s7
 void
-test_manyNN(std::string v, std::string mapopt, std::string initialplaceopt)
+test_manyNN(std::string v, std::string mapopt, std::string initialplaceopt, std::string mapusemovesopt)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -199,16 +204,17 @@ test_manyNN(std::string v, std::string mapopt, std::string initialplaceopt)
 
     ql::options::set("mapper", mapopt);
     ql::options::set("initialplace", initialplaceopt);
+    ql::options::set("mapusemoves", mapusemovesopt);
     prog.compile( );
 }
 
 // one cnot with operands that are at distance 2 in s7
 void
-test_oneD2(std::string v, std::string mapopt, std::string initialplaceopt)
+test_oneD2(std::string v, std::string mapopt, std::string initialplaceopt, std::string mapusemovesopt)
 {
     int n = 4;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -230,16 +236,17 @@ test_oneD2(std::string v, std::string mapopt, std::string initialplaceopt)
 
     ql::options::set("mapper", mapopt);
     ql::options::set("initialplace", initialplaceopt);
+    ql::options::set("mapusemoves", mapusemovesopt);
     prog.compile( );
 }
 
 // one cnot with operands that are at distance 4 in s7
 void
-test_oneD4(std::string v, std::string mapopt, std::string initialplaceopt)
+test_oneD4(std::string v, std::string mapopt, std::string initialplaceopt, std::string mapusemovesopt)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -261,17 +268,18 @@ test_oneD4(std::string v, std::string mapopt, std::string initialplaceopt)
 
     ql::options::set("mapper", mapopt);
     ql::options::set("initialplace", initialplaceopt);
+    ql::options::set("mapusemoves", mapusemovesopt);
     prog.compile( );
 }
 
 // all possible cnots in s7, in lexicographic order
 // requires many swaps
 void
-test_allD(std::string v, std::string mapopt, std::string initialplaceopt)
+test_allD(std::string v, std::string mapopt, std::string initialplaceopt, std::string mapusemovesopt)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -290,6 +298,7 @@ test_allD(std::string v, std::string mapopt, std::string initialplaceopt)
 
     ql::options::set("mapper", mapopt);
     ql::options::set("initialplace", initialplaceopt);
+    ql::options::set("mapusemoves", mapusemovesopt);
     prog.compile( );
 }
 
@@ -298,11 +307,11 @@ test_allD(std::string v, std::string mapopt, std::string initialplaceopt)
 // - from low distance to high distance
 // - each time as much as possible in opposite sides of the circuit
 void
-test_allDopt(std::string v, std::string mapopt, std::string initialplaceopt)
+test_allDopt(std::string v, std::string mapopt, std::string initialplaceopt, std::string mapusemovesopt)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -382,6 +391,7 @@ test_allDopt(std::string v, std::string mapopt, std::string initialplaceopt)
 
     ql::options::set("mapper", mapopt);
     ql::options::set("initialplace", initialplaceopt);
+    ql::options::set("mapusemoves", mapusemovesopt);
     prog.compile( );
 }
 
@@ -389,11 +399,11 @@ test_allDopt(std::string v, std::string mapopt, std::string initialplaceopt)
 // matches intel NISQ application
 // tests initial placement
 void
-test_string(std::string v, std::string mapopt, std::string initialplaceopt)
+test_string(std::string v, std::string mapopt, std::string initialplaceopt, std::string mapusemovesopt)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -419,16 +429,17 @@ test_string(std::string v, std::string mapopt, std::string initialplaceopt)
 
     ql::options::set("mapper", mapopt);
     ql::options::set("initialplace", initialplaceopt);
+    ql::options::set("mapusemoves", mapusemovesopt);
     prog.compile( );
 }
 
 // simple kernel originating from two kernel example of daniel
 // will be modified to two kernels when inter kernel control flow is supported
 void
-test_daniel(std::string v, std::string mapopt, std::string initialplaceopt)
+test_daniel(std::string v, std::string mapopt, std::string initialplaceopt, std::string mapusemovesopt)
 {
     int n = 2;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -448,6 +459,7 @@ test_daniel(std::string v, std::string mapopt, std::string initialplaceopt)
 
     ql::options::set("mapper", mapopt);
     ql::options::set("initialplace", initialplaceopt);
+    ql::options::set("mapusemoves", mapusemovesopt);
     prog.compile( );
 }
 
@@ -455,17 +467,18 @@ test_daniel(std::string v, std::string mapopt, std::string initialplaceopt)
 // because it caused use of a location that, before mapping heuristic was started, wasn't assigned to a used virtual qubit
 // i.e. a location that didn't appear in the v2r map as location where the v2r is the initial map of the heuristic
 void
-test_daniel2(std::string v, std::string mapopt, std::string initialplaceopt)
+test_daniel2(std::string v, std::string mapopt, std::string initialplaceopt, std::string mapusemovesopt)
 {
     int n = 6;
-    std::string prog_name = "4gt12_v1_89";
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_initplace=" + initialplaceopt + "_mapusemoves=" + mapusemovesopt;
     float sweep_points[] = { 1, 2 };
 
     ql::quantum_platform starmon("starmon", "constraints_configuration_quantumsim_sc17.json");
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, n);
 
-    ql::quantum_kernel k("4gt12_v1_89", starmon, n, 0);
+    ql::quantum_kernel k(kernel_name, starmon, n, 0);
 
     k.gate("x",0);
     k.gate("cnot",4,0);
@@ -707,6 +720,7 @@ test_daniel2(std::string v, std::string mapopt, std::string initialplaceopt)
 
     ql::options::set("mapper", mapopt);
     ql::options::set("initialplace", initialplaceopt);
+    ql::options::set("mapusemoves", mapusemovesopt);
     prog.compile( );
 }
 
@@ -716,61 +730,63 @@ int main(int argc, char ** argv)
     ql::options::set("scheduler", "ALAP");
     ql::options::set("mapdecomposer", "yes");   // always decompose to primitives
 
-//  test_singledim("singledim", "minextendrc", "yes");
+//  test_singledim("singledim", "minextendrc", "yes", "no");
 
-//  test_qwg("qwg", "minextendrc", "yes");
-//  test_edge("edge", "minextendrc", "yes");
-//  test_detuned("detuned", "minextendrc", "yes");
+//  test_qwg("qwg", "minextendrc", "yes", "no");
+//  test_edge("edge", "minextendrc", "yes", "no");
+//  test_detuned("detuned", "minextendrc", "yes", "no");
 
-//  test_oneNN("oneNN", "base", "yes");
-//  test_oneNN("oneNN", "minextend", "yes");
-//  test_oneNN("oneNN", "minextendrc", "no");
-//  test_oneNN("oneNN", "minextendrc", "yes");
+//  test_oneNN("oneNN", "base", "yes", "no");
+//  test_oneNN("oneNN", "minextend", "yes", "no");
+//  test_oneNN("oneNN", "minextendrc", "no", "no");
+//  test_oneNN("oneNN", "minextendrc", "yes", "no");
 
-//  test_manyNN("manyNN", "base", "yes");
-//  test_manyNN("manyNN", "minextend", "yes");
-//  test_manyNN("manyNN", "minextendrc", "no");
-//  test_manyNN("manyNN", "minextendrc", "yes");
+//  test_manyNN("manyNN", "base", "yes", "no");
+//  test_manyNN("manyNN", "minextend", "yes", "no");
+//  test_manyNN("manyNN", "minextendrc", "no", "no");
+//  test_manyNN("manyNN", "minextendrc", "yes", "no");
     
-//  test_daniel("daniel", "minextendrc", "yes");
-//  test_daniel("daniel", "minextendrc", "no");
-//  test_daniel2("daniel2", "minextendrc", "yes");
-  test_daniel2("daniel2", "minextendrc", "no");
+//  test_daniel("daniel", "minextendrc", "yes", "no");
+//  test_daniel("daniel", "minextendrc", "no", "no");
+  test_daniel2("daniel2", "minextendrc", "no", "no");
+  test_daniel2("daniel2", "minextendrc", "no", "yes");
+//  test_daniel2("daniel2", "minextendrc", "yes", "no");
+//  test_daniel2("daniel2", "minextendrc", "yes", "yes");
 
-//  test_oneD2("oneD2", "base", "no");
-//  test_oneD2("oneD2", "base", "yes");
-//  test_oneD2("oneD2", "minextend", "no");
-//  test_oneD2("oneD2", "minextend", "yes");
-//  test_oneD2("oneD2", "minextendrc", "no");
-//  test_oneD2("oneD2", "minextendrc", "yes");
+//  test_oneD2("oneD2", "base", "no", "no");
+//  test_oneD2("oneD2", "base", "yes", "no");
+//  test_oneD2("oneD2", "minextend", "no", "no");
+//  test_oneD2("oneD2", "minextend", "yes", "no");
+//  test_oneD2("oneD2", "minextendrc", "no", "no");
+//  test_oneD2("oneD2", "minextendrc", "yes", "no");
 
-//  test_oneD4("oneD4", "base", "no");
-//  test_oneD4("oneD4", "base", "yes");
-//  test_oneD4("oneD4", "minextend", "no");
-//  test_oneD4("oneD4", "minextend", "yes");
-//  test_oneD4("oneD4", "minextendrc", "no");
-//  test_oneD4("oneD4", "minextendrc", "yes");
+//  test_oneD4("oneD4", "base", "no", "no");
+//  test_oneD4("oneD4", "base", "yes", "no");
+//  test_oneD4("oneD4", "minextend", "no", "no");
+//  test_oneD4("oneD4", "minextend", "yes", "no");
+//  test_oneD4("oneD4", "minextendrc", "no", "no");
+//  test_oneD4("oneD4", "minextendrc", "yes", "no");
 
-//  test_string("string", "base", "no");
-//  test_string("string", "base", "yes");
-//  test_string("string", "minextend", "no");
-//  test_string("string", "minextend", "yes");
-//  test_string("string", "minextendrc", "no");
-//  test_string("string", "minextendrc", "yes");
+//  test_string("string", "base", "no", "no");
+//  test_string("string", "base", "yes", "no");
+//  test_string("string", "minextend", "no", "no");
+//  test_string("string", "minextend", "yes", "no");
+//  test_string("string", "minextendrc", "no", "no");
+//  test_string("string", "minextendrc", "yes", "no");
 
-//  test_allD("allD", "base", "no");
-//  test_allD("allD", "base", "yes");
-//  test_allD("allD", "minextend", "no");
-//  test_allD("allD", "minextend", "yes");
-//  test_allD("allD", "minextendrc", "no");
-//  test_allD("allD", "minextendrc", "yes");
+//  test_allD("allD", "base", "no", "no");
+//  test_allD("allD", "base", "yes", "no");
+//  test_allD("allD", "minextend", "no", "no");
+//  test_allD("allD", "minextend", "yes", "no");
+//  test_allD("allD", "minextendrc", "no", "no");
+//  test_allD("allD", "minextendrc", "yes", "no");
 
-//  test_allDopt("allDopt", "base", "no");
-//  test_allDopt("allDopt", "base", "yes");
-//  test_allDopt("allDopt", "minextend", "no");
-//  test_allDopt("allDopt", "minextend", "yes");
-//  test_allDopt("allDopt", "minextendrc", "no");
-//  test_allDopt("allDopt", "minextendrc", "yes");
+//  test_allDopt("allDopt", "base", "no", "no");
+//  test_allDopt("allDopt", "base", "yes", "no");
+//  test_allDopt("allDopt", "minextend", "no", "no");
+//  test_allDopt("allDopt", "minextend", "yes", "no");
+//  test_allDopt("allDopt", "minextendrc", "no", "no");
+//  test_allDopt("allDopt", "minextendrc", "yes", "no");
 
     return 0;
 }

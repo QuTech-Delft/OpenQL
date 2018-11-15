@@ -14,13 +14,6 @@
 #include "ql/arch/cc_light_resource_manager.h"
 #include "ql/gate.h"
 
-void assert_fail(const char *f, int l, const char *s)
-{
-    EOUT("assert " << s << " failed in file " << f << " at line " << l);
-    throw ql::exception("assert failed",false);
-}
-#define MapperAssert(condition)   { if (!(condition)) { assert_fail(__FILE__, __LINE__, #condition); } }
-
 // Note on the use of constructors and Init functions for classes of the mapper
 // -----------------------------------------------------------------------------
 // Almost all classes of the mapper have one or more members that require initialization
@@ -34,6 +27,12 @@ void assert_fail(const char *f, int l, const char *s)
 // Construction of skeleton objects requires the used classes to provide such (non-parameterized) constructors;
 // therefore, such a constructor was added to class resource_manager_t in cc_light_resource_manager.h
 
+void assert_fail(const char *f, int l, const char *s)
+{
+    EOUT("assert " << s << " failed in file " << f << " at line " << l);
+    throw ql::exception("assert failed",false);
+}
+#define MapperAssert(condition)   { if (!(condition)) { assert_fail(__FILE__, __LINE__, #condition); } }
 
 // =========================================================================================
 // Virt2Real: map of a virtual qubit index to its real qubit index
@@ -97,7 +96,7 @@ size_t& operator[] (size_t v)
 }
 
 // r0 and r1 are real qubit indices
-// after a swap(r0,r1) gate application their states were exchanged,
+// after execution of a swap(r0,r1), their states were exchanged,
 // so when v0 was in r0 and v1 was in r1, then v0 is now in r1 and v1 is in r0
 // update v2r accordingly
 void Swap(size_t r0, size_t r1)
@@ -141,7 +140,7 @@ void Print(std::string s)
 
 
 // =========================================================================================
-// FreeCycle: map for each real qubit to the first cycle that it is free to use
+// FreeCycle: map each real qubit to the first cycle that it is free for use
 //
 // in scheduling gates, qubit dependencies cause latencies
 // for each real qubit, the first cycle that it is free to use is the cycle that the
@@ -217,8 +216,8 @@ size_t Depth()
 }
 #endif
 
-// max of the FreeCycle map
-// equals the max of all entries
+// max of the FreeCycle map equals the max of all entries;
+// this is the current depth of the circuit
 size_t Max()
 {
     size_t  maxFreeCycle = 0;
@@ -244,6 +243,9 @@ void Print(std::string s)
     // rm.Print("... in FreeCycle: ");
 }
 
+// get the gate parameters that need to be passed to the resource manager;
+// it would have been nicer if they would have been made available by the platform
+// directly to the resource manager since this function makes the mapper dependent on cc_light
 static void GetGateParameters(std::string id, ql::quantum_platform *platformp, std::string& operation_name, std::string& operation_type, std::string& instruction_type)
 {
     if ( !platformp->instruction_settings[id]["cc_light_instr"].is_null() )
@@ -332,7 +334,7 @@ void AddNoRc(ql::gate *g, size_t startCycle)
     }
 }
 
-// schedule gate g in the FreeCycle and resource map
+// schedule gate g in the FreeCycle and resource maps
 // gate operands are real qubit indices
 // both the FreeCycle map and the resource map are updated
 void Add(ql::gate *g, size_t startCycle)
@@ -386,10 +388,11 @@ void Add(ql::gate *g, size_t startCycle)
 // Then the overhead of the list of gates and the cycle map could be reduced to constant.
 // Experimentation has shown that e.g. a max cycle difference of 100 where swaps take 10 cycles,
 // is a sufficiently large window to limit the reduction in performance of the mapper;
-// when scheduling a gate (or swap) in the past, for optimal performance it should never be
+// i.e. when using a Past window when scheduling a gate (or swap) in the past,
+// to avoid this performance reduction this gate should never end up
 // at the start of the list (i.e. at a cycle number before the first cycle of the current Past)
 // because then the Past window would be too small and scheduling would be negatively impacted.
-// It is sufficient when the first cycle of Past is smaller/equal than the minimum value in FreeCycle.
+// It is sufficient when the first cycle of Past is smaller or equal than the minimum value in FreeCycle.
 class Past
 {
 private:
@@ -399,15 +402,16 @@ private:
     ql::quantum_platform   *platformp;  // platform describing resources for scheduling
     std::map<std::string,ql::custom_gate*> *gate_definitionp; // gate definitions from platform's .json file
                                         // to be able to create new gates
-    std::vector<size_t>     usecount;   // usecount[virtual qubit index] -> use of qubit in circuit
+    std::vector<size_t>     usecount;   // usecount[virtual qubit index] -> number of uses of virtual qubit in circuit
 
     Virt2Real               v2r;        // Virt2Real map applying to this Past
     FreeCycle               fc;         // FreeCycle map applying to this Past
+    std::vector<bool>       wasinited;  // wasinited[unused virtual qubit index] -> virtual qubit is in |+> state
 
     typedef ql::gate *      gate_p;
-    std::list<gate_p>       waitinglg;  // list of gates in this Past, top order, waiting to be scheduled in
+    std::list<gate_p>       waitinglg;  // list of gates in this Past, topological order, waiting to be scheduled in
     std::list<gate_p>       lg;         // list of gates in this Past, scheduled by their (start) cycle values
-    size_t                  nswapsadded;// number of swaps (incl. moves) added to this past
+    size_t                  nswapsadded;// number of swaps (including moves) added to this past
     size_t                  nmovesadded;// number of moves added to this past
     std::map<gate_p,size_t> cycle;      // gate to cycle map, startCycle value of each past gatecycle[gp]
     ql::circuit             *outCircp;  // output stream after past
@@ -423,17 +427,22 @@ void Init(ql::quantum_platform *p)
     nq = platformp->qubit_number;
     ct = platformp->cycle_time;
     gate_definitionp = &platformp->instruction_map;
-    usecount.resize(nq, 0);
+    usecount.resize(nq, 0);     // until InitUseCount, none of the virtual qubits is used; after that, constant
 
-    v2r.Init(nq);
-    fc.Init(platformp);
-    waitinglg.clear();  // waitinglg is initialized to empty list
-    lg.clear();         // lg is initialized to empty list
-    nswapsadded = 0;
-    nmovesadded = 0;
-    cycle.clear();      // cycle is initialized to empty map
+    v2r.Init(nq);               // v2r starts off in trivial (1 to 1) mapping, is updated after nonNN gate
+    fc.Init(platformp);         // fc starts off with all qubits free, is updated after schedule of each gate
+    wasinited.resize(nq, false);// wasinited indicates no qubits were initialized yet; addSwaps adds initialization
+    waitinglg.clear();          // no gates pending to be scheduled in; Add of gate to past entered here
+    lg.clear();                 // no gates scheduled yet in this past; after schedule of gate, it gets here
+    nswapsadded = 0;            // no swaps or moves added yet to this past; AddSwap adds one here
+    nmovesadded = 0;            // no moves added yet to this past; AddSwap may add one here
+    cycle.clear();              // no gates have cycles assigned in this past; scheduling gate updates this
 }
 
+// compute usecount (of virtual qubits)
+// doesn't change while mapping the circuit;
+// just initializations of the unused qubits are inserted (see wasinited)
+// so afterwards, more real qubits may be used than virtual qubits were used before mapping
 void InitUseCount(ql::circuit& circ)
 {
     for ( auto& gp : circ )
@@ -443,10 +452,16 @@ void InitUseCount(ql::circuit& circ)
             usecount[v] += 1;
         }
     }
+
+    // and optionally print it in DOUT
+    std::stringstream ss;
+    ss << "[";
     for ( auto c : usecount )
     {
-        DOUT("usecount: " << c);
+        ss << c << " ";;
     }
+    ss << "]";
+    DOUT("usecount: " << ss.str());
 }
 
 void Print(std::string s)
@@ -466,6 +481,7 @@ void Output(ql::circuit& circ)
     outCircp = &circ;
 }
 
+// initial placement wants to use the v2r info directly
 void GetV2r(Virt2Real& argv2r)
 {
     argv2r = v2r;
@@ -476,7 +492,7 @@ void SetV2r(Virt2Real& newv2r)
     v2r = newv2r;
 }
 
-// all gates in past.waitinglg are scheduled into past.lg
+// all gates in past.waitinglg are scheduled here into past.lg
 // note that these gates all are mapped and so have real operand qubit indices
 // the FreeCycle map reflects for each qubit the first free cycle
 // all new gates, now in waitinglist, get such a cycle assigned below, increased gradually, until definitive
@@ -498,8 +514,10 @@ void Schedule()
         // the gates of each are added to the back of the list in the order of execution.
         // So, using AddNoRc, the tryfc (try FreeCycle map) reflects the earliest startCycle per qubit,
         // and so dependences are respected, so we can find the gate that can start first ...
-        // This is really a hack to avoid the construction of a dependence graph.
         // We use a copy of fc and not fc itself, since the latter reflects the really scheduled gates.
+        //
+        // This search is really a hack to avoid
+        // the construction of a dependence graph and a set of schedulable gates
         FreeCycle   tryfc = fc;
         for (auto & trygp : waitinglg)
         {
@@ -516,11 +534,11 @@ void Schedule()
         // add this gate to the maps, scheduling the gate (doing the cycle assignment)
         // DOUT("... add " << gp->qasm() << " startcycle=" << startCycle << " cycles=" << ((gp->duration+ct-1)/ct) );
         fc.Add(gp, startCycle);
-        cycle[gp] = startCycle;
-        gp->cycle = startCycle;
+        cycle[gp] = startCycle; // cycle[gp] is private to this past but gp->cycle is private to gp
+        gp->cycle = startCycle; // so gp->cycle gets assigned for each path' Past and finally definitively for mainPast
         // DOUT("... set " << gp->qasm() << " at cycle " << startCycle);
     
-        // insert gate in lg, the list of gates, in cycle order, and in this order, as late as possible
+        // insert gate in lg, the list of gates, in cycle order, and inside this order, as late as possible
         //
         // reverse iterate because the insertion is near the end of the list
         // insert so that cycle values are in order afterwards and the new one is nearest to the end
@@ -531,7 +549,7 @@ void Schedule()
             {
                 // base because insert doesn't work with reverse iteration
                 // rigp.base points after the element that rigp is pointing at
-                // which is luckly because insert only inserts before the given element
+                // which is lucky because insert only inserts before the given element
                 // the end effect is inserting after rigp
                 lg.insert(rigp.base(), gp);
                 break;
@@ -551,7 +569,38 @@ void Schedule()
     // Print("Schedule:");
 }
 
-// add the mapped gate to the current past's waiting list
+// check whether scheduling initcirc is for free, assuming that scheduling of circ follows it
+bool IsForFree(ql::circuit& initcirc, ql::circuit& circ)
+{
+     size_t initmax;
+     FreeCycle   tryfcinit = fc;
+     for (auto & trygp : initcirc)
+     {
+         size_t tryStartCycle = tryfcinit.StartCycle(trygp);
+         tryfcinit.AddNoRc(trygp, tryStartCycle);
+     }
+     for (auto & trygp : circ)
+     {
+         size_t tryStartCycle = tryfcinit.StartCycle(trygp);
+         tryfcinit.AddNoRc(trygp, tryStartCycle);
+     }
+     initmax = tryfcinit.Max();
+
+     size_t max;
+     FreeCycle   tryfc = fc;
+     for (auto & trygp : circ)
+     {
+         size_t tryStartCycle = tryfc.StartCycle(trygp);
+         tryfc.AddNoRc(trygp, tryStartCycle);
+     }
+     max = tryfc.Max();
+
+     DOUT("... scheduling init+circ => depth " << initmax << " while scheduling just circ => depth " << max);
+     return (initmax <= max);
+}
+
+// add the mapped gate to the current past
+// means adding it to the current past's waiting list, waiting for it to be scheduled later
 void Add(gate_p gp)
 {
     waitinglg.push_back(gp);
@@ -828,7 +877,6 @@ bool new_param_decomposed_gate_if_available(std::string gate_name, std::vector<s
 //      "cz" in gate_definition as non-composite gate
 // (default gate is not supported)
 // if not, then return false else true
-
 bool new_gate(std::string gname, std::vector<size_t> qubits, ql::circuit& circ, size_t duration=0, double angle = 0.0)
 {
     bool added = false;
@@ -883,6 +931,8 @@ bool new_gate(std::string gname, std::vector<size_t> qubits, ql::circuit& circ, 
     // DOUT("new: ");
     return added;
 }
+// end copy of the kernel's new_gate interface
+// ===================
 
 // return number of swaps added to this past
 size_t NumberOfSwapsAdded()
@@ -896,74 +946,111 @@ size_t NumberOfMovesAdded()
     return nmovesadded;
 }
 
-// generate a single swap with real operands and add it to the current past's waiting list
-// note that the swap may be implemented by a series of gates
-void AddSwap(size_t r0, size_t r1)
+void new_gate_exception(std::string s)
 {
-    int r0_isunused;
-    int r1_isunused;
+    EOUT("unknown gate '" << s << "'");
+    throw ql::exception("[x] error : ql::mapper::new_gate() : gate is not supported by the target platform !",false);
+}
+
+// generate a single swap/move with real operands and add it to the current past's waiting list;
+// note that the swap/move may be implemented by a series of gates (circuit circ below),
+// and that a swap/move essentially is a commutative operation, interchanging the states of the two qubits;
+// a move is implemented by 2 CNOTs, while a swap by 3 CNOTs, provided the target qubit is in |+> state;
+// so, when one of the operands is the current location of an unused virtual qubit,
+// use a move with that location as 2nd operand,
+// after first having initialized the target qubit in |+> state when that has not been done already;
+// but this initialization must not extend the depth so can only be done when cycles for it are for free
+void AddSwap(size_t r0, size_t r1, bool ismainpast)
+{
+    size_t  v0;
+    size_t  v1;
     bool created = false;
     ql::circuit circ;
 
-    DOUT("... adding/trying swap(q" << r0 << ",q" << r1 << ") ... " );
+    DOUT("... adding/trying swap(q" << r0 << ",q" << r1 << ") in mainpast?=" << ismainpast << " ... " );
     v2r.Print("... adding swap/move");
 
-    r0_isunused = ( usecount[v2r.GetVirt(r0)] == 0 );
-    DOUT("... r0_isunused= " << r0_isunused);
-    r1_isunused = ( usecount[v2r.GetVirt(r1)] == 0 );
-    DOUT("... r1_isunused= " << r1_isunused);
-    if (r0_isunused)
+    v0 = v2r.GetVirt(r0);
+    v1 = v2r.GetVirt(r1);
+    DOUT("... r0_isunused=" << (usecount[v0]==0) << " r1_isunused=" << (usecount[v1]==0));
+    DOUT("... r0=" << r0 << " holds virtual " << v0 << " and r1=" << r1 << " holds virtual " << v1);
+    std::string mapusemovesopt = ql::options::get("mapusemoves");
+    if ("yes" == mapusemovesopt && (usecount[v0]==0 || usecount[v1]==0))
     {
-        MapperAssert (!r1_isunused);
-        created = new_gate("move_real", {r1,r0}, circ);    // gates implementing move returned in circ
-        if (!created)
+        if (usecount[v0]==0)
         {
-            created = new_gate("move", {r1,r0}, circ);
-            if (!created)
-            {
-                EOUT("unknown gates 'move(q" << r1 << ",q" << r0 << ")' and 'move_real(...)'");
-                throw ql::exception("[x] error : ql::mapper::new_gate() : the gates 'move' and 'move_real' are not supported by the target platform !",false);
-            }
+            // interchange r0/v0 and r1/v1, so that r1 (right-hand operand of move) will contain v1, the unused one
+            size_t  tmp = r1; r1 = r0; r0 = tmp;
+                    tmp = v1; v1 = v0; v0 = tmp;
         }
-        nmovesadded++;                       // for reporting at the end
-        DOUT("... move(q" << r1 << ",q" << r0 << ") (i.e. reversed)");
-    }
-    else if (r1_isunused)
-    {
-        MapperAssert (!r0_isunused);
+        // r1 (containing v1) is the unused one from now on
+
+        // first (optimistically) create the move circuit
         created = new_gate("move_real", {r0,r1}, circ);    // gates implementing move returned in circ
         if (!created)
         {
             created = new_gate("move", {r0,r1}, circ);
-            if (!created)
-            {
-                EOUT("unknown gates 'move(q" << r0 << ",q" << r1 << ")' and 'move_real(...)'");
-                throw ql::exception("[x] error : ql::mapper::new_gate() : the gates 'move' and 'move_real' are not supported by the target platform !",false);
-            }
+            if (!created) new_gate_exception("move or move_real");
         }
-        nmovesadded++;                       // for reporting at the end
-        DOUT("... move(q" << r0 << ",q" << r1 << ")");
+
+        if (wasinited[v1] == false)
+        {
+            // v1 is not in |+> state, generate in initcirc the circuit to do so
+            DOUT("... initializing unused virtual " << v1 << " (real " << r1 << ") to |+> state in mainpast=" << ismainpast);
+            ql::circuit initcirc;
+            created = new_gate("prepz", {r1}, initcirc);
+            if (created)
+            {
+                created = new_gate("h", {r1}, initcirc);
+                if (!created) new_gate_exception("h");
+            }
+            if (!created) new_gate_exception("prepz");
+
+            // when scheduling initcirc+circ extends circuit equally as just circ, commit to it, otherwise abort
+            if (IsForFree(initcirc, circ))
+            {
+                DOUT("... initialization is for free, do it in mainpast=" << ismainpast);
+                // generate initcirc in front of circ by appending circ to initcirc, and then swapping circ/initcirc
+                for (auto& gp : circ)
+                {
+                    initcirc.push_back(gp);
+                }
+                circ.swap(initcirc);
+                wasinited[v1] = true;
+            }
+            else
+            {
+                // undo damage done, will not do move but swap, i.e. nothing created thisfar
+                DOUT("... initialization extends circuit, don't do it in mainpast=" << ismainpast);
+                circ.clear();
+                created = false;    // so continue by generating the swap below
+            }
+            // initcirc getting out-of-scope here so gets destroyed
+        }
+        if (created)
+        {
+            // generate move
+            // move is in circ, optionally with initialization in front of it
+            nmovesadded++;                       // for reporting at the end
+            DOUT("... move(q" << r0 << ",q" << r1 << ") in mainpast=" << ismainpast);
+        }
     }
-    else
+    if (!created)
     {
+        // no move generated so do swap
         created = new_gate("swap_real", {r0,r1}, circ);    // gates implementing swap returned in circ
         if (!created)
         {
             created = new_gate("swap", {r0,r1}, circ);
-            if (!created)
-            {
-                EOUT("unknown gates 'swap(q" << r0 << ",q" << r1 << ")' and 'swap_real(...)'");
-                throw ql::exception("[x] error : ql::mapper::new_gate() : the gates 'swap' and 'swap_real' are not supported by the target platform !",false);
-            }
+            if (!created) new_gate_exception("swap or swap_real");
         }
-        nswapsadded++;                       // for reporting at the end
-        DOUT("... swap(q" << r0 << ",q" << r1 << ")");
+        DOUT("... swap(q" << r0 << ",q" << r1 << ") in mainpast=" << ismainpast);
     }
+    nswapsadded++;                       // for reporting at the end
     for (auto &gp : circ)
     {
         Add(gp);
     }
-
     v2r.Swap(r0,r1);
 }
 
@@ -1056,6 +1143,7 @@ void Flush()
     fc.Init(platformp);
     lg.clear();         // lg is initialized to empty list
     cycle.clear();      // cycle is initialized to empty map
+                        // is ok without windowing, but with window, just delete the ones outside the window
 }
 
 };  // end class Past
@@ -1214,7 +1302,7 @@ void Add2Front(size_t q)
 
 // add swap gates for the current path to the given past
 // this past can be a path-local one or the main past
-void AddSwaps(Past & past)
+void AddSwaps(Past & past, bool ismainpast)
 {
     size_t  fromQ;
     size_t  toQ;
@@ -1223,26 +1311,26 @@ void AddSwaps(Past & past)
     for ( size_t i = 1; i < fromSource.size(); i++ )
     {
         toQ = fromSource[i];
-        past.AddSwap(fromQ, toQ);
+        past.AddSwap(fromQ, toQ, ismainpast);
         fromQ = toQ;
     }
     fromQ = fromTarget[0];
     for ( size_t i = 1; i < fromTarget.size(); i++ )
     {
         toQ = fromTarget[i];
-        past.AddSwap(fromQ, toQ);
+        past.AddSwap(fromQ, toQ, ismainpast);
         fromQ = toQ;
     }
 }
 
-// compute cycle extension of the path relative to the given basePast
+// compute cycle extension of the path relative to the given base past
 // do this by adding the swaps described by the path to a local copy of the past and compare cycles
 // store the extension relative to the base in cycleExtend and return it
 size_t Extend(Past basePast)
 {
     past = basePast;   // explicitly a path-local copy of this basePast!
     // DOUT("... adding swaps for local past ...");
-    AddSwaps(past);
+    AddSwaps(past, false);
     // DOUT("... done adding swaps for local past");
     past.Schedule();
     cycleExtend = past.MaxFreeCycle() - basePast.MaxFreeCycle();
@@ -1298,6 +1386,7 @@ void Split(std::list<NNPath> & reslp)
 }
 
 };  // end class NNPath
+
 
 
 // =========================================================================================
@@ -1408,9 +1497,9 @@ void Init(ql::quantum_platform* p)
     }
 #endif        // debug
 }
-
-
 };  // end class Grid
+
+
 
 // =========================================================================================
 // InitialPlace: initial placement solved as an MIP, mixed integer linear program
@@ -1812,6 +1901,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
 #endif
 
 
+
 // =========================================================================================
 // Mapper: map operands of gates and insert swaps so that two-qubit gate operands are NN
 // all gates must be unary or two-qubit gates
@@ -1970,8 +2060,8 @@ void MapMinExtend(ql::gate* gp)
         MinimalExtendingPath(splitlp, resp);// from all these, find path that minimally extends mainPast
 
         resp.Print("... the minimally extending path with swaps is");
-        resp.AddSwaps(mainPast);    // add swaps, as described by resp, to mainPast
-        mainPast.Schedule();        // and schedule them in
+        resp.AddSwaps(mainPast, true);  // add swaps, as described by resp, to mainPast; indicate this adds to mainPast
+        mainPast.Schedule();            // and schedule them in
     }
 }
 
@@ -1992,7 +2082,7 @@ void MapBase(ql::gate* gp)
             if (dnb < d)
             {
                 // DOUT(" ... distance(real " << n << ", real " << tgt << ")=" << dnb);
-                mainPast.AddSwap(src, n);
+                mainPast.AddSwap(src, n, true);
                 DOUT(" ... adding swap(q" << src << ",q" << n << ")");
                 mainPast.Schedule();
                 // mainPast.Print("mapping after swap");
@@ -2178,7 +2268,7 @@ ql::ir::bundles_t Bundler(ql::circuit& circ)
 
 /**
  * qasm
- * copied and shrunk from develop kernel.h
+ * copied and shrunk from kernel.h
  */
 std::string qasm(ql::circuit& c, size_t nqubits, std::string& name)
 {

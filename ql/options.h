@@ -36,6 +36,7 @@ namespace ql
           opt_name2opt_val["decompose_toffoli"] = "no";
           opt_name2opt_val["mapper"] = "no";
           opt_name2opt_val["initialplace"] = "no";
+          opt_name2opt_val["mapusemoves"] = "no";
           opt_name2opt_val["mapdecomposer"] = "yes";
 
           // add options with default values and list of possible values
@@ -49,6 +50,7 @@ namespace ql
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "MA"}, "Type of decomposition used for toffoli", true);
           app->add_set_ignore_case("--mapper", opt_name2opt_val["mapper"], {"no", "base", "baserc", "minextend", "minextendrc"}, "Mapper heuristic", true);
           app->add_set_ignore_case("--initialplace", opt_name2opt_val["initialplace"], {"no", "yes"}, "Initialplace qubits before mapping", true);
+          app->add_set_ignore_case("--mapusemoves", opt_name2opt_val["mapusemoves"], {"no", "yes"}, "Use unused qubit to move thru", true);
           app->add_set_ignore_case("--mapdecomposer", opt_name2opt_val["mapdecomposer"], {"no", "yes"}, "Decompose after mapper", true);
       }
 
@@ -59,6 +61,7 @@ namespace ql
                     << "scheduler_uniform: " << opt_name2opt_val["scheduler_uniform"] << std::endl
                     << "mapper: "           << opt_name2opt_val["mapper"] << std::endl
                     << "initialplace: "     << opt_name2opt_val["initialplace"] << std::endl
+                    << "mapusemoves: "      << opt_name2opt_val["mapusemoves"] << std::endl
                     << "mapdecomposer: "    << opt_name2opt_val["mapdecomposer"] << std::endl
 	  ;
       }
