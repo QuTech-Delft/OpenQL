@@ -13,8 +13,6 @@
 
 #include "gate.h"
 
-#define __print_circuit__ 0
-
 namespace ql
 {
 
