@@ -29,9 +29,6 @@
 
 namespace ql
 {
-// un-comment it to decompose
-// #define DECOMPOSE
-
 enum class kernel_type_t
 {
     STATIC,
@@ -1023,7 +1020,7 @@ public:
         {
             if ("yes" == scheduler_uniform)
             {
-	        EOUT("Uniform scheduling not supported with ASAP; please turn on ALAP to perform uniform scheduling");
+	        EOUT("Uniform scheduling not supported with ASAP; please turn on ALAP to perform uniform scheduling");     // FIXME: FATAL?
 	    }
 	    else if ("no" == scheduler_uniform)
 	    {
