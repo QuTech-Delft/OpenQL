@@ -60,17 +60,17 @@ namespace ql
             }
             else
             {
-            // write to file
-            std::ofstream file(file_name);
-            if (file.is_open())
-            {
-                IOUT("writing eqasm code (" << eqasm_code.size() << " lines) to '" << file_name << "' ...");
-                for (std::string l : eqasm_code)
-                    file << l << std::endl;
-                file.close();
-            }
-            else
-                EOUT("opening file '" << file_name << "' !");
+                // write to file
+                std::ofstream file(file_name);
+                if (file.is_open())
+                {
+                    IOUT("writing eqasm code (" << eqasm_code.size() << " lines) to '" << file_name << "' ...");
+                    for (std::string l : eqasm_code)
+                        file << l << std::endl;
+                    file.close();
+                }
+                else
+                    EOUT("opening file '" << file_name << "' !");
             }
         }
 
