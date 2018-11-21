@@ -355,6 +355,7 @@ class quantum_program
          return ss.str();
       }
 
+#if OPT_MICRO_CODE
       std::string microcode()
       {
          std::stringstream ss;
@@ -396,6 +397,7 @@ class quantum_program
          ss << "     beq  r3,  r3, loop   # infinite loop";
          return ss.str();
       }
+#endif
 
       void set_platform(quantum_platform & platform)
       {

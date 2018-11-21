@@ -84,6 +84,10 @@ public:
         type = typ;
     }
 
+    /************************************************************************\
+    | Gate shortcuts
+    \************************************************************************/
+
     void identity(size_t qubit)
     {
         gate("identity", {qubit} );
@@ -239,18 +243,18 @@ public:
         switch (id)
         {
         case 0 :
-            break;                                          //  ['I']
+            break;              //  ['I']
         case 1 :
             ry90(qubit);
             rx90(qubit);
-            break;                //  ['Y90', 'X90']
+            break;              //  ['Y90', 'X90']
         case 2 :
             mrx90(qubit);
             mry90(qubit);
             break;              //  ['mX90', 'mY90']
         case 3 :
             rx180(qubit);
-            break;                            //  ['X180']
+            break;              //  ['X180']
         case 4 :
             mry90(qubit);
             mrx90(qubit);
@@ -258,18 +262,18 @@ public:
         case 5 :
             rx90(qubit);
             mry90(qubit);
-            break;               //  ['X90', 'mY90']
+            break;              //  ['X90', 'mY90']
         case 6 :
             ry180(qubit);
-            break;                            //  ['Y180']
+            break;              //  ['Y180']
         case 7 :
             mry90(qubit);
             rx90(qubit);
-            break;               //  ['mY90', 'X90']
+            break;              //  ['mY90', 'X90']
         case 8 :
             rx90(qubit);
             ry90(qubit);
-            break;                //  ['X90', 'Y90']
+            break;              //  ['X90', 'Y90']
         case 9 :
             rx180(qubit);
             ry180(qubit);
@@ -277,34 +281,34 @@ public:
         case 10:
             ry90(qubit);
             mrx90(qubit);
-            break;               //  ['Y90', 'mX90']
+            break;              //  ['Y90', 'mX90']
         case 11:
             mrx90(qubit);
             ry90(qubit);
-            break;               //  ['mX90', 'Y90']
+            break;              //  ['mX90', 'Y90']
         case 12:
             ry90(qubit);
             rx180(qubit);
-            break;               //  ['Y90', 'X180']
+            break;              //  ['Y90', 'X180']
         case 13:
             mrx90(qubit);
-            break;                            //  ['mX90']
+            break;              //  ['mX90']
         case 14:
             rx90(qubit);
             mry90(qubit);
             mrx90(qubit);
-            break; //  ['X90', 'mY90', 'mX90']
+            break;              //  ['X90', 'mY90', 'mX90']
         case 15:
             mry90(qubit);
-            break;                            //  ['mY90']
+            break;              //  ['mY90']
         case 16:
             rx90(qubit);
-            break;                             //  ['X90']
+            break;              //  ['X90']
         case 17:
             rx90(qubit);
             ry90(qubit);
             rx90(qubit);
-            break;   //  ['X90', 'Y90', 'X90']
+            break;              //  ['X90', 'Y90', 'X90']
         case 18:
             mry90(qubit);
             rx180(qubit);
@@ -312,15 +316,15 @@ public:
         case 19:
             rx90(qubit);
             ry180(qubit);
-            break;               //  ['X90', 'Y180']
+            break;              //  ['X90', 'Y180']
         case 20:
             rx90(qubit);
             mry90(qubit);
             rx90(qubit);
-            break;  //  ['X90', 'mY90', 'X90']
+            break;              //  ['X90', 'mY90', 'X90']
         case 21:
             ry90(qubit);
-            break;                             //  ['Y90']
+            break;              //  ['Y90']
         case 22:
             mrx90(qubit);
             ry180(qubit);
@@ -329,11 +333,15 @@ public:
             rx90(qubit);
             ry90(qubit);
             mrx90(qubit);
-            break;  //  ['X90', 'Y90', 'mX90']
+            break;              //  ['X90', 'Y90', 'mX90']
         default:
             break;
         }
     }
+
+    /************************************************************************\
+    | Gate management
+    \************************************************************************/
 
     bool add_default_gate_if_available(std::string gname, std::vector<size_t> qubits,
         std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
@@ -913,6 +921,7 @@ public:
         c.push_back(new ql::classical(operation));
     }
 
+#if OPT_MICRO_CODE
     /**
      * micro code
      */
@@ -931,7 +940,7 @@ public:
         }
         return ss.str();
     }
-
+#endif
 
     void optimize()
     {
@@ -1146,7 +1155,9 @@ public:
         for (std::map<std::string,custom_gate*>::iterator i=gate_definition.begin(); i!=gate_definition.end(); i++)
         {
             COUT("[-] gate '" << i->first << "'");
+#if OPT_MICRO_CODE
             COUT(" |- qumis : \n" << i->second->micro_code());
+#endif
         }
     }
 
@@ -1176,6 +1187,10 @@ public:
     {
         return c;
     }
+
+    /************************************************************************\
+    | Controlled gates
+    \************************************************************************/
 
     void controlled_x(size_t tq, size_t cq)
     {

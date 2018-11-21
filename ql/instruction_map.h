@@ -150,8 +150,10 @@ int load_instructions(std::map<std::string, custom_gate *>& instruction_map, std
         custom_gate * g = new custom_gate(instruction_name);
         g->name = instruction_name; // instr["name"];
         g->parameters = instr["parameters"];
+#if OPT_MICRO_CODE
         ucode_sequence_t ucs = instr["qumis"];
         g->qumis.assign(ucs.begin(), ucs.end());
+#endif
         std::string t = instr["type"];
         instruction_type_t type = (t == "rf" ? rf_t : flux_t );
         g->operation_type = type;
