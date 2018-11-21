@@ -10,7 +10,6 @@
 #include "instruction_map.h"
 #include "optimizer.h"
 #include "circuit.h"
-//#include "transmon.h" FIXME(WJV): unused
 #include "program.h"
 
 #include <fstream>
