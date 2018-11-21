@@ -50,21 +50,6 @@ void set_platform(ql::quantum_platform platform)
     target_platform = platform;
 }
 
-
-/**
- * generate qasm for a give circuit
- */
-std::string qasm(ql::circuit c)
-{
-    std::stringstream ss;
-    for (size_t i=0; i<c.size(); ++i)
-    {
-        ss << c[i]->qasm() << "\n";
-        // COUT(c[i]->qasm());
-    }
-    return ss.str();
-}
-
 }
 
 #endif // OPENQL_H
