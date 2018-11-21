@@ -12,8 +12,6 @@
 
 #include <ql/circuit.h>
 #include <ql/hardware_configuration.h>
-// #include <ql/eqasm_compiler.h>
-// #include <ql/arch/cbox_eqasm_compiler.h>
 
 namespace ql
 {
@@ -27,6 +25,8 @@ typedef enum __ql_platform_t
 
 typedef std::vector<std::string> micro_code_t;
 
+
+#if 0   // FIXME: unused
 /**
  * abstract platform interface (deprecated)
  * should be removed soon
@@ -36,6 +36,7 @@ class platform
 public:
     virtual int compile(circuit& c, std::string file_name, bool optimize=false) = 0;
 };
+#endif
 
 
 /**
@@ -57,9 +58,6 @@ public:
     json                    resources;
     json                    topology;
     json                    aliases;                  // workaround the generic instruction composition
-
-    // ql::eqasm_compiler *      backend_compiler;         // backend compiler
-    // std::vector<ql::custom_gate *> supported_instructions; // supported operation
 
     /**
      * quantum_platform constructor
@@ -94,21 +92,6 @@ public:
         }
         else
             cycle_time = hardware_settings["cycle_time"];
-
-        // FIXME(WJV): now in program.h, cleanup
-        // if (eqasm_compiler_name == "qumis_compiler")
-        // {
-        //    backend_compiler = new ql::arch::cbox_eqasm_compiler();
-        // }
-        // else if (eqasm_compiler_name == "none")
-        // {
-        //    backend_compiler = NULL;
-        // }
-        // else
-        // {
-        //    EOUT("eqasm compiler backend specified in the hardware configuration file is not supported !");
-        //    throw std::exception();
-        // }
     }
 
     /**
