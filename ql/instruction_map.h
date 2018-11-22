@@ -29,8 +29,6 @@ bool format_string(std::string& s);
 void replace_all(std::string &str, std::string seq, std::string rep);
 }
 
-// bool load_instruction_map(std::string file_name, dep_instruction_map_t& imap);
-
 /**
  * load instruction map from a file
  */
