@@ -113,18 +113,11 @@ public:
             if (!ckt.empty()) {
                 auto creg_count = kernel.creg_count;                        // FIXME: also take platform into account. We get qubit_number from JSON
 
-#if 0
-                ql::circuit decomp_ckt;
-                decompose_instructions(ckt, decomp_ckt, platform);          // decompose meta-instructions
-#endif
-
 #if 0   // FIXME: based on old code, disabled in cc_light_scheduler.h
                 // schedule
-//                ql::ir::bundles_t bundles = cc_light_schedule(decomp_ckt, platform, qubit_number, creg_count);
                 ql::ir::bundles_t bundles = cc_light_schedule(ckt, platform, qubit_number, creg_count);
 #else
                 // schedule with platform resource constraints
-//                ql::ir::bundles_t bundles = cc_light_schedule_rc(decomp_ckt, platform, qubit_number, creg_count);
                 // FIXME: we removed decompose_instructions, but can cc_light_schedule_rc live with that? Apparently it's not too bad
                 ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, qubit_number, creg_count);
                 // FIXME: cc_light* is just available here because everything is in header files
@@ -150,7 +143,7 @@ public:
 
     void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform)
     {
-        FATAL("circuit compilation not implemented, because it does not support classical kernel operations");
+        FATAL("Circuit compilation not implemented, because it does not support classical kernel operations");
     }
 
 
@@ -196,6 +189,8 @@ private:
           )
 
         {
+            FATAL("Classical instruction not implemented: " << iname);
+
 #if 0   // FIXME: adapt for CC, this is still CC-light
             ret << iname;
             for(int i=0; i<iopers_count; ++i)
@@ -217,6 +212,7 @@ private:
                  (iname == QASM_GT) || (iname == QASM_LE) || (iname == QASM_GE)
                )
         {
+            FATAL("Classical instruction not implemented: " << iname);
         }
         else
         {
@@ -363,30 +359,8 @@ private:
                                 break;
 
                             case __custom_gate__:
-                            {
-                                size_t  nOperands = instr->operands.size();
-                                size_t  nCoperands = instr->creg_operands.size();
-
-                                // handle readout (NB: extracted from decompose_instructions)
-                                if("readout" == platform.find_instruction_type(iname))   // FIXME: we only use the "readout" instruction_type and don't care about the rest because the terms "mw" and "flux" don't fully cover gate functionality. It would be nice if custom gates could mimic ql::gate_type_t
-                                {
-                                    DOUT("    readout instruction ");
-                                    if(nCoperands != 1) {
-                                        FATAL("Readout instruction requires exactly 1 classical operand, not " << nCoperands);
-                                    }
-                                    if(nOperands != 1) {
-                                        FATAL("Readout instruction requires exactly 1 qubit operand, not " << nOperands);
-                                    }
-
-                                    size_t op0 = instr->operands[0];
-                                    size_t cop0 = instr->creg_operands[0];
-                                    codegen.readout(cop0, op0);
-                                } else { // handle all other instruction types
-                                    // NB: we don't have a particular limit for the number of operands
-                                    codegen.custom_gate(iname, instr->operands, platform);
-                                }
+                                codegen.custom_gate(iname, instr->operands, instr->creg_operands, platform);
                                 break;
-                            }   // __custom_gate__
 
                             case __measure_gate__:
                                 FATAL("Gate type __measure_gate__ not supported");    // FIXME: should we. Probably not, because there is no way to define CC-specifics
@@ -397,7 +371,7 @@ private:
                                 break;
 
                             default:
-                                FATAL("Unsupported gate type" << itype);
+                                FATAL("Unsupported gate type: " << itype);
                         }   // switch(itype)
                     } // for(section...)
                 }
