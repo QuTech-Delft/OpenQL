@@ -718,11 +718,11 @@ private:
 
                 while(op_start_cycle < MAX_CYCLE)
                 {
-                    DOUT("Trying to schedule: " << name[*currNode] << "  in cycle: " << op_start_cycle);
-                    DOUT("current operation_duration: " << operation_duration);
+                    // DOUT("Trying to schedule: " << name[*currNode] << "  in cycle: " << op_start_cycle);
+                    // DOUT("current operation_duration: " << operation_duration);
                     if( rm.available(op_start_cycle, curr_ins, operation_name, operation_type, instruction_type, operation_duration) )
                     {
-                        DOUT("Resources available at cycle " << op_start_cycle << ", Scheduled.");
+                        // DOUT("Resources available at cycle " << op_start_cycle << ", Scheduled.");
 
                         rm.reserve(op_start_cycle, curr_ins, operation_name, operation_type, instruction_type, operation_duration);
                         cycle[*currNode]=op_start_cycle;
@@ -731,7 +731,7 @@ private:
                     }
                     else
                     {
-                        DOUT("Resources not available at cycle " << op_start_cycle << ", trying again ...");
+                        // DOUT("Resources not available at cycle " << op_start_cycle << ", trying again ...");
                         ++op_start_cycle;
                     }
                 }
@@ -1047,12 +1047,11 @@ private:
         ++currNode;
         while(currNode != order.end() )
         {
-            DOUT("");
             auto & curr_ins = instruction[*currNode];
             auto & id = curr_ins->name;
 
             size_t op_start_cycle=MAX_CYCLE;
-            DOUT("Scheduling " << name[*currNode]);
+            // DOUT("Scheduling " << name[*currNode]);
             for( ListDigraph::OutArcIt arc(graph,*currNode); arc != INVALID; ++arc )
             {
                 ListDigraph::Node targetNode  = graph.target(arc);
@@ -1093,11 +1092,11 @@ private:
 
                 while(op_start_cycle > 0)
                 {
-                    DOUT("Trying to schedule: " << name[*currNode] << "  in cycle: " << op_start_cycle);
-                    DOUT("current operation_duration: " << operation_duration);
+                    // DOUT("Trying to schedule: " << name[*currNode] << "  in cycle: " << op_start_cycle);
+                    // DOUT("current operation_duration: " << operation_duration);
                     if( rm.available(op_start_cycle, curr_ins, operation_name, operation_type, instruction_type, operation_duration) )
                     {
-                        DOUT("Resources available at cycle " << op_start_cycle << ", Scheduled.");
+                        // DOUT("Resources available at cycle " << op_start_cycle << ", Scheduled.");
 
                         rm.reserve(op_start_cycle, curr_ins, operation_name, operation_type, instruction_type, operation_duration);
                         cycle[*currNode]=op_start_cycle;
@@ -1105,7 +1104,7 @@ private:
                     }
                     else
                     {
-                        DOUT("Resources not available at cycle " << op_start_cycle << ", trying again ...");
+                        // DOUT("Resources not available at cycle " << op_start_cycle << ", trying again ...");
                         --op_start_cycle;
                     }
                 }
@@ -1353,6 +1352,7 @@ public:
                 bundles.push_back(abundle);
             }
         }
+        // DOUT("Depth=" << TotalCycles);
         DOUT("Scheduling ALAP to get bundles [DONE]");
         return bundles;
     }
@@ -1450,6 +1450,7 @@ public:
             operations_prev_bundle = operations_curr_bundle;
         }
 
+        DOUT("Depth=" << (TotalCycles+buffer_cycles_accum));
         DOUT("RC Scheduling ALAP to get bundles [DONE]");
         return bundles;
     }
@@ -1766,6 +1767,7 @@ public:
             }
         }
 
+        DOUT("Depth=" << TotalCycles);
         DOUT("Scheduling ALAP UNIFORM to get bundles [DONE]");
         return bundles;
     }

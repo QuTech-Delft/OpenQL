@@ -1,7 +1,7 @@
 #define INITIALPLACE 1
 /**
  * @file   mapper.h
- * @date   09/2018
+ * @date   06/2018 - now
  * @author Hans van Someren
  * @brief  openql virtual to real qubit mapping and routing
  */
@@ -27,6 +27,11 @@
 // Construction of skeleton objects requires the used classes to provide such (non-parameterized) constructors;
 // therefore, such a constructor was added to class resource_manager_t in cc_light_resource_manager.h
 
+
+// =========================================================================================
+// the standard assert didn't stop the compiler on its failure (causing long debug sessions)
+// so added the next to get around this and enforce assert working
+// it can be replaced by the standard assert if it works
 void assert_fail(const char *f, int l, const char *s)
 {
     EOUT("assert " << s << " failed in file " << f << " at line " << l);
@@ -482,6 +487,9 @@ void Output(ql::circuit& circ)
 }
 
 // initial placement wants to use the v2r info directly
+// with multiple kernels and control flow between kernels, this needs updating
+// since then this Virt2Real interface becomes one of the main interfaces between kernel mappings
+// implemented by a class on top of single circuit mapping
 void GetV2r(Virt2Real& argv2r)
 {
     argv2r = v2r;
@@ -547,7 +555,7 @@ void Schedule()
         {
             if (cycle[*rigp] <= startCycle)
             {
-                // base because insert doesn't work with reverse iteration
+                // rigp.base() because insert doesn't work with reverse iteration
                 // rigp.base points after the element that rigp is pointing at
                 // which is lucky because insert only inserts before the given element
                 // the end effect is inserting after rigp
@@ -561,7 +569,7 @@ void Schedule()
             lg.push_front(gp);
         }
     
-        // and remove it then from the waiting list
+        // having added it to the main list, remove it from the waiting list
         waitinglg.remove(gp);
     }
     while (!waitinglg.empty());
@@ -569,9 +577,10 @@ void Schedule()
     // Print("Schedule:");
 }
 
-// check whether scheduling initcirc is for free, assuming that scheduling of circ follows it
-bool IsForFree(ql::circuit& initcirc, ql::circuit& circ)
+// compute costs in cycle extension of optionally scheduling initcirc before the inevitable circ
+int InsertionCost(ql::circuit& initcirc, ql::circuit& circ)
 {
+     // first fake-schedule initcirc followed by circ in a private freecyclemap
      size_t initmax;
      FreeCycle   tryfcinit = fc;
      for (auto & trygp : initcirc)
@@ -584,8 +593,9 @@ bool IsForFree(ql::circuit& initcirc, ql::circuit& circ)
          size_t tryStartCycle = tryfcinit.StartCycle(trygp);
          tryfcinit.AddNoRc(trygp, tryStartCycle);
      }
-     initmax = tryfcinit.Max();
+     initmax = tryfcinit.Max(); // this reflects the depth afterwards
 
+     // then fake-schedule circ alone in a private freecyclemap
      size_t max;
      FreeCycle   tryfc = fc;
      for (auto & trygp : circ)
@@ -593,10 +603,12 @@ bool IsForFree(ql::circuit& initcirc, ql::circuit& circ)
          size_t tryStartCycle = tryfc.StartCycle(trygp);
          tryfc.AddNoRc(trygp, tryStartCycle);
      }
-     max = tryfc.Max();
+     max = tryfc.Max();         // this reflects the depth afterwards
 
-     DOUT("... scheduling init+circ => depth " << initmax << " while scheduling just circ => depth " << max);
-     return (initmax <= max);
+     DOUT("... scheduling init+circ => depth " << initmax << ", scheduling circ => depth " << max << ", init insertion cost " << (initmax-max));
+     MapperAssert(initmax >= max);
+     // scheduling initcirc would be for free when initmax == max, so the cost is (initmax - max)
+     return (initmax - max);
 }
 
 // add the mapped gate to the current past
@@ -975,7 +987,7 @@ void AddSwap(size_t r0, size_t r1, bool ismainpast)
     DOUT("... r0_isunused=" << (usecount[v0]==0) << " r1_isunused=" << (usecount[v1]==0));
     DOUT("... r0=" << r0 << " holds virtual " << v0 << " and r1=" << r1 << " holds virtual " << v1);
     std::string mapusemovesopt = ql::options::get("mapusemoves");
-    if ("yes" == mapusemovesopt && (usecount[v0]==0 || usecount[v1]==0))
+    if ("no" != mapusemovesopt && (usecount[v0]==0 || usecount[v1]==0))
     {
         if (usecount[v0]==0)
         {
@@ -1006,8 +1018,19 @@ void AddSwap(size_t r0, size_t r1, bool ismainpast)
             }
             if (!created) new_gate_exception("prepz");
 
-            // when scheduling initcirc+circ extends circuit equally as just circ, commit to it, otherwise abort
-            if (IsForFree(initcirc, circ))
+            // when difference in extending circuit after scheduling initcirc+circ or just circ
+            // is less equal than threshold cycles (0 would mean scheduling initcirc was for free),
+            // commit to it, otherwise abort
+            int threshold;
+            if ("yes" == mapusemovesopt)
+            {
+                threshold = 0;
+            }
+            else
+            {
+                threshold = atoi(mapusemovesopt.c_str());
+            }
+            if (InsertionCost(initcirc, circ) <= threshold)
             {
                 DOUT("... initialization is for free, do it in mainpast=" << ismainpast);
                 // generate initcirc in front of circ by appending circ to initcirc, and then swapping circ/initcirc
@@ -1214,6 +1237,8 @@ void Init(ql::quantum_platform* p)
 }
 
 // printing facilities of Paths
+// print path as hd followed by [0->1->2]
+// and then followed by "implying" swap(q0,q1) swap(q1,q2)
 void partialPrint(std::string hd, std::vector<size_t> & pp)
 {
     if (!pp.empty())
@@ -1224,7 +1249,8 @@ void partialPrint(std::string hd, std::vector<size_t> & pp)
             if (started == 0)
             {
                 started = 1;
-                std::cout << hd << "[" << pp.size() << "]=[";
+//              std::cout << hd << "[" << pp.size() << "]=[";
+                std::cout << hd << "[";
             }
             else
             {
