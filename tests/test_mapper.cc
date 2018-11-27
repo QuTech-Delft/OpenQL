@@ -771,21 +771,25 @@ int main(int argc, char ** argv)
 //  test_daniel("daniel", "minextendrc", "yes", "no");
 //  test_daniel("daniel", "minextendrc", "yes", "yes");
 
-    test_daniel2("daniel2", "minextend", "no", "no");
-    for (int i=0; i<20; i++)
-    {
-        std::string moveoption;
-        moveoption = std::to_string(i);
-        test_daniel2("daniel2", "minextend", "no", moveoption);
-    }
-    test_daniel2("daniel2", "minextendrc", "no", "no");
-    for (int i=0; i<20; i++)
-    {
-        std::string moveoption;
-        moveoption = std::to_string(i);
-        test_daniel2("daniel2", "minextendrc", "no", moveoption);
-    }
-//  test_daniel2("daniel2", "minextendrc", "yes", "no");
+//  test_daniel2("daniel2", "minextend", "no", "no");
+//  for (int i=0; i<20; i++)
+//  {
+//      std::string moveoption;
+//      moveoption = std::to_string(i);
+//      test_daniel2("daniel2", "minextend", "no", moveoption);
+//  }
+//  test_daniel2("daniel2", "minextend", "no", "yes");
+
+//  test_daniel2("daniel2", "minextendrc", "no", "no");
+//  for (int i=0; i<20; i++)
+//  {
+//      std::string moveoption;
+//      moveoption = std::to_string(i);
+//      test_daniel2("daniel2", "minextendrc", "no", moveoption);
+//  }
+//  test_daniel2("daniel2", "minextendrc", "no", "yes");
+
+    test_daniel2("daniel2", "minextendrc", "10sx", "no");
 //  test_daniel2("daniel2", "minextendrc", "yes", "yes");
 
 //  test_oneD2("oneD2", "base", "no", "no");

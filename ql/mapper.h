@@ -1562,6 +1562,10 @@ void Init(ql::quantum_platform* p)
 //          + ( sum j: sum l: refcount[i][j]*distance(k,l)*x[j][l] ) - w[i][k] <= costmax[i][k]
 
 #ifdef INITIALPLACE
+#include <chrono>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 #include <lemon/lp.h>
 using namespace lemon;
 
@@ -1603,7 +1607,7 @@ void Init(Grid* g, ql::quantum_platform *p)
 // find an initial placement of the virtual qubits for the given circuit
 // the resulting placement is put in the provided virt2real map
 // result indicates one of the result indicators (ipr_t, see above)
-void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
+void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
 {
     DOUT("InitialPlace circuit ...");
 
@@ -1848,8 +1852,6 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     if (s != Mip::SOLVED || pt != Mip::OPTIMAL)
     {
         DOUT("Initial placement: no (optimal) solution found; solve returned:"<< s << " type returned:" << pt);
-        EOUT("Initial placement: no (optimal) solution found; solve returned:"<< s << " type returned:" << pt);
-        // throw ql::exception("Initial placement: no (optimal) solution found", false);
         result = ipr_failed;
         DOUT("InitialPlace circuit [FAILED]");
         return;
@@ -1921,6 +1923,119 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     v2r.Print("... final result Virt2Real map of InitialPlace");
     result = ipr_newmap;
     DOUT("InitialPlace circuit [DONE]");
+}
+
+// the above PlaceBody is a regular function using circ, and updating v2r and result before it returns;
+// it implements Initial Placement as if the call to Place in the mapper called PlaceBody directly;
+// because it may take a while to return, a new Place and a PlaceWrapper are put in between;
+// the idea is to run PlaceBody in a detached thread, that, when ready, signals the main thread;
+// the main thread waits for this signal with a timeout value;
+// all this is done in a try block where the catch is called on this timeout;
+// why exceptions are used, is not clear, so it was replaced by PlaceWrapper returning "timedout" or not
+// and this works as well ...
+bool PlaceWrapper( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, std::string& initialplaceopt)
+{
+    DOUT("PlaceWrapper called");
+//  ql::circuit* circp; Virt2Real* v2rp; ipr_t* resultp;
+    std::mutex  m;
+    std::condition_variable cv;
+
+//  circp = &circ; v2rp = &v2r; resultp = &result;
+    std::thread t([&cv, this, &circ, &v2r, &result]()       // v2r and result are allocated on stack of main thread by some ancestor
+//  std::thread t([&cv, this, circp, v2rp, resultp]()
+    {
+        DOUT("PlaceWrapper subthread about to call PlaceBody");
+        // to simulate PlaceBody taking at least 20 seconds, uncomment the next 2 lines
+        // std::chrono::seconds runtime(20);
+        // std::this_thread::sleep_for(runtime);
+        PlaceBody(circ, v2r, result);
+//      PlaceBody(*circp, *v2rp, *resultp);
+        DOUT("PlaceBody returned in subthread; about to signal the main thread");
+        cv.notify_one();        // by this, the main thread awakes from cv.wait_for without timeout
+        DOUT("Subthread signaled the main thread, and is about to die");
+    }
+    );
+    DOUT("PlaceWrapper main code created thread; about to call detach on it");
+    t.detach();
+    DOUT("PlaceWrapper main code detached thread");
+    {
+        int      waitseconds;
+        bool     andthrowexception = false;
+        if ("1s" == initialplaceopt)        { waitseconds = 1; }
+        else if ("1sx" == initialplaceopt)  { waitseconds = 1; andthrowexception = true; }
+        else if ("10s" == initialplaceopt)  { waitseconds = 10; }
+        else if ("10sx" == initialplaceopt) { waitseconds = 10; andthrowexception = true; }
+        else if ("1m" == initialplaceopt)   { waitseconds = 60; }
+        else if ("1mx" == initialplaceopt)  { waitseconds = 60; andthrowexception = true; }
+        else if ("10m" == initialplaceopt)  { waitseconds = 600; }
+        else if ("10mx" == initialplaceopt) { waitseconds = 600; andthrowexception = true; }
+        else if ("1h" == initialplaceopt)   { waitseconds = 3600; }
+        else if ("1hx" == initialplaceopt)  { waitseconds = 3600; andthrowexception = true; }
+        else
+        {
+            EOUT("Unknown value of option 'initialplace'='" << initialplaceopt << "'.");
+            throw ql::exception("Error: unknown value of initialplace option.", false);
+        }
+        std::chrono::seconds maxwaittime(waitseconds);
+        std::unique_lock<std::mutex> l(m);
+        DOUT("PlaceWrapper main code calling wait_for with timeout of " << waitseconds << " seconds");
+        if (cv.wait_for(l, maxwaittime) == std::cv_status::timeout)
+        {
+            DOUT("PlaceWrapper main code awoke from wait_for with timeout");
+            if (andthrowexception)
+            {
+                EOUT("Initial placement timed out and stops compilation");
+                throw ql::exception("Error: initial placement timed out", false);
+            }
+            DOUT("PlaceWrapper about to return timedout==true");
+            return true;
+        }
+        DOUT("PlaceWrapper main code awoke from wait_for not with timeout");
+    }
+
+    DOUT("PlaceWrapper about to return timedout==false");
+    return false;
+}
+
+// find an initial placement of the virtual qubits for the given circuit as in Place
+// put a timelimit on its execution specified by the initialplace option
+// when it expires, result is set to ipr_failed
+// details of how this is accomplished, can be found above
+void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, std::string& initialplaceopt)
+{
+    DOUT("Place called with option initialplace=" << initialplaceopt);
+    if ("yes" == initialplaceopt)
+    {
+        // do initial placement without time limit
+        DOUT("Place calling PlaceBody without time limit");
+        PlaceBody(circ, v2r, result);
+        DOUT("Place returns with result=" << result);
+        return;
+    }
+    bool timedout = false;
+//    try
+//    {
+        DOUT("Place calling PlaceWrapper");
+        timedout = PlaceWrapper(circ, v2r, result, initialplaceopt);
+        DOUT("Place directly after return from call to PlaceWrapper");
+//    }
+//    catch(std::runtime_error & e)
+//    {
+//        DOUT("Place at start of catch block");
+//        std::cout << e.what() << std::endl;
+//        timedout = true;
+//    }
+
+    if (timedout)
+    {
+        DOUT("InitialPlacement: timedout");
+        result = ipr_failed;
+    }
+    else
+    {
+        DOUT("InitialPlacement: not timedout");
+    }
+    DOUT("Place returns with result=" << result);
 }
     
 };  // end class InitialPlace
@@ -2320,7 +2435,7 @@ void MapCircuit(size_t& kernel_qubits, ql::circuit& circ, std::string& kernel_na
 
 #ifdef INITIALPLACE
     std::string initialplaceopt = ql::options::get("initialplace");
-    if("yes" == initialplaceopt)
+    if("no" != initialplaceopt)
     {
         ip.Init(&grid, &platform);
 
@@ -2329,7 +2444,7 @@ void MapCircuit(size_t& kernel_qubits, ql::circuit& circ, std::string& kernel_na
         mainPast.GetV2r(v2r);
         // compute mapping using ip model, may fail
         ipr_t ipok;
-        ip.Place(circ, v2r, ipok);
+        ip.Place(circ, v2r, ipok, initialplaceopt);
         if (ipok == ipr_newmap)
         {
             DOUT("InitialPlace result is used to update Virt2Real mapping");
