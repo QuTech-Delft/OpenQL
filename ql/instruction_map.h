@@ -101,36 +101,47 @@ inline json load_json(std::string file_name)
 
         try
         {
-            // pass stripped line to json
-            stripped >> j;
+            stripped >> j;  // pass stripped line to json. NB: the whole file must be passed in 1 go
         }
         // treat parse errors separately to give the user a clue about what's wrong
         catch (json::parse_error e)
         {
-            EOUT("error parsing json file : \n\t" << e.what());
+            EOUT("error parsing JSON file : \n\t" << e.what());
             if(e.byte != 0)
             {
-                int contextLen = 50;
-                int start = e.byte - contextLen;
-                if(start<0)
-                {
-                    contextLen += start;
-                    start = 0;
+                // go through file once again to find error position
+                unsigned int lineNr = 1;
+                unsigned int absPos = 0;
+                fs.clear();
+                fs.seekg(0, std::ios::beg);
+                while (getline(fs, line)) {
+                    std::string::size_type n = line.find("//");
+                    if (n != std::string::npos) line.erase(n);
+                    if(e.byte >= absPos && e.byte < absPos+line.size()) {
+                        unsigned int relPos = e.byte-absPos;
+                        str::replace_all(line, "\t", " ");                                      // make a TAB take one position
+                        FATAL("in line " << lineNr <<
+                              " at position " << relPos << ":" << std::endl <<
+                              line << std::endl <<                                              // print offending line
+                              std::string(relPos>0 ? relPos-1 : 0, ' ') << "^" << std::endl);   // print marker
+                        break;
+                    }
+                    lineNr++;
+                    absPos += line.size();
                 }
-                EOUT("JSON input before error: '" << stripped.str().substr(start, contextLen) << "'");    // FIXME: not fancy. Will this be seen by Python user?
+                FATAL("error position " << e.byte << " points beyond last file position " << absPos);
+            } else {
+                FATAL("no information on error position");
             }
-            throw (e);
         }
         catch (json::exception e)
         {
-            EOUT("malformed json file : \n\t" << e.what());
-            throw (e);
+            FATAL("malformed JSON file : \n\t" << e.what());
         }
     }
     else
     {
-        EOUT("failed to open file '" << file_name << "' !");
-        throw ql::exception("[x] error : failed to open file '" + file_name + "' !",false);
+        FATAL("failed to open file '" << file_name << "'");
     }
     return j;
 }
