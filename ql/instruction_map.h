@@ -21,6 +21,7 @@ namespace ql
 typedef std::string qasm_inst_t;
 typedef std::string ucode_inst_t;
 
+typedef std::map<std::string,ql::custom_gate *> instruction_map_t;
 typedef std::map<qasm_inst_t, ucode_inst_t> dep_instruction_map_t;
 
 namespace utils

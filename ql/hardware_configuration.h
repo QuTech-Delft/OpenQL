@@ -26,8 +26,6 @@
 namespace ql
 {
 
-typedef std::map<std::string,ql::custom_gate *> instruction_map_t;
-
 /**
  * loading hardware configuration
  */
@@ -146,7 +144,7 @@ public:
                 str::lower_case(comp_ins);
                 DOUT("");
                 DOUT("Adding composite instr : " << comp_ins);
-                std::replace( comp_ins.begin(), comp_ins.end(), ',', ' ');                
+                std::replace( comp_ins.begin(), comp_ins.end(), ',', ' ');
                 DOUT("Adjusted composite instr : " << comp_ins);
 
                 // check for duplicate operations
