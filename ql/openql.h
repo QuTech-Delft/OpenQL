@@ -29,7 +29,9 @@ typedef std::stringstream  str_t;
 /**
  * configurable instruction map
  */
+#if OPT_MICRO_CODE
 /* static */ dep_instruction_map_t dep_instruction_map;
+#endif
 /* static */ // bool              initialized = false;
 /* static */ // ql_platform_t     target_platform;
 

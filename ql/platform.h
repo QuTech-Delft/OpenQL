@@ -23,13 +23,11 @@ typedef enum __ql_platform_t
     qx_simulator_platform,
     unsupported_platform
 } ql_platform_t;
-#endif
 
 
 typedef std::vector<std::string> micro_code_t;
 
 
-#if 0   // FIXME: unused
 /**
  * abstract platform interface (deprecated)
  * should be removed soon

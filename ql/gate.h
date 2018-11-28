@@ -37,7 +37,7 @@ typedef std::string ucode_inst_t;
 
 typedef std::string string_t;
 typedef std::vector<std::string> strings_t;
-typedef std::vector<std::string> ucode_sequence_t;
+typedef std::vector<std::string> ucode_sequence_t;      // FIXME: should be removed
 
 typedef enum
 {
@@ -47,9 +47,12 @@ typedef enum
 
 
 
+#if OPT_MICRO_CODE
 typedef std::map<qasm_inst_t, ucode_inst_t> dep_instruction_map_t;
 
 extern dep_instruction_map_t dep_instruction_map;
+#endif
+
 
 // gate types
 typedef enum __gate_type_t
@@ -1522,11 +1525,13 @@ public:
                 }
                 operands.push_back(qubit_id(qid));
             }
+            // FIXME: code commented out:
             // ucode_sequence_t ucs = instr["qumis"];
             // qumis.assign(ucs.begin(), ucs.end());
             // operation_type = instr["type"];
             l_attr = "duration";
             duration = instr["duration"];
+            // FIXME: code commented out:
             // strings_t hdw = instr["hardware"];
             // used_hardware.assign(hdw.begin(), hdw.end());
             l_attr = "matrix";
