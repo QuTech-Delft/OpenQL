@@ -31,6 +31,7 @@ ENDIF()
 
 SET(CLI11_INCLUDE_DIRS
   "${CMAKE_SOURCE_DIR}/deps/CLI11/include"
+  "/usr/local/include"
 )
 
 ##MESSAGE( STATUS "CLI11_INCLUDE_DIRS: " ${CLI11_INCLUDE_DIRS} )

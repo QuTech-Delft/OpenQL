@@ -789,7 +789,8 @@ int main(int argc, char ** argv)
 //  }
 //  test_daniel2("daniel2", "minextendrc", "no", "yes");
 
-    test_daniel2("daniel2", "minextendrc", "10sx", "no");
+    test_daniel2("daniel2", "minextendrc", "10s", "no");
+    test_daniel2("daniel2", "minextendrc", "10s", "no");
 //  test_daniel2("daniel2", "minextendrc", "yes", "yes");
 
 //  test_oneD2("oneD2", "base", "no", "no");
