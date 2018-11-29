@@ -979,13 +979,13 @@ void AddSwap(size_t r0, size_t r1, bool ismainpast)
     bool created = false;
     ql::circuit circ;
 
-    DOUT("... adding/trying swap(q" << r0 << ",q" << r1 << ") in mainpast?=" << ismainpast << " ... " );
+//  DOUT("... adding/trying swap(q" << r0 << ",q" << r1 << ") in mainpast?=" << ismainpast << " ... " );
     v2r.Print("... adding swap/move");
 
     v0 = v2r.GetVirt(r0);
     v1 = v2r.GetVirt(r1);
-    DOUT("... r0_isunused=" << (usecount[v0]==0) << " r1_isunused=" << (usecount[v1]==0));
-    DOUT("... r0=" << r0 << " holds virtual " << v0 << " and r1=" << r1 << " holds virtual " << v1);
+//  DOUT("... r0_isunused=" << (usecount[v0]==0) << " r1_isunused=" << (usecount[v1]==0));
+//  DOUT("... r0=" << r0 << " holds virtual " << v0 << " and r1=" << r1 << " holds virtual " << v1);
     std::string mapusemovesopt = ql::options::get("mapusemoves");
     if ("no" != mapusemovesopt && (usecount[v0]==0 || usecount[v1]==0))
     {
@@ -1109,7 +1109,7 @@ void DeVirtualize(ql::gate* gp, ql::circuit& circ)
     bool created = new_gate(real_gname, real_qubits, circ);
     if (created)
     {
-        DOUT("... DeVirtualize: new gates created for: " << real_gname);
+        // DOUT("... DeVirtualize: new gates created for: " << real_gname);
     }
     else
     {
@@ -1141,12 +1141,12 @@ void Decompose(ql::gate* gp, ql::circuit& circ)
         }
         else
         {
-            DOUT("... Decomposed: " << gp->qasm() << " to decomposition of " << gname << "(...)");
+            // DOUT("... Decomposed: " << gp->qasm() << " to decomposition of " << gname << "(...)");
         }
     }
     else
     {
-        DOUT("... Decompose: keep gate: " << gp->qasm());
+        // DOUT("... Decompose: keep gate: " << gp->qasm());
         circ.push_back(gp);
     }
 }
@@ -1560,6 +1560,28 @@ void Init(ql::quantum_platform* p)
 //      forall i: ( sum k: x[i][k] == 1 )
 //      forall i: forall k: costmax[i][k] * x[i][k]
 //          + ( sum j: sum l: refcount[i][j]*distance(k,l)*x[j][l] ) - w[i][k] <= costmax[i][k]
+//
+// This model is coded in lemon/mip below.
+// The latter is mapped onto glpk.
+// Since solving takes a while, a option steerable timeout mechanism around it is implemented, using threads.
+// The solver runs in a subthread which can succeed or be timed out by the main thread waiting for it.
+// When timed out, it can stop the compiler by raising an exception or continue mapping as if it were not called.
+// When INITIALPLACE is not defined, the compiler doesn't contain initial placement support and ignores calls to it;
+// then all this: lemon/mip, glpk, thread support is avoided making OpenQL much easier build and run.
+// Otherwise, depending on the initialplace option value, initial placement is attempted before the heuristic.
+// Options values of initialplace:
+//	no      don't run initial placement ('ip')
+//	yes     run ip until the solver is ready
+//	1hx     run ip max for 1 hour; when timed out, stop the compiler
+//	1h      run ip max for 1 hour; when timed out, just use heuristics
+//	10mx    run ip max for 10 minutes; when timed out, stop the compiler
+//	10m     run ip max for 10 minutes; when timed out, just use heuristics
+//	1mx     run ip max for 1 minute; when timed out, stop the compiler
+//	1m      run ip max for 1 minute; when timed out, just use heuristics
+//	10sx    run ip max for 10 seconds; when timed out, stop the compiler
+//	10s     run ip max for 10 seconds; when timed out, just use heuristics
+//	1sx     run ip max for 1 second; when timed out, stop the compiler
+//	1s      run ip max for 1 second; when timed out, just use heuristics
 
 #ifdef INITIALPLACE
 #include <chrono>
@@ -1575,7 +1597,8 @@ enum InitialPlaceResults
     ipr_any,            // any mapping will do because there are no two-qubit gates in the circuit
     ipr_current,        // current mapping will do because all two-qubit gates are NN
     ipr_newmap,         // initial placement solution found a mapping
-    ipr_failed          // initial placement solution failed
+    ipr_failed,         // initial placement solution failed
+    ipr_timedout        // initial placement solution timed out and thus failed
 } ipr_t;
 
 class InitialPlace
@@ -1600,7 +1623,7 @@ void Init(Grid* g, ql::quantum_platform *p)
     platformp = p;
     nlocs = p->qubit_number;
     nvq = p->qubit_number;  // same range; when not, take set from config and create v2i earlier
-    DOUT("... number of real qubits (locations): " << nlocs);
+    // DOUT("... number of real qubits (locations): " << nlocs);
     gridp = g;
 }
 
@@ -1847,11 +1870,11 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     WOUT("... solve the initial placement model, this may take a while ...");
     DOUT("... solve the problem");
     Mip::SolveExitStatus s = mip.solve();
-    DOUT("... determine result of solving");
+    // DOUT("... determine result of solving");
     Mip::ProblemType pt = mip.type();
     if (s != Mip::SOLVED || pt != Mip::OPTIMAL)
     {
-        DOUT("Initial placement: no (optimal) solution found; solve returned:"<< s << " type returned:" << pt);
+        DOUT("... initial placement: no (optimal) solution found; solve returned:"<< s << " type returned:" << pt);
         result = ipr_failed;
         DOUT("InitialPlace circuit [FAILED]");
         return;
@@ -1890,7 +1913,8 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
         }
         MapperAssert(k < nlocs);  // each facility i by definition represents a used qubit so must have got a location
     }
-    v2r.Print("... result Virt2Real map of InitialPlace before adding unused virtual qubits and unused locations ");
+    DOUT("... correct location of unused virtual qubits to be an unused location");
+//  v2r.Print("... result Virt2Real map of InitialPlace before adding unused virtual qubits and unused locations ");
     // used virtual qubits v have got their location k filled in in v2r[v] == k
     // unused virtual qubits still have location MAX_CYCLE, fill those with the remaining locations
     for (size_t v=0; v<nvq; v++)
@@ -1922,7 +1946,7 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     }
     v2r.Print("... final result Virt2Real map of InitialPlace");
     result = ipr_newmap;
-    DOUT("InitialPlace circuit [DONE]");
+    DOUT("InitialPlace circuit [SUCCESS]");
 }
 
 // the above PlaceBody is a regular function using circ, and updating v2r and result before it returns;
@@ -1935,29 +1959,23 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
 // and this works as well ...
 bool PlaceWrapper( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, std::string& initialplaceopt)
 {
-    DOUT("PlaceWrapper called");
-//  ql::circuit* circp; Virt2Real* v2rp; ipr_t* resultp;
+    // DOUT("PlaceWrapper called");
     std::mutex  m;
     std::condition_variable cv;
 
-//  circp = &circ; v2rp = &v2r; resultp = &result;
-    std::thread t([&cv, this, &circ, &v2r, &result]()       // v2r and result are allocated on stack of main thread by some ancestor
-//  std::thread t([&cv, this, circp, v2rp, resultp]()
+    // v2r and result are allocated on stack of main thread by some ancestor so be careful with threading
+    std::thread t([&cv, this, &circ, &v2r, &result]()
     {
-        DOUT("PlaceWrapper subthread about to call PlaceBody");
-        // to simulate PlaceBody taking at least 20 seconds, uncomment the next 2 lines
-        // std::chrono::seconds runtime(20);
-        // std::this_thread::sleep_for(runtime);
+        // DOUT("PlaceWrapper subthread about to call PlaceBody");
         PlaceBody(circ, v2r, result);
-//      PlaceBody(*circp, *v2rp, *resultp);
-        DOUT("PlaceBody returned in subthread; about to signal the main thread");
+        // DOUT("PlaceBody returned in subthread; about to signal the main thread");
         cv.notify_one();        // by this, the main thread awakes from cv.wait_for without timeout
-        DOUT("Subthread signaled the main thread, and is about to die");
+        DOUT("Subthread with solver signaled the main thread, and is about to die");
     }
     );
-    DOUT("PlaceWrapper main code created thread; about to call detach on it");
+    // DOUT("PlaceWrapper main code created thread; about to call detach on it");
     t.detach();
-    DOUT("PlaceWrapper main code detached thread");
+    // DOUT("PlaceWrapper main code detached thread");
     {
         int      waitseconds;
         bool     andthrowexception = false;
@@ -1978,19 +1996,19 @@ bool PlaceWrapper( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, std::string
         }
         std::chrono::seconds maxwaittime(waitseconds);
         std::unique_lock<std::mutex> l(m);
-        DOUT("PlaceWrapper main code calling wait_for with timeout of " << waitseconds << " seconds");
+        DOUT("PlaceWrapper main code starts waiting with timeout of " << waitseconds << " seconds");
         if (cv.wait_for(l, maxwaittime) == std::cv_status::timeout)
         {
-            DOUT("PlaceWrapper main code awoke from wait_for with timeout");
+            DOUT("PlaceWrapper main code awoke from waiting with timeout");
             if (andthrowexception)
             {
-                EOUT("Initial placement timed out and stops compilation");
+                EOUT("Initial placement timed out and stops compilation [TIMED OUT]");
                 throw ql::exception("Error: initial placement timed out", false);
             }
             DOUT("PlaceWrapper about to return timedout==true");
             return true;
         }
-        DOUT("PlaceWrapper main code awoke from wait_for not with timeout");
+        DOUT("PlaceWrapper main code awoke from waiting without timeout");
     }
 
     DOUT("PlaceWrapper about to return timedout==false");
@@ -1999,43 +2017,31 @@ bool PlaceWrapper( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, std::string
 
 // find an initial placement of the virtual qubits for the given circuit as in Place
 // put a timelimit on its execution specified by the initialplace option
-// when it expires, result is set to ipr_failed
+// when it expires, result is set to ipr_timedout
 // details of how this is accomplished, can be found above
 void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, std::string& initialplaceopt)
 {
-    DOUT("Place called with option initialplace=" << initialplaceopt);
+    // DOUT("Place called with option initialplace=" << initialplaceopt);
     if ("yes" == initialplaceopt)
     {
         // do initial placement without time limit
-        DOUT("Place calling PlaceBody without time limit");
+        // DOUT("Place calling PlaceBody without time limit");
         PlaceBody(circ, v2r, result);
-        DOUT("Place returns with result=" << result);
+        // DOUT("Place returns with result=" << result);
         return;
     }
-    bool timedout = false;
-//    try
-//    {
-        DOUT("Place calling PlaceWrapper");
-        timedout = PlaceWrapper(circ, v2r, result, initialplaceopt);
-        DOUT("Place directly after return from call to PlaceWrapper");
-//    }
-//    catch(std::runtime_error & e)
-//    {
-//        DOUT("Place at start of catch block");
-//        std::cout << e.what() << std::endl;
-//        timedout = true;
-//    }
+    bool timedout;
+    timedout = PlaceWrapper(circ, v2r, result, initialplaceopt);
 
     if (timedout)
     {
-        DOUT("InitialPlacement: timedout");
-        result = ipr_failed;
+        result = ipr_timedout;
+        DOUT("InitialPlacement [TIMED OUT], result=" << result);
     }
     else
     {
-        DOUT("InitialPlacement: not timedout");
+        DOUT("InitialPlacement: returned not timing out, result=" << result);
     }
-    DOUT("Place returns with result=" << result);
 }
     
 };  // end class InitialPlace
@@ -2437,23 +2443,24 @@ void MapCircuit(size_t& kernel_qubits, ql::circuit& circ, std::string& kernel_na
     std::string initialplaceopt = ql::options::get("initialplace");
     if("no" != initialplaceopt)
     {
+        DOUT("InitialPlace requested with option " << initialplaceopt << " [START]");
         ip.Init(&grid, &platform);
 
         Virt2Real   v2r;
-        DOUT("InitialPlace copy in current Virt2Real mapping ...");
+//      DOUT("InitialPlace copy in current Virt2Real mapping ...");
         mainPast.GetV2r(v2r);
         // compute mapping using ip model, may fail
         ipr_t ipok;
         ip.Place(circ, v2r, ipok, initialplaceopt);
         if (ipok == ipr_newmap)
         {
-            DOUT("InitialPlace result is used to update Virt2Real mapping");
+            DOUT("InitialPlace success: result is used to update Virt2Real mapping [DONE]");
             // replace current mapping of mainPast by the result of initial placement
             mainPast.SetV2r(v2r);
         }
         else
         {
-            DOUT("InitialPlace: don't use result; continue with current mapping");
+            DOUT("InitialPlace failure: don't use result; continue with current mapping [DONE]");
         }
     }
 #endif
