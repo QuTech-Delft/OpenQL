@@ -24,6 +24,8 @@
 #include <ql/openql.h>
 #include <ql/exception.h>
 
+//#include "ql/unitarydecomp.h"
+
 using json = nlohmann::json;
 
 typedef std::string instruction_t;
@@ -84,7 +86,8 @@ typedef enum __gate_type_t
     __dummy_gate__,
     __swap_gate__,
     __wait_gate__,
-    __classical_gate__
+    __classical_gate__,
+    __anneriet_gate__
 } gate_type_t;
 
 #define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
@@ -219,6 +222,8 @@ public:
     virtual instruction_t micro_code() = 0;  // to do : deprecated
     virtual gate_type_t   type()       = 0;
     virtual cmat_t        mat()        = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
+   //anneriet
+   cmat_t m;
 };
 
 
@@ -1576,6 +1581,51 @@ public:
         return m;
     }
 };
+
+/**
+ * anneriet
+ */
+class anneriet : public gate
+{
+public:
+    cmat_t 	m;
+    size_t	parameters;
+/*    anneriet(size_t q) : m(hadamard_c)
+    {
+        name = "anneriet";
+        duration = 40;
+        operands.push_back(q);
+    }*/
+
+    anneriet(size_t q, cmat_t m) : m(m)
+    {
+        name = "anneriet";
+        duration = 40;
+        operands.push_back(q);
+    }
+
+    instruction_t qasm()
+    {
+        return instruction_t("anneriet2 q[" + std::to_string(operands[0]) + "]");
+    }
+
+    instruction_t micro_code()
+    {
+        // y90 + x180
+        return instruction_t("  pulse 1100 0000 1100\n     wait 10\n     pulse 1001 0000 1001\n     wait 10");
+    }
+
+    gate_type_t type()
+    {
+        return __anneriet_gate__;
+    }
+
+    cmat_t mat()
+    {
+        return m;
+    }
+};
+
 
 } // end ql namespace
 
