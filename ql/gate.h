@@ -87,7 +87,7 @@ typedef enum __gate_type_t
     __swap_gate__,
     __wait_gate__,
     __classical_gate__,
-    __anneriet_gate__
+    __unitary_decomp_gate__
 } gate_type_t;
 
 #define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
@@ -222,7 +222,7 @@ public:
     virtual instruction_t micro_code() = 0;  // to do : deprecated
     virtual gate_type_t   type()       = 0;
     virtual cmat_t        mat()        = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
-   //anneriet
+   //unitary_decomp
    cmat_t m;
 };
 
@@ -1583,30 +1583,36 @@ public:
 };
 
 /**
- * anneriet
+ * unitary_decomp
  */
-class anneriet : public gate
+class unitary_decomp : public gate
 {
 public:
     cmat_t 	m;
     size_t	parameters;
-/*    anneriet(size_t q) : m(hadamard_c)
+/*    unitary_decomp(size_t q) : m(hadamard_c)
     {
-        name = "anneriet";
+        name = "unitary_decomp";
         duration = 40;
         operands.push_back(q);
     }*/
 
-    anneriet(size_t q, cmat_t m) : m(m)
-    {
-        name = "anneriet";
+    unitary_decomp(size_t qubit1, size_t qubit2, cmat_t m) : m(m)
+{
+        name = "unitary_decomp";
         duration = 40;
-        operands.push_back(q);
+        operands.push_back(qubit1);
+}
+    unitary_decomp(std::vector<size_t> q, cmat_t m) : m(m)
+    {
+        name = "unitary_decomp";
+        duration = 40;
+        operands.push_back(q[0]);
     }
 
     instruction_t qasm()
     {
-        return instruction_t("anneriet2 q[" + std::to_string(operands[0]) + "]");
+        return instruction_t("unitary_decomp q[" + std::to_string(operands[0]) + "]");
     }
 
     instruction_t micro_code()
@@ -1617,7 +1623,7 @@ public:
 
     gate_type_t type()
     {
-        return __anneriet_gate__;
+        return __unitary_decomp_gate__;
     }
 
     cmat_t mat()

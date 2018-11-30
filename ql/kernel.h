@@ -235,10 +235,10 @@ public:
         c.push_back(new ql::display());
     }
 
-    //anneriet
-    void anneriet(size_t qubit1, size_t qubit2, cmat_t m)
+    void unitary_decomp(size_t qubit1, size_t qubit2, cmat_t m)
     {
-	gate("anneriet", {qubit1, qubit2}, m);
+//error: no matching function fro call to 'ql::quantum_kernel::gate(...)'
+	gate("unitary_decomp", {qubit1, qubit2}, m);
     }
 
     /**
@@ -438,7 +438,6 @@ public:
             result = true;
         }
 	else result = false;
-//anneriet: hier ook nieuwe functie toevoegen?
     	return result;
     }
 
@@ -729,13 +728,20 @@ public:
     }
 
     /**
-     * anneriet custom matrix gate
+     * unitary_decomp custom matrix gate 
      */
     void gate(std::string gname, size_t q0, size_t q1, cmat_t m)
     {
         gate(gname, std::vector<size_t> {q0, q1}, m);
     }
 
+    /**
+     * unitary_decomp custom matrix gate version2
+     */
+    void gate(std::string gname, std::vector<size_t> qubits, cmat_t m)
+    {
+	if(gname == "unitary_decomp") {c.push_back(new ql::unitary_decomp(qubits, m));}
+    }
 
 
     /**
