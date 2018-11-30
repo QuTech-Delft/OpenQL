@@ -20,6 +20,7 @@
 #include "ql/classical.h"
 #include "ql/optimizer.h"
 #include "ql/ir.h"
+//#include "ql/unitarydecomp.h"
 
 #define PI M_PI
 
@@ -234,6 +235,12 @@ public:
         c.push_back(new ql::display());
     }
 
+    //anneriet
+//    void anneriet(size_t qubit1, size_t qubit2, cmat_t m)
+//    {
+//	gate("anneriet", {qubit1, qubit2}, m);
+//    }
+
     /**
      * add clifford
      */
@@ -408,7 +415,7 @@ public:
         else if( gname == "mry90" )      { c.push_back(new ql::mry90(qubits[0]) ); result = true; }
         else if( gname == "ry180" )      { c.push_back(new ql::ry180(qubits[0]) ); result = true; }
         else if( gname == "measure" )
-        {
+	 {
             if(cregs.empty())
                 c.push_back(new ql::measure(qubits[0]) );
             else
@@ -430,8 +437,8 @@ public:
             c.push_back(new ql::wait(qubits, duration, duration_in_cycles));
             result = true;
         }
-        else result = false;
-
+	else result = false;
+//anneriet: hier ook nieuwe functie toevoegen?
     	return result;
     }
 
@@ -720,6 +727,15 @@ public:
     {
         gate(gname, std::vector<size_t> {q0, q1});
     }
+
+    /**
+     * anneriet custom matrix gate
+     */
+//    void gate(std::string gname, size_t q0, size_t q1, cmat_t m)
+//    {
+//        gate(gname, std::vector<size_t> {q0, q1}, m);
+//    }
+
 
 
     /**
@@ -1702,6 +1718,7 @@ public:
             {
                 gate("toffoli", g->operands, {}, g->duration, g->angle);
             }
+
             else
             {
                 EOUT("Conjugate version of gate '" << gname << "' not defined !");
