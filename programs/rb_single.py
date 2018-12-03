@@ -29,7 +29,7 @@ def build_rb(qubit, num_cliffords, kernel):
     kernel.measure(qubit)
 
 
-config_fn  = os.path.join(curdir, '../tests/hardware_config_qx.json')
+config_fn  = os.path.join(curdir, 'hardware_config_qx.json')
 platform   = ql.Platform('platform_none', config_fn)
 num_qubits = 117
 
