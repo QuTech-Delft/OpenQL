@@ -44,9 +44,6 @@ def hello_openql():
 
     # compile the program
     p.compile()
-    p.write_interaction_matrix()
-    p.print_interaction_matrix()
-    print(p.qasm())
 
 if __name__ == '__main__':
     hello_openql()
