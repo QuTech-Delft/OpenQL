@@ -729,6 +729,7 @@ int main(int argc, char ** argv)
     ql::utils::logger::set_log_level("LOG_DEBUG");
     ql::options::set("scheduler", "ALAP");
     ql::options::set("mapdecomposer", "yes");   // always decompose to primitives
+    ql::options::set("maptiebreak", "random");  // always tiebreak randomly
 
 //  test_singledim("singledim", "minextendrc", "yes", "no");
 //  test_singledim("singledim", "minextend", "no", "no");
@@ -803,15 +804,15 @@ int main(int argc, char ** argv)
 //  test_oneD2("oneD2", "minextendrc", "no", "no");
 //  test_oneD2("oneD2", "minextendrc", "no", "yes");
 
-//  test_oneD4("oneD4", "base", "no", "no");
+    test_oneD4("oneD4", "base", "no", "no");
 //  test_oneD4("oneD4", "base", "yes", "no");
 //  test_oneD4("oneD4", "minextend", "no", "no");
 //  test_oneD4("oneD4", "minextend", "yes", "no");
 //  test_oneD4("oneD4", "minextend", "no", "no");
 //  test_oneD4("oneD4", "minextend", "no", "yes");
-    test_oneD4("oneD4", "minextendrc", "yes", "no");
-    test_oneD4("oneD4", "minextendrc", "1sx", "no");
-    test_oneD4("oneD4", "minextendrc", "10sx", "no");
+//  test_oneD4("oneD4", "minextendrc", "yes", "no");
+//  test_oneD4("oneD4", "minextendrc", "1sx", "no");
+//  test_oneD4("oneD4", "minextendrc", "10sx", "no");
 //  test_oneD4("oneD4", "minextendrc", "no", "no");
 //  test_oneD4("oneD4", "minextendrc", "no", "yes");
 
@@ -832,9 +833,9 @@ int main(int argc, char ** argv)
 //  test_allD("allD", "minextend", "yes", "no");
 //  test_allD("allD", "minextend", "no", "no");
 //  test_allD("allD", "minextend", "no", "yes");
-    test_allD("allD", "minextendrc", "1sx", "no");
-    test_allD("allD", "minextendrc", "10sx", "no");
-    test_allD("allD", "minextendrc", "1mx", "no");
+//  test_allD("allD", "minextendrc", "1sx", "no");
+//  test_allD("allD", "minextendrc", "10sx", "no");
+//  test_allD("allD", "minextendrc", "1mx", "no");
 //  test_allD("allD", "minextendrc", "no", "no");
 //  test_allD("allD", "minextendrc", "no", "yes");
 

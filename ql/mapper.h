@@ -9,6 +9,7 @@
 #ifndef QL_MAPPER_H
 #define QL_MAPPER_H
 
+#include <random>
 #include "ql/utils.h"
 #include "ql/platform.h"
 #include "ql/arch/cc_light_resource_manager.h"
@@ -2076,6 +2077,7 @@ private:
     InitialPlace    ip;             // initial placer facility
 #endif
     Past            mainPast;       // main past window; all path alternatives start off as clones of it
+    std::random_device rd;          // seed for random number generator
 
 
 // Mapper constructor is default synthesized
@@ -2212,31 +2214,55 @@ void MapMinExtend(ql::gate* gp)
     }
 }
 
-// find one (first) shortest path and use it to generate swaps
+// generate a random int number in range 0..count-1
+size_t Draw(size_t count)
+{
+    std::mt19937 gen(rd());         // Standard mersenne_twister_engine seeded with rd()
+    std::uniform_int_distribution<> dis(0, (count-1));
+    return dis(gen);
+}
+
+// find one (first/random) shortest path and use it to generate swaps
 void MapBase(ql::gate* gp)
 {
     auto& q = gp->operands;
     size_t src = mainPast.MapQubit(q[0]);
     size_t tgt = mainPast.MapQubit(q[1]);
+    std::string maptiebreakopt = ql::options::get("maptiebreak");
         
     size_t d = grid.Distance(src, tgt);
     DOUT("... MapBase: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
     while (d > 1)
     {
+        std::vector<size_t>   choices;
+        size_t dnb;
         for( auto & n : grid.nbs[src] )
         {
-            size_t dnb = grid.Distance(n, tgt);
+            dnb = grid.Distance(n, tgt);
             if (dnb < d)
             {
-                // DOUT(" ... distance(real " << n << ", real " << tgt << ")=" << dnb);
-                mainPast.AddSwap(src, n, true);
-                DOUT(" ... adding swap(q" << src << ",q" << n << ")");
-                mainPast.Schedule();
-                // mainPast.Print("mapping after swap");
-                src = n;
-                break;
+                choices.push_back(n);
             }
         }
+        MapperAssert(choices.size() >= 1);
+        size_t     c = 0;
+        if ("random" == maptiebreakopt && choices.size() >= 1)
+        {
+            for (auto x : choices)
+            {
+                DOUT(" ... choice: " << x);
+            }
+            c = Draw(choices.size());
+        }
+        size_t  n = choices[c];
+        dnb = grid.Distance(n, tgt);
+        DOUT(" ... distance(real " << n << ", real " << tgt << ")=" << dnb);
+        mainPast.AddSwap(src, n, true);
+        DOUT(" ... adding swap(q" << src << ",q" << n << ")");
+        mainPast.Schedule();
+        // mainPast.Print("mapping after swap");
+        src = n;
+
         d = grid.Distance(src, tgt);
         // DOUT(" ... new distance(real " << src << ", real " << tgt << ")=" << d);
     }
