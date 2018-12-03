@@ -10,6 +10,7 @@
 #define QL_MAPPER_H
 
 #include <random>
+#include <ctime>
 #include "ql/utils.h"
 #include "ql/platform.h"
 #include "ql/arch/cc_light_resource_manager.h"
@@ -2077,7 +2078,7 @@ private:
     InitialPlace    ip;             // initial placer facility
 #endif
     Past            mainPast;       // main past window; all path alternatives start off as clones of it
-    std::random_device rd;          // seed for random number generator
+    std::mt19937    gen;            // Standard mersenne_twister_engine, not yet seeded
 
 
 // Mapper constructor is default synthesized
@@ -2217,7 +2218,6 @@ void MapMinExtend(ql::gate* gp)
 // generate a random int number in range 0..count-1
 size_t Draw(size_t count)
 {
-    std::mt19937 gen(rd());         // Standard mersenne_twister_engine seeded with rd()
     std::uniform_int_distribution<> dis(0, (count-1));
     return dis(gen);
 }
@@ -2513,6 +2513,7 @@ void Init(const ql::quantum_platform& p)
     // DOUT("... Grid initialization: platform qubits->coordinates, ->neighbors, distance ...");
     platform = p;
     nqbits = p.qubit_number;
+    gen.seed(time(NULL));
     // DOUT("... platform/real number of qubits=" << nqbits << ");
     cycle_time = p.cycle_time;
 
