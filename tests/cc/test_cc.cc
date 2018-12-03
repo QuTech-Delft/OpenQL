@@ -1,4 +1,5 @@
 /*
+    file:       test_cc.cc
     author:     Wouter Vlothuizen
     notes:      based on:
                 - ../test_uniform.cc, modified and extended for the cc (Central Controller)
@@ -24,29 +25,39 @@
 // based on tests/test_hybrid.py
 void test_classical(std::string scheduler, std::string scheduler_uniform)
 {
+    const int num_qubits = 25;
+    const int num_cregs = 3;
+
    // create and set platform
-    ql::quantum_platform starmon("starmon", CFG_FILE_JSON);
-    ql::set_platform(starmon);
+    ql::quantum_platform s17("s17", CFG_FILE_JSON);
+    ql::set_platform(s17);
 
     // create program
-    ql::quantum_program prog(("test_classical_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 3);    // FIXME: 3 creg
-    ql::quantum_kernel k("kernel7.0", starmon, 7, 3);   // FIXME: 3 creg
+    ql::quantum_program prog(("test_classical_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
+    ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
 
     // quantum operations
-    for (int j=0; j<7; j++)
+//    std::vector<size_t> qubits;
+    for (int j=6; j<19; j++) {
         k.gate("x", j);
-    k.gate("cnot", 0, 2);
-    k.gate("cnot", 6, 3);
-    k.gate("cnot", 1, 4);
+//        qubits.push_back(j);
+    }
+//    k.wait(qubits, 0);      // FIXME: try to help scheduler
+
+    k.gate("cnot", 6, 7);
+    k.gate("cnot", 12, 13);
+    k.gate("cnot", 10, 15);
 
     // create classical registers
     ql::creg rd;    // destination register
     ql::creg rs1;
     ql::creg rs2;
 
+#if 0   // FIXME: not implemented in CC backend
     // add/sub/and/or/xor//    k.classical(rd, ql::operation(rs1, std::string("+"), rs2));
     ql::operation op = ql::operation(rs1, std::string("+"), rs2);
     k.classical(rd, op);
+#endif
 
 #if 0   // Python
     k.classical(rd, ql.Operation(rs1, "+", rs2))
@@ -66,8 +77,10 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
     // measure
     k.gate("measure", [0], rs1)
 #endif
-
-    k.gate("measure", std::vector<size_t>(1) , std::vector<size_t>(1));
+    std::vector<size_t> qops, cops;
+    qops.push_back(7);
+    cops.push_back(0);      // FIXME: use a ql::creg
+    k.gate("measure", qops , cops);
 
 
     prog.add(k);
@@ -81,21 +94,21 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
 void test_do_while_nested_for(std::string scheduler, std::string scheduler_uniform)
 {
    // create and set platform
-    ql::quantum_platform starmon("starmon", CFG_FILE_JSON);
-    ql::set_platform(starmon);
+    ql::quantum_platform s17("s17", CFG_FILE_JSON);
+    ql::set_platform(s17);
 
     // create program
     int num_qubits = 5;
     int num_cregs = 10;
-    ql::quantum_program prog(("test_do_while_nested_for_" + scheduler + "_uniform_" + scheduler_uniform), starmon, num_qubits, num_cregs);
-    ql::quantum_kernel k("kernel7.0", starmon, num_qubits, num_cregs);
+    ql::quantum_program prog(("test_do_while_nested_for_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
+    ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
 
     // FIXME: sweep points
 
-    ql::quantum_program sp1(("sp1"), starmon, num_qubits, num_cregs);
-    ql::quantum_program sp2(("sp2"), starmon, num_qubits, num_cregs);
-    ql::quantum_kernel k1("aKernel1", starmon, num_qubits, num_cregs);
-    ql::quantum_kernel k2("aKernel2", starmon, num_qubits, num_cregs);
+    ql::quantum_program sp1(("sp1"), s17, num_qubits, num_cregs);
+    ql::quantum_program sp2(("sp2"), s17, num_qubits, num_cregs);
+    ql::quantum_kernel k1("aKernel1", s17, num_qubits, num_cregs);
+    ql::quantum_kernel k2("aKernel2", s17, num_qubits, num_cregs);
 
     // create classical registers
     ql::creg rd;    // destination register
@@ -103,8 +116,8 @@ void test_do_while_nested_for(std::string scheduler, std::string scheduler_unifo
     ql::creg rs2;
 
     // quantum operations
-    k1.gate("x", 0);
-    k2.gate("y", 0);
+    k1.gate("x", 6);
+    k2.gate("y", 6);
 
     // sp1.add_do_while(k1, ql.Operation(rs1, '>=', rs2))
     ql::operation op1 = ql::operation(rs1, std::string(">="), rs2);
@@ -166,12 +179,12 @@ void
 test_0( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
-    ql::quantum_platform starmon("starmon", CFG_FILE_JSON);
-    ql::set_platform(starmon);
+    ql::quantum_platform s17("s17", CFG_FILE_JSON);
+    ql::set_platform(s17);
 
     // create program
-    ql::quantum_program prog(("test_0_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 0);
-    ql::quantum_kernel k("kernel7.0", starmon, 7, 0);
+    ql::quantum_program prog(("test_0_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
+    ql::quantum_kernel k("kernel7.0", s17, 7, 0);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -196,12 +209,12 @@ void
 test_1( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
-    ql::quantum_platform starmon("starmon", CFG_FILE_JSON);
-    ql::set_platform(starmon);
+    ql::quantum_platform s17("s17", CFG_FILE_JSON);
+    ql::set_platform(s17);
 
     // create program
-    ql::quantum_program prog(("test_1_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 0);
-    ql::quantum_kernel k("kernel7.1", starmon, 7, 0);
+    ql::quantum_program prog(("test_1_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
+    ql::quantum_kernel k("kernel7.1", s17, 7, 0);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -259,12 +272,12 @@ void
 test_2( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
-    ql::quantum_platform starmon("starmon", CFG_FILE_JSON);
-    ql::set_platform(starmon);
+    ql::quantum_platform s17("s17", CFG_FILE_JSON);
+    ql::set_platform(s17);
 
     // create program
-    ql::quantum_program prog(("test_2_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 0);
-    ql::quantum_kernel k("kernel7.2", starmon, 7, 0);
+    ql::quantum_program prog(("test_2_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
+    ql::quantum_kernel k("kernel7.2", s17, 7, 0);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -304,12 +317,12 @@ void
 test_3( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
-    ql::quantum_platform starmon("starmon", CFG_FILE_JSON);
-    ql::set_platform(starmon);
+    ql::quantum_platform s17("s17", CFG_FILE_JSON);
+    ql::set_platform(s17);
 
     // create program
-    ql::quantum_program prog(("test_3_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 0);
-    ql::quantum_kernel k("kernel7.3", starmon, 7, 0);
+    ql::quantum_program prog(("test_3_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
+    ql::quantum_kernel k("kernel7.3", s17, 7, 0);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -353,12 +366,12 @@ void
 test_4( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
-    ql::quantum_platform starmon("starmon", CFG_FILE_JSON);
-    ql::set_platform(starmon);
+    ql::quantum_platform s17("s17", CFG_FILE_JSON);
+    ql::set_platform(s17);
 
     // create program
-    ql::quantum_program prog(("test_4_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 0);
-    ql::quantum_kernel k("kernel7.4", starmon, 7, 0);
+    ql::quantum_program prog(("test_4_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
+    ql::quantum_kernel k("kernel7.4", s17, 7, 0);
 
     for (int j=0; j<7; j++)
         k.gate("x", j);
@@ -391,12 +404,12 @@ void
 test_5( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
-    ql::quantum_platform starmon("starmon", CFG_FILE_JSON);
-    ql::set_platform(starmon);
+    ql::quantum_platform s17("s17", CFG_FILE_JSON);
+    ql::set_platform(s17);
 
     // create program
-    ql::quantum_program prog(("test_5_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 0);
-    ql::quantum_kernel k("kernel7.5", starmon, 7, 0);
+    ql::quantum_program prog(("test_5_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
+    ql::quantum_kernel k("kernel7.5", s17, 7, 0);
 
     // empty kernel
 
@@ -413,12 +426,12 @@ void
 test_6( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
-    ql::quantum_platform starmon("starmon", CFG_FILE_JSON);
-    ql::set_platform(starmon);
+    ql::quantum_platform s17("s17", CFG_FILE_JSON);
+    ql::set_platform(s17);
 
     // create program
-    ql::quantum_program prog(("test_6_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 0);
-    ql::quantum_kernel k("kernel7.6", starmon, 7, 0);
+    ql::quantum_program prog(("test_6_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
+    ql::quantum_kernel k("kernel7.6", s17, 7, 0);
 
     k.gate("prepz", 0);
     k.gate("prepz", 1);
@@ -456,12 +469,12 @@ void
 test_7( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
-    ql::quantum_platform starmon("starmon", CFG_FILE_JSON);
-    ql::set_platform(starmon);
+    ql::quantum_platform s17("s17", CFG_FILE_JSON);
+    ql::set_platform(s17);
 
     // create program
-    ql::quantum_program prog(("test_7_" + scheduler + "_uniform_" + scheduler_uniform), starmon, 7, 0);
-    ql::quantum_kernel k("kernel7.7", starmon, 7, 0);
+    ql::quantum_program prog(("test_7_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
+    ql::quantum_kernel k("kernel7.7", s17, 7, 0);
 
     k.gate("prepz", 0);
     k.gate("prepz", 1);
@@ -493,13 +506,13 @@ test_7( std::string scheduler, std::string scheduler_uniform)
 
 int main(int argc, char ** argv)
 {
-    ql::utils::logger::set_log_level("LOG_DEBUG");
+    ql::utils::logger::set_log_level("LOG_INFO");      // LOG_DEBUG
 
     test_classical("ALAP", "no");
     test_do_while_nested_for("ALAP", "no");
 
-    test_0("ALAP", "no");
 #if 0
+    test_0("ALAP", "no");
     test_0("ALAP", "yes");
     test_1("ALAP", "no");
     test_1("ALAP", "yes");

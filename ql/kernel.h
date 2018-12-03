@@ -1732,7 +1732,7 @@ public:
     size_t        cycle_time;
     kernel_type_t type;
     operation     br_condition;
-    std::map<std::string,custom_gate*> gate_definition;
+    std::map<std::string,custom_gate*> gate_definition;     // FIXME: consider using instruction_map_t
 };
 
 

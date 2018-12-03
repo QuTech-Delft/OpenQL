@@ -113,12 +113,11 @@ public:
             if (!ckt.empty()) {
                 auto creg_count = kernel.creg_count;                        // FIXME: also take platform into account. We get qubit_number from JSON
 
-#if 0   // FIXME: based on old code, disabled in cc_light_scheduler.h
+#if 0           // FIXME: old scheduler
                 // schedule
                 ql::ir::bundles_t bundles = cc_light_schedule(ckt, platform, qubit_number, creg_count);
 #else
                 // schedule with platform resource constraints
-                // FIXME: we removed decompose_instructions, but can cc_light_schedule_rc live with that? Apparently it's not too bad
                 ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, qubit_number, creg_count);
                 // FIXME: cc_light* is just available here because everything is in header files
 #endif
@@ -145,33 +144,6 @@ public:
     {
         FATAL("Circuit compilation not implemented, because it does not support classical kernel operations");
     }
-
-
-#if 0   // FIXME: potential additions, from cc_light
-    // time analysis
-    // total_exec_time = time_analysis();
-
-    // compensate for latencies
-    // compensate_latency();
-
-    // reschedule
-    // resechedule();
-
-    // dump_instructions();
-
-    // decompose meta-instructions
-    // decompose_instructions();
-
-    // reorder instructions
-    // reorder_instructions();
-
-    // insert waits
-
-    emit_eqasm();
-#endif
-
-
-
 
 private:
     // based on cc_light_eqasm_compiler.h::classical_instruction2qisa/decompose_instructions

@@ -20,6 +20,7 @@ namespace arch
 
 
 // from: https://stackoverflow.com/questions/5878775/how-to-find-and-replace-string
+// FIXME: also see str.h::replace_all
 template <typename T, typename U>
 T &replace (
           T &str,
@@ -468,7 +469,7 @@ private:
             std::string instrumentName = instrument["name"];
             std::string signalType = instrument["signal_type"];
 
-            DOUT("found instrument: name='" << instrumentName << "signal type='" << signalType << "'");
+            DOUT("found instrument: name='" << instrumentName << "', signal type='" << signalType << "'");
         }
     }
 
