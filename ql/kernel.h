@@ -237,7 +237,6 @@ public:
 
     void unitary_decomp(size_t qubit1, size_t qubit2, cmat_t m)
     {
-//error: no matching function fro call to 'ql::quantum_kernel::gate(...)'
 	gate("unitary_decomp", {qubit1, qubit2}, m);
     }
 
