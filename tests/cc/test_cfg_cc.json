@@ -543,9 +543,7 @@
 				"signal": [
 					{	"type": "measure",
 						"operand_idx": 0,
-						"value": [
-							"FIXME"	// FIXME: specify output and weight?
-						]
+						"value": ["dummy"]			// Future extension: specify output and weight, and generate code word
 					}
 				]
 			}

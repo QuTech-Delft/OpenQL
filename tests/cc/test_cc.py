@@ -11,6 +11,8 @@ curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
 config_fn = os.path.join(curdir, 'test_cfg_cc.json')
 platform_name = 's-17'
+num_qubits = 25
+num_cregs = 32
 
 
 class Test_central_controller(unittest.TestCase):
@@ -24,18 +26,16 @@ class Test_central_controller(unittest.TestCase):
 
     def test_classical(self):
         platform = ql.Platform(platform_name, config_fn)
-        num_qubits = 5
-        num_cregs = 10
 
         p = ql.Program('test_classical', platform, num_qubits, num_cregs)
-        sweep_points = [1, 2]
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        # sweep_points = [1, 2]
+        # p.set_sweep_points(sweep_points, len(sweep_points))
 
         k1 = ql.Kernel('aKernel1', platform, num_qubits, num_cregs)
 
         # quantum operations
-        k1.gate('x', [0])
-        k1.gate('cz', [0, 2])
+        k1.gate('x', [6])
+        k1.gate('cz', [6, 7])
 
         # create classical registers
         rd = ql.CReg()
@@ -59,8 +59,8 @@ class Test_central_controller(unittest.TestCase):
             k1.classical(rs1, ql.Operation(rs2))
 
         # measure
-        k1.gate('measure', [0], rs1)
-        k1.gate('measure', [1], rs2)
+        k1.gate('measure', [6], rs1)
+        k1.gate('measure', [7], rs2)
 
         # add kernel
         p.add_kernel(k1)
@@ -75,9 +75,8 @@ class Test_central_controller(unittest.TestCase):
 
         platform = ql.Platform(platform_name, config_fn)
 
-        num_qubits = 7
-        p = ql.Program('test_uniform_scheduler_0', platform, num_qubits, 0)
-        k = ql.Kernel('kernel_0', platform, num_qubits, 0)
+        p = ql.Program('test_uniform_scheduler_0', platform, num_qubits, num_cregs)
+        k = ql.Kernel('kernel_0', platform, num_qubits, num_cregs)
 
         # a simple first test
         # the x gates serve to separate the cnot gates wrt dependences
@@ -87,20 +86,20 @@ class Test_central_controller(unittest.TestCase):
         # should have been moved next to the cnot
         # those will move that do not have operands that overlap those of the cnot
 
-        for j in range(7):
+        for j in range(6, 18+1):
             k.gate("x", [j])
 
-        k.gate("cnot", [0, 2])
+        k.gate("cnot", [6, 7])
 
-        for j in range(7):
+        for j in range(6, 18+1):
             k.gate("x", [j])
 
-        k.gate("cnot", [6, 3])
+        k.gate("cnot", [12, 13])
 
-        for j in range(7):
+        for j in range(6, 18+1):
             k.gate("x", [j])
 
-        k.gate("cnot", [1, 4])
+        k.gate("cnot", [10, 15])
 
         p.add_kernel(k)
         p.compile()
@@ -115,12 +114,12 @@ class Test_central_controller(unittest.TestCase):
 
         platform = ql.Platform(platform_name, config_fn)
 
-        num_qubits = 7
-        p = ql.Program('test_qec', platform, num_qubits, 0)
-        k = ql.Kernel('kernel_0', platform, num_qubits, 0)
+        p = ql.Program('test_qec', platform, num_qubits, num_cregs)
+        k = ql.Kernel('kernel_0', platform, num_qubits, num_cregs)
 
 
-        k.gate("cnot", [1, 4])
+        k.gate("cnot", [6, 7])
+        # FIXME: add proper code
 
         p.add_kernel(k)
         p.compile()

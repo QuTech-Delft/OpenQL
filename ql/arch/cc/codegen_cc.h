@@ -111,6 +111,7 @@ public:
 
             bool isSlotUsed = false;
             uint32_t digOut = 0;
+            uint32_t digIn = 0;
             size_t nrGroups = signalValues[slotIdx].size();
             for(size_t group=0; group<nrGroups; group++) {                     // iterate over groups used within slot
                 if(signalValues[slotIdx][group] != "") {
@@ -118,7 +119,7 @@ public:
 
                     // find control mode & bits
                     std::string controlModeName = instrument["control_mode"];
-                    const json &controlMode = controlModes[controlModeName];    // the control mode definition for our instrument
+                    const json &controlMode = controlModes[controlModeName];   // the control mode definition for our instrument
                     const json &controlBits = controlMode["control_bits"][group];
 
                     // find or create codeword/mask fragment for this group
@@ -150,14 +151,12 @@ public:
                                 DOUT("signal value '" << signalValue << "' not found in group " << group << ", which contains " << myCodewordArray);
                                 // NB: codeWord already contains last used value + 1
                                 // FIXME: check that number is available
-                                myCodewordArray[codeWord] = signalValue;   // NB: structure created on demand
+                                myCodewordArray[codeWord] = signalValue;                    // NB: structure created on demand
                             }
-//                            std::cout << std::setw(4) << codewordTable << std::endl; // FIXME
                         } else {    // new instrument or group
                             codeWord = 1;
                             codewordTable[instrumentName][group][0] = "";                   // code word 0 is empty
                             codewordTable[instrumentName][group][codeWord] = signalValue;   // NB: structure created on demand
-//                            std::cout << std::setw(4) << codewordTable << std::endl; // FIXME
                         }
 
                         // convert codeWord to digOut
@@ -177,6 +176,18 @@ public:
                         digOut |= 1 << (int)controlMode["trigger_bits"][group];
                         // FIXME: check validity of nrTriggerBits
                     }
+
+                    // handle readout
+                    // NB: this does not allow for readout without signal generation, which might be needed in the future
+                    if(JSON_EXISTS(controlMode, "result_bits")) {
+                        const json &resultBits = controlMode["result_bits"][group];
+                        size_t nrResultBits = resultBits.size();
+                        if(nrResultBits == 1) {                     // single bit
+                            digIn |= 1<<(int)resultBits[0];         // NB: we assume the result is active high, which is correct for UHF-QC
+                        } else {                                    // NB: nrResultBits==0 will not arrive at this point
+                            FATAL("JSON key 'result_bits' must have 1 bit per group");
+                        }
+                    }
                 }
             }
 
@@ -188,6 +199,10 @@ public:
                           "," << duration_in_cycles),
                           std::string("# code word/mask on '"+instrumentName+"'").c_str());
                     // FIXME: for codewords there is no problem if duration>gate time, but for VSM there is!
+
+                if(digIn) { // FIXME
+                    comment(SS2S("# digIn=" << digIn));
+                }
             } else {
                 // slot not used for this gate, generate delay
                 emit("", "seq_out", SS2S(slot << ",0x00000000," << duration_in_cycles), std::string("# idle on '"+instrumentName+"'").c_str());
@@ -270,7 +285,7 @@ public:
             if(operandIdx >= qops.size()) {
                 FATAL("Error in JSON definition of instruction '" << iname <<
                       "': illegal operand number " << operandIdx <<
-                      "' exceeds expected maximum of " << qops.size())
+                      "' exceeds expected maximum of " << qops.size()-1)
             }
             size_t qubit = qops[operandIdx];
 
@@ -320,7 +335,6 @@ public:
             // associate cop0 with qop0
         }
     }
-
 
     /************************************************************************\
     | Classical operations on kernels

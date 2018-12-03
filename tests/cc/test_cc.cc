@@ -98,8 +98,8 @@ void test_do_while_nested_for(std::string scheduler, std::string scheduler_unifo
     ql::set_platform(s17);
 
     // create program
-    int num_qubits = 5;
-    int num_cregs = 10;
+    const int num_qubits = 25;
+    const int num_cregs = 3;
     ql::quantum_program prog(("test_do_while_nested_for_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
     ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
 
@@ -506,7 +506,7 @@ test_7( std::string scheduler, std::string scheduler_uniform)
 
 int main(int argc, char ** argv)
 {
-    ql::utils::logger::set_log_level("LOG_INFO");      // LOG_DEBUG
+    ql::utils::logger::set_log_level("LOG_DEBUG");      // LOG_DEBUG, LOG_INFO
 
     test_classical("ALAP", "no");
     test_do_while_nested_for("ALAP", "no");
