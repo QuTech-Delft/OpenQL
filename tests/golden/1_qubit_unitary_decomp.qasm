@@ -4,6 +4,6 @@ qubits 1
 
 .aKernel
     prepz q[0]
-    Rz[0,1.5708]
+    Rz[0,0]
     Ry[0,1.5708]
-    Rz[0,4.7124]
+    Rz[0,0]

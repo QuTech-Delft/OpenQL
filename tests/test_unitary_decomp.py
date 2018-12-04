@@ -29,7 +29,7 @@ class Test_unitary_decomp(unittest.TestCase):
 
         # populate kernel
         k.prepz(0)
-        k.unitarydecomp(0, [[0.7071,i*0.7071],[i*0.7071,0.7071]])
+        k.unitarydecomp(0, [[0.7071,0.7071],[-0.7071,0.7071]])
 
         p = ql.Program("1_qubit_unitary_decomp", platf, nqubits)
         p.set_sweep_points(sweep_points, len(sweep_points))
