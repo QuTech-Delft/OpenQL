@@ -96,7 +96,7 @@ public:
 
         for( auto ins : ckt )
         {
-            DOUT("Current instruction : " << ins->qasm());
+            // DOUT("Current instruction : " << ins->qasm());
 
             // Add nodes
             ListDigraph::Node consNode = graph.addNode();
@@ -982,7 +982,7 @@ public:
                 for(auto & op_curr : operations_curr_bundle)
                 {
                     auto temp_buf_cycles = buffer_cycles_map[ std::pair<std::string,std::string>(op_prev, op_curr) ];
-                    DOUT("Considering buffer_" << op_prev << "_" << op_curr << ": " << temp_buf_cycles);
+                    // DOUT("Considering buffer_" << op_prev << "_" << op_curr << ": " << temp_buf_cycles);
                     buffer_cycles = std::max(temp_buf_cycles, buffer_cycles);
                 }
             }
@@ -1352,7 +1352,7 @@ public:
                 bundles.push_back(abundle);
             }
         }
-        // DOUT("Depth=" << TotalCycles);
+        DOUT("Depth=" << TotalCycles);
         DOUT("Scheduling ALAP to get bundles [DONE]");
         return bundles;
     }

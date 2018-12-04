@@ -10,7 +10,7 @@
 #define QL_MAPPER_H
 
 #include <random>
-#include <ctime>
+#include <chrono>
 #include "ql/utils.h"
 #include "ql/platform.h"
 #include "ql/arch/cc_light_resource_manager.h"
@@ -982,7 +982,7 @@ void AddSwap(size_t r0, size_t r1, bool ismainpast)
     ql::circuit circ;
 
 //  DOUT("... adding/trying swap(q" << r0 << ",q" << r1 << ") in mainpast?=" << ismainpast << " ... " );
-    v2r.Print("... adding swap/move");
+    // v2r.Print("... adding swap/move");
 
     v0 = v2r.GetVirt(r0);
     v1 = v2r.GetVirt(r1);
@@ -1586,7 +1586,6 @@ void Init(ql::quantum_platform* p)
 //	1s      run ip max for 1 second; when timed out, just use heuristics
 
 #ifdef INITIALPLACE
-#include <chrono>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -1916,7 +1915,7 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
         MapperAssert(k < nlocs);  // each facility i by definition represents a used qubit so must have got a location
     }
     DOUT("... correct location of unused virtual qubits to be an unused location");
-//  v2r.Print("... result Virt2Real map of InitialPlace before adding unused virtual qubits and unused locations ");
+    // v2r.Print("... result Virt2Real map of InitialPlace before adding unused virtual qubits and unused locations ");
     // used virtual qubits v have got their location k filled in in v2r[v] == k
     // unused virtual qubits still have location MAX_CYCLE, fill those with the remaining locations
     for (size_t v=0; v<nvq; v++)
@@ -2165,70 +2164,83 @@ void GenSplitPaths(std::list<NNPath> & oldlp, std::list<NNPath> & reslp)
     // NNPath::listPrint("... after GenSplitPaths", reslp);
 }
 
-// return path from list of paths with minimal cycle extension of mainPast
-void MinimalExtendingPath(std::list<NNPath>& lp, NNPath & resp)
-{
-    size_t  minExtension = MAX_CYCLE;
-    NNPath  minp;
-
-    // DOUT("MinimalExtendingPath");
-    MapperAssert (!lp.empty());   // so there always is a result path
-
-    for (auto & p : lp)
-    {
-        size_t extension = p.Extend(mainPast);
-        if (extension < minExtension)
-        {
-            minExtension = extension;
-            minp = p;
-        }
-    }
-    resp = minp;
-    // NNPath::listPrint("... after MinimalExtendingPath", lp);
-}
-
-// find the minimally extending shortest path and use it to generate swaps
-void MapMinExtend(ql::gate* gp)
-{
-    auto&   q = gp->operands;
-    size_t  src = mainPast.MapQubit(q[0]);
-    size_t  tgt = mainPast.MapQubit(q[1]);
-    size_t  d = grid.Distance(src, tgt);
-    MapperAssert (d >= 1);
-    DOUT("... MapMinExtend: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
-
-    if (d > 1)
-    {
-        std::list<NNPath> genlp;    // list that will hold all paths
-        std::list<NNPath> splitlp;  // list that will hold all split paths
-        NNPath resp;                // path in splitlp that minimally extends mainPast
-
-        GenShortestPaths(src, tgt, genlp);       // find all shortest paths from src to tgt
-        // NNPath::listPrint("... after GenShortestPaths", genlp);
-
-        GenSplitPaths(genlp, splitlp);   // 2q gate can be put anywhere in each path
-        MinimalExtendingPath(splitlp, resp);// from all these, find path that minimally extends mainPast
-
-        resp.Print("... the minimally extending path with swaps is");
-        resp.AddSwaps(mainPast, true);  // add swaps, as described by resp, to mainPast; indicate this adds to mainPast
-        mainPast.Schedule();            // and schedule them in
-    }
-}
-
-// generate a random int number in range 0..count-1
+// if the maptiebreak option indicates so,
+// generate a random int number in range 0..count-1 and return that
+// otherwise return 0
 size_t Draw(size_t count)
 {
-    std::uniform_int_distribution<> dis(0, (count-1));
-    return dis(gen);
+    MapperAssert(count >= 1);
+    size_t     c = 0;
+    if (count > 1)
+    {
+        std::string maptiebreakopt = ql::options::get("maptiebreak");
+        std::uniform_int_distribution<> dis(0, (count-1));
+        if ("random" == maptiebreakopt)
+        {
+            c = dis(gen);
+            DOUT(" ... random drew " << c << " from 0.." << (count-1));
+        }
+        else if ("last" == maptiebreakopt)
+        {
+            c = count-1;
+        }
+        else if ("first" == maptiebreakopt)
+        {
+            c = 0;
+        }
+    }
+    return c;
 }
 
+// select path determined by strategy defined by mapper options
+// - if minextend[rc], select path from list of paths with minimal cycle extension of mainPast
+// - if base[rc], select from whole list of paths
+// maptiebreak option indicates which one to take when several remain
+// result is returned in resp
+void SelectPath(std::list<NNPath>& lp, NNPath & resp)
+{
+    std::vector<NNPath>   choices;
+    DOUT("SelectPath");
+    MapperAssert (!lp.empty());   // so there always is a result path
+
+    auto mapopt = ql::options::get("mapper");
+    if (mapopt == "base"|| mapopt == "baserc")
+    {
+        for (auto & p : lp)
+        {
+            choices.push_back(p);
+        }
+    }
+    else if (mapopt == "minextend" || mapopt == "minextendrc")
+    {
+        size_t  minExtension = MAX_CYCLE;
+        for (auto & p : lp)
+        {
+            size_t extension = p.Extend(mainPast);
+            if (extension <= minExtension)
+            {
+                if (extension < minExtension)
+                {
+                    minExtension = extension;
+                    choices.clear();
+                }
+                choices.push_back(p);
+            }
+        }
+    }
+    resp = choices[Draw(choices.size())];
+    NNPath::listPrint("... after SelectPath", lp);
+    resp.Print("... the selected path is");
+}
+
+#if 0
 // find one (first/random) shortest path and use it to generate swaps
+// original implementation
 void MapBase(ql::gate* gp)
 {
     auto& q = gp->operands;
     size_t src = mainPast.MapQubit(q[0]);
     size_t tgt = mainPast.MapQubit(q[1]);
-    std::string maptiebreakopt = ql::options::get("maptiebreak");
         
     size_t d = grid.Distance(src, tgt);
     DOUT("... MapBase: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
@@ -2244,17 +2256,8 @@ void MapBase(ql::gate* gp)
                 choices.push_back(n);
             }
         }
-        MapperAssert(choices.size() >= 1);
-        size_t     c = 0;
-        if ("random" == maptiebreakopt && choices.size() >= 1)
-        {
-            for (auto x : choices)
-            {
-                DOUT(" ... choice: " << x);
-            }
-            c = Draw(choices.size());
-        }
-        size_t  n = choices[c];
+        size_t  n = choices[Draw(choices.size())];
+
         dnb = grid.Distance(n, tgt);
         DOUT(" ... distance(real " << n << ", real " << tgt << ")=" << dnb);
         mainPast.AddSwap(src, n, true);
@@ -2265,6 +2268,35 @@ void MapBase(ql::gate* gp)
 
         d = grid.Distance(src, tgt);
         // DOUT(" ... new distance(real " << src << ", real " << tgt << ")=" << d);
+    }
+}
+#endif
+
+// take care that the operands of the given 2q gate become NN
+void EnforceNN(ql::gate* gp)
+{
+    auto&   q = gp->operands;
+    size_t  src = mainPast.MapQubit(q[0]);
+    size_t  tgt = mainPast.MapQubit(q[1]);
+    size_t  d = grid.Distance(src, tgt);
+    MapperAssert (d >= 1);
+    DOUT("... EnforceNN: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
+
+    if (d > 1)
+    {
+        std::list<NNPath> genlp;    // list that will hold all paths
+        std::list<NNPath> splitlp;  // list that will hold all split paths
+        NNPath resp;                // select result path in splitlp
+
+        GenShortestPaths(src, tgt, genlp);       // find all shortest paths from src to tgt
+        // NNPath::listPrint("... after GenShortestPaths", genlp);
+
+        GenSplitPaths(genlp, splitlp);   // 2q gate can be put anywhere in each path
+
+        SelectPath(splitlp, resp);      // select one according to strategy specified by options
+
+        resp.AddSwaps(mainPast, true);  // add swaps, as described by resp, to mainPast; indicate this adds to mainPast
+        mainPast.Schedule();            // and schedule them in
     }
 }
 
@@ -2286,20 +2318,7 @@ void MapGate(ql::gate* gp)
     // for each two-qubit gate, make the mapping right, if necessary by inserting swaps
     if (operandCount == 2)
     {
-        auto mapopt = ql::options::get("mapper");
-        if (mapopt == "base"|| mapopt == "baserc")
-        {
-            MapBase(gp);
-        }
-        else if (mapopt == "minextend" || mapopt == "minextendrc")
-        {
-            MapMinExtend(gp);
-        }
-        else
-        {
-            EOUT("Unknown value of option 'mapper'='" << mapopt << "'.");
-            throw ql::exception("Error: unknown value of mapper option.", false);
-        }
+        EnforceNN(gp);
     }
 
     // with mapping done, insert the gate itself
@@ -2505,6 +2524,15 @@ void MapCircuit(size_t& kernel_qubits, ql::circuit& circ, std::string& kernel_na
     DOUT("==================================");
 }   // end MapCircuit
 
+// start the random generator with a seed
+// that is unique to the microsecond
+void RandomInit()
+{
+    auto ts = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    DOUT("Seeding random generator with " << ts );
+    gen.seed(ts);
+}
+
 // initialize mapper for whole program
 // lots could be split off for the whole program, once that is needed
 void Init(const ql::quantum_platform& p)
@@ -2513,7 +2541,7 @@ void Init(const ql::quantum_platform& p)
     // DOUT("... Grid initialization: platform qubits->coordinates, ->neighbors, distance ...");
     platform = p;
     nqbits = p.qubit_number;
-    gen.seed(time(NULL));
+    RandomInit();
     // DOUT("... platform/real number of qubits=" << nqbits << ");
     cycle_time = p.cycle_time;
 

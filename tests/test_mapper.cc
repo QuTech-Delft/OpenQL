@@ -804,7 +804,38 @@ int main(int argc, char ** argv)
 //  test_oneD2("oneD2", "minextendrc", "no", "no");
 //  test_oneD2("oneD2", "minextendrc", "no", "yes");
 
+    ql::options::set("maptiebreak", "first");
+    DOUT("maptiebreak=first");
     test_oneD4("oneD4", "base", "no", "no");
+    test_oneD4("oneD4", "minextend", "no", "no");
+    test_oneD4("oneD4", "minextendrc", "no", "no");
+    ql::options::set("maptiebreak", "last");
+    DOUT("maptiebreak=last");
+    test_oneD4("oneD4", "base", "no", "no");
+    test_oneD4("oneD4", "minextend", "no", "no");
+    test_oneD4("oneD4", "minextendrc", "no", "no");
+    ql::options::set("maptiebreak", "random");
+    DOUT("maptiebreak=random trial 1");
+    test_oneD4("oneD4", "base", "no", "no");
+    test_oneD4("oneD4", "minextend", "no", "no");
+    test_oneD4("oneD4", "minextendrc", "no", "no");
+    ql::options::set("maptiebreak", "random");
+    DOUT("maptiebreak=random trial 2");
+    test_oneD4("oneD4", "base", "no", "no");
+    test_oneD4("oneD4", "minextend", "no", "no");
+    test_oneD4("oneD4", "minextendrc", "no", "no");
+    ql::options::set("maptiebreak", "random");
+    DOUT("maptiebreak=random trial 3");
+    test_oneD4("oneD4", "base", "no", "no");
+    test_oneD4("oneD4", "minextend", "no", "no");
+    test_oneD4("oneD4", "minextendrc", "no", "no");
+    ql::options::set("maptiebreak", "random");
+    DOUT("maptiebreak=random trial 4");
+    test_oneD4("oneD4", "base", "no", "no");
+    test_oneD4("oneD4", "minextend", "no", "no");
+    test_oneD4("oneD4", "minextendrc", "no", "no");
+
+//  test_oneD4("oneD4", "base", "no", "no");
 //  test_oneD4("oneD4", "base", "yes", "no");
 //  test_oneD4("oneD4", "minextend", "no", "no");
 //  test_oneD4("oneD4", "minextend", "yes", "no");
