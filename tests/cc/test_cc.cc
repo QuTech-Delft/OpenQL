@@ -45,8 +45,15 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
 //    k.wait(qubits, 0);      // FIXME: try to help scheduler
 
     k.gate("cnot", 6, 7);
+    k.gate("park_cz", 11);  // NB: not necessarily correct qubit
+
     k.gate("cnot", 12, 13);
+    k.gate("park_cz", 17);
+
     k.gate("cnot", 10, 15);
+    k.gate("park_cz", 11);
+
+    k.gate("cnot_park2", std::vector<size_t> {10, 15, 11});
 
     // create classical registers
     ql::creg rd;    // destination register
@@ -77,11 +84,8 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
     // measure
     k.gate("measure", [0], rs1)
 #endif
-    std::vector<size_t> qops, cops;
-    qops.push_back(7);
-    cops.push_back(0);      // FIXME: use a ql::creg
-    k.gate("measure", qops , cops);
-
+    k.gate("measure", std::vector<size_t> {7}, std::vector<size_t> {0});
+    k.gate("measure", std::vector<size_t> {8}, std::vector<size_t> {1});
 
     prog.add(k);
 

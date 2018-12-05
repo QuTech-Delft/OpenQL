@@ -71,7 +71,7 @@ public:
 
     void program_start(std::string prog_name)
     {
-        // FIXME: clear codewordTable
+        // FIXME: clear codewordTable, inputLutTable
 
         // emit program header
         cccode << std::left;                                // assumed by emit()
@@ -86,23 +86,25 @@ public:
     {
         emit("", "stop");                                  // NB: cc_light loops whole program indefinitely
 
-        std::cout << std::setw(4) << codewordTable << std::endl; // FIXME
+        std::cout << std::setw(4) << codewordTable << std::endl << inputLutTable << std::endl; // FIXME
     }
 
+    // bundle_start: clear groupInfo, which maintains the work that needs to be performed for bundle
     void bundle_start(int delta, std::string cmnt)   // FIXME: do we need parameter delta
     {
         // empty the matrix of signal values
         size_t slotsUsed = ccSetup["slots"].size();
         size_t maxGroups = 32;                     // FIXME: magic constant, enough for VSM
-        signalValues.assign(slotsUsed, std::vector<string>(maxGroups, ""));
+        groupInfo.assign(slotsUsed, std::vector<tGroupInfo>(maxGroups, {"", -1}));
 
         comment(cmnt);
     }
 
+    // bundle_finish: generate code for bundle from information collected in groupInfo
     void bundle_finish(int duration_in_cycles, int delta)   // FIXME: do we need parameter delta
     {
         const json &ccSetupSlots = ccSetup["slots"];
-        for(size_t slotIdx=0; slotIdx<signalValues.size(); slotIdx++) {         // iterate over slot vector
+        for(size_t slotIdx=0; slotIdx<groupInfo.size(); slotIdx++) {         // iterate over slot vector
             // collect info from JSON
             const json &ccSetupSlot = ccSetupSlots[slotIdx];
             const json &instrument = ccSetupSlot["instrument"];
@@ -112,9 +114,9 @@ public:
             bool isSlotUsed = false;
             uint32_t digOut = 0;
             uint32_t digIn = 0;
-            size_t nrGroups = signalValues[slotIdx].size();
+            size_t nrGroups = groupInfo[slotIdx].size();
             for(size_t group=0; group<nrGroups; group++) {                     // iterate over groups used within slot
-                if(signalValues[slotIdx][group] != "") {
+                if(groupInfo[slotIdx][group].signalValue != "") {
                     isSlotUsed = true;
 
                     // find control mode & bits
@@ -134,7 +136,7 @@ public:
                         // FIXME allow single code word for vector of groups
                         // try to find code word
                         uint32_t codeWord = 0;
-                        std::string signalValue = signalValues[slotIdx][group];
+                        std::string signalValue = groupInfo[slotIdx][group].signalValue;
 
                         if(JSON_EXISTS(codewordTable, instrumentName) &&                    // instrument exists
                                         codewordTable[instrumentName].size() > group) {     // group exists
@@ -178,36 +180,53 @@ public:
                     }
 
                     // handle readout
-                    // NB: this does not allow for readout without signal generation, which might be needed in the future
-                    if(JSON_EXISTS(controlMode, "result_bits")) {
+                    // NB: this does not allow for readout without signal generation (by the same instrument), which might be needed in the future
+                    // FIXME: move out of this loop
+                    // FIXME: test for groupInfo[slotIdx][group].readoutCop >= 0
+                    if(JSON_EXISTS(controlMode, "result_bits")) {                               // this instrument mode produces results
                         const json &resultBits = controlMode["result_bits"][group];
                         size_t nrResultBits = resultBits.size();
                         if(nrResultBits == 1) {                     // single bit
                             digIn |= 1<<(int)resultBits[0];         // NB: we assume the result is active high, which is correct for UHF-QC
+
+#if 0
+                            // FIXME: save groupInfo[slotIdx][group].readoutCop in inputLut
+                            if(JSON_EXISTS(inputLutTable, instrumentName) &&                    // instrument exists
+                                            inputLutTable[instrumentName].size() > group) {     // group exists
+                            } else {    // new instrument or group
+                                codeWord = 1;
+                                inputLutTable[instrumentName][group][0] = "";                   // code word 0 is empty
+                                inputLutTable[instrumentName][group][codeWord] = signalValue;   // NB: structure created on demand
+                            }
+#endif
                         } else {                                    // NB: nrResultBits==0 will not arrive at this point
                             FATAL("JSON key 'result_bits' must have 1 bit per group");
                         }
                     }
-                }
-            }
+                } // if signal defined
+            } // for group
 
             if(isSlotUsed) {
                 // emit code for slot
                 emit("", "seq_out",
                      SS2S(slot <<
-                          ",0x" << std::hex << std::setw(8) << std::setfill('0') << digOut << std::dec <<       // FIXME: also reset setfill?
+                          ",0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec <<
                           "," << duration_in_cycles),
-                          std::string("# code word/mask on '"+instrumentName+"'").c_str());
+                     std::string("# code word/mask on '"+instrumentName+"'").c_str());
                     // FIXME: for codewords there is no problem if duration>gate time, but for VSM there is!
 
                 if(digIn) { // FIXME
                     comment(SS2S("# digIn=" << digIn));
+                    // get qop
+                    // get cop
+                    // get/assign LUT
+                    // seq_in_sm
                 }
             } else {
                 // slot not used for this gate, generate delay
                 emit("", "seq_out", SS2S(slot << ",0x00000000," << duration_in_cycles), std::string("# idle on '"+instrumentName+"'").c_str());
             }
-        }
+        } // for slot
 
         comment("");    // blank line to separate bundles
     }
@@ -312,28 +331,30 @@ public:
                          "', signal='" << signalValueString << "'"));
 
             // check and store signal value
-#if 0   // FIXME: make room in signalValues matrix
+#if 0   // FIXME: make room in signalValues matrix. NB: now groupInfo
             signalValues.reserve(si.slotIdx+1);
             signalValues[si.slotIdx].reserve(si.group+1);
 #endif
-            if(signalValues[si.slotIdx][si.group] == "") {                          // not yet used
-                signalValues[si.slotIdx][si.group] = signalValueString;
-            } else if(signalValues[si.slotIdx][si.group] == signalValueString) {    // unchanged
+            if(groupInfo[si.slotIdx][si.group].signalValue == "") {                         // not yet used
+                groupInfo[si.slotIdx][si.group].signalValue = signalValueString;
+            } else if(groupInfo[si.slotIdx][si.group].signalValue == signalValueString) {   // unchanged
                 // do nothing
             } else {
                 EOUT("Code so far:\n" << cccode.str());                    // FIXME: provide context to help finding reason
                 FATAL("Signal conflict on instrument='" << instrumentName <<
                       "', group=" << si.group <<
-                      ", between '" << signalValues[si.slotIdx][si.group] <<
+                      ", between '" << groupInfo[si.slotIdx][si.group].signalValue <<
                       "' and '" << signalValueString << "'");
+            }
+
+            if(isReadout) {
+                // remind the classical operand used
+                groupInfo[si.slotIdx][si.group].readoutCop = cops[0];
             }
 
             // NB: code is generated in bundle_finish()
         }
 
-        if(isReadout) {
-            // associate cop0 with qop0
-        }
     }
 
     /************************************************************************\
@@ -395,13 +416,18 @@ private:
         int group;
     } tSignalInfo;
 
+    typedef struct {
+        std::string signalValue;
+        int readoutCop;     // NB: we use int iso size_t so we can encode 'unused'
+    } tGroupInfo;
 
 private:
     bool verboseCode = true;                                    // output extra comments in generated code
 
     std::stringstream cccode;                                   // the code generated for the CC
-    std::vector<std::vector<std::string>> signalValues;         // matrix[slotIdx][group]
-    json codewordTable;
+    std::vector<std::vector<tGroupInfo>> groupInfo;             // matrix[slotIdx][group]
+    json codewordTable;                                         // codewords versus signals per instrument group
+    json inputLutTable;                                         // input LUT usage per instrument group
 
     // some JSON nodes we need access to. FIXME: use pointers for efficiency?
     json backendSettings;

@@ -114,7 +114,7 @@
 			},
 
 			// Modes to control instruments. These define which bits are used to
-			// control groups of channels
+			// control groups of channels and/or get back measurement results
 			"control_modes": {
 				"awg8-mw-vsm": {						// ZI_HDAWG8.py::cfg_codeword_protocol() == 'microwave'
 					"control_bits": [
@@ -474,7 +474,6 @@
       "cl_9 %0": ["rx180 %0", "ry180 %0"],
       "cl_10 %0": ["ry90 %0", "rxm90 %0"],
       "cl_11 %0": ["rxm90 %0", "ry90 %0"],
-
       "cl_12 %0": ["ry90 %0", "rx180 %0"],
       "cl_13 %0": ["rxm90 %0"],
       "cl_14 %0": ["rx90 %0", "rym90 %0", "rxm90 %0"],
@@ -486,36 +485,46 @@
       "cl_20 %0": ["rx90 %0", "rym90 %0", "rx90 %0"],
       "cl_21 %0": ["ry90 %0"],
       "cl_22 %0": ["rxm90 %0", "ry180 %0"],
-      "cl_23 %0": ["rx90 %0", "ry90 %0", "rxm90 %0"]
+      "cl_23 %0": ["rx90 %0", "ry90 %0", "rxm90 %0"],
+
+      // CC additions
+      "cnot_park1 %0,%1,%2": ["ry90 %1", "cz %0,%1", "park_cz %2", "ry90 %1"],
+      "cnot_park2 %0,%1,%2": ["ry90 %1", "cz_park %0,%1,%2", "ry90 %1"]
   	},
 
 
 	// FIXME: allow AWG8 setPrecompClear with wave
 	// FIXME: key 'matrix' is required, but does not contain useful information
 	"instructions": {
-		// additions from 'CC-software-implementation.docx':
+		// additions from 'CC-software-implementation.docx', these are single-qubit
+		// flux pulses, see issue #176:
 		"park_cz" : { // park signal with same length as cz gate
 			"duration" : 40,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+			"cc_light_instr": "park_cz",
+			"type": "measure",		// FIXME
 			"cc": {
-				"sig": {
-					"flux": {
-						"qubit": "q%0",	// FIXME: necessary, or implicit from parameters we get at runtime. Let's look at cz
-						"wave": ["{gateName}-{instrumentName}"]
+				"signal": [
+					{	"type": "flux",
+						"operand_idx": 0,
+						"value": ["park_cz-{qubit}"]
 					}
-//					"flux,<codeword>,%q" // %q assumes same codeword for all qubits
-				}
+				]
 			}
 		},
+
 		"park_measure" : { // park signal with same length as measurement
 			"duration" : 300,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"cc": {
-				"sig": {
-//					"flux,<codeword>,%q" // %q assumes same codeword for all qubits
-				}
+				"signal": [
+					{	"type": "flux",
+						"operand_idx": 0,		// FIXME: control, or target?
+						"value": ["park_measure-{qubit}"]
+					}
+				]
 			}
 		},
 
@@ -651,6 +660,31 @@
 			"cc_light_instr": "cz",
 			"cc": {
 				"signal_ref": "two-qubit"		// NB: reference, instead of defining "signal" here
+			}
+		},
+		"cz_park": {
+			"duration": 40,
+			"latency": 0,
+			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+			"disable_optimization": true,
+			"type": "flux",
+			"cc_light_instr_type": "two_qubit_gate",
+			"cc_light_instr": "cz",
+			"cc": {
+				"signal": [
+					{	"type": "flux",
+						"operand_idx": 0,		// FIXME: control, or target?
+						"value": ["flux-0-{qubit}"]
+					},
+					{	"type": "flux",
+						"operand_idx": 1,		// FIXME: control, or target?
+						"value": ["flux-1-{qubit}"]
+					},
+					{	"type": "flux",
+						"operand_idx": 2,
+						"value": ["park_cz-{qubit}"]
+					}
+				]
 			}
 		}
 	}	// end of "instructions"

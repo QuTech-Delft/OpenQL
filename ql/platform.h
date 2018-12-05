@@ -135,13 +135,12 @@ public:
             instr_name = g->arch_operation_name;
             if(instr_name.empty())
             {
-                FATAL("arch_operation_name not defined for instruction: " << iname << " !");
+                FATAL("JSON file: field 'arch_operation_name' not defined for instruction '" << iname << "'");
             }
-            // DOUT("arch_operation_name: " << instr_name);
         }
         else
         {
-            FATAL("custom instruction not found for : " << iname << " !");
+            FATAL("JSON file: custom instruction not found: '" << iname << "'");
         }
         return instr_name;
     }
@@ -151,11 +150,7 @@ public:
     const json& find_instruction(std::string iname) const
     {
         // search the JSON defined instructions, to prevent JSON exception if key does not exist
-        if (instruction_settings.find(iname) == instruction_settings.end())
-        {
-            FATAL("instruction settings not found for '" << iname << "'!");
-        }
-
+        if(!JSON_EXISTS(instruction_settings, iname)) FATAL("JSON file: instruction not found: '" << iname << "'");
         return instruction_settings[iname];
     }
 
@@ -164,6 +159,7 @@ public:
     std::string find_instruction_type(std::string iname) const
     {
         const json &instruction = find_instruction(iname);
+        if(!JSON_EXISTS(instruction, "type")) FATAL("JSON file: field 'type' not defined for instruction '" << iname <<"'");
         return instruction["type"];
     }
 };

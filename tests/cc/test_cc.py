@@ -28,9 +28,6 @@ class Test_central_controller(unittest.TestCase):
         platform = ql.Platform(platform_name, config_fn)
 
         p = ql.Program('test_classical', platform, num_qubits, num_cregs)
-        # sweep_points = [1, 2]
-        # p.set_sweep_points(sweep_points, len(sweep_points))
-
         k1 = ql.Kernel('aKernel1', platform, num_qubits, num_cregs)
 
         # quantum operations
