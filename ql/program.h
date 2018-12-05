@@ -112,9 +112,11 @@ class quantum_program
                   ((gtype != __classical_gate__) && (op >= qubit_count))
                  )
                {
-                   EOUT("Out of range operand(s) for operation: '" << gname << "'");
-                   EOUT("FIXME: creg_count=" << creg_count << ", qubit_count" << qubit_count);
-                   throw ql::exception("Out of range operand(s) for operation: '"+gname+"' !",false);
+                   FATAL("Out of range operand(s) for operation: '" << gname <<
+                        "' (op=" << op <<
+                        ", qubit_count=" << qubit_count <<
+                        ", creg_count=" << creg_count <<
+                        ")");
                }
             }
          }
