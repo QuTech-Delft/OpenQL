@@ -422,6 +422,8 @@ private:
                     }
                     fout << ssbundles.str();
                 }
+                std::vector<size_t> usedcyclecount;
+                kernel.get_qubit_usedcyclecount(usedcyclecount);
                 fout << "# ----- depth: " << kernel.get_depth() << "\n";
                 fout << "# ----- quantum gates: " << kernel.get_quantum_gates_count() << "\n";
                 fout << "# ----- non single qubit gates: " << kernel.get_non_single_qubit_quantum_gates_count() << "\n";
@@ -429,6 +431,14 @@ private:
                 fout << "# ----- moves added: " << kernel.moves_added << "\n";
                 fout << "# ----- classical operations: " << kernel.get_classical_operations_count() << "\n";
                 fout << "# ----- qubits used: " << kernel.get_qubit_usecount() << "\n";
+                fout << "# ----- qubit cycles use: ";
+                    int started = 0;
+                    for (auto v : usedcyclecount)
+                    {
+                        if (started) { fout << ", "; } else { fout << "["; started = 1; }
+                        fout << v;
+                    }
+                    fout << "]" << "\n";
             }
         }
         size_t total_depth = 0;

@@ -925,6 +925,27 @@ public:
         return count;
     }
 
+    void  get_qubit_usedcyclecount(std::vector<size_t>& usedcyclecount)
+    {
+        usedcyclecount.resize(qubit_count,0);
+        for (auto & gp: c)
+        {
+            switch(gp->type())
+            {
+            case __classical_gate__:
+            case __wait_gate__:
+                break;
+            default:    // quantum gate
+                for (auto v: gp->operands)
+                {
+                    usedcyclecount[v] += (gp->duration+cycle_time-1)/cycle_time;
+                }
+                break;
+            }
+        }
+        return;
+    }
+
     size_t  get_quantum_gates_count()
     {
         size_t quantum_gates = 0;
@@ -1006,13 +1027,33 @@ public:
             ss << "    blt r31, r29, " << tokens[0] << "\n";
         }
 
-        ss << "# ----- depth: " << get_depth() << "\n";
+        size_t  depth = get_depth();
+        size_t  usecount = get_qubit_usecount();
+        std::vector<size_t> usedcyclecount;
+        get_qubit_usedcyclecount(usedcyclecount);
+        ss << "# ----- depth: " << depth << "\n";
         ss << "# ----- quantum gates: " << get_quantum_gates_count() << "\n";
         ss << "# ----- non single qubit gates: " << get_non_single_qubit_quantum_gates_count() << "\n";
         ss << "# ----- swaps added: " << swaps_added << "\n";
         ss << "# ----- of which moves added: " << moves_added << "\n";
         ss << "# ----- classical operations: " << get_classical_operations_count() << "\n";
-        ss << "# ----- qubits used: " << get_qubit_usecount() << "\n";
+        ss << "# ----- qubits used: " << usecount << "\n";
+        ss << "# ----- qubit cycles use: ";
+            int started = 0;
+            for (auto v : usedcyclecount)
+            {
+                if (started)
+                {
+                    ss << ", ";
+                }
+                else
+                {
+                    ss << "[";
+                    started = 1;
+                }
+                ss << v;
+            }
+            ss << "]" << "\n";
         return ss.str();
     }
 
