@@ -1624,7 +1624,7 @@ void Init(Grid* g, ql::quantum_platform *p)
     platformp = p;
     nlocs = p->qubit_number;
     nvq = p->qubit_number;  // same range; when not, take set from config and create v2i earlier
-    // DOUT("... number of real qubits (locations): " << nlocs);
+    DOUT("... number of real qubits (locations): " << nlocs);
     gridp = g;
 }
 
@@ -1635,8 +1635,9 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
 {
     DOUT("InitialPlace circuit ...");
 
-    // compute usecount to know which virtual qubits are actually used
-    // use it to compute v2i, mapping virtual qubit indices to contiguous facility indices
+    // compute usecount[] to know which virtual qubits are actually used
+    // use it to compute v2i, mapping (non-contiguous) virtual qubit indices to contiguous facility indices
+    // (the MIP model is shorter when the indices are contiguous)
     // finally, nfac is set to the number of these facilities
     DOUT("... compute usecount by scanning circuit");
     std::vector<size_t>  usecount;  // usecount[v] = count of use of virtual qubit v in current circuit
@@ -1661,7 +1662,7 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     }
     DOUT("... number of facilities: " << nfac << " while number of virtual qubits is: " << nvq);
 
-    // precompute refcount by scanning circuit
+    // precompute refcount (used by the model as constants) by scanning circuit
     // refcount[i][j] = count of two-qubit gates between facilities i and j in current circuit
     // at the same time, set anymap and currmap
     // anymap = there are no two-qubit gates so any map will do
@@ -1868,7 +1869,7 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     // DOUT("MINIMIZE " << objs);
     
     // solve the problem
-    WOUT("... solve the initial placement model, this may take a while ...");
+    WOUT("... computing initial placement using MIP, this may take a while ...");
     DOUT("... solve the problem");
     Mip::SolveExitStatus s = mip.solve();
     // DOUT("... determine result of solving");
