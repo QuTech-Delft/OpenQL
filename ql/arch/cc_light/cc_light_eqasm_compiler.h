@@ -745,7 +745,7 @@ public:
 
         load_hw_settings(platform);
 
-        generate_opcode_cs_files(platform);
+        // generate_opcode_cs_files(platform);
 
 
         // schedule
@@ -909,7 +909,7 @@ public:
             }
         }
 
-        generate_opcode_cs_files(platform);
+        // generate_opcode_cs_files(platform);
         MaskManager mask_manager;
 
         std::stringstream ssqisa, sskernels_qisa;

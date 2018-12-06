@@ -440,7 +440,7 @@ private:
 #endif
 
         // read instruments
-        const json &ccSetupType = ccSetup["type"];
+        // const json &ccSetupType = ccSetup["type"];
 
         // CC specific
         const json &ccSetupSlots = ccSetup["slots"];                      // FIXME: check against instrumentDefinitions

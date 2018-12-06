@@ -5,5 +5,5 @@ INCLUDE_DIRECTORIES(
 )
 
 
-#ADD_EXECUTABLE(test_alap_rc_schedule test_alap_rc_schedule.cc )
-#TARGET_LINK_LIBRARIES(test_alap_rc_schedule ${LEMON_LIBRARIES} )
+ADD_EXECUTABLE(test_179 test_179.cc)
+TARGET_LINK_LIBRARIES(test_179 ${LEMON_LIBRARIES} )
