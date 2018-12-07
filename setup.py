@@ -1,7 +1,7 @@
 import os
 import re
-from setuptools import setup
-from shutil import copyfile
+from setuptools import setup, Extension, find_packages
+from setuptools.command.build_ext import build_ext
 import subprocess
 from sys import platform
 
@@ -12,54 +12,76 @@ clibDir = os.path.join(buildDir, "openql")
 
 if not os.path.exists(buildDir):
     os.makedirs(buildDir)
-os.chdir(buildDir)
+
+try:
+    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+
+    class bdist_wheel(_bdist_wheel):
+        def finalize_options(self):
+            _bdist_wheel.finalize_options(self)
+            # Mark us as not a pure python package
+            self.root_is_pure = False
+
+        def get_tag(self):
+            python, abi, plat = _bdist_wheel.get_tag(self)
+            # We don't contain any python source
+            python, abi = 'py2.py3', 'none'
+            return python, abi, plat
+except ImportError:
+    bdist_wheel = None
+
 
 if platform == "linux" or platform == "linux2":
     print('Detected Linux OS, installing openql ... ')
-    cmd = 'cmake ..'
-    proc = subprocess.Popen(cmd, shell=True)
-    proc.communicate()
-    cmd = 'make'
-    proc = subprocess.Popen(cmd, shell=True)
-    proc.communicate()
+    cmake_command = 'cmake ..'
+    make_command = 'make'
     clibname = "_openql.so"
-
 elif platform == "darwin":
     print('Detected OSX, installing openql ... ')
     os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.10"
-    cmd = 'cmake ..'
-    proc = subprocess.Popen(cmd, shell=True)
-    proc.communicate()
-    cmd = 'make'
-    proc = subprocess.Popen(cmd, shell=True)
-    proc.communicate()
+    cmake_command = 'cmake ..'
+    make_command = 'make'
     clibname = "_openql.so"
-
 elif platform == "win32":
     print('Detected Windows OS, installing openql ... ')
-    cmd = 'cmake -G "NMake Makefiles" ..'
-    proc = subprocess.Popen(cmd, shell=True)
-    proc.communicate()
-    cmd = 'nmake'
-    proc = subprocess.Popen(cmd, shell=True)
-    proc.communicate()
+    cmake_command = 'cmake -G "NMake Makefiles" ..'
+    make_command = 'nmake'
     clibname = "_openql.pyd"
-
 else:
-    print('Unknown/Unsupported OS !!!')
+    raise RuntimeError('Unknown/Unsupported OS !!!')
 
-genclib = os.path.join(clibDir, clibname)
 clib = os.path.join(rootDir, "openql", clibname)
-copyfile(genclib, clib)
-copyfile(os.path.join(clibDir, "openql.py"),
-         os.path.join(rootDir, "openql", "openql.py"))
-os.chdir(rootDir)
+genclib = os.path.join(clibDir, clibname)
+
+class BuildOpenQL(build_ext):
+
+    def build_extension(self, ext):
+        import shutil
+        import os.path
+
+        os.chdir(buildDir)
+        proc = subprocess.Popen(cmake_command, shell=True)
+        proc.communicate()
+        proc = subprocess.Popen(make_command, shell=True)
+        proc.communicate()
+        os.chdir(rootDir)
+
+        try:
+            os.makedirs(os.path.dirname(self.get_ext_fullpath(ext.name)))
+        except WindowsError as e:
+            if e.winerror != 183:  # already exists
+                raise
+
+        shutil.copyfile(genclib, clib)
+        shutil.copyfile(os.path.join(clibDir, "openql.py"),
+                        os.path.join(rootDir, "openql", "openql.py"))
 
 
 def get_version(verbose=0):
     """ Extract version information from source code """
 
-    matcher = re.compile('[\t ]*#define[\t ]+OPENQL_(MAJOR|MINOR|PATCH)_VERSION[\t ]+(.*)')
+    matcher = re.compile(
+        '[\t ]*#define[\t ]+OPENQL_(MAJOR|MINOR|PATCH)_VERSION[\t ]+(.*)')
 
     openql_major_version = None
     openql_minor_version = None
@@ -83,9 +105,9 @@ def get_version(verbose=0):
                             (openql_minor_version is not None) and
                             (openql_patch_version is not None)):
                             version = '{}.{}.{}'.format(openql_major_version,
-                                              openql_minor_version,
-                                              openql_patch_version)
-                            break;
+                                                        openql_minor_version,
+                                                        openql_patch_version)
+                            break
 
     except Exception as E:
         print(E)
@@ -96,8 +118,10 @@ def get_version(verbose=0):
 
     return version
 
+
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
 
 setup(name='openql',
       version=get_version(),
@@ -107,7 +131,12 @@ setup(name='openql',
       author_email='nader.khammassi@gmail.com, iimran.aashraf@gmail.com',
       url='https://github.com/QE-Lab/OpenQL',
       license=read('license'),
-      packages=['openql'],
+      packages=find_packages(),
       include_package_data=True,
       package_data={'openql': [clib]},
-      zip_safe=False)
+      ext_modules=[
+          Extension(name='openql.openql._openql', sources=[])
+      ],
+      zip_safe=False,
+      cmdclass={'build_ext': BuildOpenQL},
+      )
