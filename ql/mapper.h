@@ -1370,18 +1370,27 @@ size_t Extend(Past basePast)
 // generate all split path variations where each path is split once at any hop in it
 // the intention is that the mapped two-qubit gate can be placed at the position of that hop
 // all result paths are added to the given result list
+//
+// distance=5   means length=6  means 4 swaps + 1 CZ gate, e.g.
+// index in total:      0           1           2           length-3        length-2        length-1
+// qubit:               2   ->      5   ->      7   ->      3       ->      1       CZ      4
 void Split(std::list<NNPath> & reslp)
 {
     // DOUT("Split ...");
 
     size_t length = total.size();
     MapperAssert (length >= 3);   // distance > 1 so path at least: source -> intermediate -> target
-    for (size_t leftopi = 0; leftopi < length-1; leftopi++)
+//  for (size_t leftopi = 0; leftopi < length-1; leftopi++)
+    for (size_t rightopi = length-1; rightopi >= 1; rightopi--)
     {
+        size_t leftopi = rightopi - 1;
+//      size_t rightopi = leftopi + 1;
         // DOUT("... leftopi=" << leftopi);
         // leftopi is the index in total that holds the qubit that becomes the left operand of the gate
+        // rightopi is the index in total that holds the qubit that becomes the right operand of the gate
+        // rightopi == leftopi + 1
         // fromSource will contain the path with qubits at indices 0 to leftopi
-        // fromTarget will contain the path with qubits at indices leftopi+1 to length-1, reversed
+        // fromTarget will contain the path with qubits at indices rightopi to length-1, reversed
         //      reversal of fromTarget is done since swaps need to be generated starting at the target
 
         NNPath    np;
