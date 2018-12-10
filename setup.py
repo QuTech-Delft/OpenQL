@@ -2,7 +2,6 @@ import os
 import re
 from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
-import subprocess
 from sys import platform
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
@@ -31,6 +30,7 @@ except ImportError:
     bdist_wheel = None
 
 
+cmake_args = []
 if platform == "linux" or platform == "linux2":
     print('Detected Linux OS, installing openql ... ')
     cmake_command = 'cmake ..'
@@ -44,7 +44,7 @@ elif platform == "darwin":
     clibname = "_openql.so"
 elif platform == "win32":
     print('Detected Windows OS, installing openql ... ')
-    cmake_command = 'cmake -G "NMake Makefiles" ..'
+    cmake_args += ["-G", "NMake Makefiles"]
     make_command = 'nmake'
     clibname = "_openql.pyd"
 else:
@@ -53,23 +53,25 @@ else:
 clib = os.path.join(rootDir, "openql", clibname)
 genclib = os.path.join(clibDir, clibname)
 
-class BuildOpenQL(build_ext):
 
+class BuildOpenQL(build_ext):
     def build_extension(self, ext):
         import shutil
         import os.path
 
         os.chdir(buildDir)
-        proc = subprocess.Popen(cmake_command, shell=True)
-        proc.communicate()
-        proc = subprocess.Popen(make_command, shell=True)
-        proc.communicate()
+        self.spawn(['cmake'] + cmake_args + ['..'])
+        self.spawn([make_command])
         os.chdir(rootDir)
 
         try:
             os.makedirs(os.path.dirname(self.get_ext_fullpath(ext.name)))
-        except WindowsError as e:
-            if e.winerror != 183:  # already exists
+        except OSError as e:
+            # directory already exisits
+            if isinstance(e, FileExistsError) or \
+                    (hasattr(e, 'winerror') and e.winerror == 183):
+                pass
+            else:
                 raise
 
         shutil.copyfile(genclib, clib)
