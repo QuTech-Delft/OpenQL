@@ -406,6 +406,7 @@ class quantum_program
          this->platform = platform;
       }
 
+#if OPT_MICRO_CODE
       std::string uc_header()
       {
          std::stringstream ss;
@@ -417,6 +418,7 @@ class quantum_program
          ss << "loop:\n";
          return ss.str();
       }
+#endif
 
       int compile()
       {
