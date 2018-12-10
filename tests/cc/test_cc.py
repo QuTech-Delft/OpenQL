@@ -122,6 +122,7 @@ class Test_central_controller(unittest.TestCase):
         p.compile()
 
     # FIXME: add:
+    # - qec_pipelined
     # - nested loops
     # - long program (RB)
 

@@ -37,13 +37,12 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
     ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
 
     // quantum operations
-//    std::vector<size_t> qubits;
     for (int j=6; j<19; j++) {
         k.gate("x", j);
-//        qubits.push_back(j);
     }
-//    k.wait(qubits, 0);      // FIXME: try to help scheduler
+    k.wait({6,7,8,9,10,11,12,13,14,15,16,17,18}, 0);      // help scheduler
 
+    // 1/2/3 qubit flux
     k.gate("cnot", 6, 7);
     k.gate("park_cz", 11);  // NB: not necessarily correct qubit
 
@@ -51,9 +50,57 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
     k.gate("park_cz", 17);
 
     k.gate("cnot", 10, 15);
-    k.gate("park_cz", 11);
+    k.gate("park_cz", 16);
+    k.wait({6,7,11,12,13,17,10,15,16}, 0); // help scheduler
 
-    k.gate("cnot_park2", std::vector<size_t> {10, 15, 11});
+    k.gate("cnot_park2", std::vector<size_t> {6, 7, 11});
+    k.gate("cnot_park2", std::vector<size_t> {12, 13, 17});
+    k.gate("cnot_park2", std::vector<size_t> {10, 15, 16});
+    k.wait({6,7,11,12,13,17,10,15,16}, 0); // help scheduler
+
+    // gate with angle parameter
+    double angle = 1.23456; // just some number
+    k.gate("x", std::vector<size_t> {6}, std::vector<size_t> {}, 0, angle);
+#if 0    // drops angle
+[OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:762 Adding gate : x with qubits [6]
+[OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:765 trying to add specialized decomposed gate for: x
+[OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:525 Checking if specialized decomposition is available for x
+[OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:539 decomposed specialized instruction name: x q6
+[OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:612 composite gate not found for x q6
+[OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:774 trying to add parameterized decomposed gate for: x
+[OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:623 Checking if parameterized decomposition is available for x
+[OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:637 decomposed parameterized instruction name: x %0
+[OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:643 parameterized composite gate found for x %0
+[OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:647 composite gate type
+[OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:504 composite ins: x %0
+[OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:508   sub ins: rx180 %0
+[OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:659 Adding sub ins: rx180 %0
+[OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:661  after comma removal, sub ins: rx180 %0
+[OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:675 actual qubits of this gate: [6]
+
+Breakpoint 1, ql::quantum_kernel::add_custom_gate_if_available (this=this@entry=0x7fffffffe410, gname="rx180", qubits=std::vector of length 1, capacity 1 = {...}, cregs=std::vector of length 0, capacity 0, duration=duration@entry=0,
+    angle=angle@entry=0) at /mnt/mac/GIT/OpenQL/ql/kernel.h:485
+485                     c.push_back(g);
+(gdb) print *g
+$1 = {<ql::gate> = {_vptr.gate = 0x4f1eb0 <vtable for ql::custom_gate+16>, optimization_enabled = true, name = "rx180", operands = std::vector of length 1, capacity 1 = {6}, creg_operands = std::vector of length 0, capacity 0, duration = 20,
+    angle = 3.7321244583827756e-317}, m = {m = {{_M_value = 0 + 1 * I}, {_M_value = 1 + 0 * I}, {_M_value = 1 + 0 * I}, {_M_value = 0 + 0 * I}}}, parameters = 0, operation_type = ql::flux_t, used_hardware = std::vector of length 0, capacity 0,
+  arch_operation_name = ""}
+(gdb) print angle
+$2 = 0
+(gdb) bt
+#0  ql::quantum_kernel::add_custom_gate_if_available (this=this@entry=0x7fffffffe410, gname="rx180", qubits=std::vector of length 1, capacity 1 = {...}, cregs=std::vector of length 0, capacity 0, duration=duration@entry=0, angle=angle@entry=0)
+    at /mnt/mac/GIT/OpenQL/ql/kernel.h:485
+#1  0x000000000048798e in ql::quantum_kernel::add_param_decomposed_gate_if_available (this=this@entry=0x7fffffffe410, gate_name="x", all_qubits=std::vector of length 1, capacity 1 = {...}, cregs=std::vector of length 0, capacity 0)
+    at /mnt/mac/GIT/OpenQL/ql/kernel.h:678
+#2  0x0000000000489adc in ql::quantum_kernel::gate (this=this@entry=0x7fffffffe410, gname="x", qubits=std::vector of length 1, capacity 1 = {...}, cregs=std::vector of length 0, capacity 0, duration=duration@entry=0,
+    angle=angle@entry=1.2345600000000001) at /mnt/mac/GIT/OpenQL/ql/kernel.h:775
+#3  0x000000000043b81c in test_classical (scheduler="ALAP", scheduler_uniform="no") at /mnt/mac/GIT/OpenQL/tests/cc/test_cc.cc:63
+#4  0x000000000042f330 in main (argc=<optimized out>, argv=<optimized out>) at /mnt/mac/GIT/OpenQL/tests/cc/test_cc.cc:598
+(gdb)
+#endif
+
+    k.gate("rx180", std::vector<size_t> {6}, std::vector<size_t> {}, 0, angle);     // NB: works
+
 
     // create classical registers
     ql::creg rd;    // destination register
@@ -86,6 +133,81 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
 #endif
     k.gate("measure", std::vector<size_t> {7}, std::vector<size_t> {0});
     k.gate("measure", std::vector<size_t> {8}, std::vector<size_t> {1});
+
+    prog.add(k);
+
+    ql::options::set("scheduler", scheduler);
+    ql::options::set("scheduler_uniform", scheduler_uniform);
+    prog.compile( );
+}
+
+
+void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
+{
+    const int num_qubits = 25;
+    const int num_cregs = 3;
+
+   // create and set platform
+    ql::quantum_platform s17("s17", CFG_FILE_JSON);
+    ql::set_platform(s17);
+
+    // create program
+    ql::quantum_program prog(("test_qec_pipelined_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
+    ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
+
+    // pipelined QEC: [
+    // see: R. Versluis et al., Phys. Rev. A 8, 034021 (2017)
+    // - nw, ne, sw, se] -> [n, e, w, s] because we rotate grid
+    // - H -> rym90, ry90, see Fig 2 of reference
+    //
+    // class SurfaceCode, qubits, tiles, width, getNeighbourN, getNeighbourE, getNeighbourW, getNeighbourS, getX, getZ, getData
+
+    const int x = 7;
+    const int xN = x-5;
+    const int xE = x+1;
+    const int xS = x+5;
+    const int xW = x-1;
+
+    const int z = 11;
+    const int zN = z-5;
+    const int zE = z+1;
+    const int zS = z+5;
+    const int zW = z-1;
+
+    // X stabilizers
+    k.gate("rym90", x);
+    k.gate("rym90", xN);
+    k.gate("rym90", xE);
+    k.gate("rym90", xW);
+    k.gate("rym90", xS);
+    k.wait({x, xN, xE, xW, xS}, 0);
+
+    k.gate("cz", x, xE);
+    k.gate("cz", x, xN);
+    k.gate("cz", x, xS);
+    k.gate("cz", x, xW);
+    k.wait({x, xN, xE, xW, xS}, 0);
+
+    k.gate("ry90", x);
+    k.gate("ry90", xN);
+    k.gate("ry90", xE);
+    k.gate("ry90", xW);
+    k.gate("ry90", xS);
+    k.wait({x, xN, xE, xW, xS}, 0);
+
+    k.gate("measure", std::vector<size_t> {x}, std::vector<size_t> {0});
+    k.wait({x}, 0);
+
+    // Z stabilizers
+    k.gate("rym90", z);
+
+    k.gate("cz", z, zE);
+    k.gate("cz", z, zS);
+    k.gate("cz", z, zN);
+    k.gate("cz", z, zW);
+
+    k.gate("ry90", z);
+    k.gate("measure", std::vector<size_t> {z}, std::vector<size_t> {1});
 
     prog.add(k);
 
@@ -513,6 +635,7 @@ int main(int argc, char ** argv)
     ql::utils::logger::set_log_level("LOG_DEBUG");      // LOG_DEBUG, LOG_INFO
 
     test_classical("ALAP", "no");
+    test_qec_pipelined("ALAP", "no");
     test_do_while_nested_for("ALAP", "no");
 
 #if 0

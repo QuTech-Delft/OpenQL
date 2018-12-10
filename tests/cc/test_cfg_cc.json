@@ -301,16 +301,16 @@
 					},
 					{	"type": "switch",
 						"operand_idx": 0,
-						"value": ["dummy"]	// NB: no actual signal is generated
+						"value": ["dummy"]														// NB: no actual signal is generated
 					}
 				],
 				"two-qubit": [
 					{	"type": "flux",
-						"operand_idx": 0,		// FIXME: control, or target?
+						"operand_idx": 0,															// control
 						"value": ["flux-0-{qubit}"]
 					},
 					{	"type": "flux",
-						"operand_idx": 1,		// FIXME: control, or target?
+						"operand_idx": 1,															// target
 						"value": ["flux-1-{qubit}"]
 					}
 				]
@@ -521,7 +521,7 @@
 			"cc": {
 				"signal": [
 					{	"type": "flux",
-						"operand_idx": 0,		// FIXME: control, or target?
+						"operand_idx": 0,
 						"value": ["park_measure-{qubit}"]
 					}
 				]
@@ -534,17 +534,15 @@
 			"duration": 200000,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
 			"type": "readout",
 			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "prepz"
 		},
 
 		"measure": {
-			"duration": 800,
+			"duration": 400,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
 			"type": "readout",
 			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "measz",
@@ -564,7 +562,6 @@
 			"duration": 20,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
 			"type": "mw",
 			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "i",
@@ -576,7 +573,6 @@
 			"duration": 20,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
 			"type": "mw",
 			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "x",
@@ -588,7 +584,6 @@
 			"duration": 20,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
 			"type": "mw",
 			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "y",
@@ -600,7 +595,6 @@
 			"duration": 20,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
 			"type": "mw",
 			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "x90",
@@ -612,7 +606,6 @@
 			"duration": 20,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
 			"type": "mw",
 			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "y90",
@@ -624,7 +617,6 @@
 			"duration": 20,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
 			"type": "mw",
 			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "xm90",
@@ -636,7 +628,6 @@
 			"duration": 20,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": false,
 			"type": "mw",
 			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "ym90",
@@ -652,9 +643,8 @@
 		// https://github.com/QE-Lab/OpenQL/issues/180
 		"cz": {
 			"duration": 40,
-			"latency": 0,
+//			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": true,
 			"type": "flux",
 			"cc_light_instr_type": "two_qubit_gate",
 			"cc_light_instr": "cz",
@@ -666,22 +656,21 @@
 			"duration": 40,
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"disable_optimization": true,
 			"type": "flux",
 			"cc_light_instr_type": "two_qubit_gate",
 			"cc_light_instr": "cz",
 			"cc": {
 				"signal": [
 					{	"type": "flux",
-						"operand_idx": 0,		// FIXME: control, or target?
+						"operand_idx": 0,															// control
 						"value": ["flux-0-{qubit}"]
 					},
 					{	"type": "flux",
-						"operand_idx": 1,		// FIXME: control, or target?
+						"operand_idx": 1,															// target
 						"value": ["flux-1-{qubit}"]
 					},
 					{	"type": "flux",
-						"operand_idx": 2,
+						"operand_idx": 2,															// park
 						"value": ["park_cz-{qubit}"]
 					}
 				]
