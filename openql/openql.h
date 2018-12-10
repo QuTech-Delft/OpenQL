@@ -18,6 +18,7 @@
 #include <ql/version.h>
 #include <ql/openql.h>
 #include <ql/classical.h>
+#include <ql/matrix.h>
 
 static std::string get_version()
 {
@@ -246,6 +247,11 @@ public:
         kernel->gate(name, qubits, {(destination.creg)->id} );
     }
 
+    void gate(std::string name, std::vector<size_t> qubits, ql::cmat_t matrix)
+    {
+        kernel->gate(name, qubits, matrix);
+    }
+
     void classical(CReg & destination, Operation& operation)
     {
         kernel->classical(*(destination.creg), *(operation.operation));
@@ -263,6 +269,11 @@ public:
         kernel->controlled(k.kernel, control_qubits, ancilla_qubits);
     }
 
+    void unitary_decomp(std::vector<size_t> qubits, ql::cmat_t matrix)
+    {
+        kernel->unitary_decomp(qubits, matrix);
+    }
+
     void conjugate(Kernel &k)
     {
         kernel->conjugate(k.kernel);
@@ -272,6 +283,8 @@ public:
     {
         delete(kernel);
     }
+
+
 };
 
 

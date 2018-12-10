@@ -235,9 +235,14 @@ public:
         c.push_back(new ql::display());
     }
 
-    void unitary_decomp(size_t qubit1, size_t qubit2, cmat_t m)
+    //void unitary_decomp(size_t qubit1, size_t qubit2, cmat_t m)
+    //{
+	//gate("unitary_decomp", {qubit1, qubit2}, m);
+    //}
+
+    void unitary_decomp(std::vector<size_t> qubits, cmat_t m)
     {
-	gate("unitary_decomp", {qubit1, qubit2}, m);
+	gate("unitary_decomp", qubits, m);
     }
 
     /**
