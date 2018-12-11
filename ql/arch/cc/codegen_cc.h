@@ -252,7 +252,7 @@ public:
     {
         bool isReadout = false;
 
-        if("readout" == platform.find_instruction_type(iname))          // handle readout (NB: extracted from decompose_instructions)
+        if("readout" == platform.find_instruction_type(iname))          // handle readout
         /* FIXME: we only use the "readout" instruction_type and don't care about the rest because the terms "mw" and "flux" don't fully
          * cover gate functionality. It would be nice if custom gates could mimic ql::gate_type_t
          * We could also infer readout from cops/qops.size()

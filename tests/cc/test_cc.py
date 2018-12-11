@@ -13,6 +13,7 @@ config_fn = os.path.join(curdir, 'test_cfg_cc.json')
 platform_name = 's-17'
 num_qubits = 25
 num_cregs = 32
+all_qubits = range(0, num_qubits)
 
 
 class Test_central_controller(unittest.TestCase):
@@ -85,16 +86,21 @@ class Test_central_controller(unittest.TestCase):
 
         for j in range(6, 18+1):
             k.gate("x", [j])
+        k.wait(all_qubits, 0);
 
         k.gate("cnot", [6, 7])
+        k.wait(all_qubits, 0);
 
         for j in range(6, 18+1):
             k.gate("x", [j])
+        k.wait(all_qubits, 0);
 
         k.gate("cnot", [12, 13])
+        k.wait(all_qubits, 0);
 
         for j in range(6, 18+1):
             k.gate("x", [j])
+        k.wait(all_qubits, 0);
 
         k.gate("cnot", [10, 15])
 
@@ -114,12 +120,91 @@ class Test_central_controller(unittest.TestCase):
         p = ql.Program('test_qec', platform, num_qubits, num_cregs)
         k = ql.Kernel('kernel_0', platform, num_qubits, num_cregs)
 
+        # pipelined QEC: [
+        # see: R. Versluis et al., Phys. Rev. A 8, 034021 (2017)
+        # - nw, ne, sw, se] -> [n, e, w, s] because we rotate grid
+        # - H -> rym90, ry90, see Fig 2 of reference
+        #
+        # class SurfaceCode, qubits, tiles, width, getNeighbourN, getNeighbourE, getNeighbourW, getNeighbourS, getX, getZ, getData
 
-        k.gate("cnot", [6, 7])
-        # FIXME: add proper code
+        # define qubit aliases:
+        x = 7;
+        xN = x-5;
+        xE = x+1;
+        xS = x+5;
+        xW = x-1;
+
+        z = 11;
+        zN = z-5;
+        zE = z+1;
+        zS = z+5;
+        zW = z-1;
+
+        # create classical registers
+        rdX = ql.CReg()
+        rdZ = ql.CReg()
+
+        # X stabilizers
+        k.gate("rym90", [x]);
+        k.gate("rym90", [xN]);
+        k.gate("rym90", [xE]);
+        k.gate("rym90", [xW]);
+        k.gate("rym90", [xS]);
+        k.wait(all_qubits, 0);
+#        k.wait({x, xN, xE, xW, xS}, 0);
+
+        k.gate("cz", [x, xE]);
+        k.gate("cz", [x, xN]);
+        k.gate("cz", [x, xS]);
+        k.gate("cz", [x, xW]);
+        k.wait(all_qubits, 0);
+#        k.wait({x, xN, xE, xW, xS}, 0);
+
+        k.gate("ry90", [x]);
+        k.gate("ry90", [xN]);
+        k.gate("ry90", [xE]);
+        k.gate("ry90", [xW]);
+        k.gate("ry90", [xS]);
+        k.wait(all_qubits, 0);
+#        k.wait({x, xN, xE, xW, xS}, 0);
+
+        k.gate("measure", [x], rdX);
+        k.wait(all_qubits, 0);
+#        k.wait({x}, 0);
+
+        # Z stabilizers
+        k.gate("rym90", [z]);
+
+        k.gate("cz", [z, zE]);
+        k.gate("cz", [z, zS]);
+        k.gate("cz", [z, zN]);
+        k.gate("cz", [z, zW]);
+
+        k.gate("ry90", [z]);
+        k.gate("measure", [z], rdZ);
+
 
         p.add_kernel(k)
         p.compile()
+
+    def test_angle(self):
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ALAP')
+        ql.set_option('scheduler_uniform', 'yes')
+        ql.set_option('log_level', 'LOG_WARNING')
+
+        platform = ql.Platform(platform_name, config_fn)
+
+        p = ql.Program('test_angle', platform, num_qubits, num_cregs)
+        k = ql.Kernel('kernel_0', platform, num_qubits, num_cregs)
+
+
+        k.gate("rx180", [6], 0, 1.2345)     # NB: Python interface lacks classical parameter
+
+        p.add_kernel(k)
+        p.compile()
+
 
     # FIXME: add:
     # - qec_pipelined

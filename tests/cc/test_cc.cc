@@ -61,7 +61,7 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
     // gate with angle parameter
     double angle = 1.23456; // just some number
     k.gate("x", std::vector<size_t> {6}, std::vector<size_t> {}, 0, angle);
-#if 0    // drops angle
+#if 0    // FIXME: drops angle
 [OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:762 Adding gate : x with qubits [6]
 [OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:765 trying to add specialized decomposed gate for: x
 [OPENQL] /mnt/mac/GIT/OpenQL/ql/kernel.h:525 Checking if specialized decomposition is available for x
