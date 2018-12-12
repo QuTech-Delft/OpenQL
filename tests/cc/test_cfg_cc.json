@@ -489,7 +489,8 @@
 
       // CC additions
       "cnot_park1 %0,%1,%2": ["ry90 %1", "cz %0,%1", "park_cz %2", "ry90 %1"],
-      "cnot_park2 %0,%1,%2": ["ry90 %1", "cz_park %0,%1,%2", "ry90 %1"]
+      "cnot_park2 %0,%1,%2": ["ry90 %1", "cz_park %0,%1,%2", "ry90 %1"],
+      "cz_park1 %0,%1,%2": ["cz %0,%1", "park_cz %2"]
   	},
 
 

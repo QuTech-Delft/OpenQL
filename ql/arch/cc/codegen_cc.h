@@ -40,7 +40,10 @@ T &replace (
     return str;
 }
 
-
+// from https://stackoverflow.com/questions/9146395/reset-c-int-array-to-zero-the-fastest-way
+template<typename T, size_t SIZE> inline void zero(T(&arr)[SIZE]){
+    memset(arr, 0, SIZE*sizeof(T));
+}
 
 class codegen_cc
 {
@@ -89,39 +92,53 @@ public:
         std::cout << std::setw(4) << codewordTable << std::endl << inputLutTable << std::endl; // FIXME
     }
 
+    void kernel_start()
+    {
+        zero(lastStartCycle);       // FIXME: actually, bundle.start_cycle starts counting at 1
+    }
+
+    void kernel_finish()
+    {
+    }
+
     // bundle_start: clear groupInfo, which maintains the work that needs to be performed for bundle
-    void bundle_start(int delta, std::string cmnt)   // FIXME: do we need parameter delta
+    void bundle_start(std::string cmnt)
     {
         // empty the matrix of signal values
         size_t slotsUsed = ccSetup["slots"].size();
-        size_t maxGroups = 32;                     // FIXME: magic constant, enough for VSM
-        groupInfo.assign(slotsUsed, std::vector<tGroupInfo>(maxGroups, {"", -1}));
+        groupInfo.assign(slotsUsed, std::vector<tGroupInfo>(MAX_GROUPS, {"", 0, -1}));
 
         comment(cmnt);
     }
 
-    // bundle_finish: generate code for bundle from information collected in groupInfo
-    void bundle_finish(int duration_in_cycles, int delta)   // FIXME: do we need parameter delta
+    // bundle_finish: generate code for bundle from information collected in groupInfo (which may be empty if no classical gates are present in bundle)
+    void bundle_finish(size_t start_cycle, size_t duration_in_cycles, bool isLastBundle)
     {
+        if(isLastBundle) {
+            comment(SS2S(" # last bundle, will pad outputs to match durations"));
+        }
+
         const json &ccSetupSlots = ccSetup["slots"];
-        for(size_t slotIdx=0; slotIdx<groupInfo.size(); slotIdx++) {         // iterate over slot vector
+        for(size_t slotIdx=0; slotIdx<groupInfo.size(); slotIdx++) {            // iterate over slot vector
             // collect info from JSON
             const json &ccSetupSlot = ccSetupSlots[slotIdx];
             const json &instrument = ccSetupSlot["instrument"];
             std::string instrumentName = instrument["name"];
             int slot = ccSetupSlot["slot"];
 
+            // collect info for all groups within slot, i.e. one connected instrummnt
             bool isSlotUsed = false;
             uint32_t digOut = 0;
             uint32_t digIn = 0;
+            uint32_t slotDurationInCycles = 0;                                  // maximum duration over groups that are used
             size_t nrGroups = groupInfo[slotIdx].size();
-            for(size_t group=0; group<nrGroups; group++) {                     // iterate over groups used within slot
+            for(size_t group=0; group<nrGroups; group++) {                      // iterate over groups used within slot
                 if(groupInfo[slotIdx][group].signalValue != "") {
                     isSlotUsed = true;
 
                     // find control mode & bits
                     std::string controlModeName = instrument["control_mode"];
-                    const json &controlMode = controlModes[controlModeName];   // the control mode definition for our instrument
+                    const json &controlMode = controlModes[controlModeName];    // the control mode definition for our instrument
                     const json &controlBits = controlMode["control_bits"][group];
 
                     // find or create codeword/mask fragment for this group
@@ -179,6 +196,10 @@ public:
                         // FIXME: check validity of nrTriggerBits
                     }
 
+                    // compute slot duration
+                    size_t durationInCycles = groupInfo[slotIdx][group].duration / 20;   // FIXME: cycle time
+                    if(durationInCycles > slotDurationInCycles) slotDurationInCycles = durationInCycles;
+
                     // handle readout
                     // NB: this does not allow for readout without signal generation (by the same instrument), which might be needed in the future
                     // FIXME: move out of this loop
@@ -199,21 +220,34 @@ public:
                                 inputLutTable[instrumentName][group][codeWord] = signalValue;   // NB: structure created on demand
                             }
 #endif
-                        } else {                                    // NB: nrResultBits==0 will not arrive at this point
-                            FATAL("JSON key 'result_bits' must have 1 bit per group");
+                        } else {    // NB: nrResultBits==0 will not arrive at this point
+                            std::string controlModeName = controlMode;                          // convert to string
+                            FATAL("JSON key '" << controlModeName << "/result_bits' must have 1 bit per group");
                         }
                     }
                 } // if signal defined
             } // for group
 
+
+            // generate code for slot
             if(isSlotUsed) {
+                DOUT("bundle_finish(): slot=" << slot <<
+                     ", lastStartCycle[slotIdx]=" << lastStartCycle[slotIdx] <<
+                     ", start_cycle=" << start_cycle <<
+                     ", slotDurationInCycles=" << slotDurationInCycles <<
+                     ", instrumentName=" << instrumentName);
+
+                padToCycle(lastStartCycle[slotIdx], start_cycle, slot, instrumentName);
+
                 // emit code for slot
                 emit("", "seq_out",
                      SS2S(slot <<
                           ",0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec <<
-                          "," << duration_in_cycles),
-                     std::string("# code word/mask on '"+instrumentName+"'").c_str());
-                    // FIXME: for codewords there is no problem if duration>gate time, but for VSM there is!
+                          "," << slotDurationInCycles),
+                     SS2S("# cycle " << start_cycle << "-" << start_cycle+slotDurationInCycles << ": code word/mask on '" << instrumentName+"'").c_str());
+
+                // update lastStartCycle
+                lastStartCycle[slotIdx] = start_cycle + slotDurationInCycles;
 
                 if(digIn) { // FIXME
                     comment(SS2S("# digIn=" << digIn));
@@ -223,10 +257,15 @@ public:
                     // seq_in_sm
                 }
             } else {
-                // slot not used for this gate, generate delay
-                emit("", "seq_out", SS2S(slot << ",0x00000000," << duration_in_cycles), std::string("# idle on '"+instrumentName+"'").c_str());
+                // nothing to do, we delay emitting till a slot is used or kernel finishes
             }
-        } // for slot
+
+
+            // pad end of bundle to align durations
+            if(isLastBundle) {
+                padToCycle(lastStartCycle[slotIdx], start_cycle+duration_in_cycles, slot, instrumentName);
+            }
+        } // for(slotIdx)
 
         comment("");    // blank line to separate bundles
     }
@@ -240,16 +279,15 @@ public:
     | Quantum instructions
     \************************************************************************/
 
-    void nop_gate()
-    {
-        comment("# NOP gate");
-        FATAL("FIXME: NOP gate not implemented");
-    }
-
     // single/two/N qubit gate, including readout
     // FIXME: remove parameter platform
-    void custom_gate(std::string iname, std::vector<size_t> qops, std::vector<size_t> cops, const ql::quantum_platform& platform)
+    void custom_gate(std::string iname, std::vector<size_t> qops, std::vector<size_t> cops, size_t duration, double angle, const ql::quantum_platform& platform)
     {
+#if 1   // FIXME
+        if(angle != 0.0) {
+            DOUT("iname=" << iname << ", angle=" << angle);
+        }
+#endif
         bool isReadout = false;
 
         if("readout" == platform.find_instruction_type(iname))          // handle readout
@@ -308,8 +346,6 @@ public:
             }
             size_t qubit = qops[operandIdx];
 
-            // FIXME: cross check that gate duration fits within bundle?
-
             // get the instrument and group that generates the signal
             std::string instructionSignalType = signal[s]["type"];
             const json &instructionSignalValue = signal[s]["value"];
@@ -331,10 +367,6 @@ public:
                          "', signal='" << signalValueString << "'"));
 
             // check and store signal value
-#if 0   // FIXME: make room in signalValues matrix. NB: now groupInfo
-            signalValues.reserve(si.slotIdx+1);
-            signalValues[si.slotIdx].reserve(si.group+1);
-#endif
             if(groupInfo[si.slotIdx][si.group].signalValue == "") {                         // not yet used
                 groupInfo[si.slotIdx][si.group].signalValue = signalValueString;
             } else if(groupInfo[si.slotIdx][si.group].signalValue == signalValueString) {   // unchanged
@@ -352,9 +384,21 @@ public:
                 groupInfo[si.slotIdx][si.group].readoutCop = cops[0];
             }
 
-            // NB: code is generated in bundle_finish()
-        }
+            groupInfo[si.slotIdx][si.group].duration = duration;
 
+            DOUT("custom_gate(): iname='" << iname <<
+                 "', duration=" << duration <<
+                 "[ns], si.slotIdx=" << si.slotIdx <<
+                 ", si.group=" << si.group);
+
+            // NB: code is generated in bundle_finish()
+        }   // for(signal)
+    }
+
+    void nop_gate()
+    {
+        comment("# NOP gate");
+        FATAL("FIXME: NOP gate not implemented");
     }
 
     /************************************************************************\
@@ -418,16 +462,23 @@ private:
 
     typedef struct {
         std::string signalValue;
-        int readoutCop;     // NB: we use int iso size_t so we can encode 'unused'
+        size_t duration;
+        ssize_t readoutCop;     // NB: we use ssize_t iso size_t so we can encode 'unused' (-1)
     } tGroupInfo;
 
 private:
+    static const int MAX_SLOTS = 12;
+    static const int MAX_GROUPS = 32;                                  // enough for VSM
+
     bool verboseCode = true;                                    // output extra comments in generated code
 
     std::stringstream cccode;                                   // the code generated for the CC
+
+    // codegen state
     std::vector<std::vector<tGroupInfo>> groupInfo;             // matrix[slotIdx][group]
     json codewordTable;                                         // codewords versus signals per instrument group
     json inputLutTable;                                         // input LUT usage per instrument group
+    size_t lastStartCycle[MAX_SLOTS];
 
     // some JSON nodes we need access to. FIXME: use pointers for efficiency?
     json backendSettings;
@@ -461,6 +512,24 @@ private:
     }
 
     // FIXME: also provide these with std::string parameters
+
+    void padToCycle(size_t lastStartCycle, size_t start_cycle, int slot, std::string instrumentName)
+    {
+        // compute prePadding: time to bridge to align timing
+        ssize_t prePadding = start_cycle - lastStartCycle;
+        if(prePadding < 0) {
+            EOUT(getCode());        // show what we made
+            FATAL("Inconsistency detected in bundle contents: time travel not yet possible in this version: prePadding=" << prePadding <<
+                  ", start_cycle=" << start_cycle <<
+                  ", lastStartCycle=" << lastStartCycle);
+        }
+
+        if(prePadding > 0) {     // we need to align
+            emit("", "seq_out",
+                SS2S(slot << ",0x00000000," << prePadding),
+                SS2S("# cycle " << lastStartCycle << "-" << start_cycle << ": padding on '" << instrumentName+"'").c_str());
+        }
+    }
 
     /************************************************************************\
     | Functions processing JSON

@@ -209,12 +209,11 @@ private:
         return tokens[0];
     }
 
-
+    // handle kernel conditionality at beginning of kernel
     // based on cc_light_eqasm_compiler.h::get_prologue
     void codegen_kernel_prologue(ql::quantum_kernel &k)
     {
         codegen.comment(SS2S("### Kernel: '" << k.name << "'"));
-
 
         // FIXME: insert waits to compensate latencies.
 
@@ -266,6 +265,7 @@ private:
     }
 
 
+    // handle kernel conditionality at end of kernel
     // based on cc_light_eqasm_compiler.h::get_epilogue
     void codegen_kernel_epilogue(ql::quantum_kernel &k)
     {
@@ -315,16 +315,13 @@ private:
     void codegen_bundles(ql::ir::bundles_t &bundles, const ql::quantum_platform &platform)
     {
         IOUT("Generating CCCODE for bundles");
-        size_t curr_cycle = 0;
 
-        for(ql::ir::bundle_t &bundle : bundles)
-        {
-            auto delta = bundle.start_cycle - curr_cycle;
-
+        codegen.kernel_start();
+        for(ql::ir::bundle_t &bundle : bundles) {
             // generate bundle header
-            codegen.bundle_start(delta, SS2S("## Bundle " << bundleIdx++ <<
-                                              " (start_cycle=" << bundle.start_cycle <<
-                                              ", duration_in_cycles=" << bundle.duration_in_cycles << "):"));
+            codegen.bundle_start(SS2S("## Bundle " << bundleIdx++ <<
+                                      ", start_cycle=" << bundle.start_cycle <<
+                                      ", duration_in_cycles=" << bundle.duration_in_cycles << "):"));
 
             // generate code for this bundle
             for(auto section = bundle.parallel_sections.begin(); section != bundle.parallel_sections.end(); ++section ) {
@@ -356,12 +353,7 @@ private:
                                 break;
 
                             case __custom_gate__:
-                                codegen.custom_gate(iname, instr->operands, instr->creg_operands, platform);
-#if 1
-                                if(instr->angle != 0.0) {
-                                    DOUT("iname=" << iname << ", angle=" << instr->angle);
-                                }
-#endif
+                                codegen.custom_gate(iname, instr->operands, instr->creg_operands, instr->duration, instr->angle, platform);
                                 break;
 
                             case __display__:
@@ -379,18 +371,11 @@ private:
                 }
             }
 
-            // generate bundle trailer
-            codegen.bundle_finish(bundle.duration_in_cycles, delta);
-
-            curr_cycle += delta;
-        }
-
-#if 0   // FIXME: CC-light
-        auto &lastBundle = bundles.back();
-        int lbduration = lastBundle.duration_in_cycles;
-        if(lbduration > 1)
-            ret << "    qwait " << lbduration << "\n";
-#endif
+            // generate bundle trailer, and code for classical gates
+            bool isLastBundle = &bundle==&bundles.back();
+            codegen.bundle_finish(bundle.start_cycle, bundle.duration_in_cycles, isLastBundle);
+        }   // for(bundles)
+        codegen.kernel_finish();
 
         IOUT("Generating CCCODE for bundles [Done]");
     }

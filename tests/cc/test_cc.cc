@@ -43,6 +43,7 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
     k.wait({6,7,8,9,10,11,12,13,14,15,16,17,18}, 0);      // help scheduler
 
     // 1/2/3 qubit flux
+#if 0 // misaligns cz and park_cz (using old scheduler)
     k.gate("cnot", 6, 7);
     k.gate("park_cz", 11);  // NB: not necessarily correct qubit
 
@@ -51,11 +52,21 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
 
     k.gate("cnot", 10, 15);
     k.gate("park_cz", 16);
+#else
+    k.gate("cz", 6, 7);
+    k.gate("park_cz", 11);  // NB: not necessarily correct qubit
+
+    k.gate("cz", 12, 13);
+    k.gate("park_cz", 17);
+
+    k.gate("cz", 10, 15);
+    k.gate("park_cz", 16);
+#endif
     k.wait({6,7,11,12,13,17,10,15,16}, 0); // help scheduler
 
-    k.gate("cnot_park2", std::vector<size_t> {6, 7, 11});
-    k.gate("cnot_park2", std::vector<size_t> {12, 13, 17});
-    k.gate("cnot_park2", std::vector<size_t> {10, 15, 16});
+    k.gate("cz_park", std::vector<size_t> {6, 7, 11});
+    k.gate("cz_park", std::vector<size_t> {12, 13, 17});
+    k.gate("cz_park", std::vector<size_t> {10, 15, 16});
     k.wait({6,7,11,12,13,17,10,15,16}, 0); // help scheduler
 
     // gate with angle parameter

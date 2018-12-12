@@ -169,8 +169,8 @@ class Test_central_controller(unittest.TestCase):
 #        k.wait({x, xN, xE, xW, xS}, 0);
 
         k.gate("measure", [x], rdX);
-        k.wait(all_qubits, 0);
-#        k.wait({x}, 0);
+#        k.wait(all_qubits, 0);
+        k.wait([x], 0);
 
         # Z stabilizers
         k.gate("rym90", [z]);
