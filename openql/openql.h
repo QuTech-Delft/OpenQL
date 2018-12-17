@@ -19,6 +19,7 @@
 #include <ql/openql.h>
 #include <ql/classical.h>
 #include <ql/matrix.h>
+#include <ql/unitarydecomp.h>
 
 static std::string get_version()
 {
@@ -101,7 +102,31 @@ public:
     }
 };
 
+class Unitary
+{
+public:
+    std::string name;
+    ql::cmat_t mat;
+    ql::unitary * unitary;
+    
+    Unitary(std::string name, ql::cmat_t mat): name(name), mat(mat)
+    {
+        unitary = new ql::unitary(name, mat);
+    }
 
+    vector<instruction_t> decompose(std::string option)
+     {
+         //ql::complex_t det = mat.m[0]*mat.m[4]-mat.m[3]*mat.m[2];
+         return unitary->decompose(option);//{instruction_t("(det.real).toString()")};
+      
+     };
+
+    ~Unitary()
+    {
+        delete(unitary);
+    }
+
+};
 /**
  * quantum kernel interface
  */
@@ -273,6 +298,7 @@ public:
     {
         kernel->unitary_decomp(qubits, matrix);
     }
+
 
     void conjugate(Kernel &k)
     {

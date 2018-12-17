@@ -24,7 +24,6 @@
 #include <ql/openql.h>
 #include <ql/exception.h>
 
-//#include "ql/unitarydecomp.h"
 
 using json = nlohmann::json;
 
@@ -222,8 +221,6 @@ public:
     virtual instruction_t micro_code() = 0;  // to do : deprecated
     virtual gate_type_t   type()       = 0;
     virtual cmat_t        mat()        = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
-   //unitary_decomp
-   cmat_t m;
 };
 
 
@@ -1598,12 +1595,12 @@ public:
     }*/
 
     unitary_decomp(size_t qubit1, size_t qubit2, cmat_t m) : m(m)
-{
+    {
         name = "unitary_decomp";
         duration = 40;
         operands.push_back(qubit1);
-}
-    unitary_decomp(std::vector<size_t> q, cmat_t m) : m(m)
+    }
+    unitary_decomp(std::vector<size_t> q, cmat_t& m) : m(m)
     {
         name = "unitary_decomp";
         duration = 40;
