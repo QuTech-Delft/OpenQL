@@ -12,11 +12,11 @@
 
 // test qwg resource constraints mapping
 void
-test_qwg(std::string v, std::string schedopt)
+test_qwg(std::string v, std::string schedopt, std::string sched_post179opt)
 {
     int n = 2;
-    std::string prog_name = "test_" + v + "_schedopt=" + schedopt;
-    std::string kernel_name = "test_" + v + "_schedopt=" + schedopt;
+    std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
+    std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_179.json");
@@ -32,16 +32,17 @@ test_qwg(std::string v, std::string schedopt)
     prog.add(k);
 
     ql::options::set("scheduler", schedopt);
+    ql::options::set("scheduler_post179", sched_post179opt);
     prog.compile( );
 }
 
 // demo single dimension resource constraint representation simple
 void
-test_singledim(std::string v, std::string schedopt)
+test_singledim(std::string v, std::string schedopt, std::string sched_post179opt)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_schedopt=" + schedopt;
-    std::string kernel_name = "test_" + v + "_schedopt=" + schedopt;
+    std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
+    std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_179.json");
@@ -67,16 +68,17 @@ test_singledim(std::string v, std::string schedopt)
     prog.add(k);
 
     ql::options::set("scheduler", schedopt);
+    ql::options::set("scheduler_post179", sched_post179opt);
     prog.compile( );
 }
 
 // test edge resource constraints mapping
 void
-test_edge(std::string v, std::string schedopt)
+test_edge(std::string v, std::string schedopt, std::string sched_post179opt)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_schedopt=" + schedopt;
-    std::string kernel_name = "test_" + v + "_schedopt=" + schedopt;
+    std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
+    std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_179.json");
@@ -92,17 +94,18 @@ test_edge(std::string v, std::string schedopt)
     prog.add(k);
 
     ql::options::set("scheduler", schedopt);
+    ql::options::set("scheduler_post179", sched_post179opt);
     prog.compile( );
 }
 
 // test detuned_qubits resource constraints mapping
 // no swaps generated
 void
-test_detuned(std::string v, std::string schedopt)
+test_detuned(std::string v, std::string schedopt, std::string sched_post179opt)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_schedopt=" + schedopt;
-    std::string kernel_name = "test_" + v + "_schedopt=" + schedopt;
+    std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
+    std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_179.json");
@@ -124,16 +127,17 @@ test_detuned(std::string v, std::string schedopt)
     prog.add(k);
 
     ql::options::set("scheduler", schedopt);
+    ql::options::set("scheduler_post179", sched_post179opt);
     prog.compile( );
 }
 
 // one cnot with operands that are neighbors in s7
 void
-test_oneNN(std::string v, std::string schedopt)
+test_oneNN(std::string v, std::string schedopt, std::string sched_post179opt)
 {
     int n = 3;
-    std::string prog_name = "test_" + v + "_schedopt=" + schedopt;
-    std::string kernel_name = "test_" + v + "_schedopt=" + schedopt;
+    std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
+    std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_179.json");
@@ -154,16 +158,17 @@ test_oneNN(std::string v, std::string schedopt)
     prog.add(k);
 
     ql::options::set("scheduler", schedopt);
+    ql::options::set("scheduler_post179", sched_post179opt);
     prog.compile( );
 }
 
 // all cnots with operands that are neighbors in s7
 void
-test_manyNN(std::string v, std::string schedopt)
+test_manyNN(std::string v, std::string schedopt, std::string sched_post179opt)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_schedopt=" + schedopt;
-    std::string kernel_name = "test_" + v + "_schedopt=" + schedopt;
+    std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
+    std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_179.json");
@@ -197,6 +202,7 @@ test_manyNN(std::string v, std::string schedopt)
     prog.add(k);
 
     ql::options::set("scheduler", schedopt);
+    ql::options::set("scheduler_post179", sched_post179opt);
     prog.compile( );
 }
 
@@ -204,12 +210,30 @@ int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_DEBUG");
 
-    test_singledim("singledim", "ALAP");
-    test_qwg("qwg", "ALAP");
-    test_edge("edge", "ALAP");
-    test_detuned("detuned", "ALAP");
-    test_oneNN("oneNN", "ALAP");
-    test_manyNN("manyNN", "ALAP");
+    test_singledim("singledim", "ASAP", "no");
+    test_singledim("singledim", "ASAP", "yes");
+    test_singledim("singledim", "ALAP", "no");
+    test_singledim("singledim", "ALAP", "yes");
+    test_qwg("qwg", "ASAP", "no");
+    test_qwg("qwg", "ASAP", "yes");
+    test_qwg("qwg", "ALAP", "no");
+    test_qwg("qwg", "ALAP", "yes");
+    test_edge("edge", "ASAP", "no");
+    test_edge("edge", "ASAP", "yes");
+    test_edge("edge", "ALAP", "no");
+    test_edge("edge", "ALAP", "yes");
+    test_detuned("detuned", "ASAP", "no");
+    test_detuned("detuned", "ASAP", "yes");
+    test_detuned("detuned", "ALAP", "no");
+    test_detuned("detuned", "ALAP", "yes");
+    test_oneNN("oneNN", "ASAP", "no");
+    test_oneNN("oneNN", "ASAP", "yes");
+    test_oneNN("oneNN", "ALAP", "no");
+    test_oneNN("oneNN", "ALAP", "yes");
+    test_manyNN("manyNN", "ASAP", "no");
+    test_manyNN("manyNN", "ASAP", "yes");
+    test_manyNN("manyNN", "ALAP", "no");
+    test_manyNN("manyNN", "ALAP", "yes");
 
     return 0;
 }

@@ -2,6 +2,7 @@
  * @file   scheduler.h
  * @date   01/2017
  * @author Imran Ashraf
+ * @author Hans van Someren
  * @brief  ASAP/ALAP and UNIFORM scheduling with and without resource constraint
  */
 
@@ -29,29 +30,40 @@ const string DepTypesNames[] = {"RAW", "WAW", "WAR", "RAR"};
 class Scheduler
 {
 private:
+    // dependence graph is constructed (see Init) once, and can be reused as often as needed
     ListDigraph graph;
 
-    ListDigraph::NodeMap<ql::gate*> instruction;
-    ListDigraph::NodeMap<std::string> name;
+    ListDigraph::NodeMap<ql::gate*> instruction;                    // instruction[n] == gate*
+    ListDigraph::NodeMap<std::string> name;                         // name[n] == qasm string
     ListDigraph::ArcMap<int> weight;
     //TODO it might be more readable to change 'cause' to string
     //   to accomodate/print both r0, q0 operands as cause
     ListDigraph::ArcMap<int> cause;
     ListDigraph::ArcMap<int> depType;
+    ListDigraph::Node s, t;                     // instruction[s]==SOURCE, instruction[t]==SINK
 
-    ListDigraph::NodeMap<double> dist;
-    Path<ListDigraph> p;
+    // parameters of dependence graph construction
+    size_t          cycle_time;                 // to convert durations to cycles as weight of arc
+    size_t          qubit_count;                // to check/represent qubit as cause in arc
+    size_t          creg_count;                 // to check/represent cbit as cause in arc
+    ql::circuit*    circp;                      // current and result circuit, should be parameter of scheduler
 
-    ListDigraph::Node s, t;
-    size_t cycle_time;
     std::map< std::pair<std::string,std::string>, size_t> buffer_cycles_map;
 
-    size_t qubit_count;
-    size_t creg_count;
+// post179 support, can be made local to scheduler
+// next are used by a scheduler; must be reinitialized for each scheduler
+    std::map<ql::gate*,ListDigraph::Node>  node;        // node[gate*] == node_id
+    ListDigraph::NodeMap<bool>          scheduled;  // scheduled[n] == whether node n has been scheduled, init false
+    std::list<ListDigraph::Node>        avlist;     // list of schedulable nodes, initially just s or t
+    ListDigraph::NodeMap<size_t>        cycle;      // computed result of scheduler: cycle[n] == current earliest cycle
+                                                    // based on actual cycle values of scheduled predecessor nodes and weights
 
 public:
     Scheduler(): instruction(graph), name(graph), weight(graph),
-        cause(graph), depType(graph), dist(graph) {}
+        cause(graph), depType(graph)
+// post179 support
+        , scheduled(graph), cycle(graph)
+        {}
 
     void Init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
     {
@@ -60,6 +72,7 @@ public:
         creg_count = ccount;
         size_t qubit_creg_count = qubit_count + creg_count;
         cycle_time = platform.cycle_time;
+        circp = &ckt;
 
         // populate buffer map
         // 'none' type is a dummy type and 0 buffer cycles will be inserted for
@@ -83,6 +96,7 @@ public:
         // add dummy source node
         ListDigraph::Node srcNode = graph.addNode();
         instruction[srcNode] = new ql::SOURCE();
+        node[instruction[srcNode]] = srcNode;
         name[srcNode] = instruction[srcNode]->qasm();
         s=srcNode;
 
@@ -101,6 +115,7 @@ public:
             ListDigraph::Node consNode = graph.addNode();
             int consID = graph.id(consNode);
             instruction[consNode] = ins;
+            node[ins] = consNode;
             name[consNode] = ins->qasm();
 
             // Add edges
@@ -388,6 +403,7 @@ public:
         // add dummy target node
         ListDigraph::Node targetNode = graph.addNode();
         instruction[targetNode] = new ql::SINK();
+        node[instruction[targetNode]] = targetNode;
         name[targetNode] = instruction[targetNode]->qasm();
         t=targetNode;
 
@@ -574,6 +590,10 @@ public:
     //     dotout.close();
     // }
 
+private:
+
+// =========== pre179 schedulers
+
     void TopologicalSort(std::vector<ListDigraph::Node> & order)
     {
         // DOUT("Performing Topological sort.");
@@ -616,7 +636,7 @@ public:
         }
     }
 
-// =========== asap
+// =========== pre179 asap
 
     void schedule_asap_(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
     {
@@ -824,7 +844,7 @@ public:
     // }
 
 
-    ql::ir::bundles_t schedule_asap()
+    ql::ir::bundles_t schedule_asap_pre179()
     {
         DOUT("Scheduling ASAP to get bundles ...");
         ql::ir::bundles_t bundles;
@@ -878,7 +898,7 @@ public:
 
 
     // the following with rc and buffer-buffer delays
-    ql::ir::bundles_t schedule_asap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
+    ql::ir::bundles_t schedule_asap_pre179(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
     {
         DOUT("RC Scheduling ASAP to get bundles ...");
         ql::ir::bundles_t bundles;
@@ -974,7 +994,7 @@ public:
         return bundles;
     }
 
-// =========== alap
+// =========== pre179 alap
 
     void schedule_alap_(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
     {
@@ -1281,7 +1301,7 @@ public:
 
 
     // the following without rc and buffer-buffer delays
-    ql::ir::bundles_t schedule_alap()
+    ql::ir::bundles_t schedule_alap_pre179()
     {
         DOUT("Scheduling ALAP to get bundles ...");
         ql::ir::bundles_t bundles;
@@ -1332,7 +1352,7 @@ public:
     }
 
     // the following with rc and buffer-buffer delays
-    ql::ir::bundles_t schedule_alap(ql::arch::resource_manager_t & rm, 
+    ql::ir::bundles_t schedule_alap_pre179(ql::arch::resource_manager_t & rm, 
         const ql::quantum_platform & platform)
     {
         DOUT("RC Scheduling ALAP to get bundles ...");
@@ -1429,7 +1449,7 @@ public:
     }
 
 
-// =========== uniform
+// =========== pre179 uniform
     void compute_alap_cycle(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order, size_t max_cycle)
     {
         // DOUT("Computing alap_cycle");
@@ -1686,7 +1706,7 @@ public:
         DOUT("Performing ALAP UNIFORM Scheduling [DONE]");
     }
 
-    ql::ir::bundles_t schedule_alap_uniform()
+    ql::ir::bundles_t schedule_alap_uniform_pre179()
     {
         DOUT("Scheduling ALAP UNIFORM to get bundles ...");
         ql::ir::bundles_t bundles;
@@ -1737,6 +1757,321 @@ public:
         return bundles;
     }
 
+// =========== post179 schedulers
+
+    // make node n available
+    // add it to the avlist because the condition for that is fulfilled:
+    //  all its predecessors were scheduled;
+    // take care that cycle[n] is accurately based on cycle[] of those predecessors
+    void MakeAvailable(ListDigraph::Node n)
+    {
+        cycle[n] = 0;
+        for (ListDigraph::InArcIt predArc(graph,n); predArc != INVALID; ++predArc)
+        {
+            ListDigraph::Node predNode = graph.source(predArc);
+            cycle[n] = std::max(cycle[n], cycle[predNode] + weight[predArc]);
+        }
+        avlist.push_back(n);
+    }
+
+    // take node n out of avlist because it has been scheduled;
+    // this makes its successor nodes available provided all their predecessors were scheduled;
+    // a successor node which has a predecessor which hasn't been scheduled, will be checked when that one is scheduled
+    void TakeAvailable(ListDigraph::Node n)
+    {
+        scheduled[n] = true;
+        avlist.remove(n);
+        for (ListDigraph::OutArcIt succArc(graph,n); succArc != INVALID; ++succArc)
+        {
+            ListDigraph::Node succNode = graph.target(succArc);
+            bool schedulable = true;
+            for (ListDigraph::InArcIt predArc(graph,succNode); predArc != INVALID; ++predArc)
+            {
+                ListDigraph::Node predNode = graph.source(predArc);
+                if (!scheduled[predNode])
+                {
+                    schedulable = false;
+                    break;
+                }
+            }
+            if (schedulable)
+            {
+                MakeAvailable(succNode);
+            }
+        }
+    }
+
+/****************************************************************************************
+    // an example scheduler using the above facilities
+    // parameters, class relations, visibility of avlist: work in progress
+    void ExampleScheduler(graph, avlist, rm, newckt, scheduling_direction_t dir))
+    {
+        // initialize available list for this scheduler
+        for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
+        {
+            scheduled[n] = false;   // none were scheduled
+        }
+        size_t  curr_cycle = 0;     // current cycle for which instructions are sought
+        MakeAvailable(graph.s);     // srcNode is the first available node
+
+        while (!avlist.empty())
+        {
+            bool                one_found = false;
+            ListDigraph::Node   node_found;
+            for ( auto n : avlist)
+            {
+                // next test is absolutely necessary here: wait for instr to complete
+                // this cannot be avoided by not adding those to avlist in MakeAvailable
+                // because then the instrs having completed would need detection;
+                // the latter would require an additional list; this test here is the simplest
+                if (cycle[n] <= curr_cycle)                 // instruction must have completed
+                {
+                    if (rm && rm.available(n) || !rm)       // and must match all hardware state constraints
+                    {
+                        // nothing prevents n now from being scheduled in this cycle;
+                        // could also wait and collect/evaluate all those nodes qualifying
+                        // and take a preferred one, e.g. on critical path, or a classical node, ...;
+                        // for that, check all these criteria and construct a sub list for each criterion/priority;
+                        // but in this example take 1st one, i.e. ASAP with issue #179 solved
+                        // and just have this one_found and node_found as result
+                        one_found = true;                   // in order to hunt for more instrs in this one VLIW/SIMD
+                        node_found = n;
+                        break;                              // happy with the found one
+                    }
+                }
+            }
+            // here check all those sub lists above for an instr to take
+            // and finally select a single one; finalize scheduling for it;
+            // this means: effectively give prio to filling current cycle as much as possible
+            // one could also stop filling on some condition here and not select a node;
+            // in the end, we have either a single node here or no node;
+            // more nodes that could be scheduled in this cycle, will be found in an other round of the loop
+            if (one_found)
+            {
+                // commit this node (node_found) to the schedule
+                if (rm)
+                {
+                    rm.reserve(node_found);                  // add resource use to hardware state
+                }
+                cycle[node_found] = curr_cycle;              // local to scheduler for completion checks
+                newckt.push_back(instruction[node_found]);   // new circuit, in non-decreasing cycle order
+                                                             // this will be the order to use by other algorithms
+                instruction[node_found]->cycle = curr_cycle; // scheduler result; since cycle[] is local to scheduler
+                TakeAvailable(node_found);                   // update avlist, given this one was taken
+            }
+            else
+            {
+                // i.e. none in avlist could or we didn't want to be scheduled in this cycle
+                curr_cycle++;   // so try again; eventually instrs complete and machine is empty
+            }
+        }
+    }
+****************************************************************************************/
+
+    // return bundles for the given circuit
+    // assumes gatep->cycle attribute reflects the cycle assignment
+    // assumes circuit being a vector of gate pointers is ordered by this cycle value
+    ql::ir::bundles_t Bundler(ql::circuit& circ)
+    {
+        ql::ir::bundles_t bundles;          // result bundles
+    
+        ql::ir::bundle_t    currBundle;     // current bundle at currCycle that is being filled
+        size_t              currCycle = 0;  // cycle at which bundle is to be scheduled
+
+        currBundle.start_cycle = currCycle; // starts off as empty bundle starting at currCycle
+        currBundle.duration_in_cycles = 0;
+
+        DOUT("Bundler ...");
+
+        for (auto & gp: circ)
+        {
+            size_t newCycle = gp->cycle;
+            if (newCycle < currCycle)
+            {
+                EOUT("Error: circuit not ordered by cycle value");
+                throw ql::exception("[x] Error: circuit not ordered by cycle value",false);
+            }
+            if (newCycle > currCycle)
+            {
+                if (!currBundle.parallel_sections.empty())
+                {
+                    // finish currBundle at currCycle
+                    DOUT("... bundle duration in cycles: " << currBundle.duration_in_cycles);
+                    bundles.push_back(currBundle);
+                    DOUT("... ready with bundle");
+                    currBundle.parallel_sections.clear();
+                }
+
+                // new empty currBundle at newCycle
+                currCycle = newCycle;
+                DOUT("... bundling at cycle: " << currCycle);
+                currBundle.start_cycle = currCycle;
+                currBundle.duration_in_cycles = 0;
+            }
+
+            // add gp to currBundle
+            ql::ir::section_t asec;
+            asec.push_back(gp);
+            currBundle.parallel_sections.push_back(asec);
+            DOUT("... gate: " << gp->qasm() << " in private parallel section");
+            currBundle.duration_in_cycles = std::max(currBundle.duration_in_cycles, (gp->duration+cycle_time-1)/cycle_time); 
+        }
+        if (!currBundle.parallel_sections.empty())
+        {
+            // finish currBundle at currCycle
+            DOUT("... bundle duration in cycles: " << currBundle.duration_in_cycles);
+            bundles.push_back(currBundle);
+            DOUT("... ready with bundle");
+        }
+
+        DOUT("Bundler [DONE]");
+        return bundles;
+    }
+
+    // ASAP scheduler
+    ql::ir::bundles_t schedule_asap_post179()
+    {
+        DOUT("Scheduling ASAP post179 ...");
+        // *circp is by definition in a topological order of the dependence graph
+        instruction[s]->cycle = 0;
+        for ( ql::circuit::iterator gpit = circp->begin(); gpit != circp->end(); gpit++)
+        {
+            ql::gate*           gp = *gpit;
+            ListDigraph::Node   currNode = node[gp];
+            size_t              currCycle = 0;
+            DOUT("... scheduling " << name[currNode]);
+            for( ListDigraph::InArcIt arc(graph,currNode); arc != INVALID; ++arc )
+            {
+                ListDigraph::Node srcNode  = graph.source(arc);
+                size_t srcCycle = instruction[srcNode]->cycle;
+                currCycle = std::max(currCycle, srcCycle + weight[arc]);
+            }
+            gp->cycle = currCycle;
+            DOUT("... scheduled " << name[currNode] << " at cycle " << currCycle);
+        }
+        DOUT("... sorting on cycle value");
+        std::sort(circp->begin(), circp->end(), [&](ql::gate* & gp1, ql::gate* & gp2) { return gp1->cycle < gp2->cycle; });
+
+        DOUT("Scheduling ASAP [DONE]");
+        return Bundler(*circp);
+    }
+
+    ql::ir::bundles_t schedule_alap_post179()
+    {
+        DOUT("Scheduling ALAP post179 ...");
+        // *circp is by definition in a topological order of the dependence graph
+        instruction[t]->cycle = MAX_CYCLE - instruction[t]->duration;
+        for ( ql::circuit::reverse_iterator gpit = circp->rbegin(); gpit != circp->rend(); gpit++)
+        {
+            ql::gate*           gp = *gpit;
+            ListDigraph::Node   currNode = node[gp];
+            size_t              currCycle = MAX_CYCLE;
+            DOUT("... scheduling " << name[currNode]);
+            for( ListDigraph::OutArcIt arc(graph,currNode); arc != INVALID; ++arc )
+            {
+                ListDigraph::Node targetNode  = graph.target(arc);
+                size_t targetCycle = instruction[targetNode]->cycle;
+                currCycle = std::min(currCycle, targetCycle - weight[arc]);
+            }
+            gp->cycle = currCycle;
+            DOUT("... scheduled " << name[currNode] << " at cycle " << currCycle);
+        }
+        DOUT("... sorting on cycle value");
+        std::sort(circp->begin(), circp->end(), [&](ql::gate* & gp1, ql::gate* & gp2) { return gp1->cycle < gp2->cycle; });
+
+        // readjust cycle values to start at 1
+        size_t  firstCycle = (*(circp->begin()))->cycle - 1;
+        DOUT("... readjusting cycle values by -" << firstCycle << " to start at 0");
+        for ( auto & gp : *circp)
+        {
+            gp->cycle -= firstCycle;
+        }
+
+        DOUT("Scheduling ALAP [DONE]");
+        return Bundler(*circp);
+    }
+
+    ql::ir::bundles_t schedule_asap_post179(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
+    {
+        // to be reimplemented
+        return schedule_asap_pre179(rm, platform);
+    }
+
+    ql::ir::bundles_t schedule_alap_post179(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
+    {
+        // to be reimplemented
+        return schedule_alap_pre179(rm, platform);
+    }
+
+    ql::ir::bundles_t schedule_alap_uniform_post179()
+    {
+        // to be reimplemented
+        return schedule_alap_uniform_pre179();
+    }
+
+public:
+
+// =========== scheduling entry points switching out to pre179 or post179
+
+    ql::ir::bundles_t schedule_asap()
+    {
+        if (ql::options::get("scheduler_post179") == "no")
+        {
+            return schedule_asap_pre179();
+        }
+        else
+        {
+            return schedule_asap_post179();
+        }
+    }
+
+    ql::ir::bundles_t schedule_asap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
+    {
+        if (ql::options::get("scheduler_post179") == "no")
+        {
+            return schedule_asap_pre179(rm, platform);
+        }
+        else
+        {
+            return schedule_asap_post179(rm, platform);
+        }
+    }
+
+    ql::ir::bundles_t schedule_alap()
+    {
+        if (ql::options::get("scheduler_post179") == "no")
+        {
+            return schedule_alap_pre179();
+        }
+        else
+        {
+            return schedule_alap_post179();
+        }
+    }
+
+    ql::ir::bundles_t schedule_alap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
+    {
+        if (ql::options::get("scheduler_post179") == "no")
+        {
+            return schedule_alap_pre179(rm, platform);
+        }
+        else
+        {
+            return schedule_alap_post179(rm, platform);
+        }
+    }
+
+    ql::ir::bundles_t schedule_alap_uniform()
+    {
+        if (ql::options::get("scheduler_post179") == "no")
+        {
+            return schedule_alap_uniform_pre179();
+        }
+        else
+        {
+            return schedule_alap_uniform_post179();
+        }
+    }
 };
 
 #endif
