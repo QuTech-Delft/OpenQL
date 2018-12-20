@@ -14,10 +14,12 @@
 #include <sstream>
 #include <cassert>
 #include <time.h>
+#include <complex>
 
 #include <ql/version.h>
 #include <ql/openql.h>
 #include <ql/classical.h>
+#include <ql/unitary.h>
 
 static std::string get_version()
 {
@@ -100,6 +102,30 @@ public:
     }
 };
 
+// typedef std::complex<double> Complex;
+
+class Unitary
+{
+public:
+    string name;
+    ql::unitary * unitary;
+
+    Unitary(std::string name, std::vector<std::complex<double>> matrix) : name(name)
+    {
+        unitary = new ql::unitary(name, matrix);
+    }
+
+    void decompose()
+    {
+        unitary->decompose();
+    }
+
+    ~Unitary()
+    {
+        // destroy unitary
+        delete(unitary);
+    }
+};
 
 /**
  * quantum kernel interface
@@ -244,6 +270,11 @@ public:
     void gate(std::string name, std::vector<size_t> qubits, CReg & destination)
     {
         kernel->gate(name, qubits, {(destination.creg)->id} );
+    }
+
+    void gate(Unitary &u, std::vector<size_t> qubits)
+    {
+        kernel->gate(*(u.unitary), qubits);
     }
 
     void classical(CReg & destination, Operation& operation)

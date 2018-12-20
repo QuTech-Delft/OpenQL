@@ -20,6 +20,7 @@
 #include "ql/classical.h"
 #include "ql/optimizer.h"
 #include "ql/ir.h"
+#include "ql/unitary.h"
 
 #define PI M_PI
 
@@ -808,6 +809,23 @@ public:
             }
         }
         DOUT("");
+    }
+
+    // to add unitary to kernel
+    void gate(ql::unitary u, std::vector<size_t> qubits)
+    {
+        // applying unitary to gates
+        COUT("Applying unitary '" << u.name << "' to " << ql::utils::to_string(qubits, "qubits: ") );
+        if(u.is_decomposed)
+        {
+            COUT("Adding decomposed unitary to kernel ...");
+            // TODO: add decomposed gates here
+        }
+        else
+        {
+            EOUT("Unitary " << u.name <<" not decomposed. Cannot be added to kernel!");
+            throw ql::exception("Unitary '"+u.name+"' not decomposed. Cannot be added to kernel!", false);
+        }
     }
 
     // FIXME: is this really QASM, or CC-light eQASM?
