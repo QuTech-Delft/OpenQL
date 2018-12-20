@@ -172,25 +172,6 @@ CReg
 
 """
 
-%feature("docstring") Unitary
-""" Unitary class for unitary decomposition"""
-
-
-%feature("docstring") Unitary::Unitary
-""" Constructs a unitary that allows decomposition.
-
-Parameters
-----------
-arg1 : str
-    name of the unitary
-arg2 : cmat_t
-    matrix 
-
-Returns
--------
-Unitary
-    Unitary class for decomposition
-"""
 
 
 

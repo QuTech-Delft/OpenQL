@@ -24,7 +24,6 @@
 #include <ql/openql.h>
 #include <ql/exception.h>
 
-
 using json = nlohmann::json;
 
 typedef std::string instruction_t;
@@ -85,8 +84,7 @@ typedef enum __gate_type_t
     __dummy_gate__,
     __swap_gate__,
     __wait_gate__,
-    __classical_gate__,
-    __unitary_decomp_gate__
+    __classical_gate__
 } gate_type_t;
 
 #define sqrt_2  (1.4142135623730950488016887242096980785696718753769480731766797379f)
@@ -1578,57 +1576,6 @@ public:
         return m;
     }
 };
-
-/**
- * unitary_decomp
- */
-class unitary_decomp : public gate
-{
-public:
-    cmat_t 	m;
-    size_t	parameters;
-/*    unitary_decomp(size_t q) : m(hadamard_c)
-    {
-        name = "unitary_decomp";
-        duration = 40;
-        operands.push_back(q);
-    }*/
-
-    unitary_decomp(size_t qubit1, size_t qubit2, cmat_t m) : m(m)
-    {
-        name = "unitary_decomp";
-        duration = 40;
-        operands.push_back(qubit1);
-    }
-    unitary_decomp(std::vector<size_t> q, cmat_t& m) : m(m)
-    {
-        name = "unitary_decomp";
-        duration = 40;
-        operands.push_back(q[0]);
-    }
-
-    instruction_t qasm()
-    {
-        return instruction_t("unitary_decomp q[" + std::to_string(operands[0]) + "]");
-    }
-
-    instruction_t micro_code()
-    {
-        // y90 + x180
-        return instruction_t("  pulse 1100 0000 1100\n     wait 10\n     pulse 1001 0000 1001\n     wait 10");
-    }
-
-    gate_type_t type()
-    {
-        return __unitary_decomp_gate__;
-    }
-
-    cmat_t mat()
-    {
-        return m;
-    }
-};
-
 
 } // end ql namespace
 

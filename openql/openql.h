@@ -19,12 +19,7 @@
 #include <ql/version.h>
 #include <ql/openql.h>
 #include <ql/classical.h>
-<<<<<<< HEAD
-#include <ql/matrix.h>
-#include <ql/unitarydecomp.h>
-=======
 #include <ql/unitary.h>
->>>>>>> 011a4d6a8c0ac01ff387e56fa15f667fb9e9065a
 
 static std::string get_version()
 {
@@ -107,19 +102,6 @@ public:
     }
 };
 
-<<<<<<< HEAD
-class Unitary
-{
-public:
-    std::string name;
-    ql::cmat_t mat;
-    ql::unitary * unitary;
-    
-    Unitary(std::string name, ql::cmat_t mat): name(name), mat(mat)
-    {
-        unitary = new ql::unitary(name, mat);
-    }
-=======
 // typedef std::complex<double> Complex;
 
 class Unitary
@@ -144,21 +126,7 @@ public:
         delete(unitary);
     }
 };
->>>>>>> 011a4d6a8c0ac01ff387e56fa15f667fb9e9065a
 
-    vector<instruction_t> decompose(std::string option)
-     {
-         //ql::complex_t det = mat.m[0]*mat.m[4]-mat.m[3]*mat.m[2];
-         return unitary->decompose(option);//{instruction_t("(det.real).toString()")};
-      
-     };
-
-    ~Unitary()
-    {
-        delete(unitary);
-    }
-
-};
 /**
  * quantum kernel interface
  */
@@ -304,15 +272,9 @@ public:
         kernel->gate(name, qubits, {(destination.creg)->id} );
     }
 
-<<<<<<< HEAD
-    void gate(std::string name, std::vector<size_t> qubits, ql::cmat_t matrix)
-    {
-        kernel->gate(name, qubits, matrix);
-=======
     void gate(Unitary &u, std::vector<size_t> qubits)
     {
         kernel->gate(*(u.unitary), qubits);
->>>>>>> 011a4d6a8c0ac01ff387e56fa15f667fb9e9065a
     }
 
     void classical(CReg & destination, Operation& operation)
@@ -332,12 +294,6 @@ public:
         kernel->controlled(k.kernel, control_qubits, ancilla_qubits);
     }
 
-    void unitary_decomp(std::vector<size_t> qubits, ql::cmat_t matrix)
-    {
-        kernel->unitary_decomp(qubits, matrix);
-    }
-
-
     void conjugate(Kernel &k)
     {
         kernel->conjugate(k.kernel);
@@ -347,8 +303,6 @@ public:
     {
         delete(kernel);
     }
-
-
 };
 
 

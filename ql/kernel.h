@@ -20,11 +20,7 @@
 #include "ql/classical.h"
 #include "ql/optimizer.h"
 #include "ql/ir.h"
-<<<<<<< HEAD
-//#include "ql/unitarydecomp.h"
-=======
 #include "ql/unitary.h"
->>>>>>> 011a4d6a8c0ac01ff387e56fa15f667fb9e9065a
 
 #define PI M_PI
 
@@ -239,16 +235,6 @@ public:
         c.push_back(new ql::display());
     }
 
-    //void unitary_decomp(size_t qubit1, size_t qubit2, cmat_t m)
-    //{
-	//gate("unitary_decomp", {qubit1, qubit2}, m);
-    //}
-
-    void unitary_decomp(std::vector<size_t> qubits, cmat_t m)
-    {
-	gate("unitary_decomp", qubits, m);
-    }
-
     /**
      * add clifford
      */
@@ -423,7 +409,7 @@ public:
         else if( gname == "mry90" )      { c.push_back(new ql::mry90(qubits[0]) ); result = true; }
         else if( gname == "ry180" )      { c.push_back(new ql::ry180(qubits[0]) ); result = true; }
         else if( gname == "measure" )
-	 {
+        {
             if(cregs.empty())
                 c.push_back(new ql::measure(qubits[0]) );
             else
@@ -445,7 +431,8 @@ public:
             c.push_back(new ql::wait(qubits, duration, duration_in_cycles));
             result = true;
         }
-	else result = false;
+        else result = false;
+
     	return result;
     }
 
@@ -733,22 +720,6 @@ public:
     void gate(std::string gname, size_t q0, size_t q1)
     {
         gate(gname, std::vector<size_t> {q0, q1});
-    }
-
-    /**
-     * unitary_decomp custom matrix gate 
-     */
-    void gate(std::string gname, size_t q0, size_t q1, cmat_t m)
-    {
-        gate(gname, std::vector<size_t> {q0, q1}, m);
-    }
-
-    /**
-     * unitary_decomp custom matrix gate version2
-     */
-    void gate(std::string gname, std::vector<size_t> qubits, cmat_t m)
-    {
-	if(gname == "unitary_decomp") {c.push_back(new ql::unitary_decomp(qubits, m));}
     }
 
 
@@ -1749,7 +1720,6 @@ public:
             {
                 gate("toffoli", g->operands, {}, g->duration, g->angle);
             }
-
             else
             {
                 EOUT("Conjugate version of gate '" << gname << "' not defined !");
