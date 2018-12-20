@@ -14,12 +14,17 @@
 #include <sstream>
 #include <cassert>
 #include <time.h>
+#include <complex>
 
 #include <ql/version.h>
 #include <ql/openql.h>
 #include <ql/classical.h>
+<<<<<<< HEAD
 #include <ql/matrix.h>
 #include <ql/unitarydecomp.h>
+=======
+#include <ql/unitary.h>
+>>>>>>> 011a4d6a8c0ac01ff387e56fa15f667fb9e9065a
 
 static std::string get_version()
 {
@@ -102,6 +107,7 @@ public:
     }
 };
 
+<<<<<<< HEAD
 class Unitary
 {
 public:
@@ -113,6 +119,32 @@ public:
     {
         unitary = new ql::unitary(name, mat);
     }
+=======
+// typedef std::complex<double> Complex;
+
+class Unitary
+{
+public:
+    string name;
+    ql::unitary * unitary;
+
+    Unitary(std::string name, std::vector<std::complex<double>> matrix) : name(name)
+    {
+        unitary = new ql::unitary(name, matrix);
+    }
+
+    void decompose()
+    {
+        unitary->decompose();
+    }
+
+    ~Unitary()
+    {
+        // destroy unitary
+        delete(unitary);
+    }
+};
+>>>>>>> 011a4d6a8c0ac01ff387e56fa15f667fb9e9065a
 
     vector<instruction_t> decompose(std::string option)
      {
@@ -272,9 +304,15 @@ public:
         kernel->gate(name, qubits, {(destination.creg)->id} );
     }
 
+<<<<<<< HEAD
     void gate(std::string name, std::vector<size_t> qubits, ql::cmat_t matrix)
     {
         kernel->gate(name, qubits, matrix);
+=======
+    void gate(Unitary &u, std::vector<size_t> qubits)
+    {
+        kernel->gate(*(u.unitary), qubits);
+>>>>>>> 011a4d6a8c0ac01ff387e56fa15f667fb9e9065a
     }
 
     void classical(CReg & destination, Operation& operation)

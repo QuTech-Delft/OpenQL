@@ -12,12 +12,15 @@
 %include "std_vector.i"
 %include "exception.i"
 %include "std_string.i"
+%include "std_complex.i"
+
 
 namespace std {
    %template(vectori) vector<int>;
    %template(vectorui) vector<size_t>;
    %template(vectorf) vector<float>;
    %template(vectord) vector<double>;
+   %template(vectorc) vector<std::complex<double>>;
 };
 
 %{
@@ -238,6 +241,40 @@ Parameters
 arg1 : int
     immediate value
 """
+
+
+
+%feature("docstring") Unitary
+""" Unitary class to hold the matrix and its decomposition"""
+
+
+%feature("docstring") Unitary::Unitary
+""" Constructs a unitary
+
+Parameters
+----------
+arg1 : str
+    name of the unitary
+arg2 : matrix
+    complex unitary matrix
+
+Returns
+-------
+None
+"""
+
+%feature("docstring") Unitary::decompose
+""" Decomposes the unitary matrix
+
+Parameters
+----------
+None
+
+Returns
+-------
+None
+"""
+
 
 
 
@@ -511,6 +548,18 @@ arg2 : []
     list of qubits
 arg3 : CReg
     classical destination register for measure operation.
+"""
+
+
+%feature("docstring") Kernel::gate
+""" adds unitary to kernel.
+
+Parameters
+----------
+arg1 : Unitary
+    unitary matrix
+arg2 : []
+    list of qubits
 """
 
 
