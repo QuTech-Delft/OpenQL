@@ -819,7 +819,10 @@ public:
         if(u.is_decomposed)
         {
             COUT("Adding decomposed unitary to kernel ...");
-            // TODO: add decomposed gates here
+             c.push_back(new ql::rz(qubits[0], u.alpha));
+             c.push_back(new ql::ry(qubits[0], u.beta));
+             c.push_back(new ql::rz(qubits[0], u.gamma));
+
         }
         else
         {

@@ -34,8 +34,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-
-
+	
     def test_unitary_undecomposed(self):
         config_fn = os.path.join(curdir, 'test_cfg_none.json')
         platform = ql.Platform('platform_none', config_fn)
@@ -53,10 +52,22 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         self.assertEqual(str(cm.exception), 'Unitary \'u1\' not decomposed. Cannot be added to kernel!')
 
-
     # TODO: add more tests here
+    def test_unitary_decompose_X(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 1
+        p = ql.Program('test_unitary_pass', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
 
-    
+        u = ql.Unitary('u1', [  complex(1.0, 0.0), complex(0.0, 0.0),
+                                complex(0.0, 0.0), complex(0.0, 1.0)])
+        u.decompose()
+        k.gate(u, [0])
+
+        p.add_kernel(k)
+        p.compile()
+        self.assertEqual(p.qasm(), "this is not equal")
 
 if __name__ == '__main__':
     unittest.main()

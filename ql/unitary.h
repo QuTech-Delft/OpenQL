@@ -52,9 +52,16 @@ public:
         std::complex<double> A = exp(-com_two*delta)*matrix[0,0];
         std::complex<double> B = exp(-com_two*delta)*matrix[0,1];
         double sw = sqrt(pow((double) B.imag(),2) + pow((double) B.real(),2) + pow((double) A.imag(),2));
-        double wx = B.imag()/sw;
-        double wy = B.real()/sw;
-        double wz = A.imag()/sw;
+        double wx = 0;
+        double wy = 0;
+        double wz = 0;
+        if(sw > 0)
+        {
+        wx = B.imag()/sw;
+        wy = B.real()/sw;
+        wz = A.imag()/sw;
+        }
+
         double t1 = atan2(A.imag(),A.real());
         double t2 = atan2(B.imag(), B.real());
         alpha = t1+t2;
