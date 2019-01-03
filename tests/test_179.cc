@@ -11,6 +11,7 @@
 #include <ql/openql.h>
 
 // test qwg resource constraints mapping
+// no difference between pre179 and post179 scheduling
 void
 test_qwg(std::string v, std::string schedopt, std::string sched_post179opt)
 {
@@ -51,16 +52,23 @@ test_singledim(std::string v, std::string schedopt, std::string sched_post179opt
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
-    // independent gates but stacking qwg unit use
-    // in s7, q2, q3 and q4 all use qwg1
-    // the y q3 must be in an other cycle than the x's because x conflicts with y in qwg1
-    // the x q2 and x q4 can be in parallel but the y q3 in between prohibits this
-    // because the qwg1 resource in single dimensional:
-    // after x q2 it is busy on x in cycle 0,
-    // then it only looks at the y q3, which requires to go to cycle 1,
-    // and then the x q4 only looks at the current cycle (cycle 1),
+    // independent gates but interfering qwg unit use
+    // in surface-7, q2, q3 and q4 all use qwg1;
+    // the y q3 must be in an other cycle than both x's because x conflicts with y in qwg1 (different gates);
+    //
+    // the x q2 and x q4 can be in parallel but the y q3 in between prohibits this pre179
+    // because the scheduler doesn't look ahead for operations that can be done in a same cycle:
+    // after x q2 the qwg1 resource is busy on x in cycle 0,
+    // then the scheduler only looks at the y q3, which requires to go to cycle 1 because of qwg1 being busy;
+    // and then for the x q4 the scheduler only looks at the current cycle (cycle 1),
     // in which qwg1 is busy with the y, so for the x it is busy,
-    // and the only option is to go for cycle 2
+    // and the only option is to delay that x q4 to cycle 2;
+    //
+    // post179, the scheduler looks at the dep graph and sees all 3 operations to be ready for scheduling,
+    // i.e. any order would be ok when not taking resources into account;
+    // when the x q2 would be scheduled in cycle 0, it considers doing y q3 and x q4 in the same cycle;
+    // for y q3 this fails on the qwg1 resource but for x q4 this is ok because it uses the same gate as x q2;
+    // so x q2 and x q4 are done in cycle 0; y q3 is then put in cycle 1
     k.gate("x", 2);
     k.gate("y", 3);
     k.gate("x", 4);
@@ -73,6 +81,7 @@ test_singledim(std::string v, std::string schedopt, std::string sched_post179opt
 }
 
 // test edge resource constraints mapping
+// no difference between pre179 and post179 scheduling
 void
 test_edge(std::string v, std::string schedopt, std::string sched_post179opt)
 {
@@ -100,6 +109,7 @@ test_edge(std::string v, std::string schedopt, std::string sched_post179opt)
 
 // test detuned_qubits resource constraints mapping
 // no swaps generated
+// no difference between pre179 and post179 scheduling
 void
 test_detuned(std::string v, std::string schedopt, std::string sched_post179opt)
 {
@@ -132,6 +142,7 @@ test_detuned(std::string v, std::string schedopt, std::string sched_post179opt)
 }
 
 // one cnot with operands that are neighbors in s7
+// no difference between pre179 and post179 scheduling
 void
 test_oneNN(std::string v, std::string schedopt, std::string sched_post179opt)
 {
@@ -163,6 +174,8 @@ test_oneNN(std::string v, std::string schedopt, std::string sched_post179opt)
 }
 
 // all cnots with operands that are neighbors in s7
+// no or hardly any significant difference between pre179 and post179 scheduling,
+// slight differences may occur when the json file maps cnot to its constituent primitive gates
 void
 test_manyNN(std::string v, std::string schedopt, std::string sched_post179opt)
 {

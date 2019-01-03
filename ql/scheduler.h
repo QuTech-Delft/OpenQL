@@ -1750,9 +1750,10 @@ private:
 
 // =========== post179 schedulers
 
-    // return bundles for the given circuit
-    // assumes gatep->cycle attribute reflects the cycle assignment
-    // assumes circuit being a vector of gate pointers is ordered by this cycle value
+    // return bundles for the given circuit;
+    // assumes gatep->cycle attribute reflects the cycle assignment;
+    // assumes circuit being a vector of gate pointers is ordered by this cycle value;
+    // create bundles in a single scan over the circuit, using currBundle and currCycle as state
     ql::ir::bundles_t Bundler(ql::circuit& circ)
     {
         ql::ir::bundles_t bundles;          // result bundles
@@ -1894,50 +1895,140 @@ private:
     }
 
     // ASAP/ALAP scheduling support code with RC
+    // use an "available list" (avlist) as interface between dependence graph and scheduler
+    // the avlist contains all nodes that wrt their dependences can be scheduled:
+    //  all its predecessors were scheduled (forward scheduling) or
+    //  all its successors were scheduled (backward scheduling)
+    // the scheduler fills cycles subsequently, with nodes/instructions from the avlist
+    // checking before selection whether the nodes/instructions have completed execution
+    // and whether the resource constraints are fulfilled;
+    // this checking and selection can be an iterative process in case of more sophisticated scheduling algorithms
+    // but here just one first node is selected for the cycle and then as many as fit with it in that same cycle
 
     // avlist support
-    //
+
     // make node n available
     // add it to the avlist because the condition for that is fulfilled:
-    //  all its predecessors were scheduled;
-    // take care that cycle is accurately based on cycle of those predecessors
-    void MakeAvailable(ListDigraph::Node n, std::list<ListDigraph::Node>& avlist)
+    //  all its predecessors were scheduled (forward scheduling) or
+    //  all its successors were scheduled (backward scheduling)
+    // update its cycle attribute to reflect these dependences
+    void MakeAvailable(ListDigraph::Node n, std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir)
     {
         ql::gate*   gp = instruction[n];
-        gp->cycle = 0;
-        for (ListDigraph::InArcIt predArc(graph,n); predArc != INVALID; ++predArc)
+        if (ql::forward_scheduling == dir)
         {
-            ListDigraph::Node predNode = graph.source(predArc);
-            ql::gate*   predgp = instruction[predNode];
-            gp->cycle = std::max(gp->cycle, predgp->cycle + weight[predArc]);
+            gp->cycle = 0;
+            for (ListDigraph::InArcIt predArc(graph,n); predArc != INVALID; ++predArc)
+            {
+                ListDigraph::Node predNode = graph.source(predArc);
+                ql::gate*   predgp = instruction[predNode];
+                gp->cycle = std::max(gp->cycle, predgp->cycle + weight[predArc]);
+            }
+        }
+        else
+        {
+            gp->cycle = MAX_CYCLE;
+            for (ListDigraph::OutArcIt succArc(graph,n); succArc != INVALID; ++succArc)
+            {
+                ListDigraph::Node succNode = graph.target(succArc);
+                ql::gate*   succgp = instruction[succNode];
+                gp->cycle = std::min(gp->cycle, weight[succArc] + succgp->cycle);
+            }
         }
         avlist.push_back(n);
     }
 
     // take node n out of avlist because it has been scheduled;
-    // this makes its successor nodes available provided all their predecessors were scheduled;
-    // a successor node which has a predecessor which hasn't been scheduled, will be checked when that one is scheduled
-    void TakeAvailable(ListDigraph::Node n, std::list<ListDigraph::Node>& avlist, ListDigraph::NodeMap<bool> & scheduled)
+    // forward scheduling:
+    //   this makes its successor nodes available provided all their predecessors were scheduled;
+    //   a successor node which has a predecessor which hasn't been scheduled, will be checked when that one is scheduled
+    // backward scheduling:
+    //   this makes its predecessor nodes available provided all their successors were scheduled;
+    //   a predecessor node which has a successor which hasn't been scheduled, will be checked when that one is scheduled
+    // update the scheduled vector and (through MakeAvailable) the cycle attribute of the node
+    void TakeAvailable(ListDigraph::Node n, std::list<ListDigraph::Node>& avlist, ListDigraph::NodeMap<bool> & scheduled, ql::scheduling_direction_t dir)
     {
         scheduled[n] = true;
         avlist.remove(n);
-        for (ListDigraph::OutArcIt succArc(graph,n); succArc != INVALID; ++succArc)
+        if (ql::forward_scheduling == dir)
         {
-            ListDigraph::Node succNode = graph.target(succArc);
-            bool schedulable = true;
-            for (ListDigraph::InArcIt predArc(graph,succNode); predArc != INVALID; ++predArc)
+            for (ListDigraph::OutArcIt succArc(graph,n); succArc != INVALID; ++succArc)
             {
-                ListDigraph::Node predNode = graph.source(predArc);
-                if (!scheduled[predNode])
+                ListDigraph::Node succNode = graph.target(succArc);
+                bool schedulable = true;
+                for (ListDigraph::InArcIt predArc(graph,succNode); predArc != INVALID; ++predArc)
                 {
-                    schedulable = false;
-                    break;
+                    ListDigraph::Node predNode = graph.source(predArc);
+                    if (!scheduled[predNode])
+                    {
+                        schedulable = false;
+                        break;
+                    }
+                }
+                if (schedulable)
+                {
+                    MakeAvailable(succNode, avlist, dir);
                 }
             }
-            if (schedulable)
+        }
+        else
+        {
+            for (ListDigraph::InArcIt predArc(graph,n); predArc != INVALID; ++predArc)
             {
-                MakeAvailable(succNode, avlist);
+                ListDigraph::Node predNode = graph.source(predArc);
+                bool schedulable = true;
+                for (ListDigraph::OutArcIt succArc(graph,predNode); succArc != INVALID; ++succArc)
+                {
+                    ListDigraph::Node succNode = graph.target(succArc);
+                    if (!scheduled[succNode])
+                    {
+                        schedulable = false;
+                        break;
+                    }
+                }
+                if (schedulable)
+                {
+                    MakeAvailable(predNode, avlist, dir);
+                }
             }
+        }
+    }
+
+    // initialize avlist to single end node
+    // forward scheduling:
+    //  node s (with SOURCE instruction) is the top of the dependence graph; all instructions depend on it
+    // backward scheduling:
+    //  node t (with SINK instruction) is the bottom of the dependence graph; it depends on all instructions
+    // set the curr_cycle of the scheduling algorithm to start at the appropriate end as well;
+    // note that the cycle attributes will be shifted down to start at 1 after backward scheduling
+    void InitAvailable(std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir, size_t& curr_cycle)
+    {
+        // avlist is empty here
+        if (ql::forward_scheduling == dir)
+        {
+            curr_cycle = 0;
+            MakeAvailable(s, avlist, dir);   // s (SOURCE) is made the first available node
+        }
+        else
+        {
+            curr_cycle = MAX_CYCLE;
+            MakeAvailable(t, avlist, dir);   // t (SINK) is made the first available node
+        }
+    }
+
+    // advance curr_cycle
+    // when no node was selected from the avlist, advance to the next cycle
+    // and try again; this makes nodes/instructions to complete execution,
+    // and makes resources available in case of resource constrained scheduling
+    void AdvanceCurrCycle(ql::scheduling_direction_t dir, size_t& curr_cycle)
+    {
+        if (ql::forward_scheduling == dir)
+        {
+            curr_cycle++;
+        }
+        else
+        {
+            curr_cycle--;
         }
     }
 
@@ -1984,30 +2075,29 @@ private:
 
         // initializations for this scheduler
         // note that dependence graph is not modified by a scheduler, so it can be reused
+        DOUT("... initialization");
         for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
         {
             scheduled[n] = false;   // none were scheduled
         }
         size_t  curr_cycle;         // current cycle for which instructions are sought
-        if (ql::forward_scheduling == dir)
-        {
-            curr_cycle = 0;
-            MakeAvailable(s, avlist);   // s (SOURCE) is the first available node; avlist and cycle are empty
-        }
-        else
-        {
-            curr_cycle = MAX_CYCLE;
-            MakeAvailable(t, avlist);   // t (SINK) is the first available node; avlist and cycle are empty
-        }
+        InitAvailable(avlist, dir, curr_cycle);     // single end node (SOURCE/SINK) is made available and curr_cycle set
 
+        DOUT("... starting loop over avlist");
         while (!avlist.empty())
         {
-            std::string operation_name;     // ...
+            std::string operation_name;
             std::string operation_type;
             std::string instruction_type;
             size_t      operation_duration = 0;
             bool                one_found = false;
             ListDigraph::Node   node_found;
+
+            DOUT("avlist(@" << curr_cycle << "):");
+            for ( ListDigraph::Node n : avlist)
+            {
+                DOUT("... node(@" << instruction[n]->cycle << "): " << name[n]);
+            }
 
             for ( ListDigraph::Node n : avlist)
             {
@@ -2019,17 +2109,12 @@ private:
                 if (   (ql::forward_scheduling == dir && gp->cycle <= curr_cycle)
                     || (ql::backward_scheduling == dir && curr_cycle <= gp->cycle)) // instruction must have completed
                 {
-                    if (n == s || n == t)
-                    {
-                        one_found = true;
-                        node_found = n;
-                        break;
-                    }
-                
-                    GetGateParameters(gp->name, platform, operation_name, operation_type, instruction_type);
-                    operation_duration = std::ceil( static_cast<float>(gp->duration) / cycle_time);
-                    // it must match all hardware state constraints ...
-                    if (rm.available(curr_cycle, gp, operation_name, operation_type, instruction_type, operation_duration))      
+                    if (n == s || n == t || (
+                        GetGateParameters(gp->name, platform, operation_name, operation_type, instruction_type),
+                        operation_duration = std::ceil( static_cast<float>(gp->duration) / cycle_time),
+                        rm.available(curr_cycle, gp, operation_name, operation_type, instruction_type, operation_duration)
+                        )
+                    )
                     {
                         one_found = true;                   // in order to hunt for more instrs in this one VLIW/SIMD
                         node_found = n;
@@ -2043,24 +2128,19 @@ private:
             {
                 // commit this node (node_found) to the schedule
                 ql::gate* gp = instruction[node_found];
-                gp->cycle = curr_cycle;                     // scheduler result; since cycle[] is local to scheduler
+                DOUT("... selected " << gp->name << " in cycle " << curr_cycle);
+                gp->cycle = curr_cycle;                     // scheduler result
                 if (node_found != s && node_found != t)
                 {
                     rm.reserve(curr_cycle, gp, operation_name, operation_type, instruction_type, operation_duration);
                 }
-                TakeAvailable(node_found, avlist, scheduled);   // update avlist/scheduled/cycle
+                TakeAvailable(node_found, avlist, scheduled, dir);   // update avlist/scheduled/cycle
             }
             else
             {
                 // i.e. none in avlist could or we didn't want to be scheduled in this cycle
-                if (ql::forward_scheduling == dir)
-                {
-                    curr_cycle++;   // so try again; eventually instrs complete and machine is empty
-                }
-                else
-                {
-                    curr_cycle--;   // so try again; eventually instrs complete and machine is empty
-                }
+                AdvanceCurrCycle(dir, curr_cycle); 
+                // so try again; eventually instrs complete and machine is empty
             }
         }
 
@@ -2167,69 +2247,3 @@ public:
 };
 
 #endif
-/****************************************************************************************
-    // an example scheduler using the above facilities
-    // parameters, class relations, visibility of avlist: work in progress
-    void ExampleScheduler(graph, avlist, rm, newckt, ql::scheduling_direction_t dir))
-    {
-        // initialize available list for this scheduler
-        for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
-        {
-            scheduled[n] = false;   // none were scheduled
-        }
-        size_t  curr_cycle = 0;     // current cycle for which instructions are sought
-        MakeAvailable(graph.s);     // srcNode is the first available node
-
-        while (!avlist.empty())
-        {
-            bool                one_found = false;
-            ListDigraph::Node   node_found;
-            for ( auto n : avlist)
-            {
-                // next test is absolutely necessary here: wait for instr to complete
-                // this cannot be avoided by not adding those to avlist in MakeAvailable
-                // because then the instrs having completed would need detection;
-                // the latter would require an additional list; this test here is the simplest
-                if (cycle[n] <= curr_cycle)                 // instruction must have completed
-                {
-                    if (rm && rm.available(n) || !rm)       // and must match all hardware state constraints
-                    {
-                        // nothing prevents n now from being scheduled in this cycle;
-                        // could also wait and collect/evaluate all those nodes qualifying
-                        // and take a preferred one, e.g. on critical path, or a classical node, ...;
-                        // for that, check all these criteria and construct a sub list for each criterion/priority;
-                        // but in this example take 1st one, i.e. ASAP with issue #179 solved
-                        // and just have this one_found and node_found as result
-                        one_found = true;                   // in order to hunt for more instrs in this one VLIW/SIMD
-                        node_found = n;
-                        break;                              // happy with the found one
-                    }
-                }
-            }
-            // here check all those sub lists above for an instr to take
-            // and finally select a single one; finalize scheduling for it;
-            // this means: effectively give prio to filling current cycle as much as possible
-            // one could also stop filling on some condition here and not select a node;
-            // in the end, we have either a single node here or no node;
-            // more nodes that could be scheduled in this cycle, will be found in an other round of the loop
-            if (one_found)
-            {
-                // commit this node (node_found) to the schedule
-                if (rm)
-                {
-                    rm.reserve(node_found);                  // add resource use to hardware state
-                }
-                cycle[node_found] = curr_cycle;              // local to scheduler for completion checks
-                newckt.push_back(instruction[node_found]);   // new circuit, in non-decreasing cycle order
-                                                             // this will be the order to use by other algorithms
-                instruction[node_found]->cycle = curr_cycle; // scheduler result; since cycle[] is local to scheduler
-                TakeAvailable(node_found);                   // update avlist, given this one was taken
-            }
-            else
-            {
-                // i.e. none in avlist could or we didn't want to be scheduled in this cycle
-                curr_cycle++;   // so try again; eventually instrs complete and machine is empty
-            }
-        }
-    }
-****************************************************************************************/
