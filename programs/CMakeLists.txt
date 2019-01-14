@@ -20,7 +20,7 @@ INCLUDE_DIRECTORIES(
 # TARGET_LINK_LIBRARIES(multi_qubits_randomized_benchmarking ${LEMON_LIBRARIES} )
 
 # create output directory for test outputs
-ADD_CUSTOM_TARGET(build-time-make-directory ALL
+ADD_CUSTOM_TARGET(programs-output-directory ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory test_output)
 
 # copy configuration files
