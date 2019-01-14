@@ -52,7 +52,7 @@ public:
         name(name), iterations(1), type(kernel_type_t::STATIC) {}
 
     quantum_kernel(std::string name, ql::quantum_platform& platform,
-        size_t qcount, size_t ccount) :
+        size_t qcount, size_t ccount=0) :
         name(name), iterations(1), qubit_count(qcount),
         creg_count(ccount), type(kernel_type_t::STATIC)
     {
