@@ -48,7 +48,7 @@ class quantum_program
 
 
    public:
-      quantum_program(std::string n, quantum_platform platf, size_t nqubits, size_t ncregs)
+      quantum_program(std::string n, quantum_platform platf, size_t nqubits, size_t ncregs = 0)
             : name(n), platform(platf), qubit_count(nqubits), creg_count(ncregs)
       {
          default_config = true;
