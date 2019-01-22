@@ -112,9 +112,11 @@ class quantum_program
                   ((gtype != __classical_gate__) && (op >= qubit_count))
                  )
                {
-                   EOUT("Out of range operand(s) for operation: '" << gname << "'");
-                   EOUT("FIXME: creg_count=" << creg_count << ", qubit_count" << qubit_count);
-                   throw ql::exception("Out of range operand(s) for operation: '"+gname+"' !",false);
+                   FATAL("Out of range operand(s) for operation: '" << gname <<
+                        "' (op=" << op <<
+                        ", qubit_count=" << qubit_count <<
+                        ", creg_count=" << creg_count <<
+                        ")");
                }
             }
          }
@@ -355,6 +357,7 @@ class quantum_program
          return ss.str();
       }
 
+#if OPT_MICRO_CODE
       std::string microcode()
       {
          std::stringstream ss;
@@ -396,12 +399,14 @@ class quantum_program
          ss << "     beq  r3,  r3, loop   # infinite loop";
          return ss.str();
       }
+#endif
 
       void set_platform(quantum_platform & platform)
       {
          this->platform = platform;
       }
 
+#if OPT_MICRO_CODE
       std::string uc_header()
       {
          std::stringstream ss;
@@ -413,11 +418,15 @@ class quantum_program
          ss << "loop:\n";
          return ss.str();
       }
+#endif
 
       int compile()
       {
          IOUT("compiling ...");
-
+#if !OPT_MICRO_CODE
+ #warning "deprecation warning: support for CBOX microcode disabled in main code (CBOX backend not affected)"
+         WOUT("deprecation warning: this version was compiled with support for CBOX microcode disabled in main code (CBOX backend not affected)");
+#endif
          if (kernels.empty())
          {
             EOUT("compiling a program with no kernels");

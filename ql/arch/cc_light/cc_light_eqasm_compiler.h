@@ -323,10 +323,12 @@ public:
             return name + iopers;
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         return ql::dep_instruction_map["nop"];
     }
+#endif
 
     gate_type_t type()
     {
@@ -424,7 +426,7 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
     for (ql::ir::bundle_t & abundle : bundles)
     {
         // sorts instructions alphabetically
-        abundle.parallel_sections.sort( [] 
+        abundle.parallel_sections.sort( []
             (const ql::ir::section_t & sec1, const ql::ir::section_t & sec2) -> bool
             {
                 auto i1 = sec1.begin();
@@ -448,7 +450,7 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
             sspre << "    qwait " << delta-1 << "\n"
                   << "    1    ";
 
-        for(auto secIt = abundle.parallel_sections.begin(); 
+        for(auto secIt = abundle.parallel_sections.begin();
             secIt != abundle.parallel_sections.end(); ++secIt )
         {
             qubit_set_t squbits;

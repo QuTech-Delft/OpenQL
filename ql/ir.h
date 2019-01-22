@@ -23,12 +23,12 @@ namespace ql
         class bundle_t
         {
         public:
-            size_t start_cycle;
-            size_t duration_in_cycles;
+            size_t start_cycle;                         // start cycle for all gates in parallel_sections
+            size_t duration_in_cycles;                  // the maximum gate duration in parallel_sections
             std::list<section_t> parallel_sections;
         };
 
-        typedef std::list<bundle_t>bundles_t;
+        typedef std::list<bundle_t>bundles_t;           // note that subsequent bundles can overlap in time
 
         std::string qasm(bundles_t & bundles)
         {
