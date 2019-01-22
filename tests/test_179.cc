@@ -10,6 +10,34 @@
 
 #include <ql/openql.h>
 
+// test hilo bundles
+void
+test_hilo(std::string v, std::string schedopt, std::string sched_post179opt)
+{
+    int n = 7;
+    std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
+    std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
+    float sweep_points[] = { 1 };
+
+    ql::quantum_platform starmon("starmon", "test_179.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, n, 0);
+    ql::quantum_kernel k(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
+    for (int j=0; j<7; j++) { k.gate("x", j); }
+    k.gate("cz", 0, 3);
+    k.gate("cz", 4, 6);
+    k.gate("cz", 3, 6);
+    k.gate("cz", 2, 5);
+
+    prog.add(k);
+
+    ql::options::set("scheduler", schedopt);
+    ql::options::set("scheduler_post179", sched_post179opt);
+    prog.compile( );
+}
+
 // test qwg resource constraints mapping
 // no difference between pre179 and post179 scheduling
 void
@@ -222,31 +250,40 @@ test_manyNN(std::string v, std::string schedopt, std::string sched_post179opt)
 int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_DEBUG");
+    ql::options::set("scheduler_uniform", "no");
 
-    test_singledim("singledim", "ASAP", "no");
-    test_singledim("singledim", "ASAP", "yes");
-    test_singledim("singledim", "ALAP", "no");
-    test_singledim("singledim", "ALAP", "yes");
-    test_qwg("qwg", "ASAP", "no");
-    test_qwg("qwg", "ASAP", "yes");
-    test_qwg("qwg", "ALAP", "no");
-    test_qwg("qwg", "ALAP", "yes");
-    test_edge("edge", "ASAP", "no");
-    test_edge("edge", "ASAP", "yes");
-    test_edge("edge", "ALAP", "no");
-    test_edge("edge", "ALAP", "yes");
-    test_detuned("detuned", "ASAP", "no");
-    test_detuned("detuned", "ASAP", "yes");
-    test_detuned("detuned", "ALAP", "no");
-    test_detuned("detuned", "ALAP", "yes");
-    test_oneNN("oneNN", "ASAP", "no");
-    test_oneNN("oneNN", "ASAP", "yes");
-    test_oneNN("oneNN", "ALAP", "no");
-    test_oneNN("oneNN", "ALAP", "yes");
+//  test_singledim("singledim", "ASAP", "no");
+//  test_singledim("singledim", "ASAP", "yes");
+//  test_singledim("singledim", "ALAP", "no");
+//  test_singledim("singledim", "ALAP", "yes");
+//  test_qwg("qwg", "ASAP", "no");
+//  test_qwg("qwg", "ASAP", "yes");
+//  test_qwg("qwg", "ALAP", "no");
+//  test_qwg("qwg", "ALAP", "yes");
+//  test_edge("edge", "ASAP", "no");
+//  test_edge("edge", "ASAP", "yes");
+//  test_edge("edge", "ALAP", "no");
+//  test_edge("edge", "ALAP", "yes");
+//  test_detuned("detuned", "ASAP", "no");
+//  test_detuned("detuned", "ASAP", "yes");
+//  test_detuned("detuned", "ALAP", "no");
+//  test_detuned("detuned", "ALAP", "yes");
+//  test_oneNN("oneNN", "ASAP", "no");
+//  test_oneNN("oneNN", "ASAP", "yes");
+//  test_oneNN("oneNN", "ALAP", "no");
+//  test_oneNN("oneNN", "ALAP", "yes");
     test_manyNN("manyNN", "ASAP", "no");
     test_manyNN("manyNN", "ASAP", "yes");
     test_manyNN("manyNN", "ALAP", "no");
     test_manyNN("manyNN", "ALAP", "yes");
+    test_hilo("hilo", "ASAP", "no");
+    test_hilo("hilo", "ASAP", "yes");
+    test_hilo("hilo", "ALAP", "no");
+    test_hilo("hilo", "ALAP", "yes");
+
+//  ql::options::set("scheduler_uniform", "yes");
+//  test_hilo("hilo_uniform", "ALAP", "no");
+//  test_hilo("hilo_uniform", "ALAP", "yes");
 
     return 0;
 }
