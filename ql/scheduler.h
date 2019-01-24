@@ -2482,18 +2482,150 @@ private:
         return depremainingavg;
     }
 
-    typedef
-    struct schedinfo
+    // select a node from the avlist
+    ListDigraph::Node select(std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir, const size_t curr_cycle,
+                                const ql::quantum_platform& platform, ql::arch::resource_manager_t& rm, bool & success)
     {
-        ListDigraph::Node   node;     // node
-        bool                waiting;  // waiting for all operands to have completed execution
-        bool                conflict; // has resource conflict
-        bool                critical; // has highest remaining
-        size_t              remaining;// value of remaining
-        double              dep_criticality; // criticality measure of dependent nodes
+        success = false;                        // whether a node was found and returned
+        ListDigraph::Node   selected_node = s;  // node to be returned; fake value to hush gcc
+        
+        // avlist is distributed over following lists
+        std::list<ListDigraph::Node>   nodes_critical_waiting;  // nodes critical but waiting for operand or conflict
+        std::list<ListDigraph::Node>   nodes_waiting;           // other nodes waiting for operand or conflict
+        std::list<ListDigraph::Node>   nodes_critical;          // nodes critical  and schedulable;   
+        std::list<ListDigraph::Node>   nodes_other;             // nodes not critical but schedulable
+        size_t highest_remaining_waiting = 0;
+        size_t highest_remaining = 0;
+
+        DOUT("avlist(@" << curr_cycle << "):");
+        for ( auto n : avlist)
+        {
+            DOUT("...... node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining[n]);
+        }
+
+        for ( auto n : avlist)
+        {
+            // four variables to interface with resource manager (see GetGateParameters)
+            std::string operation_name;
+            std::string operation_type;
+            std::string instruction_type;
+            size_t      operation_duration = 0;
+
+            ql::gate*   gp = instruction[n];
+            if ( (     (ql::forward_scheduling == dir && gp->cycle <= curr_cycle)
+                    || (ql::backward_scheduling == dir && curr_cycle <= gp->cycle)
+                 )
+                 &&
+                 (     n == s
+                    || n == t
+                    || gp->type() == ql::gate_type_t::__dummy_gate__ 
+                    || gp->type() == ql::gate_type_t::__classical_gate__ 
+                    || (
+                        GetGateParameters(gp->name, platform, operation_name, operation_type, instruction_type),
+                        operation_duration = std::ceil( static_cast<float>(gp->duration) / cycle_time),
+                        rm.available(curr_cycle, gp, operation_name, operation_type, instruction_type, operation_duration)
+                       )
+                 )
+              )
+            {
+                if (remaining[n] >= highest_remaining)
+                {
+                    if (remaining[n] > highest_remaining)
+                    {
+                        nodes_other.splice(nodes_other.end(), nodes_critical); // move all of nodes_critical to nodes_other
+                        highest_remaining = remaining[n];
+                    }
+                    nodes_critical.push_back(n);
+                }
+                else
+                {
+                    nodes_other.push_back(n);
+                }
+            }
+            else
+            {
+                if (remaining[n] >= highest_remaining_waiting)
+                {
+                    if (remaining[n] > highest_remaining_waiting)
+                    {
+                        nodes_waiting.splice(nodes_waiting.end(), nodes_critical_waiting); // move all of nodes_critical to nodes_waiting
+                        highest_remaining_waiting = remaining[n];
+                    }
+                    nodes_critical_waiting.push_back(n);
+                }
+                else
+                {
+                    nodes_waiting.push_back(n);
+                }
+            }
+        }
+        if (highest_remaining_waiting > highest_remaining)
+        {
+            // nodes waiting are more critical than those not waiting
+            nodes_other.splice(nodes_other.end(), nodes_critical); // move all of nodes_critical to nodes_other
+        }
+        for (auto n : nodes_critical_waiting)
+        { 
+            DOUT("... node(@" << instruction[n]->cycle << "): " << name[n] << " critical waiting, remaining=" << remaining[n]);
+        } 
+        for (auto n : nodes_waiting)
+        { 
+            DOUT("... node(@" << instruction[n]->cycle << "): " << name[n] << " non-critical waiting, remaining=" << remaining[n]);
+        } 
+        for (auto n : nodes_critical)
+        { 
+            DOUT("... node(@" << instruction[n]->cycle << "): " << name[n] << " critical, remaining=" << remaining[n]);
+        } 
+        for (auto n : nodes_other)
+        { 
+            DOUT("... node(@" << instruction[n]->cycle << "): " << name[n] << " non-critical, remaining=" << remaining[n]);
+        } 
+
+        if (nodes_critical.size() == 1)
+        {
+            // only one node critical, select it
+            selected_node = nodes_critical.front();
+            DOUT("... node(@" << instruction[selected_node]->cycle << "): " << name[selected_node] << " single critical");
+            success = true;
+            return selected_node;
+        }
+        if (nodes_critical.size() > 1)
+        {
+            // more than one critical node, select one after comparing it for its dependent nodes
+            DOUT("... number of critical nodes is " << nodes_critical.size());
+            double highest_depremainingavg = -1.0;      // less than 0.0 to cmp less than 0.0 below
+            for ( auto n : nodes_critical)
+            {
+                DOUT("... most critical: remaining of " << instruction[n]->qasm() << " : " << remaining[n]);
+                double depremainingavg = avg_remaining_deps(n, dir);
+                DOUT("...... depremainingavg of " << instruction[n]->qasm() << " : " << depremainingavg);
+                if (depremainingavg > highest_depremainingavg)
+                {
+                    highest_depremainingavg = depremainingavg;
+                    selected_node = n;      // selected_node is guaranteed to be assigned here
+                }
+            }
+            // when more than one with highest avg most critical depending nodes
+            // the above has selected the first of those;
+            // here the original order of nodes (as in the circuit) becomes visible
+            DOUT("... node(@" << instruction[selected_node]->cycle << "): " << name[selected_node] << " highest avg of depending remaining: " << highest_depremainingavg);
+            success = true;
+            return selected_node;
+        }
+
+        if (nodes_other.size() >= 1)
+        {
+            selected_node = nodes_other.front();    // just select it
+            DOUT("... node(@" << instruction[selected_node]->cycle << "): " << name[selected_node] << " non-critical");
+            success = true;
+            return selected_node;
+        }
+
+        success = false;
+        DOUT("... non selected for curr_cycle " << curr_cycle);
+        return selected_node;   // fake return value
     }
-    schedinfo_t;
-   
+
     // ASAP/ALAP scheduler with RC
     //
     // schedule the circuit that is in the dependence graph
@@ -2527,151 +2659,16 @@ private:
         DOUT("... loop over avlist until it is empty");
         while (!avlist.empty())
         {
-            // four variables to interface with resource manager (see GetGateParameters)
-            std::string operation_name;
-            std::string operation_type;
-            std::string instruction_type;
-            size_t      operation_duration = 0;
-
-            // avlist is distributed over following lists
-            std::list<ListDigraph::Node>   nodes_waiting;       // nodes waiting for operand completing execution
-            std::list<ListDigraph::Node>   nodes_conflict;      // nodes having resource conflict
-            std::list<ListDigraph::Node>   nodes_critical;      // nodes with highest remaining and schedulable;   
-            std::list<ListDigraph::Node>   nodes_other;         // nodes not critical but schedulable
-
-            DOUT("avlist(@" << curr_cycle << "):");
-            for ( auto n : avlist)
+            bool success;
+            ListDigraph::Node   selected_node;
+            
+            selected_node = select(avlist, dir, curr_cycle, platform, rm, success);
+            if (!success)
             {
-                DOUT("...... node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining[n]);
-            }
-
-            size_t highest_remaining = 0;
-            for ( auto n : avlist)
-            {
-                // next test is absolutely necessary here: wait for gate to complete;
-                // this cannot be avoided by not adding those to avlist in MakeAvailable
-                // because then the instrs having completed would need detection;
-                // the latter would require an additional list; this test here is the simplest
-                //
-                // for each node in avlist, cycle is accurately reflecting its deps on scheduled nodes
-                // so comparing curr_cycle with it indicates whether it has completed execution
-                ql::gate*   gp = instruction[n];
-                if (   (ql::forward_scheduling == dir && gp->cycle <= curr_cycle)
-                    || (ql::backward_scheduling == dir && curr_cycle <= gp->cycle))
-                {
-                    if (n == s
-                        || n == t
-                        || gp->type() == ql::gate_type_t::__dummy_gate__ 
-                        || gp->type() == ql::gate_type_t::__classical_gate__ 
-                        || (
-                        GetGateParameters(gp->name, platform, operation_name, operation_type, instruction_type),
-                        operation_duration = std::ceil( static_cast<float>(gp->duration) / cycle_time),
-                        rm.available(curr_cycle, gp, operation_name, operation_type, instruction_type, operation_duration)
-                        )
-                       )
-                    {
-                        if (remaining[n] > highest_remaining)
-                        {
-                            // move all of nodes_critical to nodes_other
-                            nodes_critical.push_back(n);
-                            highest_remaining = remaining[n];
-                        }
-                        else if (remaining[n] == highest_remaining)
-                        {
-                            nodes_critical.push_back(n);
-                        }
-                        else
-                        {
-                            nodes_other.push_back(n);
-                        }
-                    }
-                    HERE
-                    else
-                    {
-                        nodes_conflict.push_back(n);
-                        DOUT("... node(@" << instruction[n]->cycle << "): " << name[n] << " resource conflict");
-                    }
-                }
-                else
-                {
-                    nodes_waiting.push_back(n);
-                    DOUT("... node(@" << instruction[n]->cycle << "): " << name[n] << " delayed until operand finished executing");
-                }
-            }
-
-            // we have a possibly empty set of nodes which are immediately schedulable
-            if (nodes_schedulable.empty())
-            {
-                // i.e. none in avlist could be scheduled in this cycle
+                // i.e. none from avlist was found suitable to schedule in this cycle
                 AdvanceCurrCycle(dir, curr_cycle); 
                 // so try again; eventually instrs complete and machine is empty
                 continue;
-            }
-
-            // we have one or more nodes
-            // when more, filter out the most critical ones
-
-            // selected_node will eventually gets assigned the 'best' node to schedule now
-            ListDigraph::Node               selected_node = s;      // init is fake, just to hush gcc
-            // nodes_mostcritical :=: subset of nodes_schedulable with highest remaining value
-            std::list<ListDigraph::Node>    nodes_mostcritical;
-            if (nodes_schedulable.size() == 1)
-            {
-                // only one node schedulable in this cycle, select it
-                selected_node = nodes_schedulable.front();
-                DOUT("... node(@" << instruction[selected_node]->cycle << "): " << name[selected_node] << " only one schedulable");
-            }
-            else // if (nodes_schedulable.size() > 1)
-            {
-                // more than one node schedulable in this cycle
-                // prefer the one(s) with the highest remaining, i.e. the most critical ones
-                // because these statistically have the highest impact on the resulting depth of the circuit
-                size_t highest_remaining = 0;
-                for ( auto n : nodes_schedulable)
-                {
-                    DOUT("... remaining of " << instruction[n]->qasm() << " : " << remaining[n]);
-                    if (remaining[n] > highest_remaining)
-                    {
-                        nodes_mostcritical.clear();         // found a more critical one
-                        nodes_mostcritical.push_back(n);
-                        highest_remaining = remaining[n];
-                    }
-                    else if (remaining[n] == highest_remaining)
-                    {
-                        nodes_mostcritical.push_back(n);    // same criticality, also remember it
-                    }
-                }
-
-                // we have one or more nodes with highest criticality
-                // when more, filter out those with average most critical depending nodes
-
-                if (nodes_mostcritical.size() == 1)
-                {
-                    // only one node most critical, select it
-                    selected_node = nodes_mostcritical.front();
-                    DOUT("... node(@" << instruction[selected_node]->cycle << "): " << name[selected_node] << " highest remaining");
-                }
-                else // if (nodes_mostcritical.size() > 1)
-                {
-                    // more than one node with highest criticality
-                    DOUT("... more than 1 mostcritical nodes: " << nodes_mostcritical.size());
-                    double highest_depremainingavg = -1.0;      // less than 0.0 to cmp less than 0.0 below
-                    for ( auto n : nodes_mostcritical)
-                    {
-                        DOUT("... most critical: remaining of " << instruction[n]->qasm() << " : " << remaining[n]);
-                        double depremainingavg = avg_remaining_deps(n, dir);
-                        DOUT("...... depremainingavg of " << instruction[n]->qasm() << " : " << depremainingavg);
-                        if (depremainingavg > highest_depremainingavg)
-                        {
-                            highest_depremainingavg = depremainingavg;
-                            selected_node = n;      // selected_node is guaranteed to be assigned here
-                        }
-                    }
-                    // when more than one with highest avg most critical depending nodes
-                    // the above has selected the first of those;
-                    // here the original order of nodes (as in the circuit) becomes visible
-                    DOUT("... node(@" << instruction[selected_node]->cycle << "): " << name[selected_node] << " highest avg of depending remaining: " << highest_depremainingavg);
-                }
             }
 
             // commit selected_node to the schedule
@@ -2684,6 +2681,11 @@ private:
                 && gp->type() != ql::gate_type_t::__classical_gate__ 
                )
             {
+                std::string operation_name;
+                std::string operation_type;
+                std::string instruction_type;
+                size_t      operation_duration = 0;
+
                 GetGateParameters(gp->name, platform, operation_name, operation_type, instruction_type),
                 operation_duration = std::ceil( static_cast<float>(gp->duration) / cycle_time),
                 rm.reserve(curr_cycle, gp, operation_name, operation_type, instruction_type, operation_duration);
