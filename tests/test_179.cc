@@ -276,10 +276,10 @@ int main(int argc, char ** argv)
     test_manyNN("manyNN", "ASAP", "yes");
     test_manyNN("manyNN", "ALAP", "no");
     test_manyNN("manyNN", "ALAP", "yes");
-    test_hilo("hilo", "ASAP", "no");
-    test_hilo("hilo", "ASAP", "yes");
-    test_hilo("hilo", "ALAP", "no");
-    test_hilo("hilo", "ALAP", "yes");
+//  test_hilo("hilo", "ASAP", "no");
+//  test_hilo("hilo", "ASAP", "yes");
+//  test_hilo("hilo", "ALAP", "no");
+//  test_hilo("hilo", "ALAP", "yes");
 
 //  ql::options::set("scheduler_uniform", "yes");
 //  test_hilo("hilo_uniform", "ALAP", "no");

@@ -1849,6 +1849,8 @@ private:
 
     // cycle assignment without RC depending on direction: forward:ASAP, backward:ALAP;
     // without RC, this is all there is to schedule, apart from forming the bundles in bundler()
+    // set_cycle iterates over the circuit's gates and set_cycle_gate over the dependences of each gate
+    // please note that their iteration directions must correspond
     void set_cycle_gate(ql::gate* gp, ql::scheduling_direction_t dir)
     {
         ListDigraph::Node   currNode = node[gp];
@@ -1877,12 +1879,15 @@ private:
         if (ql::forward_scheduling == dir)
         {
             instruction[s]->cycle = 0;
+            DOUT("... set_cycle of " << instruction[s]->qasm() << " cycles " << instruction[s]->cycle);
             // *circp is by definition in a topological order of the dependence graph
             for ( ql::circuit::iterator gpit = circp->begin(); gpit != circp->end(); gpit++)
             {
                 set_cycle_gate(*gpit, dir);
+                DOUT("... set_cycle of " << (*gpit)->qasm() << " cycles " << (*gpit)->cycle);
             }
             set_cycle_gate(instruction[t], dir);
+            DOUT("... set_cycle of " << instruction[t]->qasm() << " cycles " << instruction[t]->cycle);
         }
         else
         {
@@ -1899,12 +1904,20 @@ private:
             DOUT("... readjusting cycle values by -" << SOURCECycle);
 
             instruction[t]->cycle -= SOURCECycle;
+            DOUT("... set_cycle of " << instruction[t]->qasm() << " cycles " << instruction[t]->cycle);
             for ( auto & gp : *circp)
             {
                 gp->cycle -= SOURCECycle;
+                DOUT("... set_cycle of " << gp->qasm() << " cycles " << gp->cycle);
             }
             instruction[s]->cycle -= SOURCECycle;   // i.e. becomes 0
+            DOUT("... set_cycle of " << instruction[s]->qasm() << " cycles " << instruction[s]->cycle);
         }
+    }
+
+    static bool cycle_lessthan(ql::gate* gp1, ql::gate* gp2)
+    {
+        return gp1->cycle < gp2->cycle;
     }
 
     // sort circuit by the gates' cycle attribute in non-decreasing order
@@ -1917,51 +1930,8 @@ private:
             DOUT("...... (@" << gp->cycle << ") " << gp->qasm());
         }
 
-#ifdef  USE_STANDARD_SORT
-        std::sort(circp->begin(), circp->end(), [&](ql::gate* & gp1, ql::gate* & gp2) { return gp1->cycle < gp2->cycle; });
-
-#else
-        // std::sort doesn't preserve the original order when it is already ok
-        // this is confusing while debugging but should not influence results
-        //
-        // the code below assumes that the original and the sorted sequence are not much different
-        // and the sort is done by scanning the original and sorting it
-        // in the new sequence by scanning the new one from the back to find the new place;
-        // when the original is in order, this reduces to just appending each to the new sequence
-        //
-        // it is complicated by the fact that a circuit is a vector and not a list
-        // so it doesn't support well insertion of a gate at an arbitrary place
-        std::list<ql::gate*>   lg;  // target list
-        for ( ql::circuit::iterator gpit = circp->begin(); gpit != circp->end(); gpit++)
-        {
-            ql::gate*  gp = *gpit;      // take gate by gate from original circuit circp
-	        std::list<ql::gate*>::reverse_iterator rigp = lg.rbegin();
-	        for (; rigp != lg.rend(); rigp++)
-	        {
-                // sort gate into target list from target list's end
-	            if ((*rigp)->cycle <= gp->cycle)
-	            {
-	                // rigp.base() because insert doesn't work with reverse iteration
-	                // rigp.base points after the element that rigp is pointing at
-	                // which is lucky because insert only inserts before the given element
-	                // the end effect is inserting after rigp
-	                lg.insert(rigp.base(), gp);
-	                break;
-	            }
-	        }
-	        // when list was empty or no element was found, just put it in front
-	        if (rigp == lg.rend())
-	        {
-	            lg.push_front(gp);
-	        }
-        }
-        // and write the list back to the circuit
-        circp->clear();
-        for (auto & gp : lg)
-        {
-            circp->push_back(gp);
-        }
-#endif
+        // std::sort doesn't preserve the original order of elements that have equal values but std::stable_sort does
+        std::stable_sort(circp->begin(), circp->end(), cycle_lessthan);
 
         DOUT("... after sorting on cycle value");
         for ( ql::circuit::iterator gpit = circp->begin(); gpit != circp->end(); gpit++)
@@ -2036,8 +2006,10 @@ private:
             DOUT("... ready with bundle");
         }
 
-        // currCycle == cycle of last gate of circuit scheduled but we know that the first one got cycle 1
-        DOUT("Depth: " << currCycle+currBundle.duration_in_cycles-bundles.front().start_cycle);
+        // currCycle == cycle of last gate of circuit scheduled
+        // duration_in_cycles later the system starts idling
+        // depth is the difference between the cycle in which it starts idling and the cycle it started execution
+        DOUT("Depth: " << currCycle + currBundle.duration_in_cycles - bundles.front().start_cycle);
         DOUT("bundler [DONE]");
         return bundles;
     }
@@ -2266,16 +2238,133 @@ private:
         }
     }
 
+    // collect a list of depending nodes (i.e. those necessarily scheduled after the given node) without duplicates
+    void get_depending_nodes(ListDigraph::Node n, ql::scheduling_direction_t dir, std::list<ListDigraph::Node> & ln)
+    {
+        if (ql::forward_scheduling == dir)
+        {
+            for (ListDigraph::OutArcIt succArc(graph,n); succArc != INVALID; ++succArc)
+            {
+                ListDigraph::Node succNode = graph.target(succArc);
+                DOUT("...... succ of " << instruction[n]->qasm() << " : " << instruction[succNode]->qasm());
+                bool found = false;             // filter out duplicates
+                for ( auto anySuccNode : ln )
+                {
+                    if (succNode == anySuccNode)
+                    {
+                        DOUT("...... duplicate: " << instruction[succNode]->qasm());
+                        found = true;           // duplicate found
+                    }
+                }
+                if (found == false)             // found new one
+                {
+                    ln.push_back(succNode);     // new node to ln
+                }
+            }
+            // ln contains depending nodes of n without duplicates
+        }
+        else
+        {
+            for (ListDigraph::InArcIt predArc(graph,n); predArc != INVALID; ++predArc)
+            {
+                ListDigraph::Node predNode = graph.source(predArc);
+                DOUT("...... pred of " << instruction[n]->qasm() << " : " << instruction[predNode]->qasm());
+                bool found = false;             // filter out duplicates
+                for ( auto anyPredNode : ln )
+                {
+                    if (predNode == anyPredNode)
+                    {
+                        DOUT("...... duplicate: " << instruction[predNode]->qasm());
+                        found = true;           // duplicate found
+                    }
+                }
+                if (found == false)             // found new one
+                {
+                    ln.push_back(predNode);     // new node to ln
+                }
+            }
+            // ln contains depending nodes of n without duplicates
+        }
+    }
+
+    bool criticality_lessthan(ListDigraph::Node n1, ListDigraph::Node n2, ql::scheduling_direction_t dir)
+    {
+        if (remaining[n1] < remaining[n2]) return true;
+        if (remaining[n1] > remaining[n2]) return false;
+        // so: remaining[n1] == remaining[n2]
+
+        std::list<ListDigraph::Node>   ln1;
+        std::list<ListDigraph::Node>   ln2;
+
+        get_depending_nodes(n1, dir, ln1);
+        get_depending_nodes(n2, dir, ln2);
+        if (ln2.empty()) return false;          // strictly < only when ln1.empty and ln2.not_empty
+        if (ln1.empty()) return true;           // so when both empty, it is equal, so not strictly <, so false
+        // so: ln1.non_empty && ln2.non_empty
+
+        ln1.sort([this](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return remaining[d1] < remaining[d2]; });
+        ln2.sort([this](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return remaining[d1] < remaining[d2]; });
+
+        size_t crit_dep_n1 = remaining[ln1.back()];    // the last of the list is the one with the largest remaining value
+        size_t crit_dep_n2 = remaining[ln2.back()];
+
+        if (crit_dep_n1 < crit_dep_n2) return true;
+        if (crit_dep_n1 > crit_dep_n2) return false;
+        // so: crit_dep_n1 == crit_dep_n2, call this crit_dep
+
+        ln1.remove_if([this,crit_dep_n1](ListDigraph::Node n) { return remaining[n] < crit_dep_n1; });
+        ln2.remove_if([this,crit_dep_n2](ListDigraph::Node n) { return remaining[n] < crit_dep_n2; });
+        // because both contain element with remaining == crit_dep: ln1.non_empty && ln2.non_empty
+
+        if (ln1.size() < ln2.size()) return true;
+        if (ln1.size() > ln2.size()) return false;
+
+        ln1.sort([this,dir](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
+        ln2.sort([this,dir](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
+
+        return criticality_lessthan(ln1.back(), ln2.back(), dir);
+    }
+
     // make node n available
     // add it to the avlist because the condition for that is fulfilled:
     //  all its predecessors were scheduled (forward scheduling) or
     //  all its successors were scheduled (backward scheduling)
     // update its cycle attribute to reflect these dependences;
-    // n cannot be s or t; s and t are added to the avlist by InitAvailable
+    // avlist is initialized with s or t as first element by InitAvailable
+    // avlist is kept ordered on criticality, non-increasing (i.e. highest criticality first)
     void MakeAvailable(ListDigraph::Node n, std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir)
     {
-        set_cycle_gate(instruction[n], dir);
-        avlist.push_back(n);
+        bool    already_added = false;  // check whether n is already in avlist
+                                        // originates from having multiple arcs between pair of nodes
+        std::list<ListDigraph::Node>::iterator first_lower_criticality_inp;
+        bool    first_lower_criticality_found = false;
+
+        for (std::list<ListDigraph::Node>::iterator inp = avlist.begin(); inp != avlist.end(); inp++)
+        {
+            if (*inp == n)
+            {
+                already_added = true;
+            }
+            if (criticality_lessthan(*inp, n, dir) && !first_lower_criticality_found)
+            {
+                first_lower_criticality_inp = inp;
+                first_lower_criticality_found = true;
+            }
+        }
+        if (!already_added)
+        {
+            set_cycle_gate(instruction[n], dir);
+            if (first_lower_criticality_found)
+            {
+                // add n to avlist just before the first with lower criticality
+                avlist.insert(first_lower_criticality_inp, n);
+            }
+            else
+            {
+                // add n to avlist to end, if none
+                avlist.push_back(n);
+            }
+        }
     }
 
     // take node n out of avlist because it has been scheduled;
@@ -2295,7 +2384,7 @@ private:
     // update (through MakeAvailable) the cycle attribute of the nodes made available
     // because from then on that value is compared to the curr_cycle to check
     // whether a node has completed execution and thus is available for scheduling in curr_cycle
-    void TakeFromAvailable(ListDigraph::Node n, std::list<ListDigraph::Node>& avlist, ListDigraph::NodeMap<bool> & scheduled, ql::scheduling_direction_t dir)
+    void TakeAvailable(ListDigraph::Node n, std::list<ListDigraph::Node>& avlist, ListDigraph::NodeMap<bool> & scheduled, ql::scheduling_direction_t dir)
     {
         scheduled[n] = true;
         avlist.remove(n);
@@ -2372,7 +2461,6 @@ private:
         }
     }
 
-
     // reading platform dependent gate attributes for rc scheduling
     //
     // get the gate parameters that need to be passed to the resource manager;
@@ -2402,216 +2490,75 @@ private:
         }
     }
 
-    // find the avg of remaining[] of the depending nodes of n;
-    // rationale for this heuristic:
-    // when two nodes are equally critical then prefer the node for scheduling
-    // of which the subsequent nodes ('depending nodes') are most critical;
-    // because there may not be just one depending node but multiple of them, and not
-    // an equal number for each of the competing most critical nodes,
-    // we take the average of the criticality (== remaining) of those depending nodes;
-    // we first filter out the duplicates since these would otherwise dominate the average;
-    // the one with the highest average wins and will be scheduled first
-    double avg_remaining_deps(ListDigraph::Node n, ql::scheduling_direction_t dir)
+    bool immediately_schedulable(ListDigraph::Node n, ql::scheduling_direction_t dir, const size_t curr_cycle,
+                                const ql::quantum_platform& platform, ql::arch::resource_manager_t& rm, bool& isres)
     {
-        std::list<ListDigraph::Node>   ln;
-        if (ql::forward_scheduling == dir)
+        ql::gate*   gp = instruction[n];
+        isres = true;
+        // have dependent gates completed at curr_cycle?
+        if (    ( ql::forward_scheduling == dir && gp->cycle <= curr_cycle)
+            ||  ( ql::backward_scheduling == dir && curr_cycle <= gp->cycle)
+            )
         {
-            for (ListDigraph::OutArcIt succArc(graph,n); succArc != INVALID; ++succArc)
+            // are resources available?
+            if ( n == s || n == t
+                || gp->type() == ql::gate_type_t::__dummy_gate__ 
+                || gp->type() == ql::gate_type_t::__classical_gate__ 
+               )
             {
-                ListDigraph::Node succNode = graph.target(succArc);
-                DOUT("...... succ of " << instruction[n]->qasm() << " : " << instruction[succNode]->qasm());
-                bool found = false;             // filter out duplicates
-                for ( auto anySuccNode : ln )
-                {
-                    if (succNode == anySuccNode)
-                    {
-                        DOUT("...... duplicate: " << instruction[succNode]->qasm());
-                        found = true;           // duplicate found
-                    }
-                }
-                if (found == false)             // found new one
-                {
-                    ln.push_back(succNode);     // new node to ln
-                }
+                return true;
             }
-            // ln contains depending nodes of n without duplicates
+            std::string operation_name;
+            std::string operation_type;
+            std::string instruction_type;
+            size_t      operation_duration = std::ceil( static_cast<float>(gp->duration) / cycle_time);
+            GetGateParameters(gp->name, platform, operation_name, operation_type, instruction_type);
+            if (rm.available(curr_cycle, gp, operation_name, operation_type, instruction_type, operation_duration))
+            {
+                return true;
+            }
+            isres = true;;
+            return false;
         }
         else
         {
-            for (ListDigraph::InArcIt predArc(graph,n); predArc != INVALID; ++predArc)
-            {
-                ListDigraph::Node predNode = graph.source(predArc);
-                DOUT("...... pred of " << instruction[n]->qasm() << " : " << instruction[predNode]->qasm());
-                bool found = false;             // filter out duplicates
-                for ( auto anyPredNode : ln )
-                {
-                    if (predNode == anyPredNode)
-                    {
-                        DOUT("...... duplicate: " << instruction[predNode]->qasm());
-                        found = true;           // duplicate found
-                    }
-                }
-                if (found == false)             // found new one
-                {
-                    ln.push_back(predNode);     // new node to ln
-                }
-            }
-            // ln contains depending nodes of n without duplicates
+            isres = false;
+            return false;
         }
-        double  depremainingsum = 0.0;
-        for ( auto sn : ln)
-        {
-            DOUT("...... adding remaining of " << instruction[sn]->qasm() << " : " << remaining[sn]);
-            depremainingsum += remaining[sn];
-        }
-        DOUT("...... number of depending nodes: " << ln.size());
-        double depremainingavg = depremainingsum / ln.size();
-        DOUT("...... depremainingavg of " << instruction[n]->qasm() << " : " << depremainingavg);
-        return depremainingavg;
     }
 
     // select a node from the avlist
-    ListDigraph::Node select(std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir, const size_t curr_cycle,
+    // new implementation based on avlist deep-ordered from high to low criticality (criticality_lessthan above)
+    ListDigraph::Node SelectAvailable(std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir, const size_t curr_cycle,
                                 const ql::quantum_platform& platform, ql::arch::resource_manager_t& rm, bool & success)
     {
         success = false;                        // whether a node was found and returned
-        ListDigraph::Node   selected_node = s;  // node to be returned; fake value to hush gcc
         
-        // avlist is distributed over following lists
-        std::list<ListDigraph::Node>   nodes_critical_waiting;  // nodes critical but waiting for operand or conflict
-        std::list<ListDigraph::Node>   nodes_waiting;           // other nodes waiting for operand or conflict
-        std::list<ListDigraph::Node>   nodes_critical;          // nodes critical  and schedulable;   
-        std::list<ListDigraph::Node>   nodes_other;             // nodes not critical but schedulable
-        size_t highest_remaining_waiting = 0;
-        size_t highest_remaining = 0;
-
         DOUT("avlist(@" << curr_cycle << "):");
         for ( auto n : avlist)
         {
             DOUT("...... node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining[n]);
         }
 
+        // select the first immediately schedulable, if any
+        // since avlist is deep-criticality ordered, highest first, the first is the most deep-critical
         for ( auto n : avlist)
         {
-            // four variables to interface with resource manager (see GetGateParameters)
-            std::string operation_name;
-            std::string operation_type;
-            std::string instruction_type;
-            size_t      operation_duration = 0;
-
-            ql::gate*   gp = instruction[n];
-            if ( (     (ql::forward_scheduling == dir && gp->cycle <= curr_cycle)
-                    || (ql::backward_scheduling == dir && curr_cycle <= gp->cycle)
-                 )
-                 &&
-                 (     n == s
-                    || n == t
-                    || gp->type() == ql::gate_type_t::__dummy_gate__ 
-                    || gp->type() == ql::gate_type_t::__classical_gate__ 
-                    || (
-                        GetGateParameters(gp->name, platform, operation_name, operation_type, instruction_type),
-                        operation_duration = std::ceil( static_cast<float>(gp->duration) / cycle_time),
-                        rm.available(curr_cycle, gp, operation_name, operation_type, instruction_type, operation_duration)
-                       )
-                 )
-              )
+            bool isres;
+            if ( immediately_schedulable(n, dir, curr_cycle, platform, rm, isres) )
             {
-                if (remaining[n] >= highest_remaining)
-                {
-                    if (remaining[n] > highest_remaining)
-                    {
-                        nodes_other.splice(nodes_other.end(), nodes_critical); // move all of nodes_critical to nodes_other
-                        highest_remaining = remaining[n];
-                    }
-                    nodes_critical.push_back(n);
-                }
-                else
-                {
-                    nodes_other.push_back(n);
-                }
+                DOUT("... node " << name[n] << " most critical immediately schedulable, remaining=" << remaining[n] << ", selected");
+                success = true;
+                return n;
             }
             else
             {
-                if (remaining[n] >= highest_remaining_waiting)
-                {
-                    if (remaining[n] > highest_remaining_waiting)
-                    {
-                        nodes_waiting.splice(nodes_waiting.end(), nodes_critical_waiting); // move all of nodes_critical to nodes_waiting
-                        highest_remaining_waiting = remaining[n];
-                    }
-                    nodes_critical_waiting.push_back(n);
-                }
-                else
-                {
-                    nodes_waiting.push_back(n);
-                }
+                DOUT("... node " << name[n] << " most critical, remaining=" << remaining[n] << ", waiting for " << (isres? "resource" : "dependent completion"));
             }
-        }
-        if (highest_remaining_waiting > highest_remaining)
-        {
-            // nodes waiting are more critical than those not waiting
-            nodes_other.splice(nodes_other.end(), nodes_critical); // move all of nodes_critical to nodes_other
-        }
-        for (auto n : nodes_critical_waiting)
-        { 
-            DOUT("... node(@" << instruction[n]->cycle << "): " << name[n] << " critical waiting, remaining=" << remaining[n]);
-        } 
-        for (auto n : nodes_waiting)
-        { 
-            DOUT("... node(@" << instruction[n]->cycle << "): " << name[n] << " non-critical waiting, remaining=" << remaining[n]);
-        } 
-        for (auto n : nodes_critical)
-        { 
-            DOUT("... node(@" << instruction[n]->cycle << "): " << name[n] << " critical, remaining=" << remaining[n]);
-        } 
-        for (auto n : nodes_other)
-        { 
-            DOUT("... node(@" << instruction[n]->cycle << "): " << name[n] << " non-critical, remaining=" << remaining[n]);
-        } 
-
-        if (nodes_critical.size() == 1)
-        {
-            // only one node critical, select it
-            selected_node = nodes_critical.front();
-            DOUT("... node(@" << instruction[selected_node]->cycle << "): " << name[selected_node] << " single critical");
-            success = true;
-            return selected_node;
-        }
-        if (nodes_critical.size() > 1)
-        {
-            // more than one critical node, select one after comparing it for its dependent nodes
-            DOUT("... number of critical nodes is " << nodes_critical.size());
-            double highest_depremainingavg = -1.0;      // less than 0.0 to cmp less than 0.0 below
-            for ( auto n : nodes_critical)
-            {
-                DOUT("... most critical: remaining of " << instruction[n]->qasm() << " : " << remaining[n]);
-                double depremainingavg = avg_remaining_deps(n, dir);
-                DOUT("...... depremainingavg of " << instruction[n]->qasm() << " : " << depremainingavg);
-                if (depremainingavg > highest_depremainingavg)
-                {
-                    highest_depremainingavg = depremainingavg;
-                    selected_node = n;      // selected_node is guaranteed to be assigned here
-                }
-            }
-            // when more than one with highest avg most critical depending nodes
-            // the above has selected the first of those;
-            // here the original order of nodes (as in the circuit) becomes visible
-            DOUT("... node(@" << instruction[selected_node]->cycle << "): " << name[selected_node] << " highest avg of depending remaining: " << highest_depremainingavg);
-            success = true;
-            return selected_node;
-        }
-
-        if (nodes_other.size() >= 1)
-        {
-            selected_node = nodes_other.front();    // just select it
-            DOUT("... node(@" << instruction[selected_node]->cycle << "): " << name[selected_node] << " non-critical");
-            success = true;
-            return selected_node;
         }
 
         success = false;
-        DOUT("... non selected for curr_cycle " << curr_cycle);
-        return selected_node;   // fake return value
+        return s;   // fake return value
     }
 
     // ASAP/ALAP scheduler with RC
@@ -2650,7 +2597,7 @@ private:
             bool success;
             ListDigraph::Node   selected_node;
             
-            selected_node = select(avlist, dir, curr_cycle, platform, rm, success);
+            selected_node = SelectAvailable(avlist, dir, curr_cycle, platform, rm, success);
             if (!success)
             {
                 // i.e. none from avlist was found suitable to schedule in this cycle
@@ -2674,11 +2621,11 @@ private:
                 std::string instruction_type;
                 size_t      operation_duration = 0;
 
-                GetGateParameters(gp->name, platform, operation_name, operation_type, instruction_type),
-                operation_duration = std::ceil( static_cast<float>(gp->duration) / cycle_time),
+                GetGateParameters(gp->name, platform, operation_name, operation_type, instruction_type);
+                operation_duration = std::ceil( static_cast<float>(gp->duration) / cycle_time);
                 rm.reserve(curr_cycle, gp, operation_name, operation_type, instruction_type, operation_duration);
             }
-            TakeFromAvailable(selected_node, avlist, scheduled, dir);   // update avlist/scheduled/cycle
+            TakeAvailable(selected_node, avlist, scheduled, dir);   // update avlist/scheduled/cycle
             // more nodes that could be scheduled in this cycle, will be found in an other round of the loop
         }
 
