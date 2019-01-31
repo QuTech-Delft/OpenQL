@@ -3,7 +3,7 @@
  * @date   01/2017
  * @author Imran Ashraf
  * @author Hans van Someren
- * @brief  ASAP/ALAP and UNIFORM scheduling with and without resource constraint
+ * @brief  ASAP/ALAP critical path and UNIFORM scheduling with and without resource constraint
  */
 
 #ifndef _SCHEDULER_H
@@ -110,7 +110,7 @@ public:
             node[ins] = consNode;
             name[consNode] = ins->qasm();
 
-            // Add edges
+            // Add edges (arcs)
             // In quantum computing there are no real Reads and Writes on qubits because they cannot be cloned.
             // Every qubit use influences the qubit, updates it, so would be considered a Read+Write at the same time.
             // In dependence graph construction, this leads to RAW-dependence chains of all uses of the same qubit,
@@ -127,9 +127,9 @@ public:
 
             if (ql::options::get("scheduler_post179") == "yes")
             {
-            // Control-operands of Controlled Unitaries commute, independent of the unitary,
-            // i.e. these qubit uses need not be kept in order.
-            // But, of course, those uses should be ordered after (/before) the last (/next) non-control use of the qubit.
+            // Control-operands of Controlled Unitaries commute, independent of the Unitary,
+            // i.e. these gates need not be kept in order.
+            // But, of course, those qubit uses should be ordered after (/before) the last (/next) non-control use of the qubit.
             // In this way, those control-operand qubit uses would be like pure Reads in dependence graph construction.
             // A problem might be that the gates with the same control-operands might be scheduled in parallel then.
             // In a non-resource scheduler that will happen but it doesn't do harm because it is not a real machine.
@@ -138,6 +138,25 @@ public:
             // So ignoring Read After Read (RAR) dependences enables the scheduler to take advantage
             // of the commutation property of Controlled Unitaries without disadvantages.
             }
+#ifdef TARGETCOMMUTATION
+            // CNOT(a,b) and CNOT(a,c) commute (see above).
+            // CNOT(a,b) and CNOT(c,b) commute.
+            // CZ(a,b) and CZ(b,a) are identical.
+            // CNOT(a,b) commutes with CZ(a,c) and CZ(c,a).
+            // CNOT(a,b) does not commute with CZ(b,c) and CZ(c,b).
+            // When assuming gates like X, SWAP, TOFOLI, DISPLAY, MEASURE, WAIT all have a Read+Write character,
+            // and the CNOT(a,b) does a CRead (C) on a, and a TRead (T) on b
+            // and the CZ(a,b) does a Read (R) on a, and a Read (R) on b
+            // we effectively get the following table of event transitions (from vertical to horizontal, left-bottom to right-up):
+            //
+            //      R   C   T   W
+            // R    no  no  /   /
+            // C    no  no  /   /
+            // T    /   /   no  /
+            // W    /   /   /   /
+            //
+            // Note that the R and C events have the same effect, and could be combined when we are only interested in dependences, not flow.
+#endif
 
             auto operands = ins->operands;
             size_t op_count = operands.size();
@@ -150,7 +169,7 @@ public:
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    { // RAW dependencies
+                    { // RAW dependencies (overlaps with WAW dependencies)
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
@@ -230,7 +249,7 @@ public:
                 for( auto operand : qubits )
                 {
                     DOUT(".. Operand: " << operand);
-                    { // RAW dependencies
+                    { // RAW dependencies (overlaps with WAW dependencies)
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
@@ -386,7 +405,7 @@ public:
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    { // RAW dependencies
+                    { // RAW dependencies (overlaps with WAW dependencies)
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
@@ -434,7 +453,6 @@ public:
             if( outDeg[n] == 0 && n!=targetNode )
             {
                 ListDigraph::Arc arc = graph.addArc(n,targetNode);
-                // weight[arc] = 1; // TARGET is dummy
                 // to guarantee that exactly at start of execution of dummy SINK,
                 // all still executing nodes complete, give arc weight of those nodes;
                 // this is relevant for ALAP (which starts backward from SINK for all these nodes),
@@ -442,6 +460,7 @@ public:
                 // and for implementing scheduling and mapping across control-flow (so that it is
                 // guaranteed that on a jump and on start of target circuit, the source circuit completed).
                 weight[arc] = std::ceil( static_cast<float>(instruction[n]->duration) / cycle_time);
+
                 cause[arc] = 0;
                 depType[arc] = WAW;
                 DOUT("... dep " << name[n] << " -> " << name[targetNode] << " (opnd=" << 0 << ", dep=" << WAW << ")");
@@ -2040,10 +2059,10 @@ private:
 
 
 // =========== post179 schedulers with RC, latency compensation and buffer-buffer delay insertion
-    // most code from here on deals with scheduling with Resource Constraints
-    // then the cycles as assigned from the depgraph shift, because of resource conflicts
+    // Most code from here on deals with scheduling with Resource Constraints.
+    // Then the cycles as assigned from the depgraph shift, because of resource conflicts
     // and then at each point all available nodes should be considered for scheduling
-    // to avoid largely suboptimal results
+    // to avoid largely suboptimal results (issue 179).
 
     // latency compensation
     void latency_compensation(ql::circuit* circp, const ql::quantum_platform& platform)
@@ -2133,19 +2152,23 @@ private:
         DOUT("Buffer-buffer delay insertion [DONE] ");
     }
 
-    // in critical-path scheduling, usually more critical instructions are preferred;
-    // an instruction is more critical when its ASAP and ALAP values differ less;
-    // when scheduling with resource constraints, the ideal ASAP/ALAP cycle values cannot
+    // In critical-path scheduling, usually more-critical instructions are preferred;
+    // an instruction is more-critical when its ASAP and ALAP values differ less.
+    // When scheduling with resource constraints, the ideal ASAP/ALAP cycle values cannot
     // be attained because of resource conflicts being in the way, they will 'slip',
     // so actual cycle values cannot be compared anymore to ideal ASAP/ALAP values to compute criticality;
-    // but the ideal ASAP/ALAP values can be compared mutually between gates as approximation:
-    // when forward (backward) scheduling, a lower ALAP (higher ASAP) indicates more criticality;
-    // those ALAP/ASAP are a measure for number of cycles still to fill with gates in the schedule,
-    // and are coined 'remaining' cycles here;
+    // but when forward (backward) scheduling, a lower ALAP (higher ASAP) indicates more criticality
+    // (i.e. in ASAP scheduling use the ALAP values to know the criticality, and vice-versa);
+    // those ALAP/ASAP are then a measure for number of cycles still to fill with gates in the schedule,
+    // and are coined 'remaining' cycles here.
+    //
     // remaining[node] indicates number of cycles remaining in schedule after start execution of node;
-    // please note that for forward (backward) scheduling we use an
+    //
+    // Please note that for forward (backward) scheduling we use an
     // adaptation of the ALAP (ASAP) cycle computation to compute the remaining values; with this
-    // definition both in forward and backward scheduling, a higher remaining indicates more criticality
+    // definition both in forward and backward scheduling, a higher remaining indicates more criticality.
+    // This means that criticality has become independent of the direction of scheduling
+    // which is easier in the core of the scheduler.
     void set_remaining_gate(ql::gate* gp, ql::scheduling_direction_t dir)
     {
         ListDigraph::Node   currNode = node[gp];
@@ -2204,23 +2227,23 @@ private:
     }
 
     // ASAP/ALAP scheduling support code with RC
-    // uses an "available list" (avlist) as interface between dependence graph and scheduler
+    // Uses an "available list" (avlist) as interface between dependence graph and scheduler
     // the avlist contains all nodes that wrt their dependences can be scheduled:
-    //  all its predecessors were scheduled (forward scheduling) or
-    //  all its successors were scheduled (backward scheduling)
-    // the scheduler fills cycles one by one, with nodes/instructions from the avlist
+    // when forward scheduling:
+    //  all its predecessors were scheduled
+    // when backward scheduling:
+    //  all its successors were scheduled
+    // The scheduler fills cycles one by one, with nodes/instructions from the avlist
     // checking before selection whether the nodes/instructions have completed execution
-    // and whether the resource constraints are fulfilled
+    // and whether the resource constraints are fulfilled.
 
-    // avlist support
-
-    // initialize avlist to single starting node
-    // forward scheduling:
+    // Initialize avlist to the single starting node
+    // when forward scheduling:
     //  node s (with SOURCE instruction) is the top of the dependence graph; all instructions depend on it
-    // backward scheduling:
+    // when backward scheduling:
     //  node t (with SINK instruction) is the bottom of the dependence graph; it depends on all instructions
-    // set the curr_cycle of the scheduling algorithm to start at the appropriate end as well;
-    // note that the cycle attributes will be shifted down to start at 1 after backward scheduling
+    // Set the curr_cycle of the scheduling algorithm to start at the appropriate end as well;
+    // note that the cycle attributes will be shifted down to start at 1 after backward scheduling.
     void InitAvailable(std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir, size_t& curr_cycle)
     {
         avlist.clear();
@@ -2238,7 +2261,7 @@ private:
         }
     }
 
-    // collect a list of depending nodes (i.e. those necessarily scheduled after the given node) without duplicates
+    // collect a list of directly depending nodes (i.e. those necessarily scheduled after the given node) without duplicates
     void get_depending_nodes(ListDigraph::Node n, ql::scheduling_direction_t dir, std::list<ListDigraph::Node> & ln)
     {
         if (ql::forward_scheduling == dir)
@@ -2246,13 +2269,13 @@ private:
             for (ListDigraph::OutArcIt succArc(graph,n); succArc != INVALID; ++succArc)
             {
                 ListDigraph::Node succNode = graph.target(succArc);
-                DOUT("...... succ of " << instruction[n]->qasm() << " : " << instruction[succNode]->qasm());
+                // DOUT("...... succ of " << instruction[n]->qasm() << " : " << instruction[succNode]->qasm());
                 bool found = false;             // filter out duplicates
                 for ( auto anySuccNode : ln )
                 {
                     if (succNode == anySuccNode)
                     {
-                        DOUT("...... duplicate: " << instruction[succNode]->qasm());
+                        // DOUT("...... duplicate: " << instruction[succNode]->qasm());
                         found = true;           // duplicate found
                     }
                 }
@@ -2268,13 +2291,13 @@ private:
             for (ListDigraph::InArcIt predArc(graph,n); predArc != INVALID; ++predArc)
             {
                 ListDigraph::Node predNode = graph.source(predArc);
-                DOUT("...... pred of " << instruction[n]->qasm() << " : " << instruction[predNode]->qasm());
+                // DOUT("...... pred of " << instruction[n]->qasm() << " : " << instruction[predNode]->qasm());
                 bool found = false;             // filter out duplicates
                 for ( auto anyPredNode : ln )
                 {
                     if (predNode == anyPredNode)
                     {
-                        DOUT("...... duplicate: " << instruction[predNode]->qasm());
+                        // DOUT("...... duplicate: " << instruction[predNode]->qasm());
                         found = true;           // duplicate found
                     }
                 }
@@ -2287,8 +2310,15 @@ private:
         }
     }
 
+    // Compute of two nodes whether the first one is less deep-critical than the second, for the given scheduling direction;
+    // criticality of a node is given by its remaining[node] value which is precomputed;
+    // deep-criticality takes into account the criticality of depending nodes (in the right direction!);
+    // this function is used to order the avlist in an order from highest deep-criticality to lowest deep-criticality;
+    // it is the core of the heuristics of the critical path scheduler.
     bool criticality_lessthan(ListDigraph::Node n1, ListDigraph::Node n2, ql::scheduling_direction_t dir)
     {
+        if (n1 == n2) return false;
+
         if (remaining[n1] < remaining[n2]) return true;
         if (remaining[n1] > remaining[n2]) return false;
         // so: remaining[n1] == remaining[n2]
@@ -2318,6 +2348,7 @@ private:
 
         if (ln1.size() < ln2.size()) return true;
         if (ln1.size() > ln2.size()) return false;
+        // so: ln1.size() == ln2.size() >= 1
 
         ln1.sort([this,dir](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
         ln2.sort([this,dir](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
@@ -2331,7 +2362,7 @@ private:
     //  all its successors were scheduled (backward scheduling)
     // update its cycle attribute to reflect these dependences;
     // avlist is initialized with s or t as first element by InitAvailable
-    // avlist is kept ordered on criticality, non-increasing (i.e. highest criticality first)
+    // avlist is kept ordered on deep-criticality, non-increasing (i.e. highest deep-criticality first)
     void MakeAvailable(ListDigraph::Node n, std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir)
     {
         bool    already_added = false;  // check whether n is already in avlist
@@ -2339,16 +2370,21 @@ private:
         std::list<ListDigraph::Node>::iterator first_lower_criticality_inp;
         bool    first_lower_criticality_found = false;
 
+        DOUT(".... making available node " << name[n] << " remaining: " << remaining[n]);
         for (std::list<ListDigraph::Node>::iterator inp = avlist.begin(); inp != avlist.end(); inp++)
         {
             if (*inp == n)
             {
                 already_added = true;
+                DOUT("...... duplicate when making available: " << name[n]);
             }
-            if (criticality_lessthan(*inp, n, dir) && !first_lower_criticality_found)
+            else
             {
-                first_lower_criticality_inp = inp;
-                first_lower_criticality_found = true;
+                if (criticality_lessthan(*inp, n, dir) && !first_lower_criticality_found)
+                {
+                    first_lower_criticality_inp = inp;
+                    first_lower_criticality_found = true;
+                }
             }
         }
         if (!already_added)
@@ -2364,6 +2400,7 @@ private:
                 // add n to avlist to end, if none
                 avlist.push_back(n);
             }
+            DOUT("...... made available node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining[n]);
         }
     }
 
@@ -2390,15 +2427,6 @@ private:
         avlist.remove(n);
         if (ql::forward_scheduling == dir)
         {
-            // the order of the arcs (i.e. dependences) in the depgraph are not in gate input order
-            // they are in a reverse order; without additional action, in forward scheduling
-            // the succNodes are made available in reverse gate input order
-            // resulting in a later gate with otherwise equal attributes being preferred
-            // over an earlier one while the original scheduler code had the non-reversed gate order;
-            // since there is no reverse iterator over the arcs,
-            // kludge here to undo the reversal explicitly;
-            // for backward scheduler this reversed order is ok
-            std::list<ListDigraph::Node>   sln;
             for (ListDigraph::OutArcIt succArc(graph,n); succArc != INVALID; ++succArc)
             {
                 ListDigraph::Node succNode = graph.target(succArc);
@@ -2414,12 +2442,8 @@ private:
                 }
                 if (schedulable)
                 {
-                    sln.push_front(succNode);   // build list from front, i.e. reverse
+                    MakeAvailable(succNode, avlist, dir);
                 }
-            }
-            for (auto sn : sln)
-            {
-                MakeAvailable(sn, avlist, dir);
             }
         }
         else
@@ -2447,8 +2471,9 @@ private:
 
     // advance curr_cycle
     // when no node was selected from the avlist, advance to the next cycle
-    // and try again; this makes nodes/instructions to complete execution,
-    // and makes resources available in case of resource constrained scheduling
+    // and try again; this makes nodes/instructions to complete execution for one more cycle,
+    // and makes resources finally available in case of resource constrained scheduling
+    // so it contributes to proceeding and to finally have an empty avlist
     void AdvanceCurrCycle(ql::scheduling_direction_t dir, size_t& curr_cycle)
     {
         if (ql::forward_scheduling == dir)
@@ -2490,6 +2515,10 @@ private:
         }
     }
 
+    // a gate must wait until all its operand are available, i.e. the gates having computed them have completed,
+    // and must wait until all resources required for the gate's execution are available;
+    // return true when immediately schedulable
+    // when returning false, isres indicates whether resource occupation was the reason or operand completion (for debugging)
     bool immediately_schedulable(ListDigraph::Node n, ql::scheduling_direction_t dir, const size_t curr_cycle,
                                 const ql::quantum_platform& platform, ql::arch::resource_manager_t& rm, bool& isres)
     {
@@ -2528,7 +2557,7 @@ private:
     }
 
     // select a node from the avlist
-    // new implementation based on avlist deep-ordered from high to low criticality (criticality_lessthan above)
+    // the avlist is deep-ordered from high to low criticality (see criticality_lessthan above)
     ListDigraph::Node SelectAvailable(std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir, const size_t curr_cycle,
                                 const ql::quantum_platform& platform, ql::arch::resource_manager_t& rm, bool & success)
     {
@@ -2547,13 +2576,13 @@ private:
             bool isres;
             if ( immediately_schedulable(n, dir, curr_cycle, platform, rm, isres) )
             {
-                DOUT("... node " << name[n] << " most critical immediately schedulable, remaining=" << remaining[n] << ", selected");
+                DOUT("... node (@" << instruction[n]->cycle << "): " << name[n] << " immediately schedulable, remaining=" << remaining[n] << ", selected");
                 success = true;
                 return n;
             }
             else
             {
-                DOUT("... node " << name[n] << " most critical, remaining=" << remaining[n] << ", waiting for " << (isres? "resource" : "dependent completion"));
+                DOUT("... node (@" << instruction[n]->cycle << "): " << name[n] << " remaining=" << remaining[n] << ", waiting for " << (isres? "resource" : "dependent completion"));
             }
         }
 
