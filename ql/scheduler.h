@@ -24,8 +24,15 @@
 using namespace std;
 using namespace lemon;
 
+#define TARGETCOMMUTATION
+#ifdef TARGETCOMMUTATION
+// see below for the motivation of this
+enum DepTypes{RAW, WAW, WAR, RAR, RAT, TAR, TAT, WAT, TAW};
+const string DepTypesNames[] = {"RAW", "WAW", "WAR", "RAR", "RAT", "TAR", "TAT", "WAT", "TAW"};
+#else
 enum DepTypes{RAW, WAW, WAR, RAR};
 const string DepTypesNames[] = {"RAW", "WAW", "WAR", "RAR"};
+#endif
 
 class Scheduler
 {
@@ -96,6 +103,9 @@ public:
         vector<ReadersListType> LastReaders;
         LastReaders.resize(qubit_creg_count);
 
+        vector<ReadersListType> LastTargets;
+        LastTargets.resize(qubit_creg_count);
+
         int srcID = graph.id(srcNode);
         vector<int> LastWriter(qubit_creg_count,srcID);
 
@@ -137,29 +147,39 @@ public:
             // of the same qubit being active at the same time, will prevent this parallelism.
             // So ignoring Read After Read (RAR) dependences enables the scheduler to take advantage
             // of the commutation property of Controlled Unitaries without disadvantages.
+            //
+            // The above was implemented. But then we came to the following observations and extensions.
+            // 1. CU1(a,b) and CU2(a,c) commute (for any U1, U2, so also can be equal and/or be CNOT and/or be CZ)
+            // In addition:
+            // 2. CNOT(a,b) and CNOT(c,b) commute.
+            // 3. CZ(a,b) and CZ(b,a) are identical.
+            // 4. CNOT(a,b) commutes with CZ(a,c) (from 1.) and thus with CZ(c,a) (from 3.)
+            // 5. CNOT(a,b) does not commute with CZ(c,b) (and thus not with CZ(b,c), from 3.)
+            // To support this, next to R and W a T (for Target operand) is introduced for the target operand of CNOT.
+            // The events (instead of just Read and Write) become then:
+            // - Both operands of CZ are just Read.
+            // - The control operand of CNOT is Read, the target operand is Target.
+            // - Of any other control unitary, the control operand is Read and the target operand is Write.
+            // - Of any other gate the operands are Read+Write or just Write (as usual to represent flow).
+            // With this, we effectively get the following table of event transitions (from left-bottom to right-up),
+            // in which 'no' indicates no dependence from left event to top event and '/' indicates a dependence from left to top.
+            //
+            //      R   T   W
+            // R    no  /   /
+            // T    /   no  /
+            // W    /   /   /
+            //
+            // In addition to LastReaders, we introduce LastTargets.
+            // Either one is cleared when dependences are generated from them, and extended otherwise.
+            // From the table it can be seen that the T 'behaves' as a Write to Read, and as a Read to Write,
+            // that there is no order among Ts nor among Rs, but T after R and R after T sequentialize.
+            // With this, the dependence graph is claimed to represent the commutation as above.
             }
-#ifdef TARGETCOMMUTATION
-            // CNOT(a,b) and CNOT(a,c) commute (see above).
-            // CNOT(a,b) and CNOT(c,b) commute.
-            // CZ(a,b) and CZ(b,a) are identical.
-            // CNOT(a,b) commutes with CZ(a,c) and CZ(c,a).
-            // CNOT(a,b) does not commute with CZ(b,c) and CZ(c,b).
-            // When assuming gates like X, SWAP, TOFOLI, DISPLAY, MEASURE, WAIT all have a Read+Write character,
-            // and the CNOT(a,b) does a CRead (C) on a, and a TRead (T) on b
-            // and the CZ(a,b) does a Read (R) on a, and a Read (R) on b
-            // we effectively get the following table of event transitions (from vertical to horizontal, left-bottom to right-up):
-            //
-            //      R   C   T   W
-            // R    no  no  /   /
-            // C    no  no  /   /
-            // T    /   /   no  /
-            // W    /   /   /   /
-            //
-            // Note that the R and C events have the same effect, and could be combined when we are only interested in dependences, not flow.
-#endif
 
             auto operands = ins->operands;
+#ifdef HAVEGENERALCONTROLUNITARIES
             size_t op_count = operands.size();
+#endif
             size_t operandNo=0;
 
             if(ins->name == "measure")
@@ -189,6 +209,20 @@ public:
                             cause[arc1] = operand;
                             depType[arc1] = WAR;
                             DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAR << ")");
+                        }
+                    }
+                    
+                    if (ql::options::get("scheduler_post179") == "yes")
+                    { // WAT dependencies
+                        ReadersListType readers = LastTargets[operand];
+                        for(auto & readerID : readers)
+                        {
+                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+                            cause[arc1] = operand;
+                            depType[arc1] = WAT;
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAT << ")");
                         }
                     }
                 }
@@ -228,6 +262,7 @@ public:
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
                         LastReaders[operand].clear();
+                        LastTargets[operand].clear();
                     }
                 }
                 for( auto operand : mins->creg_operands )
@@ -271,15 +306,30 @@ public:
                             DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAR << ")");
                         }
                     }
+                    
+                    if (ql::options::get("scheduler_post179") == "yes")
+                    { // WAT dependencies
+                        ReadersListType readers = LastTargets[operand];
+                        for(auto & readerID : readers)
+                        {
+                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+                            cause[arc1] = operand;
+                            depType[arc1] = WAT;
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAT << ")");
+                        }
+                    }
                 }
 
                 // now update LastWriter and so clear LastReaders
-                for( auto operand : operands )
+                for( auto operand : qubits )
                 {
                     LastWriter[operand] = consID;
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
                         LastReaders[operand].clear();
+                        LastTargets[operand].clear();
                     }
                 }
             }
@@ -313,6 +363,20 @@ public:
                             DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAR << ")");
                         }
                     }
+
+                    if (ql::options::get("scheduler_post179") == "yes")
+                    { // WAT dependencies
+                        ReadersListType readers = LastTargets[operand];
+                        for(auto & readerID : readers)
+                        {
+                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+                            cause[arc1] = operand;
+                            depType[arc1] = WAT;
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAT << ")");
+                        }
+                    }
                 }
 
                 // now update LastWriter and so clear LastReaders
@@ -322,13 +386,303 @@ public:
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
                         LastReaders[operand].clear();
+                        LastTargets[operand].clear();
                     }
                 }
             }
             else if (  ins->name == "cnot"
-                    || ins->name == "cz"
+                    )
+            {
+                DOUT(". considering " << name[consNode] << " as cnot");
+                // CNOTs Read the first operands, and Target the second operand
+                for( auto operand : operands )
+                {
+                    DOUT(".. Operand: " << operand);
+
+                    if( operandNo == 0)
+                    {
+	                    { // RAW dependencies
+	                        int prodID = LastWriter[operand];
+	                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+	                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+	                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
+	                        cause[arc] = operand;
+	                        depType[arc] = RAW;
+	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAW << ")");
+	                    }
+	
+	                    if (ql::options::get("scheduler_post179") == "no")
+	                    {
+		                    // RAR dependencies
+		                    ReadersListType readers = LastReaders[operand];
+		                    for(auto & readerID : readers)
+		                    {
+		                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+		                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+		                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+		                        cause[arc1] = operand;
+		                        depType[arc1] = RAR;
+		                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAR << ")");
+		                    }
+	                    }
+	
+	                    if (ql::options::get("scheduler_post179") == "yes")
+	                    {
+		                    // RAT dependencies
+		                    ReadersListType readers = LastTargets[operand];
+		                    for(auto & readerID : readers)
+		                    {
+		                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+		                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+		                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+		                        cause[arc1] = operand;
+		                        depType[arc1] = RAT;
+		                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAT << ")");
+		                    }
+	                    }
+                    }
+                    else
+                    {
+	                    if (ql::options::get("scheduler_post179") == "no")
+                        {
+		                    { // RAW dependencies
+		                        int prodID = LastWriter[operand];
+		                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+		                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+		                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
+		                        cause[arc] = operand;
+		                        depType[arc] = RAW;
+		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAW << ")");
+		                    }
+		
+		                    { // RAR dependencies
+			                    ReadersListType readers = LastReaders[operand];
+			                    for(auto & readerID : readers)
+			                    {
+			                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+			                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+			                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+			                        cause[arc1] = operand;
+			                        depType[arc1] = RAR;
+			                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAR << ")");
+			                    }
+		                    }
+		
+		                    {   // WAW dependencies
+		                        int prodID = LastWriter[operand];
+		                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+		                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+		                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
+		                        cause[arc] = operand;
+		                        depType[arc] = WAW;
+		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAW << ")");
+		                    }
+		
+		                    {   // WAR dependencies
+		                        ReadersListType readers = LastReaders[operand];
+		                        for(auto & readerID : readers)
+		                        {
+		                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+		                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+		                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+		                            cause[arc1] = operand;
+		                            depType[arc1] = WAR;
+		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAR << ")");
+		                        }
+		                    }
+                        }
+                        else
+                        {
+		                    {   // TAW dependencies
+		                        int prodID = LastWriter[operand];
+		                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+		                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+		                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
+		                        cause[arc] = operand;
+		                        depType[arc] = TAW;
+		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << TAW << ")");
+		                    }
+		
+		                    {   // TAR dependencies
+		                        ReadersListType readers = LastReaders[operand];
+		                        for(auto & readerID : readers)
+		                        {
+		                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+		                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+		                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+		                            cause[arc1] = operand;
+		                            depType[arc1] = TAR;
+		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << TAR << ")");
+		                        }
+		                    }
+                        }
+                    }
+                    operandNo++;
+                } // end of operand for
+
+                // now update LastWriter and so clear LastReaders
+                operandNo=0;
+                for( auto operand : operands )
+                {
+                    if( operandNo == 0)
+                    {
+                        // update LastReaders for this operand 0
+                        LastReaders[operand].push_back(consID);
+                        if (ql::options::get("scheduler_post179") == "yes")
+                        {
+                            LastTargets[operand].clear();
+                        }
+                    }
+                    else
+                    {
+	                    if (ql::options::get("scheduler_post179") == "no")
+                        {
+	                        // update LastWriter and so also clear LastReaders for this operand 1
+	                        LastWriter[operand] = consID;
+                        }
+                        else
+                        {
+	                        // update LastTargets and so also clear LastReaders for this operand 1
+                            LastTargets[operand].push_back(consID);
+                        }
+	                    LastReaders[operand].clear();
+                    }
+                    operandNo++;
+                }
+            }
+            else if (  ins->name == "cz"
                     || ins->name == "cphase"
+                    )
+            {
+                DOUT(". considering " << name[consNode] << " as cz");
+                // CZs Read all operands for post179
+                // CZs Read all operands and write last one for pre179 
+                for( auto operand : operands )
+                {
+                    DOUT(".. Operand: " << operand);
+                    if (ql::options::get("scheduler_post179") == "no")
+                    {
+	                    { // RAW dependencies
+	                        int prodID = LastWriter[operand];
+	                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+	                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+	                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
+	                        cause[arc] = operand;
+	                        depType[arc] = RAW;
+	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAW << ")");
+	                    }
+	
+	                    {   // RAR dependencies
+		                    ReadersListType readers = LastReaders[operand];
+		                    for(auto & readerID : readers)
+		                    {
+		                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+		                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+		                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+		                        cause[arc1] = operand;
+		                        depType[arc1] = RAR;
+		                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAR << ")");
+		                    }
+	                    }
+	
+	                    if( operandNo == 0)
+	                    {
+	                        // update LastReaders for this operand
+	                        LastReaders[operand].push_back(consID);
+	                    }
+	                    else
+	                    {
+		                    {   // WAW dependencies
+		                        int prodID = LastWriter[operand];
+		                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+		                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+		                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
+		                        cause[arc] = operand;
+		                        depType[arc] = WAW;
+		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAW << ")");
+		                    }
+		
+		                    {   // WAR dependencies
+		                        ReadersListType readers = LastReaders[operand];
+		                        for(auto & readerID : readers)
+		                        {
+		                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+		                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+		                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+		                            cause[arc1] = operand;
+		                            depType[arc1] = WAR;
+		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAR << ")");
+		                        }
+		                    }
+	
+	                        // update LastWriter and so also clear LastReaders for this operand
+	                        LastWriter[operand] = consID;
+	                        LastReaders[operand].clear();
+	                    }
+                    }
+                    else
+                    {
+	                    { // RAW dependencies
+	                        int prodID = LastWriter[operand];
+	                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+	                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+	                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
+	                        cause[arc] = operand;
+	                        depType[arc] = RAW;
+	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAW << ")");
+	                    }
+	
+	                    {   // RAT dependencies
+		                    ReadersListType targets = LastTargets[operand];
+		                    for(auto & targetID : targets)
+		                    {
+		                        ListDigraph::Node targetNode = graph.nodeFromId(targetID);
+		                        ListDigraph::Arc arc1 = graph.addArc(targetNode,consNode);
+		                        weight[arc1] = std::ceil( static_cast<float>(instruction[targetNode]->duration) / cycle_time);
+		                        cause[arc1] = operand;
+		                        depType[arc1] = RAT;
+		                        DOUT("... dep " << name[targetNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAT << ")");
+		                    }
+	                    }
+	
+                        // update LastReaders for this operand
+                        LastTargets[operand].clear();
+                        LastReaders[operand].push_back(consID);
+                    }
+                    operandNo++;
+                } // end of operand for
+
+                // update LastReaders etc.
+                operandNo=0;
+                for( auto operand : operands )
+                {
+                    if (ql::options::get("scheduler_post179") == "no")
+                    {
+	                    if( operandNo == 0)
+	                    {
+	                        // update LastReaders for this operand
+	                        LastReaders[operand].push_back(consID);
+	                    }
+	                    else
+	                    {
+	                        // update LastWriter and so also clear LastReaders for this operand
+	                        LastWriter[operand] = consID;
+	                        LastReaders[operand].clear();
+	                    }
+                    }
+                    else
+                    {
+                        // update LastReaders for this operand
+                        LastTargets[operand].clear();
+                        LastReaders[operand].push_back(consID);
+                    }
+                    operandNo++;
+                }
+            }
+#ifdef HAVEGENERALCONTROLUNITARIES
+            else if (
                     // or is a control-unitary in general
+                    // Read on all operands, Write on last operand
                     )
             {
                 DOUT(". considering " << name[consNode] << " as control-unitary");
@@ -361,10 +715,29 @@ public:
 	                    }
                     }
 
+                    if (ql::options::get("scheduler_post179") == "yes")
+                    {
+	                    // RAT dependencies
+	                    ReadersListType readers = LastTargets[operand];
+	                    for(auto & readerID : readers)
+	                    {
+	                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+	                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+	                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+	                        cause[arc1] = operand;
+	                        depType[arc1] = RAT;
+	                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAT << ")");
+	                    }
+                    }
+
                     if( operandNo < op_count-1 )
                     {
                         // update LastReaders for this operand
                         LastReaders[operand].push_back(consID);
+                        if (ql::options::get("scheduler_post179") == "yes")
+                        {
+                            LastTargets[operand].clear();
+                        }
                     }
                     else
                     {
@@ -391,13 +764,32 @@ public:
 	                        }
 	                    }
 
+                        if (ql::options::get("scheduler_post179") == "yes")
+	                    {   // WAT dependencies
+	                        ReadersListType readers = LastTargets[operand];
+	                        for(auto & readerID : readers)
+	                        {
+	                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+	                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+	                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+	                            cause[arc1] = operand;
+	                            depType[arc1] = WAT;
+	                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAT << ")");
+	                        }
+	                    }
+
                         // update LastWriter and so also clear LastReaders for this operand
                         LastWriter[operand] = consID;
                         LastReaders[operand].clear();
+                        if (ql::options::get("scheduler_post179") == "yes")
+                        {
+                            LastTargets[operand].clear();
+                        }
                     }
                     operandNo++;
                 } // end of operand for
             }
+#endif  // HAVEGENERALCONTROLUNITARIES
             else
             {
                 DOUT(". considering " << name[consNode] << " as general quantum gate");
@@ -428,9 +820,27 @@ public:
                         }
                     }
 
-                    // update LastWriter and so also clear LastReader for this operand
+                    if (ql::options::get("scheduler_post179") == "yes")
+                    { // WAT dependencies
+                        ReadersListType readers = LastTargets[operand];
+                        for(auto & readerID : readers)
+                        {
+                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+                            cause[arc1] = operand;
+                            depType[arc1] = WAT;
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAT << ")");
+                        }
+                    }
+
+                    // update LastWriter and so also clear LastReaders for this operand
                     LastWriter[operand] = consID;
                     LastReaders[operand].clear();
+                    if (ql::options::get("scheduler_post179") == "yes")
+                    {
+                        LastTargets[operand].clear();
+                    }
                     
                     operandNo++;
                 } // end of operand for
@@ -453,6 +863,7 @@ public:
             if( outDeg[n] == 0 && n!=targetNode )
             {
                 ListDigraph::Arc arc = graph.addArc(n,targetNode);
+
                 // to guarantee that exactly at start of execution of dummy SINK,
                 // all still executing nodes complete, give arc weight of those nodes;
                 // this is relevant for ALAP (which starts backward from SINK for all these nodes),
@@ -466,6 +877,8 @@ public:
                 DOUT("... dep " << name[n] << " -> " << name[targetNode] << " (opnd=" << 0 << ", dep=" << WAW << ")");
             }
         }
+        // here would have to clear all LastReaders and LastTargets because of the SINK node
+        // but these sets would be used so it makes no sense
 
         if( !dag(graph) )
         {

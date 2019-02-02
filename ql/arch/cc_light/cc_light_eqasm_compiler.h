@@ -1339,7 +1339,7 @@ private:
         for (const json & i : instruction_settings)
         {
             std::string instr_name;
-            // COUT("Looking for instruction: " << i);
+            DOUT("Looking for instruction: " << i);
             if (i.count("cc_light_instr") <= 0)
             {
                 EOUT("cc_light_instr not found for " << i);
@@ -1349,11 +1349,13 @@ private:
             {
                 instr_name = i["cc_light_instr"];
             }
+            DOUT("... instr_name=" << instr_name);
 
             if (i.count("cc_light_opcode") <= 0)
                 throw ql::exception("[x] error : ql::eqasm_compiler::compile() : missing opcode for instruction '"+instr_name,false);
             else
                 opcode = i["cc_light_opcode"];
+            DOUT("... opcode=" << opcode);
 
             auto mapit = instr_name_2_opcode.find(instr_name);
             if( mapit != instr_name_2_opcode.end() )
@@ -1367,13 +1369,16 @@ private:
                 // not found
                 instr_name_2_opcode[instr_name] = opcode;
             }
+            DOUT("..... mapit done mapt->second:" << mapit->second); DOUT(".....instr_name_2_opcode[instr_name]=" << instr_name_2_opcode[instr_name]);
 
             if (i["cc_light_instr_type"] == "single_qubit_gate")
             {
+                DOUT("..... in single_qubit_gate ...");
                 if (opcode_set.find(opcode) != opcode_set.end())
                     continue;
 
                 // opcode range check
+                DOUT("..... opcode found");
                 if (i["type"] == "readout")
                 {
                     if (opcode < 0x4 || opcode > 0x7)
@@ -1383,17 +1388,25 @@ private:
                 {
                     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for single qubit gate instruction '"+instr_name+"' : should be in [1..127] range : current opcode: "+std::to_string(opcode),false);
                 }
+                DOUT("..... inserting opcode in opcode_set ...");
                 opcode_set.insert(opcode);
 
                 size_t condition  = (i.count("cc_light_cond")<=0? 0 :i["cc_light_cond"].get<size_t>());
+                DOUT("..... condition=" << condition);
 
                 if (i.count("cc_light_instr") <=0 )
                     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
 
+                DOUT("..... composing constrol store line ..."); 
+                DOUT("..... opcode_ss generation ...");
                 opcode_ss << "def_q_arg_st[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
+                DOUT("..... optype computation...");
                 auto optype     = (i["type"] == "mw" ? 1 : (i["type"] == "flux" ? 2 : ((i["type"] == "readout" ? 3 : 0))));
+                DOUT("..... optype:" << optype);
                 auto codeword   = i["cc_light_codeword"];
+                DOUT("..... codeword:" << codeword);
                 control_store << "     " << i["cc_light_opcode"] << ":     " << condition << "          " << optype << "          " << codeword << "          0          0\n";
+                DOUT("..... done line");
             }
             else if (i["cc_light_instr_type"] == "two_qubit_gate")
             {
@@ -1419,10 +1432,12 @@ private:
                 throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : invalid 'cc_light_instr_type' for instruction !",false);
         }
 
+        DOUT("... writing cs.txt=" << opcode);
         std::string cs_filename = ql::options::get("output_dir") + "/cs.txt";
         IOUT("writing control store file to '" << cs_filename << "' ...");
         ql::utils::write_file(cs_filename, control_store.str());
 
+        DOUT("... writing qisa_opcodes.qmap=" << opcode);
         std::string im_filename = ql::options::get("output_dir") + "/qisa_opcodes.qmap";
         IOUT("writing qisa instruction file to '" << im_filename << "' ...");
         ql::utils::write_file(im_filename, opcode_ss.str());
