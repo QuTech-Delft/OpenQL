@@ -24,15 +24,9 @@
 using namespace std;
 using namespace lemon;
 
-#define TARGETCOMMUTATION
-#ifdef TARGETCOMMUTATION
-// see below for the motivation of this
-enum DepTypes{RAW, WAW, WAR, RAR, RAT, TAR, TAT, WAT, TAW};
-const string DepTypesNames[] = {"RAW", "WAW", "WAR", "RAR", "RAT", "TAR", "TAT", "WAT", "TAW"};
-#else
-enum DepTypes{RAW, WAW, WAR, RAR};
-const string DepTypesNames[] = {"RAW", "WAW", "WAR", "RAR"};
-#endif
+// see below for the meaning of R, W, and D events and their relation to dependences
+enum DepTypes{RAW, WAW, WAR, RAR, RAD, DAR, DAD, WAD, DAW};
+const string DepTypesNames[] = {"RAW", "WAW", "WAR", "RAR", "RAD", "DAR", "DAD", "WAD", "DAW"};
 
 class Scheduler
 {
@@ -41,6 +35,7 @@ private:
     ListDigraph graph;
 
     ListDigraph::NodeMap<ql::gate*> instruction;                    // instruction[n] == gate*
+    std::map<ql::gate*,ListDigraph::Node>  node;                    // node[gate*] == node_id
     ListDigraph::NodeMap<std::string> name;                         // name[n] == qasm string
     ListDigraph::ArcMap<int> weight;                                // number of cycles of dependence
     //TODO it might be more readable to change 'cause' to string
@@ -53,11 +48,11 @@ private:
     size_t          cycle_time;                 // to convert durations to cycles as weight of dependence
     size_t          qubit_count;                // to check/represent qubit as cause of dependence
     size_t          creg_count;                 // to check/represent cbit as cause of dependence
-    ql::circuit*    circp;                      // current and result circuit, should be parameter of scheduler
+    ql::circuit*    circp;                      // current and result circuit, passed from Init to each scheduler
 
+    // scheduler support
     std::map< std::pair<std::string,std::string>, size_t> buffer_cycles_map;
-    std::map<ql::gate*,ListDigraph::Node>  node;    // node[gate*] == node_id
-    std::map<ListDigraph::Node,size_t>  remaining;  // remaining[node] == cycles until end
+    std::map<ListDigraph::Node,size_t>  remaining;  // remaining[node] == cycles until end; critical path representation
 
 
 public:
@@ -76,6 +71,9 @@ public:
         // populate buffer map
         // 'none' type is a dummy type and 0 buffer cycles will be inserted for
         // instructions of type 'none'
+        //
+        // this has nothing to do with dependence graph generation but with scheduling
+        // so should be in resource-constrained scheduler constructor
         std::vector<std::string> buffer_names = {"none", "mw", "flux", "readout"};
         for(auto & buf1 : buffer_names)
         {
@@ -103,8 +101,8 @@ public:
         vector<ReadersListType> LastReaders;
         LastReaders.resize(qubit_creg_count);
 
-        vector<ReadersListType> LastTargets;
-        LastTargets.resize(qubit_creg_count);
+        vector<ReadersListType> LastDs;
+        LastDs.resize(qubit_creg_count);
 
         int srcID = graph.id(srcNode);
         vector<int> LastWriter(qubit_creg_count,srcID);
@@ -155,25 +153,25 @@ public:
             // 3. CZ(a,b) and CZ(b,a) are identical.
             // 4. CNOT(a,b) commutes with CZ(a,c) (from 1.) and thus with CZ(c,a) (from 3.)
             // 5. CNOT(a,b) does not commute with CZ(c,b) (and thus not with CZ(b,c), from 3.)
-            // To support this, next to R and W a T (for Target operand) is introduced for the target operand of CNOT.
+            // To support this, next to R and W a D (for controlleD operand :-) is introduced for the target operand of CNOT.
             // The events (instead of just Read and Write) become then:
             // - Both operands of CZ are just Read.
-            // - The control operand of CNOT is Read, the target operand is Target.
-            // - Of any other control unitary, the control operand is Read and the target operand is Write.
+            // - The control operand of CNOT is Read, the target operand is D.
+            // - Of any other control unitary, the control operand is Read and the target operand is Write (not D!)
             // - Of any other gate the operands are Read+Write or just Write (as usual to represent flow).
             // With this, we effectively get the following table of event transitions (from left-bottom to right-up),
             // in which 'no' indicates no dependence from left event to top event and '/' indicates a dependence from left to top.
             //
-            //      R   T   W
+            //      R   D   W
             // R    no  /   /
-            // T    /   no  /
+            // D    /   no  /
             // W    /   /   /
             //
-            // In addition to LastReaders, we introduce LastTargets.
+            // In addition to LastReaders, we introduce LastDs.
             // Either one is cleared when dependences are generated from them, and extended otherwise.
-            // From the table it can be seen that the T 'behaves' as a Write to Read, and as a Read to Write,
-            // that there is no order among Ts nor among Rs, but T after R and R after T sequentialize.
-            // With this, the dependence graph is claimed to represent the commutation as above.
+            // From the table it can be seen that the D 'behaves' as a Write to Read, and as a Read to Write,
+            // that there is no order among Ds nor among Rs, but D after R and R after D sequentialize.
+            // With this, the dependence graph is claimed to represent the commutations as above.
             }
 
             auto operands = ins->operands;
@@ -189,7 +187,7 @@ public:
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    { // RAW dependencies (overlaps with WAW dependencies)
+                    { // RAW dependencies (overlaps with WAW dependencies here)
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
@@ -213,16 +211,16 @@ public:
                     }
                     
                     if (ql::options::get("scheduler_post179") == "yes")
-                    { // WAT dependencies
-                        ReadersListType readers = LastTargets[operand];
+                    { // WAD dependencies
+                        ReadersListType readers = LastDs[operand];
                         for(auto & readerID : readers)
                         {
                             ListDigraph::Node readerNode = graph.nodeFromId(readerID);
                             ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
                             weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
-                            depType[arc1] = WAT;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAT << ")");
+                            depType[arc1] = WAD;
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAD << ")");
                         }
                     }
                 }
@@ -262,7 +260,7 @@ public:
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
                         LastReaders[operand].clear();
-                        LastTargets[operand].clear();
+                        LastDs[operand].clear();
                     }
                 }
                 for( auto operand : mins->creg_operands )
@@ -284,7 +282,7 @@ public:
                 for( auto operand : qubits )
                 {
                     DOUT(".. Operand: " << operand);
-                    { // RAW dependencies (overlaps with WAW dependencies)
+                    { // RAW dependencies (overlaps with WAW dependencies here)
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
@@ -308,16 +306,16 @@ public:
                     }
                     
                     if (ql::options::get("scheduler_post179") == "yes")
-                    { // WAT dependencies
-                        ReadersListType readers = LastTargets[operand];
+                    { // WAD dependencies
+                        ReadersListType readers = LastDs[operand];
                         for(auto & readerID : readers)
                         {
                             ListDigraph::Node readerNode = graph.nodeFromId(readerID);
                             ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
                             weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
-                            depType[arc1] = WAT;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAT << ")");
+                            depType[arc1] = WAD;
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAD << ")");
                         }
                     }
                 }
@@ -329,7 +327,7 @@ public:
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
                         LastReaders[operand].clear();
-                        LastTargets[operand].clear();
+                        LastDs[operand].clear();
                     }
                 }
             }
@@ -365,16 +363,16 @@ public:
                     }
 
                     if (ql::options::get("scheduler_post179") == "yes")
-                    { // WAT dependencies
-                        ReadersListType readers = LastTargets[operand];
+                    { // WAD dependencies
+                        ReadersListType readers = LastDs[operand];
                         for(auto & readerID : readers)
                         {
                             ListDigraph::Node readerNode = graph.nodeFromId(readerID);
                             ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
                             weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
-                            depType[arc1] = WAT;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAT << ")");
+                            depType[arc1] = WAD;
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAD << ")");
                         }
                     }
                 }
@@ -386,7 +384,7 @@ public:
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
                         LastReaders[operand].clear();
-                        LastTargets[operand].clear();
+                        LastDs[operand].clear();
                     }
                 }
             }
@@ -394,7 +392,7 @@ public:
                     )
             {
                 DOUT(". considering " << name[consNode] << " as cnot");
-                // CNOTs Read the first operands, and Target the second operand
+                // CNOTs Read the first operands, and Ds the second operand
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
@@ -413,31 +411,37 @@ public:
 	
 	                    if (ql::options::get("scheduler_post179") == "no")
 	                    {
-		                    // RAR dependencies
-		                    ReadersListType readers = LastReaders[operand];
-		                    for(auto & readerID : readers)
-		                    {
-		                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-		                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-		                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-		                        cause[arc1] = operand;
-		                        depType[arc1] = RAR;
-		                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAR << ")");
+                            // to disable commutation by the scheduler, add DAD and RAR dependences
+                            // adding DADs and RARs could be done under an option e.g. "scheduler_commute", by default on
+                            // so that an experiment that doesn't want this optimization, can turn it off
+                            //
+                            // the pre179 schedulers don't commute
+		                    { // RAR dependencies
+			                    ReadersListType readers = LastReaders[operand];
+			                    for(auto & readerID : readers)
+			                    {
+			                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+			                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+			                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+			                        cause[arc1] = operand;
+			                        depType[arc1] = RAR;
+			                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAR << ")");
+			                    }
 		                    }
 	                    }
-	
+
 	                    if (ql::options::get("scheduler_post179") == "yes")
 	                    {
-		                    // RAT dependencies
-		                    ReadersListType readers = LastTargets[operand];
+		                    // RAD dependencies
+		                    ReadersListType readers = LastDs[operand];
 		                    for(auto & readerID : readers)
 		                    {
 		                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
 		                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
 		                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
 		                        cause[arc1] = operand;
-		                        depType[arc1] = RAT;
-		                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAT << ")");
+		                        depType[arc1] = RAD;
+		                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAD << ")");
 		                    }
 	                    }
                     }
@@ -455,6 +459,11 @@ public:
 		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAW << ")");
 		                    }
 		
+                            // to disable commutation by the scheduler, add DAD and RAR dependences
+                            // adding DADs and RARs could be done under an option e.g. "scheduler_commute", by default on
+                            // so that an experiment that doesn't want this optimization, can turn it off
+                            //
+                            // the pre179 schedulers don't commute
 		                    { // RAR dependencies
 			                    ReadersListType readers = LastReaders[operand];
 			                    for(auto & readerID : readers)
@@ -493,17 +502,21 @@ public:
                         }
                         else
                         {
-		                    {   // TAW dependencies
+		                    {   // DAW dependencies
 		                        int prodID = LastWriter[operand];
 		                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
 		                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
 		                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
 		                        cause[arc] = operand;
-		                        depType[arc] = TAW;
-		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << TAW << ")");
+		                        depType[arc] = DAW;
+		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DAW << ")");
 		                    }
 		
-		                    {   // TAR dependencies
+#ifdef NO_COMMUTATION_BY_SCHEDULER
+                            // to disable commutation by the scheduler, add DAD and RAR dependences
+                            // adding DADs and RARs could be done under an option e.g. "scheduler_commute", by default on
+                            // so that an experiment that doesn't want this optimization, can turn it off
+		                    {   // DAD dependencies
 		                        ReadersListType readers = LastReaders[operand];
 		                        for(auto & readerID : readers)
 		                        {
@@ -511,8 +524,22 @@ public:
 		                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
 		                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
 		                            cause[arc1] = operand;
-		                            depType[arc1] = TAR;
-		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << TAR << ")");
+		                            depType[arc1] = DAR;
+		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DAR << ")");
+		                        }
+		                    }
+#endif  // NO_COMMUTATION_BY_SCHEDULER
+
+		                    {   // DAR dependencies
+		                        ReadersListType readers = LastReaders[operand];
+		                        for(auto & readerID : readers)
+		                        {
+		                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+		                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+		                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+		                            cause[arc1] = operand;
+		                            depType[arc1] = DAR;
+		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DAR << ")");
 		                        }
 		                    }
                         }
@@ -530,7 +557,7 @@ public:
                         LastReaders[operand].push_back(consID);
                         if (ql::options::get("scheduler_post179") == "yes")
                         {
-                            LastTargets[operand].clear();
+                            LastDs[operand].clear();
                         }
                     }
                     else
@@ -542,8 +569,8 @@ public:
                         }
                         else
                         {
-	                        // update LastTargets and so also clear LastReaders for this operand 1
-                            LastTargets[operand].push_back(consID);
+	                        // update LastDs and so also clear LastReaders for this operand 1
+                            LastDs[operand].push_back(consID);
                         }
 	                    LastReaders[operand].clear();
                     }
@@ -572,6 +599,11 @@ public:
 	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAW << ")");
 	                    }
 	
+                        // to disable commutation by the scheduler, add DAD and RAR dependences
+                        // adding DADs and RARs could be done under an option e.g. "scheduler_commute", by default on
+                        // so that an experiment that doesn't want this optimization, can turn it off
+                        //
+                        // the pre179 schedulers don't commute
 	                    {   // RAR dependencies
 		                    ReadersListType readers = LastReaders[operand];
 		                    for(auto & readerID : readers)
@@ -632,21 +664,21 @@ public:
 	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAW << ")");
 	                    }
 	
-	                    {   // RAT dependencies
-		                    ReadersListType targets = LastTargets[operand];
+	                    {   // RAD dependencies
+		                    ReadersListType targets = LastDs[operand];
 		                    for(auto & targetID : targets)
 		                    {
 		                        ListDigraph::Node targetNode = graph.nodeFromId(targetID);
 		                        ListDigraph::Arc arc1 = graph.addArc(targetNode,consNode);
 		                        weight[arc1] = std::ceil( static_cast<float>(instruction[targetNode]->duration) / cycle_time);
 		                        cause[arc1] = operand;
-		                        depType[arc1] = RAT;
-		                        DOUT("... dep " << name[targetNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAT << ")");
+		                        depType[arc1] = RAD;
+		                        DOUT("... dep " << name[targetNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAD << ")");
 		                    }
 	                    }
 	
                         // update LastReaders for this operand
-                        LastTargets[operand].clear();
+                        LastDs[operand].clear();
                         LastReaders[operand].push_back(consID);
                     }
                     operandNo++;
@@ -673,7 +705,7 @@ public:
                     else
                     {
                         // update LastReaders for this operand
-                        LastTargets[operand].clear();
+                        LastDs[operand].clear();
                         LastReaders[operand].push_back(consID);
                     }
                     operandNo++;
@@ -717,16 +749,16 @@ public:
 
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
-	                    // RAT dependencies
-	                    ReadersListType readers = LastTargets[operand];
+	                    // RAD dependencies
+	                    ReadersListType readers = LastDs[operand];
 	                    for(auto & readerID : readers)
 	                    {
 	                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
 	                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
 	                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
 	                        cause[arc1] = operand;
-	                        depType[arc1] = RAT;
-	                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAT << ")");
+	                        depType[arc1] = RAD;
+	                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAD << ")");
 	                    }
                     }
 
@@ -736,7 +768,7 @@ public:
                         LastReaders[operand].push_back(consID);
                         if (ql::options::get("scheduler_post179") == "yes")
                         {
-                            LastTargets[operand].clear();
+                            LastDs[operand].clear();
                         }
                     }
                     else
@@ -765,16 +797,16 @@ public:
 	                    }
 
                         if (ql::options::get("scheduler_post179") == "yes")
-	                    {   // WAT dependencies
-	                        ReadersListType readers = LastTargets[operand];
+	                    {   // WAD dependencies
+	                        ReadersListType readers = LastDs[operand];
 	                        for(auto & readerID : readers)
 	                        {
 	                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
 	                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
 	                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
 	                            cause[arc1] = operand;
-	                            depType[arc1] = WAT;
-	                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAT << ")");
+	                            depType[arc1] = WAD;
+	                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAD << ")");
 	                        }
 	                    }
 
@@ -783,7 +815,7 @@ public:
                         LastReaders[operand].clear();
                         if (ql::options::get("scheduler_post179") == "yes")
                         {
-                            LastTargets[operand].clear();
+                            LastDs[operand].clear();
                         }
                     }
                     operandNo++;
@@ -797,7 +829,7 @@ public:
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    { // RAW dependencies (overlaps with WAW dependencies)
+                    { // RAW dependencies (overlaps with WAW dependencies here)
                         int prodID = LastWriter[operand];
                         ListDigraph::Node prodNode = graph.nodeFromId(prodID);
                         ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
@@ -821,16 +853,16 @@ public:
                     }
 
                     if (ql::options::get("scheduler_post179") == "yes")
-                    { // WAT dependencies
-                        ReadersListType readers = LastTargets[operand];
+                    { // WAD dependencies
+                        ReadersListType readers = LastDs[operand];
                         for(auto & readerID : readers)
                         {
                             ListDigraph::Node readerNode = graph.nodeFromId(readerID);
                             ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
                             weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
-                            depType[arc1] = WAT;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAT << ")");
+                            depType[arc1] = WAD;
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAD << ")");
                         }
                     }
 
@@ -839,7 +871,7 @@ public:
                     LastReaders[operand].clear();
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
-                        LastTargets[operand].clear();
+                        LastDs[operand].clear();
                     }
                     
                     operandNo++;
@@ -877,7 +909,7 @@ public:
                 DOUT("... dep " << name[n] << " -> " << name[targetNode] << " (opnd=" << 0 << ", dep=" << WAW << ")");
             }
         }
-        // here would have to clear all LastReaders and LastTargets because of the SINK node
+        // here would have to clear all LastReaders and LastDs because of the SINK node
         // but these sets would be used so it makes no sense
 
         if( !dag(graph) )
@@ -2272,7 +2304,7 @@ private:
         return bundles;
     }
 
-// =========== post179 schedulers, plain, just ASAP and ALAP, no resources, etc.
+// =========== post179 plain schedulers, just ASAP and ALAP, no resources, etc.
 
 // use MAX_CYCLE for absolute upperbound on cycle value
 // use ALAP_SINK_CYCLE for initial cycle given to SINK in ALAP;
@@ -2282,7 +2314,7 @@ private:
     // cycle assignment without RC depending on direction: forward:ASAP, backward:ALAP;
     // without RC, this is all there is to schedule, apart from forming the bundles in bundler()
     // set_cycle iterates over the circuit's gates and set_cycle_gate over the dependences of each gate
-    // please note that their iteration directions must correspond
+    // please note that set_cycle_gate expects a caller like set_cycle which iterates gp forward through the circuit
     void set_cycle_gate(ql::gate* gp, ql::scheduling_direction_t dir)
     {
         ListDigraph::Node   currNode = node[gp];
@@ -2475,7 +2507,7 @@ private:
     // Most code from here on deals with scheduling with Resource Constraints.
     // Then the cycles as assigned from the depgraph shift, because of resource conflicts
     // and then at each point all available nodes should be considered for scheduling
-    // to avoid largely suboptimal results (issue 179).
+    // to avoid largely suboptimal results (issue 179), i.e. apply list scheduling.
 
     // latency compensation
     void latency_compensation(ql::circuit* circp, const ql::quantum_platform& platform)
@@ -2582,6 +2614,8 @@ private:
     // definition both in forward and backward scheduling, a higher remaining indicates more criticality.
     // This means that criticality has become independent of the direction of scheduling
     // which is easier in the core of the scheduler.
+
+    // Note that set_remaining_gate expects a caller like set_remaining that iterates gp backward over the circuit
     void set_remaining_gate(ql::gate* gp, ql::scheduling_direction_t dir)
     {
         ListDigraph::Node   currNode = node[gp];
@@ -2639,7 +2673,7 @@ private:
         }
     }
 
-    // ASAP/ALAP scheduling support code with RC
+    // ASAP/ALAP list scheduling support code with RC
     // Uses an "available list" (avlist) as interface between dependence graph and scheduler
     // the avlist contains all nodes that wrt their dependences can be scheduled:
     // when forward scheduling:
@@ -2655,6 +2689,7 @@ private:
     //  node s (with SOURCE instruction) is the top of the dependence graph; all instructions depend on it
     // when backward scheduling:
     //  node t (with SINK instruction) is the bottom of the dependence graph; it depends on all instructions
+
     // Set the curr_cycle of the scheduling algorithm to start at the appropriate end as well;
     // note that the cycle attributes will be shifted down to start at 1 after backward scheduling.
     void InitAvailable(std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir, size_t& curr_cycle)
@@ -2674,7 +2709,8 @@ private:
         }
     }
 
-    // collect a list of directly depending nodes (i.e. those necessarily scheduled after the given node) without duplicates
+    // collect the list of directly depending nodes
+    // (i.e. those necessarily scheduled after the given node) without duplicates
     void get_depending_nodes(ListDigraph::Node n, ql::scheduling_direction_t dir, std::list<ListDigraph::Node> & ln)
     {
         if (ql::forward_scheduling == dir)
@@ -2727,10 +2763,10 @@ private:
     // criticality of a node is given by its remaining[node] value which is precomputed;
     // deep-criticality takes into account the criticality of depending nodes (in the right direction!);
     // this function is used to order the avlist in an order from highest deep-criticality to lowest deep-criticality;
-    // it is the core of the heuristics of the critical path scheduler.
+    // it is the core of the heuristics of the critical path list scheduler.
     bool criticality_lessthan(ListDigraph::Node n1, ListDigraph::Node n2, ql::scheduling_direction_t dir)
     {
-        if (n1 == n2) return false;
+        if (n1 == n2) return false;             // because not <
 
         if (remaining[n1] < remaining[n2]) return true;
         if (remaining[n1] > remaining[n2]) return false;
@@ -2769,7 +2805,7 @@ private:
         return criticality_lessthan(ln1.back(), ln2.back(), dir);
     }
 
-    // make node n available
+    // Make node n available
     // add it to the avlist because the condition for that is fulfilled:
     //  all its predecessors were scheduled (forward scheduling) or
     //  all its successors were scheduled (backward scheduling)
@@ -2778,21 +2814,25 @@ private:
     // avlist is kept ordered on deep-criticality, non-increasing (i.e. highest deep-criticality first)
     void MakeAvailable(ListDigraph::Node n, std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir)
     {
-        bool    already_added = false;  // check whether n is already in avlist
-                                        // originates from having multiple arcs between pair of nodes
-        std::list<ListDigraph::Node>::iterator first_lower_criticality_inp;
-        bool    first_lower_criticality_found = false;
+        bool    already_in_avlist = false;  // check whether n is already in avlist
+                                            // originates from having multiple arcs between pair of nodes
+        std::list<ListDigraph::Node>::iterator first_lower_criticality_inp;     // for keeping avlist ordered
+        bool    first_lower_criticality_found = false;                          // for keeping avlist ordered
 
         DOUT(".... making available node " << name[n] << " remaining: " << remaining[n]);
         for (std::list<ListDigraph::Node>::iterator inp = avlist.begin(); inp != avlist.end(); inp++)
         {
             if (*inp == n)
             {
-                already_added = true;
+                already_in_avlist = true;
                 DOUT("...... duplicate when making available: " << name[n]);
             }
             else
             {
+                // scanning avlist from front to back (avlist is ordered from high to low criticality)
+                // when encountering first node *inp with less criticality,
+                // that is where new node n should be inserted just before
+                // to keep avlist in desired order
                 if (criticality_lessthan(*inp, n, dir) && !first_lower_criticality_found)
                 {
                     first_lower_criticality_inp = inp;
@@ -2800,9 +2840,9 @@ private:
                 }
             }
         }
-        if (!already_added)
+        if (!already_in_avlist)
         {
-            set_cycle_gate(instruction[n], dir);
+            set_cycle_gate(instruction[n], dir);        // for the schedulers to inspect whether gate has completed
             if (first_lower_criticality_found)
             {
                 // add n to avlist just before the first with lower criticality
@@ -2810,7 +2850,7 @@ private:
             }
             else
             {
-                // add n to avlist to end, if none
+                // add n to end of avlist, if none found with less criticality
                 avlist.push_back(n);
             }
             DOUT("...... made available node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining[n]);
@@ -3007,8 +3047,9 @@ private:
     //
     // schedule the circuit that is in the dependence graph
     // for the given direction, with the given platform and resource manager;
-    // - the cycle attribute of the gates will be set
-    // - *circp is sorted in the new cycle order
+    // what is done, is:
+    // - the cycle attribute of the gates will be set according to the scheduling method
+    // - *circp (the original and result circuit) is sorted in the new cycle order
     // - bundles are collected from the circuit
     // - latency compensation and buffer-buffer delay insertion done
     // the bundles are returned, with private start/duration attributes
@@ -3264,6 +3305,7 @@ private:
                     }
 
                     // when multiple nodes in bundle qualify, take the one with lowest remaining
+                    // because that is the most critical one and thus deserves a cycle as high as possible (ALAP)
                     if (forward_predgp && remaining[pred_node] < min_remaining_cycle)
                     {
                         min_remaining_cycle = remaining[pred_node];
@@ -3276,19 +3318,20 @@ private:
                 // otherwise, continue scanning backward
                 if (best_predgp_found)
                 {
-                    // move predgp from pred_cycle to curr_cycle
+                    // move predgp from pred_cycle to curr_cycle;
+                    // adjust all bookkeeping that is affected by this
                     gates_per_cycle[pred_cycle].remove(best_predgp);
                     if (gates_per_cycle[pred_cycle].size() == 0)
                     {
-                        // bundle was non-empty, now it is empty
+                        // source bundle was non-empty, now it is empty
                         non_empty_bundle_count--;
                     }
                     if (gates_per_cycle[curr_cycle].size() == 0)
                     {
-                        // bundle was empty, now it will be non_empty
+                        // target bundle was empty, now it will be non_empty
                         non_empty_bundle_count++;
                     }
-                    best_predgp->cycle = curr_cycle;
+                    best_predgp->cycle = curr_cycle;        // what it is all about
                     gates_per_cycle[curr_cycle].push_back(best_predgp);
                    
                     // recompute targets
