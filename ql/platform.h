@@ -15,31 +15,6 @@
 
 namespace ql
 {
-#if 0   // FIXME: unused
-typedef enum __ql_platform_t
-{
-    transmon_platform,
-    starmon_platform,
-    qx_simulator_platform,
-    unsupported_platform
-} ql_platform_t;
-
-
-typedef std::vector<std::string> micro_code_t;
-
-
-/**
- * abstract platform interface (deprecated)
- * should be removed soon
- */
-class platform
-{
-public:
-    virtual int compile(circuit& c, std::string file_name, bool optimize=false) = 0;
-};
-#endif
-
-
 /**
  * quantum platform
  */
@@ -74,7 +49,6 @@ public:
         configuration_file_name(configuration_file_name)
     {
         ql::hardware_configuration hwc(configuration_file_name);
-        // hwc.load(instruction_map, instruction_settings, hardware_settings, resources, topology);
         hwc.load(instruction_map, instruction_settings, hardware_settings, resources, topology, aliases);
         eqasm_compiler_name = hwc.eqasm_compiler_name;
 
