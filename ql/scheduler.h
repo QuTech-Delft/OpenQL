@@ -30,7 +30,7 @@ const string DepTypesNames[] = {"RAW", "WAW", "WAR", "RAR", "RAD", "DAR", "DAD",
 
 class Scheduler
 {
-private:
+public:
     // dependence graph is constructed (see Init) once, and can be reused as often as needed
     ListDigraph graph;
 
@@ -90,12 +90,14 @@ public:
             }
         }
 
-        // add dummy source node
-        ListDigraph::Node srcNode = graph.addNode();
-        instruction[srcNode] = new ql::SOURCE();
-        node[instruction[srcNode]] = srcNode;
-        name[srcNode] = instruction[srcNode]->qasm();
-        s=srcNode;
+        {
+            // add dummy source node
+            ListDigraph::Node srcNode = graph.addNode();
+            instruction[srcNode] = new ql::SOURCE();
+            node[instruction[srcNode]] = srcNode;
+            name[srcNode] = instruction[srcNode]->qasm();
+            s=srcNode;
+        }
 
         typedef vector<int> ReadersListType;
         vector<ReadersListType> LastReaders;
@@ -104,7 +106,7 @@ public:
         vector<ReadersListType> LastDs;
         LastDs.resize(qubit_creg_count);
 
-        int srcID = graph.id(srcNode);
+        int srcID = graph.id(s);
         vector<int> LastWriter(qubit_creg_count,srcID);
 
         for( auto ins : ckt )
@@ -174,16 +176,11 @@ public:
             // With this, the dependence graph is claimed to represent the commutations as above.
             }
 
-            auto operands = ins->operands;
-#ifdef HAVEGENERALCONTROLUNITARIES
-            size_t op_count = operands.size();
-#endif
-            size_t operandNo=0;
-
             if(ins->name == "measure")
             {
                 DOUT(". considering " << name[consNode] << " as measure");
                 // Read+Write each qubit operand + Write corresponding creg
+                auto operands = ins->operands;
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
@@ -194,7 +191,7 @@ public:
                         weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
                         cause[arc] = operand;
                         depType[arc] = RAW;
-                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAW << ")");
+                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAW] << ")");
                     }
 
                     { // WAR dependencies
@@ -206,7 +203,7 @@ public:
                             weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
                             depType[arc1] = WAR;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAR << ")");
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
                         }
                     }
                     
@@ -220,7 +217,7 @@ public:
                             weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
                             depType[arc1] = WAD;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAD << ")");
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAD] << ")");
                         }
                     }
                 }
@@ -236,7 +233,7 @@ public:
                         weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
                         cause[arc] = operand;
                         depType[arc] = WAW;
-                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAW << ")");
+                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAW] << ")");
                     }
 
                     { // WAR dependencies
@@ -248,7 +245,7 @@ public:
                             weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
                             depType[arc1] = WAR;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAR << ")");
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
                         }
                     }
                 }
@@ -289,7 +286,7 @@ public:
                         weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
                         cause[arc] = operand;
                         depType[arc] = RAW;
-                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAW << ")");
+                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAW] << ")");
                     }
 
                     { // WAR dependencies
@@ -301,7 +298,7 @@ public:
                             weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
                             depType[arc1] = WAR;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAR << ")");
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
                         }
                     }
                     
@@ -315,7 +312,7 @@ public:
                             weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
                             depType[arc1] = WAD;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAD << ")");
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAD] << ")");
                         }
                     }
                 }
@@ -346,7 +343,7 @@ public:
                         weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
                         cause[arc] = operand;
                         depType[arc] = WAW;
-                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAW << ")");
+                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAW] << ")");
                     }
 
                     { // WAR dependencies
@@ -358,7 +355,7 @@ public:
                             weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
                             depType[arc1] = WAR;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAR << ")");
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
                         }
                     }
 
@@ -372,7 +369,7 @@ public:
                             weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
                             depType[arc1] = WAD;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAD << ")");
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAD] << ")");
                         }
                     }
                 }
@@ -393,6 +390,8 @@ public:
             {
                 DOUT(". considering " << name[consNode] << " as cnot");
                 // CNOTs Read the first operands, and Ds the second operand
+                size_t operandNo=0;
+                auto operands = ins->operands;
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
@@ -406,7 +405,7 @@ public:
 	                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
 	                        cause[arc] = operand;
 	                        depType[arc] = RAW;
-	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAW << ")");
+	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAW] << ")");
 	                    }
 	
 	                    if (ql::options::get("scheduler_post179") == "no")
@@ -425,7 +424,7 @@ public:
 			                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
 			                        cause[arc1] = operand;
 			                        depType[arc1] = RAR;
-			                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAR << ")");
+			                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAR] << ")");
 			                    }
 		                    }
 	                    }
@@ -441,7 +440,7 @@ public:
 		                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
 		                        cause[arc1] = operand;
 		                        depType[arc1] = RAD;
-		                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAD << ")");
+		                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAD] << ")");
 		                    }
 	                    }
                     }
@@ -456,7 +455,7 @@ public:
 		                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
 		                        cause[arc] = operand;
 		                        depType[arc] = RAW;
-		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAW << ")");
+		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAW] << ")");
 		                    }
 		
                             // to disable commutation by the scheduler, add DAD and RAR dependences
@@ -473,7 +472,7 @@ public:
 			                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
 			                        cause[arc1] = operand;
 			                        depType[arc1] = RAR;
-			                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAR << ")");
+			                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAR] << ")");
 			                    }
 		                    }
 		
@@ -484,7 +483,7 @@ public:
 		                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
 		                        cause[arc] = operand;
 		                        depType[arc] = WAW;
-		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAW << ")");
+		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAW] << ")");
 		                    }
 		
 		                    {   // WAR dependencies
@@ -496,7 +495,7 @@ public:
 		                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
 		                            cause[arc1] = operand;
 		                            depType[arc1] = WAR;
-		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAR << ")");
+		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
 		                        }
 		                    }
                         }
@@ -509,7 +508,7 @@ public:
 		                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
 		                        cause[arc] = operand;
 		                        depType[arc] = DAW;
-		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DAW << ")");
+		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[DAW] << ")");
 		                    }
 		
 #ifdef NO_COMMUTATION_BY_SCHEDULER
@@ -524,8 +523,8 @@ public:
 		                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
 		                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
 		                            cause[arc1] = operand;
-		                            depType[arc1] = DAR;
-		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DAR << ")");
+		                            depType[arc1] = DAD;
+		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[DAD] << ")");
 		                        }
 		                    }
 #endif  // NO_COMMUTATION_BY_SCHEDULER
@@ -539,7 +538,7 @@ public:
 		                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
 		                            cause[arc1] = operand;
 		                            depType[arc1] = DAR;
-		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DAR << ")");
+		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[DAR] << ")");
 		                        }
 		                    }
                         }
@@ -584,6 +583,8 @@ public:
                 DOUT(". considering " << name[consNode] << " as cz");
                 // CZs Read all operands for post179
                 // CZs Read all operands and write last one for pre179 
+                size_t operandNo=0;
+                auto operands = ins->operands;
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
@@ -596,7 +597,7 @@ public:
 	                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
 	                        cause[arc] = operand;
 	                        depType[arc] = RAW;
-	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAW << ")");
+	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAW] << ")");
 	                    }
 	
                         // to disable commutation by the scheduler, add DAD and RAR dependences
@@ -613,16 +614,11 @@ public:
 		                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
 		                        cause[arc1] = operand;
 		                        depType[arc1] = RAR;
-		                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAR << ")");
+		                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAR] << ")");
 		                    }
 	                    }
 	
-	                    if( operandNo == 0)
-	                    {
-	                        // update LastReaders for this operand
-	                        LastReaders[operand].push_back(consID);
-	                    }
-	                    else
+	                    if( operandNo != 0)
 	                    {
 		                    {   // WAW dependencies
 		                        int prodID = LastWriter[operand];
@@ -631,7 +627,7 @@ public:
 		                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
 		                        cause[arc] = operand;
 		                        depType[arc] = WAW;
-		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAW << ")");
+		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAW] << ")");
 		                    }
 		
 		                    {   // WAR dependencies
@@ -643,13 +639,9 @@ public:
 		                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
 		                            cause[arc1] = operand;
 		                            depType[arc1] = WAR;
-		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAR << ")");
+		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
 		                        }
 		                    }
-	
-	                        // update LastWriter and so also clear LastReaders for this operand
-	                        LastWriter[operand] = consID;
-	                        LastReaders[operand].clear();
 	                    }
                     }
                     else
@@ -661,7 +653,7 @@ public:
 	                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
 	                        cause[arc] = operand;
 	                        depType[arc] = RAW;
-	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAW << ")");
+	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAW] << ")");
 	                    }
 	
 	                    {   // RAD dependencies
@@ -673,13 +665,9 @@ public:
 		                        weight[arc1] = std::ceil( static_cast<float>(instruction[targetNode]->duration) / cycle_time);
 		                        cause[arc1] = operand;
 		                        depType[arc1] = RAD;
-		                        DOUT("... dep " << name[targetNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAD << ")");
+		                        DOUT("... dep " << name[targetNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAD] << ")");
 		                    }
 	                    }
-	
-                        // update LastReaders for this operand
-                        LastDs[operand].clear();
-                        LastReaders[operand].push_back(consID);
                     }
                     operandNo++;
                 } // end of operand for
@@ -719,6 +707,9 @@ public:
             {
                 DOUT(". considering " << name[consNode] << " as control-unitary");
                 // Control Unitaries Read all operands, and Write the last operand
+                size_t operandNo=0;
+                auto operands = ins->operands;
+                size_t op_count = operands.size();
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
@@ -729,7 +720,7 @@ public:
                         weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
                         cause[arc] = operand;
                         depType[arc] = RAW;
-                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAW << ")");
+                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAW] << ")");
                     }
 
                     if (ql::options::get("scheduler_post179") == "no")
@@ -743,7 +734,7 @@ public:
 	                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
 	                        cause[arc1] = operand;
 	                        depType[arc1] = RAR;
-	                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAR << ")");
+	                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAR] << ")");
 	                    }
                     }
 
@@ -758,7 +749,7 @@ public:
 	                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
 	                        cause[arc1] = operand;
 	                        depType[arc1] = RAD;
-	                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAD << ")");
+	                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAD] << ")");
 	                    }
                     }
 
@@ -780,7 +771,7 @@ public:
 	                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
 	                        cause[arc] = operand;
 	                        depType[arc] = WAW;
-	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAW << ")");
+	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAW] << ")");
 	                    }
 	
 	                    {   // WAR dependencies
@@ -792,7 +783,7 @@ public:
 	                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
 	                            cause[arc1] = operand;
 	                            depType[arc1] = WAR;
-	                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAR << ")");
+	                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
 	                        }
 	                    }
 
@@ -806,7 +797,7 @@ public:
 	                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
 	                            cause[arc1] = operand;
 	                            depType[arc1] = WAD;
-	                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAD << ")");
+	                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAD] << ")");
 	                        }
 	                    }
 
@@ -826,6 +817,8 @@ public:
             {
                 DOUT(". considering " << name[consNode] << " as general quantum gate");
                 // general quantum gate, Read+Write on each operand
+                size_t operandNo=0;
+                auto operands = ins->operands;
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
@@ -836,7 +829,7 @@ public:
                         weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
                         cause[arc] = operand;
                         depType[arc] = RAW;
-                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << RAW << ")");
+                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAW] << ")");
                     }
 
                     { // WAR dependencies
@@ -848,7 +841,7 @@ public:
                             weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
                             depType[arc1] = WAR;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAR << ")");
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
                         }
                     }
 
@@ -862,7 +855,7 @@ public:
                             weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
                             cause[arc1] = operand;
                             depType[arc1] = WAD;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << WAD << ")");
+                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAD] << ")");
                         }
                     }
 
@@ -880,37 +873,64 @@ public:
         } // end of instruction for
 
         // add dummy target node
+        ListDigraph::Node consNode = graph.addNode();
+        instruction[consNode] = new ql::SINK();
+        node[instruction[consNode]] = consNode;
+        name[consNode] = instruction[consNode]->qasm();
+        t=consNode;
+
         DOUT("adding deps to SINK");
-        ListDigraph::Node targetNode = graph.addNode();
-        instruction[targetNode] = new ql::SINK();
-        node[instruction[targetNode]] = targetNode;
-        name[targetNode] = instruction[targetNode]->qasm();
-        t=targetNode;
-
-        // make links to the dummy target node
-        OutDegMap<ListDigraph> outDeg(graph);
-        for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
+        // add deps to the dummy target node to close the dependence chains
+        // it behaves as a W to every qubit and creg
+        //
+        // to guarantee that exactly at start of execution of dummy SINK,
+        // all still executing nodes complete, give arc weight of those nodes;
+        // this is relevant for ALAP (which starts backward from SINK for all these nodes),
+        // for accurately computing the circuit's depth (which includes full completion),
+        // and for implementing scheduling and mapping across control-flow (so that it is
+        // guaranteed that on a jump and on start of target circuit, the source circuit completed).
+        std::vector<size_t> qubits(qubit_creg_count);
+        std::iota(qubits.begin(), qubits.end(), 0);
+        for( auto operand : qubits )
         {
-            DOUT(". considering node " << name[n] << " and its outDeg " << outDeg[n]);
-            if( outDeg[n] == 0 && n!=targetNode )
-            {
-                ListDigraph::Arc arc = graph.addArc(n,targetNode);
-
-                // to guarantee that exactly at start of execution of dummy SINK,
-                // all still executing nodes complete, give arc weight of those nodes;
-                // this is relevant for ALAP (which starts backward from SINK for all these nodes),
-                // for accurately computing the circuit's depth (which includes full completion),
-                // and for implementing scheduling and mapping across control-flow (so that it is
-                // guaranteed that on a jump and on start of target circuit, the source circuit completed).
-                weight[arc] = std::ceil( static_cast<float>(instruction[n]->duration) / cycle_time);
-
-                cause[arc] = 0;
+            DOUT(".. Operand: " << operand);
+            { // WAW dependencies
+                int prodID = LastWriter[operand];
+                ListDigraph::Node prodNode = graph.nodeFromId(prodID);
+                ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
+                weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
+                cause[arc] = operand;
                 depType[arc] = WAW;
-                DOUT("... dep " << name[n] << " -> " << name[targetNode] << " (opnd=" << 0 << ", dep=" << WAW << ")");
+                DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAW] << ")");
+            }
+
+            { // WAR dependencies
+                ReadersListType readers = LastReaders[operand];
+                for(auto & readerID : readers)
+                {
+                    ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                    ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                    weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+                    cause[arc1] = operand;
+                    depType[arc1] = WAR;
+                    DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
+                }
+            }
+            
+            if (ql::options::get("scheduler_post179") == "yes")
+            { // WAD dependencies
+                ReadersListType readers = LastDs[operand];
+                for(auto & readerID : readers)
+                {
+                    ListDigraph::Node readerNode = graph.nodeFromId(readerID);
+                    ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
+                    weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
+                    cause[arc1] = operand;
+                    depType[arc1] = WAD;
+                    DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAD] << ")");
+                }
             }
         }
-        // here would have to clear all LastReaders and LastDs because of the SINK node
-        // but these sets would be used so it makes no sense
 
         if( !dag(graph) )
         {
@@ -2946,26 +2966,49 @@ private:
     // directly to the resource manager since this function makes the mapper dependent on cc_light
     void GetGateParameters(std::string id, const ql::quantum_platform& platform, std::string& operation_name, std::string& operation_type, std::string& instruction_type)
     {
+        DOUT("... getting gate parameters of " << id);
         if (platform.instruction_settings.count(id) > 0)
         {
+            DOUT("...... extracting operation_name");
 	        if ( !platform.instruction_settings[id]["cc_light_instr"].is_null() )
 	        {
 	            operation_name = platform.instruction_settings[id]["cc_light_instr"];
 	        }
+            else
+            {
+	            operation_name = id;
+                DOUT("...... faking operation_name to " << operation_name);
+            }
+
+            DOUT("...... extracting operation_type");
 	        if ( !platform.instruction_settings[id]["type"].is_null() )
 	        {
 	            operation_type = platform.instruction_settings[id]["type"];
 	        }
+            else
+            {
+	            operation_type = "cc_light_type";
+                DOUT("...... faking operation_type to " << operation_type);
+            }
+
+            DOUT("...... extracting instruction_type");
 	        if ( !platform.instruction_settings[id]["cc_light_instr_type"].is_null() )
 	        {
 	            instruction_type = platform.instruction_settings[id]["cc_light_instr_type"];
 	        }
+            else
+            {
+	            instruction_type = "cc_light";
+                DOUT("...... faking instruction_type to " << instruction_type);
+            }
         }
         else
         {
+            DOUT("Error: platform doesn't support gate '" << id << "'");
             EOUT("Error: platform doesn't support gate '" << id << "'");
             throw ql::exception("[x] Error : platform doesn't support gate!",false);
         }
+        DOUT("... getting gate parameters [done]");
     }
 
     // a gate must wait until all its operand are available, i.e. the gates having computed them have completed,
