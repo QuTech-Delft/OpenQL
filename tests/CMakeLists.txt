@@ -1,7 +1,7 @@
 INCLUDE_DIRECTORIES(
-  ${CMAKE_SOURCE_DIR}
-  ${CMAKE_SOURCE_DIR}/programs
-  ${CMAKE_SOURCE_DIR}/tests
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/programs
+  ${PROJECT_SOURCE_DIR}/tests
 )
 
 # here are the C++ tests which will be compiled from this directory
@@ -19,11 +19,11 @@ ADD_CUSTOM_TARGET(tests-output-directory ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory test_output)
 
 # copy configuration files
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/tests/test_cfg_cbox.json
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_cfg_cbox.json
 	test_cfg_cbox.json COPYONLY)
 
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/tests/hardware_config_cc_light.json
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/hardware_config_cc_light.json
 	hardware_config_cc_light.json COPYONLY)
 
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/tests/hardware_config_qx.json
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/hardware_config_qx.json
 	hardware_config_qx.json COPYONLY)
