@@ -18,7 +18,7 @@
 #include "ql/gate.h"
 #include "ql/circuit.h"
 #include "ql/ir.h"
-#include "ql/arch/cc_light/cc_light_resource_manager.h"     // FIXME(WJV): uses specific backend code (is it really specific to cc_light?)
+#include "ql/resource_manager.h"
 
 using namespace std;
 using namespace lemon;
@@ -1332,7 +1332,7 @@ public:
     }
 
     // the following with rc and buffer-buffer delays
-    ql::ir::bundles_t schedule_alap(ql::arch::resource_manager_t & rm, 
+    ql::ir::bundles_t schedule_alap(ql::arch::resource_manager_t & rm,
         const ql::quantum_platform & platform)
     {
         DOUT("RC Scheduling ALAP to get bundles ...");
