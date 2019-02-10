@@ -80,7 +80,7 @@ namespace ql
                {
                   iterations = platform.hardware_settings["iterations"];
                }
-               catch (json::exception e)
+               catch (json::exception &e)
                {
                   // don't throw exception : iterations is a non-mondatory field
                   // throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter '"+params[p-1]+"'\n\t"+ std::string(e.what()),false);
@@ -126,7 +126,7 @@ namespace ql
                   buffer_matrix[__measurement__][__measurement__] = __ns_to_cycle(platform.hardware_settings["readout_readout_buffer"]);
 #endif
                }
-               catch (json::exception e)
+               catch (json::exception &e)
                {
                   throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter '"+params[p-1]+"'\n\t"+ std::string(e.what()),false);
                }
