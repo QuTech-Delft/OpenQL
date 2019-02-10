@@ -90,17 +90,17 @@ public:
 
     void identity(size_t qubit)
     {
-        gate("identity", {qubit} );
+        gate("identity", qubit );
     }
 
     void i(size_t qubit)
     {
-        gate("identity", {qubit} );
+        gate("identity", qubit );
     }
 
     void hadamard(size_t qubit)
     {
-        gate("hadamard", {qubit} );
+        gate("hadamard", qubit );
     }
 
     void h(size_t qubit)
@@ -131,77 +131,77 @@ public:
 
     void s(size_t qubit)
     {
-        gate("s", {qubit} );
+        gate("s", qubit );
     }
 
     void sdag(size_t qubit)
     {
-        gate("sdag", {qubit} );
+        gate("sdag", qubit );
     }
 
     void t(size_t qubit)
     {
-        gate("t", {qubit} );
+        gate("t", qubit );
     }
 
     void tdag(size_t qubit)
     {
-        gate("tdag", {qubit} );
+        gate("tdag", qubit );
     }
 
     void x(size_t qubit)
     {
-        gate("x", {qubit} );
+        gate("x", qubit );
     }
 
     void y(size_t qubit)
     {
-        gate("y", {qubit} );
+        gate("y", qubit );
     }
 
     void z(size_t qubit)
     {
-        gate("z", {qubit} );
+        gate("z", qubit );
     }
 
     void rx90(size_t qubit)
     {
-        gate("rx90", {qubit} );
+        gate("rx90", qubit );
     }
 
     void mrx90(size_t qubit)
     {
-        gate("mrx90", {qubit} );
+        gate("mrx90", qubit );
     }
 
     void rx180(size_t qubit)
     {
-        gate("rx180", {qubit} );
+        gate("rx180", qubit );
     }
 
     void ry90(size_t qubit)
     {
-        gate("ry90", {qubit} );
+        gate("ry90", qubit );
     }
 
     void mry90(size_t qubit)
     {
-        gate("mry90", {qubit} );
+        gate("mry90", qubit );
     }
 
     void ry180(size_t qubit)
     {
-        gate("ry180", {qubit} );
+        gate("ry180", qubit );
     }
 
     void measure(size_t qubit)
     {
-        gate("measure", {qubit} );
+        gate("measure", qubit );
     }
 
     void prepz(size_t qubit)
     {
-        gate("prepz", {qubit} );
+        gate("prepz", qubit );
     }
 
     void cnot(size_t qubit1, size_t qubit2)
@@ -225,6 +225,11 @@ public:
         c.push_back(new ql::toffoli(qubit1, qubit2, qubit3));
     }
 
+    void swap(size_t qubit1, size_t qubit2)
+    {
+        gate("swap", {qubit1, qubit2} );
+    }
+  
     void wait(std::vector<size_t> qubits, size_t duration)
     {
         gate("wait", qubits, {}, duration );
