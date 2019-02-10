@@ -3,7 +3,14 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 SET(PROJECT_NAME "OPENQL")
 
 PROJECT(${PROJECT_NAME})
-SET(CMAKE_BUILD_TYPE Release)
+
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  # Set default build type to RelWithDebInfo
+  set(CMAKE_BUILD_TYPE Release CACHE STRING
+    "Type of build (None Debug Release RelWithDebInfo MinSizeRel)" FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
+    "RelWithDebInfo" "MinSizeRel")
+endif()
 
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
