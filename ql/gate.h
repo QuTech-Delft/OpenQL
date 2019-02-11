@@ -9,8 +9,6 @@
 #ifndef GATE_H
 #define GATE_H
 
-#define OPT_MICRO_CODE  0       // enable old support for CBOX microcode
-
 #include <fstream>
 #include <iomanip>
 #include <complex>
