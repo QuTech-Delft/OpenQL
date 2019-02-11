@@ -240,9 +240,9 @@ public:
                 padToCycle(lastStartCycle[slotIdx], start_cycle, slot, instrumentName);
 
                 // emit code for slot
-                emit("", "seq_out",
-                     SS2S(slot <<
-                          ",0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec <<
+                emit(SS2S("[" << slot << "]").c_str(),      // CCIO selector
+                     "seq_out",
+                     SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec <<
                           "," << slotDurationInCycles),
                      SS2S("# cycle " << start_cycle << "-" << start_cycle+slotDurationInCycles << ": code word/mask on '" << instrumentName+"'").c_str());
 
@@ -257,7 +257,7 @@ public:
                     // seq_in_sm
                 }
             } else {
-                // nothing to do, we delay emitting till a slot is used or kernel finishes
+                // nothing to do, we delay emitting till a slot is used or kernel finishes (i.e. isLastBundle just below)
             }
 
 
@@ -525,8 +525,9 @@ private:
         }
 
         if(prePadding > 0) {     // we need to align
-            emit("", "seq_out",
-                SS2S(slot << ",0x00000000," << prePadding),
+            emit(SS2S("[" << slot << "]").c_str(),      // CCIO selector
+                "seq_out",
+                SS2S("0x00000000," << prePadding),
                 SS2S("# cycle " << lastStartCycle << "-" << start_cycle << ": padding on '" << instrumentName+"'").c_str());
         }
     }

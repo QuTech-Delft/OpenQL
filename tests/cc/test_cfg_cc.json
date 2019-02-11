@@ -60,7 +60,7 @@
 	//		16		23		Z3			My			2
 
 
-
+	// FIXME: proposed header, not used
 	"file_type": "OpenQL-config",
 	"file_version": "1.1",
 	"min_version_openql": "0.5.3",
@@ -70,6 +70,7 @@
 	"hardware_settings": {
 		"qubit_number": 25,		// of which 17 are used
 		"cycle_time" : 20,
+		// FIXME: the settings below don't seem to be used on CClight either
 		// "mw_mw_buffer": 0,
 		// "mw_flux_buffer": 0,
 		// "mw_readout_buffer": 0,
@@ -84,6 +85,7 @@
 		"eqasm_backend_cc": {
 			// Immutable properties of instruments.
 			// FIXME: introduce 'controller_definitions' for CC and friends?
+			// FIXME: keys "awg" etc are not really used
 			"instrument_definitions": {
 				"awg": [
 					{	"name": "qutech-qwg",
@@ -169,12 +171,47 @@
 			},
 
 			// Instruments used in this setup, their configuration and connectivity.
+			// FIXME: separate instruments array from CC (which is also an instrument). Code & codeword data is generated dependent on control_mode:
+			// /setup/instruments/*
+			// /setup/instruments/(type=cc)
 			"cc_setup": {
 				"name": "cc-surface17",
 				"type": "qutech-cc",
 				"slots": [
-					// microwave. FIXME: must match 'resources/qwgs'
+					// readout. FIXME: must match 'resources/meas_units'
 					{	"slot": 0,
+						"io_module": "cc-conn-dio",
+						"instrument": {
+							"name": "uhfqc-0",
+							"type": "zi-uhfqc",
+							"control_mode": "uhfqc-9ch",
+							"signal_type": "measure",
+							"qubits": [[10], [15], [], [], [], [], [], [], []]
+						}
+					},
+					{	"slot": 1,
+						"io_module": "cc-conn-dio",
+						"instrument": {
+							"name": "uhfqc-1",
+							"type": "zi-uhfqc",
+							"control_mode": "uhfqc-9ch",
+							"signal_type": "measure",
+							"qubits": [[1], [2], [6], [7], [11], [12], [16], [17], [22]]
+						}
+					},
+					{	"slot": 2,
+						"io_module": "cc-conn-dio",
+						"instrument": {
+							"name": "uhfqc-2",
+							"type": "zi-uhfqc",
+							"control_mode": "uhfqc-9ch",
+							"signal_type": "measure",
+							"qubits": [[8], [9], [13], [14], [18], [23], [], [], []]
+						}
+					}
+
+					// microwave. FIXME: must match 'resources/qwgs'
+					{	"slot": 3,
 						"io_module": "cc-conn-dio-diff",
 						"instrument": {
 							"name": "awg8-mw-0",
@@ -187,7 +224,7 @@
 							]
 						}
 					},
-					{	"slot": 1,
+					{	"slot": 4,
 						"io_module": "cc-conn-dio-diff",
 						"instrument": {
 							"name": "awg8-mw-1",
@@ -202,7 +239,7 @@
 					},
 
 					// VSM
-					{	"slot": 2,
+					{	"slot": 5,
 						"io_module": "cc-conn-vsm",
 						"instrument": {
 							"name": "vsm-0",
@@ -219,7 +256,7 @@
 					},
 
 					// flux
-					{	"slot": 3,
+					{	"slot": 6,
 						"io_module": "cc-conn-dio-diff",
 						"instrument": {
 							"name": "awg8-flux-0",
@@ -229,7 +266,7 @@
 							"qubits": [[1], [2], [6], [7], [8], [9], [10], [11]]
 						}
 					},
-					{	"slot": 4,
+					{	"slot": 7,
 						"io_module": "cc-conn-dio-diff",
 						"instrument": {
 							"name": "awg8-flux-1",
@@ -239,7 +276,7 @@
 							"qubits": [[12], [13], [14], [15], [16], [17], [18], [22]]
 						}
 					},
-					{	"slot": 5,
+					{	"slot": 8,
 						"io_module": "cc-conn-dio-diff",
 						"instrument": {
 							"name": "awg8-flux-2",
@@ -250,43 +287,12 @@
 						}
 					},
 
-					// readout. FIXME: must match 'resources/meas_units'
-					{	"slot": 6,
-						"io_module": "cc-conn-dio",
-						"instrument": {
-							"name": "uhfqc-0",
-							"type": "zi-uhfqc",
-							"control_mode": "uhfqc-9ch",
-							"signal_type": "measure",
-							"qubits": [[10], [15], [], [], [], [], [], [], []]
-						}
-					},
-					{	"slot": 7,
-						"io_module": "cc-conn-dio",
-						"instrument": {
-							"name": "uhfqc-1",
-							"type": "zi-uhfqc",
-							"control_mode": "uhfqc-9ch",
-							"signal_type": "measure",
-							"qubits": [[1], [2], [6], [7], [11], [12], [16], [17], [22]]
-						}
-					},
-					{	"slot": 8,
-						"io_module": "cc-conn-dio",
-						"instrument": {
-							"name": "uhfqc-2",
-							"type": "zi-uhfqc",
-							"control_mode": "uhfqc-9ch",
-							"signal_type": "measure",
-							"qubits": [[8], [9], [13], [14], [18], [23], [], [], []]
-						}
-					}
 				]
 			},
 
 			// Signal library that gate definitions can refer to. Supports
 			// macro expansion
-			// NB: our library does not yet support JSON pointers like:
+			// NB: our JSON library does not yet support JSON pointers like:
 			// "signal": {"$ref": "#/hardware_settings/eqasm_backend_cc/signals/single-qubit"}
 			"signals": {
 				"single-qubit": [
@@ -319,8 +325,8 @@
 		}
 	},
 
-	// see: "Horizontal_instruction_definition.pdf" section 5.1 for numbering scheme
-	// FIXME: x and y coordinates are different from this documentation
+	// NB: the "topology" keyword must be present, but the contents are only interpreted by
+	// the 'resource constraint' scheduler (TBC)
 	"topology": {
 		// FIXME: apparently unused:
 		// "x_size": 5,
@@ -394,6 +400,8 @@
 	},
 
 
+	// NB: the "resources" keyword must be present, but the contents are only interpreted by
+	// the 'resource constraint' scheduler (TBC)
 	"resources": {		// see: https://github.com/QE-Lab/OpenQL/blob/847ff7d373b5fe7ce23c0669cb194c79525aad2e/ql/arch/cc_light/cc_light_resource_manager.h#L724
 		"qubits": {
 			"count": 25		// of which 17 are used. FIXME: duplicates 'hardware_settings/qubit_number'

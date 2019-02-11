@@ -35,12 +35,14 @@ public:
     json                    topology;
     json                    aliases;                  // workaround the generic instruction composition
 
+#if 0   // FIXME: not useable
     /**
      * quantum_platform constructor
      */
     quantum_platform() : name("default")
     {
     }
+#endif
 
     /**
      * quantum_platform constructor

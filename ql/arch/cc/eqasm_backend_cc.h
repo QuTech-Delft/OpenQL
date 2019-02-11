@@ -6,6 +6,15 @@
  * @remark based on cc_light_eqasm_compiler.h, commit f34c0d9
  */
 
+/*
+    Todo:
+    - allow runtime selection of scheduler
+    - replace file output with strings
+    - output timing diagram (~ tool Nader?) of gates vs qubit
+    - idem waveform vs instrument
+
+*/
+
 #ifndef QL_ARCH_CC_EQASM_BACKEND_CC_H
 #define QL_ARCH_CC_EQASM_BACKEND_CC_H
 

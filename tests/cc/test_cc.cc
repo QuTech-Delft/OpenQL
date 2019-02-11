@@ -206,6 +206,13 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     k.gate("ry90", xS);
     k.wait({x, xN, xE, xW, xS}, 0);
 
+    // FIXME:
+    // - qubits participating in CZ need phase correction, which may be part of gate, or separate
+    // - similar for qubits not participating
+    // - phase corrections performed using flux lines:
+    //      + duration?
+    //      + possible in parallel without doing 2 qubits gate?
+
     k.gate("measure", std::vector<size_t> {x}, std::vector<size_t> {0});
     k.wait({x}, 0);
 
