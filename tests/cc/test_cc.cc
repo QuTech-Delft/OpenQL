@@ -30,7 +30,7 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
 
    // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
+//    ql::set_platform(s17);
 
     // create program
     ql::quantum_program prog(("test_classical_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
@@ -160,7 +160,7 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
 
    // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
+//    ql::set_platform(s17);
 
     // create program
     ql::quantum_program prog(("test_qec_pipelined_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
@@ -239,7 +239,7 @@ void test_do_while_nested_for(std::string scheduler, std::string scheduler_unifo
 {
    // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
+//    ql::set_platform(s17);
 
     // create program
     const int num_qubits = 25;
@@ -324,7 +324,7 @@ test_0( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
+//    ql::set_platform(s17);
 
     // create program
     ql::quantum_program prog(("test_0_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
@@ -354,7 +354,7 @@ test_1( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
+//    ql::set_platform(s17);
 
     // create program
     ql::quantum_program prog(("test_1_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
@@ -417,7 +417,7 @@ test_2( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
+//    ql::set_platform(s17);
 
     // create program
     ql::quantum_program prog(("test_2_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
@@ -462,7 +462,7 @@ test_3( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
+//    ql::set_platform(s17);
 
     // create program
     ql::quantum_program prog(("test_3_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
@@ -511,7 +511,7 @@ test_4( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
+    // ql::set_platform(s17);
 
     // create program
     ql::quantum_program prog(("test_4_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
@@ -549,7 +549,7 @@ test_5( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
+    // ql::set_platform(s17);
 
     // create program
     ql::quantum_program prog(("test_5_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
@@ -571,7 +571,7 @@ test_6( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
+    // ql::set_platform(s17);
 
     // create program
     ql::quantum_program prog(("test_6_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
@@ -614,7 +614,7 @@ test_7( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
+    // ql::set_platform(s17);
 
     // create program
     ql::quantum_program prog(("test_7_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);

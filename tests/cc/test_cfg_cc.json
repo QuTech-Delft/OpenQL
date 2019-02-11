@@ -208,7 +208,7 @@
 							"signal_type": "measure",
 							"qubits": [[8], [9], [13], [14], [18], [23], [], [], []]
 						}
-					}
+					},
 
 					// microwave. FIXME: must match 'resources/qwgs'
 					{	"slot": 3,
@@ -285,8 +285,7 @@
 							"signal_type": "flux",
 							"qubits": [[23], [], [], [], [], [], [], []]
 						}
-					},
-
+					}
 				]
 			},
 
