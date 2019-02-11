@@ -167,6 +167,138 @@
 			// FIXME: separate instruments array from CC (which is also an instrument). Code & codeword data is generated dependent on control_mode:
 			// /setup/instruments/*
 			// /setup/instruments/(type=cc)
+
+			// FIXME: future syntax?
+			"instruments": [
+				// readout. FIXME: must match 'resources/meas_units'
+				{
+					"name": "uhfqc-0",
+					"type": "zi-uhfqc",
+					"signal_type": "measure",
+					"qubits": [[10], [15], [], [], [], [], [], [], []],
+					"control_mode": "uhfqc-9ch",
+					"controller": {
+						"name": "cc",	// FIXME
+						"slot": 0,
+						"io_module": "cc-conn-dio"
+					}
+				},
+				{
+					"name": "uhfqc-1",
+					"type": "zi-uhfqc",
+					"signal_type": "measure",
+					"qubits": [[1], [2], [6], [7], [11], [12], [16], [17], [22]],
+					"control_mode": "uhfqc-9ch",
+					"controller": {
+						"name": "cc",	// FIXME
+						"slot": 1,
+						"io_module": "cc-conn-dio"
+					}
+				},
+				{
+					"name": "uhfqc-2",
+					"type": "zi-uhfqc",
+					"signal_type": "measure",
+					"qubits": [[8], [9], [13], [14], [18], [23], [], [], []],
+					"control_mode": "uhfqc-9ch",
+					"controller": {
+						"name": "cc",	// FIXME
+						"slot": 2,
+						"io_module": "cc-conn-dio"
+					}
+				},
+
+				// microwave. FIXME: must match 'resources/qwgs'
+				{
+					"name": "awg8-mw-0",
+					"type": "zi-hdawg",
+					"signal_type": "mw",
+					"qubits": [																// data qubits:
+						[6, 12, 18],														//	[freq L]
+						[2, 8, 10, 14, 16, 22]											// [freq H]
+					],
+					"control_mode": "awg8-mw-vsm",
+					"controller": {
+						"name": "cc",	// FIXME
+						"slot": 3,
+						"io_module": "cc-conn-dio-diff"
+					}
+				},
+				{
+					"name": "awg8-mw-1",
+					"type": "zi-hdawg",
+					"signal_type": "mw",
+					"qubits": [																// ancilla qubits:
+						[1, 9, 13, 17], 													// [freq Mg]
+						[7, 11, 15, 23]													// [freq My]
+					],
+					"control_mode": "awg8-mw-vsm",
+					"controller": {
+						"name": "cc",	// FIXME
+						"slot": 4,
+						"io_module": "cc-conn-dio-diff"
+					}
+				},
+
+				// VSM
+				{
+					"name": "vsm-0",
+					"type": "qutech-vsm",
+					"signal_type": "switch",
+					"qubits": [
+						[6, 12, 18],														//	[freq L]
+						[2, 8, 10, 14, 16, 22],											// [freq H]
+						[1, 9, 13, 17], 													// [freq Mg]
+						[7, 11, 15, 23]													// [freq My]
+					],
+					"control_mode": "vsm-32ch",
+					"controller": {
+						"name": "cc",	// FIXME
+						"slot": 5,
+						"io_module": "cc-conn-vsm"
+					}
+				},
+
+				// flux
+				{
+					"name": "awg8-flux-0",
+					"type": "zi-hdawg",
+					"signal_type": "flux",
+					"qubits": [[1], [2], [6], [7], [8], [9], [10], [11]],
+					"control_mode": "awg8-flux",
+					"controller": {
+						"name": "cc",	// FIXME
+						"slot": 6,
+						"io_module": "cc-conn-dio-diff"
+					}
+				},
+				{
+					"name": "awg8-flux-1",
+					"type": "zi-hdawg",
+					"signal_type": "flux",
+					"qubits": [[12], [13], [14], [15], [16], [17], [18], [22]],
+					"control_mode": "awg8-flux",
+					"controller": {
+						"name": "cc",	// FIXME
+						"slot": 7,
+						"io_module": "cc-conn-dio-diff"
+					}
+				},
+				{
+					"name": "awg8-flux-2",
+					"type": "zi-hdawg",
+					"signal_type": "flux",
+					"qubits": [[23], [], [], [], [], [], [], []],
+					"control_mode": "awg8-flux",
+					"controller": {
+						"name": "cc",	// FIXME
+						"slot": 7,
+						"io_module": "cc-conn-dio-diff"
+					}
+				}
+			],
+
+
 			"cc_setup": {
 				"name": "cc-surface17",
 				"type": "qutech-cc",

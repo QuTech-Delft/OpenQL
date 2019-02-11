@@ -349,10 +349,17 @@ public:
             // get the instrument and group that generates the signal
             std::string instructionSignalType = signal[s]["type"];
             const json &instructionSignalValue = signal[s]["value"];
+#if 1   // FIXME: WIP
+            tSignalInfo si = findSignalInfoForQubit(instructionSignalType, qubit);
+            const json &instrument = instruments[si.slotIdx];
+            std::string instrumentName = instrument["name"];
+            int slot = instrument["controller"]["slot"];
+#else
             tSignalInfo si = findSignalInfoForQubit(instructionSignalType, qubit);
             const json &ccSetupSlot = ccSetup["slots"][si.slotIdx];
             std::string instrumentName = ccSetupSlot["instrument"]["name"];
             int slot = ccSetupSlot["slot"];
+#endif
 
             // expand macros in signalValue
             std::string signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
@@ -480,11 +487,12 @@ private:
     json inputLutTable;                                         // input LUT usage per instrument group
     size_t lastStartCycle[MAX_SLOTS];
 
-    // some JSON nodes we need access to. FIXME: use pointers for efficiency?
+    // some JSON nodes we need access to. FIXME: use pointers/const json & for efficiency?
     json backendSettings;
     json instrumentDefinitions;
     json controlModes;
     json ccSetup;
+    json instruments;
     json signals;
 
     /************************************************************************\
@@ -543,6 +551,7 @@ private:
         instrumentDefinitions = backendSettings["instrument_definitions"];
         controlModes = backendSettings["control_modes"];
         ccSetup = backendSettings["cc_setup"];
+        instruments = backendSettings["instruments"];
         signals = backendSettings["signals"];
 
 
@@ -577,6 +586,55 @@ private:
     }
 
 
+#if 1    // FIXME: WIP -----------------------------------------------------------------------
+    // find instrument/group/slot providing instructionSignalType for qubit
+    tSignalInfo findSignalInfoForQubit(std::string instructionSignalType, size_t qubit)
+    {
+        tSignalInfo ret = {-1, -1};
+        bool signalTypeFound = false;
+        bool qubitFound = false;
+
+        // iterate over instruments
+        for(size_t instrIdx=0; instrIdx<instruments.size(); instrIdx++) {
+            const json &instrument = instruments[instrIdx];
+            std::string instrumentSignalType = instrument["signal_type"];
+            if(instrumentSignalType == instructionSignalType) {
+                signalTypeFound = true;
+                std::string instrumentName = instrument["name"];
+                const json &qubits = instrument["qubits"];
+                // FIXME: verify group size
+                // FIXME: verify signal dimensions
+
+                // anyone connected to qubit?
+                for(size_t group=0; group<qubits.size() && !qubitFound; group++) {
+                    for(size_t idx=0; idx<qubits[group].size() && !qubitFound; idx++) {
+                        if(qubits[group][idx] == qubit) {
+                            qubitFound = true;
+
+                            DOUT("qubit " << qubit
+                                 << " signal type '" << instructionSignalType
+                                 << "' driven by instrument '" << instrumentName
+                                 << "' group " << group
+//                                 << " in CC slot " << ccSetupSlot["slot"]
+                                 );
+
+                            ret.slotIdx = instrIdx;     // FIXME: rename struct var
+                            ret.group = group;
+                        }
+                    }
+                }
+            }
+        }
+        if(!signalTypeFound) {
+            FATAL("No instruments found providing signal type '" << instructionSignalType << "'");     // FIXME: clarify for user
+        }
+        if(!qubitFound) {
+            FATAL("No instruments found driving qubit " << qubit << " for signal type '" << instructionSignalType << "'");     // FIXME: clarify for user
+        }
+
+        return ret;
+    }
+#else
     // find instrument/group/slot providing instructionSignalType for qubit
     tSignalInfo findSignalInfoForQubit(std::string instructionSignalType, size_t qubit)
     {
@@ -625,6 +683,7 @@ private:
 
         return ret;
     }
+#endif
 
 }; // class
 
@@ -632,7 +691,7 @@ private:
 } // ql
 
 
-#if 0   // FIXME: old code that may me useful
+#if 0   // FIXME: old code that may me useful, keep around for now
     // information extracted from JSON file:
     typedef std::string tSignalType;
     typedef std::vector<json> tInstrumentList;
