@@ -192,6 +192,7 @@ public:
             }
         }
 
+        // FIXME: code commented out
         // // load aliases
         // if (config.count("aliases") > 0)
         // {
@@ -220,9 +221,6 @@ public:
         //       instruction_map[name] = new composite_gate(name,gs);
         //    }
         // }
-
-
-
     }
 
     /**

@@ -27,8 +27,8 @@ namespace ql
  * openql types
  */
 
-typedef std::vector<float> sweep_points_t;
 #if 0   // FIXME: unused
+typedef std::vector<float> sweep_points_t;
 typedef std::stringstream  str_t;
 #endif
 
