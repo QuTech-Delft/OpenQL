@@ -538,9 +538,6 @@ private:
 
     void load_backend_settings(const ql::quantum_platform& platform)
     {
-        // parts of JSON syntax
-        const char *instrumentTypes[] = {"cc", "switch", "awg", "measure"};
-
         // remind some main JSON areas
         backendSettings = platform.hardware_settings["eqasm_backend_cc"];
         instrumentDefinitions = backendSettings["instrument_definitions"];
@@ -550,14 +547,10 @@ private:
 
 
         // read instrument definitions
-        for(size_t i=0; i<ELEM_CNT(instrumentTypes); i++)
-        {
-            const json &ids = instrumentDefinitions[instrumentTypes[i]];
-            // FIXME: the following requires json>v3.1.0:  for(auto& id : ids.items()) {
-            for(size_t j=0; j<ids.size(); j++) {
-                std::string idName = ids[j]["name"];        // NB: uses type conversion to get node value
-                DOUT("found instrument definition:  type='" << instrumentTypes[i] << "', name='" << idName <<"'");
-            }
+        // FIXME: the following requires json>v3.1.0:  for(auto& id : instrumentDefinitions.items()) {
+        for(size_t i=0; i<instrumentDefinitions.size(); i++) {
+            std::string idName = instrumentDefinitions[i]["name"];        // NB: uses type conversion to get node value
+            DOUT("found instrument definition:  name='" << idName <<"'");
         }
 
         // read control modes

@@ -85,35 +85,28 @@
 		"eqasm_backend_cc": {
 			// Immutable properties of instruments.
 			// FIXME: introduce 'controller_definitions' for CC and friends?
-			// FIXME: keys "awg" etc are not really used
-			"instrument_definitions": {
-				"awg": [
-					{	"name": "qutech-qwg",
-						"channels": 4,
-						"control_group_sizes": [1,4],
-						"latency": 50		// FIXME: check
-					},
-					{	"name": "zi-hdawg",
-						"channels": 8,
-						"control_group_sizes": [1, 4, 8],
-						"latency": 300		// FIXME: check. If latency depends on FW version, several definitions must be present
-					}
-				],
-				"switch": [
-					{	"name": "qutech-vsm",
-						"channels": 32,
-						"control_group_sizes": [1],
-						"latency": 10		// FIXME: check
-					}
-				],
-				"measure": [
-					{	"name": "zi-uhfqc",
-						"channels": 9,
-						"control_group_sizes": [1],
-						"latency": 150		// FIXME: check
-					}
-				]
-			},
+			"instrument_definitions": [
+				{	"name": "qutech-qwg",
+					"channels": 4,
+					"control_group_sizes": [1,4],
+					"latency": 50		// FIXME: check
+				},
+				{	"name": "zi-hdawg",
+					"channels": 8,
+					"control_group_sizes": [1, 4, 8],
+					"latency": 300		// FIXME: check. If latency depends on FW version, several definitions must be present
+				},
+				{	"name": "qutech-vsm",
+					"channels": 32,
+					"control_group_sizes": [1],
+					"latency": 10		// FIXME: check
+				},
+				{	"name": "zi-uhfqc",
+					"channels": 9,
+					"control_group_sizes": [1],
+					"latency": 150		// FIXME: check
+				}
+			],
 
 			// Modes to control instruments. These define which bits are used to
 			// control groups of channels and/or get back measurement results
