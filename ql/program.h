@@ -499,7 +499,7 @@ class quantum_program
                   IOUT("compiling eqasm code...");
                   backend_compiler->compile(name, fused, platform);
                }
-               catch (ql::exception e)
+               catch (ql::exception &e)
                {
                   EOUT("[x] error : eqasm_compiler.compile() : compilation interrupted due to fatal error.");
                   throw e;

@@ -112,7 +112,7 @@ inline json load_json(std::string file_name)
             stripped >> j;  // pass stripped line to json. NB: the whole file must be passed in 1 go
         }
         // treat parse errors separately to give the user a clue about what's wrong
-        catch (json::parse_error e)
+        catch (json::parse_error &e)
         {
             EOUT("error parsing JSON file : \n\t" << e.what());
             if(e.byte != 0)
@@ -142,7 +142,7 @@ inline json load_json(std::string file_name)
                 FATAL("no information on error position");
             }
         }
-        catch (json::exception e)
+        catch (json::exception &e)
         {
             FATAL("malformed JSON file : \n\t" << e.what());
         }

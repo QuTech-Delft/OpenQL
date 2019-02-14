@@ -1541,7 +1541,7 @@ public:
             m.m[2] = complex_t(mat[2][0], mat[2][1]);
             m.m[3] = complex_t(mat[3][0], mat[3][1]);
         }
-        catch (json::exception e)
+        catch (json::exception &e)
         {
             EOUT("while loading instruction '" << name << "' (attr: " << l_attr << ") : " << e.what());
             throw ql::exception("[x] error : ql::custom_gate() : error while loading instruction '" + name + "' : attribute '" + l_attr + "' : \n\t" + e.what(), false);

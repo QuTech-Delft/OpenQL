@@ -52,7 +52,7 @@ public:
         {
             config = load_json(config_file_name);
         }
-        catch (json::exception e)
+        catch (json::exception &e)
         {
             throw ql::exception("[x] error : ql::hardware_configuration::load() :  failed to load the hardware config file : malformed json file ! : \n\t"+
                                 std::string(e.what()),false);
@@ -243,7 +243,7 @@ public:
         {
             g->load(instr);
         }
-        catch (ql::exception e)
+        catch (ql::exception &e)
         {
             EOUT("error while loading instruction '" << name << "' : " << e.what());
             throw e;
