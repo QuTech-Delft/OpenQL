@@ -9,6 +9,55 @@
 #ifndef _SCHEDULER_H
 #define _SCHEDULER_H
 
+/*
+    Summary
+
+    Below there really are two classes: the dependence graph definition and the scheduler definition.
+    All schedulers use dependence graph creation as preprocessor, and don't modify it.
+    For each kernel's circuit a private dependence graph is created.
+    The schedulers modify the order of gates in the circuit, initialize the cycle field of each gate,
+    and generate/return a separate bundles list in which gates starting in the same cycle are grouped.
+
+    The dependence graph (represented by the graph field below) is created in the Init method,
+    and the graph is on top (i.e. as in constructed from and referring to) the sequence of gates in a kernel's circuit.
+    In this graph, the nodes refer to the gates in the circuit, and the edges represent the dependences between two gates.
+    Init scans the gates from start to end, inspects their parameters, and depending on the gate type and parameter value
+    and previous gates operating on the same parameters, creates a dependence of the current gate on that previous gate.
+    Such a dependence has a type (RAW, WAW, etc.), cause (the qubit or classical register used as parameter), and a weight
+    (the cycles the previous gate takes to complete its execution and after which the current gate can start execution).
+
+    In dependence graph creation, each qubit/classical register (creg) use in each gate is seen as an "event".
+    The following events are distinguished:
+    - W for Write: such a use must sequentialize with any previous and later uses of the same qubit/creg.
+        This is the default for qubits in a gate and for assignment/modifications in classical code.
+    - R for Read: such uses can be arbitrarily reordered (as long as other dependences allow that).
+        This event applies to all operands of CZ, the first operand of CNOT gates, and to all reads in classical code.
+        It also applies in general to the control operand of Control Unitaries.
+        It represents commutativity between the gates which such use: CU(a,b), CZ(a,c), CZ(d,a) and CNOT(a,e) all commute.
+    - D: such uses can be arbitrarily reordered but are sequentialized with W and R events on the same qubit.
+        This event applies to the second operand of CNOT gates: CNOT(a,d) and CNOT(b,d) commute.
+    With this, we effectively get the following table of event transitions (from left-bottom to right-up),
+    in which 'no' indicates no dependence from left event to top event and '/' indicates a dependence from left to top.
+             W   R   D                  w   R   D
+        W    /   /   /              W   WAW RAW DAW
+        R    /   no  /              R   WAR RAR DAR
+        D    /   /   no             D   WAD RAD DAD
+    When the 'no' dependences are created (RAR and DAD), commutation is not represented in the dependence graph,
+    and to create qubit dependences there is no reason to distinguish between W, R and D.
+
+    Schedulers come essentially in the following forms:
+    - ASAP: a plain forward scheduler using dependences only, aiming at execution each gate as soon as possible
+    - ASAP with resource constraints: similar but taking resource constraints of the gates of the platform into account
+    - ASAP with UNIFORM bundle lengths (not supported): using dependences only, aim at ASAP but with equally length bundles
+    - ALAP: as ASAP but then aiming at execution of each gate as late as possible
+    - ALAP with resource constraints: similar but taking resource constraints of the gates of the platform into account
+    - ALAP with UNIFORM bundle lengths: using dependences only, aim at ALAP but with equally length bundles
+    ASAP/ALAP can be controlled by an option. Similarly for UNIFORM.
+    With/out resource constraints are separate method calls.
+    In addition, the current code implements behavior before and after solving issue 179, selectable by an option.
+    The post179 behavior supports commutation and in general produces more efficient/shorter scheduled circuits.
+ */
+
 #include <lemon/list_graph.h>
 #include <lemon/lgf_reader.h>
 #include <lemon/lgf_writer.h>
