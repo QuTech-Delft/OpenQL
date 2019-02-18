@@ -42,20 +42,20 @@
         W    /   /   /              W   WAW RAW DAW
         R    /   no  /              R   WAR RAR DAR
         D    /   /   no             D   WAD RAD DAD
-    When the 'no' dependences are created (RAR and DAD), commutation is not represented in the dependence graph,
-    and to create qubit dependences there is no reason to distinguish between W, R and D.
+    When the 'no' dependences are created (RAR and DAD), commutation is not represented in the dependence graph.
+    Then also all events cause sequentialization and become equivalent to Write.
 
     Schedulers come essentially in the following forms:
     - ASAP: a plain forward scheduler using dependences only, aiming at execution each gate as soon as possible
     - ASAP with resource constraints: similar but taking resource constraints of the gates of the platform into account
-    - ASAP with UNIFORM bundle lengths (not supported): using dependences only, aim at ASAP but with equally length bundles
     - ALAP: as ASAP but then aiming at execution of each gate as late as possible
     - ALAP with resource constraints: similar but taking resource constraints of the gates of the platform into account
     - ALAP with UNIFORM bundle lengths: using dependences only, aim at ALAP but with equally length bundles
-    ASAP/ALAP can be controlled by an option. Similarly for UNIFORM.
+    ASAP/ALAP can be controlled by the "scheduler" option. Similarly for UNIFORM ("scheduler_uniform").
     With/out resource constraints are separate method calls.
-    In addition, the current code implements behavior before and after solving issue 179, selectable by an option.
-    The post179 behavior supports commutation and in general produces more efficient/shorter scheduled circuits.
+    The current code implements behavior before and after solving issue 179, selectable by an option ("scheduler_post179").
+    The post179 behavior supports commutation and in general produces more efficient/shorter scheduled circuits;
+    that the scheduler commutes gates when possible is enabled by default and can be controlled by option "scheduler_commute".
  */
 
 #include <lemon/list_graph.h>
@@ -83,14 +83,12 @@ public:
     // dependence graph is constructed (see Init) once, and can be reused as often as needed
     ListDigraph graph;
 
-    ListDigraph::NodeMap<ql::gate*> instruction;                    // instruction[n] == gate*
-    std::map<ql::gate*,ListDigraph::Node>  node;                    // node[gate*] == node_id
-    ListDigraph::NodeMap<std::string> name;                         // name[n] == qasm string
-    ListDigraph::ArcMap<int> weight;                                // number of cycles of dependence
-    //TODO it might be more readable to change 'cause' to string
-    //   to accomodate/print both r0, q0 operands as cause
-    ListDigraph::ArcMap<int> cause;                                 // qubit/creg index of dependence
-    ListDigraph::ArcMap<int> depType;                               // RAW, WAW, ...
+    ListDigraph::NodeMap<ql::gate*> instruction;// instruction[n] == gate*
+    std::map<ql::gate*,ListDigraph::Node>  node;// node[gate*] == n
+    ListDigraph::NodeMap<std::string> name;     // name[n] == qasm string
+    ListDigraph::ArcMap<int> weight;            // number of cycles of dependence
+    ListDigraph::ArcMap<int> cause;             // qubit/creg index of dependence
+    ListDigraph::ArcMap<int> depType;           // RAW, WAW, ...
     ListDigraph::Node s, t;                     // instruction[s]==SOURCE, instruction[t]==SINK
 
     // parameters of dependence graph construction
@@ -107,6 +105,17 @@ public:
 public:
     Scheduler(): instruction(graph), name(graph), weight(graph),
         cause(graph), depType(graph) {}
+
+    void addDep(int srcID, int tgtID, enum DepTypes deptype, int operand)
+    {
+        ListDigraph::Node srcNode = graph.nodeFromId(srcID);
+        ListDigraph::Node tgtNode = graph.nodeFromId(tgtID);
+        ListDigraph::Arc arc = graph.addArc(srcNode,tgtNode);
+        weight[arc] = std::ceil( static_cast<float>(instruction[srcNode]->duration) / cycle_time);
+        cause[arc] = operand;
+        depType[arc] = deptype;
+        DOUT("... dep " << name[srcNode] << " -> " << name[tgtNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[deptype] << ")");
+    }
 
     void Init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
     {
@@ -233,40 +242,16 @@ public:
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    { // RAW dependencies (overlaps with WAW dependencies here)
-                        int prodID = LastWriter[operand];
-                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
-                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
-                        cause[arc] = operand;
-                        depType[arc] = RAW;
-                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAW] << ")");
+                    addDep(LastWriter[operand], consID, WAW, operand);
+                    for(auto & readerID : LastReaders[operand])
+                    {
+                        addDep(readerID, consID, WAR, operand);
                     }
-
-                    { // WAR dependencies
-                        ReadersListType readers = LastReaders[operand];
-                        for(auto & readerID : readers)
-                        {
-                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-                            cause[arc1] = operand;
-                            depType[arc1] = WAR;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
-                        }
-                    }
-                    
                     if (ql::options::get("scheduler_post179") == "yes")
-                    { // WAD dependencies
-                        ReadersListType readers = LastDs[operand];
-                        for(auto & readerID : readers)
+                    {
+                        for(auto & readerID : LastDs[operand])
                         {
-                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-                            cause[arc1] = operand;
-                            depType[arc1] = WAD;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAD] << ")");
+                            addDep(readerID, consID, WAD, operand);
                         }
                     }
                 }
@@ -275,27 +260,10 @@ public:
                 for( auto operand : mins->creg_operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    { // WAW dependencies
-                        int prodID = LastWriter[qubit_count+operand];
-                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
-                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
-                        cause[arc] = operand;
-                        depType[arc] = WAW;
-                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAW] << ")");
-                    }
-
-                    { // WAR dependencies
-                        ReadersListType readers = LastReaders[qubit_count+operand];
-                        for(auto & readerID : readers)
-                        {
-                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-                            cause[arc1] = operand;
-                            depType[arc1] = WAR;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
-                        }
+                    addDep(LastWriter[qubit_count+operand], consID, WAW, operand);
+                    for(auto & readerID : LastReaders[qubit_count+operand])
+                    {
+                        addDep(readerID, consID, WAR, operand);
                     }
                 }
 
@@ -328,45 +296,21 @@ public:
                 for( auto operand : qubits )
                 {
                     DOUT(".. Operand: " << operand);
-                    { // RAW dependencies (overlaps with WAW dependencies here)
-                        int prodID = LastWriter[operand];
-                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
-                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
-                        cause[arc] = operand;
-                        depType[arc] = RAW;
-                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAW] << ")");
+                    addDep(LastWriter[operand], consID, WAW, operand);
+                    for(auto & readerID : LastReaders[operand])
+                    {
+                        addDep(readerID, consID, WAR, operand);
                     }
-
-                    { // WAR dependencies
-                        ReadersListType readers = LastReaders[operand];
-                        for(auto & readerID : readers)
-                        {
-                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-                            cause[arc1] = operand;
-                            depType[arc1] = WAR;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
-                        }
-                    }
-                    
                     if (ql::options::get("scheduler_post179") == "yes")
-                    { // WAD dependencies
-                        ReadersListType readers = LastDs[operand];
-                        for(auto & readerID : readers)
+                    {
+                        for(auto & readerID : LastDs[operand])
                         {
-                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-                            cause[arc1] = operand;
-                            depType[arc1] = WAD;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAD] << ")");
+                            addDep(readerID, consID, WAD, operand);
                         }
                     }
                 }
 
-                // now update LastWriter and so clear LastReaders
+                // now update LastWriter and so clear LastReaders/LastDs
                 for( auto operand : qubits )
                 {
                     LastWriter[operand] = consID;
@@ -385,45 +329,21 @@ public:
                 for( auto operand : all_operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    { // WAW dependencies
-                        int prodID = LastWriter[operand];
-                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
-                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
-                        cause[arc] = operand;
-                        depType[arc] = WAW;
-                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAW] << ")");
+                    addDep(LastWriter[operand], consID, WAW, operand);
+                    for(auto & readerID : LastReaders[operand])
+                    {
+                        addDep(readerID, consID, WAR, operand);
                     }
-
-                    { // WAR dependencies
-                        ReadersListType readers = LastReaders[operand];
-                        for(auto & readerID : readers)
-                        {
-                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-                            cause[arc1] = operand;
-                            depType[arc1] = WAR;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
-                        }
-                    }
-
                     if (ql::options::get("scheduler_post179") == "yes")
-                    { // WAD dependencies
-                        ReadersListType readers = LastDs[operand];
-                        for(auto & readerID : readers)
+                    {
+                        for(auto & readerID : LastDs[operand])
                         {
-                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-                            cause[arc1] = operand;
-                            depType[arc1] = WAD;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAD] << ")");
+                            addDep(readerID, consID, WAD, operand);
                         }
                     }
                 }
 
-                // now update LastWriter and so clear LastReaders
+                // now update LastWriter and so clear LastReaders/LastDs
                 for( auto operand : all_operands )
                 {
                     LastWriter[operand] = consID;
@@ -444,152 +364,49 @@ public:
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
-
                     if( operandNo == 0)
                     {
-	                    { // RAW dependencies
-	                        int prodID = LastWriter[operand];
-	                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
-	                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-	                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
-	                        cause[arc] = operand;
-	                        depType[arc] = RAW;
-	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAW] << ")");
-	                    }
-	
-	                    if (ql::options::get("scheduler_post179") == "no")
-	                    {
-                            // to disable commutation by the scheduler, add DAD and RAR dependences
-                            // adding DADs and RARs could be done under an option e.g. "scheduler_commute", by default on
-                            // so that an experiment that doesn't want this optimization, can turn it off
-                            //
-                            // the pre179 schedulers don't commute
-		                    { // RAR dependencies
-			                    ReadersListType readers = LastReaders[operand];
-			                    for(auto & readerID : readers)
-			                    {
-			                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-			                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-			                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-			                        cause[arc1] = operand;
-			                        depType[arc1] = RAR;
-			                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAR] << ")");
-			                    }
-		                    }
-	                    }
-
-	                    if (ql::options::get("scheduler_post179") == "yes")
-	                    {
-		                    // RAD dependencies
-		                    ReadersListType readers = LastDs[operand];
-		                    for(auto & readerID : readers)
-		                    {
-		                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-		                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-		                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-		                        cause[arc1] = operand;
-		                        depType[arc1] = RAD;
-		                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAD] << ")");
-		                    }
-	                    }
+                        addDep(LastWriter[operand], consID, RAW, operand);
+	                    if (ql::options::get("scheduler_post179") == "no"
+	                    ||  ql::options::get("scheduler_commute") == "no")
+                        {
+                            for(auto & readerID : LastReaders[operand])
+                            {
+                                addDep(readerID, consID, RAR, operand);
+                            }
+                        }
+                        if (ql::options::get("scheduler_post179") == "yes")
+                        {
+                            for(auto & readerID : LastDs[operand])
+                            {
+                                addDep(readerID, consID, RAD, operand);
+                            }
+                        }
                     }
                     else
                     {
 	                    if (ql::options::get("scheduler_post179") == "no")
                         {
-		                    { // RAW dependencies
-		                        int prodID = LastWriter[operand];
-		                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
-		                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-		                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
-		                        cause[arc] = operand;
-		                        depType[arc] = RAW;
-		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAW] << ")");
-		                    }
-		
-                            // to disable commutation by the scheduler, add DAD and RAR dependences
-                            // adding DADs and RARs could be done under an option e.g. "scheduler_commute", by default on
-                            // so that an experiment that doesn't want this optimization, can turn it off
-                            //
-                            // the pre179 schedulers don't commute
-		                    { // RAR dependencies
-			                    ReadersListType readers = LastReaders[operand];
-			                    for(auto & readerID : readers)
-			                    {
-			                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-			                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-			                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-			                        cause[arc1] = operand;
-			                        depType[arc1] = RAR;
-			                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAR] << ")");
-			                    }
-		                    }
-		
-		                    {   // WAW dependencies
-		                        int prodID = LastWriter[operand];
-		                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
-		                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-		                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
-		                        cause[arc] = operand;
-		                        depType[arc] = WAW;
-		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAW] << ")");
-		                    }
-		
-		                    {   // WAR dependencies
-		                        ReadersListType readers = LastReaders[operand];
-		                        for(auto & readerID : readers)
-		                        {
-		                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-		                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-		                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-		                            cause[arc1] = operand;
-		                            depType[arc1] = WAR;
-		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
-		                        }
-		                    }
+                            addDep(LastWriter[operand], consID, WAW, operand);
+                            for(auto & readerID : LastReaders[operand])
+                            {
+                                addDep(readerID, consID, WAR, operand);
+                            }
                         }
                         else
                         {
-		                    {   // DAW dependencies
-		                        int prodID = LastWriter[operand];
-		                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
-		                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-		                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
-		                        cause[arc] = operand;
-		                        depType[arc] = DAW;
-		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[DAW] << ")");
-		                    }
-		
-#ifdef NO_COMMUTATION_BY_SCHEDULER
-                            // to disable commutation by the scheduler, add DAD and RAR dependences
-                            // adding DADs and RARs could be done under an option e.g. "scheduler_commute", by default on
-                            // so that an experiment that doesn't want this optimization, can turn it off
-		                    {   // DAD dependencies
-		                        ReadersListType readers = LastReaders[operand];
-		                        for(auto & readerID : readers)
-		                        {
-		                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-		                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-		                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-		                            cause[arc1] = operand;
-		                            depType[arc1] = DAD;
-		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[DAD] << ")");
-		                        }
-		                    }
-#endif  // NO_COMMUTATION_BY_SCHEDULER
-
-		                    {   // DAR dependencies
-		                        ReadersListType readers = LastReaders[operand];
-		                        for(auto & readerID : readers)
-		                        {
-		                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-		                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-		                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-		                            cause[arc1] = operand;
-		                            depType[arc1] = DAR;
-		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[DAR] << ")");
-		                        }
-		                    }
+                            addDep(LastWriter[operand], consID, DAW, operand);
+	                        if (ql::options::get("scheduler_commute") == "no")
+                            {
+                                for(auto & readerID : LastDs[operand])
+                                {
+                                    addDep(readerID, consID, DAD, operand);
+                                }
+                            }
+                            for(auto & readerID : LastReaders[operand])
+                            {
+                                addDep(readerID, consID, DAR, operand);
+                            }
                         }
                     }
                     operandNo++;
@@ -612,12 +429,10 @@ public:
                     {
 	                    if (ql::options::get("scheduler_post179") == "no")
                         {
-	                        // update LastWriter and so also clear LastReaders for this operand 1
 	                        LastWriter[operand] = consID;
                         }
                         else
                         {
-	                        // update LastDs and so also clear LastReaders for this operand 1
                             LastDs[operand].push_back(consID);
                         }
 	                    LastReaders[operand].clear();
@@ -639,84 +454,34 @@ public:
                     DOUT(".. Operand: " << operand);
                     if (ql::options::get("scheduler_post179") == "no")
                     {
-	                    { // RAW dependencies
-	                        int prodID = LastWriter[operand];
-	                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
-	                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-	                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
-	                        cause[arc] = operand;
-	                        depType[arc] = RAW;
-	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAW] << ")");
-	                    }
-	
-                        // to disable commutation by the scheduler, add DAD and RAR dependences
-                        // adding DADs and RARs could be done under an option e.g. "scheduler_commute", by default on
-                        // so that an experiment that doesn't want this optimization, can turn it off
-                        //
-                        // the pre179 schedulers don't commute
-	                    {   // RAR dependencies
-		                    ReadersListType readers = LastReaders[operand];
-		                    for(auto & readerID : readers)
-		                    {
-		                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-		                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-		                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-		                        cause[arc1] = operand;
-		                        depType[arc1] = RAR;
-		                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAR] << ")");
-		                    }
-	                    }
-	
+                        addDep(LastWriter[operand], consID, RAW, operand);
+                        for(auto & readerID : LastReaders[operand])
+                        {
+                            addDep(readerID, consID, RAR, operand);
+                        }
 	                    if( operandNo != 0)
 	                    {
-		                    {   // WAW dependencies
-		                        int prodID = LastWriter[operand];
-		                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
-		                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-		                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
-		                        cause[arc] = operand;
-		                        depType[arc] = WAW;
-		                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAW] << ")");
-		                    }
-		
-		                    {   // WAR dependencies
-		                        ReadersListType readers = LastReaders[operand];
-		                        for(auto & readerID : readers)
-		                        {
-		                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-		                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-		                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-		                            cause[arc1] = operand;
-		                            depType[arc1] = WAR;
-		                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
-		                        }
-		                    }
+                            addDep(LastWriter[operand], consID, WAW, operand);
+                            for(auto & readerID : LastReaders[operand])
+                            {
+                                addDep(readerID, consID, WAR, operand);
+                            }
 	                    }
                     }
                     else
                     {
-	                    { // RAW dependencies
-	                        int prodID = LastWriter[operand];
-	                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
-	                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-	                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
-	                        cause[arc] = operand;
-	                        depType[arc] = RAW;
-	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAW] << ")");
-	                    }
-	
-	                    {   // RAD dependencies
-		                    ReadersListType targets = LastDs[operand];
-		                    for(auto & targetID : targets)
-		                    {
-		                        ListDigraph::Node targetNode = graph.nodeFromId(targetID);
-		                        ListDigraph::Arc arc1 = graph.addArc(targetNode,consNode);
-		                        weight[arc1] = std::ceil( static_cast<float>(instruction[targetNode]->duration) / cycle_time);
-		                        cause[arc1] = operand;
-		                        depType[arc1] = RAD;
-		                        DOUT("... dep " << name[targetNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAD] << ")");
-		                    }
-	                    }
+                        if (ql::options::get("scheduler_commute") == "no")
+                        {
+                            for(auto & readerID : LastReaders[operand])
+                            {
+                                addDep(readerID, consID, RAR, operand);
+                            }
+                        }
+                        addDep(LastWriter[operand], consID, RAW, operand);
+                        for(auto & readerID : LastDs[operand])
+                        {
+                            addDep(readerID, consID, RAD, operand);
+                        }
                     }
                     operandNo++;
                 } // end of operand for
@@ -729,19 +494,16 @@ public:
                     {
 	                    if( operandNo == 0)
 	                    {
-	                        // update LastReaders for this operand
 	                        LastReaders[operand].push_back(consID);
 	                    }
 	                    else
 	                    {
-	                        // update LastWriter and so also clear LastReaders for this operand
 	                        LastWriter[operand] = consID;
 	                        LastReaders[operand].clear();
 	                    }
                     }
                     else
                     {
-                        // update LastReaders for this operand
                         LastDs[operand].clear();
                         LastReaders[operand].push_back(consID);
                     }
@@ -762,49 +524,25 @@ public:
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    { // RAW dependencies
-                        int prodID = LastWriter[operand];
-                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
-                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
-                        cause[arc] = operand;
-                        depType[arc] = RAW;
-                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAW] << ")");
-                    }
-
-                    if (ql::options::get("scheduler_post179") == "no")
+                    addDep(LastWriter[operand], consID, RAW, operand);
+                    if (ql::options::get("scheduler_post179") == "no"
+                    ||  ql::options::get("scheduler_commute") == "no")
                     {
-	                    // RAR dependencies
-	                    ReadersListType readers = LastReaders[operand];
-	                    for(auto & readerID : readers)
-	                    {
-	                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-	                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-	                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-	                        cause[arc1] = operand;
-	                        depType[arc1] = RAR;
-	                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAR] << ")");
-	                    }
+                        for(auto & readerID : LastReaders[operand])
+                        {
+                            addDep(readerID, consID, RAR, operand);
+                        }
                     }
-
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
-	                    // RAD dependencies
-	                    ReadersListType readers = LastDs[operand];
-	                    for(auto & readerID : readers)
-	                    {
-	                        ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-	                        ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-	                        weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-	                        cause[arc1] = operand;
-	                        depType[arc1] = RAD;
-	                        DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAD] << ")");
-	                    }
+                        for(auto & readerID : LastDs[operand])
+                        {
+                            addDep(readerID, consID, RAD, operand);
+                        }
                     }
 
                     if( operandNo < op_count-1 )
                     {
-                        // update LastReaders for this operand
                         LastReaders[operand].push_back(consID);
                         if (ql::options::get("scheduler_post179") == "yes")
                         {
@@ -813,44 +551,19 @@ public:
                     }
                     else
                     {
-	                    {   // WAW dependencies
-	                        int prodID = LastWriter[operand];
-	                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
-	                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-	                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
-	                        cause[arc] = operand;
-	                        depType[arc] = WAW;
-	                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAW] << ")");
-	                    }
-	
-	                    {   // WAR dependencies
-	                        ReadersListType readers = LastReaders[operand];
-	                        for(auto & readerID : readers)
-	                        {
-	                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-	                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-	                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-	                            cause[arc1] = operand;
-	                            depType[arc1] = WAR;
-	                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
-	                        }
-	                    }
-
+                        addDep(LastWriter[operand], consID, WAW, operand);
+                        for(auto & readerID : LastReaders[operand])
+                        {
+                            addDep(readerID, consID, WAR, operand);
+                        }
                         if (ql::options::get("scheduler_post179") == "yes")
-	                    {   // WAD dependencies
-	                        ReadersListType readers = LastDs[operand];
-	                        for(auto & readerID : readers)
-	                        {
-	                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-	                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-	                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-	                            cause[arc1] = operand;
-	                            depType[arc1] = WAD;
-	                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAD] << ")");
-	                        }
-	                    }
+                        {
+                            for(auto & readerID : LastDs[operand])
+                            {
+                                addDep(readerID, consID, WAD, operand);
+                            }
+                        }
 
-                        // update LastWriter and so also clear LastReaders for this operand
                         LastWriter[operand] = consID;
                         LastReaders[operand].clear();
                         if (ql::options::get("scheduler_post179") == "yes")
@@ -871,44 +584,19 @@ public:
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    { // RAW dependencies (overlaps with WAW dependencies here)
-                        int prodID = LastWriter[operand];
-                        ListDigraph::Node prodNode = graph.nodeFromId(prodID);
-                        ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-                        weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
-                        cause[arc] = operand;
-                        depType[arc] = RAW;
-                        DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[RAW] << ")");
+                    addDep(LastWriter[operand], consID, WAW, operand);
+                    for(auto & readerID : LastReaders[operand])
+                    {
+                        addDep(readerID, consID, WAR, operand);
                     }
-
-                    { // WAR dependencies
-                        ReadersListType readers = LastReaders[operand];
-                        for(auto & readerID : readers)
-                        {
-                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-                            cause[arc1] = operand;
-                            depType[arc1] = WAR;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
-                        }
-                    }
-
                     if (ql::options::get("scheduler_post179") == "yes")
-                    { // WAD dependencies
-                        ReadersListType readers = LastDs[operand];
-                        for(auto & readerID : readers)
+                    {
+                        for(auto & readerID : LastDs[operand])
                         {
-                            ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-                            ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                            weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-                            cause[arc1] = operand;
-                            depType[arc1] = WAD;
-                            DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAD] << ")");
+                            addDep(readerID, consID, WAD, operand);
                         }
                     }
 
-                    // update LastWriter and so also clear LastReaders for this operand
                     LastWriter[operand] = consID;
                     LastReaders[operand].clear();
                     if (ql::options::get("scheduler_post179") == "yes")
@@ -921,64 +609,53 @@ public:
             } // end of if/else
         } // end of instruction for
 
-        // add dummy target node
-        ListDigraph::Node consNode = graph.addNode();
-        instruction[consNode] = new ql::SINK();
-        node[instruction[consNode]] = consNode;
-        name[consNode] = instruction[consNode]->qasm();
-        t=consNode;
-
-        DOUT("adding deps to SINK");
-        // add deps to the dummy target node to close the dependence chains
-        // it behaves as a W to every qubit and creg
-        //
-        // to guarantee that exactly at start of execution of dummy SINK,
-        // all still executing nodes complete, give arc weight of those nodes;
-        // this is relevant for ALAP (which starts backward from SINK for all these nodes),
-        // for accurately computing the circuit's depth (which includes full completion),
-        // and for implementing scheduling and mapping across control-flow (so that it is
-        // guaranteed that on a jump and on start of target circuit, the source circuit completed).
-        std::vector<size_t> qubits(qubit_creg_count);
-        std::iota(qubits.begin(), qubits.end(), 0);
-        for( auto operand : qubits )
         {
-            DOUT(".. Operand: " << operand);
-            { // WAW dependencies
-                int prodID = LastWriter[operand];
-                ListDigraph::Node prodNode = graph.nodeFromId(prodID);
-                ListDigraph::Arc arc = graph.addArc(prodNode,consNode);
-                weight[arc] = std::ceil( static_cast<float>(instruction[prodNode]->duration) / cycle_time);
-                cause[arc] = operand;
-                depType[arc] = WAW;
-                DOUT("... dep " << name[prodNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAW] << ")");
-            }
-
-            { // WAR dependencies
-                ReadersListType readers = LastReaders[operand];
-                for(auto & readerID : readers)
-                {
-                    ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-                    ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                    weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-                    cause[arc1] = operand;
-                    depType[arc1] = WAR;
-                    DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAR] << ")");
-                }
-            }
-            
-            if (ql::options::get("scheduler_post179") == "yes")
-            { // WAD dependencies
-                ReadersListType readers = LastDs[operand];
-                for(auto & readerID : readers)
-                {
-                    ListDigraph::Node readerNode = graph.nodeFromId(readerID);
-                    ListDigraph::Arc arc1 = graph.addArc(readerNode,consNode);
-                    weight[arc1] = std::ceil( static_cast<float>(instruction[readerNode]->duration) / cycle_time);
-                    cause[arc1] = operand;
-                    depType[arc1] = WAD;
-                    DOUT("... dep " << name[readerNode] << " -> " << name[consNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[WAD] << ")");
-                }
-            }
+	        // add dummy target node
+	        ListDigraph::Node consNode = graph.addNode();
+	        int consID = graph.id(consNode);
+	        instruction[consNode] = new ql::SINK();
+	        node[instruction[consNode]] = consNode;
+	        name[consNode] = instruction[consNode]->qasm();
+	        t=consNode;
+	
+	        DOUT("adding deps to SINK");
+	        // add deps to the dummy target node to close the dependence chains
+	        // it behaves as a W to every qubit and creg
+	        //
+	        // to guarantee that exactly at start of execution of dummy SINK,
+	        // all still executing nodes complete, give arc weight of those nodes;
+	        // this is relevant for ALAP (which starts backward from SINK for all these nodes),
+	        // for accurately computing the circuit's depth (which includes full completion),
+	        // and for implementing scheduling and mapping across control-flow (so that it is
+	        // guaranteed that on a jump and on start of target circuit, the source circuit completed).
+	        std::vector<size_t> qubits(qubit_creg_count);
+	        std::iota(qubits.begin(), qubits.end(), 0);
+	        for( auto operand : qubits )
+	        {
+	            DOUT(".. Operand: " << operand);
+	            addDep(LastWriter[operand], consID, WAW, operand);
+	            for(auto & readerID : LastReaders[operand])
+	            {
+	                addDep(readerID, consID, WAR, operand);
+	            }
+	            if (ql::options::get("scheduler_post179") == "yes")
+	            {
+	                for(auto & readerID : LastDs[operand])
+	                {
+	                    addDep(readerID, consID, WAD, operand);
+	                }
+	            }
+	        }
+	
+	        for( auto operand : qubits )
+	        {
+	            LastWriter[operand] = consID;
+	            LastReaders[operand].clear();
+	            if (ql::options::get("scheduler_post179") == "yes")
+	            {
+	                LastDs[operand].clear();
+	            }
+	        }
         }
 
         if( !dag(graph) )

@@ -32,6 +32,7 @@ namespace ql
           opt_name2opt_val["scheduler_post179"] = "no";
           opt_name2opt_val["scheduler"] = "ALAP";
           opt_name2opt_val["scheduler_uniform"] = "no";
+          opt_name2opt_val["scheduler_commute"] = "yes";
           opt_name2opt_val["use_default_gates"] = "yes";
           opt_name2opt_val["optimize"] = "no";
           opt_name2opt_val["decompose_toffoli"] = "no";
@@ -43,6 +44,7 @@ namespace ql
           app->add_set_ignore_case("--scheduler_post179", opt_name2opt_val["scheduler_post179"], {"no", "yes"}, "Issue 179 solution included", true);
           app->add_set_ignore_case("--scheduler", opt_name2opt_val["scheduler"], {"ASAP", "ALAP"}, "scheduler type", true);
           app->add_set_ignore_case("--scheduler_uniform", opt_name2opt_val["scheduler_uniform"], {"yes", "no"}, "Do uniform scheduling or not", true);
+          app->add_set_ignore_case("--scheduler_commute", opt_name2opt_val["scheduler_commute"], {"yes", "no"}, "Commute gates when possible, or not", true);
           app->add_set_ignore_case("--use_default_gates", opt_name2opt_val["use_default_gates"], {"yes", "no"}, "Use default gates or not", true);
           app->add_set_ignore_case("--optimize", opt_name2opt_val["optimize"], {"yes", "no"}, "optimize or not", true);
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "MA"}, "Type of decomposition used for toffoli", true);
@@ -51,9 +53,10 @@ namespace ql
       void print_current_values()
       {
           std::cout << "optimize: " << opt_name2opt_val["optimize"] << std::endl
-                    << "scheduler_post179: " << opt_name2opt_val["scheduler_post179"] << std::endl
                     << "scheduler: " << opt_name2opt_val["scheduler"] << std::endl
-                    << "scheduler_uniform: " << opt_name2opt_val["scheduler_uniform"] << std::endl;
+                    << "scheduler_uniform: " << opt_name2opt_val["scheduler_uniform"] << std::endl
+                    << "scheduler_post179: " << opt_name2opt_val["scheduler_post179"] << std::endl
+                    << "scheduler_commute: " << opt_name2opt_val["scheduler_uniform"] << std::endl;
       }
 
       void help()
