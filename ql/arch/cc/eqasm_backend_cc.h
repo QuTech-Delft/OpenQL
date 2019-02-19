@@ -421,7 +421,7 @@ private:
                 *hw_settings[i].var = val;
             }
         }
-        catch (json::exception e)
+        catch (json::exception &e)
         {
             throw ql::exception(
                 "[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter '"

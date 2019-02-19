@@ -65,7 +65,7 @@ namespace ql
             std::vector<std::string> opts = {opt_value, "--"+opt_name};
             app->parse(opts);
           }
-          catch (const std::exception& e)
+          catch (const std::exception &e)
           {
             app->reset();
             EOUT("Un-known option:"<< e.what());
