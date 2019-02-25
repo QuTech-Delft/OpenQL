@@ -10,6 +10,14 @@
 
 #include <ql/openql.h>
 
+
+// all tests below should be run with scheduler_post179 yes and no
+// when scheduler_post179 is yes, also scheduler_commute should be yes (but that is default)
+// the tests that start with #ifdef NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON need not be converted to golden tests
+
+
+
+#ifdef NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON
 // test qwg resource constraints mapping
 // no difference between pre179 and post179 scheduling
 void
@@ -36,8 +44,12 @@ test_qwg(std::string v, std::string schedopt, std::string sched_post179opt)
     ql::options::set("scheduler_post179", sched_post179opt);
     prog.compile( );
 }
+#endif  // NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON
 
-// demo single dimension resource constraint representation simple
+#ifdef NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON
+// demo single dimension resource constraint representation
+// this is the test that was the reason for issue179
+// so there should definitely be a difference between pre179 and post179 scheduling
 void
 test_singledim(std::string v, std::string schedopt, std::string sched_post179opt)
 {
@@ -79,7 +91,9 @@ test_singledim(std::string v, std::string schedopt, std::string sched_post179opt
     ql::options::set("scheduler_post179", sched_post179opt);
     prog.compile( );
 }
+#endif  // NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON
 
+#ifdef NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON
 // test edge resource constraints mapping
 // no difference between pre179 and post179 scheduling
 void
@@ -106,7 +120,9 @@ test_edge(std::string v, std::string schedopt, std::string sched_post179opt)
     ql::options::set("scheduler_post179", sched_post179opt);
     prog.compile( );
 }
+#endif  // NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON
 
+#ifdef NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON
 // test detuned_qubits resource constraints mapping
 // no swaps generated
 // no difference between pre179 and post179 scheduling
@@ -140,9 +156,12 @@ test_detuned(std::string v, std::string schedopt, std::string sched_post179opt)
     ql::options::set("scheduler_post179", sched_post179opt);
     prog.compile( );
 }
+#endif  // NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON
 
+#ifdef NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON
 // one cnot with operands that are neighbors in s7
 // no difference between pre179 and post179 scheduling
+// test for mapping
 void
 test_oneNN(std::string v, std::string schedopt, std::string sched_post179opt)
 {
@@ -172,8 +191,10 @@ test_oneNN(std::string v, std::string schedopt, std::string sched_post179opt)
     ql::options::set("scheduler_post179", sched_post179opt);
     prog.compile( );
 }
+#endif  // NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON
 
 // test hilo bundles
+// tests uniform scheduling in the presence of pre179/post179
 void
 test_hilo(std::string v, std::string schedopt, std::string sched_post179opt)
 {
@@ -201,7 +222,9 @@ test_hilo(std::string v, std::string schedopt, std::string sched_post179opt)
     prog.compile( );
 }
 
+#ifdef NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON
 // steane qec on s7 with cnots
+// is really a test from smallqec, that will be added when that branch is added
 void
 test_steaneqec(std::string v, std::string schedopt, std::string sched_post179opt)
 {
@@ -235,10 +258,10 @@ test_steaneqec(std::string v, std::string schedopt, std::string sched_post179opt
     ql::options::set("scheduler_post179", sched_post179opt);
     prog.compile( );
 }
+#endif  // NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON
 
 // all cnots with operands that are neighbors in s7
-// no or hardly any significant difference between pre179 and post179 scheduling,
-// slight differences may occur when the json file maps cnot to its constituent primitive gates
+// no or hardly any significant difference between pre179 and post179 scheduling
 void
 test_manyNN(std::string v, std::string schedopt, std::string sched_post179opt)
 {
@@ -419,26 +442,26 @@ int main(int argc, char ** argv)
     ql::utils::logger::set_log_level("LOG_DEBUG");
     ql::options::set("scheduler_uniform", "no");
 
-    test_singledim("singledim", "ASAP", "no");
-    test_singledim("singledim", "ASAP", "yes");
-    test_singledim("singledim", "ALAP", "no");
-    test_singledim("singledim", "ALAP", "yes");
-    test_qwg("qwg", "ASAP", "no");
-    test_qwg("qwg", "ASAP", "yes");
-    test_qwg("qwg", "ALAP", "no");
-    test_qwg("qwg", "ALAP", "yes");
-    test_edge("edge", "ASAP", "no");
-    test_edge("edge", "ASAP", "yes");
-    test_edge("edge", "ALAP", "no");
-    test_edge("edge", "ALAP", "yes");
-    test_detuned("detuned", "ASAP", "no");
-    test_detuned("detuned", "ASAP", "yes");
-    test_detuned("detuned", "ALAP", "no");
-    test_detuned("detuned", "ALAP", "yes");
-    test_oneNN("oneNN", "ASAP", "no");
-    test_oneNN("oneNN", "ASAP", "yes");
-    test_oneNN("oneNN", "ALAP", "no");
-    test_oneNN("oneNN", "ALAP", "yes");
+//  test_singledim("singledim", "ASAP", "no");
+//  test_singledim("singledim", "ASAP", "yes");
+//  test_singledim("singledim", "ALAP", "no");
+//  test_singledim("singledim", "ALAP", "yes");
+//  test_qwg("qwg", "ASAP", "no");
+//  test_qwg("qwg", "ASAP", "yes");
+//  test_qwg("qwg", "ALAP", "no");
+//  test_qwg("qwg", "ALAP", "yes");
+//  test_edge("edge", "ASAP", "no");
+//  test_edge("edge", "ASAP", "yes");
+//  test_edge("edge", "ALAP", "no");
+//  test_edge("edge", "ALAP", "yes");
+//  test_detuned("detuned", "ASAP", "no");
+//  test_detuned("detuned", "ASAP", "yes");
+//  test_detuned("detuned", "ALAP", "no");
+//  test_detuned("detuned", "ALAP", "yes");
+//  test_oneNN("oneNN", "ASAP", "no");
+//  test_oneNN("oneNN", "ASAP", "yes");
+//  test_oneNN("oneNN", "ALAP", "no");
+//  test_oneNN("oneNN", "ALAP", "yes");
     test_hilo("hilo", "ASAP", "no");
     test_hilo("hilo", "ASAP", "yes");
     test_hilo("hilo", "ALAP", "no");
@@ -455,10 +478,10 @@ int main(int argc, char ** argv)
     test_cz_anycommute("cz_anycommute", "ASAP", "yes");
     test_cz_anycommute("cz_anycommute", "ALAP", "no");
     test_cz_anycommute("cz_anycommute", "ALAP", "yes");
-    test_steaneqec("steaneqec", "ASAP", "no");
-    test_steaneqec("steaneqec", "ASAP", "yes");
-    test_steaneqec("steaneqec", "ALAP", "no");
-    test_steaneqec("steaneqec", "ALAP", "yes");
+//  test_steaneqec("steaneqec", "ASAP", "no");
+//  test_steaneqec("steaneqec", "ASAP", "yes");
+//  test_steaneqec("steaneqec", "ALAP", "no");
+//  test_steaneqec("steaneqec", "ALAP", "yes");
     test_manyNN("manyNN", "ASAP", "no");
     test_manyNN("manyNN", "ASAP", "yes");
     test_manyNN("manyNN", "ALAP", "no");
