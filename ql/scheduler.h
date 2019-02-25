@@ -13,18 +13,19 @@
     Summary
 
     Below there really are two classes: the dependence graph definition and the scheduler definition.
-    All schedulers use dependence graph creation as preprocessor, and don't modify it.
+    All schedulers require dependence graph creation as preprocessor, and don't modify it.
     For each kernel's circuit a private dependence graph is created.
     The schedulers modify the order of gates in the circuit, initialize the cycle field of each gate,
-    and generate/return a separate bundles list in which gates starting in the same cycle are grouped.
+    and generate/return the bundles, a list of bundles in which gates starting in the same cycle are grouped.
 
     The dependence graph (represented by the graph field below) is created in the Init method,
-    and the graph is on top (i.e. as in constructed from and referring to) the sequence of gates in a kernel's circuit.
+    and the graph is constructed from and referring to the gates in the sequence of gates in the kernel's circuit.
     In this graph, the nodes refer to the gates in the circuit, and the edges represent the dependences between two gates.
-    Init scans the gates from start to end, inspects their parameters, and depending on the gate type and parameter value
-    and previous gates operating on the same parameters, creates a dependence of the current gate on that previous gate.
+    Init scans the gates of the circuit from start to end, inspects their parameters, and for each gate
+    depending on the gate type and parameter value and previous gates operating on the same parameters,
+    it creates a dependence of the current gate on that previous gate.
     Such a dependence has a type (RAW, WAW, etc.), cause (the qubit or classical register used as parameter), and a weight
-    (the cycles the previous gate takes to complete its execution and after which the current gate can start execution).
+    (the cycles the previous gate takes to complete its execution, after which the current gate can start execution).
 
     In dependence graph creation, each qubit/classical register (creg) use in each gate is seen as an "event".
     The following events are distinguished:
@@ -42,8 +43,9 @@
         W    /   /   /              W   WAW RAW DAW
         R    /   no  /              R   WAR RAR DAR
         D    /   /   no             D   WAD RAD DAD
-    When the 'no' dependences are created (RAR and DAD), commutation is not represented in the dependence graph.
-    Then also all events cause sequentialization and become equivalent to Write.
+    When the 'no' dependences are created (RAR and/or DAD),
+    the respective commutatable gates are sequentialized according to the original circuit's order.
+    With all 'no's replaced by '/', all event types become equivalent (i.e. as if they were Write).
 
     Schedulers come essentially in the following forms:
     - ASAP: a plain forward scheduler using dependences only, aiming at execution each gate as soon as possible
@@ -73,28 +75,34 @@
 using namespace std;
 using namespace lemon;
 
-// see below for the meaning of R, W, and D events and their relation to dependences
+// see above/below for the meaning of R, W, and D events and their relation to dependences
 enum DepTypes{RAW, WAW, WAR, RAR, RAD, DAR, DAD, WAD, DAW};
 const string DepTypesNames[] = {"RAW", "WAW", "WAR", "RAR", "RAD", "DAR", "DAD", "WAD", "DAW"};
 
 class Scheduler
 {
 public:
-    // dependence graph is constructed (see Init) once, and can be reused as often as needed
+    // dependence graph is constructed (see Init) once from the sequence of gates in a kernel's circuit
+    // it can be reused as often as needed as long as no gates are added/deleted; it doesn't modify those gates
     ListDigraph graph;
 
+    // conversion between gate* (pointer to the gate in the circuit) and node (of the dependence graph)
     ListDigraph::NodeMap<ql::gate*> instruction;// instruction[n] == gate*
     std::map<ql::gate*,ListDigraph::Node>  node;// node[gate*] == n
+
+    // attributes
     ListDigraph::NodeMap<std::string> name;     // name[n] == qasm string
     ListDigraph::ArcMap<int> weight;            // number of cycles of dependence
     ListDigraph::ArcMap<int> cause;             // qubit/creg index of dependence
     ListDigraph::ArcMap<int> depType;           // RAW, WAW, ...
+
+    // s and t nodes are the top and bottom of the dependence graph
     ListDigraph::Node s, t;                     // instruction[s]==SOURCE, instruction[t]==SINK
 
     // parameters of dependence graph construction
     size_t          cycle_time;                 // to convert durations to cycles as weight of dependence
-    size_t          qubit_count;                // to check/represent qubit as cause of dependence
-    size_t          creg_count;                 // to check/represent cbit as cause of dependence
+    size_t          qubit_count;                // number of qubits, to check/represent qubit as cause of dependence
+    size_t          creg_count;                 // number of cregs, to check/represent creg as cause of dependence
     ql::circuit*    circp;                      // current and result circuit, passed from Init to each scheduler
 
     // scheduler support
@@ -106,6 +114,7 @@ public:
     Scheduler(): instruction(graph), name(graph), weight(graph),
         cause(graph), depType(graph) {}
 
+    // factored out code from Init to add a dependence between two nodes
     void addDep(int srcID, int tgtID, enum DepTypes deptype, int operand)
     {
         ListDigraph::Node srcNode = graph.nodeFromId(srcID);
@@ -117,9 +126,10 @@ public:
         DOUT("... dep " << name[srcNode] << " -> " << name[tgtNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[deptype] << ")");
     }
 
+    // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
     void Init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
     {
-        DOUT("Scheduler initialization ...");
+        DOUT("Dependence graph creation ...");
         qubit_count = qcount;
         creg_count = ccount;
         size_t qubit_creg_count = qubit_count + creg_count;
@@ -148,6 +158,21 @@ public:
             }
         }
 
+        // dependences are created with a current gate as target
+        // and with those previous gates as source that have an operand match:
+        // - the previous gates that Read r in LastReaders[r]; this is a list
+        // - the previous gates that D qubit q in LastDs[q]; this is a list
+        // - the previous gate that Wrote r in LastWriter[r]; this can only be one
+        // operands can be a qubit or a classical register
+        typedef vector<int> ReadersListType;
+
+        vector<ReadersListType> LastReaders;
+        LastReaders.resize(qubit_creg_count);
+
+        vector<ReadersListType> LastDs;
+        LastDs.resize(qubit_creg_count);
+
+        // start filling the dependence graph by creating the s node, the top of the graph
         {
             // add dummy source node
             ListDigraph::Node srcNode = graph.addNode();
@@ -156,22 +181,15 @@ public:
             name[srcNode] = instruction[srcNode]->qasm();
             s=srcNode;
         }
-
-        typedef vector<int> ReadersListType;
-        vector<ReadersListType> LastReaders;
-        LastReaders.resize(qubit_creg_count);
-
-        vector<ReadersListType> LastDs;
-        LastDs.resize(qubit_creg_count);
-
         int srcID = graph.id(s);
-        vector<int> LastWriter(qubit_creg_count,srcID);
+        vector<int> LastWriter(qubit_creg_count,srcID);     // it implicitly writes to all qubits and class. regs
 
+        // for each gate pointer ins in the circuit, add a node and add dependences from previous gates to it
         for( auto ins : ckt )
         {
             DOUT("Current instruction : " << ins->qasm());
 
-            // Add nodes
+            // Add node
             ListDigraph::Node consNode = graph.addNode();
             int consID = graph.id(consNode);
             instruction[consNode] = ins;
@@ -181,8 +199,9 @@ public:
             // Add edges (arcs)
             // In quantum computing there are no real Reads and Writes on qubits because they cannot be cloned.
             // Every qubit use influences the qubit, updates it, so would be considered a Read+Write at the same time.
-            // In dependence graph construction, this leads to RAW-dependence chains of all uses of the same qubit,
+            // In dependence graph construction, this leads to WAW-dependence chains of all uses of the same qubit,
             // and hence in a scheduler using this graph to a sequentialization of those uses in the original program order.
+            //
             // For a scheduler, only the presence of a dependence counts, not its type (RAW/WAW/etc.).
             // A dependence graph also has other uses apart from the scheduler: e.g. to find chains of live qubits,
             // from their creation (Prep etc.) to their destruction (Measure, etc.) in allocation of virtual to real qubits.
@@ -206,34 +225,38 @@ public:
             // So ignoring Read After Read (RAR) dependences enables the scheduler to take advantage
             // of the commutation property of Controlled Unitaries without disadvantages.
             //
-            // The above was implemented. But then we came to the following observations and extensions.
+            // In more detail:
             // 1. CU1(a,b) and CU2(a,c) commute (for any U1, U2, so also can be equal and/or be CNOT and/or be CZ)
-            // In addition:
-            // 2. CNOT(a,b) and CNOT(c,b) commute.
-            // 3. CZ(a,b) and CZ(b,a) are identical.
+            // 2. CNOT(a,b) and CNOT(c,b) commute (property of CNOT only).
+            // 3. CZ(a,b) and CZ(b,a) are identical (property of CZ only).
             // 4. CNOT(a,b) commutes with CZ(a,c) (from 1.) and thus with CZ(c,a) (from 3.)
             // 5. CNOT(a,b) does not commute with CZ(c,b) (and thus not with CZ(b,c), from 3.)
             // To support this, next to R and W a D (for controlleD operand :-) is introduced for the target operand of CNOT.
             // The events (instead of just Read and Write) become then:
             // - Both operands of CZ are just Read.
             // - The control operand of CNOT is Read, the target operand is D.
-            // - Of any other control unitary, the control operand is Read and the target operand is Write (not D!)
+            // - Of any other Control Unitary, the control operand is Read and the target operand is Write (not D!)
             // - Of any other gate the operands are Read+Write or just Write (as usual to represent flow).
             // With this, we effectively get the following table of event transitions (from left-bottom to right-up),
             // in which 'no' indicates no dependence from left event to top event and '/' indicates a dependence from left to top.
             //
-            //      R   D   W
-            // R    no  /   /
-            // D    /   no  /
-            // W    /   /   /
+            //             W   R   D                  w   R   D
+            //        W    /   /   /              W   WAW RAW DAW
+            //        R    /   no  /              R   WAR RAR DAR
+            //        D    /   /   no             D   WAD RAD DAD
             //
             // In addition to LastReaders, we introduce LastDs.
             // Either one is cleared when dependences are generated from them, and extended otherwise.
             // From the table it can be seen that the D 'behaves' as a Write to Read, and as a Read to Write,
             // that there is no order among Ds nor among Rs, but D after R and R after D sequentialize.
             // With this, the dependence graph is claimed to represent the commutations as above.
+            //
+            // The post179 schedulers are list schedulers, i.e. they maintain a list of gates in their algorithm,
+            // of gates available for being scheduled because they are not blocked by dependences on non-scheduled gates.
+            // Therefore, the post179 schedulers are able to select the best one from a set of commutable gates.
             }
 
+            // each type of gate has a different 'signature' of events; switch out to each one
             if(ins->name == "measure")
             {
                 DOUT(". considering " << name[consNode] << " as measure");
@@ -512,11 +535,12 @@ public:
             }
 #ifdef HAVEGENERALCONTROLUNITARIES
             else if (
-                    // or is a control-unitary in general
+                    // or is a Control Unitary in general
                     // Read on all operands, Write on last operand
+                    // before implementing it, check whether all commutativity on Reads above hold for this Control Unitary
                     )
             {
-                DOUT(". considering " << name[consNode] << " as control-unitary");
+                DOUT(". considering " << name[consNode] << " as Control Unitary");
                 // Control Unitaries Read all operands, and Write the last operand
                 size_t operandNo=0;
                 auto operands = ins->operands;
@@ -609,6 +633,7 @@ public:
             } // end of if/else
         } // end of instruction for
 
+        // finish filling the dependence graph by creating the t node, the bottom of the graph
         {
 	        // add dummy target node
 	        ListDigraph::Node consNode = graph.addNode();
@@ -624,10 +649,12 @@ public:
 	        //
 	        // to guarantee that exactly at start of execution of dummy SINK,
 	        // all still executing nodes complete, give arc weight of those nodes;
-	        // this is relevant for ALAP (which starts backward from SINK for all these nodes),
-	        // for accurately computing the circuit's depth (which includes full completion),
-	        // and for implementing scheduling and mapping across control-flow (so that it is
+	        // this is relevant for ALAP (which starts backward from SINK for all these nodes);
+	        // also for accurately computing the circuit's depth (which includes full completion);
+	        // and also for implementing scheduling and mapping across control-flow (so that it is
 	        // guaranteed that on a jump and on start of target circuit, the source circuit completed).
+            //
+            // note that there always is a LastWriter: the dummy source node wrote to every qubit and class. reg
 	        std::vector<size_t> qubits(qubit_creg_count);
 	        std::iota(qubits.begin(), qubits.end(), 0);
 	        for( auto operand : qubits )
@@ -647,6 +674,7 @@ public:
 	            }
 	        }
 	
+            // useless because there is nothing after t but destruction
 	        for( auto operand : qubits )
 	        {
 	            LastWriter[operand] = consID;
@@ -658,12 +686,17 @@ public:
 	        }
         }
 
+        // useless as well because by construction, there cannot be cycles
+        // but when afterwards dependences are added, cycles may be created,
+        // and after doing so (a copy of) this test should certainly be done because
+        // a cyclic dependence graph cannot be scheduled;
+        // this test here is a kind of debugging aid whether dependence creation was done well
         if( !dag(graph) )
         {
             DOUT("The dependence graph is not a DAG.");
             EOUT("The dependence graph is not a DAG.");
         }
-        DOUT("Scheduler initialization Done.");
+        DOUT("Dependence graph creation Done.");
     }
 
     void Print()
@@ -2052,6 +2085,34 @@ private:
 
 // =========== post179 plain schedulers, just ASAP and ALAP, no resources, etc.
 
+/*
+    Summary
+
+    The post179 schedulers are linear list schedulers, i.e.
+    - they scan linearly through the code, forward or backward
+    - and while doing, they maintain a list of gates, of gates that are available for being scheduled
+      because they are not blocked by dependences on non-scheduled gates.
+    Therefore, the post179 schedulers are able to select the best one from multiple available gates.
+    Not all gates that are available (not blocked by dependences on non-scheduled gates) can actually be scheduled.
+    It must be made sure in addition that:
+    - those scheduled gates that it depends on, actually have completed their execution
+    - the resources are available for it
+    Furthermore, making a selection from the nodes that remain determines the optimality of the scheduling result.
+    The schedulers below are critical path schedulers, i.e. they prefer to schedule the most critical node first.
+    The criticality of a node is measured by estimating
+    the effect of delaying scheduling it on the depth of the resulting circuit.
+
+    The schedulers don't actually scan the circuit themselves but rely on a dependence graph representation of the circuit.
+    At the start, depending on the scheduling direction, only the top (or bottom) node is available.
+    Then one by one, according to an optimality criterion, a node is selected from the list of available ones
+    and added to the schedule. Having scheduled the node, it is taken out of the available list;
+    also having scheduled a node, some new nodes may become available because they don't depend on non-scheduled nodes anymore;
+    those nodes are found and put in the available list of nodes.
+    This continues, filling cycle by cycle from low to high (or from high to low when scheduling backward),
+    until the available list gets empty (which happens after scheduling the last node, the bottom (or top when backward).
+*/
+
+
 // use MAX_CYCLE for absolute upperbound on cycle value
 // use ALAP_SINK_CYCLE for initial cycle given to SINK in ALAP;
 // the latter allows for some growing room when doing latency compensation/buffer-delay insertion
@@ -2133,22 +2194,22 @@ private:
     // sort circuit by the gates' cycle attribute in non-decreasing order
     void sort_by_cycle()
     {
-        DOUT("... before sorting on cycle value");
-        for ( ql::circuit::iterator gpit = circp->begin(); gpit != circp->end(); gpit++)
-        {
-            ql::gate*           gp = *gpit;
-            DOUT("...... (@" << gp->cycle << ") " << gp->qasm());
-        }
+        // DOUT("... before sorting on cycle value");
+        // for ( ql::circuit::iterator gpit = circp->begin(); gpit != circp->end(); gpit++)
+        // {
+        //     ql::gate*           gp = *gpit;
+        //     DOUT("...... (@" << gp->cycle << ") " << gp->qasm());
+        // }
 
         // std::sort doesn't preserve the original order of elements that have equal values but std::stable_sort does
         std::stable_sort(circp->begin(), circp->end(), cycle_lessthan);
 
-        DOUT("... after sorting on cycle value");
-        for ( ql::circuit::iterator gpit = circp->begin(); gpit != circp->end(); gpit++)
-        {
-            ql::gate*           gp = *gpit;
-            DOUT("...... (@" << gp->cycle << ") " << gp->qasm());
-        }
+        // DOUT("... after sorting on cycle value");
+        // for ( ql::circuit::iterator gpit = circp->begin(); gpit != circp->end(); gpit++)
+        // {
+        //     ql::gate*           gp = *gpit;
+        //     DOUT("...... (@" << gp->cycle << ") " << gp->qasm());
+        // }
     }
 
     // return bundles for the given circuit;
@@ -2169,7 +2230,7 @@ private:
 
         for (auto & gp: circ)
         {
-            DOUT(". adding gate(@" << gp->cycle << ")  " << gp->qasm());
+            // DOUT(". adding gate(@" << gp->cycle << ")  " << gp->qasm());
             if ( gp->type() == ql::gate_type_t::__wait_gate__ ||
                  gp->type() == ql::gate_type_t::__dummy_gate__
                )
@@ -2188,15 +2249,15 @@ private:
                 if (!currBundle.parallel_sections.empty())
                 {
                     // finish currBundle at currCycle
-                    DOUT(".. bundle duration in cycles: " << currBundle.duration_in_cycles);
+                    // DOUT(".. bundle duration in cycles: " << currBundle.duration_in_cycles);
                     bundles.push_back(currBundle);
-                    DOUT(".. ready with bundle");
+                    // DOUT(".. ready with bundle");
                     currBundle.parallel_sections.clear();
                 }
 
                 // new empty currBundle at newCycle
                 currCycle = newCycle;
-                DOUT(".. bundling at cycle: " << currCycle);
+                // DOUT(".. bundling at cycle: " << currCycle);
                 currBundle.start_cycle = currCycle;
                 currBundle.duration_in_cycles = 0;
             }
@@ -2205,15 +2266,15 @@ private:
             ql::ir::section_t asec;
             asec.push_back(gp);
             currBundle.parallel_sections.push_back(asec);
-            DOUT("... gate: " << gp->qasm() << " in private parallel section");
+            // DOUT("... gate: " << gp->qasm() << " in private parallel section");
             currBundle.duration_in_cycles = std::max(currBundle.duration_in_cycles, (gp->duration+cycle_time-1)/cycle_time); 
         }
         if (!currBundle.parallel_sections.empty())
         {
             // finish currBundle (which is last bundle) at currCycle
-            DOUT("... bundle duration in cycles: " << currBundle.duration_in_cycles);
+            // DOUT("... bundle duration in cycles: " << currBundle.duration_in_cycles);
             bundles.push_back(currBundle);
-            DOUT("... ready with bundle");
+            // DOUT("... ready with bundle");
         }
 
         // currCycle == cycle of last gate of circuit scheduled
@@ -2456,7 +2517,9 @@ private:
     }
 
     // collect the list of directly depending nodes
-    // (i.e. those necessarily scheduled after the given node) without duplicates
+    // (i.e. those necessarily scheduled after the given node) without duplicates;
+    // dependences that are duplicates from the perspective of the scheduler
+    // may be present in the dependence graph because the scheduler ignores dependence type and cause
     void get_depending_nodes(ListDigraph::Node n, ql::scheduling_direction_t dir, std::list<ListDigraph::Node> & ln)
     {
         if (ql::forward_scheduling == dir)
@@ -2547,7 +2610,6 @@ private:
 
         ln1.sort([this,dir](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
         ln2.sort([this,dir](const ListDigraph::Node &d1, const ListDigraph::Node &d2) { return criticality_lessthan(d1, d2, dir); });
-
         return criticality_lessthan(ln1.back(), ln2.back(), dir);
     }
 
@@ -2624,6 +2686,7 @@ private:
     {
         scheduled[n] = true;
         avlist.remove(n);
+
         if (ql::forward_scheduling == dir)
         {
             for (ListDigraph::OutArcIt succArc(graph,n); succArc != INVALID; ++succArc)
