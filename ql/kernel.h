@@ -971,9 +971,18 @@ public:
         // {
         //     DOUT("Cycle=" << gp->cycle << " Qasm=" << gp->qasm() << "\n");
         // }
+        size_t  depth_result;
         if (c.back()->cycle == MAX_CYCLE)
-            return 0;
-        return c.back()->cycle + (c.back()->duration+cycle_time-1)/cycle_time - c.front()->cycle;
+        {
+            depth_result = 0;
+            DOUT("In k.get_depth() result is 0 because c.back()->cycle == MAX_CYCLE");
+        }
+        else
+        {
+            depth_result = c.back()->cycle + (c.back()->duration+cycle_time-1)/cycle_time - c.front()->cycle;
+        }
+        DOUT("Computed k.get_depth(): result is " << depth_result);
+        return depth_result;
     }
 
     std::string get_prologue()
@@ -1201,6 +1210,7 @@ public:
 
 #ifndef __disable_lemon__
         IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
+        DOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
 
         Scheduler sched;
         sched.Init(c, platform, qubit_count, creg_count);
@@ -1251,6 +1261,7 @@ public:
             EOUT("Unknown scheduler");
             throw ql::exception("Unknown scheduler!", false);
         }
+        DOUT( scheduler << " scheduling the quantum kernel '" << name << "' DONE");
 
         // schedulers assigned gatep->cycle; sort circuit on this
         typedef ql::gate *      gate_p;
