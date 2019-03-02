@@ -978,7 +978,7 @@ public:
             }
         }
 
-        generate_opcode_cs_files(platform);
+        // generate_opcode_cs_files(platform);
         MaskManager mask_manager;
 
         for(auto &kernel : kernels)
