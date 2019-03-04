@@ -42,6 +42,32 @@ void assert_fail(const char *f, int l, const char *s)
 #define MapperAssert(condition)   { if (!(condition)) { assert_fail(__FILE__, __LINE__, #condition); } }
 
 // =========================================================================================
+// Future: input window for mapper
+//
+// Future reads all gates from the input circuit into a dependence graph
+// and offers as output interface an availability list of gates which are candidates for mapping
+// Each of those gates has a remaining value representing its criticality.
+// The core of the mapper uses the availability list to select the gates from to map.
+// The dependence graph and the availability list operations are inherited from the Scheduler class.
+class Future : public Scheduler
+{
+    size_t                  nq;         // width of Past, Virt2Real, UseCount maps in number of real qubits
+    size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
+    ql::quantum_platform   *platformp;  // platform describing resources for scheduling
+
+// future initializer
+void Init(ql::quantum_platform *p)
+{
+    // DOUT("Future::Init");
+    platformp = p;
+
+    nq = platformp->qubit_number;
+    ct = platformp->cycle_time;
+}
+
+};  // end class Future
+
+// =========================================================================================
 // Virt2Real: map of a virtual qubit index to its real qubit index
 //
 // insertion of a swap changes this
@@ -2066,6 +2092,20 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, std::string& initi
 // The operands are virtual qubit indices, in the same range as the real qubit indices of the platform.
 //
 // Do this mapping in the context of a grid of qubits defined by the given platform.
+// The mapping is done kernel by kernel.
+// Program-wide is the grid (constant after initialization).
+// The design of mapping multiple kernels is as follows:
+// // Initially the program wide initial mapping is a 1 to 1 mapping of virtual to real qubits;
+// // kernels are mapped in the order that they appear.
+// // For each kernel, the output mappings of the mapped predecessor kernels are input; and then:
+// // - unify the optionally multiple input mapping to a single one; this may already introduce swaps;
+// //      keep the resulting kernel input mapping for later reference
+// // - attempt an initial placement of the circuit, starting from the kernel input mapping
+// // - anyhow use heuristics to map the input (or what initial placement left to do)
+// // - when done, keep the output mapping as the kernel's output mapping
+// //      for all mapped successor kernels, compute a transition from output to its input
+// // This is not implemented.
+// For each kernel mapping starts from a 1 to 1 mapping of virtual to real qubits
 // Maintain several local mappings to ease navigating in the grid; these are constant after initialization.
 //
 // The Mapper's main entry is MapCircuit which manages the input and output streams of QASM instructions,
@@ -2086,6 +2126,7 @@ private:
 #ifdef INITIALPLACE
     InitialPlace    ip;             // initial placer facility
 #endif
+    Future          future;         // future window, presents input in avlist
     Past            mainPast;       // main past window; all path alternatives start off as clones of it
     std::mt19937    gen;            // Standard mersenne_twister_engine, not yet seeded
 
@@ -2311,8 +2352,12 @@ void MapGates(ql::circuit& circ, std::string& kernel_name)
 {
     // mainPast.Print("start mapping");
 
+    // really want to replace circ but circ is input so cannot be output at the same time
+    // therefore, catch output in outCirc and at the end replace circ by outCirc
+    // output of mapping of quantum gates is in Past.lg, the past internal window
+    // when it would overflow (not implemented) or a classical gate is encountered, Past.lg is flushed to outCirc
     ql::circuit outCirc;        // output gate stream, mapped; will be swapped with circ on return
-    mainPast.Output(outCirc);       // past window will flush into outCirc
+    mainPast.Output(outCirc);   // past window will flush into outCirc
 
     for( auto & gp : circ )
     {
@@ -2327,7 +2372,7 @@ void MapGates(ql::circuit& circ, std::string& kernel_name)
         case ql::__wait_gate__:
             break;
         default:    // quantum gate
-            MapGate(gp);
+            MapGate(gp);    // adds gates to Past.lg; Flush will move gates from Past.lg to outCirc
             break;
         }
     }
@@ -2518,6 +2563,7 @@ void Init(const ql::quantum_platform& p)
 
     grid.Init(&platform);
 
+    future.Init(&platform);
     mainPast.Init(&platform);
 
     // DOUT("Mapping initialization [DONE]");
