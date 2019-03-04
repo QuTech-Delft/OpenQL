@@ -2243,45 +2243,6 @@ void SelectPath(std::list<NNPath>& lp, NNPath & resp)
     resp.Print("... the selected path is");
 }
 
-#if 0
-// find one (first/random) shortest path and use it to generate swaps
-// original implementation
-void MapBase(ql::gate* gp)
-{
-    auto& q = gp->operands;
-    size_t src = mainPast.MapQubit(q[0]);
-    size_t tgt = mainPast.MapQubit(q[1]);
-        
-    size_t d = grid.Distance(src, tgt);
-    DOUT("... MapBase: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
-    while (d > 1)
-    {
-        std::vector<size_t>   choices;
-        size_t dnb;
-        for( auto & n : grid.nbs[src] )
-        {
-            dnb = grid.Distance(n, tgt);
-            if (dnb < d)
-            {
-                choices.push_back(n);
-            }
-        }
-        size_t  n = choices[Draw(choices.size())];
-
-        dnb = grid.Distance(n, tgt);
-        DOUT(" ... distance(real " << n << ", real " << tgt << ")=" << dnb);
-        mainPast.AddSwap(src, n, true);
-        DOUT(" ... adding swap(q" << src << ",q" << n << ")");
-        mainPast.Schedule();
-        // mainPast.Print("mapping after swap");
-        src = n;
-
-        d = grid.Distance(src, tgt);
-        // DOUT(" ... new distance(real " << src << ", real " << tgt << ")=" << d);
-    }
-}
-#endif
-
 // take care that the operands of the given 2q gate become NN
 void EnforceNN(ql::gate* gp)
 {
