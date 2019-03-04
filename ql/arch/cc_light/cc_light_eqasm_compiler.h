@@ -560,7 +560,8 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
         }
         else
         {
-            ssbundles << sspre.str() << ssinst.str() << "\t\t# @" << bcycle << "\n";
+            // ssbundles << sspre.str() << ssinst.str() << "\t\t# @" << bcycle << "\n";
+            ssbundles << sspre.str() << ssinst.str() << "\n";
         }
         curr_cycle+=delta;
     }

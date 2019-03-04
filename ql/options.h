@@ -29,13 +29,14 @@ namespace ql
           opt_name2opt_val["log_level"] = "LOG_NOTHING";
           opt_name2opt_val["output_dir"] = "test_output";
           opt_name2opt_val["optimize"] = "no";
-          opt_name2opt_val["scheduler_post179"] = "no";
-          opt_name2opt_val["scheduler"] = "ALAP";
-          opt_name2opt_val["scheduler_uniform"] = "no";
-          opt_name2opt_val["scheduler_commute"] = "yes";
           opt_name2opt_val["use_default_gates"] = "yes";
           opt_name2opt_val["optimize"] = "no";
           opt_name2opt_val["decompose_toffoli"] = "no";
+          opt_name2opt_val["scheduler"] = "ALAP";
+          opt_name2opt_val["scheduler_uniform"] = "no";
+          opt_name2opt_val["scheduler_commute"] = "yes";
+          opt_name2opt_val["scheduler_post179"] = "yes";
+
 
           // add options with default values and list of possible values
           app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"], 
