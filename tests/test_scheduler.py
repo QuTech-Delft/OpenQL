@@ -5,7 +5,7 @@ from openql import openql as ql
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
 curdir = os.path.dirname(__file__)
-config_fn = os.path.join(curdir, 'test_config_default.json')
+config_fn = os.path.join(curdir, 'test_179.json')
 platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')

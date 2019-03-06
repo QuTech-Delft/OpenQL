@@ -8,16 +8,14 @@ smis s6, {6}
 smis s7, {0, 1, 2, 3, 4, 5, 6} 
 smis s8, {0, 1, 5, 6} 
 smis s9, {2, 3, 4} 
-smis s10, {0, 5} 
-smis s11, {0, 1, 3, 5, 6} 
-smis s12, {1, 4, 6} 
+smis s10, {0, 3, 5} 
+smis s11, {1, 2, 4, 6} 
 start:
 
 kernel_qwg2_ALAP:
-    1    x s9
-    2    y s2 | x s10
-    2    x s11
-    2    y s12
+    1    x s10
+    2    x s7
+    2    y s11
     2    y s7
     qwait 2
 

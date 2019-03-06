@@ -321,8 +321,6 @@ test_cnot_controlcommute(std::string v, std::string schedopt, std::string sched_
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
-    // for (int j=0; j<7; j++) { k.gate("x", j); }
-
     k.gate("cnot", 3,0);
     k.gate("cnot", 3,6);
     k.gate("t", 6);
@@ -340,13 +338,11 @@ test_cnot_controlcommute(std::string v, std::string schedopt, std::string sched_
     k.gate("t", 5);
     k.gate("y", 5);
 
-    // for (int j=0; j<7; j++) { k.gate("x", j); }
-
     prog.add(k);
 
     ql::options::set("scheduler", schedopt);
     ql::options::set("scheduler_post179", sched_post179opt);
-    prog.compile( );
+    prog.compile();
 }
 
 // test cnot target operand commutativity
@@ -365,8 +361,6 @@ test_cnot_targetcommute(std::string v, std::string schedopt, std::string sched_p
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
-    // for (int j=0; j<7; j++) { k.gate("x", j); }
-
     k.gate("cnot", 0,3);
     k.gate("cnot", 6,3);
     k.gate("t", 6);
@@ -383,8 +377,6 @@ test_cnot_targetcommute(std::string v, std::string schedopt, std::string sched_p
     k.gate("y", 5);
     k.gate("t", 5);
     k.gate("y", 5);
-
-    // for (int j=0; j<7; j++) { k.gate("x", j); }
 
     prog.add(k);
 
@@ -409,8 +401,6 @@ test_cz_anycommute(std::string v, std::string schedopt, std::string sched_post17
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
-    // for (int j=0; j<7; j++) { k.gate("x", j); }
-
     k.gate("cz", 0,3);
     k.gate("cz", 3,6);
     k.gate("t", 6);
@@ -427,8 +417,6 @@ test_cz_anycommute(std::string v, std::string schedopt, std::string sched_post17
     k.gate("y", 5);
     k.gate("t", 5);
     k.gate("y", 5);
-
-    // for (int j=0; j<7; j++) { k.gate("x", j); }
 
     prog.add(k);
 
