@@ -34,7 +34,7 @@ namespace ql
           opt_name2opt_val["decompose_toffoli"] = "no";
           opt_name2opt_val["scheduler"] = "ALAP";
           opt_name2opt_val["scheduler_uniform"] = "no";
-          opt_name2opt_val["scheduler_commute"] = "yes";
+          opt_name2opt_val["scheduler_commute"] = "no";
           opt_name2opt_val["scheduler_post179"] = "yes";
 
 
