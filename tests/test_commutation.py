@@ -14,17 +14,14 @@ class Test_commutation(unittest.TestCase):
         ql.set_option('optimize', 'no')
         ql.set_option("scheduler_uniform", "no")
         ql.set_option('log_level', 'LOG_WARNING')
-        # ql.set_option('scheduler', 'ASAP')
-
-    def tearDown(self):
-        ql.set_option('scheduler', 'ALAP')
+        ql.set_option('scheduler', 'ASAP')
 
     def test_cnot_controlcommute(self):
         config_fn = os.path.join(curdir, 'test_179.json')
         platf = ql.Platform("starmon", config_fn)
         ql.set_option("scheduler", 'ASAP');
         ql.set_option("scheduler_post179", 'yes');
-        ql.set_option("scheduler_commute", 'yes');
+        ql.set_option("scheduler_commute", 'no');
 
         nqubits = 7
         k = ql.Kernel("aKernel", platf, nqubits)
