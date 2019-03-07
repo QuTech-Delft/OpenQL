@@ -275,8 +275,10 @@ test_wait(std::string v, std::string schedopt, std::string sched_post179opt)
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
+    std::vector<size_t> operands = {0};
+
     k.gate("x", 0);
-    k.gate("wait");
+    k.wait(operands, 40);
     k.gate("x", 0);
 
     prog.add(k);

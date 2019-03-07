@@ -257,6 +257,41 @@ public:
             }
 
             // each type of gate has a different 'signature' of events; switch out to each one
+#ifdef wait_missing
+            if(ins->name == "wait")
+            {
+                DOUT(". considering " << name[consNode] << " as wait");
+                auto operands = ins->operands;
+                for( auto operand : operands )
+                {
+                    DOUT(".. Operand: " << operand);
+                    addDep(LastWriter[operand], consID, WAW, operand);
+                    for(auto & readerID : LastReaders[operand])
+                    {
+                        addDep(readerID, consID, WAR, operand);
+                    }
+                    if (ql::options::get("scheduler_post179") == "yes")
+                    {
+                        for(auto & readerID : LastDs[operand])
+                        {
+                            addDep(readerID, consID, WAD, operand);
+                        }
+                    }
+                }
+
+                // update LastWriter and so clear LastReaders
+                for( auto operand : operands )
+                {
+                    LastWriter[operand] = consID;
+                    if (ql::options::get("scheduler_post179") == "yes")
+                    {
+                        LastReaders[operand].clear();
+                        LastDs[operand].clear();
+                    }
+                }
+            }
+            else
+#endif
             if(ins->name == "measure")
             {
                 DOUT(". considering " << name[consNode] << " as measure");
@@ -2818,6 +2853,7 @@ private:
             if ( n == s || n == t
                 || gp->type() == ql::gate_type_t::__dummy_gate__ 
                 || gp->type() == ql::gate_type_t::__classical_gate__ 
+                || gp->type() == ql::gate_type_t::__wait_gate__ 
                )
             {
                 return true;
@@ -2929,6 +2965,7 @@ private:
                 && selected_node != t
                 && gp->type() != ql::gate_type_t::__dummy_gate__ 
                 && gp->type() != ql::gate_type_t::__classical_gate__ 
+                && gp->type() != ql::gate_type_t::__wait_gate__ 
                )
             {
                 std::string operation_name;
