@@ -260,6 +260,32 @@ test_steaneqec(std::string v, std::string schedopt, std::string sched_post179opt
 }
 #endif  // NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON
 
+// test wait as gate
+void
+test_wait(std::string v, std::string schedopt, std::string sched_post179opt)
+{
+    int n = 7;
+    std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
+    std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
+    float sweep_points[] = { 1 };
+
+    ql::quantum_platform starmon("starmon", "test_179.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, n, 0);
+    ql::quantum_kernel k(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
+    k.gate("x", 0);
+    k.gate("wait");
+    k.gate("x", 0);
+
+    prog.add(k);
+
+    ql::options::set("scheduler", schedopt);
+    ql::options::set("scheduler_post179", sched_post179opt);
+    prog.compile( );
+}
+
 // all cnots with operands that are neighbors in s7
 // no or hardly any significant difference between pre179 and post179 scheduling
 void
@@ -450,34 +476,39 @@ int main(int argc, char ** argv)
 //  test_oneNN("oneNN", "ASAP", "yes");
 //  test_oneNN("oneNN", "ALAP", "no");
 //  test_oneNN("oneNN", "ALAP", "yes");
-    test_hilo("hilo", "ASAP", "no");
-    test_hilo("hilo", "ASAP", "yes");
-    test_hilo("hilo", "ALAP", "no");
-    test_hilo("hilo", "ALAP", "yes");
-    test_cnot_controlcommute("cnot_controlcommute", "ASAP", "no");
-    test_cnot_controlcommute("cnot_controlcommute", "ASAP", "yes");
-    test_cnot_controlcommute("cnot_controlcommute", "ALAP", "no");
-    test_cnot_controlcommute("cnot_controlcommute", "ALAP", "yes");
-    test_cnot_targetcommute("cnot_targetcommute", "ASAP", "no");
-    test_cnot_targetcommute("cnot_targetcommute", "ASAP", "yes");
-    test_cnot_targetcommute("cnot_targetcommute", "ALAP", "no");
-    test_cnot_targetcommute("cnot_targetcommute", "ALAP", "yes");
-    test_cz_anycommute("cz_anycommute", "ASAP", "no");
-    test_cz_anycommute("cz_anycommute", "ASAP", "yes");
-    test_cz_anycommute("cz_anycommute", "ALAP", "no");
-    test_cz_anycommute("cz_anycommute", "ALAP", "yes");
+//  test_hilo("hilo", "ASAP", "no");
+//  test_hilo("hilo", "ASAP", "yes");
+//  test_hilo("hilo", "ALAP", "no");
+//  test_hilo("hilo", "ALAP", "yes");
+//  test_cnot_controlcommute("cnot_controlcommute", "ASAP", "no");
+//  test_cnot_controlcommute("cnot_controlcommute", "ASAP", "yes");
+//  test_cnot_controlcommute("cnot_controlcommute", "ALAP", "no");
+//  test_cnot_controlcommute("cnot_controlcommute", "ALAP", "yes");
+//  test_cnot_targetcommute("cnot_targetcommute", "ASAP", "no");
+//  test_cnot_targetcommute("cnot_targetcommute", "ASAP", "yes");
+//  test_cnot_targetcommute("cnot_targetcommute", "ALAP", "no");
+//  test_cnot_targetcommute("cnot_targetcommute", "ALAP", "yes");
+//  test_cz_anycommute("cz_anycommute", "ASAP", "no");
+//  test_cz_anycommute("cz_anycommute", "ASAP", "yes");
+//  test_cz_anycommute("cz_anycommute", "ALAP", "no");
+//  test_cz_anycommute("cz_anycommute", "ALAP", "yes");
 //  test_steaneqec("steaneqec", "ASAP", "no");
 //  test_steaneqec("steaneqec", "ASAP", "yes");
 //  test_steaneqec("steaneqec", "ALAP", "no");
 //  test_steaneqec("steaneqec", "ALAP", "yes");
-    test_manyNN("manyNN", "ASAP", "no");
-    test_manyNN("manyNN", "ASAP", "yes");
-    test_manyNN("manyNN", "ALAP", "no");
-    test_manyNN("manyNN", "ALAP", "yes");
+//  test_manyNN("manyNN", "ASAP", "no");
+//  test_manyNN("manyNN", "ASAP", "yes");
+//  test_manyNN("manyNN", "ALAP", "no");
+//  test_manyNN("manyNN", "ALAP", "yes");
 
-    ql::options::set("scheduler_uniform", "yes");
-    test_hilo("hilo_uniform", "ALAP", "no");
-    test_hilo("hilo_uniform", "ALAP", "yes");
+    test_wait("wait", "ASAP", "no");
+    test_wait("wait", "ASAP", "yes");
+    test_wait("wait", "ALAP", "no");
+    test_wait("wait", "ALAP", "yes");
+
+//  ql::options::set("scheduler_uniform", "yes");
+//  test_hilo("hilo_uniform", "ALAP", "no");
+//  test_hilo("hilo_uniform", "ALAP", "yes");
 
     return 0;
 }
