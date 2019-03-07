@@ -52,22 +52,147 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         self.assertEqual(str(cm.exception), 'Unitary \'u1\' not decomposed. Cannot be added to kernel!')
 
-    # TODO: add more tests here
-    def test_unitary_decompose_X(self):
+    def test_unitary_decompose_I(self):
         config_fn = os.path.join(curdir, 'test_cfg_none.json')
         platform = ql.Platform('platform_none', config_fn)
         num_qubits = 1
-        p = ql.Program('test_unitary_pass', platform, num_qubits)
+        p = ql.Program('test_unitary_I', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
         u = ql.Unitary('u1', [  complex(1.0, 0.0), complex(0.0, 0.0),
-                                complex(0.0, 0.0), complex(0.0, 1.0)])
+                                complex(0.0, 0.0), complex(1.0, 0.0)])
         u.decompose()
         k.gate(u, [0])
 
         p.add_kernel(k)
         p.compile()
-        self.assertEqual(p.qasm(), "this is not equal")
+        
+        gold_fn = rootDir + '/golden/test_unitary-decomp_1qubit_I.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
+
+    def test_unitary_decompose_X(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 1
+        p = ql.Program('test_unitary_X', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        u = ql.Unitary('u1', [  complex(0.0, 0.0), complex(1.0, 0.0),
+                                complex(1.0, 0.0), complex(0.0, 0.0)])
+        u.decompose()
+        k.gate(u, [0])
+
+        p.add_kernel(k)
+        p.compile()
+        
+        gold_fn = rootDir + '/golden/test_unitary-decomp_1qubit_X.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
+
+    def test_unitary_decompose_Y(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 1
+        p = ql.Program('test_unitary_Y', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        u = ql.Unitary('u1', [  complex(0.0, 0.0), complex(0.0, -1.0),
+                                complex(0.0, 1.0), complex(0.0, 0.0)])
+        u.decompose()
+        k.gate(u, [0])
+
+        p.add_kernel(k)
+        p.compile()
+        
+        gold_fn = rootDir + '/golden/test_unitary-decomp_1qubit_Y.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
+ 
+    def test_unitary_decompose_Z(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 1
+        p = ql.Program('test_unitary_Z', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        u = ql.Unitary('u1', [  complex(1.0, 0.0), complex(0.0, 0.0),
+                                complex(0.0, 0.0), complex(-1.0, 0.0)])
+        u.decompose()
+        k.gate(u, [0])
+
+        p.add_kernel(k)
+        p.compile()
+        
+        gold_fn = rootDir + '/golden/test_unitary-decomp_1qubit_Z.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )   
+
+    def test_unitary_decompose_IYZ(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 1
+        p = ql.Program('test_unitary_IYZ', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        u = ql.Unitary('X', [  complex(0.0, 0.0), complex(1.0, 0.0),
+                                complex(1.0, 0.0), complex(0.0, 0.0)])
+        u.decompose()
+        k.gate(u, [0])
+        u = ql.Unitary('y', [  complex(0.0, 0.0), complex(0.0, -1.0),
+                                complex(0.0, 1.0), complex(0.0, 0.0)])
+        u.decompose()
+        k.gate(u, [0])
+        u = ql.Unitary('Z', [  complex(1.0, 0.0), complex(0.0, 0.0),
+                                complex(0.0, 0.0), complex(-1.0, 0.0)])
+        u.decompose()
+        k.gate(u, [0])
+
+        p.add_kernel(k)
+        p.compile()
+        
+        gold_fn = rootDir + '/golden/test_unitary-decomp_1qubit_IYZ.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )   
+
+    def test_unitary_decompose_nonunitary(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 1
+        p = ql.Program('test_unitary_nonunitary', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        u = ql.Unitary('WRONG', [  complex(0.0, 0.0), complex(0.0, 0.0),
+                                complex(0.0, 0.0), complex(0.0, 0.0)])
+        u.decompose()
+        k.gate(u, [0])
+
+        p.add_kernel(k)
+        with self.assertRaises(Exception) as cm:
+            p.compile()
+
+        self.assertEqual(str(cm.exception), 'Error: trying to decompose a non-unitary gate!')
+  
+    
+    def test_unitary_decompose_nonunitary(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 1
+        p = ql.Program('test_unitary_wrongtype', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        u = ql.Unitary('WRONG', [  1,0,
+                                0, 1j])
+        u.decompose()
+        k.gate(u, [0])
+
+        p.add_kernel(k)
+        with self.assertRaises(Exception) as cm:
+            p.compile()
+
+        self.assertEqual(str(cm.exception), 'Error: wrong type!')
+
+
 
 if __name__ == '__main__':
     unittest.main()
