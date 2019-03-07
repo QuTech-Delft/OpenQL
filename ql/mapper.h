@@ -2092,20 +2092,34 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, std::string& initi
 // The operands are virtual qubit indices, in the same range as the real qubit indices of the platform.
 //
 // Do this mapping in the context of a grid of qubits defined by the given platform.
-// The mapping is done kernel by kernel.
 // Program-wide is the grid (constant after initialization).
 // The design of mapping multiple kernels is as follows:
-// // Initially the program wide initial mapping is a 1 to 1 mapping of virtual to real qubits;
-// // kernels are mapped in the order that they appear.
-// // For each kernel, the output mappings of the mapped predecessor kernels are input; and then:
-// // - unify the optionally multiple input mapping to a single one; this may already introduce swaps;
-// //      keep the resulting kernel input mapping for later reference
+// // The mapping is done kernel by kernel, in the order that they appear in the list of kernels:
+// // - initially the program wide initial mapping is a 1 to 1 mapping of virtual to real qubits
+// // - when start to map a kernel, there is a set of already mapped kernels, and a set of not yet mapped kernels;
+// //       of each mapped kernel, there is an output mapping, i.e. the mapping of virts to reals when mapping was ready,
+// //       and the current kernel has a set of kernels which are direct predecessor in the program's control flow;
+// //       a subset of those direct predecessors thus has been mapped and another subset not mapped;
+// //       the output mappings of the mapped predecessor kernels are input
+// // - unify these multiple input mappings to a single one; this may introduce swaps on the control flow edges;
+// //      the result is the input mapping of the current kernel; keep it for later reference
 // // - attempt an initial placement of the circuit, starting from the kernel input mapping
 // // - anyhow use heuristics to map the input (or what initial placement left to do)
-// // - when done, keep the output mapping as the kernel's output mapping
-// //      for all mapped successor kernels, compute a transition from output to its input
+// // - when done:
+// //       keep the output mapping as the kernel's output mapping;
+// //       for all mapped successor kernels, compute a transition from output to their input, and add it to the edge
+// //       the edge code is optimized for:
+// //       - being empty: nothing needs to be done
+// //       - having a source with one succ; the edge code can be appended to that succ
+// //       - having a target with one pred; the edge code can be prepended to that pred
+// //       - otherwise, a separate intermediate kernel for the transition code must be created, and added
 // // This is not implemented.
-// For each kernel mapping starts from a 1 to 1 mapping of virtual to real qubits
+// For each kernel independently (MapCircuit method):
+// - mapping starts from a 1 to 1 mapping of virtual to real qubits
+// - optionally attempt an initial placement of the circuit, starting from the kernel input mapping
+// - anyhow use heuristics to map the input (or what initial placement left to do)
+// - optionally decompose swap and/or cnot gates to primitives
+// 
 // Maintain several local mappings to ease navigating in the grid; these are constant after initialization.
 //
 // The Mapper's main entry is MapCircuit which manages the input and output streams of QASM instructions,
