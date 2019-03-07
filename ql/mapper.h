@@ -15,6 +15,7 @@
 #include "ql/platform.h"
 #include "ql/arch/cc_light_resource_manager.h"
 #include "ql/gate.h"
+#include "ql/scheduler.h"
 
 // Note on the use of constructors and Init functions for classes of the mapper
 // -----------------------------------------------------------------------------
@@ -41,28 +42,76 @@ void assert_fail(const char *f, int l, const char *s)
 }
 #define MapperAssert(condition)   { if (!(condition)) { assert_fail(__FILE__, __LINE__, #condition); } }
 
+
+// =========================================================================================
+// FutureDepGraph: dependence graph and availability list maintainer helper class of the Future class.
+
+class FutureDepGraph : public Scheduler
+{
+public:
+    ListDigraph::NodeMap<bool>      scheduled(graph);   // whether a node has been mapped, init all false
+    std::list<ListDigraph::Node>    avlist;             // list of available gates/instructions
+
+void Init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
+{
+    DOUT("FutureDepGraph::Init ...");
+    Scheduler::Init(ckt, platform, qcount, ccount);
+    DOUT("FutureDepGraph::Init [DONE]");
+}
+
+};  // end class FutureDepGraph
+
+
 // =========================================================================================
 // Future: input window for mapper
 //
-// Future reads all gates from the input circuit into a dependence graph
-// and offers as output interface an availability list of gates which are candidates for mapping
-// Each of those gates has a remaining value representing its criticality.
-// The core of the mapper uses the availability list to select the gates from to map.
-// The dependence graph and the availability list operations are inherited from the Scheduler class.
-class Future : public Scheduler
-{
-    size_t                  nq;         // width of Past, Virt2Real, UseCount maps in number of real qubits
-    size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
-    ql::quantum_platform   *platformp;  // platform describing resources for scheduling
+// The future window shows the gates that still must be mapped as the availability list
+// of a list scheduler that would work on a dependence graph representation of each input circuit.
+// This future window is initialized once for the whole program, and gets a method call
+// when it should switch to a new circuit (corresponding to a new kernel).
+// In each circuit and thus each dependence graph the gates (including classical instruction) are found;
+// the dependence graph models their dependences and also whether they act as barriers,
+// an example of the latter being a classical branch.
+// The availability list with gates (including classical instructions) is the main interface
+// to the mapper, i.e. the mapper selects one or more element(s) from it to map next;
+// it may even create alternatives for each combination of available gates.
+// The gates in the list have attributes like criticality, which can be exploited by the mapper.
+// The dependence graph and the availability list operations are provided by the Scheduler class.
+//
+// The future is a window because in principle it could be implemented incrementally,
+// i.e. that the dependence graph would be extended when an attribute gets below a threshold,
+// e.g. when successors of a gate are interrogated for a particular attribute.
+// A problem might be that criticality requires having seen the end of the circuit,
+// but the space overhead of this attribute is much less than that of a full dependence graph.
+// The implementation below is not incremental: it creates the dep graph for a circuit completely.
+//
+// The implementation below just selects the most critical gate from the availability list
+// as next candidate to map, the idea being that any collateral damage of mapping this gate
+// will have a lower probability of increasing circuit depth
+// than taking a non-critical gate as first one to map.
+// Later implementations may become more sophisticated.
 
-// future initializer
+class Future
+{
+    ql::quantum_platform            *platformp; // platform describing scheduling resources
+    FutureDepGraph                  sched;      // sched.graph is dependence graph
+
+public:
+
+// just program wide initialization
 void Init(ql::quantum_platform *p)
 {
-    // DOUT("Future::Init");
+    DOUT("Future::Init ...");
     platformp = p;
+    DOUT("Future::Init [DONE]");
+}
 
-    nq = platformp->qubit_number;
-    ct = platformp->cycle_time;
+// Set/switch input to the provided circuit
+void SetCircuit(ql::circuit& circ, size_t nq, size_t nc)
+{
+    DOUT("Future::SetCircuit ...");
+    sched.Init(circ, *platformp, nq, nc);   // fills sched.graph from circuit
+    DOUT("Future::SetCircuit [DONE]");
 }
 
 };  // end class Future
@@ -1453,12 +1502,14 @@ void Split(std::list<NNPath> & reslp)
 
 
 // =========================================================================================
-// Grid: definition and access functions to the grid of qubits that supports the real qubits
+// Grid: definition and access functions to the grid of qubits that supports the real qubits.
+// Maintain several maps to ease navigating in the grid; these are constant after initialization.
+//
 class Grid
 {
 private:
     ql::quantum_platform* platformp;    // current platform: topology
-    size_t nqbits;                      // number of qubits in the platform
+    size_t nq;                          // number of qubits in the platform
                                         // Grid configuration, all constant after initialization
     size_t nx;                          // length of x dimension (x coordinates count 0..nx-1)
     size_t ny;                          // length of y dimension (y coordinates count 0..ny-1)
@@ -1487,8 +1538,8 @@ void Init(ql::quantum_platform* p)
 {
     DOUT("Grid::Init");
     platformp = p;
-    nqbits = platformp->qubit_number;
-    DOUT("... number of real qbits=" << nqbits);
+    nq = platformp->qubit_number;
+    DOUT("... number of real qbits=" << nq);
 
     nx = platformp->topology["x_size"];
     ny = platformp->topology["y_size"];
@@ -1505,9 +1556,9 @@ void Init(ql::quantum_platform* p)
         y[qi] = qy;
 
         // sanity checks
-        if ( !(0<=qi && qi<nqbits) )
+        if ( !(0<=qi && qi<nq) )
         {
-            EOUT(" qbit in platform topology with id=" << qi << " has id that is not in the range 0..nqbits-1 with nqbits=" << nqbits);
+            EOUT(" qbit in platform topology with id=" << qi << " has id that is not in the range 0..nq-1 with nq=" << nq);
             throw ql::exception("Error: qbit with unsupported id.", false);
         }
         else if ( !(0<=qx && qx<nx) )
@@ -1527,14 +1578,14 @@ void Init(ql::quantum_platform* p)
         size_t ed = anedge["dst"];
 
         // sanity checks
-        if ( !(0<=es && es<nqbits) )
+        if ( !(0<=es && es<nq) )
         {
-            EOUT(" edge in platform topology has src=" << es << " that is not in the range 0..nqbits-1 with nqbits=" << nqbits);
+            EOUT(" edge in platform topology has src=" << es << " that is not in the range 0..nq-1 with nq=" << nq);
             throw ql::exception("Error: edge with unsupported src.", false);
         }
-        if ( !(0<=ed && ed<nqbits) )
+        if ( !(0<=ed && ed<nq) )
         {
-            EOUT(" edge in platform topology has dst=" << ed << " that is not in the range 0..nqbits-1 with nqbits=" << nqbits);
+            EOUT(" edge in platform topology has dst=" << ed << " that is not in the range 0..nq-1 with nq=" << nq);
             throw ql::exception("Error: edge with unsupported dst.", false);
         }
 
@@ -1542,7 +1593,7 @@ void Init(ql::quantum_platform* p)
     }
 
 #ifdef debug
-    for (int i=0; i<nqbits; i++)
+    for (int i=0; i<nq; i++)
     {
         DOUT("qubit[" << i << "]: x=" << x[i] << "; y=" << y[i]);
         std::cout << "... connects to ";
@@ -1552,7 +1603,7 @@ void Init(ql::quantum_platform* p)
         }
         std::cout << std::endl;
         std::cout << "... distance(" << i << ",j)=";
-        for (int j=0; j<nqbits; j++)
+        for (int j=0; j<nq; j++)
         {
             std::cout << Distance(i,j) << " ";
         }
@@ -2087,41 +2138,55 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, std::string& initi
 
 
 // =========================================================================================
-// Mapper: map operands of gates and insert swaps so that two-qubit gate operands are NN
-// all gates must be unary or two-qubit gates
-// The operands are virtual qubit indices, in the same range as the real qubit indices of the platform.
-//
-// Do this mapping in the context of a grid of qubits defined by the given platform.
-// Program-wide is the grid (constant after initialization).
-// The design of mapping multiple kernels is as follows:
-// // The mapping is done kernel by kernel, in the order that they appear in the list of kernels:
-// // - initially the program wide initial mapping is a 1 to 1 mapping of virtual to real qubits
-// // - when start to map a kernel, there is a set of already mapped kernels, and a set of not yet mapped kernels;
-// //       of each mapped kernel, there is an output mapping, i.e. the mapping of virts to reals when mapping was ready,
-// //       and the current kernel has a set of kernels which are direct predecessor in the program's control flow;
-// //       a subset of those direct predecessors thus has been mapped and another subset not mapped;
-// //       the output mappings of the mapped predecessor kernels are input
-// // - unify these multiple input mappings to a single one; this may introduce swaps on the control flow edges;
-// //      the result is the input mapping of the current kernel; keep it for later reference
-// // - attempt an initial placement of the circuit, starting from the kernel input mapping
-// // - anyhow use heuristics to map the input (or what initial placement left to do)
-// // - when done:
-// //       keep the output mapping as the kernel's output mapping;
-// //       for all mapped successor kernels, compute a transition from output to their input, and add it to the edge
-// //       the edge code is optimized for:
-// //       - being empty: nothing needs to be done
-// //       - having a source with one succ; the edge code can be appended to that succ
-// //       - having a target with one pred; the edge code can be prepended to that pred
-// //       - otherwise, a separate intermediate kernel for the transition code must be created, and added
-// // This is not implemented.
-// For each kernel independently (MapCircuit method):
-// - mapping starts from a 1 to 1 mapping of virtual to real qubits
+// Mapper: map operands of gates and insert swaps so that two-qubit gate operands are NN.
+// All gates must be unary or two-qubit gates. The operands are virtual qubit indices.
+// After mapping, all virtual qubit operands have been mapped to real qubit operands.
+// For the mapper to work,
+// the number of virtual qubits (nvq) must be less equal to the number of real qubits (nrq): nvq <= nrq;
+// the mapper assumes that the virtual qubit operands (vqi) are encoded as a number 0 <= vqi < nvq
+// and that the real qubit operands (rqi) are encoded as a number 0 <= rqi < nrq.
+// The nrq is given by the platform, nvq is given by the program.
+// The mapper ignores the latter (0 <= vqi < nvq was tested when creating the gates),
+// and assumes vqi, nvq, rqi and nrq to be of the same type (size_t) 0..nrq.
+// Because of this, it makes no difference between nvq and nrq, and refers to both as nq,
+// and initializes the latter from the platform.
+// All maps mapping virtual and real qubits to something are of size nq.
+
+// Classical registers are ignored by the mapper currently. TO BE DONE.
+
+// The mapping is done in the context of a grid of qubits defined by the given platform.
+// This grid is initialized once for the whole program and constant after that.
+// Each kernel in the program is independently mapped (see the MapCircuit method),
+// ignoring inter-kernel control flow and thereby the requirement to pass on the current mapping:
+// - mapping starts from a 1 to 1 mapping of virtual to real qubits (the kernel input mapping)
 // - optionally attempt an initial placement of the circuit, starting from the kernel input mapping
 // - anyhow use heuristics to map the input (or what initial placement left to do)
 // - optionally decompose swap and/or cnot gates to primitives
-// 
-// Maintain several local mappings to ease navigating in the grid; these are constant after initialization.
-//
+
+// Inter-kernel control flow and consequent mapping dependence between kernels is not implemented. TO BE DONE
+// The design of mapping multiple kernels is as follows:
+// The mapping is done kernel by kernel, in the order that they appear in the list of kernels:
+// - initially the program wide initial mapping is a 1 to 1 mapping of virtual to real qubits
+// - when start to map a kernel, there is a set of already mapped kernels, and a set of not yet mapped kernels;
+//       of each mapped kernel, there is an output mapping, i.e. the mapping of virts to reals
+//       when mapping was ready, and the current kernel has a set of kernels
+//       which are direct predecessor in the program's control flow;
+//       a subset of those direct predecessors thus has been mapped and another subset not mapped;
+//       the output mappings of the mapped predecessor kernels are input
+// - unify these multiple input mappings to a single one; this may introduce swaps on the control flow edges;
+//      the result is the input mapping of the current kernel; keep it for later reference
+// - attempt an initial placement of the circuit, starting from the kernel input mapping
+// - anyhow use heuristics to map the input (or what initial placement left to do)
+// - when done:
+//       keep the output mapping as the kernel's output mapping;
+//       for all mapped successor kernels, compute a transition from output to their input,
+//       and add it to the edge; the edge code must be optimized for:
+//       - being empty: nothing needs to be done
+//       - having a source with one succ; the edge code can be appended to that succ
+//       - having a target with one pred; the edge code can be prepended to that pred
+//       - otherwise, a separate intermediate kernel for the transition code must be created, and added
+// THE ABOVE INTER-KERNEL MAPPING IS NOT IMPLEMENTED.
+
 // The Mapper's main entry is MapCircuit which manages the input and output streams of QASM instructions,
 // selects the quantum gates from it, and maps these in the context of what was mapped before (the Past).
 // Each gate is separately mapped in MapGate in the main Past's context.
@@ -2131,7 +2196,8 @@ private:
                                     // Initialized by Mapper.Init
                                     // OpenQL wide configuration, all constant after initialization
     ql::quantum_platform platform;  // current platform: topology and gate definitions
-    size_t          nqbits;         // number of qubits in the platform, number of real qubits
+    size_t          nq;             // number of qubits in the platform, number of real qubits
+    size_t          nc;             // number of cregs in the platform, number of classical registers
     size_t          cycle_time;     // length in ns of a single cycle of the platform
                                     // is divisor of duration in ns to convert it to cycles
     Grid            grid;           // current grid
@@ -2364,13 +2430,14 @@ void MapGate(ql::gate* gp)
 // map the circuit's gates in the provided context (v2r and fc maps)
 void MapGates(ql::circuit& circ, std::string& kernel_name)
 {
-    // mainPast.Print("start mapping");
+    future.SetCircuit(circ, nq, nc);
 
     // really want to replace circ but circ is input so cannot be output at the same time
     // therefore, catch output in outCirc and at the end replace circ by outCirc
     // output of mapping of quantum gates is in Past.lg, the past internal window
     // when it would overflow (not implemented) or a classical gate is encountered, Past.lg is flushed to outCirc
     ql::circuit outCirc;        // output gate stream, mapped; will be swapped with circ on return
+    // mainPast.Print("start mapping");
     mainPast.Output(outCirc);   // past window will flush into outCirc
 
     for( auto & gp : circ )
@@ -2508,11 +2575,12 @@ std::string qasm(ql::circuit& c, size_t nqubits, std::string& name)
 }
 
 // map kernel's circuit in current mapping context as left by initialization and earlier kernels
-void MapCircuit(size_t& kernel_qubits, ql::circuit& circ, std::string& kernel_name)
+void MapCircuit(ql::circuit& circ, std::string& kernel_name, size_t& kernel_nq, size_t& kernel_nc)
 {
     DOUT("==================================");
     DOUT("Mapping circuit ...");
-    DOUT("... kernel original virtual number of qubits=" << kernel_qubits);
+    DOUT("... kernel original virtual number of qubits=" << kernel_nq);
+    nc = kernel_nc;     // in absence of platform creg_count, take it from kernel
 
 #ifdef INITIALPLACE
     std::string initialplaceopt = ql::options::get("initialplace");
@@ -2548,7 +2616,7 @@ void MapCircuit(size_t& kernel_qubits, ql::circuit& circ, std::string& kernel_na
         Decomposer(circ);   // decompose to primitives as specified in the config file
     }
 
-    kernel_qubits = nqbits; // bluntly, so that all kernels get the same qubit_count
+    kernel_nq = nq;         // bluntly, so that all kernels get the same qubit_count
 
     DOUT("Mapping circuit [DONE]");
     DOUT("==================================");
@@ -2565,14 +2633,17 @@ void RandomInit()
 
 // initialize mapper for whole program
 // lots could be split off for the whole program, once that is needed
+//
+// initialization for a particular kernel is separate
 void Init(const ql::quantum_platform& p)
 {
     // DOUT("Mapping initialization ...");
     // DOUT("... Grid initialization: platform qubits->coordinates, ->neighbors, distance ...");
     platform = p;
-    nqbits = p.qubit_number;
+    nq = p.qubit_number;
+    // nc = p.creg_number;  // nc should come from platform, but doesn't; is taken from kernel in MapCircuit
     RandomInit();
-    // DOUT("... platform/real number of qubits=" << nqbits << ");
+    // DOUT("... platform/real number of qubits=" << nq << ");
     cycle_time = p.cycle_time;
 
     grid.Init(&platform);
