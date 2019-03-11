@@ -2113,6 +2113,7 @@ private:
 */
 
 
+public:
 // use MAX_CYCLE for absolute upperbound on cycle value
 // use ALAP_SINK_CYCLE for initial cycle given to SINK in ALAP;
 // the latter allows for some growing room when doing latency compensation/buffer-delay insertion

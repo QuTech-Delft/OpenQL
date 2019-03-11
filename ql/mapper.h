@@ -43,78 +43,6 @@ void assert_fail(const char *f, int l, const char *s)
 #define MapperAssert(condition)   { if (!(condition)) { assert_fail(__FILE__, __LINE__, #condition); } }
 
 
-// =========================================================================================
-// FutureDepGraph: dependence graph and availability list maintainer helper class of the Future class.
-
-class FutureDepGraph : public Scheduler
-{
-public:
-    ListDigraph::NodeMap<bool>      scheduled(graph);   // whether a node has been mapped, init all false
-    std::list<ListDigraph::Node>    avlist;             // list of available gates/instructions
-
-void Init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
-{
-    DOUT("FutureDepGraph::Init ...");
-    Scheduler::Init(ckt, platform, qcount, ccount);
-    DOUT("FutureDepGraph::Init [DONE]");
-}
-
-};  // end class FutureDepGraph
-
-
-// =========================================================================================
-// Future: input window for mapper
-//
-// The future window shows the gates that still must be mapped as the availability list
-// of a list scheduler that would work on a dependence graph representation of each input circuit.
-// This future window is initialized once for the whole program, and gets a method call
-// when it should switch to a new circuit (corresponding to a new kernel).
-// In each circuit and thus each dependence graph the gates (including classical instruction) are found;
-// the dependence graph models their dependences and also whether they act as barriers,
-// an example of the latter being a classical branch.
-// The availability list with gates (including classical instructions) is the main interface
-// to the mapper, i.e. the mapper selects one or more element(s) from it to map next;
-// it may even create alternatives for each combination of available gates.
-// The gates in the list have attributes like criticality, which can be exploited by the mapper.
-// The dependence graph and the availability list operations are provided by the Scheduler class.
-//
-// The future is a window because in principle it could be implemented incrementally,
-// i.e. that the dependence graph would be extended when an attribute gets below a threshold,
-// e.g. when successors of a gate are interrogated for a particular attribute.
-// A problem might be that criticality requires having seen the end of the circuit,
-// but the space overhead of this attribute is much less than that of a full dependence graph.
-// The implementation below is not incremental: it creates the dep graph for a circuit completely.
-//
-// The implementation below just selects the most critical gate from the availability list
-// as next candidate to map, the idea being that any collateral damage of mapping this gate
-// will have a lower probability of increasing circuit depth
-// than taking a non-critical gate as first one to map.
-// Later implementations may become more sophisticated.
-
-class Future
-{
-    ql::quantum_platform            *platformp; // platform describing scheduling resources
-    FutureDepGraph                  sched;      // sched.graph is dependence graph
-
-public:
-
-// just program wide initialization
-void Init(ql::quantum_platform *p)
-{
-    DOUT("Future::Init ...");
-    platformp = p;
-    DOUT("Future::Init [DONE]");
-}
-
-// Set/switch input to the provided circuit
-void SetCircuit(ql::circuit& circ, size_t nq, size_t nc)
-{
-    DOUT("Future::SetCircuit ...");
-    sched.Init(circ, *platformp, nq, nc);   // fills sched.graph from circuit
-    DOUT("Future::SetCircuit [DONE]");
-}
-
-};  // end class Future
 
 // =========================================================================================
 // Virt2Real: map of a virtual qubit index to its real qubit index
@@ -1082,6 +1010,7 @@ void AddSwap(size_t r0, size_t r1, bool ismainpast)
             if (!created) new_gate_exception("move or move_real");
         }
 
+#ifdef  GEN_MOVES_ONLY_WHEN_PREP_IS_FOR_FREE
         if (wasinited[v1] == false)
         {
             // v1 is not in |+> state, generate in initcirc the circuit to do so
@@ -1127,9 +1056,10 @@ void AddSwap(size_t r0, size_t r1, bool ismainpast)
             }
             // initcirc getting out-of-scope here so gets destroyed
         }
+#endif  //  GEN_MOVES_ONLY_WHEN_PREP_IS_FOR_FREE
         if (created)
         {
-            // generate move
+            // generated move
             // move is in circ, optionally with initialization in front of it
             nmovesadded++;                       // for reporting at the end
             DOUT("... move(q" << r0 << ",q" << r1 << ") in mainpast=" << ismainpast);
@@ -1658,18 +1588,18 @@ void Init(ql::quantum_platform* p)
 // then all this: lemon/mip, glpk, thread support is avoided making OpenQL much easier build and run.
 // Otherwise, depending on the initialplace option value, initial placement is attempted before the heuristic.
 // Options values of initialplace:
-//	no      don't run initial placement ('ip')
-//	yes     run ip until the solver is ready
-//	1hx     run ip max for 1 hour; when timed out, stop the compiler
-//	1h      run ip max for 1 hour; when timed out, just use heuristics
-//	10mx    run ip max for 10 minutes; when timed out, stop the compiler
-//	10m     run ip max for 10 minutes; when timed out, just use heuristics
-//	1mx     run ip max for 1 minute; when timed out, stop the compiler
-//	1m      run ip max for 1 minute; when timed out, just use heuristics
-//	10sx    run ip max for 10 seconds; when timed out, stop the compiler
-//	10s     run ip max for 10 seconds; when timed out, just use heuristics
-//	1sx     run ip max for 1 second; when timed out, stop the compiler
-//	1s      run ip max for 1 second; when timed out, just use heuristics
+//  no      don't run initial placement ('ip')
+//  yes     run ip until the solver is ready
+//  1hx     run ip max for 1 hour; when timed out, stop the compiler
+//  1h      run ip max for 1 hour; when timed out, just use heuristics
+//  10mx    run ip max for 10 minutes; when timed out, stop the compiler
+//  10m     run ip max for 10 minutes; when timed out, just use heuristics
+//  1mx     run ip max for 1 minute; when timed out, stop the compiler
+//  1m      run ip max for 1 minute; when timed out, just use heuristics
+//  10sx    run ip max for 10 seconds; when timed out, stop the compiler
+//  10s     run ip max for 10 seconds; when timed out, just use heuristics
+//  1sx     run ip max for 1 second; when timed out, stop the compiler
+//  1s      run ip max for 1 second; when timed out, just use heuristics
 
 #ifdef INITIALPLACE
 #include <thread>
@@ -2135,6 +2065,117 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, std::string& initi
 };  // end class InitialPlace
 #endif
 
+// =========================================================================================
+// FutureDepGraph: dependence graph and availability list maintainer helper class of the Future class.
+
+class FutureDepGraph : public Scheduler
+{
+public:
+
+void Init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
+{
+    DOUT("FutureDepGraph::Init ...");
+    Scheduler::Init(ckt, platform, qcount, ccount);
+    DOUT("FutureDepGraph::Init [DONE]");
+}
+
+void MapGates(ql::circuit* circp,
+        const ql::quantum_platform& platform, ql::arch::resource_manager_t& rm)
+{
+    // scheduled[n] :=: whether node n has been mapped, init all false
+    ListDigraph::NodeMap<bool>      scheduled(graph);
+    // avlist :=: list of schedulable nodes, initially (see below) just s
+    std::list<ListDigraph::Node>    avlist;
+
+    // initializations for this scheduler
+    // note that dependence graph is not modified by a scheduler, so it can be reused
+    DOUT("... initialization");
+    for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
+    {
+        scheduled[n] = false;   // none were scheduled
+    }
+    avlist.clear();
+    avlist.push_back(s);
+    size_t  curr_cycle = 0;
+    set_remaining(ql::forward_scheduling);  // for each gate, number of cycles until end of schedule
+
+    DOUT("... loop over avlist until it is empty");
+    while (!avlist.empty())
+    {
+        bool success;
+        ListDigraph::Node   selected_node;
+        
+        selected_node = SelectAvailable(avlist, ql::forward_scheduling, curr_cycle, platform, rm, success);
+        if (!success)
+        {
+            // i.e. none from avlist was found suitable to schedule in this cycle
+            continue;
+        }
+
+        // commit selected_node to the schedule
+        ql::gate* gp = instruction[selected_node];
+        DOUT("... selected " << gp->qasm() << " in cycle " << curr_cycle);
+
+        TakeAvailable(selected_node, avlist, scheduled, ql::forward_scheduling);
+    }
+}
+
+};  // end class FutureDepGraph
+
+
+// =========================================================================================
+// Future: input window for mapper
+//
+// The future window shows the gates that still must be mapped as the availability list
+// of a list scheduler that would work on a dependence graph representation of each input circuit.
+// This future window is initialized once for the whole program, and gets a method call
+// when it should switch to a new circuit (corresponding to a new kernel).
+// In each circuit and thus each dependence graph the gates (including classical instruction) are found;
+// the dependence graph models their dependences and also whether they act as barriers,
+// an example of the latter being a classical branch.
+// The availability list with gates (including classical instructions) is the main interface
+// to the mapper, i.e. the mapper selects one or more element(s) from it to map next;
+// it may even create alternatives for each combination of available gates.
+// The gates in the list have attributes like criticality, which can be exploited by the mapper.
+// The dependence graph and the availability list operations are provided by the Scheduler class.
+//
+// The future is a window because in principle it could be implemented incrementally,
+// i.e. that the dependence graph would be extended when an attribute gets below a threshold,
+// e.g. when successors of a gate are interrogated for a particular attribute.
+// A problem might be that criticality requires having seen the end of the circuit,
+// but the space overhead of this attribute is much less than that of a full dependence graph.
+// The implementation below is not incremental: it creates the dep graph for a circuit completely.
+//
+// The implementation below just selects the most critical gate from the availability list
+// as next candidate to map, the idea being that any collateral damage of mapping this gate
+// will have a lower probability of increasing circuit depth
+// than taking a non-critical gate as first one to map.
+// Later implementations may become more sophisticated.
+
+class Future
+{
+    ql::quantum_platform            *platformp; // platform describing scheduling resources
+    FutureDepGraph                  sched;      // sched.graph is dependence graph
+
+public:
+
+// just program wide initialization
+void Init(ql::quantum_platform *p)
+{
+    DOUT("Future::Init ...");
+    platformp = p;
+    DOUT("Future::Init [DONE]");
+}
+
+// Set/switch input to the provided circuit
+void SetCircuit(ql::circuit& circ, size_t nq, size_t nc)
+{
+    DOUT("Future::SetCircuit ...");
+    sched.Init(circ, *platformp, nq, nc);   // fills sched.graph from circuit
+    DOUT("Future::SetCircuit [DONE]");
+}
+
+};  // end class Future
 
 
 // =========================================================================================
@@ -2203,9 +2244,6 @@ private:
     Grid            grid;           // current grid
 
                                     // Initialized by Mapper.MapCircuit
-#ifdef INITIALPLACE
-    InitialPlace    ip;             // initial placer facility
-#endif
     Future          future;         // future window, presents input in avlist
     Past            mainPast;       // main past window; all path alternatives start off as clones of it
     std::mt19937    gen;            // Standard mersenne_twister_engine, not yet seeded
@@ -2587,6 +2625,7 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name, size_t& kernel_nq, 
     if("no" != initialplaceopt)
     {
         DOUT("InitialPlace requested with option " << initialplaceopt << " [START]");
+        InitialPlace    ip;             // initial placer facility
         ip.Init(&grid, &platform);
 
         Virt2Real   v2r;
