@@ -21,7 +21,7 @@ class Test_commutation(unittest.TestCase):
         platf = ql.Platform("starmon", config_fn)
         ql.set_option("scheduler", 'ASAP');
         ql.set_option("scheduler_post179", 'yes');
-        ql.set_option("scheduler_commute", 'no');
+        ql.set_option("scheduler_commute", 'yes');
 
         nqubits = 7
         k = ql.Kernel("aKernel", platf, nqubits)

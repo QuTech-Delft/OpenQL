@@ -17,7 +17,7 @@ class Test_wait(unittest.TestCase):
         ql.set_option('scheduler', 'ASAP')
         ql.set_option('log_level', 'LOG_WARNING')
         ql.set_option('scheduler_post179', 'yes')
-        ql.set_option("scheduler_commute", 'no')
+        ql.set_option("scheduler_commute", 'yes')
         
 
     def test_wait_simple(self):
