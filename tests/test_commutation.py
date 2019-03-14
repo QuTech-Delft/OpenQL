@@ -50,9 +50,9 @@ class Test_commutation(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        # gold_fn = rootDir + '/golden/test_independence.qasm'
-        # qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
+        gold_fn = rootDir + '/golden/'+ p.name + '_scheduled.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_targetcommute(self):
         config_fn = os.path.join(curdir, 'test_179.json')
@@ -88,9 +88,9 @@ class Test_commutation(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        # gold_fn = rootDir + '/golden/test_independence.qasm'
-        # qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
+        gold_fn = rootDir + '/golden/'+ p.name + '_scheduled.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cz_anycommute(self):
         config_fn = os.path.join(curdir, 'test_179.json')
@@ -126,9 +126,9 @@ class Test_commutation(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        # gold_fn = rootDir + '/golden/test_independence.qasm'
-        # qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
+        gold_fn = rootDir + '/golden/'+ p.name + '_scheduled.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_mixedcommute(self):
         config_fn = os.path.join(curdir, 'test_179.json')
@@ -168,9 +168,9 @@ class Test_commutation(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        # gold_fn = rootDir + '/golden/test_independence.qasm'
-        # qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) )
+        gold_fn = rootDir + '/golden/'+ p.name + '_scheduled.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 if __name__ == '__main__':
     unittest.main()
