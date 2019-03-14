@@ -14,6 +14,7 @@
 // all tests below should be run with scheduler_post179 yes and no
 // when scheduler_post179 is yes, also scheduler_commute should be yes (but that is default)
 // the tests that start with #ifdef NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON need not be converted to golden tests
+#define NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON
 
 
 
@@ -291,7 +292,7 @@ test_wait(std::string v, std::string schedopt, std::string sched_post179opt)
 // all cnots with operands that are neighbors in s7
 // no or hardly any significant difference between pre179 and post179 scheduling
 void
-test_manyNN(std::string v, std::string schedopt, std::string sched_post179opt)
+test_cnot_mixedcommute(std::string v, std::string schedopt, std::string sched_post179opt)
 {
     int n = 7;
     std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
@@ -498,10 +499,10 @@ int main(int argc, char ** argv)
 //  test_steaneqec("steaneqec", "ASAP", "yes");
 //  test_steaneqec("steaneqec", "ALAP", "no");
 //  test_steaneqec("steaneqec", "ALAP", "yes");
-//  test_manyNN("manyNN", "ASAP", "no");
-//  test_manyNN("manyNN", "ASAP", "yes");
-//  test_manyNN("manyNN", "ALAP", "no");
-//  test_manyNN("manyNN", "ALAP", "yes");
+//  test_cnot_mixedcommute("cnot_mixedcommute", "ASAP", "no");
+//  test_cnot_mixedcommute("cnot_mixedcommute", "ASAP", "yes");
+//  test_cnot_mixedcommute("cnot_mixedcommute", "ALAP", "no");
+//  test_cnot_mixedcommute("cnot_mixedcommute", "ALAP", "yes");
 
     test_wait("wait", "ASAP", "no");
     test_wait("wait", "ASAP", "yes");
