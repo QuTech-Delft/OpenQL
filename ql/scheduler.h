@@ -257,41 +257,12 @@ public:
             }
 
             // each type of gate has a different 'signature' of events; switch out to each one
-#ifdef wait_missing
-            if(ins->name == "wait")
-            {
-                DOUT(". considering " << name[consNode] << " as wait");
-                auto operands = ins->operands;
-                for( auto operand : operands )
-                {
-                    DOUT(".. Operand: " << operand);
-                    addDep(LastWriter[operand], consID, WAW, operand);
-                    for(auto & readerID : LastReaders[operand])
-                    {
-                        addDep(readerID, consID, WAR, operand);
-                    }
-                    if (ql::options::get("scheduler_post179") == "yes")
-                    {
-                        for(auto & readerID : LastDs[operand])
-                        {
-                            addDep(readerID, consID, WAD, operand);
-                        }
-                    }
-                }
 
-                // update LastWriter and so clear LastReaders
-                for( auto operand : operands )
-                {
-                    LastWriter[operand] = consID;
-                    if (ql::options::get("scheduler_post179") == "yes")
-                    {
-                        LastReaders[operand].clear();
-                        LastDs[operand].clear();
-                    }
-                }
-            }
-            else
-#endif
+            // TODO: define signature in .json file similar to how gcc defines instructions
+            // and then have a signature interpreter here; then we don't have this long if-chain
+            // and, more importantly, we don't have the knowledge of particular gates here;
+            // the default signature would be that of a default gate, modifying each qubit operand;
+            // that also solves
             if(ins->name == "measure")
             {
                 DOUT(". considering " << name[consNode] << " as measure");
