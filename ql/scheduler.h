@@ -70,7 +70,7 @@
 #include "ql/gate.h"
 #include "ql/circuit.h"
 #include "ql/ir.h"
-#include "ql/arch/cc_light/cc_light_resource_manager.h"     // FIXME(WJV): uses specific backend code (is it really specific to cc_light?)
+#include "ql/resource_manager.h"
 
 using namespace std;
 using namespace lemon;

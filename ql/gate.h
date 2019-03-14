@@ -9,6 +9,7 @@
 #ifndef GATE_H
 #define GATE_H
 
+#define OPT_MICRO_CODE  0       // enable old support for CBOX microcode
 
 #include <fstream>
 #include <iomanip>
@@ -36,7 +37,7 @@ typedef std::string ucode_inst_t;
 
 typedef std::string string_t;
 typedef std::vector<std::string> strings_t;
-typedef std::vector<std::string> ucode_sequence_t;
+typedef std::vector<std::string> ucode_sequence_t;      // FIXME: should be removed
 
 typedef enum
 {
@@ -46,9 +47,12 @@ typedef enum
 
 
 
+#if OPT_MICRO_CODE
 typedef std::map<qasm_inst_t, ucode_inst_t> dep_instruction_map_t;
 
 extern dep_instruction_map_t dep_instruction_map;
+#endif
+
 
 // gate types
 typedef enum __gate_type_t
@@ -217,7 +221,9 @@ public:
     double angle;                            // for arbitrary rotations
     size_t  cycle;                           // set after scheduling with resulting cycle in which gate was scheduled
     virtual instruction_t qasm()       = 0;
+#if OPT_MICRO_CODE
     virtual instruction_t micro_code() = 0;  // to do : deprecated
+#endif
     virtual gate_type_t   type()       = 0;
     virtual cmat_t        mat()        = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
 };
@@ -242,11 +248,13 @@ public:
         return instruction_t("i q[" + std::to_string(operands[0]) + "]");
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // TODO fix it
         return instruction_t("  pulse 1100 0000 1100\n     wait 10\n     pulse 1001 0000 1001\n     wait 10");
     }
+#endif
 
     gate_type_t type()
     {
@@ -278,11 +286,13 @@ public:
         return instruction_t("h q[" + std::to_string(operands[0]) + "]");
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // y90 + x180
         return instruction_t("  pulse 1100 0000 1100\n     wait 10\n     pulse 1001 0000 1001\n     wait 10");
     }
+#endif
 
     gate_type_t type()
     {
@@ -316,11 +326,13 @@ public:
         return instruction_t("s q[" + std::to_string(operands[0]) + "]");
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // dummy !
         return instruction_t("  pulse 1110 0000 1110\n     wait 10");
     }
+#endif
 
     gate_type_t type()
     {
@@ -353,11 +365,13 @@ public:
         return instruction_t("sdag q[" + std::to_string(operands[0]) + "]");
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // dummy !
         return instruction_t("  pulse 1110 0000 1110\n     wait 10");
     }
+#endif
 
     gate_type_t type()
     {
@@ -396,11 +410,13 @@ public:
         return instruction_t("rx q[" + std::to_string(operands[0]) + "], " + std::to_string(angle) );
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // dummy !
         return instruction_t("  pulse 1110 0000 1110\n     wait 10");
     }
+#endif
 
     gate_type_t type()
     {
@@ -439,11 +455,13 @@ public:
         return instruction_t("ry q[" + std::to_string(operands[0]) + "], " + std::to_string(angle) );
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // dummy !
         return instruction_t("  pulse 1110 0000 1110\n     wait 10");
     }
+#endif
 
     gate_type_t type()
     {
@@ -482,11 +500,13 @@ public:
         return instruction_t("rz q[" + std::to_string(operands[0]) + "], " + std::to_string(angle) );
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // dummy !
         return instruction_t("  pulse 1110 0000 1110\n     wait 10");
     }
+#endif
 
     gate_type_t type()
     {
@@ -521,11 +541,13 @@ public:
         return instruction_t("t q[" + std::to_string(operands[0]) + "]");
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // dummy !
         return instruction_t("  pulse 1110 0000 1110\n     wait 10");
     }
+#endif
 
     gate_type_t type()
     {
@@ -558,11 +580,13 @@ public:
         return instruction_t("tdag q[" + std::to_string(operands[0]) + "]");
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // dummy !
         return instruction_t("  pulse 1110 0000 1110\n     wait 10");
     }
+#endif
 
     gate_type_t type()
     {
@@ -596,11 +620,13 @@ public:
         return instruction_t("x q[" + std::to_string(operands[0]) + "]");
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // x180
         return instruction_t("  pulse 1001 0000 1001\n     wait 10");
     }
+#endif
 
     gate_type_t type()
     {
@@ -634,12 +660,13 @@ public:
         return instruction_t("y q[" + std::to_string(operands[0]) + "]");
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // y180
         return instruction_t("  pulse 1010 0000 1010\n     wait 10");
     }
-
+#endif
 
     gate_type_t type()
     {
@@ -673,11 +700,13 @@ public:
         return instruction_t("z q[" + std::to_string(operands[0]) + "]");
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // x180 + y180
         return instruction_t("  pulse 1001 0000 1001\n     wait 10\n     pulse 1010 0000 1010\n     wait 10");
     }
+#endif
 
     gate_type_t type()
     {
@@ -711,11 +740,13 @@ public:
         return instruction_t("x90 q[" + std::to_string(operands[0]) + "]");
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // return instruction_t("  pulse 1011 0000 1011\n     wait 10");
         return ql::dep_instruction_map["rx90"];
     }
+#endif
 
     gate_type_t type()
     {
@@ -749,11 +780,13 @@ public:
         return instruction_t("mx90 q[" + std::to_string(operands[0]) + "]");
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // return instruction_t("  pulse 1101 0000 1101\n     wait 10");
         return ql::dep_instruction_map["mrx90"];
     }
+#endif
 
     gate_type_t type()
     {
@@ -786,11 +819,13 @@ public:
         return instruction_t("x180 q[" + std::to_string(operands[0]) + "]");
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // return instruction_t("  pulse 1001 0000 1001\n     wait 10");
         return ql::dep_instruction_map["rx180"];
     }
+#endif
 
     gate_type_t type()
     {
@@ -829,11 +864,13 @@ public:
         return __ry90_gate__;
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // return instruction_t("  pulse 1100 0000 1100\n     wait 10");
         return ql::dep_instruction_map["ry90"];
     }
+#endif
 
     cmat_t mat()
     {
@@ -862,11 +899,13 @@ public:
         return instruction_t("my90 q[" + std::to_string(operands[0]) + "]");
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // return instruction_t("  pulse 1110 0000 1110\n     wait 10");
         return ql::dep_instruction_map["mry90"];
     }
+#endif
 
     gate_type_t type()
     {
@@ -899,11 +938,13 @@ public:
         return instruction_t("y180 q[" + std::to_string(operands[0]) + "]");
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // return instruction_t("  pulse 1010 0000 1010\n     wait 10");
         return ql::dep_instruction_map["ry180"];
     }
+#endif
 
     gate_type_t type()
     {
@@ -951,11 +992,13 @@ public:
         return instruction_t(ss.str());
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         return instruction_t("  wait 60\n     pulse 0000 1111 1111\n     wait 50\n     measure\n");
         // return ql::dep_instruction_map["measure"];
     }
+#endif
 
     gate_type_t type()
     {
@@ -988,11 +1031,13 @@ public:
         return instruction_t("prep_z q[" + std::to_string(operands[0]) +"]");
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         return instruction_t("  waitreg r0\n     waitreg r0\n");
         // return ql::dep_instruction_map["prep_z"];
     }
+#endif
 
     gate_type_t type()
     {
@@ -1020,19 +1065,25 @@ public:
         operands.push_back(q1);
         operands.push_back(q2);
     }
+
     instruction_t qasm()
     {
         return instruction_t("cnot q[" + std::to_string(operands[0]) + "]"
                              + ",q["  + std::to_string(operands[1]) + "]");
     }
+
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         return ql::dep_instruction_map["cnot"];
     }
+#endif
+
     gate_type_t type()
     {
         return __cnot_gate__;
     }
+
     cmat_t mat()
     {
         return m;
@@ -1054,19 +1105,25 @@ public:
         operands.push_back(q1);
         operands.push_back(q2);
     }
+
     instruction_t qasm()
     {
         return instruction_t("cz q[" + std::to_string(operands[0]) + "]"
                              + ",q["  + std::to_string(operands[1]) + "]" );
     }
+
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         return ql::dep_instruction_map["cz"];
     }
+#endif
+
     gate_type_t type()
     {
         return __cphase_gate__;
     }
+
     cmat_t mat()
     {
         return m;
@@ -1089,20 +1146,26 @@ public:
         operands.push_back(q2);
         operands.push_back(q3);
     }
+
     instruction_t qasm()
     {
         return instruction_t("toffoli q[" + std::to_string(operands[0]) + "]"
                              + ",q["  + std::to_string(operands[1]) + "]"
                              + ",q["  + std::to_string(operands[2]) + "]");
     }
+
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         return ql::dep_instruction_map["toffoli"];
     }
+#endif
+
     gate_type_t type()
     {
         return __toffoli_gate__;
     }
+
     cmat_t mat()
     {
         return m;
@@ -1119,18 +1182,24 @@ public:
         name = "wait";
         duration = 20;
     }
+
     instruction_t qasm()
     {
         return instruction_t("nop");
     }
+
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         return ql::dep_instruction_map["nop"];
     }
+#endif
+
     gate_type_t type()
     {
         return __nop_gate__;
     }
+
     cmat_t mat()
     {
         return m;
@@ -1150,19 +1219,25 @@ public:
         operands.push_back(q1);
         operands.push_back(q2);
     }
+
     instruction_t qasm()
     {
         return instruction_t("swap q[" + std::to_string(operands[0]) + "]"
                              + ",q["  + std::to_string(operands[1]) + "]");
     }
+
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         return ql::dep_instruction_map["swap"];
     }
+#endif
+
     gate_type_t type()
     {
         return __swap_gate__;
     }
+
     cmat_t mat()
     {
         return m;
@@ -1186,18 +1261,24 @@ public:
             operands.push_back(q);
         }
     }
+
     instruction_t qasm()
     {
         return instruction_t("wait " + std::to_string(duration_in_cycles));
     }
+
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         return ql::dep_instruction_map["wait"];
     }
+#endif
+
     gate_type_t type()
     {
         return __wait_gate__;
     }
+
     cmat_t mat()
     {
         return m;
@@ -1214,18 +1295,24 @@ public:
         name = "SOURCE";
         duration = 1;
     }
+
     instruction_t qasm()
     {
         return instruction_t("SOURCE");
     }
+
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         return ql::dep_instruction_map["SOURCE"];
     }
+#endif
+
     gate_type_t type()
     {
         return __dummy_gate__;
     }
+
     cmat_t mat()
     {
         return m;
@@ -1242,18 +1329,24 @@ public:
         name = "SINK";
         duration = 1;
     }
+
     instruction_t qasm()
     {
         return instruction_t("SINK");
     }
+
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         return ql::dep_instruction_map["SINK"];
     }
+#endif
+
     gate_type_t type()
     {
         return __dummy_gate__;
     }
+
     cmat_t mat()
     {
         return m;
@@ -1270,18 +1363,24 @@ public:
         name = "display";
         duration = 0;
     }
+
     instruction_t qasm()
     {
         return instruction_t("display");
     }
+
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         return ql::dep_instruction_map["display"];
     }
+#endif
+
     gate_type_t type()
     {
         return __display__;
     }
+
     cmat_t mat()
     {
         return m;
@@ -1297,7 +1396,9 @@ class custom_gate : public gate
 public:
     cmat_t              m;                // matrix representation
     size_t              parameters;       // number of parameters : single qubit, two qubits ... etc
+#if OPT_MICRO_CODE
     ucode_sequence_t    qumis;            // microcode sequence
+#endif
     instruction_type_t  operation_type;   // operation type : rf/flux
     strings_t           used_hardware;    // used hardware
     std::string         arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
@@ -1320,7 +1421,9 @@ public:
         name = g.name;
         creg_operands = g.creg_operands;
         parameters = g.parameters;
+#if OPT_MICRO_CODE
         qumis.assign(g.qumis.begin(), g.qumis.end());
+#endif
         operation_type = g.operation_type;
         duration  = g.duration;
         used_hardware.assign(g.used_hardware.begin(), g.used_hardware.end());
@@ -1336,7 +1439,11 @@ public:
     custom_gate(string_t& name, cmat_t& m,
                 size_t parameters, size_t duration, size_t latency,
                 instruction_type_t& operation_type, ucode_sequence_t& qumis, strings_t hardware) :
-                m(m), parameters(parameters), qumis(qumis), operation_type(operation_type)
+                m(m), parameters(parameters),
+#if OPT_MICRO_CODE
+                qumis(qumis),
+#endif
+                operation_type(operation_type)
     {
         this->name = name;
         this->duration = duration;
@@ -1419,11 +1526,13 @@ public:
                 }
                 operands.push_back(qubit_id(qid));
             }
+            // FIXME: code commented out:
             // ucode_sequence_t ucs = instr["qumis"];
             // qumis.assign(ucs.begin(), ucs.end());
             // operation_type = instr["type"];
             l_attr = "duration";
             duration = instr["duration"];
+            // FIXME: code commented out:
             // strings_t hdw = instr["hardware"];
             // used_hardware.assign(hdw.begin(), hdw.end());
             l_attr = "matrix";
@@ -1433,7 +1542,7 @@ public:
             m.m[2] = complex_t(mat[2][0], mat[2][1]);
             m.m[3] = complex_t(mat[3][0], mat[3][1]);
         }
-        catch (json::exception e)
+        catch (json::exception &e)
         {
             EOUT("while loading instruction '" << name << "' (attr: " << l_attr << ") : " << e.what());
             throw ql::exception("[x] error : ql::custom_gate() : error while loading instruction '" + name + "' : attribute '" + l_attr + "' : \n\t" + e.what(), false);
@@ -1498,6 +1607,7 @@ public:
         return instruction_t(ss.str());
     }
 
+#if OPT_MICRO_CODE
     /**
      * microcode
      */
@@ -1508,6 +1618,7 @@ public:
             ss << "     " << qumis[i] << "\n";
         return instruction_t(ss.str());
     }
+#endif
 
     /**
      * type
@@ -1561,11 +1672,13 @@ public:
         return instruction_t(instr.str());
     }
 
+#if OPT_MICRO_CODE
     instruction_t micro_code()
     {
         // dummy !
         return instruction_t("");
     }
+#endif
 
     gate_type_t type()
     {

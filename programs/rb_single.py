@@ -1,6 +1,5 @@
 import os
 import random
-# from openql import Kernel, Program
 from openql import openql as ql
 
 
@@ -13,7 +12,6 @@ ql.set_option('output_dir', output_dir)
 ql.set_option('optimize', 'no')
 ql.set_option('scheduler', 'ASAP')
 ql.set_option('log_level', 'LOG_CRITICAL')
-
 
 
 def build_rb(qubit, num_cliffords, kernel):
@@ -48,10 +46,6 @@ num_circuits = 1
 p.set_sweep_points(sweep_points, num_circuits)
 p.add_kernel(kernel)
 p.compile()
-# p.schedule()
 
 # qasm = p.qasm()
-# microcode = p.microcode()
-
 # print(qasm)
-# print(microcode)

@@ -48,7 +48,7 @@ class quantum_program
 
 
    public:
-      quantum_program(std::string n, quantum_platform platf, size_t nqubits, size_t ncregs)
+      quantum_program(std::string n, quantum_platform platf, size_t nqubits, size_t ncregs = 0)
             : name(n), platform(platf), qubit_count(nqubits), creg_count(ncregs)
       {
          default_config = true;
@@ -112,9 +112,11 @@ class quantum_program
                   ((gtype != __classical_gate__) && (op >= qubit_count))
                  )
                {
-                   EOUT("Out of range operand(s) for operation: '" << gname << "'");
-                   EOUT("FIXME: creg_count=" << creg_count << ", qubit_count" << qubit_count);
-                   throw ql::exception("Out of range operand(s) for operation: '"+gname+"' !",false);
+                   FATAL("Out of range operand(s) for operation: '" << gname <<
+                        "' (op=" << op <<
+                        ", qubit_count=" << qubit_count <<
+                        ", creg_count=" << creg_count <<
+                        ")");
                }
             }
          }
@@ -355,6 +357,7 @@ class quantum_program
          return ss.str();
       }
 
+#if OPT_MICRO_CODE
       std::string microcode()
       {
          std::stringstream ss;
@@ -396,12 +399,14 @@ class quantum_program
          ss << "     beq  r3,  r3, loop   # infinite loop";
          return ss.str();
       }
+#endif
 
       void set_platform(quantum_platform & platform)
       {
          this->platform = platform;
       }
 
+#if OPT_MICRO_CODE
       std::string uc_header()
       {
          std::stringstream ss;
@@ -413,11 +418,15 @@ class quantum_program
          ss << "loop:\n";
          return ss.str();
       }
+#endif
 
       int compile()
       {
          IOUT("compiling ...");
-
+#if !OPT_MICRO_CODE
+ #warning "deprecation warning: support for CBOX microcode disabled in main code (CBOX backend not affected)"
+         WOUT("deprecation warning: this version was compiled with support for CBOX microcode disabled in main code (CBOX backend not affected)");
+#endif
          if (kernels.empty())
          {
             EOUT("compiling a program with no kernels");
@@ -490,7 +499,7 @@ class quantum_program
                   IOUT("compiling eqasm code...");
                   backend_compiler->compile(name, fused, platform);
                }
-               catch (ql::exception e)
+               catch (ql::exception &e)
                {
                   EOUT("[x] error : eqasm_compiler.compile() : compilation interrupted due to fatal error.");
                   throw e;

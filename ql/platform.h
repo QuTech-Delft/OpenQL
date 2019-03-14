@@ -12,11 +12,10 @@
 
 #include <ql/circuit.h>
 #include <ql/hardware_configuration.h>
-// #include <ql/eqasm_compiler.h>
-// #include <ql/arch/cbox_eqasm_compiler.h>
 
 namespace ql
 {
+#if 0   // FIXME: unused
 typedef enum __ql_platform_t
 {
     transmon_platform,
@@ -25,7 +24,9 @@ typedef enum __ql_platform_t
     unsupported_platform
 } ql_platform_t;
 
+
 typedef std::vector<std::string> micro_code_t;
+
 
 /**
  * abstract platform interface (deprecated)
@@ -36,6 +37,7 @@ class platform
 public:
     virtual int compile(circuit& c, std::string file_name, bool optimize=false) = 0;
 };
+#endif
 
 
 /**
@@ -57,9 +59,6 @@ public:
     json                    resources;
     json                    topology;
     json                    aliases;                  // workaround the generic instruction composition
-
-    // ql::eqasm_compiler *      backend_compiler;         // backend compiler
-    // std::vector<ql::custom_gate *> supported_instructions; // supported operation
 
     /**
      * quantum_platform constructor
@@ -94,21 +93,6 @@ public:
         }
         else
             cycle_time = hardware_settings["cycle_time"];
-
-        // FIXME(WJV): now in program.h, cleanup
-        // if (eqasm_compiler_name == "qumis_compiler")
-        // {
-        //    backend_compiler = new ql::arch::cbox_eqasm_compiler();
-        // }
-        // else if (eqasm_compiler_name == "none")
-        // {
-        //    backend_compiler = NULL;
-        // }
-        // else
-        // {
-        //    EOUT("eqasm compiler backend specified in the hardware configuration file is not supported !");
-        //    throw std::exception();
-        // }
     }
 
     /**
@@ -151,13 +135,12 @@ public:
             instr_name = g->arch_operation_name;
             if(instr_name.empty())
             {
-                FATAL("arch_operation_name not defined for instruction: " << iname << " !");
+                FATAL("JSON file: field 'arch_operation_name' not defined for instruction '" << iname << "'");
             }
-            // DOUT("arch_operation_name: " << instr_name);
         }
         else
         {
-            FATAL("custom instruction not found for : " << iname << " !");
+            FATAL("JSON file: custom instruction not found: '" << iname << "'");
         }
         return instr_name;
     }
@@ -167,11 +150,7 @@ public:
     const json& find_instruction(std::string iname) const
     {
         // search the JSON defined instructions, to prevent JSON exception if key does not exist
-        if (instruction_settings.find(iname) == instruction_settings.end())
-        {
-            FATAL("instruction settings not found for '" << iname << "'!");
-        }
-
+        if(!JSON_EXISTS(instruction_settings, iname)) FATAL("JSON file: instruction not found: '" << iname << "'");
         return instruction_settings[iname];
     }
 
@@ -180,6 +159,7 @@ public:
     std::string find_instruction_type(std::string iname) const
     {
         const json &instruction = find_instruction(iname);
+        if(!JSON_EXISTS(instruction, "type")) FATAL("JSON file: field 'type' not defined for instruction '" << iname <<"'");
         return instruction["type"];
     }
 };
