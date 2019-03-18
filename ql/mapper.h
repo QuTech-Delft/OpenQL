@@ -1434,17 +1434,16 @@ void Split(std::list<NNPath> & reslp)
 // =========================================================================================
 // Grid: definition and access functions to the grid of qubits that supports the real qubits.
 // Maintain several maps to ease navigating in the grid; these are constant after initialization.
-//
 class Grid
 {
 private:
     ql::quantum_platform* platformp;    // current platform: topology
     size_t nq;                          // number of qubits in the platform
                                         // Grid configuration, all constant after initialization
-    size_t nx;                          // length of x dimension (x coordinates count 0..nx-1)
-    size_t ny;                          // length of y dimension (y coordinates count 0..ny-1)
-    std::map<size_t,size_t> x;          // x[i] is x coordinate of qubit i
-    std::map<size_t,size_t> y;          // y[i] is y coordinate of qubit i
+    int nx;                             // length of x dimension (x coordinates count 0..nx-1)
+    int ny;                             // length of y dimension (y coordinates count 0..ny-1)
+    std::map<size_t,int> x;             // x[i] is x coordinate of qubit i
+    std::map<size_t,int> y;             // y[i] is y coordinate of qubit i
 
 public:
     typedef std::list<size_t> neighbors_t;  // neighbors is a list of qubits
@@ -1454,11 +1453,63 @@ public:
 // distance between two qubits
 // implementation is for "cross" and "star" grids and assumes bidirectional edges and convex grid;
 // for "plus" grids, replace "std::max" by "+"
+//      size_t  qubit indices
+//      int     x, y and dimensions in grid
 size_t Distance(size_t from_realqbit, size_t to_realqbit)
 {
     return std::max(
-               std::abs( ptrdiff_t(x[to_realqbit]) - ptrdiff_t(x[from_realqbit]) ),
-               std::abs( ptrdiff_t(y[to_realqbit]) - ptrdiff_t(y[from_realqbit]) ));
+               std::abs( x[to_realqbit] - x[from_realqbit] ),
+               std::abs( y[to_realqbit] - y[from_realqbit] ));
+}
+
+// return clockwise angle around (cx,cy) of (x,y) wrt vertical y axis with angle 0 at 12:00, 0<=angle<2*pi
+double Angle(int cx, int cy, int x, int y)
+{
+    const double pi = 4*std::atan(1);
+    double a = std::atan2((x-cx),(y-cy));
+    if (a < 0) a += 2*pi;
+    return a;
+}
+
+// rotate neighbors list such that largest angle difference between adjacent elements is behind back
+void Normalize( size_t src, neighbors_t& nbl )
+{
+    // std::cout << "Normalizing list from src=" << src << ": ";
+    // for (auto dn : nbl) { std::cout << dn << " "; } std::cout << std::endl;
+
+    const double pi = 4*std::atan(1);
+    if (nbl.size() == 1)
+    {
+        // DOUT("... size was 1; unchanged");
+        return;
+    }
+    int maxdiff = 0;                            // current maximum angle difference in loop search below
+    neighbors_t::iterator maxinx = nbl.begin();  // before which max diff occurs
+    for (neighbors_t::iterator in = nbl.begin(); in != nbl.end(); in++)
+    {
+        double a_in = Angle(x[src], y[src], x[*in], y[*in]);
+        neighbors_t::iterator inx = std::next(in); if (inx == nbl.end()) inx = nbl.begin();
+        double a_inx = Angle(x[src], y[src], x[*inx], y[*inx]);
+        int diff = a_inx - a_in; if (diff < 0) diff += 2*pi;
+        if (diff > maxdiff)
+        {
+            maxdiff = diff;
+            maxinx = inx;
+        }
+    }
+    neighbors_t   newnbl;
+    for (neighbors_t::iterator in = maxinx; in != nbl.end(); in++)
+    {
+        newnbl.push_back(*in);
+    }
+    for (neighbors_t::iterator in = nbl.begin(); in != maxinx; in++)
+    {
+        newnbl.push_back(*in);
+    }
+    nbl = newnbl;
+
+    // std::cout << "... rotated; result: ";
+    // for (auto dn : nbl) { std::cout << dn << " "; } std::cout << std::endl;
 }
 
 // Grid initializer
@@ -1479,8 +1530,8 @@ void Init(ql::quantum_platform* p)
     for (auto & aqbit : platformp->topology["qubits"] )
     {
         size_t qi = aqbit["id"];
-        size_t qx = aqbit["x"];
-        size_t qy = aqbit["y"];
+        int qx = aqbit["x"];
+        int qy = aqbit["y"];
 
         x[qi] = qx;
         y[qi] = qy;
@@ -1521,25 +1572,34 @@ void Init(ql::quantum_platform* p)
 
         nbs[es].push_back(ed);
     }
-
-#ifdef debug
-    for (int i=0; i<nq; i++)
+    for (size_t qi=0; qi<nq; qi++)
     {
-        DOUT("qubit[" << i << "]: x=" << x[i] << "; y=" << y[i]);
-        std::cout << "... connects to ";
+        // sort nbs[qi] to have increasing clockwise angles around qi, starting with angle 0 at 12:00
+        nbs[qi].sort(
+            [this,qi](const size_t& i, const size_t& j)
+            {
+                return Angle(x[qi], y[qi], x[i], y[i]) < Angle(x[qi], y[qi], x[j], y[j]);
+            }
+        );
+    }
+//#ifdef debug
+    for (size_t i=0; i<nq; i++)
+    {
+        std::cout << "qubit[" << i << "]: (x,y)=(" << x[i] << "," << y[i] << ")";
+        std::cout << " connects to ";
         for (auto & n : nbs[i])
         {
-            std::cout << n << " ";
+            std::cout << n << "=(" << x[n] << "," << y[n] << ") ";
         }
         std::cout << std::endl;
-        std::cout << "... distance(" << i << ",j)=";
-        for (int j=0; j<nq; j++)
-        {
-            std::cout << Distance(i,j) << " ";
-        }
-        std::cout << std::endl;
+//      std::cout << "... distance(" << i << ",j)=";
+//      for (size_t j=0; j<nq; j++)
+//      {
+//          std::cout << Distance(i,j) << " ";
+//      }
+//      std::cout << std::endl;
     }
-#endif        // debug
+//#endif        // debug
 }
 };  // end class Grid
 
@@ -2252,14 +2312,25 @@ private:
 // Mapper constructor is default synthesized
 
 private:
+
 // initial path finder
-// generate all paths with source src and target tgt as a list of path into reslp
-// this result list reslp is allocated by caller and is empty on the call
-void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
+// generate paths with source src and target tgt as a list of path into reslp;
+// this result list reslp is allocated by caller and is empty on the call;
+// which indicates which paths are generated; see below the enum whichpaths;
+// on top of this, the other mapper options apply
+typedef
+enum {
+    wp_all_shortest,            // all shortest paths
+    wp_left_shortest,           // only the shortest along the left side of the rectangle of src and tgt
+    wp_right_shortest,          // only the shortest along the right side of the rectangle of src and tgt
+    wp_leftright_shortest       // both the left and right shortest
+} whichpaths_t;
+
+void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp, whichpaths_t which)
 {
     std::list<NNPath> genlp;    // list that will get the result of a recursive Gen call
 
-    // DOUT("GenShortestPaths: " << "src=" << src << " tgt=" << tgt);
+    // DOUT("GenShortestPaths: " << "src=" << src << " tgt=" << tgt << " which=" << which);
     MapperAssert (reslp.empty());
 
     if (src == tgt) {
@@ -2267,19 +2338,12 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
         // create a virgin path and initialize it to become an empty path
         // add src to this path (so that it becomes a distance 0 path with one qubit, src)
         // and add the path to the result list 
-        // DOUT("GenShortestPaths ... about to allocate local virgin path");
         NNPath  p;
-
-        // DOUT("... done allocate local virgin path; now init it");
         p.Init(&platform);
-        // DOUT("... done init path; now add src to it, converting it to an empty path");
         p.Add2Front(src);
-        // DOUT("... done adding src; now add this empty path to result list");
-        // p.Print("... path before adding to result list");
         reslp.push_back(p);
-        // DOUT("... done adding empty path to result list; will print the list now");
-        // p.Print("... path after adding to result list");
-        // NNPath::listPrint("... result list after adding path", reslp);
+        // p.Print("... empty path after adding to result list");
+        // NNPath::listPrint("... result list after adding empty path", reslp);
         // DOUT("... will return now");
         return;
     }
@@ -2289,25 +2353,46 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
     size_t d = grid.Distance(src, tgt);
     MapperAssert (d >= 1);
 
-    // loop over all neighbors of src
-    for (auto & n : grid.nbs[src])
+    // reduce nbs to those continuing a shortest path
+    auto nbl = grid.nbs[src];
+    nbl.remove_if( [this,d,tgt](const size_t& n) { return grid.Distance(n,tgt) >= d; } );
+
+    // rotate nbl such that largest difference between angles of adjacent elements is beyond back()
+    grid.Normalize(src, nbl);
+    if (which == wp_left_shortest)
     {
-        size_t dn = grid.Distance(n, tgt);
+        nbl.remove_if( [nbl](const size_t& n) { return n != nbl.front(); } );
+    }
+    else if (which == wp_right_shortest)
+    {
+        nbl.remove_if( [nbl](const size_t& n) { return n != nbl.back(); } );
+    }
+    else if (which == wp_leftright_shortest)
+    {
+        nbl.remove_if( [nbl](const size_t& n) { return n != nbl.front() && n != nbl.back(); } );
+    }
 
-        if (dn >= d)
+    // std::cout << "... before iterating, nbl: ";
+    // for (auto dn : nbl) { std::cout << dn << " "; } std::cout << std::endl;
+
+    // for all resulting neighbors, find all continuations of a shortest path
+    for (auto & n : nbl)
+    {
+        whichpaths_t newwhich = which;
+        // get list of possible paths from n to tgt in genlp
+        if (which == wp_leftright_shortest && nbl.size() != 1)
         {
-            // not closer, looking for shortest path, so ignore this neighbor
-            continue;
+            if (n == nbl.front())
+            {
+                newwhich = wp_left_shortest;
+            }
+            else
+            {
+                newwhich = wp_right_shortest;
+            }
         }
-
-        // get list of all possible paths from n to tgt in genlp
-        GenShortestPaths(n, tgt, genlp);
-        // DOUT("... GenShortestPaths, returning from recursive call in: " << "src=" << src << " tgt=" << tgt);
-
-        // accumulate all results
+        GenShortestPaths(n, tgt, genlp, newwhich);
         reslp.splice(reslp.end(), genlp);   // moves all of genlp to reslp; makes genlp empty
-        // DOUT("... did splice, i.e. moved any results from recursion to current level results");
-        MapperAssert (genlp.empty());
     }
     // reslp contains all paths starting from a neighbor of src, to tgt
 
@@ -2317,7 +2402,25 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
         // DOUT("... GenShortestPaths, about to add src=" << src << "in front of path");
         p.Add2Front(src);
     }
-    // DOUT("... GenShortestPaths, returning from call of: " << "src=" << src << " tgt=" << tgt);
+    // DOUT("... GenShortestPaths, returning from call of: " << "src=" << src << " tgt=" << tgt << " which=" << which);
+}
+
+void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
+{
+    std::string mappathselectopt = ql::options::get("mappathselect");
+    if ("all" == mappathselectopt)
+    {
+        GenShortestPaths(src, tgt, reslp, wp_all_shortest);
+    }
+    else if ("borders" == mappathselectopt)
+    {
+        GenShortestPaths(src, tgt, reslp, wp_leftright_shortest);
+    }
+    else
+    {
+        EOUT("Unknown value of mapppathselect option " << mappathselectopt);
+        throw ql::exception("Unknown mappathselect option value!", false);
+    }
 }
 
 // split each path in the argument old path list
@@ -2347,15 +2450,17 @@ size_t Draw(size_t count)
         if ("random" == maptiebreakopt)
         {
             c = dis(gen);
-            DOUT(" ... random drew " << c << " from 0.." << (count-1));
+            DOUT(" ... took random draw " << c << " from 0.." << (count-1));
         }
         else if ("last" == maptiebreakopt)
         {
             c = count-1;
+            DOUT(" ... took last " << c << " from 0.." << (count-1));
         }
         else if ("first" == maptiebreakopt)
         {
             c = 0;
+            DOUT(" ... took first " << c << " from 0.." << (count-1));
         }
     }
     return c;
@@ -2418,10 +2523,10 @@ void EnforceNN(ql::gate* gp)
         std::list<NNPath> splitlp;  // list that will hold all split paths
         NNPath resp;                // select result path in splitlp
 
-        GenShortestPaths(src, tgt, genlp);       // find all shortest paths from src to tgt
-        // NNPath::listPrint("... after GenShortestPaths", genlp);
+        GenShortestPaths(src, tgt, genlp);// find shortest paths from src to tgt
+        NNPath::listPrint("... after GenShortestPaths", genlp);
 
-        GenSplitPaths(genlp, splitlp);   // 2q gate can be put anywhere in each path
+        GenSplitPaths(genlp, splitlp);  // 2q gate can be put anywhere in each path
 
         SelectPath(splitlp, resp);      // select one according to strategy specified by options
 
@@ -2468,7 +2573,7 @@ void MapGate(ql::gate* gp)
 // map the circuit's gates in the provided context (v2r and fc maps)
 void MapGates(ql::circuit& circ, std::string& kernel_name)
 {
-    future.SetCircuit(circ, nq, nc);
+    // future.SetCircuit(circ, nq, nc);
 
     // really want to replace circ but circ is input so cannot be output at the same time
     // therefore, catch output in outCirc and at the end replace circ by outCirc
@@ -2687,7 +2792,7 @@ void Init(const ql::quantum_platform& p)
 
     grid.Init(&platform);
 
-    future.Init(&platform);
+    // future.Init(&platform);
     mainPast.Init(&platform);
 
     // DOUT("Mapping initialization [DONE]");

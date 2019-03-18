@@ -12,11 +12,11 @@
 
 // all cnots with operands that are neighbors in s7
 void
-test_manyNN(std::string v, std::string mapopt, std::string maptiebreakopt, std::string post179opt)
+test_manyNN(std::string v, std::string mapopt, std::string maptiebreakopt, std::string pathselect)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -51,17 +51,17 @@ test_manyNN(std::string v, std::string mapopt, std::string maptiebreakopt, std::
 
     ql::options::set("mapper", mapopt);
     ql::options::set("maptiebreak", maptiebreakopt);
-    ql::options::set("scheduler_post179", post179opt);
+    ql::options::set("mappathselect", pathselect);
     prog.compile( );
 }
 
 // one cnot with operands that are at distance 2 in s7
 void
-test_oneD2(std::string v, std::string mapopt, std::string maptiebreakopt, std::string post179opt)
+test_oneD2(std::string v, std::string mapopt, std::string maptiebreakopt, std::string pathselect)
 {
     int n = 4;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -83,17 +83,17 @@ test_oneD2(std::string v, std::string mapopt, std::string maptiebreakopt, std::s
 
     ql::options::set("mapper", mapopt);
     ql::options::set("maptiebreak", maptiebreakopt);
-    ql::options::set("scheduler_post179", post179opt);
+    ql::options::set("mappathselect", pathselect);
     prog.compile( );
 }
 
 // one cnot with operands that are at distance 4 in s7
 void
-test_oneD4(std::string v, std::string mapopt, std::string maptiebreakopt, std::string post179opt)
+test_oneD4(std::string v, std::string mapopt, std::string maptiebreakopt, std::string pathselect)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -115,18 +115,18 @@ test_oneD4(std::string v, std::string mapopt, std::string maptiebreakopt, std::s
 
     ql::options::set("mapper", mapopt);
     ql::options::set("maptiebreak", maptiebreakopt);
-    ql::options::set("scheduler_post179", post179opt);
+    ql::options::set("mappathselect", pathselect);
     prog.compile( );
 }
 
 // all possible cnots in s7, in lexicographic order
 // requires many swaps
 void
-test_allD(std::string v, std::string mapopt, std::string maptiebreakopt, std::string post179opt)
+test_allD(std::string v, std::string mapopt, std::string maptiebreakopt, std::string pathselect)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -145,7 +145,7 @@ test_allD(std::string v, std::string mapopt, std::string maptiebreakopt, std::st
 
     ql::options::set("mapper", mapopt);
     ql::options::set("maptiebreak", maptiebreakopt);
-    ql::options::set("scheduler_post179", post179opt);
+    ql::options::set("mappathselect", pathselect);
     prog.compile( );
 }
 
@@ -154,11 +154,11 @@ test_allD(std::string v, std::string mapopt, std::string maptiebreakopt, std::st
 // - from low distance to high distance
 // - each time as much as possible in opposite sides of the circuit
 void
-test_allDopt(std::string v, std::string mapopt, std::string maptiebreakopt, std::string post179opt)
+test_allDopt(std::string v, std::string mapopt, std::string maptiebreakopt, std::string pathselect)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -238,7 +238,7 @@ test_allDopt(std::string v, std::string mapopt, std::string maptiebreakopt, std:
 
     ql::options::set("mapper", mapopt);
     ql::options::set("maptiebreak", maptiebreakopt);
-    ql::options::set("scheduler_post179", post179opt);
+    ql::options::set("mappathselect", pathselect);
     prog.compile( );
 }
 
@@ -246,11 +246,11 @@ test_allDopt(std::string v, std::string mapopt, std::string maptiebreakopt, std:
 // matches intel NISQ application
 // tests initial placement
 void
-test_string(std::string v, std::string mapopt, std::string maptiebreakopt, std::string post179opt)
+test_string(std::string v, std::string mapopt, std::string maptiebreakopt, std::string pathselect)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -276,7 +276,7 @@ test_string(std::string v, std::string mapopt, std::string maptiebreakopt, std::
 
     ql::options::set("mapper", mapopt);
     ql::options::set("maptiebreak", maptiebreakopt);
-    ql::options::set("scheduler_post179", post179opt);
+    ql::options::set("mappathselect", pathselect);
     prog.compile( );
 }
 
@@ -284,11 +284,11 @@ test_string(std::string v, std::string mapopt, std::string maptiebreakopt, std::
 // because it caused use of a location that, before mapping heuristic was started, wasn't assigned to a used virtual qubit
 // i.e. a location that didn't appear in the v2r map as location where the v2r is the initial map of the heuristic
 void
-test_daniel2(std::string v, std::string mapopt, std::string maptiebreakopt, std::string post179opt)
+test_daniel2(std::string v, std::string mapopt, std::string maptiebreakopt, std::string pathselect)
 {
     int n = 6;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
     float sweep_points[] = { 1, 2 };
 
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
@@ -537,16 +537,16 @@ test_daniel2(std::string v, std::string mapopt, std::string maptiebreakopt, std:
 
     ql::options::set("mapper", mapopt);
     ql::options::set("maptiebreak", maptiebreakopt);
-    ql::options::set("scheduler_post179", post179opt);
+    ql::options::set("mappathselect", pathselect);
     prog.compile( );
 }
 
 void
-test_lingling_5_esm(std::string v, std::string mapopt, std::string maptiebreakopt, std::string post179opt)
+test_lingling_5_esm(std::string v, std::string mapopt, std::string maptiebreakopt, std::string pathselect)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
@@ -688,16 +688,16 @@ test_lingling_5_esm(std::string v, std::string mapopt, std::string maptiebreakop
 
     ql::options::set("mapper", mapopt);
     ql::options::set("maptiebreak", maptiebreakopt);
-    ql::options::set("scheduler_post179", post179opt);
+    ql::options::set("mappathselect", pathselect);
     prog.compile( );
 }
 
 void
-test_lingling_7_esm(std::string v, std::string mapopt, std::string maptiebreakopt, std::string post179opt)
+test_lingling_7_esm(std::string v, std::string mapopt, std::string maptiebreakopt, std::string pathselect)
 {
     int n = 9;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_scheduler_post179=" + post179opt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_maptiebreak=" + maptiebreakopt + "_mappathselect=" + pathselect;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
@@ -824,7 +824,7 @@ test_lingling_7_esm(std::string v, std::string mapopt, std::string maptiebreakop
 
     ql::options::set("mapper", mapopt);
     ql::options::set("maptiebreak", maptiebreakopt);
-    ql::options::set("scheduler_post179", post179opt);
+    ql::options::set("mappathselect", pathselect);
     prog.compile( );
 }
 
@@ -836,101 +836,99 @@ int main(int argc, char ** argv)
     ql::options::set("mapdecomposer", "yes");   // always decompose to primitives
     ql::options::set("mapusemoves", "no"); 
 
-    test_daniel2("daniel2", "base", "first", "yes");
-    test_daniel2("daniel2", "minextend", "first", "yes");
-    test_daniel2("daniel2", "minextend", "last", "yes");
-    test_daniel2("daniel2", "minextend", "random", "yes");
-    test_daniel2("daniel2", "minextend", "random", "yes");
-    test_daniel2("daniel2", "minextend", "random", "yes");
-    test_daniel2("daniel2", "minextendrc", "first", "yes");
-    test_daniel2("daniel2", "minextendrc", "last", "yes");
-    test_daniel2("daniel2", "minextendrc", "random", "yes");
-    test_daniel2("daniel2", "minextendrc", "random", "yes");
-    test_daniel2("daniel2", "minextendrc", "random", "yes");
+//  test_daniel2("daniel2", "base", "first", "borders");
+//  test_daniel2("daniel2", "minextend", "first", "borders");
+//  test_daniel2("daniel2", "minextend", "last", "borders");
+//  test_daniel2("daniel2", "minextend", "random", "borders");
+//  test_daniel2("daniel2", "minextend", "random", "borders");
+//  test_daniel2("daniel2", "minextend", "random", "borders");
+//  test_daniel2("daniel2", "minextendrc", "first", "borders");
+//  test_daniel2("daniel2", "minextendrc", "last", "borders");
+//  test_daniel2("daniel2", "minextendrc", "random", "borders");
+//  test_daniel2("daniel2", "minextendrc", "random", "borders");
+//  test_daniel2("daniel2", "minextendrc", "random", "borders");
 
-    test_oneD2("oneD2", "base", "first", "yes");
-    test_oneD2("oneD2", "minextend", "first", "yes");
-    test_oneD2("oneD2", "minextend", "last", "yes");
-    test_oneD2("oneD2", "minextend", "random", "yes");
-    test_oneD2("oneD2", "minextend", "random", "yes");
-    test_oneD2("oneD2", "minextend", "random", "yes");
-    test_oneD2("oneD2", "minextendrc", "first", "yes");
-    test_oneD2("oneD2", "minextendrc", "last", "yes");
-    test_oneD2("oneD2", "minextendrc", "random", "yes");
-    test_oneD2("oneD2", "minextendrc", "random", "yes");
-    test_oneD2("oneD2", "minextendrc", "random", "yes");
+//  test_oneD2("oneD2", "base", "first", "borders");
+//  test_oneD2("oneD2", "minextend", "first", "borders");
+//  test_oneD2("oneD2", "minextend", "last", "borders");
+//  test_oneD2("oneD2", "minextend", "random", "borders");
+//  test_oneD2("oneD2", "minextend", "random", "borders");
+//  test_oneD2("oneD2", "minextend", "random", "borders");
+//  test_oneD2("oneD2", "minextendrc", "first", "borders");
+//  test_oneD2("oneD2", "minextendrc", "last", "borders");
+//  test_oneD2("oneD2", "minextendrc", "random", "borders");
+//  test_oneD2("oneD2", "minextendrc", "random", "borders");
+//  test_oneD2("oneD2", "minextendrc", "random", "borders");
 
-    test_oneD4("oneD4", "base", "first", "yes");
-    test_oneD4("oneD4", "minextend", "first", "yes");
-    test_oneD4("oneD4", "minextend", "last", "yes");
-    test_oneD4("oneD4", "minextend", "random", "yes");
-    test_oneD4("oneD4", "minextend", "random", "yes");
-    test_oneD4("oneD4", "minextend", "random", "yes");
-    test_oneD4("oneD4", "minextendrc", "first", "yes");
-    test_oneD4("oneD4", "minextendrc", "last", "yes");
-    test_oneD4("oneD4", "minextendrc", "random", "yes");
-    test_oneD4("oneD4", "minextendrc", "random", "yes");
-    test_oneD4("oneD4", "minextendrc", "random", "yes");
+//  test_oneD4("oneD4", "base", "first", "borders");
+//  test_oneD4("oneD4", "base", "last", "borders");
+//  test_oneD4("oneD4", "base", "random", "borders");
+//  test_oneD4("oneD4", "minextend", "first", "borders");
+//  test_oneD4("oneD4", "minextend", "last", "borders");
+//  test_oneD4("oneD4", "minextend", "random", "borders");
+//  test_oneD4("oneD4", "minextendrc", "first", "borders");
+//  test_oneD4("oneD4", "minextendrc", "last", "borders");
+//  test_oneD4("oneD4", "minextendrc", "random", "borders");
 
-    test_string("string", "base", "first", "yes");
-    test_string("string", "minextend", "first", "yes");
-    test_string("string", "minextend", "last", "yes");
-    test_string("string", "minextend", "random", "yes");
-    test_string("string", "minextend", "random", "yes");
-    test_string("string", "minextend", "random", "yes");
-    test_string("string", "minextendrc", "first", "yes");
-    test_string("string", "minextendrc", "last", "yes");
-    test_string("string", "minextendrc", "random", "yes");
-    test_string("string", "minextendrc", "random", "yes");
-    test_string("string", "minextendrc", "random", "yes");
+//  test_string("string", "base", "first", "borders");
+//  test_string("string", "minextend", "first", "borders");
+//  test_string("string", "minextend", "last", "borders");
+//  test_string("string", "minextend", "random", "borders");
+//  test_string("string", "minextend", "random", "borders");
+//  test_string("string", "minextend", "random", "borders");
+//  test_string("string", "minextendrc", "first", "borders");
+//  test_string("string", "minextendrc", "last", "borders");
+//  test_string("string", "minextendrc", "random", "borders");
+//  test_string("string", "minextendrc", "random", "borders");
+//  test_string("string", "minextendrc", "random", "borders");
 
-    test_allD("allD", "base", "first", "yes");
-    test_allD("allD", "minextend", "first", "yes");
-    test_allD("allD", "minextend", "last", "yes");
-    test_allD("allD", "minextend", "random", "yes");
-    test_allD("allD", "minextend", "random", "yes");
-    test_allD("allD", "minextend", "random", "yes");
-    test_allD("allD", "minextendrc", "first", "yes");
-    test_allD("allD", "minextendrc", "last", "yes");
-    test_allD("allD", "minextendrc", "random", "yes");
-    test_allD("allD", "minextendrc", "random", "yes");
-    test_allD("allD", "minextendrc", "random", "yes");
+//  test_allD("allD", "base", "first", "borders");
+//  test_allD("allD", "minextend", "first", "borders");
+//  test_allD("allD", "minextend", "last", "borders");
+//  test_allD("allD", "minextend", "random", "borders");
+//  test_allD("allD", "minextend", "random", "borders");
+//  test_allD("allD", "minextend", "random", "borders");
+//  test_allD("allD", "minextendrc", "first", "borders");
+//  test_allD("allD", "minextendrc", "last", "borders");
+//  test_allD("allD", "minextendrc", "random", "borders");
+//  test_allD("allD", "minextendrc", "random", "borders");
+//  test_allD("allD", "minextendrc", "random", "borders");
 
-    test_allDopt("allDopt", "base", "first", "yes");
-    test_allDopt("allDopt", "minextend", "first", "yes");
-    test_allDopt("allDopt", "minextend", "last", "yes");
-    test_allDopt("allDopt", "minextend", "random", "yes");
-    test_allDopt("allDopt", "minextend", "random", "yes");
-    test_allDopt("allDopt", "minextend", "random", "yes");
-    test_allDopt("allDopt", "minextendrc", "first", "yes");
-    test_allDopt("allDopt", "minextendrc", "last", "yes");
-    test_allDopt("allDopt", "minextendrc", "random", "yes");
-    test_allDopt("allDopt", "minextendrc", "random", "yes");
-    test_allDopt("allDopt", "minextendrc", "random", "yes");
+    test_allDopt("allDopt", "base", "first", "borders");
+//  test_allDopt("allDopt", "minextend", "first", "borders");
+//  test_allDopt("allDopt", "minextend", "last", "borders");
+//  test_allDopt("allDopt", "minextend", "random", "borders");
+//  test_allDopt("allDopt", "minextend", "random", "borders");
+//  test_allDopt("allDopt", "minextend", "random", "borders");
+//  test_allDopt("allDopt", "minextendrc", "first", "borders");
+//  test_allDopt("allDopt", "minextendrc", "last", "borders");
+//  test_allDopt("allDopt", "minextendrc", "random", "borders");
+//  test_allDopt("allDopt", "minextendrc", "random", "borders");
+//  test_allDopt("allDopt", "minextendrc", "random", "borders");
 
-    test_lingling_5_esm("lingling_5_esm", "base", "first", "yes");
-    test_lingling_5_esm("lingling_5_esm", "minextend", "first", "yes");
-    test_lingling_5_esm("lingling_5_esm", "minextend", "last", "yes");
-    test_lingling_5_esm("lingling_5_esm", "minextend", "random", "yes");
-    test_lingling_5_esm("lingling_5_esm", "minextend", "random", "yes");
-    test_lingling_5_esm("lingling_5_esm", "minextend", "random", "yes");
-    test_lingling_5_esm("lingling_5_esm", "minextendrc", "first", "yes");
-    test_lingling_5_esm("lingling_5_esm", "minextendrc", "last", "yes");
-    test_lingling_5_esm("lingling_5_esm", "minextendrc", "random", "yes");
-    test_lingling_5_esm("lingling_5_esm", "minextendrc", "random", "yes");
-    test_lingling_5_esm("lingling_5_esm", "minextendrc", "random", "yes");
+//  test_lingling_5_esm("lingling_5_esm", "base", "first", "borders");
+//  test_lingling_5_esm("lingling_5_esm", "minextend", "first", "borders");
+//  test_lingling_5_esm("lingling_5_esm", "minextend", "last", "borders");
+//  test_lingling_5_esm("lingling_5_esm", "minextend", "random", "borders");
+//  test_lingling_5_esm("lingling_5_esm", "minextend", "random", "borders");
+//  test_lingling_5_esm("lingling_5_esm", "minextend", "random", "borders");
+//  test_lingling_5_esm("lingling_5_esm", "minextendrc", "first", "borders");
+//  test_lingling_5_esm("lingling_5_esm", "minextendrc", "last", "borders");
+//  test_lingling_5_esm("lingling_5_esm", "minextendrc", "random", "borders");
+//  test_lingling_5_esm("lingling_5_esm", "minextendrc", "random", "borders");
+//  test_lingling_5_esm("lingling_5_esm", "minextendrc", "random", "borders");
 
-    test_lingling_7_esm("lingling_7_esm", "base", "first", "yes");
-    test_lingling_7_esm("lingling_7_esm", "minextend", "first", "yes");
-    test_lingling_7_esm("lingling_7_esm", "minextend", "last", "yes");
-    test_lingling_7_esm("lingling_7_esm", "minextend", "random", "yes");
-    test_lingling_7_esm("lingling_7_esm", "minextend", "random", "yes");
-    test_lingling_7_esm("lingling_7_esm", "minextend", "random", "yes");
-    test_lingling_7_esm("lingling_7_esm", "minextendrc", "first", "yes");
-    test_lingling_7_esm("lingling_7_esm", "minextendrc", "last", "yes");
-    test_lingling_7_esm("lingling_7_esm", "minextendrc", "random", "yes");
-    test_lingling_7_esm("lingling_7_esm", "minextendrc", "random", "yes");
-    test_lingling_7_esm("lingling_7_esm", "minextendrc", "random", "yes");
+//  test_lingling_7_esm("lingling_7_esm", "base", "first", "borders");
+//  test_lingling_7_esm("lingling_7_esm", "minextend", "first", "borders");
+//  test_lingling_7_esm("lingling_7_esm", "minextend", "last", "borders");
+//  test_lingling_7_esm("lingling_7_esm", "minextend", "random", "borders");
+//  test_lingling_7_esm("lingling_7_esm", "minextend", "random", "borders");
+//  test_lingling_7_esm("lingling_7_esm", "minextend", "random", "borders");
+//  test_lingling_7_esm("lingling_7_esm", "minextendrc", "first", "borders");
+//  test_lingling_7_esm("lingling_7_esm", "minextendrc", "last", "borders");
+//  test_lingling_7_esm("lingling_7_esm", "minextendrc", "random", "borders");
+//  test_lingling_7_esm("lingling_7_esm", "minextendrc", "random", "borders");
+//  test_lingling_7_esm("lingling_7_esm", "minextendrc", "random", "borders");
 
     return 0;
 }
