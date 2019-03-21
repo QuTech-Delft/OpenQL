@@ -62,8 +62,8 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
 {
     IOUT("Scheduling CC-Light instructions ...");
     Scheduler sched;
-    sched.Init(ckt, platform, nqubits, ncreg);
-    // sched.PrintDot();
+    sched.init(ckt, platform, nqubits, ncreg);
+
     ql::ir::bundles_t bundles1;
     std::string schedopt = ql::options::get("scheduler");
     std::string dot;    
@@ -168,7 +168,7 @@ ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
     cc_light_resource_manager_t rm(platform, direction);
 
     Scheduler sched;
-    sched.Init(ckt, platform, nqubits, ncreg);
+    sched.init(ckt, platform, nqubits, ncreg);
     ql::ir::bundles_t bundles1;
     std::string dot;
     if ("ASAP" == schedopt)

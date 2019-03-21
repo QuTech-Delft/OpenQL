@@ -1113,11 +1113,11 @@ public:
         IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
 
         Scheduler sched;
-        sched.Init(c, platform, qubit_count, creg_count);
+        sched.init(c, platform, qubit_count, creg_count);
 
         if(ql::options::get("print_dot_graphs") == "yes")
         {
-            sched.GetDot(dot);
+            sched.get_dot(dot);
         }
 
         

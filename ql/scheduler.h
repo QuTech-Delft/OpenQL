@@ -115,7 +115,7 @@ public:
         cause(graph), depType(graph) {}
 
     // factored out code from Init to add a dependence between two nodes
-    void addDep(int srcID, int tgtID, enum DepTypes deptype, int operand)
+    void add_dep(int srcID, int tgtID, enum DepTypes deptype, int operand)
     {
         ListDigraph::Node srcNode = graph.nodeFromId(srcID);
         ListDigraph::Node tgtNode = graph.nodeFromId(tgtID);
@@ -127,7 +127,7 @@ public:
     }
 
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
-    void Init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
+    void init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
     {
         DOUT("Dependence graph creation ...");
         qubit_count = qcount;
@@ -271,16 +271,16 @@ public:
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    addDep(LastWriter[operand], consID, WAW, operand);
+                    add_dep(LastWriter[operand], consID, WAW, operand);
                     for(auto & readerID : LastReaders[operand])
                     {
-                        addDep(readerID, consID, WAR, operand);
+                        add_dep(readerID, consID, WAR, operand);
                     }
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
                         for(auto & readerID : LastDs[operand])
                         {
-                            addDep(readerID, consID, WAD, operand);
+                            add_dep(readerID, consID, WAD, operand);
                         }
                     }
                 }
@@ -289,10 +289,10 @@ public:
                 for( auto operand : mins->creg_operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    addDep(LastWriter[qubit_count+operand], consID, WAW, operand);
+                    add_dep(LastWriter[qubit_count+operand], consID, WAW, operand);
                     for(auto & readerID : LastReaders[qubit_count+operand])
                     {
-                        addDep(readerID, consID, WAR, operand);
+                        add_dep(readerID, consID, WAR, operand);
                     }
                 }
 
@@ -325,16 +325,16 @@ public:
                 for( auto operand : qubits )
                 {
                     DOUT(".. Operand: " << operand);
-                    addDep(LastWriter[operand], consID, WAW, operand);
+                    add_dep(LastWriter[operand], consID, WAW, operand);
                     for(auto & readerID : LastReaders[operand])
                     {
-                        addDep(readerID, consID, WAR, operand);
+                        add_dep(readerID, consID, WAR, operand);
                     }
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
                         for(auto & readerID : LastDs[operand])
                         {
-                            addDep(readerID, consID, WAD, operand);
+                            add_dep(readerID, consID, WAD, operand);
                         }
                     }
                 }
@@ -358,16 +358,16 @@ public:
                 for( auto operand : all_operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    addDep(LastWriter[operand], consID, WAW, operand);
+                    add_dep(LastWriter[operand], consID, WAW, operand);
                     for(auto & readerID : LastReaders[operand])
                     {
-                        addDep(readerID, consID, WAR, operand);
+                        add_dep(readerID, consID, WAR, operand);
                     }
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
                         for(auto & readerID : LastDs[operand])
                         {
-                            addDep(readerID, consID, WAD, operand);
+                            add_dep(readerID, consID, WAD, operand);
                         }
                     }
                 }
@@ -395,20 +395,20 @@ public:
                     DOUT(".. Operand: " << operand);
                     if( operandNo == 0)
                     {
-                        addDep(LastWriter[operand], consID, RAW, operand);
+                        add_dep(LastWriter[operand], consID, RAW, operand);
 	                    if (ql::options::get("scheduler_post179") == "no"
 	                    ||  ql::options::get("scheduler_commute") == "no")
                         {
                             for(auto & readerID : LastReaders[operand])
                             {
-                                addDep(readerID, consID, RAR, operand);
+                                add_dep(readerID, consID, RAR, operand);
                             }
                         }
                         if (ql::options::get("scheduler_post179") == "yes")
                         {
                             for(auto & readerID : LastDs[operand])
                             {
-                                addDep(readerID, consID, RAD, operand);
+                                add_dep(readerID, consID, RAD, operand);
                             }
                         }
                     }
@@ -416,25 +416,25 @@ public:
                     {
 	                    if (ql::options::get("scheduler_post179") == "no")
                         {
-                            addDep(LastWriter[operand], consID, WAW, operand);
+                            add_dep(LastWriter[operand], consID, WAW, operand);
                             for(auto & readerID : LastReaders[operand])
                             {
-                                addDep(readerID, consID, WAR, operand);
+                                add_dep(readerID, consID, WAR, operand);
                             }
                         }
                         else
                         {
-                            addDep(LastWriter[operand], consID, DAW, operand);
+                            add_dep(LastWriter[operand], consID, DAW, operand);
 	                        if (ql::options::get("scheduler_commute") == "no")
                             {
                                 for(auto & readerID : LastDs[operand])
                                 {
-                                    addDep(readerID, consID, DAD, operand);
+                                    add_dep(readerID, consID, DAD, operand);
                                 }
                             }
                             for(auto & readerID : LastReaders[operand])
                             {
-                                addDep(readerID, consID, DAR, operand);
+                                add_dep(readerID, consID, DAR, operand);
                             }
                         }
                     }
@@ -483,17 +483,17 @@ public:
                     DOUT(".. Operand: " << operand);
                     if (ql::options::get("scheduler_post179") == "no")
                     {
-                        addDep(LastWriter[operand], consID, RAW, operand);
+                        add_dep(LastWriter[operand], consID, RAW, operand);
                         for(auto & readerID : LastReaders[operand])
                         {
-                            addDep(readerID, consID, RAR, operand);
+                            add_dep(readerID, consID, RAR, operand);
                         }
 	                    if( operandNo != 0)
 	                    {
-                            addDep(LastWriter[operand], consID, WAW, operand);
+                            add_dep(LastWriter[operand], consID, WAW, operand);
                             for(auto & readerID : LastReaders[operand])
                             {
-                                addDep(readerID, consID, WAR, operand);
+                                add_dep(readerID, consID, WAR, operand);
                             }
 	                    }
                     }
@@ -503,13 +503,13 @@ public:
                         {
                             for(auto & readerID : LastReaders[operand])
                             {
-                                addDep(readerID, consID, RAR, operand);
+                                add_dep(readerID, consID, RAR, operand);
                             }
                         }
-                        addDep(LastWriter[operand], consID, RAW, operand);
+                        add_dep(LastWriter[operand], consID, RAW, operand);
                         for(auto & readerID : LastDs[operand])
                         {
-                            addDep(readerID, consID, RAD, operand);
+                            add_dep(readerID, consID, RAD, operand);
                         }
                     }
                     operandNo++;
@@ -554,20 +554,20 @@ public:
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    addDep(LastWriter[operand], consID, RAW, operand);
+                    add_dep(LastWriter[operand], consID, RAW, operand);
                     if (ql::options::get("scheduler_post179") == "no"
                     ||  ql::options::get("scheduler_commute") == "no")
                     {
                         for(auto & readerID : LastReaders[operand])
                         {
-                            addDep(readerID, consID, RAR, operand);
+                            add_dep(readerID, consID, RAR, operand);
                         }
                     }
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
                         for(auto & readerID : LastDs[operand])
                         {
-                            addDep(readerID, consID, RAD, operand);
+                            add_dep(readerID, consID, RAD, operand);
                         }
                     }
 
@@ -581,16 +581,16 @@ public:
                     }
                     else
                     {
-                        addDep(LastWriter[operand], consID, WAW, operand);
+                        add_dep(LastWriter[operand], consID, WAW, operand);
                         for(auto & readerID : LastReaders[operand])
                         {
-                            addDep(readerID, consID, WAR, operand);
+                            add_dep(readerID, consID, WAR, operand);
                         }
                         if (ql::options::get("scheduler_post179") == "yes")
                         {
                             for(auto & readerID : LastDs[operand])
                             {
-                                addDep(readerID, consID, WAD, operand);
+                                add_dep(readerID, consID, WAD, operand);
                             }
                         }
 
@@ -614,16 +614,16 @@ public:
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    addDep(LastWriter[operand], consID, WAW, operand);
+                    add_dep(LastWriter[operand], consID, WAW, operand);
                     for(auto & readerID : LastReaders[operand])
                     {
-                        addDep(readerID, consID, WAR, operand);
+                        add_dep(readerID, consID, WAR, operand);
                     }
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
                         for(auto & readerID : LastDs[operand])
                         {
-                            addDep(readerID, consID, WAD, operand);
+                            add_dep(readerID, consID, WAD, operand);
                         }
                     }
 
@@ -666,16 +666,16 @@ public:
 	        for( auto operand : qubits )
 	        {
 	            DOUT(".. Operand: " << operand);
-	            addDep(LastWriter[operand], consID, WAW, operand);
+	            add_dep(LastWriter[operand], consID, WAW, operand);
 	            for(auto & readerID : LastReaders[operand])
 	            {
-	                addDep(readerID, consID, WAR, operand);
+	                add_dep(readerID, consID, WAR, operand);
 	            }
 	            if (ql::options::get("scheduler_post179") == "yes")
 	            {
 	                for(auto & readerID : LastDs[operand])
 	                {
-	                    addDep(readerID, consID, WAD, operand);
+	                    add_dep(readerID, consID, WAD, operand);
 	                }
 	            }
 	        }
@@ -705,7 +705,7 @@ public:
         DOUT("Dependence graph creation Done.");
     }
 
-    void Print()
+    void print()
     {
         COUT("Printing Dependence Graph ");
         digraphWriter(graph).
@@ -718,9 +718,9 @@ public:
         run();
     }
 
-    void PrintMatrix()
+    void write_dependence_matrix()
     {
-        COUT("Printing Dependence Graph as Matrix");
+        COUT("Printing Dependence Matrix ...");
         ofstream fout;
         string datfname( ql::options::get("output_dir") + "/dependenceMatrix.dat");
         fout.open( datfname, ios::binary);
@@ -756,7 +756,7 @@ public:
         fout.close();
     }
 
-    void PrintDot1_(
+    void get_dot_asap_(
                 bool WithCritical,
                 bool WithCycles,
                 ListDigraph::NodeMap<size_t> & cycle,
@@ -855,12 +855,12 @@ public:
         dotout << "}" << endl;
     }
 
-    void GetDot(std::string & dot)
+    void get_dot(std::string & dot)
     {
         stringstream ssdot;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
-        PrintDot1_(false, false, cycle, order, ssdot);
+        get_dot_asap_(false, false, cycle, order, ssdot);
         dot = ssdot.str();
     }
 
@@ -868,7 +868,7 @@ private:
 
 // =========== pre179 schedulers
 
-    void TopologicalSort(std::vector<ListDigraph::Node> & order)
+    void topological_sort(std::vector<ListDigraph::Node> & order)
     {
         // DOUT("Performing Topological sort.");
         ListDigraph::NodeMap<int> rorder(graph);
@@ -900,10 +900,10 @@ private:
         // }
     }
 
-    void PrintTopologicalOrder()
+    void print_topological_order()
     {
         std::vector<ListDigraph::Node> order;
-        TopologicalSort(order);
+        topological_sort(order);
 
         COUT("Printing nodes in Topological order");
         for ( std::vector<ListDigraph::Node>::reverse_iterator it = order.rbegin(); it != order.rend(); ++it)
@@ -917,7 +917,7 @@ private:
     void schedule_asap_(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
     {
         DOUT("Performing ASAP Scheduling");
-        TopologicalSort(order);
+        topological_sort(order);
 
         std::vector<ListDigraph::Node>::reverse_iterator currNode = order.rbegin();
         cycle[*currNode]=0; // src dummy in cycle 0
@@ -947,7 +947,7 @@ private:
                        ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
     {
         DOUT("Performing RC ASAP Scheduling");
-        TopologicalSort(order);
+        topological_sort(order);
 
         std::vector<ListDigraph::Node>::reverse_iterator currNode = order.rbegin();
         size_t currCycle=0;
@@ -1103,7 +1103,7 @@ private:
         if(ql::options::get("print_dot_graphs") == "yes")
         {
             stringstream ssdot;
-            PrintDot1_(false, true, cycle, order, ssdot);
+            get_dot_asap_(false, true, cycle, order, ssdot);
             sched_dot = ssdot.str();
         }
 
@@ -1175,7 +1175,7 @@ private:
         if(ql::options::get("print_dot_graphs") == "yes")
         {
             stringstream ssdot;
-            PrintDot1_(false, true, cycle, order, ssdot);
+            get_dot_asap_(false, true, cycle, order, ssdot);
             sched_dot = ssdot.str();
         }
 
@@ -1281,7 +1281,7 @@ private:
     void schedule_alap_(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
     {
         DOUT("Performing ALAP Scheduling");
-        TopologicalSort(order);
+        topological_sort(order);
 
         std::vector<ListDigraph::Node>::iterator currNode = order.begin();
         cycle[*currNode]=MAX_CYCLE;
@@ -1317,7 +1317,7 @@ private:
     {
         DOUT("Performing RC ALAP Scheduling");
 
-        TopologicalSort(order);
+        topological_sort(order);
 
         std::vector<ListDigraph::Node>::iterator currNode = order.begin();
         cycle[*currNode]=MAX_CYCLE;          // sink node
@@ -1454,7 +1454,7 @@ private:
     //     }
     // }
 
-    void PrintDot2_(
+    void get_dot_alap_(
                 bool WithCritical,
                 bool WithCycles,
                 ListDigraph::NodeMap<size_t> & cycle,
@@ -1564,7 +1564,7 @@ private:
         if(ql::options::get("print_dot_graphs") == "yes")
         {
             stringstream ssdot;
-            PrintDot2_(false, true, cycle, order, ssdot);
+            get_dot_alap_(false, true, cycle, order, ssdot);
             sched_dot = ssdot.str();
         }
 
@@ -1634,7 +1634,7 @@ private:
         if(ql::options::get("print_dot_graphs") == "yes")
         {
             stringstream ssdot;
-            PrintDot2_(false, true, cycle, order, ssdot);
+            get_dot_alap_(false, true, cycle, order, ssdot);
             sched_dot = ssdot.str();
         }
 
@@ -1809,7 +1809,7 @@ private:
         // order becomes a reversed topological order of the nodes
         // don't know why it is done, since the nodes already are in topological order
         // that they are is a consequence of dep graph computation which is based on this original order
-        TopologicalSort(order);
+        topological_sort(order);
 
         // compute cycle itself as asap as first approximation of result
         // when schedule is already uniform, nothing changes
@@ -2472,7 +2472,7 @@ private:
 
     // Set the curr_cycle of the scheduling algorithm to start at the appropriate end as well;
     // note that the cycle attributes will be shifted down to start at 1 after backward scheduling.
-    void InitAvailable(std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir, size_t& curr_cycle)
+    void init_available(std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir, size_t& curr_cycle)
     {
         avlist.clear();
         if (ql::forward_scheduling == dir)
@@ -2591,7 +2591,7 @@ private:
     //  all its predecessors were scheduled (forward scheduling) or
     //  all its successors were scheduled (backward scheduling)
     // update its cycle attribute to reflect these dependences;
-    // avlist is initialized with s or t as first element by InitAvailable
+    // avlist is initialized with s or t as first element by init_available
     // avlist is kept ordered on deep-criticality, non-increasing (i.e. highest deep-criticality first)
     void MakeAvailable(ListDigraph::Node n, std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir)
     {
@@ -2877,7 +2877,7 @@ private:
             scheduled[n] = false;   // none were scheduled
         }
         size_t  curr_cycle;         // current cycle for which instructions are sought
-        InitAvailable(avlist, dir, curr_cycle);     // first node (SOURCE/SINK) is made available and curr_cycle set
+        init_available(avlist, dir, curr_cycle);     // first node (SOURCE/SINK) is made available and curr_cycle set
         set_remaining(dir);         // for each gate, number of cycles until end of schedule
 
         DOUT("... loop over avlist until it is empty");
