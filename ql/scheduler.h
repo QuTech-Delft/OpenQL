@@ -756,122 +756,113 @@ public:
         fout.close();
     }
 
-    // void PrintDot1_(
-    //             bool WithCritical,
-    //             bool WithCycles,
-    //             ListDigraph::NodeMap<size_t> & cycle,
-    //             std::vector<ListDigraph::Node> & order,
-    //             std::ostream& dotout
-    //             )
-    // {
-    //     ListDigraph::ArcMap<bool> isInCritical(graph);
-    //     if(WithCritical)
-    //     {
-    //         for (ListDigraph::ArcIt a(graph); a != INVALID; ++a)
-    //         {
-    //             isInCritical[a] = false;
-    //             for ( Path<ListDigraph>::ArcIt ap(p); ap != INVALID; ++ap )
-    //             {
-    //                 if(a==ap)
-    //                 {
-    //                     isInCritical[a] = true;
-    //                     break;
-    //                 }
-    //             }
-    //         }
-    //     }
+    void PrintDot1_(
+                bool WithCritical,
+                bool WithCycles,
+                ListDigraph::NodeMap<size_t> & cycle,
+                std::vector<ListDigraph::Node> & order,
+                std::ostream& dotout
+                )
+    {
+        Path<ListDigraph> p;
+        ListDigraph::ArcMap<bool> isInCritical(graph);
+        if(WithCritical)
+        {
+            for (ListDigraph::ArcIt a(graph); a != INVALID; ++a)
+            {
+                isInCritical[a] = false;
+                for ( Path<ListDigraph>::ArcIt ap(p); ap != INVALID; ++ap )
+                {
+                    if(a==ap)
+                    {
+                        isInCritical[a] = true;
+                        break;
+                    }
+                }
+            }
+        }
 
-    //     string NodeStyle(" fontcolor=black, style=filled, fontsize=16");
-    //     string EdgeStyle1(" color=black");
-    //     string EdgeStyle2(" color=red");
-    //     string EdgeStyle = EdgeStyle1;
+        string NodeStyle(" fontcolor=black, style=filled, fontsize=16");
+        string EdgeStyle1(" color=black");
+        string EdgeStyle2(" color=red");
+        string EdgeStyle = EdgeStyle1;
 
-    //     dotout << "digraph {\ngraph [ rankdir=TD; ]; // or rankdir=LR"
-    //         << "\nedge [fontsize=16, arrowhead=vee, arrowsize=0.5];"
-    //         << endl;
+        dotout << "digraph {\ngraph [ rankdir=TD; ]; // or rankdir=LR"
+            << "\nedge [fontsize=16, arrowhead=vee, arrowsize=0.5];"
+            << endl;
 
-    //     // first print the nodes
-    //     for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
-    //     {
-    //         int nid = graph.id(n);
-    //         string nodeName = name[n];
-    //         dotout  << "\"" << nid << "\""
-    //                 << " [label=\" " << nodeName <<" \""
-    //                 << NodeStyle
-    //                 << "];" << endl;
-    //     }
+        // first print the nodes
+        for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
+        {
+            int nid = graph.id(n);
+            string nodeName = name[n];
+            dotout  << "\"" << nid << "\""
+                    << " [label=\" " << nodeName <<" \""
+                    << NodeStyle
+                    << "];" << endl;
+        }
 
-    //     if( WithCycles)
-    //     {
-    //         // Print cycle numbers as timeline, as shown below
-    //         size_t cn=0,TotalCycles=0;
-    //         dotout << "{\nnode [shape=plaintext, fontsize=16, fontcolor=blue]; \n";
-    //         ListDigraph::NodeMap<size_t>::MapIt it(cycle);
-    //         if(it != INVALID)
-    //             TotalCycles=cycle[it];
-    //         for(cn=0;cn<=TotalCycles;++cn)
-    //         {
-    //             if(cn>0)
-    //                 dotout << " -> ";
-    //             dotout << "Cycle" << cn;
-    //         }
-    //         dotout << ";\n}\n";
+        if( WithCycles)
+        {
+            // Print cycle numbers as timeline, as shown below
+            size_t cn=0,TotalCycles=0;
+            dotout << "{\nnode [shape=plaintext, fontsize=16, fontcolor=blue]; \n";
+            ListDigraph::NodeMap<size_t>::MapIt it(cycle);
+            if(it != INVALID)
+                TotalCycles=cycle[it];
+            for(cn=0;cn<=TotalCycles;++cn)
+            {
+                if(cn>0)
+                    dotout << " -> ";
+                dotout << "Cycle" << cn;
+            }
+            dotout << ";\n}\n";
 
-    //         // Now print ranks, as shown below
-    //         std::vector<ListDigraph::Node>::reverse_iterator rit;
-    //         for ( rit = order.rbegin(); rit != order.rend(); ++rit)
-    //         {
-    //             int nid = graph.id(*rit);
-    //             dotout << "{ rank=same; Cycle" << cycle[*rit] <<"; " <<nid<<"; }\n";
-    //         }
-    //     }
+            // Now print ranks, as shown below
+            std::vector<ListDigraph::Node>::reverse_iterator rit;
+            for ( rit = order.rbegin(); rit != order.rend(); ++rit)
+            {
+                int nid = graph.id(*rit);
+                dotout << "{ rank=same; Cycle" << cycle[*rit] <<"; " <<nid<<"; }\n";
+            }
+        }
 
-    //     // now print the edges
-    //     for (ListDigraph::ArcIt arc(graph); arc != INVALID; ++arc)
-    //     {
-    //         ListDigraph::Node srcNode = graph.source(arc);
-    //         ListDigraph::Node dstNode = graph.target(arc);
-    //         int srcID = graph.id( srcNode );
-    //         int dstID = graph.id( dstNode );
+        // now print the edges
+        for (ListDigraph::ArcIt arc(graph); arc != INVALID; ++arc)
+        {
+            ListDigraph::Node srcNode = graph.source(arc);
+            ListDigraph::Node dstNode = graph.target(arc);
+            int srcID = graph.id( srcNode );
+            int dstID = graph.id( dstNode );
 
-    //         if(WithCritical)
-    //             EdgeStyle = ( isInCritical[arc]==true ) ? EdgeStyle2 : EdgeStyle1;
+            if(WithCritical)
+                EdgeStyle = ( isInCritical[arc]==true ) ? EdgeStyle2 : EdgeStyle1;
 
-    //         dotout << dec
-    //             << "\"" << srcID << "\""
-    //             << "->"
-    //             << "\"" << dstID << "\""
-    //             << "[ label=\""
-    //             << "q" << cause[arc]
-    //             << " , " << weight[arc]
-    //             << " , " << DepTypesNames[ depType[arc] ]
-    //             <<"\""
-    //             << " " << EdgeStyle << " "
-    //             << "]"
-    //             << endl;
-    //     }
+            dotout << dec
+                << "\"" << srcID << "\""
+                << "->"
+                << "\"" << dstID << "\""
+                << "[ label=\""
+                << "q" << cause[arc]
+                << " , " << weight[arc]
+                << " , " << DepTypesNames[ depType[arc] ]
+                <<"\""
+                << " " << EdgeStyle << " "
+                << "]"
+                << endl;
+        }
 
-    //     dotout << "}" << endl;
-    // }
+        dotout << "}" << endl;
+    }
 
-    // void PrintDot()
-    // {
-    //     IOUT("Printing Dependence Graph in DOT");
-    //     ofstream dotout;
-    //     string dotfname(ql::options::get("output_dir") + "/dependenceGraph.dot");
-    //     dotout.open(dotfname, ios::binary);
-    //     if ( dotout.fail() )
-    //     {
-    //         EOUT("opening file " << dotfname << std::endl
-    //                  << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
-    //         return;
-    //     }
-
-    //     ListDigraph::NodeMap<size_t> cycle(graph);
-    //     std::vector<ListDigraph::Node> order;
-    //     PrintDot1_(false, false, cycle, order, dotout);
-    //     dotout.close();
-    // }
+    void GetDot(std::string & dot)
+    {
+        stringstream ssdot;
+        ListDigraph::NodeMap<size_t> cycle(graph);
+        std::vector<ListDigraph::Node> order;
+        PrintDot1_(false, false, cycle, order, ssdot);
+        dot = ssdot.str();
+    }
 
 private:
 
@@ -1091,7 +1082,6 @@ private:
     //     ListDigraph::NodeMap<size_t> cycle(graph);
     //     std::vector<ListDigraph::Node> order;
     //     schedule_asap_(cycle,order);
-
     //     COUT("\nPrinting ASAP Schedule");
     //     std::cout << "Cycle <- Instruction " << std::endl;
     //     std::vector<ListDigraph::Node>::reverse_iterator it;
@@ -1101,41 +1091,21 @@ private:
     //     }
     // }
 
-    // std::string GetDotScheduleASAP()
-    // {
-    //     stringstream dotout;
-    //     ListDigraph::NodeMap<size_t> cycle(graph);
-    //     std::vector<ListDigraph::Node> order;
-    //     schedule_asap_(cycle,order);
-    //     PrintDot1_(false,true,cycle,order,dotout);
-    //     return dotout.str();
-    // }
 
-    // void PrintDotScheduleASAP()
-    // {
-    //     ofstream dotout;
-    //     string dotfname( ql::options::get("output_dir") + "/scheduledASAP.dot");
-    //     dotout.open( dotfname, ios::binary);
-    //     if ( dotout.fail() )
-    //     {
-    //         EOUT("opening file " << dotfname << std::endl
-    //                  << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
-    //         return;
-    //     }
-
-    //     IOUT("Printing Scheduled Graph in " << dotfname);
-    //     dotout << GetDotScheduleASAP();
-    //     dotout.close();
-    // }
-
-
-    ql::ir::bundles_t schedule_asap_pre179()
+    ql::ir::bundles_t schedule_asap_pre179(std::string & sched_dot)
     {
         DOUT("Scheduling ASAP to get bundles ...");
         ql::ir::bundles_t bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         schedule_asap_(cycle, order);
+
+        if(ql::options::get("print_dot_graphs") == "yes")
+        {
+            stringstream ssdot;
+            PrintDot1_(false, true, cycle, order, ssdot);
+            sched_dot = ssdot.str();
+        }
 
         typedef std::vector<ql::gate*> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
@@ -1193,13 +1163,21 @@ private:
 
 
     // the following with rc and buffer-buffer delays
-    ql::ir::bundles_t schedule_asap_pre179(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
+    ql::ir::bundles_t schedule_asap_pre179(ql::arch::resource_manager_t & rm, 
+        const ql::quantum_platform & platform, std::string & sched_dot)
     {
         DOUT("RC Scheduling ASAP to get bundles ...");
         ql::ir::bundles_t bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         schedule_asap_(cycle, order, rm, platform);
+
+        if(ql::options::get("print_dot_graphs") == "yes")
+        {
+            stringstream ssdot;
+            PrintDot1_(false, true, cycle, order, ssdot);
+            sched_dot = ssdot.str();
+        }
 
         typedef std::vector<ql::gate*> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
@@ -1476,142 +1454,119 @@ private:
     //     }
     // }
 
-    // void PrintDot2_(
-    //             bool WithCritical,
-    //             bool WithCycles,
-    //             ListDigraph::NodeMap<size_t> & cycle,
-    //             std::vector<ListDigraph::Node> & order,
-    //             std::ostream& dotout
-    //             )
-    // {
-    //     ListDigraph::ArcMap<bool> isInCritical(graph);
-    //     if(WithCritical)
-    //     {
-    //         for (ListDigraph::ArcIt a(graph); a != INVALID; ++a)
-    //         {
-    //             isInCritical[a] = false;
-    //             for ( Path<ListDigraph>::ArcIt ap(p); ap != INVALID; ++ap )
-    //             {
-    //                 if(a==ap)
-    //                 {
-    //                     isInCritical[a] = true;
-    //                     break;
-    //                 }
-    //             }
-    //         }
-    //     }
+    void PrintDot2_(
+                bool WithCritical,
+                bool WithCycles,
+                ListDigraph::NodeMap<size_t> & cycle,
+                std::vector<ListDigraph::Node> & order,
+                std::ostream& dotout
+                )
+    {
+        ListDigraph::ArcMap<bool> isInCritical(graph);
+        Path<ListDigraph> p;
+        if(WithCritical)
+        {
+            for (ListDigraph::ArcIt a(graph); a != INVALID; ++a)
+            {
+                isInCritical[a] = false;
+                for ( Path<ListDigraph>::ArcIt ap(p); ap != INVALID; ++ap )
+                {
+                    if(a==ap)
+                    {
+                        isInCritical[a] = true;
+                        break;
+                    }
+                }
+            }
+        }
 
-    //     string NodeStyle(" fontcolor=black, style=filled, fontsize=16");
-    //     string EdgeStyle1(" color=black");
-    //     string EdgeStyle2(" color=red");
-    //     string EdgeStyle = EdgeStyle1;
+        string NodeStyle(" fontcolor=black, style=filled, fontsize=16");
+        string EdgeStyle1(" color=black");
+        string EdgeStyle2(" color=red");
+        string EdgeStyle = EdgeStyle1;
 
-    //     dotout << "digraph {\ngraph [ rankdir=TD; ]; // or rankdir=LR"
-    //         << "\nedge [fontsize=16, arrowhead=vee, arrowsize=0.5];"
-    //         << endl;
+        dotout << "digraph {\ngraph [ rankdir=TD; ]; // or rankdir=LR"
+            << "\nedge [fontsize=16, arrowhead=vee, arrowsize=0.5];"
+            << endl;
 
-    //     // first print the nodes
-    //     for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
-    //     {
-    //         int nid = graph.id(n);
-    //         string nodeName = name[n];
-    //         dotout  << "\"" << nid << "\""
-    //                 << " [label=\" " << nodeName <<" \""
-    //                 << NodeStyle
-    //                 << "];" << endl;
-    //     }
+        // first print the nodes
+        for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
+        {
+            int nid = graph.id(n);
+            string nodeName = name[n];
+            dotout  << "\"" << nid << "\""
+                    << " [label=\" " << nodeName <<" \""
+                    << NodeStyle
+                    << "];" << endl;
+        }
 
-    //     if( WithCycles)
-    //     {
-    //         // Print cycle numbers as timeline, as shown below
-    //         size_t cn=0,TotalCycles = MAX_CYCLE - cycle[ *( order.rbegin() ) ];
-    //         dotout << "{\nnode [shape=plaintext, fontsize=16, fontcolor=blue]; \n";
+        if( WithCycles)
+        {
+            // Print cycle numbers as timeline, as shown below
+            size_t cn=0,TotalCycles = MAX_CYCLE - cycle[ *( order.rbegin() ) ];
+            dotout << "{\nnode [shape=plaintext, fontsize=16, fontcolor=blue]; \n";
 
-    //         for(cn=0;cn<=TotalCycles;++cn)
-    //         {
-    //             if(cn>0)
-    //                 dotout << " -> ";
-    //             dotout << "Cycle" << cn;
-    //         }
-    //         dotout << ";\n}\n";
+            for(cn=0;cn<=TotalCycles;++cn)
+            {
+                if(cn>0)
+                    dotout << " -> ";
+                dotout << "Cycle" << cn;
+            }
+            dotout << ";\n}\n";
 
-    //         // Now print ranks, as shown below
-    //         std::vector<ListDigraph::Node>::reverse_iterator rit;
-    //         for ( rit = order.rbegin(); rit != order.rend(); ++rit)
-    //         {
-    //             int nid = graph.id(*rit);
-    //             dotout << "{ rank=same; Cycle" << TotalCycles - (MAX_CYCLE - cycle[*rit]) <<"; " <<nid<<"; }\n";
-    //         }
-    //     }
+            // Now print ranks, as shown below
+            std::vector<ListDigraph::Node>::reverse_iterator rit;
+            for ( rit = order.rbegin(); rit != order.rend(); ++rit)
+            {
+                int nid = graph.id(*rit);
+                dotout << "{ rank=same; Cycle" << TotalCycles - (MAX_CYCLE - cycle[*rit]) <<"; " <<nid<<"; }\n";
+            }
+        }
 
-    //     // now print the edges
-    //     for (ListDigraph::ArcIt arc(graph); arc != INVALID; ++arc)
-    //     {
-    //         ListDigraph::Node srcNode = graph.source(arc);
-    //         ListDigraph::Node dstNode = graph.target(arc);
-    //         int srcID = graph.id( srcNode );
-    //         int dstID = graph.id( dstNode );
+        // now print the edges
+        for (ListDigraph::ArcIt arc(graph); arc != INVALID; ++arc)
+        {
+            ListDigraph::Node srcNode = graph.source(arc);
+            ListDigraph::Node dstNode = graph.target(arc);
+            int srcID = graph.id( srcNode );
+            int dstID = graph.id( dstNode );
 
-    //         if(WithCritical)
-    //             EdgeStyle = ( isInCritical[arc]==true ) ? EdgeStyle2 : EdgeStyle1;
+            if(WithCritical)
+                EdgeStyle = ( isInCritical[arc]==true ) ? EdgeStyle2 : EdgeStyle1;
 
-    //         dotout << dec
-    //             << "\"" << srcID << "\""
-    //             << "->"
-    //             << "\"" << dstID << "\""
-    //             << "[ label=\""
-    //             << "q" << cause[arc]
-    //             << " , " << weight[arc]
-    //             << " , " << DepTypesNames[ depType[arc] ]
-    //             <<"\""
-    //             << " " << EdgeStyle << " "
-    //             << "]"
-    //             << endl;
-    //     }
+            dotout << dec
+                << "\"" << srcID << "\""
+                << "->"
+                << "\"" << dstID << "\""
+                << "[ label=\""
+                << "q" << cause[arc]
+                << " , " << weight[arc]
+                << " , " << DepTypesNames[ depType[arc] ]
+                <<"\""
+                << " " << EdgeStyle << " "
+                << "]"
+                << endl;
+        }
 
-    //     dotout << "}" << endl;
-    // }
-
-    // void PrintDotScheduleALAP()
-    // {
-    //     ofstream dotout;
-    //     string dotfname(ql::options::get("output_dir") + "/scheduledALAP.dot");
-    //     dotout.open( dotfname, ios::binary);
-    //     if ( dotout.fail() )
-    //     {
-    //         EOUT("Error opening file " << dotfname << std::endl
-    //                  << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
-    //         return;
-    //     }
-
-    //     IOUT("Printing Scheduled Graph in " << dotfname);
-    //     ListDigraph::NodeMap<size_t> cycle(graph);
-    //     std::vector<ListDigraph::Node> order;
-    //     schedule_alap_(cycle,order);
-    //     PrintDot2_(false,true,cycle,order,dotout);
-
-    //     dotout.close();
-    // }
-
-    // std::string GetDotScheduleALAP()
-    // {
-    //     stringstream dotout;
-    //     ListDigraph::NodeMap<size_t> cycle(graph);
-    //     std::vector<ListDigraph::Node> order;
-    //     schedule_alap_(cycle,order);
-    //     PrintDot2_(false,true,cycle,order,dotout);
-    //     return dotout.str();
-    // }
+        dotout << "}" << endl;
+    }
 
 
     // the following without rc and buffer-buffer delays
-    ql::ir::bundles_t schedule_alap_pre179()
+    ql::ir::bundles_t schedule_alap_pre179(std::string & sched_dot)
     {
         DOUT("Scheduling ALAP to get bundles ...");
         ql::ir::bundles_t bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         schedule_alap_(cycle,order);
+
+        if(ql::options::get("print_dot_graphs") == "yes")
+        {
+            stringstream ssdot;
+            PrintDot2_(false, true, cycle, order, ssdot);
+            sched_dot = ssdot.str();
+        }
 
         typedef std::vector<ql::gate*> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
@@ -1668,13 +1623,20 @@ private:
 
     // the following with rc and buffer-buffer delays
     ql::ir::bundles_t schedule_alap_pre179(ql::arch::resource_manager_t & rm, 
-        const ql::quantum_platform & platform)
+        const ql::quantum_platform & platform, std::string & sched_dot)
     {
         DOUT("RC Scheduling ALAP to get bundles ...");
         ql::ir::bundles_t bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         schedule_alap_(cycle, order, rm, platform);
+
+        if(ql::options::get("print_dot_graphs") == "yes")
+        {
+            stringstream ssdot;
+            PrintDot2_(false, true, cycle, order, ssdot);
+            sched_dot = ssdot.str();
+        }
 
         typedef std::vector<ql::gate*> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
@@ -2089,7 +2051,11 @@ private:
         return bundles;
     }
 
-// =========== post179 plain schedulers, just ASAP and ALAP, no resources, etc.
+
+
+
+
+// =========== post179 plain schedulers, just ASAP and ALAP, without RC
 
 /*
     Summary
@@ -2275,6 +2241,7 @@ private:
             // DOUT("... gate: " << gp->qasm() << " in private parallel section");
             currBundle.duration_in_cycles = std::max(currBundle.duration_in_cycles, (gp->duration+cycle_time-1)/cycle_time); 
         }
+
         if (!currBundle.parallel_sections.empty())
         {
             // finish currBundle (which is last bundle) at currCycle
@@ -3238,11 +3205,11 @@ public:
 
 // =========== scheduling entry points switching out to pre179 or post179
 
-    ql::ir::bundles_t schedule_asap()
+    ql::ir::bundles_t schedule_asap(std::string & sched_dot)
     {
         if (ql::options::get("scheduler_post179") == "no")
         {
-            return schedule_asap_pre179();
+            return schedule_asap_pre179(sched_dot);
         }
         else
         {
@@ -3250,11 +3217,12 @@ public:
         }
     }
 
-    ql::ir::bundles_t schedule_asap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
+    ql::ir::bundles_t schedule_asap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform,
+        std::string & sched_dot)
     {
         if (ql::options::get("scheduler_post179") == "no")
         {
-            return schedule_asap_pre179(rm, platform);
+            return schedule_asap_pre179(rm, platform, sched_dot);
         }
         else
         {
@@ -3262,11 +3230,11 @@ public:
         }
     }
 
-    ql::ir::bundles_t schedule_alap()
+    ql::ir::bundles_t schedule_alap(std::string & sched_dot)
     {
         if (ql::options::get("scheduler_post179") == "no")
         {
-            return schedule_alap_pre179();
+            return schedule_alap_pre179(sched_dot);
         }
         else
         {
@@ -3274,11 +3242,12 @@ public:
         }
     }
 
-    ql::ir::bundles_t schedule_alap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
+    ql::ir::bundles_t schedule_alap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform,
+        std::string & sched_dot)
     {
         if (ql::options::get("scheduler_post179") == "no")
         {
-            return schedule_alap_pre179(rm, platform);
+            return schedule_alap_pre179(rm, platform, sched_dot);
         }
         else
         {

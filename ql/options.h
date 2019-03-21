@@ -30,7 +30,7 @@ namespace ql
           opt_name2opt_val["output_dir"] = "test_output";
           opt_name2opt_val["optimize"] = "no";
           opt_name2opt_val["use_default_gates"] = "yes";
-          opt_name2opt_val["optimize"] = "no";
+          opt_name2opt_val["print_dot_graphs"] = "no";
           opt_name2opt_val["decompose_toffoli"] = "no";
           opt_name2opt_val["scheduler"] = "ALAP";
           opt_name2opt_val["scheduler_uniform"] = "no";

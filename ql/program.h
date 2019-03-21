@@ -558,13 +558,18 @@ class quantum_program
          for (auto k : kernels)
          {
             std::string kernel_sched_qasm;
+            std::string dot;
             std::string kernel_sched_dot;
-            k.schedule(platform, kernel_sched_qasm, kernel_sched_dot);
+            k.schedule(platform, kernel_sched_qasm, dot, kernel_sched_dot);
             sched_qasm += kernel_sched_qasm + '\n';
-            // disabled generation of dot file for each kernel
-            // string fname = ql::options::get("output_dir") + "/" + k.get_name() + scheduler + ".dot";
-            // IOUT("writing scheduled qasm to '" << fname << "' ...");
-            // ql::utils::write_file(fname, kernel_sched_dot);
+
+            if(ql::options::get("print_dot_graphs") == "yes")
+            {
+               std::string scheduler = ql::options::get("scheduler");
+               fname = ql::options::get("output_dir") + "/" + k.get_name() + scheduler + "_scheduled.dot";
+               IOUT("writing scheduled dot to '" << fname << "' ...");
+               ql::utils::write_file(fname, kernel_sched_dot);
+            }
          }
 
          string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
