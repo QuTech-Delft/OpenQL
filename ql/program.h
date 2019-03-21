@@ -565,6 +565,11 @@ class quantum_program
 
             if(ql::options::get("print_dot_graphs") == "yes")
             {
+               string fname;
+               fname = ql::options::get("output_dir") + "/" + k.get_name() + "_dependence_graph.dot";
+               IOUT("writing scheduled dot to '" << fname << "' ...");
+               ql::utils::write_file(fname, dot);
+
                std::string scheduler = ql::options::get("scheduler");
                fname = ql::options::get("output_dir") + "/" + k.get_name() + scheduler + "_scheduled.dot";
                IOUT("writing scheduled dot to '" << fname << "' ...");
