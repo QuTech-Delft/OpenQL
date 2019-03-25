@@ -47,100 +47,224 @@ void assert_fail(const char *f, int l, const char *s)
 // =========================================================================================
 // Virt2Real: map of a virtual qubit index to its real qubit index
 //
-// insertion of a swap changes this
-// the qubit indices in the QASM that is input to the mapper, are assumed to be virtual
-// the mapper inspects two-qubit operations for nearest-neighborship (NN) of the qubits
-// and, if needed, inserts swaps to make these NN, while updating this Virt2Real mapping
+// Mapping maps each used virtual qubit to a real qubit index, but which one that is, may change.
+// For a 2-qubit gate its operands should be nearest neighbor; when its virtual operand qubits
+// are not mapping to nearest neighbors, that should be accomplished by moving/swapping
+// the virtual qubits from their current real qubits to real qubits that are nearest neighbors:
+// those moves/swaps are inserted just before that 2-qubit gate.
+// Anyhow, the virtual operand qubits of gates must be mapped to the real ones, holding their state.
 //
-// the main mapping algorithm evaluates multiple paths/ways to make such two qubits NN
-// for each of these paths, the Virt2Real map changes and ends-up differently
-// so there is a Virt2Real attached to the output (the 'main' one)
-// and there is a Virt2Real for each experimental path to make one or more pairs of qubits NN;
-// in the latter case, these start off as copy of the main one
+// The number of virtual qubits is less equal than the number of real qubits,
+// so their indices use the same data type (size_t) and the same range type 0<=index<nq.
 //
-// it is wrong when nv is just the number of virtual qubits in the program
-// because when swapping through the grid, more real qubits might get involved
-// and then we're having more real than virtual qubits in use; and then the mapping is not 1-1 anymore;
-// so nv as size of Virt2Real maps should be the number of real qubits in the platform;
-// at the same time, each virtual qubit index should be < nv, or we need a v2i map as in initial placement
+// Virt2Real maintains two maps:
+// - a map (v2rMap[])for each virtual qubit that is in use to its current real qubit index.
+//      Virtual qubits are in use as soon as they have been encountered as operands in the program.
+//      When a virtual qubit is not in use, it maps to UNDEFINED_QUBIT, the undefined real index.
+//      The reverse map (GetVirt()) is implemented by a reverse look-up:
+//      when there is no virtual qubit that maps to a particular real qubit,
+//      the reverse map maps the real qubit index to UNDEFINED_QUBIT, the undefined virtual index.
+//      At any time, the virtual to real and reverse maps are 1-1 for qubits that are in use.
+// - a map for each real qubit whether there is state in it, and, if so, which (rs[]).
+//      When a gate (except for swap/move) has been executed on a real qubit,
+//      its state becomes valuable and must be preserved (rs_hasstate below).
+//      But before that, it can be in a garbage state (rs_nostate below) or in a known state (rs_wasinited below).
+//      The latter is used to replace a swap using a real qubit with such state by a move, which is cheaper.
+// There is no support yet to make a virtual qubit not in use (which could be after a measure),
+// nor to bring a real qubit in the rs_wasinited or rs_nostate state (perhaps after measure or prep).
+//
+// Some special situations are worth mentioning:
+// - while a virtual qubit is being swapped/moved near to an other one,
+//      along the trip real qubits may be used which have no virtual qubit mapping to them;
+//      a move can then be used which assumes the 2nd real operand in the |+> state, and leaves
+//      the 1st real operand in that state (while the 2nd has assumed the state of the former 1st).
+//      the mapper implementation assumes that all real qubits in the rs_wasinited state are in that state.
+// - on program start, no virtual qubit has a mapping yet to a real qubit;
+//      mapping is initialized while virtual qubits are encountered as operands.
+// - with multiple kernels, kernels assume the (unified) mapping from their predecessors and leave
+//      the result mapping to their successors in the kernels' Control Flow Graph;
+//      i.e. Virt2Real is what is passed between kernels as dynamic state;
+//      statically, the grid, the maximum number of real qubits and the current platform stay unchanged.
+// - while evaluating sets of swaps/moves as variations to continue mapping, Virt2Real is passed along
+//      to represent the mapping state after such swaps/moves where done; when deciding on a particular
+//      variation, the v2r mapping in the mainPast is made to replect the swaps/moves done.
+
+typedef
+enum realstate {
+    rs_nostate,     // real qubit has no relevant state, i.e. is garbage
+    rs_wasinited,   // real qubit has initialized state suitable for replacing swap by move
+    rs_hasstate     // real qubit has a unique state which must be kept
+} realstate_t;
+
+#define UNDEFINED_QUBIT    MAX_CYCLE
+
 class Virt2Real
 {
 private:
 
-    size_t              nv;                // size of the map; after initialization, will always be the same
-    std::vector<size_t> v2rMap;            // v2rMap[virtual qubit index] -> real qubit index
-
+    size_t              nq;                 // size of the map; after initialization, will always be the same
+    std::vector<size_t> v2rMap;             // v2rMap[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
+    std::vector<realstate_t>rs;             // rs[real qubit index] -> {nostate|wasinited|hasstate}
 
 public:
 
-// map real qubit to the virtual qubit index that is mapped to it (i.e. backward map)
-// a second vector next to v2rMap (i.e. an r2vMap) would speed this up
+// map real qubit to the virtual qubit index that is mapped to it (i.e. backward map);
+// when none, return UNDEFINED_QUBIT;
+// a second vector next to v2rMap (i.e. an r2vMap) would speed this up;
 size_t GetVirt(size_t r)
 {
-    for (size_t v=0; v<nv; v++)
+    MapperAssert(r != UNDEFINED_QUBIT);
+    for (size_t v=0; v<nq; v++)
     {
         if (v2rMap[v] == r) return v;
     }
-    MapperAssert(0);
-    return MAX_CYCLE;
+    return UNDEFINED_QUBIT;
 }
 
 
-// expand to desired size and initialize to trivial (1-1) mapping
+// expand to desired size
+//
+// mapping starts off undefined for all virtual qubits
+// real qubits are assumed to have a state suitable for replacing swap by move
+//
+// the rs initializations are done only once, for a whole program
 void Init(size_t n)
 {
-    nv = n;
-    // DOUT("Virt2Real::Init(n=" << nv << "), initializing 1-1 mapping");
-    v2rMap.resize(nv);
-    for (size_t i=0; i<nv; i++)
+    nq = n;
+    // DOUT("Virt2Real::Init(n=" << nq << "), initializing 1-1 mapping");
+    v2rMap.resize(nq);
+    rs.resize(nq);
+    for (size_t i=0; i<nq; i++)
     {
-        v2rMap[i] = i;
+        v2rMap[i] = UNDEFINED_QUBIT;
+        rs[i] = rs_wasinited;
     }
 }
 
 // map virtual qubit index to real qubit index
 size_t& operator[] (size_t v)
 {
-    MapperAssert(v < nv);
+    MapperAssert(v < nq);   // implies v != UNDEFINED_QUBIT
     return v2rMap[v];
 }
 
-// r0 and r1 are real qubit indices
-// after execution of a swap(r0,r1), their states were exchanged,
-// so when v0 was in r0 and v1 was in r1, then v0 is now in r1 and v1 is in r0
+// r0 and r1 are real qubit indices;
+// by execution of a swap(r0,r1), their states are exchanged at runtime;
+// so when v0 was in r0 and v1 was in r1, then v0 is now in r1 and v1 is in r0;
 // update v2r accordingly
 void Swap(size_t r0, size_t r1)
 {
+    MapperAssert(r0 != r1);
     size_t v0 = GetVirt(r0);
     size_t v1 = GetVirt(r1);
-    // DOUT("... swap virtual indices from ("<< v0<<"->"<<r0<<","<<v1<<"->"<<r1<<") to ("<<v0<<"->"<<r1<<","<<v1<<"->"<<r0<<" )");
-    MapperAssert(v0 != v1);
-    MapperAssert(v0 < nv);
-    MapperAssert(v1 < nv);
+    // DOUT("... swap from ("<< v0<<"<->"<<r0<<","<<v1<<"<->"<<r1<<") to ("<<v0<<"<->"<<r1<<","<<v1<<"<->"<<r0<<" )");
+    if (v0 != UNDEFINED_QUBIT && v1 != UNDEFINED_QUBIT)
+    {
+        MapperAssert(v0 != v1);
+        v2rMap[v0] = r1;
+        v2rMap[v1] = r0;
+    }
+    else if (v0 != UNDEFINED_QUBIT && v1 == UNDEFINED_QUBIT)
+    {
+        MapperAssert(v0 < nq);
+        MapperAssert(r1 != rs_hasstate);
+        v2rMap[v0] = r1;
+    }
+    else if (v1 != UNDEFINED_QUBIT && v0 == UNDEFINED_QUBIT)
+    {
+        MapperAssert(v1 < nq);
+        MapperAssert(r0 != rs_hasstate);
+        v2rMap[v1] = r0;
+    }
+    else
+    {
+        // no swaps are done between two non-mapped real qubits
+        MapperAssert(0);
+    }
 
-    v2rMap[v0] = r1;
-    v2rMap[v1] = r0;
+    realstate_t ts = rs[r0];
+    rs[r0] = rs[r1];
+    rs[r1] = ts;
+}
+
+void PrintReal(size_t r)
+{
+    std::cout << " (" << r;
+    switch(rs[r])
+    {
+    case rs_nostate:
+        std::cout << ":no";
+        break;
+    case rs_wasinited:
+        std::cout << ":in";
+        break;
+    case rs_hasstate:
+        std::cout << ":st";
+        break;
+    }
+    size_t v = GetVirt(r);
+    if (v == UNDEFINED_QUBIT)
+    {
+        std::cout << " <-UN)";
+    }
+    else
+    {
+        std::cout << " <-" << v << ")";
+    }
+}
+
+void PrintVirt(size_t v)
+{
+    std::cout << " (" << v;
+    size_t r = v2rMap[v];
+    if (r == UNDEFINED_QUBIT)
+    {
+        std::cout << " ->UN)";
+    }
+    else
+    {
+        std::cout << " ->" << r;
+        switch(rs[r])
+        {
+        case rs_nostate:
+            std::cout << ":no)";
+            break;
+        case rs_wasinited:
+            std::cout << ":in)";
+            break;
+        case rs_hasstate:
+            std::cout << ":st)";
+            break;
+        }
+    }
+}
+
+void PrintReal(std::string s, size_t r0, size_t r1)
+{
+    DOUT("v2r.PrintReal ...");
+    std::cout << "... real2Virt(r<-v) " << s << ":";
+
+    PrintReal(r0);
+    PrintReal(r1);
+    std::cout << std::endl;
 }
 
 void Print(std::string s)
 {
     DOUT("v2r.Print ...");
     std::cout << "... Virt2Real(v->r) " << s << ":";
-    for (size_t v=0; v<nv; v++)
+    for (size_t v=0; v<nq; v++)
     {
-        size_t r = v2rMap[v];
-        std::cout << " (" << v << "->" << r << ")";
+        PrintVirt(v);
     }
     std::cout << std::endl;
-#ifdef debug
+
     std::cout << "... real2virt(r->v) " << s << ":";
-    for (size_t r=0; r<nv; r++)
+    for (size_t r=0; r<nq; r++)
     {
-        size_t v = GetVirt(r);
-        std::cout << " (" << r << "->" << v << ")";
+        PrintReal(r);
     }
     std::cout << std::endl;
-#endif        // debug
 }
 
 };  // end class Virt2Real
@@ -368,9 +492,6 @@ void Add(ql::gate *g, size_t startCycle)
 };  // end class FreeCycle
 
 
-
-
-
 // =========================================================================================
 // Past: state of the mapper while somewhere in the mapping process
 //
@@ -412,11 +533,9 @@ private:
     ql::quantum_platform   *platformp;  // platform describing resources for scheduling
     std::map<std::string,ql::custom_gate*> *gate_definitionp; // gate definitions from platform's .json file
                                         // to be able to create new gates
-    std::vector<size_t>     usecount;   // usecount[virtual qubit index] -> number of uses of virtual qubit in circuit
 
     Virt2Real               v2r;        // Virt2Real map applying to this Past
     FreeCycle               fc;         // FreeCycle map applying to this Past
-    std::vector<bool>       wasinited;  // wasinited[unused virtual qubit index] -> virtual qubit is in |+> state
 
     typedef ql::gate *      gate_p;
     std::list<gate_p>       waitinglg;  // list of gates in this Past, topological order, waiting to be scheduled in
@@ -437,41 +556,14 @@ void Init(ql::quantum_platform *p)
     nq = platformp->qubit_number;
     ct = platformp->cycle_time;
     gate_definitionp = &platformp->instruction_map;
-    usecount.resize(nq, 0);     // until InitUseCount, none of the virtual qubits is used; after that, constant
 
-    v2r.Init(nq);               // v2r starts off in trivial (1 to 1) mapping, is updated after nonNN gate
+    v2r.Init(nq);               // v2r program-wide initialization, none mapped, all inited
     fc.Init(platformp);         // fc starts off with all qubits free, is updated after schedule of each gate
-    wasinited.resize(nq, false);// wasinited indicates no qubits were initialized yet; addSwaps adds initialization
     waitinglg.clear();          // no gates pending to be scheduled in; Add of gate to past entered here
     lg.clear();                 // no gates scheduled yet in this past; after schedule of gate, it gets here
     nswapsadded = 0;            // no swaps or moves added yet to this past; AddSwap adds one here
     nmovesadded = 0;            // no moves added yet to this past; AddSwap may add one here
     cycle.clear();              // no gates have cycles assigned in this past; scheduling gate updates this
-}
-
-// compute usecount (of virtual qubits)
-// doesn't change while mapping the circuit;
-// just initializations of the unused qubits are inserted (see wasinited)
-// so afterwards, more real qubits may be used than virtual qubits were used before mapping
-void InitUseCount(ql::circuit& circ)
-{
-    for ( auto& gp : circ )
-    {
-        for ( auto v : gp->operands)
-        {
-            usecount[v] += 1;
-        }
-    }
-
-    // and optionally print it in DOUT
-    std::stringstream ss;
-    ss << "[";
-    for ( auto c : usecount )
-    {
-        ss << c << " ";;
-    }
-    ss << "]";
-    DOUT("usecount: " << ss.str());
 }
 
 void Print(std::string s)
@@ -495,10 +587,10 @@ void Output(ql::circuit& circ)
 // with multiple kernels and control flow between kernels, this needs updating
 // since then this Virt2Real interface becomes one of the main interfaces between kernel mappings
 // implemented by a class on top of single circuit mapping
-void GetV2r(Virt2Real& argv2r)
-{
-    argv2r = v2r;
-}
+// void GetV2r(Virt2Real& argv2r)
+// {
+//     argv2r = v2r;
+// }
 
 void SetV2r(Virt2Real& newv2r)
 {
@@ -984,23 +1076,18 @@ void AddSwap(size_t r0, size_t r1, bool ismainpast)
     bool created = false;
     ql::circuit circ;
 
-//  DOUT("... adding/trying swap(q" << r0 << ",q" << r1 << ") in mainpast?=" << ismainpast << " ... " );
-    // v2r.Print("... adding swap/move");
+    DOUT("... adding/trying swap(q" << r0 << ",q" << r1 << ") in mainpast?=" << ismainpast << " ... " );
+    v2r.Print("... adding swap/move", r0, r1);
 
-    v0 = v2r.GetVirt(r0);
-    v1 = v2r.GetVirt(r1);
-//  DOUT("... r0_isunused=" << (usecount[v0]==0) << " r1_isunused=" << (usecount[v1]==0));
-//  DOUT("... r0=" << r0 << " holds virtual " << v0 << " and r1=" << r1 << " holds virtual " << v1);
     std::string mapusemovesopt = ql::options::get("mapusemoves");
-    if ("no" != mapusemovesopt && (usecount[v0]==0 || usecount[v1]==0))
+    if ("no" != mapusemovesopt && (v2r.rs[r0]!=rs_hasstate || v2r.rs[r1]!=rs_hasstate))
     {
-        if (usecount[v0]==0)
+        if (v2r.rs[r0]!=rs_hasstate)
         {
-            // interchange r0/v0 and r1/v1, so that r1 (right-hand operand of move) will contain v1, the unused one
+            // interchange r0 and r1, so that r1 (right-hand operand of move) will be the state-less one
             size_t  tmp = r1; r1 = r0; r0 = tmp;
-                    tmp = v1; v1 = v0; v0 = tmp;
         }
-        // r1 (containing v1) is the unused one from now on
+        MapAssert (v2r.rs[r0]==rs_hasstate);    // and r0 will be the one with state
 
         // first (optimistically) create the move circuit
         created = new_gate("move_real", {r0,r1}, circ);    // gates implementing move returned in circ
@@ -1011,10 +1098,10 @@ void AddSwap(size_t r0, size_t r1, bool ismainpast)
         }
 
 #ifdef  GEN_MOVES_ONLY_WHEN_PREP_IS_FOR_FREE
-        if (wasinited[v1] == false)
+        if (v2r.rs[r1] != rs_wasinited)
         {
-            // v1 is not in |+> state, generate in initcirc the circuit to do so
-            DOUT("... initializing unused virtual " << v1 << " (real " << r1 << ") to |+> state in mainpast=" << ismainpast);
+            // r1 is not in |+> state, generate in initcirc the circuit to do so
+            DOUT("... initializing non-inited " << r1 << " to |+> state in mainpast=" << ismainpast);
             ql::circuit initcirc;
             created = new_gate("prepz", {r1}, initcirc);
             if (created)
@@ -1045,7 +1132,7 @@ void AddSwap(size_t r0, size_t r1, bool ismainpast)
                     initcirc.push_back(gp);
                 }
                 circ.swap(initcirc);
-                wasinited[v1] = true;
+                v2r.rs[r1] = rs_wasinited;
             }
             else
             {
@@ -1061,6 +1148,8 @@ void AddSwap(size_t r0, size_t r1, bool ismainpast)
         {
             // generated move
             // move is in circ, optionally with initialization in front of it
+            // also rs of its 2nd operand is 'rs_wasinited'
+            // note that after swap/move, r0 will be in this state then
             nmovesadded++;                       // for reporting at the end
             DOUT("... move(q" << r0 << ",q" << r1 << ") in mainpast=" << ismainpast);
         }
@@ -1079,6 +1168,7 @@ void AddSwap(size_t r0, size_t r1, bool ismainpast)
     nswapsadded++;                       // for reporting at the end
     for (auto &gp : circ)
     {
+        HERE
         Add(gp);
     }
     v2r.Swap(r0,r1);
@@ -1092,9 +1182,16 @@ void AddAndSchedule(gate_p gp)
     Schedule();
 }
 
-// find real qubit index implementing virtual qubit index
+// find real qubit index implementing virtual qubit index;
+HERE
+// when vs_inited or vs_no, we are free to select any real qubit that is free;
+// gates like Prep are able to turn a virtual qubit from not used to used,
+// most other gates require an operand virtual qubit to be inited/inuse;
+// after execution of a unitary gate, all virtual qubit operands are inuse.
 size_t MapQubit(size_t v)
 {
+    HERE
+    v2r.vs[v] = vs_inuse;
     return v2r[v];
 }
 
@@ -1711,26 +1808,26 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
 {
     DOUT("InitialPlace circuit ...");
 
-    // compute usecount[] to know which virtual qubits are actually used
+    // compute ipusecount[] to know which virtual qubits are actually used
     // use it to compute v2i, mapping (non-contiguous) virtual qubit indices to contiguous facility indices
     // (the MIP model is shorter when the indices are contiguous)
     // finally, nfac is set to the number of these facilities
-    DOUT("... compute usecount by scanning circuit");
-    std::vector<size_t>  usecount;  // usecount[v] = count of use of virtual qubit v in current circuit
-    usecount.resize(nvq,0);         // initially all 0
+    DOUT("... compute ipusecount by scanning circuit");
+    std::vector<size_t>  ipusecount;// ipusecount[v] = count of use of virtual qubit v in current circuit
+    ipusecount.resize(nvq,0);       // initially all 0
     std::vector<size_t> v2i;        // v2i[virtual qubit index v] -> index of facility i
-    v2i.resize(nvq,MAX_CYCLE);      // MAX_CYCLE means undefined, virtual qubit v not used by circuit as gate operand
+    v2i.resize(nvq,UNDEFINED_QUBIT);// virtual qubit v not used by circuit as gate operand
     for ( auto& gp : circ )
     {
         for ( auto v : gp->operands)
         {
-            usecount[v] += 1;
+            ipusecount[v] += 1;
         }
     }
     nfac = 0;
     for (size_t v=0; v < nvq; v++)
     {
-        if (usecount[v] != 0)
+        if (ipusecount[v] != 0)
         {
             v2i[v] = nfac;
             nfac += 1;
@@ -1966,7 +2063,7 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     DOUT("... interpret result and copy to Virt2Real");
     for (size_t v=0; v<nvq; v++)
     {
-        v2r[v] = MAX_CYCLE;      // i.e. undefined, i.e. v is not an index of a used virtual qubit
+        v2r[v] = UNDEFINED_QUBIT;      // i.e. undefined, i.e. v is not an index of a used virtual qubit
     }
     for ( size_t i=0; i<nfac; i++ )
     {
@@ -1994,10 +2091,10 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     DOUT("... correct location of unused virtual qubits to be an unused location");
     // v2r.Print("... result Virt2Real map of InitialPlace before adding unused virtual qubits and unused locations ");
     // used virtual qubits v have got their location k filled in in v2r[v] == k
-    // unused virtual qubits still have location MAX_CYCLE, fill those with the remaining locations
+    // unused virtual qubits still have location UNDEFINED_QUBIT, fill those with the remaining locations
     for (size_t v=0; v<nvq; v++)
     {
-        if (v2r[v] == MAX_CYCLE)
+        if (v2r[v] == UNDEFINED_QUBIT)
         {
             // v is unused; find an unused location k
             size_t k;   // location k that is checked for having been allocated to some virtual qubit w
@@ -2242,13 +2339,14 @@ void SetCircuit(ql::circuit& circ, size_t nq, size_t nc)
 // Mapper: map operands of gates and insert swaps so that two-qubit gate operands are NN.
 // All gates must be unary or two-qubit gates. The operands are virtual qubit indices.
 // After mapping, all virtual qubit operands have been mapped to real qubit operands.
+
 // For the mapper to work,
 // the number of virtual qubits (nvq) must be less equal to the number of real qubits (nrq): nvq <= nrq;
 // the mapper assumes that the virtual qubit operands (vqi) are encoded as a number 0 <= vqi < nvq
 // and that the real qubit operands (rqi) are encoded as a number 0 <= rqi < nrq.
 // The nrq is given by the platform, nvq is given by the program.
 // The mapper ignores the latter (0 <= vqi < nvq was tested when creating the gates),
-// and assumes vqi, nvq, rqi and nrq to be of the same type (size_t) 0..nrq.
+// and assumes vqi, nvq, rqi and nrq to be of the same type (size_t) 0<=qi<nrq.
 // Because of this, it makes no difference between nvq and nrq, and refers to both as nq,
 // and initializes the latter from the platform.
 // All maps mapping virtual and real qubits to something are of size nq.
@@ -2257,19 +2355,31 @@ void SetCircuit(ql::circuit& circ, size_t nq, size_t nc)
 
 // The mapping is done in the context of a grid of qubits defined by the given platform.
 // This grid is initialized once for the whole program and constant after that.
+
 // Each kernel in the program is independently mapped (see the MapCircuit method),
-// ignoring inter-kernel control flow and thereby the requirement to pass on the current mapping:
+// ignoring inter-kernel control flow and thereby the requirement to pass on the current mapping.
+// However, for each kernel there are two methods: initial placement and a heuristic,
+// of which initial placement may do a half-hearted job, while heuristic will always be successful in finding a map;
+// but what initial placement may find, it will be used by the heuristic as an initial mapping; they are in this order.
+
+// Anticipating on the inter-kernel mapping, the mapper maintains a kernel input mapping coming from the context,
+// and produces a kernel output mapping for the context; the mapper updates the kernel's circuit from virtual to real.
+//
+// Without inter-kernel control flow, the flow is as follows:
 // - mapping starts from a 1 to 1 mapping of virtual to real qubits (the kernel input mapping)
+//      in which all virtual qubits are initialized to a fixed constant state (|+>), suitable for replacing swap by move
 // - optionally attempt an initial placement of the circuit, starting from the kernel input mapping
-// - anyhow use heuristics to map the input (or what initial placement left to do)
-// - optionally decompose swap and/or cnot gates to primitives
+//      and thus optionally updating the virtual to real map and the state of used virtuals (from inited to inuse)
+// - anyhow use heuristics to map the input (or what initial placement left to do),
+//      mapping the virtual gates to (sets of) real gates, and outputing the new map and the new virtuals' state
+// - optionally decompose swap and/or cnot gates in the real circuit to primitives
 
 // Inter-kernel control flow and consequent mapping dependence between kernels is not implemented. TO BE DONE
 // The design of mapping multiple kernels is as follows:
 // The mapping is done kernel by kernel, in the order that they appear in the list of kernels:
 // - initially the program wide initial mapping is a 1 to 1 mapping of virtual to real qubits
 // - when start to map a kernel, there is a set of already mapped kernels, and a set of not yet mapped kernels;
-//       of each mapped kernel, there is an output mapping, i.e. the mapping of virts to reals
+//       of each mapped kernel, there is an output mapping, i.e. the mapping of virts to reals with the vs per virtual;
 //       when mapping was ready, and the current kernel has a set of kernels
 //       which are direct predecessor in the program's control flow;
 //       a subset of those direct predecessors thus has been mapped and another subset not mapped;
@@ -2289,7 +2399,8 @@ void SetCircuit(ql::circuit& circ, size_t nq, size_t nc)
 // THE ABOVE INTER-KERNEL MAPPING IS NOT IMPLEMENTED.
 
 // The Mapper's main entry is MapCircuit which manages the input and output streams of QASM instructions,
-// selects the quantum gates from it, and maps these in the context of what was mapped before (the Past).
+// and does the logic between (global) initial placement mapper and the (more local) heuristic mapper.
+// It selects the quantum gates from it, and maps these in the context of what was mapped before (the Past).
 // Each gate is separately mapped in MapGate in the main Past's context.
 class Mapper
 {
@@ -2434,6 +2545,15 @@ void GenSplitPaths(std::list<NNPath> & oldlp, std::list<NNPath> & reslp)
         p.Split(reslp);
     }
     // NNPath::listPrint("... after GenSplitPaths", reslp);
+}
+
+// start the random generator with a seed
+// that is unique to the microsecond
+void RandomInit()
+{
+    auto ts = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    DOUT("Seeding random generator with " << ts );
+    gen.seed(ts);
 }
 
 // if the maptiebreak option indicates so,
@@ -2717,13 +2837,17 @@ std::string qasm(ql::circuit& c, size_t nqubits, std::string& name)
     return ss.str();
 }
 
-// map kernel's circuit in current mapping context as left by initialization and earlier kernels
+// map kernel's circuit, main mapper entry once per kernel
 void MapCircuit(ql::circuit& circ, std::string& kernel_name, size_t& kernel_nq, size_t& kernel_nc)
 {
     DOUT("==================================");
     DOUT("Mapping circuit ...");
     DOUT("... kernel original virtual number of qubits=" << kernel_nq);
     nc = kernel_nc;     // in absence of platform creg_count, take it from kernel
+
+    // kernel input mapping
+    Virt2Real   v2r;
+    v2r.Init(kernel_nq);
 
 #ifdef INITIALPLACE
     std::string initialplaceopt = ql::options::get("initialplace");
@@ -2733,16 +2857,13 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name, size_t& kernel_nq, 
         InitialPlace    ip;             // initial placer facility
         ip.Init(&grid, &platform);
 
-        Virt2Real   v2r;
-//      DOUT("InitialPlace copy in current Virt2Real mapping ...");
-        mainPast.GetV2r(v2r);
         // compute mapping using ip model, may fail
         ipr_t ipok;
         ip.Place(circ, v2r, ipok, initialplaceopt);
         if (ipok == ipr_newmap)
         {
             DOUT("InitialPlace success: result is used to update Virt2Real mapping [DONE]");
-            // replace current mapping of mainPast by the result of initial placement
+            // set initial mapping of mainPast to be the result of initial placement
             mainPast.SetV2r(v2r);
         }
         else
@@ -2751,7 +2872,7 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name, size_t& kernel_nq, 
         }
     }
 #endif
-    mainPast.InitUseCount(circ);
+    mainPast.InitIsUsed(circ);
     MapGates(circ, kernel_name);
 
     std::string mapdecomposeropt = ql::options::get("mapdecomposer");
@@ -2765,15 +2886,6 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name, size_t& kernel_nq, 
     DOUT("Mapping circuit [DONE]");
     DOUT("==================================");
 }   // end MapCircuit
-
-// start the random generator with a seed
-// that is unique to the microsecond
-void RandomInit()
-{
-    auto ts = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    DOUT("Seeding random generator with " << ts );
-    gen.seed(ts);
-}
 
 // initialize mapper for whole program
 // lots could be split off for the whole program, once that is needed
