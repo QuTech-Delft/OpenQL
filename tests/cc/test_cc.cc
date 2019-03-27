@@ -231,6 +231,9 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
 
     ql::options::set("scheduler", scheduler);
     ql::options::set("scheduler_uniform", scheduler_uniform);
+#if 1   // FISME: trying to get working scheduling after merge 20190327
+    ql::options::set("scheduler_post179", "no");
+#endif
     prog.compile( );
 }
 
