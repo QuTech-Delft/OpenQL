@@ -19,32 +19,6 @@ namespace arch
 {
 
 
-// from: https://stackoverflow.com/questions/5878775/how-to-find-and-replace-string
-// FIXME: also see str.h::replace_all
-template <typename T, typename U>
-T &replace (
-          T &str,
-    const U &from,
-    const U &to)
-{
-    size_t pos;
-    size_t offset = 0;
-    const size_t increment = to.size();
-
-    while ((pos = str.find(from, offset)) != T::npos)
-    {
-        str.replace(pos, from.size(), to);
-        offset = pos + increment;
-    }
-
-    return str;
-}
-
-// from https://stackoverflow.com/questions/9146395/reset-c-int-array-to-zero-the-fastest-way
-template<typename T, size_t SIZE> inline void zero(T(&arr)[SIZE]){
-    memset(arr, 0, SIZE*sizeof(T));
-}
-
 class codegen_cc
 {
 public:
@@ -113,7 +87,7 @@ public:
 
     void kernel_start()
     {
-        zero(lastStartCycle);       // FIXME: actually, bundle.start_cycle starts counting at 1
+        utils::zero(lastStartCycle);       // FIXME: actually, bundle.start_cycle starts counting at 1
     }
 
     void kernel_finish()
@@ -382,10 +356,10 @@ public:
 
             // expand macros in signalValue
             std::string signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
-            replace(signalValueString, std::string("{gateName}"), iname);
-            replace(signalValueString, std::string("{instrumentName}"), instrumentName);
-            replace(signalValueString, std::string("{instrumentGroup}"), std::to_string(si.group));
-            replace(signalValueString, std::string("{qubit}"), std::to_string(qubit));
+            utils::replace(signalValueString, std::string("{gateName}"), iname);
+            utils::replace(signalValueString, std::string("{instrumentName}"), instrumentName);
+            utils::replace(signalValueString, std::string("{instrumentGroup}"), std::to_string(si.group));
+            utils::replace(signalValueString, std::string("{qubit}"), std::to_string(qubit));
 
             comment(SS2S("  # slot=" << slot <<
                          ", group=" << si.group <<

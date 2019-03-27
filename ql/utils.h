@@ -62,6 +62,32 @@ namespace ql
             str::replace_all(str,seq,rep);
         }
 
+        // from: https://stackoverflow.com/questions/5878775/how-to-find-and-replace-string
+        // NB: also see replace_all
+        template <typename T, typename U>
+        T &replace (
+                  T &str,
+            const U &from,
+            const U &to)
+        {
+            size_t pos;
+            size_t offset = 0;
+            const size_t increment = to.size();
+
+            while ((pos = str.find(from, offset)) != T::npos)
+            {
+                str.replace(pos, from.size(), to);
+                offset = pos + increment;
+            }
+
+            return str;
+        }
+
+        // from https://stackoverflow.com/questions/9146395/reset-c-int-array-to-zero-the-fastest-way
+        template<typename T, size_t SIZE> inline void zero(T(&arr)[SIZE]){
+            memset(arr, 0, SIZE*sizeof(T));
+        }
+
         /**
          * string starts with " and end with "
          * return the content of the string between the commas
