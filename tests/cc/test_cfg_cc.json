@@ -298,7 +298,7 @@
 				}
 			],
 
-
+			// FIXME: old syntax
 			"cc_setup": {
 				"name": "cc-surface17",
 				"type": "qutech-cc",

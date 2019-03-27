@@ -18,7 +18,11 @@
 #ifndef QL_ARCH_CC_EQASM_BACKEND_CC_H
 #define QL_ARCH_CC_EQASM_BACKEND_CC_H
 
-#define OPT_CC_SCHEDULE_RC     0       // 1=use resource constraint scheduler
+// constants:
+#define CC_BACKEND_VERSION      "0.2.1"
+
+// options:
+#define OPT_CC_SCHEDULE_RC      0       // 1=use resource constraint scheduler
 
 #include <ql/platform.h>
 #include <ql/ir.h>
