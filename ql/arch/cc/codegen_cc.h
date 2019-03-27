@@ -7,7 +7,6 @@
 
 // FIXME: this should be the only backend specific code
 // FIXME: check call structure of if_start here? Better in caller?
-// FIXME: manage stringstream here
 
 
 #ifndef QL_ARCH_CC_CODEGEN_CC_H

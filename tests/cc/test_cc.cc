@@ -191,20 +191,24 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     k.gate("rym90", xE);
     k.gate("rym90", xW);
     k.gate("rym90", xS);
-    k.wait({x, xN, xE, xW, xS}, 0);
+//    k.wait({x, xN, xE, xW, xS}, 0);
+    // FIXME: above line does not work with new scheduler.h
+    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}, 0);
 
     k.gate("cz", x, xE);
     k.gate("cz", x, xN);
     k.gate("cz", x, xS);
     k.gate("cz", x, xW);
-    k.wait({x, xN, xE, xW, xS}, 0);
+//    k.wait({x, xN, xE, xW, xS}, 0);
+    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}, 0);
 
     k.gate("ry90", x);
     k.gate("ry90", xN);
     k.gate("ry90", xE);
     k.gate("ry90", xW);
     k.gate("ry90", xS);
-    k.wait({x, xN, xE, xW, xS}, 0);
+//    k.wait({x, xN, xE, xW, xS}, 0);
+    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}, 0);
 
     // FIXME:
     // - qubits participating in CZ need phase correction, which may be part of gate, or separate
@@ -214,7 +218,8 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     //      + possible in parallel without doing 2 qubits gate?
 
     k.gate("measure", std::vector<size_t> {x}, std::vector<size_t> {0});
-    k.wait({x}, 0);
+//    k.wait({x}, 0);
+    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}, 0);
 
     // Z stabilizers
     k.gate("rym90", z);
@@ -231,7 +236,7 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
 
     ql::options::set("scheduler", scheduler);
     ql::options::set("scheduler_uniform", scheduler_uniform);
-#if 1   // FISME: trying to get working scheduling after merge 20190327
+#if 0   // FISME: trying to get working scheduling after merge 20190327
     ql::options::set("scheduler_post179", "no");
 #endif
     prog.compile( );
