@@ -79,7 +79,11 @@ public:
     void bundle_start(std::string cmnt)
     {
         // empty the matrix of signal values
+#if 0   // FIXME
         size_t slotsUsed = jsonCcSetup["slots"].size();
+#else
+        size_t slotsUsed = jsonInstruments.size();   // FIXME: assuming all instruments use a slot
+#endif
         groupInfo.assign(slotsUsed, std::vector<tGroupInfo>(MAX_GROUPS, {"", 0, -1}));
 
         comment(cmnt);
@@ -92,6 +96,7 @@ public:
             comment(SS2S(" # last bundle, will pad outputs to match durations"));
         }
 
+#if 0   // FIXME
         const json &ccSetupSlots = jsonCcSetup["slots"];
         for(size_t slotIdx=0; slotIdx<groupInfo.size(); slotIdx++) {            // iterate over slot vector
             // collect info from JSON
@@ -99,6 +104,14 @@ public:
             const json &instrument = ccSetupSlot["instrument"];
             std::string instrumentName = instrument["name"];
             int slot = ccSetupSlot["slot"];
+#else
+        // iterate over instruments
+        for(size_t instrIdx=0; instrIdx<jsonInstruments.size(); instrIdx++) {
+            const json &instrument = jsonInstruments[instrIdx];
+            std::string instrumentName = instrument["name"];
+            int slot = instrument["controller"]["slot"];    // FIXME: assuming controller being cc
+            int slotIdx = instrIdx; // FIXME
+#endif
 
             // collect info for all groups within slot, i.e. one connected instrummnt
             bool isSlotUsed = false;
@@ -449,7 +462,7 @@ private:
 
 private:
     static const int MAX_SLOTS = 12;
-    static const int MAX_GROUPS = 32;                                  // enough for VSM
+    static const int MAX_GROUPS = 32;                           // enough for VSM
 
     bool verboseCode = true;                                    // output extra comments in generated code
 
@@ -465,7 +478,7 @@ private:
     json jsonBackendSettings;
     json jsonInstrumentDefinitions;
     json jsonControlModes;
-    json jsonCcSetup;
+//FIXME    json jsonCcSetup;
     json jsonInstruments;
     json jsonSignals;
 
@@ -496,6 +509,7 @@ private:
 
     void latencyCompensation()
     {
+#if 0   // FIXME: old
         // get latencies per slot
         size_t slotsUsed = jsonCcSetup["slots"].size();
         std::map<int, int> slotLatencies;
@@ -507,6 +521,16 @@ private:
             const json &instrument = ccSetupSlot["instrument"];
             std::string instrumentName = instrument["name"];
             std::string instrumentType = instrument["type"];
+#else
+        // get latencies per slot
+        std::map<int, int> slotLatencies;
+        // iterate over instruments
+        for(size_t instrIdx=0; instrIdx<jsonInstruments.size(); instrIdx++) {
+            const json &instrument = jsonInstruments[instrIdx];
+            std::string instrumentName = instrument["name"];
+            std::string instrumentType = instrument["type"];
+            int slot = instrument["controller"]["slot"];    // FIXME: assuming controller being cc
+#endif
 
             // find latency
             const json &id = findInstrumentDefinition(instrumentType);
@@ -566,7 +590,7 @@ private:
         jsonBackendSettings = platform.hardware_settings["eqasm_backend_cc"];
         jsonInstrumentDefinitions = jsonBackendSettings["instrument_definitions"];
         jsonControlModes = jsonBackendSettings["control_modes"];
-        jsonCcSetup = jsonBackendSettings["cc_setup"];
+//FIXME        jsonCcSetup = jsonBackendSettings["cc_setup"];
         jsonInstruments = jsonBackendSettings["instruments"];
         jsonSignals = jsonBackendSettings["signals"];
 
@@ -579,13 +603,12 @@ private:
         }
 
         // read control modes
-#if 0   // FIXME
+#if 0   // FIXME: print some info, which also helps detecting errors early on
         for(size_t i=0; i<jsonControlModes.size(); i++)
         {
             const json &name = jsonControlModes[i]["name"];
             DOUT("found control mode '" << name <<"'");
         }
-#endif
 
         // read instruments
         const json &ccSetupType = jsonCcSetup["type"];
@@ -599,6 +622,7 @@ private:
 
             DOUT("found instrument: name='" << instrumentName << "', signal type='" << signalType << "'");
         }
+#endif
     }
 
 

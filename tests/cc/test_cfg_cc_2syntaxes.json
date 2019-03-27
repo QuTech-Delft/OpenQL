@@ -168,6 +168,7 @@
 			// /setup/instruments/*
 			// /setup/instruments/(type=cc)
 
+			// FIXME: future syntax?
 			"instruments": [
 				// readout. FIXME: must match 'resources/meas_units'
 				{
@@ -297,6 +298,121 @@
 				}
 			],
 
+			// FIXME: old syntax
+			"cc_setup": {
+				"name": "cc-surface17",
+				"type": "qutech-cc",
+				"slots": [
+					// readout. FIXME: must match 'resources/meas_units'
+					{	"slot": 0,
+						"io_module": "cc-conn-dio",
+						"instrument": {
+							"name": "uhfqc-0",
+							"type": "zi-uhfqc",
+							"control_mode": "uhfqc-9ch",
+							"signal_type": "measure",
+							"qubits": [[10], [15], [], [], [], [], [], [], []]
+						}
+					},
+					{	"slot": 1,
+						"io_module": "cc-conn-dio",
+						"instrument": {
+							"name": "uhfqc-1",
+							"type": "zi-uhfqc",
+							"control_mode": "uhfqc-9ch",
+							"signal_type": "measure",
+							"qubits": [[1], [2], [6], [7], [11], [12], [16], [17], [22]]
+						}
+					},
+					{	"slot": 2,
+						"io_module": "cc-conn-dio",
+						"instrument": {
+							"name": "uhfqc-2",
+							"type": "zi-uhfqc",
+							"control_mode": "uhfqc-9ch",
+							"signal_type": "measure",
+							"qubits": [[8], [9], [13], [14], [18], [23], [], [], []]
+						}
+					},
+
+					// microwave. FIXME: must match 'resources/qwgs'
+					{	"slot": 3,
+						"io_module": "cc-conn-dio-diff",
+						"instrument": {
+							"name": "awg8-mw-0",
+							"type": "zi-hdawg",
+							"control_mode": "awg8-mw-vsm",
+							"signal_type": "mw",
+							"qubits": [																// data qubits:
+								[6, 12, 18],														//	[freq L]
+								[2, 8, 10, 14, 16, 22]											// [freq H]
+							]
+						}
+					},
+					{	"slot": 4,
+						"io_module": "cc-conn-dio-diff",
+						"instrument": {
+							"name": "awg8-mw-1",
+							"type": "zi-hdawg",
+							"control_mode": "awg8-mw-vsm",
+							"signal_type": "mw",
+							"qubits": [																// ancilla qubits:
+								[1, 9, 13, 17], 													// [freq Mg]
+								[7, 11, 15, 23]													// [freq My]
+							]
+						}
+					},
+
+					// VSM
+					{	"slot": 5,
+						"io_module": "cc-conn-vsm",
+						"instrument": {
+							"name": "vsm-0",
+							"type": "qutech-vsm",
+							"control_mode": "vsm-32ch",
+							"signal_type": "switch",
+							"qubits": [
+								[6, 12, 18],														//	[freq L]
+								[2, 8, 10, 14, 16, 22],											// [freq H]
+								[1, 9, 13, 17], 													// [freq Mg]
+								[7, 11, 15, 23]													// [freq My]
+							]
+						}
+					},
+
+					// flux
+					{	"slot": 6,
+						"io_module": "cc-conn-dio-diff",
+						"instrument": {
+							"name": "awg8-flux-0",
+							"type": "zi-hdawg",
+							"control_mode": "awg8-flux",
+							"signal_type": "flux",
+							"qubits": [[1], [2], [6], [7], [8], [9], [10], [11]]
+						}
+					},
+					{	"slot": 7,
+						"io_module": "cc-conn-dio-diff",
+						"instrument": {
+							"name": "awg8-flux-1",
+							"type": "zi-hdawg",
+							"control_mode": "awg8-flux",
+							"signal_type": "flux",
+							"qubits": [[12], [13], [14], [15], [16], [17], [18], [22]]
+						}
+					},
+					{	"slot": 8,
+						"io_module": "cc-conn-dio-diff",
+						"instrument": {
+							"name": "awg8-flux-2",
+							"type": "zi-hdawg",
+							"control_mode": "awg8-flux",
+							"signal_type": "flux",
+							"qubits": [[23], [], [], [], [], [], [], []]
+						}
+					}
+				]
+			},
 
 			// Signal library that gate definitions can refer to. Supports
 			// macro expansion
@@ -416,7 +532,7 @@
 		},
 		"qwgs" : {
 			"count": 4,
-			"connection_map": {	// FIXME: must match "instruments"
+			"connection_map": {	// FIXME: must match "cc_setup"
 				"0": [6, 12, 18],																	//	[freq L]
 				"1": [2, 8, 10, 14, 16, 22],													// [freq H]
 				"2": [1, 9, 13, 17], 															// [freq Mg]
@@ -425,7 +541,7 @@
 		},
 		"meas_units" : {
 			"count": 3,
-			"connection_map": {	// FIXME: must match "instruments"
+			"connection_map": {	// FIXME: must match "cc_setup"
 				"0": [10, 15],
 				"1": [1, 2, 6, 7, 11, 12, 16, 17, 22],
 				"2": [8, 9, 13, 14, 18, 23]
