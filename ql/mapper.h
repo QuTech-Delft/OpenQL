@@ -1097,7 +1097,6 @@ void AddSwap(size_t r0, size_t r1, bool ismainpast)
             if (!created) new_gate_exception("move or move_real");
         }
 
-#ifdef  GEN_MOVES_ONLY_WHEN_PREP_IS_FOR_FREE
         if (v2r.rs[r1] != rs_wasinited)
         {
             // r1 is not in |+> state, generate in initcirc the circuit to do so
@@ -1143,7 +1142,6 @@ void AddSwap(size_t r0, size_t r1, bool ismainpast)
             }
             // initcirc getting out-of-scope here so gets destroyed
         }
-#endif  //  GEN_MOVES_ONLY_WHEN_PREP_IS_FOR_FREE
         if (created)
         {
             // generated move
@@ -1184,14 +1182,14 @@ void AddAndSchedule(gate_p gp)
 
 // find real qubit index implementing virtual qubit index;
 HERE
-// when vs_inited or vs_no, we are free to select any real qubit that is free;
+// when rs_inited or rs_no, we are free to select any real qubit that is free;
 // gates like Prep are able to turn a virtual qubit from not used to used,
 // most other gates require an operand virtual qubit to be inited/inuse;
 // after execution of a unitary gate, all virtual qubit operands are inuse.
 size_t MapQubit(size_t v)
 {
     HERE
-    v2r.vs[v] = vs_inuse;
+    v2r.rs[v] = rs_inuse;
     return v2r[v];
 }
 
@@ -2375,11 +2373,11 @@ void SetCircuit(ql::circuit& circ, size_t nq, size_t nc)
 // - optionally decompose swap and/or cnot gates in the real circuit to primitives
 
 // Inter-kernel control flow and consequent mapping dependence between kernels is not implemented. TO BE DONE
-// The design of mapping multiple kernels is as follows:
+// The design of mapping multiple kernels is as follows (HERE, TO BE ADAPTED TO NEW REALSTATE):
 // The mapping is done kernel by kernel, in the order that they appear in the list of kernels:
 // - initially the program wide initial mapping is a 1 to 1 mapping of virtual to real qubits
 // - when start to map a kernel, there is a set of already mapped kernels, and a set of not yet mapped kernels;
-//       of each mapped kernel, there is an output mapping, i.e. the mapping of virts to reals with the vs per virtual;
+//       of each mapped kernel, there is an output mapping, i.e. the mapping of virts to reals with the rs per virtual;
 //       when mapping was ready, and the current kernel has a set of kernels
 //       which are direct predecessor in the program's control flow;
 //       a subset of those direct predecessors thus has been mapped and another subset not mapped;
