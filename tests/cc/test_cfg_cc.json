@@ -85,33 +85,33 @@
 		"eqasm_backend_cc": {
 			// Immutable properties of instruments.
 			// FIXME: introduce 'controller_definitions' for CC and friends?
-			"instrument_definitions": [
-				{	"name": "qutech-qwg",
+			"instrument_definitions": {
+				"qutech-qwg": {
 					"channels": 4,
 					"control_group_sizes": [1,4],
 					"latency": 50		// FIXME: check
 				},
-				{	"name": "zi-hdawg",
+				"zi-hdawg": {
 					"channels": 8,
 					"control_group_sizes": [1, 4, 8],
 					"latency": 300		// FIXME: check. If latency depends on FW version, several definitions must be present
 				},
-				{	"name": "qutech-vsm",
+				"qutech-vsm": {
 					"channels": 32,
 					"control_group_sizes": [1],
 					"latency": 10		// FIXME: check
 				},
-				{	"name": "zi-uhfqc",
+				"zi-uhfqa": {
 					"channels": 9,
 					"control_group_sizes": [1],
 					"latency": 150		// FIXME: check
 				}
-			],
+			},   // instrument_definitions
 
 			// Modes to control instruments. These define which bits are used to
 			// control groups of channels and/or get back measurement results
 			"control_modes": {
-				"awg8-mw-vsm": {						// ZI_HDAWG8.py::cfg_codeword_protocol() == 'microwave'
+				"awg8-mw-vsm": {						  // ZI_HDAWG8.py::cfg_codeword_protocol() == 'microwave'
 					"control_bits": [
 						[7,6,5,4,3,2,1,0],
 						[15,14,13,12,11,10,9,8]
@@ -146,7 +146,7 @@
 					],
 					"trigger_bits": [31]
 				},
-				"uhfqc-9ch": {
+				"uhfqa-9ch": {
 					"control_bits": [[25],[24],[23],[22],[21],[20],[19],[18],[17]],
 					"trigger_bits": [16],
 					"result_bits": [[9],[8],[7],[6],[5],[4],[3],[2],[1]],
@@ -161,96 +161,128 @@
 					],
 					"trigger_bits": []				       // no trigger
 				}
-			},
+			},   // control_modes
+
+            // Signal library that gate definitions can refer to.
+            // Supports the following macro expansions for key "value":
+            // * {gateName}
+            // * {instrumentName}
+            // * {instrumentGroup}
+            // * {qubit}
+            // NB: our JSON library does not yet support JSON pointers like:
+            // "signal": {"$ref": "#/hardware_settings/eqasm_backend_cc/signals/single-qubit"}
+            "signals": {
+                "single-qubit": [
+                    {   "type": "mw",
+                        "operand_idx": 0,
+                        "value": [
+                            "{gateName}-{instrumentName}:{instrumentGroup}-gi",
+                            "{gateName}-{instrumentName}:{instrumentGroup}-gq",
+                            "{gateName}-{instrumentName}:{instrumentGroup}-di",
+                            "{gateName}-{instrumentName}:{instrumentGroup}-dq"
+                        ]
+                    },
+                    {   "type": "switch",
+                        "operand_idx": 0,
+                        "value": ["dummy"]                                  // NB: no actual signal is generated
+                    }
+                ],
+                "two-qubit": [
+                    {   "type": "flux",
+                        "operand_idx": 0,                                   // control
+                        "value": ["flux-0-{qubit}"]
+                    },
+                    {   "type": "flux",
+                        "operand_idx": 1,                                   // target
+                        "value": ["flux-1-{qubit}"]
+                    }
+                ]
+            },  // signals
 
 			// Instruments used in this setup, their configuration and connectivity.
-			// FIXME: separate instruments array from CC (which is also an instrument). Code & codeword data is generated dependent on control_mode:
-			// /setup/instruments/*
-			// /setup/instruments/(type=cc)
-
 			"instruments": [
 				// readout. FIXME: must match 'resources/meas_units'
 				{
-					"name": "uhfqc-0",
-					"type": "zi-uhfqc",
-					"signal_type": "measure",
-					"qubits": [[10], [15], [], [], [], [], [], [], []],
-					"control_mode": "uhfqc-9ch",
+					"name": "uhfqa-0",
+                    "qubits": [[10], [15], [], [], [], [], [], [], []],
+                    "ref_signals_type": "measure",
+					"ref_instrument_definition": "zi-uhfqa",
+                    "ref_control_mode": "uhfqa-9ch",
 					"controller": {
 						"name": "cc",	// FIXME
 						"slot": 0,
-						"io_module": "cc-conn-dio"
+						"io_module": "CC-CONN-DIO"
 					}
 				},
 				{
-					"name": "uhfqc-1",
-					"type": "zi-uhfqc",
-					"signal_type": "measure",
-					"qubits": [[1], [2], [6], [7], [11], [12], [16], [17], [22]],
-					"control_mode": "uhfqc-9ch",
+					"name": "uhfqa-1",
+                    "qubits": [[1], [2], [6], [7], [11], [12], [16], [17], [22]],
+                    "ref_signals_type": "measure",
+					"ref_instrument_definition": "zi-uhfqa",
+                    "ref_control_mode": "uhfqa-9ch",
 					"controller": {
 						"name": "cc",	// FIXME
 						"slot": 1,
-						"io_module": "cc-conn-dio"
+						"io_module": "CC-CONN-DIO"
 					}
 				},
 				{
-					"name": "uhfqc-2",
-					"type": "zi-uhfqc",
-					"signal_type": "measure",
-					"qubits": [[8], [9], [13], [14], [18], [23], [], [], []],
-					"control_mode": "uhfqc-9ch",
+					"name": "uhfqa-2",
+                    "qubits": [[8], [9], [13], [14], [18], [23], [], [], []],
+                    "ref_signals_type": "measure",
+					"ref_instrument_definition": "zi-uhfqa",
+                    "ref_control_mode": "uhfqa-9ch",
 					"controller": {
 						"name": "cc",	// FIXME
 						"slot": 2,
-						"io_module": "cc-conn-dio"
+						"io_module": "CC-CONN-DIO"
 					}
 				},
 
 				// microwave. FIXME: must match 'resources/qwgs'
 				{
 					"name": "awg8-mw-0",
-					"type": "zi-hdawg",
-					"signal_type": "mw",
-					"qubits": [												// data qubits:
-						[6, 12, 18],										//	[freq L]
-						[2, 8, 10, 14, 16, 22]								// [freq H]
-					],
-					"control_mode": "awg8-mw-vsm",
+                    "qubits": [                                             // data qubits:
+                        [6, 12, 18],                                        //  [freq L]
+                        [2, 8, 10, 14, 16, 22]                              // [freq H]
+                    ],
+                    "ref_signals_type": "mw",
+					"ref_instrument_definition": "zi-hdawg",
+                    "ref_control_mode": "awg8-mw-vsm",
 					"controller": {
 						"name": "cc",	// FIXME
 						"slot": 3,
-						"io_module": "cc-conn-dio-diff"
+						"io_module": "CC-CONN-DIO-DIFF"
 					}
 				},
 				{
 					"name": "awg8-mw-1",
-					"type": "zi-hdawg",
-					"signal_type": "mw",
-					"qubits": [												// ancilla qubits:
-						[1, 9, 13, 17], 									// [freq Mg]
-						[7, 11, 15, 23]										// [freq My]
-					],
-					"control_mode": "awg8-mw-vsm",
+                    "qubits": [                                             // ancilla qubits:
+                        [1, 9, 13, 17],                                     // [freq Mg]
+                        [7, 11, 15, 23]                                     // [freq My]
+                    ],
+                    "ref_signals_type": "mw",
+					"ref_instrument_definition": "zi-hdawg",
+                    "ref_control_mode": "awg8-mw-vsm",
 					"controller": {
 						"name": "cc",	// FIXME
 						"slot": 4,
-						"io_module": "cc-conn-dio-diff"
+						"io_module": "CC-CONN-DIO-DIFF"
 					}
 				},
 
 				// VSM
 				{
 					"name": "vsm-0",
-					"type": "qutech-vsm",
-					"signal_type": "switch",
-					"qubits": [
-						[6, 12, 18],										//	[freq L]
-						[2, 8, 10, 14, 16, 22],								// [freq H]
-						[1, 9, 13, 17], 									// [freq Mg]
-						[7, 11, 15, 23]										// [freq My]
-					],
-					"control_mode": "vsm-32ch",
+                    "qubits": [
+                        [6, 12, 18],                                        //  [freq L]
+                        [2, 8, 10, 14, 16, 22],                             // [freq H]
+                        [1, 9, 13, 17],                                     // [freq Mg]
+                        [7, 11, 15, 23]                                     // [freq My]
+                    ],
+                    "ref_signals_type": "switch",
+					"ref_instrument_definition": "qutech-vsm",
+                    "ref_control_mode": "vsm-32ch",
 					"controller": {
 						"name": "cc",	// FIXME
 						"slot": 5,
@@ -261,79 +293,41 @@
 				// flux
 				{
 					"name": "awg8-flux-0",
-					"type": "zi-hdawg",
-					"signal_type": "flux",
-					"qubits": [[1], [2], [6], [7], [8], [9], [10], [11]],
-					"control_mode": "awg8-flux",
+                    "qubits": [[1], [2], [6], [7], [8], [9], [10], [11]],
+                    "ref_signals_type": "flux",
+					"ref_instrument_definition": "zi-hdawg",
+                    "ref_control_mode": "awg8-flux",
 					"controller": {
 						"name": "cc",	// FIXME
 						"slot": 6,
-						"io_module": "cc-conn-dio-diff"
+						"io_module": "CC-CONN-DIO-DIFF"
 					}
 				},
 				{
 					"name": "awg8-flux-1",
-					"type": "zi-hdawg",
-					"signal_type": "flux",
-					"qubits": [[12], [13], [14], [15], [16], [17], [18], [22]],
-					"control_mode": "awg8-flux",
+                    "qubits": [[12], [13], [14], [15], [16], [17], [18], [22]],
+                    "ref_signals_type": "flux",
+					"ref_instrument_definition": "zi-hdawg",
+                    "ref_control_mode": "awg8-flux",
 					"controller": {
 						"name": "cc",	// FIXME
 						"slot": 7,
-						"io_module": "cc-conn-dio-diff"
+						"io_module": "CC-CONN-DIO-DIFF"
 					}
 				},
 				{
 					"name": "awg8-flux-2",
-					"type": "zi-hdawg",
-					"signal_type": "flux",
-					"qubits": [[23], [], [], [], [], [], [], []],
-					"control_mode": "awg8-flux",
+                    "qubits": [[23], [], [], [], [], [], [], []],
+                    "ref_signals_type": "flux",
+					"ref_instrument_definition": "zi-hdawg",
+                    "ref_control_mode": "awg8-flux",
 					"controller": {
 						"name": "cc",	// FIXME
 						"slot": 8,
-						"io_module": "cc-conn-dio-diff"
+						"io_module": "CC-CONN-DIO-DIFF"
 					}
 				}
-			],
-
-
-			// Signal library that gate definitions can refer to.
-			// Supports the following macro expansions for key "value":
-            // * {gateName}
-            // * {instrumentName}
-            // * {instrumentGroup}
-            // * {qubit}
-			// NB: our JSON library does not yet support JSON pointers like:
-			// "signal": {"$ref": "#/hardware_settings/eqasm_backend_cc/signals/single-qubit"}
-			"signals": {
-				"single-qubit": [
-					{	"type": "mw",
-						"operand_idx": 0,
-						"value": [
-							"{gateName}-{instrumentName}:{instrumentGroup}-gi",
-							"{gateName}-{instrumentName}:{instrumentGroup}-gq",
-							"{gateName}-{instrumentName}:{instrumentGroup}-di",
-							"{gateName}-{instrumentName}:{instrumentGroup}-dq"
-						]
-					},
-					{	"type": "switch",
-						"operand_idx": 0,
-						"value": ["dummy"]									// NB: no actual signal is generated
-					}
-				],
-				"two-qubit": [
-					{	"type": "flux",
-						"operand_idx": 0,									// control
-						"value": ["flux-0-{qubit}"]
-					},
-					{	"type": "flux",
-						"operand_idx": 1,									// target
-						"value": ["flux-1-{qubit}"]
-					}
-				]
-
-			}
+			] // instruments
 		}
 	},
 

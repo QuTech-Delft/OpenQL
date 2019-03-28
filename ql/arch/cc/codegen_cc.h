@@ -111,8 +111,9 @@ public:
                     isSlotUsed = true;
 
                     // find control mode & bits
-                    std::string controlModeName = instrument["control_mode"];
-                    const json &controlMode = jsonControlModes[controlModeName];    // the control mode definition for our instrument
+                    // FIXME: check existence of keys below to ease end user debugging on configuration errors
+                    std::string controlModeRef = instrument["ref_control_mode"];
+                    const json &controlMode = jsonControlModes[controlModeRef];    // the control mode definition for our instrument
                     const json &controlBits = controlMode["control_bits"][group];
 
                     // find or create codeword/mask fragment for this group
@@ -495,13 +496,13 @@ private:
         for(size_t instrIdx=0; instrIdx<jsonInstruments.size(); instrIdx++) {
             const json &instrument = jsonInstruments[instrIdx];
             std::string instrumentName = instrument["name"];
-            std::string instrumentType = instrument["type"];
+            std::string instrumentRef = instrument["ref_instrument_definition"];
             int slot = instrument["controller"]["slot"];    // FIXME: assuming controller being cc
 
             // find latency
-            const json &id = findInstrumentDefinition(instrumentType);
+            const json &id = findInstrumentDefinition(instrumentRef);
             int latency = id["latency"];
-            DOUT("latency of '" << instrumentType << "' in slot " << slot << " is " << latency);
+            DOUT("latency of '" << instrumentRef << "' in slot " << slot << " is " << latency);
             slotLatencies.insert(std::make_pair(slot, latency));
         }
 
@@ -523,7 +524,7 @@ private:
             emit(SS2S("[" << slot << "]").c_str(),      // CCIO selector
                 "seq_bar",
                 SS2S(delayInCycles),
-                SS2S("# latency compensation").c_str());    // FIXME: add instrumentName/instrumentType/latency
+                SS2S("# latency compensation").c_str());    // FIXME: add instrumentName/instrumentRef/latency
         }
     }
 
@@ -556,20 +557,19 @@ private:
         jsonBackendSettings = platform.hardware_settings["eqasm_backend_cc"];
         jsonInstrumentDefinitions = jsonBackendSettings["instrument_definitions"];
         jsonControlModes = jsonBackendSettings["control_modes"];
-//FIXME        jsonCcSetup = jsonBackendSettings["cc_setup"];
         jsonInstruments = jsonBackendSettings["instruments"];
         jsonSignals = jsonBackendSettings["signals"];
 
 
+#if 0   // FIXME: print some info, which also helps detecting errors early on
         // read instrument definitions
         // FIXME: the following requires json>v3.1.0:  for(auto& id : jsonInstrumentDefinitions.items()) {
         for(size_t i=0; i<jsonInstrumentDefinitions.size(); i++) {
-            std::string idName = jsonInstrumentDefinitions[i]["name"];        // NB: uses type conversion to get node value
-            DOUT("found instrument definition:  name='" << idName <<"'");
+            std::string idName = jsonInstrumentDefinitions[i];        // NB: uses type conversion to get node value
+            DOUT("found instrument definition: '" << idName <<"'");
         }
 
         // read control modes
-#if 0   // FIXME: print some info, which also helps detecting errors early on
         for(size_t i=0; i<jsonControlModes.size(); i++)
         {
             const json &name = jsonControlModes[i]["name"];
@@ -584,7 +584,7 @@ private:
         for(size_t slot=0; slot<ccSetupSlots.size(); slot++) {
             const json &instrument = ccSetupSlots[slot]["instrument"];
             std::string instrumentName = instrument["name"];
-            std::string signalType = instrument["signal_type"];
+            std::string signalType = instrument["ref_signals_type"];
 
             DOUT("found instrument: name='" << instrumentName << "', signal type='" << signalType << "'");
         }
@@ -594,11 +594,11 @@ private:
 
     const json &findInstrumentDefinition(const std::string &name)
     {
-        for(size_t i=0; i<jsonInstrumentDefinitions.size(); i++) {
-            std::string idName = jsonInstrumentDefinitions[i]["name"];        // NB: uses type conversion to get node value
-            if(idName == name) return jsonInstrumentDefinitions[i];
+        if JSON_EXISTS(jsonInstrumentDefinitions, name) {
+            return jsonInstrumentDefinitions[name];
+        } else {
+            FATAL("Could not find key 'name'=" << name << "in JSON section 'instrument_definitions'");
         }
-        FATAL("Could not find entry with 'name'=" << name << "in JSON section 'instrument_definitions'");
     }
 
 
@@ -612,7 +612,7 @@ private:
         // iterate over instruments
         for(size_t instrIdx=0; instrIdx<jsonInstruments.size(); instrIdx++) {
             const json &instrument = jsonInstruments[instrIdx];
-            std::string instrumentSignalType = instrument["signal_type"];
+            std::string instrumentSignalType = instrument["ref_signals_type"];
             if(instrumentSignalType == instructionSignalType) {
                 signalTypeFound = true;
                 std::string instrumentName = instrument["name"];
