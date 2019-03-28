@@ -118,16 +118,16 @@
 					],
 					"trigger_bits": [31]
 				},
-				"awg8-mw-direct-iq": {				// just I&Q to generate microwave without VSM
+				"awg8-mw-direct-iq": {				      // just I&Q to generate microwave without VSM
 					"control_bits": [
-						[6,5,4,3,2,1,0],				// FIXME: no official mode yet
+						[6,5,4,3,2,1,0],				  // FIXME: no official mode yet
 						[13,12,11,10,9,8,7],
 						[20,19,18,17,16,15,14],
 						[27,26,25,24,23,22,21]
 					],
 					"trigger_bits": [31]
 				},
-				"awg8-flux": {							// ZI_HDAWG8.py::cfg_codeword_protocol() == 'flux'
+				"awg8-flux": {							   // ZI_HDAWG8.py::cfg_codeword_protocol() == 'flux'
 					"control_bits": [
 						[2,1,0],
 						[5,4,3],
@@ -140,7 +140,7 @@
 					],
 					"trigger_bits": [31]
 				},
-				"awg8-flux-vector": {				// single code word for 8 flux channels
+				"awg8-flux-vector": {				       // single code word for 8 flux channels
 					"control_bits": [
 						[7,6,5,4,3,2,1,0]
 					],
@@ -159,7 +159,7 @@
 						[16],[17],[18],[19],[20],[21],[22],[23],
 						[24],[25],[26],[27],[28],[28],[30],[31]
 					],
-					"trigger_bits": []				// no trigger
+					"trigger_bits": []				       // no trigger
 				}
 			},
 
@@ -212,9 +212,9 @@
 					"name": "awg8-mw-0",
 					"type": "zi-hdawg",
 					"signal_type": "mw",
-					"qubits": [																// data qubits:
-						[6, 12, 18],														//	[freq L]
-						[2, 8, 10, 14, 16, 22]											// [freq H]
+					"qubits": [												// data qubits:
+						[6, 12, 18],										//	[freq L]
+						[2, 8, 10, 14, 16, 22]								// [freq H]
 					],
 					"control_mode": "awg8-mw-vsm",
 					"controller": {
@@ -227,9 +227,9 @@
 					"name": "awg8-mw-1",
 					"type": "zi-hdawg",
 					"signal_type": "mw",
-					"qubits": [																// ancilla qubits:
-						[1, 9, 13, 17], 													// [freq Mg]
-						[7, 11, 15, 23]													// [freq My]
+					"qubits": [												// ancilla qubits:
+						[1, 9, 13, 17], 									// [freq Mg]
+						[7, 11, 15, 23]										// [freq My]
 					],
 					"control_mode": "awg8-mw-vsm",
 					"controller": {
@@ -245,10 +245,10 @@
 					"type": "qutech-vsm",
 					"signal_type": "switch",
 					"qubits": [
-						[6, 12, 18],														//	[freq L]
-						[2, 8, 10, 14, 16, 22],											// [freq H]
-						[1, 9, 13, 17], 													// [freq Mg]
-						[7, 11, 15, 23]													// [freq My]
+						[6, 12, 18],										//	[freq L]
+						[2, 8, 10, 14, 16, 22],								// [freq H]
+						[1, 9, 13, 17], 									// [freq Mg]
+						[7, 11, 15, 23]										// [freq My]
 					],
 					"control_mode": "vsm-32ch",
 					"controller": {
@@ -298,8 +298,12 @@
 			],
 
 
-			// Signal library that gate definitions can refer to. Supports
-			// macro expansion
+			// Signal library that gate definitions can refer to.
+			// Supports the following macro expansions for key "value":
+            // * {gateName}
+            // * {instrumentName}
+            // * {instrumentGroup}
+            // * {qubit}
 			// NB: our JSON library does not yet support JSON pointers like:
 			// "signal": {"$ref": "#/hardware_settings/eqasm_backend_cc/signals/single-qubit"}
 			"signals": {
@@ -315,16 +319,16 @@
 					},
 					{	"type": "switch",
 						"operand_idx": 0,
-						"value": ["dummy"]														// NB: no actual signal is generated
+						"value": ["dummy"]									// NB: no actual signal is generated
 					}
 				],
 				"two-qubit": [
 					{	"type": "flux",
-						"operand_idx": 0,															// control
+						"operand_idx": 0,									// control
 						"value": ["flux-0-{qubit}"]
 					},
 					{	"type": "flux",
-						"operand_idx": 1,															// target
+						"operand_idx": 1,									// target
 						"value": ["flux-1-{qubit}"]
 					}
 				]
@@ -417,10 +421,10 @@
 		"qwgs" : {
 			"count": 4,
 			"connection_map": {	// FIXME: must match "instruments"
-				"0": [6, 12, 18],																	//	[freq L]
-				"1": [2, 8, 10, 14, 16, 22],													// [freq H]
-				"2": [1, 9, 13, 17], 															// [freq Mg]
-				"3": [7, 11, 15, 23]																// [freq My]
+				"0": [6, 12, 18],											//	[freq L]
+				"1": [2, 8, 10, 14, 16, 22],								// [freq H]
+				"2": [1, 9, 13, 17], 										// [freq Mg]
+				"3": [7, 11, 15, 23]										// [freq My]
 			}
 		},
 		"meas_units" : {
@@ -679,15 +683,15 @@
 			"cc": {
 				"signal": [
 					{	"type": "flux",
-						"operand_idx": 0,															// control
+						"operand_idx": 0,									// control
 						"value": ["flux-0-{qubit}"]
 					},
 					{	"type": "flux",
-						"operand_idx": 1,															// target
+						"operand_idx": 1,									// target
 						"value": ["flux-1-{qubit}"]
 					},
 					{	"type": "flux",
-						"operand_idx": 2,															// park
+						"operand_idx": 2,									// park
 						"value": ["park_cz-{qubit}"]
 					}
 				]
