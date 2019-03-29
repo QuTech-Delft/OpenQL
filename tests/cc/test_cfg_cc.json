@@ -243,7 +243,7 @@
 				{
 					"name": "awg8-mw-0",
                     "qubits": [                                             // data qubits:
-                        [6, 12, 18],                                        //  [freq L]
+                        [6, 12, 18],                                        // [freq L]
                         [2, 8, 10, 14, 16, 22]                              // [freq H]
                     ],
                     "ref_signals_type": "mw",
@@ -275,7 +275,7 @@
 				{
 					"name": "vsm-0",
                     "qubits": [
-                        [6, 12, 18],                                        //  [freq L]
+                        [6, 12, 18],                                        // [freq L]
                         [2, 8, 10, 14, 16, 22],                             // [freq H]
                         [1, 9, 13, 17],                                     // [freq Mg]
                         [7, 11, 15, 23]                                     // [freq My]

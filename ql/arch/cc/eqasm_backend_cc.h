@@ -297,7 +297,8 @@ private:
                 auto op0 = k.br_condition.operands[0]->id;
                 auto op1 = k.br_condition.operands[1]->id;
                 auto opName = k.br_condition.operation_name;
-                codegen.do_while_end(op0, opName, op1);
+                std::string label = kernelLabel(k);
+                codegen.do_while_end(label, op0, opName, op1);
                 break;
             }
 

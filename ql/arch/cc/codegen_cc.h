@@ -411,12 +411,18 @@ public:
     {
         comment("# DO_WHILE_START");
 //        FATAL("FIXME: not implemented");    // FIXME: implement: emit label
+//        emit((label+":").c_str(), "", SS2S(""), "# ");        // FIXME: just a label
+        emit("", "seq_out", SS2S("0x0,100"), "# delay");                // FIXME: to prevent SEQ_OUT_EMPTY
+        emit((label+":").c_str(), "", SS2S(""), "# ");        // FIXME: just a label
     }
 
-    void do_while_end(size_t op0, std::string opName, size_t op1)
+    void do_while_end(std::string label, size_t op0, std::string opName, size_t op1)
     {
         comment(SS2S("# DO_WHILE_END(R" << op0 << " " << opName << " R" << op1 << ")"));
 //        FATAL("FIXME: not implemented");
+
+        emit("", "seq_out", SS2S("0x0,100"), "# delay");                // FIXME: to prevent SEQ_OUT_EMPTY
+        emit("", "jmp", SS2S("@" << label), "# endless loop'");        // FIXME: just endless loop
     }
 
     /************************************************************************\
@@ -519,12 +525,15 @@ private:
         for(auto it=slotLatencies.begin(); it!=slotLatencies.end(); it++) {
             int slot = it->first;
             int latency = it->second;
-            int delayInCycles = (maxLatency-latency)/20;   // FIXME: cycle time
+            const int minDelay = 1;     // min value for seq_bar
+            int delayInCycles = minDelay+(maxLatency-latency)/20;   // FIXME: cycle time
 
+#if 0   // FIXME: for demo
             emit(SS2S("[" << slot << "]").c_str(),      // CCIO selector
                 "seq_bar",
                 SS2S(delayInCycles),
                 SS2S("# latency compensation").c_str());    // FIXME: add instrumentName/instrumentRef/latency
+#endif
         }
     }
 
