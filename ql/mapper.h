@@ -13,6 +13,7 @@
 #include <chrono>
 #include "ql/utils.h"
 #include "ql/platform.h"
+#include "ql/kernel.h"
 #include "ql/arch/cc_light_resource_manager.h"
 #include "ql/gate.h"
 #include "ql/scheduler.h"
@@ -133,19 +134,28 @@ void SetRs(size_t q, realstate_t rsvalue)
 
 // expand to desired size
 //
-// mapping starts off undefined for all virtual qubits
+// mapping starts off undefined for all virtual qubits (unless one2oneopt is set)
 // real qubits are assumed to have a state suitable for replacing swap by move
 //
 // the rs initializations are done only once, for a whole program
 void Init(size_t n)
 {
+    auto mapinitone2oneopt = ql::options::get("mapinitone2one");
+
     nq = n;
     // DOUT("Virt2Real::Init(n=" << nq << "), initializing 1-1 mapping");
     v2rMap.resize(nq);
     rs.resize(nq);
     for (size_t i=0; i<nq; i++)
     {
-        v2rMap[i] = UNDEFINED_QUBIT;
+        if ("yes" == mapinitone2oneopt)
+        {
+            v2rMap[i] = i;
+        }
+        else
+        {
+            v2rMap[i] = UNDEFINED_QUBIT;
+        }
         rs[i] = rs_wasinited;
     }
 }
@@ -166,17 +176,20 @@ size_t AllocQubit(size_t v)
     // first one that isn't, is free and is returned
     for (size_t r=0; r<nq; r++)
     {
-        for (size_t v=0; v<nq; v++)
+        size_t vt;
+        for (vt=0; vt<nq; vt++)
         {
-            if (v2rMap[v] == r)
+            if (v2rMap[vt] == r)
             {
                 break;
             }
         }
-        if (v >= nq)
+        if (vt >= nq)
         {
             // real qubit r was not found in v2rMap
+            // use it to map v
             v2rMap[v] = r;
+            DOUT("AllocQubit(v=" << v << ") in r=" << r);
             return r;
         }
     }
@@ -194,6 +207,7 @@ void Swap(size_t r0, size_t r1)
     size_t v0 = GetVirt(r0);
     size_t v1 = GetVirt(r1);
     // DOUT("... swap from ("<< v0<<"<->"<<r0<<","<<v1<<"<->"<<r1<<") to ("<<v0<<"<->"<<r1<<","<<v1<<"<->"<<r0<<" )");
+    // Print("... before swap");
     MapperAssert(v0 != v1);         // also holds when vi == UNDEFINED_QUBIT
 
     if (v0 != UNDEFINED_QUBIT)
@@ -213,12 +227,13 @@ void Swap(size_t r0, size_t r1)
     }
     else
     {
-        MapperAssert(r0 != rs_hasstate);
+        MapperAssert(r1 != rs_hasstate);
     }
 
     realstate_t ts = rs[r0];
     rs[r0] = rs[r1];
     rs[r1] = ts;
+    // Print("... after swap");
 }
 
 void PrintReal(size_t r)
@@ -239,11 +254,11 @@ void PrintReal(size_t r)
     size_t v = GetVirt(r);
     if (v == UNDEFINED_QUBIT)
     {
-        std::cout << " <-UN)";
+        std::cout << "<-UN)";
     }
     else
     {
-        std::cout << " <-" << v << ")";
+        std::cout << "<-" << v << ")";
     }
 }
 
@@ -253,11 +268,11 @@ void PrintVirt(size_t v)
     size_t r = v2rMap[v];
     if (r == UNDEFINED_QUBIT)
     {
-        std::cout << " ->UN)";
+        std::cout << "->UN)";
     }
     else
     {
-        std::cout << " ->" << r;
+        std::cout << "->" << r;
         switch(rs[r])
         {
         case rs_nostate:
@@ -285,20 +300,22 @@ void PrintReal(std::string s, size_t r0, size_t r1)
 
 void Print(std::string s)
 {
-    DOUT("v2r.Print ...");
-    std::cout << "... Virt2Real(v->r) " << s << ":";
+    // DOUT("v2r.Print ...");
+    std::cout << "Virt2Real(v->r) " << s << ":";
     for (size_t v=0; v<nq; v++)
     {
         PrintVirt(v);
     }
     std::cout << std::endl;
 
+#ifdef needed
     std::cout << "... real2virt(r->v) " << s << ":";
     for (size_t r=0; r<nq; r++)
     {
         PrintReal(r);
     }
     std::cout << std::endl;
+#endif
 }
 
 };  // end class Virt2Real
@@ -350,10 +367,10 @@ void Init(ql::quantum_platform *p)
     // DOUT("FreeCycle::Init()");
     ql::arch::resource_manager_t lrm(*p);   // allocated here and copied below to rm because of platform parameter
     // DOUT("... created local resource manager");
-    // DOUT("... FreeCycle: nq=" << n << ", c=" << c << "), initializing to all 0 cycles");
     platformp = p;
     nq = platformp->qubit_number;
     ct = platformp->cycle_time;
+    // DOUT("... FreeCycle: nq=" << nq << ", ct=" << ct << "), initializing to all 0 cycles");
     fcv.clear();
     fcv.resize(nq, 1);   // this 1 implies that cycle of first gate will be 1 and not 0; OpenQL convention!?!?
     // DOUT("... about to copy local resource manager to FreeCycle member rm");
@@ -568,9 +585,9 @@ private:
     std::map<std::string,ql::custom_gate*> *gate_definitionp; // gate definitions from platform's .json file
                                         // to be able to create new gates
 
-    Virt2Real               v2r;        // Virt2Real map applying to this Past
-    FreeCycle               fc;         // FreeCycle map applying to this Past
+    Virt2Real               v2r;        // current Virt2Real map
 
+    FreeCycle               fc;         // FreeCycle map of this Past
     typedef ql::gate *      gate_p;
     std::list<gate_p>       waitinglg;  // list of gates in this Past, topological order, waiting to be scheduled in
     std::list<gate_p>       lg;         // list of gates in this Past, scheduled by their (start) cycle values
@@ -591,13 +608,25 @@ void Init(ql::quantum_platform *p)
     ct = platformp->cycle_time;
     gate_definitionp = &platformp->instruction_map;
 
-    v2r.Init(nq);               // v2r program-wide initialization, none mapped, all inited
+    v2r.Init(nq);               // v2r initializtion until v2r is imported from context
     fc.Init(platformp);         // fc starts off with all qubits free, is updated after schedule of each gate
     waitinglg.clear();          // no gates pending to be scheduled in; Add of gate to past entered here
     lg.clear();                 // no gates scheduled yet in this past; after schedule of gate, it gets here
     nswapsadded = 0;            // no swaps or moves added yet to this past; AddSwap adds one here
     nmovesadded = 0;            // no moves added yet to this past; AddSwap may add one here
     cycle.clear();              // no gates have cycles assigned in this past; scheduling gate updates this
+}
+
+// import Past's v2r from v2r_value
+void ImportV2r(Virt2Real& v2r_value)
+{
+    v2r = v2r_value;
+}
+
+// export Past's v2r into v2r_destination
+void ExportV2r(Virt2Real& v2r_destination)
+{
+    v2r_destination = v2r;
 }
 
 void Print(std::string s)
@@ -1094,8 +1123,8 @@ void AddSwap(size_t r0, size_t r1)
     bool created = false;
     ql::circuit circ;
 
-    DOUT("... adding/trying swap(q" << r0 << ",q" << r1 << ") ...");
-    v2r.PrintReal("... adding swap/move", r0, r1);
+    // DOUT("... adding/trying swap(q" << r0 << ",q" << r1 << ") ...");
+    // v2r.PrintReal("... adding swap/move", r0, r1);
 
     std::string mapusemovesopt = ql::options::get("mapusemoves");
     if ("no" != mapusemovesopt && (v2r.GetRs(r0)!=rs_hasstate || v2r.GetRs(r1)!=rs_hasstate))
@@ -1180,7 +1209,7 @@ void AddSwap(size_t r0, size_t r1)
             created = new_gate("swap", {r0,r1}, circ);
             if (!created) new_gate_exception("swap or swap_real");
         }
-        DOUT("... swap(q" << r0 << ",q" << r1 << ") ...");
+        // DOUT("... swap(q" << r0 << ",q" << r1 << ") ...");
     }
     nswapsadded++;                       // for reporting at the end
     for (auto &gp : circ)
@@ -1215,6 +1244,29 @@ size_t MapQubit(size_t v)
 // when a gate can be created with the same name but with "_real" appended, with the real qubits as operands, then create that gate
 // otherwise keep the old gate; replace the virtual qubit operands by the real qubit indices
 // since creating a new gate may result in a decomposition to several gates, the result is returned as a circuit vector
+//
+// So each gate in the circuit (optionally) passes through the following phases:
+// 1. it is created:
+//      when a decomposition in config file, decompose immediately, otherwise just create (k.gate)
+//      so we expect gates like: x, cz, cnot to be specified in config file;
+//      on the resulting (decomposed) gates, the routing is done including depth/cost estimation
+// 2a.if needed for mapping, swap/move is created:
+//      first try creating swap_real/move_real as above, otherwise just swap/real (AddSwap)
+//      so we expect gates like: swap_real, move_real to be specified in config file,
+//      swap_real/move_real unlike swap/real allow immediate decomposition;
+//      when no swap_real/move_real are specified, just swap/move must be present
+//      and swap/move are created usually without decomposition;
+//      on the resulting (decomposed) gates, the routing is done including depth/cost estimation;
+//      when the resulting gates end in _prim, see step 3
+// 2b.the resulting gates of step 1: map operands/gate:
+//      first try creating gate_real as above, otherwise just gate (DeVirtualize)
+//      gate_real unlike gate allows immediate decomposition;
+//      when the resulting gates end in _prim, see step 3
+// 3. decompose gates:
+//      only when gates end in _prim, change name to _dprim and re-create as above (Decompose)
+// 4. final schedule:
+//      the resulting gates are subject to final scheduling (the original resource-constrained scheduler)
+
 void DeVirtualize(ql::gate* gp, ql::circuit& circ)
 {
     std::vector<size_t> real_qubits  = gp->operands;// starts off as copy of virtual qubits!
@@ -1346,14 +1398,14 @@ public:
 // This should only be called after a virgin construction and not after cloning a path.
 void Init(ql::quantum_platform* p)
 {
-    // DOUT("path::Init(number of virtual qubits=" << n);
+    // DOUT("path::Init(number of qubits=" << nq);
     platformp = p;
 
     nq = platformp->qubit_number;
     ct = platformp->cycle_time;
     // total, fromSource and fromTarget start as empty vectors
     past.Init(platformp);                // initializes past to empty
-    cycleExtend = MAX_CYCLE;             // means undefined
+    cycleExtend = MAX_CYCLE;             // means undefined, for printing
 }
 
 // printing facilities of Paths
@@ -1475,7 +1527,7 @@ void AddSwaps(Past & past)
 // store the extension relative to the base in cycleExtend and return it
 size_t Extend(Past basePast)
 {
-    past = basePast;   // explicitly a path-local copy of this basePast!
+    past = basePast;   // explicitly clone basePast to a path-local copy of it, NNPath.past
     // DOUT("... adding swaps for local past ...");
     AddSwaps(past);
     // DOUT("... done adding/scheduling swaps to local past");
@@ -1630,14 +1682,14 @@ void Normalize( size_t src, neighbors_t& nbl )
 // this remains constant over multiple kernels on the same platform
 void Init(ql::quantum_platform* p)
 {
-    DOUT("Grid::Init");
+    // DOUT("Grid::Init");
     platformp = p;
     nq = platformp->qubit_number;
-    DOUT("... number of real qbits=" << nq);
+    // DOUT("... number of real qbits=" << nq);
 
     nx = platformp->topology["x_size"];
     ny = platformp->topology["y_size"];
-    DOUT("... nx=" << nx << "; ny=" << ny);
+    // DOUT("... nx=" << nx << "; ny=" << ny);
 
     // init x, y and nbs maps
     for (auto & aqbit : platformp->topology["qubits"] )
@@ -1809,11 +1861,11 @@ public:
 // kernel-once initialization
 void Init(Grid* g, ql::quantum_platform *p)
 {
-    DOUT("InitialPlace Init ...");
+    // DOUT("InitialPlace Init ...");
     platformp = p;
     nlocs = p->qubit_number;
     nvq = p->qubit_number;  // same range; when not, take set from config and create v2i earlier
-    DOUT("... number of real qubits (locations): " << nlocs);
+    // DOUT("... number of real qubits (locations): " << nlocs);
     gridp = g;
 }
 
@@ -2077,10 +2129,10 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     // return new mapping as result in v2r
 
     // get the results: x[i][k] == 1 iff facility i is in location k (i.e. real qubit index k)
-    // use v2i to translate facilities back to virtual qubit indices
+    // use v2i to translate facilities back to original virtual qubit indices
     // and fill v2r with the found locations for the used virtual qubits;
-    // the unused virtual qubits are mapped to an arbitrary permutation of the remaining locations
-    // since these might get used by swap paths and thus must have a (fake) virtual qubit assigned for the mapper's logic
+    // the unused mapped virtual qubits are mapped to an arbitrary permutation of the remaining locations;
+    // the latter must be updated to generate swaps when mapping multiple kernels
     DOUT("... interpret result and copy to Virt2Real");
     for (size_t v=0; v<nvq; v++)
     {
@@ -2111,38 +2163,42 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
         MapperAssert(k < nlocs);  // each facility i by definition represents a used qubit so must have got a location
     }
 
-#ifdef needed
-    DOUT("... correct location of unused virtual qubits to be an unused location");
-    v2r.Print("... result Virt2Real map of InitialPlace before adding unused virtual qubits and unused locations ");
-    // used virtual qubits v have got their location k filled in in v2r[v] == k
-    // unused virtual qubits still have location UNDEFINED_QUBIT, fill those with the remaining locations
-    for (size_t v=0; v<nvq; v++)
+    auto mapinitone2oneopt = ql::options::get("mapinitone2one");
+    if ("yes" == mapinitone2oneopt)
     {
-        if (v2r[v] == UNDEFINED_QUBIT)
+        DOUT("... correct location of unused mapped virtual qubits to be an unused location");
+        v2r.Print("... result Virt2Real map of InitialPlace before mapping unused mapped virtual qubits ");
+        // virtual qubits used by this kernel v have got their location k filled in in v2r[v] == k
+        // unused mapped virtual qubits still have location UNDEFINED_QUBIT, fill with the remaining locs
+        // this should be replaced by actually swapping them to there, when mapping multiple kernels
+        for (size_t v=0; v<nvq; v++)
         {
-            // v is unused; find an unused location k
-            size_t k;   // location k that is checked for having been allocated to some virtual qubit w
-            for (k=0; k<nlocs; k++ )
+            if (v2r[v] == UNDEFINED_QUBIT)
             {
-                for (size_t w=0; w<nvq; w++)
+                // v is unused by this kernel; find an unused location k
+                size_t k;   // location k that is checked for having been allocated to some virtual qubit w
+                for (k=0; k<nlocs; k++ )
                 {
-                    if (v2r[w] == k)
+                    size_t w;
+                    for (w=0; w<nvq; w++)
                     {
-                        break;
+                        if (v2r[w] == k)
+                        {
+                            break;
+                        }
                     }
+                    if (w >= nvq)
+                    {
+                        // no w found for which v2r[w] == k
+                        break;     // k is an unused location
+                    }
+                    // k is a used location, so continue with next k to check whether it is hopefully unused
                 }
-                if (w >= nvq)
-                {
-                    // no w found for which v2r[w] == k
-                    break;     // k is an unused location
-                }
-                // k is a used location, so continue with next k to check whether it is hopefully unused
+                MapperAssert(k < nlocs);  // when a virtual qubit is not used, there must be a location that is not used
+                v2r[v] = k;
             }
-            MapperAssert(k < nlocs);  // when a virtual qubit is not used, there must be a location that is not used
-            v2r[v] = k;
         }
     }
-#endif
     v2r.Print("... final result Virt2Real map of InitialPlace");
     result = ipr_newmap;
     DOUT("InitialPlace circuit [SUCCESS]");
@@ -2448,9 +2504,11 @@ private:
     Grid            grid;           // current grid
 
                                     // Initialized by Mapper.MapCircuit
-    Future          future;         // future window, presents input in avlist
-    Past            mainPast;       // main past window; all path alternatives start off as clones of it
     std::mt19937    gen;            // Standard mersenne_twister_engine, not yet seeded
+
+public:
+    size_t          nswapsadded;    // result of mapping to pass back to context
+    size_t          nmovesadded;    // result of mapping to pass back to context
 
 
 // Mapper constructor is default synthesized
@@ -2503,6 +2561,7 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp, whichpa
 
     // rotate nbl such that largest difference between angles of adjacent elements is beyond back()
     grid.Normalize(src, nbl);
+    // subset to those neighbors that continue in direction(s) we want
     if (which == wp_left_shortest)
     {
         nbl.remove_if( [nbl](const size_t& n) { return n != nbl.front(); } );
@@ -2523,9 +2582,10 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp, whichpa
     for (auto & n : nbl)
     {
         whichpaths_t newwhich = which;
-        // get list of possible paths from n to tgt in genlp
+        // but for each neighbor only look in desired direction, if any
         if (which == wp_leftright_shortest && nbl.size() != 1)
         {
+            // when looking both left and right still, and there is a choice now, split into left and right
             if (n == nbl.front())
             {
                 newwhich = wp_left_shortest;
@@ -2535,8 +2595,8 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp, whichpa
                 newwhich = wp_right_shortest;
             }
         }
-        GenShortestPaths(n, tgt, genlp, newwhich);
-        reslp.splice(reslp.end(), genlp);   // moves all of genlp to reslp; makes genlp empty
+        GenShortestPaths(n, tgt, genlp, newwhich);  // get list of possible paths from n to tgt in genlp
+        reslp.splice(reslp.end(), genlp);           // moves all of genlp to reslp; makes genlp empty
     }
     // reslp contains all paths starting from a neighbor of src, to tgt
 
@@ -2585,7 +2645,7 @@ void GenSplitPaths(std::list<NNPath> & oldlp, std::list<NNPath> & reslp)
 void RandomInit()
 {
     auto ts = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    DOUT("Seeding random generator with " << ts );
+    // DOUT("Seeding random generator with " << ts );
     gen.seed(ts);
 }
 
@@ -2624,10 +2684,10 @@ size_t Draw(size_t count)
 // - if base[rc], select from whole list of paths
 // maptiebreak option indicates which one to take when several remain
 // result is returned in resp
-void SelectPath(std::list<NNPath>& lp, NNPath & resp)
+void SelectPath(std::list<NNPath>& lp, NNPath & resp, Past& past)
 {
     std::vector<NNPath>   choices;
-    DOUT("SelectPath");
+    // DOUT("SelectPath");
     MapperAssert (!lp.empty());   // so there always is a result path
 
     auto mapopt = ql::options::get("mapper");
@@ -2643,7 +2703,8 @@ void SelectPath(std::list<NNPath>& lp, NNPath & resp)
         size_t  minExtension = MAX_CYCLE;
         for (auto & p : lp)
         {
-            size_t extension = p.Extend(mainPast);
+            // p.Print("Considering extension by path: ...");
+            size_t extension = p.Extend(past);  // locally here, past is cloned into current path
             if (extension <= minExtension)
             {
                 if (extension < minExtension)
@@ -2655,17 +2716,17 @@ void SelectPath(std::list<NNPath>& lp, NNPath & resp)
             }
         }
     }
-    resp = choices[Draw(choices.size())];
     NNPath::listPrint("... after SelectPath", lp);
+    resp = choices[Draw(choices.size())];
     resp.Print("... the selected path is");
 }
 
 // take care that the operands of the given 2q gate become NN
-void EnforceNN(ql::gate* gp)
+void EnforceNN(ql::gate* gp, Past& past)
 {
     auto&   q = gp->operands;
-    size_t  src = mainPast.MapQubit(q[0]);      // interpret virtual operands in current map
-    size_t  tgt = mainPast.MapQubit(q[1]);      // interpret virtual operands in current map
+    size_t  src = past.MapQubit(q[0]);      // interpret virtual operands in current map
+    size_t  tgt = past.MapQubit(q[1]);      // interpret virtual operands in current map
     size_t  d = grid.Distance(src, tgt);        // and find distance between real counterparts
     MapperAssert (d >= 1);
     DOUT("... EnforceNN: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
@@ -2673,24 +2734,24 @@ void EnforceNN(ql::gate* gp)
     if (d > 1)
     {
         std::list<NNPath> genlp;    // list that will hold all paths
-        std::list<NNPath> splitlp;  // list that will hold all split paths
+        std::list<NNPath> splitlp;  // list that will hold all split paths, each with a private past
         NNPath resp;                // select result path in splitlp
 
         GenShortestPaths(src, tgt, genlp);// find shortest paths from src to tgt
-        NNPath::listPrint("... after GenShortestPaths", genlp);
+        // NNPath::listPrint("... after GenShortestPaths", genlp);
 
         GenSplitPaths(genlp, splitlp);  // 2q gate can be put anywhere in each path
 
-        SelectPath(splitlp, resp);      // select one according to strategy specified by options
+        SelectPath(splitlp, resp, past);// select one according to strategy specified by options, clones past
 
-        resp.AddSwaps(mainPast);        // add swaps, as described by resp, to mainPast, and schedule them in
+        resp.AddSwaps(past);        // add swaps, as described by resp, to THIS main past, and schedule them in
     }
 }
 
 // map the gate/operands of a single gate
 // - if necessary, insert swaps
 // - if necessary, create new gates
-void MapGate(ql::gate* gp)
+void MapGate(ql::gate* gp, Past& past)
 {
     auto& q = gp->operands;
     size_t operandCount = q.size();
@@ -2705,7 +2766,7 @@ void MapGate(ql::gate* gp)
     // for each two-qubit gate, make the mapping right, if necessary by inserting swaps
     if (operandCount == 2)
     {
-        EnforceNN(gp);
+        EnforceNN(gp, past);
     }
 
     // now ready to accept the gate, move it from future/current gate window to past gate window
@@ -2713,20 +2774,25 @@ void MapGate(ql::gate* gp)
     // with mapping done, insert the gate itself
     // devirtualization of this gate maps its qubit operands and optionally updates its gate name
     // when the gate name was updated, a new gate with that name is created;
-    // when that new gate is a composite gate, it is decomposed
+    // when that new gate is a composite gate, it is immediately decomposed (by gate creation)
     // the resulting gate/expansion (anyhow a sequence of gates) is collected in circ
     ql::circuit circ;   // result of devirtualization
-    mainPast.DeVirtualize(gp, circ);        
+    past.DeVirtualize(gp, circ);        
     for (auto newgp : circ)
     {
         // DOUT(" ... mapped gate: " << newgp->qasm() );
-        mainPast.AddAndSchedule(newgp);
+        past.AddAndSchedule(newgp);
     }
 }
 
-// map the circuit's gates in the provided context (v2r and fc maps)
+// map the circuit's gates in the provided context (v2r maps), update circuit and v2r maps
 void MapGates(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
 {
+    Past    mainPast;
+    // Future  future;         // future window, presents input in avlist
+
+    mainPast.Init(&platform);
+    // future.Init(&platform);
     // future.SetCircuit(circ, nq, nc);
 
     // really want to replace circ but circ is input so cannot be output at the same time
@@ -2734,9 +2800,9 @@ void MapGates(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
     // output of mapping of quantum gates is in Past.lg, the past internal window
     // when it would overflow (not implemented) or a classical gate is encountered, Past.lg is flushed to outCirc
     ql::circuit outCirc;        // output gate stream, mapped; will be swapped with circ on return
-    // mainPast.Print("start mapping");
+    mainPast.ImportV2r(v2r);
     mainPast.Output(outCirc);   // past window will flush into outCirc
-    mainPast.v2r = v2r;
+    // mainPast.Print("start mapping");
 
     for( auto & gp : circ )
     {
@@ -2751,7 +2817,7 @@ void MapGates(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
         case ql::__wait_gate__:
             break;
         default:    // quantum gate
-            MapGate(gp);    // adds gates to Past.lg; Flush will move gates from Past.lg to outCirc
+            MapGate(gp, mainPast);    // adds gates to Past.lg; Flush will move gates from Past.lg to outCirc
             break;
         }
     }
@@ -2763,21 +2829,12 @@ void MapGates(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
     // outCirc gets the old circ and is destroyed when leaving scope
     // DOUT("... swapping outCirc with circ");
     circ.swap(outCirc);
-    v2r = mainPast.v2r;
+    mainPast.ExportV2r(v2r);
+    nswapsadded = mainPast.NumberOfSwapsAdded();
+    nmovesadded = mainPast.NumberOfMovesAdded();
 }
 
 public:
-// retrieve number of swaps added
-void GetNumberOfSwapsAdded(size_t & sa)
-{
-    sa = mainPast.NumberOfSwapsAdded();
-}
-
-// retrieve number of moves added
-void GetNumberOfMovesAdded(size_t & sa)
-{
-    sa = mainPast.NumberOfMovesAdded();
-}
 
 // decompose all gates with names ending in _prim
 // by replacing it by a new copy of this gate with as name _prim replaced by _dprim
@@ -2787,7 +2844,11 @@ void GetNumberOfMovesAdded(size_t & sa)
 // and: this decomposes cnot_prim to whatever is specified in .json gate decomposition behind cnot_dprim
 void Decomposer(ql::circuit& circ)
 {
-    DOUT("Decompose circuit ...");
+    Past    mainPast;
+
+    mainPast.Init(&platform);
+
+    // DOUT("Decompose circuit ...");
 
     ql::circuit outCirc;        // output gate stream
     mainPast.Output(outCirc);   // past window will flush into outCirc
@@ -2804,7 +2865,7 @@ void Decomposer(ql::circuit& circ)
 
     circ.swap(outCirc);
 
-    DOUT("Decompose circuit [DONE]");
+    // DOUT("Decompose circuit [DONE]");
 }   // end Decomposer
 
 // alternative bundler using gate->cycle attribute instead of lemon's cycle map
@@ -2816,7 +2877,7 @@ ql::ir::bundles_t Bundler(ql::circuit& circ)
     typedef std::vector<ql::gate*> insInOneCycle;
     std::map<size_t,insInOneCycle> insInAllCycles;
 
-    DOUT("Bundler ...");
+    // DOUT("Bundler ...");
     size_t TotalCycles = 0;
     for ( auto & gp : circ)
     {
@@ -2850,7 +2911,7 @@ ql::ir::bundles_t Bundler(ql::circuit& circ)
         }
     }
 
-    DOUT("Bundler [DONE]");
+    // DOUT("Bundler [DONE]");
     return bundles;
 }
 
@@ -2876,7 +2937,6 @@ std::string qasm(ql::circuit& c, size_t nqubits, std::string& name)
 // map kernel's circuit, main mapper entry once per kernel
 void MapCircuit(ql::circuit& circ, std::string& kernel_name, size_t& kernel_nq, size_t& kernel_nc)
 {
-    DOUT("==================================");
     DOUT("Mapping circuit ...");
     DOUT("... kernel original virtual number of qubits=" << kernel_nq);
     nc = kernel_nc;     // in absence of platform creg_count, take it from kernel
@@ -2885,7 +2945,8 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name, size_t& kernel_nq, 
 
     // unify all incoming v2rs into v2r to compute kernel input mapping;
     // but until inter-kernel mapping is implemented, take program initial mapping for it
-    v2r.Init(kernel_nq);
+    v2r.Init(nq);
+    v2r.Print("After initialization");
 
 #ifdef INITIALPLACE
     std::string initialplaceopt = ql::options::get("initialplace");
@@ -2898,8 +2959,10 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name, size_t& kernel_nq, 
         ip.Place(circ, v2r, ipok, initialplaceopt); // compute mapping (in v2r) using ip model, may fail
     }
 #endif
+    v2r.Print("After initial placement");
 
     MapGates(circ, kernel_name, v2r);       // updates circ with swaps, maps all gates, updates v2r map
+    v2r.Print("After heuristics");
 
     std::string mapdecomposeropt = ql::options::get("mapdecomposer");
     if("yes" == mapdecomposeropt)
@@ -2907,10 +2970,11 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name, size_t& kernel_nq, 
         Decomposer(circ);   // decompose to primitives as specified in the config file
     }
 
-    kernel_nq = nq;         // bluntly, so that all kernels get the same qubit_count
+    kernel_nq = nq;         // bluntly copy nq (==#real qubits), so that all kernels get the same qubit_count
 
     DOUT("Mapping circuit [DONE]");
-    DOUT("==================================");
+
+    // here export v2r to context again to be used by successor kernels
 }   // end MapCircuit
 
 // initialize mapper for whole program
@@ -2929,9 +2993,6 @@ void Init(const ql::quantum_platform& p)
     cycle_time = p.cycle_time;
 
     grid.Init(&platform);
-
-    // future.Init(&platform);
-    mainPast.Init(&platform);
 
     // DOUT("Mapping initialization [DONE]");
 }   // end Init

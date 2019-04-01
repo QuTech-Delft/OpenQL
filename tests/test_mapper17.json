@@ -178,7 +178,7 @@
 		"44": [12],
 		"45": [11],
 		"46": [10],
-		"47": [10, 11],
+		"47": [10, 11]
 	    }
 	}
     },
@@ -501,15 +501,25 @@
 	    "cc_light_instr": "cnot",
 	    "cc_light_opcode": 128
 	},
-	"cz_real": {
-	    "duration": 40,
+	"swap": {
+	    "duration": 200,
 	    "latency": 0,
 	    "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 	    "disable_optimization": true,
 	    "type": "flux",
 	    "cc_light_instr_type": "two_qubit_gate",
-	    "cc_light_instr": "cz",
-	    "cc_light_opcode": 129
+	    "cc_light_instr": "swap",
+	    "cc_light_opcode": 128
+	},
+	"move": {
+	    "duration": 140,
+	    "latency": 0,
+	    "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+	    "disable_optimization": true,
+	    "type": "flux",
+	    "cc_light_instr_type": "two_qubit_gate",
+	    "cc_light_instr": "move",
+	    "cc_light_opcode": 128
 	},
 	"cnot_prim": {
 	    "duration": 80,
@@ -544,9 +554,6 @@
     },
 
     "gate_decomposition": {
-	"cnot_real %0 %1": ["ym90 %1","cz %0 %1","ry90 %1"],
-	"swap_real %0 %1": ["ym90 %1","cz %0 %1","ry90 %1", "ym90 %0","cz %1 %0","ry90 %0", "ym90 %1","cz %0 %1","ry90 %1"],
-    "move_real %0 %1": ["ym90 %0","cz %1 %0","ry90 %0", "ym90 %1","cz %0 %1","ry90 %1"],
 
 	"swap_dswap %0 %1": ["swap_prim %0 %1"],
 

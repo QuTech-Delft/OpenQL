@@ -522,6 +522,7 @@ class quantum_program
          }
 
          IOUT("compilation of program '" << name << "' done.");
+         IOUT("=============================================");
 
          return 0;
       }

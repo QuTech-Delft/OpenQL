@@ -37,6 +37,7 @@ namespace ql
           opt_name2opt_val["optimize"] = "no";
           opt_name2opt_val["decompose_toffoli"] = "no";
           opt_name2opt_val["mapper"] = "no";
+          opt_name2opt_val["mapinitone2one"] = "yes";
           opt_name2opt_val["initialplace"] = "no";
           opt_name2opt_val["mapusemoves"] = "no";
           opt_name2opt_val["maptiebreak"] = "first";
@@ -56,6 +57,7 @@ namespace ql
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "MA"}, "Type of decomposition used for toffoli", true);
 
           app->add_set_ignore_case("--mapper", opt_name2opt_val["mapper"], {"no", "base", "baserc", "minextend", "minextendrc"}, "Mapper heuristic", true);
+          app->add_set_ignore_case("--mapinitone2one", opt_name2opt_val["mapinitone2one"], {"no", "yes"}, "Initialize mapping of virtual qubits one to one to real qubits", true);
           app->add_set_ignore_case("--initialplace", opt_name2opt_val["initialplace"], {"no","yes","1s","10s","1m","10m","1h","1sx","10sx","1mx","10mx","1hx"}, "Initialplace qubits before mapping", true);
           app->add_set_ignore_case("--mapusemoves", opt_name2opt_val["mapusemoves"], {"no", "yes", "0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20",}, "Use unused qubit to move thru", true);
           app->add_set_ignore_case("--maptiebreak", opt_name2opt_val["maptiebreak"], {"first", "last", "random"}, "Tie break method", true);
@@ -69,6 +71,7 @@ namespace ql
                     << "scheduler: " << opt_name2opt_val["scheduler"] << std::endl
                     << "scheduler_uniform: " << opt_name2opt_val["scheduler_uniform"] << std::endl
                     << "mapper: "           << opt_name2opt_val["mapper"] << std::endl
+                    << "mapinitone2one: "   << opt_name2opt_val["mapinitone2one"] << std::endl
                     << "initialplace: "     << opt_name2opt_val["initialplace"] << std::endl
                     << "mapusemoves: "      << opt_name2opt_val["mapusemoves"] << std::endl
                     << "maptiebreak: "      << opt_name2opt_val["maptiebreak"] << std::endl
