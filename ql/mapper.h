@@ -2312,64 +2312,6 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, std::string& initi
 #endif
 
 // =========================================================================================
-// FutureDepGraph: dependence graph and availability list maintainer helper class of the Future class.
-
-class FutureDepGraph : public Scheduler
-{
-public:
-
-void Init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
-{
-    DOUT("FutureDepGraph::Init ...");
-    Scheduler::Init(ckt, platform, qcount, ccount);
-    DOUT("FutureDepGraph::Init [DONE]");
-}
-
-void MapGates(ql::circuit* circp,
-        const ql::quantum_platform& platform, ql::arch::resource_manager_t& rm)
-{
-    // scheduled[n] :=: whether node n has been mapped, init all false
-    ListDigraph::NodeMap<bool>      scheduled(graph);
-    // avlist :=: list of schedulable nodes, initially (see below) just s
-    std::list<ListDigraph::Node>    avlist;
-
-    // initializations for this scheduler
-    // note that dependence graph is not modified by a scheduler, so it can be reused
-    DOUT("... initialization");
-    for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
-    {
-        scheduled[n] = false;   // none were scheduled
-    }
-    avlist.clear();
-    avlist.push_back(s);
-    size_t  curr_cycle = 0;
-    set_remaining(ql::forward_scheduling);  // for each gate, number of cycles until end of schedule
-
-    DOUT("... loop over avlist until it is empty");
-    while (!avlist.empty())
-    {
-        bool success;
-        ListDigraph::Node   selected_node;
-        
-        selected_node = SelectAvailable(avlist, ql::forward_scheduling, curr_cycle, platform, rm, success);
-        if (!success)
-        {
-            // i.e. none from avlist was found suitable to schedule in this cycle
-            continue;
-        }
-
-        // commit selected_node to the schedule
-        ql::gate* gp = instruction[selected_node];
-        DOUT("... selected " << gp->qasm() << " in cycle " << curr_cycle);
-
-        TakeAvailable(selected_node, avlist, scheduled, ql::forward_scheduling);
-    }
-}
-
-};  // end class FutureDepGraph
-
-
-// =========================================================================================
 // Future: input window for mapper
 //
 // The future window shows the gates that still must be mapped as the availability list
@@ -2398,15 +2340,13 @@ void MapGates(ql::circuit* circp,
 // than taking a non-critical gate as first one to map.
 // Later implementations may become more sophisticated.
 
-class Future
+class Future : public Scheduler
 {
-    ql::quantum_platform            *platformp; // platform describing scheduling resources
-    FutureDepGraph                  sched;      // sched.graph is dependence graph
-
 public:
+    ql::quantum_platform    *platformp;
 
 // just program wide initialization
-void Init(ql::quantum_platform *p)
+void Init( ql::quantum_platform *p)
 {
     DOUT("Future::Init ...");
     platformp = p;
@@ -2414,14 +2354,90 @@ void Init(ql::quantum_platform *p)
 }
 
 // Set/switch input to the provided circuit
+// nq and nc are parameters because nc may not be provided by platform but by kernel
+// the latter should be updated when mapping multiple kernels
 void SetCircuit(ql::circuit& circ, size_t nq, size_t nc)
 {
     DOUT("Future::SetCircuit ...");
-    sched.Init(circ, *platformp, nq, nc);   // fills sched.graph from circuit
+    Init(circ, *p, nq, nc);                // fills graph from circuit
     DOUT("Future::SetCircuit [DONE]");
 }
 
+// select a node from the avlist
+// the avlist is deep-ordered from high to low criticality (see criticality_lessthan above)
+ListDigraph::Node SelectAvailable(std::list<ListDigraph::Node>& avlist, const size_t curr_cycle, bool & success)
+{
+    success = false;                        // whether a node was found and returned
+    
+    DOUT("avlist(@" << curr_cycle << "):");
+    for ( auto n : avlist)
+    {
+        DOUT("...... node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining[n]);
+    }
+
+    // select the first immediately schedulable, if any
+    // since avlist is deep-criticality ordered, highest first, the first is the most deep-critical
+    for ( auto n : avlist)
+    {
+        bool isres;
+        if ( instruction[n]->cycle <= curr_cycle )
+        {
+            success = true;
+            return n;
+        }
+        else
+        {
+            DOUT("... node (@" << instruction[n]->cycle << "): " << name[n] << " remaining=" << remaining[n]);
+        }
+    }
+
+    success = false;
+    return s;   // fake return value
+}
+
+void MapGates(ql::circuit* circp, const ql::quantum_platform& platform)
+{
+    // scheduled[n] :=: whether node n has been mapped, init all false
+    ListDigraph::NodeMap<bool>      scheduled(graph);
+    // avlist :=: list of schedulable nodes, initially (see below) just s
+    std::list<ListDigraph::Node>    avlist;
+
+    // initializations for this scheduler
+    // note that dependence graph is not modified by a scheduler, so it can be reused
+    DOUT("... initialization");
+    for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
+    {
+        scheduled[n] = false;   // none were scheduled
+    }
+    avlist.clear();
+    avlist.push_back(s);
+    size_t  curr_cycle = 0;
+    set_remaining(ql::forward_scheduling);  // for each gate, number of cycles until end of schedule
+
+    DOUT("... loop over avlist until it is empty");
+    while (!avlist.empty())
+    {
+        bool success;
+        ListDigraph::Node   selected_node;
+        
+        selected_node = SelectAvailable(avlist, curr_cycle, success);
+        if (!success)
+        {
+            // i.e. none from avlist was found suitable to schedule in this cycle
+            curr_cycle++;
+            continue;
+        }
+
+        // commit selected_node to the schedule
+        ql::gate* gp = instruction[selected_node];
+        DOUT("... selected " << gp->qasm() << " in cycle " << curr_cycle);
+
+        TakeAvailable(selected_node, avlist, scheduled, ql::forward_scheduling);
+    }
+}
+
 };  // end class Future
+
 
 
 // =========================================================================================
@@ -2789,11 +2805,12 @@ void MapGate(ql::gate* gp, Past& past)
 void MapGates(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
 {
     Past    mainPast;
-    // Future  future;         // future window, presents input in avlist
+    Future  future;         // future window, presents input in avlist
+    // avlist
 
     mainPast.Init(&platform);
-    // future.Init(&platform);
-    // future.SetCircuit(circ, nq, nc);
+    future.Init(&platform);
+    future.SetCircuit(circ, nq, nc);
 
     // really want to replace circ but circ is input so cannot be output at the same time
     // therefore, catch output in outCirc and at the end replace circ by outCirc
