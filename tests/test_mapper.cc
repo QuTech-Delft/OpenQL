@@ -833,7 +833,7 @@ int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_DEBUG");
     ql::options::set("scheduler", "ALAP");
-    ql::options::set("mapinitone2one", "no"); 
+    ql::options::set("mapinitone2one", "yes"); 
     ql::options::set("initialplace", "no"); 
     ql::options::set("mapusemoves", "yes"); 
     ql::options::set("mapdecomposer", "no");
@@ -862,7 +862,7 @@ int main(int argc, char ** argv)
 //  test_oneD2("oneD2", "minextendrc", "random", "all");
 //  test_oneD2("oneD2", "minextendrc", "random", "all");
 
-    test_oneD4("oneD4", "base", "first", "all");
+//  test_oneD4("oneD4", "base", "first", "all");
 //  test_oneD4("oneD4", "base", "last", "all");
 //  test_oneD4("oneD4", "base", "random", "all");
 //  test_oneD4("oneD4", "minextend", "first", "all");
@@ -894,7 +894,7 @@ int main(int argc, char ** argv)
 //  test_allD("allD", "minextendrc", "last", "all");
 //  test_allD("allD", "minextendrc", "random", "all");
 //  test_allD("allD", "minextendrc", "random", "all");
-//  test_allD("allD", "minextendrc", "random", "all");
+    test_allD("allD", "minextendrc", "random", "all");
 
 //  test_allDopt("allDopt", "base", "first", "all");
 //  test_allDopt("allDopt", "minextend", "first", "all");

@@ -581,11 +581,12 @@ private:
 
     size_t                  nq;         // width of Past, Virt2Real, UseCount maps in number of real qubits
     size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
-    ql::quantum_platform   *platformp;  // platform describing resources for scheduling
-    std::map<std::string,ql::custom_gate*> *gate_definitionp; // gate definitions from platform's .json file
-                                        // to be able to create new gates
+    ql::quantum_platform    *platformp; // platform describing resources for scheduling
+    std::map<std::string,ql::custom_gate*>
+                            *gate_definitionp;  // gate definitions from platform's .json file
+                                                // to be able to create new gates
 
-    Virt2Real               v2r;        // current Virt2Real map
+    Virt2Real               v2r;        // current Virt2Real map, imported/exported to kernel
 
     FreeCycle               fc;         // FreeCycle map of this Past
     typedef ql::gate *      gate_p;
@@ -1092,6 +1093,8 @@ bool new_gate(std::string gname, std::vector<size_t> qubits, ql::circuit& circ, 
 // end copy of the kernel's new_gate interface
 // ===================
 
+
+
 // return number of swaps added to this past
 size_t NumberOfSwapsAdded()
 {
@@ -1421,7 +1424,6 @@ void partialPrint(std::string hd, std::vector<size_t> & pp)
             if (started == 0)
             {
                 started = 1;
-//              std::cout << hd << "[" << pp.size() << "]=[";
                 std::cout << hd << "[";
             }
             else
@@ -1460,7 +1462,7 @@ void Print(std::string s)
     else
     {
         partialPrint("\tpath from source", fromSource);
-        partialPrint("\tpath from target", fromTarget);
+        partialPrint("\t     from target", fromTarget);
     }
     // past.Print("past in Path");
 }
@@ -2343,7 +2345,12 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, std::string& initi
 class Future : public Scheduler
 {
 public:
-    ql::quantum_platform    *platformp;
+    ql::quantum_platform            *platformp;
+    ListDigraph::NodeMap<bool>      scheduled;
+    std::list<ListDigraph::Node>    avlist;
+    size_t                          curr_cycle;         // only for implementation of criticality
+
+Future(): scheduled(graph) {}
 
 // just program wide initialization
 void Init( ql::quantum_platform *p)
@@ -2359,81 +2366,58 @@ void Init( ql::quantum_platform *p)
 void SetCircuit(ql::circuit& circ, size_t nq, size_t nc)
 {
     DOUT("Future::SetCircuit ...");
-    Init(circ, *p, nq, nc);                // fills graph from circuit
-    DOUT("Future::SetCircuit [DONE]");
-}
+    Scheduler::Init(circ, *platformp, nq, nc);                // fills graph from circuit
 
-// select a node from the avlist
-// the avlist is deep-ordered from high to low criticality (see criticality_lessthan above)
-ListDigraph::Node SelectAvailable(std::list<ListDigraph::Node>& avlist, const size_t curr_cycle, bool & success)
-{
-    success = false;                        // whether a node was found and returned
-    
-    DOUT("avlist(@" << curr_cycle << "):");
-    for ( auto n : avlist)
-    {
-        DOUT("...... node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining[n]);
-    }
-
-    // select the first immediately schedulable, if any
-    // since avlist is deep-criticality ordered, highest first, the first is the most deep-critical
-    for ( auto n : avlist)
-    {
-        bool isres;
-        if ( instruction[n]->cycle <= curr_cycle )
-        {
-            success = true;
-            return n;
-        }
-        else
-        {
-            DOUT("... node (@" << instruction[n]->cycle << "): " << name[n] << " remaining=" << remaining[n]);
-        }
-    }
-
-    success = false;
-    return s;   // fake return value
-}
-
-void MapGates(ql::circuit* circp, const ql::quantum_platform& platform)
-{
-    // scheduled[n] :=: whether node n has been mapped, init all false
-    ListDigraph::NodeMap<bool>      scheduled(graph);
-    // avlist :=: list of schedulable nodes, initially (see below) just s
-    std::list<ListDigraph::Node>    avlist;
-
-    // initializations for this scheduler
-    // note that dependence graph is not modified by a scheduler, so it can be reused
-    DOUT("... initialization");
     for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
     {
         scheduled[n] = false;   // none were scheduled
     }
     avlist.clear();
     avlist.push_back(s);
-    size_t  curr_cycle = 0;
-    set_remaining(ql::forward_scheduling);  // for each gate, number of cycles until end of schedule
+    curr_cycle = 0;
+    set_remaining(ql::forward_scheduling);      // to know criticality
 
-    DOUT("... loop over avlist until it is empty");
-    while (!avlist.empty())
+    DOUT("Future::SetCircuit [DONE]");
+}
+
+// Get all non-quantum gates from avlist
+// Non-quantum gates include: classical, and dummy (SOURCE/SINK)
+// Return whether some non-quantum gate was found
+bool GetNonQuantumGates(std::list<ql::gate*>& lg)
+{
+    lg.clear();
+    for ( auto n : avlist)
     {
-        bool success;
-        ListDigraph::Node   selected_node;
-        
-        selected_node = SelectAvailable(avlist, curr_cycle, success);
-        if (!success)
+        ql::gate*  gp = instruction[n];
+        if (gp->type() == ql::__classical_gate__
+            || gp->type() == ql::__dummy_gate__
+            )
         {
-            // i.e. none from avlist was found suitable to schedule in this cycle
-            curr_cycle++;
-            continue;
+            lg.push_back(gp);
         }
-
-        // commit selected_node to the schedule
-        ql::gate* gp = instruction[selected_node];
-        DOUT("... selected " << gp->qasm() << " in cycle " << curr_cycle);
-
-        TakeAvailable(selected_node, avlist, scheduled, ql::forward_scheduling);
     }
+    return lg.size() != 0;
+}
+
+// Get all gates from avlist
+// Return whether some gate was found
+bool GetGates(std::list<ql::gate*>& lg)
+{
+    lg.clear();
+    for ( auto n : avlist)
+    {
+        lg.push_back(instruction[n]);
+    }
+    return lg.size() != 0;
+}
+
+// Indicate that a gate currently in avlist has been mapped, can be taken out of the avlist
+// and its successors can be made available
+void DoneGate(ql::gate* gp)
+{
+    ListDigraph::Node n;
+    n = node[gp];
+    TakeAvailable(n, avlist, scheduled, ql::forward_scheduling);
 }
 
 };  // end class Future
@@ -2544,6 +2528,7 @@ enum {
     wp_leftright_shortest       // both the left and right shortest
 } whichpaths_t;
 
+// Find shortest paths between src and tgt in the grid, bounded by a particular strategy (which)
 void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp, whichpaths_t which)
 {
     std::list<NNPath> genlp;    // list that will get the result of a recursive Gen call
@@ -2625,6 +2610,7 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp, whichpa
     // DOUT("... GenShortestPaths, returning from call of: " << "src=" << src << " tgt=" << tgt << " which=" << which);
 }
 
+// Generate shortest paths in the grid
 void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
 {
     std::string mappathselectopt = ql::options::get("mappathselect");
@@ -2737,57 +2723,41 @@ void SelectPath(std::list<NNPath>& lp, NNPath & resp, Past& past)
     resp.Print("... the selected path is");
 }
 
-// take care that the operands of the given 2q gate become NN
-void EnforceNN(ql::gate* gp, Past& past)
+// Generate all possible variations of making gp NN in lp, given current past (with its mappings)
+void GenPaths(ql::gate* gp, std::list<NNPath>& lp, Past& past)
 {
     auto&   q = gp->operands;
+    MapperAssert (q.size() == 2);
     size_t  src = past.MapQubit(q[0]);      // interpret virtual operands in current map
-    size_t  tgt = past.MapQubit(q[1]);      // interpret virtual operands in current map
-    size_t  d = grid.Distance(src, tgt);        // and find distance between real counterparts
-    MapperAssert (d >= 1);
-    DOUT("... EnforceNN: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
+    size_t  tgt = past.MapQubit(q[1]);
+    size_t  d = grid.Distance(src, tgt);    // and find distance between real counterparts
+    MapperAssert (d > 1);
+    DOUT("GenPaths: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
 
-    if (d > 1)
-    {
-        std::list<NNPath> genlp;    // list that will hold all paths
-        std::list<NNPath> splitlp;  // list that will hold all split paths, each with a private past
-        NNPath resp;                // select result path in splitlp
-
-        GenShortestPaths(src, tgt, genlp);// find shortest paths from src to tgt
-        // NNPath::listPrint("... after GenShortestPaths", genlp);
-
-        GenSplitPaths(genlp, splitlp);  // 2q gate can be put anywhere in each path
-
-        SelectPath(splitlp, resp, past);// select one according to strategy specified by options, clones past
-
-        resp.AddSwaps(past);        // add swaps, as described by resp, to THIS main past, and schedule them in
-    }
+    std::list<NNPath> straightnlp;  // list that will hold all paths directly from src to tgt
+    GenShortestPaths(src, tgt, straightnlp);// find straight shortest paths from src to tgt
+    // NNPath::listPrint("... after GenShortestPaths", straightnlp);
+    GenSplitPaths(straightnlp, lp);  // 2q gate can be put anywhere in each path
+    // NNPath::listPrint("... after GenSplitPaths", lp);
 }
 
-// map the gate/operands of a single gate
-// - if necessary, insert swaps
-// - if necessary, create new gates
-void MapGate(ql::gate* gp, Past& past)
+// Take care that the operands of the given non-NN two qubit gate become NN
+void EnforceNN(ql::gate* gp, Past& past)
 {
-    auto& q = gp->operands;
-    size_t operandCount = q.size();
+    std::list<NNPath> alllp;    // list that will hold all variations
+    GenPaths(gp, alllp, past);  // gen all possible variations ("paths") to make gp NN, in current v2r mapping ("past")
 
-    DOUT("MapGate: " << gp->qasm() );
-    if (operandCount > 2)
-    {
-        EOUT(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
-        throw ql::exception("Error: gate with more than 2 operand qubits; please decompose such gates first before mapping.", false);
-    }
+    NNPath resp;
+    SelectPath(alllp, resp, past);// select one according to strategy specified by options, clones past per variation
 
-    // for each two-qubit gate, make the mapping right, if necessary by inserting swaps
-    if (operandCount == 2)
-    {
-        EnforceNN(gp, past);
-    }
+    resp.AddSwaps(past);        // add swaps, as described by resp, to THIS main past, and schedule them in
+}
 
-    // now ready to accept the gate, move it from future/current gate window to past gate window
+// Map the gate/operands of a gate that has been routed or doesn't require routing
+void MapRoutedGate(ql::gate* gp, Past& past)
+{
+    DOUT("MapRoutedGate: " << gp->qasm() );
 
-    // with mapping done, insert the gate itself
     // devirtualization of this gate maps its qubit operands and optionally updates its gate name
     // when the gate name was updated, a new gate with that name is created;
     // when that new gate is a composite gate, it is immediately decomposed (by gate creation)
@@ -2801,49 +2771,121 @@ void MapGate(ql::gate* gp, Past& past)
     }
 }
 
-// map the circuit's gates in the provided context (v2r maps), update circuit and v2r maps
-void MapGates(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
+// all gates in avlist are non-NN two-qubit quantum gates
+// select which one(s) to (partially) route, according to one of the known strategies
+// the only requirement on the code below is that at least something is done that decreases the problem
+void RouteAndMapNonNNGates(std::list<ql::gate*> lg, Future& future, Past& past)
 {
-    Past    mainPast;
-    Future  future;         // future window, presents input in avlist
-    // avlist
+    // the single currently implemented strategy is to take one and totally route it
+    ql::gate*  gp = lg.front();
+    DOUT("RouteAndMapNonNNGates, " << lg.size() << " non-NNs; take first: " << gp->qasm());
 
-    mainPast.Init(&platform);
-    future.Init(&platform);
-    future.SetCircuit(circ, nq, nc);
+    EnforceNN(gp, past);
+    DOUT("... RouteAndMapNonNNGates, NN after routing: " << gp->qasm());
+    MapRoutedGate(gp, past);
+    future.DoneGate(gp);
+}
 
-    // really want to replace circ but circ is input so cannot be output at the same time
-    // therefore, catch output in outCirc and at the end replace circ by outCirc
-    // output of mapping of quantum gates is in Past.lg, the past internal window
-    // when it would overflow (not implemented) or a classical gate is encountered, Past.lg is flushed to outCirc
-    ql::circuit outCirc;        // output gate stream, mapped; will be swapped with circ on return
-    mainPast.ImportV2r(v2r);
-    mainPast.Output(outCirc);   // past window will flush into outCirc
-    // mainPast.Print("start mapping");
-
-    for( auto & gp : circ )
+// With only gates available for mapping that require routing, map gates that already are NN
+// or make the sum of all distances between operands of the routed gates smaller by inserting swaps/moves.
+// When of those a gate becomes mappable (its operands are NN), map it.
+void RouteAndMapGates(std::list<ql::gate*> lg, Future& future, Past& past)
+{
+    for (auto gp : lg)
     {
-        switch(gp->type())
+        auto&   q = gp->operands;
+        if (q.size() > 2)
         {
-        case ql::__classical_gate__:
-            // flush Past first because Past should only contain quantum gates
-            mainPast.Flush();
-            // map qubit use of any classical instruction????
-            outCirc.push_back(gp);
-            break;
-        case ql::__wait_gate__:
-            break;
-        default:    // quantum gate
-            MapGate(gp, mainPast);    // adds gates to Past.lg; Flush will move gates from Past.lg to outCirc
-            break;
+            EOUT(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
+            throw ql::exception("Error: gate with more than 2 operand qubits; please decompose such gates first before mapping.", false);
+        }
+        size_t  src = past.MapQubit(q[0]);      // interpret virtual operands in current map
+        size_t  tgt = past.MapQubit(q[1]);
+        size_t  d = grid.Distance(src, tgt);    // and find distance between real counterparts
+        if (d == 1)
+        {
+            DOUT("RouteAndMapGates, NN no routing: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ")");
+            MapRoutedGate(gp, past);
+            future.DoneGate(gp);
+            return;
         }
     }
+    RouteAndMapNonNNGates(lg, future, past);
+}
+
+// Map the circuit's gates in the provided context (v2r maps), updating circuit and v2r maps
+void MapGates(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
+{
+    Future  future;         // future window, presents input in avlist
+    Past    mainPast;       // past window
+
+    future.Init(&platform);
+    mainPast.Init(&platform);
+
+    future.SetCircuit(circ, nq, nc);    // constructs depgraph, initializes avlist, ready for producing gates
+
+    ql::circuit outCirc;
+    mainPast.Output(outCirc);   // past window will output into outCirc, to be swapped with circ before return
+    mainPast.ImportV2r(v2r);    // give it the current mapping/state
+    // mainPast.Print("start mapping");
+
+    std::list<ql::gate*>   nonqlg; // list of non-quantum gates taken from avlist
+    std::list<ql::gate*>   qlg;    // list of (remaining) gates taken from avlist
+
+    // continue taking gates from avlist until it is empty (i.e. when future.GetGates returns true)
+    while(1)
+    {
+        // avlist can contain any kind of gate, if any
+        if (future.GetNonQuantumGates(nonqlg))
+        {
+            // Past only contains quantum gates, and non-quantum gates by-pass Past;
+            // so flush quantum gates from Past to outCirc first, before adding gates to outCirc
+            mainPast.Flush();
+            for (auto gp : nonqlg)
+            {
+                // add code to map qubit use of any non-quantum instruction????
+
+                if ( gp->type() != ql::__dummy_gate__)
+                {
+                    // dummy gates must not appear in the output circuit
+                    outCirc.push_back(gp);
+                }
+                future.DoneGate(gp);
+            }
+            continue;
+        }
+        // avlist only contains quantum gates, if any
+        if (future.GetGates(qlg))
+        {
+            bool foundone = false;
+            for (auto gp : qlg)
+            {
+                if ( gp->type() == ql::gate_type_t::__wait_gate__
+                    || gp->operands.size() == 1
+                    )
+                {
+                    // a quantum gate not requiring routing is found
+                    MapRoutedGate(gp, mainPast);
+                    future.DoneGate(gp);
+                    foundone = true;
+                }
+            }
+            if (foundone)
+            {
+                // as long as there are gates that don't require routing, continue mapping these
+                continue;
+            }
+
+            // avlist (qlg) only contains gates requiring routing
+            RouteAndMapGates(qlg, future, mainPast);    // at least does something (map gate or insert swap/move)
+            continue;
+        }
+        // avlist doesn't contain any gate
+        break;
+    }
+
     mainPast.Flush();
-
     // mainPast.Print("end mapping");
-
-    // replace circ (the IR's main circuit) by the newly computed outCirc
-    // outCirc gets the old circ and is destroyed when leaving scope
     // DOUT("... swapping outCirc with circ");
     circ.swap(outCirc);
     mainPast.ExportV2r(v2r);
