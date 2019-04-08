@@ -21,6 +21,9 @@ namespace arch
 
 class codegen_cc
 {
+private:
+    const ql::quantum_platform *platform;
+
 public:
 
     codegen_cc()
@@ -36,9 +39,10 @@ public:
     | Generic
     \************************************************************************/
 
-    void init(const ql::quantum_platform& platform)
+    void init(const ql::quantum_platform &platform)
     {
-        load_backend_settings(platform);
+        this->platform = &platform;
+        load_backend_settings();
     }
 
     std::string getCode()
@@ -79,7 +83,6 @@ public:
     // bundle_start: clear groupInfo, which maintains the work that needs to be performed for bundle
     void bundle_start(std::string cmnt)
     {
-        // empty the matrix of signal values
         size_t slotsUsed = jsonInstruments.size();   // FIXME: assuming all instruments use a slot
         groupInfo.assign(slotsUsed, std::vector<tGroupInfo>(MAX_GROUPS, {"", 0, -1}));
 
@@ -172,7 +175,7 @@ public:
                     }
 
                     // compute slot duration
-                    size_t durationInCycles = groupInfo[slotIdx][group].duration / 20;   // FIXME: cycle time
+                    size_t durationInCycles = platform->time_to_cycles(groupInfo[slotIdx][group].duration);
                     if(durationInCycles > slotDurationInCycles) slotDurationInCycles = durationInCycles;
 
                     // handle readout
@@ -235,11 +238,10 @@ public:
                 // nothing to do, we delay emitting till a slot is used or kernel finishes (i.e. isLastBundle just below)
             }
 
-
             // pad end of bundle to align durations
             if(isLastBundle) {
                 padToCycle(lastStartCycle[slotIdx], start_cycle+duration_in_cycles, slot, instrumentName);
-                // FIXME: also pad latency differences
+                // FIXME: also pad latency differences, here or in kernel_finish?
             }
         } // for(slotIdx)
 
@@ -256,8 +258,7 @@ public:
     \************************************************************************/
 
     // single/two/N qubit gate, including readout
-    // FIXME: remove parameter platform
-    void custom_gate(std::string iname, std::vector<size_t> qops, std::vector<size_t> cops, size_t duration, double angle, const ql::quantum_platform& platform)
+    void custom_gate(std::string iname, std::vector<size_t> qops, std::vector<size_t> cops, size_t duration, double angle)
     {
 #if 1   // FIXME
         if(angle != 0.0) {
@@ -266,7 +267,7 @@ public:
 #endif
         bool isReadout = false;
 
-        if("readout" == platform.find_instruction_type(iname))          // handle readout
+        if("readout" == platform->find_instruction_type(iname))          // handle readout
         /* FIXME: we only use the "readout" instruction_type and don't care about the rest because the terms "mw" and "flux" don't fully
          * cover gate functionality. It would be nice if custom gates could mimic ql::gate_type_t
          * We could also infer readout from cops/qops.size()
@@ -296,7 +297,7 @@ public:
         }
 
         // find signal definition for iname
-        const json &instruction = platform.find_instruction(iname);
+        const json &instruction = platform->find_instruction(iname);
         const json *tmp;
         if(JSON_EXISTS(instruction["cc"], "signal_ref")) {
             std::string signalRef = instruction["cc"]["signal_ref"];
@@ -410,18 +411,12 @@ public:
     void do_while_start(std::string label)
     {
         comment("# DO_WHILE_START");
-//        FATAL("FIXME: not implemented");    // FIXME: implement: emit label
-//        emit((label+":").c_str(), "", SS2S(""), "# ");        // FIXME: just a label
-        emit("", "seq_out", SS2S("0x0,100"), "# delay");                // FIXME: to prevent SEQ_OUT_EMPTY
         emit((label+":").c_str(), "", SS2S(""), "# ");        // FIXME: just a label
     }
 
     void do_while_end(std::string label, size_t op0, std::string opName, size_t op1)
     {
         comment(SS2S("# DO_WHILE_END(R" << op0 << " " << opName << " R" << op1 << ")"));
-//        FATAL("FIXME: not implemented");
-
-        emit("", "seq_out", SS2S("0x0,100"), "# delay");                // FIXME: to prevent SEQ_OUT_EMPTY
         emit("", "jmp", SS2S("@" << label), "# endless loop'");        // FIXME: just endless loop
     }
 
@@ -438,7 +433,7 @@ public:
 
 private:
     typedef struct {
-        int slotIdx;    // index into cc_setup["slots"]
+        int slotIdx;            // index into cc_setup["slots"]. FIXME: outdated comment
         int group;
     } tSignalInfo;
 
@@ -496,9 +491,9 @@ private:
 
     void latencyCompensation()
     {
-        // get latencies per slot
-        std::map<int, int> slotLatencies;
-        // iterate over instruments
+        std::map<int, int> slotLatencies;   // maps slot to latency
+
+        // get latencies per slot, iterating over instruments
         for(size_t instrIdx=0; instrIdx<jsonInstruments.size(); instrIdx++) {
             const json &instrument = jsonInstruments[instrIdx];
             std::string instrumentName = instrument["name"];
@@ -526,14 +521,12 @@ private:
             int slot = it->first;
             int latency = it->second;
             const int minDelay = 1;     // min value for seq_bar
-            int delayInCycles = minDelay+(maxLatency-latency)/20;   // FIXME: cycle time
+            int delayInCycles = minDelay + platform->time_to_cycles(maxLatency-latency);
 
-#if 0   // FIXME: for demo
             emit(SS2S("[" << slot << "]").c_str(),      // CCIO selector
                 "seq_bar",
                 SS2S(delayInCycles),
                 SS2S("# latency compensation").c_str());    // FIXME: add instrumentName/instrumentRef/latency
-#endif
         }
     }
 
@@ -560,10 +553,10 @@ private:
     | Functions processing JSON
     \************************************************************************/
 
-    void load_backend_settings(const ql::quantum_platform& platform)
+    void load_backend_settings()
     {
         // remind some main JSON areas
-        jsonBackendSettings = platform.hardware_settings["eqasm_backend_cc"];
+        jsonBackendSettings = platform->hardware_settings["eqasm_backend_cc"];
         jsonInstrumentDefinitions = jsonBackendSettings["instrument_definitions"];
         jsonControlModes = jsonBackendSettings["control_modes"];
         jsonInstruments = jsonBackendSettings["instruments"];

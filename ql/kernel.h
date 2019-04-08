@@ -229,7 +229,7 @@ public:
     {
         gate("swap", {qubit1, qubit2} );
     }
-  
+
     void wait(std::vector<size_t> qubits, size_t duration)
     {
         gate("wait", qubits, {}, duration );
@@ -1734,7 +1734,7 @@ public:
     size_t        iterations;
     size_t        qubit_count;
     size_t        creg_count;
-    size_t        cycle_time;
+    size_t        cycle_time;                               // FIXME: just a copy of platform.cycle_time
     kernel_type_t type;
     operation     br_condition;
     std::map<std::string,custom_gate*> gate_definition;     // FIXME: consider using instruction_map_t

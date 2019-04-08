@@ -88,8 +88,10 @@ private:
     int bundleIdx;
 
     // parameters from JSON file:
+#if 0   // FIXME: take from platform.
     size_t qubit_number;    // aka num_qubits;
     size_t cycle_time;      // aka ns_per_cycle;
+#endif
     size_t buffer_matrix[__operation_types_num__][__operation_types_num__];
 
 public:
@@ -103,7 +105,7 @@ public:
 
     // compile for Central Controller (CCCODE)
     // NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
-    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, const ql::quantum_platform& platform)
+    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, const ql::quantum_platform &platform)
     {
 #if 1   // FIXME: patch for issue #164, should be moved to caller
         if(kernels.size() == 0) {
@@ -131,10 +133,10 @@ public:
 
 #if OPT_CC_SCHEDULE_RC
                 // schedule with platform resource constraints
-                ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, qubit_number, creg_count);
+                ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, platform.qubit_number, creg_count);
 #else
                 // schedule without resource constraints
-                ql::ir::bundles_t bundles = cc_light_schedule(ckt, platform, qubit_number, creg_count);
+                ql::ir::bundles_t bundles = cc_light_schedule(ckt, platform, platform.qubit_number, creg_count);
 #endif
                 codegen_bundles(bundles, platform);
             } else {
@@ -367,7 +369,7 @@ private:
                                 break;
 
                             case __custom_gate__:
-                                codegen.custom_gate(iname, instr->operands, instr->creg_operands, instr->duration, instr->angle, platform);
+                                codegen.custom_gate(iname, instr->operands, instr->creg_operands, instr->duration, instr->angle);
                                 break;
 
                             case __display__:
@@ -402,8 +404,10 @@ private:
             size_t  *var;
             std::string name;
         } hw_settings[] = {
-            { &qubit_number,            "qubit_number"},
-            { &cycle_time,              "cycle_time" },
+#if 0
+            { &qubit_number,            "qubit_number"},    // FIXME: also available as platform.qubit_number
+            { &cycle_time,              "cycle_time" },     // FIXME: also available as platform.cycle_time
+#endif
 #if 0   // FIXME: unused. Convert to cycle
             { &mw_mw_buffer,            "mw_mw_buffer" },
             { &mw_flux_buffer,          "mw_flux_buffer" },

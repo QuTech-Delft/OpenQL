@@ -22,11 +22,10 @@ class quantum_platform
 {
 
 public:
-
     std::string             name;                     // platform name
     std::string             eqasm_compiler_name;      // eqasm backend
     size_t                  qubit_number;             // number of qubits
-    size_t                  cycle_time;
+    size_t                  cycle_time;               // in [ns]
     std::string             configuration_file_name;  // configuration file name
     ql::instruction_map_t   instruction_map;          // supported operations
     json                    instruction_settings;     // instruction settings (to use by the eqasm backend)
@@ -54,7 +53,7 @@ public:
         hwc.load(instruction_map, instruction_settings, hardware_settings, resources, topology, aliases);
         eqasm_compiler_name = hwc.eqasm_compiler_name;
 
-        if(hardware_settings.count("qubit_number") <=0)
+        if(hardware_settings.count("qubit_number") <= 0)
         {
             EOUT("qubit number of the platform is not specified in the configuration file !");
             throw std::exception();
@@ -62,7 +61,7 @@ public:
         else
             qubit_number = hardware_settings["qubit_number"];
 
-        if(hardware_settings.count("cycle_time") <=0)
+        if(hardware_settings.count("cycle_time") <= 0)
         {
             EOUT("cycle time of the platform is not specified in the configuration file !");
             throw std::exception();
@@ -85,7 +84,7 @@ public:
             println("  |-- " << (*i).first);
     }
 
-    size_t get_qubit_number()
+    size_t get_qubit_number()   // FIXME: qubit_number is public anyway
     {
         return qubit_number;
     }
@@ -137,6 +136,11 @@ public:
         const json &instruction = find_instruction(iname);
         if(!JSON_EXISTS(instruction, "type")) FATAL("JSON file: field 'type' not defined for instruction '" << iname <<"'");
         return instruction["type"];
+    }
+
+    size_t time_to_cycles(float time_ns) const
+    {
+        return std::ceil(time_ns/cycle_time);
     }
 };
 

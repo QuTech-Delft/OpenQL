@@ -295,7 +295,7 @@ void test_rabi( std::string scheduler, std::string scheduler_uniform)
 
     ql::creg rs1;
     ql::creg rs2;
-    int qubit = 10;     // connects to UHFQA-0 and
+    int qubit = 10;     // connects to uhfqa-0 and awg8-mw-0
 
     k1.gate("x", qubit);
     k1.gate("measure", std::vector<size_t> {qubit}, std::vector<size_t> {1});
