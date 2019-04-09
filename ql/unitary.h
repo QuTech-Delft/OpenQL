@@ -32,8 +32,7 @@ public:
     double beta;
     double gamma;
     bool is_decomposed;
-    typedef std::vector<double> complex_vec_t;
-    complex_vec_t instructionlist;
+    std::vector<double> instructionlist;
 
     typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> complex_matrix ;
     Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> matrix;
@@ -57,33 +56,35 @@ public:
     {
         DOUT("decomposing Unitary: " << name);
 
-        // compute the size of the matrix: length of array is collumns*rows
-        int u_size = (int) log2(std::pow(array.size(),0.5));
-//,std::pow(2, u_size-1),std::pow(2, u_size-1)
+
+        int matrix_size = (int)std::pow(array.size(),0.5);
+        // compute the number of qubits: length of array is collumns*rows, so log2(sqrt(array.size))
+        int numberofbits = (int) log2(matrix_size);
+
+
     
 
-        complex_matrix matrix(u_size, u_size);
-        for(int i= 0; i <= array.size(); i++){
-            matrix << array[i];
-        };
-               DOUT("constructing unitary: " << name << ", containing: " << matrix << " elements");
+        Eigen::Map<complex_matrix> matrix(array.data(), matrix_size, matrix_size);
+         //      DOUT("constructing unitary: " << name << ", containing: " << matrix << " elements");
         
-        //matrix(std::pow(2, u_size-1),std::pow(2, u_size-1));
-        //matrix = array;
 
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> identity = Eigen::MatrixXd::Identity(u_size, u_size);
+
+        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> identity = Eigen::MatrixXd::Identity(matrix_size, matrix_size);
         if(matrix.conjugate().transpose()*matrix != identity)
         {
             //Throw an error
             EOUT("Unitary " << name <<" is not a unitary matrix!");;
             throw ql::exception("Unitary '"+ name+"' is not a unitary matrix. Cannot be decomposed!", false);
         }
-
-
-
-        if(array.size() == 4)
+        else
         {
-            complex_vec_t tmp(4);
+             utils::print_vector(array,"[openql] matrix is unitary :"," , ");
+             std::cout << "size: " << numberofbits<< std::endl;
+        }
+  
+        if(numberofbits == 1)
+        {
+            std::vector<double> tmp(4);
             tmp = zyz_decomp(array);
             delta = tmp[0];
             alpha = tmp[1];
@@ -92,18 +93,43 @@ public:
         }
         else
         {
-            Eigen::JacobiSVD<Eigen::MatrixXd> svd;
-            svd.compute(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
-            DOUT(svd.matrixU() );
-            DOUT(svd.matrixV()) ;
+            //Eigen::JacobiSVD<Eigen::MatrixXd> svd;
+            //svd.compute(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
+            //DOUT(svd.matrixU() );
+            //DOUT(svd.matrixV()) ;
+            matrix = CSD(matrix);
         }
         
         DOUT("Done decomposing");
         is_decomposed = true;
     }
 
+    complex_matrix CSD(complex_matrix U)
+    {
 
-    complex_vec_t zyz_decomp(std::vector<std::complex<double>> matrix)
+        std::cout << "u_rows " << U.rows() << std::endl;
+        complex_matrix q1 = U.topLeftCorner(U.rows()/2,U.cols()/2);
+        complex_matrix q2 = U.bottomLeftCorner(U.rows()/2,U.cols()/2);
+
+        std::cout << "U: " << U << std::endl;
+        std::cout << "q1: " << q1 << std::endl;
+        std::cout << "q2: " << q2 << std::endl;
+        Eigen::BDCSVD<complex_matrix> svd;
+        if(q1.rows() > 1 && q1.cols() > 1)
+        {          
+        svd.compute(q1, Eigen::ComputeFullU | Eigen::ComputeFullV);
+        }
+        complex_matrix u1 = svd.matrixU();
+        complex_matrix c = Eigen::Diagonal(svd.singularValues());
+        complex_matrix v = svd.matrixV();
+        std::cout << "u1: " << u1 << std::endl;
+        std::cout << "c: " << c << std::endl;
+        std::cout << "v: " << v << std::endl;
+        Eigen::MatrixXd z = Eigen::MatrixXd::Identity(q1.rows(), q1.cols());
+        return U;
+    }
+
+    std::vector<double> zyz_decomp(std::vector<std::complex<double>> matrix)
     {
          //TODO: make this efficient again
         ql::complex_t det = matrix[0]*matrix[3]-matrix[2]*matrix[1];
