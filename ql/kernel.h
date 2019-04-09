@@ -814,6 +814,13 @@ public:
     // to add unitary to kernel
     void gate(ql::unitary u, std::vector<size_t> qubits)
     {
+        double u_size = log2(std::pow(u.size(),0.5));
+        if(u_size != qubits.size())
+        {
+            EOUT("Unitary " << u.name <<" has been applied to the wrong number of qubits! " << qubits.size() << " and not " << u_size);
+            throw ql::exception("Unitary '"+u.name+"' has been applied to the wrong number of qubits. Cannot be added to kernel! "  + std::to_string(qubits.size()) +" and not "+ std::to_string(u_size), false);
+        
+        }
         // applying unitary to gates
         COUT("Applying unitary '" << u.name << "' to " << ql::utils::to_string(qubits, "qubits: ") );
         if(u.is_decomposed)

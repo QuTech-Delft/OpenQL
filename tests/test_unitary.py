@@ -192,6 +192,25 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         self.assertEqual(str(cm.exception), 'Error: wrong type!')
 
+    def test_unitary_decompose_2qubit_CNOT(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 2
+        p = ql.Program('test_unitary_2qubitCNOT', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        u = ql.Unitary('big_unitary', [  complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0),
+                               complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0),
+                               complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0),
+                               complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0)])
+        u.decompose()
+        k.gate(u, [0, 1])
+        p.add_kernel(k)
+        p.compile()
+        
+        gold_fn = rootDir + '/golden/test_unitary-decomp_1qubit_IYZ.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )   
 
 
 if __name__ == '__main__':
