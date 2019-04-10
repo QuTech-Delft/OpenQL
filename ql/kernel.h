@@ -55,6 +55,8 @@ public:
     {
         gate_definition = platform.instruction_map;     // FIXME: confusing name change
         cycle_time = platform.cycle_time;
+        // FIXME: check qubit_count and creg_count against platform
+        // FIXME: what is the reason we can specify qubit_count and creg_count here anyway
     }
 
     void set_static_loop_count(size_t it)
@@ -348,6 +350,7 @@ public:
     | Gate management
     \************************************************************************/
 
+private:
     bool add_default_gate_if_available(std::string gname, std::vector<size_t> qubits,
         std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
@@ -523,6 +526,7 @@ public:
         }
     }
 
+    // add specialized decomposed gate, example JSON definition: "cl_14 q1": ["rx90 %0", "rym90 %0", "rxm90 %0"]
     bool add_spec_decomposed_gate_if_available(std::string gate_name,
         std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
@@ -620,12 +624,14 @@ public:
         return added;
     }
 
-
+    // add parameterized decomposed gate, example JSON definition: "cl_14 %0": ["rx90 %0", "rym90 %0", "rxm90 %0"]
     bool add_param_decomposed_gate_if_available(std::string gate_name,
         std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
         bool added = false;
         DOUT("Checking if parameterized decomposition is available for " << gate_name);
+
+        // construct instruction name from gate_name and actual qubit parameters
         std::string instr_parameterized = gate_name + " ";
         size_t i;
         if(all_qubits.size() > 0)
@@ -664,8 +670,10 @@ public:
                 DOUT("Adding sub ins: " << sub_ins);
                 std::replace( sub_ins.begin(), sub_ins.end(), ',', ' ');
                 DOUT(" after comma removal, sub ins: " << sub_ins);
-                std::istringstream iss(sub_ins);
 
+                // tokenize sub_ins into sub_ins_name and this_gate_qubits
+                // FIXME: similar code in add_spec_decomposed_gate_if_available()
+                std::istringstream iss(sub_ins);
                 std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
                                                  std::istream_iterator<std::string>{} };
 
@@ -674,9 +682,16 @@ public:
 
                 for(size_t i=1; i<tokens.size(); i++)
                 {
-                    this_gate_qubits.push_back( all_qubits[ stoi( tokens[i].substr(1) ) ] );
+                    auto sub_str_token = tokens[i].substr(1);   // example: tokens[i] equals "%1" -> sub_str_token equals "1"
+                    size_t qubit_idx = stoi(sub_str_token);
+                    if(qubit_idx >= all_qubits.size()) {
+                        FATAL("Illegal qubit parameter index " << sub_str_token
+                              << " exceeds actual number of parameters given (" << all_qubits.size()
+                              << ") while adding sub ins '" << sub_ins
+                              << "' in parameterized instruction '" << instr_parameterized << "'");
+                    }
+                    this_gate_qubits.push_back( all_qubits[qubit_idx] );
                 }
-
                 DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
                 // custom gate check
@@ -714,7 +729,7 @@ public:
         return added;
     }
 
-
+public:
     /**
      * custom 1 qubit gate.
      */
@@ -820,7 +835,9 @@ public:
         DOUT("");
     }
 
-    // FIXME: is this really QASM, or CC-light eQASM?
+    /**
+     * qasm output
+     */
     // FIXME: create a separate QASM backend?
     std::string get_prologue()
     {
@@ -877,9 +894,6 @@ public:
         return ss.str();
     }
 
-    /**
-     * qasm
-     */
     std::string qasm()
     {
         std::stringstream ss;
@@ -896,6 +910,9 @@ public:
         return  ss.str();
     }
 
+    /**
+     * classical gate
+     */
     void classical(creg& destination, operation & oper)
     {
         // check sanity of destination
@@ -1015,6 +1032,9 @@ public:
         DOUT("decompose_toffoli() [Done] ");
     }
 
+#if OPT_WRITE_SCHED_QASM
+    // schedule support for program.h::schedule()
+    // FIXME: parameter sched_dot currently unused (commented out)
     void schedule(quantum_platform platform, std::string& sched_qasm, std::string& sched_dot)
     {
         std::string scheduler = ql::options::get("scheduler");
@@ -1081,8 +1101,10 @@ public:
 
 #endif // __disable_lemon__
     }
+#endif // OPT_WRITE_SCHED_QASM
 
-    std::vector<circuit*> split_circuit(circuit x)
+    // FIXME: move to circuit.h
+    static std::vector<circuit*> split_circuit(circuit x)
     {
         IOUT("circuit decomposition in basic blocks ... ");
         std::vector<circuit*> cs;
@@ -1100,7 +1122,7 @@ public:
                 cs.back()->push_back(x[i]);
             }
         }
-        IOUT("circuit decomposion done (" << cs.size() << ").");
+        IOUT("circuit decomposition done (" << cs.size() << ").");
         /*
            for (int i=0; i<cs.size(); ++i)
            {
@@ -1114,7 +1136,8 @@ public:
     /**
      * detect measurements and qubit preparations
      */
-    bool contains_measurements(circuit x)
+    // FIXME: move to circuit.h
+    static bool contains_measurements(circuit x)
     {
         for (size_t i=0; i<x.size(); i++)
         {
@@ -1126,10 +1149,12 @@ public:
         return false;
     }
 
+#if OPT_UNFINISHED_OPTIMIZATION
     /**
      * detect unoptimizable gates
      */
-    bool contains_unoptimizable_gates(circuit x)
+    // FIXME: move to circuit.h
+    static bool contains_unoptimizable_gates(circuit x)
     {
         for (size_t i=0; i<x.size(); i++)
         {
@@ -1142,13 +1167,14 @@ public:
         }
         return false;
     }
+#endif
 
     /**
      * load custom instructions from a json file
      */
     int load_custom_instructions(std::string file_name="instructions.json")
     {
-        load_instructions(gate_definition,file_name);
+        load_instructions(gate_definition, file_name);
         return 0;
     }
 
