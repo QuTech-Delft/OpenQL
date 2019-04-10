@@ -115,10 +115,10 @@ public:
         }
 
         // load instructions
-        json instructions = config["instructions"];
+        const json &instructions = config["instructions"];
         // DOUT(instructions.dump(4));
         static const std::regex comma_space_pattern("\\s*,\\s*");
-        for (json::iterator it = instructions.begin(); it != instructions.end(); ++it)
+        for (auto it = instructions.begin(); it != instructions.end(); ++it)
         {
             std::string name = it.key();
             str::lower_case(name);
@@ -138,9 +138,10 @@ public:
         // load gate decomposition
         if (config.count("gate_decomposition") > 0)
         {
-            json gate_decomposition = config["gate_decomposition"];
-            for (json::iterator it = gate_decomposition.begin(); it != gate_decomposition.end(); ++it)
+            const json &gate_decomposition = config["gate_decomposition"];
+            for (auto it = gate_decomposition.begin(); it != gate_decomposition.end(); ++it)
             {
+                // standardize instruction name
                 std::string  comp_ins = it.key();
                 str::lower_case(comp_ins);
                 DOUT("");
@@ -153,6 +154,7 @@ public:
                 if (instruction_map.find(comp_ins) != instruction_map.end())
                     WOUT("composite instruction '" << comp_ins << "' redefined : the old definition is overwritten !");
 
+                // check that we're looking at array
                 json sub_instructions = *it;
                 if (!sub_instructions.is_array())
                     throw ql::exception("[x] error : ql::hardware_configuration::load() : 'gate_decomposition' section : gate '"+comp_ins+"' is malformed !",false);
@@ -160,13 +162,14 @@ public:
                 std::vector<gate *> gs;
                 for (size_t i=0; i<sub_instructions.size(); i++)
                 {
+                    // standardize name of sub instruction
                     std::string sub_ins = sub_instructions[i];
                     str::lower_case(sub_ins);
                     DOUT("Adding sub instr: " << sub_ins);
                     sub_ins = sanitize_instruction_name(sub_ins);
                     sub_ins = std::regex_replace(sub_ins, comma_space_pattern, " ");
                     DOUT("After comma removal sub instr: " << sub_ins);
-                    std::string sub_ins_adjusted(sub_ins);
+                    std::string sub_ins_adjusted(sub_ins);  // FIXME: useless copy
 
                     if ( instruction_map.find(sub_ins_adjusted) != instruction_map.end() )
                     {
@@ -265,9 +268,9 @@ private:
     static const std::regex multiple_space_pattern;
 
     /**
-    * Sanetizes the name of an instruction by removing the unnecessary spaces.
+    * Sanitizes the name of an instruction by removing the unnecessary spaces.
     */
-    std::string sanitize_instruction_name(std::string name)
+    static std::string sanitize_instruction_name(std::string name)
     {
         name = std::regex_replace(name, trim_pattern, "");
         name = std::regex_replace(name, multiple_space_pattern, " ");

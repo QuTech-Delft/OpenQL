@@ -65,7 +65,7 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
 
     k.gate("cz_park", std::vector<size_t> {6, 7, 11});
     k.gate("cz_park", std::vector<size_t> {12, 13, 17});
-    k.gate("cz_park", std::vector<size_t> {10, 15, 16});
+    k.gate("cz_park1", std::vector<size_t> {10, 15, 16});   // FIXME:
     k.wait({6,7,11,12,13,17,10,15,16}, 0); // help scheduler
 
     // gate with angle parameter
@@ -315,9 +315,11 @@ int main(int argc, char ** argv)
     ql::utils::logger::set_log_level("LOG_DEBUG");      // LOG_DEBUG, LOG_INFO
 
     test_classical("ALAP", "no");
+#if 0
     test_qec_pipelined("ALAP", "no");
     test_do_while_nested_for("ALAP", "no");
     test_rabi("ALAP", "no");
+#endif
 
     return 0;
 }

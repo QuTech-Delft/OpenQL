@@ -61,6 +61,8 @@ public:
         else
             qubit_number = hardware_settings["qubit_number"];
 
+        // FIXME: add creg_count to JSIN file and platform
+
         if(hardware_settings.count("cycle_time") <= 0)
         {
             EOUT("cycle time of the platform is not specified in the configuration file !");

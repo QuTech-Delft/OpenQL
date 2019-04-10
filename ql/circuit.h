@@ -2,7 +2,7 @@
  * @file   circuit.h
  * @date   11/2016
  * @author Nader Khammassi
- * @brief  gate container implementation
+ * @brief  circuit (i.e. gate container) implementation
  */
 
 #ifndef CIRCUIT_H
@@ -28,15 +28,14 @@ namespace ql
     }
 
     /**
-     * generate qasm for a give circuit
+     * generate qasm for a given circuit
      */
-    std::string qasm(ql::circuit c)
+    std::string qasm(circuit& c)
     {
         std::stringstream ss;
         for (size_t i=0; i<c.size(); ++i)
         {
             ss << c[i]->qasm() << "\n";
-            // COUT(c[i]->qasm());
         }
         return ss.str();
     }

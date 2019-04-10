@@ -211,7 +211,9 @@ const complex_t nop_c      [] /*__attribute__((aligned(64)))*/ =
 class gate
 {
 public:
+#if OPT_UNFINISHED_OPTIMIZATION
     bool optimization_enabled = true;
+#endif
     std::string name = "";
     std::vector<size_t> operands;
     std::vector<size_t> creg_operands;
@@ -1389,6 +1391,7 @@ public:
 /**
  * custom gate support
  */
+// FIXME: move to separate file
 class custom_gate : public gate
 {
 public:
@@ -1642,7 +1645,9 @@ public:
 class composite_gate : public custom_gate
 {
 public:
+#if 0
     double angle; // TODO not needed, should be removed, check it!!!
+#endif
     cmat_t m;
     std::vector<gate *> gs;
 

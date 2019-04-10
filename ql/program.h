@@ -6,6 +6,8 @@
  * @brief  openql program
  */
 
+// FIXME: change tab to 4 spaces like rest of project
+
 #ifndef QL_PROGRAM_H
 #define QL_PROGRAM_H
 
@@ -94,6 +96,9 @@ class quantum_program
             EOUT("number of qubits requested in program '" + std::to_string(qubit_count) + "' is greater than the qubits available in platform '" + std::to_string(platform.qubit_number) + "'" );
             throw ql::exception("[x] error : number of qubits requested in program '"+std::to_string(qubit_count)+"' is greater than the qubits available in platform '"+std::to_string(platform.qubit_number)+"' !",false);
          }
+
+         // FIXME: also check creg_count against platform
+         // FIXME: what is the reason we can specify qubit_count and creg_count here anyway
       }
 
       void add(ql::quantum_kernel &k)
@@ -464,7 +469,9 @@ class quantum_program
          IOUT("writing un-scheduled qasm to '" << ss_qasm.str() << "' ...");
          ql::utils::write_file(ss_qasm.str(), s);
 
+#if OPT_WRITE_SCHED_QASM
          schedule();
+#endif
 
          if (backend_compiler == NULL)
          {
@@ -548,6 +555,8 @@ class quantum_program
          return 0;
       }
 
+#if OPT_WRITE_SCHED_QASM
+      // schedule and write scheduled qasm. Note that the backend may use a different scheduler with different results
       void schedule()
       {
          std::string sched_qasm("version 1.0\n");
@@ -571,6 +580,7 @@ class quantum_program
          IOUT("writing scheduled qasm to '" << fname << "' ...");
          ql::utils::write_file(fname, sched_qasm);
       }
+#endif
 
       void print_interaction_matrix()
       {

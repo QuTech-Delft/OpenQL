@@ -260,7 +260,7 @@ public:
     // single/two/N qubit gate, including readout
     void custom_gate(std::string iname, std::vector<size_t> qops, std::vector<size_t> cops, size_t duration, double angle)
     {
-#if 1   // FIXME
+#if 1   // FIXME: test for angle parameter
         if(angle != 0.0) {
             DOUT("iname=" << iname << ", angle=" << angle);
         }

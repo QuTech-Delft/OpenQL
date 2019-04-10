@@ -19,10 +19,11 @@
 #define QL_ARCH_CC_EQASM_BACKEND_CC_H
 
 // constants:
-#define CC_BACKEND_VERSION      "0.2.1"
+#define CC_BACKEND_VERSION          "0.2.1"
 
 // options:
-#define OPT_CC_SCHEDULE_RC      0       // 1=use resource constraint scheduler
+#define OPT_CC_SCHEDULE_KERNEL_H    0       // 1=use scheduler from kernel.h iso cclight, overrides next option
+#define OPT_CC_SCHEDULE_RC          0       // 1=use resource constraint scheduler
 
 #include <ql/platform.h>
 #include <ql/ir.h>
@@ -88,11 +89,13 @@ private:
     int bundleIdx;
 
     // parameters from JSON file:
-#if 0   // FIXME: take from platform.
+#if 0   // FIXME: now taken from platform.
     size_t qubit_number;    // aka num_qubits;
     size_t cycle_time;      // aka ns_per_cycle;
 #endif
+#if 0   // FIXME: unused
     size_t buffer_matrix[__operation_types_num__][__operation_types_num__];
+#endif
 
 public:
     eqasm_backend_cc()
@@ -127,17 +130,41 @@ public:
             IOUT("Compiling kernel: " << kernel.name);
             codegen_kernel_prologue(kernel);
 
+#if OPT_CC_SCHEDULE_KERNEL_H    // FIXME: WIP
+            // FIXME: try kernel.h::schedule()
+            std::string kernel_sched_qasm;
+            std::string kernel_sched_dot;
+            kernel.schedule(platform, kernel_sched_qasm, kernel_sched_dot);
+#else
             ql::circuit& ckt = kernel.c;
             if (!ckt.empty()) {
-                auto creg_count = kernel.creg_count;                        // FIXME: also take platform into account. We get qubit_number from JSON
+                auto creg_count = kernel.creg_count;     // FIXME: there is no platform.creg_count
 
 #if OPT_CC_SCHEDULE_RC
                 // schedule with platform resource constraints
                 ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, platform.qubit_number, creg_count);
 #else
                 // schedule without resource constraints
+                /* FIXME: we use the "CC-light" scheduler, which actually has little platform specifics apart from
+                 * requiring us to define a field "cc_light_instr" for every instruction in the JSON configuration file.
+                 * That function could and should be generalized.
+                 */
                 ql::ir::bundles_t bundles = cc_light_schedule(ckt, platform, platform.qubit_number, creg_count);
 #endif
+#endif
+
+
+#if 0   // FIXME: from CClight
+                // write RC scheduled bundles with parallelism as simple QASM file
+                std::stringstream sched_qasm;
+                sched_qasm <<"qubits " << num_qubits << "\n\n"
+                           << ".fused_kernels";
+                string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
+                IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << fname);
+                sched_qasm << ql::ir::qasm(bundles);
+                ql::utils::write_file(fname, sched_qasm.str());
+#endif
+
                 codegen_bundles(bundles, platform);
             } else {
                 DOUT("Empty kernel: " << kernel.name);                      // NB: normal situation for kernels with classical control
@@ -404,7 +431,7 @@ private:
             size_t  *var;
             std::string name;
         } hw_settings[] = {
-#if 0
+#if 0   // FIXME: now taken from platform
             { &qubit_number,            "qubit_number"},    // FIXME: also available as platform.qubit_number
             { &cycle_time,              "cycle_time" },     // FIXME: also available as platform.cycle_time
 #endif
