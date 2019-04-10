@@ -43,6 +43,7 @@ namespace ql
           opt_name2opt_val["maptiebreak"] = "first";
           opt_name2opt_val["mapdecomposer"] = "yes";
           opt_name2opt_val["mappathselect"] = "all";
+          opt_name2opt_val["maplookahead"] = "no";
 
           // add options with default values and list of possible values
           app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"], 
@@ -63,6 +64,7 @@ namespace ql
           app->add_set_ignore_case("--maptiebreak", opt_name2opt_val["maptiebreak"], {"first", "last", "random"}, "Tie break method", true);
           app->add_set_ignore_case("--mapdecomposer", opt_name2opt_val["mapdecomposer"], {"no", "yes"}, "Decompose after mapper", true);
           app->add_set_ignore_case("--mappathselect", opt_name2opt_val["mappathselect"], {"all", "borders"}, "Which paths: all or borders", true);
+          app->add_set_ignore_case("--maplookahead", opt_name2opt_val["maplookahead"], {"no", "critical"}, "Strategy wrt selecting next gate(s) to map:no (circuit order), or critical", true);
       }
 
       void print_current_values()
@@ -77,6 +79,7 @@ namespace ql
                     << "maptiebreak: "      << opt_name2opt_val["maptiebreak"] << std::endl
                     << "mapdecomposer: "    << opt_name2opt_val["mapdecomposer"] << std::endl
                     << "mappathselect: "    << opt_name2opt_val["mappathselect"] << std::endl
+                    << "maplookahead: "     << opt_name2opt_val["maplookahead"] << std::endl
                     << "scheduler_post179: " << opt_name2opt_val["scheduler_post179"] << std::endl
                     << "scheduler_commute: " << opt_name2opt_val["scheduler_uniform"] << std::endl;
 	  ;

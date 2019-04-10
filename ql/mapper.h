@@ -2348,7 +2348,9 @@ public:
     ql::quantum_platform            *platformp;
     ListDigraph::NodeMap<bool>      scheduled;
     std::list<ListDigraph::Node>    avlist;
-    size_t                          curr_cycle;         // only for implementation of criticality
+
+    ql::circuit                     *inCircp;       // input stream
+    ql::circuit::iterator           curr_gatepp;    // only to scan circuit instead of avlist
 
 Future(): scheduled(graph) {}
 
@@ -2366,16 +2368,24 @@ void Init( ql::quantum_platform *p)
 void SetCircuit(ql::circuit& circ, size_t nq, size_t nc)
 {
     DOUT("Future::SetCircuit ...");
-    Scheduler::Init(circ, *platformp, nq, nc);                // fills graph from circuit
-
-    for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
+    inCircp = &circ;
+    std::string maplookaheadopt = ql::options::get("maplookahead");
+    if ("no" == maplookaheadopt)
     {
-        scheduled[n] = false;   // none were scheduled
+        curr_gatepp = inCircp->begin();
     }
-    avlist.clear();
-    avlist.push_back(s);
-    curr_cycle = 0;
-    set_remaining(ql::forward_scheduling);      // to know criticality
+    else
+    {
+	    Scheduler::Init(circ, *platformp, nq, nc);                // fills graph from circuit
+	
+	    for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
+	    {
+	        scheduled[n] = false;   // none were scheduled
+	    }
+	    avlist.clear();
+	    avlist.push_back(s);
+	    set_remaining(ql::forward_scheduling);                    // to know criticality
+    }
 
     DOUT("Future::SetCircuit [DONE]");
 }
@@ -2386,15 +2396,32 @@ void SetCircuit(ql::circuit& circ, size_t nq, size_t nc)
 bool GetNonQuantumGates(std::list<ql::gate*>& lg)
 {
     lg.clear();
-    for ( auto n : avlist)
+    std::string maplookaheadopt = ql::options::get("maplookahead");
+    if ("no" == maplookaheadopt)
     {
-        ql::gate*  gp = instruction[n];
-        if (gp->type() == ql::__classical_gate__
-            || gp->type() == ql::__dummy_gate__
-            )
+        ql::gate*   gp = *curr_gatepp;
+        if (curr_gatepp != inCircp->end())
         {
-            lg.push_back(gp);
+	        if (gp->type() == ql::__classical_gate__
+	            || gp->type() == ql::__dummy_gate__
+	            )
+	        {
+	            lg.push_back(gp);
+	        }
         }
+    }
+    else
+    {
+	    for ( auto n : avlist)
+	    {
+	        ql::gate*  gp = instruction[n];
+	        if (gp->type() == ql::__classical_gate__
+	            || gp->type() == ql::__dummy_gate__
+	            )
+	        {
+	            lg.push_back(gp);
+	        }
+	    }
     }
     return lg.size() != 0;
 }
@@ -2404,9 +2431,20 @@ bool GetNonQuantumGates(std::list<ql::gate*>& lg)
 bool GetGates(std::list<ql::gate*>& lg)
 {
     lg.clear();
-    for ( auto n : avlist)
+    std::string maplookaheadopt = ql::options::get("maplookahead");
+    if ("no" == maplookaheadopt)
     {
-        lg.push_back(instruction[n]);
+        if (curr_gatepp != inCircp->end())
+        {
+            lg.push_back(*curr_gatepp);
+        }
+    }
+    else
+    {
+	    for ( auto n : avlist)
+	    {
+	        lg.push_back(instruction[n]);
+	    }
     }
     return lg.size() != 0;
 }
@@ -2415,9 +2453,15 @@ bool GetGates(std::list<ql::gate*>& lg)
 // and its successors can be made available
 void DoneGate(ql::gate* gp)
 {
-    ListDigraph::Node n;
-    n = node[gp];
-    TakeAvailable(n, avlist, scheduled, ql::forward_scheduling);
+    std::string maplookaheadopt = ql::options::get("maplookahead");
+    if ("no" == maplookaheadopt)
+    {
+        curr_gatepp = std::next(curr_gatepp);
+    }
+    else
+    {
+        TakeAvailable(node[gp], avlist, scheduled, ql::forward_scheduling);
+    }
 }
 
 };  // end class Future
