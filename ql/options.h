@@ -64,7 +64,7 @@ namespace ql
           app->add_set_ignore_case("--maptiebreak", opt_name2opt_val["maptiebreak"], {"first", "last", "random"}, "Tie break method", true);
           app->add_set_ignore_case("--mapdecomposer", opt_name2opt_val["mapdecomposer"], {"no", "yes"}, "Decompose after mapper", true);
           app->add_set_ignore_case("--mappathselect", opt_name2opt_val["mappathselect"], {"all", "borders"}, "Which paths: all or borders", true);
-          app->add_set_ignore_case("--maplookahead", opt_name2opt_val["maplookahead"], {"no", "critical"}, "Strategy wrt selecting next gate(s) to map:no (circuit order), or critical", true);
+          app->add_set_ignore_case("--maplookahead", opt_name2opt_val["maplookahead"], {"no", "critical", "noroutingfirst"}, "Strategy wrt selecting next gate(s) to map", true);
       }
 
       void print_current_values()

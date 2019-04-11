@@ -2815,26 +2815,40 @@ void MapRoutedGate(ql::gate* gp, Past& past)
     }
 }
 
-// all gates in avlist are non-NN two-qubit quantum gates
+// all gates in avlist are two-qubit quantum gates
 // select which one(s) to (partially) route, according to one of the known strategies
 // the only requirement on the code below is that at least something is done that decreases the problem
-void RouteAndMapNonNNGates(std::list<ql::gate*> lg, Future& future, Past& past)
+void RouteAndMap2qGates(std::list<ql::gate*> lg, Future& future, Past& past)
 {
     // the single currently implemented strategy is to take one and totally route it
     ql::gate*  gp = lg.front();
-    DOUT("RouteAndMapNonNNGates, " << lg.size() << " non-NNs; take first: " << gp->qasm());
+    DOUT("RouteAndMap2qGates, " << lg.size() << " 2q gates; take first: " << gp->qasm());
 
-    EnforceNN(gp, past);
-    DOUT("... RouteAndMapNonNNGates, NN after routing: " << gp->qasm());
+    auto&   q = gp->operands;
+    size_t  src = past.MapQubit(q[0]);      // interpret virtual operands in current map
+    size_t  tgt = past.MapQubit(q[1]);
+    size_t  d = grid.Distance(src, tgt);    // and find distance between real counterparts
+    if (d == 1)
+    {
+        // here only when maplookahead is not noroutingfirst
+        DOUT("... RouteAndMap2qGates, 2q NN no routing: " << gp->qasm());
+    }
+    else
+    {
+        EnforceNN(gp, past);
+        DOUT("... RouteAndMap2qGates, 2q nonNN after routing: " << gp->qasm());
+    }
+
     MapRoutedGate(gp, past);
     future.DoneGate(gp);
 }
 
-// With only gates available for mapping that require routing, map gates that already are NN
+// With only gates available for mapping that may require routing, map gates that are NN in the current mapping
 // or make the sum of all distances between operands of the routed gates smaller by inserting swaps/moves.
 // When of those a gate becomes mappable (its operands are NN), map it.
 void RouteAndMapGates(std::list<ql::gate*> lg, Future& future, Past& past)
 {
+    std::string maplookaheadopt = ql::options::get("maplookahead");
     for (auto gp : lg)
     {
         auto&   q = gp->operands;
@@ -2846,7 +2860,8 @@ void RouteAndMapGates(std::list<ql::gate*> lg, Future& future, Past& past)
         size_t  src = past.MapQubit(q[0]);      // interpret virtual operands in current map
         size_t  tgt = past.MapQubit(q[1]);
         size_t  d = grid.Distance(src, tgt);    // and find distance between real counterparts
-        if (d == 1)
+        if (d == 1
+            && "noroutingfirst" == maplookaheadopt)
         {
             DOUT("RouteAndMapGates, NN no routing: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ")");
             MapRoutedGate(gp, past);
@@ -2854,7 +2869,7 @@ void RouteAndMapGates(std::list<ql::gate*> lg, Future& future, Past& past)
             return;
         }
     }
-    RouteAndMapNonNNGates(lg, future, past);
+    RouteAndMap2qGates(lg, future, past);
 }
 
 // Map the circuit's gates in the provided context (v2r maps), updating circuit and v2r maps
@@ -2908,7 +2923,7 @@ void MapGates(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
                     || gp->operands.size() == 1
                     )
                 {
-                    // a quantum gate not requiring routing is found
+                    // a quantum gate not requiring routing in any mapping is found
                     MapRoutedGate(gp, mainPast);
                     future.DoneGate(gp);
                     foundone = true;
@@ -2916,11 +2931,11 @@ void MapGates(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
             }
             if (foundone)
             {
-                // as long as there are gates that don't require routing, continue mapping these
+                // as long as there are gates that don't require routing in any mapping, continue mapping these
                 continue;
             }
 
-            // avlist (qlg) only contains gates requiring routing
+            // avlist (qlg) only contains gates may require routing
             RouteAndMapGates(qlg, future, mainPast);    // at least does something (map gate or insert swap/move)
             continue;
         }
