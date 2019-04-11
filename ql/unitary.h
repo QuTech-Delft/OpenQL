@@ -70,16 +70,11 @@ public:
 
 
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> identity = Eigen::MatrixXd::Identity(matrix_size, matrix_size);
-        if(matrix.conjugate().transpose()*matrix != identity)
+        if(matrix.adjoint()*matrix != identity)
         {
             //Throw an error
             EOUT("Unitary " << name <<" is not a unitary matrix!");;
             throw ql::exception("Unitary '"+ name+"' is not a unitary matrix. Cannot be decomposed!", false);
-        }
-        else
-        {
-             utils::print_vector(array,"[openql] matrix is unitary :"," , ");
-             std::cout << "size: " << numberofbits<< std::endl;
         }
   
         if(numberofbits == 1)
@@ -93,10 +88,6 @@ public:
         }
         else
         {
-            //Eigen::JacobiSVD<Eigen::MatrixXd> svd;
-            //svd.compute(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
-            //DOUT(svd.matrixU() );
-            //DOUT(svd.matrixV()) ;
             matrix = CSD(matrix);
         }
         
@@ -106,27 +97,109 @@ public:
 
     complex_matrix CSD(complex_matrix U)
     {
-
-        std::cout << "u_rows " << U.rows() << std::endl;
-        complex_matrix q1 = U.topLeftCorner(U.rows()/2,U.cols()/2);
-        complex_matrix q2 = U.bottomLeftCorner(U.rows()/2,U.cols()/2);
+        //Cosine sine decomposition
+        // U = [q1, U01] = [u1    ][c  s][v1  ]
+        //     [q2, U11] = [    u2][-s c][   v2]
+        int n = U.rows();
+        int m = U.cols();
+        std::cout << "u_rows " << n << std::endl;
+        complex_matrix q1 = U.topLeftCorner(n/2,m/2);
+        complex_matrix q2 = U.bottomLeftCorner(n/2,m/2);
 
         std::cout << "U: " << U << std::endl;
         std::cout << "q1: " << q1 << std::endl;
         std::cout << "q2: " << q2 << std::endl;
         Eigen::BDCSVD<complex_matrix> svd;
+
         if(q1.rows() > 1 && q1.cols() > 1)
         {          
         svd.compute(q1, Eigen::ComputeFullU | Eigen::ComputeFullV);
         }
         complex_matrix u1 = svd.matrixU();
-        complex_matrix c = Eigen::Diagonal(svd.singularValues());
-        complex_matrix v = svd.matrixV();
+        complex_matrix c = svd.singularValues().asDiagonal();
+        std::cout << "c: " << c << std::endl;
+
+        // thinCSD: q1 = u1*c*v1.adjoint()
+        //          q2 = u2*s*v1.adjoint()
+        complex_matrix v1 = svd.matrixV();
+        int p = q1.rows();
+        complex_matrix z = Eigen::MatrixXd::Identity(p, p).colwise().reverse();
         std::cout << "u1: " << u1 << std::endl;
         std::cout << "c: " << c << std::endl;
-        std::cout << "v: " << v << std::endl;
-        Eigen::MatrixXd z = Eigen::MatrixXd::Identity(q1.rows(), q1.cols());
-        return U;
+        std::cout << "z: " << z << std::endl;
+        u1 = u1*z;
+        v1 = v1*z;
+        q2 = q2*v1;
+        c = z*c*z;
+        int k = 0;
+        for(int j = 1; j < p; j++)
+        {
+            if(c(j,j).real() <= 0.70710678119)
+            {
+                k = j;
+            }
+        }
+        complex_matrix b = q2.block( 0,0, p, k);
+
+        Eigen::HouseholderQR<complex_matrix> qr;
+        qr.compute(b);        
+        //complex_matrix r = qr.matrixQR();
+        complex_matrix u2 = qr.householderQ();
+        complex_matrix s = u2.adjoint();
+        std::cout << "s: " << s << std::endl;
+        if(k < p)
+        {
+            std::cout << "k: " << k << std::endl;
+            svd.compute(s.block(k, k, p-k, p-k));
+            std::cout << "singular values: \n" << ((complex_matrix) svd.singularValues()) << std::endl;
+            s.block(k, k, p-k, p-k) = svd.singularValues().asDiagonal();
+            std::cout << "s: " << s << std::endl;
+            c.block(0,k, p,p-k) = c.block(0,k, p,k)*svd.matrixV();
+            u2.block(0,k, p,p-k) = u2.block(0,k, p,p-k)*svd.matrixU();
+            v1.block(0,k, p,p-k) = v1.block(0,k, p,p-k)*svd.matrixV();
+            qr.compute(c.block(k,k, p-k,p-k));
+            c.block(k,k,p-k,p-k) = qr.matrixQR();
+            std::cout << "c: " << c << std::endl;
+            u1.block(0,k, p,p-k) = u1.block(0,k, p,p-k)*qr.householderQ(); 
+            
+            std::cout << "z: " << ((complex_matrix) qr.householderQ()) << std::endl;
+            std::cout << "u1: " << u1 << std::endl;
+            std::cout << "u2: " << u2 << std::endl;
+            std::cout << "v1: " << v1 << std::endl;
+        }
+        for(int j = 0; j < p; j++)
+        {
+            if(c(j,j).real() < 0)
+            {
+                c(j,j) = -c(j,j);
+                u1(j,j) = -u1(j,j);
+            }
+            if(s(j,j).real() < 0)
+            {
+                s(j,j) = -s(j,j);
+                u2(j,j) = -u2(j,j);
+            }
+        }
+        std::cout << "reconstructed q1: " << u1*c*v1.adjoint() << std::endl;
+        std::cout << "reconstructed q2: " << u2*s*v1.adjoint() << std::endl;
+        // L0 = u1, L1 = u2, R0 = v1, cc = c,ss  = s
+        complex_matrix v2 = complex_matrix(n/2, n/2);
+        v1 = v1.adjoint();
+        s = -s;
+        for(int i = 0; i < n/2; i++)
+        {
+            if(std::abs(s(i,i)) > std::abs(c(i,i)))
+            {
+                complex_matrix tmp = u1.adjoint()*U.block(n/2,n/2, 0, n/2);
+                v2.row(i) = tmp.row(i)/s(i,i);
+            }
+            else
+            {
+                complex_matrix tmp = u2.adjoint()*U.block(n/2,n/2, n/2, n/2);
+                v2.row(i) = tmp.row(i)/c(i,i);
+            }
+        }
+        return (u1,u2,v1,v2,c,s);
     }
 
     std::vector<double> zyz_decomp(std::vector<std::complex<double>> matrix)
