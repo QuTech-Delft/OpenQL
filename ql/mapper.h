@@ -1601,12 +1601,21 @@ void Split(std::list<NNPath> & reslp)
 // =========================================================================================
 // Grid: definition and access functions to the grid of qubits that supports the real qubits.
 // Maintain several maps to ease navigating in the grid; these are constant after initialization.
+typedef
+enum GridForms
+{
+    gf_cross,       // nodes in grid have neighbors only along two diagonals
+    gf_plus,        // nodes in grid have neighbors only horizontally and vertically
+    gf_irregular    // nodes in grid may have neighbors in unspecified directions
+} gridform_t;
+
 class Grid
 {
 private:
     ql::quantum_platform* platformp;    // current platform: topology
     size_t nq;                          // number of qubits in the platform
                                         // Grid configuration, all constant after initialization
+    gridform_t form;                    // form of grid
     int nx;                             // length of x dimension (x coordinates count 0..nx-1)
     int ny;                             // length of y dimension (y coordinates count 0..ny-1)
     std::map<size_t,int> x;             // x[i] is x coordinate of qubit i
@@ -1624,9 +1633,21 @@ public:
 //      int     x, y and dimensions in grid
 size_t Distance(size_t from_realqbit, size_t to_realqbit)
 {
-    return std::max(
-               std::abs( x[to_realqbit] - x[from_realqbit] ),
-               std::abs( y[to_realqbit] - y[from_realqbit] ));
+    if (form == gf_cross)
+    {
+        return std::max(
+                   std::abs( x[to_realqbit] - x[from_realqbit] ),
+                   std::abs( y[to_realqbit] - y[from_realqbit] ));
+    }
+    else if (form == gf_plus)
+    {
+        return std::abs( x[to_realqbit] - x[from_realqbit] )
+               + std::abs( y[to_realqbit] - y[from_realqbit] );
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 // return clockwise angle around (cx,cy) of (x,y) wrt vertical y axis with angle 0 at 12:00, 0<=angle<2*pi
@@ -1689,9 +1710,22 @@ void Init(ql::quantum_platform* p)
     nq = platformp->qubit_number;
     // DOUT("... number of real qbits=" << nq);
 
+    std::string formstr;
+    if (platformp->topology.count("form") <= 0)
+    {
+        formstr = "cross";
+    }
+    else
+    {
+        formstr = platformp->topology["form"];
+    }
+    if (formstr == "cross") { form = gf_cross; }
+    if (formstr == "plus") { form = gf_plus; }
+    if (formstr == "irregular") { form = gf_irregular; }
+
     nx = platformp->topology["x_size"];
     ny = platformp->topology["y_size"];
-    // DOUT("... nx=" << nx << "; ny=" << ny);
+    DOUT("... formstr=" << formstr << "; form=" << form << "; nx=" << nx << "; ny=" << ny);
 
     // init x, y and nbs maps
     for (auto & aqbit : platformp->topology["qubits"] )
