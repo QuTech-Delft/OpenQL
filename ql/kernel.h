@@ -1047,22 +1047,11 @@ public:
         ss << "# ----- of which moves added: " << moves_added << "\n";
         ss << "# ----- classical operations: " << get_classical_operations_count() << "\n";
         ss << "# ----- qubits used: " << usecount << "\n";
-        ss << "# ----- qubit cycles use: ";
-            int started = 0;
-            for (auto v : usedcyclecount)
-            {
-                if (started)
-                {
-                    ss << ", ";
-                }
-                else
-                {
-                    ss << "[";
-                    started = 1;
-                }
-                ss << v;
-            }
-            ss << "]" << "\n";
+        ss << "# ----- qubit cycles use:" << ql::utils::to_string(usedcyclecount) << "\n";
+        ss << "# ----- virt2real map before mapper:" << ql::utils::to_string(v2r_in) << "\n";
+        ss << "# ----- virt2real map after mapper:" << ql::utils::to_string(v2r_out) << "\n";
+        ss << "# ----- realqubit states before mapper:" << ql::utils::to_string(rs_in) << "\n";
+        ss << "# ----- realqubit states after mapper:" << ql::utils::to_string(rs_out) << "\n";
         return ss.str();
     }
 
@@ -1922,6 +1911,11 @@ public:
     kernel_type_t type;
     operation     br_condition;
     std::map<std::string,custom_gate*> gate_definition;
+
+    std::vector<size_t> v2r_in;        // v2r[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
+    std::vector<int>    rs_in;         // rs[real qubit index] -> {nostate|wasinited|hasstate}
+    std::vector<size_t> v2r_out;
+    std::vector<int>    rs_out;
     size_t        swaps_added;
     size_t        moves_added;
 };

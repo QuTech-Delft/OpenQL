@@ -129,7 +129,8 @@ private:
                 continue;;
             }
             IOUT("Mapping kernel: " << kernel.name);
-            mapper.MapCircuit(kernel.c, kernel.name, kernel.qubit_count, kernel.creg_count);
+            mapper.MapCircuit(kernel);
+                            // kernel.c, kernel.name, kernel.qubit_count, kernel.creg_count);
                             // kernel.qubit_count is number of virtual qubits, i.e. highest indexed qubit minus 1
                             // and kernel.qubit_count is updated to real highest index used minus -1
             kernel.bundles = mapper.Bundler(kernel.c);
