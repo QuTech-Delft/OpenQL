@@ -1829,7 +1829,15 @@ void ComputeDist()
 	{
         for (size_t j=0; j<nq; j++)
 	    {
-            MapperAssert (dist[i][j] == Distance(i,j));
+            if (form == gf_cross)
+            {
+                MapperAssert (dist[i][j] == (std::max( std::abs( x[i] - x[j] ), std::abs( y[i] - y[j] ))) );
+            }
+            else if (form == gf_plus)
+            {
+                MapperAssert (dist[i][j] == (std::abs( x[i] - x[j] ) + std::abs( y[i] - y[j] )) );
+            }
+
         }
     }
 //#endif
@@ -3158,7 +3166,7 @@ void Decomposer(ql::circuit& circ)
 
 // alternative bundler using gate->cycle attribute instead of lemon's cycle map
 // it assumes that the gate->cycle attribute reflect the cycle assignment of a particular schedule
-ql::ir::bundles_t Bundler(ql::circuit& circ)
+ql::ir::bundles_t Bundler(ql::quantum_kernel& kernel)
 {
     ql::ir::bundles_t bundles;
 
@@ -3167,7 +3175,7 @@ ql::ir::bundles_t Bundler(ql::circuit& circ)
 
     // DOUT("Bundler ...");
     size_t TotalCycles = 0;
-    for ( auto & gp : circ)
+    for ( auto & gp : kernel.c)
     {
         if( gp->type() != ql::gate_type_t::__wait_gate__ )
         {
@@ -3263,6 +3271,8 @@ void MapCircuit(ql::quantum_kernel& kernel)
     kernel.qubit_count = nq;         // bluntly copy nq (==#real qubits), so that all kernels get the same qubit_count
     v2r.Export(kernel.v2r_out);
     v2r.Export(kernel.rs_out);
+    kernel.swaps_added = nswapsadded;
+    kernel.moves_added = nmovesadded;
 
     DOUT("Mapping circuit [DONE]");
 
