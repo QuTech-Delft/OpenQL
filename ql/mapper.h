@@ -1641,23 +1641,24 @@ void Split(std::list<NNPath> & reslp)
 //  Normalize(qi, neighborlist):    rotate neighborlist such that largest angle diff around qi is behind last element
 //                      relies on nbs, and x[i]/y[i]
 //
-// For an irregular grid form, only nq and edges (so nbs) are needed; distance is computed from nbs:
+// For an irregular grid form, only nq and edges (so nbs) need to be specified; distance is computed from nbs:
 // - there is no underlying rectangular grid, so there are no defined x and y coordinates of qubits;
 //   this means that Normalize as needed by mappathselect==borders cannot work
 // For a fully assigned and regular grid, we can have two forms: cross and plus, named after where neighbors are:
-// - in theory, these forms have formulae for x- and y-coordinates and for distance; this is not supported (yet)
-// - below, we support regular grids which need not be fully assigned; this requires edges (so nbs) to be defined,
-//   from which distance is computed; also we have x/y coordinates per qubit
-// An underlying grid with x/y coordinates comes in use for:
-// - crossbars
-// - cclight qwg assignment 
-// - when mappathselectopt==borders
+// - these forms use formulae for x- and y-coordinates and for distance; this is not supported (yet)
+// Below, we support regular (xy) grids which need not be fully assigned; this requires edges (so nbs) to be defined,
+//   from which distance is computed; also we have x/y coordinates per qubit specified in the configuration file
+//   An underlying grid with x/y coordinates comes in use for:
+//   - crossbars
+//   - cclight qwg assignment (done in another manner now)
+//   - when mappathselectopt==borders
 typedef
 enum GridForms
 {
-    gf_cross,       // nodes in grid have neighbors only along two diagonals
-    gf_plus,        // nodes in grid have neighbors only horizontally and vertically
-    gf_irregular    // nodes in grid may have neighbors in unspecified directions
+    gf_xy,          // nodes have explicit neighbor definitions, qubits have explicit x/y coordinates
+//  gf_cross,       // nodes have implicit neighbor definitions along two diagonals, qubits have implicit x/y coordinates
+//  gf_plus,        // nodes have implicit neighbor definitions horizontally and vertically, qubits have implicit x/y coords
+    gf_irregular    // nodes have explicit neighbor definitions, qubits don't have x/y coordinates
 } gridform_t;
 
 class Grid
@@ -1689,23 +1690,24 @@ void Init(ql::quantum_platform* p)
     std::string formstr;
     if (platformp->topology.count("form") <= 0)
     {
-        formstr = "cross";
+        formstr = "xy";
     }
     else
     {
         formstr = platformp->topology["form"];
     }
-    if (formstr == "cross") { form = gf_cross; }
-    if (formstr == "plus") { form = gf_plus; }
+    if (formstr == "xy") { form = gf_xy; }
     if (formstr == "irregular") { form = gf_irregular; }
 
     if (form == gf_irregular)
     {
-        nx = MAX_CYCLE;
-        ny = MAX_CYCLE;
+        // irregular can do without topology.x_size, topology.y_size, and topology.qubits
+        nx = 0;
+        ny = 0;
     }
     else
     {
+        // xy/cross/plus have an x/y space; coordinates are explicit for xy but implicit for cross/plus
         nx = platformp->topology["x_size"];
         ny = platformp->topology["y_size"];
     }
@@ -1726,7 +1728,6 @@ void Init(ql::quantum_platform* p)
 size_t Distance(size_t from_realqi, size_t to_realqi)
 {
     return dist[from_realqi][to_realqi];
-
 }
 
 // return clockwise angle around (cx,cy) of (x,y) wrt vertical y axis with angle 0 at 12:00, 0<=angle<2*pi
@@ -1745,6 +1746,7 @@ void Normalize( size_t src, neighbors_t& nbl )
 {
     if (form == gf_irregular)
     {
+        // there no implicit/explicit x/y coordinates defined per qubit, so no sense of nearness
         std::string mappathselectopt = ql::options::get("mappathselect");
         MapperAssert ("borders" != mappathselectopt);
         return;
@@ -1824,7 +1826,7 @@ void ComputeDist()
 	        }
 	    }
 	}
-//#ifdef debug
+#ifdef debug
     for (size_t i=0; i<nq; i++)
 	{
         for (size_t j=0; j<nq; j++)
@@ -1840,7 +1842,7 @@ void ComputeDist()
 
         }
     }
-//#endif
+#endif
 }
 
 void PrintGrid()
@@ -1871,7 +1873,11 @@ void PrintGrid()
 // init x, and y maps
 void InitXY()
 {
-    if (platformp->topology.count("qubits") > 0)
+    if (platformp->topology.count("qubits") == 0)
+    {
+        MapperAssert (form == gf_irregular);
+    }
+    else
     {
 	    for (auto & aqbit : platformp->topology["qubits"] )
 	    {
@@ -1899,10 +1905,6 @@ void InitXY()
 	            throw ql::exception("Error: qbit with unsupported y.", false);
 	        }
 	    }
-    }
-    else
-    {
-        MapperAssert (form == gf_irregular);
     }
 }
 
@@ -2520,17 +2522,16 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, std::string& initi
 // than taking a non-critical gate as first one to map.
 // Later implementations may become more sophisticated.
 
-class Future : public Scheduler
+class Future // : public Scheduler
 {
 public:
     ql::quantum_platform            *platformp;
-    ListDigraph::NodeMap<bool>      scheduled;
-    std::list<ListDigraph::Node>    avlist;
+    ql::circuit                     *inCircp;       // pointer to input stream
+    Scheduler                       *schedp;        // a pointer, since dependence graph doesn't change
 
-    ql::circuit                     *inCircp;       // input stream
-    ql::circuit::iterator           curr_gatepp;    // only to scan circuit instead of avlist
-
-Future(): scheduled(graph) {}
+    std::map<ql::gate*,bool>        scheduled;      // state: has gate been taken from future?
+    std::list<ListDigraph::Node>    avlist;         // state: which nodes/gates are available for mapping now?
+    ql::circuit::iterator           curr_gatepp;    // state: only to scan circuit instead of avlist
 
 // just program wide initialization
 void Init( ql::quantum_platform *p)
@@ -2543,10 +2544,11 @@ void Init( ql::quantum_platform *p)
 // Set/switch input to the provided circuit
 // nq and nc are parameters because nc may not be provided by platform but by kernel
 // the latter should be updated when mapping multiple kernels
-void SetCircuit(ql::circuit& circ, size_t nq, size_t nc)
+void SetCircuit(ql::circuit& circ, Scheduler& sched, size_t nq, size_t nc)
 {
     DOUT("Future::SetCircuit ...");
     inCircp = &circ;
+    schedp = &sched;
     std::string maplookaheadopt = ql::options::get("maplookahead");
     if ("no" == maplookaheadopt)
     {
@@ -2554,15 +2556,17 @@ void SetCircuit(ql::circuit& circ, size_t nq, size_t nc)
     }
     else
     {
-	    Scheduler::Init(circ, *platformp, nq, nc);                // fills graph from circuit
+	    schedp->Init(circ, *platformp, nq, nc);                 // fills schedp->graph (dependence graph) from circuit
 	
-	    for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
+        for( auto & gp : circ )
 	    {
-	        scheduled[n] = false;   // none were scheduled
+	        scheduled[gp] = false;   // none were scheduled
 	    }
+        scheduled[schedp->instruction[schedp->s]] = false;      // also the dummy nodes not
+        scheduled[schedp->instruction[schedp->t]] = false;
 	    avlist.clear();
-	    avlist.push_back(s);
-	    set_remaining(ql::forward_scheduling);                    // to know criticality
+	    avlist.push_back(schedp->s);
+	    schedp->set_remaining(ql::forward_scheduling);          // to know criticality
     }
 
     DOUT("Future::SetCircuit [DONE]");
@@ -2592,7 +2596,7 @@ bool GetNonQuantumGates(std::list<ql::gate*>& lg)
     {
 	    for ( auto n : avlist)
 	    {
-	        ql::gate*  gp = instruction[n];
+	        ql::gate*  gp = schedp->instruction[n];
 	        if (gp->type() == ql::__classical_gate__
 	            || gp->type() == ql::__dummy_gate__
 	            )
@@ -2621,7 +2625,7 @@ bool GetGates(std::list<ql::gate*>& lg)
     {
 	    for ( auto n : avlist)
 	    {
-	        lg.push_back(instruction[n]);
+	        lg.push_back(schedp->instruction[n]);
 	    }
     }
     return lg.size() != 0;
@@ -2638,7 +2642,7 @@ void DoneGate(ql::gate* gp)
     }
     else
     {
-        TakeAvailable(node[gp], avlist, scheduled, ql::forward_scheduling);
+        schedp->TakeAvailable(schedp->node[gp], avlist, scheduled, ql::forward_scheduling);
     }
 }
 
@@ -3055,11 +3059,12 @@ void MapGates(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
 {
     Future  future;         // future window, presents input in avlist
     Past    mainPast;       // past window
+    Scheduler sched;        // sched to take depgraph from
 
     future.Init(&platform);
     mainPast.Init(&platform);
 
-    future.SetCircuit(circ, nq, nc);    // constructs depgraph, initializes avlist, ready for producing gates
+    future.SetCircuit(circ, sched, nq, nc); // constructs depgraph, initializes avlist, ready for producing gates
 
     ql::circuit outCirc;
     mainPast.Output(outCirc);   // past window will output into outCirc, to be swapped with circ before return
