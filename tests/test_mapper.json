@@ -109,6 +109,7 @@
   "topology" : 
   {
     "description": "A qubit grid is rectangular. The coordinates in the X direction are 0 to x_size-1. In the Y direction they are 0 to y_size-1. In the grid real qubits are placed. Each qubit has an id (its index, used above in the resource descriptions, and used below as operands to gates), an x and a y coordinate. Qubits are connected in directed pairs, called edges. Each edge has an id (its index, used above in the resource descriptions), a source qubit and a destination qubit.",
+    "form": "xy",
     "x_size": 5,
     "y_size": 3,
     "qubits": 
