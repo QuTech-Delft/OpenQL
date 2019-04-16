@@ -336,6 +336,7 @@ public:
             utils::replace(signalValueString, std::string("{gateName}"), iname);
             utils::replace(signalValueString, std::string("{instrumentName}"), instrumentName);
             utils::replace(signalValueString, std::string("{instrumentGroup}"), std::to_string(si.group));
+            // FIXME: allow using all qubits involved (in same signalType?, or refer to signal: qubitOfSignal[n]), e.g. qubit[0], qubit[1], qubit[2]
             utils::replace(signalValueString, std::string("{qubit}"), std::to_string(qubit));
 
             comment(SS2S("  # slot=" << slot <<
@@ -344,9 +345,9 @@ public:
                          "', signal='" << signalValueString << "'"));
 
             // check and store signal value
-            if(groupInfo[si.slotIdx][si.group].signalValue == "") {                         // not yet used
+            if(groupInfo[si.slotIdx][si.group].signalValue == "") {                         // signal not yet used
                 groupInfo[si.slotIdx][si.group].signalValue = signalValueString;
-            } else if(groupInfo[si.slotIdx][si.group].signalValue == signalValueString) {   // unchanged
+            } else if(groupInfo[si.slotIdx][si.group].signalValue == signalValueString) {   // signal unchanged
                 // do nothing
             } else {
                 EOUT("Code so far:\n" << cccode.str());                    // FIXME: provide context to help finding reason

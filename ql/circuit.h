@@ -88,7 +88,6 @@ namespace ql
     /**
      * detect unoptimizable gates
      */
-    // FIXME: move to circuit.h
     bool contains_unoptimizable_gates(circuit &x)
     {
         for (size_t i=0; i<x.size(); i++)

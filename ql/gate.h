@@ -205,6 +205,8 @@ const complex_t nop_c      [] /*__attribute__((aligned(64)))*/ =
 #undef __c
 
 
+
+
 /**
  * gate interface
  */
@@ -217,7 +219,7 @@ public:
     std::string name = "";
     std::vector<size_t> operands;
     std::vector<size_t> creg_operands;
-    size_t duration;                         // to do change attribute name "duration" to "duration" (duration is used to describe hardware duration)
+    size_t duration;
     double angle;                            // for arbitrary rotations
     size_t  cycle;                           // set after scheduling with resulting cycle in which gate was scheduled
     virtual instruction_t qasm()       = 0;
