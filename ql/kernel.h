@@ -43,26 +43,41 @@ enum class kernel_type_t
  */
 class quantum_kernel
 {
-public:
+public: // FIXME: should be private
+    std::string   name;
+    size_t        iterations;
+    size_t        qubit_count;
+    size_t        creg_count;
+    kernel_type_t type;
+    circuit       c;
+    operation     br_condition;
+private:
+    size_t        cycle_time;                               // FIXME: just a copy of platform.cycle_time
+    instruction_map_t instruction_map;
 
+public:
     quantum_kernel(std::string name) :
         name(name), iterations(1), type(kernel_type_t::STATIC) {}
 
-    quantum_kernel(std::string name, ql::quantum_platform& platform,
+    quantum_kernel(std::string name, const ql::quantum_platform& platform,
         size_t qcount, size_t ccount=0) :
         name(name), iterations(1), qubit_count(qcount),
         creg_count(ccount), type(kernel_type_t::STATIC)
     {
-        gate_definition = platform.instruction_map;     // FIXME: confusing name change
+        instruction_map = platform.instruction_map;
         cycle_time = platform.cycle_time;
         // FIXME: check qubit_count and creg_count against platform
         // FIXME: what is the reason we can specify qubit_count and creg_count here anyway
     }
 
+    // FIXME: add constructor which allows setting iterations and type, and use that in program.h::add_for(), etc
+
+#if 0   // FIXME: unused, iterations is directly manipulated by program.h::add_for()
     void set_static_loop_count(size_t it)
     {
         iterations = it;
     }
+#endif
 
     void set_condition(operation & oper)
     {
@@ -84,6 +99,47 @@ public:
     void set_kernel_type(kernel_type_t typ)
     {
         type = typ;
+    }
+
+    /**
+     * debug
+     */
+    void print_gates_definition()
+    {
+        for (std::map<std::string,custom_gate*>::iterator i=instruction_map.begin(); i!=instruction_map.end(); i++)
+        {
+            COUT("[-] gate '" << i->first << "'");
+#if OPT_MICRO_CODE
+            COUT(" |- qumis : \n" << i->second->micro_code());
+#endif
+        }
+    }
+
+    std::string get_gates_definition()
+    {
+        std::stringstream ss;
+
+        for (std::map<std::string,custom_gate*>::iterator i=instruction_map.begin(); i!=instruction_map.end(); i++)
+        {
+            ss << i->first << '\n';
+        }
+        return ss.str();
+    }
+
+    /**
+     * name getter
+     */
+    std::string get_name()
+    {
+        return name;
+    }
+
+    /**
+     * circuit getter
+     */
+    circuit& get_circuit()
+    {
+        return c;
     }
 
     /************************************************************************\
@@ -463,8 +519,8 @@ private:
                 instr += "q" + std::to_string(qubits[qubits.size()-1]);
         }
 
-        std::map<std::string,custom_gate*>::iterator it = gate_definition.find(instr);
-        if (it != gate_definition.end())
+        std::map<std::string,custom_gate*>::iterator it = instruction_map.find(instr);
+        if (it != instruction_map.end())
         {
             custom_gate* g = new custom_gate(*(it->second));
             for(auto & qubit : qubits)
@@ -479,8 +535,8 @@ private:
         else
         {
             // otherwise, check if there is a parameterized custom gate (i.e. not specialized for arguments)
-            std::map<std::string,custom_gate*>::iterator it = gate_definition.find(gname);
-            if (it != gate_definition.end())
+            std::map<std::string,custom_gate*>::iterator it = instruction_map.find(gname);
+            if (it != instruction_map.end())
             {
                 custom_gate* g = new custom_gate(*(it->second));
                 for(auto & qubit : qubits)
@@ -514,8 +570,8 @@ private:
         {
             std::string & sub_ins = agate->name;
             DOUT("  sub ins: " << sub_ins);
-            auto it = gate_definition.find(sub_ins);
-            if( it != gate_definition.end() )
+            auto it = instruction_map.find(sub_ins);
+            if( it != instruction_map.end() )
             {
                 sub_instructons.push_back(sub_ins);
             }
@@ -547,8 +603,8 @@ private:
         }
         DOUT("decomposed specialized instruction name: " << instr_parameterized);
 
-        auto it = gate_definition.find(instr_parameterized);
-        if( it != gate_definition.end() )
+        auto it = instruction_map.find(instr_parameterized);
+        if( it != instruction_map.end() )
         {
             DOUT("specialized composite gate found for " << instr_parameterized);
             composite_gate * gptr = (composite_gate *)(it->second);
@@ -648,8 +704,8 @@ private:
         DOUT("decomposed parameterized instruction name: " << instr_parameterized);
 
         // check for composite ins
-        auto it = gate_definition.find(instr_parameterized);
-        if( it != gate_definition.end() )
+        auto it = instruction_map.find(instr_parameterized);
+        if( it != instruction_map.end() )
         {
             DOUT("parameterized composite gate found for " << instr_parameterized);
             composite_gate * gptr = (composite_gate *)(it->second);
@@ -1006,7 +1062,7 @@ public:
             std::vector<size_t> goperands = g->operands;
 
             ql::quantum_kernel toff_kernel("toff_kernel");
-            toff_kernel.gate_definition = gate_definition;
+            toff_kernel.instruction_map = instruction_map;
             toff_kernel.qubit_count = qubit_count;
             toff_kernel.cycle_time = cycle_time;
 
@@ -1108,49 +1164,8 @@ public:
      */
     int load_custom_instructions(std::string file_name="instructions.json")
     {
-        load_instructions(gate_definition, file_name);
+        load_instructions(instruction_map, file_name);
         return 0;
-    }
-
-    /**
-     * debug
-     */
-    void print_gates_definition()
-    {
-        for (std::map<std::string,custom_gate*>::iterator i=gate_definition.begin(); i!=gate_definition.end(); i++)
-        {
-            COUT("[-] gate '" << i->first << "'");
-#if OPT_MICRO_CODE
-            COUT(" |- qumis : \n" << i->second->micro_code());
-#endif
-        }
-    }
-
-    std::string get_gates_definition()
-    {
-        std::stringstream ss;
-
-        for (std::map<std::string,custom_gate*>::iterator i=gate_definition.begin(); i!=gate_definition.end(); i++)
-        {
-            ss << i->first << '\n';
-        }
-        return ss.str();
-    }
-
-    /**
-     * name getter
-     */
-    std::string get_name()
-    {
-        return name;
-    }
-
-    /**
-     * circuit getter
-     */
-    circuit& get_circuit()
-    {
-        return c;
     }
 
     /************************************************************************\
@@ -1687,17 +1702,6 @@ public:
         }
         COUT("Generating conjugate kernel [Done]");
     }
-
-public:
-    std::string   name;
-    circuit       c;
-    size_t        iterations;
-    size_t        qubit_count;
-    size_t        creg_count;
-    size_t        cycle_time;                               // FIXME: just a copy of platform.cycle_time
-    kernel_type_t type;
-    operation     br_condition;
-    std::map<std::string,custom_gate*> gate_definition;     // FIXME: consider using instruction_map_t
 };
 
 
