@@ -62,7 +62,7 @@
 
 	// FIXME: proposed header, not used
 	"file_type": "OpenQL-config",
-	"file_version": "1.1",
+	"file_version": "0.3",
 	"min_version_openql": "0.5.3",
 
 	"eqasm_compiler" : "eqasm_backend_cc",
@@ -104,7 +104,7 @@
 				"zi-uhfqa": {
 					"channels": 9,
 					"control_group_sizes": [1],
-					"latency": 150		// FIXME: check
+					"latency": 150		// FIXME: check. FIXME: specify latency if trigger to output, also measurement latency
 				}
 			},   // instrument_definitions
 
@@ -196,12 +196,14 @@
                         "operand_idx": 1,                                   // target
                         "value": ["flux-1-{qubit}"]
                     }
+                    // FIXME: CZ(a,b) and CZ(a,c) requires different waveforms on a
                 ]
             },  // signals
 
 			// Instruments used in this setup, their configuration and connectivity.
 			"instruments": [
-				// readout. FIXME: must match 'resources/meas_units'
+				// readout.
+                // FIXME: must match 'resources/meas_units' if resource constraint scheduler is used
 				{
 					"name": "uhfqa-0",
                     "qubits": [[10], [15], [], [], [], [], [], [], []],
@@ -239,7 +241,8 @@
 					}
 				},
 
-				// microwave. FIXME: must match 'resources/qwgs'
+				// microwave.
+                // FIXME: must match 'resources/qwgs' if resource constraint scheduler is used
 				{
 					"name": "awg8-mw-0",
                     "qubits": [                                             // data qubits:
@@ -509,7 +512,14 @@
 
 
 	// FIXME: allow AWG8 setPrecompClear with wave
-	// FIXME: key 'matrix' is required, but does not contain useful information
+	// FIXME:
+    // - key 'matrix' is required, but does not contain useful information
+    // - key 'latency' ??
+    // - the cc-light scheduler requires the following keys:
+    //      * 'cc_light_instr'
+    //      * 'type'
+    // - only the cc-light backend requires the following keys:
+    //      * 'cc_light_instr_type'
 	"instructions": {
 		// additions from 'CC-software-implementation.docx', these are single-qubit
 		// flux pulses, see issue #176:
@@ -550,7 +560,7 @@
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "readout",
-			"cc_light_instr_type": "single_qubit_gate",
+//			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "prepz"
 		},
 
@@ -559,7 +569,7 @@
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "readout",
-			"cc_light_instr_type": "single_qubit_gate",
+//			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "measz",
 			"cc": {
 				"signal": [
@@ -578,7 +588,7 @@
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
+//			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "i",
 			"cc": {
 				"signal_ref": "single-qubit"
@@ -589,7 +599,7 @@
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
+//			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "x",
 			"cc": {
 				"signal_ref": "single-qubit"		// NB: reference, instead of defining "signal" here
@@ -600,7 +610,7 @@
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
+//			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "y",
 			"cc": {
 				"signal_ref": "single-qubit"
@@ -611,7 +621,7 @@
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
+//			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "x90",
 			"cc": {
 				"signal_ref": "single-qubit"
@@ -622,7 +632,7 @@
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
+//			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "y90",
 			"cc": {
 				"signal_ref": "single-qubit"
@@ -633,7 +643,7 @@
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
+//			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "xm90",
 			"cc": {
 				"signal_ref": "single-qubit"
@@ -644,7 +654,7 @@
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "mw",
-			"cc_light_instr_type": "single_qubit_gate",
+//			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "ym90",
 			"cc": {
 				"signal_ref": "single-qubit"
@@ -661,7 +671,7 @@
 //			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "flux",
-			"cc_light_instr_type": "two_qubit_gate",
+//			"cc_light_instr_type": "two_qubit_gate",
 			"cc_light_instr": "cz",
 			"cc": {
 				"signal_ref": "two-qubit"		// NB: reference, instead of defining "signal" here
@@ -672,7 +682,7 @@
 			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "flux",
-			"cc_light_instr_type": "two_qubit_gate",
+//			"cc_light_instr_type": "two_qubit_gate",
 			"cc_light_instr": "cz",
 			"cc": {
 				"signal": [
