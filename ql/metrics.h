@@ -12,20 +12,20 @@
 
 namespace ql
 {
-class Metrics {
+// class Metrics {
 
-private:
-	size_t Nqubits;
-	double gatefid_1;
-	double gatefid_2; 
-	double decoherence_time;
+// private:
+// 	size_t Nqubits;
+// 	double gatefid_1;
+// 	double gatefid_2; 
+// 	double decoherence_time;
 
-public:
+// public:
 
-	Metrics(size_t Nqubits, double gatefid_1, double gatefid_2, double decoherence_time) : Nqubits(Nqubits), gatefid_1(gatefid_1), gatefid_2(gatefid_2), decoherence_time(decoherence_time)
-	{
-	}
-};
+// 	Metrics(size_t Nqubits, double gatefid_1, double gatefid_2, double decoherence_time) : Nqubits(Nqubits), gatefid_1(gatefid_1), gatefid_2(gatefid_2), decoherence_time(decoherence_time)
+// 	{
+// 	}
+// };
 
 
 
@@ -33,7 +33,8 @@ double bounded_fidelity(ql::circuit& circ, size_t Nqubits, double gatefid_1, dou
 { 
     //this function considers the primitive gates! each operand undergoing a 2-qubit operation is always considered to have the same latency
 	//same end fidelity considered for the two operands of the same 2-qubit gate
-	//The output is the worst fidelity from the all the qubits
+	//The output is the worst fidelity from the all the qubits (output_mode = "worst")
+	//TODO - Gate error rate not considered
 	//TODO - Exp operation can be optimized. Exponential of k cycles is the same as each cycle^k
 	//TODO - URGENT!!!! Confirm whether gate.duration is defined in cycles or ns!!! Considering cycles currently
 	
@@ -50,6 +51,9 @@ double bounded_fidelity(ql::circuit& circ, size_t Nqubits, double gatefid_1, dou
 	for (auto gate : circ)
 	{
 
+		if (gate->name == "measure")
+			continue;
+		
 		unsigned char type_op = gate->operands.size(); // type of operation (1-qubit/2-qubit)
 		if (type_op == 1)
 		{
@@ -95,12 +99,12 @@ double bounded_fidelity(ql::circuit& circ, size_t Nqubits, double gatefid_1, dou
 
 };
 
-double heuristic_metric()
-{
-	//Maybe try to understand how the fidelity of each operand evolves
-	//Extra: as a function of the initial and final qubit fidelity
-	return 0;
-};
+// double heuristic_metric()
+// {
+// 	//Maybe try to understand how the fidelity of each operand evolves
+// 	//Extra: as a function of the initial and final qubit fidelity
+// 	return 0;
+// };
 
 
 
