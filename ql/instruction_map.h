@@ -89,7 +89,7 @@ bool load_instruction_map(std::string file_name, dep_instruction_map_t& imap)
 #endif
 
 
-inline json load_json(std::string file_name)
+json load_json(std::string file_name)
 {
     std::ifstream fs(file_name);
     json j;

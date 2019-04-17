@@ -36,10 +36,11 @@ namespace ql
           opt_name2opt_val["scheduler_uniform"] = "no";
           opt_name2opt_val["scheduler_commute"] = "no";
           opt_name2opt_val["scheduler_post179"] = "yes";
+          opt_name2opt_val["backend_cc_map_input_file"] = "";
 
 
           // add options with default values and list of possible values
-          app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"], 
+          app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"],
             {"LOG_NOTHING", "LOG_CRITICAL", "LOG_ERROR", "LOG_WARNING", "LOG_INFO", "LOG_DEBUG"}, "Log levels", true);
           app->add_option("--output_dir", opt_name2opt_val["output_dir"], "Name of output directory", true);
           app->add_set_ignore_case("--scheduler_post179", opt_name2opt_val["scheduler_post179"], {"no", "yes"}, "Issue 179 solution included", true);
@@ -49,6 +50,7 @@ namespace ql
           app->add_set_ignore_case("--use_default_gates", opt_name2opt_val["use_default_gates"], {"yes", "no"}, "Use default gates or not", true);
           app->add_set_ignore_case("--optimize", opt_name2opt_val["optimize"], {"yes", "no"}, "optimize or not", true);
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "MA"}, "Type of decomposition used for toffoli", true);
+          app->add_option("--backend_cc_map_input_file", opt_name2opt_val["backend_cc_map_input_file"], "Name of CC input map file", true);
       }
 
       void print_current_values()
@@ -58,6 +60,7 @@ namespace ql
                     << "scheduler_uniform: " << opt_name2opt_val["scheduler_uniform"] << std::endl
                     << "scheduler_post179: " << opt_name2opt_val["scheduler_post179"] << std::endl
                     << "scheduler_commute: " << opt_name2opt_val["scheduler_uniform"] << std::endl;
+          // FIXME: incomplete, function seems unused
       }
 
       void help()
@@ -125,7 +128,7 @@ namespace ql
 
 #endif
 
-/*        
+/*
         void set(std::string opt_name, std::string opt_value)
         {
             if( _options.find(opt_name) != _options.end() )
@@ -143,7 +146,7 @@ namespace ql
             }
             else
             {
-                std::cerr << "[OPENQL] " << __FILE__ <<":"<< __LINE__ 
+                std::cerr << "[OPENQL] " << __FILE__ <<":"<< __LINE__
                           <<" Error: Un-known option:"<< opt_name << std::endl;
             }
         }
@@ -154,7 +157,7 @@ namespace ql
             for(auto elem : _options)
             {
                 std::cout << "    " << elem.first << " : " << elem.second << "\n";
-            }            
+            }
         }
 */
 

@@ -148,6 +148,8 @@ $2 = 0
 
     ql::options::set("scheduler", scheduler);
     ql::options::set("scheduler_uniform", scheduler_uniform);
+    ql::options::set("backend_cc_map_input_file", "test_output/test_classical_ALAP_uniform_no.map");
+
     prog.compile( );
 }
 

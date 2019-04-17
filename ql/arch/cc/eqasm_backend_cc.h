@@ -19,7 +19,7 @@
 #define QL_ARCH_CC_EQASM_BACKEND_CC_H
 
 // constants:
-#define CC_BACKEND_VERSION          "0.2.1"
+#define CC_BACKEND_VERSION          "0.2.2"
 
 // options:
 #define OPT_CC_SCHEDULE_KERNEL_H    0       // 1=use scheduler from kernel.h iso cclight, overrides next option
@@ -84,15 +84,11 @@ namespace arch
 
 class eqasm_backend_cc : public eqasm_compiler
 {
-private:
+private: // vars
     codegen_cc codegen;
     int bundleIdx;
 
     // parameters from JSON file:
-#if 0   // FIXME: now taken from platform.
-    size_t qubit_number;    // aka num_qubits;
-    size_t cycle_time;      // aka ns_per_cycle;
-#endif
 #if 0   // FIXME: unused
     size_t buffer_matrix[__operation_types_num__][__operation_types_num__];
 #endif
@@ -179,6 +175,14 @@ public:
         std::string file_name(ql::options::get("output_dir") + "/" + prog_name + ".cccode");
         IOUT("Writing CCCODE to " << file_name);
         ql::utils::write_file(file_name, codegen.getCode());
+
+        // write instrument map to file (unless we were using input file)
+        std::string map_input_file = ql::options::get("backend_cc_map_input_file");
+        if(map_input_file != "") {
+            std::string file_name_map(ql::options::get("output_dir") + "/" + prog_name + ".map");
+            IOUT("Writing instrument map to " << file_name_map);
+            ql::utils::write_file(file_name_map, codegen.getMap());
+        }
 
         DOUT("Compiling CCCODE [Done]");
     }
@@ -431,10 +435,6 @@ private:
             size_t  *var;
             std::string name;
         } hw_settings[] = {
-#if 0   // FIXME: now taken from platform
-            { &qubit_number,            "qubit_number"},    // FIXME: also available as platform.qubit_number
-            { &cycle_time,              "cycle_time" },     // FIXME: also available as platform.cycle_time
-#endif
 #if 0   // FIXME: unused. Convert to cycle
             { &mw_mw_buffer,            "mw_mw_buffer" },
             { &mw_flux_buffer,          "mw_flux_buffer" },
