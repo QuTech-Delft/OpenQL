@@ -173,17 +173,17 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     //
     // class SurfaceCode, qubits, tiles, width, getNeighbourN, getNeighbourE, getNeighbourW, getNeighbourS, getX, getZ, getData
 
-    const int x = 7;
-    const int xN = x-5;
-    const int xE = x+1;
-    const int xS = x+5;
-    const int xW = x-1;
+    const unsigned int x = 7;
+    const unsigned int xN = x-5;
+    const unsigned int xE = x+1;
+    const unsigned int xS = x+5;
+    const unsigned int xW = x-1;
 
-    const int z = 11;
-    const int zN = z-5;
-    const int zE = z+1;
-    const int zS = z+5;
-    const int zW = z-1;
+    const unsigned int z = 11;
+    const unsigned int zN = z-5;
+    const unsigned int zE = z+1;
+    const unsigned int zS = z+5;
+    const unsigned int zW = z-1;
 
     // X stabilizers
     k.gate("rym90", x);

@@ -31,3 +31,6 @@ CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/hardware_config_cc_light.json
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/hardware_config_qx.json
 	hardware_config_qx.json COPYONLY)
 
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/cc/test_cfg_cc.json
+	test_cfg_cc.json COPYONLY)
+

@@ -13,6 +13,14 @@
 #ifndef QL_ARCH_CC_CODEGEN_CC_H
 #define QL_ARCH_CC_CODEGEN_CC_H
 
+#include <cstddef>  // for size_t etc.
+
+// MS Visual C++ does not know about ssize_t
+#ifdef _MSC_VER
+  #include <type_traits>
+  typedef std::make_signed<size_t>::type ssize_t;
+#endif
+
 namespace ql
 {
 namespace arch
