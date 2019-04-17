@@ -194,7 +194,7 @@ public:
                                 }
                             }
                             if(!cwFound) {
-                                std::stringstream msg;
+                                std::ostringstream msg;
                                 msg << "signal value '" << signalValue
                                         << "' not found in group " << group
                                         << ", which contains " << myCodewordArray;
