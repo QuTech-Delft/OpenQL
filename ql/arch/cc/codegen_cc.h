@@ -194,10 +194,9 @@ public:
                                 }
                             }
                             if(!cwFound) {
-                                std::ostringstream msg;
-                                msg << "signal value '" << signalValue
+                                std::string msg = SS2S("signal value '" << signalValue
                                         << "' not found in group " << group
-                                        << ", which contains " << myCodewordArray;
+                                        << ", which contains " << myCodewordArray);
                                 if(mapPreloaded) {
                                     FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements:" << msg)
                                 } else {
