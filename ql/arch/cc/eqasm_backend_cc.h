@@ -466,8 +466,8 @@ private:
                 + "'\n\t"
                 + std::string(e.what()), false);
         }
-    }
 #endif
+    }
 }; // class
 
 } // arch
