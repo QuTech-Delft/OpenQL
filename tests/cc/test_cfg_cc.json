@@ -318,8 +318,8 @@
                     "qubits": [[1], [2], [6], [7], [8], [9], [10], [11]],
                     "ref_signals_type": "flux",
 					"ref_instrument_definition": "zi-hdawg",
-//                    "ref_control_mode": "awg8-flux",
-                    "ref_control_mode": "awg8-flux-vector-8",
+                    "ref_control_mode": "awg8-flux",
+//                    "ref_control_mode": "awg8-flux-vector-8",
 					"controller": {
 						"name": "cc",	// FIXME
 						"slot": 6,
@@ -331,8 +331,8 @@
                     "qubits": [[12], [13], [14], [15], [16], [17], [18], [22]],
                     "ref_signals_type": "flux",
 					"ref_instrument_definition": "zi-hdawg",
-//                    "ref_control_mode": "awg8-flux",
-                    "ref_control_mode": "awg8-flux-vector-8",
+                    "ref_control_mode": "awg8-flux",
+//                    "ref_control_mode": "awg8-flux-vector-8",
 					"controller": {
 						"name": "cc",	// FIXME
 						"slot": 7,
@@ -344,8 +344,8 @@
                     "qubits": [[23], [], [], [], [], [], [], []],
                     "ref_signals_type": "flux",
 					"ref_instrument_definition": "zi-hdawg",
-//                    "ref_control_mode": "awg8-flux",
-                    "ref_control_mode": "awg8-flux-vector-8",
+                    "ref_control_mode": "awg8-flux",
+//                    "ref_control_mode": "awg8-flux-vector-8",
 					"controller": {
 						"name": "cc",	// FIXME
 						"slot": 8,
