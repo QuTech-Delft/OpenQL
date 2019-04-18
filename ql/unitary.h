@@ -66,13 +66,14 @@ public:
         // compute the number of qubits: length of array is collumns*rows, so log2(sqrt(array.size))
         int numberofbits = (int) log2(matrix_size);
 
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> identity = Eigen::MatrixXd::Identity(matrix_size, matrix_size);
-        if(matrix.adjoint()*matrix != identity)
-        {
-            //Throw an error
-            EOUT("Unitary " << name <<" is not a unitary matrix!");;
-            throw ql::exception("Unitary '"+ name+"' is not a unitary matrix. Cannot be decomposed!", false);
-        }
+        // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> identity = Eigen::MatrixXi::Identity(matrix_size, matrix_size);
+        // if( ((Eigen::MatrixXcd) matrix*matrix.adjoint()) != identity)
+        // {
+        //     //Throw an error
+        //     EOUT("Unitary " << name <<" is not a unitary matrix!");
+
+        //     throw ql::exception("Unitary '"+ name+"' is not a unitary matrix. Cannot be decomposed!"+to_string(matrix*matrix.adjoint()), false);
+        // }
 
         decomp_function(matrix, numberofbits);
         utils::print_vector(instructionlist, "Instruction list: ", "; ");
@@ -81,6 +82,27 @@ public:
         DOUT("Done decomposing");
         is_decomposed = true;
     }
+
+    std::string to_string(complex_matrix m, std::string vector_prefix = "",
+                            std::string elem_sep = ", ")
+    {
+        std::ostringstream ss;
+        ss << m << "\n";
+        // ss << vector_prefix << " [";
+        // Eigen::VectorXcd v = Eigen::Map<Eigen::VectorXcd>(m.data, m.size());
+        // size_t sz = v.size();
+        // if(sz > 0)
+        // {
+        //     size_t i;
+        //     for (i=0; i<sz*sz-1; ++i)
+        //         ss << v[i] << elem_sep;
+        //     ss << v[i];
+        // }
+
+        // ss << "]";
+        return ss.str();
+    }
+
 
     void decomp_function(complex_matrix matrix, int numberofbits)
     {           
@@ -239,7 +261,7 @@ public:
         alpha = t1+t2;
         gamma = t1-t2;
         beta = 2*atan2(sw*sqrt(pow((double) wx,2)+pow((double) wy,2)),sqrt(pow((double) A.real(),2)+pow((wz*sw),2)));
-        instructionlist.push_back(delta);
+        //instructionlist.push_back(delta);
         instructionlist.push_back(alpha);
         instructionlist.push_back(beta);
         instructionlist.push_back(gamma);
@@ -254,7 +276,7 @@ public:
         double delta = atan2(det.imag(), det.real())/matrix.size();
         std::complex<double> com_two(0,1);
         std::complex<double> A = exp(-com_two*delta)*matrix(0,0);
-        std::complex<double> B = exp(-com_two*delta)*matrix(1,0); //to comply with the other y-gate definition?
+        std::complex<double> B = exp(-com_two*delta)*matrix(0,1); //to comply with the other y-gate definition?
         double sw = sqrt(pow((double) B.imag(),2) + pow((double) B.real(),2) + pow((double) A.imag(),2));
         double wx = 0;
         double wy = 0;
@@ -282,9 +304,20 @@ public:
     {
         if(U1 == U2)
         {
-             EOUT("Unitaries are equal: optimization not implemented yet!");;
+            if(U1.rows() == 2)
+            {
+                zyz_decomp(U1);
+                //if U1 2x2, then the total gate is 4x4 = 2 qubit gates, which is a total of 18 rotation gates = 18 angles -> need to put 15 zeroes so the count is the same (and optimize them out later)
+                for(int i = 0; i < 15; i++)
+                {
+                    instructionlist.push_back(0);
+                }
+            }
+            else
+            {
+            EOUT("Unitaries are equal: optimization not implemented yet!");;
             throw ql::exception("Unitaries are equal: optimization not implemented yet!", false);
-  
+            }
         }
         else
         {

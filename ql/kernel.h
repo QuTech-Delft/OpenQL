@@ -826,10 +826,39 @@ public:
         if(u.is_decomposed)
         {
             COUT("Adding decomposed unitary to kernel ...");
-             c.push_back(new ql::rz(qubits[0], u.alpha));
-             c.push_back(new ql::ry(qubits[0], u.beta));
-             c.push_back(new ql::rz(qubits[0], u.gamma));
+            uint i = 0;
+            while(i < u.instructionlist.size()) //so it's easier to control how many steps the algorithm takes
+            {
+                if(qubits.size() == 1) //3 gates
+                {
+                    c.push_back(new ql::rz(qubits[0], u.instructionlist[0]));
+                    c.push_back(new ql::ry(qubits[0], u.instructionlist[1]));
+                    c.push_back(new ql::rz(qubits[0], u.instructionlist[2]));
+                    i = i+3;
+                };
+                if(qubits.size() == 2) //18 gates
+                {
+                    c.push_back(new ql::rz(qubits[1], u.instructionlist[0]));
+                    c.push_back(new ql::ry(qubits[1], u.instructionlist[1]));
+                    c.push_back(new ql::rz(qubits[1], u.instructionlist[2]));
+                    gray_code_rz(u.instructionlist,3,4, qubits); //rz //uses two gates
+                    c.push_back(new ql::rz(qubits[1], u.instructionlist[5]));
+                    c.push_back(new ql::ry(qubits[1], u.instructionlist[6]));
+                    c.push_back(new ql::rz(qubits[1], u.instructionlist[7]));
+                    gray_code_ry(u.instructionlist, 8,9, qubits); //ry //uses two gates
+                    c.push_back(new ql::rz(qubits[1], u.instructionlist[10]));
+                    c.push_back(new ql::ry(qubits[1], u.instructionlist[11]));
+                    c.push_back(new ql::rz(qubits[1], u.instructionlist[12]));
+                    gray_code_rz(u.instructionlist, 13,14, qubits); //rz //uses two gates
+                    c.push_back(new ql::rz(qubits[1], u.instructionlist[15]));
+                    c.push_back(new ql::ry(qubits[1], u.instructionlist[16]));
+                    c.push_back(new ql::rz(qubits[1], u.instructionlist[17])); 
+                    i = i+18  ;                
+                }
 
+                // And so this loop does not accidentally lock
+                i++; 
+            }
         }
         else
         {
@@ -837,6 +866,47 @@ public:
             throw ql::exception("Unitary '"+u.name+"' not decomposed. Cannot be added to kernel!", false);
         }
     }
+
+    //controlled qubit is the first in the list.
+    void gray_code_rz( std::vector<double> instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
+    {
+        int idx;
+        int posc;
+        //first is always the first bit of the controlbits (so the second item in the list)
+        c.push_back(new ql::rz(qubits[0],-instruction_list[start_index]));
+        c.push_back(new ql::cnot(qubits[1], qubits[0]));
+        for(int i = 1; i < std::pow(2,qubits.size() )-1; i++)
+        {
+            idx = log2( round( ((i-1)^((i-1)>>1))^(i^(i>>1))) );
+            posc = qubits.back() - idx;
+            c.push_back(new ql::rz(qubits[0],-instruction_list[i+start_index]));
+            c.push_back(new ql::cnot(posc, qubits[0]));
+        }
+        //The last one is always controlled from the last to the first qubit.
+        c.push_back(new ql::rz(qubits[0],-instruction_list[end_index]));
+        c.push_back(new ql::cnot(qubits.back(), qubits[0]));
+    }
+
+    //controlled qubit is the first in the list.
+    void gray_code_ry( std::vector<double> instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
+    {
+        int idx;
+        int posc;
+        //first is always the first bit of the controlbits (so the second item in the list)
+        c.push_back(new ql::ry(qubits[0],-instruction_list[start_index]));
+        c.push_back(new ql::cnot(qubits[1], qubits[0]));
+        for(int i = 1; i < std::pow(2,qubits.size() )-1; i++)
+        {
+            idx = log2( round( ((i-1)^((i-1)>>1))^(i^(i>>1))) );
+            posc = qubits.back() - idx;
+            c.push_back(new ql::ry(qubits[0],-instruction_list[i+start_index]));
+            c.push_back(new ql::cnot(posc, qubits[0]));
+        }
+        //The last one is always on from the last to the frist qubit.
+        c.push_back(new ql::ry(qubits[0],-instruction_list[end_index]));
+        c.push_back(new ql::cnot(qubits.back(), qubits[0]));
+    }
+
 
     // FIXME: is this really QASM, or CC-light eQASM?
     // FIXME: create a separate QASM backend?
