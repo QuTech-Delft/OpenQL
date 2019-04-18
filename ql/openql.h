@@ -13,7 +13,7 @@
 #define OPT_UNFINISHED_OPTIMIZATION     0   // enable unfinished optimization that actually did nothing
 
 #define OPT_WRITE_SCHED_QASM            1   // write scheduled qasm using default scheduler (which may differ from actual scheduler used)
-
+// FIXME: last option does not work, because openql.h is not included everywhere
 
 #include "instruction_map.h"
 #include "optimizer.h"
