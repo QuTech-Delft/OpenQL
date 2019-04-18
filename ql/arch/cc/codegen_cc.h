@@ -160,7 +160,8 @@ public:
             int slot = instrument["controller"]["slot"];    // FIXME: assuming controller being cc
             int slotIdx = instrIdx; // FIXME
 
-            // collect info for all groups within slot, i.e. one connected instrummnt
+            // collect info for all groups within slot, i.e. one connected instrument
+            // FIXME: the term 'group' is used in a diffused way: 1) index of signal vectors, 2) ...
             bool isSlotUsed = false;
             uint32_t digOut = 0;
             uint32_t digIn = 0;
@@ -174,18 +175,36 @@ public:
                     // FIXME: check existence of keys below to ease end user debugging on configuration errors
                     std::string controlModeRef = instrument["ref_control_mode"];
                     const json &controlMode = jsonControlModes[controlModeRef];    // the control mode definition for our instrument
-                    const json &controlBits = controlMode["control_bits"][group];
+                    int nrControlBitsGroups = controlMode["control_bits"].size();
+
+                    int controlModeGroup = -1;
+                    if(nrControlBitsGroups == 1) {                  // vector mode: group addresses channel within vector
+                        controlModeGroup = 0;
+                    } else if(group < nrControlBitsGroups) {        // normal mode: group selects control group
+                        controlModeGroup = group;
+                    } else {
+                        FATAL("instrument '" << instrumentName
+                              << "' uses " << nrGroups
+                              << " groups, but control mode '" << controlModeRef
+                              << "' only defines " << nrControlBitsGroups);
+                    }
+                    const json &groupControlBits = controlMode["control_bits"][controlModeGroup];
 
                     // find or create codeword/mask fragment for this group
-                    DOUT("instrumentName=" << instrumentName <<
+                    DOUT("instrumentName="  <<
                          ", slot=" << slot <<
-                         ", group=" << group <<
-                         ", control bits: " << controlBits);
-                    size_t nrControlBits = controlBits.size();
-                    if(nrControlBits == 1) {      // single bit, implying this is a mask (not code word)
-                        digOut |= 1<<(int)controlBits[0];     // NB: we assume the mask is active high, which is correct for VSM and UHF-QC
+                         ", control mode group=" << controlModeGroup <<
+                         ", group control bits: " << groupControlBits);
+                    size_t nrGroupControlBits = groupControlBits.size();
+                    if(nrGroupControlBits == 1) {      // single bit, implying this is a mask (not code word)
+                        digOut |= 1<<(int)groupControlBits[0];     // NB: we assume the mask is active high, which is correct for VSM and UHF-QC
+                        // FIXME: check controlModeGroup vs group
                     } else {                // > 1 bit, implying code word
-                        // FIXME allow single code word for vector of groups
+                        // FIXME allow single code word for vector of groups. Requires looking at all signals before assigning code word
+                        if(group != controlModeGroup) {
+                            FATAL("vector mode not yet supported");
+                        }
+
                         // try to find code word
                         uint32_t codeWord = 0;
                         std::string signalValue = groupInfo[slotIdx][group].signalValue;
@@ -228,9 +247,9 @@ public:
                         }
 
                         // convert codeWord to digOut
-                        for(size_t idx=0; idx<nrControlBits; idx++) {
-                            int codeWordBit = nrControlBits-1-idx;    // controlBits defines MSB..LSB
-                            if(codeWord & (1<<codeWordBit)) digOut |= 1<<(int)controlBits[idx];
+                        for(size_t idx=0; idx<nrGroupControlBits; idx++) {
+                            int codeWordBit = nrGroupControlBits-1-idx;    // groupControlBits defines MSB..LSB
+                            if(codeWord & (1<<codeWordBit)) digOut |= 1<<(int)groupControlBits[idx];
                         }
                     }
 

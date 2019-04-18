@@ -431,6 +431,7 @@ private:
     // based on: cc_light_eqasm_compiler.h::load_hw_settings
     void load_hw_settings(const ql::quantum_platform& platform)
     {
+#if 0   // NB: Visual Studio does not like empty array
         const struct {
             size_t  *var;
             std::string name;
@@ -466,7 +467,7 @@ private:
                 + std::string(e.what()), false);
         }
     }
-
+#endif
 }; // class
 
 } // arch

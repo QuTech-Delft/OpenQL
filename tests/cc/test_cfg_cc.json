@@ -85,10 +85,10 @@
 		"eqasm_backend_cc": {
 			// Immutable properties of instruments.
             // Sub keys for "instrument_definitions":
-            // - <key>                      a name which can be referred to from key 'instruments/[]/ref_instrument_definition'
-            // - <key>/channels             number of channels (either firmware (UHF-QC) or hardware)
-            // - <key>/control_group_sizes  possible arrangements of channels operating as a vector
-            // - <key>/latency              latency from trigger to output in [ns]. FIXME: where do we account for other latencies
+            // - <key>                          a name which can be referred to from key 'instruments/[]/ref_instrument_definition'
+            // - <key>/channels                 number of channels (either firmware (UHF-QC) or hardware)
+            // - <key>/control_group_sizes      possible arrangements of channels operating as a vector
+            // - <key>/latency                  latency from trigger to output in [ns]. FIXME: where do we account for other latencies
 			// FIXME: introduce 'controller_definitions' for CC and friends?
 			"instrument_definitions": {
 				"qutech-qwg": {
@@ -113,14 +113,19 @@
 				}
 			},   // instrument_definitions
 
+
+
 			// Modes to control instruments. These define which bits are used to control groups of channels
             // and/or get back measurement results.
             // Sub keys for "control_modes":
-            // - <key>                      a name which can be referred to from key 'instruments/[]/ref_control_mode'
-            // - <key>/control_bits
-            // - <key>/trigger_bits
-            // - <key>/result_bits
-            // - <key>/data_valid_bits
+            // - <key>                          a name which can be referred to from key 'instruments/[]/ref_control_mode'
+            // - <key>/control_bits             G groups of B bits:
+            //                                  - G defines the 'instrument_definitions/<key>/control_group_sizes' used
+            //                                  - B is an ordered list of bits (MSB to LSB) used for the code word
+            // - <key>/trigger_bits             vector of bits used to trigger the instrument. Must either be size 1 (common trigger)
+            //                                  or size G (separate trigger per group)
+            // - <key>/result_bits              future
+            // - <key>/data_valid_bits          future
 			"control_modes": {
 				"awg8-mw-vsm": {						  // ZI_HDAWG8.py::cfg_codeword_protocol() == 'microwave'
 					"control_bits": [
@@ -175,6 +180,8 @@
 				}
 			},   // control_modes
 
+
+
             // Signal library that gate definitions can refer to.
             // Sub keys for "signals":
             // - <key>                      a name which can be referred to from key 'instructions/<>/cc/signal_ref'
@@ -209,6 +216,8 @@
                     // FIXME: CZ(a,b) and CZ(a,c) requires different waveforms on a
                 ]
             },  // signals
+
+
 
 			// Instruments used in this setup, their configuration and connectivity.
 			"instruments": [
@@ -347,6 +356,8 @@
 		}
 	},
 
+
+
 	// extracted from PyqQED_py3 'generate_CCL_cfg.py'
   	"gate_decomposition": {
         "x %0": ["rx180 %0"],
@@ -393,6 +404,8 @@
         "cnot_park2 %0 %1 %2": ["ry90 %1", "cz_park %0 %1 %2", "ry90 %1"],
         "cz_park1 %0 %1 %2": ["cz %0 %1", "park_cz %2"]
   	},
+
+
 
     // User defined instruction set.
     // Sub keys for "instructions", standard OpenQL:
@@ -562,9 +575,7 @@
 			}
 		},
 
-
-
-		// should handle:
+		// CZ should handle:
 		// https://github.com/QE-Lab/OpenQL/issues/166
 		// https://github.com/QE-Lab/OpenQL/issues/180
 		"cz": {
@@ -732,7 +743,7 @@
             }
         }
 
-        //"detuned_qubits"  FIXME: required?
+        //"detuned_qubits"  optional?
     }
 }
 
