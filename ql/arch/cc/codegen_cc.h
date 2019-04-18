@@ -657,7 +657,7 @@ public:
                 signalTypeFound = true;
                 std::string instrumentName = instrument["name"];
                 const json &qubits = instrument["qubits"];
-                // FIXME: verify group size
+                // FIXME: verify group size: qubits vs. control mode
                 // FIXME: verify signal dimensions
 
                 // anyone connected to qubit?

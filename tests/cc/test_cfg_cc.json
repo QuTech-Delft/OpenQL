@@ -84,16 +84,21 @@
 		// FIXME: we put this key inside "hardware_settings" for now, but it should preferably be below "backend" or so
 		"eqasm_backend_cc": {
 			// Immutable properties of instruments.
+            // Sub keys for "instrument_definitions":
+            // - <key>                      a name which can be referred to from key 'instruments/[]/ref_instrument_definition'
+            // - <key>/channels             number of channels (either firmware (UHF-QC) or hardware)
+            // - <key>/control_group_sizes  possible arrangements of channels operating as a vector
+            // - <key>/latency              latency from trigger to output in [ns]. FIXME: where do we account for other latencies
 			// FIXME: introduce 'controller_definitions' for CC and friends?
 			"instrument_definitions": {
 				"qutech-qwg": {
 					"channels": 4,
-					"control_group_sizes": [1,4],
+					"control_group_sizes": [1, 4],
 					"latency": 50		// FIXME: check
 				},
 				"zi-hdawg": {
 					"channels": 8,
-					"control_group_sizes": [1, 4, 8],
+					"control_group_sizes": [1, 2, 4, 8], // NB: size=1 needs special treatment of waveforms because one AWG unit drives 2 channels
 					"latency": 300		// FIXME: check. If latency depends on FW version, several definitions must be present
 				},
 				"qutech-vsm": {
@@ -108,8 +113,14 @@
 				}
 			},   // instrument_definitions
 
-			// Modes to control instruments. These define which bits are used to
-			// control groups of channels and/or get back measurement results
+			// Modes to control instruments. These define which bits are used to control groups of channels
+            // and/or get back measurement results.
+            // Sub keys for "control_modes":
+            // - <key>                      a name which can be referred to from key 'instruments/[]/ref_control_mode'
+            // - <key>/control_bits
+            // - <key>/trigger_bits
+            // - <key>/result_bits
+            // - <key>/data_valid_bits
 			"control_modes": {
 				"awg8-mw-vsm": {						  // ZI_HDAWG8.py::cfg_codeword_protocol() == 'microwave'
 					"control_bits": [
@@ -118,9 +129,9 @@
 					],
 					"trigger_bits": [31]
 				},
-				"awg8-mw-direct-iq": {				      // just I&Q to generate microwave without VSM
+				"awg8-mw-direct-iq": {				      // just I&Q to generate microwave without VSM. FIXME: no official mode yet
 					"control_bits": [
-						[6,5,4,3,2,1,0],				  // FIXME: no official mode yet
+						[6,5,4,3,2,1,0],
 						[13,12,11,10,9,8,7],
 						[20,19,18,17,16,15,14],
 						[27,26,25,24,23,22,21]
@@ -128,6 +139,7 @@
 					"trigger_bits": [31]
 				},
 				"awg8-flux": {							   // ZI_HDAWG8.py::cfg_codeword_protocol() == 'flux'
+                    // NB: please note that internally one AWG unit handles 2 channels, which requires special handling of the waveforms
 					"control_bits": [
 						[2,1,0],
 						[5,4,3],
@@ -140,9 +152,9 @@
 					],
 					"trigger_bits": [31]
 				},
-				"awg8-flux-vector": {				       // single code word for 8 flux channels
+				"awg8-flux-vector-8": {				       // single code word for 8 flux channels. FIXME: no official mode yet
 					"control_bits": [
-						[7,6,5,4,3,2,1,0]
+						[7,6,5,4,3,2,1,0]     // FIXME: how many bits are available
 					],
 					"trigger_bits": [31]
 				},
@@ -164,11 +176,9 @@
 			},   // control_modes
 
             // Signal library that gate definitions can refer to.
-            // Supports the following macro expansions for key "value":
-            // * {gateName}
-            // * {instrumentName}
-            // * {instrumentGroup}
-            // * {qubit}
+            // Sub keys for "signals":
+            // - <key>                      a name which can be referred to from key 'instructions/<>/cc/signal_ref'
+            // - <key>/*                    see 'instructions/<>/cc/signal'
             // NB: our JSON library does not yet support JSON pointers like:
             // "signal": {"$ref": "#/hardware_settings/eqasm_backend_cc/signals/single-qubit"}
             "signals": {
@@ -299,7 +309,8 @@
                     "qubits": [[1], [2], [6], [7], [8], [9], [10], [11]],
                     "ref_signals_type": "flux",
 					"ref_instrument_definition": "zi-hdawg",
-                    "ref_control_mode": "awg8-flux",
+//                    "ref_control_mode": "awg8-flux",
+                    "ref_control_mode": "awg8-flux-vector-8",
 					"controller": {
 						"name": "cc",	// FIXME
 						"slot": 6,
@@ -311,7 +322,8 @@
                     "qubits": [[12], [13], [14], [15], [16], [17], [18], [22]],
                     "ref_signals_type": "flux",
 					"ref_instrument_definition": "zi-hdawg",
-                    "ref_control_mode": "awg8-flux",
+//                    "ref_control_mode": "awg8-flux",
+                    "ref_control_mode": "awg8-flux-vector-8",
 					"controller": {
 						"name": "cc",	// FIXME
 						"slot": 7,
@@ -323,7 +335,8 @@
                     "qubits": [[23], [], [], [], [], [], [], []],
                     "ref_signals_type": "flux",
 					"ref_instrument_definition": "zi-hdawg",
-                    "ref_control_mode": "awg8-flux",
+//                    "ref_control_mode": "awg8-flux",
+                    "ref_control_mode": "awg8-flux-vector-8",
 					"controller": {
 						"name": "cc",	// FIXME
 						"slot": 8,
@@ -332,135 +345,6 @@
 				}
 			] // instruments
 		}
-	},
-
-	// NB: the "topology" keyword must be present, but the contents are only interpreted by
-	// the 'resource constraint' scheduler (TBC)
-	"topology": {
-		// FIXME: apparently unused:
-		// "x_size": 5,
-		// "y_size": 3,
-		// "qubits": [
-		// 	{ "id": 0,  "x": 1, "y": 2 },
-		// 	{ "id": 1,  "x": 3, "y": 2 },
-		// 	{ "id": 2,  "x": 0, "y": 1 },
-		// 	{ "id": 3,  "x": 2, "y": 1 },
-		// 	{ "id": 4,  "x": 4, "y": 1 },
-		// 	{ "id": 5,  "x": 1, "y": 0 },
-		// 	{ "id": 6,  "x": 3, "y": 0 }
-		// ],
-
-		// Directed edges between qubits (from "src" to "dst") define allowable
-		// two qubit operations.
-		// see:
-		// - https://github.com/DiCarloLab-Delft/ElecPrj_CCLight/wiki/Qubit-number-and-directed-edge-number
-		// - https://github.com/QE-Lab/OpenQL/blob/847ff7d373b5fe7ce23c0669cb194c79525aad2e/ql/arch/cc_light/cc_light_resource_manager.h#L352
-		// NB: the actual edge numbering is irrelevant to the CC, which has no knowledge about edges
-		"edges": [
-			{ "id":  0,	"src":  1, "dst":	 2 },
-			{ "id":  1,	"src":  1, "dst":	 6 },
-			{ "id":  2,	"src":  2, "dst":	 1 },
-			{ "id":  3,	"src":  2, "dst":	 7 },
-			{ "id":  4,	"src":  6, "dst":	 1 },
-			{ "id":  5,	"src":  6, "dst":	 7 },
-			{ "id":  6,	"src":  6, "dst":	11 },
-			{ "id":  7,	"src":  7, "dst":	 2 },
-			{ "id":  8,	"src":  7, "dst":	 6 },
-			{ "id":  9,	"src":  7, "dst":	 8 },
-			{ "id": 10,	"src":  7, "dst":	12 },
-			{ "id": 11,	"src":  8, "dst":	 7 },
-			{ "id": 12,	"src":  8, "dst":	 9 },
-			{ "id": 13,	"src":  8, "dst":	13 },
-			{ "id": 14,	"src":  9, "dst":	 8 },
-			{ "id": 15,	"src":  9, "dst":	14 },
-			{ "id": 16,	"src": 10, "dst":	11 },
-			{ "id": 17,	"src": 10, "dst":	15 },
-			{ "id": 18,	"src": 11, "dst":	 6 },
-			{ "id": 19,	"src": 11, "dst":	10 },
-			{ "id": 20,	"src": 11, "dst":	12 },
-			{ "id": 21,	"src": 11, "dst":	16 },
-			{ "id": 22,	"src": 12, "dst":	 7 },
-			{ "id": 23,	"src": 12, "dst":	11 },
-			{ "id": 24,	"src": 12, "dst":	13 },
-			{ "id": 25,	"src": 12, "dst":	17 },
-			{ "id": 26,	"src": 13, "dst":	 8 },
-			{ "id": 27,	"src": 13, "dst":	12 },
-			{ "id": 28,	"src": 13, "dst":	14 },
-			{ "id": 29,	"src": 13, "dst":	18 },
-			{ "id": 30,	"src": 14, "dst":	 9 },
-			{ "id": 31,	"src": 14, "dst":	13 },
-			{ "id": 32,	"src": 15, "dst":	10 },
-			{ "id": 33,	"src": 15, "dst":	16 },
-			{ "id": 34,	"src": 16, "dst":	11 },
-			{ "id": 35,	"src": 16, "dst":	15 },
-			{ "id": 36,	"src": 16, "dst":	17 },
-			{ "id": 37,	"src": 17, "dst":	12 },
-			{ "id": 38,	"src": 17, "dst":	16 },
-			{ "id": 39,	"src": 17, "dst":	18 },
-			{ "id": 40,	"src": 17, "dst":	22 },
-			{ "id": 41,	"src": 18, "dst":	13 },
-			{ "id": 42,	"src": 18, "dst":	17 },
-			{ "id": 43,	"src": 18, "dst":	23 },
-			{ "id": 44,	"src": 22, "dst":	17 },
-			{ "id": 45,	"src": 22, "dst":	23 },
-			{ "id": 46,	"src": 23, "dst":	18 },
-			{ "id": 47,	"src": 23, "dst":	22 }
-		]
-	},
-
-
-	// NB: the "resources" keyword must be present, but the contents are only interpreted by
-	// the 'resource constraint' scheduler (TBC)
-	"resources": {		// see: https://github.com/QE-Lab/OpenQL/blob/847ff7d373b5fe7ce23c0669cb194c79525aad2e/ql/arch/cc_light/cc_light_resource_manager.h#L724
-		"qubits": {
-			"count": 25		// of which 17 are used. FIXME: duplicates 'hardware_settings/qubit_number'
-		},
-		"qwgs" : {
-			"count": 4,
-			"connection_map": {	// FIXME: must match "instruments"
-				"0": [6, 12, 18],											// [freq L]
-				"1": [2, 8, 10, 14, 16, 22],								// [freq H]
-				"2": [1, 9, 13, 17], 										// [freq Mg]
-				"3": [7, 11, 15, 23]										// [freq My]
-			}
-		},
-		"meas_units" : {
-			"count": 3,
-			"connection_map": {	// FIXME: must match "instruments"
-				"0": [10, 15],
-				"1": [1, 2, 6, 7, 11, 12, 16, 17, 22],
-				"2": [8, 9, 13, 14, 18, 23]
-			}
-		},
-		"edges": {
-		 	"count": 48,		// FIXME: must be present and at least match size of 'topology/edges', see edge_resource_t
-		 	// connection_map:
-		 	// "0": [2, 10] means that edge 0 'connects' to edges 2 and 10, where edges
-		 	// refer to the "id" in 'topology/edges'
-		 	// The term 'connect' in this context means that an operation on edge 0
-		 	// blocks operations on edges 2 and 10
-		 	// see: https://github.com/QE-Lab/OpenQL/blob/847ff7d373b5fe7ce23c0669cb194c79525aad2e/ql/arch/cc_light/cc_light_resource_manager.h#L371
-			"connection_map": {
-				// "0": [],
-				// "1": [],
-				// "2": [],
-				// "3": [],
-				// "4": [],
-				// "5": [],
-				// "6": [],
-				// "7": [],
-				// "8": [],
-				// "9": [],
-				// "10": [],
-				// "11": [],
-				// "12": [],
-				// "13": [],
-				// "14": [],
-				// "15": [],
-			}
-		}
-
-		//"detuned_qubits"	FIXME: required?
 	},
 
 	// extracted from PyqQED_py3 'generate_CCL_cfg.py'
@@ -510,16 +394,33 @@
         "cz_park1 %0 %1 %2": ["cz %0 %1", "park_cz %2"]
   	},
 
+    // User defined instruction set.
+    // Sub keys for "instructions", standard OpenQL:
+    // - <key>                          name for the instruction (NB: supports several naming schemes)
+    // - <key>/duration                 duration in [ns]
+    // - <key>/latency                  FIXME: what is the meaning of per instruction latency??
+    // - <key>/matrix                   required, but generally does not contain useful information
+    //
+    // The cc-light scheduler requires the following sub keys:
+    // - <key>/cc_light_instr
+    // - <key>/type
+    //
+    // Sub keys for "instructions", CC additions:
+    // - <key>/cc/signal/type
+    // - <key>/cc/signal/operand_idx
+    // - <key>/cc/signal/value
+    //                                  Supports the following macro expansions:
+    //                                  * {gateName}
+    //                                  * {instrumentName}
+    //                                  * {instrumentGroup}
+    //                                  * {qubit}
+    // - <key>/cc/signal_ref            reference to key 'signals/<value> instead of '<key>/cc/signal'
+    //
+    // Only the cc-light backend requires the following keys:
+    // - <key>/cc_light_instr_type
+    //
+    // FIXME: allow AWG8 setPrecompClear with wave
 
-	// FIXME: allow AWG8 setPrecompClear with wave
-	// FIXME:
-    // - key 'matrix' is required, but does not contain useful information
-    // - key 'latency' ??
-    // - the cc-light scheduler requires the following keys:
-    //      * 'cc_light_instr'
-    //      * 'type'
-    // - only the cc-light backend requires the following keys:
-    //      * 'cc_light_instr_type'
 	"instructions": {
 		// additions from 'CC-software-implementation.docx', these are single-qubit
 		// flux pulses, see issue #176:
@@ -701,6 +602,137 @@
 				]
 			}
 		}
-	}	// end of "instructions"
+	},	// end of "instructions"
+
+
+
+    // NB: the "topology" keyword must be present, but the contents are only interpreted by
+    // the 'resource constraint' scheduler
+    "topology": {
+        // FIXME: apparently unused:
+        // "x_size": 5,
+        // "y_size": 3,
+        // "qubits": [
+        //  { "id": 0,  "x": 1, "y": 2 },
+        //  { "id": 1,  "x": 3, "y": 2 },
+        //  { "id": 2,  "x": 0, "y": 1 },
+        //  { "id": 3,  "x": 2, "y": 1 },
+        //  { "id": 4,  "x": 4, "y": 1 },
+        //  { "id": 5,  "x": 1, "y": 0 },
+        //  { "id": 6,  "x": 3, "y": 0 }
+        // ],
+
+        // Directed edges between qubits (from "src" to "dst") define allowable
+        // two qubit operations.
+        // see:
+        // - https://github.com/DiCarloLab-Delft/ElecPrj_CCLight/wiki/Qubit-number-and-directed-edge-number
+        // - https://github.com/QE-Lab/OpenQL/blob/847ff7d373b5fe7ce23c0669cb194c79525aad2e/ql/arch/cc_light/cc_light_resource_manager.h#L352
+        // NB: the actual edge numbering is irrelevant to the CC, which has no knowledge about edges
+        "edges": [
+            { "id":  0, "src":  1, "dst":    2 },
+            { "id":  1, "src":  1, "dst":    6 },
+            { "id":  2, "src":  2, "dst":    1 },
+            { "id":  3, "src":  2, "dst":    7 },
+            { "id":  4, "src":  6, "dst":    1 },
+            { "id":  5, "src":  6, "dst":    7 },
+            { "id":  6, "src":  6, "dst":   11 },
+            { "id":  7, "src":  7, "dst":    2 },
+            { "id":  8, "src":  7, "dst":    6 },
+            { "id":  9, "src":  7, "dst":    8 },
+            { "id": 10, "src":  7, "dst":   12 },
+            { "id": 11, "src":  8, "dst":    7 },
+            { "id": 12, "src":  8, "dst":    9 },
+            { "id": 13, "src":  8, "dst":   13 },
+            { "id": 14, "src":  9, "dst":    8 },
+            { "id": 15, "src":  9, "dst":   14 },
+            { "id": 16, "src": 10, "dst":   11 },
+            { "id": 17, "src": 10, "dst":   15 },
+            { "id": 18, "src": 11, "dst":    6 },
+            { "id": 19, "src": 11, "dst":   10 },
+            { "id": 20, "src": 11, "dst":   12 },
+            { "id": 21, "src": 11, "dst":   16 },
+            { "id": 22, "src": 12, "dst":    7 },
+            { "id": 23, "src": 12, "dst":   11 },
+            { "id": 24, "src": 12, "dst":   13 },
+            { "id": 25, "src": 12, "dst":   17 },
+            { "id": 26, "src": 13, "dst":    8 },
+            { "id": 27, "src": 13, "dst":   12 },
+            { "id": 28, "src": 13, "dst":   14 },
+            { "id": 29, "src": 13, "dst":   18 },
+            { "id": 30, "src": 14, "dst":    9 },
+            { "id": 31, "src": 14, "dst":   13 },
+            { "id": 32, "src": 15, "dst":   10 },
+            { "id": 33, "src": 15, "dst":   16 },
+            { "id": 34, "src": 16, "dst":   11 },
+            { "id": 35, "src": 16, "dst":   15 },
+            { "id": 36, "src": 16, "dst":   17 },
+            { "id": 37, "src": 17, "dst":   12 },
+            { "id": 38, "src": 17, "dst":   16 },
+            { "id": 39, "src": 17, "dst":   18 },
+            { "id": 40, "src": 17, "dst":   22 },
+            { "id": 41, "src": 18, "dst":   13 },
+            { "id": 42, "src": 18, "dst":   17 },
+            { "id": 43, "src": 18, "dst":   23 },
+            { "id": 44, "src": 22, "dst":   17 },
+            { "id": 45, "src": 22, "dst":   23 },
+            { "id": 46, "src": 23, "dst":   18 },
+            { "id": 47, "src": 23, "dst":   22 }
+        ]
+    },
+
+
+    // NB: the "resources" keyword must be present, but the contents are only interpreted by
+    // the 'resource constraint' scheduler
+    "resources": {      // see: https://github.com/QE-Lab/OpenQL/blob/847ff7d373b5fe7ce23c0669cb194c79525aad2e/ql/arch/cc_light/cc_light_resource_manager.h#L724
+        "qubits": {
+            "count": 25     // of which 17 are used. FIXME: duplicates 'hardware_settings/qubit_number'
+        },
+        "qwgs" : {
+            "count": 4,
+            "connection_map": { // FIXME: must match "instruments"
+                "0": [6, 12, 18],                                           // [freq L]
+                "1": [2, 8, 10, 14, 16, 22],                                // [freq H]
+                "2": [1, 9, 13, 17],                                        // [freq Mg]
+                "3": [7, 11, 15, 23]                                        // [freq My]
+            }
+        },
+        "meas_units" : {
+            "count": 3,
+            "connection_map": { // FIXME: must match "instruments"
+                "0": [10, 15],
+                "1": [1, 2, 6, 7, 11, 12, 16, 17, 22],
+                "2": [8, 9, 13, 14, 18, 23]
+            }
+        },
+        "edges": {
+            "count": 48,        // FIXME: must be present and at least match size of 'topology/edges', see edge_resource_t
+            // connection_map:
+            // "0": [2, 10] means that edge 0 'connects' to edges 2 and 10, where edges
+            // refer to the "id" in 'topology/edges'
+            // The term 'connect' in this context means that an operation on edge 0
+            // blocks operations on edges 2 and 10
+            // see: https://github.com/QE-Lab/OpenQL/blob/847ff7d373b5fe7ce23c0669cb194c79525aad2e/ql/arch/cc_light/cc_light_resource_manager.h#L371
+            "connection_map": {
+                // "0": [],
+                // "1": [],
+                // "2": [],
+                // "3": [],
+                // "4": [],
+                // "5": [],
+                // "6": [],
+                // "7": [],
+                // "8": [],
+                // "9": [],
+                // "10": [],
+                // "11": [],
+                // "12": [],
+                // "13": [],
+                // "14": [],
+                // "15": [],
+            }
+        }
+
+        //"detuned_qubits"  FIXME: required?
+    }
 }
 
