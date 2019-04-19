@@ -66,14 +66,16 @@ public:
         // compute the number of qubits: length of array is collumns*rows, so log2(sqrt(array.size))
         int numberofbits = (int) log2(matrix_size);
 
-        // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> identity = Eigen::MatrixXi::Identity(matrix_size, matrix_size);
-        // if( ((Eigen::MatrixXcd) matrix*matrix.adjoint()) != identity)
-        // {
-        //     //Throw an error
-        //     EOUT("Unitary " << name <<" is not a unitary matrix!");
+        Eigen::MatrixXcd identity = Eigen::MatrixXcd::Identity(matrix_size, matrix_size);
+        Eigen::MatrixXcd matmatadjoint = (matrix*matrix.adjoint());
+        bool equal = matmatadjoint.isApprox(identity, 0.00001);
+        if( !equal)
+        {
+            //Throw an error
+            EOUT("Unitary " << name <<" is not a unitary matrix!");
 
-        //     throw ql::exception("Unitary '"+ name+"' is not a unitary matrix. Cannot be decomposed!"+to_string(matrix*matrix.adjoint()), false);
-        // }
+            throw ql::exception("Unitary '"+ name+"' is not a unitary matrix. Cannot be decomposed!"+to_string(matmatadjoint), false);
+        }
 
         decomp_function(matrix, numberofbits);
         utils::print_vector(instructionlist, "Instruction list: ", "; ");
@@ -381,7 +383,7 @@ public:
         Eigen::VectorXd tr = ((genMk(std::pow(2,numberofcontrolbits))).colPivHouseholderQr().solve(temp));
         for(int i = 0; i < std::pow(2, numberofcontrolbits); i++)
         {
-            instructionlist.push_back(-tr[i]);
+            instructionlist.push_back(-tr[i]*2);
         }
     }
 
