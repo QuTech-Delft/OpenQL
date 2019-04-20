@@ -134,7 +134,7 @@ class Kernel
 {
 public:
     std::string name;
-    Platform platform;    
+    Platform platform;
     size_t qubit_count;
     size_t creg_count;
     ql::quantum_kernel * kernel;
@@ -261,7 +261,7 @@ public:
         kernel->display();
     }
 
-    void gate(std::string name, std::vector<size_t> qubits, 
+    void gate(std::string name, std::vector<size_t> qubits,
         size_t duration=0, double angle=0.0)
     {
         kernel->gate(name, qubits, {}, duration, angle);
@@ -405,7 +405,11 @@ public:
 
     std::string microcode()
     {
+#if OPT_MICRO_CODE
         return program->microcode();
+#else
+        return std::string("microcode disabled");
+#endif
     }
 
     void print_interaction_matrix()

@@ -30,9 +30,6 @@
 
 namespace ql
 {
-// un-comment it to decompose
-// #define DECOMPOSE
-
 enum class kernel_type_t
 {
     STATIC,
@@ -53,7 +50,7 @@ public:
         name(name), iterations(1), type(kernel_type_t::STATIC) {}
 
     quantum_kernel(std::string name, ql::quantum_platform& platform,
-        size_t qcount, size_t ccount) :
+        size_t qcount, size_t ccount=0) :
         name(name), iterations(1), qubit_count(qcount),
         creg_count(ccount), type(kernel_type_t::STATIC)
     {
@@ -88,19 +85,23 @@ public:
         type = typ;
     }
 
+    /************************************************************************\
+    | Gate shortcuts
+    \************************************************************************/
+
     void identity(size_t qubit)
     {
-        gate("identity", {qubit} );
+        gate("identity", qubit );
     }
 
     void i(size_t qubit)
     {
-        gate("identity", {qubit} );
+        gate("identity", qubit );
     }
 
     void hadamard(size_t qubit)
     {
-        gate("hadamard", {qubit} );
+        gate("hadamard", qubit );
     }
 
     void h(size_t qubit)
@@ -131,77 +132,77 @@ public:
 
     void s(size_t qubit)
     {
-        gate("s", {qubit} );
+        gate("s", qubit );
     }
 
     void sdag(size_t qubit)
     {
-        gate("sdag", {qubit} );
+        gate("sdag", qubit );
     }
 
     void t(size_t qubit)
     {
-        gate("t", {qubit} );
+        gate("t", qubit );
     }
 
     void tdag(size_t qubit)
     {
-        gate("tdag", {qubit} );
+        gate("tdag", qubit );
     }
 
     void x(size_t qubit)
     {
-        gate("x", {qubit} );
+        gate("x", qubit );
     }
 
     void y(size_t qubit)
     {
-        gate("y", {qubit} );
+        gate("y", qubit );
     }
 
     void z(size_t qubit)
     {
-        gate("z", {qubit} );
+        gate("z", qubit );
     }
 
     void rx90(size_t qubit)
     {
-        gate("rx90", {qubit} );
+        gate("rx90", qubit );
     }
 
     void mrx90(size_t qubit)
     {
-        gate("mrx90", {qubit} );
+        gate("mrx90", qubit );
     }
 
     void rx180(size_t qubit)
     {
-        gate("rx180", {qubit} );
+        gate("rx180", qubit );
     }
 
     void ry90(size_t qubit)
     {
-        gate("ry90", {qubit} );
+        gate("ry90", qubit );
     }
 
     void mry90(size_t qubit)
     {
-        gate("mry90", {qubit} );
+        gate("mry90", qubit );
     }
 
     void ry180(size_t qubit)
     {
-        gate("ry180", {qubit} );
+        gate("ry180", qubit );
     }
 
     void measure(size_t qubit)
     {
-        gate("measure", {qubit} );
+        gate("measure", qubit );
     }
 
     void prepz(size_t qubit)
     {
-        gate("prepz", {qubit} );
+        gate("prepz", qubit );
     }
 
     void cnot(size_t qubit1, size_t qubit2)
@@ -225,6 +226,11 @@ public:
         c.push_back(new ql::toffoli(qubit1, qubit2, qubit3));
     }
 
+    void swap(size_t qubit1, size_t qubit2)
+    {
+        gate("swap", {qubit1, qubit2} );
+    }
+  
     void wait(std::vector<size_t> qubits, size_t duration)
     {
         gate("wait", qubits, {}, duration );
@@ -243,18 +249,18 @@ public:
         switch (id)
         {
         case 0 :
-            break;                                          //  ['I']
+            break;              //  ['I']
         case 1 :
             ry90(qubit);
             rx90(qubit);
-            break;                //  ['Y90', 'X90']
+            break;              //  ['Y90', 'X90']
         case 2 :
             mrx90(qubit);
             mry90(qubit);
             break;              //  ['mX90', 'mY90']
         case 3 :
             rx180(qubit);
-            break;                            //  ['X180']
+            break;              //  ['X180']
         case 4 :
             mry90(qubit);
             mrx90(qubit);
@@ -262,18 +268,18 @@ public:
         case 5 :
             rx90(qubit);
             mry90(qubit);
-            break;               //  ['X90', 'mY90']
+            break;              //  ['X90', 'mY90']
         case 6 :
             ry180(qubit);
-            break;                            //  ['Y180']
+            break;              //  ['Y180']
         case 7 :
             mry90(qubit);
             rx90(qubit);
-            break;               //  ['mY90', 'X90']
+            break;              //  ['mY90', 'X90']
         case 8 :
             rx90(qubit);
             ry90(qubit);
-            break;                //  ['X90', 'Y90']
+            break;              //  ['X90', 'Y90']
         case 9 :
             rx180(qubit);
             ry180(qubit);
@@ -281,34 +287,34 @@ public:
         case 10:
             ry90(qubit);
             mrx90(qubit);
-            break;               //  ['Y90', 'mX90']
+            break;              //  ['Y90', 'mX90']
         case 11:
             mrx90(qubit);
             ry90(qubit);
-            break;               //  ['mX90', 'Y90']
+            break;              //  ['mX90', 'Y90']
         case 12:
             ry90(qubit);
             rx180(qubit);
-            break;               //  ['Y90', 'X180']
+            break;              //  ['Y90', 'X180']
         case 13:
             mrx90(qubit);
-            break;                            //  ['mX90']
+            break;              //  ['mX90']
         case 14:
             rx90(qubit);
             mry90(qubit);
             mrx90(qubit);
-            break; //  ['X90', 'mY90', 'mX90']
+            break;              //  ['X90', 'mY90', 'mX90']
         case 15:
             mry90(qubit);
-            break;                            //  ['mY90']
+            break;              //  ['mY90']
         case 16:
             rx90(qubit);
-            break;                             //  ['X90']
+            break;              //  ['X90']
         case 17:
             rx90(qubit);
             ry90(qubit);
             rx90(qubit);
-            break;   //  ['X90', 'Y90', 'X90']
+            break;              //  ['X90', 'Y90', 'X90']
         case 18:
             mry90(qubit);
             rx180(qubit);
@@ -316,15 +322,15 @@ public:
         case 19:
             rx90(qubit);
             ry180(qubit);
-            break;               //  ['X90', 'Y180']
+            break;              //  ['X90', 'Y180']
         case 20:
             rx90(qubit);
             mry90(qubit);
             rx90(qubit);
-            break;  //  ['X90', 'mY90', 'X90']
+            break;              //  ['X90', 'mY90', 'X90']
         case 21:
             ry90(qubit);
-            break;                             //  ['Y90']
+            break;              //  ['Y90']
         case 22:
             mrx90(qubit);
             ry180(qubit);
@@ -333,11 +339,15 @@ public:
             rx90(qubit);
             ry90(qubit);
             mrx90(qubit);
-            break;  //  ['X90', 'Y90', 'mX90']
+            break;              //  ['X90', 'Y90', 'mX90']
         default:
             break;
         }
     }
+
+    /************************************************************************\
+    | Gate management
+    \************************************************************************/
 
     bool add_default_gate_if_available(std::string gname, std::vector<size_t> qubits,
         std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
@@ -934,6 +944,7 @@ public:
         c.push_back(new ql::classical(operation));
     }
 
+#if OPT_MICRO_CODE
     /**
      * micro code
      */
@@ -952,7 +963,7 @@ public:
         }
         return ss.str();
     }
-
+#endif
 
     void optimize()
     {
@@ -1041,7 +1052,7 @@ public:
         {
             if ("yes" == scheduler_uniform)
             {
-	        EOUT("Uniform scheduling not supported with ASAP; please turn on ALAP to perform uniform scheduling");
+	        EOUT("Uniform scheduling not supported with ASAP; please turn on ALAP to perform uniform scheduling");     // FIXME: FATAL?
 	    }
 	    else if ("no" == scheduler_uniform)
 	    {
@@ -1167,7 +1178,9 @@ public:
         for (std::map<std::string,custom_gate*>::iterator i=gate_definition.begin(); i!=gate_definition.end(); i++)
         {
             COUT("[-] gate '" << i->first << "'");
+#if OPT_MICRO_CODE
             COUT(" |- qumis : \n" << i->second->micro_code());
+#endif
         }
     }
 
@@ -1197,6 +1210,10 @@ public:
     {
         return c;
     }
+
+    /************************************************************************\
+    | Controlled gates
+    \************************************************************************/
 
     void controlled_x(size_t tq, size_t cq)
     {
@@ -1738,7 +1755,7 @@ public:
     size_t        cycle_time;
     kernel_type_t type;
     operation     br_condition;
-    std::map<std::string,custom_gate*> gate_definition;
+    std::map<std::string,custom_gate*> gate_definition;     // FIXME: consider using instruction_map_t
 };
 
 

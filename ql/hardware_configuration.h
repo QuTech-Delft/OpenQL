@@ -26,8 +26,6 @@
 namespace ql
 {
 
-typedef std::map<std::string,ql::custom_gate *> instruction_map_t;
-
 /**
  * loading hardware configuration
  */
@@ -54,7 +52,7 @@ public:
         {
             config = load_json(config_file_name);
         }
-        catch (json::exception e)
+        catch (json::exception &e)
         {
             throw ql::exception("[x] error : ql::hardware_configuration::load() :  failed to load the hardware config file : malformed json file ! : \n\t"+
                                 std::string(e.what()),false);
@@ -122,11 +120,12 @@ public:
         static const std::regex comma_space_pattern("\\s*,\\s*");
         for (json::iterator it = instructions.begin(); it != instructions.end(); ++it)
         {
-            std::string  name1 = it.key();
-            str::lower_case(name1);
-            json         attr = *it; //.value();
+            std::string name = it.key();
+            str::lower_case(name);
+            json attr = *it; //.value();
 
-            std::string name = std::regex_replace(name1, comma_space_pattern, ",");
+            name = sanitize_instruction_name(name);
+            name = std::regex_replace(name, comma_space_pattern, ",");
 
             // check for duplicate operations
             if (instruction_map.find(name) != instruction_map.end())
@@ -146,7 +145,8 @@ public:
                 str::lower_case(comp_ins);
                 DOUT("");
                 DOUT("Adding composite instr : " << comp_ins);
-                std::replace( comp_ins.begin(), comp_ins.end(), ',', ' ');                
+                comp_ins = sanitize_instruction_name(comp_ins);
+                comp_ins = std::regex_replace(comp_ins, comma_space_pattern, " ");
                 DOUT("Adjusted composite instr : " << comp_ins);
 
                 // check for duplicate operations
@@ -163,7 +163,8 @@ public:
                     std::string sub_ins = sub_instructions[i];
                     str::lower_case(sub_ins);
                     DOUT("Adding sub instr: " << sub_ins);
-                    std::replace( sub_ins.begin(), sub_ins.end(), ',', ' ');
+                    sub_ins = sanitize_instruction_name(sub_ins);
+                    sub_ins = std::regex_replace(sub_ins, comma_space_pattern, " ");
                     DOUT("After comma removal sub instr: " << sub_ins);
                     std::string sub_ins_adjusted(sub_ins);
 
@@ -222,9 +223,6 @@ public:
         //       instruction_map[name] = new composite_gate(name,gs);
         //    }
         // }
-
-
-
     }
 
     /**
@@ -245,7 +243,7 @@ public:
         {
             g->load(instr);
         }
-        catch (ql::exception e)
+        catch (ql::exception &e)
         {
             EOUT("error while loading instruction '" << name << "' : " << e.what());
             throw e;
@@ -260,5 +258,24 @@ public:
     std::string       config_file_name;
     std::string       eqasm_compiler_name;
 
+private:
+
+    static const std::regex trim_pattern;
+    static const std::regex multiple_space_pattern;
+
+    /**
+    * Sanetizes the name of an instruction by removing the unnecessary spaces.
+    */
+    std::string sanitize_instruction_name(std::string name)
+    {
+        name = std::regex_replace(name, trim_pattern, "");
+        name = std::regex_replace(name, multiple_space_pattern, " ");
+        return name;
+    }
+
 };
+
+const std::regex hardware_configuration::trim_pattern("^(\\s)+|(\\s)+$");
+const std::regex hardware_configuration::multiple_space_pattern("(\\s)+");
+
 }

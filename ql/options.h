@@ -29,18 +29,23 @@ namespace ql
           opt_name2opt_val["log_level"] = "LOG_NOTHING";
           opt_name2opt_val["output_dir"] = "test_output";
           opt_name2opt_val["optimize"] = "no";
-          opt_name2opt_val["scheduler"] = "ALAP";
-          opt_name2opt_val["scheduler_uniform"] = "no";
           opt_name2opt_val["use_default_gates"] = "yes";
           opt_name2opt_val["optimize"] = "no";
           opt_name2opt_val["decompose_toffoli"] = "no";
+          opt_name2opt_val["scheduler"] = "ALAP";
+          opt_name2opt_val["scheduler_uniform"] = "no";
+          opt_name2opt_val["scheduler_commute"] = "no";
+          opt_name2opt_val["scheduler_post179"] = "yes";
+
 
           // add options with default values and list of possible values
           app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"], 
             {"LOG_NOTHING", "LOG_CRITICAL", "LOG_ERROR", "LOG_WARNING", "LOG_INFO", "LOG_DEBUG"}, "Log levels", true);
           app->add_option("--output_dir", opt_name2opt_val["output_dir"], "Name of output directory", true);
+          app->add_set_ignore_case("--scheduler_post179", opt_name2opt_val["scheduler_post179"], {"no", "yes"}, "Issue 179 solution included", true);
           app->add_set_ignore_case("--scheduler", opt_name2opt_val["scheduler"], {"ASAP", "ALAP"}, "scheduler type", true);
           app->add_set_ignore_case("--scheduler_uniform", opt_name2opt_val["scheduler_uniform"], {"yes", "no"}, "Do uniform scheduling or not", true);
+          app->add_set_ignore_case("--scheduler_commute", opt_name2opt_val["scheduler_commute"], {"yes", "no"}, "Commute gates when possible, or not", true);
           app->add_set_ignore_case("--use_default_gates", opt_name2opt_val["use_default_gates"], {"yes", "no"}, "Use default gates or not", true);
           app->add_set_ignore_case("--optimize", opt_name2opt_val["optimize"], {"yes", "no"}, "optimize or not", true);
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "MA"}, "Type of decomposition used for toffoli", true);
@@ -50,7 +55,9 @@ namespace ql
       {
           std::cout << "optimize: " << opt_name2opt_val["optimize"] << std::endl
                     << "scheduler: " << opt_name2opt_val["scheduler"] << std::endl
-                    << "scheduler_uniform: " << opt_name2opt_val["scheduler_uniform"] << std::endl;
+                    << "scheduler_uniform: " << opt_name2opt_val["scheduler_uniform"] << std::endl
+                    << "scheduler_post179: " << opt_name2opt_val["scheduler_post179"] << std::endl
+                    << "scheduler_commute: " << opt_name2opt_val["scheduler_uniform"] << std::endl;
       }
 
       void help()
@@ -65,7 +72,7 @@ namespace ql
             std::vector<std::string> opts = {opt_value, "--"+opt_name};
             app->parse(opts);
           }
-          catch (const std::exception& e)
+          catch (const std::exception &e)
           {
             app->reset();
             EOUT("Un-known option:"<< e.what());
