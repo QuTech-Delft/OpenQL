@@ -102,7 +102,7 @@ public:
     {
     }
 
-    // compile for Central Controller (CCCODE)
+    // compile for Central Controller
     // NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
     void compile(std::string prog_name, std::vector<quantum_kernel> kernels, const ql::quantum_platform &platform)
     {
@@ -111,7 +111,7 @@ public:
             FATAL("Trying to compile empty kernel");
         }
 #endif
-        DOUT("Compiling " << kernels.size() << " kernels to generate CCCODE ... ");
+        DOUT("Compiling " << kernels.size() << " kernels to generate Central Controller program ... ");
 
         // init
         load_hw_settings(platform);
@@ -171,9 +171,9 @@ public:
 
         codegen.program_finish();
 
-        // write CCCODE to file
-        std::string file_name(ql::options::get("output_dir") + "/" + prog_name + ".cccode");
-        IOUT("Writing CCCODE to " << file_name);
+        // write program to file
+        std::string file_name(ql::options::get("output_dir") + "/" + prog_name + ".vq1asm");
+        IOUT("Writing Central Controller program to " << file_name);
         ql::utils::write_file(file_name, codegen.getCode());
 
         // write instrument map to file (unless we were using input file)
@@ -184,7 +184,7 @@ public:
             ql::utils::write_file(file_name_map, codegen.getMap());
         }
 
-        DOUT("Compiling CCCODE [Done]");
+        DOUT("Compiling Central Controller program [Done]");
     }
 
 
@@ -361,7 +361,7 @@ private:
     // based on cc_light_eqasm_compiler.h::bundles2qisa()
     void codegen_bundles(ql::ir::bundles_t &bundles, const ql::quantum_platform &platform)
     {
-        IOUT("Generating CCCODE for bundles");
+        IOUT("Generating .vq1asm for bundles");
 
         codegen.kernel_start();
         for(ql::ir::bundle_t &bundle : bundles) {
@@ -424,7 +424,7 @@ private:
         }   // for(bundles)
         codegen.kernel_finish();
 
-        IOUT("Generating CCCODE for bundles [Done]");
+        IOUT("Generating .vq1asm for bundles [Done]");
     }
 
 

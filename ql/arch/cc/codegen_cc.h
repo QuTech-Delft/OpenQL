@@ -175,9 +175,9 @@ public:
                     // FIXME: check existence of keys below to ease end user debugging on configuration errors
                     std::string controlModeRef = instrument["ref_control_mode"];
                     const json &controlMode = jsonControlModes[controlModeRef];    // the control mode definition for our instrument
-                    int nrControlBitsGroups = controlMode["control_bits"].size();
+                    size_t nrControlBitsGroups = controlMode["control_bits"].size();
 
-                    int controlModeGroup = -1;
+                    size_t controlModeGroup = -1;
                     if(nrControlBitsGroups == 1) {                  // vector mode: group addresses channel within vector
                         controlModeGroup = 0;
                     } else if(group < nrControlBitsGroups) {        // normal mode: group selects control group
