@@ -16,8 +16,17 @@ class Test_basic(unittest.TestCase):
     def setUpClass(self):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
-        ql.set_option('scheduler', 'ASAP')
+
+        # TODO cleanup
+        ql.set_option('scheduler', 'ASAP');
+        ql.set_option('scheduler_post179', 'yes');
+
         ql.set_option('log_level', 'LOG_WARNING')
+
+    @classmethod
+    def tearDownClass(self):
+        ql.set_option("scheduler_post179", "no");
+
 
     # single qubit mask generation test
     # @unittest.expectedFailure

@@ -825,45 +825,81 @@ public:
         COUT("Applying unitary '" << u.name << "' to " << ql::utils::to_string(qubits, "qubits: ") );
         if(u.is_decomposed)
         {
+
             COUT("Adding decomposed unitary to kernel ...");
-            uint i = 0;
-            while(i < u.instructionlist.size()) //so it's easier to control how many steps the algorithm takes
-            {
-                if(qubits.size() == 1) //3 gates
-                {
-                    c.push_back(new ql::rz(qubits[0], u.instructionlist[0]));
-                    c.push_back(new ql::ry(qubits[0], u.instructionlist[1]));
-                    c.push_back(new ql::rz(qubits[0], u.instructionlist[2]));
-                    i = i+3;
-                };
-                if(qubits.size() == 2) //18 gates
-                {
-                    c.push_back(new ql::rz(qubits[1], u.instructionlist[0]));
-                    c.push_back(new ql::ry(qubits[1], u.instructionlist[1]));
-                    c.push_back(new ql::rz(qubits[1], u.instructionlist[2]));
-                    gray_code_rz(u.instructionlist,3,4, qubits); //rz //uses two gates
-                    c.push_back(new ql::rz(qubits[1], u.instructionlist[5]));
-                    c.push_back(new ql::ry(qubits[1], u.instructionlist[6]));
-                    c.push_back(new ql::rz(qubits[1], u.instructionlist[7]));
-                    gray_code_ry(u.instructionlist, 8,9, qubits); //ry //uses two gates
-                    c.push_back(new ql::rz(qubits[1], u.instructionlist[10]));
-                    c.push_back(new ql::ry(qubits[1], u.instructionlist[11]));
-                    c.push_back(new ql::rz(qubits[1], u.instructionlist[12]));
-                    gray_code_rz(u.instructionlist, 13,14, qubits); //rz //uses two gates
-                    c.push_back(new ql::rz(qubits[1], u.instructionlist[15]));
-                    c.push_back(new ql::ry(qubits[1], u.instructionlist[16]));
-                    c.push_back(new ql::rz(qubits[1], u.instructionlist[17])); 
-                    i = i+18  ;                
-                }
+            recursiverelations(u,qubits, u_size, 0);
+            // while(i < u.instructionlist.size()) //so it's easier to control how many steps the algorithm takes
+            // {
+                // if(qubits.size() == 1) //3 gates
+                // {
+                //     c.push_back(new ql::rz(qubits[0], u.instructionlist[0]));
+                //     c.push_back(new ql::ry(qubits[0], u.instructionlist[1]));
+                //     c.push_back(new ql::rz(qubits[0], u.instructionlist[2]));
+                //     i = i+3;
+                // }
+                // else if(qubits.size() == 2) //18 gates
+                // {
+                //     c.push_back(new ql::rz(qubits[1], u.instructionlist[0]));
+                //     c.push_back(new ql::ry(qubits[1], u.instructionlist[1]));
+                //     c.push_back(new ql::rz(qubits[1], u.instructionlist[2]));
+                //     gray_code_rz(u.instructionlist,3,4, qubits); //rz //uses two gates
+                //     c.push_back(new ql::rz(qubits[1], u.instructionlist[5]));
+                //     c.push_back(new ql::ry(qubits[1], u.instructionlist[6]));
+                //     c.push_back(new ql::rz(qubits[1], u.instructionlist[7]));
+                //     gray_code_ry(u.instructionlist, 8,9, qubits); //ry //uses two gates
+                //     c.push_back(new ql::rz(qubits[1], u.instructionlist[10]));
+                //     c.push_back(new ql::ry(qubits[1], u.instructionlist[11]));
+                //     c.push_back(new ql::rz(qubits[1], u.instructionlist[12]));
+                //     gray_code_rz(u.instructionlist, 13,14, qubits); //rz //uses two gates
+                //     c.push_back(new ql::rz(qubits[1], u.instructionlist[15]));
+                //     c.push_back(new ql::ry(qubits[1], u.instructionlist[16]));
+                //     c.push_back(new ql::rz(qubits[1], u.instructionlist[17])); 
+                //     i = i+18  ;                
+                // }
+                // else
+                // {
+                //     EOUT("Feature not supported yet");
+                //     throw ql::exception("Feature not supported yet for "+ std::to_string(qubits.size())+ " qubits", false);
+                // }
 
                 // And so this loop does not accidentally lock
-                i++; 
-            }
+            //     i++; 
+            // }
         }
         else
         {
             EOUT("Unitary " << u.name <<" not decomposed. Cannot be added to kernel!");
             throw ql::exception("Unitary '"+u.name+"' not decomposed. Cannot be added to kernel!", false);
+        }
+    }
+
+    //recursive gate count function
+    //n is number of qubits
+    //i is the start point for the instructionlist
+    void recursiverelations(ql::unitary u, std::vector<size_t> qubits, int n, int i)
+    {
+
+        if(n > 1)
+        {
+            int numberforunitary = 3*std::pow(2, n-2) *(std::pow(2,n-1)-1); //number of rotation gates needed for unitaries one size smaller than the current one
+            int numberforcontrolledrotation = std::pow(2,n-2)*(std::pow(2,n)-2); //number of gates per rotation!
+            int start_1 = i; //= the point where the first sub unitary starts
+            int start_2 = start_1 + numberforunitary + numberforcontrolledrotation; //= the point where the second sub unitary starts
+            int start_3 = start_2 + numberforunitary + numberforcontrolledrotation; //= the point where the third unitary starts
+            int start_4 = start_3 + numberforunitary + numberforcontrolledrotation; //= the point where the fourth unitary starts
+            recursiverelations(u, std::vector<size_t>(&qubits[0], &qubits.end()[-1]), n-1, start_1);
+            gray_code_rz(u.instructionlist,start_1+numberforunitary,start_2-1, qubits);
+            recursiverelations(u, std::vector<size_t>(&qubits[0], &qubits.end()[-1]), n-1, start_2);
+            gray_code_ry(u.instructionlist,start_2+numberforunitary,start_3-1, qubits);
+            recursiverelations(u, std::vector<size_t>(&qubits[0], &qubits.end()[-1]), n-1, start_3);
+            gray_code_rz(u.instructionlist,start_3+numberforunitary,start_4-1, qubits);
+            recursiverelations(u, std::vector<size_t>(&qubits[0], &qubits.end()[-1]), n-1, start_4);
+        }
+        else //n=1
+        {
+                    c.push_back(new ql::rz(qubits[0], u.instructionlist[0]));
+                    c.push_back(new ql::ry(qubits[0], u.instructionlist[1]));
+                    c.push_back(new ql::rz(qubits[0], u.instructionlist[2]));
         }
     }
 
@@ -875,7 +911,7 @@ public:
         //first is always the first bit of the controlbits (so the second item in the list)
         c.push_back(new ql::rz(qubits[0],-instruction_list[start_index]));
         c.push_back(new ql::cnot(qubits[1], qubits[0]));
-        for(int i = 1; i < std::pow(2,qubits.size() )-1; i++)
+        for(int i = 1; i < std::pow(2,qubits.size()-1)-1; i++)
         {
             idx = log2( round( ((i-1)^((i-1)>>1))^(i^(i>>1))) );
             posc = qubits.back() - idx;
@@ -895,7 +931,7 @@ public:
         //first is always the first bit of the controlbits (so the second item in the list)
         c.push_back(new ql::ry(qubits[0],-instruction_list[start_index]));
         c.push_back(new ql::cnot(qubits[1], qubits[0]));
-        for(int i = 1; i < std::pow(2,qubits.size() )-1; i++)
+        for(int i = 1; i < std::pow(2,qubits.size() -1)-1; i++)
         {
             idx = log2( round( ((i-1)^((i-1)>>1))^(i^(i>>1))) );
             posc = qubits.back() - idx;
@@ -1013,7 +1049,7 @@ public:
     {
         c.push_back(new ql::classical(operation));
     }
-
+#if OPT_MICRO_CODE
     /**
      * micro code
      */
@@ -1032,7 +1068,7 @@ public:
         }
         return ss.str();
     }
-
+#endif
 
     void optimize()
     {
@@ -1247,7 +1283,9 @@ public:
         for (std::map<std::string,custom_gate*>::iterator i=gate_definition.begin(); i!=gate_definition.end(); i++)
         {
             COUT("[-] gate '" << i->first << "'");
+#if OPT_MICRO_CODE
             COUT(" |- qumis : \n" << i->second->micro_code());
+#endif
         }
     }
 

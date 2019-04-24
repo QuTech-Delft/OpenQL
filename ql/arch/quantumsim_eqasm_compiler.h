@@ -46,7 +46,7 @@ public:
             num_qubits      = platform.hardware_settings[params[p++]];
             ns_per_cycle    = platform.hardware_settings[params[p++]];
         }
-        catch (json::exception e)
+        catch (json::exception &e)
         {
             throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter '"+params[p-1]+"'\n\t"+ std::string(e.what()),false);
         }
