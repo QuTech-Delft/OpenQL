@@ -232,6 +232,17 @@ public:
   
     void wait(std::vector<size_t> qubits, size_t duration)
     {
+        /*
+            wait/barrier is applied on the qubits specified as arguments.
+            if no qubits are specified, then wait/barrier is applied on all qubits
+        */
+
+        if(qubits.size() == 0) // i.e. no qubits specified
+        {
+            DOUT("Applying wait/barrier on all qubits");
+            for(size_t q=0; q<qubit_count; q++)
+                qubits.push_back(q);
+        }
         gate("wait", qubits, {}, duration );
     }
 

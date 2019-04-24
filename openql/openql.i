@@ -429,7 +429,9 @@ The ids and the corresponding operations are:
 """
 
 %feature("docstring") Kernel::wait
-""" inserts explicit wait on specified qubits.
+""" inserts explicit wait on specified qubits. if no qubits are specified,
+    then wait/barrier is applied on all the qubits .
+
 
 Parameters
 ----------
