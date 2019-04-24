@@ -1059,10 +1059,6 @@ public:
     {
         c.push_back(new ql::classical(operation));
     }
-<<<<<<< HEAD
-=======
-
->>>>>>> 2d2801c8eda79059ee41e92d2ffdf3e031f50cb7
 #if OPT_MICRO_CODE
     /**
      * micro code
