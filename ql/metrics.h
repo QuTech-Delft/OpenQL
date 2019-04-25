@@ -12,6 +12,8 @@
 
 namespace ql
 {
+namespace metrics
+{
 // class Metrics {
 
 // private:
@@ -26,6 +28,11 @@ namespace ql
 // 	{
 // 	}
 // };
+double gaussian_pdf(double x, double mean, double sigma)
+{
+	constexpr auto M_PI = 3.14159265358979323846;
+	return (1.0/(sigma*std::sqrt(2 * M_PI)))*std::exp(-0.5*(x-mean)/sigma*(x-mean)/sigma);
+}
 
 
 
@@ -87,12 +94,22 @@ double bounded_fidelity(ql::circuit& circ, size_t Nqubits, double gatefid_1, dou
 			//TODO - Convert the code into a for loop with range 2, to get the compiler's for optimization (and possible paralellization?)
 		}
 	}
+
+	//Concatenating data into a single value, to serve as metric
 	if (output_mode == "worst")
 		return *std::min_element(fids.begin(),fids.end());
-	// else if (output_mode == "gaussian")
-	// {
-	// 	return 0 ;
-	// }
+	else if (output_mode == "gaussian")
+	{
+ 		double min = *std::min_element(fids.begin(),fids.end());
+		double sigma = (1.0 - min)/2;
+
+		double sum = 0;
+		for (auto x : fids)
+		{
+			sum += x*gaussian_pdf(x, min, sigma); //weight the fidelities
+		} 
+		return 2*sum; // *2 to normalize (we use half gaussian). divide by Nqubits?
+	}
 
 	//TODO - substitute for a better output? Consider all the fidelities, but still give a bigger weight to the lowest ones.
 	//TODO - Test the different possibilities and find the most accurate one.
@@ -104,6 +121,25 @@ double bounded_fidelity(ql::circuit& circ, size_t Nqubits, double gatefid_1, dou
 // 	//Maybe try to understand how the fidelity of each operand evolves
 // 	//Extra: as a function of the initial and final qubit fidelity
 // 	return 0;
+// };
+
+class QubitSet
+{
+	//Each physical qubit should be associated to only one QubitSet
+	private:
+
+
+	public:
+	QubitSet()
+	{
+	}
+
+};
+
+// double depolarizing_model(ql::circuit& circ, size_t Nqubits, double gatefid_1, double gatefid_2, double decoherence_time, std::vector<double> &fids = std::vector<double>(), std::string output_mode="worst")
+// {
+// 	//Depolarizing model
+
 // };
 
 
@@ -119,6 +155,5 @@ double bounded_fidelity(ql::circuit& circ, size_t Nqubits, double gatefid_1, dou
 
 
 
-
-
+}
 } //namespace end
