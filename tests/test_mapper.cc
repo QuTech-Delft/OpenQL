@@ -884,8 +884,8 @@ int main(int argc, char ** argv)
 //  test_allD("allD", "minextendrc", "no", "critical");
 //  test_allD("allD", "minextendrc", "no", "noroutingfirst");
 //  test_allD("allD", "minextendrc", "yes", "no");
-//  test_allD("allD", "minextendrc", "yes", "critical");
-test_allD("allD", "minextendrc", "yes", "noroutingfirst");
+test_allD("allD", "minextendrc", "yes", "critical");
+// test_allD("allD", "minextendrc", "yes", "noroutingfirst");
 
 //  test_allDopt("allDopt", "base", "yes", "critical");
 //  test_allDopt("allDopt", "base", "yes", "critical");

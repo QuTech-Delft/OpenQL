@@ -669,9 +669,7 @@ void Schedule()
 {
     // DOUT("Schedule ...");
 
-    MapperAssert (!waitinglg.empty());
-
-    do
+    while (!waitinglg.empty())
     {
         size_t      startCycle = MAX_CYCLE;
         gate_p      gp;
@@ -733,7 +731,6 @@ void Schedule()
         // having added it to the main list, remove it from the waiting list
         waitinglg.remove(gp);
     }
-    while (!waitinglg.empty());
 
     // Print("Schedule:");
 }
@@ -1401,12 +1398,12 @@ void Flush()
 class NNPath
 {
 
-private:
-
+public:
     ql::quantum_platform   *platformp;  // descriptions of resources for scheduling
     size_t                  nq;         // width of Past and Virt2Real map is number of real qubits
     size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
 
+    ql::gate               *targetgp;   // gate that this variation aims to make NN
     std::vector<size_t>     total;      // full path, including source and target nodes
     std::vector<size_t>     fromSource; // partial path after split, starting at source
     std::vector<size_t>     fromTarget; // partial path after split, starting at target, backward
@@ -1415,7 +1412,6 @@ private:
     size_t                  cycleExtend;// latency extension caused by the path
 
 
-public:
 // NNPath initializer
 // This should only be called after a virgin construction and not after cloning a path.
 void Init(ql::quantum_platform* p)
@@ -1570,12 +1566,11 @@ void Split(std::list<NNPath> & reslp)
     // DOUT("Split ...");
 
     size_t length = total.size();
-    MapperAssert (length >= 3);   // distance > 1 so path at least: source -> intermediate -> target
-//  for (size_t leftopi = 0; leftopi < length-1; leftopi++)
+    MapperAssert (length >= 2);   // distance >= 1 so path at least: source -> target
     for (size_t rightopi = length-1; rightopi >= 1; rightopi--)
     {
         size_t leftopi = rightopi - 1;
-//      size_t rightopi = leftopi + 1;
+        MapperAssert (leftopi >= 0);
         // DOUT("... leftopi=" << leftopi);
         // leftopi is the index in total that holds the qubit that becomes the left operand of the gate
         // rightopi is the index in total that holds the qubit that becomes the right operand of the gate
@@ -2755,7 +2750,7 @@ enum {
 } whichpaths_t;
 
 // Find shortest paths between src and tgt in the grid, bounded by a particular strategy (which)
-void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp, whichpaths_t which)
+void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, std::list<NNPath> & reslp, whichpaths_t which)
 {
     std::list<NNPath> genlp;    // list that will get the result of a recursive Gen call
 
@@ -2769,6 +2764,7 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp, whichpa
         // and add the path to the result list 
         NNPath  p;
         p.Init(&platform);
+        p.targetgp = gp;
         p.Add2Front(src);
         reslp.push_back(p);
         // p.Print("... empty path after adding to result list");
@@ -2822,7 +2818,7 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp, whichpa
                 newwhich = wp_right_shortest;
             }
         }
-        GenShortestPaths(n, tgt, genlp, newwhich);  // get list of possible paths from n to tgt in genlp
+        GenShortestPaths(gp, n, tgt, genlp, newwhich);  // get list of possible paths from n to tgt in genlp
         reslp.splice(reslp.end(), genlp);           // moves all of genlp to reslp; makes genlp empty
     }
     // reslp contains all paths starting from a neighbor of src, to tgt
@@ -2837,16 +2833,16 @@ void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp, whichpa
 }
 
 // Generate shortest paths in the grid
-void GenShortestPaths(size_t src, size_t tgt, std::list<NNPath> & reslp)
+void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, std::list<NNPath> & reslp)
 {
     std::string mappathselectopt = ql::options::get("mappathselect");
     if ("all" == mappathselectopt)
     {
-        GenShortestPaths(src, tgt, reslp, wp_all_shortest);
+        GenShortestPaths(gp, src, tgt, reslp, wp_all_shortest);
     }
     else if ("borders" == mappathselectopt)
     {
-        GenShortestPaths(src, tgt, reslp, wp_leftright_shortest);
+        GenShortestPaths(gp, src, tgt, reslp, wp_leftright_shortest);
     }
     else
     {
@@ -2957,26 +2953,13 @@ void GenPaths(ql::gate* gp, std::list<NNPath>& lp, Past& past)
     size_t  src = past.MapQubit(q[0]);      // interpret virtual operands in current map
     size_t  tgt = past.MapQubit(q[1]);
     size_t  d = grid.Distance(src, tgt);    // and find distance between real counterparts
-    MapperAssert (d > 1);
     DOUT("GenPaths: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
 
     std::list<NNPath> straightnlp;  // list that will hold all paths directly from src to tgt
-    GenShortestPaths(src, tgt, straightnlp);// find straight shortest paths from src to tgt
+    GenShortestPaths(gp, src, tgt, straightnlp);// find straight shortest paths from src to tgt
     // NNPath::listPrint("... after GenShortestPaths", straightnlp);
     GenSplitPaths(straightnlp, lp);  // 2q gate can be put anywhere in each path
     // NNPath::listPrint("... after GenSplitPaths", lp);
-}
-
-// Take care that the operands of the given non-NN two qubit gate become NN
-void EnforceNN(ql::gate* gp, Past& past)
-{
-    std::list<NNPath> alllp;    // list that will hold all variations
-    GenPaths(gp, alllp, past);  // gen all possible variations ("paths") to make gp NN, in current v2r mapping ("past")
-
-    NNPath resp;
-    SelectPath(alllp, resp, past);// select one according to strategy specified by options, clones past per variation
-
-    resp.AddSwaps(past);        // add swaps, as described by resp, to THIS main past, and schedule them in
 }
 
 // Map the gate/operands of a gate that has been routed or doesn't require routing
@@ -2997,35 +2980,32 @@ void MapRoutedGate(ql::gate* gp, Past& past)
     }
 }
 
-// all gates in avlist are two-qubit quantum gates
+// All gates in avlist are two-qubit quantum gates
 // select which one(s) to (partially) route, according to one of the known strategies
 // the only requirement on the code below is that at least something is done that decreases the problem
 void RouteAndMap2qGates(std::list<ql::gate*> lg, Future& future, Past& past)
 {
+    std::list<NNPath> alllp;    // list that will hold all variations
+
     // the single currently implemented strategy is to take one and totally route it
     ql::gate*  gp = lg.front();
     DOUT("RouteAndMap2qGates, " << lg.size() << " 2q gates; take first: " << gp->qasm());
+    GenPaths(gp, alllp, past);  // gen all possible variations ("paths") to make gp NN, in current v2r mapping ("past")
 
-    auto&   q = gp->operands;
-    size_t  src = past.MapQubit(q[0]);      // interpret virtual operands in current map
-    size_t  tgt = past.MapQubit(q[1]);
-    size_t  d = grid.Distance(src, tgt);    // and find distance between real counterparts
-    if (d == 1)
-    {
-        // here only when maplookahead is not noroutingfirst
-        DOUT("... RouteAndMap2qGates, 2q NN no routing: " << gp->qasm());
-    }
-    else
-    {
-        EnforceNN(gp, past);
-        DOUT("... RouteAndMap2qGates, 2q nonNN after routing: " << gp->qasm());
-    }
+    NNPath resp;
+    ql::gate*  resgp;
+    SelectPath(alllp, resp, past);// select one according to strategy specified by options
 
-    MapRoutedGate(gp, past);
-    future.DoneGate(gp);
+
+    resp.AddSwaps(past);        // add swaps, as described by resp, to THIS main past, and schedule them in
+    resgp = resp.targetgp;
+    DOUT("... RouteAndMap2qGates, 2q after routing: " << resgp->qasm());
+    MapRoutedGate(resgp, past);
+    future.DoneGate(resgp);
 }
 
-// With only gates available for mapping that may require routing, map gates that are NN in the current mapping
+// With only gates available for mapping that may require routing,
+// map gates that are NN in the current mapping
 // or make the sum of all distances between operands of the routed gates smaller by inserting swaps/moves.
 // When of those a gate becomes mappable (its operands are NN), map it.
 void RouteAndMapGates(std::list<ql::gate*> lg, Future& future, Past& past)
@@ -3118,7 +3098,7 @@ void MapGates(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
                 continue;
             }
 
-            // avlist (qlg) only contains gates may require routing
+            // avlist (qlg) only contains gates that may require routing
             RouteAndMapGates(qlg, future, mainPast);    // at least does something (map gate or insert swap/move)
             continue;
         }
