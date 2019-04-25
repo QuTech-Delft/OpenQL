@@ -17,6 +17,7 @@
 #include "ql/arch/cc_light_resource_manager.h"
 #include "ql/gate.h"
 #include "ql/scheduler.h"
+//#include "ql/metrics.h"
 
 // Note on the use of constructors and Init functions for classes of the mapper
 // -----------------------------------------------------------------------------
@@ -1552,6 +1553,18 @@ size_t Extend(Past basePast)
     return cycleExtend;
 }
 
+double EstimateFidelity(Past basePast)
+{
+    past = basePast;   // explicitly clone basePast to a path-local copy of it, NNPath.past
+    // DOUT("... adding swaps for local past ...");
+    AddSwaps(past);
+    // DOUT("... done adding/scheduling swaps to local past");
+    // cycleExtend = past.MaxFreeCycle() - basePast.MaxFreeCycle();
+    // double estimated_fidelity = p.EstimateFidelity(past);  // locally here, past is cloned into current path
+    return 0.0;
+}
+
+
 // split the path
 // starting from the representation in the total attribute,
 // generate all split path variations where each path is split once at any hop in it
@@ -2936,6 +2949,21 @@ void SelectPath(std::list<NNPath>& lp, NNPath & resp, Past& past)
                     minExtension = extension;
                     choices.clear();
                 }
+                choices.push_back(p);
+            }
+        }
+    }
+    else if (mapopt == "minboundederror")
+    {
+        size_t  maxFidelity = 0;
+        for (auto & p : lp)
+        {
+            // p.Print("Considering extension by path: ...");
+            double estimated_fidelity = p.EstimateFidelity(past);  // locally here, past is cloned into current path
+            if (estimated_fidelity > maxFidelity)
+            {
+                maxFidelity = estimated_fidelity;
+                choices.clear();
                 choices.push_back(p);
             }
         }
