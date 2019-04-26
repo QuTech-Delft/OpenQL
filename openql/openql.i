@@ -441,6 +441,18 @@ arg2 : int
     duration in ns
 """
 
+%feature("docstring") Kernel::barrier
+""" inserts explicit barrier on specified qubits. if no qubits are specified,
+    then barrier is applied on all the qubits .
+
+
+Parameters
+----------
+arg1 : []
+    list of qubits
+"""
+
+
 %feature("docstring") Kernel::display
 """ inserts QX display instruction (so QX specific).
 
@@ -585,7 +597,7 @@ Parameters
 arg1 : []
     list of sweep points
 arg2 : int
-	number of sweep points
+    number of sweep points
 """
 
 
