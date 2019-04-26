@@ -925,12 +925,10 @@ public:
                 continue;;
             }
             IOUT("Mapping kernel: " << kernel.name);
-            mapper.MapCircuit(kernel.c, kernel.name, kernel.qubit_count, kernel.creg_count);
+            mapper.MapCircuit(kernel);
                 // kernel.qubit_count is number of virtual qubits, i.e. highest indexed qubit minus 1
                 // and kernel.qubit_count is updated to real highest index used minus -1
-            kernel.bundles = mapper.Bundler(kernel.c);
-            kernel.swaps_added = mapper.nswapsadded;
-            kernel.moves_added = mapper.nmovesadded;
+            kernel.bundles = mapper.Bundler(kernel);
         }
         std::stringstream mapper_out_fname;
         mapper_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_out.qasm";

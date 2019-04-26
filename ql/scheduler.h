@@ -176,7 +176,7 @@ public:
         {
             // add dummy source node
             ListDigraph::Node srcNode = graph.addNode();
-            instruction[srcNode] = new ql::SOURCE();
+            instruction[srcNode] = new ql::SOURCE();    // so SOURCE is defined as instruction[s], not unique in itself
             node[instruction[srcNode]] = srcNode;
             name[srcNode] = instruction[srcNode]->qasm();
             s=srcNode;
@@ -638,7 +638,7 @@ public:
 	        // add dummy target node
 	        ListDigraph::Node consNode = graph.addNode();
 	        int consID = graph.id(consNode);
-	        instruction[consNode] = new ql::SINK();
+	        instruction[consNode] = new ql::SINK();    // so SINK is defined as instruction[t], not unique in itself
 	        node[instruction[consNode]] = consNode;
 	        name[consNode] = instruction[consNode]->qasm();
 	        t=consNode;
@@ -2683,9 +2683,9 @@ public:
     // update (through MakeAvailable) the cycle attribute of the nodes made available
     // because from then on that value is compared to the curr_cycle to check
     // whether a node has completed execution and thus is available for scheduling in curr_cycle
-    void TakeAvailable(ListDigraph::Node n, std::list<ListDigraph::Node>& avlist, ListDigraph::NodeMap<bool> & scheduled, ql::scheduling_direction_t dir)
+    void TakeAvailable(ListDigraph::Node n, std::list<ListDigraph::Node>& avlist, std::map<ql::gate*,bool> & scheduled, ql::scheduling_direction_t dir)
     {
-        scheduled[n] = true;
+        scheduled[instruction[n]] = true;
         avlist.remove(n);
 
         if (ql::forward_scheduling == dir)
@@ -2697,7 +2697,7 @@ public:
                 for (ListDigraph::InArcIt predArc(graph,succNode); predArc != INVALID; ++predArc)
                 {
                     ListDigraph::Node predNode = graph.source(predArc);
-                    if (!scheduled[predNode])
+                    if (!scheduled[instruction[predNode]])
                     {
                         schedulable = false;
                         break;
@@ -2718,7 +2718,7 @@ public:
                 for (ListDigraph::OutArcIt succArc(graph,predNode); succArc != INVALID; ++succArc)
                 {
                     ListDigraph::Node succNode = graph.target(succArc);
-                    if (!scheduled[succNode])
+                    if (!scheduled[instruction[succNode]])
                     {
                         schedulable = false;
                         break;
@@ -2891,8 +2891,8 @@ public:
     {
         DOUT("Scheduling " << (ql::forward_scheduling == dir?"ASAP":"ALAP") << " with RC ...");
 
-        // scheduled[n] :=: whether node n has been scheduled, init all false
-        ListDigraph::NodeMap<bool>      scheduled(graph);
+        // scheduled[gp] :=: whether gate *gp has been scheduled, init all false
+        std::map<ql::gate*,bool>    scheduled;
         // avlist :=: list of schedulable nodes, initially (see below) just s or t
         std::list<ListDigraph::Node>    avlist;
 
@@ -2901,7 +2901,7 @@ public:
         DOUT("... initialization");
         for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
         {
-            scheduled[n] = false;   // none were scheduled
+            scheduled[instruction[n]] = false;   // none were scheduled, including SOURCE/SINK
         }
         size_t  curr_cycle;         // current cycle for which instructions are sought
         InitAvailable(avlist, dir, curr_cycle);     // first node (SOURCE/SINK) is made available and curr_cycle set

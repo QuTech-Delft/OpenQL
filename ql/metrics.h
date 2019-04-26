@@ -155,5 +155,9 @@ class QubitSet
 
 
 
+<<<<<<< HEAD
 }
 } //namespace end
+=======
+} //namespace end
+>>>>>>> 37af432027d8581d343db0f9bf72078bc8c0b9d9
