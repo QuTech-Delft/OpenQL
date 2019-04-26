@@ -907,9 +907,9 @@ public:
         }
         else //n=1
         {
-                    c.push_back(new ql::rz(qubits[0], u.instructionlist[0]));
-                    c.push_back(new ql::ry(qubits[0], u.instructionlist[1]));
-                    c.push_back(new ql::rz(qubits[0], u.instructionlist[2]));
+                    c.push_back(new ql::rz(qubits.back(), u.instructionlist[0]));
+                    c.push_back(new ql::ry(qubits.back(), u.instructionlist[1]));
+                    c.push_back(new ql::rz(qubits.back(), u.instructionlist[2]));
         }
     }
 
