@@ -11,6 +11,7 @@
 #ifndef QL_PROGRAM_H
 #define QL_PROGRAM_H
 
+#include "ql/openql.h"
 #include <ql/utils.h>
 #include <ql/options.h>
 #include <ql/platform.h>
@@ -468,9 +469,9 @@ class quantum_program
          IOUT("writing un-scheduled qasm to '" << ss_qasm.str() << "' ...");
          ql::utils::write_file(ss_qasm.str(), s);
 
-//#if OPT_WRITE_SCHED_QASM
+#if OPT_WRITE_SCHED_QASM
          schedule();
-//#endif
+#endif
 
          if (backend_compiler == NULL)
          {
@@ -554,7 +555,7 @@ class quantum_program
          return 0;
       }
 
-//#if OPT_WRITE_SCHED_QASM
+#if OPT_WRITE_SCHED_QASM
       // schedule and write scheduled qasm. Note that the backend may use a different scheduler with different results
       void schedule()
       {
@@ -579,7 +580,7 @@ class quantum_program
          IOUT("writing scheduled qasm to '" << fname << "' ...");
          ql::utils::write_file(fname, sched_qasm);
       }
-//#endif
+#endif
 
       void print_interaction_matrix()
       {

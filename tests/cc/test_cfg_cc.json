@@ -187,9 +187,9 @@
             // - <key>                      a name which can be referred to from key 'instructions/<>/cc/signal_ref'
             // - <key>/*                    see 'instructions/<>/cc/signal'
             // NB: our JSON library does not yet support JSON pointers like:
-            // "signal": {"$ref": "#/hardware_settings/eqasm_backend_cc/signals/single-qubit"}
+            // "signal": {"$ref": "#/hardware_settings/eqasm_backend_cc/signals/single-qubit-mw"}
             "signals": {
-                "single-qubit": [
+                "single-qubit-mw": [
                     {   "type": "mw",
                         "operand_idx": 0,
                         "value": [
@@ -204,7 +204,7 @@
                         "value": ["dummy"]                                  // NB: no actual signal is generated
                     }
                 ],
-                "two-qubit": [
+                "two-qubit-flux": [
                     {   "type": "flux",
                         "operand_idx": 0,                                   // control
                         "value": ["flux-0-{qubit}"]
@@ -224,7 +224,7 @@
 				// readout.
                 // FIXME: must match 'resources/meas_units' if resource constraint scheduler is used
 				{
-					"name": "uhfqa-0",
+					"name": "ro_0",
                     "qubits": [[10], [15], [], [], [], [], [], [], []],
                     "ref_signals_type": "measure",
 					"ref_instrument_definition": "zi-uhfqa",
@@ -236,7 +236,7 @@
 					}
 				},
 				{
-					"name": "uhfqa-1",
+					"name": "ro_1",
                     "qubits": [[1], [2], [6], [7], [11], [12], [16], [17], [22]],
                     "ref_signals_type": "measure",
 					"ref_instrument_definition": "zi-uhfqa",
@@ -248,7 +248,7 @@
 					}
 				},
 				{
-					"name": "uhfqa-2",
+					"name": "ro_2",
                     "qubits": [[8], [9], [13], [14], [18], [23], [], [], []],
                     "ref_signals_type": "measure",
 					"ref_instrument_definition": "zi-uhfqa",
@@ -263,7 +263,7 @@
 				// microwave.
                 // FIXME: must match 'resources/qwgs' if resource constraint scheduler is used
 				{
-					"name": "awg8-mw-0",
+					"name": "mw_0",
                     "qubits": [                                             // data qubits:
                         [6, 12, 18],                                        // [freq L]
                         [2, 8, 10, 14, 16, 22]                              // [freq H]
@@ -278,7 +278,7 @@
 					}
 				},
 				{
-					"name": "awg8-mw-1",
+					"name": "mw_1",
                     "qubits": [                                             // ancilla qubits:
                         [1, 9, 13, 17],                                     // [freq Mg]
                         [7, 11, 15, 23]                                     // [freq My]
@@ -295,7 +295,7 @@
 
 				// VSM
 				{
-					"name": "vsm-0",
+					"name": "vsm_0",
                     "qubits": [
                         [6, 12, 18],                                        // [freq L]
                         [2, 8, 10, 14, 16, 22],                             // [freq H]
@@ -314,7 +314,7 @@
 
 				// flux
 				{
-					"name": "awg8-flux-0",
+					"name": "flux_0",
                     "qubits": [[1], [2], [6], [7], [8], [9], [10], [11]],
                     "ref_signals_type": "flux",
 					"ref_instrument_definition": "zi-hdawg",
@@ -327,7 +327,7 @@
 					}
 				},
 				{
-					"name": "awg8-flux-1",
+					"name": "flux_1",
                     "qubits": [[12], [13], [14], [15], [16], [17], [18], [22]],
                     "ref_signals_type": "flux",
 					"ref_instrument_definition": "zi-hdawg",
@@ -340,7 +340,7 @@
 					}
 				},
 				{
-					"name": "awg8-flux-2",
+					"name": "flux_2",
                     "qubits": [[23], [], [], [], [], [], [], []],
                     "ref_signals_type": "flux",
 					"ref_instrument_definition": "zi-hdawg",
@@ -411,12 +411,14 @@
     // Sub keys for "instructions", standard OpenQL:
     // - <key>                          name for the instruction (NB: supports several naming schemes)
     // - <key>/duration                 duration in [ns]
-    // - <key>/latency                  FIXME: what is the meaning of per instruction latency??
+    // - <key>/latency                  optional instruction latency (effect unclear)
     // - <key>/matrix                   required, but generally does not contain useful information
     //
-    // The cc-light scheduler requires the following sub keys:
+    // The cc-light scheduler that we currently use requires the following sub keys:
     // - <key>/cc_light_instr
     // - <key>/type
+    // NB: Only the cc-light backend requires the following keys, so we don't:
+    // - <key>/cc_light_instr_type
     //
     // Sub keys for "instructions", CC additions:
     // - <key>/cc/signal/type
@@ -429,17 +431,115 @@
     //                                  * {qubit}
     // - <key>/cc/signal_ref            reference to key 'signals/<value> instead of '<key>/cc/signal'
     //
-    // Only the cc-light backend requires the following keys:
-    // - <key>/cc_light_instr_type
     //
     // FIXME: allow AWG8 setPrecompClear with wave
 
 	"instructions": {
-		// additions from 'CC-software-implementation.docx', these are single-qubit
+        // based on PyqQED_py3 'mw_lutman.py' and 'generate_CCL_cfg.py':
+        // FIXME: also add conditional single qubit gates?
+        "i": {
+            "duration": 20,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "type": "mw",
+            "cc_light_instr": "i",
+            "cc": {
+                "signal_ref": "single-qubit-mw"     // NB: reference, instead of defining "signal" here
+            }
+        },
+        "rx180": {
+            "duration": 20,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "type": "mw",
+            "cc_light_instr": "x",
+            "cc": {
+                "signal_ref": "single-qubit-mw"
+            }
+        },
+        "ry180": {
+            "duration": 20,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "type": "mw",
+            "cc_light_instr": "y",
+            "cc": {
+                "signal_ref": "single-qubit-mw"
+            }
+        },
+        "rx90": {
+            "duration": 20,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "type": "mw",
+            "cc_light_instr": "x90",
+            "cc": {
+                "signal_ref": "single-qubit-mw"
+            }
+        },
+        "ry90": {
+            "duration": 20,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "type": "mw",
+            "cc_light_instr": "y90",
+            "cc": {
+                "signal_ref": "single-qubit-mw"
+            }
+        },
+        "rxm90": {
+            "duration": 20,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "type": "mw",
+            "cc_light_instr": "xm90",
+            "cc": {
+                "signal_ref": "single-qubit-mw"
+            }
+        },
+        "rym90": {
+            "duration": 20,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "type": "mw",
+            "cc_light_instr": "ym90",
+            "cc": {
+                "signal_ref": "single-qubit-mw"
+            }
+        },
+
+        // CZ should handle:
+        // https://github.com/QE-Lab/OpenQL/issues/166
+        // https://github.com/QE-Lab/OpenQL/issues/180
+        "cz": {
+            "duration": 40,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "type": "flux",
+            "cc_light_instr": "cz",
+            "cc": {
+                "signal_ref": "two-qubit-flux"      // NB: reference, instead of defining "signal" here
+            }
+        },
+        "cz_park": {
+            "duration": 40,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "type": "flux",
+            "cc_light_instr": "cz",
+            "cc": {
+                "signal": [
+                    {   "type": "flux",
+                        "operand_idx": 0,                                   // control
+                        "value": ["flux-0-{qubit}"]
+                    },
+                    {   "type": "flux",
+                        "operand_idx": 1,                                   // target
+                        "value": ["flux-1-{qubit}"]
+                    },
+                    {   "type": "flux",
+                        "operand_idx": 2,                                   // park
+                        "value": ["park_cz-{qubit}"]
+                    }
+                ]
+            }
+        },
+
+		// additions from 'CC-software-implementation.docx', these are single-qubit-mw
 		// flux pulses, see issue #176:
 		"park_cz" : { // park signal with same length as cz gate
 			"duration" : 40,
-			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"cc_light_instr": "park_cz",
 			"type": "measure",		// FIXME
@@ -455,7 +555,6 @@
 
 		"park_measure" : { // park signal with same length as measurement
 			"duration" : 300,
-			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"cc": {
 				"signal": [
@@ -471,144 +570,21 @@
 		// based on PyqQED_py3 'generate_CCL_cfg.py':
 		"prepz": {
 			"duration": 200000,
-			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "readout",
-//			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "prepz"
 		},
 
 		"measure": {
 			"duration": 400,
-			"latency": 0,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "readout",
-//			"cc_light_instr_type": "single_qubit_gate",
 			"cc_light_instr": "measz",
 			"cc": {
 				"signal": [
 					{	"type": "measure",
 						"operand_idx": 0,
 						"value": ["dummy"]			// Future extension: specify output and weight, and generate code word
-					}
-				]
-			}
-		},
-
-		// based on PyqQED_py3 'mw_lutman.py' and 'generate_CCL_cfg.py':
-		// FIXME: also add conditional single qubit gates?
-		"i": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"type": "mw",
-//			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "i",
-			"cc": {
-				"signal_ref": "single-qubit"
-			}
-		},
-		"rx180": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"type": "mw",
-//			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "x",
-			"cc": {
-				"signal_ref": "single-qubit"		// NB: reference, instead of defining "signal" here
-			}
-		},
-		"ry180": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"type": "mw",
-//			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "y",
-			"cc": {
-				"signal_ref": "single-qubit"
-			}
-		},
-		"rx90": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"type": "mw",
-//			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "x90",
-			"cc": {
-				"signal_ref": "single-qubit"
-			}
-		},
-		"ry90": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"type": "mw",
-//			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "y90",
-			"cc": {
-				"signal_ref": "single-qubit"
-			}
-		},
-		"rxm90": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"type": "mw",
-//			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "xm90",
-			"cc": {
-				"signal_ref": "single-qubit"
-			}
-		},
-		"rym90": {
-			"duration": 20,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"type": "mw",
-//			"cc_light_instr_type": "single_qubit_gate",
-			"cc_light_instr": "ym90",
-			"cc": {
-				"signal_ref": "single-qubit"
-			}
-		},
-
-		// CZ should handle:
-		// https://github.com/QE-Lab/OpenQL/issues/166
-		// https://github.com/QE-Lab/OpenQL/issues/180
-		"cz": {
-			"duration": 40,
-//			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"type": "flux",
-//			"cc_light_instr_type": "two_qubit_gate",
-			"cc_light_instr": "cz",
-			"cc": {
-				"signal_ref": "two-qubit"		// NB: reference, instead of defining "signal" here
-			}
-		},
-		"cz_park": {
-			"duration": 40,
-			"latency": 0,
-			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-			"type": "flux",
-//			"cc_light_instr_type": "two_qubit_gate",
-			"cc_light_instr": "cz",
-			"cc": {
-				"signal": [
-					{	"type": "flux",
-						"operand_idx": 0,									// control
-						"value": ["flux-0-{qubit}"]
-					},
-					{	"type": "flux",
-						"operand_idx": 1,									// target
-						"value": ["flux-1-{qubit}"]
-					},
-					{	"type": "flux",
-						"operand_idx": 2,									// park
-						"value": ["park_cz-{qubit}"]
 					}
 				]
 			}

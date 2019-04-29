@@ -12,17 +12,18 @@
 #define OPT_TARGET_PLATFORM             0   // use target_platform, which is not actually used
 #define OPT_UNFINISHED_OPTIMIZATION     0   // enable unfinished optimization that actually did nothing
 
-#define OPT_WRITE_SCHED_QASM            1   // write scheduled qasm using default scheduler (which may differ from actual scheduler used)
-// FIXME: last option does not work, because openql.h is not included everywhere
+#define OPT_WRITE_SCHED_QASM            1   // write scheduled qasm using default scheduler (which may differ from actual scheduler used). Disabling this breaks tests
+
 
 #include "instruction_map.h"
 #include "optimizer.h"
 #include "circuit.h"
 #include "program.h"
 
+#if 0   // FIXME
 #include <fstream>
 #include <map>
-
+#endif
 
 namespace ql
 {

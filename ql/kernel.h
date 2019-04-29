@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <iterator>
 
+#include "ql/openql.h"
 #include "ql/json.h"
 #include "ql/utils.h"
 #include "ql/options.h"
@@ -1088,7 +1089,7 @@ public:
         DOUT("decompose_toffoli() [Done] ");
     }
 
-//#if OPT_WRITE_SCHED_QASM
+#if OPT_WRITE_SCHED_QASM
     // schedule support for program.h::schedule()
     // FIXME: parameter sched_dot currently unused (commented out)
     void schedule(quantum_platform platform, std::string& sched_qasm, std::string& sched_dot)
@@ -1157,7 +1158,7 @@ public:
 
 #endif // __disable_lemon__
     }
-//#endif // OPT_WRITE_SCHED_QASM
+#endif // OPT_WRITE_SCHED_QASM
 
     /**
      * load custom instructions from a json file

@@ -148,9 +148,10 @@ $2 = 0
 
     ql::options::set("scheduler", scheduler);
     ql::options::set("scheduler_uniform", scheduler_uniform);
+#if 0   // FIXME
     ql::options::set("backend_cc_map_input_file", "test_output/test_classical_ALAP_uniform_no.map");
-
-    prog.compile( );
+#endif
+    prog.compile();
 }
 
 
@@ -236,7 +237,7 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
 
     ql::options::set("scheduler", scheduler);
     ql::options::set("scheduler_uniform", scheduler_uniform);
-    prog.compile( );
+    prog.compile();
 }
 
 
@@ -278,7 +279,7 @@ void test_do_while_nested_for(std::string scheduler, std::string scheduler_unifo
 
     ql::options::set("scheduler", scheduler);
     ql::options::set("scheduler_uniform", scheduler_uniform);
-    prog.compile( );
+    prog.compile();
 }
 
 
@@ -308,7 +309,34 @@ void test_rabi( std::string scheduler, std::string scheduler_uniform)
 
     ql::options::set("scheduler", scheduler);
     ql::options::set("scheduler_uniform", scheduler_uniform);
-    prog.compile( );
+    prog.compile();
+}
+
+
+void test_wait( std::string scheduler, std::string scheduler_uniform)
+{
+    // create and set platform
+    ql::quantum_platform s17("s17", CFG_FILE_JSON);
+
+    const int num_qubits = 25;
+    const int num_cregs = 3;
+    ql::quantum_program prog(("test_wait_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
+    ql::quantum_program sp1(("sp1"), s17, num_qubits, num_cregs);
+    ql::quantum_kernel k("aKernel", s17, num_qubits, num_cregs);
+
+    size_t qubit = 10;     // connects to uhfqa-0 and awg8-mw-0
+
+    for(int delay=1; delay<=10; delay++) {
+        k.gate("x", qubit);
+        k.wait({qubit}, delay*20);
+        k.gate("y", qubit);
+    }
+
+    prog.add(k);
+
+    ql::options::set("scheduler", scheduler);
+    ql::options::set("scheduler_uniform", scheduler_uniform);
+    prog.compile();
 }
 
 
@@ -320,8 +348,9 @@ int main(int argc, char ** argv)
 #if 0
     test_qec_pipelined("ALAP", "no");
     test_do_while_nested_for("ALAP", "no");
-    test_rabi("ALAP", "no");
 #endif
+    test_rabi("ALAP", "no");
+    test_wait("ALAP", "no");
 
     return 0;
 }
