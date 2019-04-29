@@ -145,7 +145,7 @@ public:
 		if (fids.size() == 0)
 		{
 			fids.reserve(Nqubits);
-			// std::fill_n(fids, Nqubits, 1.0); //Initiallize a fidelity vector, if one is not provided
+			// std::fill_n(fids.begin(), Nqubits, 1.0); //Initiallize a fidelity vector, if one is not provided
 
 			for (int i=0; i<fids.size(); i++)
 			{
