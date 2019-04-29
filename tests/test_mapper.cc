@@ -843,70 +843,62 @@ int main(int argc, char ** argv)
 //  test_daniel2("daniel2", "base", "yes", "critical");
 //  test_daniel2("daniel2", "base", "yes", "critical");
 //  test_daniel2("daniel2", "minextend", "yes", "critical");
-//  test_daniel2("daniel2", "minextend", "no", "critical");
-//  test_daniel2("daniel2", "minextendrc", "yes", "critical");
-//  test_daniel2("daniel2", "minextendrc", "no", "critical");
+    test_daniel2("daniel2", "minextendrc", "yes", "no");
+    test_daniel2("daniel2", "minextendrc", "yes", "critical");
+    test_daniel2("daniel2", "minextendrc", "yes", "noroutingfirst");
+    test_daniel2("daniel2", "minextendrc", "yes", "all");
 
 //  test_oneD2("oneD2", "base", "yes", "critical");
 //  test_oneD2("oneD2", "base", "yes", "critical");
 //  test_oneD2("oneD2", "minextend", "yes", "critical");
-//  test_oneD2("oneD2", "minextend", "no", "critical");
 //  test_oneD2("oneD2", "minextendrc", "yes", "critical");
-//  test_oneD2("oneD2", "minextendrc", "no", "critical");
 
 //  test_oneD4("oneD4", "base", "yes", "critical");
-//  test_oneD4("oneD4", "base", "no", "critical");
 //  test_oneD4("oneD4", "minextend", "yes", "critical");
-//  test_oneD4("oneD4", "minextend", "no", "critical");
 //  test_oneD4("oneD4", "minextendrc", "yes", "critical");
-//  test_oneD4("oneD4", "minextendrc", "no", "critical");
 
 //  test_string("string", "base", "yes", "critical");
 //  test_string("string", "base", "yes", "critical");
 //  test_string("string", "minextend", "yes", "critical");
-//  test_string("string", "minextend", "no", "critical");
-//  test_string("string", "minextendrc", "yes", "critical");
-//  test_string("string", "minextendrc", "no", "critical");
+    test_string("string", "minextendrc", "yes", "no");
+    test_string("string", "minextendrc", "yes", "critical");
+    test_string("string", "minextendrc", "yes", "noroutingfirst");
+    test_string("string", "minextendrc", "yes", "all");
 
-//  test_allD("allD", "base", "no", "no");
-//  test_allD("allD", "base", "no", "critical");
-//  test_allD("allD", "base", "no", "noroutingfirst");
 //  test_allD("allD", "base", "yes", "no");
 //  test_allD("allD", "base", "yes", "critical");
 //  test_allD("allD", "base", "yes", "noroutingfirst");
-//  test_allD("allD", "minextend", "no", "no");
-//  test_allD("allD", "minextend", "no", "critical");
-//  test_allD("allD", "minextend", "no", "noroutingfirst");
 //  test_allD("allD", "minextend", "yes", "no");
 //  test_allD("allD", "minextend", "yes", "critical");
 //  test_allD("allD", "minextend", "yes", "noroutingfirst");
-//  test_allD("allD", "minextendrc", "no", "no");
-//  test_allD("allD", "minextendrc", "no", "critical");
-//  test_allD("allD", "minextendrc", "no", "noroutingfirst");
-//  test_allD("allD", "minextendrc", "yes", "no");
-test_allD("allD", "minextendrc", "yes", "critical");
-// test_allD("allD", "minextendrc", "yes", "noroutingfirst");
+    test_allD("allD", "minextendrc", "yes", "no");
+    test_allD("allD", "minextendrc", "yes", "critical");
+    test_allD("allD", "minextendrc", "yes", "noroutingfirst");
+    test_allD("allD", "minextendrc", "yes", "all");
 
 //  test_allDopt("allDopt", "base", "yes", "critical");
 //  test_allDopt("allDopt", "base", "yes", "critical");
 //  test_allDopt("allDopt", "minextend", "yes", "critical");
-//  test_allDopt("allDopt", "minextend", "no", "critical");
-//  test_allDopt("allDopt", "minextendrc", "yes", "critical");
-//  test_allDopt("allDopt", "minextendrc", "no", "critical");
+    test_allDopt("allDopt", "minextendrc", "yes", "no");
+    test_allDopt("allDopt", "minextendrc", "yes", "critical");
+    test_allDopt("allDopt", "minextendrc", "yes", "noroutingfirst");
+    test_allDopt("allDopt", "minextendrc", "yes", "all");
 
 //  test_lingling_5_esm("lingling_5_esm", "base", "yes", "critical");
 //  test_lingling_5_esm("lingling_5_esm", "base", "yes", "critical");
 //  test_lingling_5_esm("lingling_5_esm", "minextend", "yes", "critical");
-//  test_lingling_5_esm("lingling_5_esm", "minextend", "no", "critical");
-//  test_lingling_5_esm("lingling_5_esm", "minextendrc", "yes", "critical");
-//  test_lingling_5_esm("lingling_5_esm", "minextendrc", "no", "critical");
+    test_lingling_5_esm("lingling_5_esm", "minextendrc", "yes", "no");
+    test_lingling_5_esm("lingling_5_esm", "minextendrc", "yes", "critical");
+    test_lingling_5_esm("lingling_5_esm", "minextendrc", "yes", "noroutingfirst");
+    test_lingling_5_esm("lingling_5_esm", "minextendrc", "yes", "all");
 
 //  test_lingling_7_esm("lingling_7_esm", "base", "yes", "critical");
 //  test_lingling_7_esm("lingling_7_esm", "base", "yes", "critical");
 //  test_lingling_7_esm("lingling_7_esm", "minextend", "yes", "critical");
-//  test_lingling_7_esm("lingling_7_esm", "minextend", "no", "critical");
-//  test_lingling_7_esm("lingling_7_esm", "minextendrc", "yes", "critical");
-//  test_lingling_7_esm("lingling_7_esm", "minextendrc", "no", "critical");
+    test_lingling_7_esm("lingling_7_esm", "minextendrc", "yes", "no");
+    test_lingling_7_esm("lingling_7_esm", "minextendrc", "yes", "critical");
+    test_lingling_7_esm("lingling_7_esm", "minextendrc", "yes", "noroutingfirst");
+    test_lingling_7_esm("lingling_7_esm", "minextendrc", "yes", "all");
 
     return 0;
 }
