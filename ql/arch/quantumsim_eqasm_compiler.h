@@ -391,6 +391,8 @@ private:
                         {
                             auto & iname = (*insIt)->name;
                             auto & operands = (*insIt)->operands;
+                            auto duration = (*insIt)->duration;     // duration in nano-seconds
+                            size_t operation_duration = std::ceil( static_cast<float>(duration) / ns_per_cycle);
                             if( iname == "measure")
                             {
                                 DOUT("... adding gates, a measure");
@@ -399,7 +401,7 @@ private:
                                 ssbundles << "c.add_qubit(\"m" << op <<"\")\n";
                                 ssbundles << "c.add_measurement("
                                           << "\"q" << op <<"\", "
-                                          << "time=" << bcycle << ", "
+                                          << "time=" << bcycle + (operation_duration/2) << ", "
                                           << "output_bit=\"m" << op <<"\", "
                                           << "sampler=sampler"
                                           << ")\n" ;
@@ -415,7 +417,7 @@ private:
                                         ssbundles << "\"q" << *opit <<"\", ";
                                     ssbundles << "\"q" << operands.back()<<"\"";
                                 }
-                                ssbundles << ", time=" << bcycle << "))" << endl;
+                                ssbundles << ", time=" << bcycle + (operation_duration/2) << "))" << endl;
                             }
                         }
                     }
