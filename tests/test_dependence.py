@@ -42,7 +42,7 @@ class Test_dependence(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("independent", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -70,7 +70,7 @@ class Test_dependence(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("WAW", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -100,7 +100,7 @@ class Test_dependence(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("RAR", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -130,7 +130,7 @@ class Test_dependence(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("RAW", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -161,7 +161,7 @@ class Test_dependence(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("WAR", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -186,7 +186,7 @@ class Test_dependence(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("swap_single", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -213,7 +213,7 @@ class Test_dependence(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("swap_multi", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
