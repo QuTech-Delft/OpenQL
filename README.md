@@ -65,6 +65,13 @@ Or
 pip install  -e .
 ```
 
+By defining NTHREADS=N environment variable, multiple processos can be created for faster compilation. For example, the following command will create 4 processes for compilation:
+
+```
+NPROCS=4 python setup.py install  --user
+```
+
+
 ## Running the tests
 
 In order to pass all the tests, `qisa-as` and `libqasm` should be installed first. Follow [qisa-as](https://github.com/QE-Lab/eQASM_Assembler) and [libqasm](https://github.com/QE-Lab/libqasm) instructions to install python interfaces of these modules. Once `qisa-as` and `libqasm` are installed, you can run all the tests by:
