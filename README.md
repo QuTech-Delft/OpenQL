@@ -68,7 +68,7 @@ pip install  -e .
 By defining NTHREADS=N environment variable, multiple processos can be created for faster compilation. For example, the following command will create 4 processes for compilation:
 
 ```
-NTHREADS=4 python setup.py install  --user
+NPROCS=4 python setup.py install  --user
 ```
 
 
