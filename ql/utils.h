@@ -250,5 +250,10 @@ namespace ql
 // check existence of JSON key within node, see PR #194
 #define JSON_EXISTS(node, key)  (node.count(key) > 0)
 
+#define JSON_ASSERT(node, key, nodePath) \
+        {   if(!JSON_EXISTS(node, key)) { \
+                FATAL("key '" << key << "' not found on path '" << nodePath << "', actual node contents '" << node << "'"); \
+            } \
+        }
 #endif //QL_UTILS_H
 

@@ -131,7 +131,7 @@ public:
     emit("",      // CCIO selector
          "jmp",
          "@0",
-         "# loop to start indefinitely");   // FIXME: skip latencyCompensation? faster and constant loop intervals
+         "# loop to start indefinitely");   // FIXME: skip latencyCompensation? faster and constant loop intervals, but no (user settable) delay
 #endif
     }
 
@@ -401,24 +401,33 @@ public:
 
         // find signal definition for iname
         const json &instruction = platform->find_instruction(iname);
-        const json *tmp;
+        std::string instructionPath = "instructions/"+iname;
+        const json *tmpSignal;
+        std::string signalPath;
+        JSON_ASSERT(instruction, "cc", instructionPath);
         if(JSON_EXISTS(instruction["cc"], "signal_ref")) {
             std::string signalRef = instruction["cc"]["signal_ref"];
-            tmp = &jsonSignals[signalRef];  // poor man's JSON pointer
+            tmpSignal = &jsonSignals[signalRef];  // poor man's JSON pointer
             if(tmp->size() == 0) {
                 FATAL("Error in JSON definition of instruction '" << iname <<
                       "': signal_ref '" << signalRef << "' does not resolve");
             }
+            signalPath = "signals/"+signalRef;
         } else {
-            tmp = &instruction["cc"]["signal"];
+            JSON_ASSERT(instruction["cc"], "signal", instructionPath+"/cc");
+            tmpSignal = &instruction["cc"]["signal"];
             DOUT("signal for '" << instruction << "': " << *tmp);
+            signalPath = instructionPath+"/cc/signal";
         }
-        const json &signal = *tmp;
+        const json &signal = *tmpSignal;
 
         // iterate over signals defined in instruction
         for(size_t s=0; s<signal.size(); s++) {
             // get the qubit to work on
+            std::string signalSPath = signalPath+"["+s+"]";
+            JSON_ASSERT(signal[s], "operand_idx", signalSPath); // FIXME: test
             size_t operandIdx = signal[s]["operand_idx"];
+
             if(operandIdx >= qops.size()) {
                 FATAL("Error in JSON definition of instruction '" << iname <<
                       "': illegal operand number " << operandIdx <<
@@ -427,9 +436,14 @@ public:
             size_t qubit = qops[operandIdx];
 
             // get the instrument and group that generates the signal
+            JSON_ASSERT(signal[s], "type", signalSPath);
             std::string instructionSignalType = signal[s]["type"];
+
+            JSON_ASSERT(signal[s], "value", signalSPath);
             const json &instructionSignalValue = signal[s]["value"];
+
             tSignalInfo si = findSignalInfoForQubit(instructionSignalType, qubit);
+// FIXME: add JSON_ASSERTs
             const json &instrument = jsonInstruments[si.slotIdx];
             std::string instrumentName = instrument["name"];
             int slot = instrument["controller"]["slot"];
@@ -589,6 +603,7 @@ public:
 
         // align latencies
         comment("# synchronous start and latency compensation");
+#if 0   // FIXME: fixed compensation based on instrument latencies
         for(auto it=slotLatencies.begin(); it!=slotLatencies.end(); it++) {
             int slot = it->first;
             int latency = it->second;
@@ -600,6 +615,11 @@ public:
                 SS2S(delayInCycles),
                 SS2S("# latency compensation").c_str());    // FIXME: add instrumentName/instrumentRef/latency
         }
+#else   // FIXME: user settable delay via register
+            emit("",                "seq_bar",  "1",                "# synchronization");
+            emit("__syncLoop:",     "seq_out",  "0x00000000,1",     "# 20 ns delay");
+            emit("",                "loop",     "R63,@__syncLoop",  "# R63 externally set by user");
+#endif
     }
 
     void padToCycle(size_t lastStartCycle, size_t start_cycle, int slot, std::string instrumentName)
