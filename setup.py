@@ -10,6 +10,16 @@ srcDir = os.path.join(rootDir, "ql")
 buildDir = os.path.join(rootDir, "cbuild")
 clibDir = os.path.join(buildDir, "openql")
 
+nprocs = 1
+env_var_nprocs = os.environ.get('NPROCS')
+if(env_var_nprocs != None):
+  nprocs = int(env_var_nprocs)
+
+print('Using {} processes for compilation'.format(nprocs))
+if nprocs == 1:
+    print('For faster compilation by N processes, set environment variable NPROCS=N')
+    print('For example: NPROCS=4 python3 setup.py install --user')
+
 if not os.path.exists(buildDir):
     os.makedirs(buildDir)
 os.chdir(buildDir)
@@ -19,7 +29,7 @@ if platform == "linux" or platform == "linux2":
     cmd = 'cmake ..'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
-    cmd = 'make'
+    cmd = 'make -j{}'.format(nprocs)
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
     clibname = "_openql.so"
@@ -30,7 +40,7 @@ elif platform == "darwin":
     cmd = 'cmake ..'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
-    cmd = 'make'
+    cmd = 'make -j{}'.format(nprocs)
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
     clibname = "_openql.so"
@@ -40,7 +50,7 @@ elif platform == "win32":
     cmd = 'cmake -G "NMake Makefiles" ..'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
-    cmd = 'nmake'
+    cmd = 'nmake /MP{}'.format(nprocs)
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
     clibname = "_openql.pyd"
