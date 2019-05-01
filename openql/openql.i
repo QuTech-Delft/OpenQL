@@ -429,8 +429,9 @@ The ids and the corresponding operations are:
 """
 
 %feature("docstring") Kernel::wait
-""" inserts explicit wait on specified qubits. if no qubits are specified,
-    then wait/barrier is applied on all the qubits .
+""" inserts explicit wait on specified qubits. wait with duration '0'
+    is equivalent to barrier on specified list of qubits. If no qubits
+    are specified, then wait/barrier is applied on all the qubits.
 
 
 Parameters
@@ -442,9 +443,9 @@ arg2 : int
 """
 
 %feature("docstring") Kernel::barrier
-""" inserts explicit barrier on specified qubits. if no qubits are specified,
-    then barrier is applied on all the qubits .
-
+""" inserts explicit barrier on specified qubits. wait with duration '0'
+    is also equivalent to appliying barrier on specified list of qubits.
+    If no qubits are specified, then barrier is applied on all the qubits.
 
 Parameters
 ----------
