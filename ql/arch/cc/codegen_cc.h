@@ -125,7 +125,14 @@ public:
 
     void program_finish()
     {
+#if 0
         emit("", "stop");                                  // NB: cc_light loops whole program indefinitely
+#else   // FIXME: CC-light emulation
+    emit("",      // CCIO selector
+         "jmp",
+         "@0",
+         "# loop to start indefinitely");   // FIXME: skip latencyCompensation? faster and constant loop intervals
+#endif
     }
 
     void kernel_start()
@@ -366,8 +373,14 @@ public:
             isReadout = true;
 
             if(cops.size() != 1) {
+#if 0   // FIXME
                 FATAL("Readout instruction requires exactly 1 classical operand, not " << cops.size());
                 // FIXME: CClight also seems to support nCoperands=0
+                // FIXME: also needed by pycQED single_qubit_oql.py
+#else
+                WOUT("Readout instruction requires exactly 1 classical operand, not " << cops.size());
+                cops.push_back(0);
+#endif
             }
             if(qops.size() != 1) {
                 FATAL("Readout instruction requires exactly 1 qubit operand, not " << qops.size());
@@ -546,6 +559,8 @@ public:
     }
     // FIXME: also provide the above with std::string parameters
 
+
+    // FIXME: is 'seq_bar 1' safe in the sense that we will never get an empty queue?
     void latencyCompensation()
     {
         std::map<int, int> slotLatencies;   // maps slot to latency

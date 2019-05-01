@@ -572,7 +572,10 @@
 			"duration": 200000,
 			"matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
 			"type": "readout",
-			"cc_light_instr": "prepz"
+			"cc_light_instr": "prepz",
+            "cc": {
+                "signal_ref": "single-qubit-mw"
+            }
 		},
 
 		"measure": {
