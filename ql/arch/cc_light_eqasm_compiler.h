@@ -859,6 +859,16 @@ public:
 
     void write_qasm(std::stringstream& fname, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
     {
+//      DOUT("cc_light_compiler::write_qasm(" << fname.str());
+//      for(auto &kernel : kernels)
+//      {
+//          DOUT("... kernel.name:" << kernel.name);
+//          DOUT("... kernel.c.size:" << kernel.c.size());
+//          DOUT("... kernel.c:" << kernel.qasm());
+//          DOUT("... kernel.bundles.size:" << kernel.bundles.size());
+//          DOUT("... kernel.bundles:" << ql::ir::qasm(kernel.bundles));
+//      }
+
         size_t total_depth = 0;
         size_t total_quantum_gates = 0;
         size_t total_classical_operations = 0;
@@ -955,7 +965,7 @@ public:
 
 
     // program level compilation
-    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, const ql::quantum_platform& platform)
+    void compile(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
     {
         DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");
 
