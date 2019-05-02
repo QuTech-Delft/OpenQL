@@ -5,4 +5,6 @@ INCLUDE_DIRECTORIES(
 )
 
 ADD_EXECUTABLE(test_mapper test_mapper.cc )
+ADD_EXECUTABLE(test_metrics test_metrics.cc )
 TARGET_LINK_LIBRARIES(test_mapper ${LEMON_LIBRARIES} )
+TARGET_LINK_LIBRARIES(test_metrics ${LEMON_LIBRARIES} )
