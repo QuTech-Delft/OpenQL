@@ -34,9 +34,10 @@ class quantum_program
    protected:
       bool                        default_config;
       std::string                 config_file_name;
-      std::vector<quantum_kernel> kernels;
 
    public: 
+      std::vector<quantum_kernel> kernels;
+
       std::string           name;
       std::vector<float>    sweep_points;
       ql::quantum_platform  platform;

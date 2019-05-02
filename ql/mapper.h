@@ -291,7 +291,7 @@ void PrintVirt(size_t v)
 
 void PrintReal(std::string s, size_t r0, size_t r1)
 {
-    DOUT("v2r.PrintReal ...");
+    // DOUT("v2r.PrintReal ...");
     std::cout << "... real2Virt(r<-v) " << s << ":";
 
     PrintReal(r0);
@@ -608,6 +608,7 @@ private:
     typedef ql::gate *      gate_p;
     std::list<gate_p>       waitinglg;  // list of gates in this Past, topological order, waiting to be scheduled in
     std::list<gate_p>       lg;         // list of gates in this Past, scheduled by their (start) cycle values
+    std::list<gate_p>       outlg;      // list of gates flushed out of this Past, not yet put in outCirc
     size_t                  nswapsadded;// number of swaps (including moves) added to this past
     size_t                  nmovesadded;// number of moves added to this past
     std::map<gate_p,size_t> cycle;      // gate to cycle map, startCycle value of each past gatecycle[gp]
@@ -630,6 +631,7 @@ void Init(ql::quantum_platform *p)
 //  metrics.Init(nq,platformp); // metrics starts off with
     waitinglg.clear();          // no gates pending to be scheduled in; Add of gate to past entered here
     lg.clear();                 // no gates scheduled yet in this past; after schedule of gate, it gets here
+    outlg.clear();              // no gates output yet by flushing from or bypassing this past
     nswapsadded = 0;            // no swaps or moves added yet to this past; AddSwap adds one here
     nmovesadded = 0;            // no moves added yet to this past; AddSwap may add one here
     cycle.clear();              // no gates have cycles assigned in this past; scheduling gate updates this
@@ -659,7 +661,7 @@ void Print(std::string s)
     }
 }
 
-void Output(ql::circuit& circ)
+void SetOutput(ql::circuit& circ)
 {
     outCircp = &circ;
 }
@@ -1357,17 +1359,50 @@ size_t MaxFreeCycle()
     return fc.Max();
 }
 
+// nonq and q gates follow separate flows through Past:
+// - q gates are put in waitinglg when added and then scheduled; and then ordered by cycle into lg
+// - nonq gates bypass this; they immediately go to outlg; when encountered, lg is first flushed into outlg
+// outlg gets all nonq and q gates in Past; when here, they are not meaningful to past scheduling anymore
+// and can be flushed further to the outCirc when desired; but note that of this outCirc, there is only one
+// and that is at the level of the mainPast
+
+// flush lg to outlg
+// do this only when scheduling is not sacrificed:
+// - on encountering a nonq gate
+// - when the past window is deep enough (deeper than MaxDepth)
 void Flush()
 {
     for( auto & gp : lg )
     {
-        outCircp->push_back(gp);
+        outlg.push_back(gp);
     }
+    lg.clear();         // so effectively, lg's content was moved to outlg
 
-    fc.Init(platformp);
-    lg.clear();         // lg is initialized to empty list
-    cycle.clear();      // cycle is initialized to empty map
+    fc.Init(platformp); // needed?
+    cycle.clear();      // needed?
+                        // cycle is initialized to empty map
                         // is ok without windowing, but with window, just delete the ones outside the window
+}
+
+// gp as nonq gate immediately goes to outlg
+// assumes lg has been flushed
+void ByPass(ql::gate* gp)
+{
+    if (!lg.empty())
+    {
+        Flush();
+    }
+    outlg.push_back(gp);
+}
+
+// mainPast flushes outlg to outCirc
+void Out(ql::circuit& outCirc)
+{
+    for( auto & gp : outlg )
+    {
+        outCirc.push_back(gp);
+    }
+    outlg.clear();
 }
 
 };  // end class Past
@@ -3089,6 +3124,68 @@ void RouteAndMapGates(std::list<ql::gate*> lg, Future& future, Past& past)
     RouteAndMap2qGates(lg, future, past);
 }
 
+// given the states of past and future
+// look which gates to map next in future,
+// exploring mapping, evaluate and select all based on past
+// and then map them
+// when outCircp is not NULL, MapGates was called with mainPast and outlg can be flushed
+void MapGates(Future& future, Past& past, ql::circuit* outCircp)
+{
+    std::list<ql::gate*>   nonqlg; // list of non-quantum gates taken from avlist
+    std::list<ql::gate*>   qlg;    // list of (remaining) gates taken from avlist
+
+    // continue taking gates from avlist until it is empty (i.e. when future.GetGates returns true)
+    while(1)
+    {
+        if (future.GetNonQuantumGates(nonqlg))
+        {
+            // avlist contains non-quantum gates, do these first
+            // past only can contain quantum gates, so non-quantum gates must by-pass Past
+            for (auto gp : nonqlg)
+            {
+                // here add code to map qubit use of any non-quantum instruction????
+                // dummy gates are nonq gates internal to OpenQL such as SOURCE/SINK; don't output them
+                if ( gp->type() != ql::__dummy_gate__)
+                {
+                    past.ByPass(gp);    // this flushes past.lg first
+                }
+                future.DoneGate(gp);
+            }
+        }
+        else if (!future.GetGates(qlg))
+        {
+            // avlist doesn't contain any gate
+            break;
+        }
+        else
+        {
+	        // avlist only contains quantum gates
+	        bool foundone = false;
+	        for (auto gp : qlg)
+	        {
+	            if ( gp->type() == ql::gate_type_t::__wait_gate__
+	                || gp->operands.size() == 1
+	                )
+	            {
+	                // a quantum gate not requiring routing in any mapping is found
+	                MapRoutedGate(gp, past);
+	                future.DoneGate(gp);
+	                foundone = true;
+	            }
+	        }
+	        if (!foundone)
+	        {
+	            // avlist (qlg) only contains gates that require routing
+	            RouteAndMapGates(qlg, future, past);    // at least does something (map gate or insert swap/move)
+	        }
+        }
+        if (outCircp != NULL)
+        {
+            past.Out(*outCircp);
+        }
+    }
+}
+
 // Map the circuit's gates in the provided context (v2r maps), updating circuit and v2r maps
 void MapGates(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
 {
@@ -3102,67 +3199,16 @@ void MapGates(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
     future.SetCircuit(circ, sched, nq, nc); // constructs depgraph, initializes avlist, ready for producing gates
 
     ql::circuit outCirc;
-    mainPast.Output(outCirc);   // past window will output into outCirc, to be swapped with circ before return
+    mainPast.SetOutput(outCirc);// past window will output into outCirc, to be swapped with circ before return
     mainPast.ImportV2r(v2r);    // give it the current mapping/state
     // mainPast.Print("start mapping");
 
-    std::list<ql::gate*>   nonqlg; // list of non-quantum gates taken from avlist
-    std::list<ql::gate*>   qlg;    // list of (remaining) gates taken from avlist
-
-    // continue taking gates from avlist until it is empty (i.e. when future.GetGates returns true)
-    while(1)
-    {
-        // avlist can contain any kind of gate, if any
-        if (future.GetNonQuantumGates(nonqlg))
-        {
-            // Past only contains quantum gates, and non-quantum gates by-pass Past;
-            // so flush quantum gates from Past to outCirc first, before adding gates to outCirc
-            mainPast.Flush();
-            for (auto gp : nonqlg)
-            {
-                // add code to map qubit use of any non-quantum instruction????
-
-                if ( gp->type() != ql::__dummy_gate__)
-                {
-                    // dummy gates must not appear in the output circuit
-                    outCirc.push_back(gp);
-                }
-                future.DoneGate(gp);
-            }
-            continue;
-        }
-        // avlist only contains quantum gates, if any
-        if (future.GetGates(qlg))
-        {
-            bool foundone = false;
-            for (auto gp : qlg)
-            {
-                if ( gp->type() == ql::gate_type_t::__wait_gate__
-                    || gp->operands.size() == 1
-                    )
-                {
-                    // a quantum gate not requiring routing in any mapping is found
-                    MapRoutedGate(gp, mainPast);
-                    future.DoneGate(gp);
-                    foundone = true;
-                }
-            }
-            if (foundone)
-            {
-                // as long as there are gates that don't require routing in any mapping, continue mapping these
-                continue;
-            }
-
-            // avlist (qlg) only contains gates that may require routing
-            RouteAndMapGates(qlg, future, mainPast);    // at least does something (map gate or insert swap/move)
-            continue;
-        }
-        // avlist doesn't contain any gate
-        break;
-    }
+    MapGates(future, mainPast, &outCirc);
 
     mainPast.Flush();
+    mainPast.Out(outCirc);
     // mainPast.Print("end mapping");
+
     // DOUT("... swapping outCirc with circ");
     circ.swap(outCirc);
     mainPast.ExportV2r(v2r);
@@ -3187,7 +3233,7 @@ void Decomposer(ql::circuit& circ)
     // DOUT("Decompose circuit ...");
 
     ql::circuit outCirc;        // output gate stream
-    mainPast.Output(outCirc);   // past window will flush into outCirc
+    mainPast.SetOutput(outCirc);// past window will flush into outCirc
     for( auto & gp : circ )
     {
         ql::circuit tmpCirc;
@@ -3198,7 +3244,7 @@ void Decomposer(ql::circuit& circ)
         }
     }
     mainPast.Flush();
-
+    mainPast.Out(outCirc);
     circ.swap(outCirc);
 
     // DOUT("Decompose circuit [DONE]");
