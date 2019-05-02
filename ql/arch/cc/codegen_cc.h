@@ -130,7 +130,7 @@ public:
 #else   // FIXME: CC-light emulation
     emit("",      // CCIO selector
          "jmp",
-         "@0",
+         "0",
          "# loop to start indefinitely");   // FIXME: skip latencyCompensation? faster and constant loop intervals, but no (user settable) delay
 #endif
     }
@@ -408,7 +408,7 @@ public:
         if(JSON_EXISTS(instruction["cc"], "signal_ref")) {
             std::string signalRef = instruction["cc"]["signal_ref"];
             tmpSignal = &jsonSignals[signalRef];  // poor man's JSON pointer
-            if(tmp->size() == 0) {
+            if(tmpSignal->size() == 0) {
                 FATAL("Error in JSON definition of instruction '" << iname <<
                       "': signal_ref '" << signalRef << "' does not resolve");
             }
@@ -416,7 +416,7 @@ public:
         } else {
             JSON_ASSERT(instruction["cc"], "signal", instructionPath+"/cc");
             tmpSignal = &instruction["cc"]["signal"];
-            DOUT("signal for '" << instruction << "': " << *tmp);
+            DOUT("signal for '" << instruction << "': " << *tmpSignal);
             signalPath = instructionPath+"/cc/signal";
         }
         const json &signal = *tmpSignal;
@@ -424,7 +424,7 @@ public:
         // iterate over signals defined in instruction
         for(size_t s=0; s<signal.size(); s++) {
             // get the qubit to work on
-            std::string signalSPath = signalPath+"["+s+"]";
+            std::string signalSPath = SS2S(signalPath<<"["<<s<<"]");
             JSON_ASSERT(signal[s], "operand_idx", signalSPath); // FIXME: test
             size_t operandIdx = signal[s]["operand_idx"];
 
@@ -603,7 +603,7 @@ public:
 
         // align latencies
         comment("# synchronous start and latency compensation");
-#if 0   // FIXME: fixed compensation based on instrument latencies
+#if 1   // FIXME: fixed compensation based on instrument latencies
         for(auto it=slotLatencies.begin(); it!=slotLatencies.end(); it++) {
             int slot = it->first;
             int latency = it->second;
@@ -616,6 +616,7 @@ public:
                 SS2S("# latency compensation").c_str());    // FIXME: add instrumentName/instrumentRef/latency
         }
 #else   // FIXME: user settable delay via register
+        // FIXME: gives ILLEGAL_INSTR
             emit("",                "seq_bar",  "1",                "# synchronization");
             emit("__syncLoop:",     "seq_out",  "0x00000000,1",     "# 20 ns delay");
             emit("",                "loop",     "R63,@__syncLoop",  "# R63 externally set by user");
