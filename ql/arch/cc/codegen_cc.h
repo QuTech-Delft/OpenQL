@@ -569,8 +569,9 @@ public:
     // @param   comment     must include leading "#"
     void emit(const char *label, const char *instr, std::string qops, const char *comment="")
     {
-        cccode << std::setw(8) << label << std::setw(8) << instr << std::setw(24) << qops << comment << std::endl;
+        cccode << std::setw(16) << label << std::setw(16) << instr << std::setw(24) << qops << comment << std::endl;
     }
+    // FIXME: assure space between fields!
     // FIXME: also provide the above with std::string parameters
 
 
@@ -603,7 +604,7 @@ public:
 
         // align latencies
         comment("# synchronous start and latency compensation");
-#if 1   // FIXME: fixed compensation based on instrument latencies
+#if 0   // FIXME: fixed compensation based on instrument latencies
         for(auto it=slotLatencies.begin(); it!=slotLatencies.end(); it++) {
             int slot = it->first;
             int latency = it->second;
@@ -617,9 +618,10 @@ public:
         }
 #else   // FIXME: user settable delay via register
         // FIXME: gives ILLEGAL_INSTR
-            emit("",                "seq_bar",  "1",                "# synchronization");
-            emit("__syncLoop:",     "seq_out",  "0x00000000,1",     "# 20 ns delay");
-            emit("",                "loop",     "R63,@__syncLoop",  "# R63 externally set by user");
+            emit("",                "add",      "R63,1,R63",        "# prevent 0");
+            emit("",                "seq_bar",  "20",               "# synchronization");
+            emit("syncLoop:",       "seq_out",  "0x00000000,1",     "# 20 ns delay");     // FIXME: spaces/segfault if label and seq_out lack space in between/underscores
+            emit("",                "loop",     "R63,@syncLoop",    "# R63 externally set by user");
 #endif
     }
 
