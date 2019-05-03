@@ -222,7 +222,7 @@ public:
     {
         kernel->wait(qubits, duration);
     }
-    void barrier(std::vector<size_t> qubits)
+    void barrier(std::vector<size_t> qubits = {})
     {
         kernel->wait(qubits, 0);
     }

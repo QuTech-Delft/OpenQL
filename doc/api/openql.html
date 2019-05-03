@@ -1049,7 +1049,6 @@ table {
     <li class="mono"><a href="#openql.openql.Operation_swigregister">Operation_swigregister</a></li>
     <li class="mono"><a href="#openql.openql.Platform_swigregister">Platform_swigregister</a></li>
     <li class="mono"><a href="#openql.openql.Program_swigregister">Program_swigregister</a></li>
-    <li class="mono"><a href="#openql.openql.QASM_Loader_swigregister">QASM_Loader_swigregister</a></li>
     <li class="mono"><a href="#openql.openql.SwigPyIterator_swigregister">SwigPyIterator_swigregister</a></li>
     <li class="mono"><a href="#openql.openql.get_option">get_option</a></li>
     <li class="mono"><a href="#openql.openql.get_version">get_version</a></li>
@@ -1148,21 +1147,12 @@ table {
     <li class="mono"><a href="#openql.openql.Program.add_kernel">add_kernel</a></li>
     <li class="mono"><a href="#openql.openql.Program.add_program">add_program</a></li>
     <li class="mono"><a href="#openql.openql.Program.compile">compile</a></li>
+    <li class="mono"><a href="#openql.openql.Program.get_sweep_points">get_sweep_points</a></li>
     <li class="mono"><a href="#openql.openql.Program.microcode">microcode</a></li>
     <li class="mono"><a href="#openql.openql.Program.print_interaction_matrix">print_interaction_matrix</a></li>
     <li class="mono"><a href="#openql.openql.Program.qasm">qasm</a></li>
     <li class="mono"><a href="#openql.openql.Program.set_sweep_points">set_sweep_points</a></li>
     <li class="mono"><a href="#openql.openql.Program.write_interaction_matrix">write_interaction_matrix</a></li>
-  </ul>
-
-        </li>
-        <li class="mono">
-        <span class="class_name"><a href="#openql.openql.QASM_Loader">QASM_Loader</a></span>
-        
-          
-  <ul>
-    <li class="mono"><a href="#openql.openql.QASM_Loader.__init__">__init__</a></li>
-    <li class="mono"><a href="#openql.openql.QASM_Loader.load">load</a></li>
   </ul>
 
         </li>
@@ -2004,9 +1994,9 @@ table {
 
     <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
     <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">name_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_name__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_name__set</span><span class="p">)</span>
-    <span class="n">config_file_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_config_file__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_config_file__set</span><span class="p">)</span>
-    <span class="n">platform_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_platform__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_platform__set</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_name_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_name_set</span><span class="p">)</span>
+    <span class="n">config_file</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_config_file_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_config_file_set</span><span class="p">)</span>
+    <span class="n">platform</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_platform_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_platform_set</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -2052,7 +2042,7 @@ table {
 
     <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
     <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">creg_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">CReg_creg__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">CReg_creg__set</span><span class="p">)</span>
+    <span class="n">creg</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">CReg_creg_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">CReg_creg_set</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -2084,7 +2074,7 @@ table {
 
     <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
     <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">operation_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Operation_operation__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Operation_operation__set</span><span class="p">)</span>
+    <span class="n">operation</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Operation_operation_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Operation_operation_set</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -2111,13 +2101,13 @@ table {
 
     <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
     <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">name_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_name__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_name__set</span><span class="p">)</span>
-    <span class="n">platform_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_platform__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_platform__set</span><span class="p">)</span>
-    <span class="n">qubit_count_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_qubit_count__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_qubit_count__set</span><span class="p">)</span>
-    <span class="n">creg_count_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_creg_count__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_creg_count__set</span><span class="p">)</span>
-    <span class="n">kernel_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_kernel__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_kernel__set</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_name_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_name_set</span><span class="p">)</span>
+    <span class="n">platform</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_platform_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_platform_set</span><span class="p">)</span>
+    <span class="n">qubit_count</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_qubit_count_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_qubit_count_set</span><span class="p">)</span>
+    <span class="n">creg_count</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_creg_count_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_creg_count_set</span><span class="p">)</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_kernel_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_kernel_set</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernel_name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         Constructs a Kernel object.</span>
 
@@ -2133,7 +2123,7 @@ table {
 <span class="sd">            classical register count</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Kernel</span><span class="p">(</span><span class="n">kernel_name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="p">)</span>
+        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Kernel</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
@@ -2402,7 +2392,10 @@ table {
 
     <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">         inserts explicit wait on specified qubits.</span>
+<span class="sd">         inserts explicit wait on specified qubits. wait with duration &#39;0&#39;</span>
+<span class="sd">            is equivalent to barrier on specified list of qubits. If no qubits</span>
+<span class="sd">            are specified, then wait/barrier is applied on all the qubits.</span>
+
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -2415,8 +2408,20 @@ table {
         <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">,</span> <span class="n">duration</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         inserts explicit barrier on specified qubits. wait with duration &#39;0&#39;</span>
+<span class="sd">            is also equivalent to appliying barrier on specified list of qubits.</span>
+<span class="sd">            If no qubits are specified, then barrier is applied on all the qubits.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        arg1 : []</span>
+<span class="sd">            list of qubits</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
 
     <span class="k">def</span> <span class="nf">get_custom_instructions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -2536,11 +2541,11 @@ table {
 
     <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
     <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">name_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_name__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_name__set</span><span class="p">)</span>
-    <span class="n">platform_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_platform__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_platform__set</span><span class="p">)</span>
-    <span class="n">qubit_count_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_qubit_count__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_qubit_count__set</span><span class="p">)</span>
-    <span class="n">creg_count_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_creg_count__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_creg_count__set</span><span class="p">)</span>
-    <span class="n">program_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_program__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_program__set</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_name_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_name_set</span><span class="p">)</span>
+    <span class="n">platform</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_platform_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_platform_set</span><span class="p">)</span>
+    <span class="n">qubit_count</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_qubit_count_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_qubit_count_set</span><span class="p">)</span>
+    <span class="n">creg_count</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_creg_count_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_creg_count_set</span><span class="p">)</span>
+    <span class="n">program</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_program_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_program_set</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -2564,7 +2569,7 @@ table {
         <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">this</span> <span class="o">=</span> <span class="n">this</span>
 
-    <span class="k">def</span> <span class="nf">set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sweep_points</span><span class="p">,</span> <span class="n">num_sweep_points</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         Sets sweep points for an experiment.</span>
 
@@ -2572,11 +2577,25 @@ table {
 <span class="sd">        ----------</span>
 <span class="sd">        arg1 : []</span>
 <span class="sd">            list of sweep points</span>
-<span class="sd">        arg1 : int</span>
-<span class="sd">        	number of sweep points</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sweep_points</span><span class="p">,</span> <span class="n">num_sweep_points</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">get_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Returns sweep points for an experiment.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        []</span>
+<span class="sd">            list of sweep points </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_get_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 
     <span class="k">def</span> <span class="nf">add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
@@ -2708,26 +2727,6 @@ table {
     <span class="fm">__del__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">None</span>
 <span class="n">Program_swigregister</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_swigregister</span>
 <span class="n">Program_swigregister</span><span class="p">(</span><span class="n">Program</span><span class="p">)</span>
-
-<span class="k">class</span> <span class="nc">QASM_Loader</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
-    <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">loader</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">QASM_Loader_loader_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">QASM_Loader_loader_set</span><span class="p">)</span>
-    <span class="n">file_name</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">QASM_Loader_file_name_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">QASM_Loader_file_name_set</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_QASM_Loader</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
-        <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">this</span> <span class="o">=</span> <span class="n">this</span>
-
-    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">QASM_Loader_load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-    <span class="n">__swig_destroy__</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">delete_QASM_Loader</span>
-    <span class="fm">__del__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">None</span>
-<span class="n">QASM_Loader_swigregister</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">QASM_Loader_swigregister</span>
-<span class="n">QASM_Loader_swigregister</span><span class="p">(</span><span class="n">QASM_Loader</span><span class="p">)</span>
 </pre></div>
 
   </div>
@@ -2797,20 +2796,6 @@ table {
   <div class="item">
     <div class="name def" id="openql.openql.Program_swigregister">
     <p>def <span class="ident">Program_swigregister</span>(</p><p>...)</p>
-    </div>
-    
-
-    
-  
-  <div class="source_cont">
-</div>
-
-  </div>
-  
-      
-  <div class="item">
-    <div class="name def" id="openql.openql.QASM_Loader_swigregister">
-    <p>def <span class="ident">QASM_Loader_swigregister</span>(</p><p>...)</p>
     </div>
     
 
@@ -3083,7 +3068,7 @@ arg2 : str
 
     <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
     <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">creg_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">CReg_creg__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">CReg_creg__set</span><span class="p">)</span>
+    <span class="n">creg</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">CReg_creg_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">CReg_creg_set</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -3121,7 +3106,7 @@ arg2 : str
           </ul>
           <h3>Class variables</h3>
             <div class="item">
-            <p id="openql.openql.CReg.creg_" class="name">var <span class="ident">creg_</span></p>
+            <p id="openql.openql.CReg.creg" class="name">var <span class="ident">creg</span></p>
             
 
             
@@ -3184,7 +3169,7 @@ arg2 : str
   
           <h3>Instance variables</h3>
             <div class="item">
-            <p id="openql.openql.CReg.creg_" class="name">var <span class="ident">creg_</span></p>
+            <p id="openql.openql.CReg.creg" class="name">var <span class="ident">creg</span></p>
             
 
             
@@ -3220,13 +3205,13 @@ arg2 : str
 
     <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
     <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">name_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_name__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_name__set</span><span class="p">)</span>
-    <span class="n">platform_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_platform__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_platform__set</span><span class="p">)</span>
-    <span class="n">qubit_count_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_qubit_count__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_qubit_count__set</span><span class="p">)</span>
-    <span class="n">creg_count_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_creg_count__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_creg_count__set</span><span class="p">)</span>
-    <span class="n">kernel_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_kernel__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_kernel__set</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_name_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_name_set</span><span class="p">)</span>
+    <span class="n">platform</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_platform_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_platform_set</span><span class="p">)</span>
+    <span class="n">qubit_count</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_qubit_count_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_qubit_count_set</span><span class="p">)</span>
+    <span class="n">creg_count</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_creg_count_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_creg_count_set</span><span class="p">)</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_kernel_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_kernel_set</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernel_name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         Constructs a Kernel object.</span>
 
@@ -3242,7 +3227,7 @@ arg2 : str
 <span class="sd">            classical register count</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Kernel</span><span class="p">(</span><span class="n">kernel_name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="p">)</span>
+        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Kernel</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
@@ -3511,7 +3496,10 @@ arg2 : str
 
     <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">         inserts explicit wait on specified qubits.</span>
+<span class="sd">         inserts explicit wait on specified qubits. wait with duration &#39;0&#39;</span>
+<span class="sd">            is equivalent to barrier on specified list of qubits. If no qubits</span>
+<span class="sd">            are specified, then wait/barrier is applied on all the qubits.</span>
+
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -3524,8 +3512,20 @@ arg2 : str
         <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">,</span> <span class="n">duration</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         inserts explicit barrier on specified qubits. wait with duration &#39;0&#39;</span>
+<span class="sd">            is also equivalent to appliying barrier on specified list of qubits.</span>
+<span class="sd">            If no qubits are specified, then barrier is applied on all the qubits.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        arg1 : []</span>
+<span class="sd">            list of qubits</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
 
     <span class="k">def</span> <span class="nf">get_custom_instructions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -3651,7 +3651,7 @@ arg2 : str
           </ul>
           <h3>Class variables</h3>
             <div class="item">
-            <p id="openql.openql.Kernel.creg_count_" class="name">var <span class="ident">creg_count_</span></p>
+            <p id="openql.openql.Kernel.creg_count" class="name">var <span class="ident">creg_count</span></p>
             
 
             
@@ -3661,7 +3661,7 @@ arg2 : str
 
             </div>
             <div class="item">
-            <p id="openql.openql.Kernel.kernel_" class="name">var <span class="ident">kernel_</span></p>
+            <p id="openql.openql.Kernel.kernel" class="name">var <span class="ident">kernel</span></p>
             
 
             
@@ -3671,7 +3671,7 @@ arg2 : str
 
             </div>
             <div class="item">
-            <p id="openql.openql.Kernel.name_" class="name">var <span class="ident">name_</span></p>
+            <p id="openql.openql.Kernel.name" class="name">var <span class="ident">name</span></p>
             
 
             
@@ -3681,7 +3681,7 @@ arg2 : str
 
             </div>
             <div class="item">
-            <p id="openql.openql.Kernel.platform_" class="name">var <span class="ident">platform_</span></p>
+            <p id="openql.openql.Kernel.platform" class="name">var <span class="ident">platform</span></p>
             
 
             
@@ -3691,7 +3691,7 @@ arg2 : str
 
             </div>
             <div class="item">
-            <p id="openql.openql.Kernel.qubit_count_" class="name">var <span class="ident">qubit_count_</span></p>
+            <p id="openql.openql.Kernel.qubit_count" class="name">var <span class="ident">qubit_count</span></p>
             
 
             
@@ -3714,7 +3714,7 @@ arg2 : str
             
   <div class="item">
     <div class="name def" id="openql.openql.Kernel.__init__">
-    <p>def <span class="ident">__init__</span>(</p><p>self, kernel_name, platform, qubit_count, creg_count=0)</p>
+    <p>def <span class="ident">__init__</span>(</p><p>self, name, platform, qubit_count, creg_count=0)</p>
     </div>
     
 
@@ -3733,7 +3733,7 @@ arg4 : int
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Kernel.__init__', this);">Show source &equiv;</a></p>
   <div id="source-openql.openql.Kernel.__init__" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernel_name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">     Constructs a Kernel object.</span>
 <span class="sd">    Parameters</span>
@@ -3747,7 +3747,7 @@ arg4 : int
 <span class="sd">    arg4 : int</span>
 <span class="sd">        classical register count</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Kernel</span><span class="p">(</span><span class="n">kernel_name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="p">)</span>
+    <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_Kernel</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">platform</span><span class="p">,</span> <span class="n">qubit_count</span><span class="p">,</span> <span class="n">creg_count</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
@@ -3762,17 +3762,32 @@ arg4 : int
             
   <div class="item">
     <div class="name def" id="openql.openql.Kernel.barrier">
-    <p>def <span class="ident">barrier</span>(</p><p>self, qubits)</p>
+    <p>def <span class="ident">barrier</span>(</p><p>self, *args, **kwargs)</p>
     </div>
     
 
     
   
+    <div class="desc"><p>inserts explicit barrier on specified qubits. wait with duration '0'
+    is also equivalent to appliying barrier on specified list of qubits.
+    If no qubits are specified, then barrier is applied on all the qubits.</p>
+<h2>Parameters</h2>
+<p>arg1 : []
+    list of qubits</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Kernel.barrier', this);">Show source &equiv;</a></p>
   <div id="source-openql.openql.Kernel.barrier" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">)</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     inserts explicit barrier on specified qubits. wait with duration &#39;0&#39;</span>
+<span class="sd">        is also equivalent to appliying barrier on specified list of qubits.</span>
+<span class="sd">        If no qubits are specified, then barrier is applied on all the qubits.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    arg1 : []</span>
+<span class="sd">        list of qubits</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Kernel_barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </pre></div>
 
   </div>
@@ -4694,7 +4709,9 @@ arg3 : int
 
     
   
-    <div class="desc"><p>inserts explicit wait on specified qubits.</p>
+    <div class="desc"><p>inserts explicit wait on specified qubits. wait with duration '0'
+    is equivalent to barrier on specified list of qubits. If no qubits
+    are specified, then wait/barrier is applied on all the qubits.</p>
 <h2>Parameters</h2>
 <p>arg1 : []
     list of qubits
@@ -4705,7 +4722,9 @@ arg2 : int
   <div id="source-openql.openql.Kernel.wait" class="source">
     <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">     inserts explicit wait on specified qubits.</span>
+<span class="sd">     inserts explicit wait on specified qubits. wait with duration &#39;0&#39;</span>
+<span class="sd">        is equivalent to barrier on specified list of qubits. If no qubits</span>
+<span class="sd">        are specified, then wait/barrier is applied on all the qubits.</span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    arg1 : []</span>
@@ -4808,7 +4827,7 @@ arg2 : int
   
           <h3>Instance variables</h3>
             <div class="item">
-            <p id="openql.openql.Kernel.creg_count_" class="name">var <span class="ident">creg_count_</span></p>
+            <p id="openql.openql.Kernel.creg_count" class="name">var <span class="ident">creg_count</span></p>
             
 
             
@@ -4818,7 +4837,7 @@ arg2 : int
 
             </div>
             <div class="item">
-            <p id="openql.openql.Kernel.kernel_" class="name">var <span class="ident">kernel_</span></p>
+            <p id="openql.openql.Kernel.kernel" class="name">var <span class="ident">kernel</span></p>
             
 
             
@@ -4828,7 +4847,7 @@ arg2 : int
 
             </div>
             <div class="item">
-            <p id="openql.openql.Kernel.name_" class="name">var <span class="ident">name_</span></p>
+            <p id="openql.openql.Kernel.name" class="name">var <span class="ident">name</span></p>
             
 
             
@@ -4838,7 +4857,7 @@ arg2 : int
 
             </div>
             <div class="item">
-            <p id="openql.openql.Kernel.platform_" class="name">var <span class="ident">platform_</span></p>
+            <p id="openql.openql.Kernel.platform" class="name">var <span class="ident">platform</span></p>
             
 
             
@@ -4848,7 +4867,7 @@ arg2 : int
 
             </div>
             <div class="item">
-            <p id="openql.openql.Kernel.qubit_count_" class="name">var <span class="ident">qubit_count_</span></p>
+            <p id="openql.openql.Kernel.qubit_count" class="name">var <span class="ident">qubit_count</span></p>
             
 
             
@@ -4884,7 +4903,7 @@ arg2 : int
 
     <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
     <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">operation_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Operation_operation__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Operation_operation__set</span><span class="p">)</span>
+    <span class="n">operation</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Operation_operation_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Operation_operation_set</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -4917,7 +4936,7 @@ arg2 : int
           </ul>
           <h3>Class variables</h3>
             <div class="item">
-            <p id="openql.openql.Operation.operation_" class="name">var <span class="ident">operation_</span></p>
+            <p id="openql.openql.Operation.operation" class="name">var <span class="ident">operation</span></p>
             
 
             
@@ -4975,7 +4994,7 @@ arg2 : int
   
           <h3>Instance variables</h3>
             <div class="item">
-            <p id="openql.openql.Operation.operation_" class="name">var <span class="ident">operation_</span></p>
+            <p id="openql.openql.Operation.operation" class="name">var <span class="ident">operation</span></p>
             
 
             
@@ -5011,9 +5030,9 @@ arg2 : int
 
     <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
     <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">name_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_name__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_name__set</span><span class="p">)</span>
-    <span class="n">config_file_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_config_file__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_config_file__set</span><span class="p">)</span>
-    <span class="n">platform_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_platform__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_platform__set</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_name_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_name_set</span><span class="p">)</span>
+    <span class="n">config_file</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_config_file_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_config_file_set</span><span class="p">)</span>
+    <span class="n">platform</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Platform_platform_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Platform_platform_set</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -5065,7 +5084,7 @@ arg2 : int
           </ul>
           <h3>Class variables</h3>
             <div class="item">
-            <p id="openql.openql.Platform.config_file_" class="name">var <span class="ident">config_file_</span></p>
+            <p id="openql.openql.Platform.config_file" class="name">var <span class="ident">config_file</span></p>
             
 
             
@@ -5075,7 +5094,7 @@ arg2 : int
 
             </div>
             <div class="item">
-            <p id="openql.openql.Platform.name_" class="name">var <span class="ident">name_</span></p>
+            <p id="openql.openql.Platform.name" class="name">var <span class="ident">name</span></p>
             
 
             
@@ -5085,7 +5104,7 @@ arg2 : int
 
             </div>
             <div class="item">
-            <p id="openql.openql.Platform.platform_" class="name">var <span class="ident">platform_</span></p>
+            <p id="openql.openql.Platform.platform" class="name">var <span class="ident">platform</span></p>
             
 
             
@@ -5184,7 +5203,7 @@ arg2 : str
   
           <h3>Instance variables</h3>
             <div class="item">
-            <p id="openql.openql.Platform.config_file_" class="name">var <span class="ident">config_file_</span></p>
+            <p id="openql.openql.Platform.config_file" class="name">var <span class="ident">config_file</span></p>
             
 
             
@@ -5194,7 +5213,7 @@ arg2 : str
 
             </div>
             <div class="item">
-            <p id="openql.openql.Platform.name_" class="name">var <span class="ident">name_</span></p>
+            <p id="openql.openql.Platform.name" class="name">var <span class="ident">name</span></p>
             
 
             
@@ -5204,7 +5223,7 @@ arg2 : str
 
             </div>
             <div class="item">
-            <p id="openql.openql.Platform.platform_" class="name">var <span class="ident">platform_</span></p>
+            <p id="openql.openql.Platform.platform" class="name">var <span class="ident">platform</span></p>
             
 
             
@@ -5240,11 +5259,11 @@ arg2 : str
 
     <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
     <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">name_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_name__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_name__set</span><span class="p">)</span>
-    <span class="n">platform_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_platform__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_platform__set</span><span class="p">)</span>
-    <span class="n">qubit_count_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_qubit_count__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_qubit_count__set</span><span class="p">)</span>
-    <span class="n">creg_count_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_creg_count__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_creg_count__set</span><span class="p">)</span>
-    <span class="n">program_</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_program__get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_program__set</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_name_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_name_set</span><span class="p">)</span>
+    <span class="n">platform</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_platform_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_platform_set</span><span class="p">)</span>
+    <span class="n">qubit_count</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_qubit_count_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_qubit_count_set</span><span class="p">)</span>
+    <span class="n">creg_count</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_creg_count_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_creg_count_set</span><span class="p">)</span>
+    <span class="n">program</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">Program_program_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_program_set</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -5268,7 +5287,7 @@ arg2 : str
         <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">this</span> <span class="o">=</span> <span class="n">this</span>
 
-    <span class="k">def</span> <span class="nf">set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sweep_points</span><span class="p">,</span> <span class="n">num_sweep_points</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         Sets sweep points for an experiment.</span>
 
@@ -5276,11 +5295,25 @@ arg2 : str
 <span class="sd">        ----------</span>
 <span class="sd">        arg1 : []</span>
 <span class="sd">            list of sweep points</span>
-<span class="sd">        arg1 : int</span>
-<span class="sd">        	number of sweep points</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sweep_points</span><span class="p">,</span> <span class="n">num_sweep_points</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">get_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Returns sweep points for an experiment.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        []</span>
+<span class="sd">            list of sweep points </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_get_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 
     <span class="k">def</span> <span class="nf">add_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
@@ -5424,7 +5457,7 @@ arg2 : str
           </ul>
           <h3>Class variables</h3>
             <div class="item">
-            <p id="openql.openql.Program.creg_count_" class="name">var <span class="ident">creg_count_</span></p>
+            <p id="openql.openql.Program.creg_count" class="name">var <span class="ident">creg_count</span></p>
             
 
             
@@ -5434,7 +5467,7 @@ arg2 : str
 
             </div>
             <div class="item">
-            <p id="openql.openql.Program.name_" class="name">var <span class="ident">name_</span></p>
+            <p id="openql.openql.Program.name" class="name">var <span class="ident">name</span></p>
             
 
             
@@ -5444,7 +5477,7 @@ arg2 : str
 
             </div>
             <div class="item">
-            <p id="openql.openql.Program.platform_" class="name">var <span class="ident">platform_</span></p>
+            <p id="openql.openql.Program.platform" class="name">var <span class="ident">platform</span></p>
             
 
             
@@ -5454,7 +5487,7 @@ arg2 : str
 
             </div>
             <div class="item">
-            <p id="openql.openql.Program.program_" class="name">var <span class="ident">program_</span></p>
+            <p id="openql.openql.Program.program" class="name">var <span class="ident">program</span></p>
             
 
             
@@ -5464,7 +5497,7 @@ arg2 : str
 
             </div>
             <div class="item">
-            <p id="openql.openql.Program.qubit_count_" class="name">var <span class="ident">qubit_count_</span></p>
+            <p id="openql.openql.Program.qubit_count" class="name">var <span class="ident">qubit_count</span></p>
             
 
             
@@ -5765,6 +5798,43 @@ arg3: Operation
   
             
   <div class="item">
+    <div class="name def" id="openql.openql.Program.get_sweep_points">
+    <p>def <span class="ident">get_sweep_points</span>(</p><p>self)</p>
+    </div>
+    
+
+    
+  
+    <div class="desc"><p>Returns sweep points for an experiment.</p>
+<h2>Parameters</h2>
+<p>None</p>
+<h2>Returns</h2>
+<p>[]
+    list of sweep points</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Program.get_sweep_points', this);">Show source &equiv;</a></p>
+  <div id="source-openql.openql.Program.get_sweep_points" class="source">
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">get_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Returns sweep points for an experiment.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    None</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    []</span>
+<span class="sd">        list of sweep points </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_get_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</pre></div>
+
+  </div>
+</div>
+
+  </div>
+  
+            
+  <div class="item">
     <div class="name def" id="openql.openql.Program.microcode">
     <p>def <span class="ident">microcode</span>(</p><p>self)</p>
     </div>
@@ -5863,7 +5933,7 @@ Parameters</p>
             
   <div class="item">
     <div class="name def" id="openql.openql.Program.set_sweep_points">
-    <p>def <span class="ident">set_sweep_points</span>(</p><p>self, sweep_points, num_sweep_points)</p>
+    <p>def <span class="ident">set_sweep_points</span>(</p><p>self, *args)</p>
     </div>
     
 
@@ -5872,23 +5942,19 @@ Parameters</p>
     <div class="desc"><p>Sets sweep points for an experiment.</p>
 <h2>Parameters</h2>
 <p>arg1 : []
-    list of sweep points
-arg1 : int
-        number of sweep points</p></div>
+    list of sweep points</p></div>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Program.set_sweep_points', this);">Show source &equiv;</a></p>
   <div id="source-openql.openql.Program.set_sweep_points" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sweep_points</span><span class="p">,</span> <span class="n">num_sweep_points</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">     Sets sweep points for an experiment.</span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    arg1 : []</span>
 <span class="sd">        list of sweep points</span>
-<span class="sd">    arg1 : int</span>
-<span class="sd">    	number of sweep points</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sweep_points</span><span class="p">,</span> <span class="n">num_sweep_points</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
 </pre></div>
 
   </div>
@@ -5919,7 +5985,7 @@ arg1 : int
   
           <h3>Instance variables</h3>
             <div class="item">
-            <p id="openql.openql.Program.creg_count_" class="name">var <span class="ident">creg_count_</span></p>
+            <p id="openql.openql.Program.creg_count" class="name">var <span class="ident">creg_count</span></p>
             
 
             
@@ -5929,7 +5995,7 @@ arg1 : int
 
             </div>
             <div class="item">
-            <p id="openql.openql.Program.name_" class="name">var <span class="ident">name_</span></p>
+            <p id="openql.openql.Program.name" class="name">var <span class="ident">name</span></p>
             
 
             
@@ -5939,7 +6005,7 @@ arg1 : int
 
             </div>
             <div class="item">
-            <p id="openql.openql.Program.platform_" class="name">var <span class="ident">platform_</span></p>
+            <p id="openql.openql.Program.platform" class="name">var <span class="ident">platform</span></p>
             
 
             
@@ -5949,7 +6015,7 @@ arg1 : int
 
             </div>
             <div class="item">
-            <p id="openql.openql.Program.program_" class="name">var <span class="ident">program_</span></p>
+            <p id="openql.openql.Program.program" class="name">var <span class="ident">program</span></p>
             
 
             
@@ -5959,7 +6025,7 @@ arg1 : int
 
             </div>
             <div class="item">
-            <p id="openql.openql.Program.qubit_count_" class="name">var <span class="ident">qubit_count_</span></p>
+            <p id="openql.openql.Program.qubit_count" class="name">var <span class="ident">qubit_count</span></p>
             
 
             
@@ -5970,156 +6036,6 @@ arg1 : int
             </div>
             <div class="item">
             <p id="openql.openql.Program.thisown" class="name">var <span class="ident">thisown</span></p>
-            
-
-            
-  
-    <div class="desc"><p>The membership flag</p></div>
-  <div class="source_cont">
-</div>
-
-            </div>
-      </div>
-      </div>
-      
-      <div class="item">
-      <p id="openql.openql.QASM_Loader" class="name">class <span class="ident">QASM_Loader</span></p>
-      
-  
-  <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.QASM_Loader', this);">Show source &equiv;</a></p>
-  <div id="source-openql.openql.QASM_Loader" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">QASM_Loader</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="n">thisown</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(),</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">own</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;The membership flag&#39;</span><span class="p">)</span>
-    <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">_swig_repr</span>
-    <span class="n">loader</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">QASM_Loader_loader_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">QASM_Loader_loader_set</span><span class="p">)</span>
-    <span class="n">file_name</span> <span class="o">=</span> <span class="n">_swig_property</span><span class="p">(</span><span class="n">_openql</span><span class="o">.</span><span class="n">QASM_Loader_file_name_get</span><span class="p">,</span> <span class="n">_openql</span><span class="o">.</span><span class="n">QASM_Loader_file_name_set</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-        <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_QASM_Loader</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
-        <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">this</span> <span class="o">=</span> <span class="n">this</span>
-
-    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">QASM_Loader_load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-    <span class="n">__swig_destroy__</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">delete_QASM_Loader</span>
-    <span class="fm">__del__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">None</span>
-</pre></div>
-
-  </div>
-</div>
-
-
-      <div class="class">
-          <h3>Ancestors (in MRO)</h3>
-          <ul class="class_list">
-          <li><a href="#openql.openql.QASM_Loader">QASM_Loader</a></li>
-          <li>builtins.object</li>
-          </ul>
-          <h3>Class variables</h3>
-            <div class="item">
-            <p id="openql.openql.QASM_Loader.file_name" class="name">var <span class="ident">file_name</span></p>
-            
-
-            
-  
-  <div class="source_cont">
-</div>
-
-            </div>
-            <div class="item">
-            <p id="openql.openql.QASM_Loader.loader" class="name">var <span class="ident">loader</span></p>
-            
-
-            
-  
-  <div class="source_cont">
-</div>
-
-            </div>
-            <div class="item">
-            <p id="openql.openql.QASM_Loader.thisown" class="name">var <span class="ident">thisown</span></p>
-            
-
-            
-  
-  <div class="source_cont">
-</div>
-
-            </div>
-          <h3>Static methods</h3>
-            
-  <div class="item">
-    <div class="name def" id="openql.openql.QASM_Loader.__init__">
-    <p>def <span class="ident">__init__</span>(</p><p>self, file_name)</p>
-    </div>
-    
-
-    
-  
-    <div class="desc"><p>Initialize self.  See help(type(self)) for accurate signature.</p></div>
-  <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.QASM_Loader.__init__', this);">Show source &equiv;</a></p>
-  <div id="source-openql.openql.QASM_Loader.__init__" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-    <span class="n">this</span> <span class="o">=</span> <span class="n">_openql</span><span class="o">.</span><span class="n">new_QASM_Loader</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">this</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
-    <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">this</span> <span class="o">=</span> <span class="n">this</span>
-</pre></div>
-
-  </div>
-</div>
-
-  </div>
-  
-            
-  <div class="item">
-    <div class="name def" id="openql.openql.QASM_Loader.load">
-    <p>def <span class="ident">load</span>(</p><p>self)</p>
-    </div>
-    
-
-    
-  
-  <div class="source_cont">
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.QASM_Loader.load', this);">Show source &equiv;</a></p>
-  <div id="source-openql.openql.QASM_Loader.load" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">QASM_Loader_load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-</pre></div>
-
-  </div>
-</div>
-
-  </div>
-  
-          <h3>Instance variables</h3>
-            <div class="item">
-            <p id="openql.openql.QASM_Loader.file_name" class="name">var <span class="ident">file_name</span></p>
-            
-
-            
-  
-  <div class="source_cont">
-</div>
-
-            </div>
-            <div class="item">
-            <p id="openql.openql.QASM_Loader.loader" class="name">var <span class="ident">loader</span></p>
-            
-
-            
-  
-  <div class="source_cont">
-</div>
-
-            </div>
-            <div class="item">
-            <p id="openql.openql.QASM_Loader.thisown" class="name">var <span class="ident">thisown</span></p>
             
 
             

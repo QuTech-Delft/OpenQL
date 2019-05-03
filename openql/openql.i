@@ -429,7 +429,10 @@ The ids and the corresponding operations are:
 """
 
 %feature("docstring") Kernel::wait
-""" inserts explicit wait on specified qubits.
+""" inserts explicit wait on specified qubits. wait with duration '0'
+    is equivalent to barrier on specified list of qubits. If no qubits
+    are specified, then wait/barrier is applied on all the qubits.
+
 
 Parameters
 ----------
@@ -438,6 +441,18 @@ arg1 : []
 arg2 : int
     duration in ns
 """
+
+%feature("docstring") Kernel::barrier
+""" inserts explicit barrier on specified qubits. wait with duration '0'
+    is also equivalent to appliying barrier on specified list of qubits.
+    If no qubits are specified, then barrier is applied on all the qubits.
+
+Parameters
+----------
+arg1 : []
+    list of qubits
+"""
+
 
 %feature("docstring") Kernel::display
 """ inserts QX display instruction (so QX specific).
@@ -583,7 +598,7 @@ Parameters
 arg1 : []
     list of sweep points
 arg2 : int
-	number of sweep points
+    number of sweep points
 """
 
 
