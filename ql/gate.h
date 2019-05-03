@@ -231,6 +231,10 @@ public:
 };
 
 
+/****************************************************************************\
+| Standard gates
+\****************************************************************************/
+
 /**
  * identity
  */
@@ -1247,6 +1251,10 @@ public:
 };
 
 
+/****************************************************************************\
+| Special gates
+\****************************************************************************/
+
 class wait : public gate
 {
 public:
@@ -1403,7 +1411,9 @@ public:
     ucode_sequence_t    qumis;            // microcode sequence
 #endif
     instruction_type_t  operation_type;   // operation type : rf/flux
+#if OPT_USED_HARDWARE
     strings_t           used_hardware;    // used hardware
+#endif
     std::string         arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
 
 public:
@@ -1429,7 +1439,9 @@ public:
 #endif
         operation_type = g.operation_type;
         duration  = g.duration;
+#if OPT_USED_HARDWARE
         used_hardware.assign(g.used_hardware.begin(), g.used_hardware.end());
+#endif
         m.m[0] = g.m.m[0];
         m.m[1] = g.m.m[1];
         m.m[2] = g.m.m[2];
@@ -1450,8 +1462,10 @@ public:
     {
         this->name = name;
         this->duration = duration;
+#if OPT_USED_HARDWARE
         for (size_t i=0; i<hardware.size(); i++)
             used_hardware.push_back(hardware[i]);
+#endif
     }
 
     /**
@@ -1535,9 +1549,11 @@ public:
             // operation_type = instr["type"];
             l_attr = "duration";
             duration = instr["duration"];
+#if OPT_USED_HARDWARE
             // FIXME: code commented out:
             // strings_t hdw = instr["hardware"];
             // used_hardware.assign(hdw.begin(), hdw.end());
+#endif
             l_attr = "matrix";
             auto mat = instr["matrix"];
             m.m[0] = complex_t(mat[0][0], mat[0][1]);

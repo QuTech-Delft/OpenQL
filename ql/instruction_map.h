@@ -154,7 +154,7 @@ json load_json(std::string file_name)
     return j;
 }
 
-
+// FIXME: similar to custom_gate::load()
 int load_instructions(std::map<std::string, custom_gate *>& instruction_map, std::string file_name="instructions.json")
 {
     json instructions = load_json(file_name);
@@ -175,8 +175,10 @@ int load_instructions(std::map<std::string, custom_gate *>& instruction_map, std
         instruction_type_t type = (t == "rf" ? rf_t : flux_t );
         g->operation_type = type;
         g->duration = instr["duration"];
+#if OPT_USED_HARDWARE
         strings_t hdw = instr["hardware"];
         g->used_hardware.assign(hdw.begin(), hdw.end());
+#endif
         auto mat = instr["matrix"];
         g->m.m[0] = complex_t(mat[0][0], mat[0][1]);
         g->m.m[1] = complex_t(mat[1][0], mat[1][1]);
