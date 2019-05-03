@@ -130,8 +130,8 @@ public:
 #else   // FIXME: CC-light emulation
     emit("",      // CCIO selector
          "jmp",
-         "0",
-         "# loop to start indefinitely");   // FIXME: skip latencyCompensation? faster and constant loop intervals, but no (user settable) delay
+         "@mainLoop",
+         "# loop indefinitely");
 #endif
     }
 
@@ -618,10 +618,17 @@ public:
         }
 #else   // FIXME: user settable delay via register
         // FIXME: gives ILLEGAL_INSTR
-            emit("",                "add",      "R63,1,R63",        "# prevent 0");
+ #if 1
+            emit("",                "add",      "R63,1,R0",         "# R63 externally set by user, prevent 0 value which would wrap counter");
             emit("",                "seq_bar",  "20",               "# synchronization");
             emit("syncLoop:",       "seq_out",  "0x00000000,1",     "# 20 ns delay");     // FIXME: spaces/segfault if label and seq_out lack space in between/underscores
-            emit("",                "loop",     "R63,@syncLoop",    "# R63 externally set by user");
+            emit("",                "loop",     "R0,@syncLoop",     "# ");
+ #else  // FIXME demo hack, modify start address for latency setting
+            for(int i=0; i<20; i++) {
+                emit("",       "seq_out",  "0x00000000,1",     "# 20 ns delay");
+            }
+ #endif
+            emit("mainLoop:",       "",         "",                 "# ");
 #endif
     }
 
