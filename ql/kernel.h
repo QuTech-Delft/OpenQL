@@ -107,7 +107,7 @@ public:
      */
     void print_gates_definition()
     {
-        for (std::map<std::string,custom_gate*>::iterator i=instruction_map.begin(); i!=instruction_map.end(); i++)
+        for (instruction_map_t::iterator i=instruction_map.begin(); i!=instruction_map.end(); i++)
         {
             COUT("[-] gate '" << i->first << "'");
 #if OPT_MICRO_CODE
@@ -120,7 +120,7 @@ public:
     {
         std::stringstream ss;
 
-        for (std::map<std::string,custom_gate*>::iterator i=instruction_map.begin(); i!=instruction_map.end(); i++)
+        for (instruction_map_t::iterator i=instruction_map.begin(); i!=instruction_map.end(); i++)
         {
             ss << i->first << '\n';
         }
@@ -520,7 +520,7 @@ private:
                 instr += "q" + std::to_string(qubits[qubits.size()-1]);
         }
 
-        std::map<std::string,custom_gate*>::iterator it = instruction_map.find(instr);
+        instruction_map_t::iterator it = instruction_map.find(instr);
         if (it != instruction_map.end())
         {
             custom_gate* g = new custom_gate(*(it->second));
@@ -536,7 +536,7 @@ private:
         else
         {
             // otherwise, check if there is a parameterized custom gate (i.e. not specialized for arguments)
-            std::map<std::string,custom_gate*>::iterator it = instruction_map.find(gname);
+            instruction_map_t::iterator it = instruction_map.find(gname);
             if (it != instruction_map.end())
             {
                 custom_gate* g = new custom_gate(*(it->second));

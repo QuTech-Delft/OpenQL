@@ -21,7 +21,7 @@ namespace ql
 typedef std::string qasm_inst_t;
 typedef std::string ucode_inst_t;
 
-typedef std::map<std::string,ql::custom_gate *> instruction_map_t;
+typedef std::map<std::string, ql::custom_gate *> instruction_map_t;
 #if OPT_MICRO_CODE
 typedef std::map<qasm_inst_t, ucode_inst_t> dep_instruction_map_t;
 #endif
@@ -29,8 +29,8 @@ typedef std::map<qasm_inst_t, ucode_inst_t> dep_instruction_map_t;
 
 namespace utils
 {
-bool format_string(std::string& s);
-void replace_all(std::string &str, std::string seq, std::string rep);
+    bool format_string(std::string& s);
+    void replace_all(std::string &str, std::string seq, std::string rep);
 }
 
 
@@ -155,7 +155,7 @@ json load_json(std::string file_name)
 }
 
 // FIXME: similar to custom_gate::load()
-int load_instructions(std::map<std::string, custom_gate *>& instruction_map, std::string file_name="instructions.json")
+int load_instructions(instruction_map_t& instruction_map, std::string file_name="instructions.json")
 {
     json instructions = load_json(file_name);
     // std::cout << instructions.dump(4) << std::endl;
