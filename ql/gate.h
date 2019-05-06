@@ -1663,9 +1663,6 @@ public:
 class composite_gate : public custom_gate
 {
 public:
-#if 0
-    double angle; // TODO not needed, should be removed, check it!!!
-#endif
     cmat_t m;
     std::vector<gate *> gs;
 
