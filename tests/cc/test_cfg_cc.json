@@ -293,8 +293,8 @@
 				{
 					"name": "mw_0",
                     "qubits": [                                             // data qubits:
-                        [2, 8, 18],                                        // [freq L]
-                        [1, 4, 6, 10, 12, 15]                              // [freq H]
+                        [2, 8, 14],                                         // [freq L]
+                        [1, 4, 6, 10, 12, 15]                               // [freq H]
                     ],
                     "ref_signals_type": "mw",
 					"ref_instrument_definition": "zi-hdawg",
@@ -308,8 +308,8 @@
 				{
 					"name": "mw_1",
                     "qubits": [                                             // ancilla qubits:
-                        [0, 5, 9, 13],                                     // [freq Mg]
-                        [3, 7, 11, 16]                                     // [freq My]
+                        [0, 5, 9, 13],                                      // [freq Mg]
+                        [3, 7, 11, 16]                                      // [freq My]
                     ],
                     "ref_signals_type": "mw",
 					"ref_instrument_definition": "zi-hdawg",
@@ -325,10 +325,10 @@
 				{
 					"name": "vsm_0",
                     "qubits": [
-                        [2, 8, 14],                                        // [freq L]
-                        [1, 4, 6, 10, 12, 15],                             // [freq H]
-                        [0, 5, 9, 13],                                     // [freq Mg]
-                        [3, 7, 11, 16]                                     // [freq My]
+                        [2, 8, 14],                                         // [freq L]
+                        [1, 4, 6, 10, 12, 15],                              // [freq H]
+                        [0, 5, 9, 13],                                      // [freq Mg]
+                        [3, 7, 11, 16]                                      // [freq My]
                     ],
                     "ref_signals_type": "switch",
 					"ref_instrument_definition": "qutech-vsm",
@@ -569,7 +569,7 @@
             }
         },
 
-		// additions from 'CC-software-implementation.docx', these are single-qubit-mw
+		// additions from 'CC-software-implementation.docx'
 		// flux pulses, see issue #176:
 		"park_cz" : { // park signal with same length as cz gate
 			"duration" : 40,
