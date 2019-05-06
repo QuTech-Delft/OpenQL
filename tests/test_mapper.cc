@@ -878,13 +878,17 @@ test_lingling_7_esm(std::string v, std::string mapopt, std::string scheduler_com
 int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_DEBUG");
-    ql::options::set("scheduler", "ALAP");
-    ql::options::set("mapinitone2one", "yes"); 
-//  ql::options::set("initialplace", "no"); 
-    ql::options::set("mapusemoves", "yes"); 
+//default       ql::options::set("scheduler_post179", "yes");
+//default       ql::options::set("scheduler", "ALAP");
+//parameter2    ql::options::set("scheduler_commute", "yes");
+//parameter1    ql::options::set("mapper", "minextend"); 
+//default       ql::options::set("mapinitone2one", "yes"); 
+//default       ql::options::set("initialplace", "no"); 
+//default       ql::options::set("mapusemoves", "yes"); 
     ql::options::set("maptiebreak", "first"); 
-    ql::options::set("mappathselect", "all"); 
-//  ql::options::set("mapdecomposer", "no");
+//default       ql::options::set("mapdecomposer", "yes");
+//default       ql::options::set("mappathselect", "all"); 
+//parameter3    ql::options::set("maplookahead", "all");
 
 //  test_daniel2("daniel2", "base", "yes", "critical");
 //  test_daniel2("daniel2", "base", "yes", "critical");
@@ -903,7 +907,7 @@ int main(int argc, char ** argv)
 //  test_oneD4("oneD4", "minextend", "yes", "critical");
 //  test_oneD4("oneD4", "minextendrc", "yes", "critical");
 
-    test_oneD4Diogo("oneD4Diogo", "base", "yes", "critical");
+//  test_oneD4Diogo("oneD4Diogo", "base", "yes", "critical");
 
 //  test_string("string", "base", "yes", "critical");
 //  test_string("string", "base", "yes", "critical");
@@ -913,16 +917,18 @@ int main(int argc, char ** argv)
 //  test_string("string", "minextendrc", "yes", "noroutingfirst");
 //  test_string("string", "minextendrc", "yes", "all");
 
-//  test_allD("allD", "base", "yes", "no");
-//  test_allD("allD", "base", "yes", "critical");
-//  test_allD("allD", "base", "yes", "noroutingfirst");
-//  test_allD("allD", "minextend", "yes", "no");
-//  test_allD("allD", "minextend", "yes", "critical");
-//  test_allD("allD", "minextend", "yes", "noroutingfirst");
-//  test_allD("allD", "minextendrc", "yes", "no");
-//  test_allD("allD", "minextendrc", "yes", "critical");
-//  test_allD("allD", "minextendrc", "yes", "noroutingfirst");
-//  test_allD("allD", "minextendrc", "yes", "all");
+    test_allD("allD", "base", "yes", "no");
+    test_allD("allD", "base", "yes", "critical");
+    test_allD("allD", "base", "yes", "noroutingfirst");
+    test_allD("allD", "base", "yes", "all");
+    test_allD("allD", "minextend", "yes", "no");
+    test_allD("allD", "minextend", "yes", "critical");
+    test_allD("allD", "minextend", "yes", "noroutingfirst");
+    test_allD("allD", "minextend", "yes", "all");
+    test_allD("allD", "minextendrc", "yes", "no");
+    test_allD("allD", "minextendrc", "yes", "critical");
+    test_allD("allD", "minextendrc", "yes", "noroutingfirst");
+    test_allD("allD", "minextendrc", "yes", "all");
 
 //  test_allDopt("allDopt", "base", "yes", "critical");
 //  test_allDopt("allDopt", "base", "yes", "critical");

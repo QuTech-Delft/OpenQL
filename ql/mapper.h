@@ -606,8 +606,8 @@ private:
     FreeCycle               fc;         // FreeCycle map of this Past
 //  Metrics                 metrics;    // Metrics map at end of this Past
     typedef ql::gate *      gate_p;
-    std::list<gate_p>       waitinglg;  // list of gates in this Past, topological order, waiting to be scheduled in
-    std::list<gate_p>       lg;         // list of gates in this Past, scheduled by their (start) cycle values
+    std::list<gate_p>       waitinglg;  // list of q gates in this Past, topological order, waiting to be scheduled in
+    std::list<gate_p>       lg;         // list of q gates in this Past, scheduled by their (start) cycle values
     std::list<gate_p>       outlg;      // list of gates flushed out of this Past, not yet put in outCirc
     size_t                  nswapsadded;// number of swaps (including moves) added to this past
     size_t                  nmovesadded;// number of moves added to this past
@@ -1361,16 +1361,8 @@ size_t MaxFreeCycle()
 
 // nonq and q gates follow separate flows through Past:
 // - q gates are put in waitinglg when added and then scheduled; and then ordered by cycle into lg
-// - nonq gates bypass this; they immediately go to outlg; when encountered, lg is first flushed into outlg
-// outlg gets all nonq and q gates in Past; when here, they are not meaningful to past scheduling anymore
-// and can be flushed further to the outCirc when desired; but note that of this outCirc, there is only one
-// and that is at the level of the mainPast
-
-// flush lg to outlg
-// do this only when scheduling is not sacrificed:
-// - on encountering a nonq gate
-// - when the past window is deep enough (deeper than MaxDepth)
-void Flush()
+// - nonq gates bypass this; they immediately go to the tail of lg
+void FlushAll()
 {
     for( auto & gp : lg )
     {
@@ -1378,19 +1370,18 @@ void Flush()
     }
     lg.clear();         // so effectively, lg's content was moved to outlg
 
-    fc.Init(platformp); // needed?
-    cycle.clear();      // needed?
+    // fc.Init(platformp); // needed?
+    // cycle.clear();      // needed?
                         // cycle is initialized to empty map
                         // is ok without windowing, but with window, just delete the ones outside the window
 }
 
 // gp as nonq gate immediately goes to outlg
-// assumes lg has been flushed
 void ByPass(ql::gate* gp)
 {
     if (!lg.empty())
     {
-        Flush();
+        FlushAll();
     }
     outlg.push_back(gp);
 }
@@ -2725,7 +2716,7 @@ void DoneGate(ql::gate* gp)
 // The mapping is done in the context of a grid of qubits defined by the given platform.
 // This grid is initialized once for the whole program and constant after that.
 
-// Each kernel in the program is independently mapped (see the MapCircuit method),
+// Each kernel in the program is independently mapped (see the Map method),
 // ignoring inter-kernel control flow and thereby the requirement to pass on the current mapping.
 // However, for each kernel there are two methods: initial placement and a heuristic,
 // of which initial placement may do a half-hearted job, while heuristic will always be successful in finding a map;
@@ -2767,7 +2758,7 @@ void DoneGate(ql::gate* gp)
 //       - otherwise, a separate intermediate kernel for the transition code must be created, and added
 // THE ABOVE INTER-KERNEL MAPPING IS NOT IMPLEMENTED.
 
-// The Mapper's main entry is MapCircuit which manages the input and output streams of QASM instructions,
+// The Mapper's main entry is Map which manages the input and output streams of QASM instructions,
 // and does the logic between (global) initial placement mapper and the (more local) heuristic mapper.
 // It selects the quantum gates from it, and maps these in the context of what was mapped before (the Past).
 // Each gate is separately mapped in MapGate in the main Past's context.
@@ -2783,7 +2774,7 @@ private:
                                     // is divisor of duration in ns to convert it to cycles
     Grid            grid;           // current grid
 
-                                    // Initialized by Mapper.MapCircuit
+                                    // Initialized by Mapper.Map
     std::mt19937    gen;            // Standard mersenne_twister_engine, not yet seeded
 
 public:
@@ -3126,9 +3117,9 @@ void RouteAndMapGates(std::list<ql::gate*> lg, Future& future, Past& past)
 
 // given the states of past and future
 // look which gates to map next in future,
-// exploring mapping, evaluate and select all based on past
-// and then map them
-// when outCircp is not NULL, MapGates was called with mainPast and outlg can be flushed
+// exploring mapping, evaluate and select all based on past, and then map them
+//
+// when outCircp is not NULL, MapGates was called from/with mainPast and outlg can be flushed
 void MapGates(Future& future, Past& past, ql::circuit* outCircp)
 {
     std::list<ql::gate*>   nonqlg; // list of non-quantum gates taken from avlist
@@ -3187,7 +3178,7 @@ void MapGates(Future& future, Past& past, ql::circuit* outCircp)
 }
 
 // Map the circuit's gates in the provided context (v2r maps), updating circuit and v2r maps
-void MapGates(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
+void MapCircuit(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
 {
     Future  future;         // future window, presents input in avlist
     Past    mainPast;       // past window
@@ -3205,7 +3196,7 @@ void MapGates(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
 
     MapGates(future, mainPast, &outCirc);
 
-    mainPast.Flush();
+    mainPast.FlushAll();
     mainPast.Out(outCirc);
     // mainPast.Print("end mapping");
 
@@ -3243,7 +3234,7 @@ void Decomposer(ql::circuit& circ)
             mainPast.AddAndSchedule(newgp);
         }
     }
-    mainPast.Flush();
+    mainPast.FlushAll();
     mainPast.Out(outCirc);
     circ.swap(outCirc);
 
@@ -3317,11 +3308,11 @@ std::string qasm(ql::circuit& c, size_t nqubits, std::string& name)
 }
 
 // map kernel's circuit, main mapper entry once per kernel
-void MapCircuit(ql::quantum_kernel& kernel)
+void Map(ql::quantum_kernel& kernel)
 {
-    DOUT("Mapping circuit ...");
+    DOUT("Mapping kernel ...");
     DOUT("... kernel original virtual number of qubits=" << kernel.qubit_count);
-    nc = kernel.creg_count;     // in absence of platform creg_count, take it from kernel
+    nc = kernel.creg_count;     // in absence of platform creg_count, take it from kernel, i.e. from OpenQL program
 
     Virt2Real   v2r;        // current mapping while mapping this kernel
 
@@ -3345,7 +3336,7 @@ void MapCircuit(ql::quantum_kernel& kernel)
 #endif
     v2r.Print("After initial placement");
 
-    MapGates(kernel.c, kernel.name, v2r);       // updates circ with swaps, maps all gates, updates v2r map
+    MapCircuit(kernel.c, kernel.name, v2r);       // updates circ with swaps, maps all gates, updates v2r map
     v2r.Print("After heuristics");
 
     std::string mapdecomposeropt = ql::options::get("mapdecomposer");
@@ -3360,10 +3351,10 @@ void MapCircuit(ql::quantum_kernel& kernel)
     kernel.swaps_added = nswapsadded;
     kernel.moves_added = nmovesadded;
 
-    DOUT("Mapping circuit [DONE]");
+    DOUT("Mapping kernel [DONE]");
 
     // here export v2r to context again to be used by successor kernels
-}   // end MapCircuit
+}   // end Map
 
 // initialize mapper for whole program
 // lots could be split off for the whole program, once that is needed
@@ -3375,7 +3366,7 @@ void Init(const ql::quantum_platform& p)
     // DOUT("... Grid initialization: platform qubits->coordinates, ->neighbors, distance ...");
     platform = p;
     nq = p.qubit_number;
-    // nc = p.creg_number;  // nc should come from platform, but doesn't; is taken from kernel in MapCircuit
+    // nc = p.creg_number;  // nc should come from platform, but doesn't; is taken from kernel in Map
     RandomInit();
     // DOUT("... platform/real number of qubits=" << nq << ");
     cycle_time = p.cycle_time;

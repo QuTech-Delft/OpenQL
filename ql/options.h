@@ -39,11 +39,11 @@ namespace ql
           opt_name2opt_val["mapper"] = "no";
           opt_name2opt_val["mapinitone2one"] = "yes";
           opt_name2opt_val["initialplace"] = "no";
-          opt_name2opt_val["mapusemoves"] = "no";
-          opt_name2opt_val["maptiebreak"] = "first";
+          opt_name2opt_val["mapusemoves"] = "yes";
+          opt_name2opt_val["maptiebreak"] = "random";
           opt_name2opt_val["mapdecomposer"] = "yes";
           opt_name2opt_val["mappathselect"] = "all";
-          opt_name2opt_val["maplookahead"] = "no";
+          opt_name2opt_val["maplookahead"] = "noroutingfirst";
 
           // add options with default values and list of possible values
           app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"], 
