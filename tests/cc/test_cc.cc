@@ -25,7 +25,7 @@
 // based on tests/test_hybrid.py
 void test_classical(std::string scheduler, std::string scheduler_uniform)
 {
-    const int num_qubits = 25;
+    const int num_qubits = 17;
     const int num_cregs = 3;
 
     // create and set platform
@@ -36,10 +36,10 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
     ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
 
     // quantum operations
-    for (int j=6; j<19; j++) {
+    for (int j=6; j<17; j++) {
         k.gate("x", j);
     }
-    k.wait({6,7,8,9,10,11,12,13,14,15,16,17,18}, 0);      // help scheduler
+    k.wait({6,7,8,9,10,11,12,13,14,15,16}, 0);      // help scheduler
 
     // 1/2/3 qubit flux
 #if 0 // misaligns cz and park_cz (using old scheduler)
@@ -56,17 +56,17 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
     k.gate("park_cz", 11);  // NB: not necessarily correct qubit
 
     k.gate("cz", 12, 13);
-    k.gate("park_cz", 17);
+    k.gate("park_cz", 15);
 
     k.gate("cz", 10, 15);
     k.gate("park_cz", 16);
 #endif
-    k.wait({6,7,11,12,13,17,10,15,16}, 0); // help scheduler
+    k.wait({6,7,8,9,10,11,12,13,14,15,16}, 0);      // help scheduler
 
     k.gate("cz_park", std::vector<size_t> {6, 7, 11});
-    k.gate("cz_park", std::vector<size_t> {12, 13, 17});
+    k.gate("cz_park", std::vector<size_t> {12, 13, 15});
     k.gate("cz_park1", std::vector<size_t> {10, 15, 16});   // FIXME:
-    k.wait({6,7,11,12,13,17,10,15,16}, 0); // help scheduler
+    k.wait({6,7,8,9,10,11,12,13,14,15,16}, 0);      // help scheduler
 
     // gate with angle parameter
     double angle = 1.23456; // just some number
@@ -157,7 +157,7 @@ $2 = 0
 
 void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
 {
-    const int num_qubits = 25;
+    const int num_qubits = 17;
     const int num_cregs = 3;
 
    // create and set platform
@@ -194,14 +194,14 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     k.gate("rym90", xS);
 //    k.wait({x, xN, xE, xW, xS}, 0);
     // FIXME: above line does not work with new scheduler.h
-    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}, 0);
+    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}, 0);
 
     k.gate("cz", x, xE);
     k.gate("cz", x, xN);
     k.gate("cz", x, xS);
     k.gate("cz", x, xW);
 //    k.wait({x, xN, xE, xW, xS}, 0);
-    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}, 0);
+    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}, 0);
 
     k.gate("ry90", x);
     k.gate("ry90", xN);
@@ -209,7 +209,7 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     k.gate("ry90", xW);
     k.gate("ry90", xS);
 //    k.wait({x, xN, xE, xW, xS}, 0);
-    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}, 0);
+    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}, 0);
 
     // FIXME:
     // - qubits participating in CZ need phase correction, which may be part of gate, or separate
@@ -220,7 +220,7 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
 
     k.gate("measure", std::vector<size_t> {x}, std::vector<size_t> {0});
 //    k.wait({x}, 0);
-    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24}, 0);
+    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}, 0);
 
     // Z stabilizers
     k.gate("rym90", z);
@@ -247,7 +247,7 @@ void test_do_while_nested_for(std::string scheduler, std::string scheduler_unifo
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
 
     // create program
-    const int num_qubits = 25;
+    const int num_qubits = 17;
     const int num_cregs = 3;
     ql::quantum_program prog(("test_do_while_nested_for_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
 //    ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
@@ -290,7 +290,7 @@ void test_rabi( std::string scheduler, std::string scheduler_uniform)
     // create and set platform
     ql::quantum_platform s17("s17", "test_cfg_cc_demo.json");
 
-    const int num_qubits = 25;
+    const int num_qubits = 17;
     const int num_cregs = 3;
     ql::quantum_program prog(("test_rabi_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
     ql::quantum_program sp1(("sp1"), s17, num_qubits, num_cregs);
@@ -318,7 +318,7 @@ void test_wait( std::string scheduler, std::string scheduler_uniform)
     // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
 
-    const int num_qubits = 25;
+    const int num_qubits = 17;
     const int num_cregs = 3;
     ql::quantum_program prog(("test_wait_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
     ql::quantum_program sp1(("sp1"), s17, num_qubits, num_cregs);

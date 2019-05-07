@@ -11,7 +11,7 @@ curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
 config_fn = os.path.join(curdir, 'test_cfg_cc.json')
 platform_name = 's-17'
-num_qubits = 25
+num_qubits = 17
 num_cregs = 32
 all_qubits = range(0, num_qubits)
 
@@ -64,49 +64,6 @@ class Test_central_controller(unittest.TestCase):
         p.add_kernel(k1)
         p.compile()
 
-    def test_uniform_scheduler_0(self):
-        ql.set_option('output_dir', output_dir)
-        ql.set_option('optimize', 'no')
-        ql.set_option('scheduler', 'ALAP')
-        ql.set_option('scheduler_uniform', 'yes')
-        ql.set_option('log_level', 'LOG_WARNING')
-
-        platform = ql.Platform(platform_name, config_fn)
-
-        p = ql.Program('test_uniform_scheduler_0', platform, num_qubits, num_cregs)
-        k = ql.Kernel('kernel_0', platform, num_qubits, num_cregs)
-
-        # a simple first test
-        # the x gates serve to separate the cnot gates wrt dependences
-        # this creates big bundles with 7 x gates
-        # and small bundles with just a cnot
-        # after uniform scheduling, one or more x gates
-        # should have been moved next to the cnot
-        # those will move that do not have operands that overlap those of the cnot
-
-        for j in range(6, 18+1):
-            k.gate("x", [j])
-        k.wait(all_qubits, 0)
-
-        k.gate("cnot", [6, 7])
-        k.wait(all_qubits, 0)
-
-        for j in range(6, 18+1):
-            k.gate("x", [j])
-        k.wait(all_qubits, 0)
-
-        k.gate("cnot", [12, 13])
-        k.wait(all_qubits, 0)
-
-        for j in range(6, 18+1):
-            k.gate("x", [j])
-        k.wait(all_qubits, 0)
-
-        k.gate("cnot", [10, 15])
-
-        p.add_kernel(k)
-        p.compile()
-
     # Quantum Error Correction cycle
     def test_qec(self):
         ql.set_option('output_dir', output_dir)
@@ -128,6 +85,7 @@ class Test_central_controller(unittest.TestCase):
         # class SurfaceCode, qubits, tiles, width, getNeighbourN, getNeighbourE, getNeighbourW, getNeighbourS, getX, getZ, getData
 
         # define qubit aliases:
+        # FIXME: neighbours make no sense anymore
         x = 7
         xN = x-5
         xE = x+1

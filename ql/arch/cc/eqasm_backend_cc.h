@@ -19,7 +19,7 @@
 #define QL_ARCH_CC_EQASM_BACKEND_CC_H
 
 // constants:
-#define CC_BACKEND_VERSION          "0.2.2"
+#define CC_BACKEND_VERSION_STRING   "0.2.3"
 
 // options:
 #define OPT_CC_SCHEDULE_KERNEL_H    0       // 1=use scheduler from kernel.h iso cclight, overrides next option
@@ -365,9 +365,10 @@ private:
         codegen.kernel_start();
         for(ql::ir::bundle_t &bundle : bundles) {
             // generate bundle header
-            codegen.bundle_start(SS2S("## Bundle " << bundleIdx++ <<
-                                      ", start_cycle=" << bundle.start_cycle <<
-                                      ", duration_in_cycles=" << bundle.duration_in_cycles << "):"));
+            codegen.bundle_start(SS2S("## Bundle " << bundleIdx++
+                                      << ": start_cycle=" << bundle.start_cycle
+                                      << ", duration_in_cycles=" << bundle.duration_in_cycles << ":"
+                                      ));
             // NB: the "wait" instruction never makes it into the bundle. It is accounted for in scheduling though,
             // and if a non-zero duration is specified that duration is reflected in 'start_cycle' of the subsequent instruction
 
