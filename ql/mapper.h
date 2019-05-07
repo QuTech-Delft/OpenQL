@@ -17,7 +17,7 @@
 #include "ql/arch/cc_light_resource_manager.h"
 #include "ql/gate.h"
 #include "ql/scheduler.h"
-//#include "ql/metrics.h"
+#include "ql/metrics.h"
 
 // Note on the use of constructors and Init functions for classes of the mapper
 // -----------------------------------------------------------------------------
