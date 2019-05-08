@@ -181,8 +181,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         p = ql.Program('test_unitary_wrongtype', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
-        u = ql.Unitary('WRONG', [  1,0,
-                                0, 1j])
+        u = ql.Unitary('WRONG', [  1,0],
+                                [0, 1j])
         u.decompose()
         k.gate(u, [0])
 

@@ -897,19 +897,21 @@ public:
             int start_2 = start_1 + numberforunitary + numberforcontrolledrotation; //= the point where the second sub unitary starts
             int start_3 = start_2 + numberforunitary + numberforcontrolledrotation; //= the point where the third unitary starts
             int start_4 = start_3 + numberforunitary + numberforcontrolledrotation; //= the point where the fourth unitary starts
-            recursiverelations(u, std::vector<size_t>(&qubits[0], &qubits.end()[-1]), n-1, start_1);
+            std::vector<size_t> subvector(qubits.begin()+1, qubits.end());
+            recursiverelations(u, subvector, n-1, start_1);
             gray_code_rz(u.instructionlist,start_1+numberforunitary,start_2-1, qubits);
-            recursiverelations(u, std::vector<size_t>(&qubits[0], &qubits.end()[-1]), n-1, start_2);
+            recursiverelations(u,subvector, n-1, start_2);
             gray_code_ry(u.instructionlist,start_2+numberforunitary,start_3-1, qubits);
-            recursiverelations(u, std::vector<size_t>(&qubits[0], &qubits.end()[-1]), n-1, start_3);
+            recursiverelations(u,subvector, n-1, start_3);
             gray_code_rz(u.instructionlist,start_3+numberforunitary,start_4-1, qubits);
-            recursiverelations(u, std::vector<size_t>(&qubits[0], &qubits.end()[-1]), n-1, start_4);
+            recursiverelations(u, subvector, n-1, start_4);
         }
         else //n=1
         {
-                    c.push_back(new ql::rz(qubits.back(), u.instructionlist[0]));
-                    c.push_back(new ql::ry(qubits.back(), u.instructionlist[1]));
-                    c.push_back(new ql::rz(qubits.back(), u.instructionlist[2]));
+            // zyz gates happen on the only qubit in the list. 
+            c.push_back(new ql::rz(qubits[0], u.instructionlist[0]));
+            c.push_back(new ql::ry(qubits[0], u.instructionlist[1]));
+            c.push_back(new ql::rz(qubits[0], u.instructionlist[2]));
         }
     }
 
@@ -918,15 +920,14 @@ public:
     {
         int idx;
         int posc;
-        //first is always the first bit of the controlbits (so the second item in the list)
         c.push_back(new ql::rz(qubits[0],-instruction_list[start_index]));
         c.push_back(new ql::cnot(qubits[1], qubits[0]));
         for(int i = 1; i < std::pow(2,qubits.size()-1)-1; i++)
         {
             idx = log2( round( ((i-1)^((i-1)>>1))^(i^(i>>1))) );
-            posc = qubits.back() - idx;
+            // posc = qubits.back() - idx;
             c.push_back(new ql::rz(qubits[0],-instruction_list[i+start_index]));
-            c.push_back(new ql::cnot(posc, qubits[0]));
+            c.push_back(new ql::cnot(qubits[idx], qubits[0]));
         }
         //The last one is always controlled from the last to the first qubit.
         c.push_back(new ql::rz(qubits[0],-instruction_list[end_index]));
@@ -938,17 +939,16 @@ public:
     {
         int idx;
         int posc;
-        //first is always the first bit of the controlbits (so the second item in the list)
-        c.push_back(new ql::ry(qubits[0],-instruction_list[start_index]));
+        c.push_back(new ql::rz(qubits[0],-instruction_list[start_index]));
         c.push_back(new ql::cnot(qubits[1], qubits[0]));
-        for(int i = 1; i < std::pow(2,qubits.size() -1)-1; i++)
+        for(int i = 1; i < std::pow(2,qubits.size()-1)-1; i++)
         {
             idx = log2( round( ((i-1)^((i-1)>>1))^(i^(i>>1))) );
-            posc = qubits.back() - idx;
+            // posc = qubits[0] + idx;
             c.push_back(new ql::ry(qubits[0],-instruction_list[i+start_index]));
-            c.push_back(new ql::cnot(posc, qubits[0]));
+            c.push_back(new ql::cnot(qubits[idx], qubits[0]));
         }
-        //The last one is always on from the last to the frist qubit.
+        //The last one is always controlled from the last to the first qubit.
         c.push_back(new ql::ry(qubits[0],-instruction_list[end_index]));
         c.push_back(new ql::cnot(qubits.back(), qubits[0]));
     }
