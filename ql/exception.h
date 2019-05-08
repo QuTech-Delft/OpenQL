@@ -68,8 +68,6 @@ namespace ql
 
    }; // class exception
 
-   #include "exception.cc"  // FIXME
-
 } // namespace ql
 
 #endif // QL_EXCEPTION_H

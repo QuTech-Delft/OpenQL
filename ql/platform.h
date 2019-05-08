@@ -16,9 +16,6 @@
 
 namespace ql
 {
-/**
- * quantum platform
- */
 class quantum_platform
 {
 
@@ -36,17 +33,14 @@ public:
     json                    aliases;                  // workaround the generic instruction composition
 
 #if OPT_TARGET_PLATFORM   // FIXME: constructed object is not useable
-    /**
-     * quantum_platform constructor
-     */
     quantum_platform() : name("default")
     {
     }
 #endif
 
     quantum_platform(std::string name, std::string configuration_file_name);
-    void print_info();
-    size_t get_qubit_number()   // FIXME: qubit_number is public anyway
+    void print_info() const;
+    size_t get_qubit_number() const  // FIXME: qubit_number is public anyway
     {
         return qubit_number;
     }

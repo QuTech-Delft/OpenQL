@@ -51,14 +51,14 @@ quantum_platform::quantum_platform(std::string name, std::string configuration_f
 /**
  * display information about the platform
  */
-void quantum_platform::print_info()
+void quantum_platform::print_info() const
 {
     println("[+] platform name      : " << name);
     println("[+] qubit number       : " << qubit_number);
     println("[+] eqasm compiler     : " << eqasm_compiler_name);
     println("[+] configuration file : " << configuration_file_name);
     println("[+] supported instructions:");
-    for (ql::instruction_map_t::iterator i=instruction_map.begin(); i!=instruction_map.end(); i++)
+    for (ql::instruction_map_t::const_iterator i=instruction_map.begin(); i!=instruction_map.end(); i++)
         println("  |-- " << (*i).first);
 }
 

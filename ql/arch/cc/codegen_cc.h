@@ -24,12 +24,6 @@
 // options
 #define OPT_SUPPORT_STATIC_CODEWORDS    1
 
-#if 0   // FIXME
-namespace ql
-{
-namespace arch
-{
-#endif
 
 class codegen_cc
 {
@@ -76,10 +70,7 @@ public:
     codegen_cc() {}
     ~codegen_cc() {}
 
-    /************************************************************************\
-    | Generic
-    \************************************************************************/
-
+    // Generic
     void init(const ql::quantum_platform &platform);
     std::string getCode();
     std::string getMap();
@@ -92,17 +83,11 @@ public:
     void bundle_finish(size_t start_cycle, size_t duration_in_cycles, bool isLastBundle);
     void comment(std::string c);
 
-    /************************************************************************\
-    | Quantum instructions
-    \************************************************************************/
-
+    // Quantum instructions
     void custom_gate(std::string iname, std::vector<size_t> qops, std::vector<size_t> cops, size_t duration, double angle);
     void nop_gate();
 
-    /************************************************************************\
-    | Classical operations on kernels
-    \************************************************************************/
-
+    // Classical operations on kernels
     void if_start(size_t op0, std::string opName, size_t op1);
     void else_start(size_t op0, std::string opName, size_t op1);
     void for_start(std::string label, int iterations);
@@ -110,33 +95,23 @@ public:
     void do_while_start(std::string label);
     void do_while_end(std::string label, size_t op0, std::string opName, size_t op1);
 
-    /************************************************************************\
-    | Classical arithmetic instructions
-    \************************************************************************/
-
+    // Classical arithmetic instructions
     void add();
     // FIXME: etc
 
-    /************************************************************************\
-    | Some helpers to ease nice assembly formatting
-    \************************************************************************/
 private:
+    // Some helpers to ease nice assembly formatting
     void emit(const char *labelOrComment, const char *instr="");
+
     // @param   label       must include trailing ":"
     // @param   comment     must include leading "#"
     void emit(const char *label, const char *instr, std::string qops, const char *comment="");
 
-    /************************************************************************\
-    | helpers
-    \************************************************************************/
-
+    // helpers
     void latencyCompensation();
     void padToCycle(size_t lastStartCycle, size_t start_cycle, int slot, std::string instrumentName);
 
-    /************************************************************************\
-    | Functions processing JSON
-    \************************************************************************/
-
+    // Functions processing JSON
     void load_backend_settings();
     const json &findInstrumentDefinition(const std::string &name);
 
@@ -144,10 +119,5 @@ private:
     tSignalInfo findSignalInfoForQubit(std::string instructionSignalType, size_t qubit);
 }; // class
 
-
-#if 0   // FIXME
-} // arch
-} // ql
-#endif
 
 #endif  // ndef QL_ARCH_CC_CODEGEN_CC_H

@@ -131,7 +131,7 @@ namespace ql
 
 #endif
 
-/*
+/*  FIXME: remove
         void set(std::string opt_name, std::string opt_value)
         {
             if( _options.find(opt_name) != _options.end() )
