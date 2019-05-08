@@ -10,8 +10,14 @@
 #include <string>
 #include <tuple>
 
+#if 1   //FIXME: new
+#include <ql/json.h>
+#include <ql/instruction_map.h>
+#include <ql/hardware_configuration.h>
+#else
 #include <ql/circuit.h>
 #include <ql/hardware_configuration.h>
+#endif
 
 namespace ql
 {

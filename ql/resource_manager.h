@@ -13,6 +13,8 @@
 #include <vector>
 #include <string>
 
+#include <ql/platform.h>
+
 namespace ql
 {
     typedef enum {

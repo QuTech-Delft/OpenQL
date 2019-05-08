@@ -11,7 +11,7 @@
 #ifndef QL_PROGRAM_H
 #define QL_PROGRAM_H
 
-#include "ql/openql.h"
+#include <ql/compile_options.h>
 #include <ql/utils.h>
 #include <ql/options.h>
 #include <ql/platform.h>

@@ -12,6 +12,7 @@
 #include <fstream>
 #include <map>
 
+#include <ql/compile_options.h>
 #include "utils.h"
 #include "gate.h"
 

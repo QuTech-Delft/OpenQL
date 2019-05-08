@@ -18,10 +18,16 @@
 #include <iterator>
 #include <regex>
 
+#if 1   // FIXME: new
+#include <ql/instruction_map.h>
+#include <ql/json.h>
+#include <ql/exception.h>
+#else
 #include <ql/openql.h>
 #include <ql/exception.h>
 #include <ql/json.h>
 #include <ql/gate.h>
+#endif
 
 namespace ql
 {

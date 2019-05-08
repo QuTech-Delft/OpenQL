@@ -9,6 +9,7 @@
 #ifndef QL_CC_LIGHT_EQASM_COMPILER_H
 #define QL_CC_LIGHT_EQASM_COMPILER_H
 
+#include <ql/compile_options.h>
 #include <ql/utils.h>
 #include <ql/platform.h>
 #include <ql/kernel.h>
@@ -1400,7 +1401,7 @@ private:
                 if (i.count("cc_light_instr") <=0 )
                     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
 
-                DOUT("..... composing constrol store line ..."); 
+                DOUT("..... composing constrol store line ...");
                 DOUT("..... opcode_ss generation ...");
                 opcode_ss << "def_q_arg_st[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
                 DOUT("..... optype computation...");

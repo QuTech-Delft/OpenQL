@@ -9,6 +9,8 @@
 #define QL_OPTIONS_H
 
 #include <ql/utils.h>
+#include <ql/exception.h>
+
 #include <CLI/CLI.hpp>
 #include <iostream>
 

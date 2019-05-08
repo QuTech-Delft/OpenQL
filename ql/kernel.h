@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <iterator>
 
-#include "ql/openql.h"
+#include "ql/compile_options.h"
 #include "ql/json.h"
 #include "ql/utils.h"
 #include "ql/options.h"
@@ -22,11 +22,13 @@
 #include "ql/optimizer.h"
 #include "ql/ir.h"
 
+#ifndef __disable_lemon__
+ #include "scheduler.h"
+#endif // __disable_lemon__
+#include "ql/platform.h"
+
 #define PI M_PI
 
-#ifndef __disable_lemon__
-#include "scheduler.h"
-#endif // __disable_lemon__
 
 namespace ql
 {

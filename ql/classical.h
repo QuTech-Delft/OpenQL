@@ -17,6 +17,7 @@
 #include <map>
 #include <stack>
 
+#include <ql/compile_options.h>
 #include <ql/utils.h>
 #include <ql/str.h>
 #include <ql/gate.h>

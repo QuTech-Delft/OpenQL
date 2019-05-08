@@ -17,11 +17,11 @@
 #include <sstream>
 #include <map>
 
+#include <ql/compile_options.h>
 #include <ql/matrix.h>
 #include <ql/json.h>
-
-#include <ql/openql.h>
 #include <ql/exception.h>
+#include <ql/utils.h>
 
 using json = nlohmann::json;
 
