@@ -30,7 +30,7 @@ namespace ql
 
         typedef std::list<bundle_t>bundles_t;           // note that subsequent bundles can overlap in time
 
-        std::string qasm(bundles_t & bundles)
+        inline std::string qasm(bundles_t & bundles)
         {
             std::stringstream ssqasm;
             size_t curr_cycle=1;
@@ -73,7 +73,7 @@ namespace ql
             return ssqasm.str();
         }
 
-        void write_qasm(bundles_t & bundles)
+        inline void write_qasm(bundles_t & bundles)
         {
             std::ofstream fout;
             std::string fname( ql::options::get("output_dir") + "/ir.qasm" );

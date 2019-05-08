@@ -24,7 +24,7 @@
 
 #define println(x) std::cout << "[OPENQL] "<< x << std::endl
 
-size_t MAX_CYCLE = std::numeric_limits<int>::max();
+static size_t MAX_CYCLE = std::numeric_limits<int>::max();
 
 #if defined(_WIN32)
 #include <direct.h>
@@ -40,7 +40,7 @@ namespace ql
      */
     namespace utils
     {
-        void make_output_dir(std::string dir)
+        inline void make_output_dir(std::string dir)
         {
             #if defined(_WIN32)
             _mkdir(dir.c_str());
@@ -59,7 +59,7 @@ namespace ql
          * @brief
          *    replace recursively seq by rep in str
          */
-        void replace_all(std::string &str, std::string seq, std::string rep)
+        inline void replace_all(std::string &str, std::string seq, std::string rep)
         {
             str::replace_all(str,seq,rep);
         }
@@ -94,7 +94,7 @@ namespace ql
          * string starts with " and end with "
          * return the content of the string between the commas
          */
-        bool format_string(std::string& s)
+        inline bool format_string(std::string& s)
         {
             replace_all(s,"\\n","\n");
             size_t pf = s.find("\"");
@@ -112,7 +112,7 @@ namespace ql
         /**
         * write content to the file <file_name>
         */
-        void write_file(std::string file_name, const std::string& content)
+        inline void write_file(std::string file_name, const std::string& content)
         {
             std::ofstream file;
             file.open(file_name);
@@ -164,14 +164,14 @@ namespace ql
         }
 
 
-        bool string_has(const std::string & str, const std::string & token)
+        inline bool string_has(const std::string & str, const std::string & token)
         {
             return ( str.find(token) != std::string::npos);
         }
 
         // Helper function to sort the vector of pairs.
         // Pairs are sorted by first element of pairs and then by second element
-        bool sort_pair_helper(const std::pair<size_t,size_t> &a, const std::pair<size_t,size_t> &b)
+        inline bool sort_pair_helper(const std::pair<size_t,size_t> &a, const std::pair<size_t,size_t> &b)
         {
             if(a.first < b.first)
                 return true;
@@ -192,9 +192,9 @@ namespace ql
                 LOG_INFO,
                 LOG_DEBUG
             };
-            log_level_t LOG_LEVEL;
+            extern log_level_t LOG_LEVEL;
 
-            void set_log_level(std::string level)
+            inline void set_log_level(std::string level)
             {
                 if(level == "LOG_NOTHING")
                     ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_NOTHING;

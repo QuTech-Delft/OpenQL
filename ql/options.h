@@ -101,18 +101,19 @@ namespace ql
       }
   };
 
-  namespace options
+  namespace options // FIXME: why wrap?
   {
-      static ql::Options ql_options("OpenQL Options");
-      void print()
+//      static ql::Options ql_options("OpenQL Options");
+      extern ql::Options ql_options;
+      inline void print()
       {
           ql_options.help();
       }
-      void print_current_values()
+      inline void print_current_values()
       {
           ql_options.print_current_values();
       }
-      void set(std::string opt_name, std::string opt_value)
+      inline void set(std::string opt_name, std::string opt_value)
       {
           ql_options.set(opt_name, opt_value);
 
@@ -121,7 +122,7 @@ namespace ql
           else if(opt_name == "output_dir")
               ql::utils::make_output_dir(opt_value);
       }
-      std::string get(std::string opt_name)
+      inline std::string get(std::string opt_name)
       {
           return ql_options.get(opt_name);
       }

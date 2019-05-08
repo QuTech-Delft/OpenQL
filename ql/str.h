@@ -1,14 +1,14 @@
 /**
  * @file        str.h
- * @author	Nader KHAMMASSI - nader.khammassi@gmail.com 
+ * @author	Nader KHAMMASSI - nader.khammassi@gmail.com
  * @date	20-01-12
- * @copyright  
- * 
+ * @copyright
+ *
  *  XPU - C++ Parallel  Programming Library for Multicore Architectures
  *
  *  Copyright (C) 2014 Nader Khammassi, All Rights Reserved.
  *
- * This file is part of XPU and has been downloaded from 
+ * This file is part of XPU and has been downloaded from
  * http://ww.xpu-project.net/.
  *
  * XPU is free software: you can redistribute it and/or modify
@@ -21,8 +21,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * @brief 
- *    string utils 
+ * @brief
+ *    string utils
  */
 
 #ifndef XPU_STRINGS_H
@@ -38,11 +38,11 @@ namespace str
    typedef std::vector<std::string> strings;
 
    /**
-    * @param str 
+    * @param str
     *    string to be processed
-    * @param seq 
+    * @param seq
     *    string to be replaced
-    * @param rep 
+    * @param rep
     *    string used to replace seq
     * @brief
     *    replace recursively seq by rep in str
@@ -58,12 +58,12 @@ namespace str
    }
 
    /**
-    * @param str 
+    * @param str
     *    string to be processed
-    * @param seq 
-    *    sequence witch we want count 
+    * @param seq
+    *    sequence witch we want count
     *    occurences
-    * @return 
+    * @return
     *    occurence count of seq in str
     */
    inline size_t occur_count(std::string &str, std::string seq)
@@ -80,12 +80,12 @@ namespace str
 
 
    /**
-    * @param str 
+    * @param str
     *    string to be processed
     * @param separator
-    *    words seprator (usually space charachter but can be any string) 
-    * @return 
-    *    word list of a given string. 
+    *    words seprator (usually space charachter but can be any string)
+    * @return
+    *    word list of a given string.
     */
    inline strings word_list(std::string &str, std::string separator)
    {
@@ -103,7 +103,7 @@ namespace str
    }
 
    /**
-    * @param str 
+    * @param str
     *    string to be processed
     * @brief
     *    convert string to lower case
@@ -119,10 +119,10 @@ namespace str
    }
 
    /**
-    * @param str 
+    * @param str
     *    string to be processed
     * @brief
-    *    code line format : words separated by spaces : 
+    *    code line format : words separated by spaces :
     *    "word word word ...")
     */
    inline void format_line(std::string &line)
@@ -142,24 +142,24 @@ namespace str
    }
 
    /**
-    * @param str 
+    * @param str
     *    string to be processed
     * @brief
-    *    remove inline comment 
+    *    remove inline comment
     */
    inline void remove_comment(std::string &line, char c='#')
    {
       size_t p = line.find(c);
       if (p != std::string::npos)
-	 line = line.substr(0,p); 
+	 line = line.substr(0,p);
    }
 
 
    /**
-    * @param str 
+    * @param str
     *    string to be processed
-    * @return 
-    *    word count in a line (line format : words 
+    * @return
+    *    word count in a line (line format : words
     *    separated by spaces : "word word word ...")
     */
    inline size_t word_count(std::string &str)
@@ -177,13 +177,13 @@ namespace str
    {
       switch (x)
       {
-	 case '\f' : return true; 
-	 case '\n' : return true; 
-	 case '\r' : return true; 
-	 case '\t' : return true; 
-	 case '\v' : return true; 
-	 case ' '  : return true; 
-	 default   : return false; 
+	 case '\f' : return true;
+	 case '\n' : return true;
+	 case '\r' : return true;
+	 case '\t' : return true;
+	 case '\v' : return true;
+	 case ' '  : return true;
+	 default   : return false;
       }
    }
 
@@ -202,7 +202,7 @@ namespace str
    {
       return (((x >= 'a') && (x<='z')) || ((x >= 'A') && (x<='Z')) || (x == '_'));
    }
-   
+
    /**
     * is dot
     */
@@ -233,7 +233,7 @@ namespace str
    /**
     * @param str
     *    string to be processed
-    * @return 
+    * @return
     *    true if 'str' do not contain any letter or number
     */
    inline bool is_empty(std::string &str)
@@ -252,7 +252,7 @@ namespace str
    /**
     * int to string
     */
-   std::string int_to_str(int i)
+   inline std::string int_to_str(int i)
    {
       std::stringstream strm;
       std::string num;

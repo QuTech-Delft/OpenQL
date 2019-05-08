@@ -10,6 +10,17 @@
 #include <ql/hardware_configuration.h>
 #include <ql/gate.h>
 
+// FIXME: global variables: not the best of places, but this currently is our sole .cc file
+#include <ql/utils.h>
+#include <ql/options.h>
+
+namespace ql { namespace utils { namespace logger {
+    log_level_t LOG_LEVEL;
+}}}
+namespace ql { namespace options {
+    ql::Options ql_options("OpenQL Options");
+}}
+
 namespace ql
 {
 

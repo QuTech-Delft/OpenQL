@@ -90,7 +90,7 @@ bool load_instruction_map(std::string file_name, dep_instruction_map_t& imap)
 #endif
 
 
-json load_json(std::string file_name)
+inline json load_json(std::string file_name)
 {
     std::ifstream fs(file_name);
     json j;
@@ -156,7 +156,7 @@ json load_json(std::string file_name)
 }
 
 // FIXME: similar to custom_gate::load()
-int load_instructions(instruction_map_t& instruction_map, std::string file_name="instructions.json")
+inline int load_instructions(instruction_map_t& instruction_map, std::string file_name="instructions.json")
 {
     json instructions = load_json(file_name);
     // std::cout << instructions.dump(4) << std::endl;

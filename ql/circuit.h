@@ -19,7 +19,7 @@ namespace ql
     typedef std::vector<gate*> circuit;
 
 
-    void print(circuit& c)
+    inline void print(circuit& c)
     {
         std::cout << "-------------------" << std::endl;
         for (size_t i=0; i<c.size(); i++)
@@ -30,7 +30,7 @@ namespace ql
     /**
      * generate qasm for a given circuit
      */
-    std::string qasm(circuit& c)
+    inline std::string qasm(circuit& c)
     {
         std::stringstream ss;
         for (size_t i=0; i<c.size(); ++i)
@@ -40,7 +40,7 @@ namespace ql
         return ss.str();
     }
 
-    std::vector<circuit*> split_circuit(circuit &x)
+    inline std::vector<circuit*> split_circuit(circuit &x)
     {
         IOUT("circuit decomposition in basic blocks ... ");
         std::vector<circuit*> cs;
@@ -72,7 +72,7 @@ namespace ql
     /**
      * detect measurements and qubit preparations
      */
-    bool contains_measurements(circuit &x)
+    inline bool contains_measurements(circuit &x)
     {
         for (size_t i=0; i<x.size(); i++)
         {
@@ -88,7 +88,7 @@ namespace ql
     /**
      * detect unoptimizable gates
      */
-    bool contains_unoptimizable_gates(circuit &x)
+    inline bool contains_unoptimizable_gates(circuit &x)
     {
         for (size_t i=0; i<x.size(); i++)
         {
