@@ -122,7 +122,7 @@ str
 
 
 %feature("docstring") Platform
-""" Platform class specifiying the target platform to be used for compilation."""
+""" Platform class specifying the target platform to be used for compilation."""
 
 
 %feature("docstring") Platform::Platform
@@ -444,7 +444,7 @@ arg2 : int
 
 %feature("docstring") Kernel::barrier
 """ inserts explicit barrier on specified qubits. wait with duration '0'
-    is also equivalent to appliying barrier on specified list of qubits.
+    is also equivalent to applying barrier on specified list of qubits.
     If no qubits are specified, then barrier is applied on all the qubits.
 
 Parameters
@@ -493,7 +493,7 @@ arg2 : []
 arg3 : int
     duration in ns (at the moment it is only supported for wait instruction, in the future it will be extended to override duration of any gate)
 arg3 : double
-    angle of roation, used internally only for roations (rx, ry and rz)
+    angle of rotation, used internally only for rotations (rx, ry and rz)
 """
 
 %feature("docstring") Kernel::gate

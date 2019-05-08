@@ -1,9 +1,11 @@
-# Specifying OPENQL configuration for CC backend
+# OPENQL configuration file for CC backend
+Version: 20190507 Draft
 
 This document describes the JSON configuration file format for OpenQL in conjunction 
 with the CC backend
 
-## Backend independent parameters
+## Standard OpenQL features
+### Standard parameters
 This section describes parameters that are independent of the OpenQL backend used and 
 should therefore be compatible with other backends.
 
@@ -20,7 +22,7 @@ Path | Type | Values | Note
 `gate_decomposition`|Optional|
 
 
-### Instruction names
+#### Instruction names
 The following syntaxes can be used for instruction names (i.e. the `<key>` in `instructions/<key>` as described above:
 
 - "`<name>`"
@@ -28,10 +30,11 @@ The following syntaxes can be used for instruction names (i.e. the `<key>` in `i
 
 FIXME: special treatment of names by scheduler/backend
 - "readout" : backend
+- "measure"
 
 
 
-### Parametrized gate-decomposition
+#### Parametrized gate-decomposition
 Parametrized gate decompositions can be specified in `gate_decomposition` section, as shown below:
 
     "rx180 %0" : ["x %0"]
@@ -60,8 +63,8 @@ Path | Type | Values | Note
 Note that for the CC - contrary to the CC-light - the final hardrware output is entirely *determined* by the contents of the configuration file,
 there is no builtin knowledge of instrument connectivity or codeword organization.
 
-# Unused parameters
-## Non-implemented parameters
+## Unused parameters
+### Non-implemented parameters
 This section describes parameters that occur in documentation or example files, but are not actually implemented.
 
 ```
@@ -77,7 +80,7 @@ hardware_settings/readout_readout_buffer
 instructions/<key>/disable_optimization
 alias 
 ```
-## CC-light parameters
+### CC-light parameters
 ```
 instructions/<key>/cc_light_instr_type
 instructions/<key>/cc_light_cond

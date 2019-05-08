@@ -397,6 +397,7 @@ public:
             isReadout = true;
 
             if(cops.size() == 0) {      // NB: existing code uses empty cops: measurement results can also be read from the readout device
+                // FIXME: define meaning: no classical target, or implied target (classical register matching qubit)
                 comment(SS2S(" # READOUT: " << iname << "(q" << qops[0] << ")"));
             } else if(cops.size() != 1) {
                 FATAL("Readout instruction requires 0 or 1 classical operanda, not " << cops.size());
