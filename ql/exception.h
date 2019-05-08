@@ -11,7 +11,7 @@
  *
  * Copyright (C) 2014 Nader Khammassi, All Rights Reserved.
  *
- * This file is part of QL and has been downloaded from 
+ * This file is part of QL and has been downloaded from
  * http://www.ql-project.net/.
  *
  * QL is free software: you can redistribute it and/or modify
@@ -32,19 +32,19 @@
 
 #include <string>            // for string
 #include <cstring>           // for strerror
-#include <exception>         // for exception 
+#include <exception>         // for exception
 #include <cerrno>            // for errno
 
 namespace ql
 {
-   class exception : public std::exception 
+   class exception : public std::exception
    {
 
 	 public:
 
 	   /**
 	    *   construct a exception with a explanatory message.
-	    *   
+	    *
 	    *   @param message         explanatory message
 	    *   @param system_message  true if system message (from strerror(errno))
 	    *                          should be postfixed to the user provided message
@@ -63,12 +63,12 @@ namespace ql
 	   inline const char *what() const throw();
 
 	 private:
-	   
+
 	   std::string user_message;  // exception message
 
    }; // class exception
 
-   #include "exception.cc"
+   #include "exception.cc"  // FIXME
 
 } // namespace ql
 

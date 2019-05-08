@@ -10,14 +10,9 @@
 #include <string>
 #include <tuple>
 
-#if 1   //FIXME: new
+#include <ql/compile_options.h>
 #include <ql/json.h>
 #include <ql/instruction_map.h>
-#include <ql/hardware_configuration.h>
-#else
-#include <ql/circuit.h>
-#include <ql/hardware_configuration.h>
-#endif
 
 namespace ql
 {
@@ -49,49 +44,8 @@ public:
     }
 #endif
 
-    /**
-     * quantum_platform constructor
-     */
-    quantum_platform(std::string name, std::string configuration_file_name) : name(name),
-        configuration_file_name(configuration_file_name)
-    {
-        ql::hardware_configuration hwc(configuration_file_name);
-        hwc.load(instruction_map, instruction_settings, hardware_settings, resources, topology, aliases);
-        eqasm_compiler_name = hwc.eqasm_compiler_name;
-
-        if(hardware_settings.count("qubit_number") <= 0)
-        {
-            EOUT("qubit number of the platform is not specified in the configuration file !");
-            throw std::exception();
-        }
-        else
-            qubit_number = hardware_settings["qubit_number"];
-
-        // FIXME: add creg_count to JSIN file and platform
-
-        if(hardware_settings.count("cycle_time") <= 0)
-        {
-            EOUT("cycle time of the platform is not specified in the configuration file !");
-            throw std::exception();
-        }
-        else
-            cycle_time = hardware_settings["cycle_time"];
-    }
-
-    /**
-     * display information about the platform
-     */
-    void print_info()
-    {
-        println("[+] platform name      : " << name);
-        println("[+] qubit number       : " << qubit_number);
-        println("[+] eqasm compiler     : " << eqasm_compiler_name);
-        println("[+] configuration file : " << configuration_file_name);
-        println("[+] supported instructions:");
-        for (ql::instruction_map_t::iterator i=instruction_map.begin(); i!=instruction_map.end(); i++)
-            println("  |-- " << (*i).first);
-    }
-
+    quantum_platform(std::string name, std::string configuration_file_name);
+    void print_info();
     size_t get_qubit_number()   // FIXME: qubit_number is public anyway
     {
         return qubit_number;
@@ -108,48 +62,15 @@ public:
      * @note    Only works for custom instructions defined in JSON
        FIXME:   it may be more useful to get the information directly from JSON, because arch_operation_name is not really generic
      */
-    std::string get_instruction_name(std::string &iname) const
-    {
-        std::string instr_name;
-        auto it = instruction_map.find(iname);
-        if (it != instruction_map.end())
-        {
-            custom_gate* g = it->second;
-            instr_name = g->arch_operation_name;
-            if(instr_name.empty())
-            {
-                FATAL("JSON file: field 'arch_operation_name' not defined for instruction '" << iname << "'");
-            }
-        }
-        else
-        {
-            FATAL("JSON file: custom instruction not found: '" << iname << "'");
-        }
-        return instr_name;
-    }
-
+    std::string get_instruction_name(std::string &iname) const;
 
     // find settings for custom gate, preventing JSON exceptions
-    const json& find_instruction(std::string iname) const
-    {
-        // search the JSON defined instructions, to prevent JSON exception if key does not exist
-        if(!JSON_EXISTS(instruction_settings, iname)) FATAL("JSON file: instruction not found: '" << iname << "'");
-        return instruction_settings[iname];
-    }
-
+    const json& find_instruction(std::string iname) const;
 
     // find instruction type for custom gate
-    std::string find_instruction_type(std::string iname) const
-    {
-        const json &instruction = find_instruction(iname);
-        if(!JSON_EXISTS(instruction, "type")) FATAL("JSON file: field 'type' not defined for instruction '" << iname <<"'");
-        return instruction["type"];
-    }
+    std::string find_instruction_type(std::string iname) const;
 
-    size_t time_to_cycles(float time_ns) const
-    {
-        return std::ceil(time_ns/cycle_time);
-    }
+    size_t time_to_cycles(float time_ns) const;
 };
 
 }
