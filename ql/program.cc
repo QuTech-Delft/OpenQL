@@ -21,8 +21,6 @@ static unsigned long phi_node_count = 0;    // FIXME: number across quantum_prog
 namespace ql
 {
 
-extern bool initialized;
-
 quantum_program::quantum_program(std::string n, quantum_platform platf, size_t nqubits, size_t ncregs)
         : name(n), platform(platf), qubit_count(nqubits), creg_count(ncregs)
 {

@@ -13,21 +13,11 @@
 #include "circuit.h"
 #include "program.h"
 
-#if 0   // FIXME
-#include <fstream>
-#include <map>
-#endif
-
 namespace ql
 {
 /**
  * openql types
  */
-
-#if 0   // FIXME: unused
-typedef std::vector<float> sweep_points_t;
-typedef std::stringstream  str_t;
-#endif
 
 #if OPT_MICRO_CODE
 /**
@@ -36,21 +26,11 @@ typedef std::stringstream  str_t;
 /* static */ dep_instruction_map_t dep_instruction_map;
 #endif
 
-/* static */ // bool              initialized = false;
-/* static */ // ql_platform_t     target_platform;
 
 #if OPT_TARGET_PLATFORM
 // target platform
 ql::quantum_platform           target_platform;
 #endif
-
-// deprecated : for back compatibility
-// should be removed
-/*
-void init(ql_platform_t platform, std::string dep_instruction_map_file="")
-{
-}
-*/
 
 void set_platform(ql::quantum_platform platform)
 {
