@@ -191,7 +191,7 @@ public:
 			else if (gate->name == "prep_z")
 			{
 				size_t qubit = gate->operands[0]; 
-				split_sets(qubit);
+				fids[qubit] = 1.0;
 				last_op_endtime[qubit] = gate->cycle + gate->duration / CYCLE_TIME;
 				continue;
 			}
@@ -545,7 +545,6 @@ public:
 // 				size_t qubit = gate->operands[0]; 
 // 				// fids[qubit] = 1.0;
 // 				split_qubits(qubit);
-				
 // 				last_op_endtime[qubit] = gate->cycle + gate->duration / CYCLE_TIME;
 // 				continue;
 // 			}
