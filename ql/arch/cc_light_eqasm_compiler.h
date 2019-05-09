@@ -935,7 +935,7 @@ public:
                 continue;;
             }
             IOUT("Mapping kernel: " << kernel.name);
-            mapper.MapCircuit(kernel);
+            mapper.Map(kernel);
                 // kernel.qubit_count is number of virtual qubits, i.e. highest indexed qubit minus 1
                 // and kernel.qubit_count is updated to real highest index used minus -1
             kernel.bundles = mapper.Bundler(kernel);
