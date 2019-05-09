@@ -909,9 +909,9 @@ public:
         else //n=1
         {
             // zyz gates happen on the only qubit in the list. 
-            c.push_back(new ql::rz(qubits[0], u.instructionlist[0]));
-            c.push_back(new ql::ry(qubits[0], u.instructionlist[1]));
-            c.push_back(new ql::rz(qubits[0], u.instructionlist[2]));
+            c.push_back(new ql::rz(qubits[0], u.instructionlist[i]));
+            c.push_back(new ql::ry(qubits[0], u.instructionlist[i+1]));
+            c.push_back(new ql::rz(qubits[0], u.instructionlist[i+2]));
         }
     }
 
@@ -939,7 +939,7 @@ public:
     {
         int idx;
         int posc;
-        c.push_back(new ql::rz(qubits[0],-instruction_list[start_index]));
+        c.push_back(new ql::ry(qubits[0],-instruction_list[start_index]));
         c.push_back(new ql::cnot(qubits[1], qubits[0]));
         for(int i = 1; i < std::pow(2,qubits.size()-1)-1; i++)
         {

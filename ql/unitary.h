@@ -178,9 +178,9 @@ public:
         complex_matrix q1 = U.topLeftCorner(n/2,m/2);
         complex_matrix q2 = U.bottomLeftCorner(n/2,m/2);
 
-        std::cout << "U: " << U << std::endl;
-        std::cout << "q1: " << q1 << std::endl;
-        std::cout << "q2: " << q2 << std::endl;
+        // std::cout << "U: " << U << std::endl;
+        // std::cout << "q1: " << q1 << std::endl;
+        // std::cout << "q2: " << q2 << std::endl;
         Eigen::BDCSVD<complex_matrix> svd;
 
         if(q1.rows() > 1 && q1.cols() > 1)
@@ -196,9 +196,9 @@ public:
         v1 = svd.matrixV();
         int p = q1.rows();
         complex_matrix z = Eigen::MatrixXd::Identity(p, p).colwise().reverse();
-        std::cout << "u1: " << u1 << std::endl;
-        std::cout << "c: " << c << std::endl;
-        std::cout << "z: " << z << std::endl;
+        // std::cout << "u1: " << u1 << std::endl;
+        // std::cout << "c: " << c << std::endl;
+        // std::cout << "z: " << z << std::endl;
         u1 = u1*z;
         v1 = v1*z;
         q2 = q2*v1;
@@ -217,27 +217,27 @@ public:
         qr.compute(b);        
         //complex_matrix r = qr.matrixQR();
         u2 = qr.householderQ();
-        s = u2.adjoint();
-        std::cout << "s: " << s << std::endl;
+        s = u2.adjoint()*q2;
+        // std::cout << "s: " << s << std::endl;
         if(k < p)
         {
-            std::cout << "k: " << k << std::endl;
+            // std::cout << "k: " << k << std::endl;
             svd.compute(s.block(k, k, p-k, p-k));
-            std::cout << "singular values: \n" << ((complex_matrix) svd.singularValues()) << std::endl;
+            // std::cout << "singular values: \n" << ((complex_matrix) svd.singularValues()) << std::endl;
             s.block(k, k, p-k, p-k) = svd.singularValues().asDiagonal();
-            std::cout << "s: " << s << std::endl;
+            // std::cout << "sk: " << s << std::endl;
             c.block(0,k, p,p-k) = c.block(0,k, p,k)*svd.matrixV();
             u2.block(0,k, p,p-k) = u2.block(0,k, p,p-k)*svd.matrixU();
             v1.block(0,k, p,p-k) = v1.block(0,k, p,p-k)*svd.matrixV();
             qr.compute(c.block(k,k, p-k,p-k));
             c.block(k,k,p-k,p-k) = qr.matrixQR();
-            std::cout << "c: " << c << std::endl;
+            // std::cout << "c:k " << c << std::endl;
             u1.block(0,k, p,p-k) = u1.block(0,k, p,p-k)*qr.householderQ(); 
             
-            std::cout << "z: " << ((complex_matrix) qr.householderQ()) << std::endl;
-            std::cout << "u1: " << u1 << std::endl;
-            std::cout << "u2: " << u2 << std::endl;
-            std::cout << "v1: " << v1 << std::endl;
+            // std::cout << "z: " << ((complex_matrix) qr.householderQ()) << std::endl;
+            // std::cout << "u1: " << u1 << std::endl;
+            // std::cout << "u2: " << u2 << std::endl;
+            // std::cout << "v1: " << v1 << std::endl;
         }
         for(int j = 0; j < p; j++)
         {
@@ -252,8 +252,8 @@ public:
                 u2(j,j) = -u2(j,j);
             }
         }
-        std::cout << "reconstructed q1: " << u1*c*v1.adjoint() << std::endl;
-        std::cout << "reconstructed q2: " << u2*s*v1.adjoint() << std::endl;
+        // std::cout << "reconstructed q1: " << u1*c*v1.adjoint() << std::endl;
+        // std::cout << "reconstructed q2: " << u2*s*v1.adjoint() << std::endl;
         v2 = complex_matrix(n/2, n/2);
         v1 = v1.adjoint();
         s = -s;
@@ -311,20 +311,29 @@ public:
         ql::complex_t det = matrix(0,0)*matrix(1,1)-matrix(1,0)*matrix(0,1);
         //utils::print_vector(matrix, "matrix: " + std::to_string(matrix[0].real()) + ", " + std::to_string(matrix[1].real()) + ", "+ std::to_string(matrix[2].real()) + ", "+ std::to_string(matrix[3].real()) + ", "+ std::to_string(matrix[4].real()), "; ");
 
-        double delta = atan2(det.imag(), det.real())/matrix.size();
-        std::complex<double> com_two(0,1);
-        std::complex<double> A = exp(-com_two*delta)*matrix(0,0);
-        std::complex<double> B = exp(-com_two*delta)*matrix(0,1); //to comply with the other y-gate definition?
+        double delta = atan2(det.imag(), det.real())/matrix.rows();
+        std::complex<double> j(0,1); // 1j basically
+        std::complex<double> A = exp(-j*delta)*matrix(0,0);
+        std::complex<double> B = exp(-j*delta)*matrix(0,1); //to comply with the other y-gate definition?
+        // std::cout << "A: " << A << std::endl;
+        // std::cout << "B: " << B << std::endl;
+        
         double sw = sqrt(pow((double) B.imag(),2) + pow((double) B.real(),2) + pow((double) A.imag(),2));
         double wx = 0;
         double wy = 0;
         double wz = 0;
+        // std::cout << "sw: " << sw << std::endl;
+
         if(sw > 0)
         {
         wx = B.imag()/sw;
         wy = B.real()/sw;
         wz = A.imag()/sw;
         }
+        // std::cout << "wx: " << wx << std::endl;
+        // std::cout << "wy: " << wy << std::endl;
+        // std::cout << "wz: " << wz << std::endl;
+
 
         double t1 = atan2(A.imag(),A.real());
         double t2 = atan2(B.imag(), B.real());
@@ -332,6 +341,9 @@ public:
         gamma = t1-t2;
         beta = 2*atan2(sw*sqrt(pow((double) wx,2)+pow((double) wy,2)),sqrt(pow((double) A.real(),2)+pow((wz*sw),2)));
         //instructionlist.push_back(delta); //this is not used for the total decomposition
+        // std::cout << "alpha: " << alpha << std::endl;
+        // std::cout << "beta: " << beta << std::endl;
+        // std::cout << "gamma: " << gamma << std::endl;        
         instructionlist.push_back(-gamma);
         instructionlist.push_back(-beta);
         instructionlist.push_back(-alpha);
@@ -340,7 +352,7 @@ public:
 
     void demultiplexing(complex_matrix U1, complex_matrix U2, int numberofcontrolbits)
     {
-        std::cout << "U1: " << U1 << std::endl;
+        std::cout << "Demultiplexing\nU1: " << U1 << std::endl;
         std::cout << "U2: " << U2 << std::endl;
         if(U1 == U2)
         {
@@ -356,21 +368,22 @@ public:
             }
             else
             {
-            EOUT("Unitaries are equal: optimization not implemented yet!");;
-            std::cout << "U1 rows:" << U1.rows() << std::endl;
+            EOUT("Unitaries are equal: optimization not implemented yet!");
             throw ql::exception("Unitaries are equal: optimization not implemented yet for size: " + U1.rows() , false);
             }
         }
         else
         {
-            Eigen::ComplexEigenSolver<Eigen::MatrixXcd> eigslv(U1*U2.adjoint()); 
-            complex_matrix d = eigslv.eigenvalues().asDiagonal();
-            complex_matrix V = eigslv.eigenvectors();
-
-            std::cout << "d: " << d << std::endl;
-            complex_matrix D = d.sqrt();
-            std::cout << "D: " << D << std::endl;
+            // std::cout << "U1*U2.adjoint(): " << U1*U2.adjoint() << std::endl;
+            Eigen::ComplexEigenSolver<Eigen::MatrixXcd> eigslv(U1*U2.adjoint(), true); 
+            complex_matrix d = eigslv.eigenvalues().reverse().asDiagonal(); //gives eigenvecotrs in different order than numpy
+            complex_matrix V = eigslv.eigenvectors().rowwise().reverse(); //Gives eigenvectors in different order than numpy
+            // std::cout << "d: " << d << std::endl;
+            complex_matrix D = d.sqrt(); // Do this here to not get aliasing issues
+            // std::cout << "D: " << D << std::endl;
             complex_matrix W = D*V.adjoint()*U2;
+            // std::cout << "W: " << W << std::endl;
+            // std::cout << "V: " << V << std::endl;
             if(W.rows() == 2)
             {
                 zyz_decomp(W);
@@ -409,23 +422,23 @@ public:
 
     void multicontrolledY(complex_matrix ss, int numberofcontrolbits)
     {
-        std::cout << "ss: " << ss << std::endl;
+        // std::cout << "ss: " << ss << std::endl;
         Eigen::VectorXd temp =  2*Eigen::asin(ss.real().diagonal().array());
         Eigen::VectorXd tr = (genMk(std::pow(2,numberofcontrolbits))).colPivHouseholderQr().solve(temp);
         for(int i = 0; i < std::pow(2, numberofcontrolbits); i++)
         {
-            instructionlist.push_back(-tr[i]);
+            instructionlist.push_back(tr[i]);
         }
     }
 
     void multicontrolledZ(complex_matrix D, int numberofcontrolbits)
     {
-        std::cout << "D: " << D << std::endl;
+        // std::cout << "D: " << D << std::endl;
         Eigen::VectorXd temp =  (2*Eigen::log(D.diagonal().array())/(std::complex<double>(0,1))).real();
         Eigen::VectorXd tr = ((genMk(std::pow(2,numberofcontrolbits))).colPivHouseholderQr().solve(temp));
         for(int i = 0; i < std::pow(2, numberofcontrolbits); i++)
         {
-            instructionlist.push_back(-tr[i]);
+            instructionlist.push_back(tr[i]);
         }
     }
 
