@@ -49,18 +49,18 @@ namespace ql
 	    *   @param system_message  true if system message (from strerror(errno))
 	    *                          should be postfixed to the user provided message
 	    */
-	   inline exception(const std::string &message, bool system_message = false) throw();
+	   exception(const std::string &message, bool system_message = false) throw();
 
 	   /**
 	    *   provided just to guarantee that no exceptions are thrown.
 	    */
-	   inline ~exception() throw();
+	   ~exception() throw();
 
 	   /**
 	    *   get the exception message
 	    *   @return exception message
 	    */
-	   inline const char *what() const throw();
+	   const char *what() const throw();
 
 	 private:
 
