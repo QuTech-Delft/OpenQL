@@ -327,31 +327,7 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
         comment(cmnt.str());
     }
 
-    // find signal definition for iname
     const json &instruction = platform->find_instruction(iname);
-#if 1   // FIXME: signalPath lost in translation
-    const json signal = findSignalDefinition(instruction, iname);
-#else
-    std::string instructionPath = "instructions/"+iname;
-    const json *tmpSignal;
-    std::string signalPath;
-    JSON_ASSERT(instruction, "cc", instructionPath);
-    if(JSON_EXISTS(instruction["cc"], "signal_ref")) {
-        std::string signalRef = instruction["cc"]["signal_ref"];
-        tmpSignal = &jsonSignals[signalRef];  // poor man's JSON pointer
-        if(tmpSignal->size() == 0) {
-            FATAL("Error in JSON definition of instruction '" << iname <<
-                  "': signal_ref '" << signalRef << "' does not resolve");
-        }
-        signalPath = "signals/"+signalRef;
-    } else {
-        JSON_ASSERT(instruction["cc"], "signal", instructionPath+"/cc");
-        tmpSignal = &instruction["cc"]["signal"];
-        DOUT("signal for '" << instruction << "': " << *tmpSignal);
-        signalPath = instructionPath+"/cc/signal";
-    }
-    const json &signal = *tmpSignal;
-#endif
 
 #if OPT_SUPPORT_STATIC_CODEWORDS
     // look for optional codeword override
@@ -363,11 +339,16 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
     }
 #endif
 
+    // find signal definition for iname
+    tJsonNodeInfo signalInfo = findSignalDefinition(instruction, iname);
+    const json signal = signalInfo.node;
+    std::string signalPath = signalInfo.path;
+
     // iterate over signals defined for instruction
     for(size_t s=0; s<signal.size(); s++) {
         // get the qubit to work on
-//        std::string signalSPath = SS2S(signalPath<<"["<<s<<"]");
-//        JSON_ASSERT(signal[s], "operand_idx", signalSPath); // FIXME: test
+        std::string signalSPath = SS2S(signalPath<<"["<<s<<"]");
+        JSON_ASSERT(signal[s], "operand_idx", signalSPath); // FIXME: test
         size_t operandIdx = signal[s]["operand_idx"];
 
         if(operandIdx >= qops.size()) {
@@ -379,10 +360,10 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
 
 
         // get the instrument and group that generates the signal
-//        JSON_ASSERT(signal[s], "type", signalSPath);
+        JSON_ASSERT(signal[s], "type", signalSPath);
         std::string instructionSignalType = signal[s]["type"];
 
-//        JSON_ASSERT(signal[s], "value", signalSPath);
+        JSON_ASSERT(signal[s], "value", signalSPath);
         const json &instructionSignalValue = signal[s]["value"];
 
         tSignalInfo si = findSignalInfoForQubit(instructionSignalType, qubit);
@@ -743,25 +724,24 @@ codegen_cc::tSignalInfo codegen_cc::findSignalInfoForQubit(std::string instructi
 }
 
 
-const json codegen_cc::findSignalDefinition(const json &instruction, const std::string &iname) const
+codegen_cc::tJsonNodeInfo codegen_cc::findSignalDefinition(const json &instruction, const std::string &iname) const
 {
-    json signal;
+    tJsonNodeInfo signalInfo;
     std::string instructionPath = "instructions/"+iname;
-    std::string signalPath;
     JSON_ASSERT(instruction, "cc", instructionPath);
     if(JSON_EXISTS(instruction["cc"], "signal_ref")) {
         std::string signalRef = instruction["cc"]["signal_ref"];
-        signal = jsonSignals[signalRef];  // poor man's JSON pointer
-        if(signal.size() == 0) {
+        signalInfo.node = jsonSignals[signalRef];  // poor man's JSON pointer
+        if(signalInfo.node.size() == 0) {
             FATAL("Error in JSON definition of instruction '" << iname <<
                   "': signal_ref '" << signalRef << "' does not resolve");
         }
-        signalPath = "signals/"+signalRef;
+        signalInfo.path = "signals/"+signalRef;
     } else {
-        signal = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");
-        DOUT("signal for '" << instruction << "': " << signal);
-        signalPath = instructionPath+"/cc/signal";
+        signalInfo.node = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");
+        DOUT("signal for '" << instruction << "': " << signalInfo.node);
+        signalInfo.path = instructionPath+"/cc/signal";
     }
-    return signal;
+    return signalInfo;
 }
 

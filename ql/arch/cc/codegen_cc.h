@@ -42,6 +42,11 @@ private: // types
 #endif
     } tGroupInfo;
 
+    typedef struct {
+        json node;
+        std::string path;
+    } tJsonNodeInfo;
+
 private: // vars
     static const int MAX_SLOTS = 12;
     static const int MAX_GROUPS = 32;                           // enough for VSM
@@ -119,7 +124,7 @@ private:
     // find instrument/group providing instructionSignalType for qubit
     tSignalInfo findSignalInfoForQubit(std::string instructionSignalType, size_t qubit);
 
-    const json findSignalDefinition(const json &instruction, const std::string &iname) const;
+    tJsonNodeInfo findSignalDefinition(const json &instruction, const std::string &iname) const;
 }; // class
 
 
