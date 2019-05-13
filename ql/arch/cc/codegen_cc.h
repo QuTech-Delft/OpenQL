@@ -119,7 +119,7 @@ private:
     // find instrument/group providing instructionSignalType for qubit
     tSignalInfo findSignalInfoForQubit(std::string instructionSignalType, size_t qubit);
 
-    const json *findSignalDefinition(const json &instruction, const std::string &iname);
+    const json findSignalDefinition(const json &instruction, const std::string &iname) const;
 }; // class
 
 

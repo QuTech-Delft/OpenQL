@@ -10,6 +10,8 @@
 #define QL_UTILS_H
 
 #include "str.h"
+#include <ql/json.h>
+#include <ql/exception.h>
 
 #include <limits>
 #include <algorithm>
@@ -21,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+using json = nlohmann::json;
 
 #define println(x) std::cout << "[OPENQL] "<< x << std::endl
 
@@ -257,5 +260,27 @@ namespace ql
                 FATAL("key '" << key << "' not found on path '" << nodePath << "', actual node contents '" << node << "'"); \
             } \
         }
+
+// get json value with error notification
+// based on: https://github.com/nlohmann/json/issues/932
+template<class T>
+T json_get(const json &j, std::string key, std::string nodePath="") {
+    auto it = j.find(key);
+    if(it == j.end()) {
+        FATAL("Key '" << key
+              << "' not found on path '" << nodePath
+              << "', actual node contents '" << j << "'");
+    }
+
+    try {
+        return it->get<T>();
+    } catch(const std::exception& e) {
+        FATAL("Could not get value of key '" << key
+              << "' on path '" << nodePath
+              << "', exception message '" << e.what()
+              << "', actual node contents '" << j << "'");
+    }
+}
+
 #endif //QL_UTILS_H
 

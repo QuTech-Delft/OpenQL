@@ -161,19 +161,20 @@ void codegen_cc::bundle_finish(size_t start_cycle, size_t duration_in_cycles, bo
                         FATAL("vector mode not yet supported");
                     }
 
-                    // try to find code word
+                    // find or assign code word
                     uint32_t codeword = 0;
                     bool codewordOverriden = false;
 #if OPT_SUPPORT_STATIC_CODEWORDS    // FIXME: this does not provide support only, but actually requires static codewords
                     int staticCodewordOverride = groupInfo[instrIdx][group].staticCodewordOverride;
                     if(staticCodewordOverride < 0) {
-                        FATAL("No static codeword defined");
+                        FATAL("No static codeword defined, we currently require it because automatic assignment is disabled");
                     }
                     codeword = staticCodewordOverride;
                     codewordOverriden = true;
 #else
                     codeword = assignCodeword(instrumentName, instrIdx, group);
 #endif
+
                     // convert codeword to digOut
                     uint32_t groupDigOut = 0;
                     for(size_t idx=0; idx<nrGroupControlBits; idx++) {
@@ -329,7 +330,7 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
     // find signal definition for iname
     const json &instruction = platform->find_instruction(iname);
 #if 1   // FIXME: signalPath lost in translation
-    const json &signal = *findSignalDefinition(instruction, iname);
+    const json signal = findSignalDefinition(instruction, iname);
 #else
     std::string instructionPath = "instructions/"+iname;
     const json *tmpSignal;
@@ -353,6 +354,7 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
 #endif
 
 #if OPT_SUPPORT_STATIC_CODEWORDS
+    // look for optional codeword override
     int staticCodewordOverride = -1;    // -1 means unused
     if(JSON_EXISTS(instruction["cc"], "static_codeword_override")) {
         staticCodewordOverride = instruction["cc"]["static_codeword_override"];
@@ -741,24 +743,23 @@ codegen_cc::tSignalInfo codegen_cc::findSignalInfoForQubit(std::string instructi
 }
 
 
-const json *codegen_cc::findSignalDefinition(const json &instruction, const std::string &iname)
+const json codegen_cc::findSignalDefinition(const json &instruction, const std::string &iname) const
 {
-    const json *signal;
+    json signal;
     std::string instructionPath = "instructions/"+iname;
     std::string signalPath;
     JSON_ASSERT(instruction, "cc", instructionPath);
     if(JSON_EXISTS(instruction["cc"], "signal_ref")) {
         std::string signalRef = instruction["cc"]["signal_ref"];
-        signal = &jsonSignals[signalRef];  // poor man's JSON pointer
-        if(signal->size() == 0) {
+        signal = jsonSignals[signalRef];  // poor man's JSON pointer
+        if(signal.size() == 0) {
             FATAL("Error in JSON definition of instruction '" << iname <<
                   "': signal_ref '" << signalRef << "' does not resolve");
         }
         signalPath = "signals/"+signalRef;
     } else {
-        JSON_ASSERT(instruction["cc"], "signal", instructionPath+"/cc");
-        signal = &instruction["cc"]["signal"];
-        DOUT("signal for '" << instruction << "': " << *signal);
+        signal = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");
+        DOUT("signal for '" << instruction << "': " << signal);
         signalPath = instructionPath+"/cc/signal";
     }
     return signal;
