@@ -1270,7 +1270,7 @@ size_t MapQubit(size_t v)
     return r;
 }
 
-// devirtualize gp
+// MakeReal gp
 // assume gp points to a virtual gate with virtual qubit indices as operands;
 // when a gate can be created with the same name but with "_real" appended, with the real qubits as operands, then create that gate
 // otherwise keep the old gate; replace the virtual qubit operands by the real qubit indices
@@ -1290,15 +1290,15 @@ size_t MapQubit(size_t v)
 //      on the resulting (decomposed) gates, the routing is done including depth/cost estimation;
 //      when the resulting gates end in _prim, see step 3
 // 2b.the resulting gates of step 1: map operands/gate:
-//      first try creating gate_real as above, otherwise just gate (DeVirtualize)
+//      first try creating gate_real as above, otherwise just gate (MakeReal)
 //      gate_real unlike gate allows immediate decomposition;
 //      when the resulting gates end in _prim, see step 3
-// 3. decompose gates:
-//      only when gates end in _prim, change name to _dprim and re-create as above (Decompose)
+// 3. make primitive gates:
+//      for each gate try recreating it with _prim appended to its name, otherwise keep it; this decomposes those with corresponding _prim entries
 // 4. final schedule:
 //      the resulting gates are subject to final scheduling (the original resource-constrained scheduler)
 
-void DeVirtualize(ql::gate* gp, ql::circuit& circ)
+void MakeReal(ql::gate* gp, ql::circuit& circ)
 {
     std::vector<size_t> real_qubits  = gp->operands;// starts off as copy of virtual qubits!
     for (auto& qi : real_qubits)
@@ -1312,44 +1312,31 @@ void DeVirtualize(ql::gate* gp, ql::circuit& circ)
     bool created = new_gate(real_gname, real_qubits, circ);
     if (created)
     {
-        // DOUT("... DeVirtualize: new gates created for: " << real_gname);
+        // DOUT("... MakeReal: new gates created for: " << real_gname);
     }
     else
     {
         gp->operands = real_qubits;
-        // DOUT("... DeVirtualize: keep gate after mapping qubit indices: " << gp->qasm());
+        // DOUT("... MakeReal: keep gate after mapping qubit indices: " << gp->qasm());
         circ.push_back(gp);
     }
 }
 
 // as mapper after-burner
-// decompose all gates with names ending in _prim
-// by replacing it by a new copy of this gate with as name _prim replaced by _dprim
+// make primitives of all gates that also have an entry with _prim appended to its name
 // and decomposing it according to the .json file gate decomposition
-void Decompose(ql::gate* gp, ql::circuit& circ)
+void MakePrimitive(ql::gate* gp, ql::circuit& circ)
 {
-    std::string gname = gp->name;   // a copy!
-    std::string postfix ("_prim");
-    std::size_t found = gname.find(postfix, (gname.length()-postfix.length())); // i.e. postfix ends gname
-
-    if (found != std::string::npos)
+    std::string prim_gname = gp->name;   // a copy!
+    prim_gname.append("_prim");
+    bool created = new_gate(prim_gname, gp->operands, circ);
+    if (created)
     {
-        // decompose gates with _prim postfix to equivalent with _dprim
-        gname.replace(found, postfix.length(), "_dprim"); 
-        bool created = new_gate(gname, gp->operands, circ);
-        if (!created)
-        {
-            EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(gp->operands,"qubits") );
-            throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(gp->operands,"qubits")+" is not supported by the target platform !",false);
-        }
-        else
-        {
-            // DOUT("... Decomposed: " << gp->qasm() << " to decomposition of " << gname << "(...)");
-        }
+        // DOUT("... MakePrimitive: new gates created for: " << prim_gname);
     }
     else
     {
-        // DOUT("... Decompose: keep gate: " << gp->qasm());
+        // DOUT("... MakePrimitive: keep gate: " << gp->qasm());
         circ.push_back(gp);
     }
 }
@@ -2732,7 +2719,7 @@ void DoneGate(ql::gate* gp)
 //      and thus optionally updating the virtual to real map and the state of used virtuals (from inited to inuse)
 // - anyhow use heuristics to map the input (or what initial placement left to do),
 //      mapping the virtual gates to (sets of) real gates, and outputing the new map and the new virtuals' state
-// - optionally decompose swap and/or cnot gates in the real circuit to primitives
+// - optionally decompose swap and/or cnot gates in the real circuit to primitives (MakePrimitive)
 
 // Inter-kernel control flow and consequent mapping dependence between kernels is not implemented. TO BE DONE
 // The design of mapping multiple kernels is as follows (HERE, TO BE ADAPTED TO NEW REALSTATE):
@@ -3032,12 +3019,12 @@ void MapRoutedGate(ql::gate* gp, Past& past)
 {
     DOUT("MapRoutedGate: " << gp->qasm() );
 
-    // devirtualization of this gate maps its qubit operands and optionally updates its gate name
+    // MakeReal of this gate maps its qubit operands and optionally updates its gate name
     // when the gate name was updated, a new gate with that name is created;
     // when that new gate is a composite gate, it is immediately decomposed (by gate creation)
     // the resulting gate/expansion (anyhow a sequence of gates) is collected in circ
-    ql::circuit circ;   // result of devirtualization
-    past.DeVirtualize(gp, circ);        
+    ql::circuit circ;   // result of MakeReal
+    past.MakeReal(gp, circ);        
     for (auto newgp : circ)
     {
         // DOUT(" ... mapped gate: " << newgp->qasm() );
@@ -3209,26 +3196,21 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
 
 public:
 
-// decompose all gates with names ending in _prim
-// by replacing it by a new copy of this gate with as name _prim replaced by _dprim
-// and decomposing it according to the .json file gate decomposition
-//
-// so:  this decomposes swap_prim to whatever is specified in .json gate decomposition behind swap_dprim
-// and: this decomposes cnot_prim to whatever is specified in .json gate decomposition behind cnot_dprim
-void Decomposer(ql::circuit& circ)
+// decompose all gates that have a definition with _prim appended to its name
+void MakePrimitives(ql::circuit& circ)
 {
     Past    mainPast;
 
     mainPast.Init(&platform);
 
-    // DOUT("Decompose circuit ...");
+    // DOUT("MakePrimitives circuit ...");
 
     ql::circuit outCirc;        // output gate stream
     mainPast.SetOutput(outCirc);// past window will flush into outCirc
     for( auto & gp : circ )
     {
         ql::circuit tmpCirc;
-        mainPast.Decompose(gp, tmpCirc);
+        mainPast.MakePrimitive(gp, tmpCirc);
         for (auto newgp : tmpCirc)
         {
             mainPast.AddAndSchedule(newgp);
@@ -3238,8 +3220,8 @@ void Decomposer(ql::circuit& circ)
     mainPast.Out(outCirc);
     circ.swap(outCirc);
 
-    // DOUT("Decompose circuit [DONE]");
-}   // end Decomposer
+    // DOUT("MakePrimitives circuit [DONE]");
+}   // end MakePrimitives
 
 // alternative bundler using gate->cycle attribute instead of lemon's cycle map
 // it assumes that the gate->cycle attribute reflect the cycle assignment of a particular schedule
@@ -3339,10 +3321,10 @@ void Map(ql::quantum_kernel& kernel)
     MapCircuit(kernel.c, kernel.name, v2r);       // updates circ with swaps, maps all gates, updates v2r map
     v2r.Print("After heuristics");
 
-    std::string mapdecomposeropt = ql::options::get("mapdecomposer");
-    if("yes" == mapdecomposeropt)
+    std::string map2primitivesopt = ql::options::get("map2primitives");
+    if("yes" == map2primitivesopt)
     {
-        Decomposer(kernel.c);   // decompose to primitives as specified in the config file
+        MakePrimitives(kernel.c);     // decompose to primitives as specified in the config file
     }
 
     kernel.qubit_count = nq;         // bluntly copy nq (==#real qubits), so that all kernels get the same qubit_count

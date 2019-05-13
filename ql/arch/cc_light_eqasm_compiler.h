@@ -20,6 +20,7 @@
 #include <ql/arch/cc_light_scheduler.h>
 
 #include <ql/mapper.h>
+#include <ql/clifford.h>
 
 // eqasm code : set of cc_light_eqasm instructions
 typedef std::vector<ql::arch::cc_light_eqasm_instr_t> eqasm_t;
@@ -910,8 +911,47 @@ public:
         ql::utils::write_file(fname.str(), out_qasm.str());
     }
 
+    void clifford_optimize(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform, std::string opt)
+    {
+        if (ql::options::get(opt) != "no")
+        {
+            for(auto &kernel : kernels)
+            {
+                // don't trust the cycle fields in the instructions
+                // and let write_qasm print the circuit instead of the bundles
+                kernel.bundles.clear();
+            }
+    
+            std::stringstream clifford_in_fname;
+            clifford_in_fname << ql::options::get("output_dir") << "/" << prog_name << "_" << opt << "_in.qasm";
+            DOUT("writing clifford input qasm to '" << clifford_in_fname.str() << "' ...");
+            write_qasm(clifford_in_fname, kernels, platform);
+    
+            Clifford cliff;
+            for(auto &kernel : kernels)
+            {
+                cliff.Optimize(kernel, opt);
+            }
+            std::stringstream clifford_out_fname;
+            clifford_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_" << opt << "_out.qasm";
+            DOUT("writing clifford output qasm to '" << clifford_out_fname.str() << "' ...");
+            write_qasm(clifford_out_fname, kernels, platform);
+        }
+        else
+        {
+            DOUT("Clifford optimization on program " << prog_name << " at " << opt << " not DONE");
+        }
+    }
+
     void map(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
     {
+        auto mapopt = ql::options::get("mapper");
+        if (mapopt == "no" )
+        {
+            IOUT("Not mapping kernels");
+            return;
+        }
+
         for(auto &kernel : kernels)
         {
             // don't trust the cycle fields in the instructions
@@ -928,12 +968,6 @@ public:
         mapper.Init(platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
         for(auto &kernel : kernels)
         {
-            auto mapopt = ql::options::get("mapper");
-            if (mapopt == "no" )
-            {
-                IOUT("Not mapping kernel");
-                continue;;
-            }
             IOUT("Mapping kernel: " << kernel.name);
             mapper.Map(kernel);
                 // kernel.qubit_count is number of virtual qubits, i.e. highest indexed qubit minus 1
@@ -1002,8 +1036,10 @@ public:
             }
         }
 
+        clifford_optimize(prog_name, kernels, platform, "clifford_premapper");
         map(prog_name, kernels, platform);
 
+        clifford_optimize(prog_name, kernels, platform, "clifford_prescheduler");
         schedule(prog_name, kernels, platform);
 
         std::stringstream ssqisa, sskernels_qisa;

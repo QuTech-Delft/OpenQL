@@ -12,11 +12,11 @@
 
 // all cnots with operands that are neighbors in s7
 void
-test_manyNN(std::string v, std::string mapopt, std::string scheduler_commuteopt, std::string maplookaheadopt)
+test_manyNN(std::string v, std::string mapopt, std::string cliffordopt, std::string schedulercommuteopt)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -50,18 +50,19 @@ test_manyNN(std::string v, std::string mapopt, std::string scheduler_commuteopt,
     prog.add(k);
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("scheduler_commute", scheduler_commuteopt);
-    ql::options::set("maplookahead", maplookaheadopt);
+    ql::options::set("clifford_premapper", cliffordopt);
+    ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
 
 // one cnot with operands that are at distance 2 in s7
 void
-test_oneD2(std::string v, std::string mapopt, std::string scheduler_commuteopt, std::string maplookaheadopt)
+test_oneD2(std::string v, std::string mapopt, std::string cliffordopt, std::string schedulercommuteopt)
 {
     int n = 4;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -82,18 +83,19 @@ test_oneD2(std::string v, std::string mapopt, std::string scheduler_commuteopt, 
     prog.add(k);
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("scheduler_commute", scheduler_commuteopt);
-    ql::options::set("maplookahead", maplookaheadopt);
+    ql::options::set("clifford_premapper", cliffordopt);
+    ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
 
 // one cnot with operands that are at distance 4 in s7
 void
-test_oneD4(std::string v, std::string mapopt, std::string scheduler_commuteopt, std::string maplookaheadopt)
+test_oneD4(std::string v, std::string mapopt, std::string cliffordopt, std::string schedulercommuteopt)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -114,18 +116,19 @@ test_oneD4(std::string v, std::string mapopt, std::string scheduler_commuteopt, 
     prog.add(k);
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("scheduler_commute", scheduler_commuteopt);
-    ql::options::set("maplookahead", maplookaheadopt);
+    ql::options::set("clifford_premapper", cliffordopt);
+    ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
 
 // just test
 void
-test_oneD4Diogo(std::string v, std::string mapopt, std::string scheduler_commuteopt, std::string maplookaheadopt)
+test_oneD4Diogo(std::string v, std::string mapopt, std::string cliffordopt, std::string schedulercommuteopt)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -148,8 +151,9 @@ test_oneD4Diogo(std::string v, std::string mapopt, std::string scheduler_commute
     k.gate("x", 2);     // demonstrates that prog.add(k) copies k as value, so k cannot be used anymore
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("scheduler_commute", scheduler_commuteopt);
-    ql::options::set("maplookahead", maplookaheadopt);
+    ql::options::set("clifford_premapper", cliffordopt);
+    ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 
     IOUT("AFTER test_oneD4Diogo prog.compile()");
@@ -168,11 +172,11 @@ test_oneD4Diogo(std::string v, std::string mapopt, std::string scheduler_commute
 // all possible cnots in s7, in lexicographic order
 // requires many swaps
 void
-test_allD(std::string v, std::string mapopt, std::string scheduler_commuteopt, std::string maplookaheadopt)
+test_allD(std::string v, std::string mapopt, std::string cliffordopt, std::string schedulercommuteopt)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -190,8 +194,9 @@ test_allD(std::string v, std::string mapopt, std::string scheduler_commuteopt, s
     prog.add(k);
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("scheduler_commute", scheduler_commuteopt);
-    ql::options::set("maplookahead", maplookaheadopt);
+    ql::options::set("clifford_premapper", cliffordopt);
+    ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
 
@@ -200,11 +205,11 @@ test_allD(std::string v, std::string mapopt, std::string scheduler_commuteopt, s
 // - from low distance to high distance
 // - each time as much as possible in opposite sides of the circuit
 void
-test_allDopt(std::string v, std::string mapopt, std::string scheduler_commuteopt, std::string maplookaheadopt)
+test_allDopt(std::string v, std::string mapopt, std::string cliffordopt, std::string schedulercommuteopt)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -283,8 +288,9 @@ test_allDopt(std::string v, std::string mapopt, std::string scheduler_commuteopt
     prog.add(k);
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("scheduler_commute", scheduler_commuteopt);
-    ql::options::set("maplookahead", maplookaheadopt);
+    ql::options::set("clifford_premapper", cliffordopt);
+    ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
 
@@ -292,11 +298,11 @@ test_allDopt(std::string v, std::string mapopt, std::string scheduler_commuteopt
 // matches intel NISQ application
 // tests initial placement
 void
-test_string(std::string v, std::string mapopt, std::string scheduler_commuteopt, std::string maplookaheadopt)
+test_string(std::string v, std::string mapopt, std::string cliffordopt, std::string schedulercommuteopt)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -321,8 +327,9 @@ test_string(std::string v, std::string mapopt, std::string scheduler_commuteopt,
     prog.add(k);
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("scheduler_commute", scheduler_commuteopt);
-    ql::options::set("maplookahead", maplookaheadopt);
+    ql::options::set("clifford_premapper", cliffordopt);
+    ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
 
@@ -330,11 +337,11 @@ test_string(std::string v, std::string mapopt, std::string scheduler_commuteopt,
 // because it caused use of a location that, before mapping heuristic was started, wasn't assigned to a used virtual qubit
 // i.e. a location that didn't appear in the v2r map as location where the v2r is the initial map of the heuristic
 void
-test_daniel2(std::string v, std::string mapopt, std::string scheduler_commuteopt, std::string maplookaheadopt)
+test_daniel2(std::string v, std::string mapopt, std::string cliffordopt, std::string schedulercommuteopt)
 {
     int n = 6;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
     float sweep_points[] = { 1, 2 };
 
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
@@ -582,17 +589,18 @@ test_daniel2(std::string v, std::string mapopt, std::string scheduler_commuteopt
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("scheduler_commute", scheduler_commuteopt);
-    ql::options::set("maplookahead", maplookaheadopt);
+    ql::options::set("clifford_premapper", cliffordopt);
+    ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
 
 void
-test_lingling_5_esm(std::string v, std::string mapopt, std::string scheduler_commuteopt, std::string maplookaheadopt)
+test_lingling5esm(std::string v, std::string mapopt, std::string cliffordopt, std::string schedulercommuteopt)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
@@ -733,17 +741,18 @@ test_lingling_5_esm(std::string v, std::string mapopt, std::string scheduler_com
     prog.add(k);
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("scheduler_commute", scheduler_commuteopt);
-    ql::options::set("maplookahead", maplookaheadopt);
+    ql::options::set("clifford_premapper", cliffordopt);
+    ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
 
 void
-test_lingling_7_esm(std::string v, std::string mapopt, std::string scheduler_commuteopt, std::string maplookaheadopt)
+test_lingling7esm(std::string v, std::string mapopt, std::string cliffordopt, std::string schedulercommuteopt)
 {
     int n = 9;
-    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
-    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_scheduler_commute=" + scheduler_commuteopt + "_maplookahead=" + maplookaheadopt;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
@@ -869,8 +878,9 @@ test_lingling_7_esm(std::string v, std::string mapopt, std::string scheduler_com
     prog.add(k);
 
     ql::options::set("mapper", mapopt);
-    ql::options::set("scheduler_commute", scheduler_commuteopt);
-    ql::options::set("maplookahead", maplookaheadopt);
+    ql::options::set("clifford_premapper", cliffordopt);
+    ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
 
@@ -880,22 +890,28 @@ int main(int argc, char ** argv)
     ql::utils::logger::set_log_level("LOG_DEBUG");
 //default       ql::options::set("scheduler_post179", "yes");
 //default       ql::options::set("scheduler", "ALAP");
-//parameter2    ql::options::set("scheduler_commute", "yes");
+//parameter3    ql::options::set("scheduler_commute", "yes");
+    ql::options::set("scheduler_commute", "no");
+//parameter2    ql::options::set("clifford_premapper", "yes"); 
 //parameter1    ql::options::set("mapper", "minextend"); 
 //default       ql::options::set("mapinitone2one", "yes"); 
 //default       ql::options::set("initialplace", "no"); 
 //default       ql::options::set("mapusemoves", "yes"); 
     ql::options::set("maptiebreak", "first"); 
-//default       ql::options::set("mapdecomposer", "yes");
+//default       ql::options::set("mapprimitives", "yes");
 //default       ql::options::set("mappathselect", "all"); 
-//parameter3    ql::options::set("maplookahead", "all");
+//default       ql::options::set("maplookahead", "all");
+//parameter2    ql::options::set("clifford_prescheduler", "yes"); 
 
 //  test_daniel2("daniel2", "base", "yes", "critical");
 //  test_daniel2("daniel2", "base", "yes", "critical");
 //  test_daniel2("daniel2", "minextend", "yes", "critical");
 //  test_daniel2("daniel2", "minextendrc", "yes", "no");
 //  test_daniel2("daniel2", "minextendrc", "yes", "critical");
-//  test_daniel2("daniel2", "minextendrc", "yes", "noroutingfirst");
+    test_daniel2("daniel2", "minextendrc", "no", "no");
+    test_daniel2("daniel2", "minextendrc", "yes", "no");
+    test_daniel2("daniel2", "minextendrc", "no", "yes");
+    test_daniel2("daniel2", "minextendrc", "yes", "yes");
 //  test_daniel2("daniel2", "minextendrc", "yes", "all");
 
 //  test_oneD2("oneD2", "base", "yes", "critical");
@@ -914,45 +930,61 @@ int main(int argc, char ** argv)
 //  test_string("string", "minextend", "yes", "critical");
 //  test_string("string", "minextendrc", "yes", "no");
 //  test_string("string", "minextendrc", "yes", "critical");
-//  test_string("string", "minextendrc", "yes", "noroutingfirst");
+    test_string("string", "minextendrc", "no", "no");
+    test_string("string", "minextendrc", "yes", "no");
+    test_string("string", "minextendrc", "no", "yes");
+    test_string("string", "minextendrc", "yes", "yes");
 //  test_string("string", "minextendrc", "yes", "all");
 
-    test_allD("allD", "base", "yes", "no");
-    test_allD("allD", "base", "yes", "critical");
-    test_allD("allD", "base", "yes", "noroutingfirst");
-    test_allD("allD", "base", "yes", "all");
-    test_allD("allD", "minextend", "yes", "no");
-    test_allD("allD", "minextend", "yes", "critical");
-    test_allD("allD", "minextend", "yes", "noroutingfirst");
-    test_allD("allD", "minextend", "yes", "all");
+//  test_allD("allD", "base", "yes", "no");
+//  test_allD("allD", "base", "yes", "critical");
+//  test_allD("allD", "base", "yes", "noroutingfirst");
+//  test_allD("allD", "base", "yes", "all");
+//  test_allD("allD", "minextend", "yes", "no");
+//  test_allD("allD", "minextend", "yes", "critical");
+//  test_allD("allD", "minextend", "yes", "noroutingfirst");
+//  test_allD("allD", "minextend", "yes", "all");
+//  test_allD("allD", "minextendrc", "yes", "no");
+//  test_allD("allD", "minextendrc", "yes", "critical");
+    test_allD("allD", "minextendrc", "no", "no");
     test_allD("allD", "minextendrc", "yes", "no");
-    test_allD("allD", "minextendrc", "yes", "critical");
-    test_allD("allD", "minextendrc", "yes", "noroutingfirst");
-    test_allD("allD", "minextendrc", "yes", "all");
+    test_allD("allD", "minextendrc", "no", "yes");
+    test_allD("allD", "minextendrc", "yes", "yes");
+//  test_allD("allD", "minextendrc", "yes", "all");
 
 //  test_allDopt("allDopt", "base", "yes", "critical");
 //  test_allDopt("allDopt", "base", "yes", "critical");
 //  test_allDopt("allDopt", "minextend", "yes", "critical");
 //  test_allDopt("allDopt", "minextendrc", "yes", "no");
 //  test_allDopt("allDopt", "minextendrc", "yes", "critical");
-//  test_allDopt("allDopt", "minextendrc", "yes", "noroutingfirst");
+    test_allDopt("allDopt", "minextendrc", "no", "no");
+    test_allDopt("allDopt", "minextendrc", "yes", "no");
+    test_allDopt("allDopt", "minextendrc", "no", "yes");
+    test_allDopt("allDopt", "minextendrc", "yes", "yes");
 //  test_allDopt("allDopt", "minextendrc", "yes", "all");
 
-//  test_lingling_5_esm("lingling_5_esm", "base", "yes", "critical");
-//  test_lingling_5_esm("lingling_5_esm", "base", "yes", "critical");
-//  test_lingling_5_esm("lingling_5_esm", "minextend", "yes", "critical");
-//  test_lingling_5_esm("lingling_5_esm", "minextendrc", "yes", "no");
-//  test_lingling_5_esm("lingling_5_esm", "minextendrc", "yes", "critical");
-//  test_lingling_5_esm("lingling_5_esm", "minextendrc", "yes", "noroutingfirst");
-//  test_lingling_5_esm("lingling_5_esm", "minextendrc", "yes", "all");
+//  test_lingling5esm("lingling5esm", "base", "yes", "critical");
+//  test_lingling5esm("lingling5esm", "base", "yes", "critical");
+//  test_lingling5esm("lingling5esm", "minextend", "yes", "critical");
+//  test_lingling5esm("lingling5esm", "minextendrc", "yes", "no");
+//  test_lingling5esm("lingling5esm", "minextendrc", "yes", "critical");
+    test_lingling5esm("lingling5esm", "minextendrc", "no", "no");
+    test_lingling5esm("lingling5esm", "minextendrc", "yes", "no");
+    test_lingling5esm("lingling5esm", "minextendrc", "no", "yes");
+    test_lingling5esm("lingling5esm", "minextendrc", "yes", "yes");
+//  test_lingling5esm("lingling5esm", "minextendrc", "yes", "all");
 
-//  test_lingling_7_esm("lingling_7_esm", "base", "yes", "critical");
-//  test_lingling_7_esm("lingling_7_esm", "base", "yes", "critical");
-//  test_lingling_7_esm("lingling_7_esm", "minextend", "yes", "critical");
-//  test_lingling_7_esm("lingling_7_esm", "minextendrc", "yes", "no");
-//  test_lingling_7_esm("lingling_7_esm", "minextendrc", "yes", "critical");
-//  test_lingling_7_esm("lingling_7_esm", "minextendrc", "yes", "noroutingfirst");
-//  test_lingling_7_esm("lingling_7_esm", "minextendrc", "yes", "all");
+//  test_lingling7esm("lingling7esm", "base", "yes", "critical");
+//  test_lingling7esm("lingling7esm", "base", "yes", "critical");
+//  test_lingling7esm("lingling7esm", "minextend", "yes", "critical");
+//  test_lingling7esm("lingling7esm", "minextend", "yes", "noroutingfirst");
+//  test_lingling7esm("lingling7esm", "minextendrc", "yes", "no");
+//  test_lingling7esm("lingling7esm", "minextendrc", "yes", "critical");
+    test_lingling7esm("lingling7esm", "minextendrc", "no", "no");
+    test_lingling7esm("lingling7esm", "minextendrc", "yes", "no");
+    test_lingling7esm("lingling7esm", "minextendrc", "no", "yes");
+    test_lingling7esm("lingling7esm", "minextendrc", "yes", "yes");
+//  test_lingling7esm("lingling7esm", "minextendrc", "yes", "all");
 
     return 0;
 }

@@ -15,6 +15,7 @@
 #include <ql/scheduler.h>
 #include <ql/eqasm_compiler.h>
 #include <ql/mapper.h>
+#include <ql/clifford.h>
 
 namespace ql
 {
@@ -102,6 +103,38 @@ private:
         out_qasm << "# Qubits used: " << get_qubit_usecount(kernels) << "\n";
         out_qasm << "# No. kernels: " << kernels.size() << "\n";
         ql::utils::write_file(fname.str(), out_qasm.str());
+    }
+
+    void clifford_optimize(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform, std::string opt)
+    {
+        if (ql::options::get(opt) != "no")
+        {
+            for(auto &kernel : kernels)
+            {
+                // don't trust the cycle fields in the instructions
+                // and let write_qasm print the circuit instead of the bundles
+                kernel.bundles.clear();
+            }
+    
+            std::stringstream clifford_in_fname;
+            clifford_in_fname << ql::options::get("output_dir") << "/" << prog_name << "_" << opt << "_in.qasm";
+            DOUT("writing clifford input qasm to '" << clifford_in_fname.str() << "' ...");
+            write_qasm(clifford_in_fname, kernels, platform);
+    
+            Clifford cliff;
+            for(auto &kernel : kernels)
+            {
+                cliff.Optimize(kernel, opt);
+            }
+            std::stringstream clifford_out_fname;
+            clifford_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_" << opt << "_out.qasm";
+            DOUT("writing clifford output qasm to '" << clifford_out_fname.str() << "' ...");
+            write_qasm(clifford_out_fname, kernels, platform);
+        }
+        else
+        {
+            DOUT("Clifford optimization on program " << prog_name << " at " << opt << " not DONE");
+        }
     }
 
     void map(std::string& prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
@@ -226,8 +259,10 @@ public:
 
         write_quantumsim_program(prog_name, num_qubits, kernels, platform, "");
 
+        clifford_optimize(prog_name, kernels, platform, "clifford_premapper");
         map(prog_name, kernels, platform);
 
+        clifford_optimize(prog_name, kernels, platform, "clifford_prescheduler");
         schedule(prog_name, kernels, platform);
 
         // write scheduled bundles for quantumsim
