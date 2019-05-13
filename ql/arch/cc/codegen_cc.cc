@@ -22,8 +22,6 @@
 // constants:
 #define CC_BACKEND_VERSION_STRING       "0.2.4"
 
-// options
-#define OPT_SUPPORT_STATIC_CODEWORDS    1
 
 /************************************************************************\
 | Generic
@@ -149,10 +147,10 @@ void codegen_cc::bundle_finish(size_t start_cycle, size_t duration_in_cycles, bo
 
 
                 // find or create codeword/mask fragment for this group
-                DOUT("instrumentName="  <<
-                     ", slot=" << slot <<
-                     ", control mode group=" << controlModeGroup <<
-                     ", group control bits: " << groupControlBits);
+                DOUT("instrumentName=" << instrumentName
+                     << ", slot=" << slot
+                     << ", control mode group=" << controlModeGroup
+                     << ", group control bits: " << groupControlBits);
                 size_t nrGroupControlBits = groupControlBits.size();
                 if(nrGroupControlBits == 1) {      // single bit, implying this is a mask (not code word)
                     digOut |= 1<<(int)groupControlBits[0];     // NB: we assume the mask is active high, which is correct for VSM and UHF-QC
@@ -164,67 +162,32 @@ void codegen_cc::bundle_finish(size_t start_cycle, size_t duration_in_cycles, bo
                     }
 
                     // try to find code word
-                    uint32_t codeWord = 0;
-#if 0   // OPT_SUPPORT_STATIC_CODEWORDS
-                    int staticCodewordOverride = groupInfo[si.instrIdx][si.group].staticCodewordOverride;
+                    uint32_t codeword = 0;
+                    bool codewordOverriden = false;
+#if OPT_SUPPORT_STATIC_CODEWORDS    // FIXME: this does not provide support only, but actually requires static codewords
+                    int staticCodewordOverride = groupInfo[instrIdx][group].staticCodewordOverride;
                     if(staticCodewordOverride < 0) {
-                        FATAL("No codeword defined");   // FIXME: only here we require, this is a hack
+                        FATAL("No static codeword defined");
                     }
-                    codeWord = staticCodewordOverride;
+                    codeword = staticCodewordOverride;
+                    codewordOverriden = true;
 #else
-                    std::string signalValue = groupInfo[instrIdx][group].signalValue;
-
-                    if(JSON_EXISTS(codewordTable, instrumentName) &&                    // instrument exists
-                                    codewordTable[instrumentName].size() > group) {     // group exists
-                        bool cwFound = false;
-                        // try to find signalValue
-                        json &myCodewordArray = codewordTable[instrumentName][group];
-                        for(codeWord=0; codeWord<myCodewordArray.size() && !cwFound; codeWord++) {   // NB: JSON find() doesn't work for arrays
-                            if(myCodewordArray[codeWord] == signalValue) {
-                                DOUT("signal value found at cw=" << codeWord);
-                                cwFound = true;
-                            }
-                        }
-                        if(!cwFound) {
-                            std::string msg = SS2S("signal value '" << signalValue
-                                    << "' not found in group " << group
-                                    << ", which contains " << myCodewordArray);
-                            if(mapPreloaded) {
-                                FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements:" << msg)
-                            } else {
-                                DOUT(msg);
-                                // NB: codeWord already contains last used value + 1
-                                // FIXME: check that number is available
-                                myCodewordArray[codeWord] = signalValue;                    // NB: structure created on demand
-                            }
-                        }
-                    } else {    // new instrument or group
-                        if(mapPreloaded) {
-                            FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements: instrument '"
-                                  << instrumentName << "', group "
-                                  << group
-                                  << " not present in file");
-                        } else {
-                            codeWord = 1;
-                            codewordTable[instrumentName][group][0] = "";                   // code word 0 is empty
-                            codewordTable[instrumentName][group][codeWord] = signalValue;   // NB: structure created on demand
-                        }
-                    }
+                    codeword = assignCodeword(instrumentName, instrIdx, group);
 #endif
-
-                    // convert codeWord to digOut
+                    // convert codeword to digOut
                     uint32_t groupDigOut = 0;
                     for(size_t idx=0; idx<nrGroupControlBits; idx++) {
                         int codeWordBit = nrGroupControlBits-1-idx;    // NB: groupControlBits defines MSB..LSB
-                        if(codeWord & (1<<codeWordBit)) groupDigOut |= 1<<(int)groupControlBits[idx];
+                        if(codeword & (1<<codeWordBit)) groupDigOut |= 1<<(int)groupControlBits[idx];
                     }
                     digOut |= groupDigOut;
 
                     comment(SS2S("  # slot=" << slot
                             << ", instrument='" << instrumentName << "'"
                             << ", group=" << group
-                            <<": codeWord=" << codeWord
-                            <<": groupDigOut=0x" << std::hex << std::setfill('0') << std::setw(8) << groupDigOut
+                            << ": codeword=" << codeword
+                            << std::string(codewordOverriden ? " (static override)" : "")
+                            << ": groupDigOut=0x" << std::hex << std::setfill('0') << std::setw(8) << groupDigOut
                             ));
                 }
 
@@ -258,9 +221,9 @@ void codegen_cc::bundle_finish(size_t start_cycle, size_t duration_in_cycles, bo
                         if(JSON_EXISTS(inputLutTable, instrumentName) &&                    // instrument exists
                                         inputLutTable[instrumentName].size() > group) {     // group exists
                         } else {    // new instrument or group
-                            codeWord = 1;
+                            codeword = 1;
                             inputLutTable[instrumentName][group][0] = "";                   // code word 0 is empty
-                            inputLutTable[instrumentName][group][codeWord] = signalValue;   // NB: structure created on demand
+                            inputLutTable[instrumentName][group][codeword] = signalValue;   // NB: structure created on demand
                         }
 #endif
                     } else {    // NB: nrResultBits==0 will not arrive at this point
@@ -363,9 +326,11 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
         comment(cmnt.str());
     }
 
-
     // find signal definition for iname
     const json &instruction = platform->find_instruction(iname);
+#if 1   // FIXME: signalPath lost in translation
+    const json &signal = *findSignalDefinition(instruction, iname);
+#else
     std::string instructionPath = "instructions/"+iname;
     const json *tmpSignal;
     std::string signalPath;
@@ -385,6 +350,7 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
         signalPath = instructionPath+"/cc/signal";
     }
     const json &signal = *tmpSignal;
+#endif
 
 #if OPT_SUPPORT_STATIC_CODEWORDS
     int staticCodewordOverride = -1;    // -1 means unused
@@ -398,8 +364,8 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
     // iterate over signals defined for instruction
     for(size_t s=0; s<signal.size(); s++) {
         // get the qubit to work on
-        std::string signalSPath = SS2S(signalPath<<"["<<s<<"]");
-        JSON_ASSERT(signal[s], "operand_idx", signalSPath); // FIXME: test
+//        std::string signalSPath = SS2S(signalPath<<"["<<s<<"]");
+//        JSON_ASSERT(signal[s], "operand_idx", signalSPath); // FIXME: test
         size_t operandIdx = signal[s]["operand_idx"];
 
         if(operandIdx >= qops.size()) {
@@ -411,10 +377,10 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
 
 
         // get the instrument and group that generates the signal
-        JSON_ASSERT(signal[s], "type", signalSPath);
+//        JSON_ASSERT(signal[s], "type", signalSPath);
         std::string instructionSignalType = signal[s]["type"];
 
-        JSON_ASSERT(signal[s], "value", signalSPath);
+//        JSON_ASSERT(signal[s], "value", signalSPath);
         const json &instructionSignalValue = signal[s]["value"];
 
         tSignalInfo si = findSignalInfoForQubit(instructionSignalType, qubit);
@@ -442,7 +408,7 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
         if(groupInfo[si.instrIdx][si.group].signalValue == "") {                         // signal not yet used
             groupInfo[si.instrIdx][si.group].signalValue = signalValueString;
 #if OPT_SUPPORT_STATIC_CODEWORDS
-            groupInfo[si.instrIdx][si.group].staticCodewordOverride = staticCodewordOverride;
+            groupInfo[si.instrIdx][si.group].staticCodewordOverride = staticCodewordOverride;   // NB: -1 means unused
 #endif
         } else if(groupInfo[si.instrIdx][si.group].signalValue == signalValueString) {   // signal unchanged
             // do nothing
@@ -626,6 +592,50 @@ void codegen_cc::padToCycle(size_t lastStartCycle, size_t start_cycle, int slot,
     }
 }
 
+uint32_t codegen_cc::assignCodeword(const std::string &instrumentName, int instrIdx, int group)
+{
+    uint32_t codeword;
+    std::string signalValue = groupInfo[instrIdx][group].signalValue;
+
+    if(JSON_EXISTS(codewordTable, instrumentName) &&                    // instrument exists
+                    codewordTable[instrumentName].size() > group) {     // group exists
+        bool cwFound = false;
+        // try to find signalValue
+        json &myCodewordArray = codewordTable[instrumentName][group];
+        for(codeword=0; codeword<myCodewordArray.size() && !cwFound; codeword++) {   // NB: JSON find() doesn't work for arrays
+            if(myCodewordArray[codeword] == signalValue) {
+                DOUT("signal value found at cw=" << codeword);
+                cwFound = true;
+            }
+        }
+        if(!cwFound) {
+            std::string msg = SS2S("signal value '" << signalValue
+                    << "' not found in group " << group
+                    << ", which contains " << myCodewordArray);
+            if(mapPreloaded) {
+                FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements:" << msg)
+            } else {
+                DOUT(msg);
+                // NB: codeword already contains last used value + 1
+                // FIXME: check that number is available
+                myCodewordArray[codeword] = signalValue;                    // NB: structure created on demand
+            }
+        }
+    } else {    // new instrument or group
+        if(mapPreloaded) {
+            FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements: instrument '"
+                  << instrumentName << "', group "
+                  << group
+                  << " not present in file");
+        } else {
+            codeword = 1;
+            codewordTable[instrumentName][group][0] = "";                   // code word 0 is empty
+            codewordTable[instrumentName][group][codeword] = signalValue;   // NB: structure created on demand
+        }
+    }
+    return codeword;
+}
+
 /************************************************************************\
 | Functions processing JSON
 \************************************************************************/
@@ -729,3 +739,28 @@ codegen_cc::tSignalInfo codegen_cc::findSignalInfoForQubit(std::string instructi
 
     return ret;
 }
+
+
+const json *codegen_cc::findSignalDefinition(const json &instruction, const std::string &iname)
+{
+    const json *signal;
+    std::string instructionPath = "instructions/"+iname;
+    std::string signalPath;
+    JSON_ASSERT(instruction, "cc", instructionPath);
+    if(JSON_EXISTS(instruction["cc"], "signal_ref")) {
+        std::string signalRef = instruction["cc"]["signal_ref"];
+        signal = &jsonSignals[signalRef];  // poor man's JSON pointer
+        if(signal->size() == 0) {
+            FATAL("Error in JSON definition of instruction '" << iname <<
+                  "': signal_ref '" << signalRef << "' does not resolve");
+        }
+        signalPath = "signals/"+signalRef;
+    } else {
+        JSON_ASSERT(instruction["cc"], "signal", instructionPath+"/cc");
+        signal = &instruction["cc"]["signal"];
+        DOUT("signal for '" << instruction << "': " << *signal);
+        signalPath = instructionPath+"/cc/signal";
+    }
+    return signal;
+}
+

@@ -171,21 +171,21 @@ public:
 
     void rx(size_t qubit, double angle)
     {
-        std::string gname("rx");
+        std::string gname("rx");    // FIXME: unused
         // to do : rotation decomposition
         c.push_back(new ql::rx(qubit,angle));
     }
 
     void ry(size_t qubit, double angle)
     {
-        std::string gname("ry");
+        std::string gname("ry");    // FIXME: unused
         // to do : rotation decomposition
         c.push_back(new ql::ry(qubit,angle));
     }
 
     void rz(size_t qubit, double angle)
     {
-        std::string gname("rz");
+        std::string gname("rz");    // FIXME: unused
         // to do : rotation decomposition
         c.push_back(new ql::rz(qubit,angle));
     }

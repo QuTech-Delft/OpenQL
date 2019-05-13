@@ -17,8 +17,8 @@
   typedef std::make_signed<size_t>::type ssize_t;
 #endif
 
-#include "ql/platform.h"
 #include "ql/json.h"
+#include "ql/platform.h"
 
 
 // options
@@ -110,6 +110,7 @@ private:
     // helpers
     void latencyCompensation();
     void padToCycle(size_t lastStartCycle, size_t start_cycle, int slot, std::string instrumentName);
+    uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
 
     // Functions processing JSON
     void load_backend_settings();
@@ -117,6 +118,8 @@ private:
 
     // find instrument/group providing instructionSignalType for qubit
     tSignalInfo findSignalInfoForQubit(std::string instructionSignalType, size_t qubit);
+
+    const json *findSignalDefinition(const json &instruction, const std::string &iname);
 }; // class
 
 

@@ -469,7 +469,7 @@
             "cc_light_instr": "i",
             "cc": {
 //                "signal_ref": "single-qubit-mw",
-                "signal": [],                       // no signal to prevent conflicts with other gates
+                "signal": [],   // no signal, to prevent conflicts with other gates (NB: will output nothing because VSM stays off)
                 "static_codeword_override": 0
             }
         },
@@ -479,7 +479,7 @@
             "type": "mw",
             "cc_light_instr": "x",
             "cc": {
-                "signal_ref": "single-qubit-mw",     // NB: reference, instead of defining "signal" here
+                "signal_ref": "single-qubit-mw",    // NB: reference, instead of defining "signal" here
                 "static_codeword_override": 1
             }
         },
