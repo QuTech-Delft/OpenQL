@@ -590,17 +590,6 @@ arg4 : int
     number of classical registers the program will use (default: 0)
 """
 
-%feature("docstring") Program::set_sweep_points
-""" Sets sweep points for an experiment.
-
-Parameters
-----------
-arg1 : []
-    list of sweep points
-arg2 : int
-    number of sweep points
-"""
-
 
 %feature("docstring") Program::set_sweep_points
 """ Sets sweep points for an experiment.

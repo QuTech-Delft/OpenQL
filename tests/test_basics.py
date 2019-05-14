@@ -29,7 +29,7 @@ class Test_basic(unittest.TestCase):
         sweep_points = [1]
         nqubits = 2
         p = ql.Program("basic", platf, nqubits, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         # populate kernel
         k = ql.Kernel("first_kernel", platf, nqubits, nqubits)

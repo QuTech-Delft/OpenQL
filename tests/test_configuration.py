@@ -20,7 +20,7 @@ class Test_Configuration(unittest.TestCase):
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         p = ql.Program("aProgram", platform, platform.get_qubit_number())
         sweep_points = [1,2]
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, platform.get_qubit_number())
         k.gate('Rx180', [0])  # in the configuartion its name is rx180 q0
@@ -50,7 +50,7 @@ class Test_Configuration(unittest.TestCase):
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         p = ql.Program("aProgram", platform, platform.get_qubit_number())
         sweep_points = [1,2]
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, platform.get_qubit_number())
         k.gate('rx180', [0])  # available
@@ -86,7 +86,7 @@ class Test_Configuration(unittest.TestCase):
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         p = ql.Program("aProgram", platform, platform.get_qubit_number())
         sweep_points = [1,2]
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, platform.get_qubit_number())
 

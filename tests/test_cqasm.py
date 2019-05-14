@@ -67,7 +67,7 @@ class Test_cqasm(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program('test_cqasm_default_gates', platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -114,7 +114,7 @@ class Test_cqasm(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program('test_cqasm_custom_gates', platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
