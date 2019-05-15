@@ -7,21 +7,20 @@
  *          functions is correct
  */
 
+// constants:
+#define CC_BACKEND_VERSION_STRING       "0.2.4"
+
+
 #include "codegen_cc.h"
 #include "eqasm_backend_cc.h"
 
 #include <ql/version.h>
 #include <ql/options.h>
 
-// MS Visual C++ does not know about ssize_t
-#ifdef _MSC_VER
+#ifdef _MSC_VER // MS Visual C++ does not know about ssize_t
   #include <type_traits>
   typedef std::make_signed<size_t>::type ssize_t;
 #endif
-
-// constants:
-#define CC_BACKEND_VERSION_STRING       "0.2.4"
-
 
 /************************************************************************\
 | Generic
@@ -70,9 +69,25 @@ void codegen_cc::program_start(std::string prog_name)
     cccode << "#" << std::endl;
 
     latencyCompensation();  // FIXME: does not support measuring yet
+
+#if OPT_VCD_OUTPUT
+    // define header
+    vcd.start();
+
+    // define qubit variables
+    vcdVarQubit.resize(platform->qubit_number);
+    for(size_t q=0; q<platform->qubit_number; q++) {
+        std::string name = "q"+std::to_string(q);
+        vcdVarQubit[q] = vcd.registerVar(name, Vcd::VT_STRING);
+    }
+
+    // define kernel variable
+
+    // define instrument:group variables
+#endif
 }
 
-void codegen_cc::program_finish()
+void codegen_cc::program_finish(std::string prog_name)
 {
 #if 0   // program runs once only
         emit("", "stop");
@@ -82,11 +97,23 @@ void codegen_cc::program_finish()
          "@mainLoop",
          "# loop indefinitely");
 #endif
+
+#if OPT_VCD_OUTPUT
+    // generate VCD
+    vcd.finish();
+
+    // write VCD to file
+    std::string file_name(ql::options::get("output_dir") + "/" + prog_name + ".vcd");
+    IOUT("Writing Value Change Dump to " << file_name);
+    ql::utils::write_file(file_name, vcd.getVcd());
+#endif
 }
 
 void codegen_cc::kernel_start()
 {
     ql::utils::zero(lastStartCycle);       // FIXME: actually, bundle.start_cycle starts counting at 1
+#if OPT_VCD_OUTPUT
+#endif
 }
 
 void codegen_cc::kernel_finish()
@@ -168,6 +195,7 @@ void codegen_cc::bundle_finish(size_t start_cycle, size_t duration_in_cycles, bo
                     int staticCodewordOverride = groupInfo[instrIdx][group].staticCodewordOverride;
                     if(staticCodewordOverride < 0) {
                         FATAL("No static codeword defined, we currently require it because automatic assignment is disabled");
+                        // FIXME: give a clue about offending instruction
                     }
                     codeword = staticCodewordOverride;
                     codewordOverriden = true;
@@ -204,7 +232,7 @@ void codegen_cc::bundle_finish(size_t start_cycle, size_t duration_in_cycles, bo
                 }
 
                 // compute slot duration
-                size_t durationInCycles = platform->time_to_cycles(groupInfo[instrIdx][group].duration);
+                size_t durationInCycles = platform->time_to_cycles(groupInfo[instrIdx][group].duration_ns);
                 if(durationInCycles > slotDurationInCycles) slotDurationInCycles = durationInCycles;
 
                 // handle readout
@@ -289,7 +317,7 @@ void codegen_cc::comment(std::string c)
 \************************************************************************/
 
 // single/two/N qubit gate, including readout
-void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::vector<size_t> cops, size_t duration, double angle)
+void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::vector<size_t> cops, double angle, size_t start_cycle, size_t duration_ns)
 {
 #if 1   // FIXME: test for angle parameter
     if(angle != 0.0) {
@@ -328,6 +356,19 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
     }
 
     const json &instruction = platform->find_instruction(iname);
+
+#if OPT_VCD_OUTPUT
+    // generate qubit output
+    size_t startTime = start_cycle*platform->cycle_time;
+    for(size_t i=0; i<qops.size(); i++) {
+        DOUT(iname << " op[" << i << "]=" << qops[i]
+             << ", start=" << startTime
+             << ", end=" << startTime+duration_ns);
+        // FIXME: improve name for 2q gates
+        vcd.change(vcdVarQubit[qops[i]], startTime, iname);             // start of instruction
+        vcd.change(vcdVarQubit[qops[i]], startTime+duration_ns, "");    // end of instruction
+    }
+#endif
 
 #if OPT_SUPPORT_STATIC_CODEWORDS
     // look for optional codeword override
@@ -409,14 +450,17 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
             groupInfo[si.instrIdx][si.group].readoutCop = cop;
         }
 
-        groupInfo[si.instrIdx][si.group].duration = duration;
+        groupInfo[si.instrIdx][si.group].duration_ns = duration_ns;
 
         DOUT("custom_gate(): iname='" << iname <<
-             "', duration=" << duration <<
+             "', duration=" << duration_ns <<
              "[ns], si.instrIdx=" << si.instrIdx <<
              ", si.group=" << si.group);
 
         // NB: code is generated in bundle_finish()
+#if OPT_VCD_OUTPUT
+        // generate wave output
+#endif
     }   // for(signal)
 }
 

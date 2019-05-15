@@ -10,19 +10,22 @@
 #ifndef QL_ARCH_CC_CODEGEN_CC_H
 #define QL_ARCH_CC_CODEGEN_CC_H
 
+// options
+#define OPT_SUPPORT_STATIC_CODEWORDS    1
+#define OPT_VCD_OUTPUT                  1   // output Value Change Dump file for GTKWave viewer
+
+#include "ql/json.h"
+#include "ql/platform.h"
+#if OPT_VCD_OUTPUT
+ #include "vcd.h"
+#endif
+
 #include <string>
 #include <cstddef>  // for size_t etc.
 #ifdef _MSC_VER     // MS Visual C++ does not know about ssize_t
   #include <type_traits>
   typedef std::make_signed<size_t>::type ssize_t;
 #endif
-
-#include "ql/json.h"
-#include "ql/platform.h"
-
-
-// options
-#define OPT_SUPPORT_STATIC_CODEWORDS    1
 
 
 class codegen_cc
@@ -35,7 +38,7 @@ private: // types
 
     typedef struct {
         std::string signalValue;
-        size_t duration;
+        size_t duration_ns;
         ssize_t readoutCop;     // NB: we use ssize_t iso size_t so we can encode 'unused' (-1)
 #if OPT_SUPPORT_STATIC_CODEWORDS
         int staticCodewordOverride;
@@ -71,6 +74,11 @@ private: // vars
 
     const ql::quantum_platform *platform;
 
+#if OPT_VCD_OUTPUT
+    Vcd vcd;
+    std::vector<int> vcdVarQubit;
+#endif
+
 public:
     codegen_cc() {}
     ~codegen_cc() {}
@@ -81,7 +89,7 @@ public:
     std::string getMap();
 
     void program_start(std::string prog_name);
-    void program_finish();
+    void program_finish(std::string prog_name);
     void kernel_start();
     void kernel_finish();
     void bundle_start(std::string cmnt);
@@ -89,7 +97,7 @@ public:
     void comment(std::string c);
 
     // Quantum instructions
-    void custom_gate(std::string iname, std::vector<size_t> qops, std::vector<size_t> cops, size_t duration, double angle);
+    void custom_gate(std::string iname, std::vector<size_t> qops, std::vector<size_t> cops, double angle, size_t start_cycle, size_t duration_ns);
     void nop_gate();
 
     // Classical operations on kernels

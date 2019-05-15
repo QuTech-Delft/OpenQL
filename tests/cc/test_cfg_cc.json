@@ -566,7 +566,8 @@
                         "operand_idx": 2,                                   // park
                         "value": ["park_cz-{qubit}"]
                     }
-                ]
+                ],
+                "static_codeword_override": 0   // FIXME
             }
         },
 
@@ -583,7 +584,8 @@
 						"operand_idx": 0,
 						"value": ["park_cz-{qubit}"]
 					}
-				]
+				],
+                "static_codeword_override": 0   // FIXME
 			}
 		},
 
@@ -596,7 +598,8 @@
 						"operand_idx": 0,
 						"value": ["park_measure-{qubit}"]
 					}
-				]
+				],
+                "static_codeword_override": 0   // FIXME
 			}
 		},
 
@@ -609,7 +612,8 @@
 			"cc_light_instr": "prepz",
             "cc": {
 //                "signal_ref": "single-qubit-mw"
-                "signal": []    // FIXME: no signal, pycQED::test_multi_qubit_oql_CC.py fails otherwise on scheduling issues
+                "signal": [],    // FIXME: no signal, pycQED::test_multi_qubit_oql_CC.py fails otherwise on scheduling issues
+                "static_codeword_override": 0   // FIXME
             }
 		},
 
@@ -624,7 +628,8 @@
 						"operand_idx": 0,
 						"value": ["dummy"]			// Future extension: specify output and weight, and generate code word
 					}
-				]
+				],
+                "static_codeword_override": 0   // FIXME
 			}
 		},
 

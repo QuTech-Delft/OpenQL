@@ -134,13 +134,14 @@ void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel
 #endif
 
 
-#if 0   // FIXME: from CClight
+#if 0   // FIXME: from CClight, where it is called from the 'circuit' compile() function, i.e. never in practice
             // write RC scheduled bundles with parallelism as simple QASM file
+            // FIXME: writes only single kernel, ah well, overwrites file for every kernel
             std::stringstream sched_qasm;
-            sched_qasm <<"qubits " << num_qubits << "\n\n"
+            sched_qasm << "qubits " << platform.qubit_number << "\n\n"
                        << ".fused_kernels";
             string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
-            IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << fname);
+            IOUT("Writing Resource-contraint scheduled QASM to " << fname);
             sched_qasm << ql::ir::qasm(bundles);
             ql::utils::write_file(fname, sched_qasm.str());
 #endif
@@ -153,7 +154,7 @@ void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel
         codegen_kernel_epilogue(kernel);
     }
 
-    codegen.program_finish();
+    codegen.program_finish(prog_name);
 
     // write program to file
     std::string file_name(ql::options::get("output_dir") + "/" + prog_name + ".vq1asm");
@@ -387,7 +388,7 @@ void eqasm_backend_cc::codegen_bundles(ql::ir::bundles_t &bundles, const ql::qua
                             break;
 
                         case __custom_gate__:
-                            codegen.custom_gate(iname, instr->operands, instr->creg_operands, instr->duration, instr->angle);
+                            codegen.custom_gate(iname, instr->operands, instr->creg_operands, instr->angle, bundle.start_cycle, instr->duration);
                             break;
 
                         case __display__:
