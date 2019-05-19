@@ -1,0 +1,26 @@
+package:
+  name: openql
+  version: "0.6.0"
+
+source:
+  git_url: https://github.com/QE-Lab/OpenQL
+  git_rev: 3c961a1ad2adc43522f8765c8561c52fa932307a
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - python
+    - libpython
+    - setuptools
+    - swig
+    - cmake
+
+test:
+  imports:
+    - openql.openql
+
+about:
+  home: https://github.com/QE-Lab/OpenQL
+  license: Apache v2.0
