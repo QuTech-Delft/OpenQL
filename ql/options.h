@@ -35,16 +35,15 @@ namespace ql
           opt_name2opt_val["scheduler_commute"] = "yes";
           opt_name2opt_val["use_default_gates"] = "no";
           opt_name2opt_val["optimize"] = "no";
-          opt_name2opt_val["clifford_premapper"] = "no";
-          opt_name2opt_val["clifford_prescheduler"] = "no";
-          opt_name2opt_val["clifford_pre2ndscheduler"] = "no";
+          opt_name2opt_val["clifford_premapper"] = "yes";
+          opt_name2opt_val["clifford_prescheduler"] = "yes";
+          opt_name2opt_val["clifford_pre2ndscheduler"] = "yes";
           opt_name2opt_val["decompose_toffoli"] = "no";
           opt_name2opt_val["mapper"] = "no";
           opt_name2opt_val["mapinitone2one"] = "yes";
           opt_name2opt_val["initialplace"] = "no";
           opt_name2opt_val["mapusemoves"] = "yes";
           opt_name2opt_val["maptiebreak"] = "random";
-          opt_name2opt_val["map2primitives"] = "yes";
           opt_name2opt_val["mappathselect"] = "all";
           opt_name2opt_val["maplookahead"] = "noroutingfirst";
 
@@ -68,7 +67,6 @@ namespace ql
           app->add_set_ignore_case("--initialplace", opt_name2opt_val["initialplace"], {"no","yes","1s","10s","1m","10m","1h","1sx","10sx","1mx","10mx","1hx"}, "Initialplace qubits before mapping", true);
           app->add_set_ignore_case("--mapusemoves", opt_name2opt_val["mapusemoves"], {"no", "yes", "0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20",}, "Use unused qubit to move thru", true);
           app->add_set_ignore_case("--maptiebreak", opt_name2opt_val["maptiebreak"], {"first", "last", "random"}, "Tie break method", true);
-          app->add_set_ignore_case("--map2primitives", opt_name2opt_val["map2primitives"], {"no", "yes"}, "Decompose after mapper", true);
           app->add_set_ignore_case("--mappathselect", opt_name2opt_val["mappathselect"], {"all", "borders"}, "Which paths: all or borders", true);
           app->add_set_ignore_case("--maplookahead", opt_name2opt_val["maplookahead"], {"no", "critical", "noroutingfirst", "all"}, "Strategy wrt selecting next gate(s) to map", true);
       }
@@ -87,7 +85,6 @@ namespace ql
                     << "mappathselect: "    << opt_name2opt_val["mappathselect"] << std::endl
                     << "maptiebreak: "      << opt_name2opt_val["maptiebreak"] << std::endl
                     << "mapusemoves: "      << opt_name2opt_val["mapusemoves"] << std::endl
-                    << "map2primitives: "    << opt_name2opt_val["map2primitives"] << std::endl
                     << "clifford_prescheduler: " << opt_name2opt_val["clifford_prescheduler"] << std::endl
                     << "clifford_pre2ndscheduler: " << opt_name2opt_val["clifford_pre2ndscheduler"] << std::endl
                     << "scheduler_post179: " << opt_name2opt_val["scheduler_post179"] << std::endl

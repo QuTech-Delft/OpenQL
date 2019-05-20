@@ -1110,7 +1110,6 @@ bool new_gate(std::string gname, std::vector<size_t> qubits, ql::circuit& circ, 
 // ===================
 
 
-
 // return number of swaps added to this past
 size_t NumberOfSwapsAdded()
 {
@@ -1132,12 +1131,15 @@ void new_gate_exception(std::string s)
 // generate a single swap/move with real operands and add it to the current past's waiting list;
 // note that the swap/move may be implemented by a series of gates (circuit circ below),
 // and that a swap/move essentially is a commutative operation, interchanging the states of the two qubits;
+//
 // a move is implemented by 2 CNOTs, while a swap by 3 CNOTs, provided the target qubit is in |+> (inited) state;
 // so, when one of the operands is the current location of an unused virtual qubit,
 // use a move with that location as 2nd operand,
 // after first having initialized the target qubit in |+> (inited) state when that has not been done already;
 // but this initialization must not extend the depth so can only be done when cycles for it are for free
-void AddSwap(size_t r0, size_t r1)
+//
+// a swap can be implemented with 1-1 operands (0) or with reversed operands (1), as indicated by kind
+void AddSwap(size_t r0, size_t r1, int kind)
 {
     bool created = false;
     ql::circuit circ;
@@ -1159,6 +1161,7 @@ void AddSwap(size_t r0, size_t r1)
         {
             // interchange r0 and r1, so that r1 (right-hand operand of move) will be the state-less one
             size_t  tmp = r1; r1 = r0; r0 = tmp;
+            kind = 1 - kind;        // see later reversal when generating swap
         }
         MapperAssert (v2r.GetRs(r0)==rs_hasstate);    // and r0 will be the one with state
         MapperAssert (v2r.GetRs(r1)!=rs_hasstate);    // and r1 will be the one without state (rs_nostate || rs_inited)
@@ -1230,6 +1233,11 @@ void AddSwap(size_t r0, size_t r1)
             nmovesadded++;                       // for reporting at the end
             DOUT("... move(q" << r0 << ",q" << r1 << ") ...");
         }
+    }
+    if (kind == 1)
+    {
+        // interchange r0 and r1, exploiting asymmetry of swap implementation: 1st operand starts 1 cycle later
+        size_t  tmp = r1; r1 = r0; r0 = tmp;
     }
     if (!created)
     {
@@ -1550,14 +1558,14 @@ void AddSwaps(Past & past)
     for ( size_t i = 1; i < fromSource.size(); i++ )
     {
         toQ = fromSource[i];
-        past.AddSwap(fromQ, toQ);
+        past.AddSwap(fromQ, toQ, 0);
         fromQ = toQ;
     }
     fromQ = fromTarget[0];
     for ( size_t i = 1; i < fromTarget.size(); i++ )
     {
         toQ = fromTarget[i];
-        past.AddSwap(fromQ, toQ);
+        past.AddSwap(fromQ, toQ, 0);
         fromQ = toQ;
     }
     past.Schedule();
@@ -3321,13 +3329,9 @@ void Map(ql::quantum_kernel& kernel)
     MapCircuit(kernel.c, kernel.name, v2r);       // updates circ with swaps, maps all gates, updates v2r map
     v2r.Print("After heuristics");
 
-    std::string map2primitivesopt = ql::options::get("map2primitives");
-    if("yes" == map2primitivesopt)
-    {
-        MakePrimitives(kernel.c);     // decompose to primitives as specified in the config file
-    }
+    MakePrimitives(kernel.c);       // decompose to primitives as specified in the config file
 
-    kernel.qubit_count = nq;         // bluntly copy nq (==#real qubits), so that all kernels get the same qubit_count
+    kernel.qubit_count = nq;        // bluntly copy nq (==#real qubits), so that all kernels get the same qubit_count
     v2r.Export(kernel.v2r_out);
     v2r.Export(kernel.rs_out);
     kernel.swaps_added = nswapsadded;
