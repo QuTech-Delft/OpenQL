@@ -52,6 +52,7 @@ test_manyNN(std::string v, std::string mapopt, std::string cliffordopt, std::str
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -85,6 +86,7 @@ test_oneD2(std::string v, std::string mapopt, std::string cliffordopt, std::stri
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -118,6 +120,7 @@ test_oneD4(std::string v, std::string mapopt, std::string cliffordopt, std::stri
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -153,6 +156,7 @@ test_oneD4Diogo(std::string v, std::string mapopt, std::string cliffordopt, std:
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 
@@ -196,6 +200,7 @@ test_allD(std::string v, std::string mapopt, std::string cliffordopt, std::strin
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -290,6 +295,7 @@ test_allDopt(std::string v, std::string mapopt, std::string cliffordopt, std::st
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -329,6 +335,45 @@ test_string(std::string v, std::string mapopt, std::string cliffordopt, std::str
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
+    ql::options::set("scheduler_commute", schedulercommuteopt);
+    prog.compile( );
+}
+
+// actual test kernel of daniel that failed once
+// because it caused use of a location that, before mapping heuristic was started, wasn't assigned to a used virtual qubit
+// i.e. a location that didn't appear in the v2r map as location where the v2r is the initial map of the heuristic
+void
+test_danielt(std::string v, std::string mapopt, std::string cliffordopt, std::string schedulercommuteopt)
+{
+    int n = 6;
+    std::string prog_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
+    std::string kernel_name = "test_" + v + "_mapopt=" + mapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
+    float sweep_points[] = { 1, 2 };
+
+    ql::quantum_platform starmon("starmon", "test_mapper17.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, n, n);
+
+    ql::quantum_kernel k(kernel_name, starmon, n, 0);
+
+    k.gate("x",0);
+    k.gate("cnot",4,0);
+    k.gate("h",0);
+    k.gate("t",1);
+    k.gate("t",5);
+    k.gate("t",0);
+    k.gate("cnot",5,1);
+    k.gate("cnot",0,5);
+
+    prog.add(k);
+
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
+    ql::options::set("mapper", mapopt);
+    ql::options::set("clifford_premapper", cliffordopt);
+    ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -591,6 +636,7 @@ test_daniel2(std::string v, std::string mapopt, std::string cliffordopt, std::st
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -743,6 +789,7 @@ test_lingling5esm(std::string v, std::string mapopt, std::string cliffordopt, st
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -880,6 +927,7 @@ test_lingling7esm(std::string v, std::string mapopt, std::string cliffordopt, st
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
+    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -902,6 +950,12 @@ int main(int argc, char ** argv)
 //default       ql::options::set("mappathselect", "all"); 
 //default       ql::options::set("maplookahead", "all");
 //parameter2    ql::options::set("clifford_prescheduler", "yes"); 
+//parameter2    ql::options::set("clifford_pre2ndscheduler", "yes"); 
+
+//  test_danielt("danielt", "minextendrc", "no", "no");
+//  test_danielt("danielt", "minextendrc", "yes", "no");
+//  test_danielt("danielt", "minextendrc", "no", "yes");
+//  test_danielt("danielt", "minextendrc", "yes", "yes");
 
 //  test_daniel2("daniel2", "base", "yes", "critical");
 //  test_daniel2("daniel2", "base", "yes", "critical");
@@ -912,7 +966,6 @@ int main(int argc, char ** argv)
     test_daniel2("daniel2", "minextendrc", "yes", "no");
     test_daniel2("daniel2", "minextendrc", "no", "yes");
     test_daniel2("daniel2", "minextendrc", "yes", "yes");
-//  test_daniel2("daniel2", "minextendrc", "yes", "all");
 
 //  test_oneD2("oneD2", "base", "yes", "critical");
 //  test_oneD2("oneD2", "base", "yes", "critical");
@@ -934,7 +987,6 @@ int main(int argc, char ** argv)
     test_string("string", "minextendrc", "yes", "no");
     test_string("string", "minextendrc", "no", "yes");
     test_string("string", "minextendrc", "yes", "yes");
-//  test_string("string", "minextendrc", "yes", "all");
 
 //  test_allD("allD", "base", "yes", "no");
 //  test_allD("allD", "base", "yes", "critical");
@@ -950,7 +1002,6 @@ int main(int argc, char ** argv)
     test_allD("allD", "minextendrc", "yes", "no");
     test_allD("allD", "minextendrc", "no", "yes");
     test_allD("allD", "minextendrc", "yes", "yes");
-//  test_allD("allD", "minextendrc", "yes", "all");
 
 //  test_allDopt("allDopt", "base", "yes", "critical");
 //  test_allDopt("allDopt", "base", "yes", "critical");
@@ -961,7 +1012,6 @@ int main(int argc, char ** argv)
     test_allDopt("allDopt", "minextendrc", "yes", "no");
     test_allDopt("allDopt", "minextendrc", "no", "yes");
     test_allDopt("allDopt", "minextendrc", "yes", "yes");
-//  test_allDopt("allDopt", "minextendrc", "yes", "all");
 
 //  test_lingling5esm("lingling5esm", "base", "yes", "critical");
 //  test_lingling5esm("lingling5esm", "base", "yes", "critical");
@@ -972,7 +1022,6 @@ int main(int argc, char ** argv)
     test_lingling5esm("lingling5esm", "minextendrc", "yes", "no");
     test_lingling5esm("lingling5esm", "minextendrc", "no", "yes");
     test_lingling5esm("lingling5esm", "minextendrc", "yes", "yes");
-//  test_lingling5esm("lingling5esm", "minextendrc", "yes", "all");
 
 //  test_lingling7esm("lingling7esm", "base", "yes", "critical");
 //  test_lingling7esm("lingling7esm", "base", "yes", "critical");
@@ -984,7 +1033,6 @@ int main(int argc, char ** argv)
     test_lingling7esm("lingling7esm", "minextendrc", "yes", "no");
     test_lingling7esm("lingling7esm", "minextendrc", "no", "yes");
     test_lingling7esm("lingling7esm", "minextendrc", "yes", "yes");
-//  test_lingling7esm("lingling7esm", "minextendrc", "yes", "all");
 
     return 0;
 }

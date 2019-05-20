@@ -915,11 +915,12 @@ public:
     {
         if (ql::options::get(opt) != "no")
         {
+            DOUT("Clifford optimization on program " << prog_name << " at " << opt << " ...");
             for(auto &kernel : kernels)
             {
                 // don't trust the cycle fields in the instructions
                 // and let write_qasm print the circuit instead of the bundles
-                kernel.bundles.clear();
+                kernel.bundles.clear();                 // delete bundles
             }
     
             std::stringstream clifford_in_fname;
@@ -931,6 +932,8 @@ public:
             for(auto &kernel : kernels)
             {
                 cliff.Optimize(kernel, opt);
+                kernel.c.front()->cycle = MAX_CYCLE;    // invalidate cycle attribute
+                kernel.c.back()->cycle = MAX_CYCLE;
             }
             std::stringstream clifford_out_fname;
             clifford_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_" << opt << "_out.qasm";
@@ -980,7 +983,7 @@ public:
         write_qasm(mapper_out_fname, kernels, platform);
     }
 
-    void schedule(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
+    void schedule(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform, std::string opt)
     {
         for(auto &kernel : kernels)
         {
@@ -992,8 +995,8 @@ public:
             }
         }
         std::stringstream rcscheduler_out_fname;
-        rcscheduler_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_rcscheduler_out.qasm";
-        IOUT("writing rcscheduler output qasm to '" << rcscheduler_out_fname.str() << "' ...");
+        rcscheduler_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_" << opt << "_out.qasm";
+        IOUT("writing " << opt << " output qasm to '" << rcscheduler_out_fname.str() << "' ...");
         write_qasm(rcscheduler_out_fname, kernels, platform);
     }
 
@@ -1040,7 +1043,17 @@ public:
         map(prog_name, kernels, platform);
 
         clifford_optimize(prog_name, kernels, platform, "clifford_prescheduler");
-        schedule(prog_name, kernels, platform);
+        schedule(prog_name, kernels, platform, "rcscheduler");
+        // size_t total_depth_afterscheduler = 0;
+        // for(auto &kernel : kernels) { total_depth_afterscheduler += kernel.get_depth(); }
+        // DOUT("1st clifford+rcscheduler on " << prog_name << ": " << total_depth_afterscheduler << " cycles");
+
+        // clifford_optimize(prog_name, kernels, platform, "clifford_pre2ndscheduler");
+        // schedule(prog_name, kernels, platform, "2ndrcscheduler");
+        // size_t total_depth_after2ndscheduler = 0;
+        // for(auto &kernel : kernels) { total_depth_after2ndscheduler += kernel.get_depth(); }
+        // DOUT("2nd clifford+rcscheduler on " << prog_name << ": " << total_depth_after2ndscheduler << " cycles");
+        // DOUT("2nd clifford+rcscheduler on " << prog_name << " saved " << ( total_depth_afterscheduler - total_depth_after2ndscheduler ) << " cycles");
 
         std::stringstream ssqisa, sskernels_qisa;
         sskernels_qisa << "start:" << std::endl;

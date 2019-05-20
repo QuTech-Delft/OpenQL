@@ -81,6 +81,7 @@ public:
                 {
                     // unary quantum non-clifford gates like wait/meas/prepz/...
                     // interpret cliffstate and create corresponding gate sequence, for this operand qubit
+                    DOUT("... unary gate not a clifford gate: " << gp->qasm());
                     sync(kernel, q);
                     kernel.c.push_back(gp);
                 }
@@ -88,6 +89,8 @@ public:
             DOUT("... gate: " << gp->qasm() << " DONE");
         }
         sync_all(kernel);
+        // kernel.c.front()->cycle = MAX_CYCLE;    // invalidate cycle attributes
+        // kernel.c.back()->cycle = MAX_CYCLE;     // invalidate cycle attributes
         DOUT("Clifford " << fromwhere << " on kernel " << kernel.name << " saved " << total_saved << " cycles [DONE]");
     }
 
@@ -160,27 +163,31 @@ private:
     int string2c(std::string gname)
     {
         if (gname == "identity")    return 0;
-        if (gname == "i")           return 0;
-        if (gname == "pauli_x")     return 3;
-        if (gname == "x")           return 3;
-        if (gname == "rx")          return 3;
-        if (gname == "rx180")       return 3;
-        if (gname == "pauli_y")     return 6;
-        if (gname == "y")           return 6;
-        if (gname == "ry")          return 6;
-        if (gname == "ry180")       return 6;
-        if (gname == "pauli_z")     return 9;
-        if (gname == "z")           return 9;
-        if (gname == "rz")          return 9;
-        if (gname == "hadamard")    return 12;
-        if (gname == "h")           return 12;
-        if (gname == "mrx90")       return 13;
-        if (gname == "s")           return 14;
-        if (gname == "mry90")       return 15;
-        if (gname == "rx90")        return 16;
-        if (gname == "ry90")        return 21;
-        if (gname == "sdag")        return 23;
-        return -1;
+        else if (gname == "i")           return 0;
+        else if (gname == "pauli_x")     return 3;
+        else if (gname == "x")           return 3;
+        else if (gname == "rx")          return 3;
+        else if (gname == "rx180")       return 3;
+        else if (gname == "pauli_y")     return 6;
+        else if (gname == "y")           return 6;
+        else if (gname == "ry")          return 6;
+        else if (gname == "ry180")       return 6;
+        else if (gname == "pauli_z")     return 9;
+        else if (gname == "z")           return 9;
+        else if (gname == "rz")          return 9;
+        else if (gname == "hadamard")    return 12;
+        else if (gname == "h")           return 12;
+        else if (gname == "xm90")        return 13;
+        else if (gname == "mrx90")       return 13;
+        else if (gname == "s")           return 14;
+        else if (gname == "ym90")        return 15;
+        else if (gname == "mry90")       return 15;
+        else if (gname == "x90")         return 16;
+        else if (gname == "rx90")        return 16;
+        else if (gname == "y90")         return 21;
+        else if (gname == "ry90")        return 21;
+        else if (gname == "sdag")        return 23;
+        else return -1;
     }
 
     // find the duration of the gate sequence corresponding to given clifford state

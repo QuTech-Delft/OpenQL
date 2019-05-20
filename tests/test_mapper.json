@@ -37,7 +37,6 @@
         "y_size": 3,
         "qubits": 
         [ 
-
             { "id": 0,  "x": 1, "y": 2 },
             { "id": 1,  "x": 3, "y": 2 },
             { "id": 2,  "x": 0, "y": 1 },
@@ -97,7 +96,7 @@
         },
         "edges":
         {
-            "description": "Two-qubit flux gates (instructions of 'flux' type) are controlled by qubit-selective frequency detuning: neighbor qubits (qubits connected by an edge) interact when their otherwise different frequencies get close because the frequency of the one with the highest frequency, was lowered to near the one with the lowest frequency.  Frequency detuning may cause neighbor qubits to inadvertently engage in a two-qubit flux gate as well: this may happen between two connected qubits that are both executing a two-qubit flux gate each with an other qubit. Therefore to prevent this, for each edge executing a two-qubit gate, certain other edges should not execute a two-qubit gate in parallel. There are 'count' edges. For each edge it is described which set of other edges cannot execute a two-qubit gate in parallel.",
+            "description": "Two-qubit flux gates only operate on neighboring qubits, i.e. qubits connected by an edge. A two-qubit flux gate operates by lowering (detuning) the frequency of the operand qubit with the highest frequency to get close to the frequency of the other operand qubit.  But any two qubits which have close frequencies execute a two-qubit flux gate: this may happen between the detuned frequency qubit and each of its other neighbors with a frequency close to this; to prevent this, those neighbors must have their frequency detuned (lowered out of the way, parked) as well. A parked qubit cannot engage in any gate, so also not a two-qubit gate. As a consequence, for each edge executing a two-qubit gate, certain other edges cannot execute a two-qubit gate in parallel. There are 'count' edges. For each edge it is described which set of other edges cannot execute a two-qubit gate in parallel.",
             "count": 16,
             "connection_map":
             {
@@ -121,7 +120,7 @@
         },
         "detuned_qubits":
         {
-            "description": "A two-qubit flux gate operates by lowering the frequency of (detuning) the operand qubit with the highest frequency to get near the frequency of the other operand qubit.  But any two qubits which have near frequencies execute a two-qubit flux gate: this may happen between the detuned qubit and an other neighbor.  To prevent those neighbor qubits to engage in a two-flux gate with the detuned qubit as well, those neighbors must have their frequency detuned (lowered out of the way, parked) as well.  A parked qubit cannot execute a single-qubit rotation (an instruction of 'mw' type). An edge is a pair of qubits which can execute a two-qubit flux gate.  There are 'count' qubits. For each edge it is described, when executing a two-qubit gate for it, which set of qubits it detunes in addition to one of its operand qubits.",
+            "updated description": "Two-qubit flux gates only operate on neighboring qubits, i.e. qubits connected by an edge. A two-qubit flux gate operates by lowering (detuning) the frequency of the operand qubit with the highest frequency to get close to the frequency of the other operand qubit.  But any two qubits which have close frequencies execute a two-qubit flux gate: this may happen between the detuned frequency qubit and each of its other neighbors with a frequency close to this; to prevent this, those neighbors must have their frequency detuned (lowered out of the way, parked) as well. A parked qubit cannot engage in any gate, so also not a single-qubit rotation (an instruction of 'mw' type). There are 'count' qubits. For each edge it is described, when executing a two-qubit gate for it, which set of qubits it detunes in addition to one of its operand qubits, and so which set of qubits cannot execute a single-qubit rotation in parallel.",
             "count": 7,
             "connection_map":
             {
@@ -266,7 +265,7 @@
             "cc_light_instr": "sdag",
             "cc_light_opcode": 11
         },
-        "rx90": {
+        "x90": {
             "duration": 20,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -275,16 +274,6 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "x90",
             "cc_light_opcode": 12
-        },
-        "mrx90": {
-            "duration": 20,
-            "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
-            "type": "mw",
-            "cc_light_instr_type": "single_qubit_gate",
-            "cc_light_instr": "xm90",
-            "cc_light_opcode": 13
         },
         "xm90": {
             "duration": 20,
@@ -296,7 +285,7 @@
             "cc_light_instr": "xm90",
             "cc_light_opcode": 13
         },
-        "ry90": {
+        "y90": {
             "duration": 20,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -305,16 +294,6 @@
             "cc_light_instr_type": "single_qubit_gate",
             "cc_light_instr": "y90",
             "cc_light_opcode": 14
-        },
-        "mry90": {
-            "duration": 20,
-            "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
-            "type": "mw",
-            "cc_light_instr_type": "single_qubit_gate",
-            "cc_light_instr": "ym90",
-            "cc_light_opcode": 15
         },
         "ym90": {
             "duration": 20,
@@ -356,16 +335,6 @@
             "cc_light_instr": "x45",
             "cc_light_opcode": 18
         },
-        "rx45": {
-            "duration": 20,
-            "latency": 0,
-            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-            "disable_optimization": false,
-            "type": "mw",
-            "cc_light_instr_type": "single_qubit_gate",
-            "cc_light_instr": "x45",
-            "cc_light_opcode": 18
-        },
         "xm45": {
             "duration": 20,
             "latency": 0,
@@ -376,15 +345,25 @@
             "cc_light_instr": "xm45",
             "cc_light_opcode": 19
         },
-        "ry180": {
+        "y45": {
             "duration": 20,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
             "type": "mw",
             "cc_light_instr_type": "single_qubit_gate",
-            "cc_light_instr": "ry180",
-            "cc_light_opcode": 35
+            "cc_light_instr": "y45",
+            "cc_light_opcode": 18
+        },
+        "ym45": {
+            "duration": 20,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "ym45",
+            "cc_light_opcode": 19
         },
         "cz": {
             "duration": 40,
@@ -429,25 +408,31 @@
     },
 
     "gate_decomposition": {
-
-        "swap_dswap %0 %1": ["swap_prim %0 %1"],
-
-        "cnot_dcnot %0 %1": ["cnot_prim %0 %1"],
-        "swap_dcnot %0 %1": ["cnot_prim %0 %1", "cnot_prim %1 %0", "cnot_prim %0 %1"], 
-        "move_dcnot %0 %1": ["cnot_prim %1 %0", "cnot_prim %0 %1"], 
-
-        "cnot_prim %0 %1": ["ym90 %1","cz %0 %1","ry90 %1"],
-        "swap_prim %0 %1": ["ym90 %1","cz %0 %1","ry90 %1", "ym90 %0","cz %1 %0","ry90 %0", "ym90 %1","cz %0 %1","ry90 %1"],
-        "move_prim %0 %1": ["ym90 %0","cz %1 %0","ry90 %0", "ym90 %1","cz %0 %1","ry90 %1"],
+        "toffoli %0 %1 %2" : ["y90 %0", "xm45 %0", "y %0", "y90 %1", "xm45 %1", "ym90 %1", "x %2", "ym90 %2", "cz %2 %0", "y %0", "x45 %0", "y %0", "ym90 %2","cz %1 %2","y %2","cz %1 %0","y %0", "x45 %2", "y %2", "xm45 %0", "y %0","cz %1 %2","y90 %2","cz %2 %0","y %0", "x45 %0", "y %0", "y90 %2", "xm45 %2", "ym90 %2", "cz %1 %0","y90 %0", "x %2", "ym90 %2"],
 
         "rx180 %0" : ["x %0"],
-        "z %0" : ["x %0","y %0"],
-        "h %0" : ["x %0", "ym90 %0"],
-        "t %0" : ["ry90 %0", "rx45 %0", "ym90 %0"],
-        "tdag %0" : ["ry90 %0", "xm45 %0", "ym90 %0"],
-        "s %0" : ["ry90 %0", "rx90 %0", "ym90 %0"],
-        "sdag %0" : ["ry90 %0", "xm90 %0", "ym90 %0"],
+        "ry180 %0" : ["y %0"],
+        "rx90 %0" : ["x90 %0"],
+        "ry90 %0" : ["y90 %0"],
+        "mrx90 %0" : ["xm90 %0"],
+        "mry90 %0" : ["ym90 %0"],
+        "rx45 %0" : ["x45 %0"],
+        "ry45 %0" : ["y45 %0"],
+        "mrx45 %0" : ["xm45 %0"],
+        "mry45 %0" : ["ym45 %0"],
 
-        "toffoli %0 %1 %2" : ["ry90 %0", "xm45 %0", "y %0", "ry90 %1", "xm45 %1", "ym90 %1", "x %2", "ym90 %2", "cz %2 %0", "y %0", "rx45 %0", "y %0", "ym90 %2","cz %1 %2","y %2","cz %1 %0","y %0", "rx45 %2", "y %2", "xm45 %0", "y %0","cz %1 %2","ry90 %2","cz %2 %0","y %0", "rx45 %0", "y %0", "ry90 %2", "xm45 %2", "ym90 %2", "cz %1 %0","ry90 %0", "x %2", "ym90 %2"]
+        "swap_real %0 %1": ["cnot %0 %1", "cnot %1 %0", "cnot %0 %1"], 
+        "move_real %0 %1": ["cnot %1 %0", "cnot %0 %1"], 
+
+        "z_real %0" : ["x %0","y %0"],
+        "h_real %0" : ["x %0", "ym90 %0"],
+        "t_real %0" : ["y90 %0", "x45 %0", "ym90 %0"],
+        "tdag_real %0" : ["y90 %0", "xm45 %0", "ym90 %0"],
+        "s_real %0" : ["y90 %0", "x90 %0", "ym90 %0"],
+        "sdag_real %0" : ["y90 %0", "xm90 %0", "ym90 %0"],
+
+        "cnot_prim %0 %1": ["ym90 %1","cz %0 %1","y90 %1"],
+        "swap_prim %0 %1": ["ym90 %1","cz %0 %1","y90 %1", "ym90 %0","cz %1 %0","y90 %0", "ym90 %1","cz %0 %1","y90 %1"],
+        "move_prim %0 %1": ["ym90 %0","cz %1 %0","y90 %0", "ym90 %1","cz %0 %1","y90 %1"]
     }
 }
