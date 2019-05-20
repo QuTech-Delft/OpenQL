@@ -75,8 +75,10 @@ private: // vars
     const ql::quantum_platform *platform;
 
 #if OPT_VCD_OUTPUT
+    size_t kernelStartTime;
     Vcd vcd;
     std::vector<int> vcdVarQubit;
+    int vcdVarKernel;
 #endif
 
 public:
@@ -91,7 +93,7 @@ public:
     void program_start(std::string prog_name);
     void program_finish(std::string prog_name);
     void kernel_start();
-    void kernel_finish();
+    void kernel_finish(std::string kernelName, size_t duration_in_cycles);
     void bundle_start(std::string cmnt);
     void bundle_finish(size_t start_cycle, size_t duration_in_cycles, bool isLastBundle);
     void comment(std::string c);

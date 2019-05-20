@@ -82,6 +82,7 @@ void codegen_cc::program_start(std::string prog_name)
     }
 
     // define kernel variable
+    vcdVarKernel = vcd.registerVar("kernel", Vcd::VT_STRING);
 
     // define instrument:group variables
 #endif
@@ -112,12 +113,17 @@ void codegen_cc::program_finish(std::string prog_name)
 void codegen_cc::kernel_start()
 {
     ql::utils::zero(lastStartCycle);       // FIXME: actually, bundle.start_cycle starts counting at 1
-#if OPT_VCD_OUTPUT
-#endif
 }
 
-void codegen_cc::kernel_finish()
+void codegen_cc::kernel_finish(std::string kernelName, size_t duration_in_cycles)
 {
+#if OPT_VCD_OUTPUT
+    // NB: timing starts anew for every kernel
+    size_t duration_ns = duration_in_cycles*platform->cycle_time;
+    vcd.change(vcdVarKernel, kernelStartTime, kernelName);     // start of kernel
+    vcd.change(vcdVarKernel, kernelStartTime + duration_ns, "");               // end of kernel
+    kernelStartTime += duration_ns;
+#endif
 }
 
 // bundle_start: clear groupInfo, which maintains the work that needs to be performed for bundle
@@ -338,7 +344,7 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
             // FIXME: define meaning: no classical target, or implied target (classical register matching qubit)
             comment(SS2S(" # READOUT: " << iname << "(q" << qops[0] << ")"));
         } else if(cops.size() != 1) {
-            FATAL("Readout instruction requires 0 or 1 classical operanda, not " << cops.size());
+            FATAL("Readout instruction requires 0 or 1 classical operands, not " << cops.size());
         } else {
             comment(SS2S(" # READOUT: " << iname << "(c" << cops[0] << ",q" << qops[0] << ")"));
         }
@@ -359,11 +365,8 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
 
 #if OPT_VCD_OUTPUT
     // generate qubit output
-    size_t startTime = start_cycle*platform->cycle_time;
+    size_t startTime = kernelStartTime + start_cycle*platform->cycle_time;
     for(size_t i=0; i<qops.size(); i++) {
-        DOUT(iname << " op[" << i << "]=" << qops[i]
-             << ", start=" << startTime
-             << ", end=" << startTime+duration_ns);
         // FIXME: improve name for 2q gates
         vcd.change(vcdVarQubit[qops[i]], startTime, iname);             // start of instruction
         vcd.change(vcdVarQubit[qops[i]], startTime+duration_ns, "");    // end of instruction

@@ -12,10 +12,6 @@
 #include <iostream>
 
 
-
-
-
-
 void Vcd::start()
 {
     vcd << "$date today $end" << std::endl;
@@ -25,6 +21,16 @@ void Vcd::start()
     vcd << "$scope module c $end" << std::endl;
 }
 
+
+int Vcd::registerVar(std::string name, tVarType type, tScopeType scope)
+{
+    // FIXME: incomplete
+    const int width = 20;
+
+    vcd << "$var string " << width << " " << lastId << " " << name << " $end" << std::endl;
+
+    return lastId++;
+}
 
 void Vcd::finish()
 {
@@ -48,16 +54,6 @@ std::string Vcd::getVcd()
 }
 
 
-int Vcd::registerVar(std::string name, tVarType type, tScopeType scope)
-{
-    // FIXME: incomplete
-    const int width = 20;
-
-    vcd << "$var string " << width << " " << lastId << " " << name << " $end" << std::endl;
-
-    return lastId++;
-}
-
 void Vcd::change(int var, int timestamp, std::string value)
 {
     auto tsIt = timestampMap.find(timestamp);
@@ -70,15 +66,8 @@ void Vcd::change(int var, int timestamp, std::string value)
                 << ", var " << vcmIt->first
                 << " overwritten with '" << value << "'" << std::endl;
 
-#if 1
-            tValue val = vcmIt->second;
-            val.strVal = value;         // overwrite previous value
-#else
-            vcm.erase(vcmIt);
-            tValue val;
-            val.strVal = value;
-            vcm.insert({var, val});
-#endif
+            tValue &val = vcmIt->second;
+            val.strVal = value;         // overwrite previous value. FIXME: only if it was empty?
         } else {                        // var not found
             std::cout << "ts=" << tsIt->first
                 << ", var " << var

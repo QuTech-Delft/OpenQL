@@ -8,8 +8,9 @@
 
 /*
     Todo:
+    - finish support for classical instructions
+    - finish support for kernel conditionality
     - allow runtime selection of scheduler
-    - replace file output with strings
     - output timing diagram (~ tool Nader?) of gates vs qubit
     - idem waveform vs instrument
 
@@ -146,7 +147,9 @@ void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel
             ql::utils::write_file(fname, sched_qasm.str());
 #endif
 
+            codegen.kernel_start();
             codegen_bundles(bundles, platform);
+            codegen.kernel_finish(kernel.name, bundles.back().start_cycle+bundles.back().duration_in_cycles);
         } else {
             DOUT("Empty kernel: " << kernel.name);                      // NB: normal situation for kernels with classical control
         }
@@ -348,7 +351,6 @@ void eqasm_backend_cc::codegen_bundles(ql::ir::bundles_t &bundles, const ql::qua
 {
     IOUT("Generating .vq1asm for bundles");
 
-    codegen.kernel_start();
     for(ql::ir::bundle_t &bundle : bundles) {
         // generate bundle header
         codegen.bundle_start(SS2S("## Bundle " << bundleIdx++
@@ -410,7 +412,6 @@ void eqasm_backend_cc::codegen_bundles(ql::ir::bundles_t &bundles, const ql::qua
         bool isLastBundle = &bundle==&bundles.back();
         codegen.bundle_finish(bundle.start_cycle, bundle.duration_in_cycles, isLastBundle);
     }   // for(bundles)
-    codegen.kernel_finish();
 
     IOUT("Generating .vq1asm for bundles [Done]");
 }
