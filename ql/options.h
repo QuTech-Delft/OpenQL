@@ -37,7 +37,6 @@ namespace ql
           opt_name2opt_val["optimize"] = "no";
           opt_name2opt_val["clifford_premapper"] = "yes";
           opt_name2opt_val["clifford_prescheduler"] = "yes";
-          opt_name2opt_val["clifford_pre2ndscheduler"] = "yes";
           opt_name2opt_val["decompose_toffoli"] = "no";
           opt_name2opt_val["mapper"] = "no";
           opt_name2opt_val["mapinitone2one"] = "yes";
@@ -59,7 +58,6 @@ namespace ql
           app->add_set_ignore_case("--optimize", opt_name2opt_val["optimize"], {"yes", "no"}, "optimize or not", true);
           app->add_set_ignore_case("--clifford_premapper", opt_name2opt_val["clifford_premapper"], {"yes", "no"}, "clifford optimize before mapping yes or not", true);
           app->add_set_ignore_case("--clifford_prescheduler", opt_name2opt_val["clifford_prescheduler"], {"yes", "no"}, "clifford optimize before scheduling yes or not", true);
-          app->add_set_ignore_case("--clifford_pre2ndscheduler", opt_name2opt_val["clifford_pre2ndscheduler"], {"yes", "no"}, "clifford optimize before 2nd scheduling yes or not", true);
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "MA"}, "Type of decomposition used for toffoli", true);
 
           app->add_set_ignore_case("--mapper", opt_name2opt_val["mapper"], {"no", "base", "baserc", "minextend", "minextendrc", "minboundederror"}, "Mapper heuristic", true);
@@ -86,7 +84,6 @@ namespace ql
                     << "maptiebreak: "      << opt_name2opt_val["maptiebreak"] << std::endl
                     << "mapusemoves: "      << opt_name2opt_val["mapusemoves"] << std::endl
                     << "clifford_prescheduler: " << opt_name2opt_val["clifford_prescheduler"] << std::endl
-                    << "clifford_pre2ndscheduler: " << opt_name2opt_val["clifford_pre2ndscheduler"] << std::endl
                     << "scheduler_post179: " << opt_name2opt_val["scheduler_post179"] << std::endl
                     << "scheduler_commute: " << opt_name2opt_val["scheduler_uniform"] << std::endl;
 	  ;

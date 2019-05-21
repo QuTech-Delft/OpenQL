@@ -78,7 +78,7 @@ void assert_fail(const char *f, int l, const char *s)
 // Some special situations are worth mentioning:
 // - while a virtual qubit is being swapped/moved near to an other one,
 //      along the trip real qubits may be used which have no virtual qubit mapping to them;
-//      a move can then be used which assumes the 2nd real operand in the |+> (inited) state, and leaves
+//      a move can then be used which assumes the 2nd real operand in the |0> (inited) state, and leaves
 //      the 1st real operand in that state (while the 2nd has assumed the state of the former 1st).
 //      the mapper implementation assumes that all real qubits in the rs_wasinited state are in that state.
 // - on program start, no virtual qubit has a mapping yet to a real qubit;
@@ -460,6 +460,12 @@ static void GetGateParameters(std::string id, ql::quantum_platform *platformp, s
     {
         instruction_type = platformp->instruction_settings[id]["cc_light_instr_type"];
     }
+}
+
+// return whether gate with operand qubit r0 can be scheduled earlier than with operand qubit r1
+bool IsFreeEarlier(size_t r0, size_t r1)
+{
+    return fcv[r0] < fcv[r1];
 }
 
 // when we would schedule gate g, what would be its start cycle? return it
@@ -1128,14 +1134,20 @@ void new_gate_exception(std::string s)
     throw ql::exception("[x] error : ql::mapper::new_gate() : gate is not supported by the target platform !",false);
 }
 
+// return whether real qubit r0 allows scheduling a gate with operands r0,r1 earlier than qubit r1
+bool CanBeScheduledEarlier(size_t r0, size_t r1)
+{
+    return fc.IsFreeEarlier(r0, r1);
+}
+
 // generate a single swap/move with real operands and add it to the current past's waiting list;
 // note that the swap/move may be implemented by a series of gates (circuit circ below),
 // and that a swap/move essentially is a commutative operation, interchanging the states of the two qubits;
 //
-// a move is implemented by 2 CNOTs, while a swap by 3 CNOTs, provided the target qubit is in |+> (inited) state;
+// a move is implemented by 2 CNOTs, while a swap by 3 CNOTs, provided the target qubit is in |0> (inited) state;
 // so, when one of the operands is the current location of an unused virtual qubit,
 // use a move with that location as 2nd operand,
-// after first having initialized the target qubit in |+> (inited) state when that has not been done already;
+// after first having initialized the target qubit in |0> (inited) state when that has not been done already;
 // but this initialization must not extend the depth so can only be done when cycles for it are for free
 //
 // a swap can be implemented with 1-1 operands (0) or with reversed operands (1), as indicated by kind
@@ -1177,18 +1189,18 @@ void AddSwap(size_t r0, size_t r1, int kind)
         if (v2r.GetRs(r1) == rs_nostate)
         {
             // r1 is not in inited state, generate in initcirc the circuit to do so
-            DOUT("... initializing non-inited " << r1 << " to |+> (inited) state preferably using move_init ...");
+            DOUT("... initializing non-inited " << r1 << " to |0> (inited) state preferably using move_init ...");
             ql::circuit initcirc;
 
             created = new_gate("move_init", {r1}, initcirc);
             if (!created)
             {
                 created = new_gate("prepz", {r1}, initcirc);
-                if (created)
-                {
-                    created = new_gate("h", {r1}, initcirc);
-                    if (!created) new_gate_exception("h");
-                }
+                // if (created)
+                // {
+                //     created = new_gate("h", {r1}, initcirc);
+                //     if (!created) new_gate_exception("h");
+                // }
                 if (!created) new_gate_exception("move_init or prepz");
             }
 
@@ -1237,7 +1249,7 @@ void AddSwap(size_t r0, size_t r1, int kind)
     if (kind == 1)
     {
         // interchange r0 and r1, exploiting asymmetry of swap implementation: 1st operand starts 1 cycle later
-        size_t  tmp = r1; r1 = r0; r0 = tmp;
+        // size_t  tmp = r1; r1 = r0; r0 = tmp;
     }
     if (!created)
     {
@@ -1553,21 +1565,34 @@ void AddSwaps(Past & past)
 {
     size_t  fromQ;
     size_t  toQ;
+    int     kind;
 
     fromQ = fromSource[0];
+    kind = 0;
     for ( size_t i = 1; i < fromSource.size(); i++ )
     {
         toQ = fromSource[i];
-        past.AddSwap(fromQ, toQ, 0);
+        if (i == 1 && past.CanBeScheduledEarlier(fromQ, toQ))
+        {
+            kind = 1;   // generate seq of reversed swaps
+        }
+        past.AddSwap(fromQ, toQ, kind);
         fromQ = toQ;
     }
+
     fromQ = fromTarget[0];
+    kind = 0;
     for ( size_t i = 1; i < fromTarget.size(); i++ )
     {
         toQ = fromTarget[i];
-        past.AddSwap(fromQ, toQ, 0);
+        if (i == 1 && past.CanBeScheduledEarlier(fromQ, toQ))
+        {
+            kind = 1;   // generate seq of reversed swaps
+        }
+        past.AddSwap(fromQ, toQ, kind);
         fromQ = toQ;
     }
+
     past.Schedule();
 }
 
@@ -2722,7 +2747,7 @@ void DoneGate(ql::gate* gp)
 //
 // Without inter-kernel control flow, the flow is as follows:
 // - mapping starts from a 1 to 1 mapping of virtual to real qubits (the kernel input mapping)
-//      in which all virtual qubits are initialized to a fixed constant state (|+>/inited), suitable for replacing swap by move
+//      in which all virtual qubits are initialized to a fixed constant state (|0>/inited), suitable for replacing swap by move
 // - optionally attempt an initial placement of the circuit, starting from the kernel input mapping
 //      and thus optionally updating the virtual to real map and the state of used virtuals (from inited to inuse)
 // - anyhow use heuristics to map the input (or what initial placement left to do),

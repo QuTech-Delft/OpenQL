@@ -52,7 +52,6 @@ test_manyNN(std::string v, std::string mapopt, std::string cliffordopt, std::str
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
-    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -86,7 +85,6 @@ test_oneD2(std::string v, std::string mapopt, std::string cliffordopt, std::stri
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
-    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -120,7 +118,6 @@ test_oneD4(std::string v, std::string mapopt, std::string cliffordopt, std::stri
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
-    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -156,7 +153,6 @@ test_oneD4Diogo(std::string v, std::string mapopt, std::string cliffordopt, std:
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
-    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 
@@ -200,7 +196,6 @@ test_allD(std::string v, std::string mapopt, std::string cliffordopt, std::strin
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
-    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -295,7 +290,6 @@ test_allDopt(std::string v, std::string mapopt, std::string cliffordopt, std::st
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
-    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -335,7 +329,6 @@ test_string(std::string v, std::string mapopt, std::string cliffordopt, std::str
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
-    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -373,7 +366,6 @@ test_danielt(std::string v, std::string mapopt, std::string cliffordopt, std::st
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
-    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -636,7 +628,6 @@ test_daniel2(std::string v, std::string mapopt, std::string cliffordopt, std::st
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
-    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -789,7 +780,6 @@ test_lingling5esm(std::string v, std::string mapopt, std::string cliffordopt, st
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
-    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -927,7 +917,6 @@ test_lingling7esm(std::string v, std::string mapopt, std::string cliffordopt, st
     ql::options::set("mapper", mapopt);
     ql::options::set("clifford_premapper", cliffordopt);
     ql::options::set("clifford_prescheduler", cliffordopt);
-    ql::options::set("clifford_pre2ndscheduler", cliffordopt);
     ql::options::set("scheduler_commute", schedulercommuteopt);
     prog.compile( );
 }
@@ -936,21 +925,20 @@ test_lingling7esm(std::string v, std::string mapopt, std::string cliffordopt, st
 int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_DEBUG");
-//default       ql::options::set("scheduler_post179", "yes");
-//default       ql::options::set("scheduler", "ALAP");
-//parameter3    ql::options::set("scheduler_commute", "yes");
-    ql::options::set("scheduler_commute", "no");
+
 //parameter2    ql::options::set("clifford_premapper", "yes"); 
 //parameter1    ql::options::set("mapper", "minextend"); 
-//default       ql::options::set("mapinitone2one", "yes"); 
-//default       ql::options::set("initialplace", "no"); 
-//default       ql::options::set("mapusemoves", "yes"); 
+    ql::options::set("mapinitone2one", "yes"); 
+    ql::options::set("maplookahead", "noroutingfirst");
+    ql::options::set("initialplace", "no"); 
+    ql::options::set("mappathselect", "all"); 
+    ql::options::set("mapusemoves", "yes"); 
     ql::options::set("maptiebreak", "first"); 
-//default       ql::options::set("mapprimitives", "yes");
-//default       ql::options::set("mappathselect", "all"); 
-//default       ql::options::set("maplookahead", "all");
+
 //parameter2    ql::options::set("clifford_prescheduler", "yes"); 
-//parameter2    ql::options::set("clifford_pre2ndscheduler", "yes"); 
+    ql::options::set("scheduler_post179", "yes");
+    ql::options::set("scheduler", "ALAP");
+//parameter3    ql::options::set("scheduler_commute", "yes");
 
 //  test_danielt("danielt", "minextendrc", "no", "no");
 //  test_danielt("danielt", "minextendrc", "yes", "no");
