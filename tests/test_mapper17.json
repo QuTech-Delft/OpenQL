@@ -266,7 +266,7 @@
 
     "instructions": {
         "prepx": {
-            "duration": 360,
+            "duration": 640,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
@@ -276,7 +276,7 @@
             "cc_light_opcode": 1
         },
         "prepz": {
-            "duration": 360,
+            "duration": 640,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
@@ -286,7 +286,7 @@
             "cc_light_opcode": 2
         },
         "measx": {
-            "duration": 320,
+            "duration": 640,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
@@ -296,7 +296,7 @@
             "cc_light_opcode": 4
         },
         "measz": {
-            "duration": 320,
+            "duration": 600,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
@@ -306,7 +306,7 @@
             "cc_light_opcode": 4
         },
         "measure": {
-            "duration": 320,
+            "duration": 600,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,

@@ -15,6 +15,30 @@
         "readout_readout_buffer": 0
     },
 
+    "qubit_attributes":
+    {
+        "relaxation_times":
+        {
+        "0" : [3000, 1500],
+        "1" : [3000, 1500],
+        "2" : [3000, 1500],
+        "3" : [3000, 1500],
+        "4" : [3000, 1500],
+        "5" : [3000, 1500],
+        "6" : [3000, 1500],
+        "7" : [3000, 1500],
+        "8" : [3000, 1500],
+        "9" : [3000, 1500],
+        "10" : [3000, 1500],
+        "11" : [3000, 1500],
+        "12" : [3000, 1500],
+        "13" : [3000, 1500],
+        "14" : [3000, 1500],
+        "15" : [3000, 1500],
+        "16" : [3000, 1500]
+        }
+    },
+
     "topology" : 
     {
         "description": "A qubit grid's topology is defined by the neighbor relation among its qubits. Each qubit has an id (its index, used as gate operand and in the resource descriptions) in the range of 0 to hardware_settings.qubit_number-1. Qubits are connected by directed pairs, called edges. Each edge has an id (its index, also used in the resource descriptions) in some contiguous range starting from 0, a source qubit and a destination qubit. Two grid forms are supported: the xy form and the irregular form. In grids of xy form qubits have in addition an x and a y coordinate: these coordinates in the X (Y) direction are in the range of 0 to x_size-1 (y_size-1).",
@@ -242,7 +266,7 @@
 
     "instructions": {
         "prepx": {
-            "duration": 360,
+            "duration": 640,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
@@ -252,7 +276,7 @@
             "cc_light_opcode": 1
         },
         "prepz": {
-            "duration": 360,
+            "duration": 640,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
@@ -262,7 +286,7 @@
             "cc_light_opcode": 2
         },
         "measx": {
-            "duration": 320,
+            "duration": 640,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
@@ -272,7 +296,7 @@
             "cc_light_opcode": 4
         },
         "measz": {
-            "duration": 320,
+            "duration": 600,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
@@ -282,7 +306,7 @@
             "cc_light_opcode": 4
         },
         "measure": {
-            "duration": 320,
+            "duration": 600,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,

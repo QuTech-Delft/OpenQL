@@ -38,7 +38,7 @@ namespace ql
           opt_name2opt_val["clifford_premapper"] = "yes";
           opt_name2opt_val["clifford_prescheduler"] = "yes";
           opt_name2opt_val["decompose_toffoli"] = "no";
-          opt_name2opt_val["mapper"] = "no";
+          opt_name2opt_val["mapper"] = "minextendrc";
           opt_name2opt_val["mapinitone2one"] = "yes";
           opt_name2opt_val["initialplace"] = "no";
           opt_name2opt_val["mapusemoves"] = "yes";
