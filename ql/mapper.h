@@ -207,7 +207,7 @@ void Swap(size_t r0, size_t r1)
     MapperAssert(r0 != r1);
     size_t v0 = GetVirt(r0);
     size_t v1 = GetVirt(r1);
-    // DOUT("... swap from ("<< v0<<"<->"<<r0<<","<<v1<<"<->"<<r1<<") to ("<<v0<<"<->"<<r1<<","<<v1<<"<->"<<r0<<" )");
+    // DOUT("... swap between ("<< v0<<"<->"<<r0<<","<<v1<<"<->"<<r1<<") and ("<<v0<<"<->"<<r1<<","<<v1<<"<->"<<r0<<" )");
     // Print("... before swap");
     MapperAssert(v0 != v1);         // also holds when vi == UNDEFINED_QUBIT
 
@@ -471,13 +471,8 @@ bool IsFreeEarlier(size_t r0, size_t r1)
 // when we would schedule gate g, what would be its start cycle? return it
 // gate operands are real qubit indices
 // is purely functional, doesn't affect state
-size_t StartCycle(ql::gate *g)
+size_t StartCycleNoRc(ql::gate *g)
 {
-    auto&       id = g->name;
-    std::string operation_name(id);
-    std::string operation_type;
-    std::string instruction_type;
-
     auto&       q = g->operands;
     size_t      operandCount = q.size();
 
@@ -490,12 +485,28 @@ size_t StartCycle(ql::gate *g)
     {
         startCycle = std::max<size_t>(fcv[q[0]], fcv[q[1]]);
     }
+    MapperAssert (startCycle < MAX_CYCLE);
+
+    return startCycle;
+}
+
+// when we would schedule gate g, what would be its start cycle? return it
+// gate operands are real qubit indices
+// is purely functional, doesn't affect state
+size_t StartCycle(ql::gate *g)
+{
+    size_t      startCycle = StartCycleNoRc(g);
     
-    size_t      duration = (g->duration+ct-1)/ct;   // rounded-up unsigned integer division
     auto        mapopt = ql::options::get("mapper");
     if (mapopt == "baserc" || mapopt == "minextendrc")
     {
-        size_t  baseStartCycle = startCycle;
+        size_t      baseStartCycle = startCycle;
+        size_t      duration = (g->duration+ct-1)/ct;   // rounded-up unsigned integer division
+        auto&       id = g->name;
+        std::string operation_name(id);
+        std::string operation_type;
+        std::string instruction_type;
+
         GetGateParameters(id, platformp, operation_name, operation_type, instruction_type);
         while (startCycle < MAX_CYCLE)
         {
@@ -543,6 +554,7 @@ void AddNoRc(ql::gate *g, size_t startCycle)
 // schedule gate g in the FreeCycle and resource maps
 // gate operands are real qubit indices
 // both the FreeCycle map and the resource map are updated
+// startcycle must be the result of an earlier StartCycle call (with rc!)
 void Add(ql::gate *g, size_t startCycle)
 {
     AddNoRc(g, startCycle);
@@ -677,6 +689,7 @@ void SetOutput(ql::circuit& circ)
 // the FreeCycle map reflects for each qubit the first free cycle
 // all new gates, now in waitinglist, get such a cycle assigned below, increased gradually, until definitive
 void Schedule()
+        // the copy includes the resource manager.
 {
     // DOUT("Schedule ...");
 
@@ -690,9 +703,12 @@ void Schedule()
         // IMPORTANT: this assumes that the waitinglg gates list is in topological order,
         // which is ok because the pair of swap lists use distict qubits and
         // the gates of each are added to the back of the list in the order of execution.
-        // So, using AddNoRc, the tryfc (try FreeCycle map) reflects the earliest startCycle per qubit,
+        // Using tryfc.Add, the tryfc (try FreeCycle map) reflects the earliest startCycle per qubit,
         // and so dependences are respected, so we can find the gate that can start first ...
-        // We use a copy of fc and not fc itself, since the latter reflects the really scheduled gates.
+        // Note that tryfc includes the free cycle vector AND the resource map,
+        // so using tryfc.StartCycle/tryfc.Add we get a realistic ASAP rc schedule.
+        // We use a copy of fc and not fc itself, since the latter reflects the really scheduled gates
+        // and that shouldn't be changed.
         //
         // This search is really a hack to avoid
         // the construction of a dependence graph and a set of schedulable gates
@@ -700,7 +716,7 @@ void Schedule()
         for (auto & trygp : waitinglg)
         {
             size_t tryStartCycle = tryfc.StartCycle(trygp);
-            tryfc.AddNoRc(trygp, tryStartCycle);
+            tryfc.Add(trygp, tryStartCycle);
 
             if (tryStartCycle < startCycle)
             {
@@ -754,12 +770,12 @@ int InsertionCost(ql::circuit& initcirc, ql::circuit& circ)
      FreeCycle   tryfcinit = fc;
      for (auto & trygp : initcirc)
      {
-         size_t tryStartCycle = tryfcinit.StartCycle(trygp);
+         size_t tryStartCycle = tryfcinit.StartCycleNoRc(trygp);
          tryfcinit.AddNoRc(trygp, tryStartCycle);
      }
      for (auto & trygp : circ)
      {
-         size_t tryStartCycle = tryfcinit.StartCycle(trygp);
+         size_t tryStartCycle = tryfcinit.StartCycleNoRc(trygp);
          tryfcinit.AddNoRc(trygp, tryStartCycle);
      }
      initmax = tryfcinit.Max(); // this reflects the depth afterwards
@@ -769,7 +785,7 @@ int InsertionCost(ql::circuit& initcirc, ql::circuit& circ)
      FreeCycle   tryfc = fc;
      for (auto & trygp : circ)
      {
-         size_t tryStartCycle = tryfc.StartCycle(trygp);
+         size_t tryStartCycle = tryfc.StartCycleNoRc(trygp);
          tryfc.AddNoRc(trygp, tryStartCycle);
      }
      max = tryfc.Max();         // this reflects the depth afterwards
@@ -1150,8 +1166,8 @@ bool CanBeScheduledEarlier(size_t r0, size_t r1)
 // after first having initialized the target qubit in |0> (inited) state when that has not been done already;
 // but this initialization must not extend the depth so can only be done when cycles for it are for free
 //
-// a swap can be implemented with 1-1 operands (0) or with reversed operands (1), as indicated by kind
-void AddSwap(size_t r0, size_t r1, int kind)
+// a swap can be implemented with 1-1 operands (0) or with reversed operands (1), as indicated by doreverseswap
+void AddSwap(size_t r0, size_t r1, int doreverseswap)
 {
     bool created = false;
     ql::circuit circ;
@@ -1173,7 +1189,7 @@ void AddSwap(size_t r0, size_t r1, int kind)
         {
             // interchange r0 and r1, so that r1 (right-hand operand of move) will be the state-less one
             size_t  tmp = r1; r1 = r0; r0 = tmp;
-            kind = 1 - kind;        // see later reversal when generating swap
+            doreverseswap = 1 - doreverseswap;        // reversal, so complement doreverseswap for later use
         }
         MapperAssert (v2r.GetRs(r0)==rs_hasstate);    // and r0 will be the one with state
         MapperAssert (v2r.GetRs(r1)!=rs_hasstate);    // and r1 will be the one without state (rs_nostate || rs_inited)
@@ -1246,10 +1262,14 @@ void AddSwap(size_t r0, size_t r1, int kind)
             DOUT("... move(q" << r0 << ",q" << r1 << ") ...");
         }
     }
-    if (kind == 1)
+    if (doreverseswap == 1)
     {
         // interchange r0 and r1, exploiting asymmetry of swap implementation: 1st operand starts 1 cycle later
-        // size_t  tmp = r1; r1 = r0; r0 = tmp;
+        std::string mapreverseswapopt = ql::options::get("mapreverseswap");
+        if ("yes" == mapreverseswapopt)
+        {
+            size_t  tmp = r1; r1 = r0; r0 = tmp;
+        }
     }
     if (!created)
     {
@@ -1565,31 +1585,31 @@ void AddSwaps(Past & past)
 {
     size_t  fromQ;
     size_t  toQ;
-    int     kind;
+    int     doreverseswap;
 
     fromQ = fromSource[0];
-    kind = 0;
+    doreverseswap = 0;
     for ( size_t i = 1; i < fromSource.size(); i++ )
     {
         toQ = fromSource[i];
         if (i == 1 && past.CanBeScheduledEarlier(fromQ, toQ))
         {
-            kind = 1;   // generate seq of reversed swaps
+            doreverseswap = 1;   // generate seq of reversed swaps
         }
-        past.AddSwap(fromQ, toQ, kind);
+        past.AddSwap(fromQ, toQ, doreverseswap);
         fromQ = toQ;
     }
 
     fromQ = fromTarget[0];
-    kind = 0;
+    doreverseswap = 0;
     for ( size_t i = 1; i < fromTarget.size(); i++ )
     {
         toQ = fromTarget[i];
         if (i == 1 && past.CanBeScheduledEarlier(fromQ, toQ))
         {
-            kind = 1;   // generate seq of reversed swaps
+            doreverseswap = 1;   // generate seq of reversed swaps
         }
-        past.AddSwap(fromQ, toQ, kind);
+        past.AddSwap(fromQ, toQ, doreverseswap);
         fromQ = toQ;
     }
 
