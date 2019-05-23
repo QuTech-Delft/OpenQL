@@ -125,13 +125,34 @@ public:
             complex_matrix L1;
             complex_matrix R0;
             complex_matrix R1;
+
+            int n = matrix.rows()/2;
+            // if q2 is zero, the whole thing is a demultiplexing problem instead of full CSD
+            if(matrix.bottomLeftCorner(n,n).isZero(10e-14) && matrix.topRightCorner(n,n).isZero(10e-14))
+            {
+                std::cout << "q2 is zero, only demultiplexing will be performed. q2 = " << matrix.bottomLeftCorner(n,n) << std::endl;
+                demultiplexing(matrix.topLeftCorner(n, n), matrix.bottomRightCorner(n,n), n-1);
+                // The number of gates that would be necessary minus the number that is actually necessary to implement this unitary. (two unitaries one size smaller and one uniformly controlled rotation)
+                int numberforrecursion = 3*std::pow(2, n-1) *(std::pow(2,n)-1) - ( 2*3*std::pow(2, n-2) *(std::pow(2,n-1)-1)+std::pow(2,n-2)*(std::pow(2,n)-2));
+                for(int i = 0; i < n; i++)
+                {
+                    instructionlist.push_back(0);
+                }
+            }
+            else
+            {
             CSD(matrix, L0, L1, R0,R1,cc,ss);
-            
+            std::cout << "L0: " << L0 << std::endl;
+            std::cout << "L1: " << L1 << std::endl;
+            std::cout << "R0: " << R0 << std::endl;
+            std::cout << "R1: " << R1 << std::endl;
+            std::cout << "cc: " << cc << std::endl;
+            std::cout << "ss: " << ss << std::endl;
             demultiplexing(R0,R1, numberofbits-1);
             multicontrolledY(ss,numberofbits-1);
             demultiplexing(L0,L1, numberofbits-1);
 
-
+            }
             // Alternative CSD:
 
             // float __complex__ * L0;
@@ -178,66 +199,72 @@ public:
         complex_matrix q1 = U.topLeftCorner(n/2,m/2);
         complex_matrix q2 = U.bottomLeftCorner(n/2,m/2);
 
-        // std::cout << "U: " << U << std::endl;
-        // std::cout << "q1: " << q1 << std::endl;
-        // std::cout << "q2: " << q2 << std::endl;
-        Eigen::BDCSVD<complex_matrix> svd;
+        std::cout << "U: " << U << std::endl;
+        std::cout << "q1: " << q1 << std::endl;
+        std::cout << "q2: " << q2 << std::endl;
+
+
+        Eigen::JacobiSVD<complex_matrix> svd;
 
         if(q1.rows() > 1 && q1.cols() > 1)
         {          
-        svd.compute(q1, Eigen::ComputeFullU | Eigen::ComputeFullV);
+        svd.compute(q1, Eigen::ComputeThinU | Eigen::ComputeThinV); // possible because it's square anyway
         }
         u1 = svd.matrixU();
+        std::cout << "u1: " << u1 << std::endl;
         c = svd.singularValues().asDiagonal();
         std::cout << "c: " << c << std::endl;
 
+
         // thinCSD: q1 = u1*c*v1.adjoint()
         //          q2 = u2*s*v1.adjoint()
-        v1 = svd.matrixV();
+        v1 = svd.matrixV().adjoint();
         int p = q1.rows();
         complex_matrix z = Eigen::MatrixXd::Identity(p, p).colwise().reverse();
-        // std::cout << "u1: " << u1 << std::endl;
-        // std::cout << "c: " << c << std::endl;
-        // std::cout << "z: " << z << std::endl;
+        std::cout << "v1: " << v1 << std::endl;
         u1 = u1*z;
         v1 = v1*z;
         q2 = q2*v1;
         c = z*c*z;
+
+        std::cout << "c: " << c << std::endl;
         int k = 0;
         for(int j = 1; j < p; j++)
         {
             if(c(j,j).real() <= 0.70710678119)
             {
                 k = j;
+                std::cout << "c(" << j << "): " << c(j,j) << std::endl;
             }
         }
-        complex_matrix b = q2.block( 0,0, p, k);
+        complex_matrix b = q2.block( 0,0, p, k+1);
 
         Eigen::HouseholderQR<complex_matrix> qr;
-        qr.compute(b);        
-        //complex_matrix r = qr.matrixQR();
+        // complex_matrix r = qr.matrixQR();
+        qr.compute(b);
         u2 = qr.householderQ();
         s = u2.adjoint()*q2;
-        // std::cout << "s: " << s << std::endl;
-        if(k < p)
+        std::cout << "s: " << s << std::endl;
+        std::cout << "u2: " << u2 << std::endl;
+        if(k < p-1)
         {
-            // std::cout << "k: " << k << std::endl;
+            std::cout << "k is smaller than size of q1 -> adjustments will be made, k = " << k << std::endl;
+            k = k+1;
             svd.compute(s.block(k, k, p-k, p-k));
-            // std::cout << "singular values: \n" << ((complex_matrix) svd.singularValues()) << std::endl;
             s.block(k, k, p-k, p-k) = svd.singularValues().asDiagonal();
-            // std::cout << "sk: " << s << std::endl;
-            c.block(0,k, p,p-k) = c.block(0,k, p,k)*svd.matrixV();
+            c.block(0,k, p,p-k) = c.block(0,k, p,k)*svd.matrixV().adjoint();
             u2.block(0,k, p,p-k) = u2.block(0,k, p,p-k)*svd.matrixU();
             v1.block(0,k, p,p-k) = v1.block(0,k, p,p-k)*svd.matrixV();
             qr.compute(c.block(k,k, p-k,p-k));
+            Eigen::HouseholderQR<complex_matrix> qr2(c.block(k,k, p-k,p-k));
             c.block(k,k,p-k,p-k) = qr.matrixQR();
-            // std::cout << "c:k " << c << std::endl;
             u1.block(0,k, p,p-k) = u1.block(0,k, p,p-k)*qr.householderQ(); 
             
-            // std::cout << "z: " << ((complex_matrix) qr.householderQ()) << std::endl;
-            // std::cout << "u1: " << u1 << std::endl;
-            // std::cout << "u2: " << u2 << std::endl;
-            // std::cout << "v1: " << v1 << std::endl;
+            std::cout << "z: " << ((complex_matrix) qr.householderQ()) << std::endl;
+            std::cout << "u1: " << u1 << std::endl;
+            std::cout << "u2: " << u2 << std::endl;
+            std::cout << "v1: " << v1 << std::endl;
+            std::cout << "s:" << s << std::endl;
         }
         for(int j = 0; j < p; j++)
         {
@@ -252,8 +279,10 @@ public:
                 u2(j,j) = -u2(j,j);
             }
         }
-        // std::cout << "reconstructed q1: " << u1*c*v1.adjoint() << std::endl;
-        // std::cout << "reconstructed q2: " << u2*s*v1.adjoint() << std::endl;
+        std::cout << "reconstructed q1: " << u1*c*v1.adjoint() << std::endl;
+        std::cout << "reconstructed q2: " << u2*s*v1.adjoint() << std::endl;
+        std::cout << "c: " << c << std::endl;
+
         v2 = complex_matrix(n/2, n/2);
         v1 = v1.adjoint();
         s = -s;
@@ -262,14 +291,23 @@ public:
             if(std::abs(s(i,i)) > std::abs(c(i,i)))
             {
                 complex_matrix tmp = u1.adjoint()*U.block(n/2,n/2, 0, n/2);
-                v2.row(i) = tmp.row(i)/s(i,i);
+                v2.row(i) = tmp.row(i)/s(i,i);                
+                // std::cout << "v2 (s): " << v2 << std::endl;
+                // std::cout << "tmp (s): " << tmp << std::endl;
+                // std::cout << "s(i,i): " << s(i,i) << std::endl;
+                // std::cout << "i: " << i << std::endl;
             }
             else
             {
                 complex_matrix tmp = u2.adjoint()*U.block(n/2,n/2, n/2, n/2);
                 v2.row(i) = tmp.row(i)/c(i,i);
+                // std::cout << "v2 (c): " << v2 << std::endl;
+                // std::cout << "tmp (c): " << tmp << std::endl;
+                // std::cout << "c(i,i): " << c(i,i) << std::endl;
+                // std::cout << "i: " << i << std::endl;
             }
         }
+        std::cout << "v2: " << v2 << std::endl;
     }
 
     std::vector<double> zyz_decomp(std::vector<std::complex<double>> matrix)
@@ -359,8 +397,9 @@ public:
             if((int) U1.rows() == 2)
             {
                 zyz_decomp(U1);
-                //if U1 2x2, then the total gate is 4x4 = 2 qubit gates, which is a total of 18 rotation gates = 18 angles -> need to put 15 zeroes so the count is the same (and optimize them out later)
-                for(int i = 0; i < 15; i++)
+                std::cout << "Unitaries are equal, they are both: " << U1 << std::endl;
+                //if U1 2x2, then the total gate is 4x4 = 2 qubit gates, which is a total of 3+3+2 rotation gates = 8 angles -> need to put 5 zeroes so the count is the same (and optimize them out later)
+                for(int i = 0; i < 5; i++)
                 {
                     instructionlist.push_back(0);
                 }
@@ -378,12 +417,12 @@ public:
             Eigen::ComplexEigenSolver<Eigen::MatrixXcd> eigslv(U1*U2.adjoint(), true); 
             complex_matrix d = eigslv.eigenvalues().reverse().asDiagonal(); //gives eigenvecotrs in different order than numpy
             complex_matrix V = eigslv.eigenvectors().rowwise().reverse(); //Gives eigenvectors in different order than numpy
-            // std::cout << "d: " << d << std::endl;
+            std::cout << "d: " << d << std::endl;
             complex_matrix D = d.sqrt(); // Do this here to not get aliasing issues
-            // std::cout << "D: " << D << std::endl;
+            std::cout << "D: " << D << std::endl;
             complex_matrix W = D*V.adjoint()*U2;
-            // std::cout << "W: " << W << std::endl;
-            // std::cout << "V: " << V << std::endl;
+            std::cout << "W: " << W << std::endl;
+            std::cout << "V: " << V << std::endl;
             if(W.rows() == 2)
             {
                 zyz_decomp(W);
@@ -441,7 +480,6 @@ public:
             instructionlist.push_back(tr[i]);
         }
     }
-
     ~unitary()
     {
         // destroy unitary

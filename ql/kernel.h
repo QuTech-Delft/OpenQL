@@ -838,43 +838,6 @@ public:
 
             COUT("Adding decomposed unitary to kernel ...");
             recursiverelations(u,qubits, u_size, 0);
-            // while(i < u.instructionlist.size()) //so it's easier to control how many steps the algorithm takes
-            // {
-                // if(qubits.size() == 1) //3 gates
-                // {
-                //     c.push_back(new ql::rz(qubits[0], u.instructionlist[0]));
-                //     c.push_back(new ql::ry(qubits[0], u.instructionlist[1]));
-                //     c.push_back(new ql::rz(qubits[0], u.instructionlist[2]));
-                //     i = i+3;
-                // }
-                // else if(qubits.size() == 2) //18 gates
-                // {
-                //     c.push_back(new ql::rz(qubits[1], u.instructionlist[0]));
-                //     c.push_back(new ql::ry(qubits[1], u.instructionlist[1]));
-                //     c.push_back(new ql::rz(qubits[1], u.instructionlist[2]));
-                //     gray_code_rz(u.instructionlist,3,4, qubits); //rz //uses two gates
-                //     c.push_back(new ql::rz(qubits[1], u.instructionlist[5]));
-                //     c.push_back(new ql::ry(qubits[1], u.instructionlist[6]));
-                //     c.push_back(new ql::rz(qubits[1], u.instructionlist[7]));
-                //     gray_code_ry(u.instructionlist, 8,9, qubits); //ry //uses two gates
-                //     c.push_back(new ql::rz(qubits[1], u.instructionlist[10]));
-                //     c.push_back(new ql::ry(qubits[1], u.instructionlist[11]));
-                //     c.push_back(new ql::rz(qubits[1], u.instructionlist[12]));
-                //     gray_code_rz(u.instructionlist, 13,14, qubits); //rz //uses two gates
-                //     c.push_back(new ql::rz(qubits[1], u.instructionlist[15]));
-                //     c.push_back(new ql::ry(qubits[1], u.instructionlist[16]));
-                //     c.push_back(new ql::rz(qubits[1], u.instructionlist[17])); 
-                //     i = i+18  ;                
-                // }
-                // else
-                // {
-                //     EOUT("Feature not supported yet");
-                //     throw ql::exception("Feature not supported yet for "+ std::to_string(qubits.size())+ " qubits", false);
-                // }
-
-                // And so this loop does not accidentally lock
-            //     i++; 
-            // }
         }
         else
         {

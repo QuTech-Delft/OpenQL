@@ -192,6 +192,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         self.assertEqual(str(cm.exception), 'Error: wrong type!')
 
+
     def test_unitary_decompose_2qubit_CNOT(self):
         config_fn = os.path.join(curdir, 'test_cfg_none.json')
         platform = ql.Platform('platform_none', config_fn)
@@ -207,8 +208,38 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.gate(u, [0, 1])
         p.add_kernel(k)
         p.compile()
+        # Verified using QX
+        gold_fn = rootDir + '/golden/test_unitary_2qubitCNOT.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )   
+
+    def test_non_90_degree_angle(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 2
+        p = ql.Program('test_non_90_degree_angle', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        matrix =  [ 0.95803258+0.j  ,       -0.24462588+0.j  ,        0.        -0.14479246j,
+                    0.        +0.03697159j,
+                    0.24462588+0.j  ,        0.95803258+0.j         , 0.        -0.03697159j
+                ,   0.        -0.14479246j
+                ,   0.        -0.03697159j , 0.        -0.14479246j , 0.24462588+0.j,
+                    0.95803258+0.j  ,      
+                    0.        -0.14479246j , 0.        +0.03697159j , 0.95803258+0.j,
+                    -0.24462588+0.j        ]
+
+
+
+        u1 = ql.Unitary("testname",matrix)
+        u1.decompose()
+        k.gate(u1, [0,1])
+
+        p.add_kernel(k)
+        p.compile()
         
-        gold_fn = rootDir + '/golden/test_unitary-decomp_1qubit_IYZ.qasm'
+        # Tested for correctness using QX
+        gold_fn = rootDir + '/golden/test_unitary-decomp_non_90+degree_angle.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )   
 
