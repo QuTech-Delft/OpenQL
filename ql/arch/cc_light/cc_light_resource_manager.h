@@ -102,7 +102,8 @@ public:
     std::vector<std::string> operations;    // with operation_name==operations[qwg]
     std::map<size_t,size_t> qubit2qwg;      // on qwg==qubit2qwg[q]
 
-    qwg_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("qwgs", dir)
+    qwg_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : 
+        resource_t("qwgs", dir)
     {
         // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
@@ -211,7 +212,8 @@ public:
     std::vector<size_t> tocycle;    // is busy till cycle
     std::map<size_t,size_t> qubit2meas;
 
-    meas_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("meas_units", dir)
+    meas_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : 
+        resource_t("meas_units", dir)
     {
         // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
@@ -488,7 +490,8 @@ public:
     std::map< qubits_pair_t, size_t > qubitpair2edge;           // map: pair of qubits to edge (from grid configuration)
     std::map<size_t, std::vector<size_t> > edge_detunes_qubits; // map: edge to vector of qubits that edge detunes (resource desc.)
 
-    detuned_qubits_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("detuned_qubits", dir)
+    detuned_qubits_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : 
+        resource_t("detuned_qubits", dir)
     {
         // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
