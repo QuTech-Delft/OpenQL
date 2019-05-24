@@ -208,7 +208,8 @@ void Swap(size_t r0, size_t r1)
     size_t v0 = GetVirt(r0);
     size_t v1 = GetVirt(r1);
     // DOUT("... swap between ("<< v0<<"<->"<<r0<<","<<v1<<"<->"<<r1<<") and ("<<v0<<"<->"<<r1<<","<<v1<<"<->"<<r0<<" )");
-    // Print("... before swap");
+    // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+    //  Print("... before swap");
     MapperAssert(v0 != v1);         // also holds when vi == UNDEFINED_QUBIT
 
     if (v0 != UNDEFINED_QUBIT)
@@ -234,7 +235,8 @@ void Swap(size_t r0, size_t r1)
     realstate_t ts = rs[r0];
     rs[r0] = rs[r1];
     rs[r1] = ts;
-    // Print("... after swap");
+    // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+    //  Print("... after swap");
 }
 
 void PrintReal(size_t r)
@@ -759,7 +761,8 @@ void Schedule()
         waitinglg.remove(gp);
     }
 
-    // Print("Schedule:");
+    // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+    //  Print("Schedule:");
 }
 
 // compute costs in cycle extension of optionally scheduling initcirc before the inevitable circ
@@ -1173,7 +1176,8 @@ void AddSwap(size_t r0, size_t r1, int doreverseswap)
     ql::circuit circ;
 
     DOUT("... adding/trying swap(q" << r0 << ",q" << r1 << ") ...");
-    v2r.PrintReal("... adding swap/move", r0, r1);
+    if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        v2r.PrintReal("... adding swap/move", r0, r1);
 
     if (v2r.GetRs(r0)!=rs_hasstate && v2r.GetRs(r1)!=rs_hasstate)
     {
@@ -1671,7 +1675,8 @@ void Split(std::list<Alter> & reslp)
 
         Alter    np;
         np = *this;            // np is local copy of the current path, including total
-        // np.Print("... copy of current path");
+        // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        //  np.Print("... copy of current path");
 
         size_t fromi, toi;
 
@@ -1691,10 +1696,12 @@ void Split(std::list<Alter> & reslp)
             np.fromTarget[toi] = np.total[fromi];
         }
 
-        // np.Print("... copy of path after split");
+        // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        //  np.Print("... copy of path after split");
         reslp.push_back(np);
         // DOUT("... added to result list");
-        // Print("... current path after split");
+        // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        //  Print("... current path after split");
     }
 }
 
@@ -1802,7 +1809,8 @@ void Init(ql::quantum_platform* p)
     InitNbs();
     AngleSortNbs();
     ComputeDist();
-    PrintGrid();
+    if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        PrintGrid();
 }
 
 // distance between two qubits
@@ -1932,7 +1940,6 @@ void ComputeDist()
 
 void PrintGrid()
 {
-//#ifdef debug
     for (size_t i=0; i<nq; i++)
     {
         std::cout << "qubit[" << i << "]=(" << x[i] << "," << y[i] << ")";
@@ -1952,7 +1959,6 @@ void PrintGrid()
         }
         std::cout << std::endl;
     }
-//#endif        // debug
 }
 
 // init x, and y maps
@@ -2434,7 +2440,8 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
     if ("yes" == mapinitone2oneopt)
     {
         DOUT("... correct location of unused mapped virtual qubits to be an unused location");
-        v2r.Print("... result Virt2Real map of InitialPlace before mapping unused mapped virtual qubits ");
+        if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+            v2r.Print("... result Virt2Real map of InitialPlace before mapping unused mapped virtual qubits ");
         // virtual qubits used by this kernel v have got their location k filled in in v2r[v] == k
         // unused mapped virtual qubits still have location UNDEFINED_QUBIT, fill with the remaining locs
         // this should be replaced by actually swapping them to there, when mapping multiple kernels
@@ -2466,7 +2473,8 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result)
             }
         }
     }
-    v2r.Print("... final result Virt2Real map of InitialPlace");
+    if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        v2r.Print("... final result Virt2Real map of InitialPlace");
     result = ipr_newmap;
     DOUT("InitialPlace circuit [SUCCESS]");
 }
@@ -2857,7 +2865,8 @@ void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, std::list<Alter> & r
         p.targetgp = gp;
         p.Add2Front(src);
         reslp.push_back(p);
-        // p.Print("... empty path after adding to result list");
+        // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        //     p.Print("... empty path after adding to result list");
         // Alter::listPrint("... result list after adding empty path", reslp);
         // DOUT("... will return now");
         return;
@@ -2951,7 +2960,8 @@ void GenSplitPaths(std::list<Alter> & oldlp, std::list<Alter> & reslp)
     {
         p.Split(reslp);
     }
-    // Alter::listPrint("... after GenSplitPaths", reslp);
+    // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+    //    Alter::listPrint("... after GenSplitPaths", reslp);
 }
 
 // start the random generator with a seed
@@ -3017,7 +3027,8 @@ void SelectAlter(std::list<Alter>& lp, Alter & resp, Past& past)
         size_t  minExtension = MAX_CYCLE;
         for (auto & p : lp)
         {
-            // p.Print("Considering extension by path: ...");
+            // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+            //  p.Print("Considering extension by path: ...");
             size_t extension = p.Extend(past);  // locally here, past is cloned
             if (extension <= minExtension)
             {
@@ -3035,7 +3046,8 @@ void SelectAlter(std::list<Alter>& lp, Alter & resp, Past& past)
         size_t  maxFidelity = 0;
         for (auto & p : lp)
         {
-            // p.Print("Considering extension by path: ...");
+            // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+            //  p.Print("Considering extension by path: ...");
             double estimated_fidelity = p.EstimateFidelity(past);  // locally here, past is cloned
             if (estimated_fidelity > maxFidelity)
             {
@@ -3045,9 +3057,11 @@ void SelectAlter(std::list<Alter>& lp, Alter & resp, Past& past)
             }
         }
     }
-    Alter::listPrint("... after SelectAlter", lp);
+    // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+    //  Alter::listPrint("... after SelectAlter", lp);
     resp = choices[Draw(choices.size())];
-    resp.Print("... the selected Alter is");
+    if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        resp.Print("... the selected Alter is");
 }
 
 // Generate all possible variations of making gp NN in lp, given current past (with its mappings)
@@ -3062,9 +3076,11 @@ void GenAlters(ql::gate* gp, std::list<Alter>& lp, Past& past)
 
     std::list<Alter> straightnlp;  // list that will hold all Alters directly from src to tgt
     GenShortestPaths(gp, src, tgt, straightnlp);// find straight shortest paths from src to tgt
-    // Alter::listPrint("... after GenShortestPaths", straightnlp);
+    // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+    //  Alter::listPrint("... after GenShortestPaths", straightnlp);
     GenSplitPaths(straightnlp, lp);  // 2q gate can be put anywhere in each path
-    // Alter::listPrint("... after GenSplitPaths", lp);
+    // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+    //  Alter::listPrint("... after GenSplitPaths", lp);
 }
 
 // Map the gate/operands of a gate that has been routed or doesn't require routing
@@ -3232,13 +3248,15 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
     ql::circuit outCirc;
     mainPast.SetOutput(outCirc);// past window will output into outCirc, to be swapped with circ before return
     mainPast.ImportV2r(v2r);    // give it the current mapping/state
-    // mainPast.Print("start mapping");
+    // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+    //  mainPast.Print("start mapping");
 
     MapGates(future, mainPast, &outCirc);
 
     mainPast.FlushAll();
     mainPast.Out(outCirc);
-    // mainPast.Print("end mapping");
+    // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+    //  mainPast.Print("end mapping");
 
     // DOUT("... swapping outCirc with circ");
     circ.swap(outCirc);
@@ -3354,7 +3372,8 @@ void Map(ql::quantum_kernel& kernel)
     // unify all incoming v2rs into v2r to compute kernel input mapping;
     // but until inter-kernel mapping is implemented, take program initial mapping for it
     v2r.Init(nq);
-    v2r.Print("After initialization");
+    if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        v2r.Print("After initialization");
     v2r.Export(kernel.v2r_in);
     v2r.Export(kernel.rs_in);
 
@@ -3369,10 +3388,12 @@ void Map(ql::quantum_kernel& kernel)
         ip.Place(kernel.c, v2r, ipok, initialplaceopt); // compute mapping (in v2r) using ip model, may fail
     }
 #endif
-    v2r.Print("After initial placement");
+    if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        v2r.Print("After initial placement");
 
     MapCircuit(kernel.c, kernel.name, v2r);       // updates circ with swaps, maps all gates, updates v2r map
-    v2r.Print("After heuristics");
+    if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        v2r.Print("After heuristics");
 
     MakePrimitives(kernel.c);       // decompose to primitives as specified in the config file
 

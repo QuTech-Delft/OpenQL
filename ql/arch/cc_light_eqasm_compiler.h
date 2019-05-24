@@ -923,10 +923,13 @@ public:
                 kernel.bundles.clear();                 // delete bundles
             }
     
-            std::stringstream clifford_in_fname;
-            clifford_in_fname << ql::options::get("output_dir") << "/" << prog_name << "_" << opt << "_in.qasm";
-            DOUT("writing clifford input qasm to '" << clifford_in_fname.str() << "' ...");
-            write_qasm(clifford_in_fname, kernels, platform);
+            if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+            {
+                std::stringstream clifford_in_fname;
+                clifford_in_fname << ql::options::get("output_dir") << "/" << prog_name << "_" << opt << "_in.qasm";
+                DOUT("writing clifford input qasm to '" << clifford_in_fname.str() << "' ...");
+                write_qasm(clifford_in_fname, kernels, platform);
+            }
     
             Clifford cliff;
             for(auto &kernel : kernels)
@@ -935,10 +938,13 @@ public:
                 kernel.c.front()->cycle = MAX_CYCLE;    // invalidate cycle attribute
                 kernel.c.back()->cycle = MAX_CYCLE;
             }
-            std::stringstream clifford_out_fname;
-            clifford_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_" << opt << "_out.qasm";
-            DOUT("writing clifford output qasm to '" << clifford_out_fname.str() << "' ...");
-            write_qasm(clifford_out_fname, kernels, platform);
+            if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+            {
+                std::stringstream clifford_out_fname;
+                clifford_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_" << opt << "_out.qasm";
+                DOUT("writing clifford output qasm to '" << clifford_out_fname.str() << "' ...");
+                write_qasm(clifford_out_fname, kernels, platform);
+            }
         }
         else
         {
@@ -962,10 +968,13 @@ public:
             kernel.bundles.clear();
         }
 
-        std::stringstream mapper_in_fname;
-        mapper_in_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_in.qasm";
-        IOUT("writing mapper input qasm to '" << mapper_in_fname.str() << "' ...");
-        write_qasm(mapper_in_fname, kernels, platform);
+        if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        {
+            std::stringstream mapper_in_fname;
+            mapper_in_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_in.qasm";
+            IOUT("writing mapper input qasm to '" << mapper_in_fname.str() << "' ...");
+            write_qasm(mapper_in_fname, kernels, platform);
+        }
 
         Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
         mapper.Init(platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
@@ -977,10 +986,13 @@ public:
                 // and kernel.qubit_count is updated to real highest index used minus -1
             kernel.bundles = mapper.Bundler(kernel);
         }
-        std::stringstream mapper_out_fname;
-        mapper_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_out.qasm";
-        IOUT("writing mapper output qasm to '" << mapper_out_fname.str() << "' ...");
-        write_qasm(mapper_out_fname, kernels, platform);
+        if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        {
+            std::stringstream mapper_out_fname;
+            mapper_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_out.qasm";
+            IOUT("writing mapper output qasm to '" << mapper_out_fname.str() << "' ...");
+            write_qasm(mapper_out_fname, kernels, platform);
+        }
     }
 
     void schedule(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform, std::string opt)

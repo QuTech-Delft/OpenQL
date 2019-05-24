@@ -924,7 +924,8 @@ test_lingling7esm(std::string v, std::string swapopt, std::string cliffordopt, s
 
 int main(int argc, char ** argv)
 {
-    ql::utils::logger::set_log_level("LOG_DEBUG");
+    // ql::utils::logger::set_log_level("LOG_DEBUG");
+    ql::utils::logger::set_log_level("LOG_NOTHING");
 
 //parameter2    ql::options::set("clifford_premapper", "yes"); 
     ql::options::set("mapper", "minextendrc"); 
