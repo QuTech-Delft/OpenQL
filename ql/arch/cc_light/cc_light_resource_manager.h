@@ -353,43 +353,57 @@ public:
         bool is_flux = (operation_type == "flux");
         if( is_flux )
         {
-            auto q0 = ins->operands[0];
-            auto q1 = ins->operands[1];
-            qubits_pair_t aqpair(q0, q1);
-            auto it = qubits2edge.find(aqpair);
-            if( it != qubits2edge.end() )
+            auto nopers = ins->operands.size();
+            if(nopers == 1)
             {
-                auto edge_no = qubits2edge[aqpair];
-
-                DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " is busy till/from cycle : " << state[edge_no] << " for operation: " << ins->name);
-
-                std::vector<size_t> edges2check(edge2edges[edge_no]);
-                edges2check.push_back(edge_no);
-                for(auto & e : edges2check)
+                // single qubit flux operation does not reserve an edge resource
+                DOUT(" available for single qubit flux operation: " << name);
+            }
+            else if (nopers == 2)
+            {
+                auto q0 = ins->operands[0];
+                auto q1 = ins->operands[1];
+                qubits_pair_t aqpair(q0, q1);
+                auto it = qubits2edge.find(aqpair);
+                if( it != qubits2edge.end() )
                 {
-                    if (forward_scheduling == direction)
+                    auto edge_no = qubits2edge[aqpair];
+
+                    DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle 
+                        << ", edge: " << edge_no << " is busy till/from cycle : " << state[edge_no] 
+                        << " for operation: " << ins->name);
+
+                    std::vector<size_t> edges2check(edge2edges[edge_no]);
+                    edges2check.push_back(edge_no);
+                    for(auto & e : edges2check)
                     {
-                        if( op_start_cycle < state[e] )
+                        if (forward_scheduling == direction)
                         {
-                            DOUT("    " << name << " resource busy ...");
-                            return false;
+                            if( op_start_cycle < state[e] )
+                            {
+                                DOUT("    " << name << " resource busy ...");
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            if( op_start_cycle + operation_duration > state[e] )
+                            {
+                                DOUT("    " << name << " resource busy ...");
+                                return false;
+                            }
                         }
                     }
-                    else
-                    {
-                        if( op_start_cycle + operation_duration > state[e] )
-                        {
-                            DOUT("    " << name << " resource busy ...");
-                            return false;
-                        }
-                    }
+                    DOUT("    " << name << " resource available ...");
                 }
-                DOUT("    " << name << " resource available ...");
+                else
+                {
+                    FATAL("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
+                }
             }
             else
             {
-                EOUT("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
-                throw ql::exception("[x] Error : Use of illegal edge"+std::to_string(q0)+"->"+std::to_string(q1)+"in operation:"+ins->name+" !",false);
+                FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
             }
         }
         return true;
@@ -402,28 +416,37 @@ public:
         bool is_flux = (operation_type == "flux");
         if( is_flux )
         {
-            auto q0 = ins->operands[0];
-            auto q1 = ins->operands[1];
-            qubits_pair_t aqpair(q0, q1);
-            auto edge_no = qubits2edge[aqpair];
-            if (forward_scheduling == direction)
+            auto nopers = ins->operands.size();
+            if(nopers == 1)
             {
-                state[edge_no] = op_start_cycle + operation_duration;
-                for(auto & e : edge2edges[edge_no])
-                {
-                    state[e] = op_start_cycle + operation_duration;
-                }
+                // single qubit flux operation does not reserve an edge resource
             }
-            else
+            else if (nopers == 2)
             {
-                state[edge_no] = op_start_cycle;
-                for(auto & e : edge2edges[edge_no])
+                auto q0 = ins->operands[0];
+                auto q1 = ins->operands[1];
+                qubits_pair_t aqpair(q0, q1);
+                auto edge_no = qubits2edge[aqpair];
+                if (forward_scheduling == direction)
                 {
-                    state[e] = op_start_cycle;
+                    state[edge_no] = op_start_cycle + operation_duration;
+                    for(auto & e : edge2edges[edge_no])
+                    {
+                        state[e] = op_start_cycle + operation_duration;
+                    }
                 }
+                else
+                {
+                    state[edge_no] = op_start_cycle;
+                    for(auto & e : edge2edges[edge_no])
+                    {
+                        state[e] = op_start_cycle;
+                    }
+                }
+                DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle 
+                    << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] 
+                    << " for operation: " << ins->name);
             }
-
-            DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] << " for operation: " << ins->name);
         }
     }
     ~edge_resource_t() {}

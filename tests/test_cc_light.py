@@ -640,6 +640,25 @@ class Test_advance(unittest.TestCase):
 
             self.assertTrue( file_compare(QISA_fn, gold_fn) )
 
+    def test_single_qubit_flux_manual(self):
+
+        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
+        platform  = ql.Platform('seven_qubits_chip', config_fn)
+        num_qubits = platform.get_qubit_number()
+
+        p = ql.Program('aProgram', platform, num_qubits)
+        k = ql.Kernel('aKernel', platform, num_qubits)
+
+        k.prepz(0)
+        k.prepz(0)
+        k.gate('sqf', [1])
+        p.add_kernel(k)
+
+        p.compile()
+
+        # QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+        # assemble(QISA_fn)
+
 
 if __name__ == '__main__':
     unittest.main()

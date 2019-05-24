@@ -2275,6 +2275,7 @@ private:
             // DOUT("... gate: " << gp->qasm() << " in private parallel section");
             currBundle.duration_in_cycles = std::max(currBundle.duration_in_cycles, (gp->duration+cycle_time-1)/cycle_time); 
         }
+    
         if (!currBundle.parallel_sections.empty())
         {
             // finish currBundle (which is last bundle) at currCycle
