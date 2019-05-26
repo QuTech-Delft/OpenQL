@@ -41,6 +41,7 @@ namespace ql
           opt_name2opt_val["mapper"] = "minextendrc";
           opt_name2opt_val["mapinitone2one"] = "yes";
           opt_name2opt_val["initialplace"] = "no";
+          opt_name2opt_val["initialplaceprefix"] = "0";
           opt_name2opt_val["mapusemoves"] = "yes";
           opt_name2opt_val["mapreverseswap"] = "yes";
           opt_name2opt_val["maptiebreak"] = "random";
@@ -64,6 +65,7 @@ namespace ql
           app->add_set_ignore_case("--mapper", opt_name2opt_val["mapper"], {"no", "base", "baserc", "minextend", "minextendrc", "minboundederror"}, "Mapper heuristic", true);
           app->add_set_ignore_case("--mapinitone2one", opt_name2opt_val["mapinitone2one"], {"no", "yes"}, "Initialize mapping of virtual qubits one to one to real qubits", true);
           app->add_set_ignore_case("--initialplace", opt_name2opt_val["initialplace"], {"no","yes","1s","10s","1m","10m","1h","1sx","10sx","1mx","10mx","1hx"}, "Initialplace qubits before mapping", true);
+          app->add_set_ignore_case("--initialplaceprefix", opt_name2opt_val["initialplaceprefix"], {"0","10","20","30","40","50","60","70","80","90","100"}, "Initialplace considers only this number of initial two-qubit gates", true);
           app->add_set_ignore_case("--mapusemoves", opt_name2opt_val["mapusemoves"], {"no", "yes", "0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20",}, "Use unused qubit to move thru", true);
           app->add_set_ignore_case("--mapreverseswap", opt_name2opt_val["mapreverseswap"], {"no", "yes"}, "Reverse swap operands when better", true);
           app->add_set_ignore_case("--maptiebreak", opt_name2opt_val["maptiebreak"], {"first", "last", "random"}, "Tie break method", true);
@@ -81,6 +83,7 @@ namespace ql
                     << "mapper: "           << opt_name2opt_val["mapper"] << std::endl
                     << "mapinitone2one: "   << opt_name2opt_val["mapinitone2one"] << std::endl
                     << "initialplace: "     << opt_name2opt_val["initialplace"] << std::endl
+                    << "initialplaceprefix: "<< opt_name2opt_val["initialplaceprefix"] << std::endl
                     << "maplookahead: "     << opt_name2opt_val["maplookahead"] << std::endl
                     << "mappathselect: "    << opt_name2opt_val["mappathselect"] << std::endl
                     << "maptiebreak: "      << opt_name2opt_val["maptiebreak"] << std::endl

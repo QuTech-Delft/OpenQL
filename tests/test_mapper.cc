@@ -337,43 +337,6 @@ test_string(std::string v, std::string swapopt, std::string cliffordopt, std::st
 // because it caused use of a location that, before mapping heuristic was started, wasn't assigned to a used virtual qubit
 // i.e. a location that didn't appear in the v2r map as location where the v2r is the initial map of the heuristic
 void
-test_danielt(std::string v, std::string swapopt, std::string cliffordopt, std::string schedulercommuteopt)
-{
-    int n = 6;
-    std::string prog_name = "test_" + v + "_swapopt=" + swapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
-    std::string kernel_name = "test_" + v + "_swapopt=" + swapopt + "_clifford_premapper=" + cliffordopt + "_schedulercommute=" + schedulercommuteopt;
-    float sweep_points[] = { 1, 2 };
-
-    ql::quantum_platform starmon("starmon", "test_mapper17.json");
-    ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, n);
-
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-
-    k.gate("x",0);
-    k.gate("cnot",4,0);
-    k.gate("h",0);
-    k.gate("t",1);
-    k.gate("t",5);
-    k.gate("t",0);
-    k.gate("cnot",5,1);
-    k.gate("cnot",0,5);
-
-    prog.add(k);
-
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
-
-    ql::options::set("mapreverseswap", swapopt);
-    ql::options::set("clifford_premapper", cliffordopt);
-    ql::options::set("clifford_prescheduler", cliffordopt);
-    ql::options::set("scheduler_commute", schedulercommuteopt);
-    prog.compile( );
-}
-
-// actual test kernel of daniel that failed once
-// because it caused use of a location that, before mapping heuristic was started, wasn't assigned to a used virtual qubit
-// i.e. a location that didn't appear in the v2r map as location where the v2r is the initial map of the heuristic
-void
 test_daniel2(std::string v, std::string swapopt, std::string cliffordopt, std::string schedulercommuteopt)
 {
     int n = 6;
@@ -924,18 +887,19 @@ test_lingling7esm(std::string v, std::string swapopt, std::string cliffordopt, s
 
 int main(int argc, char ** argv)
 {
-    // ql::utils::logger::set_log_level("LOG_DEBUG");
-    ql::utils::logger::set_log_level("LOG_NOTHING");
+    ql::utils::logger::set_log_level("LOG_DEBUG");
+    // ql::utils::logger::set_log_level("LOG_NOTHING");
 
 //parameter2    ql::options::set("clifford_premapper", "yes"); 
     ql::options::set("mapper", "minextendrc"); 
     ql::options::set("mapinitone2one", "yes"); 
     ql::options::set("maplookahead", "noroutingfirst");
-    ql::options::set("initialplace", "no"); 
+    ql::options::set("initialplace", "1m"); 
+    ql::options::set("initialplaceprefix", "10"); 
     ql::options::set("mappathselect", "all"); 
     ql::options::set("mapusemoves", "yes"); 
 //parameter1    ql::options::set("mapreverseswap, "yes"); 
-    ql::options::set("maptiebreak", "first"); 
+    ql::options::set("maptiebreak", "random"); 
 
 //parameter2    ql::options::set("clifford_prescheduler", "yes"); 
     ql::options::set("scheduler_post179", "yes");
@@ -952,14 +916,14 @@ int main(int argc, char ** argv)
 //  test_daniel2("daniel2", "minextend", "yes", "critical");
 //  test_daniel2("daniel2", "minextendrc", "yes", "no");
 //  test_daniel2("daniel2", "minextendrc", "yes", "critical");
-    test_daniel2("daniel2", "yes", "no", "no");
-    test_daniel2("daniel2", "yes", "yes", "no");
-    test_daniel2("daniel2", "yes", "no", "yes");
+//  test_daniel2("daniel2", "yes", "no", "no");
+//  test_daniel2("daniel2", "yes", "yes", "no");
+//  test_daniel2("daniel2", "yes", "no", "yes");
     test_daniel2("daniel2", "yes", "yes", "yes");
-    test_daniel2("daniel2", "no", "no", "no");
-    test_daniel2("daniel2", "no", "yes", "no");
-    test_daniel2("daniel2", "no", "no", "yes");
-    test_daniel2("daniel2", "no", "yes", "yes");
+//  test_daniel2("daniel2", "no", "no", "no");
+//  test_daniel2("daniel2", "no", "yes", "no");
+//  test_daniel2("daniel2", "no", "no", "yes");
+//  test_daniel2("daniel2", "no", "yes", "yes");
 
 //  test_oneD2("oneD2", "base", "yes", "critical");
 //  test_oneD2("oneD2", "base", "yes", "critical");
@@ -977,14 +941,14 @@ int main(int argc, char ** argv)
 //  test_string("string", "minextend", "yes", "critical");
 //  test_string("string", "minextendrc", "yes", "no");
 //  test_string("string", "minextendrc", "yes", "critical");
-    test_string("string", "yes", "no", "no");
-    test_string("string", "yes", "yes", "no");
-    test_string("string", "yes", "no", "yes");
+//  test_string("string", "yes", "no", "no");
+//  test_string("string", "yes", "yes", "no");
+//  test_string("string", "yes", "no", "yes");
     test_string("string", "yes", "yes", "yes");
-    test_string("string", "no", "no", "no");
-    test_string("string", "no", "yes", "no");
-    test_string("string", "no", "no", "yes");
-    test_string("string", "no", "yes", "yes");
+//  test_string("string", "no", "no", "no");
+//  test_string("string", "no", "yes", "no");
+//  test_string("string", "no", "no", "yes");
+//  test_string("string", "no", "yes", "yes");
 
 //  test_allD("allD", "base", "yes", "no");
 //  test_allD("allD", "base", "yes", "critical");
@@ -996,42 +960,42 @@ int main(int argc, char ** argv)
 //  test_allD("allD", "minextend", "yes", "all");
 //  test_allD("allD", "minextendrc", "yes", "no");
 //  test_allD("allD", "minextendrc", "yes", "critical");
-    test_allD("allD", "yes", "no", "no");
-    test_allD("allD", "yes", "yes", "no");
-    test_allD("allD", "yes", "no", "yes");
+//  test_allD("allD", "yes", "no", "no");
+//  test_allD("allD", "yes", "yes", "no");
+//  test_allD("allD", "yes", "no", "yes");
     test_allD("allD", "yes", "yes", "yes");
-    test_allD("allD", "no", "no", "no");
-    test_allD("allD", "no", "yes", "no");
-    test_allD("allD", "no", "no", "yes");
-    test_allD("allD", "no", "yes", "yes");
+//  test_allD("allD", "no", "no", "no");
+//  test_allD("allD", "no", "yes", "no");
+//  test_allD("allD", "no", "no", "yes");
+//  test_allD("allD", "no", "yes", "yes");
 
 //  test_allDopt("allDopt", "base", "yes", "critical");
 //  test_allDopt("allDopt", "base", "yes", "critical");
 //  test_allDopt("allDopt", "minextend", "yes", "critical");
 //  test_allDopt("allDopt", "minextendrc", "yes", "no");
 //  test_allDopt("allDopt", "minextendrc", "yes", "critical");
-    test_allDopt("allDopt", "yes", "no", "no");
-    test_allDopt("allDopt", "yes", "yes", "no");
-    test_allDopt("allDopt", "yes", "no", "yes");
+//  test_allDopt("allDopt", "yes", "no", "no");
+//  test_allDopt("allDopt", "yes", "yes", "no");
+//  test_allDopt("allDopt", "yes", "no", "yes");
     test_allDopt("allDopt", "yes", "yes", "yes");
-    test_allDopt("allDopt", "no", "no", "no");
-    test_allDopt("allDopt", "no", "yes", "no");
-    test_allDopt("allDopt", "no", "no", "yes");
-    test_allDopt("allDopt", "no", "yes", "yes");
+//  test_allDopt("allDopt", "no", "no", "no");
+//  test_allDopt("allDopt", "no", "yes", "no");
+//  test_allDopt("allDopt", "no", "no", "yes");
+//  test_allDopt("allDopt", "no", "yes", "yes");
 
 //  test_lingling5esm("lingling5esm", "base", "yes", "critical");
 //  test_lingling5esm("lingling5esm", "base", "yes", "critical");
 //  test_lingling5esm("lingling5esm", "minextend", "yes", "critical");
 //  test_lingling5esm("lingling5esm", "minextendrc", "yes", "no");
 //  test_lingling5esm("lingling5esm", "minextendrc", "yes", "critical");
-    test_lingling5esm("lingling5esm", "yes", "no", "no");
-    test_lingling5esm("lingling5esm", "yes", "yes", "no");
-    test_lingling5esm("lingling5esm", "yes", "no", "yes");
+//  test_lingling5esm("lingling5esm", "yes", "no", "no");
+//  test_lingling5esm("lingling5esm", "yes", "yes", "no");
+//  test_lingling5esm("lingling5esm", "yes", "no", "yes");
     test_lingling5esm("lingling5esm", "yes", "yes", "yes");
-    test_lingling5esm("lingling5esm", "no", "no", "no");
-    test_lingling5esm("lingling5esm", "no", "yes", "no");
-    test_lingling5esm("lingling5esm", "no", "no", "yes");
-    test_lingling5esm("lingling5esm", "no", "yes", "yes");
+//  test_lingling5esm("lingling5esm", "no", "no", "no");
+//  test_lingling5esm("lingling5esm", "no", "yes", "no");
+//  test_lingling5esm("lingling5esm", "no", "no", "yes");
+//  test_lingling5esm("lingling5esm", "no", "yes", "yes");
 
 //  test_lingling7esm("lingling7esm", "base", "yes", "critical");
 //  test_lingling7esm("lingling7esm", "base", "yes", "critical");
@@ -1039,14 +1003,14 @@ int main(int argc, char ** argv)
 //  test_lingling7esm("lingling7esm", "minextend", "yes", "noroutingfirst");
 //  test_lingling7esm("lingling7esm", "minextendrc", "yes", "no");
 //  test_lingling7esm("lingling7esm", "minextendrc", "yes", "critical");
-    test_lingling7esm("lingling7esm", "yes", "no", "no");
-    test_lingling7esm("lingling7esm", "yes", "yes", "no");
-    test_lingling7esm("lingling7esm", "yes", "no", "yes");
+//  test_lingling7esm("lingling7esm", "yes", "no", "no");
+//  test_lingling7esm("lingling7esm", "yes", "yes", "no");
+//  test_lingling7esm("lingling7esm", "yes", "no", "yes");
     test_lingling7esm("lingling7esm", "yes", "yes", "yes");
-    test_lingling7esm("lingling7esm", "no", "no", "no");
-    test_lingling7esm("lingling7esm", "no", "yes", "no");
-    test_lingling7esm("lingling7esm", "no", "no", "yes");
-    test_lingling7esm("lingling7esm", "no", "yes", "yes");
+//  test_lingling7esm("lingling7esm", "no", "no", "no");
+//  test_lingling7esm("lingling7esm", "no", "yes", "no");
+//  test_lingling7esm("lingling7esm", "no", "no", "yes");
+//  test_lingling7esm("lingling7esm", "no", "yes", "yes");
 
     return 0;
 }
