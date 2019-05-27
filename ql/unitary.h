@@ -204,7 +204,7 @@ public:
         std::cout << "q2: " << q2 << std::endl;
 
 
-        Eigen::JacobiSVD<complex_matrix> svd;
+        Eigen::BDCSVD<complex_matrix> svd;
 
         if(q1.rows() > 1 && q1.cols() > 1)
         {          
@@ -213,20 +213,33 @@ public:
         u1 = svd.matrixU();
         std::cout << "u1: " << u1 << std::endl;
         c = svd.singularValues().asDiagonal();
-        std::cout << "c: " << c << std::endl;
 
 
         // thinCSD: q1 = u1*c*v1.adjoint()
         //          q2 = u2*s*v1.adjoint()
-        v1 = svd.matrixV().adjoint();
+        v1 = svd.matrixV();
         int p = q1.rows();
         complex_matrix z = Eigen::MatrixXd::Identity(p, p).colwise().reverse();
+        
         std::cout << "v1: " << v1 << std::endl;
+
+        complex_matrix v1new(p,p);
+        v1new.topLeftCorner(p/2,p/2) = v1.bottomRightCorner(p/2,p/2).conjugate();
+        v1new.topRightCorner(p/2,p/2) = - v1.bottomLeftCorner(p/2,p/2).conjugate();
+        v1new.bottomLeftCorner(p/2,p/2) = - v1.topRightCorner(p/2,p/2).conjugate();
+        v1new.bottomRightCorner(p/2,p/2) = v1.topLeftCorner(p/2,p/2).conjugate();
+        std::cout << "v1 new" << v1new << std::endl;
+        std::cout << "c: " << c << std::endl;
+        // hack for u1:
+        u1 = v1new.adjoint().inverse()*s.inverse()*q1;
+        std::cout << "corrected u1: " << u1 << std::endl;
         u1 = u1*z;
         v1 = v1*z;
         q2 = q2*v1;
         c = z*c*z;
+        std::cout << "c: " << c << std::endl;
 
+        // c is correct
         std::cout << "c: " << c << std::endl;
         int k = 0;
         for(int j = 1; j < p; j++)
