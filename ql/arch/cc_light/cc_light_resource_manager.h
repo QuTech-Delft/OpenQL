@@ -556,6 +556,7 @@ public:
             if (nopers == 1)
             {
                 // single qubit flux operation does not reserve a detuned qubits resource
+		DOUT(" available for single qubit flux operation: " << name);
             }
             else if (nopers == 2)
             {
