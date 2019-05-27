@@ -521,7 +521,7 @@ private:
         fout << "\t# Qubits used: " << get_qubit_usecount(kernels) << "\n";
         fout << "\t# No. kernels: " << kernels.size() << "\n";
         
-        fout << "\treturn(c)";
+        fout << "\treturn c";
 
         fout.close();
         IOUT("Writing scheduled Quantumsim program [Done]");
