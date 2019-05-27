@@ -2036,10 +2036,88 @@
       "cc_light_opcode": 128
    },
 
+   "sqf q0": {
+      "duration": 80,
+      "latency": 0,
+      "qubits": ["q0"],
+      "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+      "disable_optimization": true,
+      "type": "flux",
+      "cc_light_instr_type": "single_qubit_gate",
+      "cc_light_instr": "sqf",
+      "cc_light_codeword": 115,
+      "cc_light_opcode": 129
+   },
+
    "sqf q1": {
       "duration": 80,
       "latency": 0,
       "qubits": ["q1"],
+      "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+      "disable_optimization": true,
+      "type": "flux",
+      "cc_light_instr_type": "single_qubit_gate",
+      "cc_light_instr": "sqf",
+      "cc_light_codeword": 115,
+      "cc_light_opcode": 129
+   },
+
+   "sqf q2": {
+      "duration": 80,
+      "latency": 0,
+      "qubits": ["q2"],
+      "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+      "disable_optimization": true,
+      "type": "flux",
+      "cc_light_instr_type": "single_qubit_gate",
+      "cc_light_instr": "sqf",
+      "cc_light_codeword": 115,
+      "cc_light_opcode": 129
+   },
+
+   "sqf q3": {
+      "duration": 80,
+      "latency": 0,
+      "qubits": ["q3"],
+      "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+      "disable_optimization": true,
+      "type": "flux",
+      "cc_light_instr_type": "single_qubit_gate",
+      "cc_light_instr": "sqf",
+      "cc_light_codeword": 115,
+      "cc_light_opcode": 129
+   },
+
+   "sqf q4": {
+      "duration": 80,
+      "latency": 0,
+      "qubits": ["q4"],
+      "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+      "disable_optimization": true,
+      "type": "flux",
+      "cc_light_instr_type": "single_qubit_gate",
+      "cc_light_instr": "sqf",
+      "cc_light_codeword": 115,
+      "cc_light_opcode": 129
+   },
+
+   "sqf q5": {
+      "duration": 80,
+      "latency": 0,
+      "qubits": ["q5"],
+      "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+      "disable_optimization": true,
+      "type": "flux",
+      "cc_light_instr_type": "single_qubit_gate",
+      "cc_light_instr": "sqf",
+      "cc_light_codeword": 115,
+      "cc_light_opcode": 129
+   },
+
+   "sqf q6": {
+      "duration": 80,
+      "latency": 0,
+      "qubits": ["q6"],
       "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
       "disable_optimization": true,
       "type": "flux",

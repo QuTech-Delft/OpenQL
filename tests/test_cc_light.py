@@ -650,7 +650,7 @@ class Test_advance(unittest.TestCase):
         k = ql.Kernel('aKernel', platform, num_qubits)
 
         k.prepz(0)
-        k.prepz(0)
+        k.prepz(1)
         k.gate('sqf', [1])
         p.add_kernel(k)
 
