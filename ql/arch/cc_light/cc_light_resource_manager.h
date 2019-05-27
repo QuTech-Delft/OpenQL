@@ -449,6 +449,10 @@ public:
                     << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] 
                     << " for operation: " << ins->name);
             }
+	    else
+            {
+                FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
+            }
         }
     }
     ~edge_resource_t() {}
@@ -584,14 +588,18 @@ public:
                                 return false;
                             }
                         }
-                    }
-                }
+                    }	// for over edges
+                }   // edge found
                 else
                 {
                     EOUT("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
                     throw ql::exception("[x] Error : Use of illegal edge"+std::to_string(q0)+"->"+std::to_string(q1)+"in operation:"+ins->name+" !",false);
                 }
-	        }
+	    }   // nopers 1 or 2
+	    else
+            {
+                FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
+            }
         }
         bool is_mw = (operation_type == "mw");
         if ( is_mw )
@@ -674,6 +682,10 @@ public:
                     }
                     DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " edge: " << edge_no << " detunes qubit: " << q << " reserved from cycle: " << fromcycle[q] << " till cycle: " << tocycle[q] << " for operation: " << ins->name);
                 }
+            }
+	    else
+            {
+                FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
             }
         }
         bool is_mw = (operation_type == "mw");
