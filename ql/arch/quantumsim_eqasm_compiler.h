@@ -367,7 +367,7 @@ private:
              << endl;
 
         fout << "\n# create a circuit\n";
-        fout << "def circuit_generated() :";
+        fout << "def circuit_generated() :\n";
         fout << "\tc = Circuit(title=\"" << prog_name << "\")\n\n";
 
         DOUT("Adding qubits to Quantumsim program");
