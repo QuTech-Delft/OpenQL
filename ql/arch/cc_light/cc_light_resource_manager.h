@@ -548,42 +548,50 @@ public:
         bool is_flux = (operation_type == "flux");
         if( is_flux )
         {
-            auto q0 = ins->operands[0];
-            auto q1 = ins->operands[1];
-            qubits_pair_t aqpair(q0, q1);
-            auto it = qubitpair2edge.find(aqpair);
-            if( it != qubitpair2edge.end() )
+            auto nopers = ins->operands.size();
+            if (nopers == 1)
             {
-                auto edge_no = qubitpair2edge[aqpair];
+                // single qubit flux operation does not reserve a detuned qubits resource
+            }
+            else if (nopers == 2)
+            {
+	    	    auto q0 = ins->operands[0];
+            	auto q1 = ins->operands[1];
+            	qubits_pair_t aqpair(q0, q1);
+            	auto it = qubitpair2edge.find(aqpair);
+            	if( it != qubitpair2edge.end() )
+            	{
+                    auto edge_no = qubitpair2edge[aqpair];
 
-                for( auto & q : edge_detunes_qubits[edge_no])
-                {
-                    DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " detuning qubit: " << q << " for operation: " << ins->name << " busy from: " << fromcycle[q] << " till: " << tocycle[q] << " with operation_type: " << operation_type);
-                    if (forward_scheduling == direction)
+                    for( auto & q : edge_detunes_qubits[edge_no])
                     {
-                        if ( op_start_cycle < fromcycle[q]
-                        || ( op_start_cycle < tocycle[q] && operations[q] != operation_type ) )
+                        DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " detuning qubit: " << q << " for operation: " << ins->name << " busy from: " << fromcycle[q] << " till: " << tocycle[q] << " with operation_type: " << operation_type);
+                        if (forward_scheduling == direction)
                         {
-                            DOUT("    " << name << " resource busy for a two-qubit gate...");
-                            return false;
+                            if ( op_start_cycle < fromcycle[q]
+                            || ( op_start_cycle < tocycle[q] && operations[q] != operation_type ) )
+                            {
+                                DOUT("    " << name << " resource busy for a two-qubit gate...");
+                                return false;
+                            }
                         }
-                    }
-                    else
-                    {
-                        if ( op_start_cycle + operation_duration > tocycle[q]
-                        || ( op_start_cycle + operation_duration > fromcycle[q] && operations[q] != operation_type ) )
+                        else
                         {
-                            DOUT("    " << name << " resource busy for a two-qubit gate...");
-                            return false;
+                            if ( op_start_cycle + operation_duration > tocycle[q]
+                            || ( op_start_cycle + operation_duration > fromcycle[q] && operations[q] != operation_type ) )
+                            {
+                                DOUT("    " << name << " resource busy for a two-qubit gate...");
+                                return false;
+                            }
                         }
                     }
                 }
-            }
-            else
-            {
-                EOUT("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
-                throw ql::exception("[x] Error : Use of illegal edge"+std::to_string(q0)+"->"+std::to_string(q1)+"in operation:"+ins->name+" !",false);
-            }
+                else
+                {
+                    EOUT("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
+                    throw ql::exception("[x] Error : Use of illegal edge"+std::to_string(q0)+"->"+std::to_string(q1)+"in operation:"+ins->name+" !",false);
+                }
+	        }
         }
         bool is_mw = (operation_type == "mw");
         if ( is_mw )
@@ -624,40 +632,48 @@ public:
         bool is_flux = (operation_type == "flux");
         if( is_flux )
         {
-            auto q0 = ins->operands[0];
-            auto q1 = ins->operands[1];
-            qubits_pair_t aqpair(q0, q1);
-            auto edge_no = qubitpair2edge[aqpair];
-
-            for(auto & q : edge_detunes_qubits[edge_no])
+            auto nopers = ins->operands.size();
+            if (nopers == 1)
             {
-                if (forward_scheduling == direction)
+                // single qubit flux operation does not reserve a detuned qubits resource
+            }
+            else if (nopers == 2)
+            {
+                auto q0 = ins->operands[0];
+                auto q1 = ins->operands[1];
+                qubits_pair_t aqpair(q0, q1);
+                auto edge_no = qubitpair2edge[aqpair];
+
+                for(auto & q : edge_detunes_qubits[edge_no])
                 {
-                    if (operations[q] == operation_type)
+                    if (forward_scheduling == direction)
                     {
-                        tocycle[q] = std::max( tocycle[q], op_start_cycle + operation_duration);
+                        if (operations[q] == operation_type)
+                        {
+                            tocycle[q] = std::max( tocycle[q], op_start_cycle + operation_duration);
+                        }
+                        else
+                        {
+                            fromcycle[q] = op_start_cycle;
+                            tocycle[q] = op_start_cycle + operation_duration;
+                            operations[q] = operation_type;
+                        }
                     }
                     else
                     {
-                        fromcycle[q] = op_start_cycle;
-                        tocycle[q] = op_start_cycle + operation_duration;
-                        operations[q] = operation_type;
+                        if (operations[q] == operation_type)
+                        {
+                            fromcycle[q] = std::min( fromcycle[q], op_start_cycle);
+                        }
+                        else
+                        {
+                            fromcycle[q] = op_start_cycle;
+                            tocycle[q] = op_start_cycle + operation_duration;
+                            operations[q] = operation_type;
+                        }
                     }
+                    DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " edge: " << edge_no << " detunes qubit: " << q << " reserved from cycle: " << fromcycle[q] << " till cycle: " << tocycle[q] << " for operation: " << ins->name);
                 }
-                else
-                {
-                    if (operations[q] == operation_type)
-                    {
-                        fromcycle[q] = std::min( fromcycle[q], op_start_cycle);
-                    }
-                    else
-                    {
-                        fromcycle[q] = op_start_cycle;
-                        tocycle[q] = op_start_cycle + operation_duration;
-                        operations[q] = operation_type;
-                    }
-                }
-                DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " edge: " << edge_no << " detunes qubit: " << q << " reserved from cycle: " << fromcycle[q] << " till cycle: " << tocycle[q] << " for operation: " << ins->name);
             }
         }
         bool is_mw = (operation_type == "mw");
