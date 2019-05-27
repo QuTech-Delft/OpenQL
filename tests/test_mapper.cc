@@ -899,7 +899,7 @@ int main(int argc, char ** argv)
     ql::options::set("mappathselect", "all"); 
     ql::options::set("mapusemoves", "yes"); 
 //parameter1    ql::options::set("mapreverseswap, "yes"); 
-    ql::options::set("maptiebreak", "random"); 
+    ql::options::set("maptiebreak", "first"); 
 
 //parameter2    ql::options::set("clifford_prescheduler", "yes"); 
     ql::options::set("scheduler_post179", "yes");
