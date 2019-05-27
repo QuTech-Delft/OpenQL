@@ -556,7 +556,7 @@ public:
             if (nopers == 1)
             {
                 // single qubit flux operation does not reserve a detuned qubits resource
-		DOUT(" available for single qubit flux operation: " << name);
+                DOUT(" available for single qubit flux operation: " << name);
             }
             else if (nopers == 2)
             {
@@ -596,12 +596,13 @@ public:
                     EOUT("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
                     throw ql::exception("[x] Error : Use of illegal edge"+std::to_string(q0)+"->"+std::to_string(q1)+"in operation:"+ins->name+" !",false);
                 }
-	    }   // nopers 1 or 2
-	    else
+	        }   // nopers 1 or 2
+	        else
             {
                 FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
             }
         }
+
         bool is_mw = (operation_type == "mw");
         if ( is_mw )
         {
