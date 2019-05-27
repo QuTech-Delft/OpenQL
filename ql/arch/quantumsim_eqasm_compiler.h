@@ -313,7 +313,7 @@ private:
              << "from quantumsim.circuit import RotateX as rx\n"                            
              << "from quantumsim.circuit import RotateZ as rz\n"                            
              << "from quantumsim.circuit import Hadamard as h\n"                            
-             << "from quantumsim.circuit import CPhase as cz\n"                             
+             << "from quantumsim.circuit import NoisyCPhase as cz\n"                             
              << "from quantumsim.circuit import CNOT as cnot\n"                             
              << "from quantumsim.circuit import Swap as swap\n"                             
              << "from quantumsim.circuit import CPhaseRotation as cr\n"                     
@@ -367,10 +367,11 @@ private:
              << endl;
 
         fout << "\n# create a circuit\n";
-        fout << "c = Circuit(title=\"" << prog_name << "\")\n\n";
+        fout << "def circuit_generated() :";
+        fout << "\tc = Circuit(title=\"" << prog_name << "\")\n\n";
 
         DOUT("Adding qubits to Quantumsim program");
-        fout << "\n# add qubits\n";
+        fout << "\n\t# add qubits\n";
         json config;
         try
         {
@@ -411,11 +412,17 @@ private:
                 EOUT("each qubit must have at least two relaxation times");
                 throw ql::exception("[x] error: each qubit must have at least two relaxation times",false);
             }
-            fout << "c.add_qubit(\"q" << q <<"\", " << rt[0] << ", " << rt[1] << ")\n" ;
+            fout << "\tc.add_qubit(\"q" << q <<"\", " << rt[0] << ", " << rt[1] << ")\n" ;
         }
 
         DOUT("Adding Gates to Quantumsim program");
-        fout << "\n# add gates\n";
+        {
+            // global writes
+            std::stringstream ssbundles;
+            ssbundles << "\n\tsampler = uniform_noisy_sampler(readout_error=0.015, seed=42)\n";
+            ssbundles << "\n\t# add gates\n";
+            fout << ssbundles.str();
+        }
         for(auto &kernel : kernels)
         {
             DOUT("... adding gates, a new kernel");
@@ -439,16 +446,15 @@ private:
                             auto & iname = (*insIt)->name;
                             auto & operands = (*insIt)->operands;
                             auto duration = (*insIt)->duration;     // duration in nano-seconds
-                            size_t operation_duration = std::ceil( static_cast<float>(duration) / ns_per_cycle);
+                            // size_t operation_duration = std::ceil( static_cast<float>(duration) / ns_per_cycle);
                             if( iname == "measure")
                             {
                                 DOUT("... adding gates, a measure");
                                 auto op = operands.back();
-                                ssbundles << "\nsampler = uniform_noisy_sampler(readout_error=0.03, seed=42)\n";
-                                ssbundles << "c.add_qubit(\"m" << op <<"\")\n";
-                                ssbundles << "c.add_measurement("
+                                ssbundles << "\tc.add_qubit(\"m" << op <<"\")\n";
+                                ssbundles << "\tc.add_measurement("
                                           << "\"q" << op <<"\", "
-                                          << "time=" << bcycle + (operation_duration/2) << ", "
+                                          << "time=" << (bcycle*ns_per_cycle) + (duration/2) << ", "
                                           << "output_bit=\"m" << op <<"\", "
                                           << "sampler=sampler"
                                           << ")\n" ;
@@ -456,7 +462,7 @@ private:
                             else
                             {
                                 DOUT("... adding gates, another gate");
-                                ssbundles <<  "c.add_gate("<< iname << "(" ;
+                                ssbundles <<  "\tc.add_gate("<< iname << "(" ;
                                 size_t noperands = operands.size();
                                 if( noperands > 0 )
                                 {
@@ -464,7 +470,7 @@ private:
                                         ssbundles << "\"q" << *opit <<"\", ";
                                     ssbundles << "\"q" << operands.back()<<"\"";
                                 }
-                                ssbundles << ", time=" << bcycle + (operation_duration/2) << "))" << endl;
+                                ssbundles << ", time=" << (bcycle*ns_per_cycle) + (duration/2) << "))" << endl;
                             }
                         }
                     }
@@ -472,14 +478,14 @@ private:
                 }
                 std::vector<size_t> usedcyclecount;
                 kernel.get_qubit_usedcyclecount(usedcyclecount);
-                fout << "# ----- depth: " << kernel.get_depth() << "\n";
-                fout << "# ----- quantum gates: " << kernel.get_quantum_gates_count() << "\n";
-                fout << "# ----- non single qubit gates: " << kernel.get_non_single_qubit_quantum_gates_count() << "\n";
-                fout << "# ----- swaps added: " << kernel.swaps_added << "\n";
-                fout << "# ----- moves added: " << kernel.moves_added << "\n";
-                fout << "# ----- classical operations: " << kernel.get_classical_operations_count() << "\n";
-                fout << "# ----- qubits used: " << kernel.get_qubit_usecount() << "\n";
-                fout << "# ----- qubit cycles use: ";
+                fout << "\t# ----- depth: " << kernel.get_depth() << "\n";
+                fout << "\t# ----- quantum gates: " << kernel.get_quantum_gates_count() << "\n";
+                fout << "\t# ----- non single qubit gates: " << kernel.get_non_single_qubit_quantum_gates_count() << "\n";
+                fout << "\t# ----- swaps added: " << kernel.swaps_added << "\n";
+                fout << "\t# ----- moves added: " << kernel.moves_added << "\n";
+                fout << "\t# ----- classical operations: " << kernel.get_classical_operations_count() << "\n";
+                fout << "\t# ----- qubits used: " << kernel.get_qubit_usecount() << "\n";
+                fout << "\t# ----- qubit cycles use: ";
                     int started = 0;
                     for (auto v : usedcyclecount)
                     {
@@ -504,16 +510,18 @@ private:
             total_swaps += kernel.swaps_added;
             total_moves += kernel.moves_added;
         }
-        fout << "\n";
-        fout << "# Program-wide statistics:\n";
-        fout << "# Total depth: " << total_depth << "\n";
-        fout << "# Total no. of quantum gates: " << total_quantum_gates << "\n";
-        fout << "# Total no. of non single qubit gates: " << total_non_single_qubit_gates << "\n";
-        fout << "# Total no. of swaps: " << total_swaps << "\n";
-        fout << "# Total no. of moves of swaps: " << total_moves << "\n";
-        fout << "# Total no. of classical operations: " << total_classical_operations << "\n";
-        fout << "# Qubits used: " << get_qubit_usecount(kernels) << "\n";
-        fout << "# No. kernels: " << kernels.size() << "\n";
+        fout << "\t\n";
+        fout << "\t# Program-wide statistics:\n";
+        fout << "\t# Total depth: " << total_depth << "\n";
+        fout << "\t# Total no. of quantum gates: " << total_quantum_gates << "\n";
+        fout << "\t# Total no. of non single qubit gates: " << total_non_single_qubit_gates << "\n";
+        fout << "\t# Total no. of swaps: " << total_swaps << "\n";
+        fout << "\t# Total no. of moves of swaps: " << total_moves << "\n";
+        fout << "\t# Total no. of classical operations: " << total_classical_operations << "\n";
+        fout << "\t# Qubits used: " << get_qubit_usecount(kernels) << "\n";
+        fout << "\t# No. kernels: " << kernels.size() << "\n";
+        
+        fout << "\treturn(c)";
 
         fout.close();
         IOUT("Writing scheduled Quantumsim program [Done]");

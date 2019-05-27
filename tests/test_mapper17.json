@@ -276,7 +276,7 @@
             "cc_light_opcode": 1
         },
         "prepz": {
-            "duration": 640,
+            "duration": 620,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
@@ -285,8 +285,8 @@
             "cc_light_instr": "prepz",
             "cc_light_opcode": 2
         },
-        "measx": {
-            "duration": 640,
+        "measx_keep": {
+            "duration": 340,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
@@ -295,8 +295,8 @@
             "cc_light_instr": "measx",
             "cc_light_opcode": 4
         },
-        "measz": {
-            "duration": 600,
+        "measz_keep": {
+            "duration": 300,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
@@ -306,7 +306,7 @@
             "cc_light_opcode": 4
         },
         "measure": {
-            "duration": 600,
+            "duration": 300,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
             "disable_optimization": false,
@@ -540,6 +540,8 @@
         "ry45 %0" : ["y45 %0"],
         "mrx45 %0" : ["xm45 %0"],
         "mry45 %0" : ["ym45 %0"],
+        "measx %0" : ["h %0", "measure %0"],
+        "measz %0" : ["measure %0"],
 
         "swap_real %0 %1": ["cnot %0 %1", "cnot %1 %0", "cnot %0 %1"], 
         "move_real %0 %1": ["cnot %1 %0", "cnot %0 %1"], 
