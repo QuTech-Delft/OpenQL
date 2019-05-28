@@ -266,7 +266,7 @@ public:
         }
         catch (json::exception e)
         {
-            throw ql::exception("[x] error : ql::quantumsim::compile() : error while reading hardware settings : parameter '"+params[p-1]+"'\n\t"+ std::string(e.what()),false);
+            throw ql::exception("[x] error : ql::quantumsim::compile() : error while reading hardware settings : parameter '"+params[p-1]+"'\n    "+ std::string(e.what()),false);
         }
 
         write_quantumsim_program(prog_name, num_qubits, kernels, platform, "");
@@ -344,10 +344,10 @@ private:
              << "def y(q, time):\n"                                                         
              << "    return ry(q, time, angle=np.pi)\n"                                     
              << "\n"                                                                        
-             << "def rx90(q, time):\n"                                                      
+             << "def x90(q, time):\n"                                                      
              << "    return rx(q, time, angle=np.pi/2)\n"                                   
              << "\n"                                                                        
-             << "def ry90(q, time):\n"                                                      
+             << "def y90(q, time):\n"                                                      
              << "    return ry(q, time, angle=np.pi/2)\n"                                   
              << "\n"                                                                        
              << "def xm90(q, time):\n"                                                      
@@ -356,7 +356,7 @@ private:
              << "def ym90(q, time):\n"                                                      
              << "    return ry(q, time, angle=-np.pi/2)\n"                                  
              << "\n"                                                                        
-             << "def rx45(q, time):\n"                                                      
+             << "def x45(q, time):\n"                                                      
              << "    return rx(q, time, angle=np.pi/4)\n"                                   
              << "\n"                                                                        
              << "def xm45(q, time):\n"                                                      
@@ -368,10 +368,10 @@ private:
 
         fout << "\n# create a circuit\n";
         fout << "def circuit_generated() :\n";
-        fout << "\tc = Circuit(title=\"" << prog_name << "\")\n\n";
+        fout << "    c = Circuit(title=\"" << prog_name << "\")\n\n";
 
         DOUT("Adding qubits to Quantumsim program");
-        fout << "\n\t# add qubits\n";
+        fout << "\n    # add qubits\n";
         json config;
         try
         {
@@ -379,7 +379,7 @@ private:
         }
         catch (json::exception e)
         {
-            throw ql::exception("[x] error : ql::quantumsim_compiler::load() :  failed to load the hardware config file : malformed json file ! : \n\t"+
+            throw ql::exception("[x] error : ql::quantumsim_compiler::load() :  failed to load the hardware config file : malformed json file ! : \n    "+
                                 std::string(e.what()),false);
         }
 
@@ -412,15 +412,15 @@ private:
                 EOUT("each qubit must have at least two relaxation times");
                 throw ql::exception("[x] error: each qubit must have at least two relaxation times",false);
             }
-            fout << "\tc.add_qubit(\"q" << q <<"\", " << rt[0] << ", " << rt[1] << ")\n" ;
+            fout << "    c.add_qubit(\"q" << q <<"\", " << rt[0] << ", " << rt[1] << ")\n" ;
         }
 
         DOUT("Adding Gates to Quantumsim program");
         {
             // global writes
             std::stringstream ssbundles;
-            ssbundles << "\n\tsampler = uniform_noisy_sampler(readout_error=0.015, seed=42)\n";
-            ssbundles << "\n\t# add gates\n";
+            ssbundles << "\n    sampler = uniform_noisy_sampler(readout_error=0.015, seed=42)\n";
+            ssbundles << "\n    # add gates\n";
             fout << ssbundles.str();
         }
         for(auto &kernel : kernels)
@@ -451,8 +451,8 @@ private:
                             {
                                 DOUT("... adding gates, a measure");
                                 auto op = operands.back();
-                                ssbundles << "\tc.add_qubit(\"m" << op <<"\")\n";
-                                ssbundles << "\tc.add_measurement("
+                                ssbundles << "    c.add_qubit(\"m" << op <<"\")\n";
+                                ssbundles << "    c.add_measurement("
                                           << "\"q" << op <<"\", "
                                           << "time=" << (bcycle*ns_per_cycle) + (duration/2) << ", "
                                           << "output_bit=\"m" << op <<"\", "
@@ -462,7 +462,7 @@ private:
                             else
                             {
                                 DOUT("... adding gates, another gate");
-                                ssbundles <<  "\tc.add_gate("<< iname << "(" ;
+                                ssbundles <<  "    c.add_gate("<< iname << "(" ;
                                 size_t noperands = operands.size();
                                 if( noperands > 0 )
                                 {
@@ -478,14 +478,14 @@ private:
                 }
                 std::vector<size_t> usedcyclecount;
                 kernel.get_qubit_usedcyclecount(usedcyclecount);
-                fout << "\t# ----- depth: " << kernel.get_depth() << "\n";
-                fout << "\t# ----- quantum gates: " << kernel.get_quantum_gates_count() << "\n";
-                fout << "\t# ----- non single qubit gates: " << kernel.get_non_single_qubit_quantum_gates_count() << "\n";
-                fout << "\t# ----- swaps added: " << kernel.swaps_added << "\n";
-                fout << "\t# ----- moves added: " << kernel.moves_added << "\n";
-                fout << "\t# ----- classical operations: " << kernel.get_classical_operations_count() << "\n";
-                fout << "\t# ----- qubits used: " << kernel.get_qubit_usecount() << "\n";
-                fout << "\t# ----- qubit cycles use: ";
+                fout << "    # ----- depth: " << kernel.get_depth() << "\n";
+                fout << "    # ----- quantum gates: " << kernel.get_quantum_gates_count() << "\n";
+                fout << "    # ----- non single qubit gates: " << kernel.get_non_single_qubit_quantum_gates_count() << "\n";
+                fout << "    # ----- swaps added: " << kernel.swaps_added << "\n";
+                fout << "    # ----- moves added: " << kernel.moves_added << "\n";
+                fout << "    # ----- classical operations: " << kernel.get_classical_operations_count() << "\n";
+                fout << "    # ----- qubits used: " << kernel.get_qubit_usecount() << "\n";
+                fout << "    # ----- qubit cycles use: ";
                     int started = 0;
                     for (auto v : usedcyclecount)
                     {
@@ -510,18 +510,18 @@ private:
             total_swaps += kernel.swaps_added;
             total_moves += kernel.moves_added;
         }
-        fout << "\t\n";
-        fout << "\t# Program-wide statistics:\n";
-        fout << "\t# Total depth: " << total_depth << "\n";
-        fout << "\t# Total no. of quantum gates: " << total_quantum_gates << "\n";
-        fout << "\t# Total no. of non single qubit gates: " << total_non_single_qubit_gates << "\n";
-        fout << "\t# Total no. of swaps: " << total_swaps << "\n";
-        fout << "\t# Total no. of moves of swaps: " << total_moves << "\n";
-        fout << "\t# Total no. of classical operations: " << total_classical_operations << "\n";
-        fout << "\t# Qubits used: " << get_qubit_usecount(kernels) << "\n";
-        fout << "\t# No. kernels: " << kernels.size() << "\n";
+        fout << "    \n";
+        fout << "    # Program-wide statistics:\n";
+        fout << "    # Total depth: " << total_depth << "\n";
+        fout << "    # Total no. of quantum gates: " << total_quantum_gates << "\n";
+        fout << "    # Total no. of non single qubit gates: " << total_non_single_qubit_gates << "\n";
+        fout << "    # Total no. of swaps: " << total_swaps << "\n";
+        fout << "    # Total no. of moves of swaps: " << total_moves << "\n";
+        fout << "    # Total no. of classical operations: " << total_classical_operations << "\n";
+        fout << "    # Qubits used: " << get_qubit_usecount(kernels) << "\n";
+        fout << "    # No. kernels: " << kernels.size() << "\n";
         
-        fout << "\treturn c";
+        fout << "    return c";
 
         fout.close();
         IOUT("Writing scheduled Quantumsim program [Done]");
