@@ -2236,7 +2236,7 @@ private:
 
         for (auto & gp: circ)
         {
-            // DOUT(". adding gate(@" << gp->cycle << ")  " << gp->qasm());
+            DOUT(". adding gate(@" << gp->cycle << ")  " << gp->qasm());
             if ( gp->type() == ql::gate_type_t::__wait_gate__ ||
                  gp->type() == ql::gate_type_t::__dummy_gate__
                )
@@ -2255,15 +2255,22 @@ private:
                 if (!currBundle.parallel_sections.empty())
                 {
                     // finish currBundle at currCycle
-                    // DOUT(".. bundle duration in cycles: " << currBundle.duration_in_cycles);
+                    DOUT(".. bundle at cycle " << currCycle << " duration in cycles: " << currBundle.duration_in_cycles);
+                    for (auto &s : currBundle.parallel_sections)
+                    {
+                        for (auto &sgp: s)
+                        {
+                            DOUT("... with gate(@" << sgp->cycle << ")  " << sgp->qasm());
+                        }
+                    }
                     bundles.push_back(currBundle);
-                    // DOUT(".. ready with bundle");
+                    DOUT(".. ready with bundle at cycle " << currCycle);
                     currBundle.parallel_sections.clear();
                 }
 
                 // new empty currBundle at newCycle
                 currCycle = newCycle;
-                // DOUT(".. bundling at cycle: " << currCycle);
+                DOUT(".. bundling at cycle: " << currCycle);
                 currBundle.start_cycle = currCycle;
                 currBundle.duration_in_cycles = 0;
             }
@@ -2272,16 +2279,23 @@ private:
             ql::ir::section_t asec;
             asec.push_back(gp);
             currBundle.parallel_sections.push_back(asec);
-            // DOUT("... gate: " << gp->qasm() << " in private parallel section");
+            DOUT("... gate: " << gp->qasm() << " in private parallel section");
             currBundle.duration_in_cycles = std::max(currBundle.duration_in_cycles, (gp->duration+cycle_time-1)/cycle_time); 
         }
     
         if (!currBundle.parallel_sections.empty())
         {
             // finish currBundle (which is last bundle) at currCycle
-            // DOUT("... bundle duration in cycles: " << currBundle.duration_in_cycles);
+            DOUT("... bundle at cycle " << currCycle << " duration in cycles: " << currBundle.duration_in_cycles);
+            for (auto &s : currBundle.parallel_sections)
+            {
+                for (auto &sgp: s)
+                {
+                    DOUT("... with gate(@" << sgp->cycle << ")  " << sgp->qasm());
+                }
+            }
             bundles.push_back(currBundle);
-            // DOUT("... ready with bundle");
+            DOUT(".. ready with bundle at cycle " << currCycle);
         }
 
         // currCycle == cycle of last gate of circuit scheduled
