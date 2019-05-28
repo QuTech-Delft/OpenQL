@@ -611,19 +611,27 @@ public:
                 DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", qubit: " << q << " for operation: " << ins->name << " busy from: " << fromcycle[q] << " till: " << tocycle[q] << " with operation_type: " << operation_type);
                 if (forward_scheduling == direction)
                 {
-                    if ( op_start_cycle < fromcycle[q]
-                    || ( op_start_cycle < tocycle[q] && operations[q] != operation_type ) )
+                    if ( op_start_cycle < fromcycle[q])
                     {
-                        DOUT("    " << name << " resource busy for a rotation ...");
+                        DOUT("    " << name << " busy for rotation: op_start cycle " << op_start_cycle << " < fromcycle[" << q << "] " << fromcycle[q] );
+                        return false;
+                    }
+                    if ( op_start_cycle < tocycle[q] && operations[q] != operation_type )
+                    {
+                        DOUT("    " << name << " busy for rotation with flux: op_start cycle " << op_start_cycle << " < tocycle[" << q << "] " << tocycle[q] );
                         return false;
                     }
                 }
                 else
                 {
-                    if ( op_start_cycle + operation_duration > tocycle[q]
-                    || ( op_start_cycle + operation_duration > fromcycle[q] && operations[q] != operation_type ) )
+                    if ( op_start_cycle + operation_duration > tocycle[q])
                     {
-                        DOUT("    " << name << " resource busy for a two-qubit gate...");
+                        DOUT("    " << name << " busy for rotation: op_start cycle " << op_start_cycle << " + duration > tocycle[" << q << "] " << tocycle[q] );
+                        return false;
+                    }
+                    if ( op_start_cycle + operation_duration > fromcycle[q] && operations[q] != operation_type )
+                    {
+                        DOUT("    " << name << " busy for rotation with flux: op_start cycle " << op_start_cycle << " + duration > fromcycle[" << q << "] " << fromcycle[q] );
                         return false;
                     }
                 }
@@ -661,12 +669,14 @@ public:
                         if (operations[q] == operation_type)
                         {
                             tocycle[q] = std::max( tocycle[q], op_start_cycle + operation_duration);
+                            DOUT("reserving " << name << ". for qubit: " << q << " reusing cycle: " << fromcycle[q] << " to extending tocycle: " << tocycle[q] << " for old operation: " << ins->name);
                         }
                         else
                         {
                             fromcycle[q] = op_start_cycle;
                             tocycle[q] = op_start_cycle + operation_duration;
                             operations[q] = operation_type;
+                            DOUT("reserving " << name << ". for qubit: " << q << " from fromcycle: " << fromcycle[q] << " to new tocycle: " << tocycle[q] << " for new operation: " << ins->name);
                         }
                     }
                     else
@@ -674,12 +684,14 @@ public:
                         if (operations[q] == operation_type)
                         {
                             fromcycle[q] = std::min( fromcycle[q], op_start_cycle);
+                            DOUT("reserving " << name << ". for qubit: " << q << " from extended cycle: " << fromcycle[q] << " reusing tocycle: " << tocycle[q] << " for old operation: " << ins->name);
                         }
                         else
                         {
                             fromcycle[q] = op_start_cycle;
                             tocycle[q] = op_start_cycle + operation_duration;
                             operations[q] = operation_type;
+                            DOUT("reserving " << name << ". for qubit: " << q << " from new cycle: " << fromcycle[q] << " to tocycle: " << tocycle[q] << " for new operation: " << ins->name);
                         }
                     }
                     DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " edge: " << edge_no << " detunes qubit: " << q << " reserved from cycle: " << fromcycle[q] << " till cycle: " << tocycle[q] << " for operation: " << ins->name);
@@ -700,12 +712,14 @@ public:
                     if (operations[q] == operation_type)
                     {
                         tocycle[q] = std::max( tocycle[q], op_start_cycle + operation_duration);
+                        DOUT("reserving " << name << ". for qubit: " << q << " reusing cycle: " << fromcycle[q] << " to extending tocycle: " << tocycle[q] << " for old operation: " << ins->name);
                     }
                     else
                     {
                         fromcycle[q] = op_start_cycle;
                         tocycle[q] = op_start_cycle + operation_duration;
                         operations[q] = operation_type;
+                        DOUT("reserving " << name << ". for qubit: " << q << " from fromcycle: " << fromcycle[q] << " to new tocycle: " << tocycle[q] << " for new operation: " << ins->name);
                     }
                 }
                 else
@@ -713,15 +727,17 @@ public:
                     if (operations[q] == operation_type)
                     {
                         fromcycle[q] = std::min( fromcycle[q], op_start_cycle);
+                        DOUT("reserving " << name << ". for qubit: " << q << " from extended cycle: " << fromcycle[q] << " reusing tocycle: " << tocycle[q] << " for old operation: " << ins->name);
                     }
                     else
                     {
                         fromcycle[q] = op_start_cycle;
                         tocycle[q] = op_start_cycle + operation_duration;
                         operations[q] = operation_type;
+                        DOUT("reserving " << name << ". for qubit: " << q << " from new cycle: " << fromcycle[q] << " to tocycle: " << tocycle[q] << " for new operation: " << ins->name);
                     }
                 }
-                DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " for qubit: " << q << " reserved from cycle: " << fromcycle[q] << " till cycle: " << tocycle[q] << " for operation: " << ins->name);
+                DOUT("... reserved " << name << ". op_start_cycle: " << op_start_cycle << " for qubit: " << q << " reserved from cycle: " << fromcycle[q] << " till cycle: " << tocycle[q] << " for operation: " << ins->name);
             }
         }
     }

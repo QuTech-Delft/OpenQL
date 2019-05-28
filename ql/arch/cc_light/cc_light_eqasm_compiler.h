@@ -1024,6 +1024,14 @@ public:
                 ql::ir::bundles_t bundles = 
                     cc_light_schedule_rc(decomp_ckt, platform, num_qubits, num_creg);
 
+        std::stringstream sched_qasm;
+        sched_qasm <<"qubits " << num_qubits << "\n\n"
+                   << ".fused_kernels";
+        string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
+        IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << fname);
+        sched_qasm << ql::ir::qasm(bundles);
+        ql::utils::write_file(fname, sched_qasm.str());
+
                 // decompose meta-instructions after scheduling
                 decompose_post_schedule(bundles, platform);
 
