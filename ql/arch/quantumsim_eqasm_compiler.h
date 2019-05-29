@@ -64,8 +64,9 @@ private:
     {
         IOUT("Scheduling Quantumsim instructions ...");
         Scheduler sched;
-        sched.Init(ckt, platform, nqubits, 0); //no creg in quantumsim, so creg_count = 0
-        ql::ir::bundles_t bundles = sched.schedule_asap();
+        sched.init(ckt, platform, nqubits, 0); //no creg in quantumsim, so creg_count = 0
+        std::string dot;
+        ql::ir::bundles_t bundles = sched.schedule_asap(dot);
 
         IOUT("Scheduling Quantumsim instructions [Done].");
         return bundles;

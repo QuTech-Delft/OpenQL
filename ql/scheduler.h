@@ -115,7 +115,7 @@ public:
         cause(graph), depType(graph) {}
 
     // factored out code from Init to add a dependence between two nodes
-    void addDep(int srcID, int tgtID, enum DepTypes deptype, int operand)
+    void add_dep(int srcID, int tgtID, enum DepTypes deptype, int operand)
     {
         ListDigraph::Node srcNode = graph.nodeFromId(srcID);
         ListDigraph::Node tgtNode = graph.nodeFromId(tgtID);
@@ -127,7 +127,7 @@ public:
     }
 
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
-    void Init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
+    void init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
     {
         DOUT("Dependence graph creation ...");
         qubit_count = qcount;
@@ -271,16 +271,16 @@ public:
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    addDep(LastWriter[operand], consID, WAW, operand);
+                    add_dep(LastWriter[operand], consID, WAW, operand);
                     for(auto & readerID : LastReaders[operand])
                     {
-                        addDep(readerID, consID, WAR, operand);
+                        add_dep(readerID, consID, WAR, operand);
                     }
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
                         for(auto & readerID : LastDs[operand])
                         {
-                            addDep(readerID, consID, WAD, operand);
+                            add_dep(readerID, consID, WAD, operand);
                         }
                     }
                 }
@@ -289,10 +289,10 @@ public:
                 for( auto operand : mins->creg_operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    addDep(LastWriter[qubit_count+operand], consID, WAW, operand);
+                    add_dep(LastWriter[qubit_count+operand], consID, WAW, operand);
                     for(auto & readerID : LastReaders[qubit_count+operand])
                     {
-                        addDep(readerID, consID, WAR, operand);
+                        add_dep(readerID, consID, WAR, operand);
                     }
                 }
 
@@ -325,16 +325,16 @@ public:
                 for( auto operand : qubits )
                 {
                     DOUT(".. Operand: " << operand);
-                    addDep(LastWriter[operand], consID, WAW, operand);
+                    add_dep(LastWriter[operand], consID, WAW, operand);
                     for(auto & readerID : LastReaders[operand])
                     {
-                        addDep(readerID, consID, WAR, operand);
+                        add_dep(readerID, consID, WAR, operand);
                     }
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
                         for(auto & readerID : LastDs[operand])
                         {
-                            addDep(readerID, consID, WAD, operand);
+                            add_dep(readerID, consID, WAD, operand);
                         }
                     }
                 }
@@ -358,16 +358,16 @@ public:
                 for( auto operand : all_operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    addDep(LastWriter[operand], consID, WAW, operand);
+                    add_dep(LastWriter[operand], consID, WAW, operand);
                     for(auto & readerID : LastReaders[operand])
                     {
-                        addDep(readerID, consID, WAR, operand);
+                        add_dep(readerID, consID, WAR, operand);
                     }
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
                         for(auto & readerID : LastDs[operand])
                         {
-                            addDep(readerID, consID, WAD, operand);
+                            add_dep(readerID, consID, WAD, operand);
                         }
                     }
                 }
@@ -395,20 +395,20 @@ public:
                     DOUT(".. Operand: " << operand);
                     if( operandNo == 0)
                     {
-                        addDep(LastWriter[operand], consID, RAW, operand);
+                        add_dep(LastWriter[operand], consID, RAW, operand);
 	                    if (ql::options::get("scheduler_post179") == "no"
 	                    ||  ql::options::get("scheduler_commute") == "no")
                         {
                             for(auto & readerID : LastReaders[operand])
                             {
-                                addDep(readerID, consID, RAR, operand);
+                                add_dep(readerID, consID, RAR, operand);
                             }
                         }
                         if (ql::options::get("scheduler_post179") == "yes")
                         {
                             for(auto & readerID : LastDs[operand])
                             {
-                                addDep(readerID, consID, RAD, operand);
+                                add_dep(readerID, consID, RAD, operand);
                             }
                         }
                     }
@@ -416,25 +416,25 @@ public:
                     {
 	                    if (ql::options::get("scheduler_post179") == "no")
                         {
-                            addDep(LastWriter[operand], consID, WAW, operand);
+                            add_dep(LastWriter[operand], consID, WAW, operand);
                             for(auto & readerID : LastReaders[operand])
                             {
-                                addDep(readerID, consID, WAR, operand);
+                                add_dep(readerID, consID, WAR, operand);
                             }
                         }
                         else
                         {
-                            addDep(LastWriter[operand], consID, DAW, operand);
+                            add_dep(LastWriter[operand], consID, DAW, operand);
 	                        if (ql::options::get("scheduler_commute") == "no")
                             {
                                 for(auto & readerID : LastDs[operand])
                                 {
-                                    addDep(readerID, consID, DAD, operand);
+                                    add_dep(readerID, consID, DAD, operand);
                                 }
                             }
                             for(auto & readerID : LastReaders[operand])
                             {
-                                addDep(readerID, consID, DAR, operand);
+                                add_dep(readerID, consID, DAR, operand);
                             }
                         }
                     }
@@ -483,17 +483,17 @@ public:
                     DOUT(".. Operand: " << operand);
                     if (ql::options::get("scheduler_post179") == "no")
                     {
-                        addDep(LastWriter[operand], consID, RAW, operand);
+                        add_dep(LastWriter[operand], consID, RAW, operand);
                         for(auto & readerID : LastReaders[operand])
                         {
-                            addDep(readerID, consID, RAR, operand);
+                            add_dep(readerID, consID, RAR, operand);
                         }
 	                    if( operandNo != 0)
 	                    {
-                            addDep(LastWriter[operand], consID, WAW, operand);
+                            add_dep(LastWriter[operand], consID, WAW, operand);
                             for(auto & readerID : LastReaders[operand])
                             {
-                                addDep(readerID, consID, WAR, operand);
+                                add_dep(readerID, consID, WAR, operand);
                             }
 	                    }
                     }
@@ -503,13 +503,13 @@ public:
                         {
                             for(auto & readerID : LastReaders[operand])
                             {
-                                addDep(readerID, consID, RAR, operand);
+                                add_dep(readerID, consID, RAR, operand);
                             }
                         }
-                        addDep(LastWriter[operand], consID, RAW, operand);
+                        add_dep(LastWriter[operand], consID, RAW, operand);
                         for(auto & readerID : LastDs[operand])
                         {
-                            addDep(readerID, consID, RAD, operand);
+                            add_dep(readerID, consID, RAD, operand);
                         }
                     }
                     operandNo++;
@@ -554,20 +554,20 @@ public:
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    addDep(LastWriter[operand], consID, RAW, operand);
+                    add_dep(LastWriter[operand], consID, RAW, operand);
                     if (ql::options::get("scheduler_post179") == "no"
                     ||  ql::options::get("scheduler_commute") == "no")
                     {
                         for(auto & readerID : LastReaders[operand])
                         {
-                            addDep(readerID, consID, RAR, operand);
+                            add_dep(readerID, consID, RAR, operand);
                         }
                     }
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
                         for(auto & readerID : LastDs[operand])
                         {
-                            addDep(readerID, consID, RAD, operand);
+                            add_dep(readerID, consID, RAD, operand);
                         }
                     }
 
@@ -581,16 +581,16 @@ public:
                     }
                     else
                     {
-                        addDep(LastWriter[operand], consID, WAW, operand);
+                        add_dep(LastWriter[operand], consID, WAW, operand);
                         for(auto & readerID : LastReaders[operand])
                         {
-                            addDep(readerID, consID, WAR, operand);
+                            add_dep(readerID, consID, WAR, operand);
                         }
                         if (ql::options::get("scheduler_post179") == "yes")
                         {
                             for(auto & readerID : LastDs[operand])
                             {
-                                addDep(readerID, consID, WAD, operand);
+                                add_dep(readerID, consID, WAD, operand);
                             }
                         }
 
@@ -614,16 +614,16 @@ public:
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    addDep(LastWriter[operand], consID, WAW, operand);
+                    add_dep(LastWriter[operand], consID, WAW, operand);
                     for(auto & readerID : LastReaders[operand])
                     {
-                        addDep(readerID, consID, WAR, operand);
+                        add_dep(readerID, consID, WAR, operand);
                     }
                     if (ql::options::get("scheduler_post179") == "yes")
                     {
                         for(auto & readerID : LastDs[operand])
                         {
-                            addDep(readerID, consID, WAD, operand);
+                            add_dep(readerID, consID, WAD, operand);
                         }
                     }
 
@@ -666,16 +666,16 @@ public:
 	        for( auto operand : qubits )
 	        {
 	            DOUT(".. Operand: " << operand);
-	            addDep(LastWriter[operand], consID, WAW, operand);
+	            add_dep(LastWriter[operand], consID, WAW, operand);
 	            for(auto & readerID : LastReaders[operand])
 	            {
-	                addDep(readerID, consID, WAR, operand);
+	                add_dep(readerID, consID, WAR, operand);
 	            }
 	            if (ql::options::get("scheduler_post179") == "yes")
 	            {
 	                for(auto & readerID : LastDs[operand])
 	                {
-	                    addDep(readerID, consID, WAD, operand);
+	                    add_dep(readerID, consID, WAD, operand);
 	                }
 	            }
 	        }
@@ -705,7 +705,7 @@ public:
         DOUT("Dependence graph creation Done.");
     }
 
-    void Print()
+    void print()
     {
         COUT("Printing Dependence Graph ");
         digraphWriter(graph).
@@ -718,9 +718,9 @@ public:
         run();
     }
 
-    void PrintMatrix()
+    void write_dependence_matrix()
     {
-        COUT("Printing Dependence Graph as Matrix");
+        COUT("Printing Dependence Matrix ...");
         ofstream fout;
         string datfname( ql::options::get("output_dir") + "/dependenceMatrix.dat");
         fout.open( datfname, ios::binary);
@@ -756,128 +756,119 @@ public:
         fout.close();
     }
 
-    // void PrintDot1_(
-    //             bool WithCritical,
-    //             bool WithCycles,
-    //             ListDigraph::NodeMap<size_t> & cycle,
-    //             std::vector<ListDigraph::Node> & order,
-    //             std::ostream& dotout
-    //             )
-    // {
-    //     ListDigraph::ArcMap<bool> isInCritical(graph);
-    //     if(WithCritical)
-    //     {
-    //         for (ListDigraph::ArcIt a(graph); a != INVALID; ++a)
-    //         {
-    //             isInCritical[a] = false;
-    //             for ( Path<ListDigraph>::ArcIt ap(p); ap != INVALID; ++ap )
-    //             {
-    //                 if(a==ap)
-    //                 {
-    //                     isInCritical[a] = true;
-    //                     break;
-    //                 }
-    //             }
-    //         }
-    //     }
+    void get_dot_asap_(
+                bool WithCritical,
+                bool WithCycles,
+                ListDigraph::NodeMap<size_t> & cycle,
+                std::vector<ListDigraph::Node> & order,
+                std::ostream& dotout
+                )
+    {
+        Path<ListDigraph> p;
+        ListDigraph::ArcMap<bool> isInCritical(graph);
+        if(WithCritical)
+        {
+            for (ListDigraph::ArcIt a(graph); a != INVALID; ++a)
+            {
+                isInCritical[a] = false;
+                for ( Path<ListDigraph>::ArcIt ap(p); ap != INVALID; ++ap )
+                {
+                    if(a==ap)
+                    {
+                        isInCritical[a] = true;
+                        break;
+                    }
+                }
+            }
+        }
 
-    //     string NodeStyle(" fontcolor=black, style=filled, fontsize=16");
-    //     string EdgeStyle1(" color=black");
-    //     string EdgeStyle2(" color=red");
-    //     string EdgeStyle = EdgeStyle1;
+        string NodeStyle(" fontcolor=black, style=filled, fontsize=16");
+        string EdgeStyle1(" color=black");
+        string EdgeStyle2(" color=red");
+        string EdgeStyle = EdgeStyle1;
 
-    //     dotout << "digraph {\ngraph [ rankdir=TD; ]; // or rankdir=LR"
-    //         << "\nedge [fontsize=16, arrowhead=vee, arrowsize=0.5];"
-    //         << endl;
+        dotout << "digraph {\ngraph [ rankdir=TD; ]; // or rankdir=LR"
+            << "\nedge [fontsize=16, arrowhead=vee, arrowsize=0.5];"
+            << endl;
 
-    //     // first print the nodes
-    //     for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
-    //     {
-    //         int nid = graph.id(n);
-    //         string nodeName = name[n];
-    //         dotout  << "\"" << nid << "\""
-    //                 << " [label=\" " << nodeName <<" \""
-    //                 << NodeStyle
-    //                 << "];" << endl;
-    //     }
+        // first print the nodes
+        for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
+        {
+            int nid = graph.id(n);
+            string nodeName = name[n];
+            dotout  << "\"" << nid << "\""
+                    << " [label=\" " << nodeName <<" \""
+                    << NodeStyle
+                    << "];" << endl;
+        }
 
-    //     if( WithCycles)
-    //     {
-    //         // Print cycle numbers as timeline, as shown below
-    //         size_t cn=0,TotalCycles=0;
-    //         dotout << "{\nnode [shape=plaintext, fontsize=16, fontcolor=blue]; \n";
-    //         ListDigraph::NodeMap<size_t>::MapIt it(cycle);
-    //         if(it != INVALID)
-    //             TotalCycles=cycle[it];
-    //         for(cn=0;cn<=TotalCycles;++cn)
-    //         {
-    //             if(cn>0)
-    //                 dotout << " -> ";
-    //             dotout << "Cycle" << cn;
-    //         }
-    //         dotout << ";\n}\n";
+        if( WithCycles)
+        {
+            // Print cycle numbers as timeline, as shown below
+            size_t cn=0,TotalCycles=0;
+            dotout << "{\nnode [shape=plaintext, fontsize=16, fontcolor=blue]; \n";
+            ListDigraph::NodeMap<size_t>::MapIt it(cycle);
+            if(it != INVALID)
+                TotalCycles=cycle[it];
+            for(cn=0;cn<=TotalCycles;++cn)
+            {
+                if(cn>0)
+                    dotout << " -> ";
+                dotout << "Cycle" << cn;
+            }
+            dotout << ";\n}\n";
 
-    //         // Now print ranks, as shown below
-    //         std::vector<ListDigraph::Node>::reverse_iterator rit;
-    //         for ( rit = order.rbegin(); rit != order.rend(); ++rit)
-    //         {
-    //             int nid = graph.id(*rit);
-    //             dotout << "{ rank=same; Cycle" << cycle[*rit] <<"; " <<nid<<"; }\n";
-    //         }
-    //     }
+            // Now print ranks, as shown below
+            std::vector<ListDigraph::Node>::reverse_iterator rit;
+            for ( rit = order.rbegin(); rit != order.rend(); ++rit)
+            {
+                int nid = graph.id(*rit);
+                dotout << "{ rank=same; Cycle" << cycle[*rit] <<"; " <<nid<<"; }\n";
+            }
+        }
 
-    //     // now print the edges
-    //     for (ListDigraph::ArcIt arc(graph); arc != INVALID; ++arc)
-    //     {
-    //         ListDigraph::Node srcNode = graph.source(arc);
-    //         ListDigraph::Node dstNode = graph.target(arc);
-    //         int srcID = graph.id( srcNode );
-    //         int dstID = graph.id( dstNode );
+        // now print the edges
+        for (ListDigraph::ArcIt arc(graph); arc != INVALID; ++arc)
+        {
+            ListDigraph::Node srcNode = graph.source(arc);
+            ListDigraph::Node dstNode = graph.target(arc);
+            int srcID = graph.id( srcNode );
+            int dstID = graph.id( dstNode );
 
-    //         if(WithCritical)
-    //             EdgeStyle = ( isInCritical[arc]==true ) ? EdgeStyle2 : EdgeStyle1;
+            if(WithCritical)
+                EdgeStyle = ( isInCritical[arc]==true ) ? EdgeStyle2 : EdgeStyle1;
 
-    //         dotout << dec
-    //             << "\"" << srcID << "\""
-    //             << "->"
-    //             << "\"" << dstID << "\""
-    //             << "[ label=\""
-    //             << "q" << cause[arc]
-    //             << " , " << weight[arc]
-    //             << " , " << DepTypesNames[ depType[arc] ]
-    //             <<"\""
-    //             << " " << EdgeStyle << " "
-    //             << "]"
-    //             << endl;
-    //     }
+            dotout << dec
+                << "\"" << srcID << "\""
+                << "->"
+                << "\"" << dstID << "\""
+                << "[ label=\""
+                << "q" << cause[arc]
+                << " , " << weight[arc]
+                << " , " << DepTypesNames[ depType[arc] ]
+                <<"\""
+                << " " << EdgeStyle << " "
+                << "]"
+                << endl;
+        }
 
-    //     dotout << "}" << endl;
-    // }
+        dotout << "}" << endl;
+    }
 
-    // void PrintDot()
-    // {
-    //     IOUT("Printing Dependence Graph in DOT");
-    //     ofstream dotout;
-    //     string dotfname(ql::options::get("output_dir") + "/dependenceGraph.dot");
-    //     dotout.open(dotfname, ios::binary);
-    //     if ( dotout.fail() )
-    //     {
-    //         EOUT("opening file " << dotfname << std::endl
-    //                  << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
-    //         return;
-    //     }
-
-    //     ListDigraph::NodeMap<size_t> cycle(graph);
-    //     std::vector<ListDigraph::Node> order;
-    //     PrintDot1_(false, false, cycle, order, dotout);
-    //     dotout.close();
-    // }
+    void get_dot(std::string & dot)
+    {
+        stringstream ssdot;
+        ListDigraph::NodeMap<size_t> cycle(graph);
+        std::vector<ListDigraph::Node> order;
+        get_dot_asap_(false, false, cycle, order, ssdot);
+        dot = ssdot.str();
+    }
 
 private:
 
 // =========== pre179 schedulers
 
-    void TopologicalSort(std::vector<ListDigraph::Node> & order)
+    void topological_sort(std::vector<ListDigraph::Node> & order)
     {
         // DOUT("Performing Topological sort.");
         ListDigraph::NodeMap<int> rorder(graph);
@@ -909,10 +900,10 @@ private:
         // }
     }
 
-    void PrintTopologicalOrder()
+    void print_topological_order()
     {
         std::vector<ListDigraph::Node> order;
-        TopologicalSort(order);
+        topological_sort(order);
 
         COUT("Printing nodes in Topological order");
         for ( std::vector<ListDigraph::Node>::reverse_iterator it = order.rbegin(); it != order.rend(); ++it)
@@ -926,7 +917,7 @@ private:
     void schedule_asap_(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
     {
         DOUT("Performing ASAP Scheduling");
-        TopologicalSort(order);
+        topological_sort(order);
 
         std::vector<ListDigraph::Node>::reverse_iterator currNode = order.rbegin();
         cycle[*currNode]=0; // src dummy in cycle 0
@@ -956,7 +947,7 @@ private:
                        ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
     {
         DOUT("Performing RC ASAP Scheduling");
-        TopologicalSort(order);
+        topological_sort(order);
 
         std::vector<ListDigraph::Node>::reverse_iterator currNode = order.rbegin();
         size_t currCycle=0;
@@ -1091,7 +1082,6 @@ private:
     //     ListDigraph::NodeMap<size_t> cycle(graph);
     //     std::vector<ListDigraph::Node> order;
     //     schedule_asap_(cycle,order);
-
     //     COUT("\nPrinting ASAP Schedule");
     //     std::cout << "Cycle <- Instruction " << std::endl;
     //     std::vector<ListDigraph::Node>::reverse_iterator it;
@@ -1101,41 +1091,21 @@ private:
     //     }
     // }
 
-    // std::string GetDotScheduleASAP()
-    // {
-    //     stringstream dotout;
-    //     ListDigraph::NodeMap<size_t> cycle(graph);
-    //     std::vector<ListDigraph::Node> order;
-    //     schedule_asap_(cycle,order);
-    //     PrintDot1_(false,true,cycle,order,dotout);
-    //     return dotout.str();
-    // }
 
-    // void PrintDotScheduleASAP()
-    // {
-    //     ofstream dotout;
-    //     string dotfname( ql::options::get("output_dir") + "/scheduledASAP.dot");
-    //     dotout.open( dotfname, ios::binary);
-    //     if ( dotout.fail() )
-    //     {
-    //         EOUT("opening file " << dotfname << std::endl
-    //                  << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
-    //         return;
-    //     }
-
-    //     IOUT("Printing Scheduled Graph in " << dotfname);
-    //     dotout << GetDotScheduleASAP();
-    //     dotout.close();
-    // }
-
-
-    ql::ir::bundles_t schedule_asap_pre179()
+    ql::ir::bundles_t schedule_asap_pre179(std::string & sched_dot)
     {
         DOUT("Scheduling ASAP to get bundles ...");
         ql::ir::bundles_t bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         schedule_asap_(cycle, order);
+
+        if(ql::options::get("print_dot_graphs") == "yes")
+        {
+            stringstream ssdot;
+            get_dot_asap_(false, true, cycle, order, ssdot);
+            sched_dot = ssdot.str();
+        }
 
         typedef std::vector<ql::gate*> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
@@ -1193,13 +1163,21 @@ private:
 
 
     // the following with rc and buffer-buffer delays
-    ql::ir::bundles_t schedule_asap_pre179(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
+    ql::ir::bundles_t schedule_asap_pre179(ql::arch::resource_manager_t & rm, 
+        const ql::quantum_platform & platform, std::string & sched_dot)
     {
         DOUT("RC Scheduling ASAP to get bundles ...");
         ql::ir::bundles_t bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         schedule_asap_(cycle, order, rm, platform);
+
+        if(ql::options::get("print_dot_graphs") == "yes")
+        {
+            stringstream ssdot;
+            get_dot_asap_(false, true, cycle, order, ssdot);
+            sched_dot = ssdot.str();
+        }
 
         typedef std::vector<ql::gate*> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
@@ -1303,7 +1281,7 @@ private:
     void schedule_alap_(ListDigraph::NodeMap<size_t> & cycle, std::vector<ListDigraph::Node> & order)
     {
         DOUT("Performing ALAP Scheduling");
-        TopologicalSort(order);
+        topological_sort(order);
 
         std::vector<ListDigraph::Node>::iterator currNode = order.begin();
         cycle[*currNode]=MAX_CYCLE;
@@ -1339,7 +1317,7 @@ private:
     {
         DOUT("Performing RC ALAP Scheduling");
 
-        TopologicalSort(order);
+        topological_sort(order);
 
         std::vector<ListDigraph::Node>::iterator currNode = order.begin();
         cycle[*currNode]=MAX_CYCLE;          // sink node
@@ -1476,142 +1454,119 @@ private:
     //     }
     // }
 
-    // void PrintDot2_(
-    //             bool WithCritical,
-    //             bool WithCycles,
-    //             ListDigraph::NodeMap<size_t> & cycle,
-    //             std::vector<ListDigraph::Node> & order,
-    //             std::ostream& dotout
-    //             )
-    // {
-    //     ListDigraph::ArcMap<bool> isInCritical(graph);
-    //     if(WithCritical)
-    //     {
-    //         for (ListDigraph::ArcIt a(graph); a != INVALID; ++a)
-    //         {
-    //             isInCritical[a] = false;
-    //             for ( Path<ListDigraph>::ArcIt ap(p); ap != INVALID; ++ap )
-    //             {
-    //                 if(a==ap)
-    //                 {
-    //                     isInCritical[a] = true;
-    //                     break;
-    //                 }
-    //             }
-    //         }
-    //     }
+    void get_dot_alap_(
+                bool WithCritical,
+                bool WithCycles,
+                ListDigraph::NodeMap<size_t> & cycle,
+                std::vector<ListDigraph::Node> & order,
+                std::ostream& dotout
+                )
+    {
+        ListDigraph::ArcMap<bool> isInCritical(graph);
+        Path<ListDigraph> p;
+        if(WithCritical)
+        {
+            for (ListDigraph::ArcIt a(graph); a != INVALID; ++a)
+            {
+                isInCritical[a] = false;
+                for ( Path<ListDigraph>::ArcIt ap(p); ap != INVALID; ++ap )
+                {
+                    if(a==ap)
+                    {
+                        isInCritical[a] = true;
+                        break;
+                    }
+                }
+            }
+        }
 
-    //     string NodeStyle(" fontcolor=black, style=filled, fontsize=16");
-    //     string EdgeStyle1(" color=black");
-    //     string EdgeStyle2(" color=red");
-    //     string EdgeStyle = EdgeStyle1;
+        string NodeStyle(" fontcolor=black, style=filled, fontsize=16");
+        string EdgeStyle1(" color=black");
+        string EdgeStyle2(" color=red");
+        string EdgeStyle = EdgeStyle1;
 
-    //     dotout << "digraph {\ngraph [ rankdir=TD; ]; // or rankdir=LR"
-    //         << "\nedge [fontsize=16, arrowhead=vee, arrowsize=0.5];"
-    //         << endl;
+        dotout << "digraph {\ngraph [ rankdir=TD; ]; // or rankdir=LR"
+            << "\nedge [fontsize=16, arrowhead=vee, arrowsize=0.5];"
+            << endl;
 
-    //     // first print the nodes
-    //     for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
-    //     {
-    //         int nid = graph.id(n);
-    //         string nodeName = name[n];
-    //         dotout  << "\"" << nid << "\""
-    //                 << " [label=\" " << nodeName <<" \""
-    //                 << NodeStyle
-    //                 << "];" << endl;
-    //     }
+        // first print the nodes
+        for (ListDigraph::NodeIt n(graph); n != INVALID; ++n)
+        {
+            int nid = graph.id(n);
+            string nodeName = name[n];
+            dotout  << "\"" << nid << "\""
+                    << " [label=\" " << nodeName <<" \""
+                    << NodeStyle
+                    << "];" << endl;
+        }
 
-    //     if( WithCycles)
-    //     {
-    //         // Print cycle numbers as timeline, as shown below
-    //         size_t cn=0,TotalCycles = MAX_CYCLE - cycle[ *( order.rbegin() ) ];
-    //         dotout << "{\nnode [shape=plaintext, fontsize=16, fontcolor=blue]; \n";
+        if( WithCycles)
+        {
+            // Print cycle numbers as timeline, as shown below
+            size_t cn=0,TotalCycles = MAX_CYCLE - cycle[ *( order.rbegin() ) ];
+            dotout << "{\nnode [shape=plaintext, fontsize=16, fontcolor=blue]; \n";
 
-    //         for(cn=0;cn<=TotalCycles;++cn)
-    //         {
-    //             if(cn>0)
-    //                 dotout << " -> ";
-    //             dotout << "Cycle" << cn;
-    //         }
-    //         dotout << ";\n}\n";
+            for(cn=0;cn<=TotalCycles;++cn)
+            {
+                if(cn>0)
+                    dotout << " -> ";
+                dotout << "Cycle" << cn;
+            }
+            dotout << ";\n}\n";
 
-    //         // Now print ranks, as shown below
-    //         std::vector<ListDigraph::Node>::reverse_iterator rit;
-    //         for ( rit = order.rbegin(); rit != order.rend(); ++rit)
-    //         {
-    //             int nid = graph.id(*rit);
-    //             dotout << "{ rank=same; Cycle" << TotalCycles - (MAX_CYCLE - cycle[*rit]) <<"; " <<nid<<"; }\n";
-    //         }
-    //     }
+            // Now print ranks, as shown below
+            std::vector<ListDigraph::Node>::reverse_iterator rit;
+            for ( rit = order.rbegin(); rit != order.rend(); ++rit)
+            {
+                int nid = graph.id(*rit);
+                dotout << "{ rank=same; Cycle" << TotalCycles - (MAX_CYCLE - cycle[*rit]) <<"; " <<nid<<"; }\n";
+            }
+        }
 
-    //     // now print the edges
-    //     for (ListDigraph::ArcIt arc(graph); arc != INVALID; ++arc)
-    //     {
-    //         ListDigraph::Node srcNode = graph.source(arc);
-    //         ListDigraph::Node dstNode = graph.target(arc);
-    //         int srcID = graph.id( srcNode );
-    //         int dstID = graph.id( dstNode );
+        // now print the edges
+        for (ListDigraph::ArcIt arc(graph); arc != INVALID; ++arc)
+        {
+            ListDigraph::Node srcNode = graph.source(arc);
+            ListDigraph::Node dstNode = graph.target(arc);
+            int srcID = graph.id( srcNode );
+            int dstID = graph.id( dstNode );
 
-    //         if(WithCritical)
-    //             EdgeStyle = ( isInCritical[arc]==true ) ? EdgeStyle2 : EdgeStyle1;
+            if(WithCritical)
+                EdgeStyle = ( isInCritical[arc]==true ) ? EdgeStyle2 : EdgeStyle1;
 
-    //         dotout << dec
-    //             << "\"" << srcID << "\""
-    //             << "->"
-    //             << "\"" << dstID << "\""
-    //             << "[ label=\""
-    //             << "q" << cause[arc]
-    //             << " , " << weight[arc]
-    //             << " , " << DepTypesNames[ depType[arc] ]
-    //             <<"\""
-    //             << " " << EdgeStyle << " "
-    //             << "]"
-    //             << endl;
-    //     }
+            dotout << dec
+                << "\"" << srcID << "\""
+                << "->"
+                << "\"" << dstID << "\""
+                << "[ label=\""
+                << "q" << cause[arc]
+                << " , " << weight[arc]
+                << " , " << DepTypesNames[ depType[arc] ]
+                <<"\""
+                << " " << EdgeStyle << " "
+                << "]"
+                << endl;
+        }
 
-    //     dotout << "}" << endl;
-    // }
-
-    // void PrintDotScheduleALAP()
-    // {
-    //     ofstream dotout;
-    //     string dotfname(ql::options::get("output_dir") + "/scheduledALAP.dot");
-    //     dotout.open( dotfname, ios::binary);
-    //     if ( dotout.fail() )
-    //     {
-    //         EOUT("Error opening file " << dotfname << std::endl
-    //                  << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
-    //         return;
-    //     }
-
-    //     IOUT("Printing Scheduled Graph in " << dotfname);
-    //     ListDigraph::NodeMap<size_t> cycle(graph);
-    //     std::vector<ListDigraph::Node> order;
-    //     schedule_alap_(cycle,order);
-    //     PrintDot2_(false,true,cycle,order,dotout);
-
-    //     dotout.close();
-    // }
-
-    // std::string GetDotScheduleALAP()
-    // {
-    //     stringstream dotout;
-    //     ListDigraph::NodeMap<size_t> cycle(graph);
-    //     std::vector<ListDigraph::Node> order;
-    //     schedule_alap_(cycle,order);
-    //     PrintDot2_(false,true,cycle,order,dotout);
-    //     return dotout.str();
-    // }
+        dotout << "}" << endl;
+    }
 
 
     // the following without rc and buffer-buffer delays
-    ql::ir::bundles_t schedule_alap_pre179()
+    ql::ir::bundles_t schedule_alap_pre179(std::string & sched_dot)
     {
         DOUT("Scheduling ALAP to get bundles ...");
         ql::ir::bundles_t bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         schedule_alap_(cycle,order);
+
+        if(ql::options::get("print_dot_graphs") == "yes")
+        {
+            stringstream ssdot;
+            get_dot_alap_(false, true, cycle, order, ssdot);
+            sched_dot = ssdot.str();
+        }
 
         typedef std::vector<ql::gate*> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
@@ -1668,13 +1623,20 @@ private:
 
     // the following with rc and buffer-buffer delays
     ql::ir::bundles_t schedule_alap_pre179(ql::arch::resource_manager_t & rm, 
-        const ql::quantum_platform & platform)
+        const ql::quantum_platform & platform, std::string & sched_dot)
     {
         DOUT("RC Scheduling ALAP to get bundles ...");
         ql::ir::bundles_t bundles;
         ListDigraph::NodeMap<size_t> cycle(graph);
         std::vector<ListDigraph::Node> order;
         schedule_alap_(cycle, order, rm, platform);
+
+        if(ql::options::get("print_dot_graphs") == "yes")
+        {
+            stringstream ssdot;
+            get_dot_alap_(false, true, cycle, order, ssdot);
+            sched_dot = ssdot.str();
+        }
 
         typedef std::vector<ql::gate*> insInOneCycle;
         std::map<size_t,insInOneCycle> insInAllCycles;
@@ -1847,7 +1809,7 @@ private:
         // order becomes a reversed topological order of the nodes
         // don't know why it is done, since the nodes already are in topological order
         // that they are is a consequence of dep graph computation which is based on this original order
-        TopologicalSort(order);
+        topological_sort(order);
 
         // compute cycle itself as asap as first approximation of result
         // when schedule is already uniform, nothing changes
@@ -2089,7 +2051,11 @@ private:
         return bundles;
     }
 
-// =========== post179 plain schedulers, just ASAP and ALAP, no resources, etc.
+
+
+
+
+// =========== post179 plain schedulers, just ASAP and ALAP, without RC
 
 /*
     Summary
@@ -2275,6 +2241,7 @@ private:
             // DOUT("... gate: " << gp->qasm() << " in private parallel section");
             currBundle.duration_in_cycles = std::max(currBundle.duration_in_cycles, (gp->duration+cycle_time-1)/cycle_time); 
         }
+
         if (!currBundle.parallel_sections.empty())
         {
             // finish currBundle (which is last bundle) at currCycle
@@ -2505,7 +2472,7 @@ private:
 
     // Set the curr_cycle of the scheduling algorithm to start at the appropriate end as well;
     // note that the cycle attributes will be shifted down to start at 1 after backward scheduling.
-    void InitAvailable(std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir, size_t& curr_cycle)
+    void init_available(std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir, size_t& curr_cycle)
     {
         avlist.clear();
         if (ql::forward_scheduling == dir)
@@ -2624,7 +2591,7 @@ private:
     //  all its predecessors were scheduled (forward scheduling) or
     //  all its successors were scheduled (backward scheduling)
     // update its cycle attribute to reflect these dependences;
-    // avlist is initialized with s or t as first element by InitAvailable
+    // avlist is initialized with s or t as first element by init_available
     // avlist is kept ordered on deep-criticality, non-increasing (i.e. highest deep-criticality first)
     void MakeAvailable(ListDigraph::Node n, std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir)
     {
@@ -2910,7 +2877,7 @@ private:
             scheduled[n] = false;   // none were scheduled
         }
         size_t  curr_cycle;         // current cycle for which instructions are sought
-        InitAvailable(avlist, dir, curr_cycle);     // first node (SOURCE/SINK) is made available and curr_cycle set
+        init_available(avlist, dir, curr_cycle);     // first node (SOURCE/SINK) is made available and curr_cycle set
         set_remaining(dir);         // for each gate, number of cycles until end of schedule
 
         DOUT("... loop over avlist until it is empty");
@@ -3238,11 +3205,11 @@ public:
 
 // =========== scheduling entry points switching out to pre179 or post179
 
-    ql::ir::bundles_t schedule_asap()
+    ql::ir::bundles_t schedule_asap(std::string & sched_dot)
     {
         if (ql::options::get("scheduler_post179") == "no")
         {
-            return schedule_asap_pre179();
+            return schedule_asap_pre179(sched_dot);
         }
         else
         {
@@ -3250,11 +3217,12 @@ public:
         }
     }
 
-    ql::ir::bundles_t schedule_asap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
+    ql::ir::bundles_t schedule_asap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform,
+        std::string & sched_dot)
     {
         if (ql::options::get("scheduler_post179") == "no")
         {
-            return schedule_asap_pre179(rm, platform);
+            return schedule_asap_pre179(rm, platform, sched_dot);
         }
         else
         {
@@ -3262,11 +3230,11 @@ public:
         }
     }
 
-    ql::ir::bundles_t schedule_alap()
+    ql::ir::bundles_t schedule_alap(std::string & sched_dot)
     {
         if (ql::options::get("scheduler_post179") == "no")
         {
-            return schedule_alap_pre179();
+            return schedule_alap_pre179(sched_dot);
         }
         else
         {
@@ -3274,11 +3242,12 @@ public:
         }
     }
 
-    ql::ir::bundles_t schedule_alap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform)
+    ql::ir::bundles_t schedule_alap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform,
+        std::string & sched_dot)
     {
         if (ql::options::get("scheduler_post179") == "no")
         {
-            return schedule_alap_pre179(rm, platform);
+            return schedule_alap_pre179(rm, platform, sched_dot);
         }
         else
         {

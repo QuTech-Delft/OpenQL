@@ -14,6 +14,7 @@ class Test_Configuration(unittest.TestCase):
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('log_level', 'LOG_WARNING')
+        ql.set_option('write_qasm_files', 'yes')
 
     def test_case_insensitivity(self):
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
