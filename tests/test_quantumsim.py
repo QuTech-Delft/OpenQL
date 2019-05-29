@@ -23,7 +23,7 @@ class Test_quantumsim(unittest.TestCase):
         num_qubits = 2
         p = ql.Program('aProgram', platform, num_qubits)
         sweep_points = [1, 2]
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         # create a kernel
         k = ql.Kernel('aKernel', platform, num_qubits)

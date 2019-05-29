@@ -30,7 +30,7 @@ class Test_sweep_points(unittest.TestCase):
 
         # create a program
         p = ql.Program("aProgram", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         # add kernel to program
         p.add_kernel(k)
@@ -47,6 +47,26 @@ class Test_sweep_points(unittest.TestCase):
         # compare list in json with initial list of sweep_points
         matched = [(i, j) for i, j in zip(config['measurement_points'], sweep_points)]
         self.assertEqual(len(matched), len(sweep_points))
+
+    def test_no_sweep_points(self):
+        nqubits = 1
+
+        # create a kernel
+        k = ql.Kernel("aKernel", platf, nqubits)
+
+        # populate a kernel
+        k.prepz(0)
+        k.measure(0)
+
+        # create a program
+        p = ql.Program("aProgram", platf, nqubits)
+
+        # add kernel to program
+        p.add_kernel(k)
+
+        # compile
+        p.compile()
+
 
 if __name__ == '__main__':
     unittest.main()

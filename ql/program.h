@@ -543,7 +543,7 @@ class quantum_program
          }
          else
          {
-            EOUT("cannot write sweepoint file : sweep point array is empty !");
+            IOUT("sweep points file not generated as sweep point array is empty !");
          }
 
 	      IOUT("compilation of program '" << name << "' done.");

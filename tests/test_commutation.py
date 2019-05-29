@@ -46,7 +46,7 @@ class Test_commutation(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("test_cnot_controlcommute", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -84,7 +84,7 @@ class Test_commutation(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("test_cnot_targetcommute", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -122,7 +122,7 @@ class Test_commutation(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("test_cz_anycommute", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -164,7 +164,7 @@ class Test_commutation(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("test_cnot_mixedcommute", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 

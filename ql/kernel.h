@@ -507,27 +507,41 @@ public:
             result = true;
         }
         else if( gname == "toffoli" )
-        {
-            c.push_back(new ql::toffoli(qubits[0], qubits[1], qubits[2]) );
-            result = true;
-        }
-        else if( gname == "swap" )
-        {
-            c.push_back(new ql::swap(qubits[0], qubits[1]) );
-            result = true;
-        }
+            { c.push_back(new ql::toffoli(qubits[0], qubits[1], qubits[2]) ); result = true; }
+        else if( gname == "swap" )       { c.push_back(new ql::swap(qubits[0], qubits[1]) ); result = true; }
         else if( gname == "barrier")
         {
+            /*
+            wait/barrier is applied on the qubits specified as arguments.
+            if no qubits are specified, then wait/barrier is applied on all qubits
+            */
+            if(qubits.size() == 0) // i.e. no qubits specified
+            {
+                for(size_t q=0; q<qubit_count; q++)
+                    qubits.push_back(q);
+            }
+
             c.push_back(new ql::wait(qubits, 0, 0));
             result = true;
         }
         else if( gname == "wait")
         {
+            /*
+            wait/barrier is applied on the qubits specified as arguments.
+            if no qubits are specified, then wait/barrier is applied on all qubits
+            */
+            if(qubits.size() == 0) // i.e. no qubits specified
+            {
+                for(size_t q=0; q<qubit_count; q++)
+                    qubits.push_back(q);
+            }
+
             size_t duration_in_cycles = std::ceil(static_cast<float>(duration)/cycle_time);
             c.push_back(new ql::wait(qubits, duration, duration_in_cycles));
             result = true;
         }
-        else result = false;
+        else
+            result = false;
 
         return result;
     }
