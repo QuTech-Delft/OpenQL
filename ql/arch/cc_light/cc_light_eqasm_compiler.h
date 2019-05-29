@@ -738,14 +738,17 @@ public:
         // schedule with platform resource constraints
         ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, num_qubits);
 
-        // write RC scheduled bundles with parallelism as simple QASM file
-        std::stringstream sched_qasm;
-        sched_qasm <<"qubits " << num_qubits << "\n\n"
-                   << ".fused_kernels";
-        string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
-        IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << fname);
-        sched_qasm << ql::ir::qasm(bundles);
-        ql::utils::write_file(fname, sched_qasm.str());
+        if( ql::options::get("write_qasm_files") == "yes")
+        {
+            // write RC scheduled bundles with parallelism as simple QASM file
+            std::stringstream sched_qasm;
+            sched_qasm <<"qubits " << num_qubits << "\n\n"
+                       << ".fused_kernels";
+            string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
+            IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << fname);
+            sched_qasm << ql::ir::qasm(bundles);
+            ql::utils::write_file(fname, sched_qasm.str());
+        }
 
         MaskManager mask_manager;
         // write scheduled bundles with parallelism in cc-light syntax
@@ -1005,7 +1008,7 @@ public:
         // generate_opcode_cs_files(platform);
         MaskManager mask_manager;
 
-        std::stringstream ssqisa, sskernels_qisa;
+        std::stringstream ssqasm, ssqisa, sskernels_qisa;
         sskernels_qisa << "start:" << std::endl;
         for(auto &kernel : kernels)
         {
@@ -1035,10 +1038,8 @@ public:
                 // decompose meta-instructions after scheduling
                 decompose_post_schedule(bundles, platform);
 
-                // std::cout << "QASM" << std::endl;
-                // std::cout << ql::ir::qasm(bundles) << std::endl;
-
                 sskernels_qisa << bundles2qisa(bundles, platform, mask_manager);
+                ssqasm << ql::ir::qasm(bundles) << std::endl;
             }
             sskernels_qisa << get_epilogue(kernel);
         }
@@ -1048,9 +1049,17 @@ public:
                   << "    nop" << std::endl;
 
         ssqisa << mask_manager.getMaskInstructions() << sskernels_qisa.str();
-        // std::cout << ssqisa.str();
 
-        // write qisa file
+        if( ql::options::get("write_qasm_files") == "yes")
+        {
+            // write RC scheduled bundles with parallelism as QASM file
+            ssqasm <<"qubits " << num_qubits << "\n\n";
+            string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
+            IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << fname);
+            ql::utils::write_file(fname, ssqasm.str());
+        }
+
+        // write cc-light qisa file
         std::ofstream fout;
         std::string qisafname( ql::options::get("output_dir") + "/" + prog_name + ".qisa");
         IOUT("Writing CC-Light QISA to " << qisafname);
