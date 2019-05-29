@@ -757,7 +757,7 @@ public:
         // schedule with platform resource constraints
         ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, num_qubits);
 
-        if( ql::options::get("write_gasm_files") == "yes")
+        if( ql::options::get("write_qasm_files") == "yes")
         {
             // write RC scheduled bundles with parallelism as simple QASM file
             std::stringstream sched_qasm;
@@ -948,7 +948,7 @@ public:
 
         ssqisa << mask_manager.getMaskInstructions() << sskernels_qisa.str();
 
-        if( ql::options::get("write_gasm_files") == "yes")
+        if( ql::options::get("write_qasm_files") == "yes")
         {
             // write RC scheduled bundles with parallelism as QASM file
             ssqasm <<"qubits " << num_qubits << "\n\n";

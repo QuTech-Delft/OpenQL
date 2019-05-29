@@ -15,6 +15,7 @@ class Test_commutation(unittest.TestCase):
         ql.set_option("scheduler_uniform", "no")
         ql.set_option('log_level', 'LOG_WARNING')
         ql.set_option('scheduler', 'ASAP')
+        ql.set_option('write_qasm_files', 'yes')
 
     def test_cnot_controlcommute(self):
         config_fn = os.path.join(curdir, 'test_179.json')

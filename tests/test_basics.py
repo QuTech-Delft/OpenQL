@@ -14,6 +14,7 @@ class Test_basic(unittest.TestCase):
         ql.set_option('optimize', 'no')
         ql.set_option('log_level', 'LOG_WARNING')
         ql.set_option('use_default_gates', 'no')
+        ql.set_option('write_qasm_files', 'yes')
 
         # TODO cleanup
         ql.set_option('scheduler', 'ALAP')

@@ -457,7 +457,7 @@ class quantum_program
             throw ql::exception("Error: Unknown option '"+tdopt+"' set for decompose_toffoli !",false);
          }
 
-        if( ql::options::get("write_gasm_files") == "yes")
+        if( ql::options::get("write_qasm_files") == "yes")
         {
             std::stringstream ss_qasm;
             ss_qasm << ql::options::get("output_dir") << "/" << name << ".qasm";
@@ -580,7 +580,7 @@ class quantum_program
             }
          }
 
-         if( ql::options::get("write_gasm_files") == "yes")
+         if( ql::options::get("write_qasm_files") == "yes")
          {
             string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
             IOUT("writing scheduled qasm to '" << fname << "' ...");
