@@ -1,4 +1,4 @@
-//#define INITIALPLACE 1
+#define INITIALPLACE 1
 /**
  * @file   mapper.h
  * @date   06/2018 - now
@@ -2160,6 +2160,7 @@ void Init(Grid* g, ql::quantum_platform *p)
     nvq = p->qubit_number;  // same range; when not, take set from config and create v2i earlier
     // DOUT("... number of real qubits (locations): " << nlocs);
     gridp = g;
+    DOUT("Init: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp);
 }
 
 // find an initial placement of the virtual qubits for the given circuit
@@ -2441,19 +2442,41 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result, double& timeta
     }
     mip.obj(objective);
     // DOUT("MINIMIZE " << objs);
+
+    DOUT("... v2r before solving, nvq=" << nvq);
+    for (size_t v=0; v<nvq; v++)
+    {
+        DOUT("... about to print v2r[" << v << "]= ...");
+        DOUT("....." << v2r[v]);
+    }
+    DOUT("..1 nvq=" << nvq);
     
     // solve the problem
     WOUT("... computing initial placement using MIP, this may take a while ...");
     DOUT("InitialPlace: solving the problem, this may take a while ...");
-    Mip::SolveExitStatus s = mip.solve();
+    DOUT("..2 nvq=" << nvq);
+    Mip::SolveExitStatus s;
+    DOUT("Just before solve: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp);
+    DOUT("Just before solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
+    DOUT("..2b nvq=" << nvq);
+    {
+        s = mip.solve();
+    }
+    DOUT("..3 nvq=" << nvq);
+    DOUT("Just after solve: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp);
+    DOUT("Just after solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
+    MapperAssert(nvq == nlocs);         // consistency check, mainly to let it crash
 
     // computing timetaken, stop interval timer
+    DOUT("..4 nvq=" << nvq);
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     duration<double> time_span = t2 - t1;
     timetaken = time_span.count();
+    DOUT("..5 nvq=" << nvq);
 
     // DOUT("... determine result of solving");
     Mip::ProblemType pt = mip.type();
+    DOUT("..6 nvq=" << nvq);
     if (s != Mip::SOLVED || pt != Mip::OPTIMAL)
     {
         DOUT("... InitialPlace: no (optimal) solution found; solve returned:"<< s << " type returned:" << pt);
@@ -2461,6 +2484,7 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result, double& timeta
         DOUT("InitialPlace.PlaceBody [FAILED, DID NOT FIND MAPPING]");
         return;
     }
+    DOUT("..7 nvq=" << nvq);
 
     // return new mapping as result in v2r
 
@@ -2469,15 +2493,18 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result, double& timeta
     // and fill v2r with the found locations for the used virtual qubits;
     // the unused mapped virtual qubits are mapped to an arbitrary permutation of the remaining locations;
     // the latter must be updated to generate swaps when mapping multiple kernels
-    DOUT("... interpret result and copy to Virt2Real");
+    DOUT("..8 nvq=" << nvq);
+    DOUT("... interpret result and copy to Virt2Real, nvq=" << nvq);
     for (size_t v=0; v<nvq; v++)
     {
+        DOUT("... about to set v2r to undefined for v " << v);
         v2r[v] = UNDEFINED_QUBIT;      // i.e. undefined, i.e. v is not an index of a used virtual qubit
     }
     for ( size_t i=0; i<nfac; i++ )
     {
         size_t v;   // found virtual qubit index v represented by facility i
         // use v2i backward to find virtual qubit v represented by facility i
+        DOUT("... about to inspect v2i to get solution and set it in v2r for facility " << i);
         for (v=0; v<nvq; v++)
         {
             if (v2i[v] == i)
@@ -2497,6 +2524,7 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result, double& timeta
             }
         }
         MapperAssert(k < nlocs);  // each facility i by definition represents a used qubit so must have got a location
+        DOUT("... end loop body over nfac");
     }
 
     auto mapinitone2oneopt = ql::options::get("mapinitone2one");
@@ -2534,6 +2562,7 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result, double& timeta
                 MapperAssert(k < nlocs);  // when a virtual qubit is not used, there must be a location that is not used
                 v2r[v] = k;
             }
+            DOUT("... end loop body over nvq when mapinitone2oneopt");
         }
     }
     if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
@@ -2552,7 +2581,7 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result, double& timeta
 // and this works as well ...
 bool PlaceWrapper( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& timetaken, std::string& initialplaceopt)
 {
-    // DOUT("InitialPlace.PlaceWrapper called");
+    DOUT("InitialPlace.PlaceWrapper called");
     std::mutex  m;
     std::condition_variable cv;
 
@@ -2579,16 +2608,16 @@ bool PlaceWrapper( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& tim
     // v2r and result are allocated on stack of main thread by some ancestor so be careful with threading
     std::thread t([&cv, this, &circ, &v2r, &result, &timetaken]()
         {
-            // DOUT("InitialPlace.PlaceWrapper subthread about to call PlaceBody");
+            DOUT("InitialPlace.PlaceWrapper subthread about to call PlaceBody");
             PlaceBody(circ, v2r, result, timetaken);
-            // DOUT("PlaceBody returned in subthread; about to signal the main thread");
+            DOUT("InitialPlace.PlaceBody returned in subthread; about to signal the main thread");
             cv.notify_one();        // by this, the main thread awakes from cv.wait_for without timeout
-            DOUT("Subthread with solver signaled the main thread, and is about to die");
+            DOUT("InitialPlace.PlaceWrapper subthread after signaling the main thread, and is about to die");
         }
     );
-    // DOUT("InitialPlace.PlaceWrapper main code created thread; about to call detach on it");
+    DOUT("InitialPlace.PlaceWrapper main code created thread; about to call detach on it");
     t.detach();
-    // DOUT("InitialPlace.PlaceWrapper main code detached thread");
+    DOUT("InitialPlace.PlaceWrapper main code detached thread");
     {
         std::chrono::seconds maxwaittime(waitseconds);
         std::unique_lock<std::mutex> l(m);
@@ -2605,7 +2634,7 @@ bool PlaceWrapper( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& tim
             DOUT("InitialPlace.PlaceWrapper about to return timedout==true");
             return true;
         }
-        DOUT("InitialPlace.PlaceWrapper main code awoke from waiting without timeout");
+        DOUT("InitialPlace.PlaceWrapper main code awoke from waiting without timeout, from signal sent by InitialPlace.PlaceWrapper subthread just before its death");
     }
 
     DOUT("InitialPlace.PlaceWrapper about to return timedout==false");
@@ -2625,7 +2654,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& timetaken,
     if ("yes" == initialplaceopt)
     {
         // do initial placement without time limit
-        // DOUT("Place calling PlaceBody without time limit");
+        DOUT("InitialPlace.Place calling PlaceBody without time limit");
         PlaceBody(circ, v2r, result, timetaken);
         // v2r reflects new mapping, if any found, otherwise unchanged
         DOUT("InitialPlace.Place [done, no time limit], result=" << result << " timetaken=" << timetaken << " seconds");

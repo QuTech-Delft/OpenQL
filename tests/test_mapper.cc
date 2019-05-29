@@ -894,7 +894,7 @@ int main(int argc, char ** argv)
     ql::options::set("mapper", "minextendrc"); 
     ql::options::set("mapinitone2one", "yes"); 
     ql::options::set("maplookahead", "noroutingfirst");
-    ql::options::set("initialplace", "1m"); 
+    ql::options::set("initialplace", "10s"); 
     ql::options::set("initialplaceprefix", "10"); 
     ql::options::set("mappathselect", "all"); 
     ql::options::set("mapusemoves", "yes"); 
