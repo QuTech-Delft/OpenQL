@@ -457,12 +457,15 @@ class quantum_program
             throw ql::exception("Error: Unknown option '"+tdopt+"' set for decompose_toffoli !",false);
          }
 
-         std::stringstream ss_qasm;
-         ss_qasm << ql::options::get("output_dir") << "/" << name << ".qasm";
-         std::string s = qasm();
+        if( ql::options::get("write_gasm_files") == "yes")
+        {
+            std::stringstream ss_qasm;
+            ss_qasm << ql::options::get("output_dir") << "/" << name << ".qasm";
+            std::string s = qasm();
 
-         IOUT("writing un-scheduled qasm to '" << ss_qasm.str() << "' ...");
-         ql::utils::write_file(ss_qasm.str(), s);
+            IOUT("writing un-scheduled qasm to '" << ss_qasm.str() << "' ...");
+            ql::utils::write_file(ss_qasm.str(), s);
+         }
 
          schedule();
 
@@ -577,9 +580,12 @@ class quantum_program
             }
          }
 
-         string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
-         IOUT("writing scheduled qasm to '" << fname << "' ...");
-         ql::utils::write_file(fname, sched_qasm);
+         if( ql::options::get("write_gasm_files") == "yes")
+         {
+            string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
+            IOUT("writing scheduled qasm to '" << fname << "' ...");
+            ql::utils::write_file(fname, sched_qasm);
+         }
       }
 
       void print_interaction_matrix()

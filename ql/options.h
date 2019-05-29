@@ -36,6 +36,7 @@ namespace ql
           opt_name2opt_val["scheduler_uniform"] = "no";
           opt_name2opt_val["scheduler_commute"] = "no";
           opt_name2opt_val["scheduler_post179"] = "yes";
+          opt_name2opt_val["write_gasm_files"] = "no";
 
 
           // add options with default values and list of possible values
@@ -50,6 +51,7 @@ namespace ql
           app->add_set_ignore_case("--optimize", opt_name2opt_val["optimize"], {"yes", "no"}, "optimize or not", true);
           app->add_set_ignore_case("--print_dot_graphs", opt_name2opt_val["print_dot_graphs"], {"yes", "no"}, "print (un-)secheduled graphs in DOT format", true);
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "MA"}, "Type of decomposition used for toffoli", true);
+          app->add_set_ignore_case("--write_gasm_files", opt_name2opt_val["write_gasm_files"], {"yes", "no"}, "write (un-)secheduled (with and without resource-constraint) qasm files", true);
       }
 
       void print_current_values()
