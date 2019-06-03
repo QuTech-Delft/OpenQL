@@ -1,6 +1,6 @@
 package:
   name: openql
-  version: "0.6.0"
+  version: "0.7.0"
 
 source:
   # use the following path for the source if this recipie is inside the repo
