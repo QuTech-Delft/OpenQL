@@ -102,7 +102,8 @@ public:
     std::vector<std::string> operations;    // with operation_name==operations[qwg]
     std::map<size_t,size_t> qubit2qwg;      // on qwg==qubit2qwg[q]
 
-    qwg_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("qwgs", dir)
+    qwg_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : 
+        resource_t("qwgs", dir)
     {
         // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
@@ -211,7 +212,8 @@ public:
     std::vector<size_t> tocycle;    // is busy till cycle
     std::map<size_t,size_t> qubit2meas;
 
-    meas_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("meas_units", dir)
+    meas_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : 
+        resource_t("meas_units", dir)
     {
         // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
@@ -353,43 +355,57 @@ public:
         bool is_flux = (operation_type == "flux");
         if( is_flux )
         {
-            auto q0 = ins->operands[0];
-            auto q1 = ins->operands[1];
-            qubits_pair_t aqpair(q0, q1);
-            auto it = qubits2edge.find(aqpair);
-            if( it != qubits2edge.end() )
+            auto nopers = ins->operands.size();
+            if(nopers == 1)
             {
-                auto edge_no = qubits2edge[aqpair];
-
-                DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " is busy till/from cycle : " << state[edge_no] << " for operation: " << ins->name);
-
-                std::vector<size_t> edges2check(edge2edges[edge_no]);
-                edges2check.push_back(edge_no);
-                for(auto & e : edges2check)
+                // single qubit flux operation does not reserve an edge resource
+                DOUT(" available for single qubit flux operation: " << name);
+            }
+            else if (nopers == 2)
+            {
+                auto q0 = ins->operands[0];
+                auto q1 = ins->operands[1];
+                qubits_pair_t aqpair(q0, q1);
+                auto it = qubits2edge.find(aqpair);
+                if( it != qubits2edge.end() )
                 {
-                    if (forward_scheduling == direction)
+                    auto edge_no = qubits2edge[aqpair];
+
+                    DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle 
+                        << ", edge: " << edge_no << " is busy till/from cycle : " << state[edge_no] 
+                        << " for operation: " << ins->name);
+
+                    std::vector<size_t> edges2check(edge2edges[edge_no]);
+                    edges2check.push_back(edge_no);
+                    for(auto & e : edges2check)
                     {
-                        if( op_start_cycle < state[e] )
+                        if (forward_scheduling == direction)
                         {
-                            DOUT("    " << name << " resource busy ...");
-                            return false;
+                            if( op_start_cycle < state[e] )
+                            {
+                                DOUT("    " << name << " resource busy ...");
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            if( op_start_cycle + operation_duration > state[e] )
+                            {
+                                DOUT("    " << name << " resource busy ...");
+                                return false;
+                            }
                         }
                     }
-                    else
-                    {
-                        if( op_start_cycle + operation_duration > state[e] )
-                        {
-                            DOUT("    " << name << " resource busy ...");
-                            return false;
-                        }
-                    }
+                    DOUT("    " << name << " resource available ...");
                 }
-                DOUT("    " << name << " resource available ...");
+                else
+                {
+                    FATAL("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
+                }
             }
             else
             {
-                EOUT("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
-                throw ql::exception("[x] Error : Use of illegal edge"+std::to_string(q0)+"->"+std::to_string(q1)+"in operation:"+ins->name+" !",false);
+                FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
             }
         }
         return true;
@@ -402,28 +418,41 @@ public:
         bool is_flux = (operation_type == "flux");
         if( is_flux )
         {
-            auto q0 = ins->operands[0];
-            auto q1 = ins->operands[1];
-            qubits_pair_t aqpair(q0, q1);
-            auto edge_no = qubits2edge[aqpair];
-            if (forward_scheduling == direction)
+            auto nopers = ins->operands.size();
+            if(nopers == 1)
             {
-                state[edge_no] = op_start_cycle + operation_duration;
-                for(auto & e : edge2edges[edge_no])
-                {
-                    state[e] = op_start_cycle + operation_duration;
-                }
+                // single qubit flux operation does not reserve an edge resource
             }
-            else
+            else if (nopers == 2)
             {
-                state[edge_no] = op_start_cycle;
-                for(auto & e : edge2edges[edge_no])
+                auto q0 = ins->operands[0];
+                auto q1 = ins->operands[1];
+                qubits_pair_t aqpair(q0, q1);
+                auto edge_no = qubits2edge[aqpair];
+                if (forward_scheduling == direction)
                 {
-                    state[e] = op_start_cycle;
+                    state[edge_no] = op_start_cycle + operation_duration;
+                    for(auto & e : edge2edges[edge_no])
+                    {
+                        state[e] = op_start_cycle + operation_duration;
+                    }
                 }
+                else
+                {
+                    state[edge_no] = op_start_cycle;
+                    for(auto & e : edge2edges[edge_no])
+                    {
+                        state[e] = op_start_cycle;
+                    }
+                }
+                DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle 
+                    << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] 
+                    << " for operation: " << ins->name);
             }
-
-            DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] << " for operation: " << ins->name);
+	    else
+            {
+                FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
+            }
         }
     }
     ~edge_resource_t() {}
@@ -465,7 +494,8 @@ public:
     std::map< qubits_pair_t, size_t > qubitpair2edge;           // map: pair of qubits to edge (from grid configuration)
     std::map<size_t, std::vector<size_t> > edge_detunes_qubits; // map: edge to vector of qubits that edge detunes (resource desc.)
 
-    detuned_qubits_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("detuned_qubits", dir)
+    detuned_qubits_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : 
+        resource_t("detuned_qubits", dir)
     {
         // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
@@ -522,43 +552,57 @@ public:
         bool is_flux = (operation_type == "flux");
         if( is_flux )
         {
-            auto q0 = ins->operands[0];
-            auto q1 = ins->operands[1];
-            qubits_pair_t aqpair(q0, q1);
-            auto it = qubitpair2edge.find(aqpair);
-            if( it != qubitpair2edge.end() )
+            auto nopers = ins->operands.size();
+            if (nopers == 1)
             {
-                auto edge_no = qubitpair2edge[aqpair];
-
-                for( auto & q : edge_detunes_qubits[edge_no])
-                {
-                    DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " detuning qubit: " << q << " for operation: " << ins->name << " busy from: " << fromcycle[q] << " till: " << tocycle[q] << " with operation_type: " << operation_type);
-                    if (forward_scheduling == direction)
-                    {
-                        if ( op_start_cycle < fromcycle[q]
-                        || ( op_start_cycle < tocycle[q] && operations[q] != operation_type ) )
-                        {
-                            DOUT("    " << name << " resource busy for a two-qubit gate...");
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        if ( op_start_cycle + operation_duration > tocycle[q]
-                        || ( op_start_cycle + operation_duration > fromcycle[q] && operations[q] != operation_type ) )
-                        {
-                            DOUT("    " << name << " resource busy for a two-qubit gate...");
-                            return false;
-                        }
-                    }
-                }
+                // single qubit flux operation does not reserve a detuned qubits resource
+                DOUT(" available for single qubit flux operation: " << name);
             }
-            else
+            else if (nopers == 2)
             {
-                EOUT("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
-                throw ql::exception("[x] Error : Use of illegal edge"+std::to_string(q0)+"->"+std::to_string(q1)+"in operation:"+ins->name+" !",false);
+	    	    auto q0 = ins->operands[0];
+            	auto q1 = ins->operands[1];
+            	qubits_pair_t aqpair(q0, q1);
+            	auto it = qubitpair2edge.find(aqpair);
+            	if( it != qubitpair2edge.end() )
+            	{
+                    auto edge_no = qubitpair2edge[aqpair];
+
+                    for( auto & q : edge_detunes_qubits[edge_no])
+                    {
+                        DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " detuning qubit: " << q << " for operation: " << ins->name << " busy from: " << fromcycle[q] << " till: " << tocycle[q] << " with operation_type: " << operation_type);
+                        if (forward_scheduling == direction)
+                        {
+                            if ( op_start_cycle < fromcycle[q]
+                            || ( op_start_cycle < tocycle[q] && operations[q] != operation_type ) )
+                            {
+                                DOUT("    " << name << " resource busy for a two-qubit gate...");
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            if ( op_start_cycle + operation_duration > tocycle[q]
+                            || ( op_start_cycle + operation_duration > fromcycle[q] && operations[q] != operation_type ) )
+                            {
+                                DOUT("    " << name << " resource busy for a two-qubit gate...");
+                                return false;
+                            }
+                        }
+                    }	// for over edges
+                }   // edge found
+                else
+                {
+                    EOUT("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
+                    throw ql::exception("[x] Error : Use of illegal edge"+std::to_string(q0)+"->"+std::to_string(q1)+"in operation:"+ins->name+" !",false);
+                }
+	        }   // nopers 1 or 2
+	        else
+            {
+                FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
             }
         }
+
         bool is_mw = (operation_type == "mw");
         if ( is_mw )
         {
@@ -567,19 +611,27 @@ public:
                 DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", qubit: " << q << " for operation: " << ins->name << " busy from: " << fromcycle[q] << " till: " << tocycle[q] << " with operation_type: " << operation_type);
                 if (forward_scheduling == direction)
                 {
-                    if ( op_start_cycle < fromcycle[q]
-                    || ( op_start_cycle < tocycle[q] && operations[q] != operation_type ) )
+                    if ( op_start_cycle < fromcycle[q])
                     {
-                        DOUT("    " << name << " resource busy for a rotation ...");
+                        DOUT("    " << name << " busy for rotation: op_start cycle " << op_start_cycle << " < fromcycle[" << q << "] " << fromcycle[q] );
+                        return false;
+                    }
+                    if ( op_start_cycle < tocycle[q] && operations[q] != operation_type )
+                    {
+                        DOUT("    " << name << " busy for rotation with flux: op_start cycle " << op_start_cycle << " < tocycle[" << q << "] " << tocycle[q] );
                         return false;
                     }
                 }
                 else
                 {
-                    if ( op_start_cycle + operation_duration > tocycle[q]
-                    || ( op_start_cycle + operation_duration > fromcycle[q] && operations[q] != operation_type ) )
+                    if ( op_start_cycle + operation_duration > tocycle[q])
                     {
-                        DOUT("    " << name << " resource busy for a two-qubit gate...");
+                        DOUT("    " << name << " busy for rotation: op_start cycle " << op_start_cycle << " + duration > tocycle[" << q << "] " << tocycle[q] );
+                        return false;
+                    }
+                    if ( op_start_cycle + operation_duration > fromcycle[q] && operations[q] != operation_type )
+                    {
+                        DOUT("    " << name << " busy for rotation with flux: op_start cycle " << op_start_cycle << " + duration > fromcycle[" << q << "] " << fromcycle[q] );
                         return false;
                     }
                 }
@@ -598,40 +650,56 @@ public:
         bool is_flux = (operation_type == "flux");
         if( is_flux )
         {
-            auto q0 = ins->operands[0];
-            auto q1 = ins->operands[1];
-            qubits_pair_t aqpair(q0, q1);
-            auto edge_no = qubitpair2edge[aqpair];
-
-            for(auto & q : edge_detunes_qubits[edge_no])
+            auto nopers = ins->operands.size();
+            if (nopers == 1)
             {
-                if (forward_scheduling == direction)
+                // single qubit flux operation does not reserve a detuned qubits resource
+            }
+            else if (nopers == 2)
+            {
+                auto q0 = ins->operands[0];
+                auto q1 = ins->operands[1];
+                qubits_pair_t aqpair(q0, q1);
+                auto edge_no = qubitpair2edge[aqpair];
+
+                for(auto & q : edge_detunes_qubits[edge_no])
                 {
-                    if (operations[q] == operation_type)
+                    if (forward_scheduling == direction)
                     {
-                        tocycle[q] = std::max( tocycle[q], op_start_cycle + operation_duration);
+                        if (operations[q] == operation_type)
+                        {
+                            tocycle[q] = std::max( tocycle[q], op_start_cycle + operation_duration);
+                            DOUT("reserving " << name << ". for qubit: " << q << " reusing cycle: " << fromcycle[q] << " to extending tocycle: " << tocycle[q] << " for old operation: " << ins->name);
+                        }
+                        else
+                        {
+                            fromcycle[q] = op_start_cycle;
+                            tocycle[q] = op_start_cycle + operation_duration;
+                            operations[q] = operation_type;
+                            DOUT("reserving " << name << ". for qubit: " << q << " from fromcycle: " << fromcycle[q] << " to new tocycle: " << tocycle[q] << " for new operation: " << ins->name);
+                        }
                     }
                     else
                     {
-                        fromcycle[q] = op_start_cycle;
-                        tocycle[q] = op_start_cycle + operation_duration;
-                        operations[q] = operation_type;
+                        if (operations[q] == operation_type)
+                        {
+                            fromcycle[q] = std::min( fromcycle[q], op_start_cycle);
+                            DOUT("reserving " << name << ". for qubit: " << q << " from extended cycle: " << fromcycle[q] << " reusing tocycle: " << tocycle[q] << " for old operation: " << ins->name);
+                        }
+                        else
+                        {
+                            fromcycle[q] = op_start_cycle;
+                            tocycle[q] = op_start_cycle + operation_duration;
+                            operations[q] = operation_type;
+                            DOUT("reserving " << name << ". for qubit: " << q << " from new cycle: " << fromcycle[q] << " to tocycle: " << tocycle[q] << " for new operation: " << ins->name);
+                        }
                     }
+                    DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " edge: " << edge_no << " detunes qubit: " << q << " reserved from cycle: " << fromcycle[q] << " till cycle: " << tocycle[q] << " for operation: " << ins->name);
                 }
-                else
-                {
-                    if (operations[q] == operation_type)
-                    {
-                        fromcycle[q] = std::min( fromcycle[q], op_start_cycle);
-                    }
-                    else
-                    {
-                        fromcycle[q] = op_start_cycle;
-                        tocycle[q] = op_start_cycle + operation_duration;
-                        operations[q] = operation_type;
-                    }
-                }
-                DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " edge: " << edge_no << " detunes qubit: " << q << " reserved from cycle: " << fromcycle[q] << " till cycle: " << tocycle[q] << " for operation: " << ins->name);
+            }
+	    else
+            {
+                FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
             }
         }
         bool is_mw = (operation_type == "mw");
@@ -644,12 +712,14 @@ public:
                     if (operations[q] == operation_type)
                     {
                         tocycle[q] = std::max( tocycle[q], op_start_cycle + operation_duration);
+                        DOUT("reserving " << name << ". for qubit: " << q << " reusing cycle: " << fromcycle[q] << " to extending tocycle: " << tocycle[q] << " for old operation: " << ins->name);
                     }
                     else
                     {
                         fromcycle[q] = op_start_cycle;
                         tocycle[q] = op_start_cycle + operation_duration;
                         operations[q] = operation_type;
+                        DOUT("reserving " << name << ". for qubit: " << q << " from fromcycle: " << fromcycle[q] << " to new tocycle: " << tocycle[q] << " for new operation: " << ins->name);
                     }
                 }
                 else
@@ -657,15 +727,17 @@ public:
                     if (operations[q] == operation_type)
                     {
                         fromcycle[q] = std::min( fromcycle[q], op_start_cycle);
+                        DOUT("reserving " << name << ". for qubit: " << q << " from extended cycle: " << fromcycle[q] << " reusing tocycle: " << tocycle[q] << " for old operation: " << ins->name);
                     }
                     else
                     {
                         fromcycle[q] = op_start_cycle;
                         tocycle[q] = op_start_cycle + operation_duration;
                         operations[q] = operation_type;
+                        DOUT("reserving " << name << ". for qubit: " << q << " from new cycle: " << fromcycle[q] << " to tocycle: " << tocycle[q] << " for new operation: " << ins->name);
                     }
                 }
-                DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " for qubit: " << q << " reserved from cycle: " << fromcycle[q] << " till cycle: " << tocycle[q] << " for operation: " << ins->name);
+                DOUT("... reserved " << name << ". op_start_cycle: " << op_start_cycle << " for qubit: " << q << " reserved from cycle: " << fromcycle[q] << " till cycle: " << tocycle[q] << " for operation: " << ins->name);
             }
         }
     }

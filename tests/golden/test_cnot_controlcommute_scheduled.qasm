@@ -14,3 +14,4 @@ qubits 7
     { cnot q[3],q[0] | t q[6] | t q[1] | t q[5] }
     wait 2
     { y q[6] | y q[1] | y q[5] }
+

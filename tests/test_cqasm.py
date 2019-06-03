@@ -31,6 +31,7 @@ class Test_cqasm(unittest.TestCase):
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ASAP')
         ql.set_option('log_level', 'LOG_INFO')
+        ql.set_option('write_qasm_files', 'yes')
 
 
     def test_cqasm_default_gates(self):
