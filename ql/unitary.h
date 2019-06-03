@@ -133,8 +133,8 @@ public:
                 std::cout << "q2 is zero, only demultiplexing will be performed. q2 = " << matrix.bottomLeftCorner(n,n) << std::endl;
                 demultiplexing(matrix.topLeftCorner(n, n), matrix.bottomRightCorner(n,n), n-1);
                 // The number of gates that would be necessary minus the number that is actually necessary to implement this unitary. (two unitaries one size smaller and one uniformly controlled rotation)
-                int numberforrecursion = 3*std::pow(2, n-1) *(std::pow(2,n)-1) - ( 2*3*std::pow(2, n-2) *(std::pow(2,n-1)-1)+std::pow(2,n-2)*(std::pow(2,n)-2));
-                for(int i = 0; i < n; i++)
+                int gatessaved = 3*std::pow(2, n-1) *(std::pow(2,n)-1) - ( 2*3*std::pow(2, n-2) *(std::pow(2,n-1)-1)+std::pow(2,n-2)*(std::pow(2,n)-2));
+                for(int i = 0; i < gatessaved; i++)
                 {
                     instructionlist.push_back(0);
                 }
@@ -223,24 +223,14 @@ public:
         
         std::cout << "v1: " << v1 << std::endl;
 
-        complex_matrix v1new(p,p);
-        v1new.topLeftCorner(p/2,p/2) = v1.bottomRightCorner(p/2,p/2).conjugate();
-        v1new.topRightCorner(p/2,p/2) = - v1.bottomLeftCorner(p/2,p/2).conjugate();
-        v1new.bottomLeftCorner(p/2,p/2) = - v1.topRightCorner(p/2,p/2).conjugate();
-        v1new.bottomRightCorner(p/2,p/2) = v1.topLeftCorner(p/2,p/2).conjugate();
-        std::cout << "v1 new" << v1new << std::endl;
-        std::cout << "c: " << c << std::endl;
-        // hack for u1:
-        u1 = v1new.adjoint().inverse()*s.inverse()*q1;
-        std::cout << "corrected u1: " << u1 << std::endl;
+         std::cout << "c: " << c << std::endl;
         u1 = u1*z;
         v1 = v1*z;
         q2 = q2*v1;
         c = z*c*z;
         std::cout << "c: " << c << std::endl;
 
-        // c is correct
-        std::cout << "c: " << c << std::endl;
+        std::cout << "q1 reconstructed:" << u1*c*v1.adjoint()<< std::endl;
         int k = 0;
         for(int j = 1; j < p; j++)
         {
@@ -284,26 +274,25 @@ public:
             if(c(j,j).real() < 0)
             {
                 c(j,j) = -c(j,j);
-                u1(j,j) = -u1(j,j);
+                u1.col(j) = -u1.col(j);
             }
             if(s(j,j).real() < 0)
             {
                 s(j,j) = -s(j,j);
-                u2(j,j) = -u2(j,j);
+                u2.col(j) = -u2.col(j);
             }
         }
         std::cout << "reconstructed q1: " << u1*c*v1.adjoint() << std::endl;
         std::cout << "reconstructed q2: " << u2*s*v1.adjoint() << std::endl;
-        std::cout << "c: " << c << std::endl;
 
         v2 = complex_matrix(n/2, n/2);
-        v1 = v1.adjoint();
+        v1.adjointInPlace();
         s = -s;
         for(int i = 0; i < n/2; i++)
         {
             if(std::abs(s(i,i)) > std::abs(c(i,i)))
             {
-                complex_matrix tmp = u1.adjoint()*U.block(n/2,n/2, 0, n/2);
+                complex_matrix tmp = u1.adjoint()*U.topRightCorner(p,p);
                 v2.row(i) = tmp.row(i)/s(i,i);                
                 // std::cout << "v2 (s): " << v2 << std::endl;
                 // std::cout << "tmp (s): " << tmp << std::endl;
@@ -312,7 +301,7 @@ public:
             }
             else
             {
-                complex_matrix tmp = u2.adjoint()*U.block(n/2,n/2, n/2, n/2);
+                complex_matrix tmp = u2.adjoint()*U.bottomRightCorner(p,p);
                 v2.row(i) = tmp.row(i)/c(i,i);
                 // std::cout << "v2 (c): " << v2 << std::endl;
                 // std::cout << "tmp (c): " << tmp << std::endl;
@@ -321,6 +310,17 @@ public:
             }
         }
         std::cout << "v2: " << v2 << std::endl;
+        // U = [q1, U01] = [u1    ][c  s][v1  ]
+        //     [q2, U11] = [    u2][-s c][   v2]
+
+    
+        complex_matrix tmp(n,m);
+        tmp.topLeftCorner(p,p) = u1*c*v1;
+        tmp.bottomLeftCorner(p,p) = -u2*s*v1;
+        tmp.topRightCorner(p,p) = u1*s*v2;
+        tmp.bottomRightCorner(p,p) = u2*c*v2;
+
+        std::cout << "CSD: reconstructed U" << tmp << std::endl;
     }
 
     std::vector<double> zyz_decomp(std::vector<std::complex<double>> matrix)

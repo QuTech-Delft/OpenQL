@@ -855,7 +855,7 @@ public:
         if(n > 1)
         {
             int numberforunitary = 3*std::pow(2, n-2) *(std::pow(2,n-1)-1); //number of rotation gates needed for unitaries one size smaller than the current one
-            int numberforcontrolledrotation = std::pow(2,n-2)*(std::pow(2,n)-2); //number of gates per rotation!
+            int numberforcontrolledrotation = std::pow(2,n-2)*(std::pow(2,n)-2); //number of gates per rotation
             int start_1 = i; //= the point where the first sub unitary starts
             int start_2 = start_1 + numberforunitary + numberforcontrolledrotation; //= the point where the second sub unitary starts
             int start_3 = start_2 + numberforunitary + numberforcontrolledrotation; //= the point where the third unitary starts
@@ -882,7 +882,6 @@ public:
     void gray_code_rz( std::vector<double> instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
     {
         int idx;
-        int posc;
         c.push_back(new ql::rz(qubits[0],-instruction_list[start_index]));
         c.push_back(new ql::cnot(qubits[1], qubits[0]));
         for(int i = 1; i < std::pow(2,qubits.size()-1)-1; i++)
@@ -901,7 +900,6 @@ public:
     void gray_code_ry( std::vector<double> instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
     {
         int idx;
-        int posc;
         c.push_back(new ql::ry(qubits[0],-instruction_list[start_index]));
         c.push_back(new ql::cnot(qubits[1], qubits[0]));
         for(int i = 1; i < std::pow(2,qubits.size()-1)-1; i++)
