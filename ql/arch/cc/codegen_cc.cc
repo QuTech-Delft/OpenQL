@@ -75,14 +75,18 @@ void codegen_cc::program_start(std::string prog_name)
     vcd.start();
 
     // define qubit variables
+    vcd.scope(vcd.ST_MODULE, "qubits");
     vcdVarQubit.resize(platform->qubit_number);
     for(size_t q=0; q<platform->qubit_number; q++) {
         std::string name = "q"+std::to_string(q);
         vcdVarQubit[q] = vcd.registerVar(name, Vcd::VT_STRING);
     }
+    vcd.upscope();
 
     // define kernel variable
+    vcd.scope(vcd.ST_MODULE, "kernel");
     vcdVarKernel = vcd.registerVar("kernel", Vcd::VT_STRING);
+    vcd.upscope();
 
     // define instrument:group variables
 #endif
@@ -266,6 +270,15 @@ void codegen_cc::bundle_finish(size_t start_cycle, size_t duration_in_cycles, bo
                         FATAL("JSON key '" << controlModeName << "/result_bits' must have 1 bit per group");
                     }
                 }
+#if 0   // FIXME: OPT_VCD_OUTPUT
+                // generate wave output
+                size_t startTime = kernelStartTime + start_cycle*platform->cycle_time;
+                size_t duration_ns = groupInfo[instrIdx][group].duration_ns;
+                std::string signalValue = groupInfo[instrIdx][group].signalValue;
+                int var = 0;    // FIXME
+                vcd.change(var, startTime, signalValue);        // start of signal
+                vcd.change(var, startTime+duration_ns, "");     // end of signal
+#endif
             } // if signal defined
         } // for group
 
@@ -368,8 +381,9 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
     size_t startTime = kernelStartTime + start_cycle*platform->cycle_time;
     for(size_t i=0; i<qops.size(); i++) {
         // FIXME: improve name for 2q gates
-        vcd.change(vcdVarQubit[qops[i]], startTime, iname);             // start of instruction
-        vcd.change(vcdVarQubit[qops[i]], startTime+duration_ns, "");    // end of instruction
+        int var = vcdVarQubit[qops[i]];
+        vcd.change(var, startTime, iname);             // start of instruction
+        vcd.change(var, startTime+duration_ns, "");    // end of instruction
     }
 #endif
 
@@ -419,6 +433,7 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
 
         // expand macros in signalValue
         std::string signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
+        ql::utils::replace(signalValueString, std::string("\""), std::string(""));   // get rid of quotes
         ql::utils::replace(signalValueString, std::string("{gateName}"), iname);
         ql::utils::replace(signalValueString, std::string("{instrumentName}"), instrumentName);
         ql::utils::replace(signalValueString, std::string("{instrumentGroup}"), std::to_string(si.group));
@@ -461,9 +476,6 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
              ", si.group=" << si.group);
 
         // NB: code is generated in bundle_finish()
-#if OPT_VCD_OUTPUT
-        // generate wave output
-#endif
     }   // for(signal)
 }
 

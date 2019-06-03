@@ -6,6 +6,8 @@
  * @remark based on https://github.com/SanDisk-Open-Source/pyvcd/tree/master/vcd
  */
 
+#define OPT_DEBUG_VCD   0
+
 
 #include "vcd.h"
 
@@ -16,9 +18,13 @@ void Vcd::start()
 {
     vcd << "$date today $end" << std::endl;
     vcd << "$timescale 1 ns $end" << std::endl;
-    vcd << "$scope module a $end" << std::endl;
-    vcd << "$scope module b $end" << std::endl;
-    vcd << "$scope module c $end" << std::endl;
+}
+
+
+void Vcd::scope(tScopeType type, std::string name)
+{
+    // FIXME: handle type
+    vcd << "$scope " << "module" << " " << name << " $end" << std::endl;
 }
 
 
@@ -32,11 +38,14 @@ int Vcd::registerVar(std::string name, tVarType type, tScopeType scope)
     return lastId++;
 }
 
-void Vcd::finish()
+void Vcd::upscope()
 {
     vcd << "$upscope $end" << std::endl;
-    vcd << "$upscope $end" << std::endl;
-    vcd << "$upscope $end" << std::endl;
+}
+
+
+void Vcd::finish()
+{
     vcd << "$enddefinitions $end" << std::endl;
 
     for(auto &t: timestampMap) {
@@ -62,26 +71,29 @@ void Vcd::change(int var, int timestamp, std::string value)
 
         auto vcmIt = vcm.find(var);
         if(vcmIt != vcm.end()) {        // var found
+#if OPT_DEBUG_VCD
             std::cout << "ts=" << tsIt->first
                 << ", var " << vcmIt->first
                 << " overwritten with '" << value << "'" << std::endl;
-
+#endif
             tValue &val = vcmIt->second;
             val.strVal = value;         // overwrite previous value. FIXME: only if it was empty?
         } else {                        // var not found
+#if OPT_DEBUG_VCD
             std::cout << "ts=" << tsIt->first
                 << ", var " << var
                 << " not found, wrote value '" << value << "'" << std::endl;
-
+#endif
             tValue val;
             val.strVal = value;
             vcm.insert({var, val});
         }
     } else {                            // timestamp not found
+#if OPT_DEBUG_VCD
         std::cout << "ts=" << timestamp
             << " not found, wrote var " << var
             << " with value '" << value << "'" << std::endl;
-
+#endif
         tValue val;
         val.strVal = value;
 

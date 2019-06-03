@@ -20,7 +20,9 @@ public:
 
 public:
     void start();
+    void scope(tScopeType type, std::string name);
     int registerVar(std::string name, tVarType type, tScopeType scope=ST_MODULE);
+    void upscope();
     void change(int var, int timestamp, std::string value);
     void change(int var, int timestamp, int value);
     void finish();
