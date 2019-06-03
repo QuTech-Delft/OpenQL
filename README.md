@@ -10,6 +10,8 @@ OpenQL is a framework for high-level quantum programming in C++/Python. The fram
 
 ## Required Packages
 
+The following packges are required if you are not using pre-built conda packages:
+
 * g++ compiler with C++11 support (Linux)
 * MSVC 2015 with update 3 or above (Windows)
 * cmake (>= 3.0)
@@ -19,7 +21,7 @@ OpenQL is a framework for high-level quantum programming in C++/Python. The fram
 * [Optional] Graphviz Dot utility to convert graphs from dot to pdf, png etc
 * [Optional] XDot to visualize generated graphs in dot format
 
-In all the instructions below, `python` refers to `Python 3.5` and `pip` refers to `Pip 3.5`.
+In all the instructions below, `python` refers to `Python 3` and `pip` refers to `Pip 3`.
 
 ## Notes for Windows Users
 
@@ -41,6 +43,30 @@ In all the instructions below, `python` refers to `Python 3.5` and `pip` refers 
 * Make sure the following variables are defined:
   * PYTHON\_INCLUDE (should point to the directory containing Python.h)
   * PYTHON\_LIB (should point to the python library python35.lib)
+
+# Installing OpenQL as a Conda Package
+
+## use pre-built packages
+
+Openql can be installed as a conda package (currently on Linux and Windows) by:
+
+```
+conda install -c imran.ashraf openql 
+```
+
+## use recipe to build package locally
+
+conda packages can also be built locally by using the recipie available in `conda-recipe` directory, by running the following command:
+
+```
+conda build conda-recipe/.
+```
+
+The generated package can then be installed by:
+
+```
+conda install openql --use-local
+```
 
 
 # Installing OpenQL as Python Package
