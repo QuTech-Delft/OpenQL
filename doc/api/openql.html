@@ -1942,10 +1942,15 @@ table {
 <span class="sd">         Opt. Name   :   Default     : Possible values</span>
 <span class="sd">        &#39;log_level&#39;  : LOG_NOTHING   : &#39;LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}&#39;</span>
 <span class="sd">        &#39;output_dir&#39; : &#39;test_output&#39; : &lt;output directory&gt;</span>
-<span class="sd">        &#39;scheduler&#39;  : &#39;ASAP&#39;        : &#39;ASAP/ALAP&#39;</span>
-<span class="sd">        &#39;use_default_gates&#39; : &#39;yes&#39;  : &#39;yes/no&#39;</span>
 <span class="sd">        &#39;optimize&#39;   :   &#39;no&#39;        : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;use_default_gates&#39; : &#39;yes&#39;  : &#39;yes/no&#39;</span>
 <span class="sd">        &#39;decompose_toffoli&#39; :  &#39;no&#39;  : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;scheduler&#39;  : &#39;ASAP&#39;        : &#39;ASAP/ALAP&#39;</span>
+<span class="sd">        &#39;scheduler_uniform&#39; : &#39;no&#39;   : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;scheduler_commute&#39; : &#39;no&#39;   : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;scheduler_post179&#39; : &#39;yes&#39;  : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;cz_mode&#39; : &#39;manual&#39;         : &#39;auto/manual&#39;</span>
+
 
 
 <span class="sd">    Parameters</span>
@@ -1964,10 +1969,14 @@ table {
 <span class="sd">         Opt. Name   :   Default     : Possible values</span>
 <span class="sd">        &#39;log_level&#39;  : LOG_NOTHING   : &#39;LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}&#39;</span>
 <span class="sd">        &#39;output_dir&#39; : &#39;test_output&#39; : &lt;output directory&gt;</span>
-<span class="sd">        &#39;scheduler&#39;  : &#39;ASAP&#39;        : &#39;ASAP/ALAP&#39;</span>
-<span class="sd">        &#39;use_default_gates&#39; : &#39;yes&#39;  : &#39;yes/no&#39;</span>
 <span class="sd">        &#39;optimize&#39;   :   &#39;no&#39;        : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;use_default_gates&#39; : &#39;yes&#39;  : &#39;yes/no&#39;</span>
 <span class="sd">        &#39;decompose_toffoli&#39; :  &#39;no&#39;  : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;scheduler&#39;  : &#39;ASAP&#39;        : &#39;ASAP/ALAP&#39;</span>
+<span class="sd">        &#39;scheduler_uniform&#39; : &#39;no&#39;   : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;scheduler_commute&#39; : &#39;no&#39;   : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;scheduler_post179&#39; : &#39;yes&#39;  : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;cz_mode&#39; : &#39;manual&#39;         : &#39;auto/manual&#39;</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -2569,7 +2578,7 @@ table {
         <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">this</span> <span class="o">=</span> <span class="n">this</span>
 
-    <span class="k">def</span> <span class="nf">set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sweep_points</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         Sets sweep points for an experiment.</span>
 
@@ -2579,7 +2588,7 @@ table {
 <span class="sd">            list of sweep points</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sweep_points</span><span class="p">)</span>
 
 
     <span class="k">def</span> <span class="nf">get_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -2833,10 +2842,14 @@ table {
      Opt. Name   :   Default     : Possible values
     'log_level'  : LOG_NOTHING   : 'LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}'
     'output_dir' : 'test_output' : <output directory>
-    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
-    'use_default_gates' : 'yes'  : 'yes/no'
     'optimize'   :   'no'        : 'yes/no'
-    'decompose_toffoli' :  'no'  : 'yes/no'</p>
+    'use_default_gates' : 'yes'  : 'yes/no'
+    'decompose_toffoli' :  'no'  : 'yes/no'
+    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
+    'scheduler_uniform' : 'no'   : 'yes/no'
+    'scheduler_commute' : 'no'   : 'yes/no'
+    'scheduler_post179' : 'yes'  : 'yes/no'
+    'cz_mode' : 'manual'         : 'auto/manual'</p>
 <h2>Parameters</h2>
 <p>arg1 : str
     Option name</p>
@@ -2852,10 +2865,14 @@ table {
 <span class="sd">         Opt. Name   :   Default     : Possible values</span>
 <span class="sd">        &#39;log_level&#39;  : LOG_NOTHING   : &#39;LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}&#39;</span>
 <span class="sd">        &#39;output_dir&#39; : &#39;test_output&#39; : &lt;output directory&gt;</span>
-<span class="sd">        &#39;scheduler&#39;  : &#39;ASAP&#39;        : &#39;ASAP/ALAP&#39;</span>
-<span class="sd">        &#39;use_default_gates&#39; : &#39;yes&#39;  : &#39;yes/no&#39;</span>
 <span class="sd">        &#39;optimize&#39;   :   &#39;no&#39;        : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;use_default_gates&#39; : &#39;yes&#39;  : &#39;yes/no&#39;</span>
 <span class="sd">        &#39;decompose_toffoli&#39; :  &#39;no&#39;  : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;scheduler&#39;  : &#39;ASAP&#39;        : &#39;ASAP/ALAP&#39;</span>
+<span class="sd">        &#39;scheduler_uniform&#39; : &#39;no&#39;   : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;scheduler_commute&#39; : &#39;no&#39;   : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;scheduler_post179&#39; : &#39;yes&#39;  : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;cz_mode&#39; : &#39;manual&#39;         : &#39;auto/manual&#39;</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -2956,10 +2973,14 @@ table {
      Opt. Name   :   Default     : Possible values
     'log_level'  : LOG_NOTHING   : 'LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}'
     'output_dir' : 'test_output' : <output directory>
-    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
-    'use_default_gates' : 'yes'  : 'yes/no'
     'optimize'   :   'no'        : 'yes/no'
-    'decompose_toffoli' :  'no'  : 'yes/no'</p>
+    'use_default_gates' : 'yes'  : 'yes/no'
+    'decompose_toffoli' :  'no'  : 'yes/no'
+    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
+    'scheduler_uniform' : 'no'   : 'yes/no'
+    'scheduler_commute' : 'no'   : 'yes/no'
+    'scheduler_post179' : 'yes'  : 'yes/no'
+    'cz_mode' : 'manual'         : 'auto/manual'</p>
 <h2>Parameters</h2>
 <p>arg1 : str
     Option name
@@ -2974,10 +2995,15 @@ arg2 : str
 <span class="sd">         Opt. Name   :   Default     : Possible values</span>
 <span class="sd">        &#39;log_level&#39;  : LOG_NOTHING   : &#39;LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}&#39;</span>
 <span class="sd">        &#39;output_dir&#39; : &#39;test_output&#39; : &lt;output directory&gt;</span>
-<span class="sd">        &#39;scheduler&#39;  : &#39;ASAP&#39;        : &#39;ASAP/ALAP&#39;</span>
-<span class="sd">        &#39;use_default_gates&#39; : &#39;yes&#39;  : &#39;yes/no&#39;</span>
 <span class="sd">        &#39;optimize&#39;   :   &#39;no&#39;        : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;use_default_gates&#39; : &#39;yes&#39;  : &#39;yes/no&#39;</span>
 <span class="sd">        &#39;decompose_toffoli&#39; :  &#39;no&#39;  : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;scheduler&#39;  : &#39;ASAP&#39;        : &#39;ASAP/ALAP&#39;</span>
+<span class="sd">        &#39;scheduler_uniform&#39; : &#39;no&#39;   : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;scheduler_commute&#39; : &#39;no&#39;   : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;scheduler_post179&#39; : &#39;yes&#39;  : &#39;yes/no&#39;</span>
+<span class="sd">        &#39;cz_mode&#39; : &#39;manual&#39;         : &#39;auto/manual&#39;</span>
+
 
 
 <span class="sd">    Parameters</span>
@@ -5287,7 +5313,7 @@ arg2 : str
         <span class="k">except</span> <span class="n">__builtin__</span><span class="o">.</span><span class="n">Exception</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">this</span> <span class="o">=</span> <span class="n">this</span>
 
-    <span class="k">def</span> <span class="nf">set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sweep_points</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         Sets sweep points for an experiment.</span>
 
@@ -5297,7 +5323,7 @@ arg2 : str
 <span class="sd">            list of sweep points</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sweep_points</span><span class="p">)</span>
 
 
     <span class="k">def</span> <span class="nf">get_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -5933,7 +5959,7 @@ Parameters</p>
             
   <div class="item">
     <div class="name def" id="openql.openql.Program.set_sweep_points">
-    <p>def <span class="ident">set_sweep_points</span>(</p><p>self, *args)</p>
+    <p>def <span class="ident">set_sweep_points</span>(</p><p>self, sweep_points)</p>
     </div>
     
 
@@ -5946,7 +5972,7 @@ Parameters</p>
   <div class="source_cont">
   <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-openql.openql.Program.set_sweep_points', this);">Show source &equiv;</a></p>
   <div id="source-openql.openql.Program.set_sweep_points" class="source">
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sweep_points</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">     Sets sweep points for an experiment.</span>
 <span class="sd">    Parameters</span>
@@ -5954,7 +5980,7 @@ Parameters</p>
 <span class="sd">    arg1 : []</span>
 <span class="sd">        list of sweep points</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_openql</span><span class="o">.</span><span class="n">Program_set_sweep_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sweep_points</span><span class="p">)</span>
 </pre></div>
 
   </div>

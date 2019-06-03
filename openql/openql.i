@@ -79,10 +79,15 @@ str
      Opt. Name   :   Default     : Possible values
     'log_level'  : LOG_NOTHING   : 'LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}'
     'output_dir' : 'test_output' : <output directory>
-    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
-    'use_default_gates' : 'yes'  : 'yes/no'
     'optimize'   :   'no'        : 'yes/no'
+    'use_default_gates' : 'yes'  : 'yes/no'
     'decompose_toffoli' :  'no'  : 'yes/no'
+    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
+    'scheduler_uniform' : 'no'   : 'yes/no'
+    'scheduler_commute' : 'no'   : 'yes/no'
+    'scheduler_post179' : 'yes'  : 'yes/no'
+    'cz_mode' : 'manual'         : 'auto/manual'
+    
 
 
 Parameters
@@ -98,10 +103,14 @@ arg2 : str
      Opt. Name   :   Default     : Possible values
     'log_level'  : LOG_NOTHING   : 'LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}'
     'output_dir' : 'test_output' : <output directory>
-    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
-    'use_default_gates' : 'yes'  : 'yes/no'
     'optimize'   :   'no'        : 'yes/no'
+    'use_default_gates' : 'yes'  : 'yes/no'
     'decompose_toffoli' :  'no'  : 'yes/no'
+    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
+    'scheduler_uniform' : 'no'   : 'yes/no'
+    'scheduler_commute' : 'no'   : 'yes/no'
+    'scheduler_post179' : 'yes'  : 'yes/no'
+    'cz_mode' : 'manual'         : 'auto/manual'
 
 Parameters
 ----------
