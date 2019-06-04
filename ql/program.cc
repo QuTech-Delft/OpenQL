@@ -396,6 +396,8 @@ std::string quantum_program::uc_header()
 }
 #endif
 
+
+
 int quantum_program::compile()
 {
     IOUT("compiling ...");
@@ -432,16 +434,17 @@ int quantum_program::compile()
         throw ql::exception("Error: Unknown option '"+tdopt+"' set for decompose_toffoli !",false);
     }
 
-    std::stringstream ss_qasm;
-    ss_qasm << ql::options::get("output_dir") << "/" << name << ".qasm";
-    std::string s = qasm();
+  if( ql::options::get("write_qasm_files") == "yes")
+  {
+        std::stringstream ss_qasm;
+        ss_qasm << ql::options::get("output_dir") << "/" << name << ".qasm";
+        std::string s = qasm();
 
-    IOUT("writing un-scheduled qasm to '" << ss_qasm.str() << "' ...");
-    ql::utils::write_file(ss_qasm.str(), s);
+        IOUT("writing un-scheduled qasm to '" << ss_qasm.str() << "' ...");
+        ql::utils::write_file(ss_qasm.str(), s);
+    }
 
-#if OPT_WRITE_SCHED_QASM
     schedule();
-#endif
 
     if (backend_compiler == NULL)
     {
@@ -517,15 +520,14 @@ int quantum_program::compile()
     }
     else
     {
-        EOUT("cannot write sweepoint file : sweep point array is empty !");
+        IOUT("sweep points file not generated as sweep point array is empty !");
     }
 
-    IOUT("compilation of program '" << name << "' done.");
+     IOUT("compilation of program '" << name << "' done.");
 
     return 0;
 }
 
-#if OPT_WRITE_SCHED_QASM
 // schedule and write scheduled qasm. Note that the backend may use a different scheduler with different results
 void quantum_program::schedule()
 {
@@ -537,20 +539,32 @@ void quantum_program::schedule()
     for (auto k : kernels)
     {
         std::string kernel_sched_qasm;
+        std::string dot;
         std::string kernel_sched_dot;
-        k.schedule(platform, kernel_sched_qasm, kernel_sched_dot);
+        k.schedule(platform, kernel_sched_qasm, dot, kernel_sched_dot);
         sched_qasm += kernel_sched_qasm + '\n';
-        // disabled generation of dot file for each kernel
-        // string fname = ql::options::get("output_dir") + "/" + k.get_name() + scheduler + ".dot";
-        // IOUT("writing scheduled qasm to '" << fname << "' ...");
-        // ql::utils::write_file(fname, kernel_sched_dot);
+
+        if(ql::options::get("print_dot_graphs") == "yes")
+        {
+            string fname;
+            fname = ql::options::get("output_dir") + "/" + k.get_name() + "_dependence_graph.dot";
+            IOUT("writing scheduled dot to '" << fname << "' ...");
+            ql::utils::write_file(fname, dot);
+
+            std::string scheduler = ql::options::get("scheduler");
+            fname = ql::options::get("output_dir") + "/" + k.get_name() + scheduler + "_scheduled.dot";
+            IOUT("writing scheduled dot to '" << fname << "' ...");
+            ql::utils::write_file(fname, kernel_sched_dot);
+        }
     }
 
-    string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
-    IOUT("writing scheduled qasm to '" << fname << "' ...");
-    ql::utils::write_file(fname, sched_qasm);
+    if( ql::options::get("write_qasm_files") == "yes")
+    {
+        string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
+        IOUT("writing scheduled qasm to '" << fname << "' ...");
+        ql::utils::write_file(fname, sched_qasm);
+    }
 }
-#endif
 
 void quantum_program::print_interaction_matrix()
 {
@@ -583,6 +597,5 @@ void quantum_program::set_sweep_points(float * swpts, size_t size)
     for (size_t i=0; i<size; ++i)
         sweep_points.push_back(swpts[i]);
 }
-
 
 } // ql

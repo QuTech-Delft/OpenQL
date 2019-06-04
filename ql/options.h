@@ -32,7 +32,6 @@ namespace ql
           opt_name2opt_val["output_dir"] = "test_output";
           opt_name2opt_val["optimize"] = "no";
           opt_name2opt_val["use_default_gates"] = "yes";
-          opt_name2opt_val["optimize"] = "no";
           opt_name2opt_val["decompose_toffoli"] = "no";
           opt_name2opt_val["scheduler"] = "ALAP";
           opt_name2opt_val["scheduler_uniform"] = "no";
@@ -40,6 +39,9 @@ namespace ql
           opt_name2opt_val["scheduler_post179"] = "yes";
           opt_name2opt_val["backend_cc_map_input_file"] = "";
 
+          opt_name2opt_val["cz_mode"] = "manual";
+          opt_name2opt_val["print_dot_graphs"] = "no";
+          opt_name2opt_val["write_qasm_files"] = "no";
 
           // add options with default values and list of possible values
           app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"],
@@ -53,15 +55,23 @@ namespace ql
           app->add_set_ignore_case("--optimize", opt_name2opt_val["optimize"], {"yes", "no"}, "optimize or not", true);
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "MA"}, "Type of decomposition used for toffoli", true);
           app->add_option("--backend_cc_map_input_file", opt_name2opt_val["backend_cc_map_input_file"], "Name of CC input map file", true);
+          app->add_set_ignore_case("--cz_mode", opt_name2opt_val["cz_mode"], {"manual", "auto"}, "CZ mode", true);
+          app->add_set_ignore_case("--print_dot_graphs", opt_name2opt_val["print_dot_graphs"], {"yes", "no"}, "print (un-)secheduled graphs in DOT format", true);
+          app->add_set_ignore_case("--write_qasm_files", opt_name2opt_val["write_qasm_files"], {"yes", "no"}, "write (un-)secheduled (with and without resource-constraint) qasm files", true);
       }
 
       void print_current_values()
       {
-          std::cout << "optimize: " << opt_name2opt_val["optimize"] << std::endl
+          std::cout << "log_level: " << opt_name2opt_val["log_level"] << std::endl
+                    << "output_dir: " << opt_name2opt_val["output_dir"] << std::endl
+                    << "optimize: " << opt_name2opt_val["optimize"] << std::endl
+                    << "use_default_gates: " << opt_name2opt_val["use_default_gates"] << std::endl
+                    << "decompose_toffoli: " << opt_name2opt_val["decompose_toffoli"] << std::endl
                     << "scheduler: " << opt_name2opt_val["scheduler"] << std::endl
                     << "scheduler_uniform: " << opt_name2opt_val["scheduler_uniform"] << std::endl
                     << "scheduler_post179: " << opt_name2opt_val["scheduler_post179"] << std::endl
-                    << "scheduler_commute: " << opt_name2opt_val["scheduler_uniform"] << std::endl;
+                    << "scheduler_commute: " << opt_name2opt_val["scheduler_uniform"] << std::endl
+                    << "cz_mode: " << opt_name2opt_val["cz_mode"] << std::endl;
           // FIXME: incomplete, function seems unused
       }
 

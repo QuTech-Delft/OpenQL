@@ -60,11 +60,7 @@ class quantum_program
 #endif
 
         int compile();
-#if OPT_WRITE_SCHED_QASM
-        // schedule and write scheduled qasm. Note that the backend may use a different scheduler with different results
-        void schedule();
-#endif
-
+        void schedule();        // schedule and write scheduled qasm. Note that the backend may use a different scheduler with different results
         void print_interaction_matrix();
         void write_interaction_matrix();
         void set_sweep_points(float * swpts, size_t size);

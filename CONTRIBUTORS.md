@@ -33,6 +33,9 @@ Note: please fill your contributions in this file
     -   unit-tests
     -   python Package for OpenQL
     -   cmake-based Compilation for cross-platform build setup
+    -   conda recipies and packages
+    -   single qubit flux operations
+    -   cQASM v1.0 support
 
 
 

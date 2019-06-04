@@ -467,27 +467,8 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
             }
             else
             {
-                // FIXME: use platform.h::get_instruction_name or get_cc_light_instruction_name
-                auto id = iname;
-                // DOUT("get cclight instr name for : " << id);
-                std::string cc_light_instr_name;
-                auto it = platform.instruction_map.find(id);
-                if (it != platform.instruction_map.end())
-                {
-                    custom_gate* g = it->second;
-                    cc_light_instr_name = g->arch_operation_name;
-                    if(cc_light_instr_name.empty())
-                    {
-                        EOUT("cc_light_instr not defined for instruction: " << id << " !");
-                        throw ql::exception("Error : cc_light_instr not defined for instruction: "+id+" !",false);
-                    }
-                }
-                else
-                {
-                    EOUT("custom instruction not found for : " << id << " !");
-                    throw ql::exception("Error : custom instruction not found for : "+id+" !",false);
-                }
-
+                DOUT("get cclight instr name for : " << iname);
+                std::string cc_light_instr_name = get_cc_light_instruction_name(iname, platform);
                 auto nOperands = ((*firstInsIt)->operands).size();
                 if( itype == __nop_gate__ )
                 {
@@ -506,7 +487,7 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
                         {
                             auto & op1 = (*insIt)->operands[0];
                             auto & op2 = (*insIt)->operands[1];
-                            dqubits.push_back( qubit_pair_t(op1,op2) );
+                            dqubits.push_back( qubit_pair_t(op1, op2) );
                         }
                         else
                         {
@@ -758,14 +739,17 @@ public:
         // schedule with platform resource constraints
         ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, num_qubits);
 
-        // write RC scheduled bundles with parallelism as simple QASM file
-        std::stringstream sched_qasm;
-        sched_qasm <<"qubits " << num_qubits << "\n\n"
-                   << ".fused_kernels";
-        string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
-        IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << fname);
-        sched_qasm << ql::ir::qasm(bundles);
-        ql::utils::write_file(fname, sched_qasm.str());
+        if( ql::options::get("write_qasm_files") == "yes")
+        {
+            // write RC scheduled bundles with parallelism as simple QASM file
+            std::stringstream sched_qasm;
+            sched_qasm <<"qubits " << num_qubits << "\n\n"
+                       << ".fused_kernels";
+            string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
+            IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << fname);
+            sched_qasm << ql::ir::qasm(bundles);
+            ql::utils::write_file(fname, sched_qasm.str());
+        }
 
         MaskManager mask_manager;
         // write scheduled bundles with parallelism in cc-light syntax
@@ -787,7 +771,7 @@ public:
         // dump_instructions();
 
         // decompose meta-instructions
-        // decompose_instructions();
+        // decompose_pre_schedule();
 
         // reorder instructions
         // reorder_instructions();
@@ -891,8 +875,117 @@ public:
         return ss.str();
     }
 
+
+    void decompose_post_schedule(ql::ir::bundles_t & bundles_dst,
+        const ql::quantum_platform& platform)
+    {
+        auto bundles_src = bundles_dst;
+
+        IOUT("Post scheduling decomposition ...");
+        if (ql::options::get("cz_mode") == "auto")
+        {
+            IOUT("decompose cz to cz+sqf...");
+
+            typedef std::pair<size_t,size_t> qubits_pair_t;
+            std::map< qubits_pair_t, size_t > qubitpair2edge;           // map: pair of qubits to edge (from grid configuration)
+            std::map<size_t, std::vector<size_t> > edge_detunes_qubits; // map: edge to vector of qubits that edge detunes (resource desc.)
+
+            // initialize qubitpair2edge map from json description; this is a constant map
+            for(auto & anedge : platform.topology["edges"])
+            {
+                size_t s = anedge["src"];
+                size_t d = anedge["dst"];
+                size_t e = anedge["id"];
+
+                qubits_pair_t aqpair(s,d);
+                auto it = qubitpair2edge.find(aqpair);
+                if( it != qubitpair2edge.end() )
+                {
+                    FATAL("re-defining edge " << s <<"->" << d << " !");
+                }
+                else
+                {
+                    qubitpair2edge[aqpair] = e;
+                }
+            }
+
+            // initialize edge_detunes_qubits map from json description; this is a constant map
+            auto & constraints = platform.resources["detuned_qubits"]["connection_map"];
+            for (auto it = constraints.begin(); it != constraints.end(); ++it)
+            {
+                size_t edgeNo = stoi( it.key() );
+                auto & detuned_qubits = it.value();
+                for(auto & q : detuned_qubits)
+                    edge_detunes_qubits[edgeNo].push_back(q);
+            }
+
+            for (
+                auto bundles_src_it = bundles_src.begin(), bundles_dst_it = bundles_dst.begin();
+                bundles_src_it != bundles_src.end(), bundles_dst_it != bundles_dst.end();
+                ++bundles_src_it, ++bundles_dst_it
+                )
+            {
+                for(auto sec_src_it = bundles_src_it->parallel_sections.begin();
+                    sec_src_it != bundles_src_it->parallel_sections.end();
+                    ++sec_src_it)
+                {
+                    for(auto ins_src_it = sec_src_it->begin(); 
+                        ins_src_it != sec_src_it->end();
+                        ++ins_src_it )
+                    {
+                        std::string id = (*ins_src_it)->name;
+                        std::string operation_type = "";
+                        size_t nOperands = ((*ins_src_it)->operands).size();
+                        if(2 == nOperands)
+                        {
+                            auto it = platform.instruction_map.find(id);
+                            if (it != platform.instruction_map.end())
+                            {
+                                if(platform.instruction_settings[id].count("type") > 0)
+                                {
+                                    operation_type = platform.instruction_settings[id]["type"];
+                                }
+                            }
+                            else
+                            {
+                                FATAL("custom instruction not found for : " << id << " !");
+                            }
+                            
+                            bool is_flux_2_qubit = ( (operation_type == "flux") );
+                            if( is_flux_2_qubit )
+                            {
+                                auto & q0 = (*ins_src_it)->operands[0];
+                                auto & q1 = (*ins_src_it)->operands[1];
+                                DOUT("found 2 qubit flux gate on " << q0 << " and " << q1);
+                                qubits_pair_t aqpair(q0, q1);
+                                auto it = qubitpair2edge.find(aqpair);
+                                if( it != qubitpair2edge.end() )
+                                {
+                                    auto edge_no = qubitpair2edge[aqpair];
+                                    DOUT("add the following sqf gates for edge: " << edge_no << ":");
+                                    for( auto & q : edge_detunes_qubits[edge_no])
+                                    {
+                                        DOUT("sqf q" << q);
+                                        custom_gate* g = new custom_gate("sqf q"+std::to_string(q));
+                                        g->operands.push_back(q);
+
+                                        ql::ir::section_t asec;
+                                        asec.push_back(g);
+                                        bundles_dst_it->parallel_sections.push_back(asec);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        IOUT("Post scheduling decomposition [Done]");
+    }
+
     // kernel level compilation
-    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, const ql::quantum_platform& platform)
+    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, 
+        const ql::quantum_platform& platform)
     {
         DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");
 
@@ -916,7 +1009,7 @@ public:
         // generate_opcode_cs_files(platform);
         MaskManager mask_manager;
 
-        std::stringstream ssqisa, sskernels_qisa;
+        std::stringstream ssqasm, ssqisa, sskernels_qisa;
         sskernels_qisa << "start:" << std::endl;
         for(auto &kernel : kernels)
         {
@@ -929,15 +1022,25 @@ public:
             if (! ckt.empty())
             {
                 // decompose meta-instructions
-                decompose_instructions(ckt, decomp_ckt, platform);
+                decompose_pre_schedule(ckt, decomp_ckt, platform);
 
                 // schedule with platform resource constraints
-                ql::ir::bundles_t bundles = cc_light_schedule_rc(decomp_ckt, platform, num_qubits, num_creg);
+                ql::ir::bundles_t bundles = 
+                    cc_light_schedule_rc(decomp_ckt, platform, num_qubits, num_creg);
 
-                // std::cout << "QASM" << std::endl;
-                // std::cout << ql::ir::qasm(bundles) << std::endl;
+        std::stringstream sched_qasm;
+        sched_qasm <<"qubits " << num_qubits << "\n\n"
+                   << ".fused_kernels";
+        string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
+        IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << fname);
+        sched_qasm << ql::ir::qasm(bundles);
+        ql::utils::write_file(fname, sched_qasm.str());
+
+                // decompose meta-instructions after scheduling
+                decompose_post_schedule(bundles, platform);
 
                 sskernels_qisa << bundles2qisa(bundles, platform, mask_manager);
+                ssqasm << ql::ir::qasm(bundles) << std::endl;
             }
             sskernels_qisa << get_epilogue(kernel);
         }
@@ -947,9 +1050,17 @@ public:
                   << "    nop" << std::endl;
 
         ssqisa << mask_manager.getMaskInstructions() << sskernels_qisa.str();
-        // std::cout << ssqisa.str();
 
-        // write qisa file
+        if( ql::options::get("write_qasm_files") == "yes")
+        {
+            // write RC scheduled bundles with parallelism as QASM file
+            ssqasm <<"qubits " << num_qubits << "\n\n";
+            string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
+            IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << fname);
+            ql::utils::write_file(fname, ssqasm.str());
+        }
+
+        // write cc-light qisa file
         std::ofstream fout;
         std::string qisafname( ql::options::get("output_dir") + "/" + prog_name + ".qisa");
         IOUT("Writing CC-Light QISA to " << qisafname);
@@ -970,7 +1081,7 @@ public:
     /**
      * decompose
      */
-    void decompose_instructions(ql::circuit& ckt, ql::circuit& decomp_ckt, const ql::quantum_platform& platform)
+    void decompose_pre_schedule(ql::circuit& ckt, ql::circuit& decomp_ckt, const ql::quantum_platform& platform)
     {
         DOUT("decomposing instructions...");
         for( auto ins : ckt )

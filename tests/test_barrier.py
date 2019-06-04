@@ -18,6 +18,7 @@ class Test_barrier(unittest.TestCase):
         ql.set_option('scheduler_post179', 'yes')
         ql.set_option("scheduler_commute", 'no')
         ql.set_option('use_default_gates', 'yes')
+        ql.set_option('write_qasm_files', 'yes')
         
 
     # barrier on specified qubits
@@ -28,7 +29,7 @@ class Test_barrier(unittest.TestCase):
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_barrier', platform, num_qubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
 
@@ -58,7 +59,7 @@ class Test_barrier(unittest.TestCase):
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_wait_barrier', platform, num_qubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
 
@@ -86,7 +87,7 @@ class Test_barrier(unittest.TestCase):
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_barrier_all_1', platform, num_qubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
 
@@ -132,7 +133,7 @@ class Test_barrier(unittest.TestCase):
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_barrier_all_2', platform, num_qubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
 
@@ -177,7 +178,7 @@ class Test_barrier(unittest.TestCase):
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_barrier_all_3', platform, num_qubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
 

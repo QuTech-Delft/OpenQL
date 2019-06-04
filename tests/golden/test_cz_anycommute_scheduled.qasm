@@ -17,3 +17,4 @@ qubits 7
     wait 1
     cz q[0],q[3]
     { y q[6] | y q[1] | y q[5] }
+

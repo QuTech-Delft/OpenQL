@@ -4,13 +4,10 @@ CMAKE_POLICY(SET CMP0054 NEW)
 
 PROJECT(OPENQL)
 
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  # Set default build type to RelWithDebInfo
-  set(CMAKE_BUILD_TYPE Release CACHE STRING
+SET(CMAKE_BUILD_TYPE Release CACHE STRING
     "Type of build (None Debug Release RelWithDebInfo MinSizeRel)" FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
+SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
     "RelWithDebInfo" "MinSizeRel")
-endif()
 
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -43,7 +40,6 @@ SET(CLI11_INCLUDE_DIRS
 ##MESSAGE( STATUS "CLI11_INCLUDE_DIRS: " ${CLI11_INCLUDE_DIRS} )
 
 ## These are the include directories used by the compiler.
-
 INCLUDE_DIRECTORIES(
   ${PROJECT_SOURCE_DIR}
   ${LEMON_INCLUDE_DIRS}

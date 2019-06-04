@@ -27,7 +27,7 @@ class Test_wait(unittest.TestCase):
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_wait_simple', platform, num_qubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
 
@@ -49,7 +49,7 @@ class Test_wait(unittest.TestCase):
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_wait_parallel', platform, num_qubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
 
@@ -72,7 +72,7 @@ class Test_wait(unittest.TestCase):
         sweep_points = [1, 2]
         num_qubits = 7
         p = ql.Program('test_wait_sweep', platform, num_qubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         qubit_idx = 0
         waits = [20, 40, 60, 100, 200, 400, 800, 1000, 2000]
@@ -109,7 +109,7 @@ class Test_wait(unittest.TestCase):
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
         p = ql.Program('test_wait_multi', platform, num_qubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
 
