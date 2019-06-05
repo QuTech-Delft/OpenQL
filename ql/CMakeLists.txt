@@ -16,4 +16,6 @@ target_include_directories(ql SYSTEM
   PUBLIC ${PARENT_DIR}
   )
 
+set_target_properties(ql PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 unset(PARENT_DIR)
