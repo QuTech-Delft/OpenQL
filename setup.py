@@ -6,9 +6,9 @@ import subprocess
 from sys import platform
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
-srcDir = os.path.join(rootDir, "ql")
+srcDir = os.path.join(rootDir, "src")
 buildDir = os.path.join(rootDir, "cbuild")
-clibDir = os.path.join(buildDir, "openql")
+clibDir = os.path.join(buildDir, "swig")
 
 nprocs = 1
 env_var_nprocs = os.environ.get('NPROCS')
@@ -60,10 +60,10 @@ else:
     print('Unknown/Unsupported OS !!!')
 
 genclib = os.path.join(clibDir, clibname)
-clib = os.path.join(rootDir, "openql", clibname)
+clib = os.path.join(rootDir, "swig", clibname)
 copyfile(genclib, clib)
 copyfile(os.path.join(clibDir, "openql.py"),
-         os.path.join(rootDir, "openql", "openql.py"))
+         os.path.join(rootDir, "swig", "openql.py"))
 os.chdir(rootDir)
 
 
@@ -117,8 +117,8 @@ setup(name='openql',
       author='Nader Khammassi and Imran Ashraf',
       author_email='nader.khammassi@gmail.com, iimran.aashraf@gmail.com',
       url='https://github.com/QE-Lab/OpenQL',
-      license=read('license'),
-      packages=['openql'],
+      license=read('LICENSE'),
+      packages=['swig'],
       include_package_data=True,
       package_data={'openql': [clib]},
       zip_safe=False)
