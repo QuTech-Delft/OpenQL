@@ -74,6 +74,11 @@ void codegen_cc::program_start(std::string prog_name)
     // define header
     vcd.start();
 
+    // define kernel variable
+    vcd.scope(vcd.ST_MODULE, "kernel");
+    vcdVarKernel = vcd.registerVar("kernel", Vcd::VT_STRING);
+    vcd.upscope();
+
     // define qubit variables
     vcd.scope(vcd.ST_MODULE, "qubits");
     vcdVarQubit.resize(platform->qubit_number);
@@ -83,20 +88,28 @@ void codegen_cc::program_start(std::string prog_name)
     }
     vcd.upscope();
 
-    // define kernel variable
-    vcd.scope(vcd.ST_MODULE, "kernel");
-    vcdVarKernel = vcd.registerVar("kernel", Vcd::VT_STRING);
-    vcd.upscope();
-
     // define instrument:group variables
+    vcd.scope(vcd.ST_MODULE, "signals");
+    size_t instrsUsed = jsonInstruments.size();
+    vcdVarInstr.assign(instrsUsed, std::vector<int>(MAX_GROUPS, {0}));
+    for(size_t instrIdx=0; instrIdx<instrsUsed; instrIdx++) {
+        const json &instrument = jsonInstruments[instrIdx];
+        std::string instrumentName = instrument["name"];
+        const json &qubits = instrument["qubits"];
+        for(size_t group=0; group<qubits.size(); group++) {
+            std::string name = instrumentName+"-"+std::to_string(group);
+            vcdVarInstr[instrIdx][group] = vcd.registerVar(name, Vcd::VT_STRING);
+        }
+    }
+    vcd.upscope();
 #endif
 }
 
 void codegen_cc::program_finish(std::string prog_name)
 {
-#if 0   // program runs once only
+#if OPT_RUN_ONCE   // program runs once only
         emit("", "stop");
-#else   // FIXME: CC-light emulation: loop indefinitely
+#else   // CC-light emulation: loop indefinitely
     emit("",      // no CCIO selector
          "jmp",
          "@mainLoop",
@@ -163,12 +176,12 @@ void codegen_cc::bundle_finish(size_t start_cycle, size_t duration_in_cycles, bo
             if(groupInfo[instrIdx][group].signalValue != "") {              // signal defined, i.e.: we need to output something
                 isSlotUsed = true;
 
-                // find control mode & bits for instrument&group
                 // FIXME: check existence of keys below to ease end user debugging on configuration errors
+                // find control mode & bits for instrument&group
                 std::string controlModeRef = instrument["ref_control_mode"];
-                const json &controlMode = jsonControlModes[controlModeRef];    // the control mode definition for our instrument
-                size_t nrControlBitsGroups = controlMode["control_bits"].size();
-
+                const json &controlMode = jsonControlModes[controlModeRef];     // the control mode definition for our instrument
+                size_t nrControlBitsGroups = controlMode["control_bits"].size();// how many groups of control bits does the control mode specify
+                // determine which group to use
                 size_t controlModeGroup = -1;
                 if(nrControlBitsGroups == 1) {                  // vector mode: group addresses channel within vector
                     controlModeGroup = 0;
@@ -180,6 +193,7 @@ void codegen_cc::bundle_finish(size_t start_cycle, size_t duration_in_cycles, bo
                           << " groups, but control mode '" << controlModeRef
                           << "' only defines " << nrControlBitsGroups);
                 }
+
                 const json &groupControlBits = controlMode["control_bits"][controlModeGroup];
 
 
@@ -189,8 +203,9 @@ void codegen_cc::bundle_finish(size_t start_cycle, size_t duration_in_cycles, bo
                      << ", control mode group=" << controlModeGroup
                      << ", group control bits: " << groupControlBits);
                 size_t nrGroupControlBits = groupControlBits.size();
+                uint32_t groupDigOut = 0;
                 if(nrGroupControlBits == 1) {      // single bit, implying this is a mask (not code word)
-                    digOut |= 1<<(int)groupControlBits[0];     // NB: we assume the mask is active high, which is correct for VSM and UHF-QC
+                    groupDigOut |= 1<<(int)groupControlBits[0];     // NB: we assume the mask is active high, which is correct for VSM and UHF-QC
                     // FIXME: check controlModeGroup vs group
                 } else {                // > 1 bit, implying code word
                     // FIXME allow single code word for vector of groups. Requires looking at all signals before assigning code word
@@ -214,12 +229,10 @@ void codegen_cc::bundle_finish(size_t start_cycle, size_t duration_in_cycles, bo
 #endif
 
                     // convert codeword to digOut
-                    uint32_t groupDigOut = 0;
                     for(size_t idx=0; idx<nrGroupControlBits; idx++) {
                         int codeWordBit = nrGroupControlBits-1-idx;    // NB: groupControlBits defines MSB..LSB
                         if(codeword & (1<<codeWordBit)) groupDigOut |= 1<<(int)groupControlBits[idx];
                     }
-                    digOut |= groupDigOut;
 
                     comment(SS2S("  # slot=" << slot
                             << ", instrument='" << instrumentName << "'"
@@ -229,6 +242,8 @@ void codegen_cc::bundle_finish(size_t start_cycle, size_t duration_in_cycles, bo
                             << ": groupDigOut=0x" << std::hex << std::setfill('0') << std::setw(8) << groupDigOut
                             ));
                 }
+
+                digOut |= groupDigOut;
 
                 // add trigger to digOut
                 size_t nrTriggerBits = controlMode["trigger_bits"].size();
@@ -270,13 +285,14 @@ void codegen_cc::bundle_finish(size_t start_cycle, size_t duration_in_cycles, bo
                         FATAL("JSON key '" << controlModeName << "/result_bits' must have 1 bit per group");
                     }
                 }
-#if 0   // FIXME: OPT_VCD_OUTPUT
-                // generate wave output
+#if OPT_VCD_OUTPUT
+                // generate signal output
                 size_t startTime = kernelStartTime + start_cycle*platform->cycle_time;
                 size_t duration_ns = groupInfo[instrIdx][group].duration_ns;
                 std::string signalValue = groupInfo[instrIdx][group].signalValue;
-                int var = 0;    // FIXME
-                vcd.change(var, startTime, signalValue);        // start of signal
+                int var = vcdVarInstr[instrIdx][group];
+                std::string val = SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << groupDigOut) + "=" + signalValue;
+                vcd.change(var, startTime, val);                // start of signal
                 vcd.change(var, startTime+duration_ns, "");     // end of signal
 #endif
             } // if signal defined
@@ -348,7 +364,6 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
     if("readout" == platform->find_instruction_type(iname))          // handle readout
     /* FIXME: we only use the "readout" instruction_type and don't care about the rest because the terms "mw" and "flux" don't fully
      * cover gate functionality. It would be nice if custom gates could mimic ql::gate_type_t
-     * We could also infer readout from cops/qops.size()
     */
     {
         isReadout = true;

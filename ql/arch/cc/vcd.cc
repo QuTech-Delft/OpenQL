@@ -105,9 +105,3 @@ void Vcd::change(int var, int timestamp, std::string value)
 void Vcd::change(int var, int timestamp, int value)
 {
 }
-
-
-
-
-
-

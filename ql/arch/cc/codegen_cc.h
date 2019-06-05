@@ -13,6 +13,7 @@
 // options
 #define OPT_SUPPORT_STATIC_CODEWORDS    1
 #define OPT_VCD_OUTPUT                  1   // output Value Change Dump file for GTKWave viewer
+#define OPT_RUN_ONCE                    0   // 0=loop indefinitely (CC-light emulation)
 
 #include "ql/json.h"
 #include "ql/platform.h"
@@ -77,8 +78,9 @@ private: // vars
 #if OPT_VCD_OUTPUT
     size_t kernelStartTime;
     Vcd vcd;
-    std::vector<int> vcdVarQubit;
     int vcdVarKernel;
+    std::vector<int> vcdVarQubit;
+    std::vector<std::vector<int>> vcdVarInstr;
 #endif
 
 public:
