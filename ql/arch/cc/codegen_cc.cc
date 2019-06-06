@@ -88,18 +88,28 @@ void codegen_cc::program_start(std::string prog_name)
     }
     vcd.upscope();
 
-    // define instrument:group variables
-    vcd.scope(vcd.ST_MODULE, "signals");
+    // define signal variables
     size_t instrsUsed = jsonInstruments.size();
-    vcdVarInstr.assign(instrsUsed, std::vector<int>(MAX_GROUPS, {0}));
+    vcd.scope(vcd.ST_MODULE, "signals");
+    vcdVarSignal.assign(instrsUsed, std::vector<int>(MAX_GROUPS, {0}));
     for(size_t instrIdx=0; instrIdx<instrsUsed; instrIdx++) {
         const json &instrument = jsonInstruments[instrIdx];
         std::string instrumentName = instrument["name"];
         const json &qubits = instrument["qubits"];
         for(size_t group=0; group<qubits.size(); group++) {
             std::string name = instrumentName+"-"+std::to_string(group);
-            vcdVarInstr[instrIdx][group] = vcd.registerVar(name, Vcd::VT_STRING);
+            vcdVarSignal[instrIdx][group] = vcd.registerVar(name, Vcd::VT_STRING);
         }
+    }
+    vcd.upscope();
+
+    // define codeword variables
+    vcd.scope(vcd.ST_MODULE, "codewords");
+    vcdVarCodeword.resize(platform->qubit_number);
+    for(size_t instrIdx=0; instrIdx<instrsUsed; instrIdx++) {
+        const json &instrument = jsonInstruments[instrIdx];
+        std::string instrumentName = instrument["name"];
+        vcdVarCodeword[instrIdx] = vcd.registerVar(instrumentName, Vcd::VT_STRING);
     }
     vcd.upscope();
 #endif
@@ -286,17 +296,27 @@ void codegen_cc::bundle_finish(size_t start_cycle, size_t duration_in_cycles, bo
                     }
                 }
 #if OPT_VCD_OUTPUT
-                // generate signal output
+                // generate signal output for group
                 size_t startTime = kernelStartTime + start_cycle*platform->cycle_time;
                 size_t duration_ns = groupInfo[instrIdx][group].duration_ns;
                 std::string signalValue = groupInfo[instrIdx][group].signalValue;
-                int var = vcdVarInstr[instrIdx][group];
-                std::string val = SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << groupDigOut) + "=" + signalValue;
+                int var = vcdVarSignal[instrIdx][group];
+                std::string val = SS2S(groupDigOut) + "=" + signalValue;
                 vcd.change(var, startTime, val);                // start of signal
                 vcd.change(var, startTime+duration_ns, "");     // end of signal
 #endif
-            } // if signal defined
-        } // for group
+            } // if(signal defined)
+        } // for(group)
+
+#if OPT_VCD_OUTPUT
+        // generate codeword output for instrument
+        size_t startTime = kernelStartTime + start_cycle*platform->cycle_time;
+        size_t duration_ns = slotDurationInCycles*platform->cycle_time;
+        int var = vcdVarCodeword[instrIdx];
+        std::string val = SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut);
+        vcd.change(var, startTime, val);                // start of signal
+        vcd.change(var, startTime+duration_ns, "");     // end of signal
+#endif
 
 
         // generate code for slot

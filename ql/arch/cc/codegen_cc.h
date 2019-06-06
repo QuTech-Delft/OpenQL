@@ -80,7 +80,8 @@ private: // vars
     Vcd vcd;
     int vcdVarKernel;
     std::vector<int> vcdVarQubit;
-    std::vector<std::vector<int>> vcdVarInstr;
+    std::vector<std::vector<int>> vcdVarSignal;
+    std::vector<int> vcdVarCodeword;
 #endif
 
 public:
