@@ -142,48 +142,12 @@ public:
             else
             {
             CSD(matrix, L0, L1, R0,R1,cc,ss);
-            // std::cout << "L0: " << L0 << std::endl;
-            // std::cout << "L1: " << L1 << std::endl;
-            // std::cout << "R0: " << R0 << std::endl;
-            // std::cout << "R1: " << R1 << std::endl;
-            // std::cout << "cc: " << cc << std::endl;
-            // std::cout << "ss: " << ss << std::endl;
             demultiplexing(R0,R1, numberofbits-1);
-            multicontrolledY(ss,numberofbits-1);
+            multicontrolledY(ss,n);
             demultiplexing(L0,L1, numberofbits-1);
 
             }
-            // Alternative CSD:
 
-            // float __complex__ * L0;
-            // float __complex__ * L1;
-            // float __complex__ * R0;
-            // float __complex__ * R1;
-            // complex_matrix cc;
-            // complex_matrix ss;
-            // CSD(matrix, L0, L1, R0,R1,cc,ss);
-
-            // int matrix_size = matrix.rows(); ///only works for square matrices
-            // int p = matrix_size/2; //input int
-            // float * theta; //Eigen::ArrayXcf theta(matrix_size); //(float __complex__)
-            // Eigen::MatrixXcf new_matrix = matrix.cast<std::complex<float>>();
-            // float __complex__ * u11 = reinterpret_cast<float __complex__ (&)[2]>(*new_matrix.topLeftCorner(p,p).data());
-            // float __complex__ * u12 = reinterpret_cast<float __complex__ (&)[2]>(*new_matrix.topRightCorner(p,p).data());
-            // float __complex__ * u21 = reinterpret_cast<float __complex__ (&)[2]>(*new_matrix.bottomLeftCorner(p,p).data());
-            // float __complex__ * u22 = reinterpret_cast<float __complex__ (&)[2]>(*new_matrix.bottomRightCorner(p,p).data());
-            // LAPACKE_cuncsd( 0,'Y', 'Y', 
-            //                'Y', 'Y', 'T','P',
-            //                matrix_size, p, p,
-            //                u11, p,
-            //                u12, p,
-            //                u21, p,
-            //                u22, p,
-            //                theta, L0,
-            //                p, L1,
-            //                p, R0,
-            //                p, R1,
-            //                p);
-            // std::cout << "(End CSD) L0: " << L0 << std::endl;
 
         }
     }
@@ -222,7 +186,7 @@ public:
 
         std::cout << "c: " << c << std::endl;
 
-        std::cout << "q1 reconstructed:" << u1*c*v1.adjoint()<< std::endl;
+        // std::cout << "q1 reconstructed:" << u1*c*v1.adjoint()<< std::endl;
         int k = 0;
         for(int j = 1; j < p; j++)
         {
@@ -464,14 +428,21 @@ public:
         {
             // std::cout << "U1*U2.adjoint(): " << U1*U2.adjoint() << std::endl;
             Eigen::ComplexEigenSolver<Eigen::MatrixXcd> eigslv(U1*U2.adjoint(), true); 
-            complex_matrix d = eigslv.eigenvalues().reverse().asDiagonal(); //gives eigenvecotrs in different order than numpy
-            complex_matrix V = eigslv.eigenvectors().rowwise().reverse(); //Gives eigenvectors in different order than numpy
+            complex_matrix d = eigslv.eigenvalues().asDiagonal();
+            complex_matrix V = eigslv.eigenvectors();
             // std::cout << "d: " << d << std::endl;
             complex_matrix D = d.sqrt(); // Do this here to not get aliasing issues
             // std::cout << "D: " << D << std::endl;
             complex_matrix W = D*V.adjoint()*U2;
             // std::cout << "W: " << W << std::endl;
             // std::cout << "V: " << V << std::endl;
+            if(!U1.isApprox(V*D*W, 10e-7) || !U2.isApprox(V*D.adjoint()*W, 10e-7))
+            {
+                std::cout << "Demultiplexing check U1: " << V*D*W << std::endl;
+                std::cout << "Demultiplexing check U2: " << V*D.adjoint()*W << std::endl;
+                EOUT("Demultiplexing not correct!");
+                throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at matrix U1: \n"+to_string(U1)+ "and matrix U2: \n" +to_string(U2), false);
+            }
             if(W.rows() == 2)
             {
                 zyz_decomp(W);
@@ -480,7 +451,7 @@ public:
             {
                 decomp_function(W, std::log2(W.rows()));
             }
-            multicontrolledZ(D,numberofcontrolbits);
+            multicontrolledZ(D, D.rows());
             if(V.rows() == 2)
             {
                 zyz_decomp(V);
@@ -489,13 +460,7 @@ public:
             {
                 decomp_function(V, std::log2(V.rows()));
             }
-            if(!U1.isApprox(V*D*W, 10e-7) || !U2.isApprox(V*D.adjoint()*W, 10e-7))
-            {
-                std::cout << "Demultiplexing check U1: " << V*D*W << std::endl;
-                std::cout << "Demultiplexing check U2: " << V*D.adjoint()*W << std::endl;
-                EOUT("Demultiplexing not correct!");
-                throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at matrix U1: \n"+to_string(U1)+ "and matrix U2: \n" +to_string(U2), false);
-            }
+
             // std::cout << "Demultiplexing check U1: " << V*D*W << std::endl;
             // std::cout << "Demultiplexing check U2: " << V*D.adjoint()*W << std::endl;
         }
@@ -511,29 +476,44 @@ public:
         {
             for(int j = 0; j < n ;j++)
             {
-                Mk(i,j) =std::pow(-1, i*(j^(j>>1)));
+                Mk(i,j) =std::pow(-1, bitParity(i&(j^(j>>1))));
             }
         }
         return Mk;
     }
 
-    void multicontrolledY(complex_matrix ss, int numberofcontrolbits)
+    int bitParity(int i)
+    {
+    i = (i >> 16) ^ i;
+    i = (i >> 8) ^ i;
+    i = (i >> 4) ^ i;
+    i = (i >> 2) ^ i;
+    i = (i >> 1) ^ i;
+    return i % 2;
+    }
+
+
+    void multicontrolledY(complex_matrix ss, int halfthesizeofthematrix)
     {
         // std::cout << "ss: " << ss << std::endl;
-        Eigen::VectorXd temp =  2*Eigen::asin(ss.real().diagonal().array());
-        Eigen::VectorXd tr = (genMk(std::pow(2,numberofcontrolbits))).colPivHouseholderQr().solve(temp);
-        for(int i = 0; i < std::pow(2, numberofcontrolbits); i++)
+        Eigen::VectorXd temp =  2*Eigen::asin(ss.diagonal().array()).real();
+        Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk(halfthesizeofthematrix));
+        Eigen::VectorXd tr = dec.solve(temp);
+        //Eigen::VectorXd tr = (genMk(std::pow(2,numberofcontrolbits))).householderQr().solve(temp);
+             for(int i = 0; i < halfthesizeofthematrix; i++)    
         {
             instructionlist.push_back(tr[i]);
         }
     }
 
-    void multicontrolledZ(complex_matrix D, int numberofcontrolbits)
+    void multicontrolledZ(complex_matrix D, int halfthesizeofthematrix)
     {
         // std::cout << "D: " << D << std::endl;
         Eigen::VectorXd temp =  (2*Eigen::log(D.diagonal().array())/(std::complex<double>(0,1))).real();
-        Eigen::VectorXd tr = ((genMk(std::pow(2,numberofcontrolbits))).colPivHouseholderQr().solve(temp));
-        for(int i = 0; i < std::pow(2, numberofcontrolbits); i++)
+        Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk(halfthesizeofthematrix));
+        Eigen::VectorXd tr =dec.solve(temp);
+        //Eigen::VectorXd tr = ((genMk(std::pow(2,numberofcontrolbits))).ColPivHouseholderQR().solve(temp));
+        for(int i = 0; i < halfthesizeofthematrix; i++)   
         {
             instructionlist.push_back(tr[i]);
         }

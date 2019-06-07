@@ -894,19 +894,20 @@ public:
     {
         std::cout << "Adding a multicontrolled rz-gate at start index " << start_index << ", to " << ql::utils::to_string(qubits, "qubits: ") << std::endl;
         int idx;
+        //The first one is always controlled from the last to the first qubit.
         c.push_back(new ql::rz(qubits[0],-instruction_list[start_index]));
-        c.push_back(new ql::cnot(qubits[1], qubits[0]));
+        c.push_back(new ql::cnot(qubits.back(), qubits[0]));
         for(int i = 1; i < std::pow(2,qubits.size()-1)-1; i++)
         {
             idx = log2( round( ((i-1)^((i-1)>>1))^(i^(i>>1))) );
-            int posc = qubits.size() - idx-1;
+            int posc = 1+  idx;
             std::cout << "posc: " << posc << std::endl;
             c.push_back(new ql::rz(qubits[0],-instruction_list[i+start_index]));
             c.push_back(new ql::cnot(qubits[posc], qubits[0]));
         }
-        //The last one is always controlled from the last to the first qubit.
+        // The last one is always controlled from the next qubit to the first qubit
         c.push_back(new ql::rz(qubits[0],-instruction_list[end_index]));
-        c.push_back(new ql::cnot(qubits.back(), qubits[0]));
+        c.push_back(new ql::cnot(qubits[1], qubits[0]));
     }
 
     //controlled qubit is the first in the list.
@@ -914,20 +915,22 @@ public:
     {
         std::cout << "Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << ql::utils::to_string(qubits, "qubits: ") << std::endl;
         int idx;
+        //The first one is always controlled from the last to the first qubit.
         c.push_back(new ql::ry(qubits[0],-instruction_list[start_index]));
-        // First one is controlled from the next qubit to the first one. 
-        c.push_back(new ql::cnot(qubits[1], qubits[0])); 
+        c.push_back(new ql::cnot(qubits.back(), qubits[0]));
+
         for(int i = 1; i < std::pow(2,qubits.size()-1)-1; i++)
         { 
             idx = log2( round( ((i-1)^((i-1)>>1))^(i^(i>>1))) );
-            int posc = qubits.size() - idx-1;
+            int posc = 1+ idx;
             std::cout << "posc: " << posc << std::endl;
             c.push_back(new ql::ry(qubits[0],-instruction_list[i+start_index]));
             c.push_back(new ql::cnot(qubits[posc], qubits[0]));
         }
-        //The last one is always controlled from the last to the first qubit.
+        // Last one is controlled from the next qubit to the first one. 
         c.push_back(new ql::ry(qubits[0],-instruction_list[end_index]));
-        c.push_back(new ql::cnot(qubits.back(), qubits[0]));
+        c.push_back(new ql::cnot(qubits[1], qubits[0])); 
+
     }
 
 
