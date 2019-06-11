@@ -130,7 +130,7 @@ public:
             // if q2 is zero, the whole thing is a demultiplexing problem instead of full CSD
             if(matrix.bottomLeftCorner(n,n).isZero(10e-14) && matrix.topRightCorner(n,n).isZero(10e-14))
             {
-                DOUT("Optimization: q2 is zero, only demultiplexing will be performed. q2 = " << matrix.bottomLeftCorner(n,n) );
+                COUT("Optimization: q2 is zero, only demultiplexing will be performed. q2 = " << matrix.bottomLeftCorner(n,n) );
                 demultiplexing(matrix.topLeftCorner(n, n), matrix.bottomRightCorner(n,n), n-1);
                 // The number of gates that would be necessary minus the number that is actually necessary to implement this unitary. (two unitaries one size smaller and one uniformly controlled rotation)
                 int gatessaved = 3*std::pow(2, n-1) *(std::pow(2,n)-1) - ( 2*3*std::pow(2, n-2) *(std::pow(2,n-1)-1)+std::pow(2,n-2)*(std::pow(2,n)-2));
@@ -184,7 +184,7 @@ public:
         v1 = svd.matrixV()*z; // Same v as in matlab: u*s*v.adjoint() = q1
         complex_matrix q2 = U.bottomLeftCorner(p,p)*v1;      
 
-        std::cout << "c: " << c << std::endl;
+        // std::cout << "c: " << c << std::endl;
 
         // std::cout << "q1 reconstructed:" << u1*c*v1.adjoint()<< std::endl;
         int k = 0;
@@ -193,7 +193,7 @@ public:
             if(c(j,j).real() <= 0.70710678119)
             {
                 k = j;
-                std::cout << "c(" << j << "): " << c(j,j) << std::endl;
+                // std::cout << "c(" << j << "): " << c(j,j) << std::endl;
             }
         }
         complex_matrix b = q2.block( 0,0, p, k+1);
@@ -207,7 +207,7 @@ public:
         // std::cout << "u2: " << u2 << std::endl;
         if(k < p-1)
         {
-            std::cout << "k is smaller than size of q1 = "<< p << ", adjustments will be made, k = " << k << std::endl;
+            DOUT("k is smaller than size of q1 = "<< p << ", adjustments will be made, k = " << k << std::endl);
             k = k+1;
             svd.compute(s.block(k, k, p-k, p-k));
             s.block(k, k, p-k, p-k) = svd.singularValues().asDiagonal();
@@ -267,7 +267,7 @@ public:
         // std::cout << "reconstructed q1: " << u1*c*v1.adjoint() << std::endl;
         // std::cout << "reconstructed q2: " << u2*s*v1.adjoint() << std::endl;
 
-        v2 = complex_matrix(n/2, n/2);
+        v2 = complex_matrix(p,p);
         v1.adjointInPlace(); // Us this instead of = v1.adjoint(0 to avoid aliasing issues)
         s = -s;
         for(int i = 0; i < n/2; i++)
@@ -402,7 +402,7 @@ public:
             if((int) U1.rows() == 2)
             {
                 zyz_decomp(U1);
-                DOUT(" Optimization: Unitaries are equal, they are both: " << U1);
+                COUT(" Optimization: Unitaries are equal, they are both: " << U1);
                 //if U1 2x2, then the total gate is 4x4 = 2 qubit gates, which is a total of 3+3+2 rotation gates = 8 angles -> need to put 5 zeroes so the count is the same (and optimize them out later)
                 for(int i = 0; i < 5; i++)
                 {
@@ -413,7 +413,7 @@ public:
             else
             {
 
-            DOUT("Optimization: Unitaries are equal, skip one step in the recursion for unitaries of size: " << U1.rows());
+            COUT("Optimization: Unitaries are equal, skip one step in the recursion for unitaries of size: " << U1.rows());
             decomp_function(U1, numberofcontrolbits);
             // The number of gates that would be necessary minus the number that is actually necessary to implement this unitary. 
             // One unitary one size smaller instead of two and a controlled rotation. (numberofcontrolbits = one less than the total number of qubits that this gate applies to)
@@ -472,6 +472,7 @@ public:
         //int b = n;
         //int g = n^(n>>1);
         Eigen::MatrixXd Mk(n,n);
+
         for(int i = 0; i < n; i++)
         {
             for(int j = 0; j < n ;j++)
@@ -484,14 +485,20 @@ public:
 
     int bitParity(int i)
     {
-    i = (i >> 16) ^ i;
-    i = (i >> 8) ^ i;
-    i = (i >> 4) ^ i;
-    i = (i >> 2) ^ i;
-    i = (i >> 1) ^ i;
-    return i % 2;
+        if (i < 2 << 16)
+        {
+            i = (i >> 16) ^ i;
+            i = (i >> 8) ^ i;
+            i = (i >> 4) ^ i;
+            i = (i >> 2) ^ i;
+            i = (i >> 1) ^ i;
+            return i % 2;
+        }
+        else
+        {
+            throw ql::exception("Bit parity number too big!", false);
+        }
     }
-
 
     void multicontrolledY(complex_matrix ss, int halfthesizeofthematrix)
     {
@@ -499,8 +506,16 @@ public:
         Eigen::VectorXd temp =  2*Eigen::asin(ss.diagonal().array()).real();
         Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk(halfthesizeofthematrix));
         Eigen::VectorXd tr = dec.solve(temp);
-        //Eigen::VectorXd tr = (genMk(std::pow(2,numberofcontrolbits))).householderQr().solve(temp);
-             for(int i = 0; i < halfthesizeofthematrix; i++)    
+        // Eigen::VectorXd tr = (genMk(std::pow(2,numberofcontrolbits))).householderQr().solve(temp);
+        // std::cout << "Mk: " << genMk(halfthesizeofthematrix) << std::endl;
+        if(!temp.isApprox(genMk(halfthesizeofthematrix)*tr, 10e-7))
+        {
+                std::cout << "multicontrolledY check b: " << temp << std::endl;
+                std::cout << "multicontrolledY check A*x: " << genMk(halfthesizeofthematrix)*tr << std::endl;
+                EOUT("Multicontrolled Y not correct!");
+                throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix ss: \n"  + to_string(ss), false);
+        }
+        for(int i = 0; i < halfthesizeofthematrix; i++)    
         {
             instructionlist.push_back(tr[i]);
         }
@@ -512,7 +527,15 @@ public:
         Eigen::VectorXd temp =  (2*Eigen::log(D.diagonal().array())/(std::complex<double>(0,1))).real();
         Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk(halfthesizeofthematrix));
         Eigen::VectorXd tr =dec.solve(temp);
-        //Eigen::VectorXd tr = ((genMk(std::pow(2,numberofcontrolbits))).ColPivHouseholderQR().solve(temp));
+        // Eigen::VectorXd tr = ((genMk(std::pow(2,numberofcontrolbits))).ColPivHouseholderQR().solve(temp));
+        if(!temp.isApprox(genMk(halfthesizeofthematrix)*tr, 10e-7))
+        {
+                std::cout << "multicontrolledZ check b: " << temp << std::endl;
+                std::cout << "multicontrolledZ check A*x: " << genMk(halfthesizeofthematrix)*tr << std::endl;
+                EOUT("Multicontrolled Z not correct!");
+                throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix D: \n"+ to_string(D), false);
+        }
+        
         for(int i = 0; i < halfthesizeofthematrix; i++)   
         {
             instructionlist.push_back(tr[i]);

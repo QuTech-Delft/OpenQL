@@ -852,7 +852,7 @@ public:
     //i is the start point for the instructionlist
     void recursiveRelationsForUnitaryDecomposition(ql::unitary u, std::vector<size_t> qubits, int n, int i)
     {
-        std::cout << "Adding a new unitary starting at index: "<< i << ", to " << ql::utils::to_string(qubits, "qubits: ") << std::endl;
+        // std::cout << "Adding a new unitary starting at index: "<< i << ", to " << ql::utils::to_string(qubits, "qubits: ") << std::endl;
         if(n > 1)
         {
             int numberforunitary = 3*std::pow(2, n-2) *(std::pow(2,n-1)-1); //number of rotation gates needed for unitaries one size smaller than the current one
@@ -881,7 +881,7 @@ public:
         }
         else //n=1
         {
-            std::cout << "Adding the zyz decomposition gates" << std::endl;
+            // std::cout << "Adding the zyz decomposition gates" << std::endl;
             // zyz gates happen on the only qubit in the list. 
             c.push_back(new ql::rz(qubits[0], u.instructionlist[i]));
             c.push_back(new ql::ry(qubits[0], u.instructionlist[i+1]));
@@ -892,16 +892,17 @@ public:
     //controlled qubit is the first in the list.
     void multicontrolled_rz( std::vector<double> instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
     {
-        std::cout << "Adding a multicontrolled rz-gate at start index " << start_index << ", to " << ql::utils::to_string(qubits, "qubits: ") << std::endl;
+        // std::cout << "Adding a multicontrolled rz-gate at start index " << start_index << ", to " << ql::utils::to_string(qubits, "qubits: ") << std::endl;
         int idx;
         //The first one is always controlled from the last to the first qubit.
         c.push_back(new ql::rz(qubits[0],-instruction_list[start_index]));
         c.push_back(new ql::cnot(qubits.back(), qubits[0]));
         for(int i = 1; i < std::pow(2,qubits.size()-1)-1; i++)
         {
-            idx = log2( round( ((i-1)^((i-1)>>1))^(i^(i>>1))) );
-            int posc = 1+  idx;
-            std::cout << "posc: " << posc << std::endl;
+            idx = log2( round( ((i)^((i)>>1))^((i+1)^((i+1)>>1))) );
+            // std::cout << "idx: " << idx << std::endl;
+            int posc = qubits.size() - idx - 1; // because counting from zero
+            // std::cout << "posc: " << posc << std::endl;
             c.push_back(new ql::rz(qubits[0],-instruction_list[i+start_index]));
             c.push_back(new ql::cnot(qubits[posc], qubits[0]));
         }
@@ -913,17 +914,19 @@ public:
     //controlled qubit is the first in the list.
     void multicontrolled_ry( std::vector<double> instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
     {
-        std::cout << "Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << ql::utils::to_string(qubits, "qubits: ") << std::endl;
+        // std::cout << "Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << ql::utils::to_string(qubits, "qubits: ") << std::endl;
         int idx;
         //The first one is always controlled from the last to the first qubit.
         c.push_back(new ql::ry(qubits[0],-instruction_list[start_index]));
         c.push_back(new ql::cnot(qubits.back(), qubits[0]));
 
+        // std::cout << "multicontrolled y" << std::endl;
         for(int i = 1; i < std::pow(2,qubits.size()-1)-1; i++)
         { 
-            idx = log2( round( ((i-1)^((i-1)>>1))^(i^(i>>1))) );
-            int posc = 1+ idx;
-            std::cout << "posc: " << posc << std::endl;
+            idx = log2( round( ((i)^((i)>>1))^((i+1)^((i+1)>>1))) );
+            // std::cout << "idx: " << idx << std::endl;
+            int posc = qubits.size() - idx - 1; // because counting from zero
+            // std::cout << "posc: " << posc << std::endl;
             c.push_back(new ql::ry(qubits[0],-instruction_list[i+start_index]));
             c.push_back(new ql::cnot(qubits[posc], qubits[0]));
         }
