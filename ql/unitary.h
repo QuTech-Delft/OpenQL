@@ -44,7 +44,7 @@ public:
     {
         DOUT("constructing unitary: " << name 
                   << ", containing: " << array.size() << " elements");
-        utils::print_vector(array,"[openql] unitary elements :"," , ");
+        // utils::print_vector(array,"[openql] unitary elements :"," , ");
         // TODO: add sanity checks for supplied arguments
     }
 
@@ -130,10 +130,10 @@ public:
             // if q2 is zero, the whole thing is a demultiplexing problem instead of full CSD
             if(matrix.bottomLeftCorner(n,n).isZero(10e-14) && matrix.topRightCorner(n,n).isZero(10e-14))
             {
-                COUT("Optimization: q2 is zero, only demultiplexing will be performed. q2 = " << matrix.bottomLeftCorner(n,n) );
-                demultiplexing(matrix.topLeftCorner(n, n), matrix.bottomRightCorner(n,n), n-1);
+                COUT("Optimization: q2 is zero, only demultiplexing will be performed.");
+                demultiplexing(matrix.topLeftCorner(n, n), matrix.bottomRightCorner(n,n), numberofbits-1);
                 // The number of gates that would be necessary minus the number that is actually necessary to implement this unitary. (two unitaries one size smaller and one uniformly controlled rotation)
-                int gatessaved = 3*std::pow(2, n-1) *(std::pow(2,n)-1) - ( 2*3*std::pow(2, n-2) *(std::pow(2,n-1)-1)+std::pow(2,n-2)*(std::pow(2,n)-2));
+                int gatessaved = 3*std::pow(2, numberofbits-1) *(std::pow(2,numberofbits)-1) - ( 2*3*std::pow(2, numberofbits-2) *(std::pow(2,numberofbits-1)-1)+std::pow(2,numberofbits-2)*(std::pow(2,numberofbits)-2));
                 for(int i = 0; i < gatessaved; i++)
                 {
                     instructionlist.push_back(0);
@@ -242,24 +242,24 @@ public:
         {
             if(U.topLeftCorner(p,p).isApprox(u1*c*v1.adjoint(), 10e-8))
             {
-                std::cout << "q1 is correct" << std::endl;
+                COUT("q1 is correct");
             }
             else
             {
-                std::cout << "q1 is not correct!" << std::endl;
-                std::cout << "q1: " << U.topLeftCorner(p,p) << std::endl;
-                std::cout << "reconstructed q1: " << u1*c*v1.adjoint() << std::endl;
+                COUT("q1 is not correct!");
+                COUT("q1: " << U.topLeftCorner(p,p));
+                COUT("reconstructed q1: " << u1*c*v1.adjoint());
 
             }
             if(U.bottomLeftCorner(p,p).isApprox(u2*s*v1.adjoint(), 10e-8))
             {
-                std::cout << "q2 is correct" << std::endl;
+                COUT("q2 is correct");
             }
             else
             {
-                std::cout << "q2 is not correct!" << std::endl;
-                std::cout << "q2: " << U.bottomLeftCorner(p,p) << std::endl;
-                std::cout << "reconstructed q2: " << u2*s*v1.adjoint() << std::endl;
+                COUT("q2 is not correct!");
+                COUT("q2: " << U.bottomLeftCorner(p,p));
+                COUT("reconstructed q2: " << u2*s*v1.adjoint());
             }
             // EOUT("thinCSD not correct!");
             // throw ql::exception("thinCSD of unitary '"+ name+"' not correct. Cannot be decomposed! Failed at matrix: \n"+to_string(q1) + " and matrix \n" + to_string(q2), false);
@@ -303,8 +303,8 @@ public:
         tmp.bottomRightCorner(p,p) = u2*c*v2;
         if(!tmp.isApprox(U, 10e-7))
         {
-            std::cout << "CSD: reconstructed U" <<std::endl;
-            std::cout << tmp << std::endl;
+            COUT("CSD: reconstructed U");
+            COUT(tmp);
             EOUT("CSD not correct!");
             throw ql::exception("CSD of unitary '"+ name+"' is wrong! Failed at matrix: \n"+to_string(tmp) + "\nwhich should be: \n" + to_string(U), false);
 
@@ -413,7 +413,7 @@ public:
             else
             {
 
-            COUT("Optimization: Unitaries are equal, skip one step in the recursion for unitaries of size: " << U1.rows());
+            COUT("Optimization: Unitaries are equal, skip one step in the recursion for unitaries of size: " << U1.rows() << " with this many control bits: " << numberofcontrolbits);
             decomp_function(U1, numberofcontrolbits);
             // The number of gates that would be necessary minus the number that is actually necessary to implement this unitary. 
             // One unitary one size smaller instead of two and a controlled rotation. (numberofcontrolbits = one less than the total number of qubits that this gate applies to)
@@ -438,8 +438,8 @@ public:
             // std::cout << "V: " << V << std::endl;
             if(!U1.isApprox(V*D*W, 10e-7) || !U2.isApprox(V*D.adjoint()*W, 10e-7))
             {
-                std::cout << "Demultiplexing check U1: " << V*D*W << std::endl;
-                std::cout << "Demultiplexing check U2: " << V*D.adjoint()*W << std::endl;
+                COUT("Demultiplexing check U1: " << V*D*W);
+                COUT("Demultiplexing check U2: " << V*D.adjoint()*W);
                 EOUT("Demultiplexing not correct!");
                 throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at matrix U1: \n"+to_string(U1)+ "and matrix U2: \n" +to_string(U2), false);
             }
@@ -510,8 +510,8 @@ public:
         // std::cout << "Mk: " << genMk(halfthesizeofthematrix) << std::endl;
         if(!temp.isApprox(genMk(halfthesizeofthematrix)*tr, 10e-7))
         {
-                std::cout << "multicontrolledY check b: " << temp << std::endl;
-                std::cout << "multicontrolledY check A*x: " << genMk(halfthesizeofthematrix)*tr << std::endl;
+                COUT("multicontrolledY check b: " << temp);
+                COUT("multicontrolledY check A*x: " << genMk(halfthesizeofthematrix)*tr);
                 EOUT("Multicontrolled Y not correct!");
                 throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix ss: \n"  + to_string(ss), false);
         }
@@ -530,8 +530,8 @@ public:
         // Eigen::VectorXd tr = ((genMk(std::pow(2,numberofcontrolbits))).ColPivHouseholderQR().solve(temp));
         if(!temp.isApprox(genMk(halfthesizeofthematrix)*tr, 10e-7))
         {
-                std::cout << "multicontrolledZ check b: " << temp << std::endl;
-                std::cout << "multicontrolledZ check A*x: " << genMk(halfthesizeofthematrix)*tr << std::endl;
+                COUT("multicontrolledZ check b: " << temp);
+                COUT("multicontrolledZ check A*x: " << genMk(halfthesizeofthematrix)*tr);
                 EOUT("Multicontrolled Z not correct!");
                 throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix D: \n"+ to_string(D), false);
         }
