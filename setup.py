@@ -12,7 +12,7 @@ clibDir = os.path.join(buildDir, "swig")
 
 nprocs = 1
 env_var_nprocs = os.environ.get('NPROCS')
-if(env_var_nprocs != None):
+if (env_var_nprocs != None):
   nprocs = int(env_var_nprocs)
 
 print('Using {} processes for compilation'.format(nprocs))
@@ -60,7 +60,7 @@ else:
     print('Unknown/Unsupported OS !!!')
 
 clib = os.path.join(clibDir, clibname)
-swigDir = os.path.join(rootDir, "swig")
+swigDir = os.path.join(rootDir, "swig", "openql")
 clibSwig = os.path.join(swigDir, clibname)
 
 copyfile(clib, clibSwig)
@@ -121,7 +121,7 @@ setup(name='openql',
       url='https://github.com/QE-Lab/OpenQL',
       license=read('LICENSE'),
       packages=['openql'],
-      package_dir={'openql': 'swig'},
+      package_dir={'': 'swig'},
       include_package_data=True,
       package_data={'openql': [clibSwig]},
       zip_safe=False)
