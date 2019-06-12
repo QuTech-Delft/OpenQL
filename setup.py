@@ -59,11 +59,13 @@ elif platform == "win32":
 else:
     print('Unknown/Unsupported OS !!!')
 
-genclib = os.path.join(clibDir, clibname)
-clib = os.path.join(rootDir, "swig", clibname)
-copyfile(genclib, clib)
+clib = os.path.join(clibDir, clibname)
+swigDir = os.path.join(rootDir, "swig")
+clibSwig = os.path.join(swigDir, clibname)
+
+copyfile(clib, clibSwig)
 copyfile(os.path.join(clibDir, "openql.py"),
-         os.path.join(rootDir, "swig", "openql.py"))
+         os.path.join(swigDir, "openql.py"))
 os.chdir(rootDir)
 
 
@@ -118,7 +120,8 @@ setup(name='openql',
       author_email='nader.khammassi@gmail.com, iimran.aashraf@gmail.com',
       url='https://github.com/QE-Lab/OpenQL',
       license=read('LICENSE'),
-      packages=['swig'],
+      packages=['openql'],
+      package_dir={'openql': 'swig'},
       include_package_data=True,
-      package_data={'openql': [clib]},
+      package_data={'openql': [clibSwig]},
       zip_safe=False)
