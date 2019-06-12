@@ -74,7 +74,7 @@ conda install openql --use-local
 N.B. the instructions below will compile the C++ files the first time you try to install OpenQL package. If you are updating an existing installation you should first clean and recompile the C++ files using the following command. 
 
 ```
-rm -rf build cbuild       # delete the old build folders
+python cleanme.py
 ```
 
 ## Linux, Windows & OSX
@@ -91,7 +91,7 @@ Or
 pip install  -e .
 ```
 
-By defining NTHREADS=N environment variable, multiple processos can be created for faster compilation. For example, the following command will create 4 processes for compilation:
+By defining NPROCS=N environment variable, multiple processos can be created for faster compilation. For example, the following command will create 4 processes for compilation:
 
 ```
 NPROCS=4 python setup.py install  --user
