@@ -2166,7 +2166,7 @@ void Init(Grid* g, ql::quantum_platform *p)
 // find an initial placement of the virtual qubits for the given circuit
 // the resulting placement is put in the provided virt2real map
 // result indicates one of the result indicators (ipr_t, see above)
-void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result, double& timetaken)
+void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result, double& iptimetaken)
 {
     DOUT("InitialPlace.PlaceBody ...");
 
@@ -2265,7 +2265,7 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result, double& timeta
         DOUT("InitialPlace: no two-qubit gates found, so no constraints, and any mapping is ok");
         DOUT("InitialPlace.PlaceBody [ANY MAPPING IS OK]");
         result = ipr_any;
-        timetaken = 0.0;
+        iptimetaken = 0.0;
         return;
     }
     if (currmap)
@@ -2273,11 +2273,11 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result, double& timeta
         DOUT("InitialPlace: in current map, all two-qubit gates are nearest neighbor, so current map is ok");
         DOUT("InitialPlace.PlaceBody [CURRENT MAPPING IS OK]");
         result = ipr_current;
-        timetaken = 0.0;
+        iptimetaken = 0.0;
         return;
     }
 
-    // compute timetaken, start interval timer here
+    // compute iptimetaken, start interval timer here
     using namespace std::chrono;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
@@ -2467,11 +2467,11 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result, double& timeta
     DOUT("Just after solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
     MapperAssert(nvq == nlocs);         // consistency check, mainly to let it crash
 
-    // computing timetaken, stop interval timer
+    // computing iptimetaken, stop interval timer
     DOUT("..4 nvq=" << nvq);
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     duration<double> time_span = t2 - t1;
-    timetaken = time_span.count();
+    iptimetaken = time_span.count();
     DOUT("..5 nvq=" << nvq);
 
     // DOUT("... determine result of solving");
@@ -2579,7 +2579,7 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result, double& timeta
 // all this is done in a try block where the catch is called on this timeout;
 // why exceptions are used, is not clear, so it was replaced by PlaceWrapper returning "timedout" or not
 // and this works as well ...
-bool PlaceWrapper( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& timetaken, std::string& initialplaceopt)
+bool PlaceWrapper( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& iptimetaken, std::string& initialplaceopt)
 {
     DOUT("InitialPlace.PlaceWrapper called");
     std::mutex  m;
@@ -2603,13 +2603,13 @@ bool PlaceWrapper( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& tim
         EOUT("Unknown value of option 'initialplace'='" << initialplaceopt << "'.");
         throw ql::exception("Error: unknown value of initialplace option.", false);
     }
-    timetaken = waitseconds;    // pessimistic, in case of timeout, otherwise it is corrected
+    iptimetaken = waitseconds;    // pessimistic, in case of timeout, otherwise it is corrected
 
     // v2r and result are allocated on stack of main thread by some ancestor so be careful with threading
-    std::thread t([&cv, this, &circ, &v2r, &result, &timetaken]()
+    std::thread t([&cv, this, &circ, &v2r, &result, &iptimetaken]()
         {
             DOUT("InitialPlace.PlaceWrapper subthread about to call PlaceBody");
-            PlaceBody(circ, v2r, result, timetaken);
+            PlaceBody(circ, v2r, result, iptimetaken);
             DOUT("InitialPlace.PlaceBody returned in subthread; about to signal the main thread");
             cv.notify_one();        // by this, the main thread awakes from cv.wait_for without timeout
             DOUT("InitialPlace.PlaceWrapper subthread after signaling the main thread, and is about to die");
@@ -2646,7 +2646,7 @@ bool PlaceWrapper( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& tim
 // when it expires, result is set to ipr_timedout;
 // details of how this is accomplished, can be found above;
 // v2r is updated by PlaceBody/PlaceWrapper when it has found a mapping
-void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& timetaken, std::string& initialplaceopt)
+void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& iptimetaken, std::string& initialplaceopt)
 {
     Virt2Real   v2r_orig = v2r;
 
@@ -2655,26 +2655,26 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& timetaken,
     {
         // do initial placement without time limit
         DOUT("InitialPlace.Place calling PlaceBody without time limit");
-        PlaceBody(circ, v2r, result, timetaken);
+        PlaceBody(circ, v2r, result, iptimetaken);
         // v2r reflects new mapping, if any found, otherwise unchanged
-        DOUT("InitialPlace.Place [done, no time limit], result=" << result << " timetaken=" << timetaken << " seconds");
+        DOUT("InitialPlace.Place [done, no time limit], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
     }
     else
     {
 	    bool timedout;
-	    timedout = PlaceWrapper(circ, v2r, result, timetaken, initialplaceopt);
+	    timedout = PlaceWrapper(circ, v2r, result, iptimetaken, initialplaceopt);
 	
 	    if (timedout)
 	    {
 	        result = ipr_timedout;
-	        DOUT("InitialPlace.Place [done, TIMED OUT, NO MAPPING FOUND], result=" << result << " timetaken=" << timetaken << " seconds");
+	        DOUT("InitialPlace.Place [done, TIMED OUT, NO MAPPING FOUND], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
 
             v2r = v2r_orig; // v2r may have got corrupted when timed out during v2r updating
 	    }
 	    else
 	    {
             // v2r reflects new mapping, if any found, otherwise unchanged
-	        DOUT("InitialPlace.Place [done, not timed out], result=" << result << " timetaken=" << timetaken << " seconds");
+	        DOUT("InitialPlace.Place [done, not timed out], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
 	    }
     }
 }
@@ -2924,6 +2924,7 @@ private:
 public:
     size_t          nswapsadded;    // result of mapping to pass back to context
     size_t          nmovesadded;    // result of mapping to pass back to context
+    double          timetaken;      // by mapper
 
 
 // Mapper constructor is default synthesized
@@ -3473,6 +3474,10 @@ void Map(ql::quantum_kernel& kernel)
     v2r.Export(kernel.v2r_in);
     v2r.Export(kernel.rs_in);
 
+    // compute timetaken, start interval timer here
+    using namespace std::chrono;
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
 #ifdef INITIALPLACE
     std::string initialplaceopt = ql::options::get("initialplace");
     std::string initialplaceprefixopt = ql::options::get("initialplaceprefix");
@@ -3482,11 +3487,11 @@ void Map(ql::quantum_kernel& kernel)
         DOUT("InitialPlace: kernel=" << kernel.name << " initialplace=" << initialplaceopt << " initialplaceprefix=" << initialplaceprefixopt << " [START]");
         InitialPlace    ip;             // initial placer facility
         ipr_t           ipok;           // one of several ip result possibilities
-        double          timetaken;      // time solving the initial placement took, in seconds
+        double          iptimetaken;      // time solving the initial placement took, in seconds
         
         ip.Init(&grid, &platform);
-        ip.Place(kernel.c, v2r, ipok, timetaken, initialplaceopt); // compute mapping (in v2r) using ip model, may fail
-        DOUT("InitialPlace: kernel=" << kernel.name << " initialplace=" << initialplaceopt << " initialplaceprefix=" << initialplaceprefixopt << " result=" << ip.ipr2string(ipok) << " timetaken=" << timetaken << " seconds [DONE]");
+        ip.Place(kernel.c, v2r, ipok, iptimetaken, initialplaceopt); // compute mapping (in v2r) using ip model, may fail
+        DOUT("InitialPlace: kernel=" << kernel.name << " initialplace=" << initialplaceopt << " initialplaceprefix=" << initialplaceprefixopt << " result=" << ip.ipr2string(ipok) << " iptimetaken=" << iptimetaken << " seconds [DONE]");
     }
 #endif
     if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
@@ -3498,11 +3503,18 @@ void Map(ql::quantum_kernel& kernel)
 
     MakePrimitives(kernel.c);       // decompose to primitives as specified in the config file
 
+    // computing timetaken, stop interval timer
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+    duration<double> time_span = t2 - t1;
+    timetaken = time_span.count();
+
     kernel.qubit_count = nq;        // bluntly copy nq (==#real qubits), so that all kernels get the same qubit_count
     v2r.Export(kernel.v2r_out);
     v2r.Export(kernel.rs_out);
     kernel.swaps_added = nswapsadded;
     kernel.moves_added = nmovesadded;
+    kernel.timetaken += timetaken;
+    DOUT("kernel.timetaken adding: " << timetaken << " giving new total: " << kernel.timetaken);
 
     DOUT("Mapping kernel [DONE]");
 

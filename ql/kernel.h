@@ -13,6 +13,8 @@
 #include <algorithm>
 #include <iterator>
 #include <cmath>
+#include <chrono>
+#include <ctime>
 
 #include "ql/json.h"
 #include "ql/utils.h"
@@ -48,12 +50,12 @@ class quantum_kernel
 public:
 
     quantum_kernel(std::string name) : 
-        name(name), iterations(1), type(kernel_type_t::STATIC), swaps_added(0), moves_added(0) {}
+        name(name), iterations(1), type(kernel_type_t::STATIC), swaps_added(0), moves_added(0), timetaken(0.0) {}
 
     quantum_kernel(std::string name, ql::quantum_platform& platform,
         size_t qcount, size_t ccount) : 
         name(name), iterations(1), qubit_count(qcount),
-        creg_count(ccount), type(kernel_type_t::STATIC), swaps_added(0), moves_added(0)
+        creg_count(ccount), type(kernel_type_t::STATIC), swaps_added(0), moves_added(0), timetaken(0.0)
     {
         gate_definition = platform.instruction_map;
         cycle_time = platform.cycle_time;
@@ -1045,6 +1047,7 @@ public:
         ss << "# ----- non single qubit gates: " << get_non_single_qubit_quantum_gates_count() << "\n";
         ss << "# ----- swaps added: " << swaps_added << "\n";
         ss << "# ----- of which moves added: " << moves_added << "\n";
+        ss << "# ----- time taken: " << timetaken << "\n";
         ss << "# ----- classical operations: " << get_classical_operations_count() << "\n";
         ss << "# ----- qubits used: " << usecount << "\n";
         ss << "# ----- qubit cycles use:" << ql::utils::to_string(usedcyclecount) << "\n";
@@ -1197,6 +1200,10 @@ public:
         std::string scheduler = ql::options::get("scheduler");
         std::string scheduler_uniform = ql::options::get("scheduler_uniform");
 
+        // compute timetaken, start interval timer here
+        using namespace std::chrono;
+        high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
 #ifndef __disable_lemon__
         IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
         DOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
@@ -1251,6 +1258,13 @@ public:
             throw ql::exception("Unknown scheduler!", false);
         }
         DOUT( scheduler << " scheduling the quantum kernel '" << name << "' DONE");
+
+        // computing timetaken, stop interval timer
+        high_resolution_clock::time_point t2 = high_resolution_clock::now();
+        duration<double> time_span = t2 - t1;
+        double tt = time_span.count();
+        timetaken += tt;
+        DOUT("kernel.timetaken adding: " << tt << " giving new total: " << timetaken);
 
         // schedulers assigned gatep->cycle; sort circuit on this
         typedef ql::gate *      gate_p;
@@ -1918,6 +1932,7 @@ public:
     std::vector<int>    rs_out;
     size_t        swaps_added;
     size_t        moves_added;
+    double        timetaken;
 };
 
 
