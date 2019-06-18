@@ -930,8 +930,8 @@ int main(int argc, char ** argv)
 //  test_daniel2("daniel2", "yes", "no", "no", "no");
 //  test_daniel2("daniel2", "yes", "yes", "no", "no");
 //  test_daniel2("daniel2", "yes", "no", "yes", "no");
-    test_daniel2("daniel2", "yes", "yes", "yes", "no");
-    test_daniel2("daniel2", "yes", "yes", "yes", "yes");
+//  test_daniel2("daniel2", "yes", "yes", "yes", "no");
+//  test_daniel2("daniel2", "yes", "yes", "yes", "yes");
 //  test_daniel2("daniel2", "no", "no", "no", "no");
 //  test_daniel2("daniel2", "no", "yes", "no", "no");
 //  test_daniel2("daniel2", "no", "no", "yes", "no");
@@ -956,8 +956,8 @@ int main(int argc, char ** argv)
 //  test_string("string", "yes", "no", "no", "no");
 //  test_string("string", "yes", "yes", "no", "no");
 //  test_string("string", "yes", "no", "yes", "no");
-    test_string("string", "yes", "yes", "yes", "no");
-    test_string("string", "yes", "yes", "yes", "yes");
+//  test_string("string", "yes", "yes", "yes", "no");
+//  test_string("string", "yes", "yes", "yes", "yes");
 //  test_string("string", "no", "no", "no", "no");
 //  test_string("string", "no", "yes", "no", "no");
 //  test_string("string", "no", "no", "yes", "no");
@@ -991,8 +991,8 @@ int main(int argc, char ** argv)
 //  test_allDopt("allDopt", "yes", "no", "no", "no");
 //  test_allDopt("allDopt", "yes", "yes", "no", "no");
 //  test_allDopt("allDopt", "yes", "no", "yes", "no");
-    test_allDopt("allDopt", "yes", "yes", "yes", "no");
-    test_allDopt("allDopt", "yes", "yes", "yes", "yes");
+//  test_allDopt("allDopt", "yes", "yes", "yes", "no");
+//  test_allDopt("allDopt", "yes", "yes", "yes", "yes");
 //  test_allDopt("allDopt", "no", "no", "no", "no");
 //  test_allDopt("allDopt", "no", "yes", "no", "no");
 //  test_allDopt("allDopt", "no", "no", "yes", "no");
@@ -1006,8 +1006,8 @@ int main(int argc, char ** argv)
 //  test_lingling5esm("lingling5esm", "yes", "no", "no", "no");
 //  test_lingling5esm("lingling5esm", "yes", "yes", "no", "no");
 //  test_lingling5esm("lingling5esm", "yes", "no", "yes", "no");
-    test_lingling5esm("lingling5esm", "yes", "yes", "yes", "no");
-    test_lingling5esm("lingling5esm", "yes", "yes", "yes", "yes");
+//  test_lingling5esm("lingling5esm", "yes", "yes", "yes", "no");
+//  test_lingling5esm("lingling5esm", "yes", "yes", "yes", "yes");
 //  test_lingling5esm("lingling5esm", "no", "no", "no", "no");
 //  test_lingling5esm("lingling5esm", "no", "yes", "no", "no");
 //  test_lingling5esm("lingling5esm", "no", "no", "yes", "no");
@@ -1022,8 +1022,8 @@ int main(int argc, char ** argv)
 //  test_lingling7esm("lingling7esm", "yes", "no", "no", "no");
 //  test_lingling7esm("lingling7esm", "yes", "yes", "no", "no");
 //  test_lingling7esm("lingling7esm", "yes", "no", "yes", "no");
-    test_lingling7esm("lingling7esm", "yes", "yes", "yes", "no");
-    test_lingling7esm("lingling7esm", "yes", "yes", "yes", "yes");
+//  test_lingling7esm("lingling7esm", "yes", "yes", "yes", "no");
+//  test_lingling7esm("lingling7esm", "yes", "yes", "yes", "yes");
 //  test_lingling7esm("lingling7esm", "no", "no", "no", "no");
 //  test_lingling7esm("lingling7esm", "no", "yes", "no", "no");
 //  test_lingling7esm("lingling7esm", "no", "no", "yes", "no");
