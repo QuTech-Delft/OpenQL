@@ -74,7 +74,7 @@ conda install openql --use-local
 N.B. the instructions below will compile the C++ files the first time you try to install OpenQL package. If you are updating an existing installation you should first clean and recompile the C++ files using the following command. 
 
 ```sh
-make clean
+python cleanme.py
 ```
 
 ## Linux, Windows & OSX
