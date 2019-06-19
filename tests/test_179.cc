@@ -8,7 +8,7 @@
 
 #include <time.h>
 
-#include <ql/openql.h>
+#include <openql.h>
 
 
 // all tests below should be run with scheduler_post179 yes and no
