@@ -228,10 +228,6 @@ void codegen_cc::bundle_finish(size_t start_cycle, size_t duration_in_cycles, bo
                     bool codewordOverriden = false;
 #if OPT_SUPPORT_STATIC_CODEWORDS    // FIXME: this does not provide support only, but actually requires static codewords
                     int staticCodewordOverride = groupInfo[instrIdx][group].staticCodewordOverride;
-                    if(staticCodewordOverride < 0) {
-                        FATAL("No static codeword defined, we currently require it because automatic assignment is disabled");
-                        // FIXME: give a clue about offending instruction
-                    }
                     codeword = staticCodewordOverride;
                     codewordOverriden = true;
 #else
@@ -430,6 +426,12 @@ void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::v
         DOUT("Found static_codeword_override=" << staticCodewordOverride <<
              " for instruction '" << iname << "'");
     }
+ #if 1 // FIXME: require override
+    if(staticCodewordOverride < 0) {
+        FATAL("No static codeword defined for instruction '" << iname <<
+            "' (we currently require it because automatic assignment is disabled)");
+    }
+ #endif
 #endif
 
     // find signal definition for iname
