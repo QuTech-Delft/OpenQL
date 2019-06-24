@@ -92,7 +92,7 @@ private:
                 kernel.bundles.clear();
             }
     
-            if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+            if( ql::options::get("write_qasm_files") == "yes")
             {
                 std::stringstream clifford_in_fname;
                 clifford_in_fname << ql::options::get("output_dir") << "/" << prog_name << "_" << opt << "_in.qasm";
@@ -105,7 +105,7 @@ private:
             {
                 cliff.Optimize(kernel, opt);
             }
-            if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+            if( ql::options::get("write_qasm_files") == "yes")
             {
                 std::stringstream clifford_out_fname;
                 clifford_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_" << opt << "_out.qasm";
@@ -128,7 +128,7 @@ private:
             kernel.bundles.clear();
         }
 
-        if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        if( ql::options::get("write_qasm_files") == "yes")
         {
             std::stringstream mapper_in_fname;
             mapper_in_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_in.qasm";
@@ -153,7 +153,7 @@ private:
                             // and kernel.qubit_count is updated to real highest index used minus -1
             kernel.bundles = mapper.Bundler(kernel);
         }
-        if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        if( ql::options::get("write_qasm_files") == "yes")
         {
             std::stringstream mapper_out_fname;
             mapper_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_out.qasm";
@@ -233,13 +233,11 @@ private:
                 DOUT("kernel.timetaken adding: " << timetaken << " giving new total: " << kernel.timetaken);
             }
         }
-        // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
-        {
-            std::stringstream rcscheduler_out_fname;
-            rcscheduler_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_rcscheduler_out.qasm";
-            IOUT("writing rcscheduler output qasm to '" << rcscheduler_out_fname.str() << "' ...");
-            write_qasm(rcscheduler_out_fname, kernels, platform);
-        }
+
+        std::stringstream rcscheduler_out_fname;
+        rcscheduler_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_rcscheduler_out.qasm";
+        IOUT("writing rcscheduler output qasm to '" << rcscheduler_out_fname.str() << "' ...");
+        write_qasm(rcscheduler_out_fname, kernels, platform);
     }
 
 public:

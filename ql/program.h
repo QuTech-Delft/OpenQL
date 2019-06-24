@@ -480,7 +480,7 @@ class quantum_program
             throw ql::exception("Error: Unknown option '"+tdopt+"' set for decompose_toffoli !",false);
          }
 
-         if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+         if( ql::options::get("write_qasm_files") == "yes")
          {
             std::string s = qasm();
             std::stringstream ss_qasm;
@@ -595,12 +595,9 @@ class quantum_program
          sched_qasm << "# Qubits used: " << qubits_used << "\n";
          sched_qasm << "# No. kernels: " << kernels.size() << "\n";
 
-         // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
-         {
-            string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
-            IOUT("writing scheduled qasm to '" << fname << "' ...");
-            ql::utils::write_file(fname, sched_qasm.str());
-         }
+         string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
+         IOUT("writing scheduled qasm to '" << fname << "' ...");
+         ql::utils::write_file(fname, sched_qasm.str());
       }
 
       void print_interaction_matrix()
