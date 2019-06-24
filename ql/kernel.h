@@ -897,10 +897,8 @@ public:
         return quantum_gates;
     }
 
-    size_t  get_qubit_usecount()
+    void  get_qubit_usecount(std::vector<size_t>& usecount)
     {
-        std::vector<size_t> usecount;
-        usecount.resize(qubit_count,0);
         for (auto & gp: c)
         {
             switch(gp->type())
@@ -916,15 +914,7 @@ public:
                 break;
             }
         }
-        size_t count = 0;
-        for (auto v: usecount)
-        {
-            if (v != 0)
-            {
-                count++;
-            }
-        }
-        return count;
+        return;
     }
 
     void  get_qubit_usedcyclecount(std::vector<size_t>& usedcyclecount)
@@ -1038,10 +1028,16 @@ public:
             ss << "    blt r31, r29, " << tokens[0] << "\n";
         }
 
-        size_t  depth = get_depth();
-        size_t  usecount = get_qubit_usecount();
+        std::vector<size_t> usecount;
+        usecount.resize(qubit_count, 0);
+        get_qubit_usecount(usecount);
+        size_t qubits_used = 0; for (auto v: usecount) { if (v != 0) { qubits_used++; } } 
+
         std::vector<size_t> usedcyclecount;
+        usedcyclecount.resize(qubit_count, 0);
         get_qubit_usedcyclecount(usedcyclecount);
+
+        size_t  depth = get_depth();
         ss << "# ----- depth: " << depth << "\n";
         ss << "# ----- quantum gates: " << get_quantum_gates_count() << "\n";
         ss << "# ----- non single qubit gates: " << get_non_single_qubit_quantum_gates_count() << "\n";
@@ -1049,7 +1045,7 @@ public:
         ss << "# ----- of which moves added: " << moves_added << "\n";
         ss << "# ----- time taken: " << timetaken << "\n";
         ss << "# ----- classical operations: " << get_classical_operations_count() << "\n";
-        ss << "# ----- qubits used: " << usecount << "\n";
+        ss << "# ----- qubits used: " << qubits_used << "\n";
         ss << "# ----- qubit cycles use:" << ql::utils::to_string(usedcyclecount) << "\n";
         ss << "# ----- virt2real map before mapper:" << ql::utils::to_string(v2r_in) << "\n";
         ss << "# ----- virt2real map after mapper:" << ql::utils::to_string(v2r_out) << "\n";
@@ -1222,11 +1218,7 @@ public:
 	        }
 	        else if ("no" == scheduler_uniform)
 	        {
-	            // sched.PrintScheduleASAP();
-                // sched.PrintDotScheduleASAP();
-                // sched_dot = sched.GetDotScheduleASAP();
-                // sched.PrintQASMScheduledASAP();
-                bundles = sched.schedule_asap();
+                bundles = sched.schedule_asap(sched_dot);
 	        }
 	        else
             {
@@ -1241,11 +1233,7 @@ public:
 	        }
 	        else if ("no" == scheduler_uniform)
 	        {
-                // sched.PrintScheduleALAP();
-                // sched.PrintDotScheduleALAP();
-                // sched_dot = sched.GetDotScheduleALAP();
-                // sched.PrintQASMScheduledALAP();
-                bundles = sched.schedule_alap();
+                bundles = sched.schedule_alap(sched_dot);
 	        }
 	        else
             {

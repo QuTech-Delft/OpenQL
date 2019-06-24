@@ -31,6 +31,7 @@ namespace ql
           opt_name2opt_val["optimize"] = "no";
           opt_name2opt_val["prescheduler"] = "yes";
           opt_name2opt_val["scheduler_post179"] = "yes";
+          opt_name2opt_val["print_dot_graphs"] = "no";
           opt_name2opt_val["scheduler"] = "ALAP";
           opt_name2opt_val["scheduler_uniform"] = "no";
           opt_name2opt_val["scheduler_commute"] = "yes";
@@ -55,6 +56,7 @@ namespace ql
           app->add_option("--output_dir", opt_name2opt_val["output_dir"], "Name of output directory", true);
           app->add_set_ignore_case("--prescheduler", opt_name2opt_val["prescheduler"], {"no", "yes"}, "Run qasm (first) scheduler?", true);
           app->add_set_ignore_case("--scheduler_post179", opt_name2opt_val["scheduler_post179"], {"no", "yes"}, "Issue 179 solution included", true);
+          app->add_set_ignore_case("--print_dot_graphs", opt_name2opt_val["print_dot_graphs"], {"no", "yes"}, "Print (un-)scheduled graphs in DOT format", true);
           app->add_set_ignore_case("--scheduler", opt_name2opt_val["scheduler"], {"ASAP", "ALAP"}, "scheduler type", true);
           app->add_set_ignore_case("--scheduler_uniform", opt_name2opt_val["scheduler_uniform"], {"yes", "no"}, "Do uniform scheduling or not", true);
           app->add_set_ignore_case("--scheduler_commute", opt_name2opt_val["scheduler_commute"], {"yes", "no"}, "Commute gates when possible, or not", true);
@@ -67,7 +69,7 @@ namespace ql
           app->add_set_ignore_case("--mapper", opt_name2opt_val["mapper"], {"no", "base", "baserc", "minextend", "minextendrc", "minboundederror"}, "Mapper heuristic", true);
           app->add_set_ignore_case("--mapinitone2one", opt_name2opt_val["mapinitone2one"], {"no", "yes"}, "Initialize mapping of virtual qubits one to one to real qubits", true);
           app->add_set_ignore_case("--initialplace", opt_name2opt_val["initialplace"], {"no","yes","1s","10s","1m","10m","1h","1sx","10sx","1mx","10mx","1hx"}, "Initialplace qubits before mapping", true);
-          app->add_set_ignore_case("--initialplaceprefix", opt_name2opt_val["initialplaceprefix"], {"0","10","20","30","40","50","60","70","80","90","100"}, "Initialplace considers only this number of initial two-qubit gates", true);
+          app->add_set_ignore_case("--initialplaceprefix", opt_name2opt_val["initialplaceprefix"], {"0","1","2","3","4","5","6","7","8","9", "10","11","12","13","14","15","16","17","18","19","20","30","40","50","60","70","80","90","100"}, "Initialplace considers only this number of initial two-qubit gates", true);
           app->add_set_ignore_case("--mapusemoves", opt_name2opt_val["mapusemoves"], {"no", "yes", "0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20",}, "Use unused qubit to move thru", true);
           app->add_set_ignore_case("--mapreverseswap", opt_name2opt_val["mapreverseswap"], {"no", "yes"}, "Reverse swap operands when better", true);
           app->add_set_ignore_case("--maptiebreak", opt_name2opt_val["maptiebreak"], {"first", "last", "random"}, "Tie break method", true);
@@ -94,6 +96,7 @@ namespace ql
                     << "mapreverseswap: "   << opt_name2opt_val["mapreverseswap"] << std::endl
                     << "clifford_postmapper: " << opt_name2opt_val["clifford_postmapper"] << std::endl
                     << "scheduler_post179: " << opt_name2opt_val["scheduler_post179"] << std::endl
+                    << "print_dot_graphs: " << opt_name2opt_val["print_dot_graphs"] << std::endl
                     << "scheduler_commute: " << opt_name2opt_val["scheduler_uniform"] << std::endl;
 	  ;
       }

@@ -29,41 +29,12 @@ public:
     size_t ns_per_cycle;
 
 private:
-      size_t get_qubit_usecount(std::vector<quantum_kernel>& kernels)
-      {
-         std::vector<size_t> usecount;
-         usecount.resize(num_qubits, 0);
-         for (auto& k: kernels)
-         {
-            for (auto & gp: k.c)
-            {
-                switch(gp->type())
-                {
-                case __classical_gate__:
-                case __wait_gate__:
-                    break;
-                default:
-                    for (auto v: gp->operands)
-                    {
-                        usecount[v]++;
-                    }
-                    break;
-                }
-            }
-         }
-         size_t count= 0;
-         for (auto v: usecount)
-         {
-            if (v != 0)
-            {
-                count++;
-            }
-         }
-         return count;
-      }
 
     void write_qasm(std::stringstream& fname, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
     {
+        std::vector<size_t> usecount;
+        usecount.resize(platform.qubit_number, 0);
+
         size_t total_depth = 0;
         size_t total_quantum_gates = 0;
         size_t total_classical_operations = 0;
@@ -87,6 +58,7 @@ private:
                 out_qasm << ql::ir::qasm(kernel.bundles);
                 out_qasm << kernel.get_epilogue();
             }
+            kernel.get_qubit_usecount(usecount);
             total_depth += kernel.get_depth();
             total_classical_operations += kernel.get_classical_operations_count();
             total_quantum_gates += kernel.get_quantum_gates_count();
@@ -95,6 +67,7 @@ private:
             total_moves += kernel.moves_added;
             total_timetaken += kernel.timetaken;
         }
+        size_t qubits_used = 0; for (auto v: usecount) { if (v != 0) { qubits_used++; } } 
         out_qasm << "\n";
         out_qasm << "# Total depth: " << total_depth << "\n";
         out_qasm << "# Total no. of quantum gates: " << total_quantum_gates << "\n";
@@ -103,7 +76,7 @@ private:
         out_qasm << "# Total no. of moves of swaps: " << total_moves << "\n";
         out_qasm << "# Total time taken: " << total_timetaken << "\n";
         out_qasm << "# Total no. of classical operations: " << total_classical_operations << "\n";
-        out_qasm << "# Qubits used: " << get_qubit_usecount(kernels) << "\n";
+        out_qasm << "# Qubits used: " << qubits_used << "\n";
         out_qasm << "# No. kernels: " << kernels.size() << "\n";
         ql::utils::write_file(fname.str(), out_qasm.str());
     }
@@ -215,13 +188,14 @@ private:
         Scheduler sched;
         sched.Init(ckt, platform, nqubits, ncreg);
         ql::ir::bundles_t bundles;
+        std::string dot;
         if ("ASAP" == schedopt)
         {
-            bundles = sched.schedule_asap(rm, platform);
+            bundles = sched.schedule_asap(rm, platform, dot);
         }
         else if ("ALAP" == schedopt)
         {
-            bundles = sched.schedule_alap(rm, platform);
+            bundles = sched.schedule_alap(rm, platform, dot);
         }
         else
         {
@@ -323,6 +297,7 @@ private:
         fout << "import numpy as np\n"
              << "from quantumsim.circuit import Circuit\n"
              << "from quantumsim.circuit import uniform_noisy_sampler\n"
+			 << "from quantumsim.circuit import ButterflyGate\n"
              << endl;
 
         fout << "from quantumsim.circuit import IdlingGate as i\n"                         
@@ -355,37 +330,40 @@ private:
              << "def z(q, time):\n"                                                         
              << "    return rz(q, time, angle=np.pi)\n"                                     
              << "\n"                                                                        
-             << "def x(q, time):\n"                                                         
-             << "    return rx(q, time, angle=np.pi)\n"                                     
+             << "def x(q, time, dephasing_axis, dephasing_angle):\n"                                                         
+             << "    return rx(q, time, angle=np.pi, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"                                     
              << "\n"                                                                        
-             << "def y(q, time):\n"                                                         
-             << "    return ry(q, time, angle=np.pi)\n"                                     
+             << "def y(q, time, dephasing_axis, dephasing_angle):\n"                                                         
+             << "    return ry(q, time, angle=np.pi, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"                                     
              << "\n"                                                                        
-             << "def x90(q, time):\n"                                                      
-             << "    return rx(q, time, angle=np.pi/2)\n"                                   
+             << "def x90(q, time, dephasing_axis, dephasing_angle):\n"                                                      
+             << "    return rx(q, time, angle=np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"                                   
              << "\n"                                                                        
-             << "def y90(q, time):\n"                                                      
-             << "    return ry(q, time, angle=np.pi/2)\n"                                   
+             << "def y90(q, time, dephasing_axis, dephasing_angle):\n"                                                      
+             << "    return ry(q, time, angle=np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"                                   
              << "\n"                                                                        
-             << "def xm90(q, time):\n"                                                      
-             << "    return rx(q, time, angle=-np.pi/2)\n"                                  
+             << "def xm90(q, time, dephasing_axis, dephasing_angle):\n"                                                      
+             << "    return rx(q, time, angle=-np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"                                  
              << "\n"                                                                        
-             << "def ym90(q, time):\n"                                                      
-             << "    return ry(q, time, angle=-np.pi/2)\n"                                  
+             << "def ym90(q, time, dephasing_axis, dephasing_angle):\n"                                                      
+             << "    return ry(q, time, angle=-np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"                                  
              << "\n"                                                                        
              << "def x45(q, time):\n"                                                      
              << "    return rx(q, time, angle=np.pi/4)\n"                                   
              << "\n"                                                                        
              << "def xm45(q, time):\n"                                                      
              << "    return rx(q, time, angle=-np.pi/4)\n"                                  
-             << "\n"                                                                        
+             << "\n"  
+             //<< "def cz(q, time, dephase_var):\n"                                                         
+             //<< "    return cphase(q, time, dephase_var=dephase_var)\n"                                     
+             << "\n"                                                                       
              << "def prepz(q, time):\n"                                                    
              << "    return ResetGate(q, time, state=0)\n\n"                                
              << endl;
 
         fout << "\n# create a circuit\n";
-        fout << "def circuit_generated() :\n";
-        fout << "    c = Circuit(title=\"" << prog_name << "\")\n\n";
+        fout << "def circuit_generated(t1=np.inf, t2=np.inf, dephasing_axis=None, dephasing_angle=None, dephase_var=0, readout_error=0.0) :\n";
+        fout << "    c = Circuit(title=\"" << prog_name << "\")\n";
 
         DOUT("Adding qubits to Quantumsim program");
         fout << "\n    # add qubits\n";
@@ -415,6 +393,12 @@ private:
         }
         size_t count =  platform.hardware_settings["qubit_number"];
 
+        // want to ignore unused qubits below
+        MapperAssert (kernels.size() <= 1);
+        std::vector<size_t> check_usecount;
+        check_usecount.resize(count, 0);
+        kernels.front().get_qubit_usecount(check_usecount);
+
         for (json::iterator it = relaxation_times.begin(); it != relaxation_times.end(); ++it)
         {
             size_t q = stoi(it.key());
@@ -423,20 +407,26 @@ private:
                 EOUT("qubit_attribute.relaxation_time.qubit number is not in qubits available in the platform");
                 throw ql::exception("[x] error: qubit_attribute.relaxation_time.qubit number is not in qubits available in the platform",false);
             }
+            if (check_usecount[q] == 0)
+            {
+                DOUT("... qubit " << q << " is not used; skipping it");
+                continue;
+            }
             auto & rt = it.value();
             if (rt.size() < 2)
             {
                 EOUT("each qubit must have at least two relaxation times");
                 throw ql::exception("[x] error: each qubit must have at least two relaxation times",false);
             }
-            fout << "    c.add_qubit(\"q" << q <<"\", " << rt[0] << ", " << rt[1] << ")\n" ;
+            // fout << "    c.add_qubit(\"q" << q <<"\", " << rt[0] << ", " << rt[1] << ")\n" ;
+            fout << "    c.add_qubit(\"q" << q << "\", t1=t1, t2=t2)\n" ;
         }
 
         DOUT("Adding Gates to Quantumsim program");
         {
             // global writes
             std::stringstream ssbundles;
-            ssbundles << "\n    sampler = uniform_noisy_sampler(readout_error=0.015, seed=42)\n";
+            ssbundles << "\n    sampler = uniform_noisy_sampler(readout_error=readout_error, seed=42)\n";
             ssbundles << "\n    # add gates\n";
             fout << ssbundles.str();
         }
@@ -468,13 +458,55 @@ private:
                             {
                                 DOUT("... adding gates, a measure");
                                 auto op = operands.back();
-                                ssbundles << "    c.add_qubit(\"m" << op <<"\")\n";
-                                ssbundles << "    c.add_measurement("
+								ssbundles << "    c.add_qubit(\"m" << op << "\")\n";
+                                ssbundles << "    c.add_gate("
+                                          << "ButterflyGate("
                                           << "\"q" << op <<"\", "
-                                          << "time=" << (bcycle*ns_per_cycle) + (duration/2) << ", "
-                                          << "output_bit=\"m" << op <<"\", "
-                                          << "sampler=sampler"
+                                          << "time=" << ((bcycle-1)*ns_per_cycle) << ", "
+                                          << "p_exc=0,"
+                                          << "p_dec= 0.005)"
                                           << ")\n" ;
+								ssbundles << "    c.add_measurement("
+									<< "\"q" << op << "\", "
+									<< "time=" << ((bcycle - 1)*ns_per_cycle) + (duration/4) << ", "
+									<< "output_bit=\"m" << op << "\", "
+									<< "sampler=sampler"
+									<< ")\n";
+								ssbundles << "    c.add_gate("
+									<< "ButterflyGate("
+									<< "\"q" << op << "\", "
+									<< "time=" << ((bcycle - 1)*ns_per_cycle) + duration/2 << ", "
+									<< "p_exc=0,"
+									<< "p_dec= 0.015)"
+									<< ")\n";
+
+                            }
+                            else if( iname == "y90" or iname == "ym90" or iname == "y" or iname == "x" or 
+								iname == "x90" or iname == "xm90")
+                            {
+                                DOUT("... adding gates, another gate");
+                                ssbundles <<  "    c.add_gate("<< iname << "(" ;
+                                size_t noperands = operands.size();
+                                if( noperands > 0 )
+                                {
+                                    for(auto opit = operands.begin(); opit != operands.end()-1; opit++ )
+                                        ssbundles << "\"q" << *opit <<"\", ";
+                                    ssbundles << "\"q" << operands.back()<<"\"";
+                                }
+                                ssbundles << ", time=" << ((bcycle - 1)*ns_per_cycle) + (duration/2) << ", dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle))" << endl;
+                            }
+                            else if( iname == "cz")
+                            {
+                               DOUT("... adding gates, another gate");
+                                ssbundles <<  "    c.add_gate("<< iname << "(" ;
+                                size_t noperands = operands.size();
+                                if( noperands > 0 )
+                                {
+                                    for(auto opit = operands.begin(); opit != operands.end()-1; opit++ )
+                                        ssbundles << "\"q" << *opit <<"\", ";
+                                    ssbundles << "\"q" << operands.back()<<"\"";
+                                }
+                                ssbundles << ", time=" << ((bcycle - 1)*ns_per_cycle) + (duration/2) << ", dephase_var=dephase_var))" << endl;
                             }
                             else
                             {
@@ -487,14 +519,22 @@ private:
                                         ssbundles << "\"q" << *opit <<"\", ";
                                     ssbundles << "\"q" << operands.back()<<"\"";
                                 }
-                                ssbundles << ", time=" << (bcycle*ns_per_cycle) + (duration/2) << "))" << endl;
+                                ssbundles << ", time=" << ((bcycle - 1)*ns_per_cycle) + (duration/2) << "))" << endl;
                             }
                         }
                     }
                     fout << ssbundles.str();
                 }
+                std::vector<size_t> usecount;
+                usecount.resize(platform.qubit_number, 0);
                 std::vector<size_t> usedcyclecount;
                 kernel.get_qubit_usedcyclecount(usedcyclecount);
+
+                kernel.get_qubit_usecount(usecount);
+                size_t qubits_used = 0; for (auto v: usecount) { if (v != 0) { qubits_used++; } } 
+
+				fout << "    return c";
+				fout << "    \n\n";
                 fout << "    # ----- depth: " << kernel.get_depth() << "\n";
                 fout << "    # ----- quantum gates: " << kernel.get_quantum_gates_count() << "\n";
                 fout << "    # ----- non single qubit gates: " << kernel.get_non_single_qubit_quantum_gates_count() << "\n";
@@ -502,7 +542,7 @@ private:
                 fout << "    # ----- moves added: " << kernel.moves_added << "\n";
                 fout << "    # ----- time taken: " << kernel.timetaken << "\n";
                 fout << "    # ----- classical operations: " << kernel.get_classical_operations_count() << "\n";
-                fout << "    # ----- qubits used: " << kernel.get_qubit_usecount() << "\n";
+                fout << "    # ----- qubits used: " << qubits_used << "\n";
                 fout << "    # ----- qubit cycles use: ";
                     int started = 0;
                     for (auto v : usedcyclecount)
@@ -513,6 +553,9 @@ private:
                     fout << "]" << "\n";
             }
         }
+        std::vector<size_t> total_usecount;
+        total_usecount.resize(platform.qubit_number, 0);
+
         size_t total_depth = 0;
         size_t total_quantum_gates = 0;
         size_t total_classical_operations = 0;
@@ -522,6 +565,8 @@ private:
         double total_timetaken = 0.0;
         for(auto &kernel : kernels)
         {
+            kernel.get_qubit_usecount(total_usecount);
+
             total_depth += kernel.get_depth();
             total_classical_operations += kernel.get_classical_operations_count();
             total_quantum_gates += kernel.get_quantum_gates_count();
@@ -530,6 +575,7 @@ private:
             total_moves += kernel.moves_added;
             total_timetaken += kernel.timetaken;
         }
+        size_t qubits_used = 0; for (auto v: total_usecount) { if (v != 0) { qubits_used++; } } 
         fout << "    \n";
         fout << "    # Program-wide statistics:\n";
         fout << "    # Total depth: " << total_depth << "\n";
@@ -540,7 +586,7 @@ private:
         fout << "    # Total time taken: " << total_timetaken << "\n";
 
         fout << "    # Total no. of classical operations: " << total_classical_operations << "\n";
-        fout << "    # Qubits used: " << get_qubit_usecount(kernels) << "\n";
+        fout << "    # Qubits used: " << qubits_used << "\n";
         fout << "    # No. kernels: " << kernels.size() << "\n";
         
         fout << "    return c";

@@ -51,7 +51,7 @@ test_manyNN(std::string v, std::string param1, std::string param2, std::string p
 
     ql::options::set("mapreverseswap", param1);
     ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_prescheduler", param2);
+    ql::options::set("clifford_postmapper", param2);
     ql::options::set("scheduler_commute", param3);
     ql::options::set("prescheduler", param4);
     prog.compile( );
@@ -85,7 +85,7 @@ test_oneD2(std::string v, std::string param1, std::string param2, std::string pa
 
     ql::options::set("mapreverseswap", param1);
     ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_prescheduler", param2);
+    ql::options::set("clifford_postmapper", param2);
     ql::options::set("scheduler_commute", param3);
     ql::options::set("prescheduler", param4);
     prog.compile( );
@@ -119,7 +119,7 @@ test_oneD4(std::string v, std::string param1, std::string param2, std::string pa
 
     ql::options::set("mapreverseswap", param1);
     ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_prescheduler", param2);
+    ql::options::set("clifford_postmapper", param2);
     ql::options::set("scheduler_commute", param3);
     ql::options::set("prescheduler", param4);
     prog.compile( );
@@ -155,7 +155,7 @@ test_oneD4Diogo(std::string v, std::string param1, std::string param2, std::stri
 
     ql::options::set("mapreverseswap", param1);
     ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_prescheduler", param2);
+    ql::options::set("clifford_postmapper", param2);
     ql::options::set("scheduler_commute", param3);
     ql::options::set("prescheduler", param4);
     prog.compile( );
@@ -199,7 +199,7 @@ test_allD(std::string v, std::string param1, std::string param2, std::string par
 
     ql::options::set("mapreverseswap", param1);
     ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_prescheduler", param2);
+    ql::options::set("clifford_postmapper", param2);
     ql::options::set("scheduler_commute", param3);
     ql::options::set("prescheduler", param4);
     prog.compile( );
@@ -294,7 +294,7 @@ test_allDopt(std::string v, std::string param1, std::string param2, std::string 
 
     ql::options::set("mapreverseswap", param1);
     ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_prescheduler", param2);
+    ql::options::set("clifford_postmapper", param2);
     ql::options::set("scheduler_commute", param3);
     ql::options::set("prescheduler", param4);
     prog.compile( );
@@ -334,7 +334,7 @@ test_string(std::string v, std::string param1, std::string param2, std::string p
 
     ql::options::set("mapreverseswap", param1);
     ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_prescheduler", param2);
+    ql::options::set("clifford_postmapper", param2);
     ql::options::set("scheduler_commute", param3);
     ql::options::set("prescheduler", param4);
     prog.compile( );
@@ -597,7 +597,7 @@ test_daniel2(std::string v, std::string param1, std::string param2, std::string 
 
     ql::options::set("mapreverseswap", param1);
     ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_prescheduler", param2);
+    ql::options::set("clifford_postmapper", param2);
     ql::options::set("scheduler_commute", param3);
     ql::options::set("prescheduler", param4);
     prog.compile( );
@@ -750,7 +750,7 @@ test_lingling5esm(std::string v, std::string param1, std::string param2, std::st
 
     ql::options::set("mapreverseswap", param1);
     ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_prescheduler", param2);
+    ql::options::set("clifford_postmapper", param2);
     ql::options::set("scheduler_commute", param3);
     ql::options::set("prescheduler", param4);
     prog.compile( );
@@ -888,7 +888,7 @@ test_lingling7esm(std::string v, std::string param1, std::string param2, std::st
 
     ql::options::set("mapreverseswap", param1);
     ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_prescheduler", param2);
+    ql::options::set("clifford_postmapper", param2);
     ql::options::set("scheduler_commute", param3);
     ql::options::set("prescheduler", param4);
     prog.compile( );
@@ -911,7 +911,7 @@ int main(int argc, char ** argv)
 //parameter1    ql::options::set("mapreverseswap, "yes"); 
     ql::options::set("maptiebreak", "first"); 
 
-//parameter2    ql::options::set("clifford_prescheduler", "yes"); 
+//parameter2    ql::options::set("clifford_postmapper", "yes"); 
     ql::options::set("scheduler_post179", "yes");
     ql::options::set("scheduler", "ALAP");
 //parameter3    ql::options::set("scheduler_commute", "yes");
@@ -941,6 +941,8 @@ int main(int argc, char ** argv)
 //  test_oneD2("oneD2", "base", "yes", "critical", "no");
 //  test_oneD2("oneD2", "minextend", "yes", "critical", "no");
 //  test_oneD2("oneD2", "minextendrc", "yes", "critical", "no");
+    test_oneD2("oneD2", "yes", "yes", "yes", "no");
+    test_oneD2("oneD2", "yes", "yes", "yes", "yes");
 
 //  test_oneD4("oneD4", "base", "yes", "critical", "no");
 //  test_oneD4("oneD4", "minextend", "yes", "critical", "no");
@@ -976,8 +978,8 @@ int main(int argc, char ** argv)
 //  test_allD("allD", "yes", "no", "no", "no");
 //  test_allD("allD", "yes", "yes", "no", "no");
 //  test_allD("allD", "yes", "no", "yes", "no");
-    test_allD("allD", "yes", "yes", "yes", "no");
-    test_allD("allD", "yes", "yes", "yes", "yes");
+//  test_allD("allD", "yes", "yes", "yes", "no");
+//  test_allD("allD", "yes", "yes", "yes", "yes");
 //  test_allD("allD", "no", "no", "no", "no");
 //  test_allD("allD", "no", "yes", "no", "no");
 //  test_allD("allD", "no", "no", "yes", "no");

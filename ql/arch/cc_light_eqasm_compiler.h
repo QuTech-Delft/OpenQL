@@ -825,39 +825,6 @@ public:
         return ss.str();
     }
 
-    size_t get_qubit_usecount(std::vector<quantum_kernel>& kernels)
-    {
-       std::vector<size_t> usecount;
-       usecount.resize(num_qubits, 0);
-       for (auto& k: kernels)
-       {
-          for (auto & gp: k.c)
-          {
-              switch(gp->type())
-              {
-              case __classical_gate__:
-              case __wait_gate__:
-                  break;
-              default:
-                  for (auto v: gp->operands)
-                  {
-                      usecount[v]++;
-                  }
-                  break;
-              }
-          }
-       }
-       size_t count= 0;
-       for (auto v: usecount)
-       {
-          if (v != 0)
-          {
-              count++;
-          }
-       }
-       return count;
-    }
-
     void write_qasm(std::stringstream& fname, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
     {
 //      DOUT("cc_light_compiler::write_qasm(" << fname.str());
@@ -869,6 +836,9 @@ public:
 //          DOUT("... kernel.bundles.size:" << kernel.bundles.size());
 //          DOUT("... kernel.bundles:" << ql::ir::qasm(kernel.bundles));
 //      }
+
+        std::vector<size_t> usecount;
+        usecount.resize(platform.qubit_number, 0);
 
         size_t total_depth = 0;
         size_t total_quantum_gates = 0;
@@ -893,6 +863,7 @@ public:
                 out_qasm << ql::ir::qasm(kernel.bundles);
                 out_qasm << kernel.get_epilogue();
             }
+            kernel.get_qubit_usecount(usecount);
             total_depth += kernel.get_depth();
             total_classical_operations += kernel.get_classical_operations_count();
             total_quantum_gates += kernel.get_quantum_gates_count();
@@ -901,6 +872,7 @@ public:
             total_moves += kernel.moves_added;
             total_timetaken += kernel.timetaken;
         }
+        size_t qubits_used = 0; for (auto v: usecount) { if (v != 0) { qubits_used++; } }
         out_qasm << "\n";
         out_qasm << "# Total depth: " << total_depth << "\n";
         out_qasm << "# Total no. of quantum gates: " << total_quantum_gates << "\n";
@@ -909,7 +881,7 @@ public:
         out_qasm << "# Total no. of moves of swaps: " << total_moves << "\n";
         out_qasm << "# Total time taken: " << total_timetaken << "\n";
         out_qasm << "# Total no. of classical operations: " << total_classical_operations << "\n";
-        out_qasm << "# Qubits used: " << get_qubit_usecount(kernels) << "\n";
+        out_qasm << "# Qubits used: " << qubits_used << "\n";
         out_qasm << "# No. kernels: " << kernels.size() << "\n";
         ql::utils::write_file(fname.str(), out_qasm.str());
     }
@@ -1007,12 +979,13 @@ public:
             {
                 auto num_creg = kernel.creg_count;
                 double  timetaken = 0.0;
+                std::string     sched_dot;
 
                 // compute timetaken, start interval timer here
                 using namespace std::chrono;
                 high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
-                kernel.bundles = cc_light_schedule_rc(kernel.c, platform, num_qubits, num_creg);
+                kernel.bundles = cc_light_schedule_rc(kernel.c, platform, sched_dot, num_qubits, num_creg);
 
                 // computing timetaken, stop interval timer
                 high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -1020,6 +993,15 @@ public:
                 timetaken = time_span.count();
 
                 kernel.timetaken += timetaken;
+
+                if (ql::options::get("print_dot_graphs") == "yes")
+                {
+                    std::stringstream fname;
+                    fname << ql::options::get("output_dir") << "/" << kernel.name << "_" << opt << "_scheduler.dot";
+                    IOUT("writing " << opt << " dependence graph dot file to '" << fname.str() << "' ...");
+                    ql::utils::write_file(fname.str(), sched_dot);
+                }
+
                 DOUT("kernel.timetaken adding: " << timetaken << " giving new total: " << kernel.timetaken);
             }
         }
@@ -1070,8 +1052,8 @@ public:
 
         clifford_optimize(prog_name, kernels, platform, "clifford_premapper");
         map(prog_name, kernels, platform);
+        clifford_optimize(prog_name, kernels, platform, "clifford_postmapper");
 
-        clifford_optimize(prog_name, kernels, platform, "clifford_prescheduler");
         schedule(prog_name, kernels, platform, "rcscheduler");
         // size_t total_depth_afterscheduler = 0;
         // for(auto &kernel : kernels) { total_depth_afterscheduler += kernel.get_depth(); }

@@ -76,7 +76,7 @@ void DebugBundles(std::string at, ql::ir::bundles_t& bundles)
 
 
 ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt, 
-    ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
+    ql::quantum_platform & platform, std::string & sched_dot, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Scheduling CC-Light instructions ...");
 
@@ -87,11 +87,11 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
     std::string schedopt = ql::options::get("scheduler");
     if ("ASAP" == schedopt)
     {
-        bundles1 = sched.schedule_asap();
+        bundles1 = sched.schedule_asap(sched_dot);
     }
     else if ("ALAP" == schedopt)
     {
-        bundles1 = sched.schedule_alap();
+        bundles1 = sched.schedule_alap(sched_dot);
     }
     else
     {
@@ -169,7 +169,7 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
 }
 
 ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt, 
-    const ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
+    const ql::quantum_platform & platform, std::string & sched_dot, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Resource constraint scheduling of CC-Light instructions ...");
 
@@ -196,11 +196,11 @@ ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
     ql::ir::bundles_t bundles1;
     if ("ASAP" == schedopt)
     {
-        bundles1 = sched.schedule_asap(rm, platform);
+        bundles1 = sched.schedule_asap(rm, platform, sched_dot);
     }
     else if ("ALAP" == schedopt)
     {
-        bundles1 = sched.schedule_alap(rm, platform);
+        bundles1 = sched.schedule_alap(rm, platform, sched_dot);
     }
     else
     {
