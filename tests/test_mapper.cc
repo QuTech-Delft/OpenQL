@@ -897,11 +897,29 @@ test_lingling7esm(std::string v, std::string param1, std::string param2, std::st
 
 int main(int argc, char ** argv)
 {
-    ql::utils::logger::set_log_level("LOG_DEBUG");
-    // ql::utils::logger::set_log_level("LOG_NOTHING");
+    // ql::utils::logger::set_log_level("LOG_DEBUG");
+    ql::utils::logger::set_log_level("LOG_NOTHING");
 
+#ifdef DEVELOP
 //parameter2    ql::options::set("clifford_premapper", "yes"); 
     ql::options::set("mapper", "minextendrc"); 
+    ql::options::set("mapinitone2one", "yes"); 
+    ql::options::set("maplookahead", "noroutingfirst");
+    ql::options::set("initialplace", "no"); 
+    ql::options::set("initialplaceprefix", "10"); 
+    ql::options::set("mappathselect", "all"); 
+    ql::options::set("mapusemoves", "yes"); 
+//parameter1    ql::options::set("mapreverseswap, "yes"); 
+    ql::options::set("maptiebreak", "first"); 
+
+//parameter2    ql::options::set("clifford_postmapper", "yes"); 
+    ql::options::set("scheduler_post179", "yes");
+    ql::options::set("scheduler", "ALAP");
+//parameter3    ql::options::set("scheduler_commute", "yes");
+//parameter4    ql::options::set("prescheduler", "no");
+#endif
+
+    ql::options::set("mapper", "base"); 
     ql::options::set("mapinitone2one", "yes"); 
     ql::options::set("maplookahead", "noroutingfirst");
     ql::options::set("initialplace", "no"); 
@@ -941,8 +959,8 @@ int main(int argc, char ** argv)
 //  test_oneD2("oneD2", "base", "yes", "critical", "no");
 //  test_oneD2("oneD2", "minextend", "yes", "critical", "no");
 //  test_oneD2("oneD2", "minextendrc", "yes", "critical", "no");
-    test_oneD2("oneD2", "yes", "yes", "yes", "no");
-    test_oneD2("oneD2", "yes", "yes", "yes", "yes");
+//  test_oneD2("oneD2", "yes", "yes", "yes", "no");
+//  test_oneD2("oneD2", "yes", "yes", "yes", "yes");
 
 //  test_oneD4("oneD4", "base", "yes", "critical", "no");
 //  test_oneD4("oneD4", "minextend", "yes", "critical", "no");
@@ -980,7 +998,7 @@ int main(int argc, char ** argv)
 //  test_allD("allD", "yes", "no", "yes", "no");
 //  test_allD("allD", "yes", "yes", "yes", "no");
 //  test_allD("allD", "yes", "yes", "yes", "yes");
-//  test_allD("allD", "no", "no", "no", "no");
+    test_allD("allD", "no", "no", "no", "no");
 //  test_allD("allD", "no", "yes", "no", "no");
 //  test_allD("allD", "no", "no", "yes", "no");
 //  test_allD("allD", "no", "yes", "yes", "no");

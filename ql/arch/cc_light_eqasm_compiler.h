@@ -900,10 +900,10 @@ public:
     
             if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
             {
-                // std::stringstream clifford_in_fname;
-                // clifford_in_fname << ql::options::get("output_dir") << "/" << prog_name << "_" << opt << "_in.qasm";
-                // DOUT("writing clifford input qasm to '" << clifford_in_fname.str() << "' ...");
-                // write_qasm(clifford_in_fname, kernels, platform);
+                std::stringstream clifford_in_fname;
+                clifford_in_fname << ql::options::get("output_dir") << "/" << prog_name << "_" << opt << "_in.qasm";
+                DOUT("writing clifford input qasm to '" << clifford_in_fname.str() << "' ...");
+                write_qasm(clifford_in_fname, kernels, platform);
             }
     
             Clifford cliff;
@@ -945,10 +945,10 @@ public:
 
         if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
         {
-            // std::stringstream mapper_in_fname;
-            // mapper_in_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_in.qasm";
-            // IOUT("writing mapper input qasm to '" << mapper_in_fname.str() << "' ...");
-            // write_qasm(mapper_in_fname, kernels, platform);
+            std::stringstream mapper_in_fname;
+            mapper_in_fname << ql::options::get("output_dir") << "/" << prog_name << "_mapper_in.qasm";
+            IOUT("writing mapper input qasm to '" << mapper_in_fname.str() << "' ...");
+            write_qasm(mapper_in_fname, kernels, platform);
         }
 
         Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
@@ -1005,10 +1005,13 @@ public:
                 DOUT("kernel.timetaken adding: " << timetaken << " giving new total: " << kernel.timetaken);
             }
         }
-        std::stringstream rcscheduler_out_fname;
-        rcscheduler_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_" << opt << "_out.qasm";
-        IOUT("writing " << opt << " output qasm to '" << rcscheduler_out_fname.str() << "' ...");
-        write_qasm(rcscheduler_out_fname, kernels, platform);
+        // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        {
+            std::stringstream rcscheduler_out_fname;
+            rcscheduler_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_" << opt << "_out.qasm";
+            IOUT("writing " << opt << " output qasm to '" << rcscheduler_out_fname.str() << "' ...");
+            write_qasm(rcscheduler_out_fname, kernels, platform);
+        }
     }
 
 

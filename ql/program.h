@@ -480,12 +480,14 @@ class quantum_program
             throw ql::exception("Error: Unknown option '"+tdopt+"' set for decompose_toffoli !",false);
          }
 
-         std::stringstream ss_qasm;
-         ss_qasm << ql::options::get("output_dir") << "/" << name << ".qasm";
-         std::string s = qasm();
-
-         IOUT("writing un-scheduled qasm to '" << ss_qasm.str() << "' ...");
-         ql::utils::write_file(ss_qasm.str(), s);
+         if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+         {
+            std::string s = qasm();
+            std::stringstream ss_qasm;
+            ss_qasm << ql::options::get("output_dir") << "/" << name << ".qasm";
+            IOUT("writing un-scheduled qasm to '" << ss_qasm.str() << "' ...");
+            ql::utils::write_file(ss_qasm.str(), s);
+         }
 
          if( ql::options::get("prescheduler") == "yes" )
          {
@@ -513,22 +515,20 @@ class quantum_program
                ss_swpts << sweep_points[i] << ", ";
             ss_swpts << sweep_points[sweep_points.size()-1] << "] }";
             std::string config = ss_swpts.str();
+
+            std::stringstream ss_config;
             if (default_config)
             {
-               std::stringstream ss_config;
                ss_config << ql::options::get("output_dir") << "/" << name << "_config.json";
-               std::string conf_file_name = ss_config.str();
-               IOUT("writing sweep points to '" << conf_file_name << "'...");
-               ql::utils::write_file(conf_file_name, config);
             }
             else
             {
-               std::stringstream ss_config;
                ss_config << ql::options::get("output_dir") << "/" << config_file_name;
-               std::string conf_file_name = ss_config.str();
-               IOUT("writing sweep points to '" << conf_file_name << "'...");
-               ql::utils::write_file(conf_file_name, config);
             }
+            std::string conf_file_name = ss_config.str();
+            IOUT("writing sweep points to '" << conf_file_name << "'...");
+
+            ql::utils::write_file(conf_file_name, config);
          }
          else
          {
@@ -595,9 +595,12 @@ class quantum_program
          sched_qasm << "# Qubits used: " << qubits_used << "\n";
          sched_qasm << "# No. kernels: " << kernels.size() << "\n";
 
-         string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
-         IOUT("writing scheduled qasm to '" << fname << "' ...");
-         ql::utils::write_file(fname, sched_qasm.str());
+         // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+         {
+            string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
+            IOUT("writing scheduled qasm to '" << fname << "' ...");
+            ql::utils::write_file(fname, sched_qasm.str());
+         }
       }
 
       void print_interaction_matrix()

@@ -233,10 +233,13 @@ private:
                 DOUT("kernel.timetaken adding: " << timetaken << " giving new total: " << kernel.timetaken);
             }
         }
-        std::stringstream rcscheduler_out_fname;
-        rcscheduler_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_rcscheduler_out.qasm";
-        IOUT("writing rcscheduler output qasm to '" << rcscheduler_out_fname.str() << "' ...");
-        write_qasm(rcscheduler_out_fname, kernels, platform);
+        // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        {
+            std::stringstream rcscheduler_out_fname;
+            rcscheduler_out_fname << ql::options::get("output_dir") << "/" << prog_name << "_rcscheduler_out.qasm";
+            IOUT("writing rcscheduler output qasm to '" << rcscheduler_out_fname.str() << "' ...");
+            write_qasm(rcscheduler_out_fname, kernels, platform);
+        }
     }
 
 public:
