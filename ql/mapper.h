@@ -2294,7 +2294,7 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result, double& iptime
             {
                 for ( size_t l=0; l<nlocs; l++ )
                 {
-                    costmax[i][k] += refcount[i][j] * gridp->Distance(k,l);
+                    costmax[i][k] += refcount[i][j] * (gridp->Distance(k,l) - 1);
                 }
             }
         }

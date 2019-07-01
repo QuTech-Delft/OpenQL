@@ -997,7 +997,7 @@ public:
                 if (ql::options::get("print_dot_graphs") == "yes")
                 {
                     std::stringstream fname;
-                    fname << ql::options::get("output_dir") << "/" << kernel.name << "_" << opt << "_scheduler.dot";
+                    fname << ql::options::get("output_dir") << "/" << kernel.name << "_" << opt << ".dot";
                     IOUT("writing " << opt << " dependence graph dot file to '" << fname.str() << "' ...");
                     ql::utils::write_file(fname.str(), sched_dot);
                 }

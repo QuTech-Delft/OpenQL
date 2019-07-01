@@ -897,10 +897,11 @@ test_lingling7esm(std::string v, std::string param1, std::string param2, std::st
 
 int main(int argc, char ** argv)
 {
-    // ql::utils::logger::set_log_level("LOG_DEBUG");
-    ql::utils::logger::set_log_level("LOG_NOTHING");
+    ql::utils::logger::set_log_level("LOG_DEBUG");
+    // ql::utils::logger::set_log_level("LOG_NOTHING");
+    ql::options::set("write_qasm_files", "yes"); 
+    ql::options::set("print_dot_graphs", "yes"); 
 
-#ifdef DEVELOP
 //parameter2    ql::options::set("clifford_premapper", "yes"); 
     ql::options::set("mapper", "minextendrc"); 
     ql::options::set("mapinitone2one", "yes"); 
@@ -917,137 +918,33 @@ int main(int argc, char ** argv)
     ql::options::set("scheduler", "ALAP");
 //parameter3    ql::options::set("scheduler_commute", "yes");
 //parameter4    ql::options::set("prescheduler", "no");
-#endif
 
-    ql::options::set("mapper", "base"); 
-    ql::options::set("mapinitone2one", "yes"); 
-    ql::options::set("maplookahead", "noroutingfirst");
-    ql::options::set("initialplace", "no"); 
-    ql::options::set("initialplaceprefix", "10"); 
-    ql::options::set("mappathselect", "all"); 
-    ql::options::set("mapusemoves", "yes"); 
-//parameter1    ql::options::set("mapreverseswap, "yes"); 
-    ql::options::set("maptiebreak", "first"); 
-
-//parameter2    ql::options::set("clifford_postmapper", "yes"); 
-    ql::options::set("scheduler_post179", "yes");
-    ql::options::set("scheduler", "ALAP");
-//parameter3    ql::options::set("scheduler_commute", "yes");
-//parameter4    ql::options::set("prescheduler", "no");
-
-//  test_danielt("danielt", "minextendrc", "no", "no", "no");
-//  test_danielt("danielt", "minextendrc", "yes", "no", "no");
-//  test_danielt("danielt", "minextendrc", "no", "yes", "no");
-//  test_danielt("danielt", "minextendrc", "yes", "yes", "no");
-
-//  test_daniel2("daniel2", "base", "yes", "critical", "no");
-//  test_daniel2("daniel2", "base", "yes", "critical", "no");
-//  test_daniel2("daniel2", "minextend", "yes", "critical", "no");
-//  test_daniel2("daniel2", "minextendrc", "yes", "no", "no");
-//  test_daniel2("daniel2", "minextendrc", "yes", "critical", "no");
-//  test_daniel2("daniel2", "yes", "no", "no", "no");
-//  test_daniel2("daniel2", "yes", "yes", "no", "no");
-//  test_daniel2("daniel2", "yes", "no", "yes", "no");
 //  test_daniel2("daniel2", "yes", "yes", "yes", "no");
 //  test_daniel2("daniel2", "yes", "yes", "yes", "yes");
-//  test_daniel2("daniel2", "no", "no", "no", "no");
-//  test_daniel2("daniel2", "no", "yes", "no", "no");
-//  test_daniel2("daniel2", "no", "no", "yes", "no");
-//  test_daniel2("daniel2", "no", "yes", "yes", "no");
 
-//  test_oneD2("oneD2", "base", "yes", "critical", "no");
-//  test_oneD2("oneD2", "base", "yes", "critical", "no");
-//  test_oneD2("oneD2", "minextend", "yes", "critical", "no");
-//  test_oneD2("oneD2", "minextendrc", "yes", "critical", "no");
 //  test_oneD2("oneD2", "yes", "yes", "yes", "no");
 //  test_oneD2("oneD2", "yes", "yes", "yes", "yes");
 
-//  test_oneD4("oneD4", "base", "yes", "critical", "no");
-//  test_oneD4("oneD4", "minextend", "yes", "critical", "no");
-//  test_oneD4("oneD4", "minextendrc", "yes", "critical", "no");
+//  test_oneD4("oneD4", "yes", "yes", "yes", "no");
+//  test_oneD4("oneD4", "yes", "yes", "yes", "yes");
 
-//  test_oneD4Diogo("oneD4Diogo", "base", "yes", "critical", "no");
+//  test_oneD4Diogo("oneD4Diogo", "yes", "yes", "yes", "no");
+//  test_oneD4Diogo("oneD4Diogo", "yes", "yes", "yes", "yes");
 
-//  test_string("string", "base", "yes", "critical", "no");
-//  test_string("string", "base", "yes", "critical", "no");
-//  test_string("string", "minextend", "yes", "critical", "no");
-//  test_string("string", "minextendrc", "yes", "no", "no");
-//  test_string("string", "minextendrc", "yes", "critical", "no");
-//  test_string("string", "yes", "no", "no", "no");
-//  test_string("string", "yes", "yes", "no", "no");
-//  test_string("string", "yes", "no", "yes", "no");
 //  test_string("string", "yes", "yes", "yes", "no");
 //  test_string("string", "yes", "yes", "yes", "yes");
-//  test_string("string", "no", "no", "no", "no");
-//  test_string("string", "no", "yes", "no", "no");
-//  test_string("string", "no", "no", "yes", "no");
-//  test_string("string", "no", "yes", "yes", "no");
 
-//  test_allD("allD", "base", "yes", "no", "no");
-//  test_allD("allD", "base", "yes", "critical", "no");
-//  test_allD("allD", "base", "yes", "noroutingfirst", "no");
-//  test_allD("allD", "base", "yes", "all", "no");
-//  test_allD("allD", "minextend", "yes", "no", "no");
-//  test_allD("allD", "minextend", "yes", "critical", "no");
-//  test_allD("allD", "minextend", "yes", "noroutingfirst", "no");
-//  test_allD("allD", "minextend", "yes", "all", "no");
-//  test_allD("allD", "minextendrc", "yes", "no", "no");
-//  test_allD("allD", "minextendrc", "yes", "critical", "no");
-//  test_allD("allD", "yes", "no", "no", "no");
-//  test_allD("allD", "yes", "yes", "no", "no");
-//  test_allD("allD", "yes", "no", "yes", "no");
-//  test_allD("allD", "yes", "yes", "yes", "no");
-//  test_allD("allD", "yes", "yes", "yes", "yes");
-    test_allD("allD", "no", "no", "no", "no");
-//  test_allD("allD", "no", "yes", "no", "no");
-//  test_allD("allD", "no", "no", "yes", "no");
-//  test_allD("allD", "no", "yes", "yes", "no");
+    test_allD("allD", "yes", "yes", "yes", "no");
+    test_allD("allD", "yes", "yes", "yes", "yes");
 
-//  test_allDopt("allDopt", "base", "yes", "critical", "no");
-//  test_allDopt("allDopt", "base", "yes", "critical", "no");
-//  test_allDopt("allDopt", "minextend", "yes", "critical", "no");
-//  test_allDopt("allDopt", "minextendrc", "yes", "no", "no");
-//  test_allDopt("allDopt", "minextendrc", "yes", "critical", "no");
-//  test_allDopt("allDopt", "yes", "no", "no", "no");
-//  test_allDopt("allDopt", "yes", "yes", "no", "no");
-//  test_allDopt("allDopt", "yes", "no", "yes", "no");
 //  test_allDopt("allDopt", "yes", "yes", "yes", "no");
 //  test_allDopt("allDopt", "yes", "yes", "yes", "yes");
-//  test_allDopt("allDopt", "no", "no", "no", "no");
-//  test_allDopt("allDopt", "no", "yes", "no", "no");
-//  test_allDopt("allDopt", "no", "no", "yes", "no");
-//  test_allDopt("allDopt", "no", "yes", "yes", "no");
 
-//  test_lingling5esm("lingling5esm", "base", "yes", "critical", "no");
-//  test_lingling5esm("lingling5esm", "base", "yes", "critical", "no");
-//  test_lingling5esm("lingling5esm", "minextend", "yes", "critical", "no");
-//  test_lingling5esm("lingling5esm", "minextendrc", "yes", "no", "no");
-//  test_lingling5esm("lingling5esm", "minextendrc", "yes", "critical", "no");
-//  test_lingling5esm("lingling5esm", "yes", "no", "no", "no");
-//  test_lingling5esm("lingling5esm", "yes", "yes", "no", "no");
-//  test_lingling5esm("lingling5esm", "yes", "no", "yes", "no");
 //  test_lingling5esm("lingling5esm", "yes", "yes", "yes", "no");
 //  test_lingling5esm("lingling5esm", "yes", "yes", "yes", "yes");
-//  test_lingling5esm("lingling5esm", "no", "no", "no", "no");
-//  test_lingling5esm("lingling5esm", "no", "yes", "no", "no");
-//  test_lingling5esm("lingling5esm", "no", "no", "yes", "no");
-//  test_lingling5esm("lingling5esm", "no", "yes", "yes", "no");
 
-//  test_lingling7esm("lingling7esm", "base", "yes", "critical", "no");
-//  test_lingling7esm("lingling7esm", "base", "yes", "critical", "no");
-//  test_lingling7esm("lingling7esm", "minextend", "yes", "critical", "no");
-//  test_lingling7esm("lingling7esm", "minextend", "yes", "noroutingfirst", "no");
-//  test_lingling7esm("lingling7esm", "minextendrc", "yes", "no", "no");
-//  test_lingling7esm("lingling7esm", "minextendrc", "yes", "critical", "no");
-//  test_lingling7esm("lingling7esm", "yes", "no", "no", "no");
-//  test_lingling7esm("lingling7esm", "yes", "yes", "no", "no");
-//  test_lingling7esm("lingling7esm", "yes", "no", "yes", "no");
 //  test_lingling7esm("lingling7esm", "yes", "yes", "yes", "no");
 //  test_lingling7esm("lingling7esm", "yes", "yes", "yes", "yes");
-//  test_lingling7esm("lingling7esm", "no", "no", "no", "no");
-//  test_lingling7esm("lingling7esm", "no", "yes", "no", "no");
-//  test_lingling7esm("lingling7esm", "no", "no", "yes", "no");
-//  test_lingling7esm("lingling7esm", "no", "yes", "yes", "no");
 
     return 0;
 }
