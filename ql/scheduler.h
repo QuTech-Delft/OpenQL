@@ -2625,8 +2625,13 @@ public:
             {
                 // scanning avlist from front to back (avlist is ordered from high to low criticality)
                 // when encountering first node *inp with less criticality,
-                // that is where new node n should be inserted just before
+                // that is where new node n should be inserted just before,
                 // to keep avlist in desired order
+                //
+                // consequence is that
+                // when a node has same criticality as n, new node n is put after it, as last one of set of same criticality,
+                // so order of calling MakeAvailable (and probably original circuit, and running other scheduler first) matters,
+                // also when all dependence sets (and so remaining values) are identical!
                 if (criticality_lessthan(*inp, n, dir) && !first_lower_criticality_found)
                 {
                     first_lower_criticality_inp = inp;

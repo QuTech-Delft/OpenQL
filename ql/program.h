@@ -564,6 +564,8 @@ class quantum_program
             std::string kernel_sched_dot;
             k.schedule(platform, kernel_sched_dot);
             sched_qasm << "\n" << k.get_prologue() << ql::ir::qasm(k.bundles) << k.get_epilogue();
+            // alternative printing of k's circuit instead of k's bundles
+            // sched_qasm << k.qasm();
 
             if (ql::options::get("print_dot_graphs") == "yes")
             {

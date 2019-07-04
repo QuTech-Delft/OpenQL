@@ -934,8 +934,8 @@ int main(int argc, char ** argv)
 //  test_string("string", "yes", "yes", "yes", "no");
 //  test_string("string", "yes", "yes", "yes", "yes");
 
-    test_allD("allD", "yes", "yes", "yes", "no");
-    test_allD("allD", "yes", "yes", "yes", "yes");
+    test_allD("allD", "yes", "no", "yes", "no");
+    test_allD("allD", "yes", "no", "yes", "yes");
 
 //  test_allDopt("allDopt", "yes", "yes", "yes", "no");
 //  test_allDopt("allDopt", "yes", "yes", "yes", "yes");
