@@ -15,9 +15,9 @@
 #include <cassert>
 #include <time.h>
 
-#include <ql/version.h>
-#include <ql/openql.h>
-#include <ql/classical.h>
+#include <src/version.h>
+#include <src/openql.h>
+#include <src/classical.h>
 
 static std::string get_version()
 {

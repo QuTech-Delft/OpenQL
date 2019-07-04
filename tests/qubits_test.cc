@@ -1,4 +1,4 @@
-// #include "ql/openql.h"
+// #include "src/openql.h"
 
 // int main(int argc, char ** argv)
 // {
@@ -35,7 +35,7 @@
 
 #include <time.h>
 
-#include <ql/openql.h>
+#include <src/openql.h>
 
 int main(int argc, char ** argv)
 {

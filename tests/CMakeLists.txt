@@ -1,6 +1,6 @@
 INCLUDE_DIRECTORIES(
   ${CMAKE_SOURCE_DIR}
-  ${CMAKE_SOURCE_DIR}/programs
+  ${CMAKE_SOURCE_DIR}/examples
   ${CMAKE_SOURCE_DIR}/tests
 )
 

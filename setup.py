@@ -6,7 +6,7 @@ import subprocess
 from sys import platform
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
-srcDir = os.path.join(rootDir, "ql")
+srcDir = os.path.join(rootDir, "src")
 buildDir = os.path.join(rootDir, "cbuild")
 clibDir = os.path.join(buildDir, "openql")
 

@@ -8,7 +8,7 @@
 
 #include <time.h>
 
-#include <ql/openql.h>
+#include <src/openql.h>
 
 // all cnots with operands that are neighbors in s7
 void

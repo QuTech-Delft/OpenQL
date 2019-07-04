@@ -80,9 +80,9 @@ python -m pytest
 ```
 
 
-# Compiling C++ OpenQL tests and programs
+# Compiling C++ OpenQL tests and examples
 
-Existing tests and programs can be compiled by the following instructions. You can use an existing example as a starting point and write your own programs. Make sure to include them in CMakeLists.txt file to inform cmake to compile it as well.
+Existing tests and examples can be compiled by the following instructions. You can use an existing example as a starting point and write your own programs. Make sure to include them in CMakeLists.txt file to inform cmake to compile it as well.
 
 
 ## Linux/OSX
@@ -94,7 +94,7 @@ cmake ..   # generates the make file based on CMakeLists.txt in the OpenQL direc
 make       # compiles the source code into the current directory. 
 ```
 
-To execute an example program go to e.g., `OpenQL/cbuild/programs` and execute one of the files e.g.,  `./simple`. The output will be saved to the output directory next to the file.
+To execute an example program go to e.g., `OpenQL/cbuild/examples` and execute one of the files e.g.,  `./simple`. The output will be saved to the output directory next to the file.
 
 If one wants to compile and run a single file, e.g., `example.cc`, to compile it one can run : 
 
@@ -114,18 +114,18 @@ nmake
 
 ## Usage
 
-Example C++ tests and programs can be found in 'tests' and 'programs'
-directories. Executables for these will be generated in 'build/tests' and 'build/programs'
+Example C++ tests and examples can be found in 'tests' and 'examples'
+directories. Executables for these will be generated in 'build/tests' and 'build/examples'
 directory.
 
-Example python tests and programs can be found in the 'tests' and 'programs' directories.
+Example python tests and examples can be found in the 'tests' and 'examples' directories.
 These can be executed as 'python tests/simplePyTest.py'.
 
 # Getting started 
 
 After installing OpenQL a good place to get started is by looking at the files
 in the "tests" directory. Here you can find commented examples on how to use OpenQL.
-For instance, `programs/getting_started.py` could be a good starting point.
+For instance, `examples/getting_started.py` could be a good starting point.
 `doc` directory as well as the Wiki page documents various aspects.
 
 N.B. gates in OpenQL are *case insensitive*. 

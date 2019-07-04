@@ -8,8 +8,8 @@
 
 #include <time.h>
 
-#include "ql/openql.h"
-#include "ql/utils.h"
+#include "src/openql.h"
+#include "src/utils.h"
 
 // a simple first test
 // the x gates serve to separate the cnot gates wrt dependences

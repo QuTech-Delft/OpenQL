@@ -6,7 +6,7 @@
  */
 
 
-#include <ql/qasm_loader.h>
+#include <src/qasm_loader.h>
 
 
 /**
