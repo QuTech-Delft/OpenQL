@@ -21,7 +21,7 @@ namespace std {
 };
 
 %{
-#include "openql.h"
+#include "openql_i.h"
 %}
 
 
@@ -42,7 +42,7 @@ def set_output_dir(path):
 
 %exception
 {
-try
+    try
     {
         $action
         if (PyErr_Occurred()) SWIG_fail;
@@ -751,4 +751,4 @@ str
 
 
 // Include the header file with above prototypes
-%include "openql.h"
+%include "openql_i.h"

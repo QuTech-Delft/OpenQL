@@ -8,8 +8,18 @@ from sys import platform
 rootDir = os.path.dirname(os.path.realpath(__file__))
 srcDir = os.path.join(rootDir, "src")
 buildDir = os.path.join(rootDir, "cbuild")
-clibDir = os.path.join(buildDir, "openql")
+clibDir = os.path.join(buildDir, "swig")
 
+nprocs = 1
+env_var_nprocs = os.environ.get('NPROCS')
+if (env_var_nprocs != None):
+  nprocs = int(env_var_nprocs)
+
+print('Using {} processes for compilation'.format(nprocs))
+if nprocs == 1:
+    print('For faster compilation by N processes, set environment variable NPROCS=N')
+    print('For example: NPROCS=4 python3 setup.py install --user')
+    
 if not os.path.exists(buildDir):
     os.makedirs(buildDir)
 os.chdir(buildDir)
@@ -19,7 +29,7 @@ if platform == "linux" or platform == "linux2":
     cmd = 'cmake ..'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
-    cmd = 'make'
+    cmd = 'make -j{}'.format(nprocs)
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
     clibname = "_openql.so"
@@ -30,7 +40,7 @@ elif platform == "darwin":
     cmd = 'cmake ..'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
-    cmd = 'make'
+    cmd = 'make -j{}'.format(nprocs)
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
     clibname = "_openql.so"
@@ -48,13 +58,16 @@ elif platform == "win32":
 else:
     print('Unknown/Unsupported OS !!!')
 
-genclib = os.path.join(clibDir, clibname)
-clib = os.path.join(rootDir, "openql", clibname)
-copyfile(genclib, clib)
-copyfile(os.path.join(clibDir, "openql.py"),
-         os.path.join(rootDir, "openql", "openql.py"))
-os.chdir(rootDir)
 
+
+clib = os.path.join(clibDir, clibname)
+swigDir = os.path.join(rootDir, "swig", "openql")
+clibSwig = os.path.join(swigDir, clibname)
+
+copyfile(clib, clibSwig)
+copyfile(os.path.join(clibDir, "openql.py"),
+         os.path.join(swigDir, "openql.py"))
+os.chdir(rootDir)
 
 def get_version(verbose=0):
     """ Extract version information from source code """
@@ -108,6 +121,7 @@ setup(name='openql',
       url='https://github.com/QE-Lab/OpenQL',
       license=read('license'),
       packages=['openql'],
+      package_dir={'': 'swig'},
       include_package_data=True,
-      package_data={'openql': [clib]},
+      package_data={'openql': [clibSwig]},
       zip_safe=False)
