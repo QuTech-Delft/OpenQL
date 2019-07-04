@@ -70,7 +70,7 @@
 #include "src/gate.h"
 #include "src/circuit.h"
 #include "src/ir.h"
-#include "src/arch/cc_light_resource_manager.h"
+#include "src/resource_manager.h"
 
 using namespace std;
 using namespace lemon;

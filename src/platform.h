@@ -13,7 +13,7 @@
 #include <src/circuit.h>
 #include <src/hardware_configuration.h>
 // #include <src/eqasm_compiler.h>
-// #include <src/arch/cbox_eqasm_compiler.h>
+// #include <src/arch/cbox/cbox_eqasm_compiler.h>
 
 namespace ql
 {

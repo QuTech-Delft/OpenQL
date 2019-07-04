@@ -209,5 +209,20 @@ namespace ql
 #define COUT(content) \
         std::cout << "[OPENQL] " << __FILE__ <<":"<< __LINE__ <<" "<< content << std::endl
 
+// helper macro: stringstream to string
+// based on https://stackoverflow.com/questions/21924156/how-to-initialize-a-stdstringstream
+#define SS2S(values) std::string(static_cast<std::ostringstream&&>(std::ostringstream() << values).str())
+
+#define FATAL(content) \
+        {   EOUT(content); \
+            throw ql::exception(SS2S("Error : " << content), false); \
+        }
+
+// get the number of elements in an array
+#define ELEM_CNT(x) (sizeof(x)/sizeof(x[0]))
+
+// check existence of JSON key within node, see PR #194
+#define JSON_EXISTS(node, key)  (node.count(key) > 0)
+
 #endif //QL_UTILS_H
 

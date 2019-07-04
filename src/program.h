@@ -15,8 +15,8 @@
 #include <src/kernel.h>
 #include <src/interactionMatrix.h>
 #include <src/eqasm_compiler.h>
-#include <src/arch/cbox_eqasm_compiler.h>
-#include <src/arch/cc_light_eqasm_compiler.h>
+#include <src/arch/cbox/cbox_eqasm_compiler.h>
+#include <src/arch/cc_light/cc_light_eqasm_compiler.h>
 #include <src/arch/quantumsim_eqasm_compiler.h>
 
 static unsigned long phi_node_count = 0;

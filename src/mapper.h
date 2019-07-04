@@ -16,7 +16,7 @@
 #include "src/utils.h"
 #include "src/platform.h"
 #include "src/kernel.h"
-#include "src/arch/cc_light_resource_manager.h"
+#include "src/arch/cc_light/cc_light_resource_manager.h"
 #include "src/gate.h"
 #include "src/scheduler.h"
 //#include "src/metrics.h"
