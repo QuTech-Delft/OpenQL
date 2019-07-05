@@ -744,6 +744,11 @@ class cc_light_resource_manager_t : public resource_manager_t
 {
 public:
 
+    cc_light_resource_manager_t() : resource_manager_t()
+    {
+        DOUT("Constructing virgin cc_light_resouce_manager_t");
+    }
+
     cc_light_resource_manager_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_manager_t(platform, dir)
     {
         DOUT("Constructing inited resouce_manager_t");

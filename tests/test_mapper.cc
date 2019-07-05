@@ -10,6 +10,82 @@
 
 #include <src/openql.h>
 
+// rc test
+void
+test_rc(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
+{
+    int n = 7;
+    std::string prog_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
+    std::string kernel_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
+    float sweep_points[] = { 1 };
+
+    ql::quantum_platform starmon("starmon", "test_mapper.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, n, 0);
+    ql::quantum_kernel k(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
+    // no dependency, only a conflict in qwg resource
+    k.gate("x", 0);
+    k.gate("y", 1);
+
+    prog.add(k);
+
+    ql::options::set("mapreverseswap", param1);
+    ql::options::set("clifford_premapper", param2);
+    ql::options::set("clifford_postmapper", param2);
+    ql::options::set("scheduler_commute", param3);
+    ql::options::set("prescheduler", param4);
+    prog.compile( );
+}
+
+// some cnots with operands that are neighbors in s7
+void
+test_someNN(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
+{
+    int n = 7;
+    std::string prog_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
+    std::string kernel_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
+    float sweep_points[] = { 1 };
+
+    ql::quantum_platform starmon("starmon", "test_mapper.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, n, 0);
+    ql::quantum_kernel k(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
+    for (int j=0; j<7; j++) { k.gate("x", j); }
+
+    // a list of all cnots that are ok in trivial mapping
+    k.gate("cnot", 0,2);
+    k.gate("cnot", 0,3);
+    k.gate("cnot", 1,3);
+    k.gate("cnot", 1,4);
+    k.gate("cnot", 2,0);
+    k.gate("cnot", 2,5);
+    k.gate("cnot", 3,0);
+    k.gate("cnot", 3,1);
+    k.gate("cnot", 3,5);
+    k.gate("cnot", 3,6);
+    k.gate("cnot", 4,1);
+    k.gate("cnot", 4,6);
+    k.gate("cnot", 5,2);
+    k.gate("cnot", 5,3);
+    k.gate("cnot", 6,3);
+    k.gate("cnot", 6,4);
+
+    for (int j=0; j<7; j++) { k.gate("x", j); }
+
+    prog.add(k);
+
+    ql::options::set("mapreverseswap", param1);
+    ql::options::set("clifford_premapper", param2);
+    ql::options::set("clifford_postmapper", param2);
+    ql::options::set("scheduler_commute", param3);
+    ql::options::set("prescheduler", param4);
+    prog.compile( );
+}
+
 // all cnots with operands that are neighbors in s7
 void
 test_manyNN(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
@@ -919,6 +995,11 @@ int main(int argc, char ** argv)
 //parameter3    ql::options::set("scheduler_commute", "yes");
 //parameter4    ql::options::set("prescheduler", "no");
 
+    test_rc("rc", "no", "no", "yes", "no");
+
+//  test_someNN("someNN", "no", "no", "yes", "no");
+//  test_someNN("someNN", "no", "no", "yes", "yes");
+
 //  test_daniel2("daniel2", "yes", "yes", "yes", "no");
 //  test_daniel2("daniel2", "yes", "yes", "yes", "yes");
 
@@ -934,8 +1015,8 @@ int main(int argc, char ** argv)
 //  test_string("string", "yes", "yes", "yes", "no");
 //  test_string("string", "yes", "yes", "yes", "yes");
 
-    test_allD("allD", "yes", "no", "yes", "no");
-    test_allD("allD", "yes", "no", "yes", "yes");
+//  test_allD("allD", "yes", "no", "yes", "no");
+//  test_allD("allD", "yes", "no", "yes", "yes");
 
 //  test_allDopt("allDopt", "yes", "yes", "yes", "no");
 //  test_allDopt("allDopt", "yes", "yes", "yes", "yes");

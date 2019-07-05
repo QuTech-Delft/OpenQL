@@ -370,7 +370,7 @@ private:
     size_t                  nq;      // size of the map; after initialization, will always be the same
     size_t                  ct;      // multiplication factor from cycles to nano-seconds (unit of duration)
     std::vector<size_t>     fcv;     // fcv[real qubit index i]: qubit i is free from this cycle on
-    ql::arch::resource_manager_t rm; // actual resources occupied by scheduled gates
+    ql::arch::cc_light_resource_manager_t rm;  // actual resources occupied by scheduled gates
 
 
 // access free cycle value of qubit i
@@ -381,10 +381,18 @@ size_t& operator[] (size_t i)
 
 public:
 
+// explicit FreeCycle constructor
+// needed for virgin construction
+// default constructor was deleted because it cannot construct cc_light_resource_manager_t without parameters
+FreeCycle()
+{
+    DOUT("Constructing FreeCycle");
+}
+
 void Init(ql::quantum_platform *p)
 {
     // DOUT("FreeCycle::Init()");
-    ql::arch::resource_manager_t lrm(*p);   // allocated here and copied below to rm because of platform parameter
+    ql::arch::cc_light_resource_manager_t lrm(*p, ql::forward_scheduling);   // allocated here and copied below to rm because of platform parameter
     // DOUT("... created local resource manager");
     platformp = p;
     nq = platformp->qubit_number;
@@ -637,6 +645,13 @@ private:
     ql::circuit             *outCircp;  // output stream after past
 
 public:
+
+// explicit Past constructor
+// needed for virgin construction
+Past()
+{
+    DOUT("Constructing Past");
+}
 
 // past initializer
 void Init(ql::quantum_platform *p)
@@ -1481,6 +1496,12 @@ public:
     Past                    past;       // cloned main past, extended with swaps from this path
     size_t                  cycleExtend;// latency extension caused by the path
 
+// explicit Alter constructor
+// needed for virgin construction
+Alter()
+{
+    DOUT("Constructing Alter");
+}
 
 // Alter initializer
 // This should only be called after a virgin construction and not after cloning a path.
@@ -1675,10 +1696,10 @@ void Split(std::list<Alter> & reslp)
         // fromTarget will contain the path with qubits at indices rightopi to length-1, reversed
         //      reversal of fromTarget is done since swaps need to be generated starting at the target
 
-        Alter    np;
-        np = *this;            // np is local copy of the current path, including total
-        // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
-        //  np.Print("... copy of current path");
+        Alter    np = *this;      // np is local copy of the current path, including total
+        // np = *this;            // np is local copy of the current path, including total
+        if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+            np.Print("... copy of current path");
 
         size_t fromi, toi;
 

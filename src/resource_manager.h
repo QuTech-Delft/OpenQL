@@ -118,7 +118,7 @@ public:
             DOUT("... checking availability for resource " << rptr->name);
             if( rptr->available(op_start_cycle, ins, operation_name, operation_type, instruction_type, operation_duration) == false)
             {
-                DOUT("... resource " << rptr->name << "not available");
+                DOUT("... resource " << rptr->name << " not available");
                 return false;
             }
         }

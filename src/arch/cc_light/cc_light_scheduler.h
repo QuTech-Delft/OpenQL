@@ -189,7 +189,7 @@ ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
         throw ql::exception("Unknown scheduler!", false);
 
     }
-    resource_manager_t rm(platform, direction);
+    cc_light_resource_manager_t rm(platform, direction);
 
     Scheduler sched;
     sched.Init(ckt, platform, nqubits, ncreg);
