@@ -9,15 +9,16 @@
 #ifndef QL_PROGRAM_H
 #define QL_PROGRAM_H
 
-#include <src/utils.h>
-#include <src/options.h>
-#include <src/platform.h>
-#include <src/kernel.h>
-#include <src/interactionMatrix.h>
-#include <src/eqasm_compiler.h>
-#include <src/arch/cbox/cbox_eqasm_compiler.h>
-#include <src/arch/cc_light/cc_light_eqasm_compiler.h>
-#include <src/arch/quantumsim_eqasm_compiler.h>
+#include <utils.h>
+#include <options.h>
+#include <platform.h>
+#include <kernel.h>
+#include <interactionMatrix.h>
+#include <eqasm_compiler.h>
+#include <arch/cbox/cbox_eqasm_compiler.h>
+#include <arch/cc_light/cc_light_eqasm_compiler.h>
+#include <arch/quantumsim_eqasm_compiler.h>
+#include <arch/cc/eqasm_backend_cc.h>
 
 static unsigned long phi_node_count = 0;
 
@@ -35,9 +36,8 @@ class quantum_program
       bool                        default_config;
       std::string                 config_file_name;
 
-   public: 
+   public:
       std::vector<quantum_kernel> kernels;
-
       std::string           name;
       std::vector<float>    sweep_points;
       ql::quantum_platform  platform;
@@ -48,7 +48,7 @@ class quantum_program
 
 
    public:
-      quantum_program(std::string n, quantum_platform platf, size_t nqubits, size_t ncregs) 
+      quantum_program(std::string n, quantum_platform platf, size_t nqubits, size_t ncregs = 0)
             : name(n), platform(platf), qubit_count(nqubits), creg_count(ncregs)
       {
          default_config = true;
@@ -76,6 +76,10 @@ class quantum_program
             else if (eqasm_compiler_name == "quantumsim_compiler" )
             {
                 backend_compiler = new ql::arch::quantumsim_eqasm_compiler();
+            }
+            else if (eqasm_compiler_name == "eqasm_backend_cc" )
+            {
+                backend_compiler = new ql::arch::eqasm_backend_cc();
             }
             else
             {
@@ -111,9 +115,12 @@ class quantum_program
                   ((gtype == __classical_gate__) && (op >= creg_count)) ||
                   ((gtype != __classical_gate__) && (op >= qubit_count))
                  )
-               {   
-                   EOUT("Out of range operand(s) for operation: '" << gname << "'");
-                   throw ql::exception("Out of range operand(s) for operation: '"+gname+"' !",false);
+               {
+                   FATAL("Out of range operand(s) for operation: '" << gname <<
+                        "' (op=" << op <<
+                        ", qubit_count=" << qubit_count <<
+                        ", creg_count=" << creg_count <<
+                        ")");
                }
             }
          }
@@ -387,6 +394,7 @@ class quantum_program
          return ss.str();
       }
 
+#if OPT_MICRO_CODE
       std::string microcode()
       {
          std::stringstream ss;
@@ -428,12 +436,14 @@ class quantum_program
          ss << "     beq  r3,  r3, loop   # infinite loop";
          return ss.str();
       }
+#endif
 
       void set_platform(quantum_platform & platform)
       {
          this->platform = platform;
       }
 
+#if OPT_MICRO_CODE
       std::string uc_header()
       {
          std::stringstream ss;
@@ -445,11 +455,14 @@ class quantum_program
          ss << "loop:\n";
          return ss.str();
       }
+#endif
 
       int compile()
       {
          IOUT("compiling ...");
-
+#if !OPT_MICRO_CODE
+         WOUT("deprecation warning: this version was compiled with support for CBOX microcode disabled in main code (CBOX backend not affected)");
+#endif
          if (kernels.empty())
          {
             EOUT("compiling a program with no kernels");
@@ -480,11 +493,12 @@ class quantum_program
             throw ql::exception("Error: Unknown option '"+tdopt+"' set for decompose_toffoli !",false);
          }
 
-         if( ql::options::get("write_qasm_files") == "yes")
-         {
-            std::string s = qasm();
+        if( ql::options::get("write_qasm_files") == "yes")
+        {
             std::stringstream ss_qasm;
             ss_qasm << ql::options::get("output_dir") << "/" << name << ".qasm";
+            std::string s = qasm();
+
             IOUT("writing un-scheduled qasm to '" << ss_qasm.str() << "' ...");
             ql::utils::write_file(ss_qasm.str(), s);
          }
@@ -501,8 +515,44 @@ class quantum_program
          }
          else
          {
-            backend_compiler->compile(name, kernels, platform);
+            if (eqasm_compiler_name == "cc_light_compiler"
+                || eqasm_compiler_name == "eqasm_backend_cc"
+                || eqasm_compiler_name == "quantumsim_compiler" )
+                )
+            {
+               backend_compiler->compile(name, kernels, platform);
+            }
+            else
+            {
+               // FIXME(WJV): I would suggest to move the fusing to a backend that wants it, and then:
+               // - always call:  backend_compiler->compile(name, kernels, platform);
+               // - remove from eqasm_compiler.h: compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& p);
 
+               IOUT("fusing quantum kernels...");
+               ql::circuit fused;
+               for (size_t k=0; k<kernels.size(); ++k)
+               {
+                  ql::circuit& kc = kernels[k].get_circuit();
+                  for(size_t i=0; i<kernels[k].iterations; i++)
+                  {
+                     fused.insert(fused.end(), kc.begin(), kc.end());
+                  }
+               }
+
+               try
+               {
+                  IOUT("compiling eqasm code...");
+                  backend_compiler->compile(name, fused, platform);
+               }
+               catch (ql::exception &e)
+               {
+                  EOUT("[x] error : eqasm_compiler.compile() : compilation interrupted due to fatal error.");
+                  throw e;
+               }
+
+               IOUT("writing traces to '" << ( ql::options::get("output_dir") + "/trace.dat"));
+               backend_compiler->write_traces( ql::options::get("output_dir") + "/trace.dat");
+            }
             IOUT("writing eqasm code to '" << ( ql::options::get("output_dir") + "/" + name+".asm"));
             backend_compiler->write_eqasm( ql::options::get("output_dir") + "/" + name + ".asm");
          }
@@ -532,7 +582,7 @@ class quantum_program
          }
          else
          {
-            EOUT("cannot write sweepoint file : sweep point array is empty !");
+            IOUT("sweep points file not generated as sweep point array is empty !");
          }
 
          IOUT("compilation of program '" << name << "' done.");
@@ -597,9 +647,12 @@ class quantum_program
          sched_qasm << "# Qubits used: " << qubits_used << "\n";
          sched_qasm << "# No. kernels: " << kernels.size() << "\n";
 
-         string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
-         IOUT("writing scheduled qasm to '" << fname << "' ...");
-         ql::utils::write_file(fname, sched_qasm.str());
+         if( ql::options::get("write_qasm_files") == "yes")
+         {
+            string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
+            IOUT("writing scheduled qasm to '" << fname << "' ...");
+            ql::utils::write_file(fname, sched_qasm.str());
+         }
       }
 
       void print_interaction_matrix()

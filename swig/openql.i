@@ -79,11 +79,14 @@ str
      Opt. Name   :   Default     : Possible values
     'log_level'  : LOG_NOTHING   : 'LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}'
     'output_dir' : 'test_output' : <output directory>
-    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
-    'use_default_gates' : 'yes'  : 'yes/no'
     'optimize'   :   'no'        : 'yes/no'
+    'use_default_gates' : 'yes'  : 'yes/no'
     'decompose_toffoli' :  'no'  : 'yes/no'
-
+    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
+    'scheduler_uniform' : 'no'   : 'yes/no'
+    'scheduler_commute' : 'no'   : 'yes/no'
+    'scheduler_post179' : 'yes'  : 'yes/no'
+    'cz_mode' : 'manual'         : 'auto/manual'
 
 Parameters
 ----------
@@ -98,10 +101,14 @@ arg2 : str
      Opt. Name   :   Default     : Possible values
     'log_level'  : LOG_NOTHING   : 'LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}'
     'output_dir' : 'test_output' : <output directory>
-    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
-    'use_default_gates' : 'yes'  : 'yes/no'
     'optimize'   :   'no'        : 'yes/no'
+    'use_default_gates' : 'yes'  : 'yes/no'
     'decompose_toffoli' :  'no'  : 'yes/no'
+    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
+    'scheduler_uniform' : 'no'   : 'yes/no'
+    'scheduler_commute' : 'no'   : 'yes/no'
+    'scheduler_post179' : 'yes'  : 'yes/no'
+    'cz_mode' : 'manual'         : 'auto/manual'
 
 Parameters
 ----------
@@ -429,7 +436,10 @@ The ids and the corresponding operations are:
 """
 
 %feature("docstring") Kernel::wait
-""" inserts explicit wait on specified qubits.
+""" inserts explicit wait on specified qubits. wait with duration '0'
+    is equivalent to barrier on specified list of qubits. If no qubits
+    are specified, then wait/barrier is applied on all the qubits.
+
 
 Parameters
 ----------
@@ -438,6 +448,18 @@ arg1 : []
 arg2 : int
     duration in ns
 """
+
+%feature("docstring") Kernel::barrier
+""" inserts explicit barrier on specified qubits. wait with duration '0'
+    is also equivalent to appliying barrier on specified list of qubits.
+    If no qubits are specified, then barrier is applied on all the qubits.
+
+Parameters
+----------
+arg1 : []
+    list of qubits
+"""
+
 
 %feature("docstring") Kernel::display
 """ inserts QX display instruction (so QX specific).
@@ -573,17 +595,6 @@ arg3 : int
     number of qubits the program will use
 arg4 : int
     number of classical registers the program will use (default: 0)
-"""
-
-%feature("docstring") Program::set_sweep_points
-""" Sets sweep points for an experiment.
-
-Parameters
-----------
-arg1 : []
-    list of sweep points
-arg2 : int
-	number of sweep points
 """
 
 

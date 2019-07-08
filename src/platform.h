@@ -10,13 +10,12 @@
 #include <string>
 #include <tuple>
 
-#include <src/circuit.h>
-#include <src/hardware_configuration.h>
-// #include <src/eqasm_compiler.h>
-// #include <src/arch/cbox/cbox_eqasm_compiler.h>
+#include <circuit.h>
+#include <hardware_configuration.h>
 
 namespace ql
 {
+#if 0   // FIXME: unused
 typedef enum __ql_platform_t
 {
     transmon_platform,
@@ -25,7 +24,9 @@ typedef enum __ql_platform_t
     unsupported_platform
 } ql_platform_t;
 
+
 typedef std::vector<std::string> micro_code_t;
+
 
 /**
  * abstract platform interface (deprecated)
@@ -36,6 +37,7 @@ class platform
 public:
     virtual int compile(circuit& c, std::string file_name, bool optimize=false) = 0;
 };
+#endif
 
 
 /**
@@ -57,9 +59,6 @@ public:
     json                    resources;
     json                    topology;
     json                    aliases;                  // workaround the generic instruction composition
-
-    // ql::eqasm_compiler *      backend_compiler;         // backend compiler
-    // std::vector<ql::custom_gate *> supported_instructions; // supported operation
 
     /**
      * quantum_platform constructor
@@ -95,20 +94,6 @@ public:
         else
             cycle_time = hardware_settings["cycle_time"];
         DOUT("quantum_platform: qubit_number=" << qubit_number << ", cycle_time=" << cycle_time);
-
-        // if (eqasm_compiler_name == "qumis_compiler")
-        // {
-        //    backend_compiler = new ql::arch::cbox_eqasm_compiler();
-        // }
-        // else if (eqasm_compiler_name == "none")
-        // {
-        //    backend_compiler = NULL;
-        // }
-        // else
-        // {
-        //    EOUT("eqasm compiler backend specified in the hardware configuration file is not supported !");
-        //    throw std::exception();
-        // }
     }
 
     /**
@@ -130,8 +115,57 @@ public:
     {
         return qubit_number;
     }
+
+
+    /**
+     * @brief   Find architecture instruction name for a custom gate
+     *
+     * @param   iname   Name of instruction, e.g. "x q5" ('specialized custom gate') or "x" ('parameterized custom gate')
+     * @return  value of 'arch_operation_name', e.g. "x"
+     * @note    On CC-light, arch_operation_name is set from JSON field cc_light_instr
+     * @note    Based on cc_light_scheduler.h::get_cc_light_instruction_name()
+     * @note    Only works for custom instructions defined in JSON
+       FIXME:   it may be more useful to get the information directly from JSON, because arch_operation_name is not really generic
+     */
+    std::string get_instruction_name(std::string &iname) const
+    {
+        std::string instr_name;
+        auto it = instruction_map.find(iname);
+        if (it != instruction_map.end())
+        {
+            custom_gate* g = it->second;
+            instr_name = g->arch_operation_name;
+            if(instr_name.empty())
+            {
+                FATAL("JSON file: field 'arch_operation_name' not defined for instruction '" << iname << "'");
+            }
+        }
+        else
+        {
+            FATAL("JSON file: custom instruction not found: '" << iname << "'");
+        }
+        return instr_name;
+    }
+
+
+    // find settings for custom gate, preventing JSON exceptions
+    const json& find_instruction(std::string iname) const
+    {
+        // search the JSON defined instructions, to prevent JSON exception if key does not exist
+        if(!JSON_EXISTS(instruction_settings, iname)) FATAL("JSON file: instruction not found: '" << iname << "'");
+        return instruction_settings[iname];
+    }
+
+
+    // find instruction type for custom gate
+    std::string find_instruction_type(std::string iname) const
+    {
+        const json &instruction = find_instruction(iname);
+        if(!JSON_EXISTS(instruction, "type")) FATAL("JSON file: field 'type' not defined for instruction '" << iname <<"'");
+        return instruction["type"];
+    }
 };
 
 }
 
-#endif // PLATFORM_H
+#endif // QL_PLATFORM_H

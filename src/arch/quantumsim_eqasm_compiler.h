@@ -8,14 +8,15 @@
 #ifndef QL_QUANTUMSIM_EQASM_COMPILER_H
 #define QL_QUANTUMSIM_EQASM_COMPILER_H
 
-#include <src/platform.h>
-#include <src/kernel.h>
-#include <src/gate.h>
-#include <src/ir.h>
-#include <src/scheduler.h>
-#include <src/eqasm_compiler.h>
-#include <src/mapper.h>
-#include <src/clifford.h>
+#include <platform.h>
+#include <kernel.h>
+#include <gate.h>
+#include <circuit.h>
+#include <ir.h>
+#include <scheduler.h>
+#include <eqasm_compiler.h>
+#include <mapper.h>
+#include <clifford.h>
 
 namespace ql
 {
@@ -256,7 +257,7 @@ public:
             num_qubits      = platform.hardware_settings[params[p++]];
             ns_per_cycle    = platform.hardware_settings[params[p++]];
         }
-        catch (json::exception e)
+        catch (json::exception &e)
         {
             throw ql::exception("[x] error : ql::quantumsim::compile() : error while reading hardware settings : parameter '"+params[p-1]+"'\n    "+ std::string(e.what()),false);
         }

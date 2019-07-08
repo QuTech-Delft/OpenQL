@@ -8,7 +8,7 @@
 #ifndef QL_OPTIONS_H
 #define QL_OPTIONS_H
 
-#include <src/utils.h>
+#include <utils.h>
 #include <CLI/CLI.hpp>
 #include <iostream>
 
@@ -29,17 +29,18 @@ namespace ql
           opt_name2opt_val["log_level"] = "LOG_NOTHING";
           opt_name2opt_val["output_dir"] = "test_output";
           opt_name2opt_val["optimize"] = "no";
-          opt_name2opt_val["prescheduler"] = "yes";
-          opt_name2opt_val["scheduler_post179"] = "yes";
-          opt_name2opt_val["print_dot_graphs"] = "no";
+          opt_name2opt_val["use_default_gates"] = "no";
+          opt_name2opt_val["decompose_toffoli"] = "no";
           opt_name2opt_val["scheduler"] = "ALAP";
           opt_name2opt_val["scheduler_uniform"] = "no";
           opt_name2opt_val["scheduler_commute"] = "yes";
-          opt_name2opt_val["use_default_gates"] = "no";
-          opt_name2opt_val["optimize"] = "no";
+          opt_name2opt_val["prescheduler"] = "yes";
+          opt_name2opt_val["scheduler_post179"] = "yes";
+          opt_name2opt_val["cz_mode"] = "manual";
+          opt_name2opt_val["print_dot_graphs"] = "no";
+
           opt_name2opt_val["clifford_premapper"] = "yes";
           opt_name2opt_val["clifford_postmapper"] = "yes";
-          opt_name2opt_val["decompose_toffoli"] = "no";
           opt_name2opt_val["mapper"] = "minextendrc";
           opt_name2opt_val["mapinitone2one"] = "yes";
           opt_name2opt_val["initialplace"] = "no";
@@ -49,6 +50,7 @@ namespace ql
           opt_name2opt_val["maptiebreak"] = "random";
           opt_name2opt_val["mappathselect"] = "all";
           opt_name2opt_val["maplookahead"] = "noroutingfirst";
+
           opt_name2opt_val["write_qasm_files"] = "no";
 
           // add options with default values and list of possible values
@@ -66,6 +68,7 @@ namespace ql
           app->add_set_ignore_case("--clifford_premapper", opt_name2opt_val["clifford_premapper"], {"yes", "no"}, "clifford optimize before mapping yes or not", true);
           app->add_set_ignore_case("--clifford_postmapper", opt_name2opt_val["clifford_postmapper"], {"yes", "no"}, "clifford optimize after mapping yes or not", true);
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "MA"}, "Type of decomposition used for toffoli", true);
+          app->add_set_ignore_case("--cz_mode", opt_name2opt_val["cz_mode"], {"manual", "auto"}, "CZ mode", true);
 
           app->add_set_ignore_case("--mapper", opt_name2opt_val["mapper"], {"no", "base", "baserc", "minextend", "minextendrc", "minboundederror"}, "Mapper heuristic", true);
           app->add_set_ignore_case("--mapinitone2one", opt_name2opt_val["mapinitone2one"], {"no", "yes"}, "Initialize mapping of virtual qubits one to one to real qubits", true);
@@ -76,13 +79,16 @@ namespace ql
           app->add_set_ignore_case("--maptiebreak", opt_name2opt_val["maptiebreak"], {"first", "last", "random"}, "Tie break method", true);
           app->add_set_ignore_case("--mappathselect", opt_name2opt_val["mappathselect"], {"all", "borders"}, "Which paths: all or borders", true);
           app->add_set_ignore_case("--maplookahead", opt_name2opt_val["maplookahead"], {"no", "critical", "noroutingfirst", "all"}, "Strategy wrt selecting next gate(s) to map", true);
-          app->add_set_ignore_case("--write_qasm_files", opt_name2opt_val["write_qasm_files"], {"yes", "no"}, "write (un-)secheduled (with and without resource-constraint) qasm files", true);
+          app->add_set_ignore_case("--write_qasm_files", opt_name2opt_val["write_qasm_files"], {"yes", "no"}, "write (un-)scheduled (with and without resource-constraint) qasm files", true);
       }
 
       void print_current_values()
       {
-          std::cout
+          std::cout << "log_level: " << opt_name2opt_val["log_level"] << std::endl
+                    << "output_dir: " << opt_name2opt_val["output_dir"] << std::endl
                     << "optimize: " << opt_name2opt_val["optimize"] << std::endl
+                    << "use_default_gates: " << opt_name2opt_val["use_default_gates"] << std::endl
+                    << "decompose_toffoli: " << opt_name2opt_val["decompose_toffoli"] << std::endl
                     << "prescheduler: " << opt_name2opt_val["prescheduler"] << std::endl
                     << "scheduler: " << opt_name2opt_val["scheduler"] << std::endl
                     << "scheduler_uniform: " << opt_name2opt_val["scheduler_uniform"] << std::endl
@@ -98,9 +104,9 @@ namespace ql
                     << "mapreverseswap: "   << opt_name2opt_val["mapreverseswap"] << std::endl
                     << "clifford_postmapper: " << opt_name2opt_val["clifford_postmapper"] << std::endl
                     << "scheduler_post179: " << opt_name2opt_val["scheduler_post179"] << std::endl
-                    << "print_dot_graphs: " << opt_name2opt_val["print_dot_graphs"] << std::endl
-                    << "scheduler_commute: " << opt_name2opt_val["scheduler_uniform"] << std::endl;
-	  ;
+                    << "scheduler_commute: " << opt_name2opt_val["scheduler_commute"] << std::endl
+                    << "cz_mode: " << opt_name2opt_val["cz_mode"] << std::endl;
+                    << "print_dot_graphs: " << opt_name2opt_val["print_dot_graphs"] << std::endl;
       }
 
       void help()
@@ -115,7 +121,7 @@ namespace ql
             std::vector<std::string> opts = {opt_value, "--"+opt_name};
             app->parse(opts);
           }
-          catch (const std::exception& e)
+          catch (const std::exception &e)
           {
             app->reset();
             EOUT("Un-known option:"<< e.what());

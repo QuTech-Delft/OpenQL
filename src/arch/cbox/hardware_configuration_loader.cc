@@ -12,9 +12,9 @@
 
 #include <cmath>
 
-#include <src/openql.h>
-#include <src/json.h>
-#include <src/gate.h>
+#include <openql.h>
+#include <json.h>
+#include <gate.h>
 
 using namespace nlohmann;
 

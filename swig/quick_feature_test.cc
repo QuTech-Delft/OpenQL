@@ -11,7 +11,7 @@
 // enable optimizations
 // #define ql_optimize
 
-#include <src/openql.h>
+#include <openql.h>
 
 int main(int argc, char ** argv)
 {

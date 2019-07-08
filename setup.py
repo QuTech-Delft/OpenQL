@@ -19,7 +19,7 @@ print('Using {} processes for compilation'.format(nprocs))
 if nprocs == 1:
     print('For faster compilation by N processes, set environment variable NPROCS=N')
     print('For example: NPROCS=4 python3 setup.py install --user')
-    
+
 if not os.path.exists(buildDir):
     os.makedirs(buildDir)
 os.chdir(buildDir)
@@ -50,6 +50,7 @@ elif platform == "win32":
     cmd = 'cmake -G "NMake Makefiles" ..'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
+    # cmd = 'nmake /M/P{}'.format(nprocs)
     cmd = 'nmake'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
@@ -57,8 +58,6 @@ elif platform == "win32":
 
 else:
     print('Unknown/Unsupported OS !!!')
-
-
 
 clib = os.path.join(clibDir, clibname)
 swigDir = os.path.join(rootDir, "swig", "openql")
@@ -119,7 +118,7 @@ setup(name='openql',
       author='Nader Khammassi and Imran Ashraf',
       author_email='nader.khammassi@gmail.com, iimran.aashraf@gmail.com',
       url='https://github.com/QE-Lab/OpenQL',
-      license=read('license'),
+      license=read('LICENSE'),
       packages=['openql'],
       package_dir={'': 'swig'},
       include_package_data=True,

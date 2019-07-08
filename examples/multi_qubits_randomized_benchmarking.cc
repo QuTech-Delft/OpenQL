@@ -8,7 +8,7 @@
 
 #include <time.h>
 
-#include <src/openql.h>
+#include <openql.h>
 
 // clifford inverse lookup table for grounded state
 const size_t inv_clifford_lut_gs[] = {0, 2, 1, 3, 8, 10, 6, 11, 4, 9, 5, 7, 12, 16, 23, 21, 13, 17, 18, 19, 20, 15, 22, 14};

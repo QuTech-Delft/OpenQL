@@ -26,7 +26,7 @@ size_t MAX_CYCLE = std::numeric_limits<int>::max();
 
 #if defined(_WIN32)
 #include <direct.h>
-#else 
+#else
 #include <sys/types.h>
 #include <sys/stat.h>
 #endif
@@ -42,7 +42,7 @@ namespace ql
         {
             #if defined(_WIN32)
             _mkdir(dir.c_str());
-            #else 
+            #else
             mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
             #endif
         }
@@ -143,15 +143,15 @@ namespace ql
 
         // Helper function to sort the vector of pairs.
         // Pairs are sorted by first element of pairs and then by second element
-        bool sort_pair_helper(const std::pair<size_t,size_t> &a, const std::pair<size_t,size_t> &b) 
-        { 
+        bool sort_pair_helper(const std::pair<size_t,size_t> &a, const std::pair<size_t,size_t> &b)
+        {
             if(a.first < b.first)
                 return true;
             else if (a.first == b.first)
-                return (a.second < b.second); 
+                return (a.second < b.second);
             else
                 return false;
-        } 
+        }
 
         namespace logger
         {

@@ -23,18 +23,19 @@ namespace ql
         class bundle_t
         {
         public:
-            size_t start_cycle;
-            size_t duration_in_cycles;
+            size_t start_cycle;                         // start cycle for all gates in parallel_sections
+            size_t duration_in_cycles;                  // the maximum gate duration in parallel_sections
             std::list<section_t> parallel_sections;
         };
 
-        typedef std::list<bundle_t>bundles_t;
+        typedef std::list<bundle_t>bundles_t;           // note that subsequent bundles can overlap in time
 
         std::string qasm(bundles_t & bundles)
         {
             std::stringstream ssqasm;
             size_t curr_cycle=1;
 
+            ssqasm << '\n';
             for (bundle_t & abundle : bundles)
             {
                 auto st_cycle = abundle.start_cycle;
@@ -51,7 +52,7 @@ namespace ql
                     ngates += sec_it->size();
                 }
                 ssqasm << "    ";
-                if (ngates > 1) ssqasm << "{ "; 
+                if (ngates > 1) ssqasm << "{ ";
                 auto isfirst = 1;
                 for( auto sec_it = abundle.parallel_sections.begin(); sec_it != abundle.parallel_sections.end(); ++sec_it )
                 {
@@ -63,7 +64,7 @@ namespace ql
                         isfirst = 0;
                     }
                 }
-                if (ngates > 1) ssqasm << " }"; 
+                if (ngates > 1) ssqasm << " }";
                 curr_cycle+=delta;
                 ssqasm << "\n";
             }
@@ -95,6 +96,6 @@ namespace ql
             fout.close();
         }
     } // namespace ir
-} //namespace ir
+} //namespace ql
 
 #endif

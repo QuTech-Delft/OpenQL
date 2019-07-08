@@ -66,11 +66,11 @@
 #include <lemon/dijkstra.h>
 #include <lemon/connectivity.h>
 
-#include "src/utils.h"
-#include "src/gate.h"
-#include "src/circuit.h"
-#include "src/ir.h"
-#include "src/resource_manager.h"
+#include "utils.h"
+#include "gate.h"
+#include "circuit.h"
+#include "ir.h"
+#include "resource_manager.h"
 
 using namespace std;
 using namespace lemon;
@@ -123,11 +123,11 @@ public:
         weight[arc] = std::ceil( static_cast<float>(instruction[srcNode]->duration) / cycle_time);
         cause[arc] = operand;
         depType[arc] = deptype;
-        // DOUT("... dep " << name[srcNode] << " -> " << name[tgtNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[deptype] << ")");
+        DOUT("... dep " << name[srcNode] << " -> " << name[tgtNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[deptype] << ")");
     }
 
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
-    void Init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
+    void init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
     {
         DOUT("Dependence graph creation ...");
         qubit_count = qcount;
@@ -187,7 +187,7 @@ public:
         // for each gate pointer ins in the circuit, add a node and add dependences from previous gates to it
         for( auto ins : ckt )
         {
-            // DOUT("Current instruction : " << ins->qasm());
+            DOUT("Current instruction : " << ins->qasm());
 
             // Add node
             ListDigraph::Node consNode = graph.addNode();
@@ -261,16 +261,16 @@ public:
             // TODO: define signature in .json file similar to how gcc defines instructions
             // and then have a signature interpreter here; then we don't have this long if-chain
             // and, more importantly, we don't have the knowledge of particular gates here;
-            // the default signature would be that of a default gate, modifying each qubit operand
-
+            // the default signature would be that of a default gate, modifying each qubit operand;
+            // that also solves
             if(ins->name == "measure")
             {
-                // DOUT(". considering " << name[consNode] << " as measure");
+                DOUT(". considering " << name[consNode] << " as measure");
                 // Read+Write each qubit operand + Write corresponding creg
                 auto operands = ins->operands;
                 for( auto operand : operands )
                 {
-                    // DOUT(".. Operand: " << operand);
+                    DOUT(".. Operand: " << operand);
                     add_dep(LastWriter[operand], consID, WAW, operand);
                     for(auto & readerID : LastReaders[operand])
                     {
@@ -288,7 +288,7 @@ public:
                 ql::measure * mins = (ql::measure*)ins;
                 for( auto operand : mins->creg_operands )
                 {
-                    // DOUT(".. Operand: " << operand);
+                    DOUT(".. Operand: " << operand);
                     add_dep(LastWriter[qubit_count+operand], consID, WAW, operand);
                     for(auto & readerID : LastReaders[qubit_count+operand])
                     {
@@ -317,14 +317,14 @@ public:
             }
             else if(ins->name == "display")
             {
-                // DOUT(". considering " << name[consNode] << " as display");
+                DOUT(". considering " << name[consNode] << " as display");
                 // no operands, display all qubits and cregs
                 // Read+Write each operand
                 std::vector<size_t> qubits(qubit_creg_count);
                 std::iota(qubits.begin(), qubits.end(), 0);
                 for( auto operand : qubits )
                 {
-                    // DOUT(".. Operand: " << operand);
+                    DOUT(".. Operand: " << operand);
                     add_dep(LastWriter[operand], consID, WAW, operand);
                     for(auto & readerID : LastReaders[operand])
                     {
@@ -352,12 +352,12 @@ public:
             }
             else if(ins->type() == ql::gate_type_t::__classical_gate__)
             {
-                // DOUT(". considering " << name[consNode] << " as classical gate");
+                DOUT(". considering " << name[consNode] << " as classical gate");
                 std::vector<size_t> all_operands(qubit_creg_count);
                 std::iota(all_operands.begin(), all_operands.end(), 0);
                 for( auto operand : all_operands )
                 {
-                    // DOUT(".. Operand: " << operand);
+                    DOUT(".. Operand: " << operand);
                     add_dep(LastWriter[operand], consID, WAW, operand);
                     for(auto & readerID : LastReaders[operand])
                     {
@@ -386,13 +386,13 @@ public:
             else if (  ins->name == "cnot"
                     )
             {
-                // DOUT(". considering " << name[consNode] << " as cnot");
+                DOUT(". considering " << name[consNode] << " as cnot");
                 // CNOTs Read the first operands, and Ds the second operand
                 size_t operandNo=0;
                 auto operands = ins->operands;
                 for( auto operand : operands )
                 {
-                    // DOUT(".. Operand: " << operand);
+                    DOUT(".. Operand: " << operand);
                     if( operandNo == 0)
                     {
                         add_dep(LastWriter[operand], consID, RAW, operand);
@@ -473,14 +473,14 @@ public:
                     || ins->name == "cphase"
                     )
             {
-                // DOUT(". considering " << name[consNode] << " as cz");
+                DOUT(". considering " << name[consNode] << " as cz");
                 // CZs Read all operands for post179
                 // CZs Read all operands and write last one for pre179 
                 size_t operandNo=0;
                 auto operands = ins->operands;
                 for( auto operand : operands )
                 {
-                    // DOUT(".. Operand: " << operand);
+                    DOUT(".. Operand: " << operand);
                     if (ql::options::get("scheduler_post179") == "no")
                     {
                         add_dep(LastWriter[operand], consID, RAW, operand);
@@ -546,14 +546,14 @@ public:
                     // before implementing it, check whether all commutativity on Reads above hold for this Control Unitary
                     )
             {
-                // DOUT(". considering " << name[consNode] << " as Control Unitary");
+                DOUT(". considering " << name[consNode] << " as Control Unitary");
                 // Control Unitaries Read all operands, and Write the last operand
                 size_t operandNo=0;
                 auto operands = ins->operands;
                 size_t op_count = operands.size();
                 for( auto operand : operands )
                 {
-                    // DOUT(".. Operand: " << operand);
+                    DOUT(".. Operand: " << operand);
                     add_dep(LastWriter[operand], consID, RAW, operand);
                     if (ql::options::get("scheduler_post179") == "no"
                     ||  ql::options::get("scheduler_commute") == "no")
@@ -607,13 +607,13 @@ public:
 #endif  // HAVEGENERALCONTROLUNITARIES
             else
             {
-                // DOUT(". considering " << name[consNode] << " as general quantum gate");
+                DOUT(". considering " << name[consNode] << " as general quantum gate");
                 // general quantum gate, Read+Write on each operand
                 size_t operandNo=0;
                 auto operands = ins->operands;
                 for( auto operand : operands )
                 {
-                    // DOUT(".. Operand: " << operand);
+                    DOUT(".. Operand: " << operand);
                     add_dep(LastWriter[operand], consID, WAW, operand);
                     for(auto & readerID : LastReaders[operand])
                     {
@@ -665,7 +665,7 @@ public:
 	        std::iota(qubits.begin(), qubits.end(), 0);
 	        for( auto operand : qubits )
 	        {
-	            // DOUT(".. Operand: " << operand);
+	            DOUT(".. Operand: " << operand);
 	            add_dep(LastWriter[operand], consID, WAW, operand);
 	            for(auto & readerID : LastReaders[operand])
 	            {
@@ -1092,6 +1092,7 @@ private:
     //     }
     // }
 
+
     ql::ir::bundles_t schedule_asap_pre179(std::string & sched_dot)
     {
         DOUT("Scheduling ASAP to get bundles ...");
@@ -1163,7 +1164,7 @@ private:
 
 
     // the following with rc and buffer-buffer delays
-    ql::ir::bundles_t schedule_asap_pre179(ql::arch::resource_manager_t & rm,
+    ql::ir::bundles_t schedule_asap_pre179(ql::arch::resource_manager_t & rm, 
         const ql::quantum_platform & platform, std::string & sched_dot)
     {
         DOUT("RC Scheduling ASAP to get bundles ...");
@@ -1513,7 +1514,6 @@ private:
                 dotout << "Cycle" << cn;
             }
             dotout << ";\n}\n";
-
 
             // Now print ranks, as shown below
             std::vector<ListDigraph::Node>::reverse_iterator rit;
@@ -2204,7 +2204,7 @@ public:
 
         for (auto & gp: circ)
         {
-            // DOUT(". adding gate(@" << gp->cycle << ")  " << gp->qasm());
+            DOUT(". adding gate(@" << gp->cycle << ")  " << gp->qasm());
             if ( gp->type() == ql::gate_type_t::__wait_gate__ ||
                  gp->type() == ql::gate_type_t::__dummy_gate__
                )
@@ -2223,15 +2223,22 @@ public:
                 if (!currBundle.parallel_sections.empty())
                 {
                     // finish currBundle at currCycle
-                    // DOUT(".. bundle duration in cycles: " << currBundle.duration_in_cycles);
+                    DOUT(".. bundle at cycle " << currCycle << " duration in cycles: " << currBundle.duration_in_cycles);
+                    for (auto &s : currBundle.parallel_sections)
+                    {
+                        for (auto &sgp: s)
+                        {
+                            DOUT("... with gate(@" << sgp->cycle << ")  " << sgp->qasm());
+                        }
+                    }
                     bundles.push_back(currBundle);
-                    // DOUT(".. ready with bundle");
+                    DOUT(".. ready with bundle at cycle " << currCycle);
                     currBundle.parallel_sections.clear();
                 }
 
                 // new empty currBundle at newCycle
                 currCycle = newCycle;
-                // DOUT(".. bundling at cycle: " << currCycle);
+                DOUT(".. bundling at cycle: " << currCycle);
                 currBundle.start_cycle = currCycle;
                 currBundle.duration_in_cycles = 0;
             }
@@ -2240,15 +2247,22 @@ public:
             ql::ir::section_t asec;
             asec.push_back(gp);
             currBundle.parallel_sections.push_back(asec);
-            // DOUT("... gate: " << gp->qasm() << " in private parallel section");
+            DOUT("... gate: " << gp->qasm() << " in private parallel section");
             currBundle.duration_in_cycles = std::max(currBundle.duration_in_cycles, (gp->duration+cycle_time-1)/cycle_time); 
         }
         if (!currBundle.parallel_sections.empty())
         {
             // finish currBundle (which is last bundle) at currCycle
-            // DOUT("... bundle duration in cycles: " << currBundle.duration_in_cycles);
+            DOUT("... bundle at cycle " << currCycle << " duration in cycles: " << currBundle.duration_in_cycles);
+            for (auto &s : currBundle.parallel_sections)
+            {
+                for (auto &sgp: s)
+                {
+                    DOUT("... with gate(@" << sgp->cycle << ")  " << sgp->qasm());
+                }
+            }
             bundles.push_back(currBundle);
-            // DOUT("... ready with bundle");
+            DOUT(".. ready with bundle at cycle " << currCycle);
         }
 
         // currCycle == cycle of last gate of circuit scheduled
@@ -2485,7 +2499,7 @@ public:
 
     // Set the curr_cycle of the scheduling algorithm to start at the appropriate end as well;
     // note that the cycle attributes will be shifted down to start at 1 after backward scheduling.
-    void InitAvailable(std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir, size_t& curr_cycle)
+    void init_available(std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir, size_t& curr_cycle)
     {
         avlist.clear();
         if (ql::forward_scheduling == dir)
@@ -2604,7 +2618,7 @@ public:
     //  all its predecessors were scheduled (forward scheduling) or
     //  all its successors were scheduled (backward scheduling)
     // update its cycle attribute to reflect these dependences;
-    // avlist is initialized with s or t as first element by InitAvailable
+    // avlist is initialized with s or t as first element by init_available
     // avlist is kept ordered on deep-criticality, non-increasing (i.e. highest deep-criticality first)
     void MakeAvailable(ListDigraph::Node n, std::list<ListDigraph::Node>& avlist, ql::scheduling_direction_t dir)
     {
@@ -2809,7 +2823,7 @@ public:
             if ( n == s || n == t
                 || gp->type() == ql::gate_type_t::__dummy_gate__ 
                 || gp->type() == ql::gate_type_t::__classical_gate__ 
-                || gp->type() == ql::gate_type_t::__wait_gate__
+                || gp->type() == ql::gate_type_t::__wait_gate__ 
                )
             {
                 return true;
@@ -2895,7 +2909,7 @@ public:
             scheduled[instruction[n]] = false;   // none were scheduled, including SOURCE/SINK
         }
         size_t  curr_cycle;         // current cycle for which instructions are sought
-        InitAvailable(avlist, dir, curr_cycle);     // first node (SOURCE/SINK) is made available and curr_cycle set
+        init_available(avlist, dir, curr_cycle);     // first node (SOURCE/SINK) is made available and curr_cycle set
         set_remaining(dir);         // for each gate, number of cycles until end of schedule
 
         DOUT("... loop over avlist until it is empty");

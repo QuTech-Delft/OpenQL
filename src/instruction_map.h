@@ -21,6 +21,8 @@ namespace ql
 typedef std::string qasm_inst_t;
 typedef std::string ucode_inst_t;
 
+typedef std::map<std::string,ql::custom_gate *> instruction_map_t;
+#if OPT_MICRO_CODE
 typedef std::map<qasm_inst_t, ucode_inst_t> dep_instruction_map_t;
 
 namespace utils
@@ -29,8 +31,7 @@ bool format_string(std::string& s);
 void replace_all(std::string &str, std::string seq, std::string rep);
 }
 
-// bool load_instruction_map(std::string file_name, dep_instruction_map_t& imap);
-
+#if 0   // FIXME: unused
 /**
  * load instruction map from a file
  */
@@ -89,20 +90,61 @@ inline json load_json(std::string file_name)
     json j;
     if (fs.is_open())
     {
+        std::stringstream stripped;     // file contents with comments stripped
+        std::string line;
+
+        // strip comments
+        while (getline(fs, line))
+        {
+            std::string::size_type n = line.find("//");
+            if (n != std::string::npos) line.erase(n);
+            std::istringstream iss(line);
+            stripped << line;
+        }
+
         try
         {
-            fs >> j;
+            stripped >> j;  // pass stripped line to json. NB: the whole file must be passed in 1 go
         }
-        catch (json::exception e)
+        // treat parse errors separately to give the user a clue about what's wrong
+        catch (json::parse_error &e)
         {
-            EOUT("malformed json file : \n\t" << e.what());
-            throw (e);
+            EOUT("error parsing JSON file : \n\t" << e.what());
+            if(e.byte != 0)
+            {
+                // go through file once again to find error position
+                unsigned int lineNr = 1;
+                unsigned int absPos = 0;
+                fs.clear();
+                fs.seekg(0, std::ios::beg);
+                while (getline(fs, line)) {
+                    std::string::size_type n = line.find("//");
+                    if (n != std::string::npos) line.erase(n);
+                    if(e.byte >= absPos && e.byte < absPos+line.size()) {
+                        unsigned int relPos = e.byte-absPos;
+                        str::replace_all(line, "\t", " ");                                      // make a TAB take one position
+                        FATAL("in line " << lineNr <<
+                              " at position " << relPos << ":" << std::endl <<
+                              line << std::endl <<                                              // print offending line
+                              std::string(relPos>0 ? relPos-1 : 0, ' ') << "^" << std::endl);   // print marker
+                        break;
+                    }
+                    lineNr++;
+                    absPos += line.size();
+                }
+                FATAL("error position " << e.byte << " points beyond last file position " << absPos);
+            } else {
+                FATAL("no information on error position");
+            }
+        }
+        catch (json::exception &e)
+        {
+            FATAL("malformed JSON file : \n\t" << e.what());
         }
     }
     else
     {
-        EOUT("failed to open file '" << file_name << "' !");
-        throw ql::exception("[x] error : failed to open file '" + file_name + "' !",false);
+        FATAL("failed to open file '" << file_name << "'");
     }
     return j;
 }
@@ -120,8 +162,10 @@ int load_instructions(std::map<std::string, custom_gate *>& instruction_map, std
         custom_gate * g = new custom_gate(instruction_name);
         g->name = instruction_name; // instr["name"];
         g->parameters = instr["parameters"];
+#if OPT_MICRO_CODE
         ucode_sequence_t ucs = instr["qumis"];
         g->qumis.assign(ucs.begin(), ucs.end());
+#endif
         std::string t = instr["type"];
         instruction_type_t type = (t == "rf" ? rf_t : flux_t );
         g->operation_type = type;

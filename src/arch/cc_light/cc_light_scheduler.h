@@ -14,12 +14,12 @@
 #include <lemon/dijkstra.h>
 #include <lemon/connectivity.h>
 
-#include <src/utils.h>
-#include <src/gate.h>
-#include <src/ir.h>
-#include <src/circuit.h>
-#include <src/scheduler.h>
-#include <src/arch/cc_light/cc_light_resource_manager.h>
+#include <utils.h>
+#include <gate.h>
+#include <ir.h>
+#include <circuit.h>
+#include <scheduler.h>
+#include <arch/cc_light/cc_light_resource_manager.h>
 
 #include <iomanip>
 #include <map>
@@ -32,7 +32,7 @@ namespace ql
 {
 namespace arch
 {
-
+// FIXME: superseded by platform.h::get_instruction_name()
 std::string get_cc_light_instruction_name(std::string & id, const ql::quantum_platform & platform)
 {
     std::string cc_light_instr_name;
@@ -45,7 +45,7 @@ std::string get_cc_light_instruction_name(std::string & id, const ql::quantum_pl
         {
             EOUT("cc_light_instr not defined for instruction: " << id << " !");
             throw ql::exception("Error : cc_light_instr not defined for instruction: "+id+" !",false);
-        }                    
+        }
         // DOUT("cc_light_instr name: " << cc_light_instr_name);
     }
     else
@@ -76,22 +76,22 @@ void DebugBundles(std::string at, ql::ir::bundles_t& bundles)
 
 
 ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt, 
-    ql::quantum_platform & platform, std::string & sched_dot, size_t nqubits, size_t ncreg = 0)
+    const ql::quantum_platform & platform, std::string & dot, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Scheduling CC-Light instructions ...");
 
     Scheduler sched;
-    sched.Init(ckt, platform, nqubits, ncreg);
-    // sched.PrintDot();
+    sched.init(ckt, platform, nqubits, ncreg);
+
     ql::ir::bundles_t bundles1;
     std::string schedopt = ql::options::get("scheduler");
     if ("ASAP" == schedopt)
     {
-        bundles1 = sched.schedule_asap(sched_dot);
+        bundles1 = sched.schedule_asap(dot);
     }
     else if ("ALAP" == schedopt)
     {
-        bundles1 = sched.schedule_alap(sched_dot);
+        bundles1 = sched.schedule_alap(dot);
     }
     else
     {
@@ -109,7 +109,7 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
         auto secIt1 = abundle.parallel_sections.begin();
         auto firstInsIt = secIt1->begin();
         auto itype = (*(firstInsIt))->type();
-        
+
         if(__classical_gate__ == itype)
         {
             continue;
@@ -169,7 +169,7 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
 }
 
 ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt, 
-    const ql::quantum_platform & platform, std::string & sched_dot, size_t nqubits, size_t ncreg = 0)
+    const ql::quantum_platform & platform, std::string & dot, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Resource constraint scheduling of CC-Light instructions ...");
 
@@ -192,15 +192,15 @@ ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
     cc_light_resource_manager_t rm(platform, direction);
 
     Scheduler sched;
-    sched.Init(ckt, platform, nqubits, ncreg);
+    sched.init(ckt, platform, nqubits, ncreg);
     ql::ir::bundles_t bundles1;
     if ("ASAP" == schedopt)
     {
-        bundles1 = sched.schedule_asap(rm, platform, sched_dot);
+        bundles1 = sched.schedule_asap(rm, platform, dot);
     }
     else if ("ALAP" == schedopt)
     {
-        bundles1 = sched.schedule_alap(rm, platform, sched_dot);
+        bundles1 = sched.schedule_alap(rm, platform, dot);
     }
     else
     {

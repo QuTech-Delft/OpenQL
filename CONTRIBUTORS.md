@@ -33,6 +33,9 @@ Note: please fill your contributions in this file
     -   unit-tests
     -   python Package for OpenQL
     -   cmake-based Compilation for cross-platform build setup
+    -   conda recipies and packages
+    -   single qubit flux operations
+    -   cQASM v1.0 support
 
 
 
@@ -44,3 +47,10 @@ Note: please fill your contributions in this file
 - **[Xiang Fu](https://github.com/gtaifu)**
     -   Contributed to the Hardware Configuration Specification
     -   Testing OpenQL on the Hardware
+
+- **[Wouter Vlothuizen](https://github.com/wvlothuizen)**
+    -   backend for Central Controller (CC)
+    -   new simplified qubit numbering scheme (rotated surface code fabric by 45 deg)
+    -   support for comments in JSON file
+    -   show line number and position on JSON syntax errors
+    -   cleanup

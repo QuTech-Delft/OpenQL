@@ -18,6 +18,7 @@ class Test_dependence(unittest.TestCase):
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ASAP')
         ql.set_option('log_level', 'LOG_WARNING')
+        ql.set_option('write_qasm_files', 'yes')
 
     def tearDown(self):
         ql.set_option('scheduler', 'ALAP')
@@ -42,7 +43,7 @@ class Test_dependence(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("independent", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -70,7 +71,7 @@ class Test_dependence(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("WAW", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -100,7 +101,7 @@ class Test_dependence(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("RAR", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -130,7 +131,7 @@ class Test_dependence(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("RAW", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -161,7 +162,7 @@ class Test_dependence(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("WAR", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -186,7 +187,7 @@ class Test_dependence(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("swap_single", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -213,7 +214,7 @@ class Test_dependence(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("swap_multi", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 

@@ -1,7 +1,7 @@
 
-#include <src/openql.h>
-#include <src/arch/cbox/cbox_eqasm_compiler.h>
-#include <src/arch/cbox/instruction_scheduler.h>
+#include <openql.h>
+#include <arch/cbox/cbox_eqasm_compiler.h>
+#include <arch/cbox/instruction_scheduler.h>
 
 
 #define x180(q) kernel.gate("x180",q)

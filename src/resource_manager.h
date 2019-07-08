@@ -50,7 +50,7 @@ public:
     void Print(std::string s)
     {
         DOUT(s);
-        DOUT("resource name=" << name << "; count=" << count );
+        DOUT("resource name=" << name << "; count=" << count);
     }
 };
 
@@ -115,14 +115,14 @@ public:
         // COUT("checking availability of resources for: " << ins->qasm());
         for(auto rptr : resource_ptrs)
         {
-            DOUT("... checking availability for resource " << rptr->name);
+            // DOUT("... checking availability for resource " << rptr->name);
             if( rptr->available(op_start_cycle, ins, operation_name, operation_type, instruction_type, operation_duration) == false)
             {
-                DOUT("... resource " << rptr->name << " not available");
+                // DOUT("... resource " << rptr->name << "not available");
                 return false;
             }
         }
-        DOUT("all resources available for: " << ins->qasm());
+        // DOUT("all resources available for: " << ins->qasm());
         return true;
     }
 
@@ -132,10 +132,10 @@ public:
         // COUT("reserving resources for: " << ins->qasm());
         for(auto rptr : resource_ptrs)
         {
-            DOUT("... reserving resource " << rptr->name);
+            // DOUT("... reserving resource " << rptr->name);
             rptr->reserve(op_start_cycle, ins, operation_name, operation_type, instruction_type, operation_duration);
         }
-        DOUT("all resources reserved for: " << ins->qasm());
+        // DOUT("all resources reserved for: " << ins->qasm());
     }
 
     // destructor destroying deep resource_t's

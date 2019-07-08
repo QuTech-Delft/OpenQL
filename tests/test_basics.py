@@ -12,9 +12,15 @@ class Test_basic(unittest.TestCase):
     def setUpClass(self):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
-        ql.set_option('scheduler', 'ALAP')
         ql.set_option('log_level', 'LOG_WARNING')
         ql.set_option('use_default_gates', 'no')
+        ql.set_option('write_qasm_files', 'yes')
+
+        # TODO cleanup
+        ql.set_option('scheduler', 'ALAP')
+        ql.set_option('scheduler_post179', 'yes')
+
+
 
     def test_compilation(self):
 
@@ -24,7 +30,7 @@ class Test_basic(unittest.TestCase):
         sweep_points = [1]
         nqubits = 2
         p = ql.Program("basic", platf, nqubits, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         # populate kernel
         k = ql.Kernel("first_kernel", platf, nqubits, nqubits)

@@ -10,7 +10,6 @@
 #include "instruction_map.h"
 #include "optimizer.h"
 #include "circuit.h"
-#include "transmon.h"
 #include "program.h"
 
 #include <fstream>
@@ -23,18 +22,21 @@ namespace ql
  */
 
 typedef std::vector<float> sweep_points_t;
+#if 0   // FIXME: unused
 typedef std::stringstream  str_t;
-
+#endif
 
 /**
  * configurable instruction map
  */
+#if OPT_MICRO_CODE
 /* static */ dep_instruction_map_t dep_instruction_map;
+#endif
 /* static */ // bool              initialized = false;
 /* static */ // ql_platform_t     target_platform;
 
 // target platform
-ql::quantum_platform           target_platform;          
+ql::quantum_platform           target_platform;
 
 
 // deprecated : for back compatibility
@@ -48,21 +50,6 @@ void init(ql_platform_t platform, std::string dep_instruction_map_file="")
 void set_platform(ql::quantum_platform platform)
 {
     target_platform = platform;
-}
-
-
-/**
- * generate qasm for a give circuit
- */
-std::string qasm(ql::circuit c)
-{
-    std::stringstream ss;
-    for (size_t i=0; i<c.size(); ++i)
-    {
-        ss << c[i]->qasm() << "\n";
-        // COUT(c[i]->qasm());
-    }
-    return ss.str();
 }
 
 }

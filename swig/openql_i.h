@@ -15,9 +15,9 @@
 #include <cassert>
 #include <time.h>
 
-#include <src/version.h>
-#include <src/openql.h>
-#include <src/classical.h>
+#include <version.h>
+#include <openql.h>
+#include <classical.h>
 
 static std::string get_version()
 {
@@ -108,7 +108,7 @@ class Kernel
 {
 public:
     std::string name;
-    Platform platform;    
+    Platform platform;
     size_t qubit_count;
     size_t creg_count;
     ql::quantum_kernel * kernel;
@@ -222,7 +222,7 @@ public:
     {
         kernel->wait(qubits, duration);
     }
-    void barrier(std::vector<size_t> qubits)
+    void barrier(std::vector<size_t> qubits = std::vector<size_t>())
     {
         kernel->wait(qubits, 0);
     }
@@ -235,7 +235,7 @@ public:
         kernel->display();
     }
 
-    void gate(std::string name, std::vector<size_t> qubits, 
+    void gate(std::string name, std::vector<size_t> qubits,
         size_t duration=0, double angle=0.0)
     {
         kernel->gate(name, qubits, {}, duration, angle);
@@ -295,20 +295,15 @@ public:
         program = new ql::quantum_program(name, *(platform.platform), qubit_count, creg_count);
     }
 
-    void set_sweep_points(std::vector<float> sweep_points, size_t num_sweep_points)
-    {
-        WOUT("This will soon be deprecated in favor of set_sweep_points(sweep_points)");
-        float* sp = &sweep_points[0];
-        program->set_sweep_points(sp, num_sweep_points);
-    }
-
     void set_sweep_points(std::vector<float> sweep_points)
     {
+        WOUT("This will soon be deprecated according to issue #76");
         program->sweep_points = sweep_points;
     }
 
     std::vector<float> get_sweep_points()
     {
+        WOUT("This will soon be deprecated according to issue #76");
         return program->sweep_points;
     }
 
@@ -374,7 +369,11 @@ public:
 
     std::string microcode()
     {
+#if OPT_MICRO_CODE
         return program->microcode();
+#else
+        return std::string("microcode disabled");
+#endif
     }
 
     void print_interaction_matrix()

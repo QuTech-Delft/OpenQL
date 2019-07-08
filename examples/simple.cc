@@ -8,30 +8,31 @@
 
 #include <time.h>
 
-#include <src/openql.h>
+#include <openql.h>
 
 int main(int argc, char ** argv)
 {
    srand(0);
 
-   int   num_circuits       = 13;
-   float sweep_points[]     = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };  // sizes of the clifford circuits per randomization
+   // number of circuits
+   int num_ckts = 13;
 
-   // ql::init();
-   // ql::init(ql::transmon_platform, "instructions.map");
+   // sizes of the clifford circuits per randomization
+   float sweep_points[] = {2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };
 
    // create platform
-   ql::quantum_platform starmon("starmon","test_cfg_cbox.json");
+   ql::quantum_platform my_platform("target_platform","hardware_config_cc_light.json");
+   // ql::quantum_platform my_platform("target_platform","test_cfg_cbox.json");
 
    // print info
-   starmon.print_info();
+   my_platform.print_info();
 
    // set platform
-   ql::set_platform(starmon);
+   ql::set_platform(my_platform);
 
    // create program
-   ql::quantum_program prog("prog",1,starmon);
-   prog.set_sweep_points(sweep_points, num_circuits);
+   ql::quantum_program prog("prog", my_platform, 1);
+   prog.set_sweep_points(sweep_points, num_ckts);
 
    for (int j=0; j<1; j++)
    {
@@ -39,15 +40,16 @@ int main(int argc, char ** argv)
       // create subcircuit
       ql::str_t name;
       name << "kernel" << c_size;
-      ql::quantum_kernel kernel(name.str(),starmon);
-      kernel.prepz(0);
-      kernel.hadamard(0);
-      kernel.x(0);
-      kernel.y(0);
-      kernel.z(0);
-      kernel.hadamard(0);
-      kernel.x(0);
-      kernel.measure(0);
+      ql::quantum_kernel kernel(name.str(),my_platform, 1);
+
+      // populate kernel
+      kernel.gate("prepz", {0});
+      kernel.gate("x", {0});
+      kernel.gate("y", {0});
+      kernel.gate("z", {0});
+      kernel.gate("measure", {0});
+
+      // add kernel to program
       prog.add(kernel);
    }
 

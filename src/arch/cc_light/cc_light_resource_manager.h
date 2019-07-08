@@ -13,8 +13,8 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include <src/json.h>
-#include <src/resource_manager.h>
+#include <json.h>
+#include <resource_manager.h>
 
 using json = nlohmann::json;
 
@@ -798,3 +798,4 @@ public:
 } // end of namespace ql
 
 #endif
+

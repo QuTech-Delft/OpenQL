@@ -1,9 +1,6 @@
+#include <openql.h>
 
-
-#include <src/openql.h>
-
-#include <src/arch/cc_light/cc_light_eqasm_compiler.h>
-// #include <src/arch/cc_light/cc_light_eqasm.h>
+#include <arch/cc_light/cc_light_eqasm_compiler.h>
 
 
 typedef ql::arch::cc_light_eqasm_instruction  ccl_instr;
@@ -59,13 +56,13 @@ int main(int argc, char ** argv)
 
    prog.compile();
 
-   /* 
+   /*
    ccl_sqg_instr i0("x",ccl_sqg_mask(0));
    ccl_tqg_instr i1("cz",ccl_tqg_mask(__p(1,3)));
 
    println(" code : \n" << i0.code());
    println(" code : \n" << i1.code());
-   */ 
+   */
 
    return 0;
 
