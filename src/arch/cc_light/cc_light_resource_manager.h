@@ -35,7 +35,7 @@ public:
 
     qubit_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("qubits", dir)
     {
-        DOUT("... creating " << name << " resource");
+        // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
         state.resize(count);
         for(size_t q=0; q<count; q++)
@@ -105,7 +105,7 @@ public:
     qwg_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : 
         resource_t("qwgs", dir)
     {
-        DOUT("... creating " << name << " resource");
+        // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
         fromcycle.resize(count);
         tocycle.resize(count);
@@ -215,7 +215,7 @@ public:
     meas_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : 
         resource_t("meas_units", dir)
     {
-        DOUT("... creating " << name << " resource");
+        // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
         fromcycle.resize(count);
         tocycle.resize(count);
@@ -309,7 +309,7 @@ public:
 
     edge_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("edges", dir)
     {
-        DOUT("... creating " << name << " resource");
+        // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
         state.resize(count);
 
@@ -371,7 +371,9 @@ public:
                 {
                     auto edge_no = qubits2edge[aqpair];
 
-                    DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " is busy till/from cycle : " << state[edge_no] << " for operation: " << ins->name);
+                    DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle 
+                        << ", edge: " << edge_no << " is busy till/from cycle : " << state[edge_no] 
+                        << " for operation: " << ins->name);
 
                     std::vector<size_t> edges2check(edge2edges[edge_no]);
                     edges2check.push_back(edge_no);
@@ -443,7 +445,9 @@ public:
                         state[e] = op_start_cycle;
                     }
                 }
-                DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] << " for operation: " << ins->name);
+                DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle 
+                    << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] 
+                    << " for operation: " << ins->name);
             }
 	    else
             {
@@ -493,7 +497,7 @@ public:
     detuned_qubits_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : 
         resource_t("detuned_qubits", dir)
     {
-        DOUT("... creating " << name << " resource");
+        // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
         fromcycle.resize(count);
         tocycle.resize(count);
@@ -743,11 +747,11 @@ public:
 class cc_light_resource_manager_t : public resource_manager_t
 {
 public:
-
     cc_light_resource_manager_t() : resource_manager_t()
     {
         DOUT("Constructing virgin cc_light_resouce_manager_t");
     }
+
 
     cc_light_resource_manager_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_manager_t(platform, dir)
     {
@@ -758,7 +762,7 @@ public:
             // COUT(it.key() << " : " << it.value() << "\n");
             std::string n = it.key();
 
-            DOUT("... about to create " << n << " resource");
+            // DOUT("... about to create " << n << " resource");
             if( n == "qubits")
             {
                 resource_t * ares = new qubit_resource_t(platform, dir);
@@ -790,7 +794,7 @@ public:
                 throw ql::exception("[x] Error : Un-modelled resource: "+n+" !",false);
             }
         }
-        DOUT("Done constructing inited resouce_manager_t");
+        // DOUT("Done constructing inited resouce_manager_t");
     }
 };
 

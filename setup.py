@@ -68,6 +68,7 @@ copyfile(os.path.join(clibDir, "openql.py"),
          os.path.join(swigDir, "openql.py"))
 os.chdir(rootDir)
 
+
 def get_version(verbose=0):
     """ Extract version information from source code """
 

@@ -4,7 +4,7 @@
  * @author Imran Ashraf
  * @date   09/2018
  * @author Hans van Someren
- * @brief  Resource mangement common for platforms
+ * @brief  Resource mangement for cc light platform
  */
 
 #ifndef QL_RESOURCE_MANAGER_H
@@ -64,7 +64,7 @@ public:
     // see the note on the use of constructors and Init functions at the start of mapper.h
     resource_manager_t()
     {
-        DOUT("Constructing virgin resource_manager_t");
+        DOUT("Constructing virgin resouce_manager_t");
     }
 
     // backward compatible delegating constructor, only doing forward_scheduling
@@ -83,7 +83,7 @@ public:
     // *orgrptr->clone() does the trick to create a copy of the actual derived class' object
     resource_manager_t(const resource_manager_t& org)
     {
-        DOUT("Copy constructing resource_manager_t");
+        DOUT("Copy constructing resouce_manager_t");
         resource_ptrs.clear();
         for(auto orgrptr : org.resource_ptrs)
         {
@@ -95,7 +95,7 @@ public:
     // follow pattern to use tmp copy to allow self-assignment and to be exception safe
     resource_manager_t& operator=(const resource_manager_t& rhs)
     {
-        DOUT("Copy assigning resource_manager_t");
+        DOUT("Copy assigning resouce_manager_t");
         std::vector<resource_t*> new_resource_ptrs;
         for(auto orgrptr : rhs.resource_ptrs)
         {
@@ -151,3 +151,4 @@ public:
 };
 
 #endif // QL_RESOURCE_MANAGER_H
+

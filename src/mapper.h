@@ -1,4 +1,4 @@
-#define INITIALPLACE 1
+//#define INITIALPLACE 1
 /**
  * @file   mapper.h
  * @date   06/2018 - now
@@ -3499,8 +3499,8 @@ void Map(ql::quantum_kernel& kernel)
     using namespace std::chrono;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
-#ifdef INITIALPLACE
     std::string initialplaceopt = ql::options::get("initialplace");
+#ifdef INITIALPLACE
     std::string initialplaceprefixopt = ql::options::get("initialplaceprefix");
     if("no" != initialplaceopt)
     {
@@ -3514,9 +3514,12 @@ void Map(ql::quantum_kernel& kernel)
         ip.Place(kernel.c, v2r, ipok, iptimetaken, initialplaceopt); // compute mapping (in v2r) using ip model, may fail
         DOUT("InitialPlace: kernel=" << kernel.name << " initialplace=" << initialplaceopt << " initialplaceprefix=" << initialplaceprefixopt << " result=" << ip.ipr2string(ipok) << " iptimetaken=" << iptimetaken << " seconds [DONE]");
     }
-#endif
     if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
         v2r.Print("After InitialPlace");
+#else
+    DOUT("InitialPlace code commented out; please uncomment #define INITIALPLACE in src/mapper.h when wanted [DONE]");
+    WOUT("InitialPlace code commented out; please uncomment #define INITIALPLACE in src/mapper.h when wanted [DONE]");
+#endif
 
     MapCircuit(kernel.c, kernel.name, v2r);       // updates circ with swaps, maps all gates, updates v2r map
     if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
