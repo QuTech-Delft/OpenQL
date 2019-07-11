@@ -53,44 +53,40 @@ class quantum_program
       {
          default_config = true;
          eqasm_compiler_name = platform.eqasm_compiler_name;
-         backend_compiler    = NULL;
+	      backend_compiler    = NULL;
          if (eqasm_compiler_name =="")
          {
             EOUT("eqasm compiler name must be specified in the hardware configuration file !");
             throw std::exception();
          }
-         else if (eqasm_compiler_name == "none" || eqasm_compiler_name == "qx")
+         else if (eqasm_compiler_name == "none")
+         {
+
+         }
+         else if (eqasm_compiler_name == "qx")
          {
             // at the moment no qx specific thing is done
          }
+         else if (eqasm_compiler_name == "qumis_compiler")
+         {
+            backend_compiler = new ql::arch::cbox_eqasm_compiler();
+         }
+	      else if (eqasm_compiler_name == "cc_light_compiler" )
+	      {
+            backend_compiler = new ql::arch::cc_light_eqasm_compiler();
+	      }
+         else if (eqasm_compiler_name == "quantumsim_compiler" )
+         {
+            backend_compiler = new ql::arch::quantumsim_eqasm_compiler();
+         }
+         else if (eqasm_compiler_name == "eqasm_backend_cc" )
+         {
+            backend_compiler = new ql::arch::eqasm_backend_cc();
+         }
          else
          {
-            if (eqasm_compiler_name == "qumis_compiler")
-            {
-                backend_compiler = new ql::arch::cbox_eqasm_compiler();
-            }
-            else if (eqasm_compiler_name == "cc_light_compiler" )
-            {
-                backend_compiler = new ql::arch::cc_light_eqasm_compiler();
-            }
-            else if (eqasm_compiler_name == "quantumsim_compiler" )
-            {
-                backend_compiler = new ql::arch::quantumsim_eqasm_compiler();
-            }
-            else if (eqasm_compiler_name == "eqasm_backend_cc" )
-            {
-                backend_compiler = new ql::arch::eqasm_backend_cc();
-            }
-            else
-            {
-                EOUT("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
-                throw std::exception();
-            }
-            if (backend_compiler == NULL)
-            {
-                EOUT("the '" << eqasm_compiler_name << "' compiler class doesn't match the common compiler class!");
-                throw std::exception();
-            }
+            EOUT("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
+            throw std::exception();
          }
 
          if(qubit_count > platform.qubit_number)
@@ -585,8 +581,7 @@ class quantum_program
             IOUT("sweep points file not generated as sweep point array is empty !");
          }
 
-         IOUT("compilation of program '" << name << "' done.");
-         IOUT("=============================================");
+	      IOUT("compilation of program '" << name << "' done.");
 
          return 0;
       }
@@ -617,7 +612,7 @@ class quantum_program
             // alternative printing of k's circuit instead of k's bundles
             // sched_qasm << k.qasm();
 
-            if (ql::options::get("print_dot_graphs") == "yes")
+            if(ql::options::get("print_dot_graphs") == "yes")
             {
                 string fname = ql::options::get("output_dir") + "/" + k.get_name() + "_prescheduler.dot";
                 IOUT("writing dependence graph dot file to '" << fname << "' ...");
