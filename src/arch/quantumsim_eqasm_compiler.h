@@ -187,7 +187,7 @@ private:
         resource_manager_t rm(platform, direction);
     
         Scheduler sched;
-        sched.Init(ckt, platform, nqubits, ncreg);
+        sched.init(ckt, platform, nqubits, ncreg);
         ql::ir::bundles_t bundles;
         std::string dot;
         if ("ASAP" == schedopt)
@@ -242,6 +242,14 @@ private:
     }
 
 public:
+    /*
+     * program-level compilation of qasm to cc_light_eqasm
+     */
+    void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform)
+    {
+        FATAL("quantumsim_eqasm_comiler::compile interface with circuit not supported");
+    }
+
     /*
      * compile qasm to quantumsim
      */

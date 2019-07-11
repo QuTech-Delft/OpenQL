@@ -1306,7 +1306,7 @@ public:
         DOUT("decompose_toffoli() [Done] ");
     }
 
-    void schedule(quantum_platform platform, std::string& sched_dot)
+    void schedule(quantum_platform platform, std::string& dot)
     {
         std::string scheduler = ql::options::get("scheduler");
         std::string scheduler_uniform = ql::options::get("scheduler_uniform");
@@ -1336,7 +1336,7 @@ public:
 	        }
 	        else if ("no" == scheduler_uniform)
 	        {
-                bundles = sched.schedule_asap(sched_dot);
+                bundles = sched.schedule_asap(dot);
 	        }
 	        else
             {
@@ -1351,7 +1351,7 @@ public:
 	        }
 	        else if ("no" == scheduler_uniform)
 	        {
-                bundles = sched.schedule_alap(sched_dot);
+                bundles = sched.schedule_alap(dot);
 	        }
 	        else
             {

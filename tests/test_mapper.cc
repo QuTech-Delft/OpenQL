@@ -8,7 +8,7 @@
 
 #include <time.h>
 
-#include <src/openql.h>
+#include <openql.h>
 
 // rc test
 void
@@ -199,43 +199,9 @@ test_oneD4(std::string v, std::string param1, std::string param2, std::string pa
     ql::options::set("scheduler_commute", param3);
     ql::options::set("prescheduler", param4);
     prog.compile( );
-}
 
-// just test
-void
-test_oneD4Diogo(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
-    int n = 5;
-    std::string prog_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
-    std::string kernel_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
-    float sweep_points[] = { 1 };
-
-    ql::quantum_platform starmon("starmon", "test_mapper.json");
-    ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
-
-    k.gate("x", 2);
-    k.gate("x", 4);
-
-    // one cnot, but needs several swaps
-    k.gate("cnot", 2,4);
-
-    k.gate("x", 2);
-    k.gate("x", 4);
-
-    prog.add(k);
-
-    k.gate("x", 2);     // demonstrates that prog.add(k) copies k as value, so k cannot be used anymore
-
-    ql::options::set("mapreverseswap", param1);
-    ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_postmapper", param2);
-    ql::options::set("scheduler_commute", param3);
-    ql::options::set("prescheduler", param4);
-    prog.compile( );
-
+#define DIOGO
+#ifdef DIOGO
     IOUT("AFTER test_oneD4Diogo prog.compile()");
     for(auto &kernel : prog.kernels)
     {
@@ -247,6 +213,7 @@ test_oneD4Diogo(std::string v, std::string param1, std::string param2, std::stri
     IOUT(k.qasm());
     for (auto gate : k.c )
         IOUT("Gate " + gate->name + "(" +  to_string(gate->operands.at(0)) + ") at cycle " + to_string(gate->cycle) );
+#endif
 }
 
 // all possible cnots in s7, in lexicographic order
@@ -982,7 +949,7 @@ int main(int argc, char ** argv)
     ql::options::set("mapper", "minextendrc"); 
     ql::options::set("mapinitone2one", "yes"); 
     ql::options::set("maplookahead", "noroutingfirst");
-    ql::options::set("initialplace", "no"); 
+    ql::options::set("initialplace", "yes"); 
     ql::options::set("initialplaceprefix", "10"); 
     ql::options::set("mappathselect", "all"); 
     ql::options::set("mapusemoves", "yes"); 
@@ -995,37 +962,23 @@ int main(int argc, char ** argv)
 //parameter3    ql::options::set("scheduler_commute", "yes");
 //parameter4    ql::options::set("prescheduler", "no");
 
-    test_rc("rc", "no", "no", "yes", "no");
-
-//  test_someNN("someNN", "no", "no", "yes", "no");
+//  NN:
+//  test_rc("rc", "no", "no", "yes", "no");
 //  test_someNN("someNN", "no", "no", "yes", "yes");
 
-//  test_daniel2("daniel2", "yes", "yes", "yes", "no");
-//  test_daniel2("daniel2", "yes", "yes", "yes", "yes");
+//  nonNN but solvable by Initial Placement:
+    test_oneD2("oneD2", "yes", "yes", "yes", "yes");
+    test_oneD4("oneD4", "yes", "yes", "yes", "yes");
+    test_string("string", "yes", "yes", "yes", "yes");
 
-//  test_oneD2("oneD2", "yes", "yes", "yes", "no");
-//  test_oneD2("oneD2", "yes", "yes", "yes", "yes");
+//  nonNN, still not too large:
+    test_allD("allD", "yes", "no", "yes", "yes");
+    test_allDopt("allDopt", "yes", "yes", "yes", "yes");
 
-//  test_oneD4("oneD4", "yes", "yes", "yes", "no");
-//  test_oneD4("oneD4", "yes", "yes", "yes", "yes");
-
-//  test_oneD4Diogo("oneD4Diogo", "yes", "yes", "yes", "no");
-//  test_oneD4Diogo("oneD4Diogo", "yes", "yes", "yes", "yes");
-
-//  test_string("string", "yes", "yes", "yes", "no");
-//  test_string("string", "yes", "yes", "yes", "yes");
-
-//  test_allD("allD", "yes", "no", "yes", "no");
-//  test_allD("allD", "yes", "no", "yes", "yes");
-
-//  test_allDopt("allDopt", "yes", "yes", "yes", "no");
-//  test_allDopt("allDopt", "yes", "yes", "yes", "yes");
-
-//  test_lingling5esm("lingling5esm", "yes", "yes", "yes", "no");
-//  test_lingling5esm("lingling5esm", "yes", "yes", "yes", "yes");
-
-//  test_lingling7esm("lingling7esm", "yes", "yes", "yes", "no");
-//  test_lingling7esm("lingling7esm", "yes", "yes", "yes", "yes");
+//  nonNN, realistic:
+    test_daniel2("daniel2", "yes", "yes", "yes", "yes");
+    test_lingling5esm("lingling5esm", "yes", "yes", "yes", "yes");
+    test_lingling7esm("lingling7esm", "yes", "yes", "yes", "yes");
 
     return 0;
 }

@@ -13,13 +13,13 @@
 #include <chrono>
 #include <ctime>
 #include <ratio>
-#include "src/utils.h"
-#include "src/platform.h"
-#include "src/kernel.h"
-#include "src/arch/cc_light/cc_light_resource_manager.h"
-#include "src/gate.h"
-#include "src/scheduler.h"
-//#include "src/metrics.h"
+#include "utils.h"
+#include "platform.h"
+#include "kernel.h"
+#include "arch/cc_light/cc_light_resource_manager.h"
+#include "gate.h"
+#include "scheduler.h"
+//#include "metrics.h"
 
 // Note on the use of constructors and Init functions for classes of the mapper
 // -----------------------------------------------------------------------------
@@ -2766,7 +2766,7 @@ void SetCircuit(ql::circuit& circ, Scheduler& sched, size_t nq, size_t nc)
     }
     else
     {
-	    schedp->Init(circ, *platformp, nq, nc);                 // fills schedp->graph (dependence graph) from circuit
+	    schedp->init(circ, *platformp, nq, nc);                 // fills schedp->graph (dependence graph) from circuit
 	
         for( auto & gp : circ )
 	    {

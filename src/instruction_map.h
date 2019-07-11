@@ -24,12 +24,15 @@ typedef std::string ucode_inst_t;
 typedef std::map<std::string,ql::custom_gate *> instruction_map_t;
 #if OPT_MICRO_CODE
 typedef std::map<qasm_inst_t, ucode_inst_t> dep_instruction_map_t;
+#endif
+
 
 namespace utils
 {
 bool format_string(std::string& s);
 void replace_all(std::string &str, std::string seq, std::string rep);
 }
+
 
 #if 0   // FIXME: unused
 /**
@@ -83,6 +86,8 @@ bool load_instruction_map(std::string file_name, dep_instruction_map_t& imap)
 
     return true;
 }
+#endif
+
 
 inline json load_json(std::string file_name)
 {

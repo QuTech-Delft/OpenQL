@@ -517,7 +517,7 @@ class quantum_program
          {
             if (eqasm_compiler_name == "cc_light_compiler"
                 || eqasm_compiler_name == "eqasm_backend_cc"
-                || eqasm_compiler_name == "quantumsim_compiler" )
+                || eqasm_compiler_name == "quantumsim_compiler"
                 )
             {
                backend_compiler->compile(name, kernels, platform);

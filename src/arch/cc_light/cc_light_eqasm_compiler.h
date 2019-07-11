@@ -715,6 +715,7 @@ public:
 
 public:
 
+    // FIXME: should be private
     std::string get_prologue(ql::quantum_kernel &k)
     {
         std::stringstream ss;
@@ -1104,6 +1105,14 @@ public:
         write_qasm(rcscheduler_out_fname, kernels, platform);
     }
 
+    /*
+     * program-level compilation of qasm to cc_light_eqasm
+     */
+    void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform)
+    {
+        FATAL("cc_light_eqasm_compiler::compile interface with circuit not supported");
+    }
+                      
     // kernel level compilation
     void compile(std::string prog_name, std::vector<quantum_kernel> kernels, 
         const ql::quantum_platform& platform)

@@ -105,7 +105,7 @@ namespace ql
                     << "clifford_postmapper: " << opt_name2opt_val["clifford_postmapper"] << std::endl
                     << "scheduler_post179: " << opt_name2opt_val["scheduler_post179"] << std::endl
                     << "scheduler_commute: " << opt_name2opt_val["scheduler_commute"] << std::endl
-                    << "cz_mode: " << opt_name2opt_val["cz_mode"] << std::endl;
+                    << "cz_mode: " << opt_name2opt_val["cz_mode"] << std::endl
                     << "print_dot_graphs: " << opt_name2opt_val["print_dot_graphs"] << std::endl;
       }
 

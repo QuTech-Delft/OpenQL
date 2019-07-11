@@ -116,12 +116,13 @@ public:
             if (!ckt.empty()) {
                 auto creg_count = kernel.creg_count;                        // FIXME: also take platform into account. We get qubit_number from JSON
 
+                std::string dot;
 #if OPT_CC_SCHEDULE_RC
                 // schedule with platform resource constraints
-                ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, qubit_number, creg_count);
+                ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, dot, qubit_number, creg_count);
 #else
                 // schedule without resource constraints
-                ql::ir::bundles_t bundles = cc_light_schedule(ckt, platform, qubit_number, creg_count);
+                ql::ir::bundles_t bundles = cc_light_schedule(ckt, platform, dot, qubit_number, creg_count);
 #endif
                 codegen_bundles(bundles, platform);
             } else {
