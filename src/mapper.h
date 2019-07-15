@@ -876,11 +876,11 @@ bool new_custom_gate_if_available(std::string & gname, std::vector<size_t> qubit
 
     if(added)
     {
-        // DOUT("new: custom gate added for " << gname);
+        DOUT("custom gate added for " << gname);
     }
     else
     {
-        // DOUT("new: custom gate not added for " << gname);
+        DOUT("custom gate not added for " << gname);
     }
 
     return added;
@@ -891,11 +891,11 @@ bool new_custom_gate_if_available(std::string & gname, std::vector<size_t> qubit
 void new_get_decomposed_ins( ql::composite_gate * gptr, std::vector<std::string> & sub_instructons)
 {
     auto & sub_gates = gptr->gs;
-    // DOUT("new: composite ins: " << gptr->name);
+    DOUT("composite ins: " << gptr->name);
     for(auto & agate : sub_gates)
     {
         std::string & sub_ins = agate->name;
-        // DOUT("new:   sub ins: " << sub_ins);
+        DOUT("  sub ins: " << sub_ins);
         auto it = gate_definitionp->find(sub_ins);
         if( it != gate_definitionp->end() )
         {
@@ -914,7 +914,7 @@ void new_get_decomposed_ins( ql::composite_gate * gptr, std::vector<std::string>
 bool new_spec_decomposed_gate_if_available(std::string gate_name, std::vector<size_t> all_qubits, ql::circuit& circ)
 {
     bool added = false;
-    // DOUT("new: Checking if specialized decomposition is available for " << gate_name);
+    DOUT("Checking if specialized decomposition is available for " << gate_name);
     std::string instr_parameterized = gate_name + " ";
     size_t i;
     if(all_qubits.size() > 0)
@@ -928,20 +928,20 @@ bool new_spec_decomposed_gate_if_available(std::string gate_name, std::vector<si
             instr_parameterized += "q" + std::to_string(all_qubits[i]);
         }
     }
-    // DOUT("new: decomposed specialized instruction name: " << instr_parameterized);
+    DOUT("decomposed specialized instruction name: " << instr_parameterized);
 
     auto it = gate_definitionp->find(instr_parameterized);
     if( it != gate_definitionp->end() )
     {
-        // DOUT("new: specialized composite gate found for " << instr_parameterized);
+        DOUT("specialized composite gate found for " << instr_parameterized);
         ql::composite_gate * gptr = (ql::composite_gate *)(it->second);
         if( ql::__composite_gate__ == gptr->type() )
         {
-            // DOUT("new: composite gate type");
+            DOUT("composite gate type");
         }
         else
         {
-            // DOUT("new: Not a composite gate type");
+            DOUT("Not a composite gate type");
             return false;
         }
 
@@ -950,9 +950,9 @@ bool new_spec_decomposed_gate_if_available(std::string gate_name, std::vector<si
         new_get_decomposed_ins( gptr, sub_instructons);
         for(auto & sub_ins : sub_instructons)
         {
-            // DOUT("new: Adding sub ins: " << sub_ins);
+            DOUT("Adding sub ins: " << sub_ins);
             std::replace( sub_ins.begin(), sub_ins.end(), ',', ' ');
-            // DOUT("new:  after comma removal, sub ins: " << sub_ins);
+            DOUT(" after comma removal, sub ins: " << sub_ins);
             std::istringstream iss(sub_ins);
 
             std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
@@ -963,20 +963,20 @@ bool new_spec_decomposed_gate_if_available(std::string gate_name, std::vector<si
 
             for(size_t i=1; i<tokens.size(); i++)
             {
-                // DOUT("new: tokens[i] : " << tokens[i]);
+                DOUT("tokens[i] : " << tokens[i]);
                 auto sub_str_token = tokens[i].substr(1);
-                // DOUT("new: sub_str_token[i] : " << sub_str_token);
+                DOUT("sub_str_token[i] : " << sub_str_token);
                 this_gate_qubits.push_back( stoi( tokens[i].substr(1) ) );
             }
 
-            // DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "new: actual qubits of this gate:") );
+            DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
             // custom gate check
             // when found, custom_added is true, and the expanded subinstruction was added to the circuit
             bool custom_added = new_custom_gate_if_available(sub_ins_name, this_gate_qubits, circ);
             if(!custom_added)
             {
-                // DOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                DOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
                 throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+sub_ins_name+"' with " +ql::utils::to_string(this_gate_qubits,"qubits")+" is not supported by the target platform !",false);
             }
         }
@@ -984,7 +984,7 @@ bool new_spec_decomposed_gate_if_available(std::string gate_name, std::vector<si
     }
     else
     {
-        // DOUT("new: composite gate not found for " << instr_parameterized);
+        DOUT("composite gate not found for " << instr_parameterized);
     }
 
     return added;
@@ -997,7 +997,7 @@ bool new_spec_decomposed_gate_if_available(std::string gate_name, std::vector<si
 bool new_param_decomposed_gate_if_available(std::string gate_name, std::vector<size_t> all_qubits, ql::circuit& circ)
 {
     bool added = false;
-    // DOUT("new: Checking if parameterized decomposition is available for " << gate_name);
+    DOUT("Checking if parameterized decomposition is available for " << gate_name);
     std::string instr_parameterized = gate_name + " ";
     size_t i;
     if(all_qubits.size() > 0)
@@ -1011,21 +1011,21 @@ bool new_param_decomposed_gate_if_available(std::string gate_name, std::vector<s
             instr_parameterized += "%" + std::to_string(i);
         }
     }
-    // DOUT("new: decomposed parameterized instruction name: " << instr_parameterized);
+    DOUT("decomposed parameterized instruction name: " << instr_parameterized);
 
     // check for composite ins
     auto it = gate_definitionp->find(instr_parameterized);
     if( it != gate_definitionp->end() )
     {
-        // DOUT("new: parameterized composite gate found for " << instr_parameterized);
+        DOUT("parameterized composite gate found for " << instr_parameterized);
         ql::composite_gate * gptr = (ql::composite_gate *)(it->second);
         if( ql::__composite_gate__ == gptr->type() )
         {
-            // DOUT("new: composite gate type");
+            DOUT("composite gate type");
         }
         else
         {
-            // DOUT("new: Not a composite gate type");
+            DOUT("Not a composite gate type");
             return false;
         }
 
@@ -1033,9 +1033,9 @@ bool new_param_decomposed_gate_if_available(std::string gate_name, std::vector<s
         new_get_decomposed_ins( gptr, sub_instructons);
         for(auto & sub_ins : sub_instructons)
         {
-            // DOUT("new: Adding sub ins: " << sub_ins);
+            DOUT("Adding sub ins: " << sub_ins);
             std::replace( sub_ins.begin(), sub_ins.end(), ',', ' ');
-            // DOUT("new:  after comma removal, sub ins: " << sub_ins);
+            DOUT(" after comma removal, sub ins: " << sub_ins);
             std::istringstream iss(sub_ins);
 
             std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
@@ -1049,14 +1049,14 @@ bool new_param_decomposed_gate_if_available(std::string gate_name, std::vector<s
                 this_gate_qubits.push_back( all_qubits[ stoi( tokens[i].substr(1) ) ] );
             }
 
-            // DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "new: actual qubits of this gate:") );
+            DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
             // custom gate check
             // when found, custom_added is true, and the expanded subinstruction was added to the circuit
             bool custom_added = new_custom_gate_if_available(sub_ins_name, this_gate_qubits, circ);
             if(!custom_added)
             {
-                // DOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                DOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
                 throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+sub_ins_name+"' with " +ql::utils::to_string(this_gate_qubits,"qubits")+" is not supported by the target platform !",false);
             }
         }
@@ -1064,7 +1064,7 @@ bool new_param_decomposed_gate_if_available(std::string gate_name, std::vector<s
     }
     else
     {
-        // DOUT("new: composite gate not found for " << instr_parameterized);
+        DOUT("composite gate not found for " << instr_parameterized);
     }
     return added;
 }
@@ -1094,12 +1094,19 @@ bool new_param_decomposed_gate_if_available(std::string gate_name, std::vector<s
 //      "cz" in gate_definition as non-composite gate
 // (default gate is not supported)
 // if not, then return false else true
-bool new_gate(std::string gname, std::vector<size_t> qubits, ql::circuit& circ, size_t duration=0, double angle = 0.0)
+bool new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits, size_t duration=0, double angle = 0.0)
+{
+    // return HIDDEN_new_gate(circ, gname, qubits, duration, angle);
+    std::vector<size_t> cregs = {};
+    return ql::quantum_kernel::gate(circ, gname, qubits, cregs, duration, angle);
+}
+
+bool HIDDEN_new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits, size_t duration=0, double angle = 0.0)
 {
     bool added = false;
     for(auto & qno : qubits)
     {
-        // DOUT("new: qno : " << qno);
+        DOUT("qno : " << qno);
         if( qno >= nq )
         {
             EOUT("Number of qubits in platform: " << std::to_string(nq) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
@@ -1108,44 +1115,44 @@ bool new_gate(std::string gname, std::vector<size_t> qubits, ql::circuit& circ, 
     }
 
     str::lower_case(gname);
-    // DOUT("new: Adding gate : " << gname << " with " << ql::utils::to_string(qubits,"qubits"));
+    DOUT("Adding gate : " << gname << " with " << ql::utils::to_string(qubits,"qubits"));
 
     // specialized composite gate check
-    // DOUT("new: trying to add specialized decomposed gate(s) for: " << gname);
+    DOUT("trying to add specialized decomposed gate(s) for: " << gname);
     bool spec_decom_added = new_spec_decomposed_gate_if_available(gname, qubits, circ);
     if(spec_decom_added)
     {
         added = true;
-        // DOUT("new: specialized decomposed gates added for " << gname);
+        DOUT("specialized decomposed gates added for " << gname);
     }
     else
     {
         // parameterized composite gate check
-        // DOUT("new: trying to add parameterized decomposed gate for: " << gname);
+        DOUT("trying to add parameterized decomposed gate for: " << gname);
         bool param_decom_added = new_param_decomposed_gate_if_available(gname, qubits, circ);
         if(param_decom_added)
         {
             added = true;
-            // DOUT("new: decomposed gates added for " << gname);
+            DOUT("decomposed gates added for " << gname);
         }
         else
         {
             // specialized/parameterized custom gate check
-            // DOUT("new: adding custom gate for " << gname);
+            DOUT("adding custom gate for " << gname);
             bool custom_added = new_custom_gate_if_available(gname, qubits, circ, duration, angle);
             if(!custom_added)
             {
-                // DOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+                DOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
                 // throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
             }
             else
             {
                 added = true;
-                // DOUT("new: custom gate added for " << gname);
+                DOUT("custom gate added for " << gname);
             }
         }
     }
-    // DOUT("new: ");
+    DOUT("new: ");
     return added;
 }
 // end copy of the kernel's new_gate interface
@@ -1216,10 +1223,10 @@ void AddSwap(size_t r0, size_t r1, int doreverseswap)
         MapperAssert (v2r.GetRs(r1)!=rs_hasstate);    // and r1 will be the one without state (rs_nostate || rs_inited)
 
         // first (optimistically) create the move circuit and add it to circ
-        created = new_gate("move_real", {r0,r1}, circ);    // gates implementing move returned in circ
+        created = new_gate(circ, "move_real", {r0,r1});    // gates implementing move returned in circ
         if (!created)
         {
-            created = new_gate("move", {r0,r1}, circ);
+            created = new_gate(circ, "move", {r0,r1});
             if (!created) new_gate_exception("move or move_real");
         }
 
@@ -1229,13 +1236,13 @@ void AddSwap(size_t r0, size_t r1, int doreverseswap)
             DOUT("... initializing non-inited " << r1 << " to |0> (inited) state preferably using move_init ...");
             ql::circuit initcirc;
 
-            created = new_gate("move_init", {r1}, initcirc);
+            created = new_gate(initcirc, "move_init", {r1});
             if (!created)
             {
-                created = new_gate("prepz", {r1}, initcirc);
+                created = new_gate(initcirc, "prepz", {r1});
                 // if (created)
                 // {
-                //     created = new_gate("h", {r1}, initcirc);
+                //     created = new_gate(initcirc, "h", {r1});
                 //     if (!created) new_gate_exception("h");
                 // }
                 if (!created) new_gate_exception("move_init or prepz");
@@ -1295,10 +1302,10 @@ void AddSwap(size_t r0, size_t r1, int doreverseswap)
     if (!created)
     {
         // no move generated so do swap
-        created = new_gate("swap_real", {r0,r1}, circ);    // gates implementing swap returned in circ
+        created = new_gate(circ, "swap_real", {r0,r1});    // gates implementing swap returned in circ
         if (!created)
         {
-            created = new_gate("swap", {r0,r1}, circ);
+            created = new_gate(circ, "swap", {r0,r1});
             if (!created) new_gate_exception("swap or swap_real");
         }
         // DOUT("... swap(q" << r0 << ",q" << r1 << ") ...");
@@ -1370,7 +1377,7 @@ void MakeReal(ql::gate* gp, ql::circuit& circ)
 
     std::string real_gname = gp->name;   // also a copy, of the gate's name in this case!
     real_gname.append("_real");
-    bool created = new_gate(real_gname, real_qubits, circ);
+    bool created = new_gate(circ, real_gname, real_qubits);
     if (created)
     {
         // DOUT("... MakeReal: new gates created for: " << real_gname);
@@ -1390,7 +1397,7 @@ void MakePrimitive(ql::gate* gp, ql::circuit& circ)
 {
     std::string prim_gname = gp->name;   // a copy!
     prim_gname.append("_prim");
-    bool created = new_gate(prim_gname, gp->operands, circ);
+    bool created = new_gate(circ, prim_gname, gp->operands);
     if (created)
     {
         // DOUT("... MakePrimitive: new gates created for: " << prim_gname);

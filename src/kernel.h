@@ -355,7 +355,7 @@ public:
     | Gate management
     \************************************************************************/
 
-    bool add_default_gate_if_available(std::string gname, std::vector<size_t> qubits,
+    bool add_default_gate_if_available(circuit& circ, std::string gname, std::vector<size_t> qubits,
                                        std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
         bool result=false;
@@ -401,121 +401,121 @@ public:
 
         if( gname == "identity" || gname == "i" )
         {
-            c.push_back(new ql::identity(qubits[0]) );
+            circ.push_back(new ql::identity(qubits[0]) );
             result = true;
         }
         else if( gname == "hadamard" || gname == "h" )
         {
-            c.push_back(new ql::hadamard(qubits[0]) );
+            circ.push_back(new ql::hadamard(qubits[0]) );
             result = true;
         }
         else if( gname == "pauli_x" || gname == "x" )
         {
-            c.push_back(new ql::pauli_x(qubits[0]) );
+            circ.push_back(new ql::pauli_x(qubits[0]) );
             result = true;
         }
         else if( gname == "pauli_y" || gname == "y" )
         {
-            c.push_back(new ql::pauli_y(qubits[0]) );
+            circ.push_back(new ql::pauli_y(qubits[0]) );
             result = true;
         }
         else if( gname == "pauli_z" || gname == "z" )
         {
-            c.push_back(new ql::pauli_z(qubits[0]) );
+            circ.push_back(new ql::pauli_z(qubits[0]) );
             result = true;
         }
         else if( gname == "s" || gname == "phase" )
         {
-            c.push_back(new ql::phase(qubits[0]) );
+            circ.push_back(new ql::phase(qubits[0]) );
             result = true;
         }
         else if( gname == "sdag" || gname == "phasedag" )
         {
-            c.push_back(new ql::phasedag(qubits[0]) );
+            circ.push_back(new ql::phasedag(qubits[0]) );
             result = true;
         }
         else if( gname == "t" )
         {
-            c.push_back(new ql::t(qubits[0]) );
+            circ.push_back(new ql::t(qubits[0]) );
             result = true;
         }
         else if( gname == "tdag" )
         {
-            c.push_back(new ql::tdag(qubits[0]) );
+            circ.push_back(new ql::tdag(qubits[0]) );
             result = true;
         }
         else if( gname == "rx" )
         {
-            c.push_back(new ql::rx(qubits[0], angle));
+            circ.push_back(new ql::rx(qubits[0], angle));
             result = true;
         }
         else if( gname == "ry" )
         {
-            c.push_back(new ql::ry(qubits[0], angle));
+            circ.push_back(new ql::ry(qubits[0], angle));
             result = true;
         }
         else if( gname == "rz" )
         {
-            c.push_back(new ql::rz(qubits[0], angle));
+            circ.push_back(new ql::rz(qubits[0], angle));
             result = true;
         }
         else if( gname == "rx90" )
         {
-            c.push_back(new ql::rx90(qubits[0]) );
+            circ.push_back(new ql::rx90(qubits[0]) );
             result = true;
         }
         else if( gname == "mrx90" )
         {
-            c.push_back(new ql::mrx90(qubits[0]) );
+            circ.push_back(new ql::mrx90(qubits[0]) );
             result = true;
         }
         else if( gname == "rx180" )
         {
-            c.push_back(new ql::rx180(qubits[0]) );
+            circ.push_back(new ql::rx180(qubits[0]) );
             result = true;
         }
         else if( gname == "ry90" )
         {
-            c.push_back(new ql::ry90(qubits[0]) );
+            circ.push_back(new ql::ry90(qubits[0]) );
             result = true;
         }
         else if( gname == "mry90" )
         {
-            c.push_back(new ql::mry90(qubits[0]) );
+            circ.push_back(new ql::mry90(qubits[0]) );
             result = true;
         }
         else if( gname == "ry180" )
         {
-            c.push_back(new ql::ry180(qubits[0]) );
+            circ.push_back(new ql::ry180(qubits[0]) );
             result = true;
         }
         else if( gname == "measure" )
         {
             if(cregs.empty())
-                c.push_back(new ql::measure(qubits[0]) );
+                circ.push_back(new ql::measure(qubits[0]) );
             else
-                c.push_back(new ql::measure(qubits[0], cregs[0]) );
+                circ.push_back(new ql::measure(qubits[0], cregs[0]) );
 
             result = true;
         }
         else if( gname == "prepz" )
         {
-            c.push_back(new ql::prepz(qubits[0]) );
+            circ.push_back(new ql::prepz(qubits[0]) );
             result = true;
         }
         else if( gname == "cnot" )
         {
-            c.push_back(new ql::cnot(qubits[0], qubits[1]) );
+            circ.push_back(new ql::cnot(qubits[0], qubits[1]) );
             result = true;
         }
         else if( gname == "cz" || gname == "cphase" )
         {
-            c.push_back(new ql::cphase(qubits[0], qubits[1]) );
+            circ.push_back(new ql::cphase(qubits[0], qubits[1]) );
             result = true;
         }
         else if( gname == "toffoli" )
-            { c.push_back(new ql::toffoli(qubits[0], qubits[1], qubits[2]) ); result = true; }
-        else if( gname == "swap" )       { c.push_back(new ql::swap(qubits[0], qubits[1]) ); result = true; }
+            { circ.push_back(new ql::toffoli(qubits[0], qubits[1], qubits[2]) ); result = true; }
+        else if( gname == "swap" )       { circ.push_back(new ql::swap(qubits[0], qubits[1]) ); result = true; }
         else if( gname == "barrier")
         {
             /*
@@ -528,7 +528,7 @@ public:
                     qubits.push_back(q);
             }
 
-            c.push_back(new ql::wait(qubits, 0, 0));
+            circ.push_back(new ql::wait(qubits, 0, 0));
             result = true;
         }
         else if( gname == "wait")
@@ -544,7 +544,7 @@ public:
             }
 
             size_t duration_in_cycles = std::ceil(static_cast<float>(duration)/cycle_time);
-            c.push_back(new ql::wait(qubits, duration, duration_in_cycles));
+            circ.push_back(new ql::wait(qubits, duration, duration_in_cycles));
             result = true;
         }
         else
@@ -557,7 +557,7 @@ public:
     // if a parameterized custom gate ("e.g. cz") is available, add it to circuit and return true
     //
     // note that there is no check for the found gate being a composite gate
-    bool add_custom_gate_if_available(std::string & gname, std::vector<size_t> qubits,
+    bool add_custom_gate_if_available(circuit& circ, std::string & gname, std::vector<size_t> qubits,
                                       std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
         bool added = false;
@@ -584,7 +584,7 @@ public:
             if(duration>0) g->duration = duration;
             g->angle = angle;
             added = true;
-            c.push_back(g);
+            circ.push_back(g);
         }
         else
         {
@@ -601,7 +601,7 @@ public:
                 if(duration>0) g->duration = duration;
                 g->angle = angle;
                 added = true;
-                c.push_back(g);
+                circ.push_back(g);
             }
         }
 
@@ -643,7 +643,7 @@ public:
     //      also check each subinstruction for presence of a custom_gate (or a default gate)
     // otherwise, return false
     // don't add anything to circuit
-    bool add_spec_decomposed_gate_if_available(std::string gate_name, 
+    bool add_spec_decomposed_gate_if_available(circuit& circ, std::string gate_name, 
         std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
         bool added = false;
@@ -706,14 +706,14 @@ public:
 
                 // custom gate check
                 // when found, custom_added is true, and the expanded subinstruction was added to the circuit
-                bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+                bool custom_added = add_custom_gate_if_available(circ, sub_ins_name, this_gate_qubits, cregs);
                 if(!custom_added)
                 {
                     if(ql::options::get("use_default_gates") == "yes")
                     {
                         // default gate check
                         DOUT("adding default gate for " << sub_ins_name);
-                        bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+                        bool default_available = add_default_gate_if_available(circ, sub_ins_name, this_gate_qubits, cregs);
                         if( default_available )
                         {
                             WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
@@ -746,7 +746,7 @@ public:
     //      also check each subinstruction for availability as a custom gate (or default gate)
     // if not, return false
     // don't add anything to circuit
-    bool add_param_decomposed_gate_if_available(std::string gate_name, 
+    bool add_param_decomposed_gate_if_available(circuit& circ, std::string gate_name, 
         std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
         bool added = false;
@@ -806,14 +806,14 @@ public:
 
                 // custom gate check
                 // when found, custom_added is true, and the expanded subinstruction was added to the circuit
-                bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+                bool custom_added = add_custom_gate_if_available(circ, sub_ins_name, this_gate_qubits, cregs);
                 if(!custom_added)
                 {
                     if(ql::options::get("use_default_gates") == "yes")
                     {
                         // default gate check
                         DOUT("adding default gate for " << sub_ins_name);
-                        bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+                        bool default_available = add_default_gate_if_available(circ, sub_ins_name, this_gate_qubits, cregs);
                         if( default_available )
                         {
                             WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
@@ -886,6 +886,20 @@ public:
     void gate(std::string gname, std::vector<size_t> qubits = {}, 
         std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
     {
+        bool added = gate(c, gname, qubits, cregs, duration, angle);
+        if (!added)
+        {
+            EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+            throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
+        }
+    }
+
+    // generate custom gate and append it to circuit circ, instead of to kernel.c
+    // return whether gate was found and added
+    bool gate(circuit& circ, std::string gname, std::vector<size_t> qubits = {}, 
+        std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
+    {
+        bool added = false;
         for(auto & qno : qubits)
         {
             if( qno >= qubit_count )
@@ -916,18 +930,20 @@ public:
 
         // specialized composite gate check
         DOUT("trying to add specialized decomposed gate for: " << gname);
-        bool spec_decom_added = add_spec_decomposed_gate_if_available(gname, qubits);
+        bool spec_decom_added = add_spec_decomposed_gate_if_available(circ, gname, qubits);
         if(spec_decom_added)
         {
+            added = true;
             DOUT("specialized decomposed gates added for " << gname);
         }
         else
         {
             // parameterized composite gate check
             DOUT("trying to add parameterized decomposed gate for: " << gname);
-            bool param_decom_added = add_param_decomposed_gate_if_available(gname, qubits);
+            bool param_decom_added = add_param_decomposed_gate_if_available(circ, gname, qubits);
             if(param_decom_added)
             {
+                added = true;
                 DOUT("decomposed gates added for " << gname);
             }
             else
@@ -935,7 +951,7 @@ public:
                 // specialized/parameterized custom gate check
                 DOUT("adding custom gate for " << gname);
                 // when found, custom_added is true, and the gate was added to the circuit
-                bool custom_added = add_custom_gate_if_available(gname, qubits, cregs, duration, angle);
+                bool custom_added = add_custom_gate_if_available(circ, gname, qubits, cregs, duration, angle);
                 if(!custom_added)
                 {
                     if(ql::options::get("use_default_gates") == "yes")
@@ -943,30 +959,23 @@ public:
                         // default gate check (which is always parameterized)
                         DOUT("adding default gate for " << gname);
 
-                        bool default_available = add_default_gate_if_available(gname, qubits, cregs, duration);
+                        bool default_available = add_default_gate_if_available(circ, gname, qubits, cregs, duration);
                         if( default_available )
                         {
+                            added = true;
                             WOUT("default gate added for " << gname);
                         }
-                        else
-                        {
-                            EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
-                            throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
-                        }
-                    }
-                    else
-                    {
-                        EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
-                        throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
                     }
                 }
                 else
                 {
+                    added = true;
                     DOUT("custom gate added for " << gname);
                 }
             }
         }
         DOUT("");
+        return added;
     }
 
     size_t  get_classical_operations_count()
