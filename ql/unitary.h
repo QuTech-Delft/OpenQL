@@ -74,7 +74,7 @@ public:
             //Throw an error
             EOUT("Unitary " << name <<" is not a unitary matrix!");
 
-            throw ql::exception("Unitary '"+ name+"' is not a unitary matrix. Cannot be decomposed!"+to_string(matrix), false);
+            throw ql::exception("Error: Unitary '"+ name+"' is not a unitary matrix. Cannot be decomposed!", false);
         }
 
         decomp_function(matrix.transpose(), numberofbits); //needed because the matrix is read in columnmajor

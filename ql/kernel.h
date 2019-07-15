@@ -824,7 +824,7 @@ public:
     // to add unitary to kernel
     void gate(ql::unitary u, std::vector<size_t> qubits)
     {
-        double u_size = log2(std::pow(u.size(),0.5));
+        double u_size = log2((int) u.size())/2;
         if(u_size != qubits.size())
         {
             EOUT("Unitary " << u.name <<" has been applied to the wrong number of qubits! " << qubits.size() << " and not " << u_size);
@@ -863,7 +863,7 @@ public:
             // int start_4 = start_3 + numberforunitary + numberforcontrolledrotation; //= the point where the fourth sub unitary starts
             
             // The new qubit vector that is passed to the recursive function
-            std::vector<size_t> subvector(qubits.begin()+1, qubits.end());
+            std::vector<size_t> subvector(qubits.begin(), qubits.end()-1);
             int start_counter = i;
             recursiveRelationsForUnitaryDecomposition(u, subvector, n-1, start_counter);
             start_counter += numberforunitary;
@@ -883,9 +883,12 @@ public:
         {
             // std::cout << "Adding the zyz decomposition gates" << std::endl;
             // zyz gates happen on the only qubit in the list. 
-            c.push_back(new ql::rz(qubits[0], u.instructionlist[i]));
-            c.push_back(new ql::ry(qubits[0], u.instructionlist[i+1]));
-            c.push_back(new ql::rz(qubits[0], u.instructionlist[i+2]));
+            if(u.instructionlist[i] > 0.0 || u.instructionlist[i] < 0.0){
+                c.push_back(new ql::rz(qubits.back(), u.instructionlist[i]));}
+            if(u.instructionlist[i+1] > 0.0 || u.instructionlist[i+1] < 0.0){
+                c.push_back(new ql::ry(qubits.back(), u.instructionlist[i+1]));}
+            if(u.instructionlist[i+2] > 0.0 || u.instructionlist[i+2] < 0.0){
+                c.push_back(new ql::rz(qubits.back(), u.instructionlist[i+2]));}
         }
     }
 
@@ -895,20 +898,26 @@ public:
         // std::cout << "Adding a multicontrolled rz-gate at start index " << start_index << ", to " << ql::utils::to_string(qubits, "qubits: ") << std::endl;
         int idx;
         //The first one is always controlled from the last to the first qubit.
-        c.push_back(new ql::rz(qubits[0],-instruction_list[start_index]));
-        c.push_back(new ql::cnot(qubits.back(), qubits[0]));
+        if(instruction_list[start_index] > 0.0 || instruction_list[start_index] < 0.0)
+            c.push_back(new ql::rz(qubits.back(),-instruction_list[start_index]));
+        c.push_back(new ql::cnot(qubits[0], qubits.back()));
         for(int i = 1; i < std::pow(2,qubits.size()-1)-1; i++)
         {
             idx = log2( round( ((i)^((i)>>1))^((i+1)^((i+1)>>1))) );
             // std::cout << "idx: " << idx << std::endl;
-            int posc = qubits.size() - idx - 1; // because counting from zero
+            //int posc = qubits.size() - idx - 1; // because counting from zero
+            int posc = idx ;
             // std::cout << "posc: " << posc << std::endl;
-            c.push_back(new ql::rz(qubits[0],-instruction_list[i+start_index]));
-            c.push_back(new ql::cnot(qubits[posc], qubits[0]));
+            if(instruction_list[i+start_index] > 0.0 || instruction_list[i+start_index] < 0.0)
+            {
+                c.push_back(new ql::rz(qubits.back(),-instruction_list[i+start_index]));                
+            }
+            c.push_back(new ql::cnot(qubits[posc], qubits.back()));
         }
         // The last one is always controlled from the next qubit to the first qubit
-        c.push_back(new ql::rz(qubits[0],-instruction_list[end_index]));
-        c.push_back(new ql::cnot(qubits[1], qubits[0]));
+        if(instruction_list[end_index] > 0.0 || instruction_list[end_index] < 0.0)
+            c.push_back(new ql::rz(qubits.back(),-instruction_list[end_index]));
+        c.push_back(new ql::cnot(qubits.end()[-2], qubits.back()));
     }
 
     //controlled qubit is the first in the list.
@@ -917,22 +926,28 @@ public:
         // std::cout << "Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << ql::utils::to_string(qubits, "qubits: ") << std::endl;
         int idx;
         //The first one is always controlled from the last to the first qubit.
-        c.push_back(new ql::ry(qubits[0],-instruction_list[start_index]));
-        c.push_back(new ql::cnot(qubits.back(), qubits[0]));
+        if(instruction_list[start_index] > 0.0 || instruction_list[start_index] < 0.0)
+            c.push_back(new ql::ry(qubits.back(),-instruction_list[start_index]));
+        c.push_back(new ql::cnot(qubits[0], qubits.back()));
 
         // std::cout << "multicontrolled y" << std::endl;
         for(int i = 1; i < std::pow(2,qubits.size()-1)-1; i++)
         { 
             idx = log2( round( ((i)^((i)>>1))^((i+1)^((i+1)>>1))) );
             // std::cout << "idx: " << idx << std::endl;
-            int posc = qubits.size() - idx - 1; // because counting from zero
+            // int posc = qubits.size() - idx - 1; // because counting from zero
+            int posc = idx;
             // std::cout << "posc: " << posc << std::endl;
-            c.push_back(new ql::ry(qubits[0],-instruction_list[i+start_index]));
-            c.push_back(new ql::cnot(qubits[posc], qubits[0]));
+            if(instruction_list[i+start_index] > 0.0 || instruction_list[i+start_index] < 0.0)
+            {
+                c.push_back(new ql::ry(qubits.back(),-instruction_list[i+start_index]));
+            }
+            c.push_back(new ql::cnot(qubits[posc], qubits.back()));
         }
         // Last one is controlled from the next qubit to the first one. 
-        c.push_back(new ql::ry(qubits[0],-instruction_list[end_index]));
-        c.push_back(new ql::cnot(qubits[1], qubits[0])); 
+        if(instruction_list[end_index] > 0.0 || instruction_list[end_index] < 0.0)
+            c.push_back(new ql::ry(qubits.back(),-instruction_list[end_index]));
+        c.push_back(new ql::cnot(qubits.end()[-2], qubits.back())); 
 
     }
 
