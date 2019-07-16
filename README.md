@@ -50,7 +50,7 @@ In all the instructions below, `python` refers to `Python 3` and `pip` refers to
 
 Openql can be installed as a conda package (currently on Linux and Windows) by:
 
-```
+```sh
 conda install -c imran.ashraf openql 
 ```
 
@@ -58,13 +58,13 @@ conda install -c imran.ashraf openql
 
 conda packages can also be built locally by using the recipie available in `conda-recipe` directory, by running the following command:
 
-```
+```sh
 conda build conda-recipe/.
 ```
 
 The generated package can then be installed by:
 
-```
+```sh
 conda install openql --use-local
 ```
 
@@ -73,27 +73,27 @@ conda install openql --use-local
 
 N.B. the instructions below will compile the C++ files the first time you try to install OpenQL package. If you are updating an existing installation you should first clean and recompile the C++ files using the following command. 
 
-```
-rm -rf build cbuild       # delete the old build folders
+```sh
+python cleanme.py
 ```
 
 ## Linux, Windows & OSX
 
 Running the following command in Terminal/Power Shell should install the openql package:
 
-```
+```sh
 python setup.py install  --user
 ```
 
 Or
 
-```
+```sh
 pip install  -e .
 ```
 
-By defining NTHREADS=N environment variable, multiple processos can be created for faster compilation. For example, the following command will create 4 processes for compilation:
+By defining NPROCS=N environment variable, multiple processos can be created for faster compilation. For example, the following command will create 4 processes for compilation:
 
-```
+```sh
 NPROCS=4 python setup.py install  --user
 ```
 
@@ -102,13 +102,13 @@ NPROCS=4 python setup.py install  --user
 
 In order to pass all the tests, `qisa-as` and `libqasm` should be installed first. Follow [qisa-as](https://github.com/QE-Lab/eQASM_Assembler) and [libqasm](https://github.com/QE-Lab/libqasm) instructions to install python interfaces of these modules. Once `qisa-as` and `libqasm` are installed, you can run all the tests by:
 
-```
+```sh
 py.test -v
 ```
 
 Or
 
-```
+```sh
 python -m pytest
 ```
 
@@ -120,18 +120,18 @@ Existing tests and programs can be compiled by the following instructions. You c
 
 ## Linux/OSX
 
-```
-mkdir cbuild 
-cd OpenQL/cbuild 
+```sh
+mkdir cbuild
+cd cbuild 
 cmake ..   # generates the make file based on CMakeLists.txt in the OpenQL directory
 make       # compiles the source code into the current directory. 
 ```
 
-To execute an example program go to e.g., `OpenQL/cbuild/programs` and execute one of the files e.g.,  `./simple`. The output will be saved to the output directory next to the file.
+To execute an example program go to e.g., `OpenQL/cbuild/examples` and execute one of the files e.g.,  `./simple`. The output will be saved to the output directory next to the file.
 
 If one wants to compile and run a single file, e.g., `example.cc`, to compile it one can run : 
 
-```
+```sh
 mkdir output           # create an output directory if it does not exist
 g++ -std=c++11 example.cc -o example.exe -I OpenQL/   # compile the file
 ./example.exe                                         # execute the file
@@ -140,25 +140,26 @@ g++ -std=c++11 example.cc -o example.exe -I OpenQL/   # compile the file
 ## Windows
 
 ```
-cd OpenQL/cbuild
+mkdir cbuild
+cd cbuild
 cmake -G "NMake Makefiles" ..
 nmake
 ```
 
 ## Usage
 
-Example C++ tests and programs can be found in 'tests' and 'programs'
-directories. Executables for these will be generated in 'build/tests' and 'build/programs'
+Example C++ tests and programs can be found in 'tests' and 'examples'
+directories. Executables for these will be generated in 'build/tests' and 'build/examples'
 directory.
 
-Example python tests and programs can be found in the 'tests' and 'programs' directories.
+Example python tests and programs can be found in the 'tests' and 'examples' directories.
 These can be executed as 'python tests/simplePyTest.py'.
 
 # Getting started 
 
 After installing OpenQL a good place to get started is by looking at the files
 in the "tests" directory. Here you can find commented examples on how to use OpenQL.
-For instance, `programs/getting_started.py` could be a good starting point.
+For instance, `examples/getting_started.py` could be a good starting point.
 `doc` directory as well as the Wiki page documents various aspects.
 
 N.B. gates in OpenQL are *case insensitive*. 

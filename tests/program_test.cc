@@ -8,7 +8,7 @@
 
 #include <time.h>
 
-#include <ql/openql.h>
+#include <openql.h>
 
 int main(int argc, char ** argv)
 {

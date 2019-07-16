@@ -6,13 +6,13 @@ import subprocess
 from sys import platform
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
-srcDir = os.path.join(rootDir, "ql")
+srcDir = os.path.join(rootDir, "src")
 buildDir = os.path.join(rootDir, "cbuild")
-clibDir = os.path.join(buildDir, "openql")
+clibDir = os.path.join(buildDir, "swig")
 
 nprocs = 1
 env_var_nprocs = os.environ.get('NPROCS')
-if(env_var_nprocs != None):
+if (env_var_nprocs != None):
   nprocs = int(env_var_nprocs)
 
 print('Using {} processes for compilation'.format(nprocs))
@@ -59,11 +59,13 @@ elif platform == "win32":
 else:
     print('Unknown/Unsupported OS !!!')
 
-genclib = os.path.join(clibDir, clibname)
-clib = os.path.join(rootDir, "openql", clibname)
-copyfile(genclib, clib)
+clib = os.path.join(clibDir, clibname)
+swigDir = os.path.join(rootDir, "swig", "openql")
+clibSwig = os.path.join(swigDir, clibname)
+
+copyfile(clib, clibSwig)
 copyfile(os.path.join(clibDir, "openql.py"),
-         os.path.join(rootDir, "openql", "openql.py"))
+         os.path.join(swigDir, "openql.py"))
 os.chdir(rootDir)
 
 
@@ -117,8 +119,9 @@ setup(name='openql',
       author='Nader Khammassi and Imran Ashraf',
       author_email='nader.khammassi@gmail.com, iimran.aashraf@gmail.com',
       url='https://github.com/QE-Lab/OpenQL',
-      license=read('license'),
+      license=read('LICENSE'),
       packages=['openql'],
+      package_dir={'': 'swig'},
       include_package_data=True,
-      package_data={'openql': [clib]},
+      package_data={'openql': [clibSwig]},
       zip_safe=False)
