@@ -1096,12 +1096,18 @@ bool new_param_decomposed_gate_if_available(std::string gate_name, std::vector<s
 // if not, then return false else true
 bool new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits, size_t duration=0, double angle = 0.0)
 {
-    // return HIDDEN_new_gate(circ, gname, qubits, duration, angle);
+#ifdef NEWGATEIMPLEMENTATION
+    // doesn't compile since gate and its callees need a quantum_kernel instance for various members
+    // solution is to move gate out of kernel class and have a single instance of the new class everywhere
+    // the new class could be similar to platform
     std::vector<size_t> cregs = {};
     return ql::quantum_kernel::gate(circ, gname, qubits, cregs, duration, angle);
+#else
+    return OLD_new_gate(circ, gname, qubits, duration, angle);
+#endif // NEWGATEIMPLEMENTATION
 }
 
-bool HIDDEN_new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits, size_t duration=0, double angle = 0.0)
+bool OLD_new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits, size_t duration=0, double angle = 0.0)
 {
     bool added = false;
     for(auto & qno : qubits)

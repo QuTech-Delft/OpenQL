@@ -356,9 +356,20 @@ public:
     | Gate management
     \************************************************************************/
 
+#ifdef NEWGATEIMPLEMENTATION
+    // doesn't compile since gate and its callees need a kernel instance for various members
+    // solution is to move gate out of quantum_kernel class and have a single instance of the new class everywhere
+    // the new class could be similar to platform
 static bool add_default_gate_if_available(circuit& circ, std::string gname, std::vector<size_t> qubits,
                                        std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
+#else
+bool add_default_gate_if_available(std::string gname, std::vector<size_t> qubits,
+                                       std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
+    {
+        #define circ c
+#endif // NEWGATEIMPLEMENTATION
+
         bool result=false;
 
         bool is_one_qubit_gate = (gname == "identity") || (gname == "i")
@@ -558,9 +569,17 @@ static bool add_default_gate_if_available(circuit& circ, std::string gname, std:
     // if a parameterized custom gate ("e.g. cz") is available, add it to circuit and return true
     //
     // note that there is no check for the found gate being a composite gate
+#ifdef NEWGATEIMPLEMENTATION
 static bool add_custom_gate_if_available(circuit& circ, instruction_map_t& gate_defs, std::string & gname, std::vector<size_t> qubits,
                                       std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
+#else
+bool add_custom_gate_if_available(std::string & gname, std::vector<size_t> qubits,
+                                      std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
+    {
+        #define circ c
+        #define gate_defs gate_definition
+#endif // NEWGATEIMPLEMENTATION
         bool added = false;
 
         // first check if a specialized custom gate is available
@@ -620,8 +639,14 @@ static bool add_custom_gate_if_available(circuit& circ, instruction_map_t& gate_
 
     // return the subinstructions of a composite gate
     // while doing, test whether the subinstructions have a definition (so they cannot be specialized or default ones!)
+#ifdef NEWGATEIMPLEMENTATION
 static void get_decomposed_ins( ql::composite_gate * gptr, instruction_map_t& gate_defs, std::vector<std::string> & sub_instructons )
     {
+#else
+void get_decomposed_ins( ql::composite_gate * gptr, std::vector<std::string> & sub_instructons )
+    {
+        #define gate_defs gate_definition
+#endif // NEWGATEIMPLEMENTATION
         auto & sub_gates = gptr->gs;
         DOUT("composite ins: " << gptr->name);
         for(auto & agate : sub_gates)
@@ -644,9 +669,17 @@ static void get_decomposed_ins( ql::composite_gate * gptr, instruction_map_t& ga
     //      also check each subinstruction for presence of a custom_gate (or a default gate)
     // otherwise, return false
     // don't add anything to circuit
+#ifdef NEWGATEIMPLEMENTATION
 static bool add_spec_decomposed_gate_if_available(circuit& circ, instruction_map_t& gate_defs, std::string gate_name, 
         std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
+#else
+bool add_spec_decomposed_gate_if_available(std::string gate_name, 
+        std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
+    {
+        #define circ c
+        #define gate_defs gate_definition
+#endif // NEWGATEIMPLEMENTATION
         bool added = false;
         DOUT("Checking if specialized decomposition is available for " << gate_name);
         std::string instr_parameterized = gate_name + " ";
@@ -681,7 +714,11 @@ static bool add_spec_decomposed_gate_if_available(circuit& circ, instruction_map
 
 
             std::vector<std::string> sub_instructons;
+#ifdef NEWGATEIMPLEMENTATION
             get_decomposed_ins( gptr, gate_defs, sub_instructons );
+#else
+            get_decomposed_ins( gptr, sub_instructons );
+#endif // NEWGATEIMPLEMENTATION
             for(auto & sub_ins : sub_instructons)
             {
                 DOUT("Adding sub ins: " << sub_ins);
@@ -707,14 +744,22 @@ static bool add_spec_decomposed_gate_if_available(circuit& circ, instruction_map
 
                 // custom gate check
                 // when found, custom_added is true, and the expanded subinstruction was added to the circuit
+#ifdef NEWGATEIMPLEMENTATION
                 bool custom_added = add_custom_gate_if_available(circ, gate_defs, sub_ins_name, this_gate_qubits, cregs);
+#else
+                bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+#endif // NEWGATEIMPLEMENTATION
                 if(!custom_added)
                 {
                     if(ql::options::get("use_default_gates") == "yes")
                     {
                         // default gate check
                         DOUT("adding default gate for " << sub_ins_name);
+#ifdef NEWGATEIMPLEMENTATION
                         bool default_available = add_default_gate_if_available(circ, sub_ins_name, this_gate_qubits, cregs);
+#else
+                        bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+#endif // NEWGATEIMPLEMENTATION
                         if( default_available )
                         {
                             WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
@@ -747,9 +792,17 @@ static bool add_spec_decomposed_gate_if_available(circuit& circ, instruction_map
     //      also check each subinstruction for availability as a custom gate (or default gate)
     // if not, return false
     // don't add anything to circuit
+#ifdef NEWGATEIMPLEMENTATION
     bool add_param_decomposed_gate_if_available(circuit& circ, instruction_map_t& gate_defs, std::string gate_name, 
         std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
+#else
+    bool add_param_decomposed_gate_if_available(std::string gate_name, 
+        std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
+    {
+        #define circ c
+        #define gate_defs gate_definition
+#endif // NEWGATEIMPLEMENTATION
         bool added = false;
         DOUT("Checking if parameterized decomposition is available for " << gate_name);
         std::string instr_parameterized = gate_name + " ";
@@ -784,7 +837,11 @@ static bool add_spec_decomposed_gate_if_available(circuit& circ, instruction_map
             }
 
             std::vector<std::string> sub_instructons;
+#ifdef NEWGATEIMPLEMENTATION
             get_decomposed_ins( gptr, gate_defs, sub_instructons );
+#else
+            get_decomposed_ins( gptr, sub_instructons );
+#endif // NEWGATEIMPLEMENTATION
             for(auto & sub_ins : sub_instructons)
             {
                 DOUT("Adding sub ins: " << sub_ins);
@@ -807,14 +864,22 @@ static bool add_spec_decomposed_gate_if_available(circuit& circ, instruction_map
 
                 // custom gate check
                 // when found, custom_added is true, and the expanded subinstruction was added to the circuit
+#ifdef NEWGATEIMPLEMENTATION
                 bool custom_added = add_custom_gate_if_available(circ, gate_defs, sub_ins_name, this_gate_qubits, cregs);
+#else
+                bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+#endif // NEWGATEIMPLEMENTATION
                 if(!custom_added)
                 {
                     if(ql::options::get("use_default_gates") == "yes")
                     {
                         // default gate check
                         DOUT("adding default gate for " << sub_ins_name);
+#ifdef NEWGATEIMPLEMENTATION
                         bool default_available = add_default_gate_if_available(circ, sub_ins_name, this_gate_qubits, cregs);
+#else
+                        bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
+#endif // NEWGATEIMPLEMENTATION
                         if( default_available )
                         {
                             WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
@@ -902,7 +967,11 @@ static bool add_spec_decomposed_gate_if_available(circuit& circ, instruction_map
             }
         }
 
-        bool added = gate(c, gate_definition, gname, qubits, cregs, duration, angle);
+#ifdef NEWGATEIMPLEMENTATION
+        bool added = BR_gate(c, gate_definition, gname, qubits, cregs, duration, angle);
+#else
+        bool added = BR_gate(gname, qubits, cregs, duration, angle);
+#endif // NEWGATEIMPLEMENTATION
         if (!added)
         {
             FATAL("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
@@ -911,9 +980,17 @@ static bool add_spec_decomposed_gate_if_available(circuit& circ, instruction_map
 
     // generate custom gate and append it to circuit circ, instead of to kernel.c
     // return whether gate was found and added
-static    bool gate(circuit& circ, instruction_map_t& gate_defs, std::string gname, std::vector<size_t> qubits = {}, 
+#ifdef NEWGATEIMPLEMENTATION
+static    bool BR_gate(circuit& circ, instruction_map_t& gate_defs, std::string gname, std::vector<size_t> qubits = {}, 
         std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
     {
+#else
+    bool BR_gate(std::string gname, std::vector<size_t> qubits = {}, 
+        std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
+    {
+        #define circ c
+        #define gate_defs gate_definition
+#endif // NEWGATEIMPLEMENTATION
         bool added = false;
         // check if specialized composite gate is available
         // if not, check if parameterized composite gate is available
@@ -927,7 +1004,11 @@ static    bool gate(circuit& circ, instruction_map_t& gate_defs, std::string gna
 
         // specialized composite gate check
         DOUT("trying to add specialized decomposed gate for: " << gname);
+#ifdef NEWGATEIMPLEMENTATION
         bool spec_decom_added = add_spec_decomposed_gate_if_available(circ, gname, qubits);
+#else
+        bool spec_decom_added = add_spec_decomposed_gate_if_available(gname, qubits);
+#endif // NEWGATEIMPLEMENTATION
         if(spec_decom_added)
         {
             added = true;
@@ -937,7 +1018,11 @@ static    bool gate(circuit& circ, instruction_map_t& gate_defs, std::string gna
         {
             // parameterized composite gate check
             DOUT("trying to add parameterized decomposed gate for: " << gname);
+#ifdef NEWGATEIMPLEMENTATION
             bool param_decom_added = add_param_decomposed_gate_if_available(circ, gname, qubits);
+#else
+            bool param_decom_added = add_param_decomposed_gate_if_available(gname, qubits);
+#endif // NEWGATEIMPLEMENTATION
             if(param_decom_added)
             {
                 added = true;
@@ -948,7 +1033,11 @@ static    bool gate(circuit& circ, instruction_map_t& gate_defs, std::string gna
                 // specialized/parameterized custom gate check
                 DOUT("adding custom gate for " << gname);
                 // when found, custom_added is true, and the gate was added to the circuit
+#ifdef NEWGATEIMPLEMENTATION
                 bool custom_added = add_custom_gate_if_available(circ, gate_defs, gname, qubits, cregs, duration, angle);
+#else
+                bool custom_added = add_custom_gate_if_available(gname, qubits, cregs, duration, angle);
+#endif // NEWGATEIMPLEMENTATION
                 if(!custom_added)
                 {
                     if(ql::options::get("use_default_gates") == "yes")
@@ -956,7 +1045,11 @@ static    bool gate(circuit& circ, instruction_map_t& gate_defs, std::string gna
                         // default gate check (which is always parameterized)
                         DOUT("adding default gate for " << gname);
 
+#ifdef NEWGATEIMPLEMENTATION
                         bool default_available = add_default_gate_if_available(circ, gname, qubits, cregs, duration);
+#else
+                        bool default_available = add_default_gate_if_available(gname, qubits, cregs, duration);
+#endif // NEWGATEIMPLEMENTATION
                         if( default_available )
                         {
                             added = true;
