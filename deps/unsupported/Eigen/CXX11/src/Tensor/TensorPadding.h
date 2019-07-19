@@ -31,6 +31,7 @@ struct traits<TensorPaddingOp<PaddingDimensions, XprType> > : public traits<XprT
   typedef typename remove_reference<Nested>::type _Nested;
   static const int NumDimensions = XprTraits::NumDimensions;
   static const int Layout = XprTraits::Layout;
+  typedef typename XprTraits::PointerType PointerType;
 };
 
 template<typename PaddingDimensions, typename XprType>
@@ -90,11 +91,15 @@ struct TensorEvaluator<const TensorPaddingOp<PaddingDimensions, ArgType>, Device
   typedef typename XprType::Scalar Scalar;
   typedef typename XprType::CoeffReturnType CoeffReturnType;
   typedef typename PacketType<CoeffReturnType, Device>::type PacketReturnType;
-  static const int PacketSize = internal::unpacket_traits<PacketReturnType>::size;
+  static const int PacketSize = PacketType<CoeffReturnType, Device>::size;
+  typedef StorageMemory<CoeffReturnType, Device> Storage;
+  typedef typename Storage::Type EvaluatorPointerType;
 
   enum {
     IsAligned = true,
     PacketAccess = TensorEvaluator<ArgType, Device>::PacketAccess,
+    BlockAccess = false,
+    PreferBlockAccess = false,
     Layout = TensorEvaluator<ArgType, Device>::Layout,
     CoordAccess = true,
     RawAccess = false
@@ -135,7 +140,7 @@ struct TensorEvaluator<const TensorPaddingOp<PaddingDimensions, ArgType>, Device
 
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Dimensions& dimensions() const { return m_dimensions; }
 
-  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE bool evalSubExprsIfNeeded(Scalar*) {
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE bool evalSubExprsIfNeeded(EvaluatorPointerType) {
     m_impl.evalSubExprsIfNeeded(NULL);
     return true;
   }
@@ -148,6 +153,7 @@ struct TensorEvaluator<const TensorPaddingOp<PaddingDimensions, ArgType>, Device
     eigen_assert(index < dimensions().TotalSize());
     Index inputIndex = 0;
     if (static_cast<int>(Layout) == static_cast<int>(ColMajor)) {
+      EIGEN_UNROLL_LOOP
       for (int i = NumDims - 1; i > 0; --i) {
         const Index idx = index / m_outputStrides[i];
         if (isPaddingAtIndexForDim(idx, i)) {
@@ -161,6 +167,7 @@ struct TensorEvaluator<const TensorPaddingOp<PaddingDimensions, ArgType>, Device
       }
       inputIndex += (index - m_padding[0].first);
     } else {
+      EIGEN_UNROLL_LOOP
       for (int i = 0; i < NumDims - 1; ++i) {
         const Index idx = index / m_outputStrides[i+1];
         if (isPaddingAtIndexForDim(idx, i)) {
@@ -189,16 +196,25 @@ struct TensorEvaluator<const TensorPaddingOp<PaddingDimensions, ArgType>, Device
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorOpCost costPerCoeff(bool vectorized) const {
     TensorOpCost cost = m_impl.costPerCoeff(vectorized);
     if (static_cast<int>(Layout) == static_cast<int>(ColMajor)) {
+      EIGEN_UNROLL_LOOP
       for (int i = 0; i < NumDims; ++i)
         updateCostPerDimension(cost, i, i == 0);
     } else {
+      EIGEN_UNROLL_LOOP
       for (int i = NumDims - 1; i >= 0; --i)
         updateCostPerDimension(cost, i, i == NumDims - 1);
     }
     return cost;
   }
 
-  EIGEN_DEVICE_FUNC Scalar* data() const { return NULL; }
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE EvaluatorPointerType data() const { return NULL; }
+
+#ifdef EIGEN_USE_SYCL
+  // binding placeholder accessors to a command group handler for SYCL
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE void bind(cl::sycl::handler &cgh) const {
+    m_impl.bind(cgh);
+  }
+#endif
 
  private:
   EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE bool isPaddingAtIndexForDim(
@@ -262,22 +278,23 @@ struct TensorEvaluator<const TensorPaddingOp<PaddingDimensions, ArgType>, Device
 
     const Index initialIndex = index;
     Index inputIndex = 0;
+    EIGEN_UNROLL_LOOP
     for (int i = NumDims - 1; i > 0; --i) {
-      const Index first = index;
-      const Index last = index + PacketSize - 1;
+      const Index firstIdx = index;
+      const Index lastIdx = index + PacketSize - 1;
       const Index lastPaddedLeft = m_padding[i].first * m_outputStrides[i];
       const Index firstPaddedRight = (m_dimensions[i] - m_padding[i].second) * m_outputStrides[i];
       const Index lastPaddedRight = m_outputStrides[i+1];
 
-      if (!isLeftPaddingCompileTimeZero(i) && last < lastPaddedLeft) {
+      if (!isLeftPaddingCompileTimeZero(i) && lastIdx < lastPaddedLeft) {
         // all the coefficient are in the padding zone.
         return internal::pset1<PacketReturnType>(m_paddingValue);
       }
-      else if (!isRightPaddingCompileTimeZero(i) && first >= firstPaddedRight && last < lastPaddedRight) {
+      else if (!isRightPaddingCompileTimeZero(i) && firstIdx >= firstPaddedRight && lastIdx < lastPaddedRight) {
         // all the coefficient are in the padding zone.
         return internal::pset1<PacketReturnType>(m_paddingValue);
       }
-      else if ((isLeftPaddingCompileTimeZero(i) && isRightPaddingCompileTimeZero(i)) || (first >= lastPaddedLeft && last < firstPaddedRight)) {
+      else if ((isLeftPaddingCompileTimeZero(i) && isRightPaddingCompileTimeZero(i)) || (firstIdx >= lastPaddedLeft && lastIdx < firstPaddedRight)) {
         // all the coefficient are between the 2 padding zones.
         const Index idx = index / m_outputStrides[i];
         inputIndex += (idx - m_padding[i].first) * m_inputStrides[i];
@@ -289,21 +306,21 @@ struct TensorEvaluator<const TensorPaddingOp<PaddingDimensions, ArgType>, Device
       }
     }
 
-    const Index last = index + PacketSize - 1;
-    const Index first = index;
+    const Index lastIdx = index + PacketSize - 1;
+    const Index firstIdx = index;
     const Index lastPaddedLeft = m_padding[0].first;
     const Index firstPaddedRight = (m_dimensions[0] - m_padding[0].second);
     const Index lastPaddedRight = m_outputStrides[1];
 
-    if (!isLeftPaddingCompileTimeZero(0) && last < lastPaddedLeft) {
+    if (!isLeftPaddingCompileTimeZero(0) && lastIdx < lastPaddedLeft) {
       // all the coefficient are in the padding zone.
       return internal::pset1<PacketReturnType>(m_paddingValue);
     }
-    else if (!isRightPaddingCompileTimeZero(0) && first >= firstPaddedRight && last < lastPaddedRight) {
+    else if (!isRightPaddingCompileTimeZero(0) && firstIdx >= firstPaddedRight && lastIdx < lastPaddedRight) {
       // all the coefficient are in the padding zone.
       return internal::pset1<PacketReturnType>(m_paddingValue);
     }
-    else if ((isLeftPaddingCompileTimeZero(0) && isRightPaddingCompileTimeZero(0)) || (first >= lastPaddedLeft && last < firstPaddedRight)) {
+    else if ((isLeftPaddingCompileTimeZero(0) && isRightPaddingCompileTimeZero(0)) || (firstIdx >= lastPaddedLeft && lastIdx < firstPaddedRight)) {
       // all the coefficient are between the 2 padding zones.
       inputIndex += (index - m_padding[0].first);
       return m_impl.template packet<Unaligned>(inputIndex);
@@ -319,23 +336,23 @@ struct TensorEvaluator<const TensorPaddingOp<PaddingDimensions, ArgType>, Device
 
     const Index initialIndex = index;
     Index inputIndex = 0;
-
+    EIGEN_UNROLL_LOOP
     for (int i = 0; i < NumDims - 1; ++i) {
-      const Index first = index;
-      const Index last = index + PacketSize - 1;
+      const Index firstIdx = index;
+      const Index lastIdx = index + PacketSize - 1;
       const Index lastPaddedLeft = m_padding[i].first * m_outputStrides[i+1];
       const Index firstPaddedRight = (m_dimensions[i] - m_padding[i].second) * m_outputStrides[i+1];
       const Index lastPaddedRight = m_outputStrides[i];
 
-      if (!isLeftPaddingCompileTimeZero(i) && last < lastPaddedLeft) {
+      if (!isLeftPaddingCompileTimeZero(i) && lastIdx < lastPaddedLeft) {
         // all the coefficient are in the padding zone.
         return internal::pset1<PacketReturnType>(m_paddingValue);
       }
-      else if (!isRightPaddingCompileTimeZero(i) && first >= firstPaddedRight && last < lastPaddedRight) {
+      else if (!isRightPaddingCompileTimeZero(i) && firstIdx >= firstPaddedRight && lastIdx < lastPaddedRight) {
         // all the coefficient are in the padding zone.
         return internal::pset1<PacketReturnType>(m_paddingValue);
       }
-      else if ((isLeftPaddingCompileTimeZero(i) && isRightPaddingCompileTimeZero(i)) || (first >= lastPaddedLeft && last < firstPaddedRight)) {
+      else if ((isLeftPaddingCompileTimeZero(i) && isRightPaddingCompileTimeZero(i)) || (firstIdx >= lastPaddedLeft && lastIdx < firstPaddedRight)) {
         // all the coefficient are between the 2 padding zones.
         const Index idx = index / m_outputStrides[i+1];
         inputIndex += (idx - m_padding[i].first) * m_inputStrides[i];
@@ -347,21 +364,21 @@ struct TensorEvaluator<const TensorPaddingOp<PaddingDimensions, ArgType>, Device
       }
     }
 
-    const Index last = index + PacketSize - 1;
-    const Index first = index;
+    const Index lastIdx = index + PacketSize - 1;
+    const Index firstIdx = index;
     const Index lastPaddedLeft = m_padding[NumDims-1].first;
     const Index firstPaddedRight = (m_dimensions[NumDims-1] - m_padding[NumDims-1].second);
     const Index lastPaddedRight = m_outputStrides[NumDims-1];
 
-    if (!isLeftPaddingCompileTimeZero(NumDims-1) && last < lastPaddedLeft) {
+    if (!isLeftPaddingCompileTimeZero(NumDims-1) && lastIdx < lastPaddedLeft) {
       // all the coefficient are in the padding zone.
       return internal::pset1<PacketReturnType>(m_paddingValue);
     }
-    else if (!isRightPaddingCompileTimeZero(NumDims-1) && first >= firstPaddedRight && last < lastPaddedRight) {
+    else if (!isRightPaddingCompileTimeZero(NumDims-1) && firstIdx >= firstPaddedRight && lastIdx < lastPaddedRight) {
       // all the coefficient are in the padding zone.
       return internal::pset1<PacketReturnType>(m_paddingValue);
     }
-    else if ((isLeftPaddingCompileTimeZero(NumDims-1) && isRightPaddingCompileTimeZero(NumDims-1)) || (first >= lastPaddedLeft && last < firstPaddedRight)) {
+    else if ((isLeftPaddingCompileTimeZero(NumDims-1) && isRightPaddingCompileTimeZero(NumDims-1)) || (firstIdx >= lastPaddedLeft && lastIdx < firstPaddedRight)) {
       // all the coefficient are between the 2 padding zones.
       inputIndex += (index - m_padding[NumDims-1].first);
       return m_impl.template packet<Unaligned>(inputIndex);
@@ -373,6 +390,7 @@ struct TensorEvaluator<const TensorPaddingOp<PaddingDimensions, ArgType>, Device
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE PacketReturnType packetWithPossibleZero(Index index) const
   {
     EIGEN_ALIGN_MAX typename internal::remove_const<CoeffReturnType>::type values[PacketSize];
+    EIGEN_UNROLL_LOOP
     for (int i = 0; i < PacketSize; ++i) {
       values[i] = coeff(index+i);
     }

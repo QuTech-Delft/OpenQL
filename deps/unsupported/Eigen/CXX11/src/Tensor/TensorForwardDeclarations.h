@@ -12,7 +12,7 @@
 
 namespace Eigen {
 
-// MakePointer class is used as a container of the adress space of the pointer
+// MakePointer class is used as a container of the address space of the pointer
 // on the host and on the device. From the host side it generates the T* pointer
 // and when EIGEN_USE_SYCL is used it construct a buffer with a map_allocator to
 // T* m_data on the host. It is always called on the device.
@@ -21,6 +21,32 @@ namespace Eigen {
 template<typename T> struct MakePointer {
   typedef T* Type;
 };
+
+template <typename T>
+EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE T* constCast(const T* data) {
+  return const_cast<T*>(data);
+}
+
+// The StorageMemory class is a container of the device specific pointer
+// used for refering to a Pointer on TensorEvaluator class. While the TensorExpression
+// is a device-agnostic type and need MakePointer class for type conversion,
+// the TensorEvaluator class can be specialized for a device, hence it is possible
+// to construct different types of temproray storage memory in TensorEvaluator
+// for different devices by specializing the following StorageMemory class.
+template<typename T, typename device> struct StorageMemory: MakePointer <T> {};
+
+namespace internal{
+template<typename A, typename B> struct Pointer_type_promotion {
+  static const bool val=false;
+};
+template<typename A> struct Pointer_type_promotion<A, A> {
+  static const bool val = true;
+};
+template<typename A, typename B> struct TypeConversion {
+  typedef A* type;
+};
+}
+
 
 template<typename PlainObjectType, int Options_ = Unaligned, template <class> class MakePointer_ = MakePointer> class TensorMap;
 template<typename Scalar_, int NumIndices_, int Options_ = 0, typename IndexType = DenseIndex> class Tensor;
@@ -37,7 +63,7 @@ template<typename Op, typename Dims, typename XprType, template <class> class Ma
 template<typename XprType> class TensorIndexTupleOp;
 template<typename ReduceOp, typename Dims, typename XprType> class TensorTupleReducerOp;
 template<typename Axis, typename LeftXprType, typename RightXprType> class TensorConcatenationOp;
-template<typename Dimensions, typename LeftXprType, typename RightXprType> class TensorContractionOp;
+template<typename Dimensions, typename LeftXprType, typename RightXprType, typename OutputKernelType> class TensorContractionOp;
 template<typename TargetType, typename XprType> class TensorConversionOp;
 template<typename Dimensions, typename InputXprType, typename KernelXprType> class TensorConvolutionOp;
 template<typename FFT, typename XprType, int FFTDataType, int FFTDirection> class TensorFFTOp;
@@ -58,20 +84,48 @@ template<typename Strides, typename XprType> class TensorInflationOp;
 template<typename Generator, typename XprType> class TensorGeneratorOp;
 template<typename LeftXprType, typename RightXprType> class TensorAssignOp;
 template<typename Op, typename XprType> class TensorScanOp;
+template<typename Dims, typename XprType> class TensorTraceOp;
 
 template<typename CustomUnaryFunc, typename XprType> class TensorCustomUnaryOp;
 template<typename CustomBinaryFunc, typename LhsXprType, typename RhsXprType> class TensorCustomBinaryOp;
 
 template<typename XprType, template <class> class MakePointer_ = MakePointer> class TensorEvalToOp;
-template<typename XprType, template <class> class MakePointer_ = MakePointer> class TensorForcedEvalOp;
+template<typename XprType> class TensorForcedEvalOp;
 
 template<typename ExpressionType, typename DeviceType> class TensorDevice;
 template<typename Derived, typename Device> struct TensorEvaluator;
+
+struct NoOpOutputKernel;
 
 struct DefaultDevice;
 struct ThreadPoolDevice;
 struct GpuDevice;
 struct SyclDevice;
+
+#ifdef EIGEN_USE_SYCL
+
+template <typename T> struct MakeSYCLPointer {
+  typedef Eigen::TensorSycl::internal::RangeAccess<cl::sycl::access::mode::read_write, T> Type;
+};
+
+template <typename T>
+EIGEN_STRONG_INLINE const Eigen::TensorSycl::internal::RangeAccess<cl::sycl::access::mode::read_write, T>&
+constCast(const Eigen::TensorSycl::internal::RangeAccess<cl::sycl::access::mode::read_write, T>& data) {
+  return data;
+}
+
+template <typename T>
+struct StorageMemory<T, SyclDevice> : MakeSYCLPointer<T> {};
+template <typename T>
+struct StorageMemory<T, const SyclDevice> : StorageMemory<T, SyclDevice> {};
+
+namespace TensorSycl {
+namespace internal{
+template <typename Evaluator, typename Op> class ReductionFunctor;
+}
+}
+#endif
+
 
 enum FFTResultType {
   RealPart = 0,
@@ -98,8 +152,18 @@ struct IsVectorizable<GpuDevice, Expression> {
                             TensorEvaluator<Expression, GpuDevice>::IsAligned;
 };
 
+template <typename Device, typename Expression>
+struct IsTileable {
+  // Check that block evaluation is supported and it's a preferred option (at
+  // least one sub-expression has much faster block evaluation, e.g.
+  // broadcasting).
+  static const bool value = TensorEvaluator<Expression, Device>::BlockAccess &&
+                            TensorEvaluator<Expression, Device>::PreferBlockAccess;
+};
+
 template <typename Expression, typename Device,
-          bool Vectorizable = IsVectorizable<Device, Expression>::value>
+          bool Vectorizable = IsVectorizable<Device, Expression>::value,
+          bool Tileable = IsTileable<Device, Expression>::value>
 class TensorExecutor;
 
 }  // end namespace internal

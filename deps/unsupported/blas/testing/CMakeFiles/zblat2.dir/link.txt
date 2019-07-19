@@ -1,1 +1,0 @@
-/usr/bin/gfortran   -O3 -DNDEBUG -O3 CMakeFiles/zblat2.dir/zblat2.f.o  -o zblat2 -Wl,-rpath,/home/anneriet/Afstuderen/eigen-eigen-323c052e1731/unsupported/blas ../libeigen_blas.so 

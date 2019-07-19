@@ -837,8 +837,9 @@ public:
         {
 
             COUT("Adding decomposed unitary to kernel ...");
-            std::cout << "The list is this many items long: " << u.instructionlist.size() << std::endl;
-            recursiveRelationsForUnitaryDecomposition(u,qubits, u_size, 0);
+            COUT("The list is this many items long: " << u.instructionlist.size());
+            int end_index = recursiveRelationsForUnitaryDecomposition(u,qubits, u_size, 0);
+            COUT("Total number of gates added: " << end_index);
         }
         else
         {
@@ -850,52 +851,119 @@ public:
     //recursive gate count function
     //n is number of qubits
     //i is the start point for the instructionlist
-    void recursiveRelationsForUnitaryDecomposition(ql::unitary u, std::vector<size_t> qubits, int n, int i)
+    int recursiveRelationsForUnitaryDecomposition(ql::unitary u, std::vector<size_t> qubits, int n, int i)
     {
-        // std::cout << "Adding a new unitary starting at index: "<< i << ", to " << ql::utils::to_string(qubits, "qubits: ") << std::endl;
-        if(n > 1)
+        COUT("Adding a new unitary starting at index: "<< i << ", to " << n << ql::utils::to_string(qubits, " qubits: "));
+        if (n > 1)
         {
-            int numberforunitary = 3*std::pow(2, n-2) *(std::pow(2,n-1)-1); //number of rotation gates needed for unitaries one size smaller than the current one
-            int numberforcontrolledrotation = std::pow(2,n-1); //number of gates per rotation
-            // int start_1 = i; //= the point where the first sub unitary starts
-            // int start_2 = start_1 + numberforunitary + numberforcontrolledrotation; //= the point where the second sub unitary starts
-            // int start_3 = start_2 + numberforunitary + numberforcontrolledrotation; //= the point where the third sub unitary starts
-            // int start_4 = start_3 + numberforunitary + numberforcontrolledrotation; //= the point where the fourth sub unitary starts
-            
-            // The new qubit vector that is passed to the recursive function
-            std::vector<size_t> subvector(qubits.begin(), qubits.end()-1);
-            int start_counter = i;
-            recursiveRelationsForUnitaryDecomposition(u, subvector, n-1, start_counter);
-            start_counter += numberforunitary;
-            multicontrolled_rz(u.instructionlist,start_counter,start_counter+numberforcontrolledrotation-1, qubits);
-            start_counter += numberforcontrolledrotation;
-            recursiveRelationsForUnitaryDecomposition(u,subvector, n-1, start_counter);
-            start_counter += numberforunitary;
-            multicontrolled_ry(u.instructionlist,start_counter,start_counter+numberforcontrolledrotation-1, qubits);
-            start_counter += numberforcontrolledrotation;
-            recursiveRelationsForUnitaryDecomposition(u,subvector, n-1, start_counter);
-            start_counter += numberforunitary;
-            multicontrolled_rz(u.instructionlist,start_counter,start_counter+numberforcontrolledrotation-1, qubits);
-            start_counter += numberforcontrolledrotation;
-            recursiveRelationsForUnitaryDecomposition(u, subvector, n-1, start_counter);
+            // Need to be checked here because it changes the structure of the decomposition.
+            // This checks whether the first qubit is affected, if not, it applies a unitary to the all qubits except the first one.
+            // int sizeofu = u.getMatrix().rows();
+            // COUT("u.size " << sizeofu);
+
+            // if (u.getMatrix()(Eigen::seqN(0, n, 2), Eigen::seqN(1, n, 2)).isZero()  && u.getMatrix()(Eigen::seqN(1, n, 2), Eigen::seqN(0, n, 2)).isZero()  && u.getMatrix().block(0,0,1,2*n-1) == u.getMatrix().block(1,1,1,2*n-1) &&  u.getMatrix().block(2*n-2,0,1,2*n-1) ==  u.getMatrix().block(2*n-1,1,1,2*n-1))
+            // // if (u.getMatrix().block(0, sizeofu/4,sizeofu/4, sizeofu/4).isZero(10e-8) && u.getMatrix().block(0,3*sizeofu/4,sizeofu/4,sizeofu/4).isZero(10e-8) && u.getMatrix().block(sizeofu/4,sizeofu/2,sizeofu/4,sizeofu/4).isZero(10e-8) && u.getMatrix().block(3*sizeofu/4,sizeofu/2,sizeofu/4,sizeofu/4).isZero(10e-8)&& u.getMatrix().topLeftCorner(sizeofu/4, sizeofu/4).isApprox(u.getMatrix().block(sizeofu/4,sizeofu/4,sizeofu/4,sizeofu/4),10e-8) && u.getMatrix().block(0,sizeofu/2,sizeofu/4,sizeofu/4).isApprox(u.getMatrix().block(sizeofu/4,3*sizeofu/4,sizeofu/4,sizeofu/4),10e-8) && u.getMatrix().block(sizeofu/2,sizeofu/2,sizeofu/4,sizeofu/4).isApprox(u.getMatrix().block(3*sizeofu/4,3*sizeofu/4,sizeofu/4,sizeofu/4),10e-8))
+            // {
+            //     COUT("[kernel.h] Optimization: last qubit is not affected, skip one step in the recursion.");
+            //     COUT("Instructionlist: " << ql::utils::to_string(u.instructionlist));
+            //     COUT("qubits: " << ql::utils::to_string(qubits));
+            //     // COUT(u.to_string(u.getMatrix()));
+            //     // std::vector<size_t> subvector(qubits.begin()+1, qubits.end());
+            //     std::vector<size_t> subvector(qubits.begin()+1, qubits.end());
+
+            //     COUT("new qubitvector" << ql::utils::to_string(subvector));
+            //     recursiveRelationsForUnitaryDecomposition(u, subvector, n-1, i);
+            // }
+
+            //int numberforunitary = 3 * std::pow(2, n - 2) * (std::pow(2, n - 1) - 1); //number of rotation gates needed for unitaries one size smaller than the current one
+            int numberforcontrolledrotation = std::pow(2, n - 1);                     //number of gates per rotation
+
+            // Need to be checked here because it changes the structure of the decomposition.
+            // code for last one not affected
+            COUT("Current instructionlist item: " << u.instructionlist[i]);
+            if (u.instructionlist[i] == 10.0)
+            {
+                COUT("[kernel.h] Optimization: last qubit is not affected, skip one step in the recursion. New start_index: " << i+1);
+                std::vector<size_t> subvector(qubits.begin() + 1, qubits.end());
+
+                // COUT("new qubitvector" << ql::utils::to_string(subvector));
+                return recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, i + 1) + 1; // for the number 10.0
+            }
+            else if (u.instructionlist[i] == 20.0)
+            {
+                std::vector<size_t> subvector(qubits.begin(), qubits.end() - 1);
+                // COUT("new qubitvector" << ql::utils::to_string(subvector));
+
+                // This is a special case of only demultiplexing
+                if (u.instructionlist[i+1] == 30.0)
+                {
+                   
+                    // Two numbers that aren't rotation gate angles
+                    int start_counter = i + 2;
+                    COUT("[kernel.h] Optimization: first qubit not affected, skip one step in the recursion. New start_index: " << start_counter);
+
+                    return recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter) + 2; //for the numbers 20 and 30
+                }
+                else
+                {
+                    int start_counter = i + 1;
+                    COUT("[kernel.h] Optimization: only demultiplexing will be performed. New start_index: " << start_counter);
+
+                    start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
+                    //start_counter += numberforunitary;
+                    multicontrolled_rz(u.instructionlist, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
+                    start_counter += numberforcontrolledrotation; //multicontrolled rotation always has the same number of gates
+                    start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
+                    return start_counter - i;
+                }
+            }
+            else
+            {
+                // The new qubit vector that is passed to the recursive function
+                std::vector<size_t> subvector(qubits.begin(), qubits.end() - 1);
+                int start_counter = i;
+                start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
+                //start_counter += numberforunitary;
+                multicontrolled_rz(u.instructionlist, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
+                start_counter += numberforcontrolledrotation;
+                start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
+                //start_counter += numberforunitary;
+                multicontrolled_ry(u.instructionlist, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
+                start_counter += numberforcontrolledrotation;
+                start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
+                //start_counter += numberforunitary;
+                multicontrolled_rz(u.instructionlist, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
+                start_counter += numberforcontrolledrotation;
+                start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
+                return start_counter -i; //it is just the total
+            }
         }
         else //n=1
         {
-            // std::cout << "Adding the zyz decomposition gates" << std::endl;
-            // zyz gates happen on the only qubit in the list. 
-            if(u.instructionlist[i] > 0.0 || u.instructionlist[i] < 0.0){
-                c.push_back(new ql::rz(qubits.back(), u.instructionlist[i]));}
-            if(u.instructionlist[i+1] > 0.0 || u.instructionlist[i+1] < 0.0){
-                c.push_back(new ql::ry(qubits.back(), u.instructionlist[i+1]));}
-            if(u.instructionlist[i+2] > 0.0 || u.instructionlist[i+2] < 0.0){
-                c.push_back(new ql::rz(qubits.back(), u.instructionlist[i+2]));}
+            COUT("Adding the zyz decomposition gates at index: "<< i);
+            // zyz gates happen on the only qubit in the list.
+            if (u.instructionlist[i] > 0.0 || u.instructionlist[i] < 0.0)
+            {
+                c.push_back(new ql::rz(qubits.back(), u.instructionlist[i]));
+            }
+            if (u.instructionlist[i + 1] > 0.0 || u.instructionlist[i + 1] < 0.0)
+            {
+                c.push_back(new ql::ry(qubits.back(), u.instructionlist[i + 1]));
+            }
+            if (u.instructionlist[i + 2] > 0.0 || u.instructionlist[i + 2] < 0.0)
+            {
+                c.push_back(new ql::rz(qubits.back(), u.instructionlist[i + 2]));
+            }
+
+            // How many gates this took
+            return 3;
         }
     }
 
     //controlled qubit is the first in the list.
     void multicontrolled_rz( std::vector<double> instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
     {
-        // std::cout << "Adding a multicontrolled rz-gate at start index " << start_index << ", to " << ql::utils::to_string(qubits, "qubits: ") << std::endl;
+        COUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << ql::utils::to_string(qubits, "qubits: "));
         int idx;
         //The first one is always controlled from the last to the first qubit.
         if(instruction_list[start_index] > 0.0 || instruction_list[start_index] < 0.0)
@@ -923,7 +991,7 @@ public:
     //controlled qubit is the first in the list.
     void multicontrolled_ry( std::vector<double> instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
     {
-        // std::cout << "Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << ql::utils::to_string(qubits, "qubits: ") << std::endl;
+        COUT("Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << ql::utils::to_string(qubits, "qubits: "));
         int idx;
         //The first one is always controlled from the last to the first qubit.
         if(instruction_list[start_index] > 0.0 || instruction_list[start_index] < 0.0)

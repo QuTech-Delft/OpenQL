@@ -67,6 +67,23 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         self.assertEqual(str(cm.exception), 'Unitary \'u1\' not decomposed. Cannot be added to kernel!')
 
+    def test_unitary_wrongnumberofqubits(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 3
+        p = ql.Program('test_unitary_pass', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        u = ql.Unitary('u1', [  complex(1.0, 0.0), complex(0.0, 0.0),
+                                complex(0.0, 0.0), complex(0.0, 1.0)])
+        k.gate("s", [0])
+
+        # adding un-decomposed u to kernel should raise error
+        with self.assertRaises(Exception) as cm:
+            k.gate(u, [1,2])
+
+        self.assertEqual(str(cm.exception), 'Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 2 and not 1.000000')
+
     def test_unitary_decompose_I(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
@@ -209,25 +226,25 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertTrue(str(cm.exception), "")
 
 
-    def test_unitary_decompose_2qubit_CNOT(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 2
-        p = ql.Program('test_unitary_2qubitCNOT', platform, num_qubits)
-        k = ql.Kernel('akernel', platform, num_qubits)
+    # def test_unitary_decompose_2qubit_CNOT(self):
+    #     config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+    #     platform = ql.Platform('platform_none', config_fn)
+    #     num_qubits = 2
+    #     p = ql.Program('test_unitary_2qubitCNOT', platform, num_qubits)
+    #     k = ql.Kernel('akernel', platform, num_qubits)
 
-        u = ql.Unitary('big_unitary', [  complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0),
-                               complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0),
-                               complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0),
-                               complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0)])
-        u.decompose()
-        k.gate(u, [0, 1])
-        p.add_kernel(k)
-        p.compile()
-        # Verified using QX
-        gold_fn = rootDir + '/golden/test_unitary_2qubitCNOT.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-        self.assertTrue( file_compare(qasm_fn, gold_fn) )   
+    #     u = ql.Unitary('big_unitary', [  complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0),
+    #                            complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0),
+    #                            complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0),
+    #                            complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0)])
+    #     u.decompose()
+    #     k.gate(u, [0, 1])
+    #     p.add_kernel(k)
+    #     p.compile()
+    #     # Verified using QX
+    #     gold_fn = rootDir + '/golden/test_unitary_2qubitCNOT.qasm'
+    #     qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+    #     self.assertTrue( file_compare(qasm_fn, gold_fn) )   
 
     def test_non_90_degree_angle(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
@@ -236,14 +253,10 @@ class Test_conjugated_kernel(unittest.TestCase):
         p = ql.Program('test_unitary_non_90_degree_angle', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
-        matrix =  [ 0.95803258+0.j  ,       -0.24462588+0.j  ,        0.        -0.14479246j,
-                    0.        +0.03697159j,
-                    0.24462588+0.j  ,        0.95803258+0.j         , 0.        -0.03697159j
-                ,   0.        -0.14479246j
-                ,   0.        -0.03697159j , 0.        -0.14479246j , 0.24462588+0.j,
-                    0.95803258+0.j  ,      
-                    0.        -0.14479246j , 0.        +0.03697159j , 0.95803258+0.j,
-                    -0.24462588+0.j        ]
+        matrix =  [-0.43874989-0.10659111j, -0.47325212+0.12917344j, -0.58227163+0.20750072j, -0.29075334+0.29807585j,  
+                    0.30168601-0.22307459j,  0.32626   +0.4534935j , -0.20523265-0.42403593j, -0.01012565+0.5701683j , 
+                    -0.40954341-0.49946371j,  0.28560698-0.06740801j,  0.52146754+0.1833513j , -0.37248653+0.22891636j,  
+                    0.03113162-0.48703302j, -0.57180014+0.18486244j,  0.2943625 -0.06148912j,  0.55533888+0.04322811j]
 
         u1 = ql.Unitary("testname",matrix)
         u1.decompose()
@@ -260,7 +273,7 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_usingqx_00(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 2
+        num_qubits = 4
         p = ql.Program('test_usingqx00', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
@@ -293,7 +306,7 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_usingqx_01(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 2
+        num_qubits = 4
         p = ql.Program('test_usingqx01', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
@@ -331,7 +344,7 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_usingqx_10(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 2
+        num_qubits = 4
         p = ql.Program('test_usingqx10', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
@@ -369,7 +382,7 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_usingqx_11(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 2
+        num_qubits = 4
         p = ql.Program('test_usingqx11', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
@@ -404,7 +417,7 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_usingqx_bellstate(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 2
+        num_qubits = 4
         p = ql.Program('test_usingqxbellstate', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
@@ -443,7 +456,7 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_usingqx_fullyentangled(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 2
+        num_qubits = 4
         p = ql.Program('test_usingqxfullentangled', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
@@ -482,8 +495,8 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_usingqx_fullyentangled_3qubit(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 3
-        p = ql.Program('test_usingqxfullentangled', platform, num_qubits)
+        num_qubits = 4
+        p = ql.Program('test_usingqxfullentangled_3qubit', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
         matrix = [-6.71424156e-01+0.20337111j, -1.99816541e-02+0.41660484j,
@@ -551,7 +564,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
         num_qubits = 4
-        p = ql.Program('test_usingqxfullentangled', platform, num_qubits)
+        p = ql.Program('test_usingqxfullentangled_4qubit', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
         matrix = [-0.11921901-0.30382154j, -0.10645804-0.11760155j,       -0.09639953-0.0353926j , -0.32605797+0.19552924j,        0.0168262 -0.26748208j, -0.17808469+0.25265196j,       -0.24676084-0.23228431j, -0.02960302+0.23697569j,
@@ -628,11 +641,12 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.0625*helper_prob((matrix[240] + matrix[241]+ matrix[242]+ matrix[243]+ matrix[244]+ matrix[245]+ matrix[246]+ matrix[247]+ matrix[248] + matrix[249]+ matrix[250]+ matrix[251]+ matrix[252]+ matrix[253]+ matrix[254]+ matrix[255])), helper_regex(c0)[15], 5)
 
 
+
     def test_usingqx_fullyentangled_5qubit(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
         num_qubits = 5
-        p = ql.Program('test_usingqxfullentangled', platform, num_qubits)
+        p = ql.Program('test_usingqxfullentangled_5qubit', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
         matrix = [ 0.31869031-9.28734622e-02j,  0.38980148+2.14592427e-01j,  0.20279154-1.56580826e-01j,  0.00210273-2.83970875e-01j, -0.04010672-9.26812940e-02j,  0.15747049+6.08283291e-02j, -0.05274772-6.45225841e-02j,  0.05909439-3.23496026e-02j,  0.07868009+6.77298732e-02j,  0.11290142+2.48468763e-02j,  0.10092033-7.03646679e-02j, -0.03557972-3.39117261e-02j,  0.02241562+1.02714684e-02j, -0.04088796-1.12143173e-01j, -0.00144015+1.83925572e-02j, -0.1257948 -1.15394681e-01j,  0.13531631-1.84271421e-01j,  0.11293592-1.44170392e-01j, -0.06985893-1.36606289e-01j, -0.08924113-6.35923942e-02j,  0.19393965-6.35656579e-02j, -0.02153233-2.76955143e-01j, -0.12094999+1.05716669e-01j, -0.00624879+1.27471575e-01j, -0.13608981-1.22140261e-01j, -0.08243959-1.72734247e-02j,  0.06562052+1.12197102e-01j, -0.01102025-1.53811069e-01j,  0.13576338-8.95540026e-02j,  0.05730484-5.62973657e-02j, -0.08835493-4.13159024e-02j, -0.04533295+3.70144188e-02j,  0.04116657+1.58298973e-01j,  0.22270976-1.18654603e-01j,
@@ -668,6 +682,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         0.05505723+1.85830802e-02j,  0.00835002+2.95374366e-02j,  0.00710951+4.40654128e-02j,  0.17926977-3.38549657e-01j]
 
 
+        k.display()
         u1 = ql.Unitary("testname",matrix)
         u1.decompose()
         k.gate(u1, [0, 1, 2, 3, 4])
@@ -718,7 +733,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
         num_qubits = 5
-        p = ql.Program('test_usingqxfullentangled', platform, num_qubits)
+        p = ql.Program('test_usingqxfullentangled_5qubit_10011', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
         matrix = [ 0.31869031-9.28734622e-02j,  0.38980148+2.14592427e-01j,  0.20279154-1.56580826e-01j,  0.00210273-2.83970875e-01j, -0.04010672-9.26812940e-02j,  0.15747049+6.08283291e-02j, -0.05274772-6.45225841e-02j,  0.05909439-3.23496026e-02j,  0.07868009+6.77298732e-02j,  0.11290142+2.48468763e-02j,  0.10092033-7.03646679e-02j, -0.03557972-3.39117261e-02j,  0.02241562+1.02714684e-02j, -0.04088796-1.12143173e-01j, -0.00144015+1.83925572e-02j, -0.1257948 -1.15394681e-01j,  0.13531631-1.84271421e-01j,  0.11293592-1.44170392e-01j, -0.06985893-1.36606289e-01j, -0.08924113-6.35923942e-02j,  0.19393965-6.35656579e-02j, -0.02153233-2.76955143e-01j, -0.12094999+1.05716669e-01j, -0.00624879+1.27471575e-01j, -0.13608981-1.22140261e-01j, -0.08243959-1.72734247e-02j,  0.06562052+1.12197102e-01j, -0.01102025-1.53811069e-01j,  0.13576338-8.95540026e-02j,  0.05730484-5.62973657e-02j, -0.08835493-4.13159024e-02j, -0.04533295+3.70144188e-02j,  0.04116657+1.58298973e-01j,  0.22270976-1.18654603e-01j,
@@ -759,6 +774,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.x(4)
         k.x(1)
         k.x(0)
+        k.display()
         k.gate(u1, [0, 1, 2, 3, 4])
         k.display()
 
@@ -802,11 +818,11 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(helper_prob(matrix[19+960]), helper_regex(c0)[30], 5)
         self.assertAlmostEqual(helper_prob(matrix[19+992]), helper_regex(c0)[31], 5)
 
-    def test_adding2tothepower5unitary(self):
+    def test_adding2tothepower6unitary(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
         num_qubits = 6
-        p = ql.Program('test_usingqxfullentangled', platform, num_qubits)
+        p = ql.Program('test_6qubitjustadding', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
         matrix = [ 3.66034993e-01+2.16918726e-01j,  4.63119758e-02-1.25284236e-01j,  3.23689480e-01-1.67028180e-02j, -4.01291192e-02-1.53117445e-01j,  1.84825403e-01-3.19144463e-02j,  5.62152150e-03-1.90239447e-02j, -1.37878659e-01-9.85388790e-02j, -4.12560667e-02+2.40591696e-02j,  1.70864304e-02-9.30023497e-02j,  3.56649947e-02-4.69203339e-02j, -3.83183754e-02+5.12024751e-02j, -1.96496357e-02+2.63675889e-02j, -1.43417236e-01+2.87083079e-02j, -7.64191581e-02+8.10632958e-03j, -5.44376216e-02+3.71068995e-02j,  7.89219612e-02+6.00438590e-02j,  2.32485473e-01-2.61279978e-03j,  3.13800342e-02+1.24253833e-02j, -3.80054586e-03-1.73877756e-02j, -7.12322896e-03+9.73966530e-02j, -1.22838320e-02-6.80562063e-02j,  1.04704708e-01+4.17530991e-02j, -1.45411627e-02-4.56578204e-03j, -3.91129910e-02+8.17248378e-02j,  6.36557074e-02+2.21470313e-02j,  1.10349909e-01-1.21376682e-02j, -4.78526826e-02+5.49355237e-02j, -1.20516087e-01+4.01182200e-03j,  9.38275660e-02+2.24713754e-02j,  8.93979520e-02+5.13816205e-03j,
@@ -948,6 +964,240 @@ class Test_conjugated_kernel(unittest.TestCase):
        -4.46016110e-02+1.95201429e-02j,  4.38113722e-02+8.65962895e-03j,  7.74746787e-02+6.94607249e-02j,  2.47130647e-02-1.12600318e-02j, -7.48410468e-02+7.24300380e-02j, -3.77887553e-02-4.43488254e-02j,  1.32708760e-01+4.87164738e-02j,  1.63778016e-01+1.40758747e-01j,  8.20076371e-02-1.79740773e-01j,  5.49371276e-02+3.22196346e-02j, -2.37249431e-02-1.30833713e-01j,  1.19126218e-01+1.15211057e-01j, -8.03659026e-03+2.24442260e-02j,  9.06621949e-02+1.69073869e-02j, -9.84253648e-02-1.22959233e-01j, -1.13106787e-01-1.00708166e-02j]
 
         u1 = ql.Unitary("big6qubitone", matrix)
+
+
     
+    def test_usingqx_sparseunitary(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 5
+        p = ql.Program('test_usingqxsparseunitary', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        matrix = [-0.11921901-0.30382154j, -0.10645804-0.11760155j,       -0.09639953-0.0353926j , -0.32605797+0.19552924j,        0.0168262 -0.26748208j, -0.17808469+0.25265196j,       -0.24676084-0.23228431j, -0.02960302+0.23697569j,
+       -0.12435741-0.07223017j,  0.00178745+0.14813263j,       -0.11173158+0.26636089j,  0.27656908+0.05229833j,       -0.02964214-0.01505502j, -0.26959616+0.23274949j,       -0.18183627-0.04041783j,  0.05385991-0.05587908j,
+        0.17894461-0.25668366j, -0.01553181-0.07446613j,        0.1876467 -0.49135878j, -0.18292006-0.04599956j,       -0.01618695+0.21951951j,  0.06003169-0.12728871j,       -0.04276406+0.08327372j,  0.30102765+0.18403071j,
+       -0.08122018-0.08375638j, -0.02971758+0.09096399j,        0.10753511-0.03359547j, -0.1596309 +0.20649279j,       -0.13684564+0.29450386j,  0.20557421+0.24856224j,        0.0683444 +0.01780095j, -0.22317907-0.12123145j,
+       -0.0323504 -0.02668934j,  0.08743777-0.49956832j,       -0.30202031-0.22517221j, -0.10642491-0.11883126j,       -0.13756817-0.20632933j,  0.02593802+0.00583978j,        0.05130972+0.06678859j, -0.10426135-0.14411822j,
+        0.12318252+0.28583957j,  0.04903179-0.31898637j,       -0.07650819-0.07261235j, -0.22918932-0.28329527j,       -0.26553775+0.04563403j, -0.07728053+0.14952931j,       -0.10271285-0.00216319j, -0.09000117+0.09055528j,
+       -0.15385903+0.01767834j,  0.42229431-0.05610483j,       -0.11330491-0.05458018j,  0.01740815-0.01605897j,       -0.11908997-0.01830574j,  0.21139794-0.10602858j,       -0.23249721-0.25516076j, -0.29066084-0.19129198j,
+        0.21273108-0.14369238j, -0.20662513+0.14463032j,        0.2512466 -0.20356141j,  0.0869495 +0.24425667j,        0.09736427-0.03954332j,  0.1446303 +0.14263171j,       -0.25679664+0.09389641j, -0.04020309-0.19362247j,
+        0.12577257-0.14527364j,  0.00371525+0.14235318j,       -0.22416134+0.02069087j,  0.03851418-0.05351593j,       -0.00289848-0.33289946j,  0.15454716-0.126633j  ,       -0.08996296-0.09119411j, -0.00804455-0.19149767j,
+       -0.13311475-0.47100304j, -0.13920624-0.16994321j,       -0.05030304+0.16820614j,  0.05770089-0.15422191j,       -0.23739468-0.05651883j,  0.19202883+0.03893001j,        0.48514604+0.01905479j, -0.01593819-0.06475285j,
+        0.31543713+0.41579542j, -0.08776349+0.24207219j,       -0.07984699-0.12818844j,  0.00359655+0.02677178j,       -0.12110453-0.25327887j, -0.21175671-0.1650074j ,       -0.14570465-0.05140668j,  0.06873883-0.01768705j,
+       -0.13804809-0.16458822j,  0.15096981-0.02802171j,       -0.05750448-0.18911017j, -0.01552104+0.03159908j,       -0.0482418 +0.09434822j,  0.1336447 +0.22030451j,       -0.3771364 -0.17773263j,  0.16023381+0.26613455j,
+        0.12688452-0.07290393j,  0.14834649+0.08064162j,       -0.06224533+0.04404318j,  0.03464369+0.19965444j,       -0.38140629-0.18927599j, -0.19710535-0.178657j  ,       -0.0507885 +0.19579635j,  0.11741615+0.13922702j,
+        0.2673399 -0.01439493j,  0.10844591-0.19799688j,        0.01177533+0.031846j  , -0.07643954+0.25870281j,        0.28971442-0.25385986j, -0.23713666+0.01838019j,        0.1731864 -0.09372299j, -0.36912353-0.02243029j,
+        0.03562803-0.09449815j,  0.13578229-0.19205153j,        0.21279127+0.14541266j, -0.20195524+0.187477j  ,       -0.06326783+0.0134827j ,  0.26953438-0.11153784j,       -0.28939961-0.08995754j,  0.20662437-0.15535337j,
+       -0.03615272+0.00848631j,  0.14124129-0.10250932j,        0.08990493-0.13010897j, -0.04547667+0.17579099j,       -0.01292137+0.10354402j, -0.21338733-0.11928412j,        0.19733294+0.12876129j,  0.35162495+0.45226713j,
+        0.17112722-0.18496045j, -0.34024071-0.09520237j,        0.18864652-0.07147408j,  0.31340662+0.24027412j,       -0.0720874 -0.11081564j,  0.08727975+0.02830958j,       -0.07584662-0.22555917j,  0.07086867-0.27714915j,
+       -0.19116148-0.02164144j, -0.24831911+0.1055229j ,       -0.09939105-0.24800283j, -0.15274706-0.12267535j,        0.05237777-0.09974669j, -0.18435891-0.1737002j ,       -0.20884292+0.1076081j , -0.31368958-0.02539025j,
+        0.03436293-0.19794965j,  0.11892581-0.17440358j,       -0.03488877+0.02305411j,  0.29835292-0.08836461j,        0.07893495-0.16881403j,  0.21025843+0.13204032j,        0.17194288-0.06285539j, -0.0500497 +0.35833208j,
+       -0.14979745-0.07567974j,  0.00193804+0.04092128j,       -0.07528403-0.18508153j, -0.16873521-0.09470809j,        0.50335605+0.00445803j,  0.11671956+0.30273552j,        0.10253226-0.13365319j,  0.16676135+0.18345473j,
+       -0.10096334-0.24031019j, -0.18452241+0.05766426j,        0.18102499-0.13532486j,  0.06252468-0.18030042j,       -0.00591499+0.07587582j, -0.35209025-0.12186396j,       -0.25282963-0.26651504j, -0.13074882+0.14059941j,
+        0.18125386-0.03889917j,  0.06983104-0.3425076j ,        0.37124455-0.00305632j,  0.04469806-0.31220629j,        0.16501585+0.00125887j,  0.15895714-0.14115809j,       -0.01515444+0.06836136j,  0.03934186+0.13425449j,
+        0.0513499 +0.21915368j,  0.00089628-0.3044611j ,        0.05443815-0.05530296j,  0.12091374-0.16717579j,       -0.06795704-0.2515947j , -0.43324316+0.13138954j,        0.03753289-0.00666299j,  0.16823686-0.22736152j,
+       -0.00567807+0.05485941j, -0.11705816+0.39078352j,        0.29136164+0.18699453j, -0.09255109+0.08923507j,        0.11214398+0.00806872j,  0.02971631+0.05584961j,        0.2561    +0.22302638j,  0.12491596+0.01725833j,
+        0.23473354-0.19203316j, -0.09144197-0.04827201j,       -0.0630975 -0.16831612j,  0.01497053+0.11121057j,        0.1426864 -0.15815582j,  0.21509872-0.0821851j ,        0.00650273+0.42560079j, -0.15721229+0.09919403j,
+        0.18076365-0.05697395j, -0.10596487+0.23118383j,        0.30913352+0.24695589j, -0.03403863-0.01778209j,       -0.07783213-0.25923847j,  0.06847369-0.2460447j ,       -0.24223779-0.10590238j,  0.15920784+0.21435437j,
+        0.26632193-0.02864663j,  0.06457043+0.0577428j ,       -0.38792984+0.08474334j,  0.00944311+0.22274564j,        0.11762823+0.36687658j, -0.1058428 -0.2103637j ,       -0.12970051-0.27031414j,  0.12684307+0.08398822j,
+        0.06711923+0.23195763j, -0.04537262+0.26478843j,        0.10253668-0.07706414j, -0.13531665-0.27150259j,       -0.09124132-0.23306839j, -0.08631867+0.17221145j,        0.17654328-0.10341264j,  0.11171903-0.05824829j,
+        0.04708668-0.13436316j, -0.10544253+0.07083904j,        0.04191629+0.28190845j, -0.4212947 -0.28704399j,        0.10278485+0.05713015j,  0.02057009-0.19126408j,        0.04856717+0.26648423j,  0.05388858-0.32433511j,
+       -0.09408669-0.12159016j, -0.01355394+0.04757554j,        0.10925003-0.0453999j , -0.02512057-0.23836324j,        0.31375479-0.0993564j , -0.14702106+0.33395328j,       -0.1608029 +0.11439592j, -0.11028577-0.0093615j ,
+       -0.08440005-0.12376623j,  0.12932188+0.09711828j,        0.18574716-0.06392924j, -0.13048059+0.0287961j ,       -0.29552716-0.08768809j, -0.02439943-0.01548155j,        0.07775135+0.00727332j,  0.1561534 -0.06489038j,
+        0.46665242-0.07708219j, -0.05251139+0.37781248j,       -0.3549081 -0.10086123j,  0.11180645-0.40408473j,        0.03031085+0.16928711j,  0.1190129 -0.10061168j,        0.0318046 -0.12504866j,  0.08689947+0.07223655j]
+
+        u1 = ql.Unitary("testname",matrix)
+        u1.decompose()
+        k.hadamard(0)
+        k.hadamard(1)
+        k.hadamard(2)
+        k.hadamard(3)
+        k.cnot(0, 1)
+        k.cnot(0, 2)
+        k.cnot(0, 3)
+        k.cnot(1, 2)
+        k.cnot(1, 3)
+        k.cnot(2, 3)
+        k.display()
+
+        k.gate(u1, [0, 1, 2, 3])
+        k.display()
+
+        p.add_kernel(k)
+        p.compile()
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+        
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[0]  +  matrix[1] +  matrix[2] +  matrix[3] +  matrix[4] +  matrix[5] +  matrix[6] +  matrix[7] +  matrix[8]  +  matrix[9] +  matrix[10]+  matrix[11]+  matrix[12]+  matrix[13]+  matrix[14]+  matrix[15])), helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[16] +  matrix[17]+  matrix[18]+  matrix[19]+  matrix[20]+  matrix[21]+  matrix[22]+  matrix[23]+  matrix[24] +  matrix[25]+  matrix[26]+  matrix[27]+  matrix[28]+  matrix[29]+  matrix[30]+  matrix[31])), helper_regex(c0)[1], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[32] +  matrix[33]+  matrix[34]+  matrix[35]+  matrix[36]+  matrix[37]+  matrix[38]+  matrix[39]+  matrix[40] +  matrix[41]+  matrix[42]+  matrix[43]+  matrix[44]+  matrix[45]+  matrix[46]+  matrix[47])), helper_regex(c0)[2], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[48] +  matrix[49]+  matrix[50]+  matrix[51]+  matrix[52]+  matrix[53]+  matrix[54]+  matrix[55]+  matrix[56] +  matrix[57]+  matrix[58]+  matrix[59]+  matrix[60]+  matrix[61]+  matrix[62]+  matrix[63])), helper_regex(c0)[3], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[64] +  matrix[65]+  matrix[66]+  matrix[67]+  matrix[68]+  matrix[69]+  matrix[70]+  matrix[71]+  matrix[72] +  matrix[73]+  matrix[74]+  matrix[75]+  matrix[76]+  matrix[77]+  matrix[78]+  matrix[79])), helper_regex(c0)[4], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[80] +  matrix[81]+  matrix[82]+  matrix[83]+  matrix[84]+  matrix[85]+  matrix[86]+  matrix[87]+  matrix[88] +  matrix[89]+  matrix[90]+  matrix[91]+  matrix[92]+  matrix[93]+  matrix[94]+  matrix[95])), helper_regex(c0)[5], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[96] +  matrix[97]+  matrix[98]+  matrix[99]+  matrix[100]+ matrix[101]+ matrix[102]+ matrix[103]+ matrix[104] + matrix[105]+ matrix[106]+ matrix[107]+ matrix[108]+ matrix[109]+ matrix[110]+ matrix[111])), helper_regex(c0)[6], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[112] + matrix[113]+ matrix[114]+ matrix[115]+ matrix[116]+ matrix[117]+ matrix[118]+ matrix[119]+ matrix[120] + matrix[121]+ matrix[122]+ matrix[123]+ matrix[124]+ matrix[125]+ matrix[126]+ matrix[127])), helper_regex(c0)[7], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[128] + matrix[129]+ matrix[130]+ matrix[131]+ matrix[132]+ matrix[133]+ matrix[134]+ matrix[135]+ matrix[136] + matrix[137]+ matrix[138]+ matrix[139]+ matrix[140]+ matrix[141]+ matrix[142]+ matrix[143])), helper_regex(c0)[8], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[144] + matrix[145]+ matrix[146]+ matrix[147]+ matrix[148]+ matrix[149]+ matrix[150]+ matrix[151]+ matrix[152] + matrix[153]+ matrix[154]+ matrix[155]+ matrix[156]+ matrix[157]+ matrix[158]+ matrix[159])), helper_regex(c0)[9], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[160] + matrix[161]+ matrix[162]+ matrix[163]+ matrix[164]+ matrix[165]+ matrix[166]+ matrix[167]+ matrix[168] + matrix[169]+ matrix[170]+ matrix[171]+ matrix[172]+ matrix[173]+ matrix[174]+ matrix[175])), helper_regex(c0)[10], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[176] + matrix[177]+ matrix[178]+ matrix[179]+ matrix[180]+ matrix[181]+ matrix[182]+ matrix[183]+ matrix[184] + matrix[185]+ matrix[186]+ matrix[187]+ matrix[188]+ matrix[189]+ matrix[190]+ matrix[191])), helper_regex(c0)[11], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[192] + matrix[193]+ matrix[194]+ matrix[195]+ matrix[196]+ matrix[197]+ matrix[198]+ matrix[199]+ matrix[200] + matrix[201]+ matrix[202]+ matrix[203]+ matrix[204]+ matrix[205]+ matrix[206]+ matrix[207])), helper_regex(c0)[12], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[208] + matrix[209]+ matrix[210]+ matrix[211]+ matrix[212]+ matrix[213]+ matrix[214]+ matrix[215]+ matrix[216] + matrix[217]+ matrix[218]+ matrix[219]+ matrix[220]+ matrix[221]+ matrix[222]+ matrix[223])), helper_regex(c0)[13], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[224] + matrix[225]+ matrix[226]+ matrix[227]+ matrix[228]+ matrix[229]+ matrix[230]+ matrix[231]+ matrix[232] + matrix[233]+ matrix[234]+ matrix[235]+ matrix[236]+ matrix[237]+ matrix[238]+ matrix[239])), helper_regex(c0)[14], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[240] + matrix[241]+ matrix[242]+ matrix[243]+ matrix[244]+ matrix[245]+ matrix[246]+ matrix[247]+ matrix[248] + matrix[249]+ matrix[250]+ matrix[251]+ matrix[252]+ matrix[253]+ matrix[254]+ matrix[255])), helper_regex(c0)[15], 5)
+
+
+    def test_extremelysparseunitary(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 4
+        p = ql.Program('test_usingqx_extremelysparseunitary_newname', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        matrix = [-0.59111943+0.15726005j, -0.        +0.j        , -0.15509793+0.32339668j, -0.        +0.j        , -0.33317562+0.00860528j, -0.        +0.j        , -0.5566068 +0.27625195j, -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        
+                , -0.        +0.j        , -0.59111943+0.15726005j, -0.        +0.j        , -0.15509793+0.32339668j, -0.        +0.j        , -0.33317562+0.00860528j, -0.        +0.j        , -0.5566068 +0.27625195j, -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        
+                , -0.00563624-0.59423429j,  0.        -0.j        ,  0.46013302+0.40732351j,  0.        +0.j        , -0.30528142-0.21246605j,  0.        -0.j        ,  0.25389832+0.25771317j,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        
+                ,  0.        -0.j        , -0.00563624-0.59423429j,  0.        +0.j        ,  0.46013302+0.40732351j,  0.        -0.j        , -0.30528142-0.21246605j,  0.        +0.j        ,  0.25389832+0.25771317j,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        
+                ,  0.01676811-0.33500121j,  0.        +0.j        , -0.46028079-0.49188018j,  0.        -0.j        , -0.18833511+0.15673318j, -0.        +0.j        ,  0.14043556+0.59492096j,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        , -0.        +0.j        , -0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        
+                ,  0.        +0.j        ,  0.01676811-0.33500121j,  0.        -0.j        , -0.46028079-0.49188018j, -0.        +0.j        , -0.18833511+0.15673318j,  0.        +0.j        ,  0.14043556+0.59492096j,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        , -0.        +0.j        , -0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        
+                ,  0.3733514 +0.14423137j,  0.        +0.j        , -0.18039476+0.08589294j, -0.        +0.j        , -0.80479128+0.20701926j, -0.        +0.j        ,  0.06883732-0.32342174j,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        
+                ,  0.        +0.j        ,  0.3733514 +0.14423137j, -0.        +0.j        , -0.18039476+0.08589294j, -0.        +0.j        , -0.80479128+0.20701926j,  0.        +0.j        ,  0.06883732-0.32342174j,  0.        +0.j        ,  0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        
+                , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.59111943+0.15726005j, -0.        +0.j        , -0.15509793+0.32339668j, -0.        +0.j        , -0.33317562+0.00860528j, -0.        +0.j        , -0.5566068 +0.27625195j, -0.        +0.j        
+                , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.59111943+0.15726005j, -0.        +0.j        , -0.15509793+0.32339668j, -0.        +0.j        , -0.33317562+0.00860528j, -0.        +0.j        , -0.5566068 +0.27625195j
+                ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        , -0.00563624-0.59423429j,  0.        -0.j        ,  0.46013302+0.40732351j,  0.        +0.j        , -0.30528142-0.21246605j,  0.        -0.j        ,  0.25389832+0.25771317j,  0.        +0.j        
+                ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        -0.j        , -0.00563624-0.59423429j,  0.        +0.j        ,  0.46013302+0.40732351j,  0.        -0.j        , -0.30528142-0.21246605j,  0.        +0.j        ,  0.25389832+0.25771317j
+                ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        , -0.        +0.j        , -0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.01676811-0.33500121j,  0.        +0.j        , -0.46028079-0.49188018j,  0.        -0.j        , -0.18833511+0.15673318j, -0.        +0.j        ,  0.14043556+0.59492096j,  0.        +0.j        
+                ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        , -0.        +0.j        , -0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.01676811-0.33500121j,  0.        -0.j        , -0.46028079-0.49188018j, -0.        +0.j        , -0.18833511+0.15673318j,  0.        +0.j        ,  0.14043556+0.59492096j
+                ,  0.        +0.j        ,  0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.3733514 +0.14423137j,  0.        +0.j        , -0.18039476+0.08589294j, -0.        +0.j        , -0.80479128+0.20701926j, -0.        +0.j        ,  0.06883732-0.32342174j,  0.        +0.j        
+                ,  0.        +0.j        ,  0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        , -0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.        +0.j        ,  0.3733514 +0.14423137j, -0.        +0.j        , -0.18039476+0.08589294j, -0.        +0.j        , -0.80479128+0.20701926j,  0.        +0.j        ,  0.06883732-0.32342174j]
+
+
+        u1 = ql.Unitary("testname",matrix)
+        u1.decompose()
+        k.hadamard(0)
+        k.hadamard(1)
+        k.hadamard(2)
+        k.hadamard(3)
+        # k.ry(0,0.2)
+        k.cnot(0, 1)
+        k.cnot(0, 2)
+        k.cnot(0, 3)
+        k.cnot(1, 2)
+        k.cnot(1, 3)
+        k.cnot(2, 3)
+        k.display()
+
+        k.gate(u1, [0, 1, 2, 3])
+        k.display()
+
+        p.add_kernel(k)
+        p.compile()
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+        
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[0]  +  matrix[1] +  matrix[2] +  matrix[3] +  matrix[4] +  matrix[5] +  matrix[6] +  matrix[7] +  matrix[8]  +  matrix[9] +  matrix[10]+  matrix[11]+  matrix[12]+  matrix[13]+  matrix[14]+  matrix[15])), helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[16] +  matrix[17]+  matrix[18]+  matrix[19]+  matrix[20]+  matrix[21]+  matrix[22]+  matrix[23]+  matrix[24] +  matrix[25]+  matrix[26]+  matrix[27]+  matrix[28]+  matrix[29]+  matrix[30]+  matrix[31])), helper_regex(c0)[1], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[32] +  matrix[33]+  matrix[34]+  matrix[35]+  matrix[36]+  matrix[37]+  matrix[38]+  matrix[39]+  matrix[40] +  matrix[41]+  matrix[42]+  matrix[43]+  matrix[44]+  matrix[45]+  matrix[46]+  matrix[47])), helper_regex(c0)[2], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[48] +  matrix[49]+  matrix[50]+  matrix[51]+  matrix[52]+  matrix[53]+  matrix[54]+  matrix[55]+  matrix[56] +  matrix[57]+  matrix[58]+  matrix[59]+  matrix[60]+  matrix[61]+  matrix[62]+  matrix[63])), helper_regex(c0)[3], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[64] +  matrix[65]+  matrix[66]+  matrix[67]+  matrix[68]+  matrix[69]+  matrix[70]+  matrix[71]+  matrix[72] +  matrix[73]+  matrix[74]+  matrix[75]+  matrix[76]+  matrix[77]+  matrix[78]+  matrix[79])), helper_regex(c0)[4], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[80] +  matrix[81]+  matrix[82]+  matrix[83]+  matrix[84]+  matrix[85]+  matrix[86]+  matrix[87]+  matrix[88] +  matrix[89]+  matrix[90]+  matrix[91]+  matrix[92]+  matrix[93]+  matrix[94]+  matrix[95])), helper_regex(c0)[5], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[96] +  matrix[97]+  matrix[98]+  matrix[99]+  matrix[100]+ matrix[101]+ matrix[102]+ matrix[103]+ matrix[104] + matrix[105]+ matrix[106]+ matrix[107]+ matrix[108]+ matrix[109]+ matrix[110]+ matrix[111])), helper_regex(c0)[6], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[112] + matrix[113]+ matrix[114]+ matrix[115]+ matrix[116]+ matrix[117]+ matrix[118]+ matrix[119]+ matrix[120] + matrix[121]+ matrix[122]+ matrix[123]+ matrix[124]+ matrix[125]+ matrix[126]+ matrix[127])), helper_regex(c0)[7], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[128] + matrix[129]+ matrix[130]+ matrix[131]+ matrix[132]+ matrix[133]+ matrix[134]+ matrix[135]+ matrix[136] + matrix[137]+ matrix[138]+ matrix[139]+ matrix[140]+ matrix[141]+ matrix[142]+ matrix[143])), helper_regex(c0)[8], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[144] + matrix[145]+ matrix[146]+ matrix[147]+ matrix[148]+ matrix[149]+ matrix[150]+ matrix[151]+ matrix[152] + matrix[153]+ matrix[154]+ matrix[155]+ matrix[156]+ matrix[157]+ matrix[158]+ matrix[159])), helper_regex(c0)[9], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[160] + matrix[161]+ matrix[162]+ matrix[163]+ matrix[164]+ matrix[165]+ matrix[166]+ matrix[167]+ matrix[168] + matrix[169]+ matrix[170]+ matrix[171]+ matrix[172]+ matrix[173]+ matrix[174]+ matrix[175])), helper_regex(c0)[10], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[176] + matrix[177]+ matrix[178]+ matrix[179]+ matrix[180]+ matrix[181]+ matrix[182]+ matrix[183]+ matrix[184] + matrix[185]+ matrix[186]+ matrix[187]+ matrix[188]+ matrix[189]+ matrix[190]+ matrix[191])), helper_regex(c0)[11], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[192] + matrix[193]+ matrix[194]+ matrix[195]+ matrix[196]+ matrix[197]+ matrix[198]+ matrix[199]+ matrix[200] + matrix[201]+ matrix[202]+ matrix[203]+ matrix[204]+ matrix[205]+ matrix[206]+ matrix[207])), helper_regex(c0)[12], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[208] + matrix[209]+ matrix[210]+ matrix[211]+ matrix[212]+ matrix[213]+ matrix[214]+ matrix[215]+ matrix[216] + matrix[217]+ matrix[218]+ matrix[219]+ matrix[220]+ matrix[221]+ matrix[222]+ matrix[223])), helper_regex(c0)[13], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[224] + matrix[225]+ matrix[226]+ matrix[227]+ matrix[228]+ matrix[229]+ matrix[230]+ matrix[231]+ matrix[232] + matrix[233]+ matrix[234]+ matrix[235]+ matrix[236]+ matrix[237]+ matrix[238]+ matrix[239])), helper_regex(c0)[14], 5)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[240] + matrix[241]+ matrix[242]+ matrix[243]+ matrix[244]+ matrix[245]+ matrix[246]+ matrix[247]+ matrix[248] + matrix[249]+ matrix[250]+ matrix[251]+ matrix[252]+ matrix[253]+ matrix[254]+ matrix[255])), helper_regex(c0)[15], 5)
+  
+    def test_sparse2qubitunitary(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 4
+        p = ql.Program('test_usingqx_sparse2qubit', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        matrix = [ 0.2309453 -0.79746147j, -0.53683301+0.15009925j,  0.        +0.j        , -0.        +0.j        
+        ,  0.39434916-0.39396473j,  0.80810853+0.19037107j,  0.        +0.j        ,  0.        +0.j        
+        ,  0.        +0.j        , -0.        +0.j        ,  0.2309453 -0.79746147j, -0.53683301+0.15009925j
+        ,  0.        +0.j        ,  0.        +0.j        ,  0.39434916-0.39396473j,  0.80810853+0.19037107j]
+
+        u1 = ql.Unitary("testname",matrix)
+        u1.decompose()
+        k.gate(u1, [0, 1])
+        k.display()
+
+        p.add_kernel(k)
+        p.compile()
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+
+        self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(helper_prob(matrix[4]), helper_regex(c0)[1], 5)
+        self.assertAlmostEqual(helper_prob(matrix[8]), 0, 5) # Zero probabilities do not show up in the output list
+        self.assertAlmostEqual(helper_prob(matrix[12]), 0, 5)
+
+
+  
+    def test_sparse2qubitunitaryotherqubit(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 4
+        p = ql.Program('test_usingqx_sparse2qubitotherqubit', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        matrix = [ 0.30279949-0.60010283j,  0.        +0.j        , -0.58058628-0.45946559j,  0.        -0.j        
+                ,  0.        +0.j        ,  0.30279949-0.60010283j,  0.        -0.j        , -0.58058628-0.45946559j
+                ,  0.04481146-0.73904059j,  0.        +0.j        ,  0.64910478+0.17456782j,  0.        +0.j        
+                ,  0.        +0.j        ,  0.04481146-0.73904059j,  0.        +0.j        ,  0.64910478+0.17456782j]
+        
+        u1 = ql.Unitary("testname",matrix)
+        u1.decompose()
+        k.gate(u1, [0, 1])
+        k.display()
+
+        p.add_kernel(k)
+        p.compile()
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+
+        self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(helper_prob(matrix[4]), 0, 5) # Zero probabilities do not show up in the output list
+        self.assertAlmostEqual(helper_prob(matrix[8]), helper_regex(c0)[2], 5)
+        self.assertAlmostEqual(helper_prob(matrix[12]), 0, 5)
+
+
+################ Has 4 qubits because there is something weird with QX and the extremely sparse unitary unit test
+    def test_sparse2qubitunitaryotherqubit(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 4
+        p = ql.Program('test_usingqx_sparse2qubitotherqubit_test', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        matrix = [ 0.30279949-0.60010283j, -0.58058628-0.45946559j       
+                ,  0.04481146-0.73904059j,    0.64910478+0.17456782j]
+        u1 = ql.Unitary("testname",matrix)
+        u1.decompose()
+        k.gate(u1, [0])
+        k.display()
+
+        p.add_kernel(k)
+        p.compile()
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+
+        self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(helper_prob(matrix[1]), helper_regex(c0)[1], 5) # Zero probabilities do not show up in the output list
+
+
+
 if __name__ == '__main__':
     unittest.main()
