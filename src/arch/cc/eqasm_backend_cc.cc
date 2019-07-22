@@ -11,9 +11,6 @@
     - finish support for classical instructions
     - finish support for kernel conditionality
     - allow runtime selection of scheduler
-    - output timing diagram (~ tool Nader?) of gates vs qubit
-    - idem waveform vs instrument
-
 */
 
 
