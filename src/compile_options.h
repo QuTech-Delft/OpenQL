@@ -7,5 +7,6 @@
 #define OPT_UNFINISHED_OPTIMIZATION     0   // enable unfinished optimization that actually did nothing
 #define OPT_USED_HARDWARE               0   // inclusion of custom_gate::used_hardware, which isn't really used
 #define OPT_CUSTOM_GATE_LOAD            0   // inclusion of custom_gate::load, which isn't really used
+#define OPT_CUSTOM_GATE_OPERATION_TYPE  0   // inclusion of field custom_gate.operation_type
 
 #endif // ndef _QL_COMPILE_OPTIONS_H

@@ -1410,7 +1410,9 @@ public:
 #if OPT_MICRO_CODE
     ucode_sequence_t    qumis;            // microcode sequence
 #endif
+#if OPT_CUSTOM_GATE_OPERATION_TYPE
     instruction_type_t  operation_type;   // operation type : rf/flux
+#endif
 #if OPT_USED_HARDWARE
     strings_t           used_hardware;    // used hardware
 #endif
@@ -1437,7 +1439,9 @@ public:
 #if OPT_MICRO_CODE
         qumis.assign(g.qumis.begin(), g.qumis.end());
 #endif
+#if OPT_CUSTOM_GATE_OPERATION_TYPE
         operation_type = g.operation_type;
+#endif
         duration  = g.duration;
 #if OPT_USED_HARDWARE
         used_hardware.assign(g.used_hardware.begin(), g.used_hardware.end());
@@ -1454,11 +1458,14 @@ public:
     custom_gate(string_t& name, cmat_t& m,
                 size_t parameters, size_t duration, size_t latency,
                 instruction_type_t& operation_type, ucode_sequence_t& qumis, strings_t hardware) :
-                m(m), parameters(parameters),
+                m(m)
+                , parameters(parameters)
 #if OPT_MICRO_CODE
-                qumis(qumis),
+                , qumis(qumis)
 #endif
-                operation_type(operation_type)
+#if OPT_CUSTOM_GATE_OPERATION_TYPE
+                , operation_type(operation_type)
+#endif
     {
         this->name = name;
         this->duration = duration;
@@ -1468,7 +1475,7 @@ public:
 #endif
     }
 
-#if OPT_CUSTOM_GATE_LOAD    // unused, but see comment in hardware_configuration.h::load_instruction()
+#if OPT_CUSTOM_GATE_LOAD    // unused, but see comment in hardware_configuration.h::load_instruction
     /**
      * load from json
      */
@@ -1528,8 +1535,7 @@ public:
      */
     void load(json& instr)
     {
-        // DOUT("loading instruction '" << name << "'...");
-        std::string l_attr = "qubits";
+        std::string l_attr = "(none)";
         try
         {
             l_attr = "qubits";
@@ -1546,8 +1552,10 @@ public:
                 operands.push_back(qubit_id(qid));
             }
             // FIXME: code commented out:
+#if OPT_MICRO_CODE
             // ucode_sequence_t ucs = instr["qumis"];
             // qumis.assign(ucs.begin(), ucs.end());
+#endif
             // operation_type = instr["type"];
             l_attr = "duration";
             duration = instr["duration"];
