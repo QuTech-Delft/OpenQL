@@ -1259,11 +1259,13 @@ public:
     /**
      * load custom instructions from a json file
      */
+#if OPT_CUSTOM_GATE_LOAD
     int load_custom_instructions(std::string file_name="instructions.json")
     {
         load_instructions(instruction_map, file_name);
         return 0;
     }
+#endif
 
     /************************************************************************\
     | Controlled gates

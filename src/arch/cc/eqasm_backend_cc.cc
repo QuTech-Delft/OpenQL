@@ -11,6 +11,7 @@
     - finish support for classical instructions
     - finish support for kernel conditionality
     - allow runtime selection of scheduler
+    - port https://github.com/QE-Lab/OpenQL/pull/238 to CC
 */
 
 

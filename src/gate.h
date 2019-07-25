@@ -1468,6 +1468,7 @@ public:
 #endif
     }
 
+#if OPT_CUSTOM_GATE_LOAD    // unused, but see comment in hardware_configuration.h::load_instruction()
     /**
      * load from json
      */
@@ -1494,6 +1495,7 @@ public:
         this->name = name;
         load(instr);
     }
+#endif
 
     /**
      * match qubit id

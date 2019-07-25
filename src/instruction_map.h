@@ -34,62 +34,7 @@ namespace utils
     void replace_all(std::string &str, std::string seq, std::string rep);
 }
 
-
-#if 0   // FIXME: unused
-/**
- * load instruction map from a file
- */
-bool load_instruction_map(std::string file_name, dep_instruction_map_t& imap)
-{
-    std::ifstream file(file_name);
-
-    std::string line;
-    int i=0;
-
-    while (std::getline(file, line))
-    {
-#ifdef __debug__
-        DOUT("line " << i << " : " << line);
-#endif
-        size_t p = line.find(":");
-        if (line.size() < 3) continue;
-        if (p == std::string::npos)
-        {
-            EOUT("syntax error at line " << i << " : invalid syntax.");
-            return false;
-        }
-        std::string key = line.substr(0,p);
-        std::string val = line.substr(p+1,line.size()-p-1);
-
-        if (!utils::format_string(key))
-        {
-            EOUT("syntax error at line " << i << " : invalid key format.");
-            return false;
-        }
-
-        if (!utils::format_string(val))
-        {
-            EOUT("syntax error at line " << i << " : invalid value format.");
-            return false;
-        }
-
-#ifdef __debug__
-        DOUT(" --> key : " << key);
-        DOUT(" --> val : " << val);
-#endif
-        imap[key] = val;
-    }
-    file.close();
-#ifdef __debug__
-    for (dep_instruction_map_t::iterator i=imap.begin(); i!=imap.end(); i++)
-        DOUT("[ " << (*i).first <<  " --> " << (*i).second << " ]");
-#endif // __debug__
-
-    return true;
-}
-#endif
-
-
+// FIXME: move to hardware_configuration.h
 inline json load_json(std::string file_name)
 {
     std::ifstream fs(file_name);
@@ -155,7 +100,7 @@ inline json load_json(std::string file_name)
     return j;
 }
 
-// FIXME: similar to custom_gate::load()
+#if OPT_CUSTOM_GATE_LOAD    // FIXME: unused and similar to custom_gate::load()
 inline int load_instructions(instruction_map_t& instruction_map, std::string file_name="instructions.json")
 {
     json instructions = load_json(file_name);
@@ -189,6 +134,7 @@ inline int load_instructions(instruction_map_t& instruction_map, std::string fil
     }
     return 0;
 }
+#endif
 
 } // ql
 
