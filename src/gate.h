@@ -1409,7 +1409,9 @@ class custom_gate : public gate
 {
 public:
     cmat_t              m;                // matrix representation
+#if OPT_CUSTOM_GATE_PARAMETERS
     size_t              parameters;       // number of parameters : single qubit, two qubits ... etc
+#endif
 #if OPT_MICRO_CODE
     ucode_sequence_t    qumis;            // microcode sequence
 #endif
@@ -1438,7 +1440,9 @@ public:
     {
         name = g.name;
         creg_operands = g.creg_operands;
+#if OPT_CUSTOM_GATE_PARAMETERS
         parameters = g.parameters;
+#endif
 #if OPT_MICRO_CODE
         qumis.assign(g.qumis.begin(), g.qumis.end());
 #endif
@@ -1546,7 +1550,11 @@ public:
         {
             l_attr = "qubits";
             // DOUT("qubits: " << instr["qubits"]);
+#if OPT_CUSTOM_GATE_PARAMETERS
             parameters = instr["qubits"].size();
+#else
+            size_t parameters = instr["qubits"].size();
+#endif
             for (size_t i=0; i<parameters; ++i)
             {
                 std::string qid = instr["qubits"][i];
@@ -1593,7 +1601,9 @@ public:
     {
         println("[-] custom gate : ");
         println("    |- name     : " << name);
+#if OPT_CUSTOM_GATE_PARAMETERS
         println("    |- n_params : " << parameters);
+#endif
         utils::print_vector(operands,"[openql]     |- qubits   :"," , ");
         println("    |- duration : " << duration);
         println("    |- matrix   : [" << m.m[0] << ", " << m.m[1] << ", " << m.m[2] << ", " << m.m[3] << "]");
