@@ -30,10 +30,13 @@ typedef std::string instruction_t;
 namespace ql
 {
 
+#if OPT_MICRO_CODE
 typedef std::string qasm_inst_t;
 typedef std::string ucode_inst_t;
+#endif
 
 typedef std::string string_t;
+#if OPT_CUSTOM_GATE_EXPLICIT_CTOR
 typedef std::vector<std::string> strings_t;
 typedef std::vector<std::string> ucode_sequence_t;      // FIXME: should be removed
 
@@ -42,7 +45,7 @@ typedef enum
     flux_t,
     rf_t
 } instruction_type_t;
-
+#endif
 
 
 #if OPT_MICRO_CODE
@@ -1455,6 +1458,7 @@ public:
     /**
      * explicit ctor
      */
+#if OPT_CUSTOM_GATE_EXPLICIT_CTOR   // FIXME
     custom_gate(string_t& name, cmat_t& m,
                 size_t parameters, size_t duration, size_t latency,
                 instruction_type_t& operation_type, ucode_sequence_t& qumis, strings_t hardware) :
@@ -1474,6 +1478,8 @@ public:
             used_hardware.push_back(hardware[i]);
 #endif
     }
+#endif
+
 
 #if OPT_CUSTOM_GATE_LOAD    // unused, but see comment in hardware_configuration.h::load_instruction
     /**
