@@ -19,8 +19,10 @@
 namespace ql
 {
 
+#if OPT_MICRO_CODE
 typedef std::string qasm_inst_t;
 typedef std::string ucode_inst_t;
+#endif
 
 typedef std::map<std::string, ql::custom_gate *> instruction_map_t;
 #if OPT_MICRO_CODE

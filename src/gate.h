@@ -1565,12 +1565,14 @@ public:
                 }
                 operands.push_back(qubit_id(qid));
             }
-            // FIXME: code commented out:
+            // FIXME: code was commented out:
 #if OPT_MICRO_CODE
             // ucode_sequence_t ucs = instr["qumis"];
             // qumis.assign(ucs.begin(), ucs.end());
 #endif
+#if OPT_CUSTOM_GATE_OPERATION_TYPE
             // operation_type = instr["type"];
+#endif
             l_attr = "duration";
             duration = instr["duration"];
 #if OPT_USED_HARDWARE
@@ -1579,6 +1581,7 @@ public:
             // used_hardware.assign(hdw.begin(), hdw.end());
 #endif
             l_attr = "matrix";
+            // FIXME: make matrix optional, default to NaN
             auto mat = instr["matrix"];
             m.m[0] = complex_t(mat[0][0], mat[0][1]);
             m.m[1] = complex_t(mat[1][0], mat[1][1]);

@@ -666,6 +666,7 @@ private:
         return added;
     }
 
+    // FIXME: move to class composite_gate?
     void get_decomposed_ins( ql::composite_gate * gptr, std::vector<std::string> & sub_instructons )
     {
         auto & sub_gates = gptr->gs;
