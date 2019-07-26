@@ -107,6 +107,7 @@ public:
     /**
      * debug
      */
+#if OPT_LACKS_SWIG_INTERFACE
     void print_gates_definition()
     {
         for (instruction_map_t::iterator i=instruction_map.begin(); i!=instruction_map.end(); i++)
@@ -117,6 +118,7 @@ public:
 #endif
         }
     }
+#endif // OPT_LACKS_SWIG_INTERFACE
 
     std::string get_gates_definition()
     {
