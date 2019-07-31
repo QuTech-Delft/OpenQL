@@ -84,7 +84,7 @@ public:
         }
 
         decomp_function(matrix.transpose(), numberofbits); //needed because the matrix is read in columnmajor
-        utils::print_vector(instructionlist, "Instruction list: ", "; ");
+        //utils::print_vector(instructionlist, "Instruction list: ", "; ");
 
         
         DOUT("Done decomposing");
@@ -133,7 +133,7 @@ public:
             complex_matrix R1;
 
             int n = matrix.rows()/2;
-            COUT("decomp_function: \n" << to_string(matrix));
+            DOUT("decomp_function: \n" << to_string(matrix));
             // if q2 is zero, the whole thing is a demultiplexing problem instead of full CSD
             if(matrix.bottomLeftCorner(n,n).isZero(10e-14) && matrix.topRightCorner(n,n).isZero(10e-14))
             {
@@ -221,7 +221,7 @@ public:
         s = u2.adjoint()*q2;
         if(k < p-1)
         {
-            DOUT("k is smaller than size of q1 = "<< p << ", adjustments will be made, k = " << k);
+            // DOUT("k is smaller than size of q1 = "<< p << ", adjustments will be made, k = " << k);
             k = k+1;
             svd.compute(s.block(k, k, p-k, p-k));
             s.block(k, k, p-k, p-k) = svd.singularValues().asDiagonal();
@@ -422,8 +422,8 @@ public:
             complex_matrix W = D*V.adjoint()*U2;
             if(!U1.isApprox(V*D*W, 10e-7) || !U2.isApprox(V*D.adjoint()*W, 10e-7))
             {
-                COUT("Demultiplexing check U1: \n" << V*D*W);
-                COUT("Demultiplexing check U2: " << V*D.adjoint()*W);
+                // DOUT("Demultiplexing check U1: \n" << V*D*W);
+                // DOUT("Demultiplexing check U2: " << V*D.adjoint()*W);
                 EOUT("Demultiplexing not correct!");
                 throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at matrix U1: \n"+to_string(U1)+ "and matrix U2: \n" +to_string(U2), false);
             }
@@ -491,8 +491,8 @@ public:
         Eigen::VectorXd tr = dec.solve(temp);
         if(!temp.isApprox(genMk(halfthesizeofthematrix)*tr, 10e-7))
         {
-                COUT("multicontrolledY check b: " << temp);
-                COUT("multicontrolledY check A*x: " << genMk(halfthesizeofthematrix)*tr);
+                // DOUT("multicontrolledY check b: " << temp);
+                // DOUT("multicontrolledY check A*x: " << genMk(halfthesizeofthematrix)*tr);
                 EOUT("Multicontrolled Y not correct!");
                 throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix ss: \n"  + to_string(ss), false);
         }
@@ -509,8 +509,8 @@ public:
         Eigen::VectorXd tr =dec.solve(temp);
         if(!temp.isApprox(genMk(halfthesizeofthematrix)*tr, 10e-7))
         {
-                COUT("multicontrolledZ check b: " << temp);
-                COUT("multicontrolledZ check A*x: " << genMk(halfthesizeofthematrix)*tr);
+                // DOUT("multicontrolledZ check b: " << temp);
+                // DOUT("multicontrolledZ check A*x: " << genMk(halfthesizeofthematrix)*tr);
                 EOUT("Multicontrolled Z not correct!");
                 throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix D: \n"+ to_string(D), false);
         }

@@ -837,9 +837,9 @@ public:
         {
 
             COUT("Adding decomposed unitary to kernel ...");
-            COUT("The list is this many items long: " << u.instructionlist.size());
+            DOUT("The list is this many items long: " << u.instructionlist.size());
             int end_index = recursiveRelationsForUnitaryDecomposition(u,qubits, u_size, 0);
-            COUT("Total number of gates added: " << end_index);
+            DOUT("Total number of gates added: " << end_index);
         }
         else
         {
@@ -853,7 +853,7 @@ public:
     //i is the start point for the instructionlist
     int recursiveRelationsForUnitaryDecomposition(ql::unitary u, std::vector<size_t> qubits, int n, int i)
     {
-        COUT("Adding a new unitary starting at index: "<< i << ", to " << n << ql::utils::to_string(qubits, " qubits: "));
+        // DOUT("Adding a new unitary starting at index: "<< i << ", to " << n << ql::utils::to_string(qubits, " qubits: "));
         if (n > 1)
         {
             // Need to be checked here because it changes the structure of the decomposition.
@@ -880,7 +880,7 @@ public:
 
             // Need to be checked here because it changes the structure of the decomposition.
             // code for last one not affected
-            COUT("Current instructionlist item: " << u.instructionlist[i]);
+            // DOUT("Current instructionlist item: " << u.instructionlist[i]);
             if (u.instructionlist[i] == 10.0)
             {
                 COUT("[kernel.h] Optimization: last qubit is not affected, skip one step in the recursion. New start_index: " << i+1);
@@ -940,7 +940,7 @@ public:
         }
         else //n=1
         {
-            COUT("Adding the zyz decomposition gates at index: "<< i);
+            // DOUT("Adding the zyz decomposition gates at index: "<< i);
             // zyz gates happen on the only qubit in the list.
             if (u.instructionlist[i] > 0.0 || u.instructionlist[i] < 0.0)
             {
@@ -963,7 +963,7 @@ public:
     //controlled qubit is the first in the list.
     void multicontrolled_rz( std::vector<double> instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
     {
-        COUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << ql::utils::to_string(qubits, "qubits: "));
+        // DOUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << ql::utils::to_string(qubits, "qubits: "));
         int idx;
         //The first one is always controlled from the last to the first qubit.
         if(instruction_list[start_index] > 0.0 || instruction_list[start_index] < 0.0)
@@ -991,7 +991,7 @@ public:
     //controlled qubit is the first in the list.
     void multicontrolled_ry( std::vector<double> instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
     {
-        COUT("Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << ql::utils::to_string(qubits, "qubits: "));
+        // DOUT("Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << ql::utils::to_string(qubits, "qubits: "));
         int idx;
         //The first one is always controlled from the last to the first qubit.
         if(instruction_list[start_index] > 0.0 || instruction_list[start_index] < 0.0)

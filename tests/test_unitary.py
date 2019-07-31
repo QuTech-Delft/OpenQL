@@ -1177,7 +1177,7 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_sparse2qubitunitaryotherqubit(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 4
+        num_qubits = 1
         p = ql.Program('test_usingqx_sparse2qubitotherqubit_test', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
