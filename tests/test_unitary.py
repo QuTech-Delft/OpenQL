@@ -4,6 +4,7 @@ from openql import openql as ql
 from utils import file_compare
 from qxelarator import qxelarator
 import re
+import numpy as np
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
 curdir = os.path.dirname(__file__)
@@ -49,6 +50,22 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
+
+    def test_unitary_called_hadamard(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 3
+        p = ql.Program('test_unitary_called_hadamard', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        u = ql.Unitary('hadamard', [  complex(1.0, 0.0), complex(0.0, 0.0),
+                                complex(0.0, 0.0), complex(0.0, 1.0)])
+        u.decompose()
+
+        k.gate(u, [2])
+
+        p.add_kernel(k)
+        p.compile()
 	
     def test_unitary_undecomposed(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
@@ -83,6 +100,24 @@ class Test_conjugated_kernel(unittest.TestCase):
             k.gate(u, [1,2])
 
         self.assertEqual(str(cm.exception), 'Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 2 and not 1.000000')
+    
+    def test_unitary_wrongnumberofqubits_toofew(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 3
+        p = ql.Program('test_unitary_pass', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+
+        u = ql.Unitary('u1', [-0.43874989-0.10659111j, -0.47325212+0.12917344j, -0.58227163+0.20750072j, -0.29075334+0.29807585j,  
+                    0.30168601-0.22307459j,  0.32626   +0.4534935j , -0.20523265-0.42403593j, -0.01012565+0.5701683j , 
+                    -0.40954341-0.49946371j,  0.28560698-0.06740801j,  0.52146754+0.1833513j , -0.37248653+0.22891636j,  
+                    0.03113162-0.48703302j, -0.57180014+0.18486244j,  0.2943625 -0.06148912j,  0.55533888+0.04322811j])
+        # adding un-decomposed u to kernel should raise error
+        with self.assertRaises(Exception) as cm:
+            k.gate(u, [0])
+
+        self.assertEqual(str(cm.exception), 'Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 1 and not 2.000000')
 
     def test_unitary_decompose_I(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
@@ -99,7 +134,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
         
-        gold_fn = rootDir + '/golden/test_unitary-decomp_1qubit_I.qasm'
+        gold_fn = rootDir + '/golden/test_unitary_I.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
@@ -118,7 +153,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
         
-        gold_fn = rootDir + '/golden/test_unitary-decomp_1qubit_X.qasm'
+        gold_fn = rootDir + '/golden/test_unitary_X.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
@@ -137,7 +172,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
         
-        gold_fn = rootDir + '/golden/test_unitary-decomp_1qubit_Y.qasm'
+        gold_fn = rootDir + '/golden/test_unitary_Y.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
  
@@ -156,7 +191,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
         
-        gold_fn = rootDir + '/golden/test_unitary-decomp_1qubit_Z.qasm'
+        gold_fn = rootDir + '/golden/test_unitary_Z.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )   
 
@@ -183,7 +218,36 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
         
-        gold_fn = rootDir + '/golden/test_unitary-decomp_1qubit_IYZ.qasm'
+        gold_fn = rootDir + '/golden/test_unitary_IYZ.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        self.assertTrue( file_compare(qasm_fn, gold_fn) )   
+
+    def test_unitary_decompose_IYZ_differentorder(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 1
+        p = ql.Program('test_unitary_IYZ', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        u = ql.Unitary('X', [  complex(0.0, 0.0), complex(1.0, 0.0),
+                                complex(1.0, 0.0), complex(0.0, 0.0)])
+        
+        u1 = ql.Unitary('y', [  complex(0.0, 0.0), complex(0.0, -1.0),
+                                complex(0.0, 1.0), complex(0.0, 0.0)])
+        
+        u2 = ql.Unitary('Z', [  complex(1.0, 0.0), complex(0.0, 0.0),
+                                complex(0.0, 0.0), complex(-1.0, 0.0)])
+        u.decompose()
+        u1.decompose()
+        u2.decompose()
+        k.gate(u, [0])
+        k.gate(u1, [0])
+        k.gate(u2, [0])
+
+        p.add_kernel(k)
+        p.compile()
+        
+        gold_fn = rootDir + '/golden/test_unitary_IYZ.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )   
 
@@ -206,7 +270,6 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         self.assertEqual(str(cm.exception), "Error: Unitary 'WRONG' is not a unitary matrix. Cannot be decomposed!")
   
-    
     def test_unitary_decompose_matrixinsteadofarray(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
@@ -214,16 +277,9 @@ class Test_conjugated_kernel(unittest.TestCase):
         p = ql.Program('test_unitary_wrongtype', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
         
-        with self.assertRaises(Exception) as cm:
-            u = ql.Unitary('WRONG', [[complex(1.0, 0.0), complex(0.0, 0.0)],
-                                [complex(0.0, 0.0), complex(1.0, 0.0)]])
-            u.decompose()
-            k.gate(u, [0])
+        with self.assertRaises(TypeError) as cm:
+            u = ql.Unitary('TypeError', [[1, 0], [0,1]])
 
-            p.add_kernel(k)
-            p.compile()
-
-        self.assertTrue(str(cm.exception), "")
 
 
     # def test_unitary_decompose_2qubit_CNOT(self):
@@ -273,7 +329,7 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_usingqx_00(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 4
+        num_qubits = 2
         p = ql.Program('test_usingqx00', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
@@ -306,7 +362,7 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_usingqx_01(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 4
+        num_qubits = 2
         p = ql.Program('test_usingqx01', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
@@ -344,7 +400,7 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_usingqx_10(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 4
+        num_qubits = 2
         p = ql.Program('test_usingqx10', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
@@ -382,7 +438,7 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_usingqx_11(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 4
+        num_qubits = 2
         p = ql.Program('test_usingqx11', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
@@ -417,7 +473,7 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_usingqx_bellstate(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 4
+        num_qubits = 2
         p = ql.Program('test_usingqxbellstate', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
@@ -456,7 +512,7 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_usingqx_fullyentangled(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 4
+        num_qubits = 2
         p = ql.Program('test_usingqxfullentangled', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
@@ -495,7 +551,7 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_usingqx_fullyentangled_3qubit(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 4
+        num_qubits = 3
         p = ql.Program('test_usingqxfullentangled_3qubit', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
@@ -1079,7 +1135,6 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.hadamard(1)
         k.hadamard(2)
         k.hadamard(3)
-        # k.ry(0,0.2)
         k.cnot(0, 1)
         k.cnot(0, 2)
         k.cnot(0, 3)
@@ -1117,7 +1172,7 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_sparse2qubitunitary(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 4
+        num_qubits = 2
         p = ql.Program('test_usingqx_sparse2qubit', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
@@ -1147,7 +1202,7 @@ class Test_conjugated_kernel(unittest.TestCase):
     def test_sparse2qubitunitaryotherqubit(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
-        num_qubits = 4
+        num_qubits = 2
         p = ql.Program('test_usingqx_sparse2qubitotherqubit', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
@@ -1156,7 +1211,7 @@ class Test_conjugated_kernel(unittest.TestCase):
                 ,  0.04481146-0.73904059j,  0.        +0.j        ,  0.64910478+0.17456782j,  0.        +0.j        
                 ,  0.        +0.j        ,  0.04481146-0.73904059j,  0.        +0.j        ,  0.64910478+0.17456782j]
         
-        u1 = ql.Unitary("testname",matrix)
+        u1 = ql.Unitary("sparse2_qubit_unitary_other_qubit",matrix)
         u1.decompose()
         k.gate(u1, [0, 1])
         k.display()
@@ -1166,15 +1221,15 @@ class Test_conjugated_kernel(unittest.TestCase):
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
+        print("test: sparse_unitary", c0)
 
         self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
         self.assertAlmostEqual(helper_prob(matrix[4]), 0, 5) # Zero probabilities do not show up in the output list
-        self.assertAlmostEqual(helper_prob(matrix[8]), helper_regex(c0)[2], 5)
+        self.assertAlmostEqual(helper_prob(matrix[8]), helper_regex(c0)[1], 5)
         self.assertAlmostEqual(helper_prob(matrix[12]), 0, 5)
 
 
-################ Has 4 qubits because there is something weird with QX and the extremely sparse unitary unit test
-    def test_sparse2qubitunitaryotherqubit(self):
+    def test_sparse2qubitunitaryotherqubitcheck(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
         num_qubits = 1

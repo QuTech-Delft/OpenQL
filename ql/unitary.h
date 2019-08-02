@@ -39,41 +39,58 @@ public:
     std::vector<double> instructionlist;
 
     typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> complex_matrix ;
-    
+
     unitary() : name(""), is_decomposed(false) {}
+
     unitary(std::string name, std::vector<std::complex<double>> array) : 
             name(name), array(array), is_decomposed(false)
     {
         DOUT("constructing unitary: " << name 
                   << ", containing: " << array.size() << " elements");
         // utils::print_vector(array,"[openql] unitary elements :"," , ");
-        // TODO: add sanity checks for supplied arguments
     }
+
+    // This can work if pybind11 is included and used. 
+    // unitary(std::string name, complex_matrix matrix) : 
+    //         name(name), _matrix(matrix), is_decomposed(false)
+    // {
+    //     DOUT("constructing unitary: " << name 
+    //               << ", containing: " << matrix.size() << " elements");
+    //     // utils::print_vector(array,"[openql] unitary elements :"," , ");
+    // }
 
     double size()
     {
-        return (double) array.size();
+        if(!array.empty())
+            return (double) array.size();
+        else
+            return (double) _matrix.size();
     }
+
     complex_matrix getMatrix()
     {
+        if (!array.empty())
+        {
+            int matrix_size = (int)std::pow(array.size(), 0.5);
+
+            Eigen::Map<complex_matrix> matrix(array.data(), matrix_size, matrix_size);
+            _matrix = matrix.transpose();
+        }
         return _matrix;
     }
     void decompose()
     {
         DOUT("decomposing Unitary: " << name);
 
-    
-        int matrix_size = (int)std::pow(array.size(),0.5);
-
-        Eigen::Map<complex_matrix> matrix(array.data(), matrix_size, matrix_size);
-        _matrix = matrix.transpose();
+        getMatrix();
+        int matrix_size = _matrix.rows();
          //      DOUT("constructing unitary: " << name << ", containing: " << matrix << " elements");
         
         // compute the number of qubits: length of array is collumns*rows, so log2(sqrt(array.size))
         int numberofbits = (int) log2(matrix_size);
 
         Eigen::MatrixXcd identity = Eigen::MatrixXcd::Identity(matrix_size, matrix_size);
-        Eigen::MatrixXcd matmatadjoint = (matrix.adjoint()*matrix);
+        Eigen::MatrixXcd matmatadjoint = (_matrix.adjoint()*_matrix);
         bool equal = matmatadjoint.isApprox(identity, 0.00001);
         if( !equal)
         {
@@ -83,8 +100,8 @@ public:
             throw ql::exception("Error: Unitary '"+ name+"' is not a unitary matrix. Cannot be decomposed!", false);
         }
 
-        decomp_function(matrix.transpose(), numberofbits); //needed because the matrix is read in columnmajor
-        //utils::print_vector(instructionlist, "Instruction list: ", "; ");
+        decomp_function(_matrix, numberofbits); //needed because the matrix is read in columnmajor
+        // utils::print_vector(instructionlist, "Instruction list: ", "; ");
 
         
         DOUT("Done decomposing");
@@ -113,27 +130,15 @@ public:
 
 
     void decomp_function(complex_matrix matrix, int numberofbits)
-    {           
+    {  
+        DOUT("decomp_function: \n" << to_string(matrix));         
         if(numberofbits == 1)
         {
-            std::vector<double> tmp(4);
-            tmp = zyz_decomp(array);
-            delta = tmp[0];
-            alpha = tmp[1];
-            beta  = tmp[2];
-            gamma = tmp[3];
+            zyz_decomp(matrix);
         }
         else
         {
-            complex_matrix cc;
-            complex_matrix ss;
-            complex_matrix L0;
-            complex_matrix L1;
-            complex_matrix R0;
-            complex_matrix R1;
-
             int n = matrix.rows()/2;
-            DOUT("decomp_function: \n" << to_string(matrix));
             // if q2 is zero, the whole thing is a demultiplexing problem instead of full CSD
             if(matrix.bottomLeftCorner(n,n).isZero(10e-14) && matrix.topRightCorner(n,n).isZero(10e-14))
             {
@@ -147,7 +152,7 @@ public:
                 //     instructionlist.push_back(0);
                 // }
             }
-            // Spot check to see if it the krnoecker product of a bigger matrix and the identity matrix.
+            // Spot check to see if it the kronecker product of a bigger matrix and the identity matrix.
             // By checking if the first row is equal to the second row one over, and if thelast two rows are equal 
             else if (matrix(Eigen::seqN(0, n, 2), Eigen::seqN(1, n, 2)).isZero()  && matrix(Eigen::seqN(1, n, 2), Eigen::seqN(0, n, 2)).isZero()  && matrix.block(0,0,1,2*n-1) == matrix.block(1,1,1,2*n-1) &&  matrix.block(2*n-2,0,1,2*n-1) ==  matrix.block(2*n-1,1,1,2*n-1))
             {
@@ -155,6 +160,7 @@ public:
 
                 // Code for last qubit not affected
                 instructionlist.push_back(10.0);
+                DOUT("new matrix: "<< matrix(Eigen::seqN(0, n, 2), Eigen::seqN(0, n, 2)));
                 decomp_function(matrix(Eigen::seqN(0, n, 2), Eigen::seqN(0, n, 2)), numberofbits-1);
 
                 // The number of gates that would be necessary minus the number that is actually necessary to implement this unitary. 
@@ -168,6 +174,13 @@ public:
             }
             else
             {
+            complex_matrix cc;
+            complex_matrix ss;
+            complex_matrix L0;
+            complex_matrix L1;
+            complex_matrix R0;
+            complex_matrix R1;
+
             CSD(matrix, L0, L1, R0,R1,cc,ss);
             demultiplexing(R0,R1, numberofbits-1);
             multicontrolledY(ss,n);
@@ -312,36 +325,36 @@ public:
         // std::cout << tmp << std::endl;
     }
 
-    std::vector<double> zyz_decomp(std::vector<std::complex<double>> matrix)
-    {
-         //TODO: make this efficient again
-        ql::complex_t det = matrix[0]*matrix[3]-matrix[2]*matrix[1];
+    // std::vector<double> zyz_decomp(std::vector<std::complex<double>> matrix)
+    // {
+    //      //TODO: make this efficient again
+    //     ql::complex_t det = matrix[0]*matrix[3]-matrix[2]*matrix[1];
 
-        double delta = atan2(det.imag(), det.real())/matrix.size();
-        std::complex<double> com_two(0,1);
-        std::complex<double> A = exp(-com_two*delta)*matrix[0];
-        std::complex<double> B = exp(-com_two*delta)*matrix[1];
-        double sw = sqrt(pow((double) B.imag(),2) + pow((double) B.real(),2) + pow((double) A.imag(),2));
-        double wx = 0;
-        double wy = 0;
-        double wz = 0;
-        if(sw > 0)
-        {
-        wx = B.imag()/sw;
-        wy = B.real()/sw;
-        wz = A.imag()/sw;
-        }
+    //     double delta = atan2(det.imag(), det.real())/matrix.size();
+    //     std::complex<double> com_two(0,1);
+    //     std::complex<double> A = exp(-com_two*delta)*matrix[0];
+    //     std::complex<double> B = exp(-com_two*delta)*matrix[1];
+    //     double sw = sqrt(pow((double) B.imag(),2) + pow((double) B.real(),2) + pow((double) A.imag(),2));
+    //     double wx = 0;
+    //     double wy = 0;
+    //     double wz = 0;
+    //     if(sw > 0)
+    //     {
+    //     wx = B.imag()/sw;
+    //     wy = B.real()/sw;
+    //     wz = A.imag()/sw;
+    //     }
 
-        double t1 = atan2(A.imag(),A.real());
-        double t2 = atan2(B.imag(), B.real());
-        alpha = t1+t2;
-        gamma = t1-t2;
-        beta = 2*atan2(sw*sqrt(pow((double) wx,2)+pow((double) wy,2)),sqrt(pow((double) A.real(),2)+pow((wz*sw),2)));
-        instructionlist.push_back(-gamma);
-        instructionlist.push_back(-beta);
-        instructionlist.push_back(-alpha);
-        return instructionlist;
-    }
+    //     double t1 = atan2(A.imag(),A.real());
+    //     double t2 = atan2(B.imag(), B.real());
+    //     alpha = t1+t2;
+    //     gamma = t1-t2;
+    //     beta = 2*atan2(sw*sqrt(pow((double) wx,2)+pow((double) wy,2)),sqrt(pow((double) A.real(),2)+pow((wz*sw),2)));
+    //     instructionlist.push_back(-gamma);
+    //     instructionlist.push_back(-beta);
+    //     instructionlist.push_back(-alpha);
+    //     return instructionlist;
+    // }
 
     void zyz_decomp(complex_matrix matrix)
     {
