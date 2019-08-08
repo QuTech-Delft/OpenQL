@@ -217,12 +217,6 @@ public:
         c = z*svd.singularValues().asDiagonal()*z;
         u1 = svd.matrixU()*z;
         v1 = svd.matrixV()*z; // Same v as in matlab: u*s*v.adjoint() = q1
-        
-        COUT("q1: \n" << U.topLeftCorner(n/2, n/2));
-        COUT("reconstructed q1: \n" << u1*c*v1.adjoint());
-        COUT("u1: \n" << u1);
-        COUT("c: \n" << c);
-        COUT("v1: \n" << v1);
         complex_matrix q2 = U.bottomLeftCorner(p,p)*v1;      
 
         int k = 0;
@@ -246,21 +240,20 @@ public:
             Eigen::BDCSVD<complex_matrix> svd2(p-k, p-k);
             svd2.compute(s.block(k, k, p-k, p-k), Eigen::ComputeThinU | Eigen::ComputeThinV);
             s.block(k, k, p-k, p-k) = svd2.singularValues().asDiagonal();
-            c.block(0,k, p,p-k) = c.block(0,k, p,p-k)*svd2.matrixV();
+            c.block(0,k, p,p-k) = (c.block(0,k, p,p-k)*svd2.matrixV()).eval(); //aliasing?
             u2.block(0,k, p,p-k) = u2.block(0,k, p,p-k)*svd2.matrixU();
             v1.block(0,k, p,p-k) = v1.block(0,k, p,p-k)*svd2.matrixV();
             
             Eigen::HouseholderQR<complex_matrix> qr2(p-k, p-k);
-
+            COUT("q1: \n" << U.topLeftCorner(n/2, n/2));
+            COUT("reconstructed q1: \n" << u1*c*v1.adjoint());
+            COUT("u1: \n" << u1);
+            COUT("c: \n" << c);
+            COUT("v1: \n" << v1);
             qr2.compute(c.block(k,k, p-k,p-k));
-            c.block(k,k,p-k,p-k) = qr2.matrixQR();
+            c.block(k,k,p-k,p-k) = qr2.matrixQR().triangularView<Eigen::Upper>();
             u1.block(0,k, p,p-k) = u1.block(0,k, p,p-k)*qr2.householderQ(); 
         }
-        COUT("q1: \n" << U.topLeftCorner(n/2, n/2));
-        COUT("reconstructed q1: \n" << u1*c*v1.adjoint());
-        COUT("u1: \n" << u1);
-        COUT("c: \n" << c);
-        COUT("v1: \n" << v1);
         for(int j = 0; j < p; j++)
         {
             if(c(j,j).real() < 0)
@@ -273,10 +266,11 @@ public:
                 s(j,j) = -s(j,j);
                 u2.col(j) = -u2.col(j);
             }
-}
-        if(!U.topLeftCorner(p,p).isApprox(u1*c*v1.adjoint(), 10e-8) || !U.bottomLeftCorner(p,p).isApprox(u2*s*v1.adjoint(), 10e-8))
+        }
+        // Decomposition is only as accurate as the input
+        if(!U.topLeftCorner(p,p).isApprox(u1*c*v1.adjoint(), 10e-4) || !U.bottomLeftCorner(p,p).isApprox(u2*s*v1.adjoint(), 10e-4))
         {
-            if(U.topLeftCorner(p,p).isApprox(u1*c*v1.adjoint(), 10e-8))
+            if(U.topLeftCorner(p,p).isApprox(u1*c*v1.adjoint(), 10e-4))
             {
                 COUT("q1 is correct");
             }
@@ -285,12 +279,8 @@ public:
                 COUT("q1 is not correct! (is not usually an issue");
                 COUT("q1: \n" << U.topLeftCorner(p,p));
                 COUT("reconstructed q1: \n" << u1*c*v1.adjoint());
-                COUT("u1: \n" << u1);
-                COUT("c: \n" << c);
-                COUT("v1: \n" << v1);
-
             }
-            if(U.bottomLeftCorner(p,p).isApprox(u2*s*v1.adjoint(), 10e-8))
+            if(U.bottomLeftCorner(p,p).isApprox(u2*s*v1.adjoint(), 10e-4))
             {
                 COUT("q2 is correct");
             }
