@@ -13,7 +13,7 @@ qx = qxelarator.QX()
 c0 = ""
 
 def helper_regex(measurementstring):
-    regex = re.findall('[0-9.]+',measurementstring)
+    regex = re.findall('[0-9.e\-]+',measurementstring)
     i = 0
     array = []
     while i < len(regex):
@@ -268,8 +268,9 @@ class Test_conjugated_kernel(unittest.TestCase):
             add_kernel(k)
             p.compile()
 
-        self.assertEqual(str(cm.exception), "Error: Unitary 'WRONG' is not a unitary matrix. Cannot be decomposed!")
+        self.assertEqual(str(cm.exception), "Error: Unitary 'WRONG' is not a unitary matrix. Cannot be decomposed!(0,0) (0,0)\n(0,0) (0,0)\n")
   
+  # input for the unitary decomposition needs to be an array
     def test_unitary_decompose_matrixinsteadofarray(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)
@@ -282,25 +283,70 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
 
-    # def test_unitary_decompose_2qubit_CNOT(self):
-    #     config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-    #     platform = ql.Platform('platform_none', config_fn)
-    #     num_qubits = 2
-    #     p = ql.Program('test_unitary_2qubitCNOT', platform, num_qubits)
-    #     k = ql.Kernel('akernel', platform, num_qubits)
+    def test_unitary_decompose_2qubit_CNOT(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 2
+        p = ql.Program('test_unitary_2qubitCNOT', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
 
-    #     u = ql.Unitary('big_unitary', [  complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0),
-    #                            complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0),
-    #                            complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0),
-    #                            complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0)])
-    #     u.decompose()
-    #     k.gate(u, [0, 1])
-    #     p.add_kernel(k)
-    #     p.compile()
-    #     # Verified using QX
-    #     gold_fn = rootDir + '/golden/test_unitary_2qubitCNOT.qasm'
-    #     qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-    #     self.assertTrue( file_compare(qasm_fn, gold_fn) )   
+        matrix = [  complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0),
+                               complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0),
+                               complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0),
+                               complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0)]
+        u = ql.Unitary('cnot',matrix)
+        u.decompose()
+        # k.x(1)
+        k.display()
+        k.gate(u, [0, 1])
+        k.display()
+        p.add_kernel(k)
+        p.compile()
+
+
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+        print("cnot: ", c0)
+        print("helper cnot", helper_regex(c0))
+
+
+        self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
+        # self.assertAlmostEqual(helper_prob(matrix[4]), helper_regex(c0)[1], 5)
+        # self.assertAlmostEqual(helper_prob(matrix[8]), helper_regex(c0)[2], 5)
+        # self.assertAlmostEqual(helper_prob(matrix[12]), helper_regex(c0)[3], 5) 
+
+    def test_unitary_decompose_2qubit_CNOT_2(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 2
+        p = ql.Program('test_unitary_2qubitCNOT', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        matrix = [  complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0),
+                               complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0),
+                               complex(0.0, 0.0), complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0),
+                               complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0)]
+        u = ql.Unitary('cnot2',matrix)
+        u.decompose()
+        k.x(1)
+        k.display()
+        k.gate(u, [0, 1])
+        k.display()
+        p.add_kernel(k)
+        p.compile()
+
+
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+        print("cnot: ", c0)
+        print("helper cnot", helper_regex(c0))
+
+        self.assertAlmostEqual(0.0, helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(1.0, helper_regex(c0)[1], 5)
+        # self.assertAlmostEqual(helper_prob(matrix[8]), helper_regex(c0)[2], 5)
+        # self.assertAlmostEqual(helper_prob(matrix[12]), helper_regex(c0)[3], 5)
 
     def test_non_90_degree_angle(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
@@ -345,7 +391,6 @@ class Test_conjugated_kernel(unittest.TestCase):
         u1 = ql.Unitary("testname",matrix)
         u1.decompose()
         k.gate(u1, [0,1])
-
         p.add_kernel(k)
         p.compile()
 
@@ -1252,7 +1297,216 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
         self.assertAlmostEqual(helper_prob(matrix[1]), helper_regex(c0)[1], 5) # Zero probabilities do not show up in the output list
 
+##################################################################3
+# Need to put in thesis
+    def test_sparse2qubit_multiplexor(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 2
+        p = ql.Program('test_usingqx_sparse2qubit_multiplexor', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
 
+        matrix = [ 0.30279949-0.60010283j, -0.58058628-0.45946559j, 0                      , 0    
+                ,  0.04481146-0.73904059j,  0.64910478+0.17456782j, 0                      , 0
+                ,  0.        +0.j        , -0.        +0.j        ,  0.2309453 -0.79746147j, -0.53683301+0.15009925j
+                ,  0.        +0.j        ,  0.        +0.j        ,  0.39434916-0.39396473j,  0.80810853+0.19037107j]
+        u1 = ql.Unitary("multiplexor",matrix)
+        u1.decompose()
+        k.hadamard(0)
+        k.hadamard(1)
+        k.display()
+        k.gate(u1, [0, 1])
+        k.display()
+
+        p.add_kernel(k)
+        p.compile()
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+
+
+        self.assertAlmostEqual(0.25*helper_prob((matrix[0] + matrix[1] + matrix[2] + matrix[3] )), helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(0.25*helper_prob((matrix[4] + matrix[5] + matrix[6] + matrix[7] )), helper_regex(c0)[1], 5)
+        self.assertAlmostEqual(0.25*helper_prob((matrix[8] + matrix[9] + matrix[10]+ matrix[11])), helper_regex(c0)[2], 5)
+        self.assertAlmostEqual(0.25*helper_prob((matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[3], 5)
+
+    def test_decomposition_rotatedtoffoli(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 3
+        p = ql.Program('test_usingqx_rotatedtoffoli', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        matrix = (np.exp(-1j*0.3*3.141562)*np.array([[1, 0, 0, 0, 0, 0, 0, 0],
+                 [0, 1, 0, 0, 0, 0, 0, 0],
+                 [0, 0, 1, 0, 0, 0, 0, 0],
+                 [0, 0, 0, 1, 0, 0, 0, 0],
+                 [0, 0, 0, 0, 1, 0, 0, 0],
+                 [0, 0, 0, 0, 0, 1, 0, 0],
+                 [0, 0, 0, 0, 0, 0, 0, 1],
+                 [0, 0, 0, 0, 0, 0, 1, 0]])).flatten()
+        print(matrix)
+
+        u1 = ql.Unitary("rotatedtoffoli",matrix)
+        u1.decompose()
+        k.hadamard(0)
+        k.hadamard(1)
+        k.hadamard(2)
+        k.display()
+        k.gate(u1, [0, 1, 2])
+        k.display()
+
+        p.add_kernel(k)
+        p.compile()
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+
+        self.assertAlmostEqual(0.125*helper_prob((matrix[0]  + matrix[1] + matrix[2] + matrix[3] + matrix[4] + matrix[5] + matrix[6] + matrix[7])), helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[8]  + matrix[9] + matrix[10]+ matrix[11]+ matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[1], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[16] + matrix[17]+ matrix[18]+ matrix[19]+ matrix[20]+ matrix[21]+ matrix[22]+ matrix[23])), helper_regex(c0)[2], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[24] + matrix[25]+ matrix[26]+ matrix[27]+ matrix[28]+ matrix[29]+ matrix[30]+ matrix[31])), helper_regex(c0)[3], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[32] + matrix[33]+ matrix[34]+ matrix[35]+ matrix[36]+ matrix[37]+ matrix[38]+ matrix[39])), helper_regex(c0)[4], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[40] + matrix[41]+ matrix[42]+ matrix[43]+ matrix[44]+ matrix[45]+ matrix[46]+ matrix[47])), helper_regex(c0)[5], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_regex(c0)[6], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
+
+        # Tested for correctness using QX
+        # gold_fn = rootDir + '/golden/test_unitary-decomp_rotatedtoffoli.qasm'
+        # qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        # self.assertTrue( file_compare(qasm_fn, gold_fn) ) 
+
+    def test_decomposition_toffoli(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 3
+        p = ql.Program('test_usingqx_toffoli', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        matrix = np.array([[1, 0, 0, 0, 0, 0, 0, 0],
+                 [0, 1, 0, 0, 0, 0, 0, 0],
+                 [0, 0, 1, 0, 0, 0, 0, 0],
+                 [0, 0, 0, 1, 0, 0, 0, 0],
+                 [0, 0, 0, 0, 1, 0, 0, 0],
+                 [0, 0, 0, 0, 0, 1, 0, 0],
+                 [0, 0, 0, 0, 0, 0, 0, 1],
+                 [0, 0, 0, 0, 0, 0, 1, 0]]).flatten()
+
+        print(matrix)
+        u1 = ql.Unitary("rotatedtoffoli",matrix)
+        u1.decompose()
+        k.hadamard(0)
+        k.hadamard(1)
+        k.hadamard(2)
+        k.display()
+        k.gate(u1, [0, 1, 2])
+        k.display()
+
+        p.add_kernel(k)
+        p.compile()
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+
+        self.assertAlmostEqual(0.125*helper_prob((matrix[0]  + matrix[1] + matrix[2] + matrix[3] + matrix[4] + matrix[5] + matrix[6] + matrix[7])), helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[8]  + matrix[9] + matrix[10]+ matrix[11]+ matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[1], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[16] + matrix[17]+ matrix[18]+ matrix[19]+ matrix[20]+ matrix[21]+ matrix[22]+ matrix[23])), helper_regex(c0)[2], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[24] + matrix[25]+ matrix[26]+ matrix[27]+ matrix[28]+ matrix[29]+ matrix[30]+ matrix[31])), helper_regex(c0)[3], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[32] + matrix[33]+ matrix[34]+ matrix[35]+ matrix[36]+ matrix[37]+ matrix[38]+ matrix[39])), helper_regex(c0)[4], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[40] + matrix[41]+ matrix[42]+ matrix[43]+ matrix[44]+ matrix[45]+ matrix[46]+ matrix[47])), helper_regex(c0)[5], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_regex(c0)[6], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
+
+        # Tested for correctness using QX
+        # gold_fn = rootDir + '/golden/test_unitary-decomp_rotatedtoffoli.qasm'
+        # qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        # self.assertTrue( file_compare(qasm_fn, gold_fn) ) 
+
+    def test_decomposition_controlled_U(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 3
+        p = ql.Program('test_usingqx_toffoli', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        matrix = np.array([[1, 0, 0, 0, 0, 0, 0, 0],
+                 [0, 1, 0, 0, 0, 0, 0, 0],
+                 [0, 0, 1, 0, 0, 0, 0, 0],
+                 [0, 0, 0, 1, 0, 0, 0, 0],
+                 [0, 0, 0, 0, 1, 0, 0, 0],
+                 [0, 0, 0, 0, 0, 1, 0, 0],
+                 [0, 0, 0, 0, 0, 0, 0.30279949-0.60010283j, -0.58058628-0.45946559j],
+                 [0, 0, 0, 0, 0 ,0, 0.04481146-0.73904059j,  0.64910478+0.17456782j]]).flatten()
+
+        print(matrix)
+        u1 = ql.Unitary("arbitrarycontrolled",matrix)
+        u1.decompose()
+        k.display()
+        k.gate(u1, [0, 1, 2])
+        k.display()
+
+        p.add_kernel(k)
+        p.compile()
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+
+        self.assertAlmostEqual(0.125*helper_prob((matrix[0]  + matrix[1] + matrix[2] + matrix[3] + matrix[4] + matrix[5] + matrix[6] + matrix[7])), helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[8]  + matrix[9] + matrix[10]+ matrix[11]+ matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[1], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[16] + matrix[17]+ matrix[18]+ matrix[19]+ matrix[20]+ matrix[21]+ matrix[22]+ matrix[23])), helper_regex(c0)[2], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[24] + matrix[25]+ matrix[26]+ matrix[27]+ matrix[28]+ matrix[29]+ matrix[30]+ matrix[31])), helper_regex(c0)[3], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[32] + matrix[33]+ matrix[34]+ matrix[35]+ matrix[36]+ matrix[37]+ matrix[38]+ matrix[39])), helper_regex(c0)[4], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[40] + matrix[41]+ matrix[42]+ matrix[43]+ matrix[44]+ matrix[45]+ matrix[46]+ matrix[47])), helper_regex(c0)[5], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_regex(c0)[6], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
+   
+    def test_decomposition_mscthesisaritra(self):
+        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+        platform = ql.Platform('platform_none', config_fn)
+        num_qubits = 4
+        p = ql.Program('test_usingqx_mscthesisaritra', platform, num_qubits)
+        k = ql.Kernel('akernel', platform, num_qubits)
+
+        matrix = [0.3672   ,-0.3654   ,-0.3654   ,-0.2109   ,-0.3654   ,-0.2109   ,-0.2109   ,-0.1218   ,-0.3654   ,-0.2109   ,-0.2109   ,-0.1218   ,-0.2109   ,-0.1218   ,-0.1218   ,-0.0703
+            ,-0.3654   , 0.7891   ,-0.2109   ,-0.1218   ,-0.2109   ,-0.1218   ,-0.1218   ,-0.0703   ,-0.2109   ,-0.1218   ,-0.1218   ,-0.0703   ,-0.1218   ,-0.0703   ,-0.0703   ,-0.0406
+            ,-0.3654   ,-0.2109   , 0.7891   ,-0.1218   ,-0.2109   ,-0.1218   ,-0.1218   ,-0.0703   ,-0.2109   ,-0.1218   ,-0.1218   ,-0.0703   ,-0.1218   ,-0.0703   ,-0.0703   ,-0.0406
+            ,-0.2109   ,-0.1218   ,-0.1218   , 0.9297   ,-0.1218   ,-0.0703   ,-0.0703   ,-0.0406   ,-0.1218   ,-0.0703   ,-0.0703   ,-0.0406   ,-0.0703   ,-0.0406   ,-0.0406   ,-0.0234
+            ,-0.3654   ,-0.2109   ,-0.2109   ,-0.1218   , 0.7891   ,-0.1218   ,-0.1218   ,-0.0703   ,-0.2109   ,-0.1218   ,-0.1218   ,-0.0703   ,-0.1218   ,-0.0703   ,-0.0703   ,-0.0406
+            ,-0.2109   ,-0.1218   ,-0.1218   ,-0.0703   ,-0.1218   , 0.9297   ,-0.0703   ,-0.0406   ,-0.1218   ,-0.0703   ,-0.0703   ,-0.0406   ,-0.0703   ,-0.0406   ,-0.0406   ,-0.0234
+            ,-0.2109   ,-0.1218   ,-0.1218   ,-0.0703   ,-0.1218   ,-0.0703   , 0.9297   ,-0.0406   ,-0.1218   ,-0.0703   ,-0.0703   ,-0.0406   ,-0.0703   ,-0.0406   ,-0.0406   ,-0.0234
+            ,-0.1218   ,-0.0703   ,-0.0703   ,-0.0406   ,-0.0703   ,-0.0406   ,-0.0406   , 0.9766   ,-0.0703   ,-0.0406   ,-0.0406   ,-0.0234   ,-0.0406   ,-0.0234   ,-0.0234   ,-0.0135
+            ,-0.3654   ,-0.2109   ,-0.2109   ,-0.1218   ,-0.2109   ,-0.1218   ,-0.1218   ,-0.0703   , 0.7891   ,-0.1218   ,-0.1218   ,-0.0703   ,-0.1218   ,-0.0703   ,-0.0703   ,-0.0406
+            ,-0.2109   ,-0.1218   ,-0.1218   ,-0.0703   ,-0.1218   ,-0.0703   ,-0.0703   ,-0.0406   ,-0.1218   , 0.9297   ,-0.0703   ,-0.0406   ,-0.0703   ,-0.0406   ,-0.0406   ,-0.0234
+            ,-0.2109   ,-0.1218   ,-0.1218   ,-0.0703   ,-0.1218   ,-0.0703   ,-0.0703   ,-0.0406   ,-0.1218   ,-0.0703   , 0.9297   ,-0.0406   ,-0.0703   ,-0.0406   ,-0.0406   ,-0.0234
+            ,-0.1218   ,-0.0703   ,-0.0703   ,-0.0406   ,-0.0703   ,-0.0406   ,-0.0406   ,-0.0234   ,-0.0703   ,-0.0406   ,-0.0406   , 0.9766   ,-0.0406   ,-0.0234   ,-0.0234   ,-0.0135
+            ,-0.2109   ,-0.1218   ,-0.1218   ,-0.0703   ,-0.1218   ,-0.0703   ,-0.0703   ,-0.0406   ,-0.1218   ,-0.0703   ,-0.0703   ,-0.0406   , 0.9297   ,-0.0406   ,-0.0406   ,-0.0234
+            ,-0.1218   ,-0.0703   ,-0.0703   ,-0.0406   ,-0.0703   ,-0.0406   ,-0.0406   ,-0.0234   ,-0.0703   ,-0.0406   ,-0.0406   ,-0.0234   ,-0.0406   , 0.9766   ,-0.0234   ,-0.0135
+            ,-0.1218   ,-0.0703   ,-0.0703   ,-0.0406   ,-0.0703   ,-0.0406   ,-0.0406   ,-0.0234   ,-0.0703   ,-0.0406   ,-0.0406   ,-0.0234   ,-0.0406   ,-0.0234   , 0.9766   ,-0.0135
+            ,-0.0703   ,-0.0406   ,-0.0406   ,-0.0234   ,-0.0406   ,-0.0234   ,-0.0234   ,-0.0135   ,-0.0406   ,-0.0234   ,-0.0234   ,-0.0135   ,-0.0234   ,-0.0135   ,-0.0135   , 0.9922]
+
+        u1 = ql.Unitary("mscthesisaritra",matrix)
+        u1.decompose()
+        k.display()
+        k.hadamard(0)
+        k.hadamard(1)
+        k.hadamard(2)
+        k.gate(u1, [0, 1, 2, 3])
+        k.display()
+
+        p.add_kernel(k)
+        p.compile()
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+
+        self.assertAlmostEqual(0.125*helper_prob((matrix[0]  + matrix[1] + matrix[2] + matrix[3] + matrix[4] + matrix[5] + matrix[6] + matrix[7])), helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[8]  + matrix[9] + matrix[10]+ matrix[11]+ matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[1], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[16] + matrix[17]+ matrix[18]+ matrix[19]+ matrix[20]+ matrix[21]+ matrix[22]+ matrix[23])), helper_regex(c0)[2], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[24] + matrix[25]+ matrix[26]+ matrix[27]+ matrix[28]+ matrix[29]+ matrix[30]+ matrix[31])), helper_regex(c0)[3], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[32] + matrix[33]+ matrix[34]+ matrix[35]+ matrix[36]+ matrix[37]+ matrix[38]+ matrix[39])), helper_regex(c0)[4], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[40] + matrix[41]+ matrix[42]+ matrix[43]+ matrix[44]+ matrix[45]+ matrix[46]+ matrix[47])), helper_regex(c0)[5], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_regex(c0)[6], 5)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
 
 if __name__ == '__main__':
     unittest.main()
