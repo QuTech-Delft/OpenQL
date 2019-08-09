@@ -192,8 +192,7 @@ public:
 
         }
     }
-
-    void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matrix &v1, complex_matrix &v2, complex_matrix &c, complex_matrix &s)
+void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matrix &v1, complex_matrix &v2, complex_matrix &c, complex_matrix &s)
     {
             //Cosine sine decomposition
         // U = [q1, U01] = [u1    ][c  s][v1  ]
@@ -217,6 +216,12 @@ public:
         c = z*svd.singularValues().asDiagonal()*z;
         u1 = svd.matrixU()*z;
         v1 = svd.matrixV()*z; // Same v as in matlab: u*s*v.adjoint() = q1
+        
+        // COUT("q1: \n" << U.topLeftCorner(n/2, n/2));
+        // COUT("reconstructed q1: \n" << u1*c*v1.adjoint());
+        // COUT("u1: \n" << u1);
+        // COUT("c: \n" << c);
+        // COUT("v1: \n" << v1);
         complex_matrix q2 = U.bottomLeftCorner(p,p)*v1;      
 
         int k = 0;
@@ -240,20 +245,21 @@ public:
             Eigen::BDCSVD<complex_matrix> svd2(p-k, p-k);
             svd2.compute(s.block(k, k, p-k, p-k), Eigen::ComputeThinU | Eigen::ComputeThinV);
             s.block(k, k, p-k, p-k) = svd2.singularValues().asDiagonal();
-            c.block(0,k, p,p-k) = (c.block(0,k, p,p-k)*svd2.matrixV()).eval(); //aliasing?
+            c.block(0,k, p,p-k) = c.block(0,k, p,p-k)*svd2.matrixV();
             u2.block(0,k, p,p-k) = u2.block(0,k, p,p-k)*svd2.matrixU();
             v1.block(0,k, p,p-k) = v1.block(0,k, p,p-k)*svd2.matrixV();
             
             Eigen::HouseholderQR<complex_matrix> qr2(p-k, p-k);
-            COUT("q1: \n" << U.topLeftCorner(n/2, n/2));
-            COUT("reconstructed q1: \n" << u1*c*v1.adjoint());
-            COUT("u1: \n" << u1);
-            COUT("c: \n" << c);
-            COUT("v1: \n" << v1);
+
             qr2.compute(c.block(k,k, p-k,p-k));
             c.block(k,k,p-k,p-k) = qr2.matrixQR().triangularView<Eigen::Upper>();
             u1.block(0,k, p,p-k) = u1.block(0,k, p,p-k)*qr2.householderQ(); 
         }
+        // COUT("q1: \n" << U.topLeftCorner(n/2, n/2));
+        // COUT("reconstructed q1: \n" << u1*c*v1.adjoint());
+        // COUT("u1: \n" << u1);
+        // COUT("c: \n" << c);
+        // COUT("v1: \n" << v1);
         for(int j = 0; j < p; j++)
         {
             if(c(j,j).real() < 0)
@@ -266,11 +272,10 @@ public:
                 s(j,j) = -s(j,j);
                 u2.col(j) = -u2.col(j);
             }
-        }
-        // Decomposition is only as accurate as the input
-        if(!U.topLeftCorner(p,p).isApprox(u1*c*v1.adjoint(), 10e-4) || !U.bottomLeftCorner(p,p).isApprox(u2*s*v1.adjoint(), 10e-4))
+}
+        if(!U.topLeftCorner(p,p).isApprox(u1*c*v1.adjoint(), 10e-8) || !U.bottomLeftCorner(p,p).isApprox(u2*s*v1.adjoint(), 10e-8))
         {
-            if(U.topLeftCorner(p,p).isApprox(u1*c*v1.adjoint(), 10e-4))
+            if(U.topLeftCorner(p,p).isApprox(u1*c*v1.adjoint(), 10e-8))
             {
                 COUT("q1 is correct");
             }
@@ -279,8 +284,12 @@ public:
                 COUT("q1 is not correct! (is not usually an issue");
                 COUT("q1: \n" << U.topLeftCorner(p,p));
                 COUT("reconstructed q1: \n" << u1*c*v1.adjoint());
+                // COUT("u1: \n" << u1);
+                // COUT("c: \n" << c);
+                // COUT("v1: \n" << v1);
+
             }
-            if(U.bottomLeftCorner(p,p).isApprox(u2*s*v1.adjoint(), 10e-4))
+            if(U.bottomLeftCorner(p,p).isApprox(u2*s*v1.adjoint(), 10e-8))
             {
                 COUT("q2 is correct");
             }
@@ -400,6 +409,8 @@ public:
 
 
     // If U1 is identity -> use a different one?
+
+    // If U1 is identity -> use a different one?
     void demultiplexing(complex_matrix U1, complex_matrix U2, int numberofcontrolbits)
     {
         // [U1 0 ]  = [V 0][D 0 ][W 0]
@@ -424,21 +435,31 @@ public:
         }
         else
         {
-            std::cout << "U1*U2.adjoint(): " << U1*U2.adjoint() << std::endl;
-            std::cout << "U1: " << U1 << std::endl;
-            std::cout << "U2: " << U2 << std::endl;
+            // std::cout << "U1*U2.adjoint(): " << U1*U2.adjoint() << std::endl;
+            // std::cout << "U1: " << U1 << std::endl;
+            // std::cout << "U2: " << U2 << std::endl;
 
             Eigen::ComplexEigenSolver<Eigen::MatrixXcd> eigslv(U1*U2.adjoint(), true); 
             complex_matrix d = eigslv.eigenvalues().asDiagonal();
-            std::cout << "d: " << d << std::endl;
+            // std::cout << "d: " << d << std::endl;
             complex_matrix V = eigslv.eigenvectors();
-            std::cout << "V: " << V << std::endl;
+            // std::cout << "V: " << V << std::endl;
+            // std::cout << "V*V': " << V*V.adjoint() << std::endl;
             if(!(U1*U2.adjoint()*V).isApprox(V*d), 10e-7)
             {
-                std::cout << "Not the SAME" << std::endl;
-                std::cout << U1*U2.adjoint()*V <<std::endl;
-                std::cout << V*d <<std::endl;
+                std::cout << "Eigenmatrix decomposition incorrect: " << std::endl;
+                std::cout << "U1*U2.adjoint()*V:\n" << U1*U2.adjoint()*V <<std::endl;
+                std::cout << "V*d:\n" << V*d <<std::endl;
             }
+            if(!(V*V.adjoint()).isApprox(Eigen::MatrixXd::Identity(V.rows(), V.rows()), 10e-7))
+            {
+
+                Eigen::BDCSVD<complex_matrix> svd3(V.block(0,0,V.rows(),2), Eigen::ComputeFullU);
+                V.block(0,0,V.rows(),2) = svd3.matrixU();
+            }
+
+            // std::cout << "V: " << V << std::endl;
+            // std::cout << "V*V': " << V*V.adjoint() << std::endl;
             // // check for double eigenvalues..
             // for (int i = 1; i < d.rows(); i++)
             // {
@@ -450,9 +471,9 @@ public:
             // }
             // std::cout << "V: " << V << std::endl;
             complex_matrix D = d.sqrt(); // Do this here to not get aliasing issues
-            std::cout << "D: " << D << std::endl;
+            // std::cout << "D: " << D << std::endl;
             complex_matrix W = D*V.adjoint()*U2;
-            std::cout << "W: " << W << std::endl;
+            // std::cout << "W: " << W << std::endl;
             if(!U1.isApprox(V*D*W, 10e-7) || !U2.isApprox(V*D.adjoint()*W, 10e-7))
             {
                 // DOUT("Demultiplexing check U1: \n" << V*D*W);
@@ -481,7 +502,7 @@ public:
             // std::cout << "Demultiplexing check U1: " << V*D*W << std::endl;
             // std::cout << "Demultiplexing check U2: " << V*D.adjoint()*W << std::endl;
         }
-    }
+}
 
     // returns M^k = (-1)^(b_(i-1)*g_(i-1)), where * is bitwise inner product, g = binary gray code, b = binary code.
     Eigen::MatrixXd genMk(int n)
