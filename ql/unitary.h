@@ -143,18 +143,13 @@ public:
             // if q2 is zero, the whole thing is a demultiplexing problem instead of full CSD
             if(matrix.bottomLeftCorner(n,n).isZero(10e-14) && matrix.topRightCorner(n,n).isZero(10e-14))
             {
-                COUT("[unitary.h] Optimization: q2 is zero, only demultiplexing will be performed.");
+                DOUT("[unitary.h] Optimization: q2 is zero, only demultiplexing will be performed.");
                 instructionlist.push_back(20.0);
                 demultiplexing(matrix.topLeftCorner(n, n), matrix.bottomRightCorner(n,n), numberofbits-1);
-                // The number of gates that would be necessary minus the number that is actually necessary to implement this unitary. (two unitaries one size smaller and one uniformly controlled rotation)
-                // int gatessaved = 3*std::pow(2, numberofbits-1) *(std::pow(2,numberofbits)-1) - ( 2*3*std::pow(2, numberofbits-2) *(std::pow(2,numberofbits-1)-1)+std::pow(2,numberofbits-2)*(std::pow(2,numberofbits)-2));
-                // for(int i = 0; i < gatessaved; i++)
-                // {
-                //     instructionlist.push_back(0);
-                // }
             }
-            // Spot check to see if it the kronecker product of a bigger matrix and the identity matrix.
+            // Check to see if it the kronecker product of a bigger matrix and the identity matrix.
             // By checking if the first row is equal to the second row one over, and if thelast two rows are equal 
+            // Which means the last qubit is not affected by this gate
             else if (matrix(Eigen::seqN(0, n, 2), Eigen::seqN(1, n, 2)).isZero()  && matrix(Eigen::seqN(1, n, 2), Eigen::seqN(0, n, 2)).isZero()  && matrix.block(0,0,1,2*n-1) == matrix.block(1,1,1,2*n-1) &&  matrix.block(2*n-2,0,1,2*n-1) ==  matrix.block(2*n-1,1,1,2*n-1))
             {
                 COUT("Optimization: last qubit is not affected, skip one step in the recursion.");
@@ -164,14 +159,6 @@ public:
                 DOUT("new matrix: "<< matrix(Eigen::seqN(0, n, 2), Eigen::seqN(0, n, 2)));
                 decomp_function(matrix(Eigen::seqN(0, n, 2), Eigen::seqN(0, n, 2)), numberofbits-1);
 
-                // The number of gates that would be necessary minus the number that is actually necessary to implement this unitary. 
-                // One unitary one size smaller instead of two and a controlled rotation. (numberofcontrolbits = one less than the total number of qubits that this gate applies to)
-                // int gatessaved = 3*std::pow(2, numberofbits-1) *(std::pow(2,numberofbits)-1) - std::pow(2,numberofbits-2)*(std::pow(2,numberofbits)-2);
-                // for(int i = 0; i < gatessaved; i++)
-                // {
-                //     instructionlist.push_back(0);
-                // }
-                
             }
             else
             {
@@ -194,7 +181,7 @@ public:
     }
 void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matrix &v1, complex_matrix &v2, complex_matrix &c, complex_matrix &s)
     {
-            //Cosine sine decomposition
+        //Cosine sine decomposition
         // U = [q1, U01] = [u1    ][c  s][v1  ]
         //     [q2, U11] = [    u2][-s c][   v2]
         int n = U.rows();
@@ -216,12 +203,7 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
         c = z*svd.singularValues().asDiagonal()*z;
         u1 = svd.matrixU()*z;
         v1 = svd.matrixV()*z; // Same v as in matlab: u*s*v.adjoint() = q1
-        
-        // COUT("q1: \n" << U.topLeftCorner(n/2, n/2));
-        // COUT("reconstructed q1: \n" << u1*c*v1.adjoint());
-        // COUT("u1: \n" << u1);
-        // COUT("c: \n" << c);
-        // COUT("v1: \n" << v1);
+
         complex_matrix q2 = U.bottomLeftCorner(p,p)*v1;      
 
         int k = 0;
@@ -240,7 +222,7 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
         s = u2.adjoint()*q2;
         if(k < p-1)
         {
-            COUT("k is smaller than size of q1 = "<< p << ", adjustments will be made, k = " << k);
+            DOUT("k is smaller than size of q1 = "<< p << ", adjustments will be made, k = " << k);
             k = k+1;
             Eigen::BDCSVD<complex_matrix> svd2(p-k, p-k);
             svd2.compute(s.block(k, k, p-k, p-k), Eigen::ComputeThinU | Eigen::ComputeThinV);
@@ -255,11 +237,7 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
             c.block(k,k,p-k,p-k) = qr2.matrixQR().triangularView<Eigen::Upper>();
             u1.block(0,k, p,p-k) = u1.block(0,k, p,p-k)*qr2.householderQ(); 
         }
-        // COUT("q1: \n" << U.topLeftCorner(n/2, n/2));
-        // COUT("reconstructed q1: \n" << u1*c*v1.adjoint());
-        // COUT("u1: \n" << u1);
-        // COUT("c: \n" << c);
-        // COUT("v1: \n" << v1);
+
         for(int j = 0; j < p; j++)
         {
             if(c(j,j).real() < 0)
@@ -277,34 +255,27 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
         {
             if(U.topLeftCorner(p,p).isApprox(u1*c*v1.adjoint(), 10e-8))
             {
-                COUT("q1 is correct");
+                DOUT("q1 is correct");
             }
             else
             {
-                COUT("q1 is not correct! (is not usually an issue");
-                COUT("q1: \n" << U.topLeftCorner(p,p));
-                COUT("reconstructed q1: \n" << u1*c*v1.adjoint());
-                // COUT("u1: \n" << u1);
-                // COUT("c: \n" << c);
-                // COUT("v1: \n" << v1);
+                DOUT("q1 is not correct! (is not usually an issue");
+                DOUT("q1: \n" << U.topLeftCorner(p,p));
+                DOUT("reconstructed q1: \n" << u1*c*v1.adjoint());
 
             }
             if(U.bottomLeftCorner(p,p).isApprox(u2*s*v1.adjoint(), 10e-8))
             {
-                COUT("q2 is correct");
+                DOUT("q2 is correct");
             }
             else
             {
-                COUT("q2 is not correct! (is not usually an issue)");
-                COUT("q2: " << U.bottomLeftCorner(p,p));
-                COUT("reconstructed q2: " << u2*s*v1.adjoint());
+                DOUT("q2 is not correct! (is not usually an issue)");
+                DOUT("q2: " << U.bottomLeftCorner(p,p));
+                DOUT("reconstructed q2: " << u2*s*v1.adjoint());
             }
-            // EOUT("thinCSD not correct!");
-            // throw ql::exception("thinCSD of unitary '"+ name+"' not correct. Cannot be decomposed! Failed at matrix: \n"+to_string(q1) + " and matrix \n" + to_string(q2), false);
         }
-        // std::cout << "reconstructed q1: " << u1*c*v1.adjoint() << std::endl;
-        // std::cout << "reconstructed q2: " << u2*s*v1.adjoint() << std::endl;
-
+ 
         v2 = complex_matrix(p,p);
         v1.adjointInPlace(); // Use this instead of = v1.adjoint (to avoid aliasing issues)
         s = -s;
@@ -323,7 +294,6 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
         }
         // U = [q1, U01] = [u1    ][c  s][v1  ]
         //     [q2, U11] = [    u2][-s c][   v2]
-
     
         complex_matrix tmp(n,m);
         tmp.topLeftCorner(p,p) = u1*c*v1;
@@ -339,40 +309,8 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
             throw ql::exception("CSD of unitary '"+ name+"' is wrong! Failed at matrix: \n"+to_string(tmp) + "\nwhich should be: \n" + to_string(U), false);
 
         }
-        // std::cout << "CSD: reconstructed U" <<std::endl;
-        // std::cout << tmp << std::endl;
     }
 
-    // std::vector<double> zyz_decomp(std::vector<std::complex<double>> matrix)
-    // {
-    //      //TODO: make this efficient again
-    //     ql::complex_t det = matrix[0]*matrix[3]-matrix[2]*matrix[1];
-
-    //     double delta = atan2(det.imag(), det.real())/matrix.size();
-    //     std::complex<double> com_two(0,1);
-    //     std::complex<double> A = exp(-com_two*delta)*matrix[0];
-    //     std::complex<double> B = exp(-com_two*delta)*matrix[1];
-    //     double sw = sqrt(pow((double) B.imag(),2) + pow((double) B.real(),2) + pow((double) A.imag(),2));
-    //     double wx = 0;
-    //     double wy = 0;
-    //     double wz = 0;
-    //     if(sw > 0)
-    //     {
-    //     wx = B.imag()/sw;
-    //     wy = B.real()/sw;
-    //     wz = A.imag()/sw;
-    //     }
-
-    //     double t1 = atan2(A.imag(),A.real());
-    //     double t2 = atan2(B.imag(), B.real());
-    //     alpha = t1+t2;
-    //     gamma = t1-t2;
-    //     beta = 2*atan2(sw*sqrt(pow((double) wx,2)+pow((double) wy,2)),sqrt(pow((double) A.real(),2)+pow((wz*sw),2)));
-    //     instructionlist.push_back(-gamma);
-    //     instructionlist.push_back(-beta);
-    //     instructionlist.push_back(-alpha);
-    //     return instructionlist;
-    // }
 
     void zyz_decomp(complex_matrix matrix)
     {
@@ -387,7 +325,6 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
         double wx = 0;
         double wy = 0;
         double wz = 0;
-        // std::cout << "sw: " << sw << std::endl;
 
         if(sw > 0)
         {
@@ -407,16 +344,10 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
         instructionlist.push_back(-alpha);
     }
 
-
-    // If U1 is identity -> use a different one?
-
-    // If U1 is identity -> use a different one?
     void demultiplexing(complex_matrix U1, complex_matrix U2, int numberofcontrolbits)
     {
         // [U1 0 ]  = [V 0][D 0 ][W 0]
         // [0  U2]    [0 V][0 D*][0 W] 
-        // std::cout << "Demultiplexing\nU1: " << U1 << std::endl;
-        // std::cout << "U2: " << U2 << std::endl;
         if(U1 == U2)
         {
             if((int) U1.rows() == 2)
@@ -435,49 +366,20 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
         }
         else
         {
-            // std::cout << "U1*U2.adjoint(): " << U1*U2.adjoint() << std::endl;
-            // std::cout << "U1: " << U1 << std::endl;
-            // std::cout << "U2: " << U2 << std::endl;
-
             Eigen::ComplexEigenSolver<Eigen::MatrixXcd> eigslv(U1*U2.adjoint(), true); 
             complex_matrix d = eigslv.eigenvalues().asDiagonal();
-            // std::cout << "d: " << d << std::endl;
             complex_matrix V = eigslv.eigenvectors();
-            // std::cout << "V: " << V << std::endl;
-            // std::cout << "V*V': " << V*V.adjoint() << std::endl;
-            if(!(U1*U2.adjoint()*V).isApprox(V*d), 10e-7)
-            {
-                std::cout << "Eigenmatrix decomposition incorrect: " << std::endl;
-                std::cout << "U1*U2.adjoint()*V:\n" << U1*U2.adjoint()*V <<std::endl;
-                std::cout << "V*d:\n" << V*d <<std::endl;
-            }
             if(!(V*V.adjoint()).isApprox(Eigen::MatrixXd::Identity(V.rows(), V.rows()), 10e-7))
             {
-
+                COUT("Eigenvalue decomposition incorrect: V is not unitary");
                 Eigen::BDCSVD<complex_matrix> svd3(V.block(0,0,V.rows(),2), Eigen::ComputeFullU);
                 V.block(0,0,V.rows(),2) = svd3.matrixU();
             }
 
-            // std::cout << "V: " << V << std::endl;
-            // std::cout << "V*V': " << V*V.adjoint() << std::endl;
-            // // check for double eigenvalues..
-            // for (int i = 1; i < d.rows(); i++)
-            // {
-            //     if(d(i,i) == d(d.rows()-i,d.rows()-i))
-            //     {
-            //         V.col(i) = V.col(i-1);
-            //         std::cout << "V.col(i): " << V.col(i) << " \nV.col(i-1): " << V.col(i-1) << std::endl;
-            //     }
-            // }
-            // std::cout << "V: " << V << std::endl;
             complex_matrix D = d.sqrt(); // Do this here to not get aliasing issues
-            // std::cout << "D: " << D << std::endl;
             complex_matrix W = D*V.adjoint()*U2;
-            // std::cout << "W: " << W << std::endl;
             if(!U1.isApprox(V*D*W, 10e-7) || !U2.isApprox(V*D.adjoint()*W, 10e-7))
             {
-                // DOUT("Demultiplexing check U1: \n" << V*D*W);
-                // DOUT("Demultiplexing check U2: " << V*D.adjoint()*W);
                 EOUT("Demultiplexing not correct!");
                 throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at matrix U1: \n"+to_string(U1)+ "and matrix U2: \n" +to_string(U2) + "\nwhile they are: \n" + to_string(V*D*W) + "\nand \n" + to_string(V*D.adjoint()*W), false);
             }
@@ -498,17 +400,12 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
             {
                 decomp_function(V, std::log2(V.rows()));
             }
-
-            // std::cout << "Demultiplexing check U1: " << V*D*W << std::endl;
-            // std::cout << "Demultiplexing check U2: " << V*D.adjoint()*W << std::endl;
         }
 }
 
     // returns M^k = (-1)^(b_(i-1)*g_(i-1)), where * is bitwise inner product, g = binary gray code, b = binary code.
     Eigen::MatrixXd genMk(int n)
     {
-        //int b = n;
-        //int g = n^(n>>1);
         Eigen::MatrixXd Mk(n,n);
 
         for(int i = 0; i < n; i++)
@@ -545,8 +442,6 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
         Eigen::VectorXd tr = dec.solve(temp);
         if(!temp.isApprox(genMk(halfthesizeofthematrix)*tr, 10e-7))
         {
-                // DOUT("multicontrolledY check b: " << temp);
-                // DOUT("multicontrolledY check A*x: " << genMk(halfthesizeofthematrix)*tr);
                 EOUT("Multicontrolled Y not correct!");
                 throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix ss: \n"  + to_string(ss), false);
         }
@@ -563,8 +458,6 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
         Eigen::VectorXd tr =dec.solve(temp);
         if(!temp.isApprox(genMk(halfthesizeofthematrix)*tr, 10e-7))
         {
-                // DOUT("multicontrolledZ check b: " << temp);
-                // DOUT("multicontrolledZ check A*x: " << genMk(halfthesizeofthematrix)*tr);
                 EOUT("Multicontrolled Z not correct!");
                 throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix D: \n"+ to_string(D), false);
         }
