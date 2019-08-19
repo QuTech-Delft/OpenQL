@@ -49,12 +49,12 @@ class quantum_kernel
 public:
 
     quantum_kernel(std::string name) : 
-        name(name), iterations(1), type(kernel_type_t::STATIC), swaps_added(0), moves_added(0), timetaken(0.0) {}
+        name(name), iterations(1), type(kernel_type_t::STATIC) {}
 
     quantum_kernel(std::string name, ql::quantum_platform& platform,
                    size_t qcount, size_t ccount=0) :
         name(name), iterations(1), qubit_count(qcount),
-        creg_count(ccount), type(kernel_type_t::STATIC), swaps_added(0), moves_added(0), timetaken(0.0)
+        creg_count(ccount), type(kernel_type_t::STATIC)
     {
         gate_definition = platform.instruction_map;     // FIXME: confusing name change
         cycle_time = platform.cycle_time;
@@ -1068,126 +1068,6 @@ static    bool BR_gate(circuit& circ, instruction_map_t& gate_defs, std::string 
         return added;
     }
 
-    size_t  get_classical_operations_count()
-    {
-        size_t classical_operations = 0;
-        for (auto & gp: c)
-        {
-            switch(gp->type())
-            {
-            case __classical_gate__:
-                classical_operations++;
-            case __wait_gate__:
-                break;
-            default:    // quantum gate
-                break;
-            }
-        }
-        return classical_operations;
-    }
-
-    size_t  get_non_single_qubit_quantum_gates_count()
-    {
-        size_t quantum_gates = 0;
-        for (auto & gp: c)
-        {
-            switch(gp->type())
-            {
-            case __classical_gate__:
-                break;
-            case __wait_gate__:
-                break;
-            default:    // quantum gate
-                if( gp->operands.size() > 1 )
-                {
-                    quantum_gates++;
-                }
-                break;
-            }
-        }
-        return quantum_gates;
-    }
-
-    void  get_qubit_usecount(std::vector<size_t>& usecount)
-    {
-        for (auto & gp: c)
-        {
-            switch(gp->type())
-            {
-            case __classical_gate__:
-            case __wait_gate__:
-                break;
-            default:    // quantum gate
-                for (auto v: gp->operands)
-                {
-                    usecount[v]++;
-                }
-                break;
-            }
-        }
-        return;
-    }
-
-    void  get_qubit_usedcyclecount(std::vector<size_t>& usedcyclecount)
-    {
-        usedcyclecount.resize(qubit_count,0);
-        for (auto & gp: c)
-        {
-            switch(gp->type())
-            {
-            case __classical_gate__:
-            case __wait_gate__:
-                break;
-            default:    // quantum gate
-                for (auto v: gp->operands)
-                {
-                    usedcyclecount[v] += (gp->duration+cycle_time-1)/cycle_time;
-                }
-                break;
-            }
-        }
-        return;
-    }
-
-    size_t  get_quantum_gates_count()
-    {
-        size_t quantum_gates = 0;
-        for (auto & gp: c)
-        {
-            switch(gp->type())
-            {
-            case __classical_gate__:
-                break;
-            case __wait_gate__:
-                break;
-            default:    // quantum gate
-                quantum_gates++;
-                break;
-            }
-        }
-        return quantum_gates;
-    }
-
-    size_t  get_depth()
-    {
-        // for (auto & gp: c)
-        // {
-        //     DOUT("Cycle=" << gp->cycle << " Qasm=" << gp->qasm() << "\n");
-        // }
-        size_t  depth_result;
-        if (c.back()->cycle == MAX_CYCLE)
-        {
-            depth_result = 0;
-            DOUT("In k.get_depth() result is 0 because c.back()->cycle == MAX_CYCLE");
-        }
-        else
-        {
-            depth_result = c.back()->cycle + (c.back()->duration+cycle_time-1)/cycle_time - c.front()->cycle;
-        }
-        DOUT("Computed k.get_depth(): result is " << depth_result);
-        return depth_result;
-    }
-
     // FIXME: is this really QASM, or CC-light eQASM?
     // FIXME: create a separate QASM backend?
     std::string get_prologue()
@@ -1241,29 +1121,6 @@ static    bool BR_gate(circuit& circ, instruction_map_t& gate_defs, std::string 
             ss << "    blt r31, r29, " << tokens[0] << "\n";
         }
 
-        std::vector<size_t> usecount;
-        usecount.resize(qubit_count, 0);
-        get_qubit_usecount(usecount);
-        size_t qubits_used = 0; for (auto v: usecount) { if (v != 0) { qubits_used++; } } 
-
-        std::vector<size_t> usedcyclecount;
-        usedcyclecount.resize(qubit_count, 0);
-        get_qubit_usedcyclecount(usedcyclecount);
-
-        size_t  depth = get_depth();
-        ss << "# ----- depth: " << depth << "\n";
-        ss << "# ----- quantum gates: " << get_quantum_gates_count() << "\n";
-        ss << "# ----- non single qubit gates: " << get_non_single_qubit_quantum_gates_count() << "\n";
-        ss << "# ----- swaps added: " << swaps_added << "\n";
-        ss << "# ----- of which moves added: " << moves_added << "\n";
-        ss << "# ----- time taken: " << timetaken << "\n";
-        ss << "# ----- classical operations: " << get_classical_operations_count() << "\n";
-        ss << "# ----- qubits used: " << qubits_used << "\n";
-        ss << "# ----- qubit cycles use:" << ql::utils::to_string(usedcyclecount) << "\n";
-        ss << "# ----- virt2real map before mapper:" << ql::utils::to_string(v2r_in) << "\n";
-        ss << "# ----- virt2real map after mapper:" << ql::utils::to_string(v2r_out) << "\n";
-        ss << "# ----- realqubit states before mapper:" << ql::utils::to_string(rs_in) << "\n";
-        ss << "# ----- realqubit states after mapper:" << ql::utils::to_string(rs_out) << "\n";
         return ss.str();
     }
 
@@ -1405,18 +1262,15 @@ static    bool BR_gate(circuit& circ, instruction_map_t& gate_defs, std::string 
         DOUT("decompose_toffoli() [Done] ");
     }
 
-    void schedule(quantum_platform platform, std::string& dot)
+    void schedule(quantum_platform platform, std::string& sched_qasm,
+        std::string & dot, std::string& sched_dot)
     {
         std::string scheduler = ql::options::get("scheduler");
         std::string scheduler_uniform = ql::options::get("scheduler_uniform");
-
-        // compute timetaken, start interval timer here
-        using namespace std::chrono;
-        high_resolution_clock::time_point t1 = high_resolution_clock::now();
+        std::string kqasm("");
 
 #ifndef __disable_lemon__
         IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
-        DOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
 
         Scheduler sched;
         sched.init(c, platform, qubit_count, creg_count);
@@ -1431,30 +1285,33 @@ static    bool BR_gate(circuit& circ, instruction_map_t& gate_defs, std::string 
         {
             if ("yes" == scheduler_uniform)
             {
-	            FATAL("Uniform scheduling not supported with ASAP; please turn on ALAP to perform uniform scheduling");
+                EOUT("Uniform scheduling not supported with ASAP; please turn on ALAP to perform uniform scheduling");     // FIXME: FATAL?
 	        }
 	        else if ("no" == scheduler_uniform)
-	        {
-                bundles = sched.schedule_asap(dot);
-	        }
-	        else
             {
-                FATAL("Unknown scheduler_uniform option value");
+                ql::ir::bundles_t bundles = sched.schedule_asap(sched_dot);
+                kqasm = ql::ir::qasm(bundles);
+            }
+            else
+            {
+                EOUT("Unknown scheduler_uniform option value");
             }
         }
         else if("ALAP" == scheduler)
         {
             if ("yes" == scheduler_uniform)
             {
-                bundles = sched.schedule_alap_uniform();
-	        }
-	        else if ("no" == scheduler_uniform)
-	        {
-                bundles = sched.schedule_alap(dot);
-	        }
-	        else
+                ql::ir::bundles_t bundles = sched.schedule_alap_uniform();
+                kqasm = ql::ir::qasm(bundles);
+            }
+            else if ("no" == scheduler_uniform)
             {
-                FATAL("Unknown scheduler_uniform option value");
+                ql::ir::bundles_t bundles = sched.schedule_alap(sched_dot);
+                kqasm = ql::ir::qasm(bundles);
+            }
+            else
+            {
+                EOUT("Unknown scheduler_uniform option value");
             }
         }
         else
@@ -1464,18 +1321,12 @@ static    bool BR_gate(circuit& circ, instruction_map_t& gate_defs, std::string 
         }
         DOUT( scheduler << " scheduling the quantum kernel '" << name << "' DONE");
 
-        // computing timetaken, stop interval timer
-        high_resolution_clock::time_point t2 = high_resolution_clock::now();
-        duration<double> time_span = t2 - t1;
-        double tt = time_span.count();
-        timetaken += tt;
-        DOUT("kernel.timetaken adding: " << tt << " giving new total: " << timetaken);
-
         // schedulers assigned gatep->cycle; sort circuit on this
         typedef ql::gate *      gate_p;
         std::sort(c.begin(), c.end(),
                 [&](gate_p g1, gate_p g2) { return g1->cycle < g2->cycle; }
         );
+        sched_qasm = get_prologue() + kqasm + get_epilogue();
 #endif // __disable_lemon__
     }
 
@@ -2166,14 +2017,6 @@ public:
     kernel_type_t type;
     operation     br_condition;
     ql::instruction_map_t   gate_definition;     // FIXME: consider using instruction_map_t
-
-    std::vector<size_t> v2r_in;        // v2r[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
-    std::vector<int>    rs_in;         // rs[real qubit index] -> {nostate|wasinited|hasstate}
-    std::vector<size_t> v2r_out;
-    std::vector<int>    rs_out;
-    size_t        swaps_added;
-    size_t        moves_added;
-    double        timetaken;
 };
 
 

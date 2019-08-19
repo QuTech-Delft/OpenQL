@@ -31,10 +31,6 @@ public:
         ct = kernel.cycle_time;
         DOUT("Clifford " << fromwhere << " on kernel " << kernel.name << " ...");
 
-        // compute iptimetaken, start interval timer here
-        using namespace std::chrono;
-        high_resolution_clock::time_point t1 = high_resolution_clock::now();
-
         // copy circuit kernel.c to take input from
         // output will fill kernel.c again
         ql::circuit input_circuit = kernel.c;
@@ -96,14 +92,8 @@ public:
             DOUT("... gate: " << gp->qasm() << " DONE");
         }
         sync_all(kernel);
-        // kernel.c.front()->cycle = MAX_CYCLE;    // invalidate cycle attributes
-        // kernel.c.back()->cycle = MAX_CYCLE;     // invalidate cycle attributes
-
-        high_resolution_clock::time_point t2 = high_resolution_clock::now();
-        duration<double> time_span = t2 - t1;
-        double timetaken = time_span.count();
-        kernel.timetaken += timetaken;
-        DOUT("kernel.timetaken adding: " << timetaken << " giving new total: " << kernel.timetaken);
+        kernel.c.front()->cycle = MAX_CYCLE;    // invalidate cycle attributes
+        kernel.c.back()->cycle = MAX_CYCLE;     // invalidate cycle attributes
 
         DOUT("Clifford " << fromwhere << " on kernel " << kernel.name << " saved " << total_saved << " cycles [DONE]");
     }

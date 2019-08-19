@@ -943,6 +943,7 @@ int main(int argc, char ** argv)
     ql::utils::logger::set_log_level("LOG_DEBUG");
     // ql::utils::logger::set_log_level("LOG_NOTHING");
     ql::options::set("write_qasm_files", "yes"); 
+    ql::options::set("write_report_files", "yes"); 
     ql::options::set("print_dot_graphs", "yes"); 
 
 //parameter2    ql::options::set("clifford_premapper", "yes"); 
@@ -964,7 +965,7 @@ int main(int argc, char ** argv)
 
 //  NN:
 //  test_rc("rc", "no", "no", "yes", "no");
-//  test_someNN("someNN", "no", "no", "yes", "yes");
+    test_someNN("someNN", "no", "no", "yes", "yes");
 
 //  nonNN but solvable by Initial Placement:
     test_oneD2("oneD2", "yes", "yes", "yes", "yes");
@@ -972,7 +973,7 @@ int main(int argc, char ** argv)
     test_string("string", "yes", "yes", "yes", "yes");
 
 //  nonNN, still not too large:
-    test_allD("allD", "yes", "no", "yes", "yes");
+    test_allD("allD", "yes", "yes", "yes", "yes");
     test_allDopt("allDopt", "yes", "yes", "yes", "yes");
 
 //  nonNN, realistic:

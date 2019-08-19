@@ -2943,7 +2943,7 @@ void DoneGate(ql::gate* gp)
 class Mapper
 {
 private:
-                                    // Initialized by Mapper.Init
+                                    // Initialized by Mapper::Init
                                     // OpenQL wide configuration, all constant after initialization
     ql::quantum_platform platform;  // current platform: topology and gate definitions
     size_t          nq;             // number of qubits in the platform, number of real qubits
@@ -2956,9 +2956,13 @@ private:
     std::mt19937    gen;            // Standard mersenne_twister_engine, not yet seeded
 
 public:
-    size_t          nswapsadded;    // result of mapping to pass back to context
-    size_t          nmovesadded;    // result of mapping to pass back to context
-    double          timetaken;      // by mapper
+                                    // Passed back by Mapper::Map to caller for reporting
+    size_t          nswapsadded;    // number of swaps added (including moves)
+    size_t          nmovesadded;    // number of moves added
+    std::vector<size_t> v2r_in;     // v2r[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
+    std::vector<int>    rs_in;      // rs[real qubit index] -> {nostate|wasinited|hasstate}
+    std::vector<size_t> v2r_out;    // v2r[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
+    std::vector<int>    rs_out;     // rs[real qubit index] -> {nostate|wasinited|hasstate}
 
 
 // Mapper constructor is default synthesized
@@ -3502,15 +3506,12 @@ void Map(ql::quantum_kernel& kernel)
 
     // unify all incoming v2rs into v2r to compute kernel input mapping;
     // but until inter-kernel mapping is implemented, take program initial mapping for it
-    v2r.Init(nq);
+    v2r.Init(nq);               // v2r now contains program initial mapping
     if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
         v2r.Print("After initialization");
-    v2r.Export(kernel.v2r_in);
-    v2r.Export(kernel.rs_in);
 
-    // compute timetaken, start interval timer here
-    using namespace std::chrono;
-    high_resolution_clock::time_point t1 = high_resolution_clock::now();
+    v2r.Export(v2r_in);  // from v2r to caller for reporting
+    v2r.Export(rs_in);   // from v2r to caller for reporting
 
     std::string initialplaceopt = ql::options::get("initialplace");
 #ifdef INITIALPLACE
@@ -3540,22 +3541,11 @@ void Map(ql::quantum_kernel& kernel)
 
     MakePrimitives(kernel.c);       // decompose to primitives as specified in the config file
 
-    // computing timetaken, stop interval timer
-    high_resolution_clock::time_point t2 = high_resolution_clock::now();
-    duration<double> time_span = t2 - t1;
-    timetaken = time_span.count();
-
     kernel.qubit_count = nq;        // bluntly copy nq (==#real qubits), so that all kernels get the same qubit_count
-    v2r.Export(kernel.v2r_out);
-    v2r.Export(kernel.rs_out);
-    kernel.swaps_added = nswapsadded;
-    kernel.moves_added = nmovesadded;
-    kernel.timetaken += timetaken;
-    DOUT("kernel.timetaken adding: " << timetaken << " giving new total: " << kernel.timetaken);
+    v2r.Export(v2r_out);     // from v2r to caller for reporting
+    v2r.Export(rs_out);      // from v2r to caller for reporting
 
     DOUT("Mapping kernel [DONE]");
-
-    // here export v2r to context again to be used by successor kernels
 }   // end Map
 
 // initialize mapper for whole program
