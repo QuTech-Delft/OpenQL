@@ -831,6 +831,18 @@ public:
             throw ql::exception("Unitary '"+u.name+"' has been applied to the wrong number of qubits. Cannot be added to kernel! "  + std::to_string(qubits.size()) +" and not "+ std::to_string(u_size), false);
         
         }
+        for(uint i = 0; i< qubits.size()-1; i++)
+        {
+            for(uint j = i+1; j < qubits.size(); j++)
+            {
+                if(qubits[i] == qubits[j])
+                {
+                EOUT("Qubift numbers used more than once in Unitary: " << u.name << ". Double qubit is number " << qubits[j]);
+                throw ql::exception("Qubit numbers used more than once in Unitary: " + u.name + ". Double qubit is number " + std::to_string(qubits[j]), false);
+                }
+                        
+            }
+        }
         // applying unitary to gates
         COUT("Applying unitary '" << u.name << "' to " << ql::utils::to_string(qubits, "qubits: ") );
         if(u.is_decomposed)
@@ -838,6 +850,7 @@ public:
 
             COUT("Adding decomposed unitary to kernel ...");
             DOUT("The list is this many items long: " << u.instructionlist.size());
+            COUT("Instructionlist" << ql::utils::to_string(u.instructionlist));
             int end_index = recursiveRelationsForUnitaryDecomposition(u,qubits, u_size, 0);
             DOUT("Total number of gates added: " << end_index);
         }
@@ -851,7 +864,7 @@ public:
     //recursive gate count function
     //n is number of qubits
     //i is the start point for the instructionlist
-    int recursiveRelationsForUnitaryDecomposition(ql::unitary u, std::vector<size_t> qubits, int n, int i)
+    int recursiveRelationsForUnitaryDecomposition(ql::unitary &u, std::vector<size_t> qubits, int n, int i)
     {
         // DOUT("Adding a new unitary starting at index: "<< i << ", to " << n << ql::utils::to_string(qubits, " qubits: "));
         if (n > 1)
@@ -924,17 +937,17 @@ public:
     }
 
     //controlled qubit is the first in the list.
-    void multicontrolled_rz( std::vector<double> instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
+    void multicontrolled_rz( std::vector<double> &instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
     {
         // DOUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << ql::utils::to_string(qubits, "qubits: "));
         int idx;
         //The first one is always controlled from the last to the first qubit.
         c.push_back(new ql::rz(qubits.back(),-instruction_list[start_index]));
         c.push_back(new ql::cnot(qubits[0], qubits.back()));
-        for(int i = i+start_index; i < end_index; i++)
+        for(int i = 1; i < end_index - start_index; i++)
         {
             idx = uint64_log2(((i)^((i)>>1))^((i+1)^((i+1)>>1)));
-            c.push_back(new ql::rz(qubits.back(),-instruction_list[i]));                
+            c.push_back(new ql::rz(qubits.back(),-instruction_list[i+start_index]));                
             c.push_back(new ql::cnot(qubits[idx], qubits.back()));
         }
         // The last one is always controlled from the next qubit to the first qubit
@@ -943,26 +956,27 @@ public:
     }
 
     //controlled qubit is the first in the list.
-    void multicontrolled_ry( std::vector<double> instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
+    void multicontrolled_ry( std::vector<double> &instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
     {
         // DOUT("Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << ql::utils::to_string(qubits, "qubits: "));
         int idx;
+        
         //The first one is always controlled from the last to the first qubit.
         c.push_back(new ql::ry(qubits.back(),-instruction_list[start_index]));
         c.push_back(new ql::cnot(qubits[0], qubits.back()));
 
-        for(int i = i+start_index; i < end_index; i++)
+        for(int i = 1; i < end_index - start_index; i++)
         { 
             idx = uint64_log2 (((i)^((i)>>1))^((i+1)^((i+1)>>1)));
-            c.push_back(new ql::ry(qubits.back(),-instruction_list[i]));
+            COUT("idx: " << idx);
+            c.push_back(new ql::ry(qubits.back(),-instruction_list[i+start_index]));
             c.push_back(new ql::cnot(qubits[idx], qubits.back()));
         }
         // Last one is controlled from the next qubit to the first one. 
         c.push_back(new ql::ry(qubits.back(),-instruction_list[end_index]));
         c.push_back(new ql::cnot(qubits.end()[-2], qubits.back())); 
-
     }
-//source: https://stackoverflow.com/questions/994593/how-to-do-an-integer-log2-in-c user Todd Lehman
+    // source: https://stackoverflow.com/questions/994593/how-to-do-an-integer-log2-in-c user Todd Lehman
     int uint64_log2(uint64_t n)
     {
     #define S(k) if (n >= (UINT64_C(1) << k)) { i += k; n >>= k; }

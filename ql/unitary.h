@@ -48,17 +48,7 @@ public:
     {
         DOUT("constructing unitary: " << name 
                   << ", containing: " << array.size() << " elements");
-        // utils::print_vector(array,"[openql] unitary elements :"," , ");
     }
-
-    // This can work if pybind11 is included and used. 
-    // unitary(std::string name, complex_matrix(matrix)) : 
-    //         name(name), _matrix(matrix), is_decomposed(false)
-    // {
-    //     DOUT("constructing unitary: " << name 
-    //               << ", containing: " << matrix.size() << " elements");
-    //     // utils::print_vector(array,"[openql] unitary elements :"," , ");
-    // }
 
     double size()
     {
@@ -85,7 +75,6 @@ public:
 
         getMatrix();
         int matrix_size = _matrix.rows();
-         //      DOUT("constructing unitary: " << name << ", containing: " << matrix << " elements");
         
         // compute the number of qubits: length of array is collumns*rows, so log2(sqrt(array.size))
         int numberofbits = (int) log2(matrix_size);
@@ -102,8 +91,6 @@ public:
         }
 
         decomp_function(_matrix, numberofbits); //needed because the matrix is read in columnmajor
-        // utils::print_vector(instructionlist, "Instruction list: ", "; ");
-
         
         DOUT("Done decomposing");
         is_decomposed = true;
@@ -114,18 +101,6 @@ public:
     {
         std::ostringstream ss;
         ss << m << "\n";
-        // ss << vector_prefix << " [";
-        // Eigen::VectorXcd v = Eigen::Map<Eigen::VectorXcd>(m.data, m.size());
-        // size_t sz = v.size();
-        // if(sz > 0)
-        // {
-        //     size_t i;
-        //     for (i=0; i<sz*sz-1; ++i)
-        //         ss << v[i] << elem_sep;
-        //     ss << v[i];
-        // }
-
-        // ss << "]";
         return ss.str();
     }
 
@@ -301,7 +276,7 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
         tmp.topRightCorner(p,p) = u1*s*v2;
         tmp.bottomRightCorner(p,p) = u2*c*v2;
         // Just to see if it kinda matches
-        if(!tmp.isApprox(U, 10e-3))
+        if(!tmp.isApprox(U, 10e-2))
         {
             // COUT("CSD: reconstructed U");
             // COUT(tmp);
@@ -309,12 +284,25 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
             throw ql::exception("CSD of unitary '"+ name+"' is wrong! Failed at matrix: \n"+to_string(tmp) + "\nwhich should be: \n" + to_string(U), false);
 
         }
+
+        COUT("u1");
+        COUT(u1);
+        COUT("u2");
+        COUT(u2);
+        COUT("c");
+        COUT(c);
+        COUT("s");
+        COUT(s);
+        COUT("v1");
+        COUT(v1);
+        COUT("v2");
+        COUT(v2);
     }
 
 
     void zyz_decomp(complex_matrix matrix)
     {
-        ql::complex_t det = matrix(0,0)*matrix(1,1)-matrix(1,0)*matrix(0,1);
+        ql::complex_t det = matrix.determinant();// matrix(0,0)*matrix(1,1)-matrix(1,0)*matrix(0,1);
 
         double delta = atan2(det.imag(), det.real())/matrix.rows();
         std::complex<double> j(0,1); // 1j basically
@@ -369,20 +357,26 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
             Eigen::ComplexEigenSolver<Eigen::MatrixXcd> eigslv(U1*U2.adjoint(), true); 
             complex_matrix d = eigslv.eigenvalues().asDiagonal();
             complex_matrix V = eigslv.eigenvectors();
-            if(!(V*V.adjoint()).isApprox(Eigen::MatrixXd::Identity(V.rows(), V.rows()), 10e-7))
+            if(!(V*V.adjoint()).isApprox(Eigen::MatrixXd::Identity(V.rows(), V.rows()), 10e-1))
             {
-                COUT("Eigenvalue decomposition incorrect: V is not unitary");
+                COUT("Eigenvalue decomposition incorrect: V is not unitary: \n" << (V*V.adjoint()));
                 Eigen::BDCSVD<complex_matrix> svd3(V.block(0,0,V.rows(),2), Eigen::ComputeFullU);
                 V.block(0,0,V.rows(),2) = svd3.matrixU();
             }
 
             complex_matrix D = d.sqrt(); // Do this here to not get aliasing issues
             complex_matrix W = D*V.adjoint()*U2;
-            if(!U1.isApprox(V*D*W, 10e-7) || !U2.isApprox(V*D.adjoint()*W, 10e-7))
+            if(!U1.isApprox(V*D*W, 10e-2) || !U2.isApprox(V*D.adjoint()*W, 10e-2))
             {
                 EOUT("Demultiplexing not correct!");
                 throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at matrix U1: \n"+to_string(U1)+ "and matrix U2: \n" +to_string(U2) + "\nwhile they are: \n" + to_string(V*D*W) + "\nand \n" + to_string(V*D.adjoint()*W), false);
             }
+            COUT("V");
+            COUT(V);
+            COUT("D");
+            COUT(D);
+            COUT("W");
+            COUT(W);
             if(W.rows() == 2)
             {
                 zyz_decomp(W);
@@ -415,6 +409,7 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
                 Mk(i,j) =std::pow(-1, bitParity(i&(j^(j>>1))));
             }
         }
+        COUT("n: " << n <<"\n and corresponding Mk: \n" << Mk);
         return Mk;
     }
 
@@ -440,7 +435,8 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
         Eigen::VectorXd temp =  2*Eigen::asin(ss.diagonal().array()).real();
         Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk(halfthesizeofthematrix));
         Eigen::VectorXd tr = dec.solve(temp);
-        if(!temp.isApprox(genMk(halfthesizeofthematrix)*tr, 10e-7))
+        // Check is very approximate to account for low-precision input matrices
+        if(!temp.isApprox(genMk(halfthesizeofthematrix)*tr, 10e-2))
         {
                 EOUT("Multicontrolled Y not correct!");
                 throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix ss: \n"  + to_string(ss), false);
@@ -453,10 +449,11 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
 
     void multicontrolledZ(complex_matrix D, int halfthesizeofthematrix)
     {
-        Eigen::VectorXd temp =  (2*Eigen::log(D.diagonal().array())/(std::complex<double>(0,1))).real();
+        Eigen::VectorXd temp =  (std::complex<double>(0,-2)*Eigen::log(D.diagonal().array())).real();
         Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk(halfthesizeofthematrix));
         Eigen::VectorXd tr =dec.solve(temp);
-        if(!temp.isApprox(genMk(halfthesizeofthematrix)*tr, 10e-7))
+        // Check is very approximate to account for low-precision input matrices
+        if(!temp.isApprox(genMk(halfthesizeofthematrix)*tr, 10e-2))
         {
                 EOUT("Multicontrolled Z not correct!");
                 throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix D: \n"+ to_string(D), false);

@@ -3,3 +3,6 @@ version 1.0
 qubits 1
 
 .akernel
+    rz q[0], -0.000000
+    ry q[0], -0.000000
+    rz q[0], -0.000000
