@@ -1,7 +1,19 @@
-import os
-import unittest
+# tests for mapper
+#
+# tests combination of prescheduler, clifford, mapper, clifford and postscheduler in cc_light context
+#   by generating .qisa and comparing the generated one with a golden one after assembly
+# assumes config files test_mapper.json and test_mapper17.json
+# written to avoid initial placement since that is not portable
+# (although turning it on with options and enabling it by uncommenting first line of src/mapper.h would test it)
+# for option assumptions, see setUp below
+# see for more details, comment lines with each individual test below
+
 from openql import openql as ql
-import numpy as np
+import os
+from test_QISA_assembler_present import assemble
+import unittest
+from utils import file_compare
+
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
 curdir = os.path.dirname(__file__)
@@ -9,26 +21,86 @@ output_dir = os.path.join(curdir, 'test_output')
 
 class Test_mapper(unittest.TestCase):
 
-    def test_mapper_0(self):
-        ql.set_option('output_dir', output_dir)
-        ql.set_option('mapper', 'base')
-        ql.set_option('scheduler', 'ASAP')
-        ql.set_option('log_level', 'LOG_WARNING')
+    def setUp(self):
+        # uses defaults of options in mapper branch except for output_dir and for maptiebreak
+        ql.set_option('output_dir', output_dir)     # this uses output_dir set above
+        ql.set_option('maptiebreak', 'first')       # this makes behavior deterministic to cmp with golden
+                                                    # and deviates from default
 
-        config_fn = os.path.join(curdir, 'test_mapper.json')
-        platform  = ql.Platform('starmon', config_fn)
+        ql.set_option('log_level', 'LOG_NOTHING')
+        ql.set_option('optimize', 'no')
+        ql.set_option('use_default_gates', 'no')
+        ql.set_option('decompose_toffoli', 'no')
+        ql.set_option('scheduler', 'ALAP')
+        ql.set_option('scheduler_uniform', 'no')
+        ql.set_option('scheduler_commute', 'yes')
+        ql.set_option('prescheduler', 'yes')
+        ql.set_option('scheduler_post179', 'yes')
+        ql.set_option('cz_mode', 'manual')
+        ql.set_option('print_dot_graphs', 'no')
+        
+        ql.set_option('clifford_premapper', 'yes')
+        ql.set_option('clifford_postmapper', 'yes')
+        ql.set_option('mapper', 'minextendrc')
+        ql.set_option('mapinitone2one', 'yes')
+        ql.set_option('initialplace', 'no')
+        ql.set_option('initialplaceprefix', '0')
+        ql.set_option('mapusemoves', 'yes')
+        ql.set_option('mapreverseswap', 'yes')
+        ql.set_option('mappathselect', 'all')
+        ql.set_option('maplookahead', 'noroutingfirst')
+        
+        ql.set_option('write_qasm_files', 'no')
+        ql.set_option('write_report_files', 'no')
 
+
+    def test_oneNN(self):
+        # just check whether mapper works for trivial case
+        # parameters
+        v = 'oneNN'
+        config = os.path.join(rootDir, "test_mapper.json")
         num_qubits = 7
-        p = ql.Program('test_mapper_0', num_qubits, platform)
-        k = ql.Kernel('kernel_0', platform)
 
-        # a simple first test
-        # a list of all cnots that are ok in trivial mapping
+        # create and set platform
+        prog_name = "test_" + v
+        kernel_name = "kernel_" + v
+        starmon = ql.Platform("starmon", config)
+        prog = ql.Program(prog_name, starmon, num_qubits, 0)
+        k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
+
+        k.gate("x", [0])
+        k.gate("y", [1])
+        k.gate("cnot", [2,5])
+
+        prog.add_kernel(k)
+        prog.compile()
+
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        assemble(QISA_fn)
+        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+
+
+    def test_allNN(self):
+        # a list of all cnots that are NN in trivial/natural mapping (as in test_mapper.json)
+        #   (s7 is 3 rows: 2 data qubits (0 and 1), 3 ancillas (2 to 4), and 2 data qubits (5 and 6))
         # so no swaps are inserted and map is not changed
+        # also tests commutation of cnots in mapper and postscheduler
+        # parameters
+        v = 'allNN'
+        config = os.path.join(rootDir, "test_mapper.json")
+        num_qubits = 7
+
+        # create and set platform
+        prog_name = "test_" + v
+        kernel_name = "kernel_" + v
+        starmon = ql.Platform("starmon", config)
+        prog = ql.Program(prog_name, starmon, num_qubits, 0)
+        k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
 
         for j in range(7):
             k.gate("x", [j])
-
         k.gate("cnot", [0,2])
         k.gate("cnot", [0,3])
         k.gate("cnot", [1,3])
@@ -45,56 +117,104 @@ class Test_mapper(unittest.TestCase):
         k.gate("cnot", [5,3])
         k.gate("cnot", [6,3])
         k.gate("cnot", [6,4])
+        for j in range(7):
+            k.gate("x", [j])
 
-        p.add_kernel(k)
-        p.compile()
-        ql.set_option('mapper', 'no')
+        prog.add_kernel(k)
+        prog.compile()
 
-    def test_mapper_1(self):
-        ql.set_option('output_dir', output_dir)
-        ql.set_option('mapper', 'base')
-        ql.set_option('optimize', 'no')
-        ql.set_option('scheduler', 'ASAP')
-        ql.set_option('log_level', 'LOG_WARNING')
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        config_fn = os.path.join(curdir, 'test_mapper.json')
-        platform  = ql.Platform('starmon', config_fn)
+        assemble(QISA_fn)
+        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
+
+    def test_oneD2(self):
+        # one cnot with operands that are at distance 2 in s7
+        # initial placement should find this
+        # otherwise ...
+        # there are 2 alternative paths
+        # in each path there are 2 alternative places to put the cnot
+        # this introduces 1 swap/move and so uses an ancilla
+        # parameters
+        v = 'oneD2'
+        config = os.path.join(rootDir, "test_mapper.json")
         num_qubits = 7
-        p = ql.Program('test_mapper_1', num_qubits, platform)
-        k = ql.Kernel('kernel_1', platform)
 
+        # create and set platform
+        prog_name = "test_" + v
+        kernel_name = "kernel_" + v
+        starmon = ql.Platform("starmon", config)
+        prog = ql.Program(prog_name, starmon, num_qubits, 0)
+        k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
+
+        k.gate("x", [2])
+        k.gate("x", [3])
+        k.gate("cnot", [2,3])
+        k.gate("x", [2])
+        k.gate("x", [3])
+
+        prog.add_kernel(k)
+        prog.compile()
+
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        assemble(QISA_fn)
+        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+
+
+    def test_oneD4(self):
         # one cnot with operands that are at distance 4 in s7
-        # this means that 3 swaps are inserted before that cnot
-
-        for j in range(7):
-            k.gate("x", [j])
-
-        k.gate("cnot", [2,4])
-
-        for j in range(7):
-            k.gate("x", [j])
-
-        p.add_kernel(k)
-        p.compile()
-        ql.set_option('mapper', 'no')
-
-    def test_mapper_2(self):
-        ql.set_option('output_dir', output_dir)
-        ql.set_option('mapper', 'base')
-        ql.set_option('optimize', 'no')
-        ql.set_option('scheduler', 'ASAP')
-        ql.set_option('log_level', 'LOG_WARNING')
-
-        config_fn = os.path.join(curdir, 'test_mapper.json')
-        platform  = ql.Platform('starmon', config_fn)
-
+        # initial placement should find this
+        # otherwise ...
+        # there are 4 alternative paths
+        # in each path there are 4 alternative places to put the cnot
+        # this introduces 3 swaps/moves
+        # parameters
+        v = 'oneD4'
+        config = os.path.join(rootDir, "test_mapper.json")
         num_qubits = 7
-        p = ql.Program('test_mapper_2', num_qubits, platform)
-        k = ql.Kernel('kernel_2', platform)
 
-        # one cnot between each pair of qubits in s7
-        # will generate a lot of swaps
+        # create and set platform
+        prog_name = "test_" + v
+        kernel_name = "kernel_" + v
+        starmon = ql.Platform("starmon", config)
+        prog = ql.Program(prog_name, starmon, num_qubits, 0)
+        k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
+
+        k.gate("x", [2])
+        k.gate("x", [4])
+        k.gate("cnot", [2,4])
+        k.gate("x", [2])
+        k.gate("x", [4])
+
+        prog.add_kernel(k)
+        prog.compile()
+
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        assemble(QISA_fn)
+        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+
+
+    def test_allD(self):
+        # all possible cnots in s7, in lexicographic order
+        # there is no initial mapping that maps this right so initial placement cannot find it
+        # so the heuristics must act and insert swaps/moves
+        # parameters
+        v = 'allD'
+        config = os.path.join(rootDir, "test_mapper.json")
+        num_qubits = 7
+
+        # create and set platform
+        prog_name = "test_" + v
+        kernel_name = "kernel_" + v
+        starmon = ql.Platform("starmon", config)
+        prog = ql.Program(prog_name, starmon, num_qubits, 0)
+        k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
 
         for j in range(7):
             k.gate("x", [j])
@@ -107,9 +227,427 @@ class Test_mapper(unittest.TestCase):
         for j in range(7):
             k.gate("x", [j])
 
-        p.add_kernel(k)
-        p.compile()
-        ql.set_option('mapper', 'no')
+        prog.add_kernel(k)
+        prog.compile()
+
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        assemble(QISA_fn)
+        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+
+
+    def test_allDopt(self):
+        # all possible cnots in s7, avoiding collisions:
+        # - the pair of possible CNOTs in both directions hopefully in parallel
+        # - these pairs ordered from low distance to high distance to avoid disturbance by swaps
+        # - and then as much as possible in opposite sides of the circuit to improve ILP
+        # idea is to get shortest latency circuit with all possible cnots
+        # there is no initial mapping that maps this right so initial placement cannot find it
+        # so the heuristics must act and insert swaps/moves
+        # parameters
+        v = 'allDopt'
+        config = os.path.join(rootDir, "test_mapper.json")
+        num_qubits = 7
+
+        # create and set platform
+        prog_name = "test_" + v
+        kernel_name = "kernel_" + v
+        starmon = ql.Platform("starmon", config)
+        prog = ql.Program(prog_name, starmon, num_qubits, 0)
+        k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
+
+        for j in range(7):
+            k.gate("x", [j])
+        k.gate("cnot", [0,3]);
+        k.gate("cnot", [3,0]);
+        k.gate("cnot", [6,4]);
+        k.gate("cnot", [4,6]);
+        k.gate("cnot", [3,1]);
+        k.gate("cnot", [1,3]);
+        k.gate("cnot", [5,2]);
+        k.gate("cnot", [2,5]);
+        k.gate("cnot", [1,4]);
+        k.gate("cnot", [4,1]);
+        k.gate("cnot", [3,5]);
+        k.gate("cnot", [5,3]);
+        k.gate("cnot", [6,3]);
+        k.gate("cnot", [3,6]);
+        k.gate("cnot", [2,0]);
+        k.gate("cnot", [0,2]);
+        k.gate("cnot", [0,1]);
+        k.gate("cnot", [1,0]);
+        k.gate("cnot", [3,4]);
+        k.gate("cnot", [4,3]);
+        k.gate("cnot", [1,6]);
+        k.gate("cnot", [6,1]);
+        k.gate("cnot", [6,5]);
+        k.gate("cnot", [5,6]);
+        k.gate("cnot", [3,2]);
+        k.gate("cnot", [2,3]);
+        k.gate("cnot", [5,0]);
+        k.gate("cnot", [0,5]);
+        k.gate("cnot", [0,6]);
+        k.gate("cnot", [6,0]);
+        k.gate("cnot", [1,5]);
+        k.gate("cnot", [5,1]);
+        k.gate("cnot", [0,4]);
+        k.gate("cnot", [4,0]);
+        k.gate("cnot", [6,2]);
+        k.gate("cnot", [2,6]);
+        k.gate("cnot", [2,1]);
+        k.gate("cnot", [1,2]);
+        k.gate("cnot", [5,4]);
+        k.gate("cnot", [4,5]);
+        k.gate("cnot", [2,4]);
+        k.gate("cnot", [4,2]);
+        for j in range(7):
+            k.gate("x", [j])
+
+        prog.add_kernel(k)
+        prog.compile()
+
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        assemble(QISA_fn)
+        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+
+
+    def test_allIP(self):
+        # longest string of cnots with operands that could be at distance 1 in s7
+        # matches intel NISQ application
+        # initial placement should find this
+        # and then no swaps are inserted
+        # otherwise ...
+        # the heuristics must act and insert swaps/moves
+        # parameters
+        v = 'allIP'
+        config = os.path.join(rootDir, "test_mapper.json")
+        num_qubits = 7
+
+        # create and set platform
+        prog_name = "test_" + v
+        kernel_name = "kernel_" + v
+        starmon = ql.Platform("starmon", config)
+        prog = ql.Program(prog_name, starmon, num_qubits, 0)
+        k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
+
+        for j in range(7):
+            k.gate("x", [j])
+        k.gate("cnot", [0,1]);
+        k.gate("cnot", [1,2]);
+        k.gate("cnot", [2,3]);
+        k.gate("cnot", [3,4]);
+        k.gate("cnot", [4,5]);
+        k.gate("cnot", [5,6]);
+        for j in range(7):
+            k.gate("x", [j])
+
+        prog.add_kernel(k)
+        prog.compile()
+
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        assemble(QISA_fn)
+        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+
+
+
+    def test_lingling5(self):
+        # parameters
+        # 'realistic' circuit
+        v = 'lingling5'
+        config = os.path.join(rootDir, "test_mapper17.json")
+        num_qubits = 7
+
+        # create and set platform
+        prog_name = "test_" + v
+        kernel_name = "kernel_" + v
+        starmon = ql.Platform("starmon", config)
+        prog = ql.Program(prog_name, starmon, num_qubits, 0)
+        k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
+
+        k.gate("prepz", [5]);
+        k.gate("prepz", [6]);
+        k.gate("x", [5]);
+        k.gate("ym90", [5]);
+        k.gate("x", [6]);
+        k.gate("ym90", [6]);
+        k.gate("ym90", [0]);
+        k.gate("cz", [5,0]);
+        k.gate("ry90", [0]);
+        k.gate("x", [5]);
+        k.gate("ym90", [5]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [6,5]);
+        k.gate("ry90", [5]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [1,5]);
+        k.gate("ry90", [5]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [2,5]);
+        k.gate("ry90", [5]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [6,5]);
+        k.gate("ry90", [5]);
+        k.gate("x", [5]);
+        k.gate("ym90", [5]);
+        k.gate("ym90", [3]);
+        k.gate("cz", [5,3]);
+        k.gate("ry90", [3]);
+        k.gate("x", [5]);
+        k.gate("ym90", [5]);
+        k.gate("measure", [5]);
+        k.gate("measure", [6]);
+        k.gate("prepz", [5]);
+        k.gate("prepz", [6]);
+        k.gate("x", [5]);
+        k.gate("ym90", [5]);
+        k.gate("x", [6]);
+        k.gate("ym90", [6]);
+        k.gate("ym90", [1]);
+        k.gate("cz", [5,1]);
+        k.gate("ry90", [1]);
+        k.gate("x", [5]);
+        k.gate("ym90", [5]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [6,5]);
+        k.gate("ry90", [5]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [2,5]);
+        k.gate("ry90", [5]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [3,5]);
+        k.gate("ry90", [5]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [6,5]);
+        k.gate("ry90", [5]);
+        k.gate("x", [5]);
+        k.gate("ym90", [5]);
+        k.gate("ym90", [4]);
+        k.gate("cz", [5,4]);
+        k.gate("ry90", [4]);
+        k.gate("x", [5]);
+        k.gate("ym90", [5]);
+        k.gate("measure", [5]);
+        k.gate("measure", [6]);
+        k.gate("prepz", [5]);
+        k.gate("prepz", [6]);
+        k.gate("x", [5]);
+        k.gate("ym90", [5]);
+        k.gate("x", [6]);
+        k.gate("ym90", [6]);
+        k.gate("ym90", [2]);
+        k.gate("cz", [5,2]);
+        k.gate("ry90", [2]);
+        k.gate("x", [5]);
+        k.gate("ym90", [5]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [6,5]);
+        k.gate("ry90", [5]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [3,5]);
+        k.gate("ry90", [5]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [4,5]);
+        k.gate("ry90", [5]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [6,5]);
+        k.gate("ry90", [5]);
+        k.gate("x", [5]);
+        k.gate("ym90", [5]);
+        k.gate("ym90", [0]);
+        k.gate("cz", [5,0]);
+        k.gate("ry90", [0]);
+        k.gate("x", [5]);
+        k.gate("ym90", [5]);
+        k.gate("measure", [5]);
+        k.gate("measure", [6]);
+        k.gate("prepz", [5]);
+        k.gate("prepz", [6]);
+        k.gate("x", [5]);
+        k.gate("ym90", [5]);
+        k.gate("x", [6]);
+        k.gate("ym90", [6]);
+        k.gate("ym90", [3]);
+        k.gate("cz", [5,3]);
+        k.gate("ry90", [3]);
+        k.gate("x", [5]);
+        k.gate("ym90", [5]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [6,5]);
+        k.gate("ry90", [5]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [4,5]);
+        k.gate("ry90", [5]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [0,5]);
+        k.gate("ry90", [5]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [6,5]);
+        k.gate("ry90", [5]);
+        k.gate("x", [5]);
+        k.gate("ym90", [5]);
+        k.gate("ym90", [1]);
+        k.gate("cz", [5,1]);
+        k.gate("ry90", [1]);
+        k.gate("x", [5]);
+        k.gate("ym90", [5]);
+        k.gate("measure", [5]);
+        k.gate("measure", [6]);
+
+        prog.add_kernel(k)
+        prog.compile()
+
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        assemble(QISA_fn)
+        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+
+
+
+    def test_lingling7(self):
+        # parameters
+        v = 'lingling7'
+        config = os.path.join(rootDir, "test_mapper17.json")
+        num_qubits = 9
+
+        # create and set platform
+        prog_name = "test_" + v
+        kernel_name = "kernel_" + v
+        starmon = ql.Platform("starmon", config)
+        prog = ql.Program(prog_name, starmon, num_qubits, 0)
+        k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
+
+        k.gate("prepz", [7]);
+        k.gate("prepz", [8]);
+        k.gate("x", [7]);
+        k.gate("ym90", [7]);
+        k.gate("ym90", [4]);
+        k.gate("cz", [7,4]);
+        k.gate("ry90", [4]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [0,8]);
+        k.gate("ry90", [8]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [7,8]);
+        k.gate("ry90", [8]);
+        k.gate("ym90", [6]);
+        k.gate("cz", [7,6]);
+        k.gate("ry90", [6]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [2,8]);
+        k.gate("ry90", [8]);
+        k.gate("ym90", [3]);
+        k.gate("cz", [7,3]);
+        k.gate("ry90", [3]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [4,8]);
+        k.gate("ry90", [8]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [7,8]);
+        k.gate("ry90", [8]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [7,5]);
+        k.gate("ry90", [5]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [6,8]);
+        k.gate("ry90", [8]);
+        k.gate("x", [7]);
+        k.gate("ym90", [7]);
+        k.gate("measure", [7]);
+        k.gate("measure", [8]);
+        k.gate("prepz", [7]);
+        k.gate("prepz", [8]);
+        k.gate("x", [7]);
+        k.gate("ym90", [7]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [7,5]);
+        k.gate("ry90", [5]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [1,8]);
+        k.gate("ry90", [8]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [7,8]);
+        k.gate("ry90", [8]);
+        k.gate("ym90", [6]);
+        k.gate("cz", [7,6]);
+        k.gate("ry90", [6]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [2,8]);
+        k.gate("ry90", [8]);
+        k.gate("ym90", [3]);
+        k.gate("cz", [7,3]);
+        k.gate("ry90", [3]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [5,8]);
+        k.gate("ry90", [8]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [7,8]);
+        k.gate("ry90", [8]);
+        k.gate("ym90", [4]);
+        k.gate("cz", [7,4]);
+        k.gate("ry90", [4]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [6,8]);
+        k.gate("ry90", [8]);
+        k.gate("x", [7]);
+        k.gate("ym90", [7]);
+        k.gate("measure", [7]);
+        k.gate("measure", [8]);
+        k.gate("prepz", [7]);
+        k.gate("prepz", [8]);
+        k.gate("x", [7]);
+        k.gate("ym90", [7]);
+        k.gate("ym90", [1]);
+        k.gate("cz", [7,1]);
+        k.gate("ry90", [1]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [2,8]);
+        k.gate("ry90", [8]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [7,8]);
+        k.gate("ry90", [8]);
+        k.gate("ym90", [5]);
+        k.gate("cz", [7,5]);
+        k.gate("ry90", [5]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [6,8]);
+        k.gate("ry90", [8]);
+        k.gate("ym90", [2]);
+        k.gate("cz", [7,2]);
+        k.gate("ry90", [2]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [0,8]);
+        k.gate("ry90", [8]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [7,8]);
+        k.gate("ry90", [8]);
+        k.gate("ym90", [6]);
+        k.gate("cz", [7,6]);
+        k.gate("ry90", [6]);
+        k.gate("ym90", [8]);
+        k.gate("cz", [4,8]);
+        k.gate("ry90", [8]);
+        k.gate("x", [7]);
+        k.gate("ym90", [7]);
+        k.gate("measure", [7]);
+        k.gate("measure", [8]);
+
+        prog.add_kernel(k)
+        prog.compile()
+
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        assemble(QISA_fn)
+        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+
+
 
 if __name__ == '__main__':
+    # ql.set_option('log_level', 'LOG_DEBUG')
     unittest.main()

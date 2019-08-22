@@ -200,7 +200,7 @@ test_oneD4(std::string v, std::string param1, std::string param2, std::string pa
     ql::options::set("prescheduler", param4);
     prog.compile( );
 
-#define DIOGO
+#undef DIOGO
 #ifdef DIOGO
     IOUT("AFTER test_oneD4Diogo prog.compile()");
     for(auto &kernel : prog.kernels)
