@@ -1499,14 +1499,17 @@ class Test_conjugated_kernel(unittest.TestCase):
         qx.execute()
         c0 = qx.get_state()
 
-        self.assertAlmostEqual(0.125*helper_prob((matrix[0]  + matrix[1] + matrix[2] + matrix[3] + matrix[4] + matrix[5] + matrix[6] + matrix[7])), helper_regex(c0)[0], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[8]  + matrix[9] + matrix[10]+ matrix[11]+ matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[1], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[16] + matrix[17]+ matrix[18]+ matrix[19]+ matrix[20]+ matrix[21]+ matrix[22]+ matrix[23])), helper_regex(c0)[2], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[24] + matrix[25]+ matrix[26]+ matrix[27]+ matrix[28]+ matrix[29]+ matrix[30]+ matrix[31])), helper_regex(c0)[3], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[32] + matrix[33]+ matrix[34]+ matrix[35]+ matrix[36]+ matrix[37]+ matrix[38]+ matrix[39])), helper_regex(c0)[4], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[40] + matrix[41]+ matrix[42]+ matrix[43]+ matrix[44]+ matrix[45]+ matrix[46]+ matrix[47])), helper_regex(c0)[5], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_regex(c0)[6], 5)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
+        # less accuracy because of less accurate input
+        self.assertAlmostEqual(0.125*helper_prob((matrix[0]  + matrix[1] + matrix[2] + matrix[3] + matrix[4] + matrix[5] + matrix[6] + matrix[7])), helper_regex(c0)[0], 2)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[8]  + matrix[9] + matrix[10]+ matrix[11]+ matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[1], 2)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[16] + matrix[17]+ matrix[18]+ matrix[19]+ matrix[20]+ matrix[21]+ matrix[22]+ matrix[23])), helper_regex(c0)[2], 2)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[24] + matrix[25]+ matrix[26]+ matrix[27]+ matrix[28]+ matrix[29]+ matrix[30]+ matrix[31])), helper_regex(c0)[3], 2)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[32] + matrix[33]+ matrix[34]+ matrix[35]+ matrix[36]+ matrix[37]+ matrix[38]+ matrix[39])), helper_regex(c0)[4], 2)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[40] + matrix[41]+ matrix[42]+ matrix[43]+ matrix[44]+ matrix[45]+ matrix[46]+ matrix[47])), helper_regex(c0)[5], 2)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_regex(c0)[6], 2)
+        self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 2)
 
 if __name__ == '__main__':
     unittest.main()
+
+

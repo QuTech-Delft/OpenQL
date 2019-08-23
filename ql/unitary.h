@@ -278,25 +278,8 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
         // Just to see if it kinda matches
         if(!tmp.isApprox(U, 10e-2))
         {
-            // COUT("CSD: reconstructed U");
-            // COUT(tmp);
-            // EOUT("CSD not correct!");
             throw ql::exception("CSD of unitary '"+ name+"' is wrong! Failed at matrix: \n"+to_string(tmp) + "\nwhich should be: \n" + to_string(U), false);
-
         }
-
-        COUT("u1");
-        COUT(u1);
-        COUT("u2");
-        COUT(u2);
-        COUT("c");
-        COUT(c);
-        COUT("s");
-        COUT(s);
-        COUT("v1");
-        COUT(v1);
-        COUT("v2");
-        COUT(v2);
     }
 
 
@@ -371,12 +354,6 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
                 EOUT("Demultiplexing not correct!");
                 throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at matrix U1: \n"+to_string(U1)+ "and matrix U2: \n" +to_string(U2) + "\nwhile they are: \n" + to_string(V*D*W) + "\nand \n" + to_string(V*D.adjoint()*W), false);
             }
-            COUT("V");
-            COUT(V);
-            COUT("D");
-            COUT(D);
-            COUT("W");
-            COUT(W);
             if(W.rows() == 2)
             {
                 zyz_decomp(W);
@@ -397,20 +374,29 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
         }
 }
 
-    // returns M^k = (-1)^(b_(i-1)*g_(i-1)), where * is bitwise inner product, g = binary gray code, b = binary code.
-    Eigen::MatrixXd genMk(int n)
-    {
-        Eigen::MatrixXd Mk(n,n);
+    std::vector<Eigen::MatrixXd> genMk_lookuptable;
 
-        for(int i = 0; i < n; i++)
+    // returns M^k = (-1)^(b_(i-1)*g_(i-1)), where * is bitwise inner product, g = binary gray code, b = binary code.
+    Eigen::MatrixXd genMk(int current_size)
+    {
+        int numberqubits = log2(current_size);
+        if(genMk_lookuptable.size() <= numberqubits)
         {
-            for(int j = 0; j < n ;j++)
+            for(int n = genMk_lookuptable.size()+1; n <= numberqubits; n++)
             {
-                Mk(i,j) =std::pow(-1, bitParity(i&(j^(j>>1))));
+            int size=1<<numberqubits;
+            Eigen::MatrixXd Mk(size,size);
+                for(int i = 0; i < size; i++)
+                {
+                    for(int j = 0; j < size ;j++)
+                    {
+                        Mk(i,j) =std::pow(-1, bitParity(i&(j^(j>>1))));
+                    }
+                }
+            genMk_lookuptable.push_back(Mk);
             }
         }
-        COUT("n: " << n <<"\n and corresponding Mk: \n" << Mk);
-        return Mk;
+         return genMk_lookuptable[numberqubits-1];
     }
 
     int bitParity(int i)
