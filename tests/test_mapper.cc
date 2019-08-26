@@ -965,21 +965,21 @@ int main(int argc, char ** argv)
 
 //  NN:
 //  test_rc("rc", "no", "no", "yes", "no");
-    test_someNN("someNN", "no", "no", "yes", "yes");
+//  test_someNN("someNN", "no", "no", "yes", "yes");
 
 //  nonNN but solvable by Initial Placement:
     test_oneD2("oneD2", "yes", "yes", "yes", "yes");
-    test_oneD4("oneD4", "yes", "yes", "yes", "yes");
-    test_string("string", "yes", "yes", "yes", "yes");
+//  test_oneD4("oneD4", "yes", "yes", "yes", "yes");
+//  test_string("string", "yes", "yes", "yes", "yes");
 
 //  nonNN, still not too large:
-    test_allD("allD", "yes", "yes", "yes", "yes");
-    test_allDopt("allDopt", "yes", "yes", "yes", "yes");
+//  test_allD("allD", "yes", "yes", "yes", "yes");
+//  test_allDopt("allDopt", "yes", "yes", "yes", "yes");
 
 //  nonNN, realistic:
-    test_daniel2("daniel2", "yes", "yes", "yes", "yes");
-    test_lingling5esm("lingling5esm", "yes", "yes", "yes", "yes");
-    test_lingling7esm("lingling7esm", "yes", "yes", "yes", "yes");
+//  test_daniel2("daniel2", "yes", "yes", "yes", "yes");
+//  test_lingling5esm("lingling5esm", "yes", "yes", "yes", "yes");
+//  test_lingling7esm("lingling7esm", "yes", "yes", "yes", "yes");
 
     return 0;
 }

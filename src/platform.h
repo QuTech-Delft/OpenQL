@@ -77,6 +77,7 @@ public:
         // hwc.load(instruction_map, instruction_settings, hardware_settings, resources, topology);
         hwc.load(instruction_map, instruction_settings, hardware_settings, resources, topology, aliases);
         eqasm_compiler_name = hwc.eqasm_compiler_name;
+        DOUT("eqasm_compiler_name= " << eqasm_compiler_name);
 
         if(hardware_settings.count("qubit_number") <=0)
         {

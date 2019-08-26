@@ -197,8 +197,9 @@ public:
      * compile qasm to quantumsim
      */
     // program level compilation
-    void compile(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
+    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, const ql::quantum_platform& platform)
     {
+        DOUT("Compiling " << kernels.size() << " kernels to generate quantumsim eQASM ... ");
         IOUT("Compiling " << kernels.size() << " kernels to generate quantumsim eQASM ... ");
 
         std::string params[] = { "qubit_number", "cycle_time" };
@@ -224,9 +225,11 @@ public:
         high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
         clifford_optimize(prog_name, kernels, platform, "clifford_premapper");
+
         map(prog_name, kernels, platform);
 
-        clifford_optimize(prog_name, kernels, platform, "clifford_prescheduler");
+        clifford_optimize(prog_name, kernels, platform, "clifford_postmapper");
+
         schedule(prog_name, kernels, platform);
 
         // computing timetaken, stop interval timer
@@ -259,6 +262,7 @@ private:
         IOUT("Writing scheduled Quantumsim program");
         ofstream fout;
         string qfname( ql::options::get("output_dir") + "/" + prog_name + "_quantumsim_" + suffix + ".py");
+        DOUT("Writing scheduled Quantumsim program to " << qfname);
         IOUT("Writing scheduled Quantumsim program to " << qfname);
         fout.open( qfname, ios::binary);
         if ( fout.fail() )
@@ -522,6 +526,7 @@ private:
                 ql::report::report_kernel_statistics(fout, kernel, platform, "    # ");
             }
         }
+        ql::report::report_string(fout, "    \n");
         ql::report::report_string(fout, "    # Program-wide statistics:\n");
         ql::report::report_totals_statistics(fout, kernels, platform, "    # ");
         fout << "    return c";

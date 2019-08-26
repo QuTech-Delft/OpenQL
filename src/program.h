@@ -472,6 +472,8 @@ class quantum_program
             schedule();
          }
 
+         DOUT("eqasm_compiler_name: " << eqasm_compiler_name);
+
          if (backend_compiler == NULL)
          {
             WOUT("no eqasm compiler has been specified in the configuration file, only qasm code has been compiled.");
@@ -484,10 +486,14 @@ class quantum_program
                 || eqasm_compiler_name == "quantumsim_compiler"
                 )
             {
+               DOUT("About to call backend_compiler->compile for " << eqasm_compiler_name);
                backend_compiler->compile(name, kernels, platform);
+               DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
             }
             else
             {
+               DOUT("Skipped call to backend_compiler->compile for " << eqasm_compiler_name);
+
                // FIXME(WJV): I would suggest to move the fusing to a backend that wants it, and then:
                // - always call:  backend_compiler->compile(name, kernels, platform);
                // - remove from eqasm_compiler.h: compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& p);
