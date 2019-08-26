@@ -99,6 +99,13 @@ namespace ql
             file.close();
         }
 
+        template <typename T>
+        std::string to_string(T arg)
+        {
+            std::stringstream ss;
+            ss << arg;
+            return ss.str ();
+        }
 
         template<class T>
         std::string to_string(std::vector<T> v, std::string vector_prefix = "",

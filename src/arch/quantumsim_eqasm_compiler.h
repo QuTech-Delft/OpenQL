@@ -39,7 +39,7 @@ private:
             return;
         }
 
-        ql::report::report_statistics(prog_name, kernels, platform, "in", opt);
+        ql::report::report_statistics(prog_name, kernels, platform, "in", opt, "# ");
         ql::report::report_qasm(prog_name, kernels, platform, "in", opt);
 
         Clifford cliff;
@@ -48,20 +48,20 @@ private:
             cliff.Optimize(kernel, opt);
         }
 
-        ql::report::report_statistics(prog_name, kernels, platform, "out", opt);
+        ql::report::report_statistics(prog_name, kernels, platform, "out", opt, "# ");
         ql::report::report_qasm(prog_name, kernels, platform, "out", opt);
     }
 
-    void map(std::string& prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
+    void map(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
     {
         auto mapopt = ql::options::get("mapper");
         if (mapopt == "no" )
         {
             IOUT("Not mapping kernels");
-            return;;
+            return;
         }
 
-        ql::report::report_statistics(prog_name, kernels, platform, "in", "mapper");
+        ql::report::report_statistics(prog_name, kernels, platform, "in", "mapper", "# ");
         ql::report::report_qasm(prog_name, kernels, platform, "in", "mapper");
 
         Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
@@ -69,27 +69,61 @@ private:
 
         std::ofstream   ofs;
         ofs = ql::report::report_open(prog_name, "out", "mapper");
+
+        size_t  total_swaps = 0;        // for reporting, data is mapper specific
+        size_t  total_moves = 0;        // for reporting, data is mapper specific
+        double  total_timetaken = 0.0;  // total over kernels of time taken by mapper
         for(auto &kernel : kernels)
         {
             IOUT("Mapping kernel: " << kernel.name);
-            mapper.Map(kernel);
-                            // kernel.qubit_count is number of virtual qubits, i.e. highest indexed qubit minus 1
-                            // kernel.qubit_count is updated by Map to real highest index used minus -1
-            kernel.bundles = mapper.Bundler(kernel);
 
-            ql::report::report_kernel_statistics(ofs, kernel, platform);
+            // compute timetaken, start interval timer here
+            double    timetaken = 0.0;
+            using namespace std::chrono;
+            high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
+            mapper.Map(kernel);
+                // kernel.qubit_count starts off as number of virtual qubits, i.e. highest indexed qubit minus 1
+                // kernel.qubit_count is updated by Map to highest index of real qubits used minus -1
+
+            // computing timetaken, stop interval timer
+            high_resolution_clock::time_point t2 = high_resolution_clock::now();
+            duration<double> time_span = t2 - t1;
+            timetaken = time_span.count();
+
+            kernel.bundles = mapper.Bundler(kernel);    // assignment to kernel.bundles only for reporting below
+
+            ql::report::report_kernel_statistics(ofs, kernel, platform, "# ");
+            std::stringstream ss;
+            ss << "# ----- swaps added: " << mapper.nswapsadded << "\n";
+            ss << "# ----- of which moves added: " << mapper.nmovesadded << "\n";
+            ss << "# ----- virt2real map before mapper:" << ql::utils::to_string(mapper.v2r_in) << "\n";
+            ss << "# ----- virt2real map after mapper:" << ql::utils::to_string(mapper.v2r_out) << "\n";
+            ss << "# ----- realqubit states before mapper:" << ql::utils::to_string(mapper.rs_in) << "\n";
+            ss << "# ----- realqubit states after mapper:" << ql::utils::to_string(mapper.rs_out) << "\n";
+            ss << "# ----- timetaken: " << timetaken << "\n";
+            ql::report::report_string(ofs, ss.str());
+
+            total_swaps += mapper.nswapsadded;
+            total_moves += mapper.nmovesadded;
+            total_timetaken += timetaken;
         }
-        ql::report::report_totals_statistics(ofs, kernels, platform);
+        ql::report::report_totals_statistics(ofs, kernels, platform, "# ");
+        std::stringstream ss;
+        ss << "# Total no. of swaps: " << total_swaps << "\n";
+        ss << "# Total no. of moves of swaps: " << total_moves << "\n";
+        ss << "# Total time taken: " << total_timetaken << "\n";
+        ql::report::report_string(ofs, ss.str());
         ql::report::report_close(ofs);
 
         ql::report::report_bundles(prog_name, kernels, platform, "out", "mapper");
     }
 
-    ql::ir::bundles_t quantumsim_schedule_rc(ql::circuit & ckt, 
+    ql::ir::bundles_t quantumsim_schedule_rc(ql::circuit & ckt,
         const ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
     {
         IOUT("Resource constraint scheduling for quantumsim ...");
-    
+
         scheduling_direction_t  direction;
         std::string schedopt = ql::options::get("scheduler");
         if ("ASAP" == schedopt)
@@ -104,10 +138,10 @@ private:
         {
             EOUT("Unknown scheduler");
             throw ql::exception("Unknown scheduler!", false);
-    
+
         }
         resource_manager_t rm(platform, direction);
-    
+
         Scheduler sched;
         sched.init(ckt, platform, nqubits, ncreg);
         ql::ir::bundles_t bundles;
@@ -124,15 +158,18 @@ private:
         {
             EOUT("Unknown scheduler");
             throw ql::exception("Unknown scheduler!", false);
-    
+
         }
-    
+
         IOUT("Resource constraint scheduling for quantumsim [Done].");
         return bundles;
     }
 
     void schedule(std::string& prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
     {
+        ql::report::report_statistics(prog_name, kernels, platform, "in", "rcscheduler", "# ");
+        ql::report::report_qasm(prog_name, kernels, platform, "in", "rcscheduler");
+
         for(auto &kernel : kernels)
         {
             IOUT("Scheduling kernel: " << kernel.name);
@@ -143,6 +180,7 @@ private:
             }
         }
 
+        ql::report::report_statistics(prog_name, kernels, platform, "out", "rcscheduler", "# ");
         ql::report::report_bundles(prog_name, kernels, platform, "out", "rcscheduler");
     }
 
@@ -177,11 +215,35 @@ public:
 
         write_quantumsim_program(prog_name, num_qubits, kernels, platform, "");
 
+        ql::report::report_qasm(prog_name, kernels, platform, "in", "quantumsim_compiler");
+        ql::report::report_statistics(prog_name, kernels, platform, "in", "quantumsim_compiler", "# ");
+
+        // compute timetaken, start interval timer here
+        double    total_timetaken = 0.0;
+        using namespace std::chrono;
+        high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
         clifford_optimize(prog_name, kernels, platform, "clifford_premapper");
         map(prog_name, kernels, platform);
 
         clifford_optimize(prog_name, kernels, platform, "clifford_prescheduler");
         schedule(prog_name, kernels, platform);
+
+        // computing timetaken, stop interval timer
+        high_resolution_clock::time_point t2 = high_resolution_clock::now();
+        duration<double> time_span = t2 - t1;
+        total_timetaken = time_span.count();
+
+        // report totals over all kernels, over all passes contributing to mapping
+        std::ofstream   ofs;
+        ofs = ql::report::report_open(prog_name, "out", "quantumsim_compiler");
+        for (auto& k : kernels) { ql::report::report_kernel_statistics(ofs, k, platform, "# "); }
+        ql::report::report_totals_statistics(ofs, kernels, platform, "# ");
+        std::stringstream ss;
+        ss << "# Total time taken: " << total_timetaken << "\n";
+        ql::report::report_string(ofs, ss.str());
+        ql::report::report_close(ofs);
+        ql::report::report_bundles(prog_name, kernels, platform, "out", "quantumsim_compiler");
 
         // write scheduled bundles for quantumsim
         write_quantumsim_program(prog_name, num_qubits, kernels, platform, "mapped");
@@ -212,68 +274,68 @@ private:
         fout << "import numpy as np\n"
              << "from quantumsim.circuit import Circuit\n"
              << "from quantumsim.circuit import uniform_noisy_sampler\n"
-			 << "from quantumsim.circuit import ButterflyGate\n"
+             << "from quantumsim.circuit import ButterflyGate\n"
              << endl;
 
-        fout << "from quantumsim.circuit import IdlingGate as i\n"                         
-             << "from quantumsim.circuit import RotateY as ry\n"                            
-             << "from quantumsim.circuit import RotateX as rx\n"                            
-             << "from quantumsim.circuit import RotateZ as rz\n"                            
-             << "from quantumsim.circuit import Hadamard as h\n"                            
-             << "from quantumsim.circuit import NoisyCPhase as cz\n"                             
-             << "from quantumsim.circuit import CNOT as cnot\n"                             
-             << "from quantumsim.circuit import Swap as swap\n"                             
-             << "from quantumsim.circuit import CPhaseRotation as cr\n"                     
-             << "from quantumsim.circuit import ConditionalGate as ConditionalGate\n"       
-             << "from quantumsim.circuit import RotateEuler as RotateEuler\n"               
-             << "from quantumsim.circuit import ResetGate as ResetGate\n"                   
-             << "from quantumsim.circuit import Measurement as measure\n"                   
-             << "import quantumsim.sparsedm as sparsedm\n"                                  
-             << "\n"                                                                        
-             << "# print('GPU is used:', sparsedm.using_gpu)\n"                             
-             << "\n"                                                                        
-             << "\n"                                                                        
-             << "def t(q, time):\n"                                                         
-             << "    return RotateEuler(q, time=time, theta=0, phi=np.pi/4, lamda=0)\n"     
-             << "\n"                                                                        
-             << "def tdag(q, time):\n"                                                      
-             << "    return RotateEuler(q, time=time, theta=0, phi=-np.pi/4, lamda=0)\n"    
-             << "\n"                                                                        
-             << "def measure_z(q, time, sampler):\n"                                        
-             << "    return measure(q, time, sampler)\n"                                    
-             << "\n"                                                                        
-             << "def z(q, time):\n"                                                         
-             << "    return rz(q, time, angle=np.pi)\n"                                     
-             << "\n"                                                                        
-             << "def x(q, time, dephasing_axis, dephasing_angle):\n"                                                         
-             << "    return rx(q, time, angle=np.pi, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"                                     
-             << "\n"                                                                        
-             << "def y(q, time, dephasing_axis, dephasing_angle):\n"                                                         
-             << "    return ry(q, time, angle=np.pi, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"                                     
-             << "\n"                                                                        
-             << "def x90(q, time, dephasing_axis, dephasing_angle):\n"                                                      
-             << "    return rx(q, time, angle=np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"                                   
-             << "\n"                                                                        
-             << "def y90(q, time, dephasing_axis, dephasing_angle):\n"                                                      
-             << "    return ry(q, time, angle=np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"                                   
-             << "\n"                                                                        
-             << "def xm90(q, time, dephasing_axis, dephasing_angle):\n"                                                      
-             << "    return rx(q, time, angle=-np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"                                  
-             << "\n"                                                                        
-             << "def ym90(q, time, dephasing_axis, dephasing_angle):\n"                                                      
-             << "    return ry(q, time, angle=-np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"                                  
-             << "\n"                                                                        
-             << "def x45(q, time):\n"                                                      
-             << "    return rx(q, time, angle=np.pi/4)\n"                                   
-             << "\n"                                                                        
-             << "def xm45(q, time):\n"                                                      
-             << "    return rx(q, time, angle=-np.pi/4)\n"                                  
-             << "\n"  
-             //<< "def cz(q, time, dephase_var):\n"                                                         
-             //<< "    return cphase(q, time, dephase_var=dephase_var)\n"                                     
-             << "\n"                                                                       
-             << "def prepz(q, time):\n"                                                    
-             << "    return ResetGate(q, time, state=0)\n\n"                                
+        fout << "from quantumsim.circuit import IdlingGate as i\n"
+             << "from quantumsim.circuit import RotateY as ry\n"
+             << "from quantumsim.circuit import RotateX as rx\n"
+             << "from quantumsim.circuit import RotateZ as rz\n"
+             << "from quantumsim.circuit import Hadamard as h\n"
+             << "from quantumsim.circuit import NoisyCPhase as cz\n"
+             << "from quantumsim.circuit import CNOT as cnot\n"
+             << "from quantumsim.circuit import Swap as swap\n"
+             << "from quantumsim.circuit import CPhaseRotation as cr\n"
+             << "from quantumsim.circuit import ConditionalGate as ConditionalGate\n"
+             << "from quantumsim.circuit import RotateEuler as RotateEuler\n"
+             << "from quantumsim.circuit import ResetGate as ResetGate\n"
+             << "from quantumsim.circuit import Measurement as measure\n"
+             << "import quantumsim.sparsedm as sparsedm\n"
+             << "\n"
+             << "# print('GPU is used:', sparsedm.using_gpu)\n"
+             << "\n"
+             << "\n"
+             << "def t(q, time):\n"
+             << "    return RotateEuler(q, time=time, theta=0, phi=np.pi/4, lamda=0)\n"
+             << "\n"
+             << "def tdag(q, time):\n"
+             << "    return RotateEuler(q, time=time, theta=0, phi=-np.pi/4, lamda=0)\n"
+             << "\n"
+             << "def measure_z(q, time, sampler):\n"
+             << "    return measure(q, time, sampler)\n"
+             << "\n"
+             << "def z(q, time):\n"
+             << "    return rz(q, time, angle=np.pi)\n"
+             << "\n"
+             << "def x(q, time, dephasing_axis, dephasing_angle):\n"
+             << "    return rx(q, time, angle=np.pi, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+             << "\n"
+             << "def y(q, time, dephasing_axis, dephasing_angle):\n"
+             << "    return ry(q, time, angle=np.pi, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+             << "\n"
+             << "def x90(q, time, dephasing_axis, dephasing_angle):\n"
+             << "    return rx(q, time, angle=np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+             << "\n"
+             << "def y90(q, time, dephasing_axis, dephasing_angle):\n"
+             << "    return ry(q, time, angle=np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+             << "\n"
+             << "def xm90(q, time, dephasing_axis, dephasing_angle):\n"
+             << "    return rx(q, time, angle=-np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+             << "\n"
+             << "def ym90(q, time, dephasing_axis, dephasing_angle):\n"
+             << "    return ry(q, time, angle=-np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+             << "\n"
+             << "def x45(q, time):\n"
+             << "    return rx(q, time, angle=np.pi/4)\n"
+             << "\n"
+             << "def xm45(q, time):\n"
+             << "    return rx(q, time, angle=-np.pi/4)\n"
+             << "\n"
+             //<< "def cz(q, time, dephase_var):\n"
+             //<< "    return cphase(q, time, dephase_var=dephase_var)\n"
+             << "\n"
+             << "def prepz(q, time):\n"
+             << "    return ResetGate(q, time, state=0)\n\n"
              << endl;
 
         fout << "\n# create a circuit\n";
@@ -373,7 +435,7 @@ private:
                 {
                     DOUT("... adding gates, a new bundle");
                     auto bcycle = abundle.start_cycle;
-        
+
                     std::stringstream ssbundles;
                     for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
                     {
@@ -388,7 +450,7 @@ private:
                             {
                                 DOUT("... adding gates, a measure");
                                 auto op = operands.back();
-								ssbundles << "    c.add_qubit(\"m" << op << "\")\n";
+                                ssbundles << "    c.add_qubit(\"m" << op << "\")\n";
                                 ssbundles << "    c.add_gate("
                                           << "ButterflyGate("
                                           << "\"q" << op <<"\", "
@@ -396,23 +458,23 @@ private:
                                           << "p_exc=0,"
                                           << "p_dec= 0.005)"
                                           << ")\n" ;
-								ssbundles << "    c.add_measurement("
-									<< "\"q" << op << "\", "
-									<< "time=" << ((bcycle - 1)*ns_per_cycle) + (duration/4) << ", "
-									<< "output_bit=\"m" << op << "\", "
-									<< "sampler=sampler"
-									<< ")\n";
-								ssbundles << "    c.add_gate("
-									<< "ButterflyGate("
-									<< "\"q" << op << "\", "
-									<< "time=" << ((bcycle - 1)*ns_per_cycle) + duration/2 << ", "
-									<< "p_exc=0,"
-									<< "p_dec= 0.015)"
-									<< ")\n";
+                                ssbundles << "    c.add_measurement("
+                                    << "\"q" << op << "\", "
+                                    << "time=" << ((bcycle - 1)*ns_per_cycle) + (duration/4) << ", "
+                                    << "output_bit=\"m" << op << "\", "
+                                    << "sampler=sampler"
+                                    << ")\n";
+                                ssbundles << "    c.add_gate("
+                                    << "ButterflyGate("
+                                    << "\"q" << op << "\", "
+                                    << "time=" << ((bcycle - 1)*ns_per_cycle) + duration/2 << ", "
+                                    << "p_exc=0,"
+                                    << "p_dec= 0.015)"
+                                    << ")\n";
 
                             }
-                            else if( iname == "y90" or iname == "ym90" or iname == "y" or iname == "x" or 
-								iname == "x90" or iname == "xm90")
+                            else if( iname == "y90" or iname == "ym90" or iname == "y" or iname == "x" or
+                                iname == "x90" or iname == "xm90")
                             {
                                 DOUT("... adding gates, another gate");
                                 ssbundles <<  "    c.add_gate("<< iname << "(" ;
@@ -455,10 +517,13 @@ private:
                     }
                     fout << ssbundles.str();
                 }
-				fout << "    return c";
-				fout << "    \n\n";
+                fout << "    return c";
+                fout << "    \n\n";
+                ql::report::report_kernel_statistics(fout, kernel, platform, "    # ");
             }
         }
+        ql::report::report_string(fout, "    # Program-wide statistics:\n");
+        ql::report::report_totals_statistics(fout, kernels, platform, "    # ");
         fout << "    return c";
 
         fout.close();

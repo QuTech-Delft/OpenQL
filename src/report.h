@@ -182,7 +182,7 @@ namespace report
 
     /*
      * composes the report_file's name
-     * in a file with a name that contains the program name and the place from where the report is done
+     * that contains the program name and the place from where the report is done
      */
     std::stringstream report_file(const std::string   prog_name,
                 const std::string               fromwhere_rel,
@@ -234,8 +234,6 @@ namespace report
         }
     }
 
-    // typedef std::stringstream (*subreport)(quantum_kernel&,const ql::quantum_platform&);
-
     /*
      * reporting statistics
      *
@@ -246,6 +244,7 @@ namespace report
      * - report_close: close the report file's ofstream again
      *
      * - report_statistics: open, report for each kernel, report the totals and close
+     * Each of above interfaces does nothing when option write_report_files is not "yes".
      */
     std::ofstream report_open(const std::string    prog_name,
                 const std::string               fromwhere_rel,
@@ -289,7 +288,8 @@ namespace report
      */
     void report_kernel_statistics(std::ofstream&           ofs,
                 quantum_kernel&                 k,
-                const ql::quantum_platform&     platform
+                const ql::quantum_platform&     platform,
+                const std::string               prefix
                )
     {
         if( ql::options::get("write_report_files") != "yes")
@@ -307,17 +307,17 @@ namespace report
         get_qubit_usedcyclecount(k.c, platform, usedcyclecount);
 
         size_t  depth = get_depth(k.c, platform);
-        ofs << "." << k.name << "\n";
-        ofs << "# ----- depth: " << depth << "\n";
-        ofs << "# ----- quantum gates: " << get_quantum_gates_count(k.c, platform) << "\n";
-        ofs << "# ----- non single qubit gates: " << get_non_single_qubit_quantum_gates_count(k.c, platform) << "\n";
-        ofs << "# ----- classical operations: " << get_classical_operations_count(k.c, platform) << "\n";
-        ofs << "# ----- qubits used: " << qubits_used << "\n";
-        ofs << "# ----- qubit cycles use:" << ql::utils::to_string(usedcyclecount) << "\n";
+        ofs << prefix << "kernel: " << k.name << "\n";
+        ofs << prefix << "----- depth: " << depth << "\n";
+        ofs << prefix << "----- quantum gates: " << get_quantum_gates_count(k.c, platform) << "\n";
+        ofs << prefix << "----- non single qubit gates: " << get_non_single_qubit_quantum_gates_count(k.c, platform) << "\n";
+        ofs << prefix << "----- classical operations: " << get_classical_operations_count(k.c, platform) << "\n";
+        ofs << prefix << "----- qubits used: " << qubits_used << "\n";
+        ofs << prefix << "----- qubit cycles use:" << ql::utils::to_string(usedcyclecount) << "\n";
     }
 
     /*
-     * report given string which is assumed to be closed by an endl
+     * report given string which is assumed to be closed by an endl by the caller
      */
     void report_string(std::ofstream&   ofs,
                 std::string             s
@@ -336,7 +336,8 @@ namespace report
      */
     void report_totals_statistics(std::ofstream&           ofs,
                 std::vector<quantum_kernel>&    kernels,
-                const ql::quantum_platform&     platform
+                const ql::quantum_platform&     platform,
+                const std::string               prefix
                )
     {
         if( ql::options::get("write_report_files") != "yes")
@@ -364,12 +365,12 @@ namespace report
 
         // report totals
         ofs << "\n";
-        ofs << "# Total depth: " << total_depth << "\n";
-        ofs << "# Total no. of quantum gates: " << total_quantum_gates << "\n";
-        ofs << "# Total no. of non single qubit gates: " << total_non_single_qubit_gates << "\n";
-        ofs << "# Total no. of classical operations: " << total_classical_operations << "\n";
-        ofs << "# Qubits used: " << qubits_used << "\n";
-        ofs << "# No. kernels: " << kernels.size() << "\n";
+        ofs << prefix << "Total depth: " << total_depth << "\n";
+        ofs << prefix << "Total no. of quantum gates: " << total_quantum_gates << "\n";
+        ofs << prefix << "Total no. of non single qubit gates: " << total_non_single_qubit_gates << "\n";
+        ofs << prefix << "Total no. of classical operations: " << total_classical_operations << "\n";
+        ofs << prefix << "Qubits used: " << qubits_used << "\n";
+        ofs << prefix << "No. kernels: " << kernels.size() << "\n";
     }
 
     /*
@@ -384,7 +385,8 @@ namespace report
                 std::vector<quantum_kernel>&    kernels,
                 const ql::quantum_platform&     platform,
                 const std::string               fromwhere_rel,
-                const std::string               fromwhere_abs
+                const std::string               fromwhere_abs,
+                const std::string               prefix
                )
     {
         if( ql::options::get("write_report_files") != "yes")
@@ -398,11 +400,11 @@ namespace report
         // per kernel reporting
         for (auto& k : kernels)
         {
-            report_kernel_statistics(ofs, k, platform);
+            report_kernel_statistics(ofs, k, platform, prefix);
         }
 
         // and total collecting and reporting
-        report_totals_statistics(ofs, kernels, platform);
+        report_totals_statistics(ofs, kernels, platform, prefix);
         report_close(ofs);
     }
 

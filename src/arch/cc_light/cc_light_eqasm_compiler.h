@@ -926,7 +926,7 @@ public:
         }
         DOUT("Clifford optimization on program " << prog_name << " at " << opt << " ...");
 
-        ql::report::report_statistics(prog_name, kernels, platform, "in", opt);
+        ql::report::report_statistics(prog_name, kernels, platform, "in", opt, "# ");
         ql::report::report_qasm(prog_name, kernels, platform, "in", opt);
 
         Clifford cliff;
@@ -935,7 +935,7 @@ public:
             cliff.Optimize(kernel, opt);
         }
 
-        ql::report::report_statistics(prog_name, kernels, platform, "out", opt);
+        ql::report::report_statistics(prog_name, kernels, platform, "out", opt, "# ");
         ql::report::report_qasm(prog_name, kernels, platform, "out", opt);
     }
 
@@ -948,7 +948,7 @@ public:
             return;
         }
 
-        ql::report::report_statistics(prog_name, kernels, platform, "in", "mapper");
+        ql::report::report_statistics(prog_name, kernels, platform, "in", "mapper", "# ");
         ql::report::report_qasm(prog_name, kernels, platform, "in", "mapper");
 
         Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
@@ -980,7 +980,7 @@ public:
 
             kernel.bundles = mapper.Bundler(kernel);    // assignment to kernel.bundles only for reporting below
 
-            ql::report::report_kernel_statistics(ofs, kernel, platform);
+            ql::report::report_kernel_statistics(ofs, kernel, platform, "# ");
             std::stringstream ss;
             ss << "# ----- swaps added: " << mapper.nswapsadded << "\n";
             ss << "# ----- of which moves added: " << mapper.nmovesadded << "\n";
@@ -988,14 +988,14 @@ public:
             ss << "# ----- virt2real map after mapper:" << ql::utils::to_string(mapper.v2r_out) << "\n";
             ss << "# ----- realqubit states before mapper:" << ql::utils::to_string(mapper.rs_in) << "\n";
             ss << "# ----- realqubit states after mapper:" << ql::utils::to_string(mapper.rs_out) << "\n";
-            ss << "# ----- timetaken: " << timetaken << "\n";
+            ss << "# ----- time taken: " << timetaken << "\n";
             ql::report::report_string(ofs, ss.str());
 
             total_swaps += mapper.nswapsadded;
             total_moves += mapper.nmovesadded;
             total_timetaken += timetaken;
         }
-        ql::report::report_totals_statistics(ofs, kernels, platform);
+        ql::report::report_totals_statistics(ofs, kernels, platform, "# ");
         std::stringstream ss;
         ss << "# Total no. of swaps: " << total_swaps << "\n";
         ss << "# Total no. of moves of swaps: " << total_moves << "\n";
@@ -1008,7 +1008,7 @@ public:
 
     void schedule(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform, std::string opt)
     {
-        ql::report::report_statistics(prog_name, kernels, platform, "in", "rcscheduler");
+        ql::report::report_statistics(prog_name, kernels, platform, "in", "rcscheduler", "# ");
         ql::report::report_qasm(prog_name, kernels, platform, "in", "rcscheduler");
 
         for(auto &kernel : kernels)
@@ -1031,7 +1031,7 @@ public:
             }
         }
 
-        ql::report::report_statistics(prog_name, kernels, platform, "out", "rcscheduler");
+        ql::report::report_statistics(prog_name, kernels, platform, "out", "rcscheduler", "# ");
         ql::report::report_bundles(prog_name, kernels, platform, "out", "rcscheduler");
     }
 
@@ -1074,7 +1074,7 @@ public:
         }
 
         ql::report::report_qasm(prog_name, kernels, platform, "in", "cc_light_compiler");
-        ql::report::report_statistics(prog_name, kernels, platform, "in", "cc_light_compiler");
+        ql::report::report_statistics(prog_name, kernels, platform, "in", "cc_light_compiler", "# ");
 
         // compute timetaken, start interval timer here
         double    total_timetaken = 0.0;
@@ -1097,8 +1097,8 @@ public:
         // report totals over all kernels, over all eqasm passes contributing to mapping
         std::ofstream   ofs;
         ofs = ql::report::report_open(prog_name, "out", "cc_light_compiler");
-        for (auto& k : kernels) { ql::report::report_kernel_statistics(ofs, k, platform); }
-        ql::report::report_totals_statistics(ofs, kernels, platform);
+        for (auto& k : kernels) { ql::report::report_kernel_statistics(ofs, k, platform, "# "); }
+        ql::report::report_totals_statistics(ofs, kernels, platform, "# ");
         std::stringstream ss;
         ss << "# Total time taken: " << total_timetaken << "\n";
         ql::report::report_string(ofs, ss.str());

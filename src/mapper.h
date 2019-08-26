@@ -1268,8 +1268,10 @@ void AddSwap(size_t r0, size_t r1, int doreverseswap)
             }
             if (InsertionCost(initcirc, circ) <= threshold)
             {
+                // so we go for it!
+                // circ contains move; it must get the initcirc before it ...
+                // do this by appending circ's gates to initcirc, and then swapping circ and initcirc content
                 DOUT("... initialization is for free, do it ...");
-                // generate initcirc in front of circ by appending circ to initcirc, and then swapping circ/initcirc
                 for (auto& gp : circ)
                 {
                     initcirc.push_back(gp);
@@ -1321,7 +1323,7 @@ void AddSwap(size_t r0, size_t r1, int doreverseswap)
     {
         Add(gp);
     }
-    v2r.Swap(r0,r1);
+    v2r.Swap(r0,r1);        // reflect in v2r that r0 and r1 interchanged state, i.e. update the map to reflect the swap
 }
 
 // add the mapped gate (with real qubit indices as operands) to the past
@@ -1619,17 +1621,19 @@ void Add2Front(size_t q)
     total.insert(total.begin(), q); // hopelessly inefficient
 }
 
-// add swap gates for the current path to the given past
+// add to a max of maxnumbertoadd swap gates for the current path to the given past
 // this past can be a path-local one or the main past
-void AddSwaps(Past & past)
+// after having added them, schedule the result into that past
+void AddSwaps(Past & past, size_t maxnumbertoadd)
 {
     size_t  fromQ;
     size_t  toQ;
     int     doreverseswap;
+    size_t  numberadded = 0;
 
     fromQ = fromSource[0];
     doreverseswap = 0;
-    for ( size_t i = 1; i < fromSource.size(); i++ )
+    for ( size_t i = 1; i < fromSource.size() && numberadded < maxnumbertoadd; i++ )
     {
         toQ = fromSource[i];
         if (i == 1 && past.CanBeScheduledEarlier(fromQ, toQ))
@@ -1638,11 +1642,12 @@ void AddSwaps(Past & past)
         }
         past.AddSwap(fromQ, toQ, doreverseswap);
         fromQ = toQ;
+        numberadded++;
     }
 
     fromQ = fromTarget[0];
     doreverseswap = 0;
-    for ( size_t i = 1; i < fromTarget.size(); i++ )
+    for ( size_t i = 1; i < fromTarget.size() && numberadded < maxnumbertoadd; i++ )
     {
         toQ = fromTarget[i];
         if (i == 1 && past.CanBeScheduledEarlier(fromQ, toQ))
@@ -1651,6 +1656,7 @@ void AddSwaps(Past & past)
         }
         past.AddSwap(fromQ, toQ, doreverseswap);
         fromQ = toQ;
+        numberadded++;
     }
 
     past.Schedule();
@@ -1663,7 +1669,7 @@ size_t Extend(Past basePast)
 {
     past = basePast;   // explicitly clone basePast to a path-local copy of it, Alter.past
     // DOUT("... adding swaps for local past ...");
-    AddSwaps(past);
+    AddSwaps(past, MAX_CYCLE);
     // DOUT("... done adding/scheduling swaps to local past");
     cycleExtend = past.MaxFreeCycle() - basePast.MaxFreeCycle();
     return cycleExtend;
@@ -1673,7 +1679,7 @@ double EstimateFidelity(Past basePast)
 {
     past = basePast;   // explicitly clone basePast to a path-local copy of it, Alter.past
     // DOUT("... adding swaps for local past ...");
-    AddSwaps(past);
+    AddSwaps(past, MAX_CYCLE);
     // DOUT("... compute fidelity local past ...");
     // DOUT("... done adding/scheduling swaps to local past");
     // cycleExtend = past.MaxFreeCycle() - basePast.MaxFreeCycle();
@@ -3204,9 +3210,9 @@ void GenAlters(ql::gate* gp, std::list<Alter>& lp, Past& past)
 {
     auto&   q = gp->operands;
     MapperAssert (q.size() == 2);
-    size_t  src = past.MapQubit(q[0]);      // interpret virtual operands in current map
+    size_t  src = past.MapQubit(q[0]);  // interpret virtual operands in past's current map
     size_t  tgt = past.MapQubit(q[1]);
-    size_t  d = grid.Distance(src, tgt);    // and find distance between real counterparts
+    size_t d = grid.Distance(src, tgt);     // and find distance between real counterparts
     DOUT("GenAlters: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
 
     std::list<Alter> straightnlp;  // list that will hold all Alters directly from src to tgt
@@ -3264,15 +3270,22 @@ void RouteAndMap2qGates(std::list<ql::gate*> lg, Future& future, Past& past)
 
     // select best one
     Alter resp;
-    ql::gate*  resgp;
-    SelectAlter(alllp, resp, past);// select one according to strategy specified by options
+    SelectAlter(alllp, resp, past);     // select one according to strategy specified by options; result in resp
+    ql::gate*  resgp = resp.targetgp;   // and the 2q target gate then in resgp
+    DOUT("... RouteAndMap2qGates, 2q selected as best: " << resgp->qasm());
 
     // commit to best one
-    resp.AddSwaps(past);        // add swaps, as described by resp, to THIS main past, and schedule them in
-    resgp = resp.targetgp;
-    DOUT("... RouteAndMap2qGates, 2q after routing: " << resgp->qasm());
-    MapRoutedGate(resgp, past);
-    future.DoneGate(resgp);
+    // add swaps (upto some max), as described by resp, to THIS main past, and schedule them in
+    resp.AddSwaps(past, atoi(ql::options::get("mapselectmaxswaps").c_str()));
+
+    // when only some swaps were added, the resgp might not yet be NN
+    auto&   q = resgp->operands;
+    if (grid.Distance(past.MapQubit(q[0]), past.MapQubit(q[1])) == 1)
+    {
+        // resgp is NN: move on
+        MapRoutedGate(resgp, past); // the 2q target gate is NN now and thus can be mapped
+        future.DoneGate(resgp);     // and then taken out of future
+    }
 }
 
 // With only gates available for mapping that may require routing,
@@ -3479,6 +3492,7 @@ ql::ir::bundles_t Bundler(ql::quantum_kernel& kernel)
 /**
  * qasm
  * copied and shrunk from kernel.h
+ * only used in DOUT and similar trace printing
  */
 std::string qasm(ql::circuit& c, size_t nqubits, std::string& name)
 {

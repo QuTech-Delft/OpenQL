@@ -50,6 +50,7 @@ namespace ql
           opt_name2opt_val["maptiebreak"] = "random";
           opt_name2opt_val["mappathselect"] = "all";
           opt_name2opt_val["maplookahead"] = "noroutingfirst";
+          opt_name2opt_val["mapselectmaxswaps"] = "20";     // want MAX_CYCLE but enumerating MAX_CYCLE different values below is too much 
 
           opt_name2opt_val["write_qasm_files"] = "no";
           opt_name2opt_val["write_report_files"] = "no";
@@ -80,6 +81,7 @@ namespace ql
           app->add_set_ignore_case("--maptiebreak", opt_name2opt_val["maptiebreak"], {"first", "last", "random"}, "Tie break method", true);
           app->add_set_ignore_case("--mappathselect", opt_name2opt_val["mappathselect"], {"all", "borders"}, "Which paths: all or borders", true);
           app->add_set_ignore_case("--maplookahead", opt_name2opt_val["maplookahead"], {"no", "critical", "noroutingfirst", "all"}, "Strategy wrt selecting next gate(s) to map", true);
+          app->add_set_ignore_case("--mapselectmaxswaps", opt_name2opt_val["maxselectmaxswaps"], {"0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20",}, "Maximum number of swaps/moves added for one alternative", true);
           app->add_set_ignore_case("--write_qasm_files", opt_name2opt_val["write_qasm_files"], {"yes", "no"}, "write (un-)scheduled (with and without resource-constraint) qasm files", true);
           app->add_set_ignore_case("--write_report_files", opt_name2opt_val["write_report_files"], {"yes", "no"}, "write report files on circuit characteristics and pass results", true);
       }
@@ -104,6 +106,7 @@ namespace ql
                     << "maptiebreak: "      << opt_name2opt_val["maptiebreak"] << std::endl
                     << "mapusemoves: "      << opt_name2opt_val["mapusemoves"] << std::endl
                     << "mapreverseswap: "   << opt_name2opt_val["mapreverseswap"] << std::endl
+                    << "mapselectmaxswaps: "   << opt_name2opt_val["mapselectmaxswaps"] << std::endl
                     << "clifford_postmapper: " << opt_name2opt_val["clifford_postmapper"] << std::endl
                     << "scheduler_post179: " << opt_name2opt_val["scheduler_post179"] << std::endl
                     << "scheduler_commute: " << opt_name2opt_val["scheduler_commute"] << std::endl
