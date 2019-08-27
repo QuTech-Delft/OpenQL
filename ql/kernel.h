@@ -837,7 +837,7 @@ public:
             {
                 if(qubits[i] == qubits[j])
                 {
-                EOUT("Qubift numbers used more than once in Unitary: " << u.name << ". Double qubit is number " << qubits[j]);
+                EOUT("Qubit numbers used more than once in Unitary: " << u.name << ". Double qubit is number " << qubits[j]);
                 throw ql::exception("Qubit numbers used more than once in Unitary: " + u.name + ". Double qubit is number " + std::to_string(qubits[j]), false);
                 }
                         
@@ -850,7 +850,7 @@ public:
 
             COUT("Adding decomposed unitary to kernel ...");
             DOUT("The list is this many items long: " << u.instructionlist.size());
-            COUT("Instructionlist" << ql::utils::to_string(u.instructionlist));
+            //COUT("Instructionlist" << ql::utils::to_string(u.instructionlist));
             int end_index = recursiveRelationsForUnitaryDecomposition(u,qubits, u_size, 0);
             DOUT("Total number of gates added: " << end_index);
         }
@@ -968,7 +968,6 @@ public:
         for(int i = 1; i < end_index - start_index; i++)
         { 
             idx = uint64_log2 (((i)^((i)>>1))^((i+1)^((i+1)>>1)));
-            COUT("idx: " << idx);
             c.push_back(new ql::ry(qubits.back(),-instruction_list[i+start_index]));
             c.push_back(new ql::cnot(qubits[idx], qubits.back()));
         }

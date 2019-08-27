@@ -69,6 +69,7 @@ public:
         }
         return _matrix;
     }
+
     void decompose()
     {
         DOUT("decomposing Unitary: " << name);
@@ -118,62 +119,62 @@ public:
             // if q2 is zero, the whole thing is a demultiplexing problem instead of full CSD
             if(matrix.bottomLeftCorner(n,n).isZero(10e-14) && matrix.topRightCorner(n,n).isZero(10e-14))
             {
-                DOUT("[unitary.h] Optimization: q2 is zero, only demultiplexing will be performed.");
+                DOUT("Optimization: q2 is zero, only demultiplexing will be performed.");
                 instructionlist.push_back(20.0);
-                demultiplexing(matrix.topLeftCorner(n, n), matrix.bottomRightCorner(n,n), numberofbits-1);
+                if(matrix.topLeftCorner(n, n) == matrix.bottomRightCorner(n,n))
+                {
+                    COUT("Optimization: Unitaries are equal, skip one step in the recursion for unitaries of size: " << n << " They are both: " << matrix.topLeftCorner(n, n));
+                    instructionlist.push_back(30.0);
+                    decomp_function(matrix.topLeftCorner(n, n), numberofbits-1);
+                }
+                else
+                {
+                    demultiplexing(matrix.topLeftCorner(n, n), matrix.bottomRightCorner(n,n), numberofbits-1);
+                }
             }
             // Check to see if it the kronecker product of a bigger matrix and the identity matrix.
             // By checking if the first row is equal to the second row one over, and if thelast two rows are equal 
             // Which means the last qubit is not affected by this gate
             else if (matrix(Eigen::seqN(0, n, 2), Eigen::seqN(1, n, 2)).isZero()  && matrix(Eigen::seqN(1, n, 2), Eigen::seqN(0, n, 2)).isZero()  && matrix.block(0,0,1,2*n-1) == matrix.block(1,1,1,2*n-1) &&  matrix.block(2*n-2,0,1,2*n-1) ==  matrix.block(2*n-1,1,1,2*n-1))
             {
-                COUT("Optimization: last qubit is not affected, skip one step in the recursion.");
-
+                DOUT("Optimization: last qubit is not affected, skip one step in the recursion.");
                 // Code for last qubit not affected
                 instructionlist.push_back(10.0);
-                DOUT("new matrix: "<< matrix(Eigen::seqN(0, n, 2), Eigen::seqN(0, n, 2)));
                 decomp_function(matrix(Eigen::seqN(0, n, 2), Eigen::seqN(0, n, 2)), numberofbits-1);
 
             }
             else
             {
-            complex_matrix cc;
-            complex_matrix ss;
-            complex_matrix L0;
-            complex_matrix L1;
-            complex_matrix R0;
-            complex_matrix R1;
-
+            complex_matrix cc(n,n);
+            complex_matrix ss(n,n);
+            complex_matrix L0(n,n);
+            complex_matrix L1(n,n);
+            complex_matrix R0(n,n);
+            complex_matrix R1(n,n);
             CSD(matrix, L0, L1, R0,R1,cc,ss);
             demultiplexing(R0,R1, numberofbits-1);
             multicontrolledY(ss,n);
             demultiplexing(L0,L1, numberofbits-1);
-
             }
-
-
         }
     }
-void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matrix &v1, complex_matrix &v2, complex_matrix &c, complex_matrix &s)
+
+    void CSD(complex_matrix &U, complex_matrix &u1, complex_matrix &u2, complex_matrix &v1, complex_matrix &v2, complex_matrix &c, complex_matrix &s)
     {
         //Cosine sine decomposition
         // U = [q1, U01] = [u1    ][c  s][v1  ]
         //     [q2, U11] = [    u2][-s c][   v2]
         int n = U.rows();
         int m = U.cols();
-        complex_matrix q1 = U.topLeftCorner(n/2,m/2);
+        // complex_matrix q1 = U.topLeftCorner(n/2,m/2);
 
         Eigen::BDCSVD<complex_matrix> svd(n/2,m/2);
-
+        svd.compute(U.topLeftCorner(n/2,m/2), Eigen::ComputeThinU | Eigen::ComputeThinV); // possible because it's square anyway
         
-        if(q1.rows() > 1 && q1.cols() > 1)
-        {          
-        svd.compute(q1, Eigen::ComputeThinU | Eigen::ComputeThinV); // possible because it's square anyway
-        }
 
         // thinCSD: q1 = u1*c*v1.adjoint()
         //          q2 = u2*s*v1.adjoint()
-        int p = q1.rows();
+        int p = n/2;
         complex_matrix z = Eigen::MatrixXd::Identity(p, p).colwise().reverse();
         c = z*svd.singularValues().asDiagonal()*z;
         u1 = svd.matrixU()*z;
@@ -225,7 +226,7 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
                 s(j,j) = -s(j,j);
                 u2.col(j) = -u2.col(j);
             }
-}
+        }
         if(!U.topLeftCorner(p,p).isApprox(u1*c*v1.adjoint(), 10e-8) || !U.bottomLeftCorner(p,p).isApprox(u2*s*v1.adjoint(), 10e-8))
         {
             if(U.topLeftCorner(p,p).isApprox(u1*c*v1.adjoint(), 10e-8))
@@ -319,60 +320,42 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
     {
         // [U1 0 ]  = [V 0][D 0 ][W 0]
         // [0  U2]    [0 V][0 D*][0 W] 
-        if(U1 == U2)
-        {
-            if((int) U1.rows() == 2)
-            {            
-                COUT("Optimization: Unitaries are equal, skip one step in the recursion for unitaries of size: " << U1.rows() << " They are both: " << U1);
-                instructionlist.push_back(30.0);
-                zyz_decomp(U1);                
-            }
-            else
-            {
 
-            COUT("Optimization: Unitaries are equal, skip one step in the recursion for unitaries of size: " << U1.rows() << " They are both: " << U1);
-            instructionlist.push_back(30.0);
-            decomp_function(U1, numberofcontrolbits);
-            }
+        Eigen::ComplexEigenSolver<Eigen::MatrixXcd> eigslv(U1*U2.adjoint(), true); 
+        complex_matrix d = eigslv.eigenvalues().asDiagonal();
+        complex_matrix V = eigslv.eigenvectors();
+        if(!(V*V.adjoint()).isApprox(Eigen::MatrixXd::Identity(V.rows(), V.rows()), 10e-3))
+        {
+            COUT("Eigenvalue decomposition incorrect: V is not unitary: \n" << (V*V.adjoint()));
+            Eigen::BDCSVD<complex_matrix> svd3(V.block(0,0,V.rows(),2), Eigen::ComputeFullU);
+            V.block(0,0,V.rows(),2) = svd3.matrixU();
+        }
+        complex_matrix D = d.sqrt(); // Do this here to not get aliasing issues
+        complex_matrix W = D*V.adjoint()*U2;
+        if(!U1.isApprox(V*D*W, 10e-2) || !U2.isApprox(V*D.adjoint()*W, 10e-2))
+        {
+            EOUT("Demultiplexing not correct!");
+            throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at matrix U1: \n"+to_string(U1)+ "and matrix U2: \n" +to_string(U2) + "\nwhile they are: \n" + to_string(V*D*W) + "\nand \n" + to_string(V*D.adjoint()*W), false);
+        }
+        if(W.rows() == 2)
+        {
+            zyz_decomp(W);
         }
         else
         {
-            Eigen::ComplexEigenSolver<Eigen::MatrixXcd> eigslv(U1*U2.adjoint(), true); 
-            complex_matrix d = eigslv.eigenvalues().asDiagonal();
-            complex_matrix V = eigslv.eigenvectors();
-            if(!(V*V.adjoint()).isApprox(Eigen::MatrixXd::Identity(V.rows(), V.rows()), 10e-1))
-            {
-                COUT("Eigenvalue decomposition incorrect: V is not unitary: \n" << (V*V.adjoint()));
-                Eigen::BDCSVD<complex_matrix> svd3(V.block(0,0,V.rows(),2), Eigen::ComputeFullU);
-                V.block(0,0,V.rows(),2) = svd3.matrixU();
-            }
-
-            complex_matrix D = d.sqrt(); // Do this here to not get aliasing issues
-            complex_matrix W = D*V.adjoint()*U2;
-            if(!U1.isApprox(V*D*W, 10e-2) || !U2.isApprox(V*D.adjoint()*W, 10e-2))
-            {
-                EOUT("Demultiplexing not correct!");
-                throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at matrix U1: \n"+to_string(U1)+ "and matrix U2: \n" +to_string(U2) + "\nwhile they are: \n" + to_string(V*D*W) + "\nand \n" + to_string(V*D.adjoint()*W), false);
-            }
-            if(W.rows() == 2)
-            {
-                zyz_decomp(W);
-            }
-            else
-            {
-                decomp_function(W, std::log2(W.rows()));
-            }
-            multicontrolledZ(D, D.rows());
-            if(V.rows() == 2)
-            {
-                zyz_decomp(V);
-            }
-            else
-            {
-                decomp_function(V, std::log2(V.rows()));
-            }
+            decomp_function(W, std::log2(W.rows()));
         }
-}
+        multicontrolledZ(D, D.rows());
+        if(V.rows() == 2)
+        {
+            zyz_decomp(V);
+        }
+        else
+        {
+            decomp_function(V, std::log2(V.rows()));
+        }
+    }
+
 
     std::vector<Eigen::MatrixXd> genMk_lookuptable;
 
@@ -396,7 +379,7 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
             genMk_lookuptable.push_back(Mk);
             }
         }
-         return genMk_lookuptable[numberqubits-1];
+        return genMk_lookuptable[numberqubits-1];
     }
 
     int bitParity(int i)
@@ -416,7 +399,7 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
         }
     }
 
-    void multicontrolledY(complex_matrix ss, int halfthesizeofthematrix)
+    void multicontrolledY(complex_matrix &ss, int halfthesizeofthematrix)
     {
         Eigen::VectorXd temp =  2*Eigen::asin(ss.diagonal().array()).real();
         Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk(halfthesizeofthematrix));
@@ -433,7 +416,7 @@ void CSD(complex_matrix U, complex_matrix &u1, complex_matrix &u2, complex_matri
         }
     }
 
-    void multicontrolledZ(complex_matrix D, int halfthesizeofthematrix)
+    void multicontrolledZ(complex_matrix &D, int halfthesizeofthematrix)
     {
         Eigen::VectorXd temp =  (std::complex<double>(0,-2)*Eigen::log(D.diagonal().array())).real();
         Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk(halfthesizeofthematrix));
