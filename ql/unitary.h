@@ -20,6 +20,8 @@
 #include <unsupported/Eigen/MatrixFunctions>
 #include <src/misc/lapacke.h>
 
+#include <chrono>
+
 namespace ql
 {
 
@@ -78,7 +80,7 @@ public:
         int matrix_size = _matrix.rows();
         
         // compute the number of qubits: length of array is collumns*rows, so log2(sqrt(array.size))
-        int numberofbits = (int) log2(matrix_size);
+        int numberofbits = uint64_log2(matrix_size);
 
         Eigen::MatrixXcd identity = Eigen::MatrixXcd::Identity(matrix_size, matrix_size);
         Eigen::MatrixXcd matmatadjoint = (_matrix.adjoint()*_matrix);
@@ -90,6 +92,8 @@ public:
 
             throw ql::exception("Error: Unitary '"+ name+"' is not a unitary matrix. Cannot be decomposed!" + to_string(matmatadjoint), false);
         }
+        // initialize the general M^k lookuptable
+        genMk();
 
         decomp_function(_matrix, numberofbits); //needed because the matrix is read in columnmajor
         
@@ -106,7 +110,7 @@ public:
     }
 
 
-    void decomp_function(complex_matrix matrix, int numberofbits)
+    void decomp_function(const Eigen::Ref<const complex_matrix>& matrix, int numberofbits)
     {  
         DOUT("decomp_function: \n" << to_string(matrix));         
         if(numberofbits == 1)
@@ -120,11 +124,11 @@ public:
             if(matrix.bottomLeftCorner(n,n).isZero(10e-14) && matrix.topRightCorner(n,n).isZero(10e-14))
             {
                 DOUT("Optimization: q2 is zero, only demultiplexing will be performed.");
-                instructionlist.push_back(20.0);
+                instructionlist.push_back(200.0);
                 if(matrix.topLeftCorner(n, n) == matrix.bottomRightCorner(n,n))
                 {
-                    COUT("Optimization: Unitaries are equal, skip one step in the recursion for unitaries of size: " << n << " They are both: " << matrix.topLeftCorner(n, n));
-                    instructionlist.push_back(30.0);
+                    DOUT("Optimization: Unitaries are equal, skip one step in the recursion for unitaries of size: " << n << " They are both: " << matrix.topLeftCorner(n, n));
+                    instructionlist.push_back(300.0);
                     decomp_function(matrix.topLeftCorner(n, n), numberofbits-1);
                 }
                 else
@@ -139,19 +143,18 @@ public:
             {
                 DOUT("Optimization: last qubit is not affected, skip one step in the recursion.");
                 // Code for last qubit not affected
-                instructionlist.push_back(10.0);
+                instructionlist.push_back(100.0);
                 decomp_function(matrix(Eigen::seqN(0, n, 2), Eigen::seqN(0, n, 2)), numberofbits-1);
 
             }
             else
             {
-            complex_matrix cc(n,n);
             complex_matrix ss(n,n);
             complex_matrix L0(n,n);
             complex_matrix L1(n,n);
             complex_matrix R0(n,n);
             complex_matrix R1(n,n);
-            CSD(matrix, L0, L1, R0,R1,cc,ss);
+            CSD(matrix, L0, L1, R0,R1,ss);
             demultiplexing(R0,R1, numberofbits-1);
             multicontrolledY(ss,n);
             demultiplexing(L0,L1, numberofbits-1);
@@ -159,13 +162,14 @@ public:
         }
     }
 
-    void CSD(complex_matrix &U, complex_matrix &u1, complex_matrix &u2, complex_matrix &v1, complex_matrix &v2, complex_matrix &c, complex_matrix &s)
+    void CSD(const Eigen::Ref<const complex_matrix>& U, Eigen::Ref<complex_matrix>u1, Eigen::Ref<complex_matrix>u2, Eigen::Ref<complex_matrix>v1, Eigen::Ref<complex_matrix>v2, Eigen::Ref<complex_matrix> s)
     {
         //Cosine sine decomposition
         // U = [q1, U01] = [u1    ][c  s][v1  ]
         //     [q2, U11] = [    u2][-s c][   v2]
         int n = U.rows();
         int m = U.cols();
+        complex_matrix c(n,n); // c matrix is not needed for the higher level
         // complex_matrix q1 = U.topLeftCorner(n/2,m/2);
 
         Eigen::BDCSVD<complex_matrix> svd(n/2,m/2);
@@ -225,7 +229,7 @@ public:
             {
                 s(j,j) = -s(j,j);
                 u2.col(j) = -u2.col(j);
-            }
+            } 
         }
         if(!U.topLeftCorner(p,p).isApprox(u1*c*v1.adjoint(), 10e-8) || !U.bottomLeftCorner(p,p).isApprox(u2*s*v1.adjoint(), 10e-8))
         {
@@ -284,14 +288,13 @@ public:
     }
 
 
-    void zyz_decomp(complex_matrix matrix)
+    void zyz_decomp(const Eigen::Ref<const complex_matrix>& matrix)
     {
         ql::complex_t det = matrix.determinant();// matrix(0,0)*matrix(1,1)-matrix(1,0)*matrix(0,1);
 
         double delta = atan2(det.imag(), det.real())/matrix.rows();
-        std::complex<double> j(0,1); // 1j basically
-        std::complex<double> A = exp(-j*delta)*matrix(0,0);
-        std::complex<double> B = exp(-j*delta)*matrix(0,1); //to comply with the other y-gate definition
+        std::complex<double> A = exp(std::complex<double>(0,-1)*delta)*matrix(0,0);
+        std::complex<double> B = exp(std::complex<double>(0,-1)*delta)*matrix(0,1); //to comply with the other y-gate definition
         
         double sw = sqrt(pow((double) B.imag(),2) + pow((double) B.real(),2) + pow((double) A.imag(),2));
         double wx = 0;
@@ -316,7 +319,7 @@ public:
         instructionlist.push_back(-alpha);
     }
 
-    void demultiplexing(complex_matrix U1, complex_matrix U2, int numberofcontrolbits)
+    void demultiplexing(const Eigen::Ref<const complex_matrix> &U1, const Eigen::Ref<const complex_matrix> &U2, int numberofcontrolbits)
     {
         // [U1 0 ]  = [V 0][D 0 ][W 0]
         // [0  U2]    [0 V][0 D*][0 W] 
@@ -326,9 +329,12 @@ public:
         complex_matrix V = eigslv.eigenvectors();
         if(!(V*V.adjoint()).isApprox(Eigen::MatrixXd::Identity(V.rows(), V.rows()), 10e-3))
         {
-            COUT("Eigenvalue decomposition incorrect: V is not unitary: \n" << (V*V.adjoint()));
+            DOUT("Eigenvalue decomposition incorrect: V is not unitary, adjustments will be made");
             Eigen::BDCSVD<complex_matrix> svd3(V.block(0,0,V.rows(),2), Eigen::ComputeFullU);
             V.block(0,0,V.rows(),2) = svd3.matrixU();
+            svd3.compute(V(Eigen::all,Eigen::seq(Eigen::last-1,Eigen::last)), Eigen::ComputeFullU);
+            V(Eigen::all,Eigen::seq(Eigen::last-1,Eigen::last)) = svd3.matrixU();
+             
         }
         complex_matrix D = d.sqrt(); // Do this here to not get aliasing issues
         complex_matrix W = D*V.adjoint()*U2;
@@ -343,7 +349,7 @@ public:
         }
         else
         {
-            decomp_function(W, std::log2(W.rows()));
+            decomp_function(W, uint64_log2(W.rows()));
         }
         multicontrolledZ(D, D.rows());
         if(V.rows() == 2)
@@ -352,7 +358,7 @@ public:
         }
         else
         {
-            decomp_function(V, std::log2(V.rows()));
+            decomp_function(V, uint64_log2(V.rows()));
         }
     }
 
@@ -360,26 +366,34 @@ public:
     std::vector<Eigen::MatrixXd> genMk_lookuptable;
 
     // returns M^k = (-1)^(b_(i-1)*g_(i-1)), where * is bitwise inner product, g = binary gray code, b = binary code.
-    Eigen::MatrixXd genMk(int current_size)
+    void genMk()
     {
-        int numberqubits = log2(current_size);
-        if(genMk_lookuptable.size() <= numberqubits)
+        int numberqubits = uint64_log2(_matrix.rows());
+        for(int n = 1; n <= numberqubits; n++)
         {
-            for(int n = genMk_lookuptable.size()+1; n <= numberqubits; n++)
-            {
-            int size=1<<numberqubits;
+            int size=1<<n;
             Eigen::MatrixXd Mk(size,size);
-                for(int i = 0; i < size; i++)
+            for(int i = 0; i < size; i++)
+            {
+                for(int j = 0; j < size ;j++)
                 {
-                    for(int j = 0; j < size ;j++)
-                    {
-                        Mk(i,j) =std::pow(-1, bitParity(i&(j^(j>>1))));
-                    }
+                    Mk(i,j) =std::pow(-1, bitParity(i&(j^(j>>1))));
                 }
-            genMk_lookuptable.push_back(Mk);
             }
+        genMk_lookuptable.push_back(Mk);
         }
-        return genMk_lookuptable[numberqubits-1];
+        
+        // return genMk_lookuptable[numberqubits-1];
+    }
+
+    // source: https://stackoverflow.com/questions/994593/how-to-do-an-integer-log2-in-c user Todd Lehman
+    int uint64_log2(uint64_t n)
+    {
+    #define S(k) if (n >= (UINT64_C(1) << k)) { i += k; n >>= k; }
+
+    int i = -(n == 0); S(32); S(16); S(8); S(4); S(2); S(1); return i;
+
+    #undef S
     }
 
     int bitParity(int i)
@@ -399,39 +413,36 @@ public:
         }
     }
 
-    void multicontrolledY(complex_matrix &ss, int halfthesizeofthematrix)
+    void multicontrolledY(const Eigen::Ref<const complex_matrix> &ss, int halfthesizeofthematrix)
     {
         Eigen::VectorXd temp =  2*Eigen::asin(ss.diagonal().array()).real();
-        Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk(halfthesizeofthematrix));
+        Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]);
         Eigen::VectorXd tr = dec.solve(temp);
         // Check is very approximate to account for low-precision input matrices
-        if(!temp.isApprox(genMk(halfthesizeofthematrix)*tr, 10e-2))
+        if(!temp.isApprox(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]*tr, 10e-2))
         {
                 EOUT("Multicontrolled Y not correct!");
                 throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix ss: \n"  + to_string(ss), false);
         }
-        for(int i = 0; i < halfthesizeofthematrix; i++)    
-        {
-            instructionlist.push_back(tr[i]);
-        }
+
+        instructionlist.insert(instructionlist.end(), &tr[0], &tr[halfthesizeofthematrix]);
+        
     }
 
-    void multicontrolledZ(complex_matrix &D, int halfthesizeofthematrix)
+    void multicontrolledZ(const Eigen::Ref<const complex_matrix> &D, int halfthesizeofthematrix)
     {
         Eigen::VectorXd temp =  (std::complex<double>(0,-2)*Eigen::log(D.diagonal().array())).real();
-        Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk(halfthesizeofthematrix));
-        Eigen::VectorXd tr =dec.solve(temp);
+        Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]);
+        Eigen::VectorXd tr = dec.solve(temp);
         // Check is very approximate to account for low-precision input matrices
-        if(!temp.isApprox(genMk(halfthesizeofthematrix)*tr, 10e-2))
+        if(!temp.isApprox(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]*tr, 10e-2))
         {
                 EOUT("Multicontrolled Z not correct!");
                 throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix D: \n"+ to_string(D), false);
         }
         
-        for(int i = 0; i < halfthesizeofthematrix; i++)   
-        {
-            instructionlist.push_back(tr[i]);
-        }
+
+        instructionlist.insert(instructionlist.end(), &tr[0], &tr[halfthesizeofthematrix]);
     }
     ~unitary()
     {

@@ -824,7 +824,7 @@ public:
     // to add unitary to kernel
     void gate(ql::unitary u, std::vector<size_t> qubits)
     {
-        double u_size = log2((int) u.size())/2;
+        double u_size = uint64_log2((int) u.size())/2;
         if(u_size != qubits.size())
         {
             EOUT("Unitary " << u.name <<" has been applied to the wrong number of qubits! " << qubits.size() << " and not " << u_size);
@@ -874,18 +874,18 @@ public:
            int numberforcontrolledrotation = std::pow(2, n - 1);                     //number of gates per rotation
 
             // code for last one not affected
-            if (u.instructionlist[i] == 10.0)
+            if (u.instructionlist[i] == 100.0)
             {
                 COUT("[kernel.h] Optimization: last qubit is not affected, skip one step in the recursion. New start_index: " << i+1);
                 std::vector<size_t> subvector(qubits.begin() + 1, qubits.end());
                 return recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, i + 1) + 1; // for the number 10.0
             }
-            else if (u.instructionlist[i] == 20.0)
+            else if (u.instructionlist[i] == 200.0)
             {
                 std::vector<size_t> subvector(qubits.begin(), qubits.end() - 1);
 
                 // This is a special case of only demultiplexing
-                if (u.instructionlist[i+1] == 30.0)
+                if (u.instructionlist[i+1] == 300.0)
                 {
                    
                     // Two numbers that aren't rotation gate angles
@@ -937,7 +937,7 @@ public:
     }
 
     //controlled qubit is the first in the list.
-    void multicontrolled_rz( std::vector<double> &instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
+    void multicontrolled_rz(std::vector<double> &instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
     {
         // DOUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << ql::utils::to_string(qubits, "qubits: "));
         int idx;
