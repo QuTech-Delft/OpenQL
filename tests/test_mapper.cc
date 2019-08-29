@@ -15,8 +15,8 @@ void
 test_rc(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
-    std::string kernel_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -31,11 +31,10 @@ test_rc(std::string v, std::string param1, std::string param2, std::string param
 
     prog.add(k);
 
-    ql::options::set("mapreverseswap", param1);
-    ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_postmapper", param2);
-    ql::options::set("scheduler_commute", param3);
-    ql::options::set("prescheduler", param4);
+    ql::options::set("maplookahead", param1);
+    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapreverseswap", param3);
+
     prog.compile( );
 }
 
@@ -44,8 +43,8 @@ void
 test_someNN(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
-    std::string kernel_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -78,11 +77,10 @@ test_someNN(std::string v, std::string param1, std::string param2, std::string p
 
     prog.add(k);
 
-    ql::options::set("mapreverseswap", param1);
-    ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_postmapper", param2);
-    ql::options::set("scheduler_commute", param3);
-    ql::options::set("prescheduler", param4);
+    ql::options::set("maplookahead", param1);
+    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapreverseswap", param3);
+
     prog.compile( );
 }
 
@@ -91,8 +89,8 @@ void
 test_manyNN(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
-    std::string kernel_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -125,11 +123,10 @@ test_manyNN(std::string v, std::string param1, std::string param2, std::string p
 
     prog.add(k);
 
-    ql::options::set("mapreverseswap", param1);
-    ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_postmapper", param2);
-    ql::options::set("scheduler_commute", param3);
-    ql::options::set("prescheduler", param4);
+    ql::options::set("maplookahead", param1);
+    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapreverseswap", param3);
+
     prog.compile( );
 }
 
@@ -138,8 +135,8 @@ void
 test_oneD2(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 4;
-    std::string prog_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
-    std::string kernel_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -159,11 +156,10 @@ test_oneD2(std::string v, std::string param1, std::string param2, std::string pa
 
     prog.add(k);
 
-    ql::options::set("mapreverseswap", param1);
-    ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_postmapper", param2);
-    ql::options::set("scheduler_commute", param3);
-    ql::options::set("prescheduler", param4);
+    ql::options::set("maplookahead", param1);
+    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapreverseswap", param3);
+
     prog.compile( );
 }
 
@@ -172,8 +168,8 @@ void
 test_oneD4(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
-    std::string kernel_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -193,11 +189,10 @@ test_oneD4(std::string v, std::string param1, std::string param2, std::string pa
 
     prog.add(k);
 
-    ql::options::set("mapreverseswap", param1);
-    ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_postmapper", param2);
-    ql::options::set("scheduler_commute", param3);
-    ql::options::set("prescheduler", param4);
+    ql::options::set("maplookahead", param1);
+    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapreverseswap", param3);
+
     prog.compile( );
 
 #undef DIOGO
@@ -222,8 +217,8 @@ void
 test_allD(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
-    std::string kernel_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -240,11 +235,10 @@ test_allD(std::string v, std::string param1, std::string param2, std::string par
 
     prog.add(k);
 
-    ql::options::set("mapreverseswap", param1);
-    ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_postmapper", param2);
-    ql::options::set("scheduler_commute", param3);
-    ql::options::set("prescheduler", param4);
+    ql::options::set("maplookahead", param1);
+    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapreverseswap", param3);
+
     prog.compile( );
 }
 
@@ -256,8 +250,8 @@ void
 test_allDopt(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
-    std::string kernel_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -335,11 +329,10 @@ test_allDopt(std::string v, std::string param1, std::string param2, std::string 
 
     prog.add(k);
 
-    ql::options::set("mapreverseswap", param1);
-    ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_postmapper", param2);
-    ql::options::set("scheduler_commute", param3);
-    ql::options::set("prescheduler", param4);
+    ql::options::set("maplookahead", param1);
+    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapreverseswap", param3);
+
     prog.compile( );
 }
 
@@ -350,8 +343,8 @@ void
 test_string(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
-    std::string kernel_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -375,11 +368,10 @@ test_string(std::string v, std::string param1, std::string param2, std::string p
 
     prog.add(k);
 
-    ql::options::set("mapreverseswap", param1);
-    ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_postmapper", param2);
-    ql::options::set("scheduler_commute", param3);
-    ql::options::set("prescheduler", param4);
+    ql::options::set("maplookahead", param1);
+    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapreverseswap", param3);
+
     prog.compile( );
 }
 
@@ -390,8 +382,8 @@ void
 test_daniel2(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 6;
-    std::string prog_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
-    std::string kernel_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1, 2 };
 
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
@@ -399,6 +391,8 @@ test_daniel2(std::string v, std::string param1, std::string param2, std::string 
     ql::quantum_program prog(prog_name, starmon, n, n);
 
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
 
     k.gate("x",0);
     k.gate("cnot",4,0);
@@ -636,13 +630,10 @@ test_daniel2(std::string v, std::string param1, std::string param2, std::string 
 
     prog.add(k);
 
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+    ql::options::set("maplookahead", param1);
+    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapreverseswap", param3);
 
-    ql::options::set("mapreverseswap", param1);
-    ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_postmapper", param2);
-    ql::options::set("scheduler_commute", param3);
-    ql::options::set("prescheduler", param4);
     prog.compile( );
 }
 
@@ -650,8 +641,8 @@ void
 test_lingling5esm(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
-    std::string kernel_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
@@ -692,6 +683,7 @@ test_lingling5esm(std::string v, std::string param1, std::string param2, std::st
     k.gate("ym90",5);
     k.gate("measure",5);
     k.gate("measure",6);
+
     k.gate("prepz",5);
     k.gate("prepz",6);
     k.gate("x",5);
@@ -724,6 +716,7 @@ test_lingling5esm(std::string v, std::string param1, std::string param2, std::st
     k.gate("ym90",5);
     k.gate("measure",5);
     k.gate("measure",6);
+
     k.gate("prepz",5);
     k.gate("prepz",6);
     k.gate("x",5);
@@ -756,6 +749,7 @@ test_lingling5esm(std::string v, std::string param1, std::string param2, std::st
     k.gate("ym90",5);
     k.gate("measure",5);
     k.gate("measure",6);
+
     k.gate("prepz",5);
     k.gate("prepz",6);
     k.gate("x",5);
@@ -791,11 +785,10 @@ test_lingling5esm(std::string v, std::string param1, std::string param2, std::st
 
     prog.add(k);
 
-    ql::options::set("mapreverseswap", param1);
-    ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_postmapper", param2);
-    ql::options::set("scheduler_commute", param3);
-    ql::options::set("prescheduler", param4);
+    ql::options::set("maplookahead", param1);
+    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapreverseswap", param3);
+
     prog.compile( );
 }
 
@@ -803,8 +796,8 @@ void
 test_lingling7esm(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 9;
-    std::string prog_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
-    std::string kernel_name = "test_" + v + "_swapopt=" + param1 + "_clifford_premapper=" + param2 + "_schedulercommute=" + param3 + "_presched=" + param4;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
@@ -851,6 +844,7 @@ test_lingling7esm(std::string v, std::string param1, std::string param2, std::st
     k.gate("ym90",7);
     k.gate("measure",7);
     k.gate("measure",8);
+
     k.gate("prepz",7);
     k.gate("prepz",8);
     k.gate("x",7);
@@ -889,6 +883,7 @@ test_lingling7esm(std::string v, std::string param1, std::string param2, std::st
     k.gate("ym90",7);
     k.gate("measure",7);
     k.gate("measure",8);
+
     k.gate("prepz",7);
     k.gate("prepz",8);
     k.gate("x",7);
@@ -929,11 +924,10 @@ test_lingling7esm(std::string v, std::string param1, std::string param2, std::st
     k.gate("measure",8);
     prog.add(k);
 
-    ql::options::set("mapreverseswap", param1);
-    ql::options::set("clifford_premapper", param2);
-    ql::options::set("clifford_postmapper", param2);
-    ql::options::set("scheduler_commute", param3);
-    ql::options::set("prescheduler", param4);
+    ql::options::set("maplookahead", param1);
+    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapreverseswap", param3);
+
     prog.compile( );
 }
 
@@ -946,40 +940,93 @@ int main(int argc, char ** argv)
     ql::options::set("write_report_files", "yes"); 
     ql::options::set("print_dot_graphs", "yes"); 
 
-//parameter2    ql::options::set("clifford_premapper", "yes"); 
+    ql::options::set("clifford_premapper", "yes"); 
     ql::options::set("mapper", "minextendrc"); 
     ql::options::set("mapinitone2one", "yes"); 
-    ql::options::set("maplookahead", "noroutingfirst");
+//parameter1  ql::options::set("maplookahead", "noroutingfirst");
+//parameter2  ql::options::set("mapselectmaxswaps", "20");
     ql::options::set("initialplace", "1m"); 
     ql::options::set("initialplaceprefix", "10"); 
     ql::options::set("mappathselect", "all"); 
     ql::options::set("mapusemoves", "yes"); 
-//parameter1    ql::options::set("mapreverseswap, "yes"); 
+//parameter3  ql::options::set("mapreverseswap", "yes"); 
     ql::options::set("maptiebreak", "first"); 
 
-//parameter2    ql::options::set("clifford_postmapper", "yes"); 
+    ql::options::set("clifford_postmapper", "yes"); 
     ql::options::set("scheduler_post179", "yes");
     ql::options::set("scheduler", "ALAP");
-//parameter3    ql::options::set("scheduler_commute", "yes");
-//parameter4    ql::options::set("prescheduler", "no");
+    ql::options::set("scheduler_commute", "yes");
+    ql::options::set("prescheduler", "no");
 
 //  NN:
 //  test_rc("rc", "no", "no", "yes", "no");
 //  test_someNN("someNN", "no", "no", "yes", "yes");
 
 //  nonNN but solvable by Initial Placement:
-    test_oneD2("oneD2", "yes", "yes", "yes", "yes");
+//  test_oneD2("oneD2", "yes", "yes", "yes", "yes");
 //  test_oneD4("oneD4", "yes", "yes", "yes", "yes");
-//  test_string("string", "yes", "yes", "yes", "yes");
+
+//  test_string("string", "no", "20", "yes", "yes");
+//  test_string("string", "critical", "20", "yes", "yes");
+    test_string("string", "noroutingfirst", "20", "no", "yes");
+    test_string("string", "noroutingfirst", "20", "yes", "yes");
+//  test_string("string", "all", "20", "yes", "yes");
+//  test_string("string", "no", "1", "yes", "yes");
+//  test_string("string", "critical", "1", "yes", "yes");
+//  test_string("string", "noroutingfirst", "1", "yes", "yes");
+//  test_string("string", "all", "1", "yes", "yes");
 
 //  nonNN, still not too large:
-//  test_allD("allD", "yes", "yes", "yes", "yes");
-//  test_allDopt("allDopt", "yes", "yes", "yes", "yes");
+//  test_allD("allD", "no", "20", "yes", "yes");
+//  test_allD("allD", "critical", "20", "yes", "yes");
+    test_allD("allD", "noroutingfirst", "20", "no", "yes");
+    test_allD("allD", "noroutingfirst", "20", "yes", "yes");
+//  test_allD("allD", "all", "20", "yes", "yes");
+//  test_allD("allD", "no", "1", "yes", "yes");
+//  test_allD("allD", "critical", "1", "yes", "yes");
+//  test_allD("allD", "noroutingfirst", "1", "yes", "yes");
+//  test_allD("allD", "all", "1", "yes", "yes");
+
+//  test_allDopt("allDopt", "no", "20", "yes", "yes");
+//  test_allDopt("allDopt", "critical", "20", "yes", "yes");
+    test_allDopt("allDopt", "noroutingfirst", "20", "no", "yes");
+    test_allDopt("allDopt", "noroutingfirst", "20", "yes", "yes");
+//  test_allDopt("allDopt", "all", "20", "yes", "yes");
+//  test_allDopt("allDopt", "no", "1", "yes", "yes");
+//  test_allDopt("allDopt", "critical", "1", "yes", "yes");
+//  test_allDopt("allDopt", "noroutingfirst", "1", "yes", "yes");
+//  test_allDopt("allDopt", "all", "1", "yes", "yes");
 
 //  nonNN, realistic:
-//  test_daniel2("daniel2", "yes", "yes", "yes", "yes");
-//  test_lingling5esm("lingling5esm", "yes", "yes", "yes", "yes");
-//  test_lingling7esm("lingling7esm", "yes", "yes", "yes", "yes");
+//  test_daniel2("daniel2", "no", "20", "yes", "yes");
+//  test_daniel2("daniel2", "critical", "20", "yes", "yes");
+    test_daniel2("daniel2", "noroutingfirst", "20", "no", "yes");
+    test_daniel2("daniel2", "noroutingfirst", "20", "yes", "yes");
+//  test_daniel2("daniel2", "all", "20", "yes", "yes");
+//  test_daniel2("daniel2", "no", "1", "yes", "yes");
+//  test_daniel2("daniel2", "critical", "1", "yes", "yes");
+//  test_daniel2("daniel2", "noroutingfirst", "1", "yes", "yes");
+//  test_daniel2("daniel2", "all", "1", "yes", "yes");
+
+//  test_lingling5esm("lingling5esm", "no", "20", "yes", "yes");
+//  test_lingling5esm("lingling5esm", "critical", "20", "yes", "yes");
+    test_lingling5esm("lingling5esm", "noroutingfirst", "20", "no", "yes");
+    test_lingling5esm("lingling5esm", "noroutingfirst", "20", "yes", "yes");
+//  test_lingling5esm("lingling5esm", "all", "20", "yes", "yes");
+//  test_lingling5esm("lingling5esm", "no", "1", "yes", "yes");
+//  test_lingling5esm("lingling5esm", "critical", "1", "yes", "yes");
+//  test_lingling5esm("lingling5esm", "noroutingfirst", "1", "yes", "yes");
+//  test_lingling5esm("lingling5esm", "all", "1", "yes", "yes");
+
+//  test_lingling7esm("lingling7esm", "no", "20", "yes", "yes");
+//  test_lingling7esm("lingling7esm", "critical", "20", "yes", "yes");
+    test_lingling7esm("lingling7esm", "noroutingfirst", "20", "no", "yes");
+    test_lingling7esm("lingling7esm", "noroutingfirst", "20", "yes", "yes");
+//  test_lingling7esm("lingling7esm", "all", "20", "yes", "yes");
+//  test_lingling7esm("lingling7esm", "no", "1", "yes", "yes");
+//  test_lingling7esm("lingling7esm", "critical", "1", "yes", "yes");
+//  test_lingling7esm("lingling7esm", "noroutingfirst", "1", "yes", "yes");
+//  test_lingling7esm("lingling7esm", "all", "1", "yes", "yes");
 
     return 0;
 }

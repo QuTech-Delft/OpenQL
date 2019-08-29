@@ -12,9 +12,6 @@
 #include <sstream>
 #include <algorithm>
 #include <iterator>
-#include <cmath>
-#include <chrono>
-#include <ctime>
 
 #include "json.h"
 #include "utils.h"
@@ -23,8 +20,8 @@
 #include "classical.h"
 #include "optimizer.h"
 #include "ir.h"
-#include "instruction_map.h"
 
+#define PI M_PI
 
 #ifndef __disable_lemon__
 #include "scheduler.h"
@@ -48,7 +45,7 @@ class quantum_kernel
 {
 public:
 
-    quantum_kernel(std::string name) : 
+    quantum_kernel(std::string name) :
         name(name), iterations(1), type(kernel_type_t::STATIC) {}
 
     quantum_kernel(std::string name, ql::quantum_platform& platform,
@@ -356,20 +353,9 @@ public:
     | Gate management
     \************************************************************************/
 
-#ifdef NEWGATEIMPLEMENTATION
-    // doesn't compile since gate and its callees need a kernel instance for various members
-    // solution is to move gate out of quantum_kernel class and have a single instance of the new class everywhere
-    // the new class could be similar to platform
-static bool add_default_gate_if_available(circuit& circ, std::string gname, std::vector<size_t> qubits,
+    bool add_default_gate_if_available(std::string gname, std::vector<size_t> qubits,
                                        std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
-#else
-bool add_default_gate_if_available(std::string gname, std::vector<size_t> qubits,
-                                       std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
-    {
-        #define circ c
-#endif // NEWGATEIMPLEMENTATION
-
         bool result=false;
 
         bool is_one_qubit_gate = (gname == "identity") || (gname == "i")
@@ -413,121 +399,121 @@ bool add_default_gate_if_available(std::string gname, std::vector<size_t> qubits
 
         if( gname == "identity" || gname == "i" )
         {
-            circ.push_back(new ql::identity(qubits[0]) );
+            c.push_back(new ql::identity(qubits[0]) );
             result = true;
         }
         else if( gname == "hadamard" || gname == "h" )
         {
-            circ.push_back(new ql::hadamard(qubits[0]) );
+            c.push_back(new ql::hadamard(qubits[0]) );
             result = true;
         }
         else if( gname == "pauli_x" || gname == "x" )
         {
-            circ.push_back(new ql::pauli_x(qubits[0]) );
+            c.push_back(new ql::pauli_x(qubits[0]) );
             result = true;
         }
         else if( gname == "pauli_y" || gname == "y" )
         {
-            circ.push_back(new ql::pauli_y(qubits[0]) );
+            c.push_back(new ql::pauli_y(qubits[0]) );
             result = true;
         }
         else if( gname == "pauli_z" || gname == "z" )
         {
-            circ.push_back(new ql::pauli_z(qubits[0]) );
+            c.push_back(new ql::pauli_z(qubits[0]) );
             result = true;
         }
         else if( gname == "s" || gname == "phase" )
         {
-            circ.push_back(new ql::phase(qubits[0]) );
+            c.push_back(new ql::phase(qubits[0]) );
             result = true;
         }
         else if( gname == "sdag" || gname == "phasedag" )
         {
-            circ.push_back(new ql::phasedag(qubits[0]) );
+            c.push_back(new ql::phasedag(qubits[0]) );
             result = true;
         }
         else if( gname == "t" )
         {
-            circ.push_back(new ql::t(qubits[0]) );
+            c.push_back(new ql::t(qubits[0]) );
             result = true;
         }
         else if( gname == "tdag" )
         {
-            circ.push_back(new ql::tdag(qubits[0]) );
+            c.push_back(new ql::tdag(qubits[0]) );
             result = true;
         }
         else if( gname == "rx" )
         {
-            circ.push_back(new ql::rx(qubits[0], angle));
+            c.push_back(new ql::rx(qubits[0], angle));
             result = true;
         }
         else if( gname == "ry" )
         {
-            circ.push_back(new ql::ry(qubits[0], angle));
+            c.push_back(new ql::ry(qubits[0], angle));
             result = true;
         }
         else if( gname == "rz" )
         {
-            circ.push_back(new ql::rz(qubits[0], angle));
+            c.push_back(new ql::rz(qubits[0], angle));
             result = true;
         }
         else if( gname == "rx90" )
         {
-            circ.push_back(new ql::rx90(qubits[0]) );
+            c.push_back(new ql::rx90(qubits[0]) );
             result = true;
         }
         else if( gname == "mrx90" )
         {
-            circ.push_back(new ql::mrx90(qubits[0]) );
+            c.push_back(new ql::mrx90(qubits[0]) );
             result = true;
         }
         else if( gname == "rx180" )
         {
-            circ.push_back(new ql::rx180(qubits[0]) );
+            c.push_back(new ql::rx180(qubits[0]) );
             result = true;
         }
         else if( gname == "ry90" )
         {
-            circ.push_back(new ql::ry90(qubits[0]) );
+            c.push_back(new ql::ry90(qubits[0]) );
             result = true;
         }
         else if( gname == "mry90" )
         {
-            circ.push_back(new ql::mry90(qubits[0]) );
+            c.push_back(new ql::mry90(qubits[0]) );
             result = true;
         }
         else if( gname == "ry180" )
         {
-            circ.push_back(new ql::ry180(qubits[0]) );
+            c.push_back(new ql::ry180(qubits[0]) );
             result = true;
         }
         else if( gname == "measure" )
         {
             if(cregs.empty())
-                circ.push_back(new ql::measure(qubits[0]) );
+                c.push_back(new ql::measure(qubits[0]) );
             else
-                circ.push_back(new ql::measure(qubits[0], cregs[0]) );
+                c.push_back(new ql::measure(qubits[0], cregs[0]) );
 
             result = true;
         }
         else if( gname == "prepz" )
         {
-            circ.push_back(new ql::prepz(qubits[0]) );
+            c.push_back(new ql::prepz(qubits[0]) );
             result = true;
         }
         else if( gname == "cnot" )
         {
-            circ.push_back(new ql::cnot(qubits[0], qubits[1]) );
+            c.push_back(new ql::cnot(qubits[0], qubits[1]) );
             result = true;
         }
         else if( gname == "cz" || gname == "cphase" )
         {
-            circ.push_back(new ql::cphase(qubits[0], qubits[1]) );
+            c.push_back(new ql::cphase(qubits[0], qubits[1]) );
             result = true;
         }
         else if( gname == "toffoli" )
-            { circ.push_back(new ql::toffoli(qubits[0], qubits[1], qubits[2]) ); result = true; }
-        else if( gname == "swap" )       { circ.push_back(new ql::swap(qubits[0], qubits[1]) ); result = true; }
+            { c.push_back(new ql::toffoli(qubits[0], qubits[1], qubits[2]) ); result = true; }
+        else if( gname == "swap" )       { c.push_back(new ql::swap(qubits[0], qubits[1]) ); result = true; }
         else if( gname == "barrier")
         {
             /*
@@ -540,7 +526,7 @@ bool add_default_gate_if_available(std::string gname, std::vector<size_t> qubits
                     qubits.push_back(q);
             }
 
-            circ.push_back(new ql::wait(qubits, 0, 0));
+            c.push_back(new ql::wait(qubits, 0, 0));
             result = true;
         }
         else if( gname == "wait")
@@ -556,7 +542,7 @@ bool add_default_gate_if_available(std::string gname, std::vector<size_t> qubits
             }
 
             size_t duration_in_cycles = std::ceil(static_cast<float>(duration)/cycle_time);
-            circ.push_back(new ql::wait(qubits, duration, duration_in_cycles));
+            c.push_back(new ql::wait(qubits, duration, duration_in_cycles));
             result = true;
         }
         else
@@ -569,17 +555,9 @@ bool add_default_gate_if_available(std::string gname, std::vector<size_t> qubits
     // if a parameterized custom gate ("e.g. cz") is available, add it to circuit and return true
     //
     // note that there is no check for the found gate being a composite gate
-#ifdef NEWGATEIMPLEMENTATION
-static bool add_custom_gate_if_available(circuit& circ, instruction_map_t& gate_defs, std::string & gname, std::vector<size_t> qubits,
+    bool add_custom_gate_if_available(std::string & gname, std::vector<size_t> qubits,
                                       std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
-#else
-bool add_custom_gate_if_available(std::string & gname, std::vector<size_t> qubits,
-                                      std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
-    {
-        #define circ c
-        #define gate_defs gate_definition
-#endif // NEWGATEIMPLEMENTATION
         bool added = false;
 
         // first check if a specialized custom gate is available
@@ -592,8 +570,8 @@ bool add_custom_gate_if_available(std::string & gname, std::vector<size_t> qubit
                 instr += "q" + std::to_string(qubits[qubits.size()-1]);
         }
 
-        std::map<std::string,custom_gate*>::iterator it = gate_defs.find(instr);
-        if (it != gate_defs.end())
+        std::map<std::string,custom_gate*>::iterator it = gate_definition.find(instr);
+        if (it != gate_definition.end())
         {
             // a specialized custom gate is of the form: "cz q0 q3"
             custom_gate* g = new custom_gate(*(it->second));
@@ -604,14 +582,14 @@ bool add_custom_gate_if_available(std::string & gname, std::vector<size_t> qubit
             if(duration>0) g->duration = duration;
             g->angle = angle;
             added = true;
-            circ.push_back(g);
+            c.push_back(g);
         }
         else
         {
             // otherwise, check if there is a parameterized custom gate (i.e. not specialized for arguments)
             // this one is of the form: "cz", i.e. just the gate's name
-            std::map<std::string,custom_gate*>::iterator it = gate_defs.find(gname);
-            if (it != gate_defs.end())
+            std::map<std::string,custom_gate*>::iterator it = gate_definition.find(gname);
+            if (it != gate_definition.end())
             {
                 custom_gate* g = new custom_gate(*(it->second));
                 for(auto & qubit : qubits)
@@ -621,7 +599,7 @@ bool add_custom_gate_if_available(std::string & gname, std::vector<size_t> qubit
                 if(duration>0) g->duration = duration;
                 g->angle = angle;
                 added = true;
-                circ.push_back(g);
+                c.push_back(g);
             }
         }
 
@@ -639,22 +617,16 @@ bool add_custom_gate_if_available(std::string & gname, std::vector<size_t> qubit
 
     // return the subinstructions of a composite gate
     // while doing, test whether the subinstructions have a definition (so they cannot be specialized or default ones!)
-#ifdef NEWGATEIMPLEMENTATION
-static void get_decomposed_ins( ql::composite_gate * gptr, instruction_map_t& gate_defs, std::vector<std::string> & sub_instructons )
+    void get_decomposed_ins( ql::composite_gate * gptr, std::vector<std::string> & sub_instructons )
     {
-#else
-void get_decomposed_ins( ql::composite_gate * gptr, std::vector<std::string> & sub_instructons )
-    {
-        #define gate_defs gate_definition
-#endif // NEWGATEIMPLEMENTATION
         auto & sub_gates = gptr->gs;
         DOUT("composite ins: " << gptr->name);
         for(auto & agate : sub_gates)
         {
             std::string & sub_ins = agate->name;
             DOUT("  sub ins: " << sub_ins);
-            auto it = gate_defs.find(sub_ins);
-            if( it != gate_defs.end() )
+            auto it = gate_definition.find(sub_ins);
+            if( it != gate_definition.end() )
             {
                 sub_instructons.push_back(sub_ins);
             }
@@ -669,17 +641,9 @@ void get_decomposed_ins( ql::composite_gate * gptr, std::vector<std::string> & s
     //      also check each subinstruction for presence of a custom_gate (or a default gate)
     // otherwise, return false
     // don't add anything to circuit
-#ifdef NEWGATEIMPLEMENTATION
-static bool add_spec_decomposed_gate_if_available(circuit& circ, instruction_map_t& gate_defs, std::string gate_name, 
-        std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
+    bool add_spec_decomposed_gate_if_available(std::string gate_name,
+            std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
-#else
-bool add_spec_decomposed_gate_if_available(std::string gate_name, 
-        std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
-    {
-        #define circ c
-        #define gate_defs gate_definition
-#endif // NEWGATEIMPLEMENTATION
         bool added = false;
         DOUT("Checking if specialized decomposition is available for " << gate_name);
         std::string instr_parameterized = gate_name + " ";
@@ -697,8 +661,8 @@ bool add_spec_decomposed_gate_if_available(std::string gate_name,
         }
         DOUT("decomposed specialized instruction name: " << instr_parameterized);
 
-        auto it = gate_defs.find(instr_parameterized);
-        if( it != gate_defs.end() )
+        auto it = gate_definition.find(instr_parameterized);
+        if( it != gate_definition.end() )
         {
             DOUT("specialized composite gate found for " << instr_parameterized);
             composite_gate * gptr = (composite_gate *)(it->second);
@@ -714,11 +678,7 @@ bool add_spec_decomposed_gate_if_available(std::string gate_name,
 
 
             std::vector<std::string> sub_instructons;
-#ifdef NEWGATEIMPLEMENTATION
-            get_decomposed_ins( gptr, gate_defs, sub_instructons );
-#else
             get_decomposed_ins( gptr, sub_instructons );
-#endif // NEWGATEIMPLEMENTATION
             for(auto & sub_ins : sub_instructons)
             {
                 DOUT("Adding sub ins: " << sub_ins);
@@ -744,22 +704,14 @@ bool add_spec_decomposed_gate_if_available(std::string gate_name,
 
                 // custom gate check
                 // when found, custom_added is true, and the expanded subinstruction was added to the circuit
-#ifdef NEWGATEIMPLEMENTATION
-                bool custom_added = add_custom_gate_if_available(circ, gate_defs, sub_ins_name, this_gate_qubits, cregs);
-#else
                 bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
-#endif // NEWGATEIMPLEMENTATION
                 if(!custom_added)
                 {
                     if(ql::options::get("use_default_gates") == "yes")
                     {
                         // default gate check
                         DOUT("adding default gate for " << sub_ins_name);
-#ifdef NEWGATEIMPLEMENTATION
-                        bool default_available = add_default_gate_if_available(circ, sub_ins_name, this_gate_qubits, cregs);
-#else
                         bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
-#endif // NEWGATEIMPLEMENTATION
                         if( default_available )
                         {
                             WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
@@ -792,17 +744,9 @@ bool add_spec_decomposed_gate_if_available(std::string gate_name,
     //      also check each subinstruction for availability as a custom gate (or default gate)
     // if not, return false
     // don't add anything to circuit
-#ifdef NEWGATEIMPLEMENTATION
-    bool add_param_decomposed_gate_if_available(circuit& circ, instruction_map_t& gate_defs, std::string gate_name, 
-        std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
+    bool add_param_decomposed_gate_if_available(std::string gate_name,
+            std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
-#else
-    bool add_param_decomposed_gate_if_available(std::string gate_name, 
-        std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
-    {
-        #define circ c
-        #define gate_defs gate_definition
-#endif // NEWGATEIMPLEMENTATION
         bool added = false;
         DOUT("Checking if parameterized decomposition is available for " << gate_name);
         std::string instr_parameterized = gate_name + " ";
@@ -821,8 +765,8 @@ bool add_spec_decomposed_gate_if_available(std::string gate_name,
         DOUT("decomposed parameterized instruction name: " << instr_parameterized);
 
         // check for composite ins
-        auto it = gate_defs.find(instr_parameterized);
-        if( it != gate_defs.end() )
+        auto it = gate_definition.find(instr_parameterized);
+        if( it != gate_definition.end() )
         {
             DOUT("parameterized composite gate found for " << instr_parameterized);
             composite_gate * gptr = (composite_gate *)(it->second);
@@ -837,11 +781,7 @@ bool add_spec_decomposed_gate_if_available(std::string gate_name,
             }
 
             std::vector<std::string> sub_instructons;
-#ifdef NEWGATEIMPLEMENTATION
-            get_decomposed_ins( gptr, gate_defs, sub_instructons );
-#else
             get_decomposed_ins( gptr, sub_instructons );
-#endif // NEWGATEIMPLEMENTATION
             for(auto & sub_ins : sub_instructons)
             {
                 DOUT("Adding sub ins: " << sub_ins);
@@ -864,22 +804,14 @@ bool add_spec_decomposed_gate_if_available(std::string gate_name,
 
                 // custom gate check
                 // when found, custom_added is true, and the expanded subinstruction was added to the circuit
-#ifdef NEWGATEIMPLEMENTATION
-                bool custom_added = add_custom_gate_if_available(circ, gate_defs, sub_ins_name, this_gate_qubits, cregs);
-#else
                 bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
-#endif // NEWGATEIMPLEMENTATION
                 if(!custom_added)
                 {
                     if(ql::options::get("use_default_gates") == "yes")
                     {
                         // default gate check
                         DOUT("adding default gate for " << sub_ins_name);
-#ifdef NEWGATEIMPLEMENTATION
-                        bool default_available = add_default_gate_if_available(circ, sub_ins_name, this_gate_qubits, cregs);
-#else
                         bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
-#endif // NEWGATEIMPLEMENTATION
                         if( default_available )
                         {
                             WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
@@ -949,49 +881,27 @@ bool add_spec_decomposed_gate_if_available(std::string gate_name,
     // if not, check if a default gate is available
     //      e.g. whether "cz" is available as default gate
     // if not, then error
-    void gate(std::string gname, std::vector<size_t> qubits = {}, 
-        std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
+    void gate(std::string gname, std::vector<size_t> qubits = {},
+              std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
     {
         for(auto & qno : qubits)
         {
             if( qno >= qubit_count )
             {
-                FATAL("Number of qubits in platform: " << std::to_string(qubit_count) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+                EOUT("Number of qubits in platform: " << std::to_string(qubit_count) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+                throw ql::exception("[x] error : ql::kernel::gate() : Number of qubits in platform: "+std::to_string(qubit_count)+", specified qubit numbers out of range for gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" !",false);
             }
         }
+
         for(auto & cno : cregs)
         {
             if( cno >= creg_count )
             {
-                FATAL("Out of range operand(s) for '" << gname << "' with " << ql::utils::to_string(cregs,"cregs") );
+                EOUT("Out of range operand(s) for '" << gname << "' with " << ql::utils::to_string(cregs,"cregs") );
+                throw ql::exception("Out of range operand(s) for '"+gname+"' with " +ql::utils::to_string(cregs,"cregs")+" !",false);
             }
         }
 
-#ifdef NEWGATEIMPLEMENTATION
-        bool added = BR_gate(c, gate_definition, gname, qubits, cregs, duration, angle);
-#else
-        bool added = BR_gate(gname, qubits, cregs, duration, angle);
-#endif // NEWGATEIMPLEMENTATION
-        if (!added)
-        {
-            FATAL("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
-        }
-    }
-
-    // generate custom gate and append it to circuit circ, instead of to kernel.c
-    // return whether gate was found and added
-#ifdef NEWGATEIMPLEMENTATION
-static    bool BR_gate(circuit& circ, instruction_map_t& gate_defs, std::string gname, std::vector<size_t> qubits = {}, 
-        std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
-    {
-#else
-    bool BR_gate(std::string gname, std::vector<size_t> qubits = {}, 
-        std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
-    {
-        #define circ c
-        #define gate_defs gate_definition
-#endif // NEWGATEIMPLEMENTATION
-        bool added = false;
         // check if specialized composite gate is available
         // if not, check if parameterized composite gate is available
         // if not, check if a specialized custom gate is available
@@ -1004,28 +914,18 @@ static    bool BR_gate(circuit& circ, instruction_map_t& gate_defs, std::string 
 
         // specialized composite gate check
         DOUT("trying to add specialized decomposed gate for: " << gname);
-#ifdef NEWGATEIMPLEMENTATION
-        bool spec_decom_added = add_spec_decomposed_gate_if_available(circ, gname, qubits);
-#else
         bool spec_decom_added = add_spec_decomposed_gate_if_available(gname, qubits);
-#endif // NEWGATEIMPLEMENTATION
         if(spec_decom_added)
         {
-            added = true;
             DOUT("specialized decomposed gates added for " << gname);
         }
         else
         {
             // parameterized composite gate check
             DOUT("trying to add parameterized decomposed gate for: " << gname);
-#ifdef NEWGATEIMPLEMENTATION
-            bool param_decom_added = add_param_decomposed_gate_if_available(circ, gname, qubits);
-#else
             bool param_decom_added = add_param_decomposed_gate_if_available(gname, qubits);
-#endif // NEWGATEIMPLEMENTATION
             if(param_decom_added)
             {
-                added = true;
                 DOUT("decomposed gates added for " << gname);
             }
             else
@@ -1033,11 +933,7 @@ static    bool BR_gate(circuit& circ, instruction_map_t& gate_defs, std::string 
                 // specialized/parameterized custom gate check
                 DOUT("adding custom gate for " << gname);
                 // when found, custom_added is true, and the gate was added to the circuit
-#ifdef NEWGATEIMPLEMENTATION
-                bool custom_added = add_custom_gate_if_available(circ, gate_defs, gname, qubits, cregs, duration, angle);
-#else
                 bool custom_added = add_custom_gate_if_available(gname, qubits, cregs, duration, angle);
-#endif // NEWGATEIMPLEMENTATION
                 if(!custom_added)
                 {
                     if(ql::options::get("use_default_gates") == "yes")
@@ -1045,27 +941,30 @@ static    bool BR_gate(circuit& circ, instruction_map_t& gate_defs, std::string 
                         // default gate check (which is always parameterized)
                         DOUT("adding default gate for " << gname);
 
-#ifdef NEWGATEIMPLEMENTATION
-                        bool default_available = add_default_gate_if_available(circ, gname, qubits, cregs, duration);
-#else
                         bool default_available = add_default_gate_if_available(gname, qubits, cregs, duration);
-#endif // NEWGATEIMPLEMENTATION
                         if( default_available )
                         {
-                            added = true;
                             WOUT("default gate added for " << gname);
                         }
+                        else
+                        {
+                            EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+                            throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
+                        }
+                    }
+                    else
+                    {
+                        EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+                        throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
                     }
                 }
                 else
                 {
-                    added = true;
                     DOUT("custom gate added for " << gname);
                 }
             }
         }
         DOUT("");
-        return added;
     }
 
     // FIXME: is this really QASM, or CC-light eQASM?
@@ -1074,6 +973,7 @@ static    bool BR_gate(circuit& circ, instruction_map_t& gate_defs, std::string 
     {
         std::stringstream ss;
         ss << "." << name << "\n";
+        // ss << name << ":\n";
 
         if(type == kernel_type_t::IF_START)
         {
@@ -1131,7 +1031,7 @@ static    bool BR_gate(circuit& circ, instruction_map_t& gate_defs, std::string 
     {
         std::stringstream ss;
 
-        ss << "\n" << get_prologue();
+        ss << get_prologue();
 
         for(size_t i=0; i<c.size(); ++i)
         {
@@ -1286,8 +1186,8 @@ static    bool BR_gate(circuit& circ, instruction_map_t& gate_defs, std::string 
             if ("yes" == scheduler_uniform)
             {
                 EOUT("Uniform scheduling not supported with ASAP; please turn on ALAP to perform uniform scheduling");     // FIXME: FATAL?
-	        }
-	        else if ("no" == scheduler_uniform)
+            }
+            else if ("no" == scheduler_uniform)
             {
                 ql::ir::bundles_t bundles = sched.schedule_asap(sched_dot);
                 kqasm = ql::ir::qasm(bundles);
@@ -1326,7 +1226,9 @@ static    bool BR_gate(circuit& circ, instruction_map_t& gate_defs, std::string 
         std::sort(c.begin(), c.end(),
                 [&](gate_p g1, gate_p g2) { return g1->cycle < g2->cycle; }
         );
+
         sched_qasm = get_prologue() + kqasm + get_epilogue();
+
 #endif // __disable_lemon__
     }
 
@@ -1803,38 +1705,38 @@ static    bool BR_gate(circuit& circ, instruction_map_t& gate_defs, std::string 
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, M_PI/2);
+                controlled_rx(tq, cq, PI/2);
             }
             else if( __mrx90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, -1*M_PI/2);
+                controlled_rx(tq, cq, -1*PI/2);
             }
             else if( __rx180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, M_PI);
+                controlled_rx(tq, cq, PI);
                 // controlled_x(tq, cq);
             }
             else if( __ry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, M_PI/4);
+                controlled_ry(tq, cq, PI/4);
             }
             else if( __mry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, -1*M_PI/4);
+                controlled_ry(tq, cq, -1*PI/4);
             }
             else if( __ry180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, M_PI);
+                controlled_ry(tq, cq, PI);
                 // controlled_y(tq, cq);
             }
             else
@@ -2016,7 +1918,7 @@ public:
     size_t        cycle_time;
     kernel_type_t type;
     operation     br_condition;
-    ql::instruction_map_t   gate_definition;     // FIXME: consider using instruction_map_t
+    std::map<std::string,custom_gate*> gate_definition;     // FIXME: consider using instruction_map_t
 };
 
 

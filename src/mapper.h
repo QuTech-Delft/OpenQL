@@ -474,8 +474,8 @@ static void GetGateParameters(std::string id, ql::quantum_platform *platformp, s
     }
 }
 
-// return whether gate with operand qubit r0 can be scheduled earlier than with operand qubit r1
-bool IsFreeEarlier(size_t r0, size_t r1)
+// return whether gate with first operand qubit r0 can be scheduled earlier than with operand qubit r1
+bool IsFirstOperandEarlier(size_t r0, size_t r1)
 {
     return fcv[r0] < fcv[r1];
 }
@@ -1094,20 +1094,7 @@ bool new_param_decomposed_gate_if_available(std::string gate_name, std::vector<s
 //      "cz" in gate_definition as non-composite gate
 // (default gate is not supported)
 // if not, then return false else true
-bool new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits, size_t duration=0, double angle = 0.0)
-{
-#ifdef NEWGATEIMPLEMENTATION
-    // doesn't compile since gate and its callees need a quantum_kernel instance for various members
-    // solution is to move gate out of kernel class and have a single instance of the new class everywhere
-    // the new class could be similar to platform
-    std::vector<size_t> cregs = {};
-    return ql::quantum_kernel::gate(circ, gname, qubits, cregs, duration, angle);
-#else
-    return OLD_new_gate(circ, gname, qubits, duration, angle);
-#endif // NEWGATEIMPLEMENTATION
-}
-
-bool OLD_new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits, size_t duration=0, double angle = 0.0)
+bool new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits)
 {
     bool added = false;
     for(auto & qno : qubits)
@@ -1145,7 +1132,7 @@ bool OLD_new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubi
         {
             // specialized/parameterized custom gate check
             DOUT("adding custom gate for " << gname);
-            bool custom_added = new_custom_gate_if_available(gname, qubits, circ, duration, angle);
+            bool custom_added = new_custom_gate_if_available(gname, qubits, circ);
             if(!custom_added)
             {
                 DOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
@@ -1183,10 +1170,80 @@ void new_gate_exception(std::string s)
     throw ql::exception("[x] error : ql::mapper::new_gate() : gate is not supported by the target platform !",false);
 }
 
-// return whether real qubit r0 allows scheduling a gate with operands r0,r1 earlier than qubit r1
-bool CanBeScheduledEarlier(size_t r0, size_t r1)
+// generate a move into circ with parameters r0 and r1 (which GenMove may reverse)
+// whether this was successfully done can be seen from whether circ was extended
+// please note that the reversal of operands may have been done also when GenMove was not successful
+void GenMove(ql::circuit& circ, size_t& r0, size_t& r1)
 {
-    return fc.IsFreeEarlier(r0, r1);
+    if (v2r.GetRs(r0)!=rs_hasstate)
+    {
+        // interchange r0 and r1, so that r1 (right-hand operand of move) will be the state-less one
+        size_t  tmp = r1; r1 = r0; r0 = tmp;
+        DOUT("... reversed operands for move to become move(q" << r0 << ",q" << r1 << ") ...");
+    }
+    MapperAssert (v2r.GetRs(r0)==rs_hasstate);    // and r0 will be the one with state
+    MapperAssert (v2r.GetRs(r1)!=rs_hasstate);    // and r1 will be the one without state (rs_nostate || rs_inited)
+
+    // first (optimistically) create the move circuit and add it to circ
+    bool created = new_gate(circ, "move_real", {r0,r1});    // gates implementing move returned in circ
+    if (!created)
+    {
+        created = new_gate(circ, "move", {r0,r1});
+        if (!created) new_gate_exception("move or move_real");
+    }
+
+    if (v2r.GetRs(r1) == rs_nostate)
+    {
+        // r1 is not in inited state, generate in initcirc the circuit to do so
+        DOUT("... initializing non-inited " << r1 << " to |0> (inited) state preferably using move_init ...");
+        ql::circuit initcirc;
+
+        created = new_gate(initcirc, "move_init", {r1});
+        if (!created)
+        {
+            created = new_gate(initcirc, "prepz", {r1});
+            // if (created)
+            // {
+            //     created = new_gate(initcirc, "h", {r1});
+            //     if (!created) new_gate_exception("h");
+            // }
+            if (!created) new_gate_exception("move_init or prepz");
+        }
+
+        // when difference in extending circuit after scheduling initcirc+circ or just circ
+        // is less equal than threshold cycles (0 would mean scheduling initcirc was for free),
+        // commit to it, otherwise abort
+        int threshold;
+        std::string mapusemovesopt = ql::options::get("mapusemoves");
+        if ("yes" == mapusemovesopt)
+        {
+            threshold = 0;
+        }
+        else
+        {
+            threshold = atoi(mapusemovesopt.c_str());
+        }
+        if (InsertionCost(initcirc, circ) <= threshold)
+        {
+            // so we go for it!
+            // circ contains move; it must get the initcirc before it ...
+            // do this by appending circ's gates to initcirc, and then swapping circ and initcirc content
+            DOUT("... initialization is for free, do it ...");
+            for (auto& gp : circ)
+            {
+                initcirc.push_back(gp);
+            }
+            circ.swap(initcirc);
+            v2r.SetRs(r1, rs_wasinited);
+        }
+        else
+        {
+            // undo damage done, will not do move but swap, i.e. nothing created thisfar
+            DOUT("... initialization extends circuit, don't do it ...");
+            circ.clear();       // circ being cleared also indicates creation wasn't successful
+        }
+        // initcirc getting out-of-scope here so gets destroyed
+    }
 }
 
 // generate a single swap/move with real operands and add it to the current past's waiting list;
@@ -1198,9 +1255,7 @@ bool CanBeScheduledEarlier(size_t r0, size_t r1)
 // use a move with that location as 2nd operand,
 // after first having initialized the target qubit in |0> (inited) state when that has not been done already;
 // but this initialization must not extend the depth so can only be done when cycles for it are for free
-//
-// a swap can be implemented with 1-1 operands (0) or with reversed operands (1), as indicated by doreverseswap
-void AddSwap(size_t r0, size_t r1, int doreverseswap)
+void AddSwap(size_t r0, size_t r1)
 {
     bool created = false;
     ql::circuit circ;
@@ -1219,75 +1274,8 @@ void AddSwap(size_t r0, size_t r1, int doreverseswap)
     std::string mapusemovesopt = ql::options::get("mapusemoves");
     if ("no" != mapusemovesopt && (v2r.GetRs(r0)!=rs_hasstate || v2r.GetRs(r1)!=rs_hasstate))
     {
-        if (v2r.GetRs(r0)!=rs_hasstate)
-        {
-            // interchange r0 and r1, so that r1 (right-hand operand of move) will be the state-less one
-            size_t  tmp = r1; r1 = r0; r0 = tmp;
-            doreverseswap = 1 - doreverseswap;        // reversal, so complement doreverseswap for later use
-        }
-        MapperAssert (v2r.GetRs(r0)==rs_hasstate);    // and r0 will be the one with state
-        MapperAssert (v2r.GetRs(r1)!=rs_hasstate);    // and r1 will be the one without state (rs_nostate || rs_inited)
-
-        // first (optimistically) create the move circuit and add it to circ
-        created = new_gate(circ, "move_real", {r0,r1});    // gates implementing move returned in circ
-        if (!created)
-        {
-            created = new_gate(circ, "move", {r0,r1});
-            if (!created) new_gate_exception("move or move_real");
-        }
-
-        if (v2r.GetRs(r1) == rs_nostate)
-        {
-            // r1 is not in inited state, generate in initcirc the circuit to do so
-            DOUT("... initializing non-inited " << r1 << " to |0> (inited) state preferably using move_init ...");
-            ql::circuit initcirc;
-
-            created = new_gate(initcirc, "move_init", {r1});
-            if (!created)
-            {
-                created = new_gate(initcirc, "prepz", {r1});
-                // if (created)
-                // {
-                //     created = new_gate(initcirc, "h", {r1});
-                //     if (!created) new_gate_exception("h");
-                // }
-                if (!created) new_gate_exception("move_init or prepz");
-            }
-
-            // when difference in extending circuit after scheduling initcirc+circ or just circ
-            // is less equal than threshold cycles (0 would mean scheduling initcirc was for free),
-            // commit to it, otherwise abort
-            int threshold;
-            if ("yes" == mapusemovesopt)
-            {
-                threshold = 0;
-            }
-            else
-            {
-                threshold = atoi(mapusemovesopt.c_str());
-            }
-            if (InsertionCost(initcirc, circ) <= threshold)
-            {
-                // so we go for it!
-                // circ contains move; it must get the initcirc before it ...
-                // do this by appending circ's gates to initcirc, and then swapping circ and initcirc content
-                DOUT("... initialization is for free, do it ...");
-                for (auto& gp : circ)
-                {
-                    initcirc.push_back(gp);
-                }
-                circ.swap(initcirc);
-                v2r.SetRs(r1, rs_wasinited);
-            }
-            else
-            {
-                // undo damage done, will not do move but swap, i.e. nothing created thisfar
-                DOUT("... initialization extends circuit, don't do it ...");
-                circ.clear();
-                created = false;    // so continue by generating the swap below
-            }
-            // initcirc getting out-of-scope here so gets destroyed
-        }
+        GenMove(circ, r0, r1);
+        created = circ.size()!=0;
         if (created)
         {
             // generated move
@@ -1297,19 +1285,28 @@ void AddSwap(size_t r0, size_t r1, int doreverseswap)
             nmovesadded++;                       // for reporting at the end
             DOUT("... move(q" << r0 << ",q" << r1 << ") ...");
         }
-    }
-    if (doreverseswap == 1)
-    {
-        // interchange r0 and r1, exploiting asymmetry of swap implementation: 1st operand starts 1 cycle later
-        std::string mapreverseswapopt = ql::options::get("mapreverseswap");
-        if ("yes" == mapreverseswapopt)
+        else
         {
-            size_t  tmp = r1; r1 = r0; r0 = tmp;
+            DOUT("... move(q" << r0 << ",q" << r1 << ") cancelled, go for swap");
         }
     }
     if (!created)
     {
         // no move generated so do swap
+	    std::string mapreverseswapopt = ql::options::get("mapreverseswap");
+	    if ("yes" == mapreverseswapopt)
+	    {
+            // swap(r0,r1) is about to be generated
+            // it is functionally symmetrical,
+            // but in the implementation r1 starts 1 cycle earlier than r0 (we should derive this from json file ...)
+            // so swap(r0,r1) with interchanged operands might get scheduled 1 cycle earlier;
+            // when fcv[r0] < fcv[r1], r0 is free for use 1 cycle earlier than r1, so a reversal will help
+            if (fc.IsFirstOperandEarlier(r0, r1))
+            {
+	            size_t  tmp = r1; r1 = r0; r0 = tmp;
+                DOUT("... reversed swap to become swap(q" << r0 << ",q" << r1 << ") ...");
+            }
+	    }
         created = new_gate(circ, "swap_real", {r0,r1});    // gates implementing swap returned in circ
         if (!created)
         {
@@ -1628,33 +1625,22 @@ void AddSwaps(Past & past, size_t maxnumbertoadd)
 {
     size_t  fromQ;
     size_t  toQ;
-    int     doreverseswap;
     size_t  numberadded = 0;
 
     fromQ = fromSource[0];
-    doreverseswap = 0;
     for ( size_t i = 1; i < fromSource.size() && numberadded < maxnumbertoadd; i++ )
     {
         toQ = fromSource[i];
-        if (i == 1 && past.CanBeScheduledEarlier(fromQ, toQ))
-        {
-            doreverseswap = 1;   // generate seq of reversed swaps
-        }
-        past.AddSwap(fromQ, toQ, doreverseswap);
+        past.AddSwap(fromQ, toQ);
         fromQ = toQ;
         numberadded++;
     }
 
     fromQ = fromTarget[0];
-    doreverseswap = 0;
     for ( size_t i = 1; i < fromTarget.size() && numberadded < maxnumbertoadd; i++ )
     {
         toQ = fromTarget[i];
-        if (i == 1 && past.CanBeScheduledEarlier(fromQ, toQ))
-        {
-            doreverseswap = 1;   // generate seq of reversed swaps
-        }
-        past.AddSwap(fromQ, toQ, doreverseswap);
+        past.AddSwap(fromQ, toQ);
         fromQ = toQ;
         numberadded++;
     }
@@ -3198,8 +3184,8 @@ void SelectAlter(std::list<Alter>& lp, Alter & resp, Past& past)
             }
         }
     }
-    // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
-    //  Alter::listPrint("... after SelectAlter", lp);
+    if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        Alter::listPrint("... after SelectAlter", lp);
     resp = choices[Draw(choices.size())];
     if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
         resp.Print("... the selected Alter is");
@@ -3256,6 +3242,7 @@ void RouteAndMap2qGates(std::list<ql::gate*> lg, Future& future, Past& past)
         DOUT("RouteAndMap2qGates, " << lg.size() << " 2q gates; create an alternative for each");
         for (auto gp : lg)
         {
+            // gen alternatives for gp and add these to alllp
             DOUT("RouteAndMap2qGates: create alternatives for: " << gp->qasm());
             GenAlters(gp, alllp, past);  // gen all possible variations to make gp NN, in current v2r mapping ("past")
         }
@@ -3278,13 +3265,16 @@ void RouteAndMap2qGates(std::list<ql::gate*> lg, Future& future, Past& past)
     // add swaps (upto some max), as described by resp, to THIS main past, and schedule them in
     resp.AddSwaps(past, atoi(ql::options::get("mapselectmaxswaps").c_str()));
 
-    // when only some swaps were added, the resgp might not yet be NN
+    // when only some swaps were added, the resgp might not yet be NN, so recheck
     auto&   q = resgp->operands;
     if (grid.Distance(past.MapQubit(q[0]), past.MapQubit(q[1])) == 1)
     {
-        // resgp is NN: move on
+        // resgp is NN: so done with this 2q gate
+        DOUT("... RouteAndMap2qGates, 2q selected as best is NN, map and done: " << resgp->qasm());
         MapRoutedGate(resgp, past); // the 2q target gate is NN now and thus can be mapped
         future.DoneGate(resgp);     // and then taken out of future
+    } else {
+        DOUT("... RouteAndMap2qGates, 2q selected as best is not NN yet: " << resgp->qasm());
     }
 }
 

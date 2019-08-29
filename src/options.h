@@ -76,12 +76,12 @@ namespace ql
           app->add_set_ignore_case("--mapinitone2one", opt_name2opt_val["mapinitone2one"], {"no", "yes"}, "Initialize mapping of virtual qubits one to one to real qubits", true);
           app->add_set_ignore_case("--initialplace", opt_name2opt_val["initialplace"], {"no","yes","1s","10s","1m","10m","1h","1sx","10sx","1mx","10mx","1hx"}, "Initialplace qubits before mapping", true);
           app->add_set_ignore_case("--initialplaceprefix", opt_name2opt_val["initialplaceprefix"], {"0","1","2","3","4","5","6","7","8","9", "10","11","12","13","14","15","16","17","18","19","20","30","40","50","60","70","80","90","100"}, "Initialplace considers only this number of initial two-qubit gates", true);
-          app->add_set_ignore_case("--mapusemoves", opt_name2opt_val["mapusemoves"], {"no", "yes", "0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20",}, "Use unused qubit to move thru", true);
+          app->add_set_ignore_case("--mapusemoves", opt_name2opt_val["mapusemoves"], {"no", "yes", "0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20"}, "Use unused qubit to move thru", true);
           app->add_set_ignore_case("--mapreverseswap", opt_name2opt_val["mapreverseswap"], {"no", "yes"}, "Reverse swap operands when better", true);
           app->add_set_ignore_case("--maptiebreak", opt_name2opt_val["maptiebreak"], {"first", "last", "random"}, "Tie break method", true);
           app->add_set_ignore_case("--mappathselect", opt_name2opt_val["mappathselect"], {"all", "borders"}, "Which paths: all or borders", true);
           app->add_set_ignore_case("--maplookahead", opt_name2opt_val["maplookahead"], {"no", "critical", "noroutingfirst", "all"}, "Strategy wrt selecting next gate(s) to map", true);
-          app->add_set_ignore_case("--mapselectmaxswaps", opt_name2opt_val["maxselectmaxswaps"], {"0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20",}, "Maximum number of swaps/moves added for one alternative", true);
+          app->add_set_ignore_case("--mapselectmaxswaps", opt_name2opt_val["mapselectmaxswaps"], {"0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20"}, "Maximum number of swaps/moves added for one alternative", true);
           app->add_set_ignore_case("--write_qasm_files", opt_name2opt_val["write_qasm_files"], {"yes", "no"}, "write (un-)scheduled (with and without resource-constraint) qasm files", true);
           app->add_set_ignore_case("--write_report_files", opt_name2opt_val["write_report_files"], {"yes", "no"}, "write report files on circuit characteristics and pass results", true);
       }
