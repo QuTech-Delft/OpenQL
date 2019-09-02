@@ -39,9 +39,17 @@ Parametrized gate decompositions can be specified in `gate_decomposition` sectio
 
     "rx180 %0" : ["x %0"]
 
-Based on this, `k.gate('rx180', 3)` will be decomposed to x(q3). Simmilarly, multi-qubit gate-decompositions can be specified as:
+Based on this, `k.gate('rx180', 3)` will be decomposed to x(q3). Similarly, multi-qubit gate-decompositions can be 
+specified as:
 
-    "cnot %0,%1" : ["ry90 %0","cz %0,%1","ry90 %1"]
+    "cnot %0,%1" : ["ry90 %0", "cz %0,%1", "ry90 %1"]
+
+
+#### Specialized gate-decomposition
+Specialized gate decompositions can be specified in `gate_decomposition` section, as shown below:
+
+    "rx180 q0" : ["x q0"]
+    "cz_park q0,q1" : ["cz q0,q1", "park q3"]
 
 
 ## CC backend specific parameters
@@ -60,8 +68,8 @@ Path | Type | Values | Note
 * {instrumentGroup}
 * {qubit}
 
-Note that for the CC - contrary to the CC-light - the final hardrware output is entirely *determined* by the contents of the configuration file,
-there is no builtin knowledge of instrument connectivity or codeword organization.
+Note that for the CC - contrary to the CC-light - the final hardrware output is entirely *determined* by the contents of 
+the configuration file, there is no builtin knowledge of instrument connectivity or codeword organization.
 
 ## Unused parameters
 ### Non-implemented parameters

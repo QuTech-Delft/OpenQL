@@ -689,7 +689,7 @@ private:
         }
     }
 
-    // add specialized decomposed gate, example JSON definition: "cl_14 q1": ["rx90 %0", "rym90 %0", "rxm90 %0"]
+    // add specialized decomposed gate, example JSON definition: "cz_park q0,q1" : ["cz q0,q1", "park q3"]
     bool add_spec_decomposed_gate_if_available(std::string gate_name,
             std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
@@ -1516,6 +1516,9 @@ public:
         cnot(cq, tq);
     }
 
+    /************************************************************************\
+    | Kernel manipulations: controlled & conjugate
+    \************************************************************************/
 
     void controlled_single(ql::quantum_kernel *k, size_t control_qubit, size_t ancilla_qubit)
     {
