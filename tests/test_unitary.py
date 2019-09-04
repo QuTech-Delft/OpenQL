@@ -1442,6 +1442,9 @@ class Test_conjugated_kernel(unittest.TestCase):
         u1 = ql.Unitary("arbitrarycontrolled",matrix)
         u1.decompose()
         k.display()
+        k.hadamard(0)
+        k.hadamard(1)
+        k.hadamard(2)
         k.gate(u1, [0, 1, 2])
         k.display()
 
