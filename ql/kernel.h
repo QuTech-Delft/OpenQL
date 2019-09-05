@@ -3,6 +3,7 @@
  * @date   04/2017
  * @author Nader Khammassi
  *         Imran Ashraf
+ *         Anneriet Krol
  * @brief  openql kernel
  */
 

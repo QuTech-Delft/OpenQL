@@ -382,18 +382,30 @@ public:
         // complex_matrix W;
         if(check == check.adjoint())
         {
-            DOUT("Demultiplexing matrix is self-adjoint()");
-            Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> eigslv(check, Eigen::ComputeEigenvectors | Eigen::ABx_lx);
-            D.noalias() = eigslv.eigenvalues().cwiseSqrt();
+            COUT("Demultiplexing matrix is self-adjoint()");
+            Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> eigslv(check);
+            D.noalias() = ((complex_matrix) eigslv.eigenvalues()).cwiseSqrt();
+            COUT("D"<< D);
             V.noalias() = eigslv.eigenvectors();
-            W.noalias() = D*V.adjoint()*U2;
+            COUT("V"<< V);
+            W.noalias() = D.asDiagonal()*V.adjoint()*U2;
         }
         else
-        {           
-            Eigen::ComplexEigenSolver<complex_matrix> decomposition(check);
-            D.noalias() = decomposition.eigenvalues().cwiseSqrt();
-            V.noalias() = decomposition.eigenvectors();
-            W.noalias() = D.asDiagonal()*V.adjoint()*U2;
+        {
+            if (numberofcontrolbits < 5) //schur is faster for small matrices
+            {
+                Eigen::ComplexSchur<complex_matrix> decomposition(check);
+                D.noalias() = decomposition.matrixT().diagonal().cwiseSqrt();
+                V.noalias() = decomposition.matrixU();
+                W.noalias() = D.asDiagonal() * V.adjoint() * U2;
+            }
+            else
+            {
+                Eigen::ComplexEigenSolver<complex_matrix> decomposition(check);
+                D.noalias() = decomposition.eigenvalues().cwiseSqrt();
+                V.noalias() = decomposition.eigenvectors();
+                W.noalias() = D.asDiagonal() * V.adjoint() * U2;
+            }
         }
     
         // demultiplexing_time += (std::chrono::steady_clock::now() - start);

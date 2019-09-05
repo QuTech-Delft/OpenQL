@@ -1489,10 +1489,10 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         u1 = ql.Unitary("mscthesisaritra",matrix)
         u1.decompose()
-        k.display()
         k.hadamard(0)
         k.hadamard(1)
         k.hadamard(2)
+        k.hadamard(3)
         k.gate(u1, [0, 1, 2, 3])
         k.display()
 
@@ -1503,15 +1503,23 @@ class Test_conjugated_kernel(unittest.TestCase):
         c0 = qx.get_state()
 
         # less accuracy because of less accurate input
-        self.assertAlmostEqual(0.125*helper_prob((matrix[0]  + matrix[1] + matrix[2] + matrix[3] + matrix[4] + matrix[5] + matrix[6] + matrix[7])), helper_regex(c0)[0], 2)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[8]  + matrix[9] + matrix[10]+ matrix[11]+ matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[1], 2)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[16] + matrix[17]+ matrix[18]+ matrix[19]+ matrix[20]+ matrix[21]+ matrix[22]+ matrix[23])), helper_regex(c0)[2], 2)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[24] + matrix[25]+ matrix[26]+ matrix[27]+ matrix[28]+ matrix[29]+ matrix[30]+ matrix[31])), helper_regex(c0)[3], 2)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[32] + matrix[33]+ matrix[34]+ matrix[35]+ matrix[36]+ matrix[37]+ matrix[38]+ matrix[39])), helper_regex(c0)[4], 2)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[40] + matrix[41]+ matrix[42]+ matrix[43]+ matrix[44]+ matrix[45]+ matrix[46]+ matrix[47])), helper_regex(c0)[5], 2)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_regex(c0)[6], 2)
-        self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 2)
-
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[0]  +  matrix[1] +  matrix[2] +  matrix[3] +  matrix[4] +  matrix[5] +  matrix[6] +  matrix[7] +  matrix[8]  +  matrix[9] +  matrix[10]+  matrix[11]+  matrix[12]+  matrix[13]+  matrix[14]+  matrix[15])), helper_regex(c0)[0], 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[16] +  matrix[17]+  matrix[18]+  matrix[19]+  matrix[20]+  matrix[21]+  matrix[22]+  matrix[23]+  matrix[24] +  matrix[25]+  matrix[26]+  matrix[27]+  matrix[28]+  matrix[29]+  matrix[30]+  matrix[31])), helper_regex(c0)[1], 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[32] +  matrix[33]+  matrix[34]+  matrix[35]+  matrix[36]+  matrix[37]+  matrix[38]+  matrix[39]+  matrix[40] +  matrix[41]+  matrix[42]+  matrix[43]+  matrix[44]+  matrix[45]+  matrix[46]+  matrix[47])), helper_regex(c0)[2], 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[48] +  matrix[49]+  matrix[50]+  matrix[51]+  matrix[52]+  matrix[53]+  matrix[54]+  matrix[55]+  matrix[56] +  matrix[57]+  matrix[58]+  matrix[59]+  matrix[60]+  matrix[61]+  matrix[62]+  matrix[63])), helper_regex(c0)[3], 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[64] +  matrix[65]+  matrix[66]+  matrix[67]+  matrix[68]+  matrix[69]+  matrix[70]+  matrix[71]+  matrix[72] +  matrix[73]+  matrix[74]+  matrix[75]+  matrix[76]+  matrix[77]+  matrix[78]+  matrix[79])), helper_regex(c0)[4], 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[80] +  matrix[81]+  matrix[82]+  matrix[83]+  matrix[84]+  matrix[85]+  matrix[86]+  matrix[87]+  matrix[88] +  matrix[89]+  matrix[90]+  matrix[91]+  matrix[92]+  matrix[93]+  matrix[94]+  matrix[95])), helper_regex(c0)[5], 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[96] +  matrix[97]+  matrix[98]+  matrix[99]+  matrix[100]+ matrix[101]+ matrix[102]+ matrix[103]+ matrix[104] + matrix[105]+ matrix[106]+ matrix[107]+ matrix[108]+ matrix[109]+ matrix[110]+ matrix[111])), helper_regex(c0)[6], 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[112] + matrix[113]+ matrix[114]+ matrix[115]+ matrix[116]+ matrix[117]+ matrix[118]+ matrix[119]+ matrix[120] + matrix[121]+ matrix[122]+ matrix[123]+ matrix[124]+ matrix[125]+ matrix[126]+ matrix[127])), helper_regex(c0)[7], 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[128] + matrix[129]+ matrix[130]+ matrix[131]+ matrix[132]+ matrix[133]+ matrix[134]+ matrix[135]+ matrix[136] + matrix[137]+ matrix[138]+ matrix[139]+ matrix[140]+ matrix[141]+ matrix[142]+ matrix[143])), helper_regex(c0)[8], 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[144] + matrix[145]+ matrix[146]+ matrix[147]+ matrix[148]+ matrix[149]+ matrix[150]+ matrix[151]+ matrix[152] + matrix[153]+ matrix[154]+ matrix[155]+ matrix[156]+ matrix[157]+ matrix[158]+ matrix[159])), helper_regex(c0)[9], 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[160] + matrix[161]+ matrix[162]+ matrix[163]+ matrix[164]+ matrix[165]+ matrix[166]+ matrix[167]+ matrix[168] + matrix[169]+ matrix[170]+ matrix[171]+ matrix[172]+ matrix[173]+ matrix[174]+ matrix[175])), helper_regex(c0)[10], 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[176] + matrix[177]+ matrix[178]+ matrix[179]+ matrix[180]+ matrix[181]+ matrix[182]+ matrix[183]+ matrix[184] + matrix[185]+ matrix[186]+ matrix[187]+ matrix[188]+ matrix[189]+ matrix[190]+ matrix[191])), helper_regex(c0)[11], 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[192] + matrix[193]+ matrix[194]+ matrix[195]+ matrix[196]+ matrix[197]+ matrix[198]+ matrix[199]+ matrix[200] + matrix[201]+ matrix[202]+ matrix[203]+ matrix[204]+ matrix[205]+ matrix[206]+ matrix[207])), helper_regex(c0)[12], 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[208] + matrix[209]+ matrix[210]+ matrix[211]+ matrix[212]+ matrix[213]+ matrix[214]+ matrix[215]+ matrix[216] + matrix[217]+ matrix[218]+ matrix[219]+ matrix[220]+ matrix[221]+ matrix[222]+ matrix[223])), helper_regex(c0)[13], 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[224] + matrix[225]+ matrix[226]+ matrix[227]+ matrix[228]+ matrix[229]+ matrix[230]+ matrix[231]+ matrix[232] + matrix[233]+ matrix[234]+ matrix[235]+ matrix[236]+ matrix[237]+ matrix[238]+ matrix[239])), helper_regex(c0)[14], 2)
+        self.assertAlmostEqual(0.0625*helper_prob((matrix[240] + matrix[241]+ matrix[242]+ matrix[243]+ matrix[244]+ matrix[245]+ matrix[246]+ matrix[247]+ matrix[248] + matrix[249]+ matrix[250]+ matrix[251]+ matrix[252]+ matrix[253]+ matrix[254]+ matrix[255])), helper_regex(c0)[15], 2)
+  
 if __name__ == '__main__':
     unittest.main()
 
