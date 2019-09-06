@@ -125,12 +125,20 @@ public:
             json attr = *it; //.value();
 
             name = sanitize_instruction_name(name);
-            name = std::regex_replace(name, comma_space_pattern, ",");
+            // name = std::regex_replace(name, comma_space_pattern, ","); // original
+            name = std::regex_replace(name, comma_space_pattern, " "); // HvS
 
             // check for duplicate operations
             if (instruction_map.find(name) != instruction_map.end())
                 WOUT("instruction '" << name << "' redefined : the old definition is overwritten !");
 
+            // format in json.instructions:
+            //  "^(\s)*token(\s)+token(\s)*,(\s)*token(\s*)$"
+            //  so with a comma between any operands and possible spaces everywhere
+            //
+            // format of key and value (which is a custom_gate)'s name in instruction_map:
+            //  "^(token|(token token(,token)*))$"
+            //  so with a comma between any operands
             instruction_map[name] = load_instruction(name, attr);
             DOUT("instruction " << name << " loaded.");
         }
@@ -149,6 +157,14 @@ public:
                 comp_ins = std::regex_replace(comp_ins, comma_space_pattern, " ");
                 DOUT("Adjusted composite instr : " << comp_ins);
 
+                // format in json.instructions:
+                //  "^(\s)*token(\s)+token(\s)*(,|\s)(\s)*token(\s*)$"
+                //  so with a comma or a space between any operands and possible spaces everywhere
+                //
+                // format of key and value (which is a custom_gate)'s name in instruction_map:
+                //  "^(token(\stoken)*))$"
+                //  so with one space between any operands
+
                 // check for duplicate operations
                 if (instruction_map.find(comp_ins) != instruction_map.end())
                     WOUT("composite instruction '" << comp_ins << "' redefined : the old definition is overwritten !");
@@ -166,10 +182,20 @@ public:
                     sub_ins = sanitize_instruction_name(sub_ins);
                     sub_ins = std::regex_replace(sub_ins, comma_space_pattern, " ");
                     DOUT("After comma removal sub instr: " << sub_ins);
-                    std::string sub_ins_adjusted(sub_ins);
+                    std::string sub_ins_adjusted(sub_ins);      // why this?
+
+                    // format in json's sub_instructions:
+                    //  "^(\s)*token(\s)+token(\s)*(,|\s)(\s)*token(\s*)$"
+                    //  so with a comma or a space between any operands and possible spaces everywhere
+                    //
+                    // format of key and value (which is a custom_gate)'s name in instruction_map:
+                    //  "^(token(\stoken)*))$"
+                    //  so with one space between any operands
 
                     if ( instruction_map.find(sub_ins_adjusted) != instruction_map.end() )
                     {
+                        // i.e. subinstruction as is is also defined as instruction (with all operands)
+
                         // using existing sub ins
                         DOUT("using existing sub instr : " << sub_ins_adjusted);
                         gs.push_back( instruction_map[sub_ins_adjusted] );
@@ -188,7 +214,7 @@ public:
                         // for specialized custom instructions, raise error if instruction
                         // is not already available
                         EOUT("custom instruction not found for '" << sub_ins_adjusted <<"'");
-                        ql::exception("[x] error : custom instruction not found for '" + sub_ins_adjusted + "'",false);
+                        throw ql::exception("[x] error : custom instruction not found for '" + sub_ins_adjusted + "'",false);
                     }
                 }
                 instruction_map[comp_ins] = new composite_gate(comp_ins, gs);

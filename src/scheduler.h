@@ -121,9 +121,10 @@ public:
         ListDigraph::Node tgtNode = graph.nodeFromId(tgtID);
         ListDigraph::Arc arc = graph.addArc(srcNode,tgtNode);
         weight[arc] = std::ceil( static_cast<float>(instruction[srcNode]->duration) / cycle_time);
+        // weight[arc] = (instruction[srcNode]->duration + cycle_time -1)/cycle_time;
         cause[arc] = operand;
         depType[arc] = deptype;
-        DOUT("... dep " << name[srcNode] << " -> " << name[tgtNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[deptype] << ")");
+        DOUT("... dep " << name[srcNode] << " -> " << name[tgtNode] << " (opnd=" << operand << ", dep=" << DepTypesNames[deptype] << ", wght=" << weight[arc] << ")");
     }
 
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
@@ -984,6 +985,7 @@ private:
                 std::string operation_type; // MW/FLUX/READOUT etc
                 std::string instruction_type; // single / two qubit
                 size_t operation_duration = std::ceil( static_cast<float>(curr_ins->duration) / cycle_time);
+                // size_t operation_duration = (curr_ins->duration + cycle_time -1)/cycle_time;
 
                 if(platform.instruction_settings.count(id) > 0)
                 {
@@ -1144,6 +1146,7 @@ private:
                     bduration = std::max(bduration, iduration);
                 }
                 abundle.duration_in_cycles = std::ceil(static_cast<float>(bduration)/cycle_time);
+                // abundle.duration_in_cycles = (bduration + cycle_time -1)/cycle_time;
                 bundles.push_back(abundle);
             }
         }
@@ -1219,7 +1222,8 @@ private:
                     bduration = std::max(bduration, iduration);
                 }
                 abundle.start_cycle = currCycle;
-                abundle.duration_in_cycles = std::ceil(static_cast<float>(bduration)/cycle_time);
+                abundle.duration_in_cycles = (bduration + cycle_time -1)/cycle_time;
+                // abundle.duration_in_cycles = std::ceil(static_cast<float>(bduration)/cycle_time);
                 bundles.push_back(abundle);
             }
         }
@@ -1352,6 +1356,7 @@ private:
                 std::string operation_type; // MW/FLUX/READOUT etc
                 std::string instruction_type; // single / two qubit
                 size_t operation_duration = std::ceil( static_cast<float>(curr_ins->duration) / cycle_time);
+                // size_t operation_duration = (curr_ins->duration + cycle_time -1) / cycle_time;
 
                 if(platform.instruction_settings.count(id) > 0)
                 {
@@ -1605,6 +1610,7 @@ private:
                     bduration = std::max(bduration, iduration);
                 }
                 abundle.duration_in_cycles = std::ceil(static_cast<float>(bduration)/cycle_time);
+                // abundle.duration_in_cycles = (bduration + cycle_time-1)/cycle_time;
                 bundles.push_back(abundle);
             }
         }
@@ -1678,6 +1684,7 @@ private:
                     bduration = std::max(bduration, iduration);
                 }
                 abundle.duration_in_cycles = std::ceil(static_cast<float>(bduration)/cycle_time);
+                // abundle.duration_in_cycles = (bduration + cycle_time-1)/cycle_time;
                 bundles.push_back(abundle);
             }
         }
@@ -1902,6 +1909,7 @@ private:
                     size_t          n_completion_cycle;
 
                     // candidate's result, when moved, must be ready before end-of-circuit and before used
+                    // n_completion_cycle = curr_cycle + (instruction[n]->duration+cycle_time-1)/cycle_time;
                     n_completion_cycle = curr_cycle + std::ceil(static_cast<float>(instruction[n]->duration)/cycle_time);
                     if (n_completion_cycle > cycle_count)
                     {
@@ -2036,6 +2044,7 @@ private:
                     bduration = std::max(bduration, iduration);
                 }
                 abundle.duration_in_cycles = std::ceil(static_cast<float>(bduration)/cycle_time);
+                // abundle.duration_in_cycles = (bduration+cycle_time-1)/cycle_time;
                 bundles.push_back(abundle);
             }
         }
@@ -2832,6 +2841,7 @@ public:
             std::string operation_type;
             std::string instruction_type;
             size_t      operation_duration = std::ceil( static_cast<float>(gp->duration) / cycle_time);
+            // size_t      operation_duration = (gp->duration+cycle_time-1) / cycle_time;
             GetGateParameters(gp->name, platform, operation_name, operation_type, instruction_type);
             if (rm.available(curr_cycle, gp, operation_name, operation_type, instruction_type, operation_duration))
             {
@@ -2944,6 +2954,7 @@ public:
                 size_t      operation_duration = 0;
 
                 GetGateParameters(gp->name, platform, operation_name, operation_type, instruction_type);
+                // operation_duration = (gp->duration+cycle_time-1) / cycle_time;
                 operation_duration = std::ceil( static_cast<float>(gp->duration) / cycle_time);
                 rm.reserve(curr_cycle, gp, operation_name, operation_type, instruction_type, operation_duration);
             }
@@ -3131,6 +3142,7 @@ public:
 
                     // candidate's result, when moved, must be ready before end-of-circuit and before used
                     predgp_completion_cycle = curr_cycle + std::ceil(static_cast<float>(predgp->duration)/cycle_time);
+                    // predgp_completion_cycle = curr_cycle + (predgp->duration+cycle_time-1)/cycle_time;
                     if (predgp_completion_cycle > cycle_count + 1)  // at SINK is ok, later not
                     {
                         forward_predgp = false;

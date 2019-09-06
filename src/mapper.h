@@ -41,8 +41,7 @@
 // it can be replaced by the standard assert if it works
 void assert_fail(const char *f, int l, const char *s)
 {
-    EOUT("assert " << s << " failed in file " << f << " at line " << l);
-    throw ql::exception("assert failed",false);
+    FATAL("assert " << s << " failed in file " << f << " at line " << l);
 }
 #define MapperAssert(condition)   { if (!(condition)) { assert_fail(__FILE__, __LINE__, #condition); } }
 
@@ -386,7 +385,7 @@ public:
 // default constructor was deleted because it cannot construct cc_light_resource_manager_t without parameters
 FreeCycle()
 {
-    DOUT("Constructing FreeCycle");
+    // DOUT("Constructing FreeCycle");
 }
 
 void Init(ql::quantum_platform *p)
@@ -477,7 +476,31 @@ static void GetGateParameters(std::string id, ql::quantum_platform *platformp, s
 // return whether gate with first operand qubit r0 can be scheduled earlier than with operand qubit r1
 bool IsFirstOperandEarlier(size_t r0, size_t r1)
 {
+    DOUT("... fcv[" << r0 << "]=" << fcv[r0]<< " fcv[" << r1 << "]=" << fcv[r1] << " IsFirstOperandEarlier=" << (fcv[r0] < fcv[r1]));
     return fcv[r0] < fcv[r1];
+}
+
+// will a swap(fr0,fr1) start earlier than a swap(sr0,sr1)?
+// is really a short-cut ignoring config file and perhaps several other details
+bool IsFirstSwapEarliest(size_t fr0, size_t fr1, size_t sr0, size_t sr1)
+{
+    std::string mapreverseswapopt = ql::options::get("mapreverseswap");
+    if ("yes" == mapreverseswapopt)
+    {
+        if (fcv[fr0] < fcv[fr1])
+        {
+            size_t  tmp = fr1; fr1 = fr0; fr0 = tmp;
+        }
+        if (fcv[sr0] < fcv[sr1])
+        {
+            size_t  tmp = sr1; sr1 = sr0; sr0 = tmp;
+        }
+    }
+    size_t  startCycleFirstSwap = std::max<size_t>(fcv[fr0]-1, fcv[fr1]);
+    size_t  startCycleSecondSwap = std::max<size_t>(fcv[sr0]-1, fcv[sr1]);
+
+    DOUT("... fcv[" << fr0 << "]=" << fcv[fr0] << " fcv[" << fr1 << "]=" << fcv[fr1] << " start=" << startCycleFirstSwap << " fcv[" << sr0 << "]=" << fcv[sr0] << " fcv[" << sr1 << "]=" << fcv[sr1] << " start=" << startCycleSecondSwap << " IsFirstSwapEarliest=" << (startCycleFirstSwap < startCycleSecondSwap));
+    return startCycleFirstSwap < startCycleSecondSwap;
 }
 
 // when we would schedule gate g, what would be its start cycle? return it
@@ -650,7 +673,7 @@ public:
 // needed for virgin construction
 Past()
 {
-    DOUT("Constructing Past");
+    // DOUT("Constructing Past");
 }
 
 // past initializer
@@ -826,7 +849,6 @@ void Add(gate_p gp)
 // ===========================================
 // essentially copies follow of the gate interface of kernel.h, adding the instructions instead to the circ parameter
 
-
 // if a specialized custom gate ("cz q0 q4") is available, add it to circuit and return true
 // if a parameterized custom gate ("cz") is available, add it to circuit and return true
 //
@@ -834,43 +856,57 @@ void Add(gate_p gp)
 bool new_custom_gate_if_available(std::string & gname, std::vector<size_t> qubits, ql::circuit& circ,
                                   size_t duration=0, double angle=0.0)
 {
+    DOUT("new_custom_gate_if_available(" << gname << ", " << ql::utils::to_string<size_t>(qubits) << ", " << duration << ", " << angle << ")");
     bool added = false;
     // first check if a specialized custom gate is available
     std::string instr = gname + " ";
     if(qubits.size() > 0)
     {
         for (size_t i=0; i<(qubits.size()-1); ++i)
-            instr += "q" + std::to_string(qubits[i]) + ",";
+            instr += "q" + std::to_string(qubits[i]) + " "; // HvS
+            // instr += "q" + std::to_string(qubits[i]) + ","; // kernel.h
         if(qubits.size() >= 1) // to make if work with gates without operands
             instr += "q" + std::to_string(qubits[qubits.size()-1]);
     }
+    DOUT("Is a specialized custom_gate available (" << instr << ") for " << gname << " on " << ql::utils::to_string<size_t>(qubits) << " ...");
 
     std::map<std::string,ql::custom_gate*>::iterator it = gate_definitionp->find(instr);
     if (it != gate_definitionp->end())
     {
         // a specialized custom gate is of the form: "cz q0 q3"
-        ql::custom_gate* g = new ql::custom_gate(*(it->second));
+        DOUT("A specialized custom gate (" << instr << ") is available for " << gname << " on " << ql::utils::to_string<size_t>(qubits) << " ...");
+        ql::custom_gate* g = new ql::custom_gate(*(it->second));    // different creator!!! from json!!! but name???
+        DOUT("... custom_gate created with name=" << g->name << ", duration=" << g->duration);
         for(auto & qubit : qubits)
             g->operands.push_back(qubit);
+        DOUT("... after adding operands, qasm is: " << g->qasm());
         if(duration>0) g->duration = duration;
         g->angle = angle;
+        DOUT("... after adding duration/angle, qasm is: " << g->qasm());
         added = true;
         circ.push_back(g);
     }
     else
     {
+        DOUT("A specialized custom_gate (" << instr << ") is not available for " << gname << " on " << ql::utils::to_string<size_t>(qubits) << " ...");
         // otherwise, check if there is a parameterized custom gate (i.e. not specialized for arguments)
         // this one is of the form: "cz", i.e. just the gate's name
         std::map<std::string,ql::custom_gate*>::iterator it = gate_definitionp->find(gname);
         if (it != gate_definitionp->end())
         {
+            DOUT("A parameterized custom gate is available for " << gname << " on " << ql::utils::to_string<size_t>(qubits) << " ...");
             ql::custom_gate* g = new ql::custom_gate(*(it->second));
+            DOUT("... custom_gate created with name=" << g->name << ", duration=" << g->duration);
             for(auto & qubit : qubits)
                 g->operands.push_back(qubit);
             if(duration>0) g->duration = duration;
             g->angle = angle;
             added = true;
             circ.push_back(g);
+        }
+        else
+        {
+            DOUT("A parameterized custom gate is not available for " << gname << " on " << ql::utils::to_string<size_t>(qubits) << " ...");
         }
     }
 
@@ -1102,8 +1138,7 @@ bool new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits)
         DOUT("qno : " << qno);
         if( qno >= nq )
         {
-            EOUT("Number of qubits in platform: " << std::to_string(nq) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
-            throw ql::exception("[x] error : ql::kernel::gate() : Number of qubits in platform: "+std::to_string(nq)+", specified qubit numbers out of range for gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" !",false);
+            FATAL("Number of qubits in platform: " << std::to_string(nq) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
         }
     }
 
@@ -1117,6 +1152,12 @@ bool new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits)
     {
         added = true;
         DOUT("specialized decomposed gates added for " << gname);
+        DOUT("new_gate's updated circuit: ");
+        for (auto& gp : circ)
+        {
+            DOUT("\t" << gp->qasm() << "\t\t#duration: " << gp->duration);
+        }
+        DOUT("new_gate's updated circuit: DONE");
     }
     else
     {
@@ -1127,6 +1168,12 @@ bool new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits)
         {
             added = true;
             DOUT("decomposed gates added for " << gname);
+            DOUT("new_gate's updated circuit: ");
+            for (auto& gp : circ)
+            {
+                DOUT("\t" << gp->qasm() << "\t\t#duration: " << gp->duration);
+            }
+            DOUT("new_gate's updated circuit: DONE");
         }
         else
         {
@@ -1142,10 +1189,24 @@ bool new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits)
             {
                 added = true;
                 DOUT("custom gate added for " << gname);
+                DOUT("new_gate's updated circuit: ");
+                for (auto& gp : circ)
+                {
+                    DOUT("\t" << gp->qasm() << "\t\t#duration: " << gp->duration);
+                }
+                DOUT("new_gate's updated circuit: DONE");
             }
         }
     }
-    DOUT("new: ");
+    if (added)
+    {
+        DOUT("new_gate's updated circuit: ");
+        for (auto& gp : circ)
+        {
+            DOUT("\t" << gp->qasm() << "\t\t#duration: " << gp->duration);
+        }
+        DOUT("new_gate's updated circuit: DONE");
+    }
     return added;
 }
 // end copy of the kernel's new_gate interface
@@ -1166,8 +1227,14 @@ size_t NumberOfMovesAdded()
 
 void new_gate_exception(std::string s)
 {
-    EOUT("unknown gate '" << s << "'");
-    throw ql::exception("[x] error : ql::mapper::new_gate() : gate is not supported by the target platform !",false);
+    FATAL("gate is not supported by the target platform: '" << s << "'");
+}
+
+// will a swap(fr0,fr1) start earlier than a swap(sr0,sr1)?
+// is really a short-cut ignoring config file and perhaps several other details
+bool IsFirstSwapEarliest(size_t fr0, size_t fr1, size_t sr0, size_t sr1)
+{
+    return fc.IsFirstSwapEarliest(fr0, fr1, sr0, sr1);
 }
 
 // generate a move into circ with parameters r0 and r1 (which GenMove may reverse)
@@ -1260,7 +1327,7 @@ void AddSwap(size_t r0, size_t r1)
     bool created = false;
     ql::circuit circ;
 
-    DOUT("... adding/trying swap(q" << r0 << ",q" << r1 << ") ...");
+    // DOUT("... adding/trying swap(q" << r0 << ",q" << r1 << ") ...");
     if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
         v2r.PrintReal("... adding swap/move", r0, r1);
 
@@ -1293,9 +1360,9 @@ void AddSwap(size_t r0, size_t r1)
     if (!created)
     {
         // no move generated so do swap
-	    std::string mapreverseswapopt = ql::options::get("mapreverseswap");
-	    if ("yes" == mapreverseswapopt)
-	    {
+        std::string mapreverseswapopt = ql::options::get("mapreverseswap");
+        if ("yes" == mapreverseswapopt)
+        {
             // swap(r0,r1) is about to be generated
             // it is functionally symmetrical,
             // but in the implementation r1 starts 1 cycle earlier than r0 (we should derive this from json file ...)
@@ -1303,10 +1370,10 @@ void AddSwap(size_t r0, size_t r1)
             // when fcv[r0] < fcv[r1], r0 is free for use 1 cycle earlier than r1, so a reversal will help
             if (fc.IsFirstOperandEarlier(r0, r1))
             {
-	            size_t  tmp = r1; r1 = r0; r0 = tmp;
+                size_t  tmp = r1; r1 = r0; r0 = tmp;
                 DOUT("... reversed swap to become swap(q" << r0 << ",q" << r1 << ") ...");
             }
-	    }
+        }
         created = new_gate(circ, "swap_real", {r0,r1});    // gates implementing swap returned in circ
         if (!created)
         {
@@ -1371,6 +1438,17 @@ size_t MapQubit(size_t v)
 // 4. final schedule:
 //      the resulting gates are subject to final scheduling (the original resource-constrained scheduler)
 
+void stripname(std::string& name)
+{
+    DOUT("stripname(name=" << name << ")");
+    size_t p = name.find(" ");
+    if (p != std::string::npos)
+    {
+        name = name.substr(0,p);
+    }
+    DOUT("... after stripname name=" << name);
+}
+
 void MakeReal(ql::gate* gp, ql::circuit& circ)
 {
     std::vector<size_t> real_qubits  = gp->operands;// starts off as copy of virtual qubits!
@@ -1381,16 +1459,17 @@ void MakeReal(ql::gate* gp, ql::circuit& circ)
     }
 
     std::string real_gname = gp->name;   // also a copy, of the gate's name in this case!
+    stripname(real_gname);
     real_gname.append("_real");
     bool created = new_gate(circ, real_gname, real_qubits);
     if (created)
     {
-        // DOUT("... MakeReal: new gates created for: " << real_gname);
+        DOUT("... MakeReal: new gates created for: " << real_gname);
     }
     else
     {
         gp->operands = real_qubits;
-        // DOUT("... MakeReal: keep gate after mapping qubit indices: " << gp->qasm());
+        DOUT("... MakeReal: keep gate after mapping qubit indices: " << gp->qasm());
         circ.push_back(gp);
     }
 }
@@ -1401,15 +1480,16 @@ void MakeReal(ql::gate* gp, ql::circuit& circ)
 void MakePrimitive(ql::gate* gp, ql::circuit& circ)
 {
     std::string prim_gname = gp->name;   // a copy!
+    stripname(prim_gname);
     prim_gname.append("_prim");
     bool created = new_gate(circ, prim_gname, gp->operands);
     if (created)
     {
-        // DOUT("... MakePrimitive: new gates created for: " << prim_gname);
+        DOUT("... MakePrimitive: new gates created for: " << prim_gname);
     }
     else
     {
-        // DOUT("... MakePrimitive: keep gate: " << gp->qasm());
+        DOUT("... MakePrimitive: keep gate: " << gp->qasm());
         circ.push_back(gp);
     }
 }
@@ -1512,14 +1592,14 @@ public:
 // needed for virgin construction
 Alter()
 {
-    DOUT("Constructing Alter");
+    // DOUT("Constructing Alter");
 }
 
 // Alter initializer
 // This should only be called after a virgin construction and not after cloning a path.
 void Init(ql::quantum_platform* p)
 {
-    // DOUT("path::Init(number of qubits=" << nq);
+    // DOUT("Alter::Init(number of qubits=" << nq);
     platformp = p;
 
     nq = platformp->qubit_number;
@@ -1621,28 +1701,58 @@ void Add2Front(size_t q)
 // add to a max of maxnumbertoadd swap gates for the current path to the given past
 // this past can be a path-local one or the main past
 // after having added them, schedule the result into that past
-void AddSwaps(Past & past, size_t maxnumbertoadd)
+void AddSwaps(Past & past, std::string mapselectswapsopt)
 {
-    size_t  fromQ;
-    size_t  toQ;
-    size_t  numberadded = 0;
-
-    fromQ = fromSource[0];
-    for ( size_t i = 1; i < fromSource.size() && numberadded < maxnumbertoadd; i++ )
+    DOUT("Addswaps " << mapselectswapsopt);
+    if ("one"==mapselectswapsopt || "all"==mapselectswapsopt)
     {
-        toQ = fromSource[i];
-        past.AddSwap(fromQ, toQ);
-        fromQ = toQ;
-        numberadded++;
+        size_t  numberadded = 0;
+        size_t  maxnumbertoadd = ("one"==mapselectswapsopt ? 1 : MAX_CYCLE);
+
+        size_t  fromSourceQ;
+        size_t  toSourceQ;
+        fromSourceQ = fromSource[0];
+        for ( size_t i = 1; i < fromSource.size() && numberadded < maxnumbertoadd; i++ )
+        {
+            toSourceQ = fromSource[i];
+            past.AddSwap(fromSourceQ, toSourceQ);
+            fromSourceQ = toSourceQ;
+            numberadded++;
+        }
+    
+        size_t  fromTargetQ;
+        size_t  toTargetQ;
+        fromTargetQ = fromTarget[0];
+        for ( size_t i = 1; i < fromTarget.size() && numberadded < maxnumbertoadd; i++ )
+        {
+            toTargetQ = fromTarget[i];
+            past.AddSwap(fromTargetQ, toTargetQ);
+            fromTargetQ = toTargetQ;
+            numberadded++;
+        }
     }
-
-    fromQ = fromTarget[0];
-    for ( size_t i = 1; i < fromTarget.size() && numberadded < maxnumbertoadd; i++ )
+    else
     {
-        toQ = fromTarget[i];
-        past.AddSwap(fromQ, toQ);
-        fromQ = toQ;
-        numberadded++;
+        MapperAssert("earliest"==mapselectswapsopt);
+        if (fromSource.size() >= 2 && fromTarget.size() >= 2)
+        {
+            if (past.IsFirstSwapEarliest(fromSource[0], fromSource[1], fromTarget[0], fromTarget[1]))
+            {
+                past.AddSwap(fromSource[0], fromSource[1]);
+            }
+            else
+            {
+                past.AddSwap(fromTarget[0], fromTarget[1]);
+            }
+        }
+        else if (fromSource.size() >= 2)
+        {
+            past.AddSwap(fromSource[0], fromSource[1]);
+        }
+        else if (fromTarget.size() >= 2)
+        {
+            past.AddSwap(fromTarget[0], fromTarget[1]);
+        }
     }
 
     past.Schedule();
@@ -1655,7 +1765,7 @@ size_t Extend(Past basePast)
 {
     past = basePast;   // explicitly clone basePast to a path-local copy of it, Alter.past
     // DOUT("... adding swaps for local past ...");
-    AddSwaps(past, MAX_CYCLE);
+    AddSwaps(past, "all");
     // DOUT("... done adding/scheduling swaps to local past");
     cycleExtend = past.MaxFreeCycle() - basePast.MaxFreeCycle();
     return cycleExtend;
@@ -1665,7 +1775,7 @@ double EstimateFidelity(Past basePast)
 {
     past = basePast;   // explicitly clone basePast to a path-local copy of it, Alter.past
     // DOUT("... adding swaps for local past ...");
-    AddSwaps(past, MAX_CYCLE);
+    AddSwaps(past, "all");
     // DOUT("... compute fidelity local past ...");
     // DOUT("... done adding/scheduling swaps to local past");
     // cycleExtend = past.MaxFreeCycle() - basePast.MaxFreeCycle();
@@ -1703,8 +1813,8 @@ void Split(std::list<Alter> & reslp)
 
         Alter    np = *this;      // np is local copy of the current path, including total
         // np = *this;            // np is local copy of the current path, including total
-        if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
-            np.Print("... copy of current path");
+        // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        //     np.Print("... copy of current alter");
 
         size_t fromi, toi;
 
@@ -1725,11 +1835,11 @@ void Split(std::list<Alter> & reslp)
         }
 
         // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
-        //  np.Print("... copy of path after split");
+        //  np.Print("... copy of alter after split");
         reslp.push_back(np);
         // DOUT("... added to result list");
         // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
-        //  Print("... current path after split");
+        //  Print("... current alter after split");
     }
 }
 
@@ -1802,10 +1912,10 @@ public:
 // this remains constant over multiple kernels on the same platform
 void Init(ql::quantum_platform* p)
 {
-    // DOUT("Grid::Init");
+    DOUT("Grid::Init");
     platformp = p;
     nq = platformp->qubit_number;
-    // DOUT("... number of real qbits=" << nq);
+    DOUT("... number of real qbits=" << nq);
 
     std::string formstr;
     if (platformp->topology.count("form") <= 0)
@@ -1873,13 +1983,13 @@ void Normalize( size_t src, neighbors_t& nbl )
         return;
     }
 
-    // std::cout << "Normalizing list from src=" << src << ": ";
-    // for (auto dn : nbl) { std::cout << dn << " "; } std::cout << std::endl;
+    std::cout << "Normalizing list from src=" << src << ": ";
+    for (auto dn : nbl) { std::cout << dn << " "; } std::cout << std::endl;
 
     const double pi = 4*std::atan(1);
     if (nbl.size() == 1)
     {
-        // DOUT("... size was 1; unchanged");
+        DOUT("... size was 1; unchanged");
         return;
     }
 
@@ -1915,8 +2025,8 @@ void Normalize( size_t src, neighbors_t& nbl )
     }
     nbl = newnbl;
 
-    // std::cout << "... rotated; result: ";
-    // for (auto dn : nbl) { std::cout << dn << " "; } std::cout << std::endl;
+    std::cout << "... rotated; result: ";
+    for (auto dn : nbl) { std::cout << dn << " "; } std::cout << std::endl;
 }
 
 // Floyd-Warshall dist[i][j] = shortest distances between all nq qubits i and j
@@ -1925,33 +2035,33 @@ void ComputeDist()
     // initialize all distances to maximum value, to neighbors to 1, to itself to 0
     dist.resize(nq); for (size_t i=0; i<nq; i++) dist[i].resize(nq, MAX_CYCLE);
     for (size_t i=0; i<nq; i++)
-	{
-	    dist[i][i] = 0;
+    {
+        dist[i][i] = 0;
         for (size_t j: nbs[i])
         {
-	        dist[i][j] = 1;
+            dist[i][j] = 1;
         }
-	}
+    }
 
     // find shorter distances by gradually including more qubits (k) in path
     for (size_t k=0; k<nq; k++)
-	{
+    {
         for (size_t i=0; i<nq; i++)
-	    {
+        {
             for (size_t j=0; j<nq; j++)
-	        {
-	           if (dist[i][j] > dist[i][k] + dist[k][j])
-	           {
-	               dist[i][j] = dist[i][k] + dist[k][j];
-	           }
-	        }
-	    }
-	}
+            {
+               if (dist[i][j] > dist[i][k] + dist[k][j])
+               {
+                   dist[i][j] = dist[i][k] + dist[k][j];
+               }
+            }
+        }
+    }
 #ifdef debug
     for (size_t i=0; i<nq; i++)
-	{
+    {
         for (size_t j=0; j<nq; j++)
-	    {
+        {
             if (form == gf_cross)
             {
                 MapperAssert (dist[i][j] == (std::max( std::abs( x[i] - x[j] ), std::abs( y[i] - y[j] ))) );
@@ -1998,39 +2108,47 @@ void InitXY()
     }
     else
     {
-	    for (auto & aqbit : platformp->topology["qubits"] )
-	    {
-	        size_t qi = aqbit["id"];
-	        int qx = aqbit["x"];
-	        int qy = aqbit["y"];
-	
-	        x[qi] = qx;
-	        y[qi] = qy;
-	
-	        // sanity checks
-	        if ( !(0<=qi && qi<nq) )
-	        {
-	            EOUT(" qbit in platform topology with id=" << qi << " has id that is not in the range 0..nq-1 with nq=" << nq);
-	            throw ql::exception("Error: qbit with unsupported id.", false);
-	        }
-	        else if ( !(0<=qx && qx<nx) )
-	        {
-	            EOUT(" qbit in platform topology with id=" << qi << " has x that is not in the range 0..x_size-1 with x_size=" << nx);
-	            throw ql::exception("Error: qbit with unsupported x.", false);
-	        }
-	        else if ( !(0<=qy && qy<ny) )
-	        {
-	            EOUT(" qbit in platform topology with id=" << qi << " has y that is not in the range 0..y_size-1 with y_size=" << ny);
-	            throw ql::exception("Error: qbit with unsupported y.", false);
-	        }
-	    }
+        for (auto & aqbit : platformp->topology["qubits"] )
+        {
+            size_t qi = aqbit["id"];
+            int qx = aqbit["x"];
+            int qy = aqbit["y"];
+    
+            // sanity checks
+            if ( !(0<=qi && qi<nq) )
+            {
+                FATAL(" qbit in platform topology with id=" << qi << " is configured with id that is not in the range 0..nq-1 with nq=" << nq);
+            }
+            if (x.count(qi) > 0)
+            {
+                FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of x coordinate");
+            }
+            if (y.count(qi) > 0)
+            {
+                FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of y coordinate");
+            }
+            if ( !(0<=qx && qx<nx) )
+            {
+                FATAL(" qbit in platform topology with id=" << qi << " is configured with x that is not in the range 0..x_size-1 with x_size=" << nx);
+            }
+            if ( !(0<=qy && qy<ny) )
+            {
+                FATAL(" qbit in platform topology with id=" << qi << " is configured with y that is not in the range 0..y_size-1 with y_size=" << ny);
+            }
+
+            x[qi] = qx;
+            y[qi] = qy;
+        }
     }
 }
 
 // init nbs map
 void InitNbs()
 {
-    MapperAssert (platformp->topology.count("edges") > 0);
+    if (platformp->topology.count("edges") == 0)
+    {
+        FATAL(" There aren't edges configured in the platform's topology");
+    }
     for (auto & anedge : platformp->topology["edges"] )
     {
         size_t qs = anedge["src"];
@@ -2039,13 +2157,18 @@ void InitNbs()
         // sanity checks
         if ( !(0<=qs && qs<nq) )
         {
-            EOUT(" edge in platform topology has src=" << qs << " that is not in the range 0..nq-1 with nq=" << nq);
-            throw ql::exception("Error: edge with unsupported src.", false);
+            FATAL(" edge in platform topology has src=" << qs << " that is not in the range 0..nq-1 with nq=" << nq);
         }
         if ( !(0<=qd && qd<nq) )
         {
-            EOUT(" edge in platform topology has dst=" << qd << " that is not in the range 0..nq-1 with nq=" << nq);
-            throw ql::exception("Error: edge with unsupported dst.", false);
+            FATAL(" edge in platform topology has dst=" << qd << " that is not in the range 0..nq-1 with nq=" << nq);
+        }
+        for (auto & n : nbs[qs])
+        {
+            if (n == qd)
+            {
+                FATAL(" redefinition of edge with src=" << qs << " and dst=" << qd);
+            }
         }
 
         nbs[qs].push_back(qd);
@@ -2202,8 +2325,7 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result, double& iptime
         auto&   q = gp->operands;
         if (q.size() > 2)
         {
-            EOUT(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
-            throw ql::exception("Error: gate with more than 2 operand qubits; please decompose such gates first before mapping.", false);
+            FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
         }
     }
 
@@ -2268,16 +2390,16 @@ void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result, double& iptime
         {
             if (prefix == 0 || twoqubitcount < prefix)
             {
-	            anymap = false;
-	            refcount[v2i[q[0]]][v2i[q[1]]] += 1;
-	            
-	            if (v2r[q[0]] == UNDEFINED_QUBIT
-	                || v2r[q[1]] == UNDEFINED_QUBIT
-	                || gridp->Distance(v2r[q[0]], v2r[q[1]]) > 1
-	                )
-	            {
-	                currmap = false;
-	            }
+                anymap = false;
+                refcount[v2i[q[0]]][v2i[q[1]]] += 1;
+                
+                if (v2r[q[0]] == UNDEFINED_QUBIT
+                    || v2r[q[1]] == UNDEFINED_QUBIT
+                    || gridp->Distance(v2r[q[0]], v2r[q[1]]) > 1
+                    )
+                {
+                    currmap = false;
+                }
             }
             twoqubitcount++;
         }
@@ -2626,8 +2748,7 @@ bool PlaceWrapper( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& ipt
     else if ("1hx" == initialplaceopt)  { waitseconds = 3600; andthrowexception = true; }
     else
     {
-        EOUT("Unknown value of option 'initialplace'='" << initialplaceopt << "'.");
-        throw ql::exception("Error: unknown value of initialplace option.", false);
+        FATAL("Unknown value of option 'initialplace'='" << initialplaceopt << "'.");
     }
     iptimetaken = waitseconds;    // pessimistic, in case of timeout, otherwise it is corrected
 
@@ -2654,8 +2775,7 @@ bool PlaceWrapper( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& ipt
             if (andthrowexception)
             {
                 DOUT("InitialPlace: timed out and stops compilation [TIMED OUT, STOP COMPILATION]");
-                EOUT("Initial placement timed out and stops compilation [TIMED OUT, STOP COMPILATION]");
-                throw ql::exception("Error: initial placement timed out", false);
+                FATAL("Initial placement timed out and stops compilation [TIMED OUT, STOP COMPILATION]");
             }
             DOUT("InitialPlace.PlaceWrapper about to return timedout==true");
             return true;
@@ -2687,21 +2807,21 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& iptimetake
     }
     else
     {
-	    bool timedout;
-	    timedout = PlaceWrapper(circ, v2r, result, iptimetaken, initialplaceopt);
-	
-	    if (timedout)
-	    {
-	        result = ipr_timedout;
-	        DOUT("InitialPlace.Place [done, TIMED OUT, NO MAPPING FOUND], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
+        bool timedout;
+        timedout = PlaceWrapper(circ, v2r, result, iptimetaken, initialplaceopt);
+    
+        if (timedout)
+        {
+            result = ipr_timedout;
+            DOUT("InitialPlace.Place [done, TIMED OUT, NO MAPPING FOUND], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
 
             v2r = v2r_orig; // v2r may have got corrupted when timed out during v2r updating
-	    }
-	    else
-	    {
+        }
+        else
+        {
             // v2r reflects new mapping, if any found, otherwise unchanged
-	        DOUT("InitialPlace.Place [done, not timed out], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
-	    }
+            DOUT("InitialPlace.Place [done, not timed out], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
+        }
     }
 }
     
@@ -2751,9 +2871,9 @@ public:
 // just program wide initialization
 void Init( ql::quantum_platform *p)
 {
-    DOUT("Future::Init ...");
+    // DOUT("Future::Init ...");
     platformp = p;
-    DOUT("Future::Init [DONE]");
+    // DOUT("Future::Init [DONE]");
 }
 
 // Set/switch input to the provided circuit
@@ -2771,17 +2891,17 @@ void SetCircuit(ql::circuit& circ, Scheduler& sched, size_t nq, size_t nc)
     }
     else
     {
-	    schedp->init(circ, *platformp, nq, nc);                 // fills schedp->graph (dependence graph) from circuit
-	
+        schedp->init(circ, *platformp, nq, nc);                 // fills schedp->graph (dependence graph) from circuit
+    
         for( auto & gp : circ )
-	    {
-	        scheduled[gp] = false;   // none were scheduled
-	    }
+        {
+            scheduled[gp] = false;   // none were scheduled
+        }
         scheduled[schedp->instruction[schedp->s]] = false;      // also the dummy nodes not
         scheduled[schedp->instruction[schedp->t]] = false;
-	    avlist.clear();
-	    avlist.push_back(schedp->s);
-	    schedp->set_remaining(ql::forward_scheduling);          // to know criticality
+        avlist.clear();
+        avlist.push_back(schedp->s);
+        schedp->set_remaining(ql::forward_scheduling);          // to know criticality
     }
 
     DOUT("Future::SetCircuit [DONE]");
@@ -2799,26 +2919,26 @@ bool GetNonQuantumGates(std::list<ql::gate*>& lg)
         ql::gate*   gp = *curr_gatepp;
         if (curr_gatepp != inCircp->end())
         {
-	        if (gp->type() == ql::__classical_gate__
-	            || gp->type() == ql::__dummy_gate__
-	            )
-	        {
-	            lg.push_back(gp);
-	        }
+            if (gp->type() == ql::__classical_gate__
+                || gp->type() == ql::__dummy_gate__
+                )
+            {
+                lg.push_back(gp);
+            }
         }
     }
     else
     {
-	    for ( auto n : avlist)
-	    {
-	        ql::gate*  gp = schedp->instruction[n];
-	        if (gp->type() == ql::__classical_gate__
-	            || gp->type() == ql::__dummy_gate__
-	            )
-	        {
-	            lg.push_back(gp);
-	        }
-	    }
+        for ( auto n : avlist)
+        {
+            ql::gate*  gp = schedp->instruction[n];
+            if (gp->type() == ql::__classical_gate__
+                || gp->type() == ql::__dummy_gate__
+                )
+            {
+                lg.push_back(gp);
+            }
+        }
     }
     return lg.size() != 0;
 }
@@ -2838,10 +2958,10 @@ bool GetGates(std::list<ql::gate*>& lg)
     }
     else
     {
-	    for ( auto n : avlist)
-	    {
-	        lg.push_back(schedp->instruction[n]);
-	    }
+        for ( auto n : avlist)
+        {
+            lg.push_back(schedp->instruction[n]);
+        }
     }
     return lg.size() != 0;
 }
@@ -3072,8 +3192,7 @@ void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, std::list<Alter> & r
     }
     else
     {
-        EOUT("Unknown value of mapppathselect option " << mappathselectopt);
-        throw ql::exception("Unknown mappathselect option value!", false);
+        FATAL("Unknown value of mapppathselect option " << mappathselectopt);
     }
 }
 
@@ -3168,22 +3287,22 @@ void SelectAlter(std::list<Alter>& lp, Alter & resp, Past& past)
             }
         }
     }
-    else if (mapopt == "minboundederror")
-    {
-        size_t  maxFidelity = 0;
-        for (auto & p : lp)
-        {
-            // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
-            //  p.Print("Considering extension by path: ...");
-            double estimated_fidelity = p.EstimateFidelity(past);  // locally here, past is cloned
-            if (estimated_fidelity > maxFidelity)
-            {
-                maxFidelity = estimated_fidelity;
-                choices.clear();
-                choices.push_back(p);
-            }
-        }
-    }
+//  else if (mapopt == "minboundederror")
+//  {
+//      size_t  maxFidelity = 0;
+//      for (auto & p : lp)
+//      {
+//          // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+//          //  p.Print("Considering extension by path: ...");
+//          double estimated_fidelity = p.EstimateFidelity(past);  // locally here, past is cloned
+//          if (estimated_fidelity > maxFidelity)
+//          {
+//              maxFidelity = estimated_fidelity;
+//              choices.clear();
+//              choices.push_back(p);
+//          }
+//      }
+//  }
     if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
         Alter::listPrint("... after SelectAlter", lp);
     resp = choices[Draw(choices.size())];
@@ -3223,7 +3342,7 @@ void MapRoutedGate(ql::gate* gp, Past& past)
     past.MakeReal(gp, circ);        
     for (auto newgp : circ)
     {
-        // DOUT(" ... mapped gate: " << newgp->qasm() );
+        DOUT(" ... mapped gate: " << newgp->qasm() );
         past.AddAndSchedule(newgp);
     }
 }
@@ -3262,8 +3381,9 @@ void RouteAndMap2qGates(std::list<ql::gate*> lg, Future& future, Past& past)
     DOUT("... RouteAndMap2qGates, 2q selected as best: " << resgp->qasm());
 
     // commit to best one
-    // add swaps (upto some max), as described by resp, to THIS main past, and schedule them in
-    resp.AddSwaps(past, atoi(ql::options::get("mapselectmaxswaps").c_str()));
+    // add all or just one swap, as described by resp, to THIS main past, and schedule them/it in
+    std::string mapselectswapsopt = ql::options::get("mapselectswaps");
+    resp.AddSwaps(past, mapselectswapsopt);
 
     // when only some swaps were added, the resgp might not yet be NN, so recheck
     auto&   q = resgp->operands;
@@ -3290,8 +3410,7 @@ void RouteAndMapGates(std::list<ql::gate*> lg, Future& future, Past& past)
         auto&   q = gp->operands;
         if (q.size() > 2)
         {
-            EOUT(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
-            throw ql::exception("Error: gate with more than 2 operand qubits; please decompose such gates first before mapping.", false);
+            FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
         }
         size_t  src = past.MapQubit(q[0]);      // interpret virtual operands in current map
         size_t  tgt = past.MapQubit(q[1]);
@@ -3344,25 +3463,25 @@ void MapGates(Future& future, Past& past, ql::circuit* outCircp)
         }
         else
         {
-	        // avlist only contains quantum gates
-	        bool foundone = false;
-	        for (auto gp : qlg)
-	        {
-	            if ( gp->type() == ql::gate_type_t::__wait_gate__
-	                || gp->operands.size() == 1
-	                )
-	            {
-	                // a quantum gate not requiring routing in any mapping is found
-	                MapRoutedGate(gp, past);
-	                future.DoneGate(gp);
-	                foundone = true;
-	            }
-	        }
-	        if (!foundone)
-	        {
-	            // avlist (qlg) only contains gates that require routing
-	            RouteAndMapGates(qlg, future, past);    // at least does something (map gate or insert swap/move)
-	        }
+            // avlist only contains quantum gates
+            bool foundone = false;
+            for (auto gp : qlg)
+            {
+                if ( gp->type() == ql::gate_type_t::__wait_gate__
+                    || gp->operands.size() == 1
+                    )
+                {
+                    // a quantum gate not requiring routing in any mapping is found
+                    MapRoutedGate(gp, past);
+                    future.DoneGate(gp);
+                    foundone = true;
+                }
+            }
+            if (!foundone)
+            {
+                // avlist (qlg) only contains gates that require routing
+                RouteAndMapGates(qlg, future, past);    // at least does something (map gate or insert swap/move)
+            }
         }
         if (outCircp != NULL)
         {

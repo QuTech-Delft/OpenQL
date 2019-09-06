@@ -565,7 +565,8 @@ public:
         if(qubits.size() > 0)
         {
             for (size_t i=0; i<(qubits.size()-1); ++i)
-                instr += "q" + std::to_string(qubits[i]) + ",";
+                // instr += "q" + std::to_string(qubits[i]) + ","; // original
+                instr += "q" + std::to_string(qubits[i]) + " "; // HvS
             if(qubits.size() >= 1) // to make if work with gates without operands
                 instr += "q" + std::to_string(qubits[qubits.size()-1]);
         }
@@ -637,7 +638,7 @@ public:
         }
     }
 
-    // if specialized composed gate: "e.g. cz q0,q3" available, with composition of subinstructions, return true
+    // if specialized composed gate: "e.g. cz q0 q3" available, with composition of subinstructions, return true
     //      also check each subinstruction for presence of a custom_gate (or a default gate)
     // otherwise, return false
     // don't add anything to circuit
@@ -871,11 +872,11 @@ public:
     //
     // the following order of checks is used below:
     // check if specialized composite gate is available
-    //      e.g. whether "cz q0,q3" is available as composite gate, where subinstructions are available as custom gates
+    //      e.g. whether "cz q0 q3" is available as composite gate, where subinstructions are available as custom gates
     // if not, check if parameterized composite gate is available
     //      e.g. whether "cz %0 %1" is in gate_definition, where subinstructions are available as custom gates
     // if not, check if a specialized custom gate is available
-    //      e.g. whether "cz q0,q3" is available as non-composite gate
+    //      e.g. whether "cz q0 q3" is available as non-composite gate
     // if not, check if a parameterized custom gate is available
     //      e.g. whether "cz" is in gate_definition as non-composite gate
     // if not, check if a default gate is available

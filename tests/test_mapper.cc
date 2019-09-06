@@ -15,8 +15,8 @@ void
 test_rc(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -32,7 +32,7 @@ test_rc(std::string v, std::string param1, std::string param2, std::string param
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapselectswaps", param2);
     ql::options::set("mapreverseswap", param3);
 
     prog.compile( );
@@ -43,8 +43,8 @@ void
 test_someNN(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -78,7 +78,7 @@ test_someNN(std::string v, std::string param1, std::string param2, std::string p
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapselectswaps", param2);
     ql::options::set("mapreverseswap", param3);
 
     prog.compile( );
@@ -89,8 +89,8 @@ void
 test_manyNN(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -124,7 +124,7 @@ test_manyNN(std::string v, std::string param1, std::string param2, std::string p
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapselectswaps", param2);
     ql::options::set("mapreverseswap", param3);
 
     prog.compile( );
@@ -135,8 +135,8 @@ void
 test_oneD2(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 4;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -157,7 +157,7 @@ test_oneD2(std::string v, std::string param1, std::string param2, std::string pa
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapselectswaps", param2);
     ql::options::set("mapreverseswap", param3);
 
     prog.compile( );
@@ -168,8 +168,8 @@ void
 test_oneD4(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -190,7 +190,7 @@ test_oneD4(std::string v, std::string param1, std::string param2, std::string pa
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapselectswaps", param2);
     ql::options::set("mapreverseswap", param3);
 
     prog.compile( );
@@ -217,8 +217,8 @@ void
 test_allD(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -236,7 +236,7 @@ test_allD(std::string v, std::string param1, std::string param2, std::string par
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapselectswaps", param2);
     ql::options::set("mapreverseswap", param3);
 
     prog.compile( );
@@ -250,8 +250,8 @@ void
 test_allDopt(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -330,7 +330,7 @@ test_allDopt(std::string v, std::string param1, std::string param2, std::string 
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapselectswaps", param2);
     ql::options::set("mapreverseswap", param3);
 
     prog.compile( );
@@ -343,8 +343,8 @@ void
 test_string(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -369,7 +369,7 @@ test_string(std::string v, std::string param1, std::string param2, std::string p
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapselectswaps", param2);
     ql::options::set("mapreverseswap", param3);
 
     prog.compile( );
@@ -382,8 +382,8 @@ void
 test_daniel2(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 6;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1, 2 };
 
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
@@ -631,7 +631,7 @@ test_daniel2(std::string v, std::string param1, std::string param2, std::string 
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapselectswaps", param2);
     ql::options::set("mapreverseswap", param3);
 
     prog.compile( );
@@ -641,8 +641,8 @@ void
 test_lingling5esm(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
@@ -786,7 +786,7 @@ test_lingling5esm(std::string v, std::string param1, std::string param2, std::st
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapselectswaps", param2);
     ql::options::set("mapreverseswap", param3);
 
     prog.compile( );
@@ -796,8 +796,8 @@ void
 test_lingling7esm(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 9;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectmaxswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
@@ -925,7 +925,7 @@ test_lingling7esm(std::string v, std::string param1, std::string param2, std::st
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectmaxswaps", param2);
+    ql::options::set("mapselectswaps", param2);
     ql::options::set("mapreverseswap", param3);
 
     prog.compile( );
@@ -944,7 +944,7 @@ int main(int argc, char ** argv)
     ql::options::set("mapper", "minextendrc"); 
     ql::options::set("mapinitone2one", "yes"); 
 //parameter1  ql::options::set("maplookahead", "noroutingfirst");
-//parameter2  ql::options::set("mapselectmaxswaps", "20");
+//parameter2  ql::options::set("mapselectswaps", "all");
     ql::options::set("initialplace", "1m"); 
     ql::options::set("initialplaceprefix", "10"); 
     ql::options::set("mappathselect", "all"); 
@@ -966,67 +966,85 @@ int main(int argc, char ** argv)
 //  test_oneD2("oneD2", "yes", "yes", "yes", "yes");
 //  test_oneD4("oneD4", "yes", "yes", "yes", "yes");
 
-//  test_string("string", "no", "20", "yes", "yes");
-//  test_string("string", "critical", "20", "yes", "yes");
-    test_string("string", "noroutingfirst", "20", "no", "yes");
-    test_string("string", "noroutingfirst", "20", "yes", "yes");
-//  test_string("string", "all", "20", "yes", "yes");
-//  test_string("string", "no", "1", "yes", "yes");
-//  test_string("string", "critical", "1", "yes", "yes");
-//  test_string("string", "noroutingfirst", "1", "yes", "yes");
-//  test_string("string", "all", "1", "yes", "yes");
+    test_string("string", "all", "all", "no", "yes");
+    test_string("string", "all", "all", "yes", "yes");
+    test_string("string", "all", "earliest", "no", "yes");
+    test_string("string", "all", "earliest", "yes", "yes");
+    test_string("string", "all", "one", "no", "yes");
+    test_string("string", "all", "one", "yes", "yes");
+    test_string("string", "noroutingfirst", "all", "no", "yes");
+    test_string("string", "noroutingfirst", "all", "yes", "yes");
+    test_string("string", "noroutingfirst", "earliest", "no", "yes");
+    test_string("string", "noroutingfirst", "earliest", "yes", "yes");
+    test_string("string", "noroutingfirst", "one", "no", "yes");
+    test_string("string", "noroutingfirst", "one", "yes", "yes");
 
 //  nonNN, still not too large:
-//  test_allD("allD", "no", "20", "yes", "yes");
-//  test_allD("allD", "critical", "20", "yes", "yes");
-    test_allD("allD", "noroutingfirst", "20", "no", "yes");
-    test_allD("allD", "noroutingfirst", "20", "yes", "yes");
-//  test_allD("allD", "all", "20", "yes", "yes");
-//  test_allD("allD", "no", "1", "yes", "yes");
-//  test_allD("allD", "critical", "1", "yes", "yes");
-//  test_allD("allD", "noroutingfirst", "1", "yes", "yes");
-//  test_allD("allD", "all", "1", "yes", "yes");
+    test_allD("allD", "all", "all", "no", "yes");
+    test_allD("allD", "all", "all", "yes", "yes");
+    test_allD("allD", "all", "earliest", "no", "yes");
+    test_allD("allD", "all", "earliest", "yes", "yes");
+    test_allD("allD", "all", "one", "no", "yes");
+    test_allD("allD", "all", "one", "yes", "yes");
+    test_allD("allD", "noroutingfirst", "all", "no", "yes");
+    test_allD("allD", "noroutingfirst", "all", "yes", "yes");
+    test_allD("allD", "noroutingfirst", "earliest", "no", "yes");
+    test_allD("allD", "noroutingfirst", "earliest", "yes", "yes");
+    test_allD("allD", "noroutingfirst", "one", "no", "yes");
+    test_allD("allD", "noroutingfirst", "one", "yes", "yes");
 
-//  test_allDopt("allDopt", "no", "20", "yes", "yes");
-//  test_allDopt("allDopt", "critical", "20", "yes", "yes");
-    test_allDopt("allDopt", "noroutingfirst", "20", "no", "yes");
-    test_allDopt("allDopt", "noroutingfirst", "20", "yes", "yes");
-//  test_allDopt("allDopt", "all", "20", "yes", "yes");
-//  test_allDopt("allDopt", "no", "1", "yes", "yes");
-//  test_allDopt("allDopt", "critical", "1", "yes", "yes");
-//  test_allDopt("allDopt", "noroutingfirst", "1", "yes", "yes");
-//  test_allDopt("allDopt", "all", "1", "yes", "yes");
+    test_allDopt("allDopt", "all", "all", "no", "yes");
+    test_allDopt("allDopt", "all", "all", "yes", "yes");
+    test_allDopt("allDopt", "all", "earliest", "no", "yes");
+    test_allDopt("allDopt", "all", "earliest", "yes", "yes");
+    test_allDopt("allDopt", "all", "one", "no", "yes");
+    test_allDopt("allDopt", "all", "one", "yes", "yes");
+    test_allDopt("allDopt", "noroutingfirst", "all", "no", "yes");
+    test_allDopt("allDopt", "noroutingfirst", "all", "yes", "yes");
+    test_allDopt("allDopt", "noroutingfirst", "earliest", "no", "yes");
+    test_allDopt("allDopt", "noroutingfirst", "earliest", "yes", "yes");
+    test_allDopt("allDopt", "noroutingfirst", "one", "no", "yes");
+    test_allDopt("allDopt", "noroutingfirst", "one", "yes", "yes");
 
 //  nonNN, realistic:
-//  test_daniel2("daniel2", "no", "20", "yes", "yes");
-//  test_daniel2("daniel2", "critical", "20", "yes", "yes");
-    test_daniel2("daniel2", "noroutingfirst", "20", "no", "yes");
-    test_daniel2("daniel2", "noroutingfirst", "20", "yes", "yes");
-//  test_daniel2("daniel2", "all", "20", "yes", "yes");
-//  test_daniel2("daniel2", "no", "1", "yes", "yes");
-//  test_daniel2("daniel2", "critical", "1", "yes", "yes");
-//  test_daniel2("daniel2", "noroutingfirst", "1", "yes", "yes");
-//  test_daniel2("daniel2", "all", "1", "yes", "yes");
+    test_daniel2("daniel2", "all", "all", "no", "yes");
+    test_daniel2("daniel2", "all", "all", "yes", "yes");
+    test_daniel2("daniel2", "all", "earliest", "no", "yes");
+    test_daniel2("daniel2", "all", "earliest", "yes", "yes");
+    test_daniel2("daniel2", "all", "one", "no", "yes");
+    test_daniel2("daniel2", "all", "one", "yes", "yes");
+    test_daniel2("daniel2", "noroutingfirst", "all", "no", "yes");
+    test_daniel2("daniel2", "noroutingfirst", "all", "yes", "yes");
+    test_daniel2("daniel2", "noroutingfirst", "earliest", "no", "yes");
+    test_daniel2("daniel2", "noroutingfirst", "earliest", "yes", "yes");
+    test_daniel2("daniel2", "noroutingfirst", "one", "no", "yes");
+    test_daniel2("daniel2", "noroutingfirst", "one", "yes", "yes");
 
-//  test_lingling5esm("lingling5esm", "no", "20", "yes", "yes");
-//  test_lingling5esm("lingling5esm", "critical", "20", "yes", "yes");
-    test_lingling5esm("lingling5esm", "noroutingfirst", "20", "no", "yes");
-    test_lingling5esm("lingling5esm", "noroutingfirst", "20", "yes", "yes");
-//  test_lingling5esm("lingling5esm", "all", "20", "yes", "yes");
-//  test_lingling5esm("lingling5esm", "no", "1", "yes", "yes");
-//  test_lingling5esm("lingling5esm", "critical", "1", "yes", "yes");
-//  test_lingling5esm("lingling5esm", "noroutingfirst", "1", "yes", "yes");
-//  test_lingling5esm("lingling5esm", "all", "1", "yes", "yes");
+    test_lingling5esm("lingling5esm", "all", "all", "no", "yes");
+    test_lingling5esm("lingling5esm", "all", "all", "yes", "yes");
+    test_lingling5esm("lingling5esm", "all", "earliest", "no", "yes");
+    test_lingling5esm("lingling5esm", "all", "earliest", "yes", "yes");
+    test_lingling5esm("lingling5esm", "all", "one", "no", "yes");
+    test_lingling5esm("lingling5esm", "all", "one", "yes", "yes");
+    test_lingling5esm("lingling5esm", "noroutingfirst", "all", "no", "yes");
+    test_lingling5esm("lingling5esm", "noroutingfirst", "all", "yes", "yes");
+    test_lingling5esm("lingling5esm", "noroutingfirst", "earliest", "no", "yes");
+    test_lingling5esm("lingling5esm", "noroutingfirst", "earliest", "yes", "yes");
+    test_lingling5esm("lingling5esm", "noroutingfirst", "one", "no", "yes");
+    test_lingling5esm("lingling5esm", "noroutingfirst", "one", "yes", "yes");
 
-//  test_lingling7esm("lingling7esm", "no", "20", "yes", "yes");
-//  test_lingling7esm("lingling7esm", "critical", "20", "yes", "yes");
-    test_lingling7esm("lingling7esm", "noroutingfirst", "20", "no", "yes");
-    test_lingling7esm("lingling7esm", "noroutingfirst", "20", "yes", "yes");
-//  test_lingling7esm("lingling7esm", "all", "20", "yes", "yes");
-//  test_lingling7esm("lingling7esm", "no", "1", "yes", "yes");
-//  test_lingling7esm("lingling7esm", "critical", "1", "yes", "yes");
-//  test_lingling7esm("lingling7esm", "noroutingfirst", "1", "yes", "yes");
-//  test_lingling7esm("lingling7esm", "all", "1", "yes", "yes");
+    test_lingling7esm("lingling7esm", "all", "all", "no", "yes");
+    test_lingling7esm("lingling7esm", "all", "all", "yes", "yes");
+    test_lingling7esm("lingling7esm", "all", "earliest", "no", "yes");
+    test_lingling7esm("lingling7esm", "all", "earliest", "yes", "yes");
+    test_lingling7esm("lingling7esm", "all", "one", "no", "yes");
+    test_lingling7esm("lingling7esm", "all", "one", "yes", "yes");
+    test_lingling7esm("lingling7esm", "noroutingfirst", "all", "no", "yes");
+    test_lingling7esm("lingling7esm", "noroutingfirst", "all", "yes", "yes");
+    test_lingling7esm("lingling7esm", "noroutingfirst", "earliest", "no", "yes");
+    test_lingling7esm("lingling7esm", "noroutingfirst", "earliest", "yes", "yes");
+    test_lingling7esm("lingling7esm", "noroutingfirst", "one", "no", "yes");
+    test_lingling7esm("lingling7esm", "noroutingfirst", "one", "yes", "yes");
 
     return 0;
 }
