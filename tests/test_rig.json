@@ -1,0 +1,279 @@
+{
+    "eqasm_compiler" : "cc_light_compiler",
+
+    "hardware_settings": {
+        "qubit_number": 8,
+        "cycle_time" : 1,
+        "mw_mw_buffer": 0,
+        "mw_flux_buffer": 0,
+        "mw_readout_buffer": 0,
+        "flux_mw_buffer": 0,
+        "flux_flux_buffer": 0,
+        "flux_readout_buffer": 0,
+        "readout_mw_buffer": 0,
+        "readout_flux_buffer": 0,
+        "readout_readout_buffer": 0
+    },
+
+    "topology" : 
+    {
+        "description": "A qubit grid's topology is defined by the neighbor relation among its qubits. Each qubit has an id (its index, used as gate operand and in the resource descriptions) in the range of 0 to hardware_settings.qubit_number-1. Qubits are connected by directed pairs, called edges. Each edge has an id (its index, also used in the resource descriptions) in some contiguous range starting from 0, a source qubit and a destination qubit. Two grid forms are supported: the xy form and the irregular form. In grids of xy form qubits have in addition an x and a y coordinate: these coordinates in the X (Y) direction are in the range of 0 to x_size-1 (y_size-1).",
+        "form": "xy",
+        "x_size": 3,
+        "y_size": 3,
+        "qubits": 
+        [ 
+            { "id": 0,  "x": 0, "y": 0 },
+            { "id": 1,  "x": 1, "y": 0 },
+            { "id": 2,  "x": 2, "y": 0 },
+            { "id": 3,  "x": 0, "y": 1 },
+            { "id": 4,  "x": 2, "y": 1 },
+            { "id": 5,  "x": 0, "y": 2 },
+            { "id": 6,  "x": 1, "y": 2 },
+            { "id": 7,  "x": 2, "y": 2 }
+        ],
+        "edges": 
+        [
+            { "id": 0,  "src": 0, "dst": 1 },
+            { "id": 1,  "src": 1, "dst": 2 },
+            { "id": 2,  "src": 0, "dst": 3 },
+            { "id": 3,  "src": 2, "dst": 4 },
+            { "id": 4,  "src": 3, "dst": 5 },
+            { "id": 5,  "src": 4, "dst": 7 },
+            { "id": 6,  "src": 5, "dst": 6 },
+            { "id": 7,  "src": 6, "dst": 7 },
+
+            { "id": 8,  "src": 1, "dst": 0 },
+            { "id": 9,  "src": 2, "dst": 1 },
+            { "id": 10,  "src": 3, "dst": 0 },
+            { "id": 11,  "src": 4, "dst": 2 },
+            { "id": 12,  "src": 5, "dst": 3 },
+            { "id": 13,  "src": 7, "dst": 4 },
+            { "id": 14,  "src": 6, "dst": 5 },
+            { "id": 15,  "src": 7, "dst": 6 }
+        ]
+    },
+
+    "resources":
+    {
+        "qubits":
+        {
+            "description": "Each qubit can be used by only one gate at a time. There are 'count' qubits.",
+            "count": 8
+        }
+    },
+
+    "instructions": {
+        "x": {
+            "duration": 1,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "x",
+            "cc_light_opcode": 1
+        },
+        "cz": {
+            "duration": 3,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "cz",
+            "cc_light_opcode": 1
+        },
+        "swap": {
+            "duration": 2,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "cz",
+            "cc_light_opcode": 1
+        },
+
+        "blue q0,q1": {
+            "duration": 3,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "blue",
+            "cc_light_opcode": 1
+        },
+        "blue q1,q0": {
+            "duration": 3,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "blue",
+            "cc_light_opcode": 1
+        },
+        "red q1,q2": {
+            "duration": 4,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "red",
+            "cc_light_opcode": 1
+        },
+        "red q2,q1": {
+            "duration": 4,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "red",
+            "cc_light_opcode": 1
+        },
+        "blue q0,q3": {
+            "duration": 3,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "blue",
+            "cc_light_opcode": 1
+        },
+        "blue q3,q0": {
+            "duration": 3,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "blue",
+            "cc_light_opcode": 1
+        },
+        "red q2,q4": {
+            "duration": 4,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "red",
+            "cc_light_opcode": 1
+        },
+        "red q4,q2": {
+            "duration": 4,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "red",
+            "cc_light_opcode": 1
+        },
+        "red q3,q5": {
+            "duration": 4,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "red",
+            "cc_light_opcode": 1
+        },
+        "red q5,q3": {
+            "duration": 4,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "red",
+            "cc_light_opcode": 1
+        },
+        "blue q4,q7": {
+            "duration": 3,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "blue",
+            "cc_light_opcode": 1
+        },
+        "blue q7,q4": {
+            "duration": 3,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "blue",
+            "cc_light_opcode": 1
+        },
+        "red q5,q6": {
+            "duration": 4,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "red",
+            "cc_light_opcode": 1
+        },
+        "red q6,q5": {
+            "duration": 4,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "red",
+            "cc_light_opcode": 1
+        },
+        "blue q6,q7": {
+            "duration": 3,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "blue",
+            "cc_light_opcode": 1
+        },
+        "blue q7,q6": {
+            "duration": 3,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "blue",
+            "cc_light_opcode": 1
+        }
+    },
+
+    "gate_decomposition": {
+		"cz_real q0,q1": [ "blue q0,q1"],
+		"cz_real q1,q2": [ "red q1,q2"],
+		"cz_real q0,q3": [ "blue q0,q3"],
+		"cz_real q2,q4": [ "red q2,q4"],
+		"cz_real q3,q5": [ "red q3,q5"],
+		"cz_real q4,q7": [ "blue q4,q7"],
+		"cz_real q5,q6": [ "red q5,q6"],
+		"cz_real q6,q7": [ "blue q6,q7"],
+
+		"cz_real q1,q0": [ "blue q1,q0"],
+		"cz_real q2,q1": [ "red q2,q1"],
+		"cz_real q3,q0": [ "blue q3,q0"],
+		"cz_real q4,q2": [ "red q4,q2"],
+		"cz_real q5,q3": [ "red q5,q3"],
+		"cz_real q7,q4": [ "blue q7,q4"],
+		"cz_real q6,q5": [ "red q6,q5"],
+		"cz_real q7,q6": [ "blue q7,q6"]
+    }
+}
