@@ -1323,7 +1323,6 @@ void GenMove(ql::circuit& circ, size_t& r0, size_t& r1)
 void AddSwap(size_t r0, size_t r1)
 {
     bool created = false;
-    ql::circuit circ;
 
     // DOUT("... adding/trying swap(q" << r0 << ",q" << r1 << ") ...");
     if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
@@ -1336,6 +1335,7 @@ void AddSwap(size_t r0, size_t r1)
         return;
     }
 
+    ql::circuit circ;
     std::string mapusemovesopt = ql::options::get("mapusemoves");
     if ("no" != mapusemovesopt && (v2r.GetRs(r0)!=rs_hasstate || v2r.GetRs(r1)!=rs_hasstate))
     {
@@ -3598,26 +3598,6 @@ ql::ir::bundles_t Bundler(ql::quantum_kernel& kernel)
 
     // DOUT("Bundler [DONE]");
     return bundles;
-}
-
-/**
- * qasm
- * copied and shrunk from kernel.h
- * only used in DOUT and similar trace printing
- */
-std::string qasm(ql::circuit& c, size_t nqubits, std::string& name)
-{
-    std::stringstream ss;
-    ss << "version 1.0\n";
-    ss << "qubits " << nqubits << "\n";
-    ss << "." << name << "\n";
-
-    for(size_t i=0; i<c.size(); ++i)
-    {
-        ss << "    " << c[i]->qasm() << "\n";
-    }
-
-    return ss.str();
 }
 
 // map kernel's circuit, main mapper entry once per kernel
