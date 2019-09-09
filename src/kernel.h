@@ -885,6 +885,16 @@ public:
     void gate(std::string gname, std::vector<size_t> qubits = {},
               std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
     {
+        if (!gate_nonfatal(gname, qubits, cregs, duration, angle))
+        {
+            FATAL("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+        }
+    }
+
+    bool gate_nonfatal(std::string gname, std::vector<size_t> qubits = {},
+              std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
+    {
+        bool added = false;
         for(auto & qno : qubits)
         {
             if( qno >= qubit_count )
@@ -918,6 +928,7 @@ public:
         bool spec_decom_added = add_spec_decomposed_gate_if_available(gname, qubits);
         if(spec_decom_added)
         {
+            added = true;
             DOUT("specialized decomposed gates added for " << gname);
         }
         else
@@ -927,6 +938,7 @@ public:
             bool param_decom_added = add_param_decomposed_gate_if_available(gname, qubits);
             if(param_decom_added)
             {
+                added = true;
                 DOUT("decomposed gates added for " << gname);
             }
             else
@@ -935,7 +947,12 @@ public:
                 DOUT("adding custom gate for " << gname);
                 // when found, custom_added is true, and the gate was added to the circuit
                 bool custom_added = add_custom_gate_if_available(gname, qubits, cregs, duration, angle);
-                if(!custom_added)
+                if(custom_added)
+                {
+                    added = true;
+                    DOUT("custom gate added for " << gname);
+                }
+                else
                 {
                     if(ql::options::get("use_default_gates") == "yes")
                     {
@@ -945,27 +962,14 @@ public:
                         bool default_available = add_default_gate_if_available(gname, qubits, cregs, duration);
                         if( default_available )
                         {
+                            added = true;
                             WOUT("default gate added for " << gname);
                         }
-                        else
-                        {
-                            EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
-                            throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
-                        }
                     }
-                    else
-                    {
-                        EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
-                        throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
-                    }
-                }
-                else
-                {
-                    DOUT("custom gate added for " << gname);
                 }
             }
         }
-        DOUT("");
+        return added;
     }
 
     // FIXME: is this really QASM, or CC-light eQASM?

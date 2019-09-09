@@ -95,7 +95,7 @@
             "cc_light_opcode": 1
         },
 
-        "blue q0,q1": {
+        "blue q0 q1": {
             "duration": 3,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -105,7 +105,7 @@
             "cc_light_instr": "blue",
             "cc_light_opcode": 1
         },
-        "blue q1,q0": {
+        "blue q1 q0": {
             "duration": 3,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -115,7 +115,7 @@
             "cc_light_instr": "blue",
             "cc_light_opcode": 1
         },
-        "red q1,q2": {
+        "red q1 q2": {
             "duration": 4,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -125,7 +125,7 @@
             "cc_light_instr": "red",
             "cc_light_opcode": 1
         },
-        "red q2,q1": {
+        "red q2 q1": {
             "duration": 4,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -135,7 +135,7 @@
             "cc_light_instr": "red",
             "cc_light_opcode": 1
         },
-        "blue q0,q3": {
+        "blue q0 q3": {
             "duration": 3,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -145,7 +145,7 @@
             "cc_light_instr": "blue",
             "cc_light_opcode": 1
         },
-        "blue q3,q0": {
+        "blue q3 q0": {
             "duration": 3,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -155,7 +155,7 @@
             "cc_light_instr": "blue",
             "cc_light_opcode": 1
         },
-        "red q2,q4": {
+        "red q2 q4": {
             "duration": 4,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -165,7 +165,7 @@
             "cc_light_instr": "red",
             "cc_light_opcode": 1
         },
-        "red q4,q2": {
+        "red q4 q2": {
             "duration": 4,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -175,7 +175,7 @@
             "cc_light_instr": "red",
             "cc_light_opcode": 1
         },
-        "red q3,q5": {
+        "red q3 q5": {
             "duration": 4,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -185,7 +185,7 @@
             "cc_light_instr": "red",
             "cc_light_opcode": 1
         },
-        "red q5,q3": {
+        "red q5 q3": {
             "duration": 4,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -195,7 +195,7 @@
             "cc_light_instr": "red",
             "cc_light_opcode": 1
         },
-        "blue q4,q7": {
+        "blue q4 q7": {
             "duration": 3,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -205,7 +205,7 @@
             "cc_light_instr": "blue",
             "cc_light_opcode": 1
         },
-        "blue q7,q4": {
+        "blue q7 q4": {
             "duration": 3,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -215,7 +215,7 @@
             "cc_light_instr": "blue",
             "cc_light_opcode": 1
         },
-        "red q5,q6": {
+        "red q5 q6": {
             "duration": 4,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -225,7 +225,7 @@
             "cc_light_instr": "red",
             "cc_light_opcode": 1
         },
-        "red q6,q5": {
+        "red q6 q5": {
             "duration": 4,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -235,7 +235,7 @@
             "cc_light_instr": "red",
             "cc_light_opcode": 1
         },
-        "blue q6,q7": {
+        "blue q6 q7": {
             "duration": 3,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -245,7 +245,7 @@
             "cc_light_instr": "blue",
             "cc_light_opcode": 1
         },
-        "blue q7,q6": {
+        "blue q7 q6": {
             "duration": 3,
             "latency": 0,
             "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
@@ -258,22 +258,22 @@
     },
 
     "gate_decomposition": {
-		"cz_real q0,q1": [ "blue q0,q1"],
-		"cz_real q1,q2": [ "red q1,q2"],
-		"cz_real q0,q3": [ "blue q0,q3"],
-		"cz_real q2,q4": [ "red q2,q4"],
-		"cz_real q3,q5": [ "red q3,q5"],
-		"cz_real q4,q7": [ "blue q4,q7"],
-		"cz_real q5,q6": [ "red q5,q6"],
-		"cz_real q6,q7": [ "blue q6,q7"],
+		"cz_real q0 q1": [ "blue q0 q1"],
+		"cz_real q1 q2": [ "red q1 q2"],
+		"cz_real q0 q3": [ "blue q0 q3"],
+		"cz_real q2 q4": [ "red q2 q4"],
+		"cz_real q3 q5": [ "red q3 q5"],
+		"cz_real q4 q7": [ "blue q4 q7"],
+		"cz_real q5 q6": [ "red q5 q6"],
+		"cz_real q6 q7": [ "blue q6 q7"],
 
-		"cz_real q1,q0": [ "blue q1,q0"],
-		"cz_real q2,q1": [ "red q2,q1"],
-		"cz_real q3,q0": [ "blue q3,q0"],
-		"cz_real q4,q2": [ "red q4,q2"],
-		"cz_real q5,q3": [ "red q5,q3"],
-		"cz_real q7,q4": [ "blue q7,q4"],
-		"cz_real q6,q5": [ "red q6,q5"],
-		"cz_real q7,q6": [ "blue q7,q6"]
+		"cz_real q1 q0": [ "blue q1 q0"],
+		"cz_real q2 q1": [ "red q2 q1"],
+		"cz_real q3 q0": [ "blue q3 q0"],
+		"cz_real q4 q2": [ "red q4 q2"],
+		"cz_real q5 q3": [ "red q5 q3"],
+		"cz_real q7 q4": [ "blue q7 q4"],
+		"cz_real q6 q5": [ "red q6 q5"],
+		"cz_real q7 q6": [ "blue q7 q6"]
     }
 }

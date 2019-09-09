@@ -861,8 +861,8 @@ bool new_custom_gate_if_available(std::string & gname, std::vector<size_t> qubit
     if(qubits.size() > 0)
     {
         for (size_t i=0; i<(qubits.size()-1); ++i)
-            instr += "q" + std::to_string(qubits[i]) + " "; // HvS
             // instr += "q" + std::to_string(qubits[i]) + ","; // kernel.h
+            instr += "q" + std::to_string(qubits[i]) + " "; // HvS
         if(qubits.size() >= 1) // to make if work with gates without operands
             instr += "q" + std::to_string(qubits[qubits.size()-1]);
     }
