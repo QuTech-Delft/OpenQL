@@ -133,7 +133,7 @@ public:
                 WOUT("instruction '" << name << "' redefined : the old definition is overwritten !");
 
             // format in json.instructions:
-            //  "^(\s)*token(\s)+token(\s)*,(\s)*token(\s*)$"
+            //  "^(\s)*token(\s)*[(\s)token(\s)*(,(\s)*token(\s*))*]$"
             //  so with a comma between any operands and possible spaces everywhere
             //
             // format of key and value (which is a custom_gate)'s name in instruction_map:

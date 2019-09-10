@@ -628,21 +628,18 @@ void Add(ql::gate *g, size_t startCycle)
 // While experimenting with path alternatives, a clone is made of the main past,
 // to insert swaps and evaluate the latency effects; note that inserting swaps changes the mapping.
 //
-// Implementation notes:
-//
-// not windowing
-// The implementation below keeps past gates in the list of gates until the end of the circuit is reached.
-// Only then Past' gates are flushed to the output stream.
-// The size of the Past could be limited (on number of gates or cycle difference between start and end)
-// and so be made a window on the output stream, regularly flushing Past to the output stream.
-// Then the overhead of the list of gates and the cycle map could be reduced to constant.
-// Experimentation has shown that e.g. a max cycle difference of 100 where swaps take 10 cycles,
-// is a sufficiently large window to limit the reduction in performance of the mapper;
-// i.e. when using a Past window when scheduling a gate (or swap) in the past,
-// to avoid this performance reduction this gate should never end up
-// at the start of the list (i.e. at a cycle number before the first cycle of the current Past)
-// because then the Past window would be too small and scheduling would be negatively impacted.
-// It is sufficient when the first cycle of Past is smaller or equal than the minimum value in FreeCycle.
+// On arrival of a q gate(s):
+// - [isempty(waitinglg)]
+// - if 2q nonNN clone mult. pasts, in each clone Add swap/move gates, Schedule, evaluate clones, select, Add swaps to mainPast
+// - Add, Add, ...: add q gates to waitinglg, waiting to be scheduled in [!isempty(waitinglg)]
+// - Schedule: schedules all q gates of waitinglg into lg [isempty(waitinglg) && !isempty(lg)]
+// On arrival of a c gate:
+// - FlushAll: lg flushed to outlg [isempty(waitinglg) && isempty(lg) && !isempty(outlg)]
+// - ByPass: c gate added to outlg [isempty(waitinglg) && isempty(lg) && !isempty(outlg)]
+// On no gates:
+// - [isempty(waitinglg)]
+// - FlushAll: lg flushed to outlg [isempty(waitinglg) && isempty(lg) && !isempty(outlg)]
+// - Out: outlg flushed to outCirc [isempty(waitinglg) && isempty(lg) && isempty(outlg)]
 class Past
 {
 private:
@@ -655,7 +652,6 @@ private:
     Virt2Real               v2r;        // current Virt2Real map, imported/exported to kernel
 
     FreeCycle               fc;         // FreeCycle map of this Past
-//  Metrics                 metrics;    // Metrics map at end of this Past
     typedef ql::gate *      gate_p;
     std::list<gate_p>       waitinglg;  // list of q gates in this Past, topological order, waiting to be scheduled in
     std::list<gate_p>       lg;         // list of q gates in this Past, scheduled by their (start) cycle values
@@ -1335,7 +1331,7 @@ void AddSwap(size_t r0, size_t r1)
         return;
     }
 
-    ql::circuit circ;
+    ql::circuit circ;   // current kernel copy, clear circuit
     std::string mapusemovesopt = ql::options::get("mapusemoves");
     if ("no" != mapusemovesopt && (v2r.GetRs(r0)!=rs_hasstate || v2r.GetRs(r1)!=rs_hasstate))
     {
@@ -1499,7 +1495,8 @@ size_t MaxFreeCycle()
 
 // nonq and q gates follow separate flows through Past:
 // - q gates are put in waitinglg when added and then scheduled; and then ordered by cycle into lg
-// - nonq gates bypass this; they immediately go to the tail of lg
+//      in lg they are waiting to be inspected and scheduled, until [too many are there,] a nonq comes or end-of-circuit
+// - nonq gates first cause lg to be flushed/cleared to output before the nonq gate is output
 void FlushAll()
 {
     for( auto & gp : lg )
@@ -1770,19 +1767,6 @@ size_t Extend(Past basePast)
     cycleExtend = past.MaxFreeCycle() - basePast.MaxFreeCycle();
     return cycleExtend;
 }
-
-double EstimateFidelity(Past basePast)
-{
-    past = basePast;   // explicitly clone basePast to a path-local copy of it, Alter.past
-    // DOUT("... adding swaps for local past ...");
-    AddSwaps(past, "all");
-    // DOUT("... compute fidelity local past ...");
-    // DOUT("... done adding/scheduling swaps to local past");
-    // cycleExtend = past.MaxFreeCycle() - basePast.MaxFreeCycle();
-    // double estimated_fidelity = a.EstimateFidelity(past);  // locally here, past is cloned into current path
-    return 0.0;
-}
-
 
 // split the path
 // starting from the representation in the total attribute,
@@ -2861,7 +2845,7 @@ class Future // : public Scheduler
 {
 public:
     ql::quantum_platform            *platformp;
-    ql::circuit                     *inCircp;       // pointer to input stream
+    ql::circuit                     *inCircp;       // pointer to total/original input circuit
     Scheduler                       *schedp;        // a pointer, since dependence graph doesn't change
 
     std::map<ql::gate*,bool>        scheduled;      // state: has gate been taken from future?
@@ -2891,7 +2875,7 @@ void SetCircuit(ql::circuit& circ, Scheduler& sched, size_t nq, size_t nc)
     }
     else
     {
-        schedp->init(circ, *platformp, nq, nc);                 // fills schedp->graph (dependence graph) from circuit
+        schedp->init(circ, *platformp, nq, nc);                 // fills schedp->graph (dependence graph) from all of circuit
     
         for( auto & gp : circ )
         {
@@ -2910,9 +2894,9 @@ void SetCircuit(ql::circuit& circ, Scheduler& sched, size_t nq, size_t nc)
 // Get all non-quantum gates from avlist
 // Non-quantum gates include: classical, and dummy (SOURCE/SINK)
 // Return whether some non-quantum gate was found
-bool GetNonQuantumGates(std::list<ql::gate*>& lg)
+bool GetNonQuantumGates(std::list<ql::gate*>& nonqlg)
 {
-    lg.clear();
+    nonqlg.clear();
     std::string maplookaheadopt = ql::options::get("maplookahead");
     if ("no" == maplookaheadopt)
     {
@@ -2923,7 +2907,7 @@ bool GetNonQuantumGates(std::list<ql::gate*>& lg)
                 || gp->type() == ql::__dummy_gate__
                 )
             {
-                lg.push_back(gp);
+                nonqlg.push_back(gp);
             }
         }
     }
@@ -2936,34 +2920,34 @@ bool GetNonQuantumGates(std::list<ql::gate*>& lg)
                 || gp->type() == ql::__dummy_gate__
                 )
             {
-                lg.push_back(gp);
+                nonqlg.push_back(gp);
             }
         }
     }
-    return lg.size() != 0;
+    return nonqlg.size() != 0;
 }
 
 // Get all gates from avlist
 // Return whether some gate was found
-bool GetGates(std::list<ql::gate*>& lg)
+bool GetGates(std::list<ql::gate*>& qlg)
 {
-    lg.clear();
+    qlg.clear();
     std::string maplookaheadopt = ql::options::get("maplookahead");
     if ("no" == maplookaheadopt)
     {
         if (curr_gatepp != inCircp->end())
         {
-            lg.push_back(*curr_gatepp);
+            qlg.push_back(*curr_gatepp);
         }
     }
     else
     {
         for ( auto n : avlist)
         {
-            lg.push_back(schedp->instruction[n]);
+            qlg.push_back(schedp->instruction[n]);
         }
     }
-    return lg.size() != 0;
+    return qlg.size() != 0;
 }
 
 // Indicate that a gate currently in avlist has been mapped, can be taken out of the avlist
@@ -3276,7 +3260,7 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Past& past)
         {
             // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
             //  a.Print("Considering extension by path: ...");
-            size_t extension = a.Extend(past);  // locally here, past is cloned
+            size_t extension = a.Extend(past);  // locally here, past will be cloned
             if (extension <= minExtension)
             {
                 if (extension < minExtension)
@@ -3288,22 +3272,6 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Past& past)
             }
         }
     }
-//  else if (mapopt == "minboundederror")
-//  {
-//      size_t  maxFidelity = 0;
-//      for (auto & a : la)
-//      {
-//          // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
-//          //  a.Print("Considering extension by path: ...");
-//          double estimated_fidelity = a.EstimateFidelity(past);  // locally here, past is cloned
-//          if (estimated_fidelity > maxFidelity)
-//          {
-//              maxFidelity = estimated_fidelity;
-//              choices.clear();
-//              choices.push_back(a);
-//          }
-//      }
-//  }
     if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
         Alter::listPrint("... after SelectAlter", la);
     resa = choices[Draw(choices.size())];
