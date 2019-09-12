@@ -628,14 +628,14 @@ void Add(ql::gate *g, size_t startCycle)
 // While experimenting with path alternatives, a clone is made of the main past,
 // to insert swaps and evaluate the latency effects; note that inserting swaps changes the mapping.
 //
-// On arrival of a q gate(s):
+// On arrival of a quantum gate(s):
 // - [isempty(waitinglg)]
 // - if 2q nonNN clone mult. pasts, in each clone Add swap/move gates, Schedule, evaluate clones, select, Add swaps to mainPast
-// - Add, Add, ...: add q gates to waitinglg, waiting to be scheduled in [!isempty(waitinglg)]
-// - Schedule: schedules all q gates of waitinglg into lg [isempty(waitinglg) && !isempty(lg)]
-// On arrival of a c gate:
+// - Add, Add, ...: add quantum gates to waitinglg, waiting to be scheduled in [!isempty(waitinglg)]
+// - Schedule: schedules all quantum gates of waitinglg into lg [isempty(waitinglg) && !isempty(lg)]
+// On arrival of a classical gate:
 // - FlushAll: lg flushed to outlg [isempty(waitinglg) && isempty(lg) && !isempty(outlg)]
-// - ByPass: c gate added to outlg [isempty(waitinglg) && isempty(lg) && !isempty(outlg)]
+// - ByPass: classical gate added to outlg [isempty(waitinglg) && isempty(lg) && !isempty(outlg)]
 // On no gates:
 // - [isempty(waitinglg)]
 // - FlushAll: lg flushed to outlg [isempty(waitinglg) && isempty(lg) && !isempty(outlg)]
@@ -647,7 +647,7 @@ private:
     size_t                  nq;         // width of Past, Virt2Real, UseCount maps in number of real qubits
     size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
     ql::quantum_platform    *platformp; // platform describing resources for scheduling
-    ql::quantum_kernel      *kernelp;   // current kernel
+    ql::quantum_kernel      *kernelp;   // current kernel for creating gates
 
     Virt2Real               v2r;        // current Virt2Real map, imported/exported to kernel
 
@@ -680,9 +680,9 @@ void Init(ql::quantum_platform *p, ql::quantum_kernel *k)
     nq = platformp->qubit_number;
     ct = platformp->cycle_time;
 
+    MapperAssert(kernelp->c.empty());   // kernelp->c will be used by new_gate to return newly created gates into
     v2r.Init(nq);               // v2r initializtion until v2r is imported from context
     fc.Init(platformp);         // fc starts off with all qubits free, is updated after schedule of each gate
-//  metrics.Init(nq,platformp); // metrics starts off with
     waitinglg.clear();          // no gates pending to be scheduled in; Add of gate to past entered here
     lg.clear();                 // no gates scheduled yet in this past; after schedule of gate, it gets here
     outlg.clear();              // no gates output yet by flushing from or bypassing this past
@@ -850,7 +850,7 @@ void Add(gate_p gp)
 bool new_custom_gate_if_available(std::string & gname, std::vector<size_t> qubits, ql::circuit& circ,
                                   size_t duration=0, double angle=0.0)
 {
-    DOUT("new_custom_gate_if_available(" << gname << ", " << ql::utils::to_string<size_t>(qubits) << ", " << duration << ", " << angle << ")");
+    // DOUT("new_custom_gate_if_available(" << gname << ", " << ql::utils::to_string<size_t>(qubits) << ", " << duration << ", " << angle << ")");
     bool added = false;
     // first check if a specialized custom gate is available
     std::string instr = gname + " ";
@@ -862,35 +862,35 @@ bool new_custom_gate_if_available(std::string & gname, std::vector<size_t> qubit
         if(qubits.size() >= 1) // to make if work with gates without operands
             instr += "q" + std::to_string(qubits[qubits.size()-1]);
     }
-    DOUT("Is a specialized custom_gate available (" << instr << ") for " << gname << " on " << ql::utils::to_string<size_t>(qubits) << " ...");
+    // DOUT("Is a specialized custom_gate available (" << instr << ") for " << gname << " on " << ql::utils::to_string<size_t>(qubits) << " ...");
 
     std::map<std::string,ql::custom_gate*>::iterator it = kernelp->gate_definition.find(instr);
     if (it != kernelp->gate_definition.end())
     {
         // a specialized custom gate is of the form: "cz q0 q3"
-        DOUT("A specialized custom gate (" << instr << ") is available for " << gname << " on " << ql::utils::to_string<size_t>(qubits) << " ...");
+        // DOUT("A specialized custom gate (" << instr << ") is available for " << gname << " on " << ql::utils::to_string<size_t>(qubits) << " ...");
         ql::custom_gate* g = new ql::custom_gate(*(it->second));    // different creator!!! from json!!! but name???
-        DOUT("... custom_gate created with name=" << g->name << ", duration=" << g->duration);
+        // DOUT("... custom_gate created with name=" << g->name << ", duration=" << g->duration);
         for(auto & qubit : qubits)
             g->operands.push_back(qubit);
-        DOUT("... after adding operands, qasm is: " << g->qasm());
+        // DOUT("... after adding operands, qasm is: " << g->qasm());
         if(duration>0) g->duration = duration;
         g->angle = angle;
-        DOUT("... after adding duration/angle, qasm is: " << g->qasm());
+        // DOUT("... after adding duration/angle, qasm is: " << g->qasm());
         added = true;
         circ.push_back(g);
     }
     else
     {
-        DOUT("A specialized custom_gate (" << instr << ") is not available for " << gname << " on " << ql::utils::to_string<size_t>(qubits) << " ...");
+        // DOUT("A specialized custom_gate (" << instr << ") is not available for " << gname << " on " << ql::utils::to_string<size_t>(qubits) << " ...");
         // otherwise, check if there is a parameterized custom gate (i.e. not specialized for arguments)
         // this one is of the form: "cz", i.e. just the gate's name
         std::map<std::string,ql::custom_gate*>::iterator it = kernelp->gate_definition.find(gname);
         if (it != kernelp->gate_definition.end())
         {
-            DOUT("A parameterized custom gate is available for " << gname << " on " << ql::utils::to_string<size_t>(qubits) << " ...");
+            // DOUT("A parameterized custom gate is available for " << gname << " on " << ql::utils::to_string<size_t>(qubits) << " ...");
             ql::custom_gate* g = new ql::custom_gate(*(it->second));
-            DOUT("... custom_gate created with name=" << g->name << ", duration=" << g->duration);
+            // DOUT("... custom_gate created with name=" << g->name << ", duration=" << g->duration);
             for(auto & qubit : qubits)
                 g->operands.push_back(qubit);
             if(duration>0) g->duration = duration;
@@ -900,17 +900,17 @@ bool new_custom_gate_if_available(std::string & gname, std::vector<size_t> qubit
         }
         else
         {
-            DOUT("A parameterized custom gate is not available for " << gname << " on " << ql::utils::to_string<size_t>(qubits) << " ...");
+            // DOUT("A parameterized custom gate is not available for " << gname << " on " << ql::utils::to_string<size_t>(qubits) << " ...");
         }
     }
 
     if(added)
     {
-        DOUT("custom gate added for " << gname);
+        // DOUT("custom gate added for " << gname);
     }
     else
     {
-        DOUT("custom gate not added for " << gname);
+        // DOUT("custom gate not added for " << gname);
     }
 
     return added;
@@ -921,11 +921,11 @@ bool new_custom_gate_if_available(std::string & gname, std::vector<size_t> qubit
 void new_get_decomposed_ins( ql::composite_gate * gptr, std::vector<std::string> & sub_instructons)
 {
     auto & sub_gates = gptr->gs;
-    DOUT("composite ins: " << gptr->name);
+    // DOUT("composite ins: " << gptr->name);
     for(auto & agate : sub_gates)
     {
         std::string & sub_ins = agate->name;
-        DOUT("  sub ins: " << sub_ins);
+        // DOUT("  sub ins: " << sub_ins);
         auto it = kernelp->gate_definition.find(sub_ins);
         if( it != kernelp->gate_definition.end() )
         {
@@ -944,7 +944,7 @@ void new_get_decomposed_ins( ql::composite_gate * gptr, std::vector<std::string>
 bool new_spec_decomposed_gate_if_available(std::string gate_name, std::vector<size_t> all_qubits, ql::circuit& circ)
 {
     bool added = false;
-    DOUT("Checking if specialized decomposition is available for " << gate_name);
+    // DOUT("Checking if specialized decomposition is available for " << gate_name);
     std::string instr_parameterized = gate_name + " ";
     size_t i;
     if(all_qubits.size() > 0)
@@ -958,20 +958,20 @@ bool new_spec_decomposed_gate_if_available(std::string gate_name, std::vector<si
             instr_parameterized += "q" + std::to_string(all_qubits[i]);
         }
     }
-    DOUT("decomposed specialized instruction name: " << instr_parameterized);
+    // DOUT("decomposed specialized instruction name: " << instr_parameterized);
 
     auto it = kernelp->gate_definition.find(instr_parameterized);
     if( it != kernelp->gate_definition.end() )
     {
-        DOUT("specialized composite gate found for " << instr_parameterized);
+        // DOUT("specialized composite gate found for " << instr_parameterized);
         ql::composite_gate * gptr = (ql::composite_gate *)(it->second);
         if( ql::__composite_gate__ == gptr->type() )
         {
-            DOUT("composite gate type");
+            // DOUT("composite gate type");
         }
         else
         {
-            DOUT("Not a composite gate type");
+            // DOUT("Not a composite gate type");
             return false;
         }
 
@@ -980,9 +980,9 @@ bool new_spec_decomposed_gate_if_available(std::string gate_name, std::vector<si
         new_get_decomposed_ins( gptr, sub_instructons);
         for(auto & sub_ins : sub_instructons)
         {
-            DOUT("Adding sub ins: " << sub_ins);
+            // DOUT("Adding sub ins: " << sub_ins);
             std::replace( sub_ins.begin(), sub_ins.end(), ',', ' ');
-            DOUT(" after comma removal, sub ins: " << sub_ins);
+            // DOUT(" after comma removal, sub ins: " << sub_ins);
             std::istringstream iss(sub_ins);
 
             std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
@@ -993,20 +993,20 @@ bool new_spec_decomposed_gate_if_available(std::string gate_name, std::vector<si
 
             for(size_t i=1; i<tokens.size(); i++)
             {
-                DOUT("tokens[i] : " << tokens[i]);
+                // DOUT("tokens[i] : " << tokens[i]);
                 auto sub_str_token = tokens[i].substr(1);
-                DOUT("sub_str_token[i] : " << sub_str_token);
+                // DOUT("sub_str_token[i] : " << sub_str_token);
                 this_gate_qubits.push_back( stoi( tokens[i].substr(1) ) );
             }
 
-            DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
+            // DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
             // custom gate check
             // when found, custom_added is true, and the expanded subinstruction was added to the circuit
             bool custom_added = new_custom_gate_if_available(sub_ins_name, this_gate_qubits, circ);
             if(!custom_added)
             {
-                DOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                // DOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
                 throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+sub_ins_name+"' with " +ql::utils::to_string(this_gate_qubits,"qubits")+" is not supported by the target platform !",false);
             }
         }
@@ -1014,7 +1014,7 @@ bool new_spec_decomposed_gate_if_available(std::string gate_name, std::vector<si
     }
     else
     {
-        DOUT("composite gate not found for " << instr_parameterized);
+        // DOUT("composite gate not found for " << instr_parameterized);
     }
 
     return added;
@@ -1027,7 +1027,7 @@ bool new_spec_decomposed_gate_if_available(std::string gate_name, std::vector<si
 bool new_param_decomposed_gate_if_available(std::string gate_name, std::vector<size_t> all_qubits, ql::circuit& circ)
 {
     bool added = false;
-    DOUT("Checking if parameterized decomposition is available for " << gate_name);
+    // DOUT("Checking if parameterized decomposition is available for " << gate_name);
     std::string instr_parameterized = gate_name + " ";
     size_t i;
     if(all_qubits.size() > 0)
@@ -1041,21 +1041,21 @@ bool new_param_decomposed_gate_if_available(std::string gate_name, std::vector<s
             instr_parameterized += "%" + std::to_string(i);
         }
     }
-    DOUT("decomposed parameterized instruction name: " << instr_parameterized);
+    // DOUT("decomposed parameterized instruction name: " << instr_parameterized);
 
     // check for composite ins
     auto it = kernelp->gate_definition.find(instr_parameterized);
     if( it != kernelp->gate_definition.end() )
     {
-        DOUT("parameterized composite gate found for " << instr_parameterized);
+        // DOUT("parameterized composite gate found for " << instr_parameterized);
         ql::composite_gate * gptr = (ql::composite_gate *)(it->second);
         if( ql::__composite_gate__ == gptr->type() )
         {
-            DOUT("composite gate type");
+            // DOUT("composite gate type");
         }
         else
         {
-            DOUT("Not a composite gate type");
+            // DOUT("Not a composite gate type");
             return false;
         }
 
@@ -1063,9 +1063,9 @@ bool new_param_decomposed_gate_if_available(std::string gate_name, std::vector<s
         new_get_decomposed_ins( gptr, sub_instructons);
         for(auto & sub_ins : sub_instructons)
         {
-            DOUT("Adding sub ins: " << sub_ins);
+            // DOUT("Adding sub ins: " << sub_ins);
             std::replace( sub_ins.begin(), sub_ins.end(), ',', ' ');
-            DOUT(" after comma removal, sub ins: " << sub_ins);
+            // DOUT(" after comma removal, sub ins: " << sub_ins);
             std::istringstream iss(sub_ins);
 
             std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
@@ -1079,14 +1079,14 @@ bool new_param_decomposed_gate_if_available(std::string gate_name, std::vector<s
                 this_gate_qubits.push_back( all_qubits[ stoi( tokens[i].substr(1) ) ] );
             }
 
-            DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
+            // DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
             // custom gate check
             // when found, custom_added is true, and the expanded subinstruction was added to the circuit
             bool custom_added = new_custom_gate_if_available(sub_ins_name, this_gate_qubits, circ);
             if(!custom_added)
             {
-                DOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                // DOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
                 throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+sub_ins_name+"' with " +ql::utils::to_string(this_gate_qubits,"qubits")+" is not supported by the target platform !",false);
             }
         }
@@ -1094,7 +1094,7 @@ bool new_param_decomposed_gate_if_available(std::string gate_name, std::vector<s
     }
     else
     {
-        DOUT("composite gate not found for " << instr_parameterized);
+        // DOUT("composite gate not found for " << instr_parameterized);
     }
     return added;
 }
@@ -1124,12 +1124,25 @@ bool new_param_decomposed_gate_if_available(std::string gate_name, std::vector<s
 //      "cz" in gate_definition as non-composite gate
 // (default gate is not supported)
 // if not, then return false else true
+#define USE_KERNEL_GATE_IMPLEMENTATION
+#ifdef USE_KERNEL_GATE_IMPLEMENTATION
+bool new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits)
+{
+    bool    added;
+    MapperAssert(circ.empty());
+    MapperAssert(kernelp->c.empty());
+    added = kernelp->gate_nonfatal(gname, qubits);   // creates gates in kernelp->c
+    circ = kernelp->c;
+    kernelp->c.clear();
+    return added;
+}
+#else   // USE_KERNEL_GATE_IMPLEMENTATION
 bool new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits)
 {
     bool added = false;
     for(auto & qno : qubits)
     {
-        DOUT("qno : " << qno);
+        // DOUT("qno : " << qno);
         if( qno >= nq )
         {
             FATAL("Number of qubits in platform: " << std::to_string(nq) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
@@ -1140,69 +1153,70 @@ bool new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits)
     DOUT("Adding gate : " << gname << " with " << ql::utils::to_string(qubits,"qubits"));
 
     // specialized composite gate check
-    DOUT("trying to add specialized decomposed gate(s) for: " << gname);
+    // DOUT("trying to add specialized decomposed gate(s) for: " << gname);
     bool spec_decom_added = new_spec_decomposed_gate_if_available(gname, qubits, circ);
     if(spec_decom_added)
     {
         added = true;
         DOUT("specialized decomposed gates added for " << gname);
-        DOUT("new_gate's updated circuit: ");
-        for (auto& gp : circ)
-        {
-            DOUT("\t" << gp->qasm() << "\t\t#duration: " << gp->duration);
-        }
-        DOUT("new_gate's updated circuit: DONE");
+        // DOUT("new_gate's updated circuit: ");
+        // for (auto& gp : circ)
+        // {
+            // DOUT("\t" << gp->qasm() << "\t\t#duration: " << gp->duration);
+        // }
+        // DOUT("new_gate's updated circuit: DONE");
     }
     else
     {
         // parameterized composite gate check
-        DOUT("trying to add parameterized decomposed gate for: " << gname);
+        // DOUT("trying to add parameterized decomposed gate for: " << gname);
         bool param_decom_added = new_param_decomposed_gate_if_available(gname, qubits, circ);
         if(param_decom_added)
         {
             added = true;
             DOUT("decomposed gates added for " << gname);
-            DOUT("new_gate's updated circuit: ");
-            for (auto& gp : circ)
-            {
-                DOUT("\t" << gp->qasm() << "\t\t#duration: " << gp->duration);
-            }
-            DOUT("new_gate's updated circuit: DONE");
+            // DOUT("new_gate's updated circuit: ");
+            // for (auto& gp : circ)
+            // {
+                // DOUT("\t" << gp->qasm() << "\t\t#duration: " << gp->duration);
+            // }
+            // DOUT("new_gate's updated circuit: DONE");
         }
         else
         {
             // specialized/parameterized custom gate check
-            DOUT("adding custom gate for " << gname);
+            // DOUT("adding custom gate for " << gname);
             bool custom_added = new_custom_gate_if_available(gname, qubits, circ);
             if(!custom_added)
             {
-                DOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+                // DOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
                 // throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
             }
             else
             {
                 added = true;
                 DOUT("custom gate added for " << gname);
-                DOUT("new_gate's updated circuit: ");
-                for (auto& gp : circ)
-                {
-                    DOUT("\t" << gp->qasm() << "\t\t#duration: " << gp->duration);
-                }
-                DOUT("new_gate's updated circuit: DONE");
+                // DOUT("new_gate's updated circuit: ");
+                // for (auto& gp : circ)
+                // {
+                    // DOUT("\t" << gp->qasm() << "\t\t#duration: " << gp->duration);
+                // }
+                // DOUT("new_gate's updated circuit: DONE");
             }
         }
     }
     if (added)
     {
-        DOUT("new_gate's updated circuit: ");
-        for (auto& gp : circ)
-        {
-            DOUT("\t" << gp->qasm() << "\t\t#duration: " << gp->duration);
-        }
-        DOUT("new_gate's updated circuit: DONE");
+        // DOUT("new_gate's updated circuit: ");
+        // for (auto& gp : circ)
+        // {
+            // DOUT("\t" << gp->qasm() << "\t\t#duration: " << gp->duration);
+        // }
+        // DOUT("new_gate's updated circuit: DONE");
     }
     return added;
 }
+#endif // USE_KERNEL_GATE_IMPLEMENTATION
 // end copy of the kernel's new_gate interface
 // ===================
 
@@ -1240,7 +1254,7 @@ void GenMove(ql::circuit& circ, size_t& r0, size_t& r1)
     {
         // interchange r0 and r1, so that r1 (right-hand operand of move) will be the state-less one
         size_t  tmp = r1; r1 = r0; r0 = tmp;
-        DOUT("... reversed operands for move to become move(q" << r0 << ",q" << r1 << ") ...");
+        // DOUT("... reversed operands for move to become move(q" << r0 << ",q" << r1 << ") ...");
     }
     MapperAssert (v2r.GetRs(r0)==rs_hasstate);    // and r0 will be the one with state
     MapperAssert (v2r.GetRs(r1)!=rs_hasstate);    // and r1 will be the one without state (rs_nostate || rs_inited)
@@ -1256,7 +1270,7 @@ void GenMove(ql::circuit& circ, size_t& r0, size_t& r1)
     if (v2r.GetRs(r1) == rs_nostate)
     {
         // r1 is not in inited state, generate in initcirc the circuit to do so
-        DOUT("... initializing non-inited " << r1 << " to |0> (inited) state preferably using move_init ...");
+        // DOUT("... initializing non-inited " << r1 << " to |0> (inited) state preferably using move_init ...");
         ql::circuit initcirc;
 
         created = new_gate(initcirc, "move_init", {r1});
@@ -1289,7 +1303,7 @@ void GenMove(ql::circuit& circ, size_t& r0, size_t& r1)
             // so we go for it!
             // circ contains move; it must get the initcirc before it ...
             // do this by appending circ's gates to initcirc, and then swapping circ and initcirc content
-            DOUT("... initialization is for free, do it ...");
+            // DOUT("... initialization is for free, do it ...");
             for (auto& gp : circ)
             {
                 initcirc.push_back(gp);
@@ -1300,7 +1314,7 @@ void GenMove(ql::circuit& circ, size_t& r0, size_t& r1)
         else
         {
             // undo damage done, will not do move but swap, i.e. nothing created thisfar
-            DOUT("... initialization extends circuit, don't do it ...");
+            // DOUT("... initialization extends circuit, don't do it ...");
             circ.clear();       // circ being cleared also indicates creation wasn't successful
         }
         // initcirc getting out-of-scope here so gets destroyed
@@ -1326,7 +1340,7 @@ void AddSwap(size_t r0, size_t r1)
 
     if (v2r.GetRs(r0)!=rs_hasstate && v2r.GetRs(r1)!=rs_hasstate)
     {
-        DOUT("... no state in both operand of intended swap/move; don't add swap/move gates");
+        // DOUT("... no state in both operand of intended swap/move; don't add swap/move gates");
         v2r.Swap(r0,r1);
         return;
     }
@@ -1344,11 +1358,11 @@ void AddSwap(size_t r0, size_t r1)
             // also rs of its 2nd operand is 'rs_wasinited'
             // note that after swap/move, r0 will be in this state then
             nmovesadded++;                       // for reporting at the end
-            DOUT("... move(q" << r0 << ",q" << r1 << ") ...");
+            // DOUT("... move(q" << r0 << ",q" << r1 << ") ...");
         }
         else
         {
-            DOUT("... move(q" << r0 << ",q" << r1 << ") cancelled, go for swap");
+            // DOUT("... move(q" << r0 << ",q" << r1 << ") cancelled, go for swap");
         }
     }
     if (!created)
@@ -1365,7 +1379,7 @@ void AddSwap(size_t r0, size_t r1)
             if (fc.IsFirstOperandEarlier(r0, r1))
             {
                 size_t  tmp = r1; r1 = r0; r0 = tmp;
-                DOUT("... reversed swap to become swap(q" << r0 << ",q" << r1 << ") ...");
+                // DOUT("... reversed swap to become swap(q" << r0 << ",q" << r1 << ") ...");
             }
         }
         created = new_gate(circ, "swap_real", {r0,r1});    // gates implementing swap returned in circ
@@ -1434,13 +1448,13 @@ size_t MapQubit(size_t v)
 
 void stripname(std::string& name)
 {
-    DOUT("stripname(name=" << name << ")");
+    // DOUT("stripname(name=" << name << ")");
     size_t p = name.find(" ");
     if (p != std::string::npos)
     {
         name = name.substr(0,p);
     }
-    DOUT("... after stripname name=" << name);
+    // DOUT("... after stripname name=" << name);
 }
 
 void MakeReal(ql::gate* gp, ql::circuit& circ)
@@ -1681,14 +1695,6 @@ void listPrint(std::string s, std::list<Alter> & la)
     }
 }
 
-// create a single node (i.e. distance 0) path consisting of just the qubit q
-void Single(size_t q)
-{
-    // total.resize(1);
-    // total[0] = q;
-    total.insert(total.begin(), q); // hopelessly inefficient
-}
-
 // add a node to the path in front, extending its length with one
 void Add2Front(size_t q)
 {
@@ -1700,7 +1706,7 @@ void Add2Front(size_t q)
 // after having added them, schedule the result into that past
 void AddSwaps(Past & past, std::string mapselectswapsopt)
 {
-    DOUT("Addswaps " << mapselectswapsopt);
+    // DOUT("Addswaps " << mapselectswapsopt);
     if ("one"==mapselectswapsopt || "all"==mapselectswapsopt)
     {
         size_t  numberadded = 0;
@@ -2840,17 +2846,20 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& iptimetake
 // will have a lower probability of increasing circuit depth
 // than taking a non-critical gate as first one to map.
 // Later implementations may become more sophisticated.
+//
+// With option maplookaheadopt=="no", the future window's dependence graph (scheduled and avlist) are not used.
+// Instead a copy of the input circuit (input_gatepv) is created and iterated over (input_gatepp).
 
 class Future // : public Scheduler
 {
 public:
     ql::quantum_platform            *platformp;
-    ql::circuit                     *inCircp;       // pointer to total/original input circuit
     Scheduler                       *schedp;        // a pointer, since dependence graph doesn't change
+    ql::circuit                     input_gatepv;   // input circuit when not using scheduler based avlist
 
     std::map<ql::gate*,bool>        scheduled;      // state: has gate been taken from future?
     std::list<ListDigraph::Node>    avlist;         // state: which nodes/gates are available for mapping now?
-    ql::circuit::iterator           curr_gatepp;    // state: only to scan circuit instead of avlist
+    ql::circuit::iterator           input_gatepp;   // state: alternative iterator in input_gatepv
 
 // just program wide initialization
 void Init( ql::quantum_platform *p)
@@ -2866,17 +2875,17 @@ void Init( ql::quantum_platform *p)
 void SetCircuit(ql::circuit& circ, Scheduler& sched, size_t nq, size_t nc)
 {
     DOUT("Future::SetCircuit ...");
-    inCircp = &circ;
     schedp = &sched;
     std::string maplookaheadopt = ql::options::get("maplookahead");
     if ("no" == maplookaheadopt)
     {
-        curr_gatepp = inCircp->begin();
+        input_gatepv = circ;                                    // copy to free original circuit to allow outputing to
+        input_gatepp = input_gatepv.begin();                    // iterator set to start of input circuit copy
     }
     else
     {
         schedp->init(circ, *platformp, nq, nc);                 // fills schedp->graph (dependence graph) from all of circuit
-    
+                                                                // and so also the original circuit can be output to after this
         for( auto & gp : circ )
         {
             scheduled[gp] = false;   // none were scheduled
@@ -2887,7 +2896,6 @@ void SetCircuit(ql::circuit& circ, Scheduler& sched, size_t nq, size_t nc)
         avlist.push_back(schedp->s);
         schedp->set_remaining(ql::forward_scheduling);          // to know criticality
     }
-
     DOUT("Future::SetCircuit [DONE]");
 }
 
@@ -2900,8 +2908,8 @@ bool GetNonQuantumGates(std::list<ql::gate*>& nonqlg)
     std::string maplookaheadopt = ql::options::get("maplookahead");
     if ("no" == maplookaheadopt)
     {
-        ql::gate*   gp = *curr_gatepp;
-        if (curr_gatepp != inCircp->end())
+        ql::gate*   gp = *input_gatepp;
+        if (input_gatepp != input_gatepv.end())
         {
             if (gp->type() == ql::__classical_gate__
                 || gp->type() == ql::__dummy_gate__
@@ -2935,9 +2943,9 @@ bool GetGates(std::list<ql::gate*>& qlg)
     std::string maplookaheadopt = ql::options::get("maplookahead");
     if ("no" == maplookaheadopt)
     {
-        if (curr_gatepp != inCircp->end())
+        if (input_gatepp != input_gatepv.end())
         {
-            qlg.push_back(*curr_gatepp);
+            qlg.push_back(*input_gatepp);
         }
     }
     else
@@ -2957,7 +2965,7 @@ void DoneGate(ql::gate* gp)
     std::string maplookaheadopt = ql::options::get("maplookahead");
     if ("no" == maplookaheadopt)
     {
-        curr_gatepp = std::next(curr_gatepp);
+        input_gatepp = std::next(input_gatepp);
     }
     else
     {
@@ -3042,7 +3050,9 @@ private:
                                     // Initialized by Mapper::Init
                                     // OpenQL wide configuration, all constant after initialization
     ql::quantum_platform platform;  // current platform: topology and gate definitions
-    ql::quantum_kernel   *kernelp;  // current kernel
+    ql::quantum_kernel   *kernelp;  // (copy of) current kernel (class) with free private circuit and methods
+                                    // primarily to create gates in Past; Past is part of Mapper and of each Alter
+                                    
     size_t          nq;             // number of qubits in the platform, number of real qubits
     size_t          nc;             // number of cregs in the platform, number of classical registers
     size_t          cycle_time;     // length in ns of a single cycle of the platform
@@ -3210,28 +3220,28 @@ void RandomInit()
 size_t Draw(size_t count)
 {
     MapperAssert(count >= 1);
-    size_t     c = 0;
+    size_t     res = 0;
     if (count > 1)
     {
         std::string maptiebreakopt = ql::options::get("maptiebreak");
         std::uniform_int_distribution<> dis(0, (count-1));
         if ("random" == maptiebreakopt)
         {
-            c = dis(gen);
-            DOUT(" ... took random draw " << c << " from 0.." << (count-1));
+            res = dis(gen);
+            DOUT(" ... took random draw " << res << " from 0.." << (count-1));
         }
         else if ("last" == maptiebreakopt)
         {
-            c = count-1;
-            DOUT(" ... took last " << c << " from 0.." << (count-1));
+            res = count-1;
+            DOUT(" ... took last " << res << " from 0.." << (count-1));
         }
         else if ("first" == maptiebreakopt)
         {
-            c = 0;
-            DOUT(" ... took first " << c << " from 0.." << (count-1));
+            res = 0;
+            DOUT(" ... took first " << res << " from 0.." << (count-1));
         }
     }
-    return c;
+    return res;
 }
 
 // select Alter determined by strategy defined by mapper options
@@ -3460,19 +3470,21 @@ void MapGates(Future& future, Past& past, ql::circuit* outCircp)
 }
 
 // Map the circuit's gates in the provided context (v2r maps), updating circuit and v2r maps
-void MapCircuit(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
+void MapCircuit(ql::quantum_kernel& kernel, Virt2Real& v2r)
 {
     Future  future;         // future window, presents input in avlist
     Past    mainPast;       // past window
     Scheduler sched;        // sched to take depgraph from
 
     future.Init(&platform);
-    mainPast.Init(&platform, kernelp);
+    future.SetCircuit(kernel.c, sched, nq, nc); // constructs depgraph, initializes avlist, ready for producing gates
+    kernel.c.clear();       // future has copied kernel.c to private data; kernel.c ready for use by new_gate
+    kernelp = &kernel;      // keep kernel to call kernelp->gate() inside Past.new_gate(), to create new gates
 
-    future.SetCircuit(circ, sched, nq, nc); // constructs depgraph, initializes avlist, ready for producing gates
+    mainPast.Init(&platform, kernelp);          // mainPast and Past clones inside Alters ready for generating output schedules into
 
-    ql::circuit outCirc;
-    mainPast.SetOutput(outCirc);// past window will output into outCirc, to be swapped with circ before return
+    ql::circuit outCirc;        // output into outCirc instead of kernel.c since latter is used by new_gate to create gates into
+    mainPast.SetOutput(outCirc);// past window will output into outCirc, to be put into kernel.c before return
     mainPast.ImportV2r(v2r);    // give it the current mapping/state
     // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
     //  mainPast.Print("start mapping");
@@ -3484,8 +3496,8 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
     // if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
     //  mainPast.Print("end mapping");
 
-    // DOUT("... swapping outCirc with circ");
-    circ.swap(outCirc);
+    DOUT("... swapping outCirc with kernel.c, kernel.c contains output circuit");
+    kernel.c.swap(outCirc);
     mainPast.ExportV2r(v2r);
     nswapsadded = mainPast.NumberOfSwapsAdded();
     nmovesadded = mainPast.NumberOfMovesAdded();
@@ -3494,17 +3506,19 @@ void MapCircuit(ql::circuit& circ, std::string& kernel_name, Virt2Real& v2r)
 public:
 
 // decompose all gates that have a definition with _prim appended to its name
-void MakePrimitives(ql::circuit& circ)
+void MakePrimitives(ql::quantum_kernel& kernel)
 {
-    Past    mainPast;
+    DOUT("MakePrimitives circuit ...");
 
+    ql::circuit     input_gatepv = kernel.c;    // copy to allow kernel.c use by Past.new_gate
+    kernel.c.clear();                           // kernel.c ready for use by new_gate
+
+    Past            mainPast;                   // output window in which gates are scheduled
     mainPast.Init(&platform, kernelp);
 
-    // DOUT("MakePrimitives circuit ...");
-
-    ql::circuit outCirc;        // output gate stream
-    mainPast.SetOutput(outCirc);// past window will flush into outCirc
-    for( auto & gp : circ )
+    ql::circuit     outCirc;                    // ultimate output gate stream
+    mainPast.SetOutput(outCirc);                // past window will flush into outCirc
+    for( auto & gp : input_gatepv )
     {
         ql::circuit tmpCirc;
         mainPast.MakePrimitive(gp, tmpCirc);
@@ -3515,9 +3529,9 @@ void MakePrimitives(ql::circuit& circ)
     }
     mainPast.FlushAll();
     mainPast.Out(outCirc);
-    circ.swap(outCirc);
+    kernel.c.swap(outCirc);
 
-    // DOUT("MakePrimitives circuit [DONE]");
+    DOUT("MakePrimitives circuit [DONE]");
 }   // end MakePrimitives
 
 // alternative bundler using gate->cycle attribute instead of lemon's cycle map
@@ -3574,9 +3588,9 @@ void Map(ql::quantum_kernel& kernel)
     DOUT("Mapping kernel ...");
     DOUT("... kernel original virtual number of qubits=" << kernel.qubit_count);
     nc = kernel.creg_count;     // in absence of platform creg_count, take it from kernel, i.e. from OpenQL program
-    kernelp = &kernel;          // keep kernel to call kernel private methods, e.g. to create gates
+    kernelp = NULL;             // no new_gates until kernel.c has been copied
 
-    Virt2Real   v2r;        // current mapping while mapping this kernel
+    Virt2Real   v2r;            // current mapping while mapping this kernel
 
     // unify all incoming v2rs into v2r to compute kernel input mapping;
     // but until inter-kernel mapping is implemented, take program initial mapping for it
@@ -3588,10 +3602,9 @@ void Map(ql::quantum_kernel& kernel)
     v2r.Export(rs_in);   // from v2r to caller for reporting
 
     std::string initialplaceopt = ql::options::get("initialplace");
-#ifdef INITIALPLACE
-    std::string initialplaceprefixopt = ql::options::get("initialplaceprefix");
     if("no" != initialplaceopt)
     {
+#ifdef INITIALPLACE
         std::string initialplaceprefixopt = ql::options::get("initialplaceprefix");
         DOUT("InitialPlace: kernel=" << kernel.name << " initialplace=" << initialplaceopt << " initialplaceprefix=" << initialplaceprefixopt << " [START]");
         InitialPlace    ip;             // initial placer facility
@@ -3601,19 +3614,19 @@ void Map(ql::quantum_kernel& kernel)
         ip.Init(&grid, &platform);
         ip.Place(kernel.c, v2r, ipok, iptimetaken, initialplaceopt); // compute mapping (in v2r) using ip model, may fail
         DOUT("InitialPlace: kernel=" << kernel.name << " initialplace=" << initialplaceopt << " initialplaceprefix=" << initialplaceprefixopt << " result=" << ip.ipr2string(ipok) << " iptimetaken=" << iptimetaken << " seconds [DONE]");
+#else
+        DOUT("InitialPlace code commented out; please uncomment #define INITIALPLACE in src/mapper.h when wanted [DONE]");
+        WOUT("InitialPlace code commented out; please uncomment #define INITIALPLACE in src/mapper.h when wanted [DONE]");
+#endif
     }
     if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
         v2r.Print("After InitialPlace");
-#else
-    DOUT("InitialPlace code commented out; please uncomment #define INITIALPLACE in src/mapper.h when wanted [DONE]");
-    WOUT("InitialPlace code commented out; please uncomment #define INITIALPLACE in src/mapper.h when wanted [DONE]");
-#endif
 
-    MapCircuit(kernel.c, kernel.name, v2r);       // updates circ with swaps, maps all gates, updates v2r map
+    MapCircuit(kernel, v2r);        // updates kernel.c with swaps, maps all gates, updates v2r map
     if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
         v2r.Print("After heuristics");
 
-    MakePrimitives(kernel.c);       // decompose to primitives as specified in the config file
+    MakePrimitives(kernel);         // decompose to primitives as specified in the config file
 
     kernel.qubit_count = nq;        // bluntly copy nq (==#real qubits), so that all kernels get the same qubit_count
     v2r.Export(v2r_out);     // from v2r to caller for reporting

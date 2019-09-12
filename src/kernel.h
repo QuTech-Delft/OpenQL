@@ -872,11 +872,11 @@ public:
     //
     // the following order of checks is used below:
     // check if specialized composite gate is available
-    //      e.g. whether "cz q0 q3" is available as composite gate, where subinstructions are available as custom gates
+    //      e.g. whether "cz q0,q3" is available as composite gate, where subinstructions are available as custom gates
     // if not, check if parameterized composite gate is available
-    //      e.g. whether "cz %0 %1" is in gate_definition, where subinstructions are available as custom gates
+    //      e.g. whether "cz %0,%1" is in gate_definition, where subinstructions are available as custom gates
     // if not, check if a specialized custom gate is available
-    //      e.g. whether "cz q0 q3" is available as non-composite gate
+    //      e.g. whether "cz q0,q3" is available as non-composite gate
     // if not, check if a parameterized custom gate is available
     //      e.g. whether "cz" is in gate_definition as non-composite gate
     // if not, check if a default gate is available
@@ -885,22 +885,11 @@ public:
     void gate(std::string gname, std::vector<size_t> qubits = {},
               std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
     {
-        if (!gate_nonfatal(gname, qubits, cregs, duration, angle))
-        {
-            FATAL("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
-        }
-    }
-
-    bool gate_nonfatal(std::string gname, std::vector<size_t> qubits = {},
-              std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
-    {
-        bool added = false;
         for(auto & qno : qubits)
         {
             if( qno >= qubit_count )
             {
-                EOUT("Number of qubits in platform: " << std::to_string(qubit_count) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
-                throw ql::exception("[x] error : ql::kernel::gate() : Number of qubits in platform: "+std::to_string(qubit_count)+", specified qubit numbers out of range for gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" !",false);
+                FATAL("Number of qubits in platform: " << std::to_string(qubit_count) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
             }
         }
 
@@ -908,11 +897,20 @@ public:
         {
             if( cno >= creg_count )
             {
-                EOUT("Out of range operand(s) for '" << gname << "' with " << ql::utils::to_string(cregs,"cregs") );
-                throw ql::exception("Out of range operand(s) for '"+gname+"' with " +ql::utils::to_string(cregs,"cregs")+" !",false);
+                FATAL("Out of range operand(s) for '" << gname << "' with " << ql::utils::to_string(cregs,"cregs") );
             }
         }
 
+        if (!gate_nonfatal(gname, qubits, cregs, duration, angle))
+        {
+            FATAL("Unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+        }
+    }
+
+    bool gate_nonfatal(std::string gname, std::vector<size_t> qubits = {},
+              std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
+    {
+        bool added = false;
         // check if specialized composite gate is available
         // if not, check if parameterized composite gate is available
         // if not, check if a specialized custom gate is available
