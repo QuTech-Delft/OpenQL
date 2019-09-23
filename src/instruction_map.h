@@ -12,6 +12,7 @@
 #include <fstream>
 #include <map>
 
+#include <compile_options.h>
 #include "utils.h"
 #include "gate.h"
 
@@ -21,7 +22,7 @@ namespace ql
 typedef std::string qasm_inst_t;
 typedef std::string ucode_inst_t;
 
-typedef std::map<std::string,ql::custom_gate *> instruction_map_t;
+typedef std::map<std::string, ql::custom_gate *> instruction_map_t;
 #if OPT_MICRO_CODE
 typedef std::map<qasm_inst_t, ucode_inst_t> dep_instruction_map_t;
 #endif
@@ -29,8 +30,8 @@ typedef std::map<qasm_inst_t, ucode_inst_t> dep_instruction_map_t;
 
 namespace utils
 {
-bool format_string(std::string& s);
-void replace_all(std::string &str, std::string seq, std::string rep);
+    bool format_string(std::string& s);
+    void replace_all(std::string &str, std::string seq, std::string rep);
 }
 
 
@@ -154,8 +155,8 @@ inline json load_json(std::string file_name)
     return j;
 }
 
-
-int load_instructions(std::map<std::string, custom_gate *>& instruction_map, std::string file_name="instructions.json")
+// FIXME: similar to custom_gate::load()
+inline int load_instructions(instruction_map_t& instruction_map, std::string file_name="instructions.json")
 {
     json instructions = load_json(file_name);
     // std::cout << instructions.dump(4) << std::endl;
@@ -175,9 +176,10 @@ int load_instructions(std::map<std::string, custom_gate *>& instruction_map, std
         instruction_type_t type = (t == "rf" ? rf_t : flux_t );
         g->operation_type = type;
         g->duration = instr["duration"];
-        // g->latency = instr["latency"];
+#if OPT_USED_HARDWARE
         strings_t hdw = instr["hardware"];
         g->used_hardware.assign(hdw.begin(), hdw.end());
+#endif
         auto mat = instr["matrix"];
         g->m.m[0] = complex_t(mat[0][0], mat[0][1]);
         g->m.m[1] = complex_t(mat[1][0], mat[1][1]);

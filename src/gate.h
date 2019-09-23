@@ -9,8 +9,6 @@
 #ifndef GATE_H
 #define GATE_H
 
-#define OPT_MICRO_CODE  0       // enable old support for CBOX microcode
-
 #include <fstream>
 #include <iomanip>
 #include <complex>
@@ -19,11 +17,11 @@
 #include <sstream>
 #include <map>
 
+#include <compile_options.h>
 #include <matrix.h>
 #include <json.h>
-
-#include <openql.h>
 #include <exception.h>
+#include <utils.h>
 
 using json = nlohmann::json;
 
@@ -207,17 +205,21 @@ const complex_t nop_c      [] /*__attribute__((aligned(64)))*/ =
 #undef __c
 
 
+
+
 /**
  * gate interface
  */
 class gate
 {
 public:
+#if OPT_UNFINISHED_OPTIMIZATION
     bool optimization_enabled = true;
+#endif
     std::string name = "";
     std::vector<size_t> operands;
     std::vector<size_t> creg_operands;
-    size_t duration;                         // to do change attribute name "duration" to "duration" (duration is used to describe hardware duration)
+    size_t duration;
     double angle;                            // for arbitrary rotations
     size_t  cycle;                           // set after scheduling with resulting cycle in which gate was scheduled
     virtual instruction_t qasm()       = 0;
@@ -228,6 +230,10 @@ public:
     virtual cmat_t        mat()        = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
 };
 
+
+/****************************************************************************\
+| Standard gates
+\****************************************************************************/
 
 /**
  * identity
@@ -1245,6 +1251,10 @@ public:
 };
 
 
+/****************************************************************************\
+| Special gates
+\****************************************************************************/
+
 class wait : public gate
 {
 public:
@@ -1391,6 +1401,7 @@ public:
 /**
  * custom gate support
  */
+// FIXME: move to separate file
 class custom_gate : public gate
 {
 public:
@@ -1400,7 +1411,9 @@ public:
     ucode_sequence_t    qumis;            // microcode sequence
 #endif
     instruction_type_t  operation_type;   // operation type : rf/flux
+#if OPT_USED_HARDWARE
     strings_t           used_hardware;    // used hardware
+#endif
     std::string         arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
 
 public:
@@ -1426,7 +1439,9 @@ public:
 #endif
         operation_type = g.operation_type;
         duration  = g.duration;
+#if OPT_USED_HARDWARE
         used_hardware.assign(g.used_hardware.begin(), g.used_hardware.end());
+#endif
         m.m[0] = g.m.m[0];
         m.m[1] = g.m.m[1];
         m.m[2] = g.m.m[2];
@@ -1447,8 +1462,10 @@ public:
     {
         this->name = name;
         this->duration = duration;
+#if OPT_USED_HARDWARE
         for (size_t i=0; i<hardware.size(); i++)
             used_hardware.push_back(hardware[i]);
+#endif
     }
 
     /**
@@ -1532,9 +1549,11 @@ public:
             // operation_type = instr["type"];
             l_attr = "duration";
             duration = instr["duration"];
+#if OPT_USED_HARDWARE
             // FIXME: code commented out:
             // strings_t hdw = instr["hardware"];
             // used_hardware.assign(hdw.begin(), hdw.end());
+#endif
             l_attr = "matrix";
             auto mat = instr["matrix"];
             m.m[0] = complex_t(mat[0][0], mat[0][1]);
@@ -1644,7 +1663,6 @@ public:
 class composite_gate : public custom_gate
 {
 public:
-    double angle; // TODO not needed, should be removed, check it!!!
     cmat_t m;
     std::vector<gate *> gs;
 
