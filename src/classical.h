@@ -17,6 +17,7 @@
 #include <map>
 #include <stack>
 
+#include <compile_options.h>
 #include <utils.h>
 #include <str.h>
 #include <gate.h>
@@ -36,12 +37,12 @@ enum class operand_type_t
 };
 
 
-class ids
+class ids   // IDs for classical registers
 {
 public:
     int max_id;
     std::stack<int> available_ids;
-    ids(int max = 28)   // FIXME: random constant
+    ids(int max = 28)   // FIXME: random constant, should be based on platform
     {
         max_id = max;
         for(int i=max_id-1; i>=0; i--)
@@ -52,7 +53,7 @@ public:
     {
         if(available_ids.empty())
         {
-            EOUT("No id available");
+            FATAL("No classical register available, built-in max is " << max_id);
         }
         int id = available_ids.top();
         available_ids.pop();

@@ -5,18 +5,19 @@
  * @date    15/03/2010
  */
 
-
+#include <exception.h>
 
 
 /**
  * exception implementation
  */
+namespace ql {
 
-exception::exception(const std::string &message, 
+exception::exception(const std::string &message,
                      bool system_message)
-                     throw() : user_message(message) 
+                     throw() : user_message(message)
 {
-  if (system_message) 
+  if (system_message)
   {
     user_message.append(": ");
     user_message.append(strerror(errno));
@@ -27,7 +28,7 @@ exception::exception(const std::string &message,
  * dtor
  */
 
-exception::~exception() throw() 
+exception::~exception() throw()
 {
 }
 
@@ -35,8 +36,9 @@ exception::~exception() throw()
  * explainatory message
  */
 
-const char *exception::what() const throw() 
+const char *exception::what() const throw()
 {
   return user_message.c_str();
 }
 
+} // namespace ql

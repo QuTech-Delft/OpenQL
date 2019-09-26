@@ -33,7 +33,7 @@ namespace ql
 namespace arch
 {
 // FIXME: superseded by platform.h::get_instruction_name()
-std::string get_cc_light_instruction_name(std::string & id, const ql::quantum_platform & platform)
+inline std::string get_cc_light_instruction_name(std::string & id, const ql::quantum_platform & platform)
 {
     std::string cc_light_instr_name;
     auto it = platform.instruction_map.find(id);
@@ -57,7 +57,7 @@ std::string get_cc_light_instruction_name(std::string & id, const ql::quantum_pl
 }
 
 
-ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
+inline ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
     const ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Scheduling CC-Light instructions ...");
@@ -145,7 +145,7 @@ ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
 }
 
 
-ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
+inline ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
     const ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Resource constraint scheduling of CC-Light instructions ...");
