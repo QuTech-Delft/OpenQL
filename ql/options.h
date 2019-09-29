@@ -44,6 +44,8 @@ namespace ql
           opt_name2opt_val["mapdecomposer"] = "yes";
           opt_name2opt_val["mappathselect"] = "all";
           opt_name2opt_val["maplookahead"] = "noroutingfirst";
+        //   opt_name2opt_val["metrics_fidelity_estimator"] = "bounded_fidelity";
+        //   opt_name2opt_val["metrics_output_mode"] = "gaussian";
 
           // add options with default values and list of possible values
           app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"], 
@@ -65,6 +67,10 @@ namespace ql
           app->add_set_ignore_case("--mapdecomposer", opt_name2opt_val["mapdecomposer"], {"no", "yes"}, "Decompose after mapper", true);
           app->add_set_ignore_case("--mappathselect", opt_name2opt_val["mappathselect"], {"all", "borders"}, "Which paths: all or borders", true);
           app->add_set_ignore_case("--maplookahead", opt_name2opt_val["maplookahead"], {"no", "critical", "noroutingfirst", "all"}, "Strategy wrt selecting next gate(s) to map", true);
+      
+        //   app->add_set_ignore_case("--metrics_fidelity_estimator", opt_name2opt_val["metrics_fidelity_estimator"], {"bounded_fidelity"}, "Fidelity estimator selection", true);
+        //   app->add_set_ignore_case("--metrics_output_mode", opt_name2opt_val["metrics_output_mode"], {"worst", "gaussian"}, "Calculate single value metric from list of fidelities", true);
+
       }
 
       void print_current_values()
@@ -81,7 +87,9 @@ namespace ql
                     << "mappathselect: "    << opt_name2opt_val["mappathselect"] << std::endl
                     << "maplookahead: "     << opt_name2opt_val["maplookahead"] << std::endl
                     << "scheduler_post179: " << opt_name2opt_val["scheduler_post179"] << std::endl
-                    << "scheduler_commute: " << opt_name2opt_val["scheduler_uniform"] << std::endl;
+                    << "scheduler_commute: " << opt_name2opt_val["scheduler_uniform"] << std::endl
+                    // << "metrics_fidelity_estimator: " << opt_name2opt_val["metrics_fidelity_estimator"] << std::endl
+                    // << "metrics_output_mode: " << opt_name2opt_val["metrics_output_mode"] << std::endl;
 	  ;
       }
 
