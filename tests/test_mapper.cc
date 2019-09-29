@@ -205,8 +205,8 @@ test_oneD4(std::string v, std::string param1, std::string param2, std::string pa
         IOUT("... kernel.bundles:" << ql::ir::qasm(kernel.bundles));
     }
 
-    IOUT(k.qasm());
-    for (auto gate : k.c )
+    IOUT(prog.kernels.at(0).qasm());
+    for (auto gate : prog.kernels.at(0).c )
         IOUT("Gate " + gate->name + "(" +  to_string(gate->operands.at(0)) + ") at cycle " + to_string(gate->cycle) );
 #endif
 }

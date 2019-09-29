@@ -11,6 +11,7 @@
 
 #include <random>
 #include <chrono>
+<<<<<<< HEAD:src/mapper.h
 #include <ctime>
 #include <ratio>
 #include "utils.h"
@@ -20,6 +21,15 @@
 #include "gate.h"
 #include "scheduler.h"
 //#include "metrics.h"
+=======
+#include "ql/utils.h"
+#include "ql/platform.h"
+#include "ql/kernel.h"
+#include "ql/arch/cc_light_resource_manager.h"
+#include "ql/gate.h"
+#include "ql/scheduler.h"
+#include "ql/metrics.h"
+>>>>>>> 32a3c87615177fd24061b9053fcc88d539d1b086:ql/mapper.h
 
 // Note on the use of constructors and Init functions for classes of the mapper
 // -----------------------------------------------------------------------------
