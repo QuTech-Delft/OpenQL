@@ -551,7 +551,7 @@ public:
         return result;
     }
 
-    // if a specialized custom gate ("e.g. cz q0 q4") is available, add it to circuit and return true
+    // if a specialized custom gate ("e.g. cz q0,q4") is available, add it to circuit and return true
     // if a parameterized custom gate ("e.g. cz") is available, add it to circuit and return true
     //
     // note that there is no check for the found gate being a composite gate
@@ -638,7 +638,7 @@ public:
         }
     }
 
-    // if specialized composed gate: "e.g. cz q0 q3" available, with composition of subinstructions, return true
+    // if specialized composed gate: "e.g. cz q0,q3" available, with composition of subinstructions, return true
     //      also check each subinstruction for presence of a custom_gate (or a default gate)
     // otherwise, return false
     // don't add anything to circuit
@@ -859,29 +859,10 @@ public:
 
     /**
      * custom gate with arbitrary number of operands
+     * check qubit/creg indices against platform parameters; fail fatally if an index is out of range
+     * find matching gate in kernel's and platform's gate_definition; when no match, fail
+     * return the gate (or its decomposition) by appending it to kernel.c, the current kernel's circuit
      */
-    // terminology:
-    // - composite/custom/default (in decreasing order of priority during lookup in the gate definition):
-    //      - composite gate: a gate definition with subinstructions; when matched, decompose and add the subinstructions
-    //      - custom gate: a fully configurable gate definition, with all kinds of attributes; there is no decomposition
-    //      - default gate: a gate definition build-in in this compiler; see above for the definition
-    //          deprecated; setting option "use_default_gates" from "yes" to "no" turns it off
-    // - specialized/parameterized (in decreasing order of priority during lookup in the gate definition)
-    //      - specialized: a gate definition that is special for its operands, i.e. the operand qubits must match
-    //      - parameterized: a gate definition that can be used for all possible qubit operands
-    //
-    // the following order of checks is used below:
-    // check if specialized composite gate is available
-    //      e.g. whether "cz q0,q3" is available as composite gate, where subinstructions are available as custom gates
-    // if not, check if parameterized composite gate is available
-    //      e.g. whether "cz %0,%1" is in gate_definition, where subinstructions are available as custom gates
-    // if not, check if a specialized custom gate is available
-    //      e.g. whether "cz q0,q3" is available as non-composite gate
-    // if not, check if a parameterized custom gate is available
-    //      e.g. whether "cz" is in gate_definition as non-composite gate
-    // if not, check if a default gate is available
-    //      e.g. whether "cz" is available as default gate
-    // if not, then error
     void gate(std::string gname, std::vector<size_t> qubits = {},
               std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
     {
@@ -907,6 +888,32 @@ public:
         }
     }
 
+    // terminology:
+    // - composite/custom/default (in decreasing order of priority during lookup in the gate definition):
+    //      - composite gate: a gate definition with subinstructions; when matched, decompose and add the subinstructions
+    //      - custom gate: a fully configurable gate definition, with all kinds of attributes; there is no decomposition
+    //      - default gate: a gate definition build-in in this compiler; see above for the definition
+    //          deprecated; setting option "use_default_gates" from "yes" to "no" turns it off
+    // - specialized/parameterized (in decreasing order of priority during lookup in the gate definition)
+    //      - specialized: a gate definition that is special for its operands, i.e. the operand qubits must match
+    //      - parameterized: a gate definition that can be used for all possible qubit operands
+    //
+    // the following order of checks is used below:
+    // check if specialized composite gate is available
+    //      e.g. whether "cz q0,q3" is available as composite gate, where subinstructions are available as custom gates
+    // if not, check if parameterized composite gate is available
+    //      e.g. whether "cz %0,%1" is in gate_definition, where subinstructions are available as custom gates
+    // if not, check if a specialized custom gate is available
+    //      e.g. whether "cz q0,q3" is available as non-composite gate
+    // if not, check if a parameterized custom gate is available
+    //      e.g. whether "cz" is in gate_definition as non-composite gate
+    // if not, check if a default gate is available
+    //      e.g. whether "cz" is available as default gate
+    // if not, then error
+    /**
+     * custom gate with arbitrary number of operands
+     * as gate above but return whether gate was successfully matched in gate_definition, next to gate in kernel.c
+     */
     bool gate_nonfatal(std::string gname, std::vector<size_t> qubits = {},
               std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
     {

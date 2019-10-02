@@ -84,6 +84,16 @@
             "cc_light_instr": "cz",
             "cc_light_opcode": 1
         },
+        "move": {
+            "duration": 2,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "cz",
+            "cc_light_opcode": 1
+        },
         "swap": {
             "duration": 2,
             "latency": 0,
@@ -258,6 +268,17 @@
     },
 
     "gate_decomposition": {
+        "rx180 %0" : ["x %0"],
+        "ry180 %0" : ["x %0"],
+        "rx90 %0" : ["x %0"],
+        "ry90 %0" : ["x %0"],
+        "mrx90 %0" : ["x %0"],
+        "mry90 %0" : ["x %0"],
+        "rx45 %0" : ["x %0"],
+        "ry45 %0" : ["x %0"],
+        "mrx45 %0" : ["x %0"],
+        "mry45 %0" : ["x %0"],
+
 		"cz_real q0 q1": [ "blue q0 q1"],
 		"cz_real q1 q2": [ "red q1 q2"],
 		"cz_real q0 q3": [ "blue q0 q3"],
