@@ -2489,6 +2489,23 @@ public:
         }
     }
 
+    ql::gate* find_mostcritical(std::list<ql::gate*>& lg)
+    {
+        size_t      maxRemain = 0;
+        ql::gate*   mostCriticalGate = NULL;
+        for ( auto gp : lg)
+        {
+            size_t gr = remaining[node[gp]];
+            if (gr > maxRemain)
+            {
+                mostCriticalGate = gp;
+                maxRemain = gr;
+            }
+        }
+        DOUT("... most critical gate: " << mostCriticalGate->qasm() << " with remaining=" << maxRemain);
+        return mostCriticalGate;
+    }
+
     // ASAP/ALAP list scheduling support code with RC
     // Uses an "available list" (avlist) as interface between dependence graph and scheduler
     // the avlist contains all nodes that wrt their dependences can be scheduled:

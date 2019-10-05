@@ -15,8 +15,8 @@ void
 test_rc(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -32,8 +32,9 @@ test_rc(std::string v, std::string param1, std::string param2, std::string param
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectswaps", param2);
-    ql::options::set("mapreverseswap", param3);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -43,8 +44,8 @@ void
 test_someNN(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -78,8 +79,9 @@ test_someNN(std::string v, std::string param1, std::string param2, std::string p
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectswaps", param2);
-    ql::options::set("mapreverseswap", param3);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -89,8 +91,8 @@ void
 test_manyNN(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -124,8 +126,9 @@ test_manyNN(std::string v, std::string param1, std::string param2, std::string p
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectswaps", param2);
-    ql::options::set("mapreverseswap", param3);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -135,8 +138,8 @@ void
 test_oneD2(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 4;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -157,8 +160,9 @@ test_oneD2(std::string v, std::string param1, std::string param2, std::string pa
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectswaps", param2);
-    ql::options::set("mapreverseswap", param3);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -168,8 +172,8 @@ void
 test_oneD4(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 5;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -190,54 +194,9 @@ test_oneD4(std::string v, std::string param1, std::string param2, std::string pa
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectswaps", param2);
-    ql::options::set("mapreverseswap", param3);
-
-    prog.compile( );
-
-#undef DIOGO
-#ifdef DIOGO
-    IOUT("AFTER test_oneD4Diogo prog.compile()");
-    for(auto &kernel : prog.kernels)
-    {
-        IOUT("... kernel.name:" << kernel.name);
-        IOUT("... kernel.c:" << kernel.qasm());
-        IOUT("... kernel.bundles:" << ql::ir::qasm(kernel.bundles));
-    }
-
-    IOUT(prog.kernels.at(0).qasm());
-    for (auto gate : prog.kernels.at(0).c )
-        IOUT("Gate " + gate->name + "(" +  to_string(gate->operands.at(0)) + ") at cycle " + to_string(gate->cycle) );
-#endif
-}
-
-// all possible cnots in s7, in lexicographic order
-// requires many swaps
-void
-test_allD(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
-{
-    int n = 7;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
-    float sweep_points[] = { 1 };
-
-    ql::quantum_platform starmon("starmon", "test_mapper.json");
-    ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
-
-    for (int j=0; j<n; j++) { k.gate("x", j); }
-
-    for (int i=0; i<n; i++) { for (int j=0; j<n; j++) { if (i != j) { k.gate("cnot", i,j); } } }
-
-    for (int j=0; j<n; j++) { k.gate("x", j); }
-
-    prog.add(k);
-
-    ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectswaps", param2);
-    ql::options::set("mapreverseswap", param3);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -250,8 +209,8 @@ void
 test_allDopt(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -330,8 +289,9 @@ test_allDopt(std::string v, std::string param1, std::string param2, std::string 
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectswaps", param2);
-    ql::options::set("mapreverseswap", param3);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -343,8 +303,8 @@ void
 test_string(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper.json");
@@ -369,8 +329,41 @@ test_string(std::string v, std::string param1, std::string param2, std::string p
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectswaps", param2);
-    ql::options::set("mapreverseswap", param3);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
+
+    prog.compile( );
+}
+
+// all possible cnots in s7, in lexicographic order
+// requires many swaps
+void
+test_allD(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
+{
+    int n = 7;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    float sweep_points[] = { 1 };
+
+    ql::quantum_platform starmon("starmon", "test_mapper.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, n, 0);
+    ql::quantum_kernel k(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
+    for (int j=0; j<n; j++) { k.gate("x", j); }
+
+    for (int i=0; i<n; i++) { for (int j=0; j<n; j++) { if (i != j) { k.gate("cnot", i,j); } } }
+
+    for (int j=0; j<n; j++) { k.gate("x", j); }
+
+    prog.add(k);
+
+    ql::options::set("maplookahead", param1);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -382,8 +375,8 @@ void
 test_daniel2(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 6;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     float sweep_points[] = { 1, 2 };
 
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
@@ -631,8 +624,9 @@ test_daniel2(std::string v, std::string param1, std::string param2, std::string 
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectswaps", param2);
-    ql::options::set("mapreverseswap", param3);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -641,8 +635,8 @@ void
 test_lingling5esm(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
@@ -786,8 +780,9 @@ test_lingling5esm(std::string v, std::string param1, std::string param2, std::st
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectswaps", param2);
-    ql::options::set("mapreverseswap", param3);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -796,8 +791,8 @@ void
 test_lingling7esm(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 9;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_mapselectswaps=" + param2 + "_mapreverseswap=" + param3;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
@@ -925,8 +920,60 @@ test_lingling7esm(std::string v, std::string param1, std::string param2, std::st
     prog.add(k);
 
     ql::options::set("maplookahead", param1);
-    ql::options::set("mapselectswaps", param2);
-    ql::options::set("mapreverseswap", param3);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
+
+    prog.compile( );
+}
+
+void
+test_maxcut(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
+{
+    int n = 8;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    float sweep_points[] = { 1 };
+
+    ql::quantum_platform starmon("starmon", "test_rig.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, n, 0);
+    ql::quantum_kernel k(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
+    k.gate("cz", 1,4);
+    k.gate("cz", 1,3);
+    k.gate("cz", 3,4);
+    k.gate("cz", 3,7);
+    k.gate("cz", 4,7);
+    k.gate("cz", 6,7);
+    k.gate("cz", 5,6);
+    k.gate("cz", 1,5);
+
+    k.gate("x", 1);
+    k.gate("x", 3);
+    k.gate("x", 4);
+    k.gate("x", 5);
+    k.gate("x", 6);
+    k.gate("x", 7);
+
+    /*
+    k.gate("cz", 1,4);
+    k.gate("cz", 1,3);
+    k.gate("cz", 3,4);
+    k.gate("cz", 3,7);
+    k.gate("cz", 4,7);
+    k.gate("cz", 6,7);
+    k.gate("cz", 5,6);
+    k.gate("cz", 1,5);
+    */
+
+    prog.add(k);
+
+    ql::options::set("maplookahead", param1);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
 
     prog.compile( );
 }
@@ -934,8 +981,9 @@ test_lingling7esm(std::string v, std::string param1, std::string param2, std::st
 
 int main(int argc, char ** argv)
 {
-    ql::utils::logger::set_log_level("LOG_DEBUG");
-    // ql::utils::logger::set_log_level("LOG_NOTHING");
+    // ql::utils::logger::set_log_level("LOG_DEBUG");
+    ql::utils::logger::set_log_level("LOG_NOTHING");
+
     ql::options::set("write_qasm_files", "yes"); 
     ql::options::set("write_report_files", "yes"); 
     ql::options::set("print_dot_graphs", "yes"); 
@@ -944,12 +992,15 @@ int main(int argc, char ** argv)
     ql::options::set("mapper", "minextendrc"); 
     ql::options::set("mapinitone2one", "yes"); 
 //parameter1  ql::options::set("maplookahead", "noroutingfirst");
-//parameter2  ql::options::set("mapselectswaps", "all");
-    ql::options::set("initialplace", "1m"); 
-    ql::options::set("initialplaceprefix", "10"); 
+    ql::options::set("mapselectswaps", "all");
+    ql::options::set("initialplace", "no"); 
+    ql::options::set("initialplace2qhorizon", "10"); 
     ql::options::set("mappathselect", "all"); 
     ql::options::set("mapusemoves", "yes"); 
-//parameter3  ql::options::set("mapreverseswap", "yes"); 
+    ql::options::set("mapreverseswap", "yes");
+//parameter3  ql::options::set("mapselectmaxlevel", "0"); 
+//parameter2  ql::options::set("maprecNN2q", "no"); 
+//parameter4  ql::options::set("mapselectmaxwidth", "min"); 
     ql::options::set("maptiebreak", "first"); 
 
     ql::options::set("clifford_postmapper", "yes"); 
@@ -958,93 +1009,268 @@ int main(int argc, char ** argv)
     ql::options::set("scheduler_commute", "yes");
     ql::options::set("prescheduler", "no");
 
+#ifdef  RUNALL
 //  NN:
-//  test_rc("rc", "no", "no", "yes", "no");
-//  test_someNN("someNN", "no", "no", "yes", "yes");
+    test_rc("rc", "no", "no", "yes", "no");
+    test_someNN("someNN", "no", "no", "yes", "yes");
 
 //  nonNN but solvable by Initial Placement:
-//  test_oneD2("oneD2", "yes", "yes", "yes", "yes");
-//  test_oneD4("oneD4", "yes", "yes", "yes", "yes");
+    test_oneD2("oneD2", "noroutingfirst", "no", "no", "yes");
+    test_oneD2("oneD2", "noroutingfirst", "no", "yes", "yes");
+    test_oneD2("oneD2", "all", "no", "no", "yes");
+    test_oneD2("oneD2", "all", "no", "yes", "yes");
+    test_oneD4("oneD4", "yes", "yes", "yes", "yes");
+#endif // RUNALL
 
-    test_string("string", "all", "all", "no", "yes");
-    test_string("string", "all", "all", "yes", "yes");
-    test_string("string", "all", "earliest", "no", "yes");
-    test_string("string", "all", "earliest", "yes", "yes");
-    test_string("string", "all", "one", "no", "yes");
-    test_string("string", "all", "one", "yes", "yes");
-    test_string("string", "noroutingfirst", "all", "no", "yes");
-    test_string("string", "noroutingfirst", "all", "yes", "yes");
-    test_string("string", "noroutingfirst", "earliest", "no", "yes");
-    test_string("string", "noroutingfirst", "earliest", "yes", "yes");
-    test_string("string", "noroutingfirst", "one", "no", "yes");
-    test_string("string", "noroutingfirst", "one", "yes", "yes");
+    test_string("string", "noroutingfirst", "no", "0", "min");
+    test_string("string", "all", "no", "0", "min");
+    test_string("string", "all", "no", "1", "min");
+    test_string("string", "all", "no", "2", "min");
+    test_string("string", "all", "no", "3", "min");
+    test_string("string", "all", "no", "0", "minplusone");
+    test_string("string", "all", "no", "1", "minplusone");
+    test_string("string", "all", "no", "2", "minplusone");
+    test_string("string", "all", "no", "3", "minplusone");
+    test_string("string", "all", "no", "0", "minplushalfmin");
+    test_string("string", "all", "no", "1", "minplushalfmin");
+    test_string("string", "all", "no", "2", "minplushalfmin");
+    test_string("string", "all", "no", "3", "minplushalfmin");
+    test_string("string", "all", "no", "0", "minplusmin");
+    test_string("string", "all", "no", "1", "minplusmin");
+    test_string("string", "all", "no", "2", "minplusmin");
+    test_string("string", "all", "no", "3", "minplusmin");
+    test_string("string", "all", "yes", "0", "min");
+    test_string("string", "all", "yes", "1", "min");
+    test_string("string", "all", "yes", "2", "min");
+    test_string("string", "all", "yes", "3", "min");
+    test_string("string", "all", "yes", "0", "minplusone");
+    test_string("string", "all", "yes", "1", "minplusone");
+    test_string("string", "all", "yes", "2", "minplusone");
+    test_string("string", "all", "yes", "3", "minplusone");
+    test_string("string", "all", "yes", "0", "minplushalfmin");
+    test_string("string", "all", "yes", "1", "minplushalfmin");
+    test_string("string", "all", "yes", "2", "minplushalfmin");
+    test_string("string", "all", "yes", "3", "minplushalfmin");
+    test_string("string", "all", "yes", "0", "minplusmin");
+    test_string("string", "all", "yes", "1", "minplusmin");
+    test_string("string", "all", "yes", "2", "minplusmin");
+    test_string("string", "all", "yes", "3", "minplusmin");
 
 //  nonNN, still not too large:
-    test_allD("allD", "all", "all", "no", "yes");
-    test_allD("allD", "all", "all", "yes", "yes");
-    test_allD("allD", "all", "earliest", "no", "yes");
-    test_allD("allD", "all", "earliest", "yes", "yes");
-    test_allD("allD", "all", "one", "no", "yes");
-    test_allD("allD", "all", "one", "yes", "yes");
-    test_allD("allD", "noroutingfirst", "all", "no", "yes");
-    test_allD("allD", "noroutingfirst", "all", "yes", "yes");
-    test_allD("allD", "noroutingfirst", "earliest", "no", "yes");
-    test_allD("allD", "noroutingfirst", "earliest", "yes", "yes");
-    test_allD("allD", "noroutingfirst", "one", "no", "yes");
-    test_allD("allD", "noroutingfirst", "one", "yes", "yes");
+    test_allD("allD", "noroutingfirst", "no", "0", "min");
+    test_allD("allD", "all", "no", "0", "min");
+    test_allD("allD", "all", "no", "1", "min");
+    test_allD("allD", "all", "no", "2", "min");
+    test_allD("allD", "all", "no", "3", "min");
+    test_allD("allD", "all", "no", "0", "minplusone");
+    test_allD("allD", "all", "no", "1", "minplusone");
+    test_allD("allD", "all", "no", "2", "minplusone");
+    test_allD("allD", "all", "no", "3", "minplusone");
+    test_allD("allD", "all", "no", "0", "minplushalfmin");
+    test_allD("allD", "all", "no", "1", "minplushalfmin");
+    test_allD("allD", "all", "no", "2", "minplushalfmin");
+    test_allD("allD", "all", "no", "3", "minplushalfmin");
+    test_allD("allD", "all", "no", "0", "minplusmin");
+    test_allD("allD", "all", "no", "1", "minplusmin");
+    test_allD("allD", "all", "no", "2", "minplusmin");
+    test_allD("allD", "all", "no", "3", "minplusmin");
+    test_allD("allD", "noroutingfirst", "no", "0", "min");
+    test_allD("allD", "all", "yes", "0", "min");
+    test_allD("allD", "all", "yes", "1", "min");
+    test_allD("allD", "all", "yes", "2", "min");
+    test_allD("allD", "all", "yes", "3", "min");
+    test_allD("allD", "all", "yes", "0", "minplusone");
+    test_allD("allD", "all", "yes", "1", "minplusone");
+    test_allD("allD", "all", "yes", "2", "minplusone");
+    test_allD("allD", "all", "yes", "3", "minplusone");
+    test_allD("allD", "all", "yes", "0", "minplushalfmin");
+    test_allD("allD", "all", "yes", "1", "minplushalfmin");
+    test_allD("allD", "all", "yes", "2", "minplushalfmin");
+    test_allD("allD", "all", "yes", "3", "minplushalfmin");
+    test_allD("allD", "all", "yes", "0", "minplusmin");
+    test_allD("allD", "all", "yes", "1", "minplusmin");
+    test_allD("allD", "all", "yes", "2", "minplusmin");
+    test_allD("allD", "all", "yes", "3", "minplusmin");
 
-    test_allDopt("allDopt", "all", "all", "no", "yes");
-    test_allDopt("allDopt", "all", "all", "yes", "yes");
-    test_allDopt("allDopt", "all", "earliest", "no", "yes");
-    test_allDopt("allDopt", "all", "earliest", "yes", "yes");
-    test_allDopt("allDopt", "all", "one", "no", "yes");
-    test_allDopt("allDopt", "all", "one", "yes", "yes");
-    test_allDopt("allDopt", "noroutingfirst", "all", "no", "yes");
-    test_allDopt("allDopt", "noroutingfirst", "all", "yes", "yes");
-    test_allDopt("allDopt", "noroutingfirst", "earliest", "no", "yes");
-    test_allDopt("allDopt", "noroutingfirst", "earliest", "yes", "yes");
-    test_allDopt("allDopt", "noroutingfirst", "one", "no", "yes");
-    test_allDopt("allDopt", "noroutingfirst", "one", "yes", "yes");
+    test_allDopt("allDopt", "noroutingfirst", "no", "0", "min");
+    test_allDopt("allDopt", "all", "no", "0", "min");
+    test_allDopt("allDopt", "all", "no", "1", "min");
+    test_allDopt("allDopt", "all", "no", "2", "min");
+    test_allDopt("allDopt", "all", "no", "3", "min");
+    test_allDopt("allDopt", "all", "no", "0", "minplusone");
+    test_allDopt("allDopt", "all", "no", "1", "minplusone");
+    test_allDopt("allDopt", "all", "no", "2", "minplusone");
+    test_allDopt("allDopt", "all", "no", "3", "minplusone");
+    test_allDopt("allDopt", "all", "no", "0", "minplushalfmin");
+    test_allDopt("allDopt", "all", "no", "1", "minplushalfmin");
+    test_allDopt("allDopt", "all", "no", "2", "minplushalfmin");
+    test_allDopt("allDopt", "all", "no", "3", "minplushalfmin");
+    test_allDopt("allDopt", "all", "no", "0", "minplusmin");
+    test_allDopt("allDopt", "all", "no", "1", "minplusmin");
+    test_allDopt("allDopt", "all", "no", "2", "minplusmin");
+    test_allDopt("allDopt", "all", "no", "3", "minplusmin");
+    test_allDopt("allDopt", "noroutingfirst", "no", "0", "min");
+    test_allDopt("allDopt", "all", "yes", "0", "min");
+    test_allDopt("allDopt", "all", "yes", "1", "min");
+    test_allDopt("allDopt", "all", "yes", "2", "min");
+    test_allDopt("allDopt", "all", "yes", "3", "min");
+    test_allDopt("allDopt", "all", "yes", "0", "minplusone");
+    test_allDopt("allDopt", "all", "yes", "1", "minplusone");
+    test_allDopt("allDopt", "all", "yes", "2", "minplusone");
+    test_allDopt("allDopt", "all", "yes", "3", "minplusone");
+    test_allDopt("allDopt", "all", "yes", "0", "minplushalfmin");
+    test_allDopt("allDopt", "all", "yes", "1", "minplushalfmin");
+    test_allDopt("allDopt", "all", "yes", "2", "minplushalfmin");
+    test_allDopt("allDopt", "all", "yes", "3", "minplushalfmin");
+    test_allDopt("allDopt", "all", "yes", "0", "minplusmin");
+    test_allDopt("allDopt", "all", "yes", "1", "minplusmin");
+    test_allDopt("allDopt", "all", "yes", "2", "minplusmin");
+    test_allDopt("allDopt", "all", "yes", "3", "minplusmin");
+
+    test_maxcut("maxcut", "noroutingfirst", "no", "0", "min");
+    test_maxcut("maxcut", "all", "no", "0", "min");
+    test_maxcut("maxcut", "all", "no", "1", "min");
+    test_maxcut("maxcut", "all", "no", "2", "min");
+    test_maxcut("maxcut", "all", "no", "3", "min");
+    test_maxcut("maxcut", "all", "no", "0", "minplusone");
+    test_maxcut("maxcut", "all", "no", "1", "minplusone");
+    test_maxcut("maxcut", "all", "no", "2", "minplusone");
+    test_maxcut("maxcut", "all", "no", "3", "minplusone");
+    test_maxcut("maxcut", "all", "no", "0", "minplushalfmin");
+    test_maxcut("maxcut", "all", "no", "1", "minplushalfmin");
+    test_maxcut("maxcut", "all", "no", "2", "minplushalfmin");
+    test_maxcut("maxcut", "all", "no", "3", "minplushalfmin");
+    test_maxcut("maxcut", "all", "no", "0", "minplusmin");
+    test_maxcut("maxcut", "all", "no", "1", "minplusmin");
+    test_maxcut("maxcut", "all", "no", "2", "minplusmin");
+    test_maxcut("maxcut", "all", "no", "3", "minplusmin");
+    test_maxcut("maxcut", "noroutingfirst", "no", "0", "min");
+    test_maxcut("maxcut", "all", "yes", "0", "min");
+    test_maxcut("maxcut", "all", "yes", "1", "min");
+    test_maxcut("maxcut", "all", "yes", "2", "min");
+    test_maxcut("maxcut", "all", "yes", "3", "min");
+    test_maxcut("maxcut", "all", "yes", "0", "minplusone");
+    test_maxcut("maxcut", "all", "yes", "1", "minplusone");
+    test_maxcut("maxcut", "all", "yes", "2", "minplusone");
+    test_maxcut("maxcut", "all", "yes", "3", "minplusone");
+    test_maxcut("maxcut", "all", "yes", "0", "minplushalfmin");
+    test_maxcut("maxcut", "all", "yes", "1", "minplushalfmin");
+    test_maxcut("maxcut", "all", "yes", "2", "minplushalfmin");
+    test_maxcut("maxcut", "all", "yes", "3", "minplushalfmin");
+    test_maxcut("maxcut", "all", "yes", "0", "minplusmin");
+    test_maxcut("maxcut", "all", "yes", "1", "minplusmin");
+    test_maxcut("maxcut", "all", "yes", "2", "minplusmin");
+    test_maxcut("maxcut", "all", "yes", "3", "minplusmin");
+
 
 //  nonNN, realistic:
-    test_daniel2("daniel2", "all", "all", "no", "yes");
-    test_daniel2("daniel2", "all", "all", "yes", "yes");
-    test_daniel2("daniel2", "all", "earliest", "no", "yes");
-    test_daniel2("daniel2", "all", "earliest", "yes", "yes");
-    test_daniel2("daniel2", "all", "one", "no", "yes");
-    test_daniel2("daniel2", "all", "one", "yes", "yes");
-    test_daniel2("daniel2", "noroutingfirst", "all", "no", "yes");
-    test_daniel2("daniel2", "noroutingfirst", "all", "yes", "yes");
-    test_daniel2("daniel2", "noroutingfirst", "earliest", "no", "yes");
-    test_daniel2("daniel2", "noroutingfirst", "earliest", "yes", "yes");
-    test_daniel2("daniel2", "noroutingfirst", "one", "no", "yes");
-    test_daniel2("daniel2", "noroutingfirst", "one", "yes", "yes");
+    test_daniel2("daniel2", "noroutingfirst", "no", "0", "min");
+    test_daniel2("daniel2", "all", "no", "0", "min");
+    test_daniel2("daniel2", "all", "no", "1", "min");
+    test_daniel2("daniel2", "all", "no", "2", "min");
+    test_daniel2("daniel2", "all", "no", "3", "min");
+    test_daniel2("daniel2", "all", "no", "0", "minplusone");
+    test_daniel2("daniel2", "all", "no", "1", "minplusone");
+    test_daniel2("daniel2", "all", "no", "2", "minplusone");
+    test_daniel2("daniel2", "all", "no", "3", "minplusone");
+    test_daniel2("daniel2", "all", "no", "0", "minplushalfmin");
+    test_daniel2("daniel2", "all", "no", "1", "minplushalfmin");
+    test_daniel2("daniel2", "all", "no", "2", "minplushalfmin");
+    test_daniel2("daniel2", "all", "no", "3", "minplushalfmin");
+    test_daniel2("daniel2", "all", "no", "0", "minplusmin");
+    test_daniel2("daniel2", "all", "no", "1", "minplusmin");
+    test_daniel2("daniel2", "all", "no", "2", "minplusmin");
+    test_daniel2("daniel2", "all", "no", "3", "minplusmin");
+    test_daniel2("daniel2", "noroutingfirst", "no", "0", "min");
+    test_daniel2("daniel2", "all", "yes", "0", "min");
+    test_daniel2("daniel2", "all", "yes", "1", "min");
+    test_daniel2("daniel2", "all", "yes", "2", "min");
+    test_daniel2("daniel2", "all", "yes", "3", "min");
+    test_daniel2("daniel2", "all", "yes", "0", "minplusone");
+    test_daniel2("daniel2", "all", "yes", "1", "minplusone");
+    test_daniel2("daniel2", "all", "yes", "2", "minplusone");
+    test_daniel2("daniel2", "all", "yes", "3", "minplusone");
+    test_daniel2("daniel2", "all", "yes", "0", "minplushalfmin");
+    test_daniel2("daniel2", "all", "yes", "1", "minplushalfmin");
+    test_daniel2("daniel2", "all", "yes", "2", "minplushalfmin");
+    test_daniel2("daniel2", "all", "yes", "3", "minplushalfmin");
+    test_daniel2("daniel2", "all", "yes", "0", "minplusmin");
+    test_daniel2("daniel2", "all", "yes", "1", "minplusmin");
+    test_daniel2("daniel2", "all", "yes", "2", "minplusmin");
+    test_daniel2("daniel2", "all", "yes", "3", "minplusmin");
 
-    test_lingling5esm("lingling5esm", "all", "all", "no", "yes");
-    test_lingling5esm("lingling5esm", "all", "all", "yes", "yes");
-    test_lingling5esm("lingling5esm", "all", "earliest", "no", "yes");
-    test_lingling5esm("lingling5esm", "all", "earliest", "yes", "yes");
-    test_lingling5esm("lingling5esm", "all", "one", "no", "yes");
-    test_lingling5esm("lingling5esm", "all", "one", "yes", "yes");
-    test_lingling5esm("lingling5esm", "noroutingfirst", "all", "no", "yes");
-    test_lingling5esm("lingling5esm", "noroutingfirst", "all", "yes", "yes");
-    test_lingling5esm("lingling5esm", "noroutingfirst", "earliest", "no", "yes");
-    test_lingling5esm("lingling5esm", "noroutingfirst", "earliest", "yes", "yes");
-    test_lingling5esm("lingling5esm", "noroutingfirst", "one", "no", "yes");
-    test_lingling5esm("lingling5esm", "noroutingfirst", "one", "yes", "yes");
 
-    test_lingling7esm("lingling7esm", "all", "all", "no", "yes");
-    test_lingling7esm("lingling7esm", "all", "all", "yes", "yes");
-    test_lingling7esm("lingling7esm", "all", "earliest", "no", "yes");
-    test_lingling7esm("lingling7esm", "all", "earliest", "yes", "yes");
-    test_lingling7esm("lingling7esm", "all", "one", "no", "yes");
-    test_lingling7esm("lingling7esm", "all", "one", "yes", "yes");
-    test_lingling7esm("lingling7esm", "noroutingfirst", "all", "no", "yes");
-    test_lingling7esm("lingling7esm", "noroutingfirst", "all", "yes", "yes");
-    test_lingling7esm("lingling7esm", "noroutingfirst", "earliest", "no", "yes");
-    test_lingling7esm("lingling7esm", "noroutingfirst", "earliest", "yes", "yes");
-    test_lingling7esm("lingling7esm", "noroutingfirst", "one", "no", "yes");
-    test_lingling7esm("lingling7esm", "noroutingfirst", "one", "yes", "yes");
+    test_lingling5esm("lingling5esm", "noroutingfirst", "no", "0", "min");
+    test_lingling5esm("lingling5esm", "all", "no", "0", "min");
+    test_lingling5esm("lingling5esm", "all", "no", "1", "min");
+    test_lingling5esm("lingling5esm", "all", "no", "2", "min");
+    test_lingling5esm("lingling5esm", "all", "no", "3", "min");
+    test_lingling5esm("lingling5esm", "all", "no", "0", "minplusone");
+    test_lingling5esm("lingling5esm", "all", "no", "1", "minplusone");
+    test_lingling5esm("lingling5esm", "all", "no", "2", "minplusone");
+    test_lingling5esm("lingling5esm", "all", "no", "3", "minplusone");
+    test_lingling5esm("lingling5esm", "all", "no", "0", "minplushalfmin");
+    test_lingling5esm("lingling5esm", "all", "no", "1", "minplushalfmin");
+    test_lingling5esm("lingling5esm", "all", "no", "2", "minplushalfmin");
+    test_lingling5esm("lingling5esm", "all", "no", "3", "minplushalfmin");
+    test_lingling5esm("lingling5esm", "all", "no", "0", "minplusmin");
+    test_lingling5esm("lingling5esm", "all", "no", "1", "minplusmin");
+    test_lingling5esm("lingling5esm", "all", "no", "2", "minplusmin");
+    test_lingling5esm("lingling5esm", "all", "no", "3", "minplusmin");
+    test_lingling5esm("lingling5esm", "noroutingfirst", "no", "0", "min");
+    test_lingling5esm("lingling5esm", "all", "yes", "0", "min");
+    test_lingling5esm("lingling5esm", "all", "yes", "1", "min");
+    test_lingling5esm("lingling5esm", "all", "yes", "2", "min");
+    test_lingling5esm("lingling5esm", "all", "yes", "3", "min");
+    test_lingling5esm("lingling5esm", "all", "yes", "0", "minplusone");
+    test_lingling5esm("lingling5esm", "all", "yes", "1", "minplusone");
+    test_lingling5esm("lingling5esm", "all", "yes", "2", "minplusone");
+    test_lingling5esm("lingling5esm", "all", "yes", "3", "minplusone");
+    test_lingling5esm("lingling5esm", "all", "yes", "0", "minplushalfmin");
+    test_lingling5esm("lingling5esm", "all", "yes", "1", "minplushalfmin");
+    test_lingling5esm("lingling5esm", "all", "yes", "2", "minplushalfmin");
+    test_lingling5esm("lingling5esm", "all", "yes", "3", "minplushalfmin");
+    test_lingling5esm("lingling5esm", "all", "yes", "0", "minplusmin");
+    test_lingling5esm("lingling5esm", "all", "yes", "1", "minplusmin");
+    test_lingling5esm("lingling5esm", "all", "yes", "2", "minplusmin");
+    test_lingling5esm("lingling5esm", "all", "yes", "3", "minplusmin");
+
+
+    test_lingling7esm("lingling7esm", "noroutingfirst", "no", "0", "min");
+    test_lingling7esm("lingling7esm", "all", "no", "0", "min");
+    test_lingling7esm("lingling7esm", "all", "no", "1", "min");
+    test_lingling7esm("lingling7esm", "all", "no", "2", "min");
+    test_lingling7esm("lingling7esm", "all", "no", "3", "min");
+    test_lingling7esm("lingling7esm", "all", "no", "0", "minplusone");
+    test_lingling7esm("lingling7esm", "all", "no", "1", "minplusone");
+    test_lingling7esm("lingling7esm", "all", "no", "2", "minplusone");
+    test_lingling7esm("lingling7esm", "all", "no", "3", "minplusone");
+    test_lingling7esm("lingling7esm", "all", "no", "0", "minplushalfmin");
+    test_lingling7esm("lingling7esm", "all", "no", "1", "minplushalfmin");
+    test_lingling7esm("lingling7esm", "all", "no", "2", "minplushalfmin");
+    test_lingling7esm("lingling7esm", "all", "no", "3", "minplushalfmin");
+    test_lingling7esm("lingling7esm", "all", "no", "0", "minplusmin");
+    test_lingling7esm("lingling7esm", "all", "no", "1", "minplusmin");
+    test_lingling7esm("lingling7esm", "all", "no", "2", "minplusmin");
+    test_lingling7esm("lingling7esm", "all", "no", "3", "minplusmin");
+    test_lingling7esm("lingling7esm", "noroutingfirst", "no", "0", "min");
+    test_lingling7esm("lingling7esm", "all", "yes", "0", "min");
+    test_lingling7esm("lingling7esm", "all", "yes", "1", "min");
+    test_lingling7esm("lingling7esm", "all", "yes", "2", "min");
+    test_lingling7esm("lingling7esm", "all", "yes", "3", "min");
+    test_lingling7esm("lingling7esm", "all", "yes", "0", "minplusone");
+    test_lingling7esm("lingling7esm", "all", "yes", "1", "minplusone");
+    test_lingling7esm("lingling7esm", "all", "yes", "2", "minplusone");
+    test_lingling7esm("lingling7esm", "all", "yes", "3", "minplusone");
+    test_lingling7esm("lingling7esm", "all", "yes", "0", "minplushalfmin");
+    test_lingling7esm("lingling7esm", "all", "yes", "1", "minplushalfmin");
+    test_lingling7esm("lingling7esm", "all", "yes", "2", "minplushalfmin");
+    test_lingling7esm("lingling7esm", "all", "yes", "3", "minplushalfmin");
+    test_lingling7esm("lingling7esm", "all", "yes", "0", "minplusmin");
+    test_lingling7esm("lingling7esm", "all", "yes", "1", "minplusmin");
+    test_lingling7esm("lingling7esm", "all", "yes", "2", "minplusmin");
+    test_lingling7esm("lingling7esm", "all", "yes", "3", "minplusmin");
+
 
     return 0;
 }
