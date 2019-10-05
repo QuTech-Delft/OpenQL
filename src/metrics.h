@@ -15,9 +15,9 @@
 #include <random>
 #include <chrono>
 #include "gate.h"
-#include "ql/utils.h"
-#include "ql/options.h"
-#include "ql/platform.h"
+#include "utils.h" 
+#include "options.h"
+#include "platform.h"
 
 
 
