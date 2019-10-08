@@ -72,33 +72,15 @@ os.chdir(rootDir)
 def get_version(verbose=0):
     """ Extract version information from source code """
 
-    matcher = re.compile('[\t ]*#define[\t ]+OPENQL_(MAJOR|MINOR|PATCH)_VERSION[\t ]+(.*)')
-
-    openql_major_version = None
-    openql_minor_version = None
-    openql_patch_version = None
-
+    matcher = re.compile('[\t ]*#define[\t ]+OPENQL_VERSION_STRING[\t ]+"(.*)"')
     version = None
     try:
         with open(os.path.join(srcDir, 'version.h'), 'r') as f:
             for ln in f:
                 m = matcher.match(ln)
                 if m:
-                    version_val = int(m.group(2))
-                    if m.group(1) == 'MAJOR':
-                        openql_major_version = version_val
-                    elif m.group(1) == 'MINOR':
-                        openql_minor_version = version_val
-                    else:
-                        openql_patch_version = version_val
-
-                        if ((openql_major_version is not None) and
-                            (openql_minor_version is not None) and
-                            (openql_patch_version is not None)):
-                            version = '{}.{}.{}'.format(openql_major_version,
-                                              openql_minor_version,
-                                              openql_patch_version)
-                            break;
+                    version = m.group(1)
+                    break;
 
     except Exception as E:
         print(E)
