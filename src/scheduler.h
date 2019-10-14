@@ -3317,7 +3317,7 @@ public:
         {
             // Print cycle numbers as timeline, as shown below
             size_t TotalCycles = circp->back()->cycle + (circp->back()->duration+cycle_time-1)/cycle_time
-                                    - circp->front()->cycle;
+                                    - circp->front()->cycle + 1;    // +1 is SOURCE's duration in cycles
             dotout << "{\nnode [shape=plaintext, fontsize=16, fontcolor=blue]; \n";
             for(size_t cn=0;cn<=TotalCycles;++cn)
             {

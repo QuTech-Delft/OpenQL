@@ -49,9 +49,51 @@ class Test_mapper(unittest.TestCase):
         ql.set_option('mapreverseswap', 'yes')
         ql.set_option('mappathselect', 'all')
         ql.set_option('maplookahead', 'noroutingfirst')
+        ql.set_option('maprecNN2q', 'no')
+        ql.set_option('mapselectmaxlevel', '0')
+        ql.set_option('mapselectmaxwidth', 'min')
         
         ql.set_option('write_qasm_files', 'no')
         ql.set_option('write_report_files', 'no')
+
+
+    def test_maxcut(self):
+        # rigetti test copied from Venturelli's paper
+        v = 'maxcut'
+        config = os.path.join(rootDir, "test_rig.json")
+        num_qubits = 8
+
+        # create and set platform
+        prog_name = "test_" + v
+        kernel_name = "kernel_" + v
+        starmon = ql.Platform("starmon", config)
+        prog = ql.Program(prog_name, starmon, num_qubits, 0)
+        k = ql.Kernel(kernel_name, starmon, num_qubits, 0)
+
+        k.gate("cz", [1,4])
+        k.gate("cz", [1,3])
+        k.gate("cz", [3,4])
+        k.gate("cz", [3,7])
+        k.gate("cz", [4,7])
+        k.gate("cz", [6,7])
+        k.gate("cz", [5,6])
+        k.gate("cz", [1,5])
+
+        k.gate("x", [1])
+        k.gate("x", [3])
+        k.gate("x", [4])
+        k.gate("x", [5])
+        k.gate("x", [6])
+        k.gate("x", [7])
+
+        prog.add_kernel(k)
+        prog.compile()
+
+        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
+
+        assemble(QISA_fn)
+        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_oneNN(self):

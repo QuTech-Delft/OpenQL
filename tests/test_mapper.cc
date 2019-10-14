@@ -10,6 +10,45 @@
 
 #include <openql.h>
 
+// simple program to test dot
+void
+test_dot(std::string v, std::string param1, std::string param2)
+{
+    int n = 4;
+    std::string prog_name = "test_" + v + "_scheduler_post179=" + param1 + "_scheduler=" + param2;
+    std::string kernel_name = "test_" + v + "_scheduler_post179=" + param1 + "_scheduler=" + param2;
+    float sweep_points[] = { 1 };
+
+    ql::quantum_platform starmon("starmon", "test_mapper.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, n, 0);
+    ql::quantum_kernel k(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
+    k.gate("x", 0);
+    k.gate("x", 3);
+
+    // one cnot, no swap
+    k.gate("cnot", 0,3);
+
+    k.gate("x", 0);
+    k.gate("x", 3);
+
+    prog.add(k);
+
+    ql::options::set("mapper", "no"); 
+
+    ql::options::set("maplookahead", "noroutingfirst");
+    ql::options::set("maprecNN2q", "no");
+    ql::options::set("mapselectmaxlevel", "0");
+    ql::options::set("mapselectmaxwidth", "min");
+
+    ql::options::set("scheduler_post179", param1);
+    ql::options::set("scheduler", param2);
+
+    prog.compile( );
+}
+
 // rc test
 void
 test_rc(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
@@ -1009,18 +1048,20 @@ int main(int argc, char ** argv)
     ql::options::set("scheduler_commute", "yes");
     ql::options::set("prescheduler", "no");
 
+    test_dot("dot", "no", "ASAP");
+    test_dot("dot", "no", "ALAP");
+    test_dot("dot", "yes", "ASAP");
+    test_dot("dot", "yes", "ALAP");
+
 #ifdef  RUNALL
 //  NN:
     test_rc("rc", "no", "no", "yes", "no");
     test_someNN("someNN", "no", "no", "yes", "yes");
 
 //  nonNN but solvable by Initial Placement:
-    test_oneD2("oneD2", "noroutingfirst", "no", "no", "yes");
-    test_oneD2("oneD2", "noroutingfirst", "no", "yes", "yes");
-    test_oneD2("oneD2", "all", "no", "no", "yes");
-    test_oneD2("oneD2", "all", "no", "yes", "yes");
+    test_oneD2("oneD2", "noroutingfirst", "no", "0", "min");
+
     test_oneD4("oneD4", "yes", "yes", "yes", "yes");
-#endif // RUNALL
 
     test_string("string", "noroutingfirst", "no", "0", "min");
     test_string("string", "all", "no", "0", "min");
@@ -1270,6 +1311,7 @@ int main(int argc, char ** argv)
     test_lingling7esm("lingling7esm", "all", "yes", "1", "minplusmin");
     test_lingling7esm("lingling7esm", "all", "yes", "2", "minplusmin");
     test_lingling7esm("lingling7esm", "all", "yes", "3", "minplusmin");
+#endif // RUNALL
 
 
     return 0;
