@@ -3118,12 +3118,20 @@ void CommitAlter(Alter& resa, Future& future, Past& past)
 // Return false when no gates remain at all.
 // Return true when any gates remain; those gates are returned in lg.
 //
-// Behavior depends on the value of option maplookahead:
-// maplookahead == "no":               while (next in circuit is nonq or 1q) map gate; return when it is 2q (maybe NN)
+// Behavior depends on the value of option maplookahead and alsoNN2q parameter
+// alsoNN2q is true:
+//   maplookahead == "no":             while (next in circuit is nonq or 1q) map gate; return when it is 2q (maybe NN)
 //                                     in this case, GetNonQuantumGates only returns a nonq when it is next in circuit
 //              == "1qfirst":          while (nonq or 1q) map gate; return most critical 2q (maybe NN)
 //              == "noroutingfirst":   while (nonq or 1q or 2qNN) map gate; return most critical 2q (nonNN)
 //              == "all":              while (nonq or 1q or 2qNN) map gate; return all 2q (nonNN)
+// alsoNN2q is false:
+//   maplookahead == "no":             while (next in circuit is nonq or 1q) map gate; return when it is 2q (maybe NN)
+//                                     in this case, GetNonQuantumGates only returns a nonq when it is next in circuit
+//              == "1qfirst":          while (nonq or 1q) map gate; return most critical 2q (nonNN or NN)
+//              == "noroutingfirst":   while (nonq or 1q) map gate; return most critical 2q (nonNN or NN)
+//              == "all":              while (nonq or 1q) map gate; return all 2q (nonNN or NN)
+//
 bool MapMappableGates(Future& future, Past& past, std::list<ql::gate*>& lg, bool alsoNN2q)
 {
     std::list<ql::gate*>   nonqlg; // list of non-quantum gates in avlist
@@ -3181,10 +3189,11 @@ bool MapMappableGates(Future& future, Past& past, std::list<ql::gate*>& lg, bool
         {
             continue;
         }
-        // qlg only contains gates that could require routing
+        // qlg only contains 2q gates (that could require routing)
         if ( alsoNN2q)
         {
-            // when there is a 2q in qlg that is mappable already, map it; when more, take most critical one first
+            // when there is a 2q in qlg that is mappable already, map it
+            // when more, take most critical one first (because qlg is ordered, most critical first)
             for (auto gp : qlg)
             {
                 auto&   q = gp->operands;
@@ -3211,15 +3220,19 @@ bool MapMappableGates(Future& future, Past& past, std::list<ql::gate*>& lg, bool
                 DOUT("MapMappableGates, found and mapped an easy quantum gate, continuing ...");
                 continue;
             }
+            DOUT("MapMappableGates, only nonNN 2q gates remain: ...");
         }
-        // avlist (qlg) only contains gates that require routing
+        else
+        {
+            DOUT("MapMappableGates, only 2q gates remain (nonNN and NN): ...");
+        }
+        // avlist (qlg) only contains 2q gates (when alsoNN2q: only non-NN ones; otherwise also perhaps NN ones)
         lg = qlg;
-        DOUT("MapMappableGates, only non-NN 2q gates remain; return");
         if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
         {
             for (auto gp: lg)
             {
-                DOUT("... non-NN 2q gate returned: " << gp->qasm());
+                DOUT("... 2q gate returned: " << gp->qasm());
             }
         }
         return true;
@@ -3358,13 +3371,16 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
         bool    havegates;                  // are there still non-NN 2q gates to map?
         std::list<ql::gate*> lg;            // list of non-NN 2q gates taken from avlist, as returned from MapMappableGates
         std::string maplookaheadopt = ql::options::get("maplookahead");
+        std::string maprecNN2qopt = ql::options::get("maprecNN2q");
         // In recursion, look at option maprecNN2q:
+        // - MapMappableGates with alsoNN2q==true is greedy and immediately maps each 1q and NN 2q gate
+        // - MapMappableGates with alsoNN2q==false is not greedy, maps all 1q gates but not the (NN) 2q gates
+        //
         // when yes and when maplookaheadopt is noroutingfirst or all, let MapMappableGates stop mapping only on nonNN2q
         // when no, let MapMappableGates stop mapping on any 2q
         // This creates more clear recursion: one 2q at a time instead of a possible empty set of NN2qs followed by a nonNN2q;
         // also when a NN2q is found, this is perfect; this is not seen when immediately mapping all NN2qs.
         // So goal is to prove that maprecNN2q should be no at this place, in the recursion step, but not at level 0!
-        std::string maprecNN2qopt = ql::options::get("maprecNN2q");
         bool alsoNN2q = ("yes" == maprecNN2qopt) && ( "noroutingfirst" == maplookaheadopt || "all" == maplookaheadopt );
         havegates = MapMappableGates(future_copy, past_copy, lg, alsoNN2q); // map all easy gates; remainder returned in lg
 
