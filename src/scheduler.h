@@ -3442,7 +3442,7 @@ public:
             sort_by_cycle();
 
             stringstream ssdot;
-            get_dot_post179(false, false, ssdot, ql::forward_scheduling);
+            get_dot_post179(false, true, ssdot, ql::forward_scheduling);
             dot = ssdot.str();
         }
     }

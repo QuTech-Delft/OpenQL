@@ -1308,24 +1308,26 @@ int main(int argc, char ** argv)
     test_allDopt("allDopt", "all", "yes", "1", "minplusmin");
     test_allDopt("allDopt", "all", "yes", "2", "minplusmin");
     test_allDopt("allDopt", "all", "yes", "3", "minplusmin");
+#endif
 
-    test_allD("allD", "noroutingfirst", "no", "0", "min");
-    test_allD("allD", "all", "no", "0", "min");
-    test_allD("allD", "all", "no", "1", "min");
-    test_allD("allD", "all", "no", "2", "min");
-    test_allD("allD", "all", "no", "3", "min");
-    test_allD("allD", "all", "no", "0", "minplusone");
-    test_allD("allD", "all", "no", "1", "minplusone");
-    test_allD("allD", "all", "no", "2", "minplusone");
     test_allD("allD", "all", "no", "3", "minplusone");
-    test_allD("allD", "all", "no", "0", "minplushalfmin");
-    test_allD("allD", "all", "no", "1", "minplushalfmin");
-    test_allD("allD", "all", "no", "2", "minplushalfmin");
-    test_allD("allD", "all", "no", "3", "minplushalfmin");
-    test_allD("allD", "all", "no", "0", "minplusmin");
-    test_allD("allD", "all", "no", "1", "minplusmin");
-    test_allD("allD", "all", "no", "2", "minplusmin");
     test_allD("allD", "all", "no", "3", "minplusmin");
+    test_allD("allD", "all", "no", "3", "minplushalfmin");
+    test_allD("allD", "all", "no", "3", "min");
+    test_allD("allD", "all", "no", "2", "minplusone");
+    test_allD("allD", "all", "no", "2", "minplusmin");
+    test_allD("allD", "all", "no", "2", "minplushalfmin");
+    test_allD("allD", "all", "no", "2", "min");
+#ifdef  RUNALL
+    test_allD("allD", "all", "no", "1", "minplusone");
+    test_allD("allD", "all", "no", "1", "minplusmin");
+    test_allD("allD", "all", "no", "1", "minplushalfmin");
+    test_allD("allD", "all", "no", "1", "min");
+    test_allD("allD", "all", "no", "0", "minplusone");
+    test_allD("allD", "all", "no", "0", "minplusmin");
+    test_allD("allD", "all", "no", "0", "minplushalfmin");
+    test_allD("allD", "all", "no", "0", "min");
+    test_allD("allD", "noroutingfirst", "no", "0", "min");
     test_allD("allD", "noroutingfirst", "yes", "0", "min");
     test_allD("allD", "all", "yes", "0", "min");
     test_allD("allD", "all", "yes", "1", "min");
@@ -1415,7 +1417,6 @@ int main(int argc, char ** argv)
     test_lingling5esm("lingling5esm", "all", "yes", "1", "minplusmin");
     test_lingling5esm("lingling5esm", "all", "yes", "2", "minplusmin");
     test_lingling5esm("lingling5esm", "all", "yes", "3", "minplusmin");
-#endif
 
     test_lingling7esm("lingling7esm", "noroutingfirst", "no", "0", "min");
     test_lingling7esm("lingling7esm", "all", "no", "0", "min");
@@ -1486,6 +1487,7 @@ int main(int argc, char ** argv)
     test_lingling7sub("lingling7sub", "all", "yes", "1", "minplusmin");
     test_lingling7sub("lingling7sub", "all", "yes", "2", "minplusmin");
     test_lingling7sub("lingling7sub", "all", "yes", "3", "minplusmin");
+#endif
 
     return 0;
 }
