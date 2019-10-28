@@ -1162,8 +1162,8 @@ test_maxcut(std::string v, std::string param1, std::string param2, std::string p
 
 int main(int argc, char ** argv)
 {
-    // ql::utils::logger::set_log_level("LOG_DEBUG");
-    ql::utils::logger::set_log_level("LOG_NOTHING");
+    ql::utils::logger::set_log_level("LOG_DEBUG");
+    // ql::utils::logger::set_log_level("LOG_NOTHING");
 
     ql::options::set("write_qasm_files", "yes"); 
     ql::options::set("write_report_files", "yes"); 
@@ -1310,15 +1310,16 @@ int main(int argc, char ** argv)
     test_allDopt("allDopt", "all", "yes", "3", "minplusmin");
 #endif
 
+    test_allD("allD", "all", "no", "2", "min");
+    test_allD("allD", "all", "no", "3", "min");
+
+#ifdef  RUNALL
     test_allD("allD", "all", "no", "3", "minplusone");
     test_allD("allD", "all", "no", "3", "minplusmin");
     test_allD("allD", "all", "no", "3", "minplushalfmin");
-    test_allD("allD", "all", "no", "3", "min");
     test_allD("allD", "all", "no", "2", "minplusone");
     test_allD("allD", "all", "no", "2", "minplusmin");
     test_allD("allD", "all", "no", "2", "minplushalfmin");
-    test_allD("allD", "all", "no", "2", "min");
-#ifdef  RUNALL
     test_allD("allD", "all", "no", "1", "minplusone");
     test_allD("allD", "all", "no", "1", "minplusmin");
     test_allD("allD", "all", "no", "1", "minplushalfmin");

@@ -1239,13 +1239,13 @@ void Out(ql::circuit& oc)
 // Actually, the Alter goes through several stages:
 // - first, for the given 2-qubit gate that is stored in targetgp,
 //   while finding a path from its source to its target, the current path is kept in total;
-//   fromSource, fromTarget, past and cycleExtend are not used; past is a clone of the main past
+//   fromSource, fromTarget, past and score are not used; past is a clone of the main past
 // - paths are found starting from the source node, and aiming to reach the target node,
 //   each time adding one additional hop to the path
-//   fromSource, fromTarget, and cycleExtend are still empty and not used
+//   fromSource, fromTarget, and score are still empty and not used
 // - each time another continuation of the path is found, the current Alter is cloned
 //   and the difference continuation represented in the total attribute; it all starts with an empty Alter
-//   fromSource, fromTarget, and cycleExtend are still empty and not used
+//   fromSource, fromTarget, and score are still empty and not used
 // - once all alternative total paths for the 2-qubit gate from source to target have been found
 //   each of these is split again in all possible ways (to ILP overlap swaps from source and target);
 //   the split is the place where the two-qubit gate is put
@@ -1254,7 +1254,7 @@ void Out(ql::circuit& oc)
 //   a partial path stores its starting and end nodes (so contains 1 hop less than its length);
 //   the partial path of the target operand is reversed, so starts at the target qubit
 // - then we add swaps to past following the recipee in fromSource and fromTarget; this extends past;
-//   also we compute cycleExtend as the latency extension caused by these swaps
+//   also we compute score as the latency extension caused by these swaps
 //
 // At the end, we have a list of Alters, each with a private Past, and a private latency extension.
 // The partial paths represent lists of swaps to be inserted.
@@ -1263,7 +1263,6 @@ void Out(ql::circuit& oc)
 // Having done that, the other Alters can be discarded and the selected one committed to the main Past.
 class Alter
 {
-
 public:
     ql::quantum_platform   *platformp;  // descriptions of resources for scheduling
     ql::quantum_kernel     *kernelp;    // kernel class pointer to allow calling kernel private methods
@@ -1276,7 +1275,8 @@ public:
     std::vector<size_t>     fromTarget; // partial path after split, starting at target, backward
 
     Past                    past;       // cloned main past, extended with swaps from this path
-    size_t                  cycleExtend;// latency extension caused by the path
+    double                  score;      // e.g. latency extension caused by the path
+    bool                    didscore;   // initially false, true after assignment to score
 
 // explicit Alter constructor
 // needed for virgin construction
@@ -1296,8 +1296,8 @@ void Init(ql::quantum_platform* p, ql::quantum_kernel* k)
     nq = platformp->qubit_number;
     ct = platformp->cycle_time;
     // total, fromSource and fromTarget start as empty vectors
-    past.Init(platformp, kernelp);       // initializes past to empty
-    cycleExtend = MAX_CYCLE;             // means undefined, for printing
+    past.Init(platformp, kernelp);      // initializes past to empty
+    didscore = false;                   // will not print score for now
 }
 
 // printing facilities of Paths
@@ -1354,9 +1354,9 @@ void Print(std::string s)
         partialPrint(", path from source:", fromSource);
         partialPrint(", from target:", fromTarget);
     }
-    if (cycleExtend != MAX_CYCLE)
+    if (didscore)
     {
-        std::cout << ", cycleExtend=" << cycleExtend;
+        std::cout << ", score=" << score;
     }
     // past.Print("past in Alter");
     std::cout << std::endl;
@@ -1489,17 +1489,16 @@ void AddSwaps(Past & past, std::string mapselectswapsopt)
 // to an alternative-local copy of the current past;
 // keep this resulting past in the current alternative (for later use);
 // compute the total extension of all pasts relative to the base past
-// and store this extension in the alternative's cycleExtend (for printing);
-// also return the extension (to, when looping over the alternatives, find the minimal one)
-size_t Extend(Past currPast, Past basePast)
+// and store this extension in the alternative's score for later use
+void Extend(Past currPast, Past basePast)
 {
-    // DOUT("... clone past, add swaps, compute overall cycleExtend and keep it all in current alternative");
+    // DOUT("... clone past, add swaps, compute overall score and keep it all in current alternative");
     past = currPast;   // explicitly clone currPast to an alternative-local copy of it, Alter.past
     // DOUT("... adding swaps to alternative-local past ...");
     AddSwaps(past, "all");
     // DOUT("... done adding/scheduling swaps to alternative-local past");
-    cycleExtend = past.MaxFreeCycle() - basePast.MaxFreeCycle();
-    return cycleExtend;
+    score = past.MaxFreeCycle() - basePast.MaxFreeCycle();
+    didscore = true;
 }
 
 // split the path
@@ -3267,13 +3266,14 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
     }
     MapperAssert(mapperopt == "minextend" || mapperopt == "minextendrc");
 
-    // Compute a.cycleExtend of each alternative relative to basePast, and sort la on it, minimum first
+    // Compute a.score of each alternative relative to basePast, and sort la on it, minimum first
     for (auto & a : la)
     {
         a.DPRINT("Considering extension by alternative: ...");
         a.Extend(past, basePast);           // locally here, past will be cloned and kept in alter
+                                            // and the extension stored into the a.score
     }
-    la.sort([this](const Alter &a1, const Alter &a2) { return a1.cycleExtend < a2.cycleExtend; });
+    la.sort([this](const Alter &a1, const Alter &a2) { return a1.score < a2.score; });
     Alter::DPRINT("... SelectAlter minextend sorted all entry alternatives after extension:", la);
 
     // Reduce sorted list of alternatives (la) to list of good alternatives (gla)
@@ -3282,7 +3282,7 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
     // With option mapselectmaxwidth="min" in which "min" stands for minimal number, we get just those minimal ones.
     // With other option values, we are more forgiving but that easily lets the number of alternatives explode.
     gla = la;
-    gla.remove_if( [this,la](const Alter& a) { return a.cycleExtend != la.front().cycleExtend; } );
+    gla.remove_if( [this,la](const Alter& a) { return a.score != la.front().score; } );
     size_t  las = la.size();
     size_t  glas = gla.size();
     auto mapselectmaxwidthopt = ql::options::get("mapselectmaxwidth");
@@ -3332,7 +3332,7 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
         // Reduce list of good alternatives (gla) to list of minextend best alternatives (bla)
         // and make a choice from that list to return as result
         bla = gla;
-        bla.remove_if( [this,gla](const Alter& a) { return a.cycleExtend != gla.front().cycleExtend; } );
+        bla.remove_if( [this,gla](const Alter& a) { return a.score != gla.front().score; } );
         Alter::DPRINT("... SelectAlter minextend reduced to best alternatives to choose result from:", bla);
         resa = ChooseAlter(bla, future);
         resa.DPRINT("... the selected Alter (STOPPING RECURSION) is");
@@ -3393,25 +3393,25 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
             Alter resa;                         // result alternative selected and returned by next SelectAlter call
             SelectAlter(la, resa, future_copy, past_copy, basePast, level+1); // recurse, best in resa ...
             resa.DPRINT("... ... SelectAlter, generated for these 2q gates ... ; RECURSE DONE; resulting alternative ");
-            a.cycleExtend = resa.cycleExtend;   // extension of deep recursion is treated as extension at current level,
+            a.score = resa.score;               // extension of deep recursion is treated as extension at current level,
                                                 // by this an alternative started bad may be compensated by deeper alts
         }
         else
         {
             DOUT("... ... SelectAlter level=" << level << ", no gates to evaluate next; RECURSION BOTTOM");
-            a.cycleExtend = past_copy.MaxFreeCycle() - basePast.MaxFreeCycle();
+            a.score = past_copy.MaxFreeCycle() - basePast.MaxFreeCycle();
             a.DPRINT("... ... SelectAlter, after committing this alternative, mapped easy gates, no gates to evaluate next; RECURSION BOTTOM");
         }
         a.DPRINT("... ... DONE considering alternative:");
     }
-    // Sort list of good alternatives (gla) on cycleExtend resulting after recursion
-    gla.sort([this](const Alter &a1, const Alter &a2) { return a1.cycleExtend < a2.cycleExtend; });
+    // Sort list of good alternatives (gla) on score resulting after recursion
+    gla.sort([this](const Alter &a1, const Alter &a2) { return a1.score < a2.score; });
     Alter::DPRINT("... SelectAlter minextend sorted alternatives after recursion:", gla);
 
     // Reduce list of good alternatives (gla) of before recursion to list of equally minimal best alternatives now (bla)
     // and make a choice from that list to return as result
     bla = gla;
-    bla.remove_if( [this,gla](const Alter& a) { return a.cycleExtend != gla.front().cycleExtend; } );
+    bla.remove_if( [this,gla](const Alter& a) { return a.score != gla.front().score; } );
     Alter::DPRINT("... SelectAlter minextend equally best alternatives on return of RECURSION:", bla);
     resa = ChooseAlter(bla, future);
     resa.DPRINT("... the selected Alter is");
