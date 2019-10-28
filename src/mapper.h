@@ -2598,21 +2598,21 @@ void Init( ql::quantum_platform *p)
 // Set/switch input to the provided circuit
 // nq and nc are parameters because nc may not be provided by platform but by kernel
 // the latter should be updated when mapping multiple kernels
-void SetCircuit(ql::circuit& circ, Scheduler& sched, size_t nq, size_t nc)
+void SetCircuit(ql::quantum_kernel& kernel, Scheduler& sched, size_t nq, size_t nc)
 {
     DOUT("Future::SetCircuit ...");
     schedp = &sched;
     std::string maplookaheadopt = ql::options::get("maplookahead");
     if ("no" == maplookaheadopt)
     {
-        input_gatepv = circ;                                    // copy to free original circuit to allow outputing to
+        input_gatepv = kernel.c;                                // copy to free original circuit to allow outputing to
         input_gatepp = input_gatepv.begin();                    // iterator set to start of input circuit copy
     }
     else
     {
-        schedp->init(circ, *platformp, nq, nc);                 // fills schedp->graph (dependence graph) from all of circuit
+        schedp->init(kernel.c, *platformp, nq, nc);             // fills schedp->graph (dependence graph) from all of circuit
                                                                 // and so also the original circuit can be output to after this
-        for( auto & gp : circ )
+        for( auto & gp : kernel.c )
         {
             scheduled[gp] = false;   // none were scheduled
         }
@@ -2621,6 +2621,18 @@ void SetCircuit(ql::circuit& circ, Scheduler& sched, size_t nq, size_t nc)
         avlist.clear();
         avlist.push_back(schedp->s);
         schedp->set_remaining(ql::forward_scheduling);          // to know criticality
+
+        if (ql::options::get("print_dot_graphs") == "yes")
+        {
+            std::string     map_dot;
+            std::stringstream fname;
+
+            schedp->get_dot(map_dot);
+
+            fname << ql::options::get("output_dir") << "/" << kernel.name << "_" << "mapper" << ".dot";
+            IOUT("writing " << "mapper" << " dependence graph dot file to '" << fname.str() << "' ...");
+            ql::utils::write_file(fname.str(), map_dot);
+        }
     }
     DOUT("Future::SetCircuit [DONE]");
 }
@@ -3458,7 +3470,7 @@ void MapCircuit(ql::quantum_kernel& kernel, Virt2Real& v2r)
     Scheduler sched;        // new scheduler instance (from src/scheduler.h) used for its dependence graph
 
     future.Init(&platform);
-    future.SetCircuit(kernel.c, sched, nq, nc); // constructs depgraph, initializes avlist, ready for producing gates
+    future.SetCircuit(kernel, sched, nq, nc); // constructs depgraph, initializes avlist, ready for producing gates
     kernel.c.clear();       // future has copied kernel.c to private data; kernel.c ready for use by new_gate
     kernelp = &kernel;      // keep kernel to call kernelp->gate() inside Past.new_gate(), to create new gates
 
