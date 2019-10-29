@@ -685,8 +685,8 @@ private:
     std::list<gate_p>       waitinglg;  // . . .  list of q gates in this Past, topological order, waiting to be scheduled in
                                         //        waitinglg only contains gates from Add and final Schedule call
                                         //        when evaluating alternatives, it is empty when Past is cloned; so no state
-    std::list<gate_p>       lg;         // state: list of q gates in this Past, scheduled by their (start) cycle values
-                                        //        so this is the result list of this Past, to compare with other Alters
+    // std::list<gate_p>       lg;         // state: list of q gates in this Past, scheduled by their (start) cycle values
+    //                                     //        so this is the result list of this Past, to compare with other Alters
     std::list<gate_p>       outlg;      // . . .  list of gates flushed out of this Past, not yet put in outCirc
                                         //        when evaluating alternatives, outlg stays constant; so no state
     std::map<gate_p,size_t> cycle;      // state: gate to cycle map, startCycle value of each past gatecycle[gp]
@@ -697,7 +697,8 @@ private:
     size_t                  nmovesadded;// number of moves added to this past
 
 public:
-
+    std::list<gate_p>       lg;         // state: list of q gates in this Past, scheduled by their (start) cycle values
+                                        //        so this is the result list of this Past, to compare with other Alters
 // explicit Past constructor
 // needed for virgin construction
 Past()
