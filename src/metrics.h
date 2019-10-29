@@ -18,6 +18,7 @@
 #include "utils.h" 
 #include "options.h"
 #include "platform.h"
+#include "mapper.h"
 
 
 
@@ -46,6 +47,16 @@ namespace metrics
 {
 
 
+// ql::circuit random_circuit_generator(double Nqubits, size_t Ncycles, double idle_fraction, double two_qb_gate_fraction ){
+// 	for ( size_t cycle ; cycle < Ncycles ; cycle++ )
+// 	{
+// 		for (auto qubit : Nqubits)
+
+// 	}
+	
+
+// }
+
 
 class Metrics {
 
@@ -71,8 +82,8 @@ public:
 	//double (Metrics::*compute_score)(ql::circuit &, std::vector<double> &  ); //TODO FIX THIS
 
 	//EVERYTHING SHOULD BE IN CYCLES (gate duration, decoherence time, etc)
-	Metrics( /*double gatefid_1, double gatefid_2, double decoherence_time */)
-	{
+	// Metrics( /*double gatefid_1, double gatefid_2, double decoherence_time */)
+	// {
 		// fidelity_estimator = ql::options::get("metrics_fidelity_estimator");
 		// output_mode = ql::options::get("metrics_output_mode");
 
@@ -89,16 +100,13 @@ public:
 		// 	EOUT("Invalid metrics_output_method provided: " << output_mode);
     	// 	throw ql::exception("invalid metrics_output_mode", false);
 		// }
-		
+	// };
 
-
-	};
-
-	Metrics(size_t Nqubits, double gatefid_1, double gatefid_2, double decoherence_time, std::string estimator = "bounded_fidelity", std::string output_mode = "gaussian" )
+	Metrics(size_t Nqubits, double gatefid_1 = 0.999, double gatefid_2 = 0.99, double decoherence_time = 3000/20, std::string estimator = "bounded_fidelity", std::string output_mode = "average" )
 	{
 		// fidelity_estimator = ql::options::get("metrics_fidelity_estimator");
 		// output_mode = ql::options::get("metrics_output_mode");
-		this -> Nqubits = Nqubits;
+		this->Nqubits = Nqubits;
 		this->output_mode=output_mode;
 
 		// if (fidelity_estimator == "bounded_fidelity")
@@ -110,7 +118,7 @@ public:
 		// EOUT("Invalid metrics_fidelity_estimator provided: " << fidelity_estimator);
 		// throw ql::exception("invalid metrics_fidelity_estimator", false);
 
-		if (output_mode != "worst" && output_mode != "gaussian")
+		if (output_mode != "worst" && output_mode != "gaussian" && output_mode != "average")
 		{
 			EOUT("Invalid metrics_output_method provided: " << output_mode);
 			throw ql::exception("invalid metrics_output_mode", false);
@@ -139,36 +147,80 @@ public:
 	}
 
 
-	double create_output (std::vector<double> &fids)
+	double create_output (const std::vector<double> &fids)
 	{
-		if (output_mode == "worst")
-			return *std::min_element(fids.begin(),fids.end());
-		else if (output_mode == "gaussian")
-		{
- 			double min = *std::min_element(fids.begin(),fids.end());
-			double sigma = (1.0 - min)/2;
+		IOUT("Creating output");
+		std::vector<double> result_vector;
+		result_vector = fids;
+		size_t dimension = result_vector.size();
+		IOUT("Creating output2");
 
+		PRINTER(result_vector);
+		IOUT("Creating output2.5");
+		//We take out negative fidelities
+		// for (size_t element = dimension-1; element >=0 ; element--)
+		// {
+		// 	if (result_vector.at(element) <= 0)
+		// 		result_vector.erase(result_vector.begin() + element);
+		// PRINTER(result_vector);
+		// }
+
+		IOUT("Creating output3.5");
+		PRINTER(result_vector);
+		IOUT("Creating output4");
+		if (output_mode == "worst"){
+			IOUT("\nOutput mode: worst");
+			return *std::min_element(fids.begin(),fids.end());
+		}
+
+		else if (output_mode == "average") //DOES NOT WORK
+		{
+			PRINTER(fids);
+			// double sum= std::accumulate(fids.begin(), fids.end(), 0);
 			double sum = 0;
 			for (auto x : fids)
 			{
-				sum += x*gaussian_pdf(x, min, sigma); //weight the fidelities
-			} 
-			return 2*sum; // *2 to normalize (we use half gaussian). divide by Nqubits?
+				sum += x;
+			}
+			DOUT("Sum fidelities :" + std::to_string(sum));
+			double average = sum / fids.size();
+			DOUT("Average fidelity:" + std::to_string(average));
+			return average;			
 		}
+
+		// else if (output_mode == "gaussian") //DOES NOT WORK
+		// {
+		// 	IOUT("\nOutput mode: gaussian");
+ 		// 	double min = *std::min_element(fids.begin(),fids.end());
+		// 	double sigma = (1.0 - min)/2;
+		// 	IOUT("\nOutput mode: gaussian2");
+		// 	double sum = 0;
+		// 	for (auto x : fids)
+		// 	{
+		// 		IOUT("\nOutput mode: gaussian3");
+
+		// 		sum += x*gaussian_pdf(x, min, sigma); //weight the fidelities
+		// 	} 
+		// 	IOUT("\nOutput mode: gaussian4");
+		// 	return 2*sum; // *2 to normalize (we use half gaussian). divide by Nqubits?
+		// }
 		else
 		{
+			IOUT("\nOutput mode: error");			
 			return 500;
 		}
 		
 	} 
 	
 	
+	// double bounded_fidelity(const ql::circuit& circ, std::vector<double> &fids)
 	double bounded_fidelity(const ql::circuit& circ, std::vector<double> &fids)
 	{ 
 		//this function considers the primitive gates! each operand undergoing a 2-qubit operation is always considered to have the same latency
 		//same end fidelity considered for the two operands of the same 2-qubit gate
 		//TODO - URGENT!! Check if gate->cycle starts in zero;
-		//TODO - URGENT!! do not consider the fidelity of non-used qubits (set to 2/-1?)
+		//TODO - URGENT!! do not consider the fidelity of non-used qubits (nqubits < qubits from architecture) (set to 2/-1?)
+		//TODO - URGENT!! do not consider the fidelity of used but non initialized qubits (set to 2/-1?)
 
 		if (fids.size() == 0)
 		{
@@ -183,8 +235,11 @@ public:
 		PRINTER(last_op_endtime);
 		IOUT("\n\n");
 
+		IOUT("Entered loop");
 		for (auto &gate : circ)
 		{
+
+			IOUT("Next gate\n");
 
 			if (gate->name == "measure")
 				continue;
@@ -237,7 +292,7 @@ public:
 				
 				IOUT("Gate " + gate->name + "("+ std::to_string(gate->operands[0]) + ", " + std::to_string(gate->operands[1]) +") at cycle " + std::to_string(gate->cycle) + " with duration " + std::to_string(gate->duration));
 				IOUT("Idled time q_c:" + std::to_string(idled_time_c));
-				IOUT("Idled time q_t:" + std::to_string(idled_time_t));
+				IOUT("Idled time q_t:" + std::to_string(idled_time_t) + " gate cycle=" + std::to_string(gate->cycle) + ". last_time_t=" + std::to_string(last_time_t));
 				IOUT("Decoherence time: " + std::to_string(decoherence_time));
 
 				fids[qubit_c] *= std::exp(-(double) idled_time_c/decoherence_time); // Update fidelity with idling-caused decoherence
@@ -274,6 +329,36 @@ public:
 	};
 
 }; //class end
+
+
+	double quick_fidelity(std::list< ql::gate * > gate_list )
+	{
+		ql::metrics::Metrics estimator(17);
+		std::vector<double> previous_fids;
+		ql::circuit circuit;
+		std::copy(gate_list.begin(), gate_list.end(), circuit.begin());
+		double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
+		fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
+		return fidelity;
+	}
+
+	double quick_fidelity_circuit(ql::circuit circuit )
+	{
+		ql::metrics::Metrics estimator(17);
+		std::vector<double> previous_fids;
+		double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
+		fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
+		return fidelity;
+	}
+
+	double quick_fidelity(ql::circuit circuit )
+	{
+		ql::metrics::Metrics estimator(17);
+		std::vector<double> previous_fids;
+		double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
+		fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
+		return fidelity;
+	}
 
 
 // const unsigned char transition_matrix[4][4]  = {{ 0, 1, 2, 3 },  //[input_state][new_error]
