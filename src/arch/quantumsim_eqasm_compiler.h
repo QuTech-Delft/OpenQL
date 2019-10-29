@@ -197,11 +197,7 @@ public:
      * compile qasm to quantumsim
      */
     // program level compilation
-<<<<<<< Updated upstream
     void compile(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
-=======
-    void compile(std::string prog_name, std::vector<quantum_kernel> & kernels, const ql::quantum_platform& platform)
->>>>>>> Stashed changes
     {
         DOUT("Compiling " << kernels.size() << " kernels to generate quantumsim eQASM ... ");
         IOUT("Compiling " << kernels.size() << " kernels to generate quantumsim eQASM ... ");
