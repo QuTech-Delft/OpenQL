@@ -950,6 +950,157 @@ test_lingling7esm(std::string v, std::string param1, std::string param2, std::st
     prog.compile( );
 }
 
+// real code with 7-qubit short error code checkers in 3 variations next to eachother
+// must fit somehow in s17
+void
+test_lingling7sub(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
+{
+    int n = 9;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    float sweep_points[] = { 1 };
+
+    ql::quantum_platform starmon("starmon", "test_mapper17.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, n, 0);
+    ql::quantum_kernel k(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
+#define SUB1    1
+
+#ifdef SUB1
+    k.gate("prepz",7);
+    k.gate("prepz",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("ym90",4);
+    k.gate("cz",7,4);
+    k.gate("ry90",4);
+    k.gate("ym90",8);
+    k.gate("cz",0,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",6);
+    k.gate("cz",7,6);
+    k.gate("ry90",6);
+    k.gate("ym90",8);
+    k.gate("cz",2,8);
+    k.gate("ry90",8);
+    k.gate("ym90",3);
+    k.gate("cz",7,3);
+    k.gate("ry90",3);
+    k.gate("ym90",8);
+    k.gate("cz",4,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",5);
+    k.gate("cz",7,5);
+    k.gate("ry90",5);
+    k.gate("ym90",8);
+    k.gate("cz",6,8);
+    k.gate("ry90",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("measure",7);
+    k.gate("measure",8);
+#endif
+
+#ifdef SUB2
+    k.gate("prepz",7);
+    k.gate("prepz",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("ym90",5);
+    k.gate("cz",7,5);
+    k.gate("ry90",5);
+    k.gate("ym90",8);
+    k.gate("cz",1,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",6);
+    k.gate("cz",7,6);
+    k.gate("ry90",6);
+    k.gate("ym90",8);
+    k.gate("cz",2,8);
+    k.gate("ry90",8);
+    k.gate("ym90",3);
+    k.gate("cz",7,3);
+    k.gate("ry90",3);
+    k.gate("ym90",8);
+    k.gate("cz",5,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",4);
+    k.gate("cz",7,4);
+    k.gate("ry90",4);
+    k.gate("ym90",8);
+    k.gate("cz",6,8);
+    k.gate("ry90",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("measure",7);
+    k.gate("measure",8);
+#endif
+
+#ifdef SUB3
+    k.gate("prepz",7);
+    k.gate("prepz",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("ym90",1);
+    k.gate("cz",7,1);
+    k.gate("ry90",1);
+    k.gate("ym90",8);
+    k.gate("cz",2,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",5);
+    k.gate("cz",7,5);
+    k.gate("ry90",5);
+    k.gate("ym90",8);
+    k.gate("cz",6,8);
+    k.gate("ry90",8);
+    k.gate("ym90",2);
+    k.gate("cz",7,2);
+    k.gate("ry90",2);
+    k.gate("ym90",8);
+    k.gate("cz",0,8);
+    k.gate("ry90",8);
+    k.gate("ym90",8);
+    k.gate("cz",7,8);
+    k.gate("ry90",8);
+    k.gate("ym90",6);
+    k.gate("cz",7,6);
+    k.gate("ry90",6);
+    k.gate("ym90",8);
+    k.gate("cz",4,8);
+    k.gate("ry90",8);
+    k.gate("x",7);
+    k.gate("ym90",7);
+    k.gate("measure",7);
+    k.gate("measure",8);
+#endif
+
+    prog.add(k);
+
+    ql::options::set("maplookahead", param1);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
+
+    prog.compile( );
+}
+
 // a maxcut QAOA algorithm inspired by the one in Venturelli et al [2017]'s paper
 // Temporal planning for compilation of quantum approximate optimization circuits
 // meant to run on an architecture inspired by an 8 bit Rigetti prototype from that paper;
@@ -1011,8 +1162,8 @@ test_maxcut(std::string v, std::string param1, std::string param2, std::string p
 
 int main(int argc, char ** argv)
 {
-    // ql::utils::logger::set_log_level("LOG_DEBUG");
-    ql::utils::logger::set_log_level("LOG_NOTHING");
+    ql::utils::logger::set_log_level("LOG_DEBUG");
+    // ql::utils::logger::set_log_level("LOG_NOTHING");
 
     ql::options::set("write_qasm_files", "yes"); 
     ql::options::set("write_report_files", "yes"); 
@@ -1052,7 +1203,6 @@ int main(int argc, char ** argv)
 //  nonNN but solvable by Initial Placement:
     test_oneD2("oneD2", "noroutingfirst", "no", "0", "min");
     test_oneD4("oneD4", "noroutingfirst", "no", "0", "min");
-#endif // RUNALL
 
     test_string("string", "noroutingfirst", "no", "0", "min");
     test_string("string", "all", "no", "0", "min");
@@ -1158,24 +1308,27 @@ int main(int argc, char ** argv)
     test_allDopt("allDopt", "all", "yes", "1", "minplusmin");
     test_allDopt("allDopt", "all", "yes", "2", "minplusmin");
     test_allDopt("allDopt", "all", "yes", "3", "minplusmin");
+#endif
 
-    test_allD("allD", "noroutingfirst", "no", "0", "min");
-    test_allD("allD", "all", "no", "0", "min");
-    test_allD("allD", "all", "no", "1", "min");
     test_allD("allD", "all", "no", "2", "min");
     test_allD("allD", "all", "no", "3", "min");
-    test_allD("allD", "all", "no", "0", "minplusone");
-    test_allD("allD", "all", "no", "1", "minplusone");
-    test_allD("allD", "all", "no", "2", "minplusone");
+
+#ifdef  RUNALL
     test_allD("allD", "all", "no", "3", "minplusone");
-    test_allD("allD", "all", "no", "0", "minplushalfmin");
-    test_allD("allD", "all", "no", "1", "minplushalfmin");
-    test_allD("allD", "all", "no", "2", "minplushalfmin");
-    test_allD("allD", "all", "no", "3", "minplushalfmin");
-    test_allD("allD", "all", "no", "0", "minplusmin");
-    test_allD("allD", "all", "no", "1", "minplusmin");
-    test_allD("allD", "all", "no", "2", "minplusmin");
     test_allD("allD", "all", "no", "3", "minplusmin");
+    test_allD("allD", "all", "no", "3", "minplushalfmin");
+    test_allD("allD", "all", "no", "2", "minplusone");
+    test_allD("allD", "all", "no", "2", "minplusmin");
+    test_allD("allD", "all", "no", "2", "minplushalfmin");
+    test_allD("allD", "all", "no", "1", "minplusone");
+    test_allD("allD", "all", "no", "1", "minplusmin");
+    test_allD("allD", "all", "no", "1", "minplushalfmin");
+    test_allD("allD", "all", "no", "1", "min");
+    test_allD("allD", "all", "no", "0", "minplusone");
+    test_allD("allD", "all", "no", "0", "minplusmin");
+    test_allD("allD", "all", "no", "0", "minplushalfmin");
+    test_allD("allD", "all", "no", "0", "min");
+    test_allD("allD", "noroutingfirst", "no", "0", "min");
     test_allD("allD", "noroutingfirst", "yes", "0", "min");
     test_allD("allD", "all", "yes", "0", "min");
     test_allD("allD", "all", "yes", "1", "min");
@@ -1300,6 +1453,42 @@ int main(int argc, char ** argv)
     test_lingling7esm("lingling7esm", "all", "yes", "1", "minplusmin");
     test_lingling7esm("lingling7esm", "all", "yes", "2", "minplusmin");
     test_lingling7esm("lingling7esm", "all", "yes", "3", "minplusmin");
+
+    test_lingling7sub("lingling7sub", "noroutingfirst", "no", "0", "min");
+    test_lingling7sub("lingling7sub", "all", "no", "0", "min");
+    test_lingling7sub("lingling7sub", "all", "no", "1", "min");
+    test_lingling7sub("lingling7sub", "all", "no", "2", "min");
+    test_lingling7sub("lingling7sub", "all", "no", "3", "min");
+    test_lingling7sub("lingling7sub", "all", "no", "0", "minplusone");
+    test_lingling7sub("lingling7sub", "all", "no", "1", "minplusone");
+    test_lingling7sub("lingling7sub", "all", "no", "2", "minplusone");
+    test_lingling7sub("lingling7sub", "all", "no", "3", "minplusone");
+    test_lingling7sub("lingling7sub", "all", "no", "0", "minplushalfmin");
+    test_lingling7sub("lingling7sub", "all", "no", "1", "minplushalfmin");
+    test_lingling7sub("lingling7sub", "all", "no", "2", "minplushalfmin");
+    test_lingling7sub("lingling7sub", "all", "no", "3", "minplushalfmin");
+    test_lingling7sub("lingling7sub", "all", "no", "0", "minplusmin");
+    test_lingling7sub("lingling7sub", "all", "no", "1", "minplusmin");
+    test_lingling7sub("lingling7sub", "all", "no", "2", "minplusmin");
+    test_lingling7sub("lingling7sub", "all", "no", "3", "minplusmin");
+    test_lingling7sub("lingling7sub", "noroutingfirst", "yes", "0", "min");
+    test_lingling7sub("lingling7sub", "all", "yes", "0", "min");
+    test_lingling7sub("lingling7sub", "all", "yes", "1", "min");
+    test_lingling7sub("lingling7sub", "all", "yes", "2", "min");
+    test_lingling7sub("lingling7sub", "all", "yes", "3", "min");
+    test_lingling7sub("lingling7sub", "all", "yes", "0", "minplusone");
+    test_lingling7sub("lingling7sub", "all", "yes", "1", "minplusone");
+    test_lingling7sub("lingling7sub", "all", "yes", "2", "minplusone");
+    test_lingling7sub("lingling7sub", "all", "yes", "3", "minplusone");
+    test_lingling7sub("lingling7sub", "all", "yes", "0", "minplushalfmin");
+    test_lingling7sub("lingling7sub", "all", "yes", "1", "minplushalfmin");
+    test_lingling7sub("lingling7sub", "all", "yes", "2", "minplushalfmin");
+    test_lingling7sub("lingling7sub", "all", "yes", "3", "minplushalfmin");
+    test_lingling7sub("lingling7sub", "all", "yes", "0", "minplusmin");
+    test_lingling7sub("lingling7sub", "all", "yes", "1", "minplusmin");
+    test_lingling7sub("lingling7sub", "all", "yes", "2", "minplusmin");
+    test_lingling7sub("lingling7sub", "all", "yes", "3", "minplusmin");
+#endif
 
     return 0;
 }
