@@ -28,6 +28,7 @@ namespace ql
           // default values
           opt_name2opt_val["log_level"] = "LOG_NOTHING";
           opt_name2opt_val["output_dir"] = "test_output";
+          opt_name2opt_val["unique_output"] = "no";
           opt_name2opt_val["optimize"] = "no";
           opt_name2opt_val["use_default_gates"] = "no";
           opt_name2opt_val["decompose_toffoli"] = "no";
@@ -63,6 +64,7 @@ namespace ql
           app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"], 
             {"LOG_NOTHING", "LOG_CRITICAL", "LOG_ERROR", "LOG_WARNING", "LOG_INFO", "LOG_DEBUG"}, "Log levels", true);
           app->add_option("--output_dir", opt_name2opt_val["output_dir"], "Name of output directory", true);
+          app->add_set_ignore_case("--unique_output", opt_name2opt_val["unique_output"], {"no", "yes"}, "Make output files unique", true);
           app->add_set_ignore_case("--prescheduler", opt_name2opt_val["prescheduler"], {"no", "yes"}, "Run qasm (first) scheduler?", true);
           app->add_set_ignore_case("--scheduler_post179", opt_name2opt_val["scheduler_post179"], {"no", "yes"}, "Issue 179 solution included", true);
           app->add_set_ignore_case("--print_dot_graphs", opt_name2opt_val["print_dot_graphs"], {"no", "yes"}, "Print (un-)scheduled graphs in DOT format", true);
@@ -98,6 +100,7 @@ namespace ql
       {
           std::cout << "log_level: " << opt_name2opt_val["log_level"] << std::endl
                     << "output_dir: " << opt_name2opt_val["output_dir"] << std::endl
+                    << "unique_output: " << opt_name2opt_val["unique_output"] << std::endl
                     << "optimize: " << opt_name2opt_val["optimize"] << std::endl
                     << "use_default_gates: " << opt_name2opt_val["use_default_gates"] << std::endl
                     << "decompose_toffoli: " << opt_name2opt_val["decompose_toffoli"] << std::endl
