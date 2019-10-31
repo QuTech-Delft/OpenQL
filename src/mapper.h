@@ -1149,7 +1149,17 @@ void MakeReal(ql::gate* gp, ql::circuit& circ)
     std::string gname = gp->name;
     stripname(gname);
     std::string real_gname = gname;
-    real_gname.append("_real");
+
+    auto mapperopt = ql::options::get("mapper");
+    if ("maxfidelity" == mapperopt)
+    {
+        DOUT("MakeReal: with mapper==maxfidelity generate _prim");
+        real_gname.append("_prim");
+    }
+    else
+    {
+        real_gname.append("_real");
+    }
     bool created = new_gate(circ, real_gname, real_qubits);
     if (!created)
     {

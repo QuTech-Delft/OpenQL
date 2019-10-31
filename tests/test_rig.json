@@ -295,6 +295,24 @@
 		"cz_real q5 q3": [ "red q5 q3"],
 		"cz_real q7 q4": [ "blue q7 q4"],
 		"cz_real q6 q5": [ "red q6 q5"],
-		"cz_real q7 q6": [ "blue q7 q6"]
+		"cz_real q7 q6": [ "blue q7 q6"],
+
+		"cz_prim q0 q1": [ "blue q0 q1"],
+		"cz_prim q1 q2": [ "red q1 q2"],
+		"cz_prim q0 q3": [ "blue q0 q3"],
+		"cz_prim q2 q4": [ "red q2 q4"],
+		"cz_prim q3 q5": [ "red q3 q5"],
+		"cz_prim q4 q7": [ "blue q4 q7"],
+		"cz_prim q5 q6": [ "red q5 q6"],
+		"cz_prim q6 q7": [ "blue q6 q7"],
+
+		"cz_prim q1 q0": [ "blue q1 q0"],
+		"cz_prim q2 q1": [ "red q2 q1"],
+		"cz_prim q3 q0": [ "blue q3 q0"],
+		"cz_prim q4 q2": [ "red q4 q2"],
+		"cz_prim q5 q3": [ "red q5 q3"],
+		"cz_prim q7 q4": [ "blue q7 q4"],
+		"cz_prim q6 q5": [ "red q6 q5"],
+		"cz_prim q7 q6": [ "blue q7 q6"]
     }
 }
