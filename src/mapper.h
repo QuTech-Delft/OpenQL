@@ -685,8 +685,10 @@ private:
     std::list<gate_p>       waitinglg;  // . . .  list of q gates in this Past, topological order, waiting to be scheduled in
                                         //        waitinglg only contains gates from Add and final Schedule call
                                         //        when evaluating alternatives, it is empty when Past is cloned; so no state
+public:
     std::list<gate_p>       lg;         // state: list of q gates in this Past, scheduled by their (start) cycle values
                                         //        so this is the result list of this Past, to compare with other Alters
+private:
     std::list<gate_p>       outlg;      // . . .  list of gates flushed out of this Past, not yet put in outCirc
                                         //        when evaluating alternatives, outlg stays constant; so no state
     std::map<gate_p,size_t> cycle;      // state: gate to cycle map, startCycle value of each past gatecycle[gp]
@@ -1497,7 +1499,15 @@ void Extend(Past currPast, Past basePast)
     // DOUT("... adding swaps to alternative-local past ...");
     AddSwaps(past, "all");
     // DOUT("... done adding/scheduling swaps to alternative-local past");
-    score = past.MaxFreeCycle() - basePast.MaxFreeCycle();
+
+    auto mapperopt = ql::options::get("mapper");
+    if ("maxfidelity" == mapperopt)
+    {
+    }
+    else
+    {
+        score = past.MaxFreeCycle() - basePast.MaxFreeCycle();
+    }
     didscore = true;
 }
 
@@ -3276,7 +3286,7 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
         DOUT("SelectAlter DONE level=" << level << " from " << la.size() << " alternatives");
         return;
     }
-    MapperAssert(mapperopt == "minextend" || mapperopt == "minextendrc");
+    MapperAssert(mapperopt == "minextend" || mapperopt == "minextendrc" || mapperopt == "maxfidelity");
 
     // Compute a.score of each alternative relative to basePast, and sort la on it, minimum first
     for (auto & a : la)
@@ -3286,7 +3296,7 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
                                             // and the extension stored into the a.score
     }
     la.sort([this](const Alter &a1, const Alter &a2) { return a1.score < a2.score; });
-    Alter::DPRINT("... SelectAlter minextend sorted all entry alternatives after extension:", la);
+    Alter::DPRINT("... SelectAlter minextend/maxfidelity sorted all entry alternatives after extension:", la);
 
     // Reduce sorted list of alternatives (la) to list of good alternatives (gla)
     // suitable to find in recursion which is/are really best;
@@ -3331,24 +3341,24 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
         }
     }
     DOUT("SelectAlter mapselectmaxwidth=" << mapselectmaxwidthopt << " level=" << level << " reduced la to gla");
-    Alter::DPRINT("... SelectAlter minextend good alternatives before recursion:", gla);
+    Alter::DPRINT("... SelectAlter minextend/maxfidelity good alternatives before recursion:", gla);
 
     // Prepare for recursion;
     // option mapselectmaxlevel indicates the maximum level of recursion (0 is no recursion)
     auto mapselectmaxlevelstring = ql::options::get("mapselectmaxlevel");
     int  mapselectmaxlevel = ("inf" == mapselectmaxlevelstring) ?  MAX_CYCLE : atoi(mapselectmaxlevelstring.c_str());
 
-    // When maxlevel has been reached, stop the recursion, and choose from the best minextend alternatives
+    // When maxlevel has been reached, stop the recursion, and choose from the best minextend/maxfidelity alternatives
     if (level >= mapselectmaxlevel)
     {
-        // Reduce list of good alternatives (gla) to list of minextend best alternatives (bla)
+        // Reduce list of good alternatives (gla) to list of minextend/maxfidelity best alternatives (bla)
         // and make a choice from that list to return as result
         bla = gla;
         bla.remove_if( [this,gla](const Alter& a) { return a.score != gla.front().score; } );
-        Alter::DPRINT("... SelectAlter minextend reduced to best alternatives to choose result from:", bla);
+        Alter::DPRINT("... SelectAlter minextend/maxfidelity reduced to best alternatives to choose result from:", bla);
         resa = ChooseAlter(bla, future);
         resa.DPRINT("... the selected Alter (STOPPING RECURSION) is");
-        DOUT("SelectAlter DONE level=" << level << " from " << bla.size() << " best minextend alternatives");
+        DOUT("SelectAlter DONE level=" << level << " from " << bla.size() << " best minextend/maxfidelity alternatives");
         return;
     }
 
@@ -3411,20 +3421,27 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
         else
         {
             DOUT("... ... SelectAlter level=" << level << ", no gates to evaluate next; RECURSION BOTTOM");
-            a.score = past_copy.MaxFreeCycle() - basePast.MaxFreeCycle();
+            auto mapperopt = ql::options::get("mapper");
+            if ("maxfidelity" == mapperopt)
+            {
+            }
+            else
+            {
+                a.score = past_copy.MaxFreeCycle() - basePast.MaxFreeCycle();
+            }
             a.DPRINT("... ... SelectAlter, after committing this alternative, mapped easy gates, no gates to evaluate next; RECURSION BOTTOM");
         }
         a.DPRINT("... ... DONE considering alternative:");
     }
     // Sort list of good alternatives (gla) on score resulting after recursion
     gla.sort([this](const Alter &a1, const Alter &a2) { return a1.score < a2.score; });
-    Alter::DPRINT("... SelectAlter minextend sorted alternatives after recursion:", gla);
+    Alter::DPRINT("... SelectAlter minextend/maxfidelity sorted alternatives after recursion:", gla);
 
     // Reduce list of good alternatives (gla) of before recursion to list of equally minimal best alternatives now (bla)
     // and make a choice from that list to return as result
     bla = gla;
     bla.remove_if( [this,gla](const Alter& a) { return a.score != gla.front().score; } );
-    Alter::DPRINT("... SelectAlter minextend equally best alternatives on return of RECURSION:", bla);
+    Alter::DPRINT("... SelectAlter minextend/maxfidelity equally best alternatives on return of RECURSION:", bla);
     resa = ChooseAlter(bla, future);
     resa.DPRINT("... the selected Alter is");
     DOUT("... SelectAlter level=" << level << " selecting from " << bla.size() << " equally good alternatives above DONE");
