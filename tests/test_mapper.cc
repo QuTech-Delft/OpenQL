@@ -10,12 +10,14 @@
 
 #include <openql.h>
 
+#include "metrics.h"
+
 void
-test_diogo(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
+test_diogo(std::string v, std::string param1, std::string param2, std::string param3)
 {
     int n = 17;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapper=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapper=" + param3;
 
     float sweep_points[] = { 1 };
 
@@ -32,13 +34,19 @@ test_diogo(std::string v, std::string param1, std::string param2, std::string pa
 
     prog.add(k);
 
-    ql::options::set("mapper", "minextendrc"); 
+    ql::options::set("maplookahead", param1);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapper", param3);
+
     ql::options::set("clifford_premapper", "no"); 
     ql::options::set("clifford_postmapper", "no"); 
     ql::options::set("scheduler_post179", "yes");
     ql::options::set("scheduler", "ALAP");
 
     prog.compile( );
+
+    IOUT("Final Fidelity: " << ql::metrics::quick_fidelity(k.c));
+    IOUT("THE END");
 }
 
 // simple program to test (post179) dot printing by the scheduler
@@ -1421,7 +1429,9 @@ int main(int argc, char ** argv)
     test_allDopt("allDopt", "all", "yes", "3", "minplusmin");
 #endif
 
-    test_diogo("diogo", "noroutingfirst", "yes", "0", "min");
+    test_diogo("diogo", "noroutingfirst", "yes", "minextendrc");
+
+    test_diogo("diogo", "noroutingfirst", "yes", "maxfidelity");
 
 #ifdef RUNALL
     test_allD2("allD2", "all", "no", "2", "min");
