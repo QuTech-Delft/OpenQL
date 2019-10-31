@@ -10,6 +10,37 @@
 
 #include <openql.h>
 
+void
+test_diogo(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
+{
+    int n = 17;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+
+    float sweep_points[] = { 1 };
+
+    ql::quantum_platform starmon("starmon", "test_mapper17.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, n, 0);
+    ql::quantum_kernel k(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
+    k.gate("x", 1);
+    k.gate("cz", 6,7);
+    k.gate("cz", 5,6);
+    k.gate("cz", 1,5);
+
+    prog.add(k);
+
+    ql::options::set("mapper", "minextendrc"); 
+    ql::options::set("clifford_premapper", "no"); 
+    ql::options::set("clifford_postmapper", "no"); 
+    ql::options::set("scheduler_post179", "yes");
+    ql::options::set("scheduler", "ALAP");
+
+    prog.compile( );
+}
+
 // simple program to test (post179) dot printing by the scheduler
 // excludes mapper
 void
@@ -370,6 +401,86 @@ test_allD(std::string v, std::string param1, std::string param2, std::string par
     for (int j=0; j<n; j++) { k.gate("x", j); }
 
     for (int i=0; i<n; i++) { for (int j=0; j<n; j++) { if (i != j) { k.gate("cnot", i,j); } } }
+
+    for (int j=0; j<n; j++) { k.gate("x", j); }
+
+    prog.add(k);
+
+    ql::options::set("maplookahead", param1);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
+
+    prog.compile( );
+}
+
+void
+test_allD2(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
+{
+    int n = 7;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    float sweep_points[] = { 1 };
+
+    ql::quantum_platform starmon("starmon", "test_mapper.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, n, 0);
+    ql::quantum_kernel k(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
+    for (int j=0; j<n; j++) { k.gate("x", j); }
+
+    //for (int i=0; i<n; i++) { for (int j=0; j<n; j++) { if (i < j) { k.gate("cnot", i,j); } } }
+
+    //k.gate("cnot", 0,0);
+    k.gate("cnot", 0,1);
+    k.gate("cnot", 0,2);
+    k.gate("cnot", 0,3);
+    k.gate("cnot", 0,4);
+    k.gate("cnot", 0,5);
+    k.gate("cnot", 0,6);
+    k.gate("cnot", 1,0);
+    //k.gate("cnot", 1,1);
+    k.gate("cnot", 1,2);
+    k.gate("cnot", 1,3);
+    k.gate("cnot", 1,4);
+    k.gate("cnot", 1,5);
+    k.gate("cnot", 1,6);
+    k.gate("cnot", 2,0);
+    k.gate("cnot", 2,1);
+    //k.gate("cnot", 2,2);
+    k.gate("cnot", 2,3);
+    k.gate("cnot", 2,4);
+    k.gate("cnot", 2,5);
+    k.gate("cnot", 2,6);
+    k.gate("cnot", 3,0);
+    k.gate("cnot", 3,1);
+    k.gate("cnot", 3,2);
+    //k.gate("cnot", 3,3);
+    k.gate("cnot", 3,4);
+    k.gate("cnot", 3,5);
+    k.gate("cnot", 3,6);
+    k.gate("cnot", 4,0);
+    k.gate("cnot", 4,1);
+    k.gate("cnot", 4,2);
+    k.gate("cnot", 4,3);
+    //k.gate("cnot", 4,4);
+    k.gate("cnot", 4,5);
+    k.gate("cnot", 4,6);
+    k.gate("cnot", 5,0);
+    k.gate("cnot", 5,1);
+    k.gate("cnot", 5,2);
+    k.gate("cnot", 5,3);
+    k.gate("cnot", 5,4);
+    //k.gate("cnot", 5,5);
+    k.gate("cnot", 5,6);
+    k.gate("cnot", 6,0);
+    k.gate("cnot", 6,1);
+    k.gate("cnot", 6,2);
+    k.gate("cnot", 6,3);
+    k.gate("cnot", 6,4);
+    k.gate("cnot", 6,5);
+    //k.gate("cnot", 6,6);
 
     for (int j=0; j<n; j++) { k.gate("x", j); }
 
@@ -1159,12 +1270,20 @@ int main(int argc, char ** argv)
     test_allDopt("allDopt", "all", "yes", "2", "minplusmin");
     test_allDopt("allDopt", "all", "yes", "3", "minplusmin");
 
-    test_allD("allD", "noroutingfirst", "no", "0", "min");
-    test_allD("allD", "all", "no", "0", "min");
-    test_allD("allD", "all", "no", "1", "min");
+    test_diogo("diogo", "noroutingfirst", "yes", "0", "min");
+
+#ifdef RUNALL
+    test_allD2("allD2", "all", "no", "2", "min");
+    test_allD2("allD2", "all", "no", "3", "min");
+// run until here later
     test_allD("allD", "all", "no", "2", "min");
     test_allD("allD", "all", "no", "3", "min");
-    test_allD("allD", "all", "no", "0", "minplusone");
+    test_allD("allD", "all", "no", "3", "minplusone");
+    test_allD("allD", "all", "no", "3", "minplusmin");
+    test_allD("allD", "all", "no", "3", "minplushalfmin");
+    test_allD("allD", "all", "no", "2", "minplusone");
+    test_allD("allD", "all", "no", "2", "minplusmin");
+    test_allD("allD", "all", "no", "2", "minplushalfmin");
     test_allD("allD", "all", "no", "1", "minplusone");
     test_allD("allD", "all", "no", "2", "minplusone");
     test_allD("allD", "all", "no", "3", "minplusone");
