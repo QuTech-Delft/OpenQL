@@ -2,6 +2,21 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [ 0.8.0 ] - [ 2019-10-31 ]
+### Added
+- support for CC backend
+
+### Changed
+- 
+
+### Removed
+- 
+
+### Fixed
+- fixed issue with duplicate kernel names
+- updated json library to fix osx builds
+
+
 ## [ 0.7.1 ] - [ 2019-09-02 ]
 ### Added
 -
