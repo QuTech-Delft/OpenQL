@@ -457,8 +457,34 @@ class quantum_program
             throw ql::exception("Error: Unknown option '"+tdopt+"' set for decompose_toffoli !",false);
          }
 
-        if( ql::options::get("write_qasm_files") == "yes")
-        {
+         if (ql::options::get("unique_output") == "yes")
+         {
+            std::string output_dir;
+            output_dir = ql::options::get("output_dir");
+            if (! ql::utils::exists_file(output_dir))
+            {
+                FATAL("Output directory " << output_dir << " does not exist");
+            }
+#ifdef UN
+            int vers = 0;
+            do
+            {
+                std::stringstream ss_unique;
+                ss_unique << ql::options::get("output_dir") << "/" << "unique";
+                if (!ql::utils::exists_file(ss_unique.str()))
+                {
+                    write_file(ss_test.str(), to_string(vers));
+                    name = name + "_" + to_string(vers);
+                    break;
+                }
+                vers++;
+            }
+            while(1);
+#endif
+         }
+
+         if( ql::options::get("write_qasm_files") == "yes")
+         {
             std::stringstream ss_qasm;
             ss_qasm << ql::options::get("output_dir") << "/" << name << ".qasm";
             std::string s = qasm();

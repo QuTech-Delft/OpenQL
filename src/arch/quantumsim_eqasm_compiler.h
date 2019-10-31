@@ -140,7 +140,7 @@ private:
             throw ql::exception("Unknown scheduler!", false);
 
         }
-        resource_manager_t rm(platform, direction);
+        cc_light_resource_manager_t rm(platform, direction);
 
         Scheduler sched;
         sched.init(ckt, platform, nqubits, ncreg);
@@ -176,7 +176,18 @@ private:
             if (! kernel.c.empty())
             {
                 auto num_creg = 0;  // quantumsim
+                std::string sched_dot;
+
                 kernel.bundles = quantumsim_schedule_rc(kernel.c, platform, num_qubits, num_creg);
+
+                if (ql::options::get("print_dot_graphs") == "yes")
+                {
+                    std::stringstream fname;
+                    fname << ql::options::get("output_dir") << "/" << kernel.name << "_" << "rcscheduler" << ".dot";
+                    IOUT("writing " << "rcscheduler" << " dependence graph dot file to '" << fname.str() << "' ...");
+                    ql::utils::write_file(fname.str(), sched_dot);
+                }
+
             }
         }
 
