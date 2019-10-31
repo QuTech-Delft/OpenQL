@@ -36,7 +36,7 @@ class quantum_program
    protected:
       bool                        default_config;
       std::string                 config_file_name;
-      std::vector<quantum_kernel> kernels;
+
 
    public:
       std::string           name;
@@ -46,6 +46,7 @@ class quantum_program
       size_t                creg_count;
       std::string           eqasm_compiler_name;
       ql::eqasm_compiler *  backend_compiler;
+	  std::vector<quantum_kernel> kernels;
 
 
    public:

@@ -1498,7 +1498,8 @@ void Extend(Past currPast, Past basePast)
     // DOUT("... adding swaps to alternative-local past ...");
     AddSwaps(past, "all");
     // DOUT("... done adding/scheduling swaps to alternative-local past");
-    score = past.MaxFreeCycle() - basePast.MaxFreeCycle();
+    // score = past.MaxFreeCycle() - basePast.MaxFreeCycle();
+    score = ql::metrics::quick_fidelity(past.lg);
     didscore = true;
 }
 
@@ -3412,7 +3413,7 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
         else
         {
             DOUT("... ... SelectAlter level=" << level << ", no gates to evaluate next; RECURSION BOTTOM");
-            a.score = past_copy.MaxFreeCycle() - basePast.MaxFreeCycle();
+            a.score = ql::metrics::quick_fidelity(past_copy.lg);
             a.DPRINT("... ... SelectAlter, after committing this alternative, mapped easy gates, no gates to evaluate next; RECURSION BOTTOM");
         }
         a.DPRINT("... ... DONE considering alternative:");

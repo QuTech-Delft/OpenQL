@@ -253,7 +253,7 @@ public:
 			
 			if (gate->duration > CYCLE_TIME*2 && gate->name!="prep_z" && gate->name!="measure" )
 			{
-				EOUT("Gate with duration larger than CYCLE_TIME*20 detected! Non primitive?: " << output_mode);
+				EOUT("Gate with duration larger than CYCLE_TIME*20 detected! Non primitive?: " << gate->name );
     			throw ql::exception("Check for non primitive gates at cycle "  + std::to_string(gate->cycle) + "!", false);
 			}
 
@@ -293,7 +293,6 @@ public:
 				IOUT("Gate " + gate->name + "("+ std::to_string(gate->operands[0]) + ", " + std::to_string(gate->operands[1]) +") at cycle " + std::to_string(gate->cycle) + " with duration " + std::to_string(gate->duration));
 				IOUT("Idled time q_c:" + std::to_string(idled_time_c));
 				IOUT("Idled time q_t:" + std::to_string(idled_time_t) + " gate cycle=" + std::to_string(gate->cycle) + ". last_time_t=" + std::to_string(last_time_t));
-				IOUT("Decoherence time: " + std::to_string(decoherence_time));
 
 				fids[qubit_c] *= std::exp(-(double) idled_time_c/decoherence_time); // Update fidelity with idling-caused decoherence
 				fids[qubit_t] *= std::exp(-(double)idled_time_t/decoherence_time); // Update fidelity with idling-caused decoherence
@@ -319,6 +318,8 @@ public:
 			fids[i] *= std::exp(-(double) idled_time_final/decoherence_time);
 		}
 
+		//Now we should still add decoherence effect in case the last gate was a two-qubit gate (the other qubits still decohere in the meantime!)
+
 
 
 		IOUT(" \n\n THE END \n\n ");
@@ -336,7 +337,7 @@ public:
 		ql::metrics::Metrics estimator(17);
 		std::vector<double> previous_fids;
 		ql::circuit circuit;
-		std::copy(gate_list.begin(), gate_list.end(), circuit.begin());
+		std::copy(std::begin(gate_list), std::end(gate_list), std::back_inserter(circuit));
 		double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
 		fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
 		return fidelity;
