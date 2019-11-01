@@ -32,6 +32,8 @@ namespace ql
           opt_name2opt_val["optimize"] = "no";
           opt_name2opt_val["use_default_gates"] = "no";
           opt_name2opt_val["decompose_toffoli"] = "no";
+          opt_name2opt_val["quantumsim"] = "no";
+
           opt_name2opt_val["scheduler"] = "ALAP";
           opt_name2opt_val["scheduler_uniform"] = "no";
           opt_name2opt_val["scheduler_commute"] = "yes";
@@ -76,6 +78,7 @@ namespace ql
           app->add_set_ignore_case("--clifford_premapper", opt_name2opt_val["clifford_premapper"], {"yes", "no"}, "clifford optimize before mapping yes or not", true);
           app->add_set_ignore_case("--clifford_postmapper", opt_name2opt_val["clifford_postmapper"], {"yes", "no"}, "clifford optimize after mapping yes or not", true);
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "MA"}, "Type of decomposition used for toffoli", true);
+          app->add_set_ignore_case("--quantumsim", opt_name2opt_val["quantumsim"], {"no", "yes"}, "Produce quantumsim output, and of which kind", true);
           app->add_set_ignore_case("--cz_mode", opt_name2opt_val["cz_mode"], {"manual", "auto"}, "CZ mode", true);
 
           app->add_set_ignore_case("--mapper", opt_name2opt_val["mapper"], {"no", "base", "baserc", "minextend", "minextendrc", "maxfidelity"}, "Mapper heuristic", true);
@@ -104,6 +107,7 @@ namespace ql
                     << "optimize: " << opt_name2opt_val["optimize"] << std::endl
                     << "use_default_gates: " << opt_name2opt_val["use_default_gates"] << std::endl
                     << "decompose_toffoli: " << opt_name2opt_val["decompose_toffoli"] << std::endl
+                    << "quantumsim: " << opt_name2opt_val["quantumsim"] << std::endl
                     << "prescheduler: " << opt_name2opt_val["prescheduler"] << std::endl
                     << "scheduler: " << opt_name2opt_val["scheduler"] << std::endl
                     << "scheduler_uniform: " << opt_name2opt_val["scheduler_uniform"] << std::endl

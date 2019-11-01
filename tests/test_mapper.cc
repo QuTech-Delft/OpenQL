@@ -43,6 +43,8 @@ test_diogo(std::string v, std::string param1, std::string param2, std::string pa
     ql::options::set("scheduler_post179", "yes");
     ql::options::set("scheduler", "ALAP");
 
+    ql::options::set("quantumsim", "yes");
+
     prog.compile( );
 
     IOUT("Final Fidelity: " << ql::metrics::quick_fidelity(k.c));

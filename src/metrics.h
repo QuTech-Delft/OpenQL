@@ -152,12 +152,12 @@ public:
 		IOUT("Creating output");
 		std::vector<double> result_vector;
 		result_vector = fids;
-		size_t dimension = result_vector.size();
 		IOUT("Creating output2");
 
 		PRINTER(result_vector);
 		IOUT("Creating output2.5");
 		//We take out negative fidelities
+		// size_t dimension = result_vector.size();
 		// for (size_t element = dimension-1; element >=0 ; element--)
 		// {
 		// 	if (result_vector.at(element) <= 0)
