@@ -19,6 +19,7 @@
 #include <arch/cc_light/cc_light_scheduler.h>
 #include <mapper.h>
 #include <clifford.h>
+#include <qsoverlay.h>
 
 // eqasm code : set of cc_light_eqasm instructions
 typedef std::vector<ql::arch::cc_light_eqasm_instr_t> eqasm_t;
@@ -1076,10 +1077,10 @@ public:
         ql::report::report_qasm(prog_name, kernels, platform, "in", "cc_light_compiler");
         ql::report::report_statistics(prog_name, kernels, platform, "in", "cc_light_compiler", "# ");
 
-        if ("no" != ql::options::get("quantumsim"))
-        {
+        if (ql::options::get("quantumsim") == "yes")
             write_quantumsim_program(prog_name, num_qubits, kernels, platform, "");
-        }
+		else if (ql::options::get("quantumsim") == "qsoverlay")
+			write_qsoverlay_program(prog_name, num_qubits, kernels, platform, "");
 
         // compute timetaken, start interval timer here
         double    total_timetaken = 0.0;
@@ -1121,11 +1122,10 @@ public:
             }
         }
 
-        if ("no" != ql::options::get("quantumsim"))
-        {
+        if (ql::options::get("quantumsim") == "yes")
             write_quantumsim_program(prog_name, num_qubits, kernels, platform, "mapped");
-            return;
-        }
+		else if (ql::options::get("quantumsim") == "qsoverlay")
+			write_qsoverlay_program(prog_name, num_qubits, kernels, platform, "mapped");
 
         // generate_opcode_cs_files(platform);
 
