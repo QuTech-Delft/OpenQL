@@ -1080,7 +1080,7 @@ public:
         if (ql::options::get("quantumsim") == "yes")
             write_quantumsim_program(prog_name, num_qubits, kernels, platform, "");
 		else if (ql::options::get("quantumsim") == "qsoverlay")
-			write_qsoverlay_program(prog_name, num_qubits, kernels, platform, "");
+			write_qsoverlay_program(prog_name, num_qubits, kernels, platform, "", ns_per_cycle);
 
         // compute timetaken, start interval timer here
         double    total_timetaken = 0.0;
@@ -1125,7 +1125,7 @@ public:
         if (ql::options::get("quantumsim") == "yes")
             write_quantumsim_program(prog_name, num_qubits, kernels, platform, "mapped");
 		else if (ql::options::get("quantumsim") == "qsoverlay")
-			write_qsoverlay_program(prog_name, num_qubits, kernels, platform, "mapped");
+			write_qsoverlay_program(prog_name, num_qubits, kernels, platform, "mapped", ns_per_cycle);
 
         // generate_opcode_cs_files(platform);
 
