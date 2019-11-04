@@ -51,6 +51,50 @@ test_diogo(std::string v, std::string param1, std::string param2, std::string pa
     IOUT("THE END");
 }
 
+void
+test_diogo2(std::string v, std::string param1, std::string param2, std::string param3)
+{
+    int n = 17;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapper=" + param3;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapper=" + param3;
+
+    float sweep_points[] = { 1 };
+
+    ql::quantum_platform starmon("starmon", "test_mapper17.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, n, 0);
+    ql::quantum_kernel k(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
+    k.gate("x", 1);
+    k.gate("cz", 6,7);
+    k.gate("cz", 5,6);
+    k.gate("cz", 1,5);
+    k.gate("y", 2);
+    k.gate("h", 3);
+    k.gate("measure", 2);
+    k.gate("measure", 3);
+
+
+    prog.add(k);
+
+    ql::options::set("maplookahead", param1);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapper", param3);
+
+    ql::options::set("clifford_premapper", "no"); 
+    ql::options::set("clifford_postmapper", "no"); 
+    ql::options::set("scheduler_post179", "yes");
+    ql::options::set("scheduler", "ALAP");
+
+    ql::options::set("quantumsim", "qsoverlay");
+
+    prog.compile( );
+
+    IOUT("Final Fidelity: " << ql::metrics::quick_fidelity(k.c));
+    IOUT("THE END");
+}
+
 // simple program to test (post179) dot printing by the scheduler
 // excludes mapper
 void
@@ -1283,7 +1327,7 @@ test_maxcut(std::string v, std::string param1, std::string param2, std::string p
 
 int main(int argc, char ** argv)
 {
-    ql::utils::logger::set_log_level("LOG_DEBUG");
+    ql::utils::logger::set_log_level("LOG_INFO");
     // ql::utils::logger::set_log_level("LOG_NOTHING");
 
     ql::options::set("write_qasm_files", "yes"); 
@@ -1310,6 +1354,9 @@ int main(int argc, char ** argv)
     ql::options::set("scheduler", "ALAP");
     ql::options::set("scheduler_commute", "yes");
     ql::options::set("prescheduler", "no");
+
+	test_diogo2("diogo2", "noroutingfirst", "yes", "minextendrc");
+    test_diogo2("diogo2", "noroutingfirst", "yes", "maxfidelity");
 
 #ifdef  RUNALL
     test_dot("dot", "no", "ASAP");
@@ -1431,9 +1478,6 @@ int main(int argc, char ** argv)
     test_allDopt("allDopt", "all", "yes", "3", "minplusmin");
 #endif
 
-    test_diogo("diogo", "noroutingfirst", "yes", "minextendrc");
-
-    test_diogo("diogo", "noroutingfirst", "yes", "maxfidelity");
 
 #ifdef RUNALL
     test_allD2("allD2", "all", "no", "2", "min");
