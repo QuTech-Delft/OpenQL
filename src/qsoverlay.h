@@ -40,21 +40,9 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
              << "\n"
              << "\n";
 
-		//Declare program qubits
-		std::string qubit_list = "";
-		for (size_t qubit=0; qubit < num_qubits; qubit++)
-		{
-			qubit_list += "'";
-			qubit_list += (qubit != num_qubits-1) ? (std::to_string(qubit) + "', ") : (std::to_string(qubit) + "'");
-		}
-		fout << "qubit_list = [" + qubit_list + "]\n";
-
-		fout << "setup = DiCarlo_setup.quick_setup(qubit_list)\n";
-
+				
+				
 		//Gate correspondence
-		fout << "\n#Now the circuit is created\n"
-			 << "b = Builder(setup)\n";
-
 		std::map <std::string, std::string> gate_map = {
 			{"x", "X"},
 			{"x45", "RX"},
@@ -82,8 +70,26 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 			{"ym90", "-np.pi/2"},
 		};
 
+		//Create qubit list
+
+		std::string qubit_list = "";
+		for (size_t qubit=0; qubit < num_qubits; qubit++)
+		{
+			qubit_list += "'";
+			qubit_list += (qubit != num_qubits-1) ? (std::to_string(qubit) + "', ") : (std::to_string(qubit) + "'");
+		}
+
 		//Circuit creation
-		fout << "\ndef circuit_generated():\n";
+		fout << "\n#Now the circuit is created\n"
+
+			 << "\ndef circuit_generated(noise_flag, setup_name = 'DiCarlo_setup'):\n"
+			 << "	qubit_list = [" + qubit_list + "]\n"
+			 << "	if setup_name == 'DiCarlo_setup':\n"
+			 << "		setup = DiCarlo_setup.quick_setup(qubit_list, noise_flag = noise_flag)\n"
+			 << "	b = Builder(setup)\n";
+
+
+		//Circuit creation: Add gates
 		for (auto & gate: kernels.front().c)
 		{
 			std::string qs_name;
