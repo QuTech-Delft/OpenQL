@@ -99,9 +99,13 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 
 			IOUT(gate->name);
 			if (gate->operands.size() == 1)
+            {
 				IOUT("Gate operands: " + std::to_string(gate->operands[0]));
+            }
 			else if (gate->operands.size() == 2)
+            {
 				IOUT("Gate operands: " + std::to_string(gate->operands[0]) + ", " + std::to_string(gate->operands[1]));
+            }
 			else
 			{
 				IOUT("GATE OPERANDS: Problem encountered");
@@ -113,7 +117,9 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 				 << (( gate->operands.size() == 1 ) ? "']" : ("', '" + std::to_string(gate->operands[1]) + "']"));
 			
 			if (qs_name == "RX" or qs_name == "RY")
+            {
 				fout << ", angle = " << angles[gate->name];
+            }
 
 			if (qs_name == "Measure")
 			{
@@ -121,7 +127,9 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 				fout << ", time = " << std::to_string((gate->cycle-1)*ns_per_cycle + gate->duration/4);
 			}
 			else
+            {
 				fout << ", time = " << std::to_string((gate->cycle-1)*ns_per_cycle + gate->duration/2);
+            }
 
 			fout << ")\n";
 		}

@@ -1327,8 +1327,9 @@ test_maxcut(std::string v, std::string param1, std::string param2, std::string p
 
 int main(int argc, char ** argv)
 {
-    ql::utils::logger::set_log_level("LOG_INFO");
+    ql::utils::logger::set_log_level("LOG_DEBUG");
     // ql::utils::logger::set_log_level("LOG_NOTHING");
+    ql::options::set("unique_output", "yes");
 
     ql::options::set("write_qasm_files", "yes"); 
     ql::options::set("write_report_files", "yes"); 
