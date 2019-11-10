@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'OpenQL'
-copyright = '2019, OpenQL Authors'
-author = 'Nader Khammassi and Imran Ashraf'
+copyright = '2016, Nader Khammassi & Imran Ashraf, QuTech, TU Delft'
+author = 'Nader Khammassi & Imran Ashraf, QuTech, TU Delft'
 
 
 # -- General configuration ---------------------------------------------------
@@ -28,7 +28,11 @@ author = 'Nader Khammassi and Imran Ashraf'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'm2r',
 ]
+
+source_suffix = ['.rst', '.md']
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
