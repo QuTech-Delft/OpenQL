@@ -21,6 +21,7 @@ test_diogo(std::string v, std::string param1, std::string param2, std::string pa
 
     float sweep_points[] = { 1 };
 
+
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
@@ -48,7 +49,7 @@ test_diogo(std::string v, std::string param1, std::string param2, std::string pa
     prog.compile( );
 
     IOUT("Final Fidelity: " << ql::metrics::quick_fidelity(k.c));
-    IOUT("THE END");
+    IOUT("THE END!");
 }
 
 void
@@ -70,10 +71,10 @@ test_diogo2(std::string v, std::string param1, std::string param2, std::string p
     k.gate("cz", 6,7);
     k.gate("cz", 5,6);
     k.gate("cz", 1,5);
-    k.gate("y", 2);
-    k.gate("h", 3);
-    k.gate("measure", 2);
-    k.gate("measure", 3);
+    // k.gate("y", 2);
+    // k.gate("h", 3);
+    // k.gate("measure", 2);
+    // k.gate("measure", 3);
 
 
     prog.add(k);
@@ -1327,8 +1328,8 @@ test_maxcut(std::string v, std::string param1, std::string param2, std::string p
 
 int main(int argc, char ** argv)
 {
-    ql::utils::logger::set_log_level("LOG_INFO");
-    // ql::utils::logger::set_log_level("LOG_NOTHING");
+    // ql::utils::logger::set_log_level("LOG_INFO");
+    ql::utils::logger::set_log_level("LOG_NOTHING");
 
     ql::options::set("write_qasm_files", "yes"); 
     ql::options::set("write_report_files", "yes"); 
@@ -1358,7 +1359,7 @@ int main(int argc, char ** argv)
 	test_diogo2("diogo2", "noroutingfirst", "yes", "minextendrc");
     test_diogo2("diogo2", "noroutingfirst", "yes", "maxfidelity");
 
-#ifdef  RUNALL
+
     test_dot("dot", "no", "ASAP");
     test_dot("dot", "no", "ALAP");
     test_dot("dot", "yes", "ASAP");
@@ -1476,10 +1477,8 @@ int main(int argc, char ** argv)
     test_allDopt("allDopt", "all", "yes", "1", "minplusmin");
     test_allDopt("allDopt", "all", "yes", "2", "minplusmin");
     test_allDopt("allDopt", "all", "yes", "3", "minplusmin");
-#endif
 
 
-#ifdef RUNALL
     test_allD2("allD2", "all", "no", "2", "min");
     test_allD2("allD2", "all", "no", "3", "min");
 // run until here later
@@ -1659,7 +1658,6 @@ int main(int argc, char ** argv)
     test_lingling7sub("lingling7sub", "all", "yes", "1", "minplusmin");
     test_lingling7sub("lingling7sub", "all", "yes", "2", "minplusmin");
     test_lingling7sub("lingling7sub", "all", "yes", "3", "minplusmin");
-#endif
 
     return 0;
 }

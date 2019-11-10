@@ -243,7 +243,7 @@ public:
 
 			if (gate->name == "measure")
 				continue;
-			else if (gate->name == "prep_z")
+			else if (gate->name == "prepz")
 			{
 				size_t qubit = gate->operands[0]; 
 				fids[qubit] = 1.0;
