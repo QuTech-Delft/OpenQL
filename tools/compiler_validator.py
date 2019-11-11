@@ -14,9 +14,7 @@ import sys
 def simulation(circuit):
 	# CIRCUIT DECLARATION
 	bell_state = SparseDM(circuit.get_qubit_names())
-	print('simulation_start')
 	circuit.apply_to(bell_state)
-	print('simulation_end')
 	measurement_result = bell_state.peak_multiple_measurements(circuit.get_qubit_names())
 	return measurement_result
 
@@ -24,9 +22,9 @@ def simulation(circuit):
 def return_correct_result(circuit):
 
 	measurement_result = simulation(circuit)
-	for measurement, value in measurement_result:
-		if round(value, 5) > 0:
-			print(measurement, round(value, 5))
+	# for measurement, value in measurement_result:
+	# 	if round(value, 5) > 0:
+	# 		print(measurement, round(value, 5))
 	correct_result = max(measurement_result,key=lambda x: x[1])
 	
 	return correct_result
@@ -37,7 +35,7 @@ def compare(circuit_original, circuit_mapped, mapping):
 
 	# measurement_result_rounded = [ (stateAndcount[0], round(stateAndcount[1],5)) for stateAndcount in measurement_result]
 	if result_original[1]<0.999 or result_mapped[1]<0.999:
-		print("Warning: Non deterministic circuit? P(most likely)<0.999")
+		print("Warning: Non deterministic circuit? P(most likely original)= ", result_original[1], " | P(most likely mapped)= ", result_mapped[1] )
 
 	#TODO SWAP according to mapping
 	result_original_updatedmapping_dict = {}
@@ -47,6 +45,16 @@ def compare(circuit_original, circuit_mapped, mapping):
 	if result_mapped[0] == result_original_updatedmapping_dict:
 		return True
 	else:
+		print(circuit_original.title)
+		print("====Circuit original: ")
+		print(result_original[0])
+		print("====Mapping: ")
+		print(mapping)
+		print("====Circuit original, mapping corrected: ")
+		print(result_original_updatedmapping_dict)
+		print("====Circuit mapped: ")
+		print(result_mapped[0])
+		print("\n\n")
 		return False
 
 def get_mapping(mapper_out_report_file):
@@ -88,6 +96,7 @@ def compiler_validation(curdir, indir):
 
 	validation_dict = {}
 	for element in name_unmapped_mapped_mapping_data_tuples:
+		# print(element[0])
 		is_correct = compare(*element[1:])
 		validation_dict[element[0]] = is_correct
 

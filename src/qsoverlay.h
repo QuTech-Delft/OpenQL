@@ -15,6 +15,12 @@
 void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
         std::vector<ql::quantum_kernel>& kernels, const ql::quantum_platform & platform, std::string suffix, size_t ns_per_cycle, bool compiled)
     {
+
+		//TODO remove the next line. Using this because qsoverlay has some bugs when time is explicited
+		compiled = false;
+
+
+
         IOUT("Writing scheduled QSoverlay program");
         ofstream fout;
         string qfname( ql::options::get("output_dir") + "/" + prog_name + "_quantumsim_" + suffix + ".py");
@@ -61,9 +67,6 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 			{"measure", "Measure"},
 		};
 
-		if (not compiled)
-			gate_map["cnot"] = "CNOT";
-
 		std::map <std::string, std::string> angles = {
 			{"x45", "np.pi/4"},
 			{"x90", "np.pi/2"},
@@ -74,6 +77,16 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 			{"ym45", "-np.pi/4"},
 			{"ym90", "-np.pi/2"},
 		};
+
+		if (not compiled)
+		{
+			gate_map["cnot"] = "CNOT";
+			// gate_map["t"] = "RZ";
+			// angles["t"] = "np.pi/4";
+			// gate_map["tdag"] = "RZ";
+			// angles["t"] = "-np.pi/4";
+
+		}
 
 		//Create qubit list
 
@@ -91,7 +104,8 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 			 << "	qubit_list = [" + qubit_list + "]\n"
 			 << "	if setup_name == 'DiCarlo_setup':\n"
 			 << "		setup = DiCarlo_setup.quick_setup(qubit_list, noise_flag = noise_flag)\n"
-			 << "	b = Builder(setup)\n";
+			 << "	b = Builder(setup)\n"
+			 << "	b.new_circuit(circuit_title = '" << kernels.front().name << "')\n";
 
 
 		//Circuit creation: Add gates
@@ -129,7 +143,7 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 			
 			
 			//Add angles for the gates that require it
-			if (qs_name == "RX" or qs_name == "RY")
+			if (qs_name == "RX" or qs_name == "RY" or qs_name == "t" or qs_name == "tdag")
 				fout << ", angle = " << angles[gate->name];
 
 			

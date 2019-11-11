@@ -15,7 +15,7 @@ for file in files:
 	for line in text:
 		if 'num_qubits = ' in line:
 			num_qubits = line.split('num_qubits = ')[1]
-			if int(num_qubits) > 17:
+			if int(num_qubits) > 10:
 				os.remove(file)
 				print('Deleted: ', file)
 				break
