@@ -99,13 +99,6 @@ namespace ql
             file.close();
         }
 
-        #include <sys/stat.h>
-        bool exists_file(const std::string& file_name)
-        {
-            struct stat buffer;   
-            return (stat (file_name.c_str(), &buffer) == 0); 
-        }
-
         template <typename T>
         std::string to_string(T arg)
         {

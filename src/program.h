@@ -416,11 +416,57 @@ class quantum_program
       }
 #endif
 
+      /*
+      * support a unique file called 'get("output_dir")/name.unique'
+      * it is a seed to create unique output files (qasm, report, etc.) for the same program (with name 'name')
+      * - when the unique file is not there, it is created with the value 0 (which is then the current value)
+      *   otherwise, it just reads the current value from that file
+      * - it then increments the current value by 1, stores it in the file and returns this value
+      * since this may be the first time that the output_dir is used, it warns when that doesn't exist
+      */
+      int bump_unique_file_version()
+      {
+          std::stringstream ss_unique;
+          ss_unique << ql::options::get("output_dir") << "/" << name << ".unique";
+      
+          std::fstream ufs;
+          int vers;
+
+          // retrieve old version number
+          ufs.open (ss_unique.str(), std::fstream::in);
+          if (!ufs.is_open())
+          {
+              // no file there, initialize old version number to 0
+              ufs.open(ss_unique.str(), std::fstream::out);
+              if (!ufs.is_open())
+              {
+                  FATAL("Cannot create: " << ss_unique.str() << ". Probably output directory " << ql::options::get("output_dir") << " does not exist");
+              }
+              ufs << 0 << std::endl;
+              vers = 0;
+          }
+          else
+          {
+              // read stored number
+              ufs >> vers;
+          }
+          ufs.close();
+      
+          // increment to get new one, store it for later and return
+          vers++;
+          ufs.open(ss_unique.str(), std::fstream::out);
+          ufs << vers << std::endl;
+          ufs.close();
+      
+          return vers;
+      }
+
       int compile()
       {
-         IOUT("compiling ...");
+         IOUT("compiling " << name << " ...");
+         WOUT("compiling " << name << " ...");
 #if !OPT_MICRO_CODE
-         WOUT("deprecation warning: this version was compiled with support for CBOX microcode disabled in main code (CBOX backend not affected)");
+         // WOUT("deprecation warning: this version was compiled with support for CBOX microcode disabled in main code (CBOX backend not affected)");
 #endif
          if (kernels.empty())
          {
@@ -454,28 +500,12 @@ class quantum_program
 
          if (ql::options::get("unique_output") == "yes")
          {
-            std::string output_dir;
-            output_dir = ql::options::get("output_dir");
-            if (! ql::utils::exists_file(output_dir))
+            int vers;
+            vers = bump_unique_file_version();
+            if (vers > 1)
             {
-                FATAL("Output directory " << output_dir << " does not exist");
+                name = ( name + to_string(vers) );
             }
-#ifdef UN
-            int vers = 0;
-            do
-            {
-                std::stringstream ss_unique;
-                ss_unique << ql::options::get("output_dir") << "/" << "unique";
-                if (!ql::utils::exists_file(ss_unique.str()))
-                {
-                    write_file(ss_test.str(), to_string(vers));
-                    name = name + "_" + to_string(vers);
-                    break;
-                }
-                vers++;
-            }
-            while(1);
-#endif
          }
 
          if( ql::options::get("write_qasm_files") == "yes")
