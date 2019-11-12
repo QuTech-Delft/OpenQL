@@ -84,6 +84,37 @@ The following packges are required to compile OpenQL from sources:
 
     In all the following instructions, python refers to Python 3 and pip refers to Pip 3.
 
+Notes for Windows Users
+^^^^^^^^^^^^^^^^^^^^^^^
+
+- Use Power Shell for installation
+- Set execution policy by:
+
+::
+
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
+
+- Install [PowerShell Community Extensions](https://www.google.com "PowerShell Community Extensions")
+- MSVC 2015 should be added to the path by using the following command:
+
+::
+
+    Invoke-BatchFile "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
+
+- To make your life easier, you can add this command to the profile you are using for power shell, avoiding the need to manually run this command every time you open a power shell. You can see the path of profile by `echo $PROFILE`. Create/Edit this fille to add the above command.
+
+- Python.exe and swig.exe should be in the path of power shell. To test if swig.exe is the path, run:
+
+::
+
+    Get-Command swig
+
+- Make sure the following variables are defined:
+
+    - PYTHON_INCLUDE (should point to the directory containing Python.h)
+    - PYTHON_LIB (should point to the python library pythonXX.lib, where XX is for python version number)
+
+
 
 Obtaining OpenQL
 ^^^^^^^^^^^^^^^^
@@ -109,4 +140,25 @@ Or in editable mode by the command:
 ::
 
     pip install  -e .
+
+
+
+Running the tests
+-----------------
+
+In order to pass all the tests, *qisa-as* and *libqasm* should be installed first. Follow `qisa-as <https://github.com/QE-Lab/eQASM_Assembler>`_ and
+`libqasm <https://github.com/QE-Lab/libqasm>`_ instructions to install python interfaces of these modules. Once *qisa-as* and *libqasm* are installed, you can run all the tests by:
+
+::
+
+    py.test -v
+
+
+Or
+
+::
+
+    python -m pytest
+
+
 
