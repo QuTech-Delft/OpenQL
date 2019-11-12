@@ -5,12 +5,43 @@
 #include <algorithm>
 #include <sstream>
 #include <cassert>
+#include <cstdlib>
 
 #include <time.h>
 
 #include <openql.h>
 
 #include "metrics.h"
+
+void
+test_recursion(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
+{
+    int n = 7;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    float sweep_points[] = { 1 };
+
+    ql::quantum_platform starmon("starmon", "test_mapper.json");
+    ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, n, 0);
+    ql::quantum_kernel k(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
+    for (int j=0; j<n; j++) { k.gate("x", j); }
+
+    for (int i=0; i<n; i++) { for (int j=0; j<n; j++) { if (i != j) { k.gate("cnot", i,j); } } }
+
+    for (int j=0; j<n; j++) { k.gate("x", j); }
+
+    prog.add(k);
+
+    ql::options::set("maplookahead", param1);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
+
+    prog.compile( );
+}
 
 void
 test_diogo(std::string v, std::string param1, std::string param2, std::string param3)
@@ -1331,9 +1362,9 @@ int main(int argc, char ** argv)
     // ql::utils::logger::set_log_level("LOG_NOTHING");
     ql::options::set("unique_output", "yes");
 
-    ql::options::set("write_qasm_files", "yes"); 
+    // ql::options::set("write_qasm_files", "yes"); 
     ql::options::set("write_report_files", "yes"); 
-    ql::options::set("print_dot_graphs", "yes"); 
+    // ql::options::set("print_dot_graphs", "yes"); 
 
     ql::options::set("clifford_premapper", "yes"); 
     ql::options::set("mapper", "minextendrc"); 
@@ -1348,25 +1379,35 @@ int main(int argc, char ** argv)
 //parameter3  ql::options::set("mapselectmaxlevel", "0"); 
 //parameter2  ql::options::set("maprecNN2q", "no"); 
 //parameter4  ql::options::set("mapselectmaxwidth", "min"); 
-    ql::options::set("maptiebreak", "first"); 
+    ql::options::set("maptiebreak", "random"); 
 
     ql::options::set("clifford_postmapper", "yes"); 
     ql::options::set("scheduler_post179", "yes");
     ql::options::set("scheduler", "ALAP");
     ql::options::set("scheduler_commute", "yes");
-    ql::options::set("prescheduler", "no");
+    ql::options::set("prescheduler", "yes");
+
+#ifdef  RUNALL
+    test_recursion("recursion", "noroutingfirst", "no", "0", "min");
+    test_recursion("recursion", "all", "no", std::getenv("mapselectmaxlevel"), "min");
+    test_recursion("recursion", "all", "no", std::getenv("mapselectmaxlevel"), "minplusone");
+    test_recursion("recursion", "all", "no", std::getenv("mapselectmaxlevel"), "minplushalfmin");
+    test_recursion("recursion", "all", "no", std::getenv("mapselectmaxlevel"), "minplusmin");
 
 	test_diogo2("diogo2", "noroutingfirst", "yes", "minextendrc");
     test_diogo2("diogo2", "noroutingfirst", "yes", "maxfidelity");
 
-#ifdef  RUNALL
     test_dot("dot", "no", "ASAP");
     test_dot("dot", "no", "ALAP");
     test_dot("dot", "yes", "ASAP");
     test_dot("dot", "yes", "ALAP");
 
 //  NN:
+#endif
+
     test_rc("rc", "noroutingfirst", "no", "0", "min");
+
+#ifdef RUNALL
     test_someNN("someNN", "noroutingfirst", "no", "0", "min");
 
 //  nonNN but solvable by Initial Placement:
@@ -1477,30 +1518,28 @@ int main(int argc, char ** argv)
     test_allDopt("allDopt", "all", "yes", "1", "minplusmin");
     test_allDopt("allDopt", "all", "yes", "2", "minplusmin");
     test_allDopt("allDopt", "all", "yes", "3", "minplusmin");
-#endif
 
 
-#ifdef RUNALL
     test_allD2("allD2", "all", "no", "2", "min");
     test_allD2("allD2", "all", "no", "3", "min");
-// run until here later
+
+    test_allD("allD", "noroutingfirst", "no", "0", "min");
     test_allD("allD", "all", "no", "2", "min");
     test_allD("allD", "all", "no", "3", "min");
-    test_allD("allD", "all", "no", "3", "minplusone");
-    test_allD("allD", "all", "no", "3", "minplusmin");
-    test_allD("allD", "all", "no", "3", "minplushalfmin");
     test_allD("allD", "all", "no", "2", "minplusone");
-    test_allD("allD", "all", "no", "2", "minplusmin");
+    test_allD("allD", "all", "no", "3", "minplusone");
     test_allD("allD", "all", "no", "2", "minplushalfmin");
-    test_allD("allD", "all", "no", "1", "minplusone");
-    test_allD("allD", "all", "no", "1", "minplusmin");
-    test_allD("allD", "all", "no", "1", "minplushalfmin");
+    test_allD("allD", "all", "no", "3", "minplushalfmin");
+    test_allD("allD", "all", "no", "2", "minplusmin");
+    test_allD("allD", "all", "no", "3", "minplusmin");
+    test_allD("allD", "all", "no", "0", "min");
     test_allD("allD", "all", "no", "1", "min");
     test_allD("allD", "all", "no", "0", "minplusone");
-    test_allD("allD", "all", "no", "0", "minplusmin");
+    test_allD("allD", "all", "no", "1", "minplusone");
     test_allD("allD", "all", "no", "0", "minplushalfmin");
-    test_allD("allD", "all", "no", "0", "min");
-    test_allD("allD", "noroutingfirst", "no", "0", "min");
+    test_allD("allD", "all", "no", "1", "minplushalfmin");
+    test_allD("allD", "all", "no", "0", "minplusmin");
+    test_allD("allD", "all", "no", "1", "minplusmin");
     test_allD("allD", "noroutingfirst", "yes", "0", "min");
     test_allD("allD", "all", "yes", "0", "min");
     test_allD("allD", "all", "yes", "1", "min");
@@ -1518,7 +1557,6 @@ int main(int argc, char ** argv)
     test_allD("allD", "all", "yes", "1", "minplusmin");
     test_allD("allD", "all", "yes", "2", "minplusmin");
     test_allD("allD", "all", "yes", "3", "minplusmin");
-
 
 //  nonNN, realistic:
     test_daniel2("daniel2", "noroutingfirst", "no", "0", "min");

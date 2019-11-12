@@ -463,9 +463,10 @@ class quantum_program
 
       int compile()
       {
-         IOUT("compiling ...");
+         IOUT("compiling " << name << " ...");
+         WOUT("compiling " << name << " ...");
 #if !OPT_MICRO_CODE
-         WOUT("deprecation warning: this version was compiled with support for CBOX microcode disabled in main code (CBOX backend not affected)");
+         // WOUT("deprecation warning: this version was compiled with support for CBOX microcode disabled in main code (CBOX backend not affected)");
 #endif
          if (kernels.empty())
          {

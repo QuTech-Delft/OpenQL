@@ -1509,12 +1509,12 @@ public:
      */
     void load(json& instr)
     {
-        // DOUT("loading instruction '" << name << "'...");
+        DOUT("loading instruction '" << name << "'...");
         std::string l_attr = "qubits";
         try
         {
             l_attr = "qubits";
-            // DOUT("qubits: " << instr["qubits"]);
+            DOUT("qubits: " << instr["qubits"]);
             parameters = instr["qubits"].size();
             for (size_t i=0; i<parameters; ++i)
             {
@@ -1532,11 +1532,13 @@ public:
             // operation_type = instr["type"];
             l_attr = "duration";
             duration = instr["duration"];
+            DOUT("duration: " << instr["duration"]);
             // FIXME: code commented out:
             // strings_t hdw = instr["hardware"];
             // used_hardware.assign(hdw.begin(), hdw.end());
             l_attr = "matrix";
             auto mat = instr["matrix"];
+            DOUT("matrix: " << instr["matrix"]);
             m.m[0] = complex_t(mat[0][0], mat[0][1]);
             m.m[1] = complex_t(mat[1][0], mat[1][1]);
             m.m[2] = complex_t(mat[2][0], mat[2][1]);
@@ -1551,6 +1553,7 @@ public:
         if ( instr.count("cc_light_instr") > 0)
         {
             arch_operation_name = instr["cc_light_instr"];
+            DOUT("cc_light_instr: " << instr["cc_light_instr"]);
         }
     }
 
