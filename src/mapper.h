@@ -219,7 +219,7 @@ void Swap(size_t r0, size_t r1)
     }
     else
     {
-        MapperAssert(r0 != rs_hasstate);
+        MapperAssert(rs[r0] != rs_hasstate);
     }
 
     if (v1 != UNDEFINED_QUBIT)
@@ -229,7 +229,7 @@ void Swap(size_t r0, size_t r1)
     }
     else
     {
-        MapperAssert(r1 != rs_hasstate);
+        MapperAssert(rs[r1] != rs_hasstate);
     }
 
     realstate_t ts = rs[r0];

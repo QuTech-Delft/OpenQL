@@ -1403,11 +1403,9 @@ int main(int argc, char ** argv)
     test_dot("dot", "yes", "ALAP");
 
 //  NN:
-#endif
 
     test_rc("rc", "noroutingfirst", "no", "0", "min");
 
-#ifdef RUNALL
     test_someNN("someNN", "noroutingfirst", "no", "0", "min");
 
 //  nonNN but solvable by Initial Placement:

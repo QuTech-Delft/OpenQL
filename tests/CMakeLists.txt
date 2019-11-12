@@ -4,8 +4,11 @@ INCLUDE_DIRECTORIES(
   ${PROJECT_SOURCE_DIR}/tests
 )
 
-ADD_EXECUTABLE(test_mapper test_mapper.cc )
-TARGET_LINK_LIBRARIES(test_mapper ${LEMON_LIBRARIES} )
+# ADD_EXECUTABLE(test_mapper test_mapper.cc )
+# TARGET_LINK_LIBRARIES(test_mapper ${LEMON_LIBRARIES} )
+
+ADD_EXECUTABLE(test_rcbug test_rcbug.cc )
+TARGET_LINK_LIBRARIES(test_rcbug ${LEMON_LIBRARIES} )
 
 # here are the C++ tests which will be compiled from this directory
 # ADD_EXECUTABLE(program_test program_test.cc )
@@ -13,8 +16,8 @@ TARGET_LINK_LIBRARIES(test_mapper ${LEMON_LIBRARIES} )
 
 # we keep an executable because it is easier to track the origin of exceptions using GDB.
 # Must be built manually to limit default build time
-ADD_EXECUTABLE(test_cc EXCLUDE_FROM_ALL cc/test_cc.cc )
-TARGET_LINK_LIBRARIES(test_cc ${LEMON_LIBRARIES} )
+# ADD_EXECUTABLE(test_cc EXCLUDE_FROM_ALL cc/test_cc.cc )
+# TARGET_LINK_LIBRARIES(test_cc ${LEMON_LIBRARIES} )
 
 
 # create output directory for test outputs
