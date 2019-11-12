@@ -22,8 +22,7 @@
 
 
 
-#define CYCLE_TIME 20
-//TEMP: because gate->duration is in ns for now
+#define CYCLE_TIME 20 //TODO: gate duration is hardcoded for now
 
 #include <iostream>
 #include <sstream>
