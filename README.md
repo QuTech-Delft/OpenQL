@@ -1,6 +1,8 @@
 # OpenQL Framework #
 
-OpenQL is a framework for high-level quantum programming in C++/Python. The framework provides a compiler for compiling and optimizing quantum code. The compiler produces the intermediate quantum assembly language and the compiled micro-code for various target platforms. While the microcode is platform-specific, the quantum assembly code (qasm) is hardware-agnostic and can be simulated on the QX simulator.
+[![Documentation Status](https://readthedocs.org/projects/openql/badge/?version=latest)](https://openql.readthedocs.io/en/latest/?badge=latest)
+
+OpenQL is a framework for high-level quantum programming in C++/Python. The framework provides a compiler for compiling and optimizing quantum code. The compiler produces the intermediate quantum assembly language and the compiled micro-code for various target platforms. While the microcode is platform-specific, the quantum assembly code (qasm) is hardware-agnostic and can be simulated on the QX simulator. For detailed documentation see [here](https://openql.readthedocs.io/en/latest).
 
 ## Supported Patforms
 
@@ -8,7 +10,7 @@ OpenQL is a framework for high-level quantum programming in C++/Python. The fram
 * Windows
 * OSX
 
-## Supported Patforms
+## Installation
 
 OpenQL can be installed in a number of ways, See [Installation](https://openql.readthedocs.io/en/latest/installation.html) for details.
 
