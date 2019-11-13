@@ -115,8 +115,6 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 			try
 			{
   				qs_name = gate_map.at(gate->name);
-				// WOUT("Next gate: " + gate->name + " .... CORRECT");
-
 			}
   			catch (exception& e)
   			{
@@ -126,7 +124,7 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 				
   			}
 
-			IOUT(gate->name);
+			// IOUT(gate->name);
 			if (gate->operands.size() == 1)
             {
 				IOUT("Gate operands: " + std::to_string(gate->operands[0]));
@@ -149,7 +147,6 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 			//Add angles for the gates that require it
 			if (qs_name == "RX" or qs_name == "RY" or qs_name == "t" or qs_name == "tdag")
 				fout << ", angle = " << angles[gate->name];
-            }
 
 			
 			//Add gate timing, if circuit was compiled.
