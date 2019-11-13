@@ -18,12 +18,21 @@ OpenQL is a framework for high-level quantum programming in C++/Python. The fram
    changelog
    contributors
 
+.. toctree::
+   :maxdepth: 2
+   :caption: OpenQL Basics:
+
+   platform
+   gate
+   kernel
+   program
+
 .. scheduling
 .. classical_instructions
 .. backends
 .. config_file
-.. changelog
-.. api
+
+
 
 
 .. toctree::
