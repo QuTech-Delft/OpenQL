@@ -47,6 +47,7 @@ namespace ql
 
           opt_name2opt_val["mapper"] = "minextendrc";
           opt_name2opt_val["mapinitone2one"] = "yes";
+          opt_name2opt_val["mapassumezeroinitstate"] = "no";
           opt_name2opt_val["initialplace"] = "no";
           opt_name2opt_val["initialplace2qhorizon"] = "0";
           opt_name2opt_val["maplookahead"] = "noroutingfirst";

@@ -61,7 +61,7 @@ void assert_fail(const char *f, int l, const char *s)
 // so their indices use the same data type (size_t) and the same range type 0<=index<nq.
 //
 // Virt2Real maintains two maps:
-// - a map (v2rMap[])for each virtual qubit that is in use to its current real qubit index.
+// - a map (v2rMap[]) for each virtual qubit that is in use to its current real qubit index.
 //      Virtual qubits are in use as soon as they have been encountered as operands in the program.
 //      When a virtual qubit is not in use, it maps to UNDEFINED_QUBIT, the undefined real index.
 //      The reverse map (GetVirt()) is implemented by a reverse look-up:
@@ -94,9 +94,9 @@ void assert_fail(const char *f, int l, const char *s)
 
 typedef
 enum realstate {
-    rs_nostate,     // real qubit has no relevant state, i.e. is garbage
+    rs_nostate,     // real qubit has no relevant state needing preservation, i.e. is garbage
     rs_wasinited,   // real qubit has initialized state suitable for replacing swap by move
-    rs_hasstate     // real qubit has a unique state which must be kept
+    rs_hasstate     // real qubit has a unique state which must be preserved
 } realstate_t;
 
 #define UNDEFINED_QUBIT    MAX_CYCLE
@@ -136,16 +136,36 @@ void SetRs(size_t q, realstate_t rsvalue)
 
 // expand to desired size
 //
-// mapping starts off undefined for all virtual qubits (unless one2oneopt is set)
-// real qubits are assumed to have a state suitable for replacing swap by move
+// mapping starts off undefined for all virtual qubits
+// (unless option mapinitone2one is set, then virtual qubit i maps to real qubit i for all qubits)
+//
+// real qubits are assumed to have a garbage state
+// (unless option mapassumezeroinitstate was set,
+//  then all real qubits are assumed to have a state suitable for replacing swap by move)
 //
 // the rs initializations are done only once, for a whole program
 void Init(size_t n)
 {
     auto mapinitone2oneopt = ql::options::get("mapinitone2one");
+    auto mapassumezeroinitstate = ql::options::get("mapassumezeroinitstate");
 
     nq = n;
-    // DOUT("Virt2Real::Init(n=" << nq << "), initializing 1-1 mapping");
+    if ("yes" == mapinitone2oneopt)
+    {
+        DOUT("Virt2Real::Init(n=" << nq << "), initializing 1-1 mapping");
+    }
+    else
+    {
+        DOUT("Virt2Real::Init(n=" << nq << "), initializing on demand mapping");
+    }
+    if ("yes" == mapassumezeroinitstate)
+    {
+        DOUT("Virt2Real::Init(n=" << nq << "), assume all qubits in initialized state");
+    }
+    else
+    {
+        DOUT("Virt2Real::Init(n=" << nq << "), assume all qubits in garbage state");
+    }
     v2rMap.resize(nq);
     rs.resize(nq);
     for (size_t i=0; i<nq; i++)
@@ -158,7 +178,14 @@ void Init(size_t n)
         {
             v2rMap[i] = UNDEFINED_QUBIT;
         }
-        rs[i] = rs_wasinited;
+        if ("yes" == mapassumezeroinitstate)
+        {
+            rs[i] = rs_wasinited;
+        }
+        else
+        {
+            rs[i] = rs_nostate;
+        }
     }
 }
 
@@ -212,24 +239,24 @@ void Swap(size_t r0, size_t r1)
     // DPRINT("... before swap");
     MapperAssert(v0 != v1);         // also holds when vi == UNDEFINED_QUBIT
 
-    if (v0 != UNDEFINED_QUBIT)
+    if (v0 == UNDEFINED_QUBIT)
+    {
+        MapperAssert(rs[r0] != rs_hasstate);
+    }
+    else
     {
         MapperAssert(v0 < nq);
         v2rMap[v0] = r1;
     }
-    else
-    {
-        MapperAssert(rs[r0] != rs_hasstate);
-    }
 
-    if (v1 != UNDEFINED_QUBIT)
+    if (v1 == UNDEFINED_QUBIT)
+    {
+        MapperAssert(rs[r1] != rs_hasstate);
+    }
+    else
     {
         MapperAssert(v1 < nq);
         v2rMap[v1] = r0;
-    }
-    else
-    {
-        MapperAssert(rs[r1] != rs_hasstate);
     }
 
     realstate_t ts = rs[r0];
@@ -938,7 +965,7 @@ void GenMove(ql::circuit& circ, size_t& r0, size_t& r1)
         // DOUT("... reversed operands for move to become move(q" << r0 << ",q" << r1 << ") ...");
     }
     MapperAssert (v2r.GetRs(r0)==rs_hasstate);    // and r0 will be the one with state
-    MapperAssert (v2r.GetRs(r1)!=rs_hasstate);    // and r1 will be the one without state (rs_nostate || rs_inited)
+    MapperAssert (v2r.GetRs(r1)!=rs_hasstate);    // and r1 will be the one without state (rs_nostate || rs_wasinited)
 
     // first (optimistically) create the move circuit and add it to circ
     bool created;
@@ -1156,18 +1183,25 @@ void stripname(std::string& name)
 
 void MakeReal(ql::gate* gp, ql::circuit& circ)
 {
+    std::string gname = gp->name;
+    stripname(gname);
+
     std::vector<size_t> real_qubits  = gp->operands;// starts off as copy of virtual qubits!
     for (auto& qi : real_qubits)
     {
         qi = MapQubit(qi);          // and now they are real
-        v2r.SetRs(qi, rs_hasstate); // and not rs_inited/rs_nostate because gate's effect on qubit creates state
+        if (gname == "prepz" || gname == "Prepz")
+        {
+            v2r.SetRs(qi, rs_wasinited);
+        }
+        else
+        {
+            v2r.SetRs(qi, rs_hasstate);
+        }
     }
 
-    std::string gname = gp->name;
-    stripname(gname);
-    std::string real_gname = gname;
-
     auto mapperopt = ql::options::get("mapper");
+    std::string real_gname = gname;
     if ("maxfidelity" == mapperopt)
     {
         DOUT("MakeReal: with mapper==maxfidelity generate _prim");
