@@ -166,31 +166,27 @@ public:
                     str::lower_case(sub_ins);
                     DOUT("Adding sub instr: " << sub_ins);
                     sub_ins = sanitize_instruction_name(sub_ins);
-                    sub_ins = std::regex_replace(sub_ins, comma_space_pattern, " ");
-                    DOUT("After comma removal sub instr: " << sub_ins);
-                    std::string sub_ins_adjusted(sub_ins);  // FIXME: useless copy
 
-                    if ( instruction_map.find(sub_ins_adjusted) != instruction_map.end() )
+                    if ( instruction_map.find(sub_ins) != instruction_map.end() )
                     {
                         // using existing sub ins
-                        DOUT("using existing sub instr : " << sub_ins_adjusted);
-                        gs.push_back( instruction_map[sub_ins_adjusted] );
+                        DOUT("using existing sub instr : " << sub_ins);
+                        gs.push_back( instruction_map[sub_ins] );
                     }
-                    else if( sub_ins_adjusted.find("%") != std::string::npos )
+                    else if( sub_ins.find("%") != std::string::npos )
                     {
                         // adding new sub ins if not already available
                         // this can be done for parameterized custom instructions
-                        DOUT("adding new sub instr : " << sub_ins_adjusted);
+                        DOUT("adding new sub instr : " << sub_ins);
                         // sub-ins can only be custom instructions
-                        instruction_map[sub_ins_adjusted] = new custom_gate(sub_ins_adjusted);
-                        gs.push_back( instruction_map[sub_ins_adjusted] );
+                        instruction_map[sub_ins] = new custom_gate(sub_ins);
+                        gs.push_back( instruction_map[sub_ins] );
                     }
                     else
                     {
                         // for specialized custom instructions, raise error if instruction
                         // is not already available
-                        EOUT("custom instruction not found for '" << sub_ins_adjusted <<"'");
-                        ql::exception("[x] error : custom instruction not found for '" + sub_ins_adjusted + "'",false);
+                        FATAL("custom instruction not found for '" << sub_ins <<"'");
                     }
                 }
                 instruction_map[comp_ins] = new composite_gate(comp_ins, gs);

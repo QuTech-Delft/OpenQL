@@ -97,6 +97,13 @@ void quantum_program::add(ql::quantum_kernel &k)
         }
     }
 
+    for (auto kernel : kernels)
+    {
+        if(kernel.name == k.name)
+        {
+            FATAL("Cannot add kernel. Duplicate kernel name: " << k.name);
+        }
+    }
     // if sane, now add kernel to list of kernels
     kernels.push_back(k);
 }

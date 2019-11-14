@@ -94,6 +94,16 @@ def get_version(verbose=0):
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+
+try:
+    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+    class bdist_wheel(_bdist_wheel):
+        def finalize_options(self):
+            _bdist_wheel.finalize_options(self)
+            self.root_is_pure = False
+except ImportError:
+    bdist_wheel = None
+
 setup(name='openql',
       version=get_version(),
       description='OpenQL Python Package',
@@ -103,6 +113,7 @@ setup(name='openql',
       url='https://github.com/QE-Lab/OpenQL',
       license=read('LICENSE'),
       packages=['openql'],
+      cmdclass={'bdist_wheel': bdist_wheel},      
       package_dir={'': 'swig'},
       include_package_data=True,
       package_data={'openql': [clibSwig]},
