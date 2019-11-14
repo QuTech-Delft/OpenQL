@@ -22,8 +22,7 @@
 
 
 
-#define CYCLE_TIME 20
-//TEMP: because gate->duration is in ns for now
+#define CYCLE_TIME 20 //TODO: gate duration is hardcoded for now
 
 #include <iostream>
 #include <sstream>
@@ -243,7 +242,7 @@ public:
 
 			if (gate->name == "measure")
 				continue;
-			else if (gate->name == "prep_z")
+			else if (gate->name == "prepz")
 			{
 				size_t qubit = gate->operands[0]; 
 				fids[qubit] = 1.0;

@@ -10,10 +10,17 @@
 #include <kernel.h>
 #include <gate.h>
 
+
 //Only support for DiCarlo setup atm
 void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
-        std::vector<ql::quantum_kernel>& kernels, const ql::quantum_platform & platform, std::string suffix, size_t ns_per_cycle)
+        std::vector<ql::quantum_kernel>& kernels, const ql::quantum_platform & platform, std::string suffix, size_t ns_per_cycle, bool compiled)
     {
+
+		//TODO remove the next line. Using this because qsoverlay has some bugs when time is explicited
+		compiled = false;
+
+
+
         IOUT("Writing scheduled QSoverlay program");
         ofstream fout;
         string qfname( ql::options::get("output_dir") + "/" + prog_name + "_quantumsim_" + suffix + ".py");
@@ -40,22 +47,11 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
              << "\n"
              << "\n";
 
-		//Declare program qubits
-		std::string qubit_list = "";
-		for (size_t qubit=0; qubit < num_qubits; qubit++)
-		{
-			qubit_list += "'";
-			qubit_list += (qubit != num_qubits-1) ? (std::to_string(qubit) + "', ") : (std::to_string(qubit) + "'");
-		}
-		fout << "qubit_list = [" + qubit_list + "]\n";
-
-		fout << "setup = DiCarlo_setup.quick_setup(qubit_list)\n";
-
+				
+				
 		//Gate correspondence
-		fout << "\n#Now the circuit is created\n"
-			 << "b = Builder(setup)\n";
-
 		std::map <std::string, std::string> gate_map = {
+			{"prepz", "prepz"},
 			{"x", "X"},
 			{"x45", "RX"},
 			{"x90", "RX"},
@@ -68,7 +64,7 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 			{"ym90", "RY"},
 			{"h", "H"},
 			{"cz", "CZ"},
-			{"measure", "Measure"}
+			{"measure", "Measure"},
 		};
 
 		std::map <std::string, std::string> angles = {
@@ -82,22 +78,53 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 			{"ym90", "-np.pi/2"},
 		};
 
+		if (not compiled)
+		{
+			gate_map["cnot"] = "CNOT";
+			// gate_map["t"] = "RZ";
+			// angles["t"] = "np.pi/4";
+			// gate_map["tdag"] = "RZ";
+			// angles["t"] = "-np.pi/4";
+
+		}
+
+		//Create qubit list
+
+		std::string qubit_list = "";
+		for (size_t qubit=0; qubit < num_qubits; qubit++)
+		{
+			qubit_list += "'";
+			qubit_list += (qubit != num_qubits-1) ? (std::to_string(qubit) + "', ") : (std::to_string(qubit) + "'");
+		}
+
 		//Circuit creation
-		fout << "\ndef circuit_generated():\n";
+		fout << "\n#Now the circuit is created\n"
+
+			 << "\ndef circuit_generated(noise_flag, setup_name = 'DiCarlo_setup'):\n"
+			 << "	qubit_list = [" + qubit_list + "]\n"
+			 << "	if setup_name == 'DiCarlo_setup':\n"
+			 << "		setup = DiCarlo_setup.quick_setup(qubit_list, noise_flag = noise_flag)\n"
+			 << "	b = Builder(setup)\n"
+			 << "	b.new_circuit(circuit_title = '" << kernels.front().name << "')\n";
+
+
+		//Circuit creation: Add gates
 		for (auto & gate: kernels.front().c)
 		{
 			std::string qs_name;
 			try
 			{
-  				qs_name = gate_map[gate->name];
+  				qs_name = gate_map.at(gate->name);
 			}
   			catch (exception& e)
   			{
-    			EOUT("Qsoverlay: unknown gate detected!: " + gate->name);
+				// WOUT("Next gate: " + gate->name + " .... WRONG");
+				EOUT("Qsoverlay: unknown gate detected!: " + gate->name);
     			throw ql::exception("Qsoverlay: unknown gate detected!:"  + gate->name, false);
+				
   			}
 
-			IOUT(gate->name);
+			// IOUT(gate->name);
 			if (gate->operands.size() == 1)
             {
 				IOUT("Gate operands: " + std::to_string(gate->operands[0]));
@@ -111,26 +138,35 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 				IOUT("GATE OPERANDS: Problem encountered");
 			}
 			
-				
+
 			fout << "	b.add_gate('" << qs_name  << "', " << "['" 
 				 << std::to_string(gate->operands[0])
 				 << (( gate->operands.size() == 1 ) ? "']" : ("', '" + std::to_string(gate->operands[1]) + "']"));
 			
-			if (qs_name == "RX" or qs_name == "RY")
-            {
+			
+			//Add angles for the gates that require it
+			if (qs_name == "RX" or qs_name == "RY" or qs_name == "t" or qs_name == "tdag")
 				fout << ", angle = " << angles[gate->name];
-            }
 
-			if (qs_name == "Measure")
+			
+			//Add gate timing, if circuit was compiled.
+			if (qs_name == "prepz")
+			{
+				if (compiled)
+					fout << ", time = " << std::to_string((gate->cycle-1)*ns_per_cycle + gate->duration);
+			}
+
+			else if (qs_name == "Measure")
 			{
 				fout << ", output_bit = " << "'" << gate->operands[0] << "_out'";
-				fout << ", time = " << std::to_string((gate->cycle-1)*ns_per_cycle + gate->duration/4);
+				if (compiled)
+					fout << ", time = " << std::to_string((gate->cycle-1)*ns_per_cycle + gate->duration/4);
 			}
 			else
-            {
-				fout << ", time = " << std::to_string((gate->cycle-1)*ns_per_cycle + gate->duration/2);
-            }
-
+			{
+				if (compiled)
+					fout << ", time = " << std::to_string((gate->cycle-1)*ns_per_cycle + gate->duration/2);
+			}
 			fout << ")\n";
 		}
 

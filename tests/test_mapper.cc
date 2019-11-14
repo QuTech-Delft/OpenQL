@@ -52,6 +52,7 @@ test_diogo(std::string v, std::string param1, std::string param2, std::string pa
 
     float sweep_points[] = { 1 };
 
+
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
     ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
@@ -79,7 +80,7 @@ test_diogo(std::string v, std::string param1, std::string param2, std::string pa
     prog.compile( );
 
     IOUT("Final Fidelity: " << ql::metrics::quick_fidelity(k.c));
-    IOUT("THE END");
+    IOUT("THE END!");
 }
 
 void
@@ -101,10 +102,10 @@ test_diogo2(std::string v, std::string param1, std::string param2, std::string p
     k.gate("cz", 6,7);
     k.gate("cz", 5,6);
     k.gate("cz", 1,5);
-    k.gate("y", 2);
-    k.gate("h", 3);
-    k.gate("measure", 2);
-    k.gate("measure", 3);
+    // k.gate("y", 2);
+    // k.gate("h", 3);
+    // k.gate("measure", 2);
+    // k.gate("measure", 3);
 
 
     prog.add(k);
@@ -1397,6 +1398,10 @@ int main(int argc, char ** argv)
 	test_diogo2("diogo2", "noroutingfirst", "yes", "minextendrc");
     test_diogo2("diogo2", "noroutingfirst", "yes", "maxfidelity");
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> 42a6bea0cf65fc6b69df1b33c9876214d49e0f83
     test_dot("dot", "no", "ASAP");
     test_dot("dot", "no", "ALAP");
     test_dot("dot", "yes", "ASAP");
@@ -1696,7 +1701,6 @@ int main(int argc, char ** argv)
     test_lingling7sub("lingling7sub", "all", "yes", "1", "minplusmin");
     test_lingling7sub("lingling7sub", "all", "yes", "2", "minplusmin");
     test_lingling7sub("lingling7sub", "all", "yes", "3", "minplusmin");
-#endif
 
     return 0;
 }

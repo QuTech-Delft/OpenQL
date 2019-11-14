@@ -1,0 +1,565 @@
+{
+    "eqasm_compiler" : "cc_light_compiler",
+
+    "hardware_settings": {
+        "qubit_number": 17,
+        "cycle_time" : 20,  
+        "mw_mw_buffer": 0,
+        "mw_flux_buffer": 0,
+        "mw_readout_buffer": 0,
+        "flux_mw_buffer": 0,
+        "flux_flux_buffer": 0,
+        "flux_readout_buffer": 0,
+        "readout_mw_buffer": 0,
+        "readout_flux_buffer": 0,
+        "readout_readout_buffer": 0
+    },
+
+    "qubit_attributes":
+    {
+        "relaxation_times":
+        {
+        "0" : [3000, 1500],
+        "1" : [3000, 1500],
+        "2" : [3000, 1500],
+        "3" : [3000, 1500],
+        "4" : [3000, 1500],
+        "5" : [3000, 1500],
+        "6" : [3000, 1500],
+        "7" : [3000, 1500],
+        "8" : [3000, 1500],
+        "9" : [3000, 1500],
+        "10" : [3000, 1500],
+        "11" : [3000, 1500],
+        "12" : [3000, 1500],
+        "13" : [3000, 1500],
+        "14" : [3000, 1500],
+        "15" : [3000, 1500],
+        "16" : [3000, 1500]
+        }
+    },
+
+    "topology" : 
+    {
+        "description": "A qubit grid's topology is defined by the neighbor relation among its qubits. Each qubit has an id (its index, used as gate operand and in the resource descriptions) in the range of 0 to hardware_settings.qubit_number-1. Qubits are connected by directed pairs, called edges. Each edge has an id (its index, also used in the resource descriptions) in some contiguous range starting from 0, a source qubit and a destination qubit. Two grid forms are supported: the xy form and the irregular form. In grids of xy form qubits have in addition an x and a y coordinate: these coordinates in the X (Y) direction are in the range of 0 to x_size-1 (y_size-1).",
+        "form": "xy",
+        "x_size": 7,
+        "y_size": 7,
+        "qubits": 
+        [ 
+            { "id": 0,  "x": 4, "y": 6 },
+            { "id": 1,  "x": 1, "y": 5 },
+            { "id": 2,  "x": 3, "y": 5 },
+            { "id": 3,  "x": 5, "y": 5 },
+            { "id": 4,  "x": 0, "y": 4 },
+            { "id": 5,  "x": 2, "y": 4 },
+            { "id": 6,  "x": 4, "y": 4 },
+            { "id": 7,  "x": 1, "y": 3 },
+            { "id": 8,  "x": 3, "y": 3 },
+            { "id": 9,  "x": 5, "y": 3 },
+            { "id": 10,  "x": 2, "y": 2 },
+            { "id": 11,  "x": 4, "y": 2 },
+            { "id": 12,  "x": 6, "y": 2 },
+            { "id": 13,  "x": 1, "y": 1 },
+            { "id": 14,  "x": 3, "y": 1 },
+            { "id": 15,  "x": 5, "y": 1 },
+            { "id": 16,  "x": 2, "y": 0 }
+        ],
+        "edges": 
+        [
+            { "id": 0,  "src": 2, "dst": 0 },
+            { "id": 1,  "src": 0, "dst": 3 },
+            { "id": 2,  "src": 4, "dst": 1 },
+            { "id": 3,  "src": 1, "dst": 5 },
+            { "id": 4,  "src": 5, "dst": 2 },
+            { "id": 5,  "src": 2, "dst": 6 },
+            { "id": 6,  "src": 6, "dst": 3 },
+            { "id": 7,  "src": 4, "dst": 7 },
+            { "id": 8,  "src": 7, "dst": 5 },
+            { "id": 9,  "src": 5, "dst": 8 },
+            { "id": 10,  "src": 8, "dst": 6 },
+            { "id": 11,  "src": 6, "dst": 9 },
+            { "id": 12,  "src": 7, "dst": 10 },
+            { "id": 13,  "src": 10, "dst": 8 },
+            { "id": 14,  "src": 8, "dst": 11 },
+            { "id": 15,  "src": 11, "dst": 9 },
+            { "id": 16,  "src": 9, "dst": 12 },
+            { "id": 17,  "src": 13, "dst": 10 },
+            { "id": 18,  "src": 10, "dst": 14 },
+            { "id": 19,  "src": 14, "dst": 11 },
+            { "id": 20,  "src": 11, "dst": 15 },
+            { "id": 21,  "src": 15, "dst": 12 },
+            { "id": 22,  "src": 13, "dst": 16 },
+            { "id": 23,  "src": 16, "dst": 14 },
+
+            { "id": 24,  "src": 0, "dst": 2 },
+            { "id": 25,  "src": 3, "dst": 0 },
+            { "id": 26,  "src": 1, "dst": 4 },
+            { "id": 27,  "src": 5, "dst": 1 },
+            { "id": 28,  "src": 2, "dst": 5 },
+            { "id": 29,  "src": 6, "dst": 2 },
+            { "id": 30,  "src": 3, "dst": 6 },
+            { "id": 31,  "src": 7, "dst": 4 },
+            { "id": 32,  "src": 5, "dst": 7 },
+            { "id": 33,  "src": 8, "dst": 5 },
+            { "id": 34,  "src": 6, "dst": 8 },
+            { "id": 35,  "src": 9, "dst": 6 },
+            { "id": 36,  "src": 10, "dst": 7 },
+            { "id": 37,  "src": 8, "dst": 10 },
+            { "id": 38,  "src": 11, "dst": 8 },
+            { "id": 39,  "src": 9, "dst": 11 },
+            { "id": 40,  "src": 12, "dst": 9 },
+            { "id": 41,  "src": 10, "dst": 13 },
+            { "id": 42,  "src": 14, "dst": 10 },
+            { "id": 43,  "src": 11, "dst": 14 },
+            { "id": 44,  "src": 15, "dst": 11 },
+            { "id": 45,  "src": 12, "dst": 15 },
+            { "id": 46,  "src": 16, "dst": 13 },
+            { "id": 47,  "src": 14, "dst": 16 }
+        ]
+    },
+
+    "resources":
+    {
+        "qubits":
+        {
+            "description": "Each qubit can be used by only one gate at a time. There are 'count' qubits.",
+            "count": 17
+        },
+        "qwgs" :
+        {
+            "description": "Single-qubit rotation gates (instructions of 'mw' type) are controlled by qwgs.  Each qwg controls a private set of qubits.  A qwg can control multiple qubits at the same time, but only when they perform the same gate and start at the same time. There are 'count' qwgs. For each qwg it is described which set of qubits it controls.",
+            "count": 3,
+            "connection_map":
+            {
+            "0" : [1, 2, 3, 13, 14, 15],
+            "1" : [7, 8, 9],            
+            "2" : [0, 5, 11, 16, 4, 6, 10, 12]             
+            }
+        },
+        "meas_units" :
+        {
+            "description": "Single-qubit measurements (instructions of 'readout' type) are controlled by measurement units.  Each one controls a private set of qubits.  A measurement unit can control multiple qubits at the same time, but only when they start at the same time. There are 'count' measurement units. For each measurement unit it is described which set of qubits it controls.",
+            "count": 3,
+            "connection_map":
+            {
+            "0" : [13,16],    
+            "1" : [1, 4, 5, 7, 8, 10, 11, 14, 15],
+            "2" : [0, 2, 3, 6, 9, 12]
+            }
+        },
+        "edges":
+        {
+            "description": "Two-qubit flux gates only operate on neighboring qubits, i.e. qubits connected by an edge. A two-qubit flux gate operates by lowering (detuning) the frequency of the operand qubit with the highest frequency to get close to the frequency of the other operand qubit.  But any two qubits which have close frequencies execute a two-qubit flux gate: this may happen between the detuned frequency qubit and each of its other neighbors with a frequency close to this; to prevent this, those neighbors must have their frequency detuned (lowered out of the way, parked) as well. A parked qubit cannot engage in any gate, so also not a two-qubit gate. As a consequence, for each edge executing a two-qubit gate, certain other edges cannot execute a two-qubit gate in parallel. There are 'count' edges. For each edge it is described which set of other edges cannot execute a two-qubit gate in parallel.",
+            "count": 48,
+            "connection_map":
+            {
+            "0": [3, 27, 6, 30], 
+            "1": [5, 29, 4, 28],
+            "2": [4, 28],
+            "3": [0, 24, 5, 29],
+            "4": [2, 26, 1, 25, 6, 30],
+            "5": [3, 27, 1, 25],
+            "6": [4, 28, 0, 24],
+            "7": [9, 23, 13, 37],
+            "8": [10, 34, 13, 37, 14, 28],
+            "9": [7, 31, 12, 36, 11, 35, 15, 39],
+            "10": [8, 32, 12, 36, 15, 39],
+            "11": [9, 33, 13, 37, 14, 38],
+            "12": [9, 33, 10, 34, 14, 38],
+            "13": [8, 32, 11, 35, 15, 39],
+            "14": [8, 32, 12, 36, 11, 35, 16, 40],
+            "15": [9, 33, 13, 37, 10, 34],
+            "16": [10, 34, 14, 38],
+            "17": [19, 43],
+            "18": [22, 46, 20, 44],
+            "19": [17, 41, 22, 46, 21, 45],
+            "20": [18, 42, 23, 47],
+            "21": [19, 43],
+            "22": [18, 42, 19, 43],
+            "23": [17, 41, 20, 44],
+
+            "24": [3, 27, 6, 30], 
+            "25": [5, 29, 4, 28],
+            "26": [4, 28],
+            "27": [0, 24, 5, 29],
+            "28": [2, 26, 1, 25, 6, 30],
+            "29": [3, 27, 1, 25],
+            "30": [4, 28, 0, 24],
+            "31": [9, 23, 13, 37],
+            "32": [10, 34, 13, 37, 14, 28],
+            "33": [7, 31, 12, 36, 11, 35, 15, 39],
+            "34": [8, 32, 12, 36, 15, 39],
+            "35": [9, 33, 13, 37, 14, 38],
+            "36": [9, 33, 10, 34, 14, 38],
+            "37": [8, 32, 11, 35, 15, 39],
+            "38": [8, 32, 12, 36, 11, 35, 16, 40],
+            "39": [9, 33, 13, 37, 10, 34],
+            "40": [10, 34, 14, 38],
+            "41": [19, 43],
+            "42": [22, 46, 20, 44],
+            "43": [17, 41, 22, 46, 21, 45],
+            "44": [18, 42, 23, 47],
+            "45": [19, 43],
+            "46": [18, 42, 19, 43],
+            "47": [17, 41, 20, 44]
+            }
+        },
+        "detuned_qubits":
+        {
+            "updated description": "Two-qubit flux gates only operate on neighboring qubits, i.e. qubits connected by an edge. A two-qubit flux gate operates by lowering (detuning) the frequency of the operand qubit with the highest frequency to get close to the frequency of the other operand qubit.  But any two qubits which have close frequencies execute a two-qubit flux gate: this may happen between the detuned frequency qubit and each of its other neighbors with a frequency close to this; to prevent this, those neighbors must have their frequency detuned (lowered out of the way, parked) as well. A parked qubit cannot engage in any gate, so also not a single-qubit rotation (an instruction of 'mw' type). There are 'count' qubits. For each edge it is described, when executing a two-qubit gate for it, which set of qubits it detunes in addition to one of its operand qubits, and so which set of qubits cannot execute a single-qubit rotation in parallel.",
+            "count": 17,
+            "connection_map":
+            {
+            "0": [5, 6],
+            "1": [6],
+            "2": [5],
+            "3": [4],
+            "4": [0, 6],
+            "5": [5, 0],
+            "6": [0],
+            "7": [],
+            "8": [8],
+            "9": [7],
+            "10": [9],
+            "11": [8],
+            "12": [8],
+            "13": [7],
+            "14": [9],
+            "15": [8],
+            "16": [],
+            "17": [16],
+            "18": [16, 11],
+            "19": [10, 16],
+            "20": [12],
+            "21": [11],
+            "22": [10],
+            "23": [10, 11],
+
+            "24": [5, 6],
+            "25": [6],
+            "26": [5],
+            "27": [4],
+            "28": [0, 6],
+            "29": [5, 0],
+            "30": [0],
+            "31": [],
+            "32": [8],
+            "33": [7],
+            "34": [9],
+            "35": [8],
+            "36": [8],
+            "37": [7],
+            "38": [9],
+            "39": [8],
+            "40": [],
+            "41": [16],
+            "42": [16, 11],
+            "43": [10, 16],
+            "44": [12],
+            "45": [11],
+            "46": [10],
+            "47": [10, 11]
+            }
+        }
+    },
+
+    "instructions": {
+        "prepx": {
+            "duration": 640,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "prepx",
+            "cc_light_opcode": 1
+        },
+        "prepz": {
+            "duration": 620,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "prepz",
+            "cc_light_opcode": 2
+        },
+        "measx_keep": {
+            "duration": 340,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "readout",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "measx",
+            "cc_light_opcode": 4
+        },
+        "measz_keep": {
+            "duration": 300,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "readout",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "measz",
+            "cc_light_opcode": 4
+        },
+        "measure": {
+            "duration": 300,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "readout",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "measz",
+            "cc_light_opcode": 4
+        },
+        "i": {
+            "duration": 20,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "i",
+            "cc_light_opcode": 5
+        },
+        "x": {
+            "duration": 20,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "x",
+            "cc_light_opcode": 6
+        },
+        "y": {
+            "duration": 20,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "y",
+            "cc_light_opcode": 7
+        },
+        "z": {
+            "duration": 40,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "z",
+            "cc_light_opcode": 8
+        },
+        "h": {
+            "duration": 40,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "h",
+            "cc_light_opcode": 9
+        },
+        "s": {
+            "duration": 60,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "s",
+            "cc_light_opcode": 10
+        },
+        "sdag": {
+            "duration": 60,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "sdag",
+            "cc_light_opcode": 11
+        },
+        "x90": {
+            "duration": 20,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "x90",
+            "cc_light_opcode": 12
+        },
+        "xm90": {
+            "duration": 20,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "xm90",
+            "cc_light_opcode": 13
+        },
+        "y90": {
+            "duration": 20,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "y90",
+            "cc_light_opcode": 14
+        },
+        "ym90": {
+            "duration": 20,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "ym90",
+            "cc_light_opcode": 15
+        },
+        "t": {
+            "duration": 60,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "t",
+            "cc_light_opcode": 16
+        },
+        "tdag": {
+            "duration": 60,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "tdag",
+            "cc_light_opcode": 17
+        },
+        "x45": {
+            "duration": 20,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "x45",
+            "cc_light_opcode": 18
+        },
+        "xm45": {
+            "duration": 20,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "xm45",
+            "cc_light_opcode": 19
+        },
+        "y45": {
+            "duration": 20,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "y45",
+            "cc_light_opcode": 18
+        },
+        "ym45": {
+            "duration": 20,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "ym45",
+            "cc_light_opcode": 19
+        },
+        "cz": {
+            "duration": 40,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": true,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "cz",
+            "cc_light_opcode": 129
+        },
+        "cnot": {
+            "duration": 80,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": true,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "cnot",
+            "cc_light_opcode": 128
+        },
+        "swap": {
+            "duration": 200,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": true,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "swap",
+            "cc_light_opcode": 128
+        },
+        "move": {
+            "duration": 140,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": true,
+            "type": "flux",
+            "cc_light_instr_type": "two_qubit_gate",
+            "cc_light_instr": "move",
+            "cc_light_opcode": 128
+        }
+    },
+
+    "gate_decomposition": {
+        "toffoli %0 %1 %2" : ["y90 %0", "xm45 %0", "y %0", "y90 %1", "xm45 %1", "ym90 %1", "x %2", "ym90 %2", "cz %2 %0", "y %0", "x45 %0", "y %0", "ym90 %2","cz %1 %2","y %2","cz %1 %0","y %0", "x45 %2", "y %2", "xm45 %0", "y %0","cz %1 %2","y90 %2","cz %2 %0","y %0", "x45 %0", "y %0", "y90 %2", "xm45 %2", "ym90 %2", "cz %1 %0","y90 %0", "x %2", "ym90 %2"],
+
+        "rx180 %0" : ["x %0"],
+        "ry180 %0" : ["y %0"],
+        "rx90 %0" : ["x90 %0"],
+        "ry90 %0" : ["y90 %0"],
+        "mrx90 %0" : ["xm90 %0"],
+        "mry90 %0" : ["ym90 %0"],
+        "rx45 %0" : ["x45 %0"],
+        "ry45 %0" : ["y45 %0"],
+        "mrx45 %0" : ["xm45 %0"],
+        "mry45 %0" : ["ym45 %0"],
+        "measx %0" : ["h %0", "measure %0"],
+        "measz %0" : ["measure %0"],
+
+        "swap_real %0 %1": ["cnot %0 %1", "cnot %1 %0", "cnot %0 %1"], 
+        "move_real %0 %1": ["cnot %1 %0", "cnot %0 %1"], 
+        "z_real %0" : ["x %0","y %0"],
+        "h_real %0" : ["x %0", "ym90 %0"],
+        "t_real %0" : ["y90 %0", "x45 %0", "ym90 %0"],
+        "tdag_real %0" : ["y90 %0", "xm45 %0", "ym90 %0"],
+        "s_real %0" : ["y90 %0", "x90 %0", "ym90 %0"],
+        "sdag_real %0" : ["y90 %0", "xm90 %0", "ym90 %0"],
+
+        "cnot_prim %0 %1": ["ym90 %1","cz %0 %1","y90 %1"],
+        "swap_prim %0 %1": ["ym90 %1","cz %0 %1","y90 %1", "ym90 %0","cz %1 %0","y90 %0", "ym90 %1","cz %0 %1","y90 %1"],
+        "move_prim %0 %1": ["ym90 %0","cz %1 %0","y90 %0", "ym90 %1","cz %0 %1","y90 %1"],
+        "z_prim %0" : ["x %0","y %0"],
+        "h_prim %0" : ["x %0", "ym90 %0"],
+        "t_prim %0" : ["y90 %0", "x45 %0", "ym90 %0"],
+        "tdag_prim %0" : ["y90 %0", "xm45 %0", "ym90 %0"],
+        "s_prim %0" : ["y90 %0", "x90 %0", "ym90 %0"],
+        "sdag_prim %0" : ["y90 %0", "xm90 %0", "ym90 %0"]
+    }
+}
