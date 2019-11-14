@@ -9,18 +9,13 @@ def circuit(config_file, new_scheduler='yes', scheduler='ASAP', uniform_sched= '
 	ql.set_option('optimize', optimize)
 	ql.set_option('scheduler', scheduler)
 	ql.set_option('scheduler_uniform', uniform_sched)
-	ql.set_option('mapper', mapper)
+	ql.set_option('mapper', "minextend")
 	ql.set_option('initialplace', initial_placement)
 	ql.set_option('log_level', log_level)
 	ql.set_option('scheduler_post179', new_scheduler)
 	ql.set_option('scheduler_commute', sched_commute)
 	ql.set_option('mapusemoves', moves)
 	ql.set_option('maptiebreak', maptiebreak)
-	ql.set_option('clifford_premapper', "no")
-	ql.set_option('clifford_postmapper', "no")
-	ql.set_option('scheduler_commute', "no")
-	ql.set_option('scheduler_post179', "no")
-	ql.set_option('mapper', "minextend")
 
 	config_fn = os.path.join(curdir, config_file)
 
@@ -28,13 +23,17 @@ def circuit(config_file, new_scheduler='yes', scheduler='ASAP', uniform_sched= '
 	platform  = ql.Platform('starmon', config_fn)
 	sweep_points = [1,2]
 	num_circuits = 1
-	num_qubits = 10
-	p = ql.Program('rd73_140', platform, num_qubits)
+	num_qubits = 3
+	p = ql.Program('benstein_vazirani_1b_secret_1', platform, num_qubits)
 	p.set_sweep_points(sweep_points)
-	k = ql.Kernel('rd73_140', platform, num_qubits)
-	k.gate('x',[9])
-	k.gate('cnot',[2,9])
-	k.gate('x',[9])
+	k = ql.Kernel('benstein_vazirani_1b_secret_1', platform, num_qubits)
+	k.gate('prepz',[1])
+	k.gate('x',[1])
+	k.gate('h',[0])
+	k.gate('h',[1])
+	k.gate('cnot',[0,1])
+	k.gate('h',[0])
+	k.gate('h',[1])
 
 	if measurement:
 		 for q in range(num_qubits):
