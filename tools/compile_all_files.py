@@ -8,13 +8,13 @@ import sys
 
 
 if __name__ == "__main__":
-	parser = argparse.ArgumentParser(description='Validate OpenQL compiler')
-	# parser.add_argument('indir', type=str, help='Input dir for circuits')
-	parser.add_argument('indir', type=str, default= 'no', help='Input dir for circuits')
-	parser.add_argument('-all', help='Input dir for circuits')
-	args = parser.parse_args()
+	# parser = argparse.ArgumentParser(description='Validate OpenQL compiler')
+	# # parser.add_argument('indir', type=str, help='Input dir for circuits')
+	# parser.add_argument('indir', type=str, default= 'no', help='Input dir for circuits')
+	# args = parser.parse_args()
 
-	indir = args.indir
+	# indir = args.indir
+	indir = 'test_files/'
 	# if not args.outdir:
 	# 	outdir = os.path.join(indir, "/output")
 
@@ -35,12 +35,31 @@ if __name__ == "__main__":
 	ql.set_option('write_qasm_files', 'yes')
 	print(files)
 
-	# options = { "new_scheduler" : ['yes', 'no'], "scheduler" : ['ASAP', 'ALAP'], "uniform_sched" : ['no', 'yes'], "sched_commute" : ['no','yes'], "mapper": ['base', 'minextend', 'minextendrc', 'maxfidelity'], "moves":['no','yes'], "maptiebreak":['random'], "initial_placement":['no'], 'optimize':['yes', 'no']}
+
+#VARIOUS OPTIONS
+
+	#Measurement
+	measurement = False
+
+	#Some compiler options
+	scheduler = 'ALAP'
+	mapper = 'minextendrc'
+	optimize = 'yes'
+	scheduler_uniform = 'no'
+	initialplace = 'no'
+	scheduler_post179 = 'yes'
+	scheduler_commute = 'yes'
+	mapusemoves = 'yes'
+	maptiebreak = 'random'
+
+	#add other options here
+	ql.set_option('decompose_toffoli', 'yes')
+
 
 	for file in files:
 		imported = importlib.import_module(os.path.join(file.replace(".py", "")))
 		try:
-			imported.circuit('test_mapper17.json', scheduler = 'ALAP', moves='yes', measurement = False, output_dir_name = 'test_output')
+			imported.circuit('test_mapper17.json', scheduler = scheduler, mapper = mapper, uniform_sched = scheduler_uniform, new_scheduler = scheduler_post179,  moves = mapusemoves, maptiebreak = maptiebreak, measurement = measurement, optimize = optimize, output_dir_name = 'test_output')
 		except:
 			continue
 
