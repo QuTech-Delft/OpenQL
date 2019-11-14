@@ -84,6 +84,7 @@ namespace ql
 
           app->add_set_ignore_case("--mapper", opt_name2opt_val["mapper"], {"no", "base", "baserc", "minextend", "minextendrc", "maxfidelity"}, "Mapper heuristic", true);
           app->add_set_ignore_case("--mapinitone2one", opt_name2opt_val["mapinitone2one"], {"no", "yes"}, "Initialize mapping of virtual qubits one to one to real qubits", true);
+          app->add_set_ignore_case("--mapassumezeroinitstate", opt_name2opt_val["assumezeroinitstate"], {"no", "yes"}, "Assume that qubits are initialized to zero state", true);
           app->add_set_ignore_case("--initialplace", opt_name2opt_val["initialplace"], {"no","yes","1s","10s","1m","10m","1h","1sx","10sx","1mx","10mx","1hx"}, "Initialplace qubits before mapping", true);
           app->add_set_ignore_case("--initialplace2qhorizon", opt_name2opt_val["initialplace2qhorizon"], {"0","1","2","3","4","5","6","7","8","9", "10","11","12","13","14","15","16","17","18","19","20","30","40","50","60","70","80","90","100"}, "Initialplace considers only this number of initial two-qubit gates", true);
           app->add_set_ignore_case("--maplookahead", opt_name2opt_val["maplookahead"], {"no", "1qfirst", "noroutingfirst", "all"}, "Strategy wrt selecting next gate(s) to map", true);

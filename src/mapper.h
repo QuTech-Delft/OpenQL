@@ -1020,7 +1020,7 @@ void GenMove(ql::circuit& circ, size_t& r0, size_t& r1)
             // so we go for it!
             // circ contains move; it must get the initcirc before it ...
             // do this by appending circ's gates to initcirc, and then swapping circ and initcirc content
-            // DOUT("... initialization is for free, do it ...");
+            DOUT("... initialization is for free, do it ...");
             for (auto& gp : circ)
             {
                 initcirc.push_back(gp);
@@ -1031,7 +1031,7 @@ void GenMove(ql::circuit& circ, size_t& r0, size_t& r1)
         else
         {
             // undo damage done, will not do move but swap, i.e. nothing created thisfar
-            // DOUT("... initialization extends circuit, don't do it ...");
+            DOUT("... initialization extends circuit, don't do it ...");
             circ.clear();       // circ being cleared also indicates creation wasn't successful
         }
         // initcirc getting out-of-scope here so gets destroyed
@@ -1052,11 +1052,11 @@ void AddSwap(size_t r0, size_t r1)
     bool created = false;
 
     DOUT("... extending with swap(q" << r0 << ",q" << r1 << ") ...");
-    // v2r.DPRINTReal("... adding swap/move", r0, r1);
+    v2r.DPRINTReal("... adding swap/move", r0, r1);
 
     if (v2r.GetRs(r0)!=rs_hasstate && v2r.GetRs(r1)!=rs_hasstate)
     {
-        // DOUT("... no state in both operand of intended swap/move; don't add swap/move gates");
+        DOUT("... no state in both operand of intended swap/move; don't add swap/move gates");
         v2r.Swap(r0,r1);
         return;
     }
@@ -1074,11 +1074,11 @@ void AddSwap(size_t r0, size_t r1)
             // also rs of its 2nd operand is 'rs_wasinited'
             // note that after swap/move, r0 will be in this state then
             nmovesadded++;                       // for reporting at the end
-            // DOUT("... move(q" << r0 << ",q" << r1 << ") ...");
+            DOUT("... move(q" << r0 << ",q" << r1 << ") ...");
         }
         else
         {
-            // DOUT("... move(q" << r0 << ",q" << r1 << ") cancelled, go for swap");
+            DOUT("... move(q" << r0 << ",q" << r1 << ") cancelled, go for swap");
         }
     }
     if (!created)
@@ -1095,7 +1095,7 @@ void AddSwap(size_t r0, size_t r1)
             if (fc.IsFirstOperandEarlier(r0, r1))
             {
                 size_t  tmp = r1; r1 = r0; r0 = tmp;
-                // DOUT("... reversed swap to become swap(q" << r0 << ",q" << r1 << ") ...");
+                DOUT("... reversed swap to become swap(q" << r0 << ",q" << r1 << ") ...");
             }
         }
         auto mapperopt = ql::options::get("mapper");
@@ -1112,7 +1112,7 @@ void AddSwap(size_t r0, size_t r1)
             created = new_gate(circ, "swap", {r0,r1});
             if (!created) new_gate_exception("swap or swap_real");
         }
-        // DOUT("... swap(q" << r0 << ",q" << r1 << ") ...");
+        DOUT("... swap(q" << r0 << ",q" << r1 << ") ...");
     }
     nswapsadded++;                       // for reporting at the end
     for (auto &gp : circ)
