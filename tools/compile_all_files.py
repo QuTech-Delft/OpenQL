@@ -14,7 +14,7 @@ if __name__ == "__main__":
 	# args = parser.parse_args()
 
 	# indir = args.indir
-	indir = 'test_files/'
+	indir = './test_files/'
 	# if not args.outdir:
 	# 	outdir = os.path.join(indir, "/output")
 
@@ -42,6 +42,7 @@ if __name__ == "__main__":
 	measurement = False
 
 	#Some compiler options
+	log_level = 'LOG_INFO'
 	scheduler = 'ALAP'
 	mapper = 'minextendrc'
 	optimize = 'yes'
@@ -49,17 +50,17 @@ if __name__ == "__main__":
 	initialplace = 'no'
 	scheduler_post179 = 'yes'
 	scheduler_commute = 'yes'
-	mapusemoves = 'yes'
+	mapusemoves = 'no'
 	maptiebreak = 'random'
 
 	#add other options here
-	ql.set_option('decompose_toffoli', 'yes')
+	ql.set_option('decompose_toffoli', 'no')
 
 
 	for file in files:
 		imported = importlib.import_module(os.path.join(file.replace(".py", "")))
 		try:
-			imported.circuit('test_mapper17.json', scheduler = scheduler, mapper = mapper, uniform_sched = scheduler_uniform, new_scheduler = scheduler_post179,  moves = mapusemoves, maptiebreak = maptiebreak, measurement = measurement, optimize = optimize, output_dir_name = 'test_output')
-		except:
-			continue
+			imported.circuit('test_mapper17.json', scheduler = scheduler, mapper = mapper, uniform_sched = scheduler_uniform, new_scheduler = scheduler_post179,  moves = mapusemoves, maptiebreak = maptiebreak, measurement = measurement, optimize = optimize, output_dir_name = 'test_output', log_level = log_level)
+		except Exception as e:
+			print(str(e))
 
