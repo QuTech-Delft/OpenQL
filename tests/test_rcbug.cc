@@ -15,11 +15,11 @@
 
 
 void
-test_rcbug_benstein(std::string v, std::string param1, std::string param2, std::string param3)
+test_rcbug_benstein(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 6;
-    std::string prog_name = "test_" + v + "_mapper=" + param1 + "_mapreverseswap=" + param2;
-    std::string kernel_name = "test_" + v + "_mapper=" + param1 + "_mapreverseswap=" + param2;
+    std::string prog_name = "test_" + v + "_mapper=" + param1 + "_mapusemoves=" + param2 + "_mapassumezeroinitstate=" + param3 + "_mapprepinitsstate=" + param4;
+    std::string kernel_name = "test_" + v + "_mapper=" + param1 + "_mapusemoves=" + param2 + "_mapassumezeroinitstate=" + param3 + "_mapprepinitsstate=" + param4;
     float sweep_points[] = { 1,2 };
 
     ql::quantum_platform starmon("starmon", "test_mapper17.json");
@@ -47,7 +47,7 @@ test_rcbug_benstein(std::string v, std::string param1, std::string param2, std::
 	std::string uniform_sched= "no";
 	std::string sched_commute = "yes";
 	// std::string mapper="base";
-	std::string moves="yes";
+	// std::string moves="yes";
 	std::string maptiebreak="first";
 	std::string initial_placement="no";
 	std::string output_dir_name="test_output";
@@ -57,16 +57,21 @@ test_rcbug_benstein(std::string v, std::string param1, std::string param2, std::
 	ql::options::set("optimize", optimize);
 	ql::options::set("scheduler", scheduler);
 	ql::options::set("scheduler_uniform", uniform_sched);
-	ql::options::set("initialplace", initial_placement);
+
 	ql::options::set("log_level", log_level);
 	ql::options::set("scheduler_post179", new_scheduler);
 	ql::options::set("scheduler_commute", sched_commute);
-	ql::options::set("mapusemoves", moves);
+
+	ql::options::set("mapreverseswap", "yes");
+	ql::options::set("mapinitone2one", "yes");
+	ql::options::set("initialplace", initial_placement);
+	ql::options::set("mapusemoves", param2);
 	ql::options::set("maptiebreak", maptiebreak);
     ql::options::set("mapper", param1);
     ql::options::set("clifford_premapper", "no");
     ql::options::set("clifford_postmapper", "no");
     ql::options::set("mapassumezeroinitstate", param3);
+    ql::options::set("mapprepinitsstate", param4);
 
 
     prog.compile( );
@@ -80,9 +85,22 @@ int main(int argc, char ** argv)
     ql::options::set("write_report_files", "yes"); 
     ql::options::set("print_dot_graphs", "yes"); 
 
-    test_rcbug_benstein("rcbug_benstein", "minextend", "yes", "no");
-    // test_rcbug_benstein("rcbug_benstein", "minextendrc", "yes", "no");
-
+    test_rcbug_benstein("rcbug_benstein", "minextend", "no", "no","no");
+    test_rcbug_benstein("rcbug_benstein", "minextend", "no", "yes","no");
+    test_rcbug_benstein("rcbug_benstein", "minextend", "no", "no","yes");
+    test_rcbug_benstein("rcbug_benstein", "minextend", "no", "yes","yes");
+    test_rcbug_benstein("rcbug_benstein", "minextend", "yes", "no","yes");
+    test_rcbug_benstein("rcbug_benstein", "minextend", "yes", "yes","yes");
+    test_rcbug_benstein("rcbug_benstein", "minextend", "yes", "no","no");
+    test_rcbug_benstein("rcbug_benstein", "minextend", "yes", "yes","no");
+    test_rcbug_benstein("rcbug_benstein", "minextendrc", "no", "no","no");
+    test_rcbug_benstein("rcbug_benstein", "minextendrc", "no", "yes","no");
+    test_rcbug_benstein("rcbug_benstein", "minextendrc", "no", "no","yes");
+    test_rcbug_benstein("rcbug_benstein", "minextendrc", "no", "yes","yes");
+    test_rcbug_benstein("rcbug_benstein", "minextendrc", "yes", "no","yes");
+    test_rcbug_benstein("rcbug_benstein", "minextendrc", "yes", "yes","yes");
+    test_rcbug_benstein("rcbug_benstein", "minextendrc", "yes", "no","no");
+    test_rcbug_benstein("rcbug_benstein", "minextendrc", "yes", "yes","no");
 
     return 0;
 }

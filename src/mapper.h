@@ -218,6 +218,7 @@ size_t AllocQubit(size_t v)
             // real qubit r was not found in v2rMap
             // use it to map v
             v2rMap[v] = r;
+            MapperAssert(rs[r]==rs_wasinited||rs[r]==rs_nostate);
             DOUT("AllocQubit(v=" << v << ") in r=" << r);
             return r;
         }
@@ -284,6 +285,8 @@ void PrintReal(size_t r)
     case rs_hasstate:
         std::cout << ":st";
         break;
+    default:
+        MapperAssert(0);
     }
     size_t v = GetVirt(r);
     if (v == UNDEFINED_QUBIT)
@@ -318,6 +321,8 @@ void PrintVirt(size_t v)
         case rs_hasstate:
             std::cout << ":st)";
             break;
+        default:
+            MapperAssert(0);
         }
     }
 }
@@ -960,6 +965,7 @@ void GenMove(ql::circuit& circ, size_t& r0, size_t& r1)
 {
     if (v2r.GetRs(r0)!=rs_hasstate)
     {
+        MapperAssert(v2r.GetRs(r0)==rs_nostate||v2r.GetRs(r0)==rs_wasinited);
         // interchange r0 and r1, so that r1 (right-hand operand of move) will be the state-less one
         size_t  tmp = r1; r1 = r0; r0 = tmp;
         // DOUT("... reversed operands for move to become move(q" << r0 << ",q" << r1 << ") ...");
@@ -1053,6 +1059,9 @@ void AddSwap(size_t r0, size_t r1)
 
     DOUT("... extending with swap(q" << r0 << ",q" << r1 << ") ...");
     v2r.DPRINTReal("... adding swap/move", r0, r1);
+
+    MapperAssert(v2r.GetRs(r0)==rs_wasinited||v2r.GetRs(r0)==rs_nostate||v2r.GetRs(r0)==rs_hasstate);
+    MapperAssert(v2r.GetRs(r1)==rs_wasinited||v2r.GetRs(r1)==rs_nostate||v2r.GetRs(r1)==rs_hasstate);
 
     if (v2r.GetRs(r0)!=rs_hasstate && v2r.GetRs(r1)!=rs_hasstate)
     {
@@ -1190,7 +1199,8 @@ void MakeReal(ql::gate* gp, ql::circuit& circ)
     for (auto& qi : real_qubits)
     {
         qi = MapQubit(qi);          // and now they are real
-        if (gname == "prepz" || gname == "Prepz")
+        auto mapprepinitsstateopt = ql::options::get("mapprepinitsstate");
+        if (mapprepinitsstateopt == "yes" && (gname == "prepz" || gname == "Prepz"))
         {
             v2r.SetRs(qi, rs_wasinited);
         }
@@ -3066,11 +3076,11 @@ void GenAlters(std::list<ql::gate*> lg, std::list<Alter>& la, Past& past)
     if ("all" == maplookaheadopt)
     {
         // create alternatives for each gate in lg
-        DOUT("GenAlters, " << lg.size() << " 2q gates; create an alternative for each");
+        // DOUT("GenAlters, " << lg.size() << " 2q gates; create an alternative for each");
         for (auto gp : lg)
         {
             // gen alternatives for gp and add these to la
-            DOUT("GenAlters: create alternatives for: " << gp->qasm());
+            // DOUT("GenAlters: create alternatives for: " << gp->qasm());
             GenAltersGate(gp, la, past);  // gen all possible variations to make gp NN, in current v2r mapping ("past")
         }
     }
@@ -3078,7 +3088,7 @@ void GenAlters(std::list<ql::gate*> lg, std::list<Alter>& la, Past& past)
     {
         // only take the first gate in avlist, the most critical one, and generate alternatives for it
         ql::gate*  gp = lg.front();
-        DOUT("GenAlters, " << lg.size() << " 2q gates; take first: " << gp->qasm());
+        // DOUT("GenAlters, " << lg.size() << " 2q gates; take first: " << gp->qasm());
         GenAltersGate(gp, la, past);  // gen all possible variations to make gp NN, in current v2r mapping ("past")
     }
 }
@@ -3117,7 +3127,7 @@ Alter ChooseAlter(std::list<Alter>& la, Future& future)
         {
             if (a.targetgp == gp)
             {
-                DOUT(" ... took first alternative with most critical target gate");
+                // DOUT(" ... took first alternative with most critical target gate");
                 return a;
             }
         }
@@ -3138,17 +3148,17 @@ Alter ChooseAlter(std::list<Alter>& la, Future& future)
             }
             i++;
         }
-        DOUT(" ... took random draw " << choice << " from 0.." << (la.size()-1));
+        // DOUT(" ... took random draw " << choice << " from 0.." << (la.size()-1));
         return res;
     }
     if ("last" == maptiebreakopt)
     {
-        DOUT(" ... took last " << " from 0.." << (la.size()-1));
+        // DOUT(" ... took last " << " from 0.." << (la.size()-1));
         return la.back();
     }
     if ("first" == maptiebreakopt)
     {
-        DOUT(" ... took first " << " from 0.." << (la.size()-1));
+        // DOUT(" ... took first " << " from 0.." << (la.size()-1));
         return la.front();
     }
     return la.front();  // to shut up gcc
@@ -3188,11 +3198,11 @@ void CommitAlter(Alter& resa, Future& future, Past& past)
     if (grid.Distance(past.MapQubit(q[0]), past.MapQubit(q[1])) == 1)
     {
         // resgp is NN: so done with this 2q gate
-        DOUT("... CommitAlter, target 2q is NN, map it and done: " << resgp->qasm());
+        // DOUT("... CommitAlter, target 2q is NN, map it and done: " << resgp->qasm());
         MapRoutedGate(resgp, past);     // the 2q target gate is NN now and thus can be mapped
         future.DoneGate(resgp);         // and then taken out of future
     } else {
-        DOUT("... CommitAlter, target 2q is not NN yet, keep it: " << resgp->qasm());
+        // DOUT("... CommitAlter, target 2q is not NN yet, keep it: " << resgp->qasm());
     }
 }
 
@@ -3345,7 +3355,7 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
         Alter::DPRINT("... SelectAlter base (equally good/best) alternatives:", la);
         resa = ChooseAlter(la, future);
         resa.DPRINT("... the selected Alter is");
-        DOUT("SelectAlter DONE level=" << level << " from " << la.size() << " alternatives");
+        // DOUT("SelectAlter DONE level=" << level << " from " << la.size() << " alternatives");
         return;
     }
     MapperAssert(mapperopt == "minextend" || mapperopt == "minextendrc" || mapperopt == "maxfidelity");
@@ -3402,7 +3412,7 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
             gla = la;
         }
     }
-    DOUT("SelectAlter mapselectmaxwidth=" << mapselectmaxwidthopt << " level=" << level << " reduced la to gla");
+    // DOUT("SelectAlter mapselectmaxwidth=" << mapselectmaxwidthopt << " level=" << level << " reduced la to gla");
     Alter::DPRINT("... SelectAlter good alternatives before recursion:", gla);
 
     // Prepare for recursion;
@@ -3420,7 +3430,7 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
         Alter::DPRINT("... SelectAlter reduced to best alternatives to choose result from:", bla);
         resa = ChooseAlter(bla, future);
         resa.DPRINT("... the selected Alter (STOPPING RECURSION) is");
-        DOUT("SelectAlter DONE level=" << level << " from " << bla.size() << " best alternatives");
+        // DOUT("SelectAlter DONE level=" << level << " from " << bla.size() << " best alternatives");
         return;
     }
 
@@ -3443,7 +3453,7 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
     // so indeed with only one alternative we may still go into recursion below.
     // This means that recursion always goes to maxlevel or end-of-circuit.
     // This anomaly may need correction.
-    DOUT("... SelectAlter level=" << level << " entering recursion with " << gla.size() << " good alternatives");
+    // DOUT("... SelectAlter level=" << level << " entering recursion with " << gla.size() << " good alternatives");
     for (auto& a : gla)
     {
         a.DPRINT("... ... considering alternative:");
@@ -3470,10 +3480,10 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
 
         if (havegates)
         {
-            DOUT("... ... SelectAlter level=" << level << ", committed + mapped easy gates, now facing " << lg.size() << " 2q gates to evaluate next");
+            // DOUT("... ... SelectAlter level=" << level << ", committed + mapped easy gates, now facing " << lg.size() << " 2q gates to evaluate next");
             std::list<Alter> la;                // list that will hold all variations, as returned by GenAlters
             GenAlters(lg, la, past_copy);       // gen all possible variations to make gates in lg NN, in current past.v2r mapping
-            DOUT("... ... SelectAlter level=" << level << ", generated for these 2q gates " << la.size() << " alternatives; RECURSE ... ");
+            // DOUT("... ... SelectAlter level=" << level << ", generated for these 2q gates " << la.size() << " alternatives; RECURSE ... ");
             Alter resa;                         // result alternative selected and returned by next SelectAlter call
             SelectAlter(la, resa, future_copy, past_copy, basePast, level+1); // recurse, best in resa ...
             resa.DPRINT("... ... SelectAlter, generated for these 2q gates ... ; RECURSE DONE; resulting alternative ");
@@ -3482,7 +3492,7 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
         }
         else
         {
-            DOUT("... ... SelectAlter level=" << level << ", no gates to evaluate next; RECURSION BOTTOM");
+            // DOUT("... ... SelectAlter level=" << level << ", no gates to evaluate next; RECURSION BOTTOM");
             auto mapperopt = ql::options::get("mapper");
             if ("maxfidelity" == mapperopt)
             {
@@ -3507,7 +3517,7 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
     Alter::DPRINT("... SelectAlter equally best alternatives on return of RECURSION:", bla);
     resa = ChooseAlter(bla, future);
     resa.DPRINT("... the selected Alter is");
-    DOUT("... SelectAlter level=" << level << " selecting from " << bla.size() << " equally good alternatives above DONE");
+    // DOUT("... SelectAlter level=" << level << " selecting from " << bla.size() << " equally good alternatives above DONE");
     DOUT("SelectAlter DONE level=" << level << " from " << la.size() << " alternatives");
 }
 
