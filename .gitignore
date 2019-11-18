@@ -23,3 +23,7 @@ swig/openql/openql.py
 # Test files
 test_output
 .ipynb_checkpoints
+
+docs/_build
+docs/_static
+docs/_templates
