@@ -1,4 +1,0 @@
-Gate
-====
-
-contains gate details

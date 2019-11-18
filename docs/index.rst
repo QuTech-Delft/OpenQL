@@ -1,8 +1,3 @@
-.. OpenQL documentation master file, created by
-   sphinx-quickstart on Sun Nov  3 17:43:19 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to OpenQL's documentation!
 ==================================
 
@@ -19,19 +14,15 @@ OpenQL is a framework for high-level quantum programming in C++/Python. The fram
    contributors
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: OpenQL Basics:
 
    platform
-   gate
+   quantum_gate
+   classical_instructions
    kernel
    program
-
-.. scheduling
-.. classical_instructions
-.. backends
-.. config_file
-
+   compiler_passes
 
 
 
