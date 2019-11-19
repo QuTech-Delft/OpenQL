@@ -207,6 +207,7 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 		//Now we use the qubit_end_cycle values to correct the circuit builder list
 		if (compiled)
 		{
+			fout << "\n";
 			fout << "	b.times = {";
 			for (size_t i=0; i < num_qubits; i++)
 			{
