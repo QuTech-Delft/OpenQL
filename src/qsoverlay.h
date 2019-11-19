@@ -17,7 +17,7 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
     {
 
 		//TODO remove the next line. Using this because qsoverlay has some bugs when time is explicited
-		compiled = false;
+		// compiled = false;
 
 
 
@@ -89,13 +89,44 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 		}
 
 		//Create qubit list
+        std::vector<size_t> check_usecount;
+        check_usecount.resize(num_qubits, 0);
+		for (auto & gp: kernels.front().c)
+        {
+            switch(gp->type())
+            {
+            // case __classical_gate__:
+            // case __wait_gate__:
+                // break;
+            default:    // quantum gate
+                for (auto v: gp->operands)
+                {
+                    check_usecount[v]++;
+                }
+                break;
+            }
+        }
 
 		std::string qubit_list = "";
+		// for (size_t qubit=0; qubit < num_qubits; qubit++)
+		// {
+		// 	qubit_list += "'";
+		// 	qubit_list += (qubit != num_qubits-1) ? (std::to_string(qubit) + "', ") : (std::to_string(qubit) + "'");
+		// }
+		bool loop_helper = false;
 		for (size_t qubit=0; qubit < num_qubits; qubit++)
 		{
+			if (check_usecount[qubit] == 0)
+				continue;
+			if (loop_helper)
+				qubit_list += ", ";
+			if (check_usecount[qubit] != 0)
+				loop_helper = true;
+
 			qubit_list += "'";
-			qubit_list += (qubit != num_qubits-1) ? (std::to_string(qubit) + "', ") : (std::to_string(qubit) + "'");
+			qubit_list += std::to_string(qubit) + "'";
 		}
+		std::vector<size_t> qubit_end_times(num_qubits, 1); //The only use is to correct the Circuit Builder times later (due to unwanted behaviour in qsoverlay)
 
 		//Circuit creation
 		fout << "\n#Now the circuit is created\n"
@@ -128,10 +159,13 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 			if (gate->operands.size() == 1)
             {
 				IOUT("Gate operands: " + std::to_string(gate->operands[0]));
+				qubit_end_times.at(gate->operands[0]) = (gate->cycle - 1)*ns_per_cycle + gate->duration;
             }
 			else if (gate->operands.size() == 2)
             {
 				IOUT("Gate operands: " + std::to_string(gate->operands[0]) + ", " + std::to_string(gate->operands[1]));
+				qubit_end_times.at(gate->operands[0]) = (gate->cycle - 1)*ns_per_cycle + gate->duration;
+				qubit_end_times.at(gate->operands[1]) = (gate->cycle - 1)*ns_per_cycle + gate->duration;
             }
 			else
 			{
@@ -153,7 +187,7 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 			if (qs_name == "prepz")
 			{
 				if (compiled)
-					fout << ", time = " << std::to_string((gate->cycle-1)*ns_per_cycle + gate->duration);
+					fout << ", time = " << std::to_string((gate->cycle-1)*ns_per_cycle + gate->duration );
 			}
 
 			else if (qs_name == "Measure")
@@ -170,6 +204,20 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 			fout << ")\n";
 		}
 
+		//Now we use the qubit_end_cycle values to correct the circuit builder list
+		if (compiled)
+		{
+			fout << "	b.times = {";
+			for (size_t i=0; i < num_qubits; i++)
+			{
+				fout << "'" << i << "' : " << (qubit_end_times.at(i)-1)*ns_per_cycle ;
+				if ( i != num_qubits-1)
+					fout << ", ";
+			}
+			fout << "}\n";
+		}
+
+		//Now we finalize the circuit
 		fout << "\n"
 			 << "	b.finalize()\n"
 			 << "	return b.circuit\n";
