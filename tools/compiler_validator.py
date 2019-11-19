@@ -13,9 +13,9 @@ import sys
 
 def simulation(circuit):
 	# CIRCUIT DECLARATION
-	bell_state = SparseDM(circuit.get_qubit_names())
-	circuit.apply_to(bell_state)
-	measurement_result = bell_state.peak_multiple_measurements(circuit.get_qubit_names())
+	state = SparseDM(circuit.get_qubit_names())
+	circuit.apply_to(state)
+	measurement_result = state.peak_multiple_measurements(circuit.get_qubit_names())
 	return measurement_result
 
 
