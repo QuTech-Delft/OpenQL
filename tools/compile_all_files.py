@@ -45,7 +45,7 @@ if __name__ == "__main__":
 	log_level = 'LOG_INFO'
 	scheduler = 'ALAP'
 	mapper = 'minextendrc'
-	optimize = 'yes'
+	optimize = 'no'
 	scheduler_uniform = 'no'
 	initialplace = 'no'
 	scheduler_post179 = 'yes'
@@ -53,8 +53,23 @@ if __name__ == "__main__":
 	mapusemoves = 'no'
 	maptiebreak = 'random'
 
-	#add other options here
-	ql.set_option('decompose_toffoli', 'no')
+	#add other options here (overring the options above will not work! change the value in the options above instead!)
+	ql.set_option('decompose_toffoli', "no")
+	ql.set_option("prescheduler", "yes") 
+	ql.set_option("cz_mode", "manual") 
+	ql.set_option("clifford_premapper", "yes") # = "yes";
+	ql.set_option("clifford_postmapper", "yes") # = "yes";
+	ql.set_option("mapinitone2one", "yes") # = "yes";
+	ql.set_option("mapassumezeroinitstate", "no") # = "no";
+	ql.set_option("initialplace", "no") # = "no";
+	ql.set_option("initialplace2qhorizon", "0") # = "0";
+	ql.set_option("maplookahead", "noroutingfirst") # = "noroutingfirst";
+	ql.set_option("mappathselect", "all") # = "all";
+	ql.set_option("maprecNN2q", "no") # = "no";
+	ql.set_option("mapselectmaxlevel", "0") # = "0";
+	ql.set_option("mapselectmaxwidth", "min") # = "min";
+	ql.set_option("mapselectswaps", "all") # = "all";
+	ql.set_option("mapreverseswap", "yes") # = "yes";
 
 
 	for file in files:
