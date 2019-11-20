@@ -7,6 +7,8 @@
 
 //TODO: ATM, this does not support operations after measurement (eg. preparing again and reusing a qubit)
 //The above will produce undefined behaviour
+//WARNING: Only use for semi-sections of circuits containing the beggining
+//Otherwise, the dec. effect of qubits unused in the section will not be accounted for (even if they were used before), since they will be detected as unused, as given a NULL fidelity
 
 #pragma once
 #include <cmath> 
@@ -63,7 +65,7 @@ private:
 	size_t Nqubits;
 	double gatefid_1 = 0.999; //Hardcoded for testing purposes
 	double gatefid_2 = 0.99; //Hardcoded for testing purposes
-	double decoherence_time = 4500.0/20; //Hardcoded for testing purposes
+	double decoherence_time = 30000.0/20; //Hardcoded for testing purposes
 	std::string fidelity_estimator;
 	std::string output_mode;
 	json qubit_attributes;
@@ -169,20 +171,25 @@ public:
 		IOUT("Creating output4");
 		if (output_mode == "worst"){
 			IOUT("\nOutput mode: worst");
-			return *std::min_element(fids.begin(),fids.end());
+			return *std::min_element(fids.begin(),fids.end()); //Have to check if it is a problem that the vector contains nulls
 		}
 
-		else if (output_mode == "average") //DOES NOT WORK
+		else if (output_mode == "average") 
 		{
 			PRINTER(fids);
 			// double sum= std::accumulate(fids.begin(), fids.end(), 0);
 			double sum = 0;
+			double num_active = 0;
 			for (auto x : fids)
 			{
-				sum += x;
+				if (not std::isnan(x))
+				{
+					sum += x;
+					num_active+=1;
+				}
 			}
 			DOUT("Sum fidelities :" + std::to_string(sum));
-			double average = sum / fids.size();
+			double average = sum / num_active;
 			DOUT("Average fidelity:" + std::to_string(average));
 			return average;			
 		}
@@ -223,9 +230,14 @@ public:
 
 		if (fids.size() == 0)
 		{
-			IOUT("EMPTY VECTOR - Initializing. Nqubits = " + std::to_string(Nqubits));
+			IOUT("Bounded fid: EMPTY VECTOR - Initializing. Nqubits = " + std::to_string(Nqubits));
 			fids.resize(Nqubits, 1.0); //Initiallize a fidelity vector, if one is not provided
 			//TODO: non initialized qubits should have undefined fidelity. It shouldn't be taken into account.
+		}
+		else
+		{
+			IOUT("Bounded fid: Initial vector provided:");
+			PRINTER(fids);
 		}
 
 		std::vector<size_t> last_op_endtime(Nqubits, 1); //First cycle has index 1
@@ -255,6 +267,8 @@ public:
 				EOUT("Gate with duration larger than CYCLE_TIME*20 detected! Non primitive?: " << gate->name );
     			throw ql::exception("Check for non primitive gates at cycle "  + std::to_string(gate->cycle) + "!", false);
 			}
+
+			IOUT("Checkpoint 1");
 
 			
 			unsigned char type_op = gate->operands.size(); // type of operation (1-qubit/2-qubit)
@@ -330,35 +344,79 @@ public:
 
 }; //class end
 
-
-	double quick_fidelity(std::list< ql::gate * > gate_list )
+	std::vector<bool> check_used_qubits(size_t Nqubits, const ql::circuit & circuit)
 	{
-		ql::metrics::Metrics estimator(17);
-		std::vector<double> previous_fids;
+	    std::vector<bool> check_use;
+        check_use.resize(Nqubits, false);
+		for (auto & gp: circuit)
+        {
+            switch(gp->type())
+            {
+            // case __classical_gate__:
+            // case __wait_gate__:
+                // break;
+            default:    // quantum gate
+                for (auto v: gp->operands)
+                {
+                    check_use[v] = true;
+                }
+                break;
+            }
+        }
+		return check_use;
+	}
+
+
+
+
+	double quick_fidelity_circuit(const ql::circuit & circuit )
+	{
+		size_t Nqubits = 17; //So be gotten from the json file/mapper when called
+		ql::metrics::Metrics estimator(Nqubits);
+		std::vector<bool> used_qubits = check_used_qubits(Nqubits, circuit);
+		IOUT("Quick Fidelity Circuit called!!!");
+		PRINTER(used_qubits);
+		IOUT(std::to_string(circuit.size()));
+
+
+		std::vector<double> previous_fids(Nqubits, NAN);
+
+		for (size_t i=0; i < Nqubits ; i++)
+		{
+			if (used_qubits[i])
+				previous_fids[i] = 1.0;
+		}  
+
+		// fids.resize(Nqubits, 1.0);
+		double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
+		fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
+		return fidelity;
+	}
+
+	double quick_fidelity(const std::list< ql::gate * > &gate_list )
+	{
+		// ql::metrics::Metrics estimator(17);
+		// std::vector<double> previous_fids;
+		IOUT("QUICK FIDELITY CALLED!");
+		// PRINTER(gate_list);
+		IOUT("Gate list size: " + std::to_string(gate_list.size()));
 		ql::circuit circuit;
 		std::copy(std::begin(gate_list), std::end(gate_list), std::back_inserter(circuit));
-		double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
-		fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
+		double fidelity = quick_fidelity_circuit(circuit);
 		return fidelity;
+		// double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
+		// fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
+		// return fidelity;
 	}
 
-	double quick_fidelity_circuit(ql::circuit circuit )
-	{
-		ql::metrics::Metrics estimator(17);
-		std::vector<double> previous_fids;
-		double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
-		fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
-		return fidelity;
-	}
-
-	double quick_fidelity(ql::circuit circuit )
-	{
-		ql::metrics::Metrics estimator(17);
-		std::vector<double> previous_fids;
-		double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
-		fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
-		return fidelity;
-	}
+	// double quick_fidelity(ql::circuit circuit )
+	// {
+	// 	ql::metrics::Metrics estimator(17);
+	// 	std::vector<double> previous_fids;
+	// 	double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
+	// 	fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
+	// 	return fidelity;
+	// }
 
 
 // const unsigned char transition_matrix[4][4]  = {{ 0, 1, 2, 3 },  //[input_state][new_error]
