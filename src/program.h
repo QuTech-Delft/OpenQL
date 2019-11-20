@@ -505,6 +505,7 @@ class quantum_program
             if (vers > 1)
             {
                 name = ( name + to_string(vers) );
+                DOUT("new program name after bump_unique_file_version: " << name << " based on version: " << vers);
             }
          }
 
@@ -516,6 +517,7 @@ class quantum_program
 
             IOUT("writing un-scheduled qasm to '" << ss_qasm.str() << "' ...");
             ql::utils::write_file(ss_qasm.str(), s);
+            DOUT("writing done");
          }
 
          if( ql::options::get("prescheduler") == "yes" )

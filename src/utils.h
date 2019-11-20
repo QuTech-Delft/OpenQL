@@ -94,7 +94,6 @@ namespace ql
                           << "         make sure the output directory exists for '" << file_name << "'" << std::endl;
                 return;
             }
-
             file << content;
             file.close();
         }

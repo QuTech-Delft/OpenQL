@@ -39,6 +39,8 @@ test_rcbug_benstein(std::string v, std::string param1, std::string param2, std::
 	k.gate("cnot",0,1);
 	k.gate("h",0);
 	k.gate("h",1);
+	k.gate("measure",0);
+	k.gate("measure",1);
 	
     prog.add(k);
 
@@ -51,7 +53,7 @@ test_rcbug_benstein(std::string v, std::string param1, std::string param2, std::
 	std::string maptiebreak="first";
 	std::string initial_placement="no";
 	std::string output_dir_name="test_output";
-	std::string optimize="no";
+	std::string optimize="yes";
 	std::string log_level="LOG_DEBUG";
 
 	ql::options::set("optimize", optimize);
@@ -86,21 +88,21 @@ int main(int argc, char ** argv)
     ql::options::set("print_dot_graphs", "yes"); 
 
     test_rcbug_benstein("rcbug_benstein", "minextend", "no", "no","no");
-    test_rcbug_benstein("rcbug_benstein", "minextend", "no", "yes","no");
-    test_rcbug_benstein("rcbug_benstein", "minextend", "no", "no","yes");
-    test_rcbug_benstein("rcbug_benstein", "minextend", "no", "yes","yes");
-    test_rcbug_benstein("rcbug_benstein", "minextend", "yes", "no","yes");
-    test_rcbug_benstein("rcbug_benstein", "minextend", "yes", "yes","yes");
-    test_rcbug_benstein("rcbug_benstein", "minextend", "yes", "no","no");
-    test_rcbug_benstein("rcbug_benstein", "minextend", "yes", "yes","no");
-    test_rcbug_benstein("rcbug_benstein", "minextendrc", "no", "no","no");
-    test_rcbug_benstein("rcbug_benstein", "minextendrc", "no", "yes","no");
-    test_rcbug_benstein("rcbug_benstein", "minextendrc", "no", "no","yes");
-    test_rcbug_benstein("rcbug_benstein", "minextendrc", "no", "yes","yes");
-    test_rcbug_benstein("rcbug_benstein", "minextendrc", "yes", "no","yes");
-    test_rcbug_benstein("rcbug_benstein", "minextendrc", "yes", "yes","yes");
-    test_rcbug_benstein("rcbug_benstein", "minextendrc", "yes", "no","no");
-    test_rcbug_benstein("rcbug_benstein", "minextendrc", "yes", "yes","no");
+//    test_rcbug_benstein("rcbug_benstein", "minextend", "no", "yes","no");
+//    test_rcbug_benstein("rcbug_benstein", "minextend", "no", "no","yes");
+//    test_rcbug_benstein("rcbug_benstein", "minextend", "no", "yes","yes");
+//    test_rcbug_benstein("rcbug_benstein", "minextend", "yes", "no","yes");
+//    test_rcbug_benstein("rcbug_benstein", "minextend", "yes", "yes","yes");
+//    test_rcbug_benstein("rcbug_benstein", "minextend", "yes", "no","no");
+//    test_rcbug_benstein("rcbug_benstein", "minextend", "yes", "yes","no");
+//    test_rcbug_benstein("rcbug_benstein", "minextendrc", "no", "no","no");
+//    test_rcbug_benstein("rcbug_benstein", "minextendrc", "no", "yes","no");
+//    test_rcbug_benstein("rcbug_benstein", "minextendrc", "no", "no","yes");
+//    test_rcbug_benstein("rcbug_benstein", "minextendrc", "no", "yes","yes");
+//    test_rcbug_benstein("rcbug_benstein", "minextendrc", "yes", "no","yes");
+//    test_rcbug_benstein("rcbug_benstein", "minextendrc", "yes", "yes","yes");
+//    test_rcbug_benstein("rcbug_benstein", "minextendrc", "yes", "no","no");
+//    test_rcbug_benstein("rcbug_benstein", "minextendrc", "yes", "yes","no");
 
     return 0;
 }
