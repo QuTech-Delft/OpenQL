@@ -1106,9 +1106,13 @@ public:
 
     void optimize()
     {
+        DOUT("kernel " << name << " optimize(): circuit before optimizing: ");
+        print(c);
+        DOUT("... end circuit");
         ql::rotations_merging rm;
         if (contains_measurements(c))
         {
+            DOUT("kernel contains measurements ...");
             // decompose the circuit
             std::vector<circuit*> cs = split_circuit(c);
             std::vector<circuit > cs_opt;
@@ -1133,7 +1137,9 @@ public:
         {
             c = rm.optimize(c);
         }
-
+        DOUT("kernel " << name << " optimize(): circuit after optimizing: ");
+        print(c);
+        DOUT("... end circuit");
     }
 
     void decompose_toffoli()

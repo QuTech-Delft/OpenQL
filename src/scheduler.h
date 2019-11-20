@@ -2277,7 +2277,14 @@ public:
         // currCycle == cycle of last gate of circuit scheduled
         // duration_in_cycles later the system starts idling
         // depth is the difference between the cycle in which it starts idling and the cycle it started execution
-        DOUT("Depth: " << currCycle + currBundle.duration_in_cycles - bundles.front().start_cycle);
+        if (bundles.empty())
+        {
+            DOUT("Depth: " << 0);
+        }
+        else
+        {
+            DOUT("Depth: " << currCycle + currBundle.duration_in_cycles - bundles.front().start_cycle);
+        }
         DOUT("bundler [DONE]");
         return bundles;
     }
