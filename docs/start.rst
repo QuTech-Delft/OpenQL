@@ -10,13 +10,15 @@ open an interactive python notebook in your terminal (with ``ipython3``), or sim
     from openql import openql as ql
 
 
-Next, create a platform
+Next, create a platform by:
 
 .. code:: python
 
-	platform = ql.Platform("myPlatform", config_fn)
+	platform = ql.Platform("myPlatform", config_file_name)
 
-For this example we will be working on 3 qubits. So let us define variable so that we can use it at multiple places in our code.
+where, ``config_file_name`` is the name of the configuration file in JSON format which specifies the paltform. For details, refer to :ref:`platform`.
+
+For this example we will be working on 3 qubits. So let us define a variable for the number of qubits.
 
 .. code:: python
 
