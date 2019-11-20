@@ -2177,7 +2177,7 @@ public:
     // sort circuit by the gates' cycle attribute in non-decreasing order
     void sort_by_cycle()
     {
-        // DOUT("... before sorting on cycle value");
+        DOUT("... before sorting on cycle value");
         // for ( ql::circuit::iterator gpit = circp->begin(); gpit != circp->end(); gpit++)
         // {
         //     ql::gate*           gp = *gpit;
@@ -2187,7 +2187,7 @@ public:
         // std::sort doesn't preserve the original order of elements that have equal values but std::stable_sort does
         std::stable_sort(circp->begin(), circp->end(), cycle_lessthan);
 
-        // DOUT("... after sorting on cycle value");
+        DOUT("... after sorting on cycle value");
         // for ( ql::circuit::iterator gpit = circp->begin(); gpit != circp->end(); gpit++)
         // {
         //     ql::gate*           gp = *gpit;
@@ -2277,7 +2277,14 @@ public:
         // currCycle == cycle of last gate of circuit scheduled
         // duration_in_cycles later the system starts idling
         // depth is the difference between the cycle in which it starts idling and the cycle it started execution
-        DOUT("Depth: " << currCycle + currBundle.duration_in_cycles - bundles.front().start_cycle);
+        if (bundles.empty())
+        {
+            DOUT("Depth: " << 0);
+        }
+        else
+        {
+            DOUT("Depth: " << currCycle + currBundle.duration_in_cycles - bundles.front().start_cycle);
+        }
         DOUT("bundler [DONE]");
         return bundles;
     }
@@ -3017,18 +3024,20 @@ public:
     ql::ir::bundles_t schedule_asap_post179(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
     {
         ql::ir::bundles_t   bundles;
+        DOUT("Scheduling ASAP post179");
         bundles = schedule_post179(circp, ql::forward_scheduling, platform, rm, sched_dot);
 
-        DOUT("Scheduling ASAP [DONE]");
+        DOUT("Scheduling ASAP post179 [DONE]");
         return bundles;
     }
 
     ql::ir::bundles_t schedule_alap_post179(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
     {
         ql::ir::bundles_t   bundles;
+        DOUT("Scheduling ALAP post179");
         bundles = schedule_post179(circp, ql::backward_scheduling, platform, rm, sched_dot);
 
-        DOUT("Scheduling ALAP [DONE]");
+        DOUT("Scheduling ALAP post179 [DONE]");
         return bundles;
     }
 
@@ -3277,6 +3286,7 @@ public:
                 ql::scheduling_direction_t dir
                 )
     {
+        DOUT("Get_dot post179");
         Path<ListDigraph> p;
         ListDigraph::ArcMap<bool> isInCritical(graph);
         if(WithCritical)
@@ -3316,8 +3326,16 @@ public:
         if( WithCycles)
         {
             // Print cycle numbers as timeline, as shown below
-            size_t TotalCycles = circp->back()->cycle + (circp->back()->duration+cycle_time-1)/cycle_time
+            size_t TotalCycles;
+            if (circp->size() == 0)
+            {
+                TotalCycles = 1;    // +1 is SOURCE's duration in cycles
+            }
+            else
+            {
+                TotalCycles = circp->back()->cycle + (circp->back()->duration+cycle_time-1)/cycle_time
                                     - circp->front()->cycle + 1;    // +1 is SOURCE's duration in cycles
+            }
             dotout << "{\nnode [shape=plaintext, fontsize=16, fontcolor=blue]; \n";
             for(size_t cn=0;cn<=TotalCycles;++cn)
             {
@@ -3362,6 +3380,7 @@ public:
         }
 
         dotout << "}" << endl;
+        DOUT("Get_dot post179 [DONE]");
     }
 
 public:
