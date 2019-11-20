@@ -42,6 +42,8 @@ if __name__ == "__main__":
 	measurement = False
 
 	#Some compiler options
+	output_dir_name = 'mapper=minextendrc'
+
 	log_level = 'LOG_INFO'
 	scheduler = 'ALAP'
 	mapper = 'minextendrc'
@@ -72,10 +74,11 @@ if __name__ == "__main__":
 	ql.set_option("mapreverseswap", "yes") # = "yes";
 
 
+
 	for file in files:
 		imported = importlib.import_module(os.path.join(file.replace(".py", "")))
 		try:
-			imported.circuit('test_mapper17.json', scheduler = scheduler, mapper = mapper, uniform_sched = scheduler_uniform, new_scheduler = scheduler_post179,  moves = mapusemoves, maptiebreak = maptiebreak, measurement = measurement, optimize = optimize, output_dir_name = 'test_output', log_level = log_level)
+			imported.circuit('test_mapper17.json', scheduler = scheduler, mapper = mapper, uniform_sched = scheduler_uniform, new_scheduler = scheduler_post179,  moves = mapusemoves, maptiebreak = maptiebreak, measurement = measurement, optimize = optimize, output_dir_name = output_dir_name, log_level = log_level)
 		except Exception as e:
 			print(str(e))
 
