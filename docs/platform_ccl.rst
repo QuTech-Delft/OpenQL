@@ -1,15 +1,20 @@
 CC-Light Plaform Configuration
 ------------------------------
 
-`hardware_configuration_cc_light.json <https://github.com/QE-Lab/OpenQL/blob/develop/tests/hardware_config_cc_light.json>`_ available inside the ``tests`` direcotry is an example configuration file for CC-Light platform. 
+`hardware_configuration_cc_light.json
+<https://github.com/QE-Lab/OpenQL/blob/develop/tests/hardware_config_cc_light.json>`_
+available inside the ``tests`` direcotry is an example configuration file for
+CC-Light platform.
 
-``cc_light_compiler`` is the backend compiler used for CC-Light platform as specified by ``eqasm_compiler`` field as:
+``cc_light_compiler`` is the backend compiler used for CC-Light platform as
+specified by ``eqasm_compiler`` field as:
 
 .. code::
 
     "eqasm_compiler" : "cc_light_compiler",
 
-Next section is ``hardware_settings`` which is used to configure various hardware settings of the platform as shown below:
+Next section is ``hardware_settings`` which is used to configure various
+hardware settings of the platform as shown below:
 
 .. code-block::
    :linenos:
@@ -30,11 +35,15 @@ Next section is ``hardware_settings`` which is used to configure various hardwar
 		"readout_readout_buffer": 0
 	}
 
-``qubit_number`` indicates the number of qubits available in the platform. Using qubits more than this number will raise an error. 
+``qubit_number`` indicates the number of qubits available in the platform. Using
+qubits more than this number will raise an error.
 
 ``cycle_time`` is the value of the clock cycle time.
 
-Rest of the entries from line 6 to 14 specify various buffer times to be inserted in various operations due to control electronics setup. For example, ``mw_mw_buffer`` can be used to specify time to be inserted between a microwave operation followed by another microwave operation.
+Rest of the entries from line 6 to 14 specify various buffer times to be
+inserted in various operations due to control electronics setup. For example,
+``mw_mw_buffer`` can be used to specify time to be inserted between a microwave
+operation followed by another microwave operation.
 
 .. note:: 
 	It is important to use same units to specify time in the configuraton
@@ -63,7 +72,9 @@ assumes the following connections:
 	 VSM                        --              0~6              microwave masking 
 	=====================    =============   =============      =================== 
 
-Qubits available in the pltform are specified in ``qubits`` section, as shown below. For CC-Light only ``count`` needs to be specified which indiates the number of available qubits.
+Qubits available in the pltform are specified in ``qubits`` section, as shown
+below. For CC-Light only ``count`` needs to be specified which indiates the
+number of available qubits. Each qubit  can be used by only one gate at a time.
 
 .. code-block::
    :linenos:
@@ -73,7 +84,11 @@ Qubits available in the pltform are specified in ``qubits`` section, as shown be
 	    "count": 7
 	},
 
-An instruction may require a wave form generator resource. Waveform generators and their constraints are specified in ``qwgs`` section, as shown below.
+Single-qubit rotation gates (instructions of 'mw' type) are controlled by qwgs.
+Each qwg controls a private set of qubits.  A qwg can control multiple qubits at
+the same time, but only when they perform the same gate and started at the same
+time. Waveform generators and their constraints are specified in ``qwgs``
+section, as shown below.
 
 .. code-block::
    :linenos:
@@ -89,12 +104,23 @@ An instruction may require a wave form generator resource. Waveform generators a
 	  }
 	},
 
-The number of these waveform generators is specified by the ``count`` field. In the ``connection_map`` it is specified which wafeform generator is connected to which qubits. For instance, Line 6 specifies that ``qwg 0`` is connected to qubits 0 and 1. This is based on ``AWG-8 1, channel 0`` entry in 4th row in Table :numref:`table_ccl_connections` This information is utilized by the scheduler to perform resource-constraint aware scheduling of instructions.
+The number of these waveform generators is specified by the ``count`` field. In
+the ``connection_map`` it is specified which wafeform generator is connected to
+which qubits. For instance, Line 6 specifies that ``qwg 0`` is connected to
+qubits 0 and 1. This is based on ``AWG-8 1, channel 0`` entry in 4th row in
+Table :numref:`table_ccl_connections` This information is utilized by the
+scheduler to perform resource-constraint aware scheduling of instructions.
 
 .. note::
-	By providing an empty list for a qwg will result in not applying any qwg constraint during scheduling.
+	By providing an empty list for a qwg will result in not applying any qwg
+	constraint during scheduling.
 
-Available measurement/readout units are specified in ``meas_units`` section, as shown below.
+Single-qubit measurements (instructions of 'readout' type) are controlled by
+measurement units.  Each one controls a private set of qubits.  A measurement
+unit can control multiple qubits at the same time, but only when they started at
+the same time. There are 'count' measurement units. For each measurement unit it
+is described which set of qubits it controls. Available measurement/readout
+units are specified in ``meas_units`` section, as shown below.
 
 .. code-block::
    :linenos:
@@ -121,16 +147,23 @@ Available measurement/readout units are specified in ``meas_units`` section, as 
     Qubit numbering and connectivity in CC-Light Platform.
 
 
-For the details below, it will be convinient to consider the 
-Figure :numref:`fig_qubit_numbering_ccl`, which shows qubit and edge numbering in CC-Light platform.
+For the details below, it will be convinient to consider the Figure
+:numref:`fig_qubit_numbering_ccl`, which shows qubit and edge numbering in
+CC-Light platform.
 
+Two-qubit flux gates (instructions of ``flux`` type) are controlled by
+qubit-selective frequency detuning.  Frequency-detuning may cause neighbor
+qubits (qubits connected by an edge) to inadvertently engage in a two-qubit flux
+gate as well. This happens when two connected qubits are both executing a
+two-qubit flux gate. Therefore, for each edge executing a two-qubit gate,
+certain other edges should not execute a two-qubit gate.
 
-Edges and the constraints imposed by these edges are specified in ``edges`` section.
-``count`` at Line 3 specifies the number of edges between qubits in the platform.
-``connection_map`` specifies connections. For example, on Line 6, Edge 0 implies a
-constraint on Edge 2 and Edge 10. This means, if Edge 0 is reserved for an operation,
-an operation on Edge 2 and Edge 10 will not be scheduled, until operation on Edge 0
-is complete.
+Edges and the constraints imposed by these edges are specified in ``edges``
+section. ``count`` at Line 3 specifies the number of edges between qubits in the
+platform. ``connection_map`` specifies connections. For example, on Line 6, Edge
+0 implies a constraint on Edge 2 and Edge 10. This means, if Edge 0 is reserved
+for an operation, an operation on Edge 2 and Edge 10 will not be scheduled,
+until operation on Edge 0 is complete.
 
 .. code-block::
    :linenos:
@@ -159,16 +192,21 @@ is complete.
 	  }
 	},
 
+.. note::
+	By providing an empty list for an edge in the ``connection_map`` will result
+	in not applying any edge constraint during scheduling.
 
-Detunning constraints are specified ``detuned_qubits``. A two-qubit flux gate
-lowers the frequency of its source qubit to get near the frequency of its target
-qubit.  Any two qubits which have near frequencies execute a two-qubit flux gate.
-To prevent any neighbor qubit of the source qubit that has the same frequency as
-the target qubit to interact as well, those neighbors must have their frequency
-detuned (lowered out of the way).  A detuned qubit cannot execute a single-qubit
-rotation (an instruction of 'mw' type).  An edge is a pair of qubits which can
-execute a two-qubit flux gate.  There are 'count' qubits. For each edge it is
-described, when executing a two-qubit gate for it, which set of qubits it detunes.
+
+Detunning constraints are specified in ``detuned_qubits`` section. A two-qubit
+flux gate lowers the frequency of its source qubit to get near the frequency of
+its target qubit.  Any two qubits which have near frequencies execute a
+two-qubit flux gate. To prevent any neighbor qubit of the source qubit that has
+the same frequency as the target qubit to interact as well, those neighbors must
+have their frequency detuned (lowered out of the way).  A detuned qubit cannot
+execute a single-qubit rotation (an instruction of 'mw' type).  An edge is a
+pair of qubits which can execute a two-qubit flux gate.  There are ``count``
+qubits. For each edge it is described, when executing a two-qubit gate for it,
+which set of qubits it detunes.
 
 .. code-block::
    :linenos:
@@ -197,9 +235,18 @@ described, when executing a two-qubit gate for it, which set of qubits it detune
 	    }
 	}
 
-Qubit topology is specified/configured using ``topology`` section. This information is used in mapping of quantum circuit. This section starts with the specification of x and y demensions of grid by setting ``x_size`` and ``y_size``. Next, the available qubits in the platform are given an ``id``, and for each qubit its ``x`` and ``y`` position on the grid is specified.
+Qubit topology is specified/configured in the ``topology`` section. This
+information is used in mapping of quantum circuit. This section starts with the
+specification of x and y demensions of grid by setting ``x_size`` and
+``y_size``. A qubit grid is rectangular. The coordinates in the X direction are
+0 to x_size-1. In the Y direction they are 0 to y_size-1. Next, the available
+qubits in the platform are given an ``id`` which is used as operands in
+instructions to index the qubits. For each qubit its ``x`` and ``y`` position on
+the grid is also specified.
 
-Each edge in the topology is given an ``id``, and its source and destination qubit by ``src`` and ``dst``, respectively.
+Qubits are connected in directed pairs, called edges. Each edge in the topology
+is given an ``id``, and its source and destination qubit by ``src`` and ``dst``,
+respectively.
 
 .. code-block::
    :linenos:
@@ -239,7 +286,8 @@ Each edge in the topology is given an ``id``, and its source and destination qub
 	},
 
 
-Instructions can be specified/configured in ``instructions section``. An example of a 1-qubit 2-qubit instruction is shown below:
+Instructions can be specified/configured in ``instructions section``. An example
+of a 1-qubit 2-qubit instruction is shown below:
 
 .. code-block::
    :linenos:
@@ -282,10 +330,29 @@ Instructions can be specified/configured in ``instructions section``. An example
 	   ...
    }
 
-``x q0`` is the name of the instruction which will be used to refer to this instruction inside OpenQL program. The ``duration`` specifies the time duration required to complete this instruction. Due to control electronics, it is sometimes required to add a positive or negtive latency to an instruction. This can be specified by ``latency`` field. ``qubits`` refer to the list of qubits operands. ``matrix`` specifies the matrix representing this instruction. ``disable_optimization`` is used to enable disable optimization of instruction. An instruction can be of microwave, flux or readout type which is specified by the ``type`` field. ``cc_light_instr_type`` field is used to specify the type of instruction based on number of qubits. ``cc_light_instr`` specifies the name of this instruction used in CC-Light architecture. This name will be used in the generated output code. ``cc_light_right_codeword`` and ``cc_light_left_codeword`` is used to specify the codewords used for the left and right operation in CC-Light architecture. ``cc_light_opcode`` specifies the opcode used for this instruction.
+``x q0`` is the name of the instruction which will be used to refer to this
+instruction inside OpenQL program. The ``duration`` specifies the time duration
+required to complete this instruction. Due to control electronics, it is
+sometimes required to add a positive or negtive latency to an instruction. This
+can be specified by ``latency`` field. ``qubits`` refer to the list of qubits
+operands. ``matrix`` specifies the matrix representing this instruction.
+``disable_optimization`` is used to enable disable optimization of instruction.
+An instruction can be of microwave, flux or readout type which is specified by
+the ``type`` field. ``cc_light_instr_type`` field is used to specify the type of
+instruction based on number of qubits. ``cc_light_instr`` specifies the name of
+this instruction used in CC-Light architecture. This name will be used in the
+generated output code. ``cc_light_right_codeword`` and
+``cc_light_left_codeword`` is used to specify the codewords used for the left
+and right operation in CC-Light architecture. ``cc_light_opcode`` specifies the
+opcode used for this instruction.
 
-Gate decompositions can also be specified in the configuration file in the ``gate_decomposition`` section. Examples of two decompositions are shown below. 
-``%0`` and ``%1`` refer to first argument and second argument. This means according to the decomposition on Line 2, ``rx180 %0`` will allow us to decompose ``rx180 q0`` to ``x q0``. Simmilarly, the decomposition on Line 3 will allow us to decompose ``cnot q2, q0`` to three instructions, namely; ``ry90 q2``, ``cz q2, q0`` and ``ry90 q0``.
+Gate decompositions can also be specified in the configuration file in the
+``gate_decomposition`` section. Examples of two decompositions are shown below.
+``%0`` and ``%1`` refer to first argument and second argument. This means
+according to the decomposition on Line 2, ``rx180 %0`` will allow us to
+decompose ``rx180 q0`` to ``x q0``. Simmilarly, the decomposition on Line 3 will
+allow us to decompose ``cnot q2, q0`` to three instructions, namely; ``ry90
+q2``, ``cz q2, q0`` and ``ry90 q0``.
 
 .. code-block::
    :linenos:
