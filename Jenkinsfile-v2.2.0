@@ -42,9 +42,10 @@ pipeline {
                     sh 'python3 -m venv env'
                     sh '''
                             . ./env/bin/activate &&
+                            pip3 install --upgrade setuptools
                             pip3 --cache-dir /var/pip_cache install pytest numpy &&
                             pip3 install -e . &&
-                            python3 libqasm/qasm_flex_bison/setup.py install
+                            python3 libqasm/qasm_flex_bison/setup.py install &&
                             pip3 install eQASM_Assembler/qisa-as
                        '''
                 }
@@ -60,7 +61,7 @@ pipeline {
                 dir(PERSIST_WORKSPACE) {
                     sh '''
                             . ./env/bin/activate &&
-                            pytest --ignore=eQASM_Assembler/
+                            pytest --ignore=eQASM_Assembler/ --ignore=libqasm/
                        '''
                 }
             }
