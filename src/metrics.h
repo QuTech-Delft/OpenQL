@@ -69,6 +69,7 @@ private:
 	std::string fidelity_estimator;
 	std::string output_mode;
 	json qubit_attributes;
+	std::vector<string> allowed_gates = {"prepz", "x", "x45", "x90", "xm45", "xm90", "y", "y45", "y90", "ym45", "ym90", "h", "cz", "measure"};
 
 
 	double gaussian_pdf(double x, double mean, double sigma)
@@ -150,13 +151,11 @@ public:
 
 	double create_output (const std::vector<double> &fids)
 	{
-		IOUT("Creating output");
+		DOUT("Creating output");
 		std::vector<double> result_vector;
 		result_vector = fids;
-		IOUT("Creating output2");
 
 		PRINTER(result_vector);
-		IOUT("Creating output2.5");
 		//We take out negative fidelities
 		// size_t dimension = result_vector.size();
 		// for (size_t element = dimension-1; element >=0 ; element--)
@@ -166,9 +165,7 @@ public:
 		// PRINTER(result_vector);
 		// }
 
-		IOUT("Creating output3.5");
 		PRINTER(result_vector);
-		IOUT("Creating output4");
 		if (output_mode == "worst"){
 			IOUT("\nOutput mode: worst");
 			return *std::min_element(fids.begin(),fids.end()); //Have to check if it is a problem that the vector contains nulls
@@ -228,6 +225,12 @@ public:
 		//TODO - URGENT!! do not consider the fidelity of non-used qubits (nqubits < qubits from architecture) (set to 2/-1?)
 		//TODO - URGENT!! do not consider the fidelity of used but non initialized qubits (set to 2/-1?)
 
+		if (circ.size()==0)
+		{
+			IOUT("Bounded Fidelity: Empty circuit provided:");
+			return 0;
+		}
+		
 		if (fids.size() == 0)
 		{
 			IOUT("Bounded fid: EMPTY VECTOR - Initializing. Nqubits = " + std::to_string(Nqubits));
@@ -267,8 +270,11 @@ public:
 				EOUT("Gate with duration larger than CYCLE_TIME*20 detected! Non primitive?: " << gate->name );
     			throw ql::exception("Check for non primitive gates at cycle "  + std::to_string(gate->cycle) + "!", false);
 			}
-
-			IOUT("Checkpoint 1");
+			else if (std::find(allowed_gates.begin(), allowed_gates.end(), gate->name) == allowed_gates.end())
+			{
+				EOUT("Metrics: Non primitive gate detected!: " << gate->name );
+    			throw ql::exception("Metrics: Check for non primitive gates at cycle "  + std::to_string(gate->cycle) + "!", false);
+			}
 
 			
 			unsigned char type_op = gate->operands.size(); // type of operation (1-qubit/2-qubit)
@@ -287,12 +293,9 @@ public:
 				fids[qubit] *= std::exp(-((double)idled_time)/decoherence_time); // Update fidelity with idling-caused decoherence
 				
 				fids[qubit] *= gatefid_1; //Update fidelity after gate
-				IOUT("METRICS - one qubit gate - END");
-
 			}
 			else if (type_op == 2)
 			{
-				IOUT("METRICS - TWO qubit gate");
 				size_t qubit_c = gate->operands[0];
 				size_t qubit_t = gate->operands[1];
 				
@@ -374,7 +377,7 @@ public:
 		size_t Nqubits = 17; //So be gotten from the json file/mapper when called
 		ql::metrics::Metrics estimator(Nqubits);
 		std::vector<bool> used_qubits = check_used_qubits(Nqubits, circuit);
-		IOUT("Quick Fidelity Circuit called!!!");
+		IOUT("==== Quick Fidelity_circuit called!!!");
 		PRINTER(used_qubits);
 		IOUT(std::to_string(circuit.size()));
 
@@ -397,9 +400,7 @@ public:
 	{
 		// ql::metrics::Metrics estimator(17);
 		// std::vector<double> previous_fids;
-		IOUT("QUICK FIDELITY CALLED!");
 		// PRINTER(gate_list);
-		IOUT("Gate list size: " + std::to_string(gate_list.size()));
 		ql::circuit circuit;
 		std::copy(std::begin(gate_list), std::end(gate_list), std::back_inserter(circuit));
 		double fidelity = quick_fidelity_circuit(circuit);
