@@ -122,7 +122,7 @@ try:
 except ImportError:
     bdist_wheel = None
 
-setup(name='openql',
+setup(name='qutechtools',
       version=get_version(),
       description='OpenQL Python Package',
       long_description=read('README.md'),
