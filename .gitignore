@@ -5,7 +5,9 @@ dist
 openql.egg-info
 lab
 env
-
+tools/test_output
+tools/test_files/test_vault/all
+tools/metrics
 # Temp files
 *.dot
 *.qc
