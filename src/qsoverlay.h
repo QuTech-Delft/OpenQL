@@ -4,7 +4,7 @@
  * @author Diogo Valada
  * @brief  Prepares the quantumsim circuits using the qsoverlay format
  */
-
+#pragma once
 #include <vector>
 #include <string>
 #include <kernel.h>
@@ -20,14 +20,19 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 		//TODO remove the next line. Using this because qsoverlay has some bugs when time is explicited
 		// compiled = false;
 
+		//WARNING: Currently only accepts fully decomposed circuits according to DiCarlo's setup when compiled=True!
+
 
 
         IOUT("Writing scheduled QSoverlay program");
         // std::ofstream fout;
         std::stringstream fout;
         string qfname( ql::options::get("output_dir") + "/" + prog_name + "_quantumsim_" + suffix + ".py");
-        DOUT("Writing scheduled QSoverlay program " << qfname);
-        IOUT("Writing scheduled QSoverlay program " << qfname);
+		if (not compiled)
+        	IOUT("Writing UNcompiled QSoverlay program to '" << qfname << "'");
+		else
+        	IOUT("Writing compiled QSoverlay program to '" << qfname << "'");
+
         // fout.open( qfname, ios::binary);
         // if ( fout.fail() )
         // {
@@ -56,6 +61,7 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 				
 		//Gate correspondence
 		std::map <std::string, std::string> gate_map = {
+			//Contains only the primitive gates for DiCarlo's
 			{"prepz", "prepz"},
 			{"x", "X"},
 			{"x45", "RX"},
@@ -67,7 +73,6 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 			{"y90", "RY"},
 			{"ym45", "RY"},
 			{"ym90", "RY"},
-			{"h", "H"},
 			{"cz", "CZ"},
 			{"measure", "Measure"},
 		};
@@ -85,11 +90,12 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 
 		if (not compiled)
 		{
+			gate_map["h"] = "H";
 			gate_map["cnot"] = "CNOT";
 			gate_map["t"] = "RZ";
 			angles["t"] = "np.pi/4";
 			gate_map["tdag"] = "RZ";
-			angles["t"] = "-np.pi/4";
+			angles["tdag"] = "-np.pi/4";
 
 		}
 
@@ -131,7 +137,13 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 			qubit_list += "'";
 			qubit_list += std::to_string(qubit) + "'";
 		}
-		std::vector<size_t> qubit_end_times(num_qubits, 1); //The only use is to correct the Circuit Builder times later (due to unwanted behaviour in qsoverlay)
+		std::vector<size_t> qubit_end_times(num_qubits, 0); //The only use is to correct the Circuit Builder times later (due to unwanted behaviour in qsoverlay)
+		// 		std::map<size_t, size_t> qubit_end_times; //The only use is to correct the Circuit Builder times later (due to unwanted behaviour in qsoverlay)
+		// for (size_t p_qubit; p_qubit < check_usecount.size(); p_qubit++)
+		// {
+		// 	if (check_usecount.at(p_qubit) > 0)
+		// 		qubit_end_time[p_qubit]=0;
+		// }
 
 		//Circuit creation
 		fout << "\n#Now the circuit is created\n"
@@ -184,7 +196,7 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 			
 			
 			//Add angles for the gates that require it
-			if (qs_name == "RX" or qs_name == "RY" or qs_name == "t" or qs_name == "tdag")
+			if (qs_name == "RX" or qs_name == "RY" or qs_name == "RZ")
 				fout << ", angle = " << angles[gate->name];
 
 			
@@ -210,13 +222,15 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 		}
 
 		//Now we use the qubit_end_cycle values to correct the circuit builder list
+		
+		
 		if (compiled)
 		{
 			fout << "\n";
 			fout << "	b.times = {";
 			for (size_t i=0; i < num_qubits; i++)
 			{
-				fout << "'" << i << "' : " << (qubit_end_times.at(i)-1)*ns_per_cycle ;
+				fout << "'" << i << "' : " << qubit_end_times.at(i) ;
 				if ( i != num_qubits-1)
 					fout << ", ";
 			}
