@@ -83,7 +83,7 @@ namespace ql
           app->add_set_ignore_case("--quantumsim", opt_name2opt_val["quantumsim"], {"no", "yes", "qsoverlay"}, "Produce quantumsim output, and of which kind", true);
           app->add_set_ignore_case("--cz_mode", opt_name2opt_val["cz_mode"], {"manual", "auto"}, "CZ mode", true);
 
-          app->add_set_ignore_case("--mapper", opt_name2opt_val["mapper"], {"no", "base", "baserc", "minextend", "minextendrc", "maxfidelity"}, "Mapper heuristic", true);
+          app->add_set_ignore_case("--mapper", opt_name2opt_val["mapper"], {"no", "base", "baserc", "minextend", "minextendrc", "maxfidelity", "maxfidelity_debug"}, "Mapper heuristic", true);
           app->add_set_ignore_case("--mapinitone2one", opt_name2opt_val["mapinitone2one"], {"no", "yes"}, "Initialize mapping of virtual qubits one to one to real qubits", true);
           app->add_set_ignore_case("--mapprepinitsstate", opt_name2opt_val["mapprepinitsstate"], {"no", "yes"}, "Prep gate leaves qubit in zero state", true);
           app->add_set_ignore_case("--mapassumezeroinitstate", opt_name2opt_val["assumezeroinitstate"], {"no", "yes"}, "Assume that qubits are initialized to zero state", true);
