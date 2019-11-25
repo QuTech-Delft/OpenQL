@@ -13,6 +13,7 @@ import sys
 
 def simulation(circuit):
 	# CIRCUIT DECLARATION
+	print("Simulating: ", circuit.title)
 	state = SparseDM(circuit.get_qubit_names())
 	circuit.apply_to(state)
 	measurement_result = state.peak_multiple_measurements(circuit.get_qubit_names())
@@ -41,6 +42,21 @@ def compare(circuit_original, circuit_mapped, mapping):
 	result_original_updatedmapping_dict = {}
 	for qubit, measurement in result_original[0].items():
 		result_original_updatedmapping_dict[str(mapping[int(qubit)])] = measurement
+
+	#Now we convert them into sets, so we can take out the extra qubits... 
+	#TODO Comparison using the real_qubit states should be used instead...
+	set_result_original_updatedmapping = set(result_original_updatedmapping_dict)
+	set_result_mapped = set(result_mapped[0])
+	if len(set_result_mapped) > len(set_result_original_updatedmapping):
+		set_difference = set_result_mapped - set_result_original_updatedmapping
+		for item in set_difference:
+			result_mapped[0].pop(item)
+	else:
+		set_difference = set_result_original_updatedmapping - set_result_mapped
+		for item in set_difference:
+			result_original_updatedmapping_dict.pop(item)
+	
+	#=================== needs to be finished
 
 	if result_mapped[0] == result_original_updatedmapping_dict:
 		return True
@@ -75,6 +91,7 @@ def get_mapping(mapper_out_report_file):
 	return mapping
 
 def get_circuit_perfect(quantumsim_filepath):
+	print("Importing: ", os.path.basename(quantumsim_filepath))
 	quantumsim_file = importlib.import_module(quantumsim_filepath)
 	return quantumsim_file.circuit_generated(False) #noise_flag = False
 
@@ -110,7 +127,7 @@ if __name__ == "__main__":
 	# parser = argparse.ArgumentParser(description='Validate OpenQL compiler')
 	# parser.add_argument('indir', help='Input dir for circuits')
 	# args = parser.parse_args()
-	indir = './test_files/test_output'
+	indir = './test_files/mapper=maxfidelity'
 	# indir = args.indir
 	curdir = os.getcwd()
 	os.chdir(curdir)
