@@ -154,8 +154,8 @@ public:
 		DOUT("Creating output");
 		std::vector<double> result_vector;
 		result_vector = fids;
-
-		PRINTER(result_vector);
+		if (ql::options::get("mapper") == "maxfidelity_debug")
+			PRINTER(result_vector);
 		//We take out negative fidelities
 		// size_t dimension = result_vector.size();
 		// for (size_t element = dimension-1; element >=0 ; element--)
@@ -165,7 +165,6 @@ public:
 		// PRINTER(result_vector);
 		// }
 
-		PRINTER(result_vector);
 		if (output_mode == "worst"){
 			IOUT("\nOutput mode: worst");
 			return *std::min_element(fids.begin(),fids.end()); //Have to check if it is a problem that the vector contains nulls
@@ -173,7 +172,7 @@ public:
 
 		else if (output_mode == "average") 
 		{
-			PRINTER(fids);
+			
 			// double sum= std::accumulate(fids.begin(), fids.end(), 0);
 			double sum = 0;
 			double num_active = 0;
@@ -227,33 +226,40 @@ public:
 
 		if (circ.size()==0)
 		{
-			IOUT("Bounded Fidelity: Empty circuit provided:");
+			if (ql::options::get("mapper") == "maxfidelity_debug")
+				IOUT("Bounded Fidelity: Empty circuit provided:");
 			return 0;
 		}
 		
 		if (fids.size() == 0)
 		{
-			IOUT("Bounded fid: EMPTY VECTOR - Initializing. Nqubits = " + std::to_string(Nqubits));
+			if (ql::options::get("mapper") == "maxfidelity_debug")
+				IOUT("Bounded fid: EMPTY VECTOR - Initializing. Nqubits = " + std::to_string(Nqubits));
 			fids.resize(Nqubits, 1.0); //Initiallize a fidelity vector, if one is not provided
 			//TODO: non initialized qubits should have undefined fidelity. It shouldn't be taken into account.
 		}
 		else
 		{
-			IOUT("Bounded fid: Initial vector provided:");
-			PRINTER(fids);
+			if (ql::options::get("mapper") == "maxfidelity_debug"){
+				IOUT("Bounded fid: Initial vector provided:");
+				PRINTER(fids);
+			}
 		}
 
 		std::vector<size_t> last_op_endtime(Nqubits, 1); //First cycle has index 1
 
-		PRINTER(fids);
-		PRINTER(last_op_endtime);
-		IOUT("\n\n");
 
-		IOUT("Entered loop");
+		if (ql::options::get("mapper") == "maxfidelity_debug"){
+			PRINTER(fids);
+			PRINTER(last_op_endtime);
+			DOUT("\n\n");
+		}
+
+		DOUT("Entered loop");
 		for (auto &gate : circ)
 		{
 
-			IOUT("Next gate\n");
+			DOUT("Next gate\n");
 
 			if (gate->name == "measure")
 				continue;
@@ -282,12 +288,13 @@ public:
 			{
 				size_t qubit = gate->operands[0];
 				size_t last_time = last_op_endtime[qubit];
-				IOUT("Gate " + gate->name + "("+ std::to_string(gate->operands[0]) +") at cycle " + std::to_string(gate->cycle) + " with duration " + std::to_string(gate->duration));
+				if (ql::options::get("mapper") == "maxfidelity_debug")
+					IOUT("Gate " + gate->name + "("+ std::to_string(gate->operands[0]) +") at cycle " + std::to_string(gate->cycle) + " with duration " + std::to_string(gate->duration));
 				size_t idled_time = gate->cycle - last_time; //get idlying time to introduce decoherence. This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 				
 				last_op_endtime[qubit] = gate->cycle  + gate->duration / CYCLE_TIME; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
-				
-				IOUT("Idled time:" + std::to_string(idled_time));
+				if (ql::options::get("mapper") == "maxfidelity_debug")
+					IOUT("Idled time:" + std::to_string(idled_time));
 
 
 				fids[qubit] *= std::exp(-((double)idled_time)/decoherence_time); // Update fidelity with idling-caused decoherence
@@ -306,26 +313,31 @@ public:
 				last_op_endtime[qubit_c] = gate->cycle  + gate->duration / CYCLE_TIME; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 				last_op_endtime[qubit_t] = gate->cycle  + gate->duration / CYCLE_TIME ; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 				
-				IOUT("Gate " + gate->name + "("+ std::to_string(gate->operands[0]) + ", " + std::to_string(gate->operands[1]) +") at cycle " + std::to_string(gate->cycle) + " with duration " + std::to_string(gate->duration));
-				IOUT("Idled time q_c:" + std::to_string(idled_time_c));
-				IOUT("Idled time q_t:" + std::to_string(idled_time_t) + " gate cycle=" + std::to_string(gate->cycle) + ". last_time_t=" + std::to_string(last_time_t));
-
+				if (ql::options::get("mapper") == "maxfidelity_debug")
+				{
+					IOUT("Gate " + gate->name + "("+ std::to_string(gate->operands[0]) + ", " + std::to_string(gate->operands[1]) +") at cycle " + std::to_string(gate->cycle) + " with duration " + std::to_string(gate->duration));
+					IOUT("Idled time q_c:" + std::to_string(idled_time_c));
+					IOUT("Idled time q_t:" + std::to_string(idled_time_t) + " gate cycle=" + std::to_string(gate->cycle) + ". last_time_t=" + std::to_string(last_time_t));
+				}
 				fids[qubit_c] *= std::exp(-(double) idled_time_c/decoherence_time); // Update fidelity with idling-caused decoherence
 				fids[qubit_t] *= std::exp(-(double)idled_time_t/decoherence_time); // Update fidelity with idling-caused decoherence
-
-				IOUT("Fidelity after idlying: ");
-				PRINTER(fids);
+				if (ql::options::get("mapper") == "maxfidelity_debug"){
+					IOUT("Fidelity after idlying: ");
+					PRINTER(fids);
+				}
 
 				fids[qubit_c] *=  fids[qubit_t] * gatefid_2; //Update fidelity after gate
 				fids[qubit_t] = fids[qubit_c];  					//Update fidelity after gate
 
 				//TODO - Convert the code into a for loop with range 2, to get the compiler's for optimization (and possible paralellization?)
 			}
+			
+			if (ql::options::get("mapper") == "maxfidelity_debug")
+			{	
 				PRINTER(fids);
 				PRINTER(last_op_endtime);
+			}
 				
-				IOUT("\n NEXT GATE");
-
 		}
 		size_t end_cycle = circ.back()->cycle + circ.back()->duration/CYCLE_TIME; 
 		for (size_t i=0; i < Nqubits; i++ )
@@ -337,10 +349,12 @@ public:
 		//Now we should still add decoherence effect in case the last gate was a two-qubit gate (the other qubits still decohere in the meantime!)
 
 
-
-		IOUT(" \n\n THE END \n\n ");
-		IOUT("Fidelity after idlying: ");
-		PRINTER(fids);
+		if (ql::options::get("mapper") == "maxfidelity_debug")
+		{
+			IOUT(" \n\n THE END \n\n ");
+			IOUT("Fidelity after idlying: ");
+			PRINTER(fids);
+		}
 		//Concatenating data into a single value, to serve as metric
 		return create_output(fids);
 	};
@@ -377,9 +391,12 @@ public:
 		size_t Nqubits = 17; //So be gotten from the json file/mapper when called
 		ql::metrics::Metrics estimator(Nqubits);
 		std::vector<bool> used_qubits = check_used_qubits(Nqubits, circuit);
+		if (ql::options::get("mapper") == "maxfidelity_debug")
+		{
 		IOUT("==== Quick Fidelity_circuit called!!!");
 		PRINTER(used_qubits);
 		IOUT(std::to_string(circuit.size()));
+		}
 
 
 		std::vector<double> previous_fids(Nqubits, NAN);
