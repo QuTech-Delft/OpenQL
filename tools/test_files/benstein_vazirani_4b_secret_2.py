@@ -22,15 +22,21 @@ def circuit(config_file, new_scheduler='yes', scheduler='ASAP', uniform_sched= '
     # platform  = ql.Platform('platform_none', config_fn)
     platform  = ql.Platform('starmon', config_fn)
     num_circuits = 1
-    num_qubits = 3
-    p = ql.Program('benstein_vazirani_1b_secret_1', platform, num_qubits)
-    k = ql.Kernel('benstein_vazirani_1b_secret_1', platform, num_qubits)
-    k.gate('x',[1])
+    num_qubits = 6
+    p = ql.Program('benstein_vazirani_4b_secret_2', platform, num_qubits)
+    k = ql.Kernel('benstein_vazirani_4b_secret_2', platform, num_qubits)
+    k.gate('x',[4])
     k.gate('h',[0])
     k.gate('h',[1])
-    k.gate('cnot',[0,1])
+    k.gate('h',[2])
+    k.gate('h',[3])
+    k.gate('h',[4])
+    k.gate('cnot',[1,4])
     k.gate('h',[0])
     k.gate('h',[1])
+    k.gate('h',[2])
+    k.gate('h',[3])
+    k.gate('h',[4])
 
     if measurement:
         for q in range(num_qubits):
