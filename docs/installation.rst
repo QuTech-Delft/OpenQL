@@ -161,15 +161,10 @@ Existing tests and programs can be compiled on Linux OS by the following command
     make       # compiles the source code into the current directory. 
 
 
-To execute the given examples/test, go to e.g., `OpenQL/cbuild/examples` and execute one of the files e.g.,  `./simple`. The output will be saved to the output directory next to the file.
+To execute the given examples/test, go to e.g., ```OpenQL/cbuild/examples``` and execute one of the files e.g.,  ```./simple```. The output will be saved to the output directory next to the file.
 
-If one wants to compile and run a single file without adding it to CMakeLists.txt, e.g., `example.cc`, the following instructions should be followed:
+If one wants to compile and run a single file without adding it to CMakeLists.txt, e.g., ```example.cc```, he can use the standalone example provided in ```examples/cpp-standalone-example``` directory.
 
-::
-
-    mkdir output           # create an output directory if it does not exist
-    g++ -std=c++11 example.cc -o example.exe -I OpenQL/   # compile the file
-    ./example.exe                                         # execute the file
 
 
 Windows
