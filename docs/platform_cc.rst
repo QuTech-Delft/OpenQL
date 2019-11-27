@@ -1,4 +1,6 @@
+.. _ccplatform:
+
 CC Plaform Configuration
 ------------------------
 
-Deatils of configuration file for CC hardware platform. [TBD]
+Details of configuration file for CC hardware platform. [TBD]

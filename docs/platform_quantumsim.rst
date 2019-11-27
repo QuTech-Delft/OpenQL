@@ -1,3 +1,5 @@
+.. _qsimplatform:
+
 Quantumsim Plaform Configuration
 --------------------------------
 

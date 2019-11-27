@@ -1,3 +1,5 @@
+.. _cclplatform:
+
 CC-Light Plaform Configuration
 ------------------------------
 
@@ -14,7 +16,8 @@ specified by ``eqasm_compiler`` field as:
     "eqasm_compiler" : "cc_light_compiler",
 
 Next section is ``hardware_settings`` which is used to configure various
-hardware settings of the platform as shown below:
+hardware settings of the platform as shown below. These settings affect the
+scheduling of instructions.
 
 .. code-block::
    :linenos:
@@ -51,9 +54,11 @@ operation followed by another microwave operation.
 	These cycles are then used internally to schedule various operations.
 
 
-``resources`` section is used to specify/configure various resources
-available in the platform as discussed below. CC-Light architecture 
-assumes the following connections:
+``resources`` section is used to specify/configure various resources available
+in the platform as discussed below. Specification of these resources effect
+scheduling and mapping of instructions. CC-Light architecture  assumes the
+following connections in `hardware_configuration_cc_light.json
+<https://github.com/QE-Lab/OpenQL/blob/develop/tests/hardware_config_cc_light.json>`_.
 
 .. _table_ccl_connections:
 
@@ -117,10 +122,11 @@ scheduler to perform resource-constraint aware scheduling of instructions.
 
 Single-qubit measurements (instructions of 'readout' type) are controlled by
 measurement units.  Each one controls a private set of qubits.  A measurement
-unit can control multiple qubits at the same time, but only when they started at
-the same time. There are 'count' measurement units. For each measurement unit it
-is described which set of qubits it controls. Available measurement/readout
-units are specified in ``meas_units`` section, as shown below.
+unit can control multiple qubits at the same time, but only when they started
+at the same time. There are 'count' number of measurement units. For each
+measurement unit it is described which set of qubits it controls. Available
+measurement/readout units are specified in ``meas_units`` section, as shown
+below.
 
 .. code-block::
    :linenos:
@@ -205,7 +211,7 @@ the same frequency as the target qubit to interact as well, those neighbors must
 have their frequency detuned (lowered out of the way).  A detuned qubit cannot
 execute a single-qubit rotation (an instruction of 'mw' type).  An edge is a
 pair of qubits which can execute a two-qubit flux gate.  There are ``count``
-qubits. For each edge it is described, when executing a two-qubit gate for it,
+number of edges. For each edge it is described, when executing a two-qubit gate for it,
 which set of qubits it detunes.
 
 .. code-block::
@@ -236,17 +242,20 @@ which set of qubits it detunes.
 	}
 
 Qubit topology is specified/configured in the ``topology`` section. This
-information is used in mapping of quantum circuit. This section starts with the
-specification of x and y demensions of grid by setting ``x_size`` and
-``y_size``. A qubit grid is rectangular. The coordinates in the X direction are
-0 to x_size-1. In the Y direction they are 0 to y_size-1. Next, the available
-qubits in the platform are given an ``id`` which is used as operands in
-instructions to index the qubits. For each qubit its ``x`` and ``y`` position on
-the grid is also specified.
+information is used in mapping of quantum circuit as discussed in detail in
+:ref:`mapping`. This section starts with the specification of x and y
+demensions of grid by setting ``x_size`` and ``y_size``. A qubit grid is
+rectangular. The coordinates in the X direction are 0 to x_size-1. In the Y
+direction they are 0 to y_size-1. Next, the available qubits in the platform
+are given an ``id`` which is used as operands in instructions to index the
+qubits. For each qubit its ``x`` and ``y`` position on the grid is also
+specified.
 
-Qubits are connected in directed pairs, called edges. Each edge in the topology
-is given an ``id``, and its source and destination qubit by ``src`` and ``dst``,
-respectively.
+Qubits are connected in directed pairs, called edges. Each edge in the
+topology is given an ``id``, and its source and destination qubit by ``src``
+and ``dst``, respectively. This means that although Edge 0 and Edge 8 are
+between qubit 0 and qubit 2, they are different as these edges are in oppsite
+directions.
 
 .. code-block::
    :linenos:
@@ -331,15 +340,23 @@ of a 1-qubit 2-qubit instruction is shown below:
    }
 
 ``x q0`` is the name of the instruction which will be used to refer to this
-instruction inside OpenQL program. The ``duration`` specifies the time duration
-required to complete this instruction. Due to control electronics, it is
-sometimes required to add a positive or negtive latency to an instruction. This
-can be specified by ``latency`` field. ``qubits`` refer to the list of qubit
-operands.
+instruction inside OpenQL program. The ``duration`` specifies the time
+duration required to complete this instruction. Due to control electronics, it
+is sometimes required to add a positive or negtive latency to an instruction.
+This can be specified by ``latency`` field. This field is divided by cycle
+time and rounded up to obtain an integer number of cycles. After scheduling is
+performed, an instruction is shifted back or forth in time depending upon
+calculated cycles corresponding to the latency field.
 
-``matrix`` field specifies the process matrix representing this instruction. 
 
-``disable_optimization`` field is used to enable disable optimization of this
+``qubits`` refer to the list of qubit operands.
+
+``matrix`` field specifies the process matrix representing this instruction.
+If optimization is enabled, this matrix will be used by optimizer to fuse
+operations together, as discussed in :ref:'optimization'. This can be left
+un-specified if optimization is disabled.
+
+``disable_optimization`` field is used to enable/disable optimization of this
 instruction. Setting ``disable_optimization`` to ``true`` will mean that this
 instruction cannot be compiled away during optimization.
 
@@ -347,10 +364,22 @@ An instruction can be of microwave, flux or readout type which is
 specified by the ``type`` field. ``cc_light_instr_type`` field is used to
 specify the type of instruction based on number of qubits. ``cc_light_instr``
 specifies the name of this instruction used in CC-Light architecture. This name
-will be used in the generated output code. ``cc_light_right_codeword`` and
-``cc_light_left_codeword`` is used to specify the codewords used for the left
-and right operation in CC-Light architecture. ``cc_light_opcode`` specifies the
-opcode used for this instruction.
+will be used in the generated output code.
+
+``cc_light_codeword``, ``cc_light_right_codeword``, ``cc_light_left_codeword``
+and ``cc_light_opcode`` are used in the generation of control store file for
+CC-Light platform. For single qubit instructions, ``cc_light_codeword`` refers
+to the codeword to be used for this instruction. Recall that quantum pipeline
+contains a VLIW front end with two VLIW lanes, each lane processing one
+quantum operation. ``cc_light_right_codeword`` and ``cc_light_left_codeword``
+is used to specify the codewords used for the left and right operation in
+two-qubit instruction. ``cc_light_opcode`` specifies the opcode used for this
+instruction.
+
+.. warning::
+	At the moment, generation of control-store file is disabled in
+	the compiler as this was not being used in experiments.
+
 
 Gate decompositions can also be specified in the configuration file in the
 ``gate_decomposition`` section. Examples of two decompositions are shown below.
@@ -368,3 +397,8 @@ q2``, ``cz q2, q0`` and ``ry90 q0``.
 		"cnot %0,%1" : ["ry90 %0","cz %0,%1","ry90 %1"]
 	}
 
+These decompositions are simple macros (in-place substitutions) which allow
+programmer to mannually specify a decomposition. These take place at the time
+of creation of kernel. This means scheduler will schedule decomposed
+instructions. OpenQL can also perform Control and Unitary decompositions which
+are discussed in :ref:'decompositions'.

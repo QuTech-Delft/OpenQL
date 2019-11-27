@@ -1,3 +1,5 @@
+.. _qxplatform:
+
 QX Plaform Configuration
 ------------------------
 

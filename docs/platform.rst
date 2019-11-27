@@ -6,12 +6,12 @@ Platform
 OpenQL supports various target platforms. These platforms can be software simulators or architectures targetting hardware quantum computers. Following platforms are supported by OpenQL:
 
 - software simulator platforms
-	- `QX <https://github.com/QE-Lab/qx-simulator>`_
-	- `Quantumsim <https://gitlab.com/quantumsim/quantumsim>`_
+	- :ref:`qxplatform`
+	- :ref:`qsimplatform`
 - hardware platforms
-	- CC-Light
-	- CC
-	- CBOX
+	- :ref:`cclplatform`
+	- :ref:`ccplatform`
+	- :ref:`cboxplatform`
 
 
 Platform can be created in OpenQL by using ``Platform()`` API as show below:
@@ -32,7 +32,7 @@ Platform Configuration File
 
 Platform configuration file describes the target platform in JSON format. Developers can use this file to:
 
-- specify backend comiler to be used for this platform
+- specify backend compiler to be used for this platform
 - specify hardware settings related to control electronics in the experiments (for hardware backends)
 - specify the resources in terms of qubits, waveform generators, measuring units, qubit topology etc in the platform
 - specify list of instructions supported by the platform

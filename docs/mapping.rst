@@ -1,4 +1,6 @@
+.. _mapping:
+
 Mapping
 -------
 
-Mapping of circuits
+Mapping of circuits [TBD]
