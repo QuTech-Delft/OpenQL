@@ -334,14 +334,20 @@ of a 1-qubit 2-qubit instruction is shown below:
 instruction inside OpenQL program. The ``duration`` specifies the time duration
 required to complete this instruction. Due to control electronics, it is
 sometimes required to add a positive or negtive latency to an instruction. This
-can be specified by ``latency`` field. ``qubits`` refer to the list of qubits
-operands. ``matrix`` specifies the matrix representing this instruction.
-``disable_optimization`` is used to enable disable optimization of instruction.
-An instruction can be of microwave, flux or readout type which is specified by
-the ``type`` field. ``cc_light_instr_type`` field is used to specify the type of
-instruction based on number of qubits. ``cc_light_instr`` specifies the name of
-this instruction used in CC-Light architecture. This name will be used in the
-generated output code. ``cc_light_right_codeword`` and
+can be specified by ``latency`` field. ``qubits`` refer to the list of qubit
+operands.
+
+``matrix`` field specifies the process matrix representing this instruction. 
+
+``disable_optimization`` field is used to enable disable optimization of this
+instruction. Setting ``disable_optimization`` to ``true`` will mean that this
+instruction cannot be compiled away during optimization.
+
+An instruction can be of microwave, flux or readout type which is
+specified by the ``type`` field. ``cc_light_instr_type`` field is used to
+specify the type of instruction based on number of qubits. ``cc_light_instr``
+specifies the name of this instruction used in CC-Light architecture. This name
+will be used in the generated output code. ``cc_light_right_codeword`` and
 ``cc_light_left_codeword`` is used to specify the codewords used for the left
 and right operation in CC-Light architecture. ``cc_light_opcode`` specifies the
 opcode used for this instruction.
