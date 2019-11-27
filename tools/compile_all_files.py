@@ -42,11 +42,11 @@ if __name__ == "__main__":
 	measurement = False
 
 	#Some compiler options
-	output_dir_name = 'mapper=maxfidelity'
+	output_dir_name = 'test_output/mapper=minextendrc'
 
 	log_level = 'LOG_WARNING'
 	scheduler = 'ALAP'
-	mapper = 'maxfidelity'
+	mapper = 'minextendrc'
 	optimize = 'no'
 	scheduler_uniform = 'no'
 	initialplace = 'no'

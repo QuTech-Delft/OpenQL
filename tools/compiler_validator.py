@@ -81,6 +81,7 @@ def get_mapping(mapper_out_report_file):
 	for line in lines:
 		if "virt2real map after mapper" in line:
 			mapping_line = line
+			break
 			# print ("Mapping line= ", mapping_line)
 
 	mapping = mapping_line.split(": ")[1]
