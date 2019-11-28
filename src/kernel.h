@@ -21,8 +21,6 @@
 #include "optimizer.h"
 #include "ir.h"
 
-#define PI M_PI
-
 #ifndef __disable_lemon__
 #include "scheduler.h"
 #endif // __disable_lemon__
@@ -1721,38 +1719,38 @@ public:
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, PI/2);
+                controlled_rx(tq, cq, M_PI/2);
             }
             else if( __mrx90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, -1*PI/2);
+                controlled_rx(tq, cq, -1*M_PI/2);
             }
             else if( __rx180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, PI);
+                controlled_rx(tq, cq, M_PI);
                 // controlled_x(tq, cq);
             }
             else if( __ry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, PI/4);
+                controlled_ry(tq, cq, M_PI/4);
             }
             else if( __mry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, -1*PI/4);
+                controlled_ry(tq, cq, -1*M_PI/4);
             }
             else if( __ry180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, PI);
+                controlled_ry(tq, cq, M_PI);
                 // controlled_y(tq, cq);
             }
             else
