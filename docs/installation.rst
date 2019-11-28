@@ -30,7 +30,7 @@ the command:
 
 ::
 
-    pip install qutechtools
+    pip install qutechopenql
 
 
 .. note::
