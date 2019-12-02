@@ -4,6 +4,7 @@ Scheduling
 ----------
 
 - Scheduling for software platform
+    - HvS
 	- Scheduling for qx
 	- Scheduling for quantumsim
 - Scheduling for hardware platforms
