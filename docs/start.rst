@@ -16,7 +16,7 @@ Next, create a platform by:
 
 	platform = ql.Platform("myPlatform", config_file_name)
 
-where, ``config_file_name`` is the name of the configuration file in JSON format which specifies the paltform. For details, refer to :ref:`platform`.
+where, ``config_file_name`` is the name of the configuration file in JSON format which specifies the platform. For details, refer to :ref:`platform`.
 
 For this example we will be working on 3 qubits. So let us define a variable for the number of qubits.
 
@@ -65,7 +65,7 @@ Compile the program
 
 This will generate the output files in *test_output* directory.
 
-A good place to get started with with your own programs might be to copy `examples/getting_started.py` to some folder of your choice and start modiifying it. For further examples, have a look at the test programs inside the "tests" directory.
+A good place to get started with with your own programs might be to copy `examples/getting_started.py` to some folder of your choice and start modifying it. For further examples, have a look at the test programs inside the "tests" directory.
 
 .. todo::
 

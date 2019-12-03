@@ -6,7 +6,7 @@ CC-Light Plaform Configuration
 `hardware_configuration_cc_light.json
 <https://github.com/QE-Lab/OpenQL/blob/develop/tests/hardware_config_cc_light.json>`_
 available inside the ``tests`` direcotry is an example configuration file for
-CC-Light platform.
+the CC-Light platform.
 
 ``cc_light_compiler`` is the backend compiler used for CC-Light platform as
 specified by ``eqasm_compiler`` field as:
@@ -41,7 +41,7 @@ scheduling of instructions.
 ``qubit_number`` indicates the number of qubits available in the platform. Using
 qubits more than this number will raise an error.
 
-``cycle_time`` is the value of the clock cycle time.
+``cycle_time`` is the clock cycle time in nanoseconds.
 
 Rest of the entries from line 6 to 14 specify various buffer times to be
 inserted in various operations due to control electronics setup. For example,
@@ -77,8 +77,8 @@ following connections in `hardware_configuration_cc_light.json
 	 VSM                        --              0~6              microwave masking 
 	=====================    =============   =============      =================== 
 
-Qubits available in the pltform are specified in ``qubits`` section, as shown
-below. For CC-Light only ``count`` needs to be specified which indiates the
+Qubits available in the platform are specified in the ``qubits`` section, as shown
+below. For CC-Light only ``count`` needs to be specified which indicates the
 number of available qubits. Each qubit  can be used by only one gate at a time.
 
 .. code-block::
@@ -203,7 +203,7 @@ until operation on Edge 0 is complete.
 	in not applying any edge constraint during scheduling.
 
 
-Detunning constraints are specified in ``detuned_qubits`` section. A two-qubit
+Detuning constraints are specified in ``detuned_qubits`` section. A two-qubit
 flux gate lowers the frequency of its source qubit to get near the frequency of
 its target qubit.  Any two qubits which have near frequencies execute a
 two-qubit flux gate. To prevent any neighbor qubit of the source qubit that has
