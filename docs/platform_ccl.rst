@@ -1,21 +1,24 @@
 .. _cclplatform:
 
-CC-Light Plaform Configuration
-------------------------------
+CC-Light Platform Configuration File
+------------------------------------
 
-`hardware_configuration_cc_light.json
+The file `hardware_configuration_cc_light.json
 <https://github.com/QE-Lab/OpenQL/blob/develop/tests/hardware_config_cc_light.json>`_
 available inside the ``tests`` direcotry is an example configuration file for
-the CC-Light platform.
+the CC-Light platform with 7 qubits.
+This file consists of several sections (in arbitrary order) which are described below.
 
-``cc_light_compiler`` is the backend compiler used for CC-Light platform as
-specified by ``eqasm_compiler`` field as:
+``eqasm_compiler`` is just a field with a single value.
+It specifies the backend compiler to be used for this CC-Light platform, which in this case is ``cc_light_compiler``.
+The backend compiler is called after the platform independent passes, and calls several private passes by itself.
+One of these is the code generation pass.
 
 .. code::
 
     "eqasm_compiler" : "cc_light_compiler",
 
-Next section is ``hardware_settings`` which is used to configure various
+``hardware_settings`` is used to configure various
 hardware settings of the platform as shown below. These settings affect the
 scheduling of instructions.
 
@@ -41,17 +44,88 @@ scheduling of instructions.
 ``qubit_number`` indicates the number of qubits available in the platform. Using
 qubits more than this number will raise an error.
 
-``cycle_time`` is the clock cycle time in nanoseconds.
+``cycle_time`` is the clock cycle time.
+As all other timing specifications in the configuration file it is specified in nanoseconds.
+Only at multiples of this cycle time, instructions can start executing.
+The schedulers assign a cycle value to each instruction, which means that that instruction can start executing
+a number of nanoseconds after program execution start
+that equals that cycle value multiplied with the cycle time value.
 
-Rest of the entries from line 6 to 14 specify various buffer times to be
+The other entries of the ``hardware_settings`` section specify various buffer times to be
 inserted in various operations due to control electronics setup. For example,
 ``mw_mw_buffer`` can be used to specify time to be inserted between a microwave
-operation followed by another microwave operation.
+operation followed by another microwave operation. See :ref:'Scheduling'.
 
-.. note:: 
-	It is important to use same units to specify time in the configuraton
-	file. OpenQL uses ``cycle_time`` to convert all the times to cycles. 
-	These cycles are then used internally to schedule various operations.
+``topology`` specifies the qubit numbering and qubit connection numbering.
+HERE
+
+.. _fig_qubit_numbering_ccl:
+
+.. figure:: ./qubit_number.png
+    :width: 800px
+    :align: center
+    :alt: Qubit numbering and connections in the 7 qubits CC-Light Platform
+    :figclass: align-center
+
+    Qubit numbering and connections in the 7 qubits CC-Light Platform
+
+
+For the details below, it will be convinient to consider the Figure
+:numref:`fig_qubit_numbering_ccl`, which shows qubit and edge numbering in
+CC-Light platform.
+
+Qubit topology is specified/configured in the ``topology`` section. This
+information is used in mapping of quantum circuit as discussed in detail in
+:ref:`mapping`. This section starts with the specification of x and y
+demensions of grid by setting ``x_size`` and ``y_size``. A qubit grid is
+rectangular. The coordinates in the X direction are 0 to x_size-1. In the Y
+direction they are 0 to y_size-1. Next, the available qubits in the platform
+are given an ``id`` which is used as operands in instructions to index the
+qubits. For each qubit its ``x`` and ``y`` position on the grid is also
+specified.
+
+Qubits are connected in directed pairs, called edges. Each edge in the
+topology is given an ``id``, and its source and destination qubit by ``src``
+and ``dst``, respectively. This means that although Edge 0 and Edge 8 are
+between qubit 0 and qubit 2, they are different as these edges are in oppsite
+directions.
+
+.. code-block::
+   :linenos:
+
+	"topology" : {
+		"x_size": 5,
+		"y_size": 3,
+		"qubits":
+		[ 
+			{ "id": 0,  "x": 1, "y": 2 },
+			{ "id": 1,  "x": 3, "y": 2 },
+			{ "id": 2,  "x": 0, "y": 1 },
+			{ "id": 3,  "x": 2, "y": 1 },
+			{ "id": 4,  "x": 4, "y": 1 },
+			{ "id": 5,  "x": 1, "y": 0 },
+			{ "id": 6,  "x": 3, "y": 0 }
+		],
+		"edges":
+		[
+			{ "id": 0,  "src": 2, "dst": 0 },
+			{ "id": 1,  "src": 0, "dst": 3 },
+			{ "id": 2,  "src": 3, "dst": 1 },
+			{ "id": 3,  "src": 1, "dst": 4 },
+			{ "id": 4,  "src": 2, "dst": 5 },
+			{ "id": 5,  "src": 5, "dst": 3 },
+			{ "id": 6,  "src": 3, "dst": 6 },
+			{ "id": 7,  "src": 6, "dst": 4 },
+			{ "id": 8,  "src": 0, "dst": 2 },
+			{ "id": 9,  "src": 3, "dst": 0 },
+			{ "id": 10,  "src": 1, "dst": 3 },
+			{ "id": 11,  "src": 4, "dst": 1 },
+			{ "id": 12,  "src": 5, "dst": 2 },
+			{ "id": 13,  "src": 3, "dst": 5 },
+			{ "id": 14,  "src": 6, "dst": 3 },
+			{ "id": 15,  "src": 4, "dst": 6 }
+		]
+	},
 
 
 ``resources`` section is used to specify/configure various resources available
@@ -142,21 +216,6 @@ below.
 	},
 
 
-.. _fig_qubit_numbering_ccl:
-
-.. figure:: ./qubit_number.png
-    :width: 800px
-    :align: center
-    :alt: Qubit numbering and connectivity of qubits in CC-Light Platform
-    :figclass: align-center
-
-    Qubit numbering and connectivity in CC-Light Platform.
-
-
-For the details below, it will be convinient to consider the Figure
-:numref:`fig_qubit_numbering_ccl`, which shows qubit and edge numbering in
-CC-Light platform.
-
 Two-qubit flux gates (instructions of ``flux`` type) are controlled by
 qubit-selective frequency detuning.  Frequency-detuning may cause neighbor
 qubits (qubits connected by an edge) to inadvertently engage in a two-qubit flux
@@ -240,59 +299,6 @@ which set of qubits it detunes.
 	    "15": []
 	    }
 	}
-
-Qubit topology is specified/configured in the ``topology`` section. This
-information is used in mapping of quantum circuit as discussed in detail in
-:ref:`mapping`. This section starts with the specification of x and y
-demensions of grid by setting ``x_size`` and ``y_size``. A qubit grid is
-rectangular. The coordinates in the X direction are 0 to x_size-1. In the Y
-direction they are 0 to y_size-1. Next, the available qubits in the platform
-are given an ``id`` which is used as operands in instructions to index the
-qubits. For each qubit its ``x`` and ``y`` position on the grid is also
-specified.
-
-Qubits are connected in directed pairs, called edges. Each edge in the
-topology is given an ``id``, and its source and destination qubit by ``src``
-and ``dst``, respectively. This means that although Edge 0 and Edge 8 are
-between qubit 0 and qubit 2, they are different as these edges are in oppsite
-directions.
-
-.. code-block::
-   :linenos:
-
-	"topology" : {
-		"x_size": 5,
-		"y_size": 3,
-		"qubits":
-		[ 
-			{ "id": 0,  "x": 1, "y": 2 },
-			{ "id": 1,  "x": 3, "y": 2 },
-			{ "id": 2,  "x": 0, "y": 1 },
-			{ "id": 3,  "x": 2, "y": 1 },
-			{ "id": 4,  "x": 4, "y": 1 },
-			{ "id": 5,  "x": 1, "y": 0 },
-			{ "id": 6,  "x": 3, "y": 0 }
-		],
-		"edges":
-		[
-			{ "id": 0,  "src": 2, "dst": 0 },
-			{ "id": 1,  "src": 0, "dst": 3 },
-			{ "id": 2,  "src": 3, "dst": 1 },
-			{ "id": 3,  "src": 1, "dst": 4 },
-			{ "id": 4,  "src": 2, "dst": 5 },
-			{ "id": 5,  "src": 5, "dst": 3 },
-			{ "id": 6,  "src": 3, "dst": 6 },
-			{ "id": 7,  "src": 6, "dst": 4 },
-			{ "id": 8,  "src": 0, "dst": 2 },
-			{ "id": 9,  "src": 3, "dst": 0 },
-			{ "id": 10,  "src": 1, "dst": 3 },
-			{ "id": 11,  "src": 4, "dst": 1 },
-			{ "id": 12,  "src": 5, "dst": 2 },
-			{ "id": 13,  "src": 3, "dst": 5 },
-			{ "id": 14,  "src": 6, "dst": 3 },
-			{ "id": 15,  "src": 4, "dst": 6 }
-		]
-	},
 
 
 Instructions can be specified/configured in ``instructions section``. An example
