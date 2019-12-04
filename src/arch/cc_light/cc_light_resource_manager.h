@@ -302,10 +302,10 @@ public:
 
     // fwd: edge is busy till cycle=state[edge], i.e. all cycles < state[edge] it is busy, i.e. start_cycle must be >= state[edge]
     // bwd: edge is busy from cycle=state[edge], i.e. all cycles >= state[edge] it is busy, i.e. start_cycle+duration must be <= state[edge]
-    std::vector<size_t> state;
+    std::vector<size_t> state;                          // machine state recording the cycles that given edge is free/busy
     typedef std::pair<size_t,size_t> qubits_pair_t;
-    std::map< qubits_pair_t, size_t > qubits2edge;
-    std::map<size_t, std::vector<size_t> > edge2edges;
+    std::map< qubits_pair_t, size_t > qubits2edge;      // constant helper table to find edge between a pair of qubits
+    std::map<size_t, std::vector<size_t> > edge2edges;  // constant "edges" table from configuration file
 
     edge_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("edges", dir)
     {

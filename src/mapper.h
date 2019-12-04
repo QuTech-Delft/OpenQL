@@ -1,4 +1,4 @@
-//#define INITIALPLACE 1
+#define INITIALPLACE 1
 /**
  * @file   mapper.h
  * @date   06/2018 - now
@@ -2913,6 +2913,8 @@ public:
     size_t          nmovesadded;    // number of moves added
     std::vector<size_t> v2r_in;     // v2r[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
     std::vector<int>    rs_in;      // rs[real qubit index] -> {nostate|wasinited|hasstate}
+    std::vector<size_t> v2r_ip;     // v2r[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
+    std::vector<int>    rs_ip;      // rs[real qubit index] -> {nostate|wasinited|hasstate}
     std::vector<size_t> v2r_out;    // v2r[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
     std::vector<int>    rs_out;     // rs[real qubit index] -> {nostate|wasinited|hasstate}
 
@@ -3698,6 +3700,9 @@ void Map(ql::quantum_kernel& kernel)
 #endif
     }
     v2r.DPRINT("After InitialPlace");
+
+    v2r.Export(v2r_ip);  // from v2r to caller for reporting
+    v2r.Export(rs_ip);   // from v2r to caller for reporting
 
     MapCircuit(kernel, v2r);        // updates kernel.c with swaps, maps all gates, updates v2r map
     v2r.DPRINT("After heuristics");
