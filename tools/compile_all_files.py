@@ -51,7 +51,7 @@ if __name__ == "__main__":
 	scheduler_post179 = 'yes'
 	scheduler_commute = 'yes'
 	mapusemoves = 'no'
-	maptiebreak = 'random'
+	maptiebreak = 'first'
 
 	output_dir_name = 'test_output/mapper=' + mapper
 
