@@ -104,7 +104,7 @@ public:
 		// }
 	// };
 
-	Metrics(size_t Nqubits, double gatefid_1 = 0.999, double gatefid_2 = 0.99, double decoherence_time = 30000/20, std::string estimator = "bounded_fidelity", std::string output_mode = "average" )
+	Metrics(size_t Nqubits, std::string estimator = "bounded_fidelity", std::string output_mode = "average" )
 	{
 		// fidelity_estimator = ql::options::get("metrics_fidelity_estimator");
 		// output_mode = ql::options::get("metrics_output_mode");
@@ -125,10 +125,6 @@ public:
 			EOUT("Invalid metrics_output_method provided: " << output_mode);
 			throw ql::exception("invalid metrics_output_mode", false);
 		}
-
-		this->gatefid_1 = gatefid_1;
-		this->gatefid_2 = gatefid_2;
-		this->decoherence_time = decoherence_time;
 	};
 
 	void Init(size_t Nqubits, ql::quantum_platform* platform)
