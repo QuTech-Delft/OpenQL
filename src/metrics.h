@@ -84,71 +84,17 @@ private:
 
 public:
 
-	//double (Metrics::*compute_score)(ql::circuit &, std::vector<double> &  ); //TODO FIX THIS
-
-	//EVERYTHING SHOULD BE IN CYCLES (gate duration, decoherence time, etc)
-	// Metrics( /*double gatefid_1, double gatefid_2, double decoherence_time_cycles */)
-	// {
-		// fidelity_estimator = ql::options::get("metrics_fidelity_estimator");
-		// output_mode = ql::options::get("metrics_output_mode");
-
-		// if (fidelity_estimator == "bounded_fidelity")
-		// 	compute_score = &bounded_fidelity;
-		// // else if (fidelity_estimator == "depolarizing")
-		// // 	compute_score = & depolarizing;
-		// else		
-    	// 	EOUT("Invalid metrics_fidelity_estimator provided: " << fidelity_estimator);
-    	// 	throw ql::exception("invalid metrics_fidelity_estimator", false);
-
-		// if (output_mode != "worst" || output_mode != "gaussian")
-		// {
-		// 	EOUT("Invalid metrics_output_method provided: " << output_mode);
-    	// 	throw ql::exception("invalid metrics_output_mode", false);
-		// }
-	// };
-
 	Metrics(size_t Nqubits, std::string estimator = "bounded_fidelity", std::string output_mode = "average" )
 	{
-		// fidelity_estimator = ql::options::get("metrics_fidelity_estimator");
-		// output_mode = ql::options::get("metrics_output_mode");
 		this->Nqubits = Nqubits;
 		this->output_mode=output_mode;
-
-		// if (fidelity_estimator == "bounded_fidelity")
-		// 	compute_score = bounded_fidelity;
-		// else if (fidelity_estimator == "depolarizing")
-		//  	compute_score = & depolarizing;
-		// else		
-
-		// EOUT("Invalid metrics_fidelity_estimator provided: " << fidelity_estimator);
-		// throw ql::exception("invalid metrics_fidelity_estimator", false);
 
 		if (output_mode != "worst" && output_mode != "gaussian" && output_mode != "average")
 		{
 			EOUT("Invalid metrics_output_method provided: " << output_mode);
 			throw ql::exception("invalid metrics_output_mode", false);
 		}
-		// IOUT('Gatefid_1: ' + std::to_string(gatefid_1));
-		// IOUT('Gatefid_2: ' + std::to_string(gatefid_2));
-		// IOUT('Decoherence_time: ' + std::to_string(decoherence_time));
 	};
-
-	void Init(size_t Nqubits, ql::quantum_platform* platform)
-	{
-		this->Nqubits = Nqubits;
-
-		//TODO test if json has qubit relaxation times / gate error rate in this function 
-		//TODO load from config_file
-
-		// qubit_attributes = platform->qubit_attributes;
-		
-		// if (qubit_attributes.count("relaxation_times") == 0 || qubit_attributes.count("gate_error_rates") == 0)
-		// {
-		// 	EOUT("'qubit_attributes' section on hardware config file doesn't contain qubit relaxation times or gate error rates!");
-        //     throw ql::exception("[x] error : ql::hardware_configuration::load() : 'relaxation_times' or 'gate_error_rates' sections not specified in the hardware config file !",false);
-		// }
-
-	}
 
 
 	double create_output (const std::vector<double> &fids)
@@ -158,14 +104,6 @@ public:
 		result_vector = fids;
 		if (ql::options::get("mapper") == "maxfidelity_debug")
 			PRINTER(result_vector);
-		//We take out negative fidelities
-		// size_t dimension = result_vector.size();
-		// for (size_t element = dimension-1; element >=0 ; element--)
-		// {
-		// 	if (result_vector.at(element) <= 0)
-		// 		result_vector.erase(result_vector.begin() + element);
-		// PRINTER(result_vector);
-		// }
 
 		if (output_mode == "worst"){
 			IOUT("\nOutput mode: worst");
@@ -175,7 +113,6 @@ public:
 		else if (output_mode == "average") 
 		{
 			
-			// double sum= std::accumulate(fids.begin(), fids.end(), 0);
 			double sum = 0;
 			double num_active = 0;
 			for (auto x : fids)
@@ -217,12 +154,10 @@ public:
 	} 
 	
 	
-	// double bounded_fidelity(const ql::circuit& circ, std::vector<double> &fids)
 	double bounded_fidelity(const ql::circuit& circ, std::vector<double> &fids)
 	{ 
 		//this function considers the primitive gates! each operand undergoing a 2-qubit operation is always considered to have the same latency
 		//same end fidelity considered for the two operands of the same 2-qubit gate
-		//TODO - URGENT!! Check if gate->cycle starts in zero;
 		//TODO - URGENT!! do not consider the fidelity of non-used qubits (nqubits < qubits from architecture) (set to 2/-1?)
 		//TODO - URGENT!! do not consider the fidelity of used but non initialized qubits (set to 2/-1?)
 
@@ -299,7 +234,8 @@ public:
 					IOUT("Idled time:" + std::to_string(idled_time));
 
 
-				fids[qubit] *= std::exp(-((double)idled_time)/decoherence_time_cycles); // Update fidelity with idling-caused decoherence
+				// fids[qubit] *= std::exp(-((double)idled_time)/decoherence_time_cycles); // Update fidelity with idling-caused decoherence
+				fids[qubit] *= std::pow(idlefid, idled_time); // Update fidelity with idling-caused decoherence
 				
 				fids[qubit] *= gatefid_1; //Update fidelity after gate
 			}
@@ -321,8 +257,11 @@ public:
 					IOUT("Idled time q_c:" + std::to_string(idled_time_c));
 					IOUT("Idled time q_t:" + std::to_string(idled_time_t) + " gate cycle=" + std::to_string(gate->cycle) + ". last_time_t=" + std::to_string(last_time_t));
 				}
-				fids[qubit_c] *= std::exp(-(double) idled_time_c/decoherence_time_cycles); // Update fidelity with idling-caused decoherence
-				fids[qubit_t] *= std::exp(-(double)idled_time_t/decoherence_time_cycles); // Update fidelity with idling-caused decoherence
+				// fids[qubit_c] *= std::exp(-(double) idled_time_c/decoherence_time_cycles); // Update fidelity with idling-caused decoherence
+				// fids[qubit_t] *= std::exp(-(double)idled_time_t/decoherence_time_cycles); // Update fidelity with idling-caused decoherence
+				fids[qubit_c] *= std::pow(idlefid, idled_time_c); // Update fidelity with idling-caused decoherence
+				fids[qubit_t] *= std::pow(idlefid, idled_time_t); // Update fidelity with idling-caused decoherence
+				
 				if (ql::options::get("mapper") == "maxfidelity_debug"){
 					IOUT("Fidelity after idlying: ");
 					PRINTER(fids);
@@ -345,7 +284,9 @@ public:
 		for (size_t i=0; i < Nqubits; i++ )
 		{
 			size_t idled_time_final = end_cycle - last_op_endtime[i];
-			fids[i] *= std::exp(-(double) idled_time_final/decoherence_time_cycles);
+			// fids[i] *= std::exp(-(double) idled_time_final/decoherence_time_cycles);
+			fids[i] *= std::pow(idlefid, idled_time_final);
+
 		}
 
 		//Now we should still add decoherence effect in case the last gate was a two-qubit gate (the other qubits still decohere in the meantime!)
