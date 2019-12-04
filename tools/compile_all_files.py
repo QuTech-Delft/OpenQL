@@ -42,8 +42,6 @@ if __name__ == "__main__":
 	measurement = False
 
 	#Some compiler options
-	output_dir_name = 'test_output/mapper=minextendrc'
-
 	log_level = 'LOG_WARNING'
 	scheduler = 'ALAP'
 	mapper = 'minextendrc'
@@ -54,6 +52,8 @@ if __name__ == "__main__":
 	scheduler_commute = 'yes'
 	mapusemoves = 'no'
 	maptiebreak = 'random'
+
+	output_dir_name = 'test_output/mapper=' + mapper
 
 	#add other options here (overring the options above will not work! change the value in the options above instead!)
 	ql.set_option('decompose_toffoli', "no")
