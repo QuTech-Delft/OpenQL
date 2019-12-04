@@ -262,7 +262,7 @@ public:
 				fids[qubit_c] *= std::pow(idlefid, idled_time_c); // Update fidelity with idling-caused decoherence
 				fids[qubit_t] *= std::pow(idlefid, idled_time_t); // Update fidelity with idling-caused decoherence
 				
-				if (ql::options::get("mapper") == "maxfidelity_debug"){
+				if (ql::options::get("maxfidelity_loglevel") == "debug"){
 					IOUT("Fidelity after idlying: ");
 					PRINTER(fids);
 				}
