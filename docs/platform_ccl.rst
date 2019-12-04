@@ -41,8 +41,10 @@ scheduling of instructions.
 		"readout_readout_buffer": 0
 	}
 
-``qubit_number`` indicates the number of qubits available in the platform. Using
-qubits more than this number will raise an error.
+``qubit_number`` indicates the number of (real) qubit indices available in the platform.
+Instructions that addresss qubits do this by providing a qubit index in the range of 0 to qubit_number-1.
+Using an index outside this range will raise an error.
+Not all qubit indices need to refer to a real qubit.
 
 ``cycle_time`` is the clock cycle time.
 As all other timing specifications in the configuration file it is specified in nanoseconds.
@@ -54,41 +56,40 @@ that equals that cycle value multiplied with the cycle time value.
 The other entries of the ``hardware_settings`` section specify various buffer times to be
 inserted in various operations due to control electronics setup. For example,
 ``mw_mw_buffer`` can be used to specify time to be inserted between a microwave
-operation followed by another microwave operation. See :ref:'Scheduling'.
+operation followed by another microwave operation. See :ref:'Scheduling' for details.
 
-``topology`` specifies the qubit numbering and qubit connection numbering.
-HERE
+``topology`` specifies the mapping of qubit indices to qubit positions in the platform, as well as the mapping of edge indices to edges in the platform.
+An edge is a connection between a pair of qubits.
+It is directed to distinguish the control and target qubits of two-qubit gates.
+
+Figure :numref:`fig_qubit_numbering_ccl` shows these numberings in the 7 qubit CC-Light platform.
 
 .. _fig_qubit_numbering_ccl:
 
 .. figure:: ./qubit_number.png
     :width: 800px
     :align: center
-    :alt: Qubit numbering and connections in the 7 qubits CC-Light Platform
+    :alt: Qubit and edge numbering in the 7 qubits CC-Light Platform
     :figclass: align-center
 
-    Qubit numbering and connections in the 7 qubits CC-Light Platform
+    Qubit and edge numbering in the 7 qubits CC-Light Platform
 
 
-For the details below, it will be convinient to consider the Figure
-:numref:`fig_qubit_numbering_ccl`, which shows qubit and edge numbering in
-CC-Light platform.
+The ``topology``  section starts with
+the specification of the two dimensions of a rectangular qubit grid by specifying ``x_size`` and ``y_size``.
+The positions of the real qubits of the platform are defined relative to this (artificial) grid.
+The coordinates in the X direction are 0 to x_size-1.
+In the Y direction they are 0 to y_size-1.
+Next, for each available qubit in the platform, its position in the grid is specified:
+the ``id`` specifies the particular qubit's index, and ``x`` and ``y`` specify its position in the grid.
+Please note that not every qubit index in the range 0 to qubit_number-1 needs to correspond to a qubit,
+nor that every position in the x_size by y_size grid needs to correspond to a qubit.
 
-Qubit topology is specified/configured in the ``topology`` section. This
-information is used in mapping of quantum circuit as discussed in detail in
-:ref:`mapping`. This section starts with the specification of x and y
-demensions of grid by setting ``x_size`` and ``y_size``. A qubit grid is
-rectangular. The coordinates in the X direction are 0 to x_size-1. In the Y
-direction they are 0 to y_size-1. Next, the available qubits in the platform
-are given an ``id`` which is used as operands in instructions to index the
-qubits. For each qubit its ``x`` and ``y`` position on the grid is also
-specified.
-
-Qubits are connected in directed pairs, called edges. Each edge in the
-topology is given an ``id``, and its source and destination qubit by ``src``
-and ``dst``, respectively. This means that although Edge 0 and Edge 8 are
-between qubit 0 and qubit 2, they are different as these edges are in oppsite
-directions.
+Qubits are connected in directed pairs, called edges.
+Edge indices form a contigous range starting at 0.
+Each edge in the topology is given an ``id`` which denotes its index, and a source (control) and destination (target) qubit index by ``src`` and ``dst``, respectively. This means that although Edge 0 and Edge 8 are
+between qubit 0 and qubit 2, they are different as these edges are in opposite directions.
+The qubit indices specified here must correspond to available qubits in the platform.
 
 .. code-block::
    :linenos:
@@ -128,7 +129,13 @@ directions.
 	},
 
 
-``resources`` section is used to specify/configure various resources available
+These mappings are used in:
+- the QISA, the instruction set of the platform, notably in the instructions that set the masks stored in the mask registers that are used in the instructions of two-qubit gates to address the operands.
+- the mapper pass that maps virtual qubit indices to real qubit indices. It is described in detail in :ref:`mapping`.
+- the postdecomposition pass that ...
+
+
+``resources`` is the section that is used to specify/configure various resources available
 in the platform as discussed below. Specification of these resources effect
 scheduling and mapping of instructions. CC-Light architecture  assumes the
 following connections in `hardware_configuration_cc_light.json
@@ -408,3 +415,5 @@ programmer to mannually specify a decomposition. These take place at the time
 of creation of kernel. This means scheduler will schedule decomposed
 instructions. OpenQL can also perform Control and Unitary decompositions which
 are discussed in :ref:'decompositions'.
+
+
