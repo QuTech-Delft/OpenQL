@@ -44,7 +44,7 @@ if __name__ == "__main__":
 	#Some compiler options
 	log_level = 'LOG_WARNING'
 	scheduler = 'ALAP'
-	mapper = 'minextendrc'
+	mapper = 'maxfidelity'
 	optimize = 'no'
 	scheduler_uniform = 'no'
 	initialplace = 'no'
@@ -56,8 +56,8 @@ if __name__ == "__main__":
 	output_dir_name = 'test_output/mapper=' + mapper
 
 	#add other options here (overring the options above will not work! change the value in the options above instead!)
-	ql.set_option('decompose_toffoli', "no")
-	ql.set_option("prescheduler", "yes") 
+	ql.set_option('decompose_toffoli', "no") # = "no";
+	ql.set_option("prescheduler", "yes") # = "yes";
 	ql.set_option("cz_mode", "manual") # = "manual";
 	ql.set_option("clifford_premapper", "yes") # = "yes";
 	ql.set_option("clifford_postmapper", "yes") # = "yes";
