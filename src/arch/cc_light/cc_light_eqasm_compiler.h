@@ -986,6 +986,7 @@ public:
             ss << "# ----- swaps added: " << mapper.nswapsadded << "\n";
             ss << "# ----- of which moves added: " << mapper.nmovesadded << "\n";
             ss << "# ----- virt2real map before mapper:" << ql::utils::to_string(mapper.v2r_in) << "\n";
+            ss << "# ----- virt2real map after initial placement:" << ql::utils::to_string(mapper.v2r_ip) << "\n";
             ss << "# ----- virt2real map after mapper:" << ql::utils::to_string(mapper.v2r_out) << "\n";
             ss << "# ----- realqubit states before mapper:" << ql::utils::to_string(mapper.rs_in) << "\n";
             ss << "# ----- realqubit states after mapper:" << ql::utils::to_string(mapper.rs_out) << "\n";
