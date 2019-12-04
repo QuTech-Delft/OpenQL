@@ -154,7 +154,7 @@ public:
 		DOUT("Creating output");
 		std::vector<double> result_vector;
 		result_vector = fids;
-		if (ql::options::get("mapper") == "maxfidelity_debug")
+		if (ql::options::get("maxfidelity_loglevel") == "debug")
 			PRINTER(result_vector);
 		//We take out negative fidelities
 		// size_t dimension = result_vector.size();
@@ -226,21 +226,21 @@ public:
 
 		if (circ.size()==0)
 		{
-			if (ql::options::get("mapper") == "maxfidelity_debug")
+			if (ql::options::get("maxfidelity_loglevel") == "debug")
 				IOUT("Bounded Fidelity: Empty circuit provided:");
 			return 0;
 		}
 		
 		if (fids.size() == 0)
 		{
-			if (ql::options::get("mapper") == "maxfidelity_debug")
+			if (ql::options::get("maxfidelity_loglevel") == "debug")
 				IOUT("Bounded fid: EMPTY VECTOR - Initializing. Nqubits = " + std::to_string(Nqubits));
 			fids.resize(Nqubits, 1.0); //Initiallize a fidelity vector, if one is not provided
 			//TODO: non initialized qubits should have undefined fidelity. It shouldn't be taken into account.
 		}
 		else
 		{
-			if (ql::options::get("mapper") == "maxfidelity_debug"){
+			if (ql::options::get("maxfidelity_loglevel") == "debug"){
 				IOUT("Bounded fid: Initial vector provided:");
 				PRINTER(fids);
 			}
@@ -249,7 +249,7 @@ public:
 		std::vector<size_t> last_op_endtime(Nqubits, 1); //First cycle has index 1
 
 
-		if (ql::options::get("mapper") == "maxfidelity_debug"){
+		if (ql::options::get("maxfidelity_loglevel") == "debug"){
 			PRINTER(fids);
 			PRINTER(last_op_endtime);
 			DOUT("\n\n");
@@ -288,12 +288,12 @@ public:
 			{
 				size_t qubit = gate->operands[0];
 				size_t last_time = last_op_endtime[qubit];
-				if (ql::options::get("mapper") == "maxfidelity_debug")
+				if (ql::options::get("maxfidelity_loglevel") == "debug")
 					IOUT("Gate " + gate->name + "("+ std::to_string(gate->operands[0]) +") at cycle " + std::to_string(gate->cycle) + " with duration " + std::to_string(gate->duration));
 				size_t idled_time = gate->cycle - last_time; //get idlying time to introduce decoherence. This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 				
 				last_op_endtime[qubit] = gate->cycle  + gate->duration / CYCLE_TIME; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
-				if (ql::options::get("mapper") == "maxfidelity_debug")
+				if (ql::options::get("maxfidelity_loglevel") == "debug")
 					IOUT("Idled time:" + std::to_string(idled_time));
 
 
@@ -313,7 +313,7 @@ public:
 				last_op_endtime[qubit_c] = gate->cycle  + gate->duration / CYCLE_TIME; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 				last_op_endtime[qubit_t] = gate->cycle  + gate->duration / CYCLE_TIME ; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 				
-				if (ql::options::get("mapper") == "maxfidelity_debug")
+				if (ql::options::get("maxfidelity_loglevel") == "debug")
 				{
 					IOUT("Gate " + gate->name + "("+ std::to_string(gate->operands[0]) + ", " + std::to_string(gate->operands[1]) +") at cycle " + std::to_string(gate->cycle) + " with duration " + std::to_string(gate->duration));
 					IOUT("Idled time q_c:" + std::to_string(idled_time_c));
@@ -321,7 +321,7 @@ public:
 				}
 				fids[qubit_c] *= std::exp(-(double) idled_time_c/decoherence_time_cycles); // Update fidelity with idling-caused decoherence
 				fids[qubit_t] *= std::exp(-(double)idled_time_t/decoherence_time_cycles); // Update fidelity with idling-caused decoherence
-				if (ql::options::get("mapper") == "maxfidelity_debug"){
+				if (ql::options::get("maxfidelity_loglevel") == "debug"){
 					IOUT("Fidelity after idlying: ");
 					PRINTER(fids);
 				}
@@ -332,7 +332,7 @@ public:
 				//TODO - Convert the code into a for loop with range 2, to get the compiler's for optimization (and possible paralellization?)
 			}
 			
-			if (ql::options::get("mapper") == "maxfidelity_debug")
+			if (ql::options::get("maxfidelity_loglevel") == "debug")
 			{	
 				PRINTER(fids);
 				PRINTER(last_op_endtime);
@@ -349,7 +349,7 @@ public:
 		//Now we should still add decoherence effect in case the last gate was a two-qubit gate (the other qubits still decohere in the meantime!)
 
 
-		if (ql::options::get("mapper") == "maxfidelity_debug")
+		if (ql::options::get("maxfidelity_loglevel") == "debug")
 		{
 			IOUT(" \n\n THE END \n\n ");
 			IOUT("Fidelity after idlying: ");
@@ -391,7 +391,7 @@ public:
 		size_t Nqubits = 17; //So be gotten from the json file/mapper when called
 		ql::metrics::Metrics estimator(Nqubits);
 		std::vector<bool> used_qubits = check_used_qubits(Nqubits, circuit);
-		if (ql::options::get("mapper") == "maxfidelity_debug")
+		if (ql::options::get("maxfidelity_loglevel") == "debug")
 		{
 		IOUT("==== Quick Fidelity_circuit called!!!");
 		PRINTER(used_qubits);
