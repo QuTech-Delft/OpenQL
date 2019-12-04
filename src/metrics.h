@@ -63,13 +63,16 @@ class Metrics {
 
 private:
 	size_t Nqubits;
-	double gatefid_1 = 0.999; //Hardcoded for testing purposes
-	double gatefid_2 = 0.99; //Hardcoded for testing purposes
-	double decoherence_time = 30000.0/20; //Hardcoded for testing purposes
+	// double gatefid_1 = 0.999; //Hardcoded for testing purposes
+	// double gatefid_2 = 0.99; //Hardcoded for testing purposes
+	// double decoherence_time = 30000.0/20; //Hardcoded for testing purposes
+	double gatefid_1 = std::stod(ql::options::get("maxfidelity_1qbgatefid")); //
+	double gatefid_2 = std::stod(ql::options::get("maxfidelity_2qbgatefid")); //
+	double idlefid = std::stod(ql::options::get("maxfidelity_idlefid")); //Quantumsim averaged over all axes is 0.9867. With T1 only it is 0.9866
 	std::string fidelity_estimator;
 	std::string output_mode;
 	json qubit_attributes;
-	std::vector<string> allowed_gates = {"prepz", "x", "x45", "x90", "xm45", "xm90", "y", "y45", "y90", "ym45", "ym90", "h", "cz", "measure"};
+	std::vector<string> allowed_gates = {"prepz", "x", "x45", "x90", "xm45", "xm90", "y", "y45", "y90", "ym45", "ym90", "cz", "measure"};
 
 
 	double gaussian_pdf(double x, double mean, double sigma)
@@ -104,7 +107,7 @@ public:
 		// }
 	// };
 
-	Metrics(size_t Nqubits, double gatefid_1 = 0.999, double gatefid_2 = 0.99, double decoherence_time = 3000/20, std::string estimator = "bounded_fidelity", std::string output_mode = "average" )
+	Metrics(size_t Nqubits, double gatefid_1 = 0.999, double gatefid_2 = 0.99, double decoherence_time = 30000/20, std::string estimator = "bounded_fidelity", std::string output_mode = "average" )
 	{
 		// fidelity_estimator = ql::options::get("metrics_fidelity_estimator");
 		// output_mode = ql::options::get("metrics_output_mode");
@@ -297,6 +300,7 @@ public:
 					IOUT("Idled time:" + std::to_string(idled_time));
 
 
+				// fids[qubit] *= std::exp(-((double)idled_time)/decoherence_time); // Update fidelity with idling-caused decoherence
 				fids[qubit] *= std::exp(-((double)idled_time)/decoherence_time); // Update fidelity with idling-caused decoherence
 				
 				fids[qubit] *= gatefid_1; //Update fidelity after gate
