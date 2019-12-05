@@ -90,7 +90,9 @@ Edge indices form a contigous range starting from 0.
 Each edge in the topology is given an ``id`` which denotes its index, and a source (control) and destination (target) qubit index by ``src`` and ``dst``, respectively. This means that although Edge 0 and Edge 8 are
 between qubit 0 and qubit 2, they are different as these edges are in opposite directions.
 The qubit indices specified here must correspond to available qubits in the platform.
-::
+
+.. code-block::$
+   :linenos:$
 
 	"topology" : {
 		"x_size": 5,
@@ -128,16 +130,17 @@ The qubit indices specified here must correspond to available qubits in the plat
 
 
 These mappings are used in:
-- the QISA, the instruction set of the platform, notably in the instructions that set the masks stored in the mask registers that are used in the instructions of two-qubit gates to address the operands.
-- the mapper pass that maps virtual qubit indices to real qubit indices. It is described in detail in :ref:`mapping`.
-- the postdecomposition pass that ...
+* the QISA, the instruction set of the platform, notably in the instructions that set the masks stored in the mask registers that are used in the instructions of two-qubit gates to address the operands.
+* the mapper pass that maps virtual qubit indices to real qubit indices. It is described in detail in :ref:`mapping`.
+* the postdecomposition pass that ...
 
 
 ``resources`` is the section that is used to specify/configure various resources available
-in the platform as discussed below. Specification of these resources effect
-scheduling and mapping of instructions. CC-Light architecture  assumes the
-following connections in `hardware_configuration_cc_light.json
-<https://github.com/QE-Lab/OpenQL/blob/develop/tests/hardware_config_cc_light.json>`_.
+in the platform as discussed below. Specification of these resources affects
+scheduling and mapping of gates. The configuration of the various resources
+in `hardware_configuration_cc_light.json
+<https://github.com/QE-Lab/OpenQL/blob/develop/tests/hardware_config_cc_light.json>`_
+assumes that the CC-Light architecture has the following relations between devices, connections, qubits and operations:
 
 .. _table_ccl_connections:
 
@@ -156,9 +159,18 @@ following connections in `hardware_configuration_cc_light.json
 	 VSM                        --              0~6              microwave masking 
 	=====================    =============   =============      =================== 
 
-Qubits available in the platform are specified in the ``qubits`` section, as shown
-below. For CC-Light only ``count`` needs to be specified which indicates the
-number of available qubits. Each qubit  can be used by only one gate at a time.
+The ``resources`` section specifies zero or more resource types
+that are predefined by the resource manager that is part of the scheduler.
+These resource types are ``qubits``, ``qwgs``, ``meas_units``, and ``edges``.
+The presence of one in the configuration file
+indicates that the resource-constrained scheduler should take it into account
+when trying to schedule operations in parallel, i.e. with overlapping executions.
+Although their names suggest otherwise, they are just vehicles to configure the scheduler
+and need not correspond to real resources present in the hardware.
+
+``qubits``: That one qubit can only be involved in one operation at each particular cycle,
+is specified by the ``qubits`` resource type, as shown
+below. ``count`` needs to be at least the number of available qubits.
 
 .. code-block::
    :linenos:
@@ -168,11 +180,16 @@ number of available qubits. Each qubit  can be used by only one gate at a time.
 	    "count": 7
 	},
 
-Single-qubit rotation gates (instructions of 'mw' type) are controlled by qwgs.
-Each qwg controls a private set of qubits.  A qwg can control multiple qubits at
-the same time, but only when they perform the same gate and started at the same
-time. Waveform generators and their constraints are specified in ``qwgs``
-section, as shown below.
+So, when this resource type is included in the configuration in this way,
+it will guarantee that the resource-constrained scheduler will never schedule two operations in parallel
+when these share a qubit index in the range of 0 to count-1 as operand.
+
+``qwgs``: This resource type specifies, when configured, several sets of qubit indices.
+For each set it specifies that when one of the qubits in the list is in use in a particular cycle
+by an instruction of 'mw' type (single-qubit rotation gates usually),
+that when one of the other qubits in the list is in use by an instruction of 'mw' type,
+it can only be in use by an 'mw' instruction doing the same operation.
+In CC-light, this models QWG wave generators that only can generate one type of wave at the same time.
 
 .. code-block::
    :linenos:
@@ -188,16 +205,15 @@ section, as shown below.
 	  }
 	},
 
-The number of these waveform generators is specified by the ``count`` field. In
-the ``connection_map`` it is specified which wafeform generator is connected to
-which qubits. For instance, Line 6 specifies that ``qwg 0`` is connected to
-qubits 0 and 1. This is based on ``AWG-8 1, channel 0`` entry in 4th row in
+The number of waveform generators is specified by the ``count`` field. In
+the ``connection_map`` it is specified which waveform generator is connected to
+which qubits.
+Each qubit that can be used by an instruction of 'mw' type,
+should be specified at most once in the combination of lists of connected qubits.
+For instance, Line 6 specifies that ``qwg 0`` is connected to
+qubits 0 and 1. This is based on the ``AWG-8 1, channel 0`` entry in 4th row in
 Table :numref:`table_ccl_connections` This information is utilized by the
 scheduler to perform resource-constraint aware scheduling of instructions.
-
-.. note::
-	By providing an empty list for a qwg will result in not applying any qwg
-	constraint during scheduling.
 
 Single-qubit measurements (instructions of 'readout' type) are controlled by
 measurement units.  Each one controls a private set of qubits.  A measurement
