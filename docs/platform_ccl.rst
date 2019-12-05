@@ -22,9 +22,7 @@ One of these is the code generation pass.
 ``hardware_settings`` is used to configure various
 hardware settings of the platform as shown below. These settings affect the
 scheduling of instructions.
-
-.. code-block:: rest
-   :linenos:
+::
 
 	"hardware_settings":
 	{
@@ -90,9 +88,7 @@ Edge indices form a contigous range starting from 0.
 Each edge in the topology is given an ``id`` which denotes its index, and a source (control) and destination (target) qubit index by ``src`` and ``dst``, respectively. This means that although Edge 0 and Edge 8 are
 between qubit 0 and qubit 2, they are different as these edges are in opposite directions.
 The qubit indices specified here must correspond to available qubits in the platform.
-
-.. code-block:: rest
-   :linenos:$
+::
 
 	"topology" : {
 		"x_size": 5,
@@ -171,9 +167,7 @@ and need not correspond to real resources present in the hardware.
 ``qubits``: That one qubit can only be involved in one operation at each particular cycle,
 is specified by the ``qubits`` resource type, as shown
 below. ``count`` needs to be at least the number of available qubits.
-
-.. code-block:: rest
-   :linenos:
+::
 
 	"qubits":
 	{
@@ -190,9 +184,7 @@ by an instruction of 'mw' type (single-qubit rotation gates usually),
 that when one of the other qubits in the list is in use by an instruction of 'mw' type,
 it can only be in use by an 'mw' instruction doing the same operation.
 In CC-light, this models QWG wave generators that only can generate one type of wave at the same time.
-
-.. code-block:: rest
-   :linenos:
+::
 
 	"qwgs" :
 	{
@@ -222,9 +214,7 @@ at the same time. There are 'count' number of measurement units. For each
 measurement unit it is described which set of qubits it controls. Available
 measurement/readout units are specified in ``meas_units`` section, as shown
 below.
-
-.. code-block:: rest
-   :linenos:
+::
 
 	"meas_units" :
 	{
@@ -250,9 +240,7 @@ platform. ``connection_map`` specifies connections. For example, on Line 6, Edge
 0 implies a constraint on Edge 2 and Edge 10. This means, if Edge 0 is reserved
 for an operation, an operation on Edge 2 and Edge 10 will not be scheduled,
 until operation on Edge 0 is complete.
-
-.. code-block:: rest
-   :linenos:
+::
 
 	"edges":
 	{
@@ -293,9 +281,7 @@ execute a single-qubit rotation (an instruction of 'mw' type).  An edge is a
 pair of qubits which can execute a two-qubit flux gate.  There are ``count``
 number of edges. For each edge it is described, when executing a two-qubit gate for it,
 which set of qubits it detunes.
-
-.. code-block:: rest
-   :linenos:
+::
 
 	"detuned_qubits":
 	{
@@ -324,9 +310,7 @@ which set of qubits it detunes.
 
 Instructions can be specified/configured in ``instructions section``. An example
 of a 1-qubit 2-qubit instruction is shown below:
-
-.. code-block:: rest
-   :linenos:
+::
 
    "instructions": {
 
@@ -415,9 +399,7 @@ according to the decomposition on Line 2, ``rx180 %0`` will allow us to
 decompose ``rx180 q0`` to ``x q0``. Simmilarly, the decomposition on Line 3 will
 allow us to decompose ``cnot q2, q0`` to three instructions, namely; ``ry90
 q2``, ``cz q2, q0`` and ``ry90 q0``.
-
-.. code-block:: rest
-   :linenos:
+::
 
 	"gate_decomposition": {
 		"rx180 %0" : ["x %0"],
