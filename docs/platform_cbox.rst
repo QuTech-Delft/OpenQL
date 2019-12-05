@@ -1,6 +1,6 @@
 .. _cboxplatform:
 
-CBox Plaform Configuration
+CBox Platform Configuration
 --------------------------
 
 Details of configuration file for CBox hardware platform. [TBD]
