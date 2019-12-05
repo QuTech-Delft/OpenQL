@@ -90,10 +90,7 @@ Edge indices form a contigous range starting from 0.
 Each edge in the topology is given an ``id`` which denotes its index, and a source (control) and destination (target) qubit index by ``src`` and ``dst``, respectively. This means that although Edge 0 and Edge 8 are
 between qubit 0 and qubit 2, they are different as these edges are in opposite directions.
 The qubit indices specified here must correspond to available qubits in the platform.
-
-
-.. code-block:: html
-	linenos:
+::
 
 	"topology" : {
 		"x_size": 5,
