@@ -5,13 +5,14 @@ CC-Light Platform Configuration File
 
 The file `hardware_configuration_cc_light.json
 <https://github.com/QE-Lab/OpenQL/blob/develop/tests/hardware_config_cc_light.json>`_
-available inside the ``tests`` direcotry is an example configuration file for
+available inside the ``tests`` directory is an example configuration file for
 the CC-Light platform with 7 qubits.
 This file consists of several sections (in arbitrary order) which are described below.
 
 ``eqasm_compiler`` is just a field with a single value.
-It specifies the backend compiler to be used for this CC-Light platform, which in this case is ``cc_light_compiler``.
+It specifies the backend compiler to be used for this CC-Light platform, which in this case has the name ``cc_light_compiler``.
 The backend compiler is called after the platform independent passes, and calls several private passes by itself.
+This backend compiler and its passes are described in detail in :ref:'Compiler_Passes'.
 One of these is the code generation pass.
 
 .. code::
@@ -41,20 +42,19 @@ scheduling of instructions.
 		"readout_readout_buffer": 0
 	}
 
-``qubit_number`` indicates the number of (real) qubit indices available in the platform.
+``qubit_number`` indicates the number of (real) qubits available in the platform.
 Instructions that addresss qubits do this by providing a qubit index in the range of 0 to qubit_number-1.
 Using an index outside this range will raise an error.
-Not all qubit indices need to refer to a real qubit.
 
 ``cycle_time`` is the clock cycle time.
 As all other timing specifications in the configuration file it is specified in nanoseconds.
 Only at multiples of this cycle time, instructions can start executing.
 The schedulers assign a cycle value to each instruction, which means that that instruction can start executing
 a number of nanoseconds after program execution start
-that equals that cycle value multiplied with the cycle time value.
+that equals that cycle value multiplied by the clock cycle time value.
 
 The other entries of the ``hardware_settings`` section specify various buffer times to be
-inserted in various operations due to control electronics setup. For example,
+inserted between various operations due to control electronics setup. For example,
 ``mw_mw_buffer`` can be used to specify time to be inserted between a microwave
 operation followed by another microwave operation. See :ref:'Scheduling' for details.
 
@@ -81,15 +81,16 @@ The positions of the real qubits of the platform are defined relative to this (a
 The coordinates in the X direction are 0 to x_size-1.
 In the Y direction they are 0 to y_size-1.
 Next, for each available qubit in the platform, its position in the grid is specified:
-the ``id`` specifies the particular qubit's index, and ``x`` and ``y`` specify its position in the grid.
-Please note that not every qubit index in the range 0 to qubit_number-1 needs to correspond to a qubit,
-nor that every position in the x_size by y_size grid needs to correspond to a qubit.
+the ``id`` specifies the particular qubit's index, and ``x`` and ``y`` specify its position in the grid,
+as coordinates in the X and Y direction, respectively.
+Please note that not every position in the x_size by y_size grid needs to correspond to a qubit.
 
 Qubits are connected in directed pairs, called edges.
-Edge indices form a contigous range starting at 0.
+Edge indices form a contigous range starting from 0.
 Each edge in the topology is given an ``id`` which denotes its index, and a source (control) and destination (target) qubit index by ``src`` and ``dst``, respectively. This means that although Edge 0 and Edge 8 are
 between qubit 0 and qubit 2, they are different as these edges are in opposite directions.
 The qubit indices specified here must correspond to available qubits in the platform.
+
 
 .. code-block::
    :linenos:
