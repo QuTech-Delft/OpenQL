@@ -92,8 +92,8 @@ between qubit 0 and qubit 2, they are different as these edges are in opposite d
 The qubit indices specified here must correspond to available qubits in the platform.
 
 
-.. code-block::
-   :linenos:
+.. code-block:: html
+	linenos:
 
 	"topology" : {
 		"x_size": 5,
