@@ -3,6 +3,10 @@
 CC-Light Platform Configuration File
 ------------------------------------
 
+:Note: The platform comfiguration file for its structure is platform independent. So, either the text below is split into a platform independent structure definition (and put one level higher) and a platform dependent content, or the whole thing is copied for other platforms and then adapted (which is not wise considering updates).
+
+
+
 The file `hardware_configuration_cc_light.json
 <https://github.com/QE-Lab/OpenQL/blob/develop/tests/hardware_config_cc_light.json>`_
 available inside the ``tests`` directory is an example configuration file for
