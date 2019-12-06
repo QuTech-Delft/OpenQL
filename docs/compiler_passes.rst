@@ -4,7 +4,7 @@ Compiler Passes
 Most of the passes in their function and implementation are platform independent,
 deriving their platform dependent information from options and/or the configuration file.
 This holds also for scheduling and mapping, although one wouldn't think so first.
-All passes like this are mentioned below and described platform independently:
+All passes like this are mentioned below and describe platform independently:
 
 - their API, including their name: in general, apart from their name, they take all parameters from the ``program`` context which includes the configuration file and the platform, the options, and the vector of kernels with their circuits
 - the Intermediate Representation (IR) they expect as input and what they update in the IR; in general, they should accept any IR, so all types of gates, quantum as well as classical
