@@ -65,6 +65,9 @@ More detailed information on each can be found in the sections below.
 	depending on the value of the equally named option, it does this in the Neilsen and Chuang way (``NC``),
 	or in the way as in https://arxiv.org/pdf/1210.0974,pdf (``AM``).
 
+- unitary decomposition:
+	the unitary decomposition pass is not generally available yet; it is in some private OpenQL branch.
+
 - scheduler:
     of each kernel's circuit the gates are scheduled at a particular cycle starting from 0
 	(by filling in the gate's ``cycle`` attribute) that matches the gates' dependences, their duration,
