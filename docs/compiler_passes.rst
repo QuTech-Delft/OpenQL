@@ -11,33 +11,38 @@ All passes like this are mentioned below and describe platform independently:
 - the particular options they listen to; there usually is an option to disable it; also there are ways to dump the IR before and/or after it although this is not generally possible yet.
 
 Other passes, of which the function and implementation is platform dependent, can be found with the platforms.
-An example of the latter passes is QISA (i.e. instruction) writing in CC-Light.
+An example of the latter passes is QISA (i.e. instruction) generation in CC-Light.
 
-Passes have some facilities available to them; these are not passes themselves.
+Passes have some general facilities available to them; these are not passes themselves since they don't transform the IR.
 Such facilities are:
 
 - Writing the IR out in an external representation (QASM 1.0) to a file;
 	the name of the file should relate to the point in compilation relative to the called passes where
 	the IR is written
+
 - Writing a report out to a file containing a summary of the IR;
 	e.g. the number of kernels,
 	the numer of one-qubit, two-qubit and more-qubit gates,
 	which qubits were uses and which not,
 	the wall clock time that compilation took until this point,
 	etc.
-- Writing an internal data structure to a file for off-line inspection such as
-	the gate dependence graph (in dot format) during scheduling
+
+- Writing a string to a file for off-line inspection
+    such as writing (in dot format) the gate dependence graph which is a scheduling pass internal data structure.
+    The writing to a file of a string is a general facility
+    but the generation of the string representation of the internal data structure is pass dependent.
 
 These facilities are described elsewhere.
 
 Writing the IR out to a file in a form suitable for a particular subsequent tool such as quantumsim
 is considered code generation for the quantumsim platform and is therefore considered a pass.
 
-:Note: A compiler pass is not something defined in OpenQL. It should be. Passes then have a standard API, standard intermediate representation dumpers before and after them, a standard way to include them in the compiler. We could have the list of passes to call be something defined in the configuration file.
+:Note: A compiler pass is not something defined in OpenQL. It should be. Passes then have a standard API, standard intermediate representation dumpers before and after them, a standard way to include them in the compiler. We could have the list of passes to call be something defined in the configuration file, perhaps with the places where we want to have dumps and reports.
 
 Compiler passes in OpenQL are the compiler elements that, when called one after the other,
 gradually transform the OpenQL input program to some platform defined output program.
-The following passes are available and usually called in this order:
+The following passes are available and usually called in this order.
+More detailed information on each can be found in the sections below.
 
 - program reading:
     not a real pass now;
@@ -48,15 +53,18 @@ The following passes are available and usually called in this order:
 	defines its kernels,
 	and defines its gates;
 	in the current OpenQL implementation this is all code upto and including the call to ``p.compile()``.
+
 - optimize:
     attempts to find contigous sequences of quantum gates
 	that are equivalent to identity (within some small epsilon which currently is 10 to the power -4)
 	and then take those sequences out of the circuit;
 	this relies on the function of each gate to be defined in its ``mat`` field as a matrix.
+
 - decompose_toffoli:
     each toffoli gate in the IR is replaced by a gate sequence with at most two-qubit gates;
 	depending on the value of the equally named option, it does this in the Neilsen and Chuang way (``NC``),
 	or in the way as in https://arxiv.org/pdf/1210.0974,pdf (``AM``).
+
 - scheduler:
     of each kernel's circuit the gates are scheduled at a particular cycle starting from 0
 	(by filling in the gate's ``cycle`` attribute) that matches the gates' dependences, their duration,
@@ -71,6 +79,19 @@ The following passes are available and usually called in this order:
 	The latter only considers the gates' dependences and their duration, which is sufficient as input to QX.
 	Next to the above necessary constraints, the remaining freedom is defined by a scheduling strategy
 	which is defined by the ``scheduler`` option value: ``ASAP``, ``ALAP`` and some other options.
+
+- decomposition before scheduling:
+    classical non-primitive gates are decomposed to primitives
+	(e.g. ``eq`` is transformed to ``cmp`` followed by an empty cycle and an ``fbr_eq``);
+	after measurements an ``fmr`` is inserted provided the measurement had a classical register operand.
+
+- clifford optimization:
+    dependency chains of one-qubit clifford gates operating on the same qubit
+    are replaced by equivalent sequences of primitive gates when the latter leads to a shorter execution time.
+    Clifford gates are recognized by their name and use is made of the property that clifford gates form a group of 24 elements.
+	The clifford optimization pass is not generally available yet; it is in the OpenQL mapper branch.
+    Clifford optimization is called before and after the mapper pass.
+
 - mapper:
     the circuits of all kernels are transformed
 	such that for any two-qubit gate the operand qubits are connected
@@ -84,26 +105,38 @@ The following passes are available and usually called in this order:
 	There are many refinements to this algorithm that can be controlled through options and the configuration file.
 	The mapper pass is not generally available yet; it is in the OpenQL mapper branch.
 	It is not complete in the sense that it ignores transfer of the v2r map between kernels.
-- opcode and control store file generation:
-    currently disabled as not used by CC-Light
-- decomposition before scheduling:
-    classical non-primitive gates are decomposed to primitives
-	(e.g. ``eq`` is transformed to ``cmp`` followed by an empty cycle and an ``fbr_eq``);
-	after measurements an ``fmr`` is inserted provided the measurement had a classical register operand.
+
 - rcscheduler:
-    see scheduler
+    see scheduler; resource constraints are taken into account; the result reflects the timing required during execution,
+    i.e. also taking into account any further non-OpenQL passes and run-time stages such as:
+    * QISA assembly
+    * classical code execution (from here on these passes are executed as run-time stages)
+    * quantum microcode generation
+    * micro operation to signal and microwave conversion
+    * execution unit reprogramming and inter operation reset times
+    * signal communication line delays
+    * execution time and feed-back delays
+    The resulting circuit is stored in the usual manner and as a sequence of bundles.
+
 - decomposition after scheduling:
     two-qubit flux gates are decomposed to a series of one-qubit flux gates
 	of the form ``sqf q0`` to be executed in the same cycle;
 	this is done only when the ``cz_mode`` option has the value ``auto``;
 	such a gate is generated for each operand and for all qubits that need to be detuned;
 	see the detuned_qubits resource description in the CC-Light platform configuration file for details.
-- bundles2qisa:
-    ...
-- mask instruction generation:
-    ...
+
+- opcode and control store file generation:
+    currently disabled as not used by CC-Light
+
 - QISA generation:
-    ...
+    * bundle to QISA translation:
+        * deterministic sorting of gates per bundle
+        * instruction prefix and wait instruction insertion
+        * classical gate to QISA classical instruction translation
+        * SOMQ generation and mask to mask register assignment (should include mask instruction generation)
+        * insertion of wait states between meas and fmr (should be done by scheduler)
+    * mask instruction generation
+    * QISA file writing
 
 :Note: Some passes are called from the platform independent compiler, other ones from the back-end compiler. That is a platform dependent issue and therefore described with the platform.
 
