@@ -28,9 +28,9 @@ Such facilities are:
 	etc.
 
 - Writing a string to a file for off-line inspection
-    such as writing (in dot format) the gate dependence graph which is a scheduling pass internal data structure.
-    The writing to a file of a string is a general facility
-    but the generation of the string representation of the internal data structure is pass dependent.
+	such as writing (in dot format) the gate dependence graph which is a scheduling pass internal data structure.
+	The writing to a file of a string is a general facility
+	but the generation of the string representation of the internal data structure is pass dependent.
 
 These facilities are described elsewhere.
 
@@ -45,7 +45,7 @@ The following passes are available and usually called in this order.
 More detailed information on each can be found in the sections below.
 
 - program reading:
-    not a real pass now;
+	not a real pass now;
 	it covers the code that for a particular program
 	sets its options,
 	connects it to a platform,
@@ -55,13 +55,13 @@ More detailed information on each can be found in the sections below.
 	in the current OpenQL implementation this is all code upto and including the call to ``p.compile()``.
 
 - optimize:
-    attempts to find contigous sequences of quantum gates
+	attempts to find contigous sequences of quantum gates
 	that are equivalent to identity (within some small epsilon which currently is 10 to the power -4)
 	and then take those sequences out of the circuit;
 	this relies on the function of each gate to be defined in its ``mat`` field as a matrix.
 
 - decompose_toffoli:
-    each toffoli gate in the IR is replaced by a gate sequence with at most two-qubit gates;
+	each toffoli gate in the IR is replaced by a gate sequence with at most two-qubit gates;
 	depending on the value of the equally named option, it does this in the Neilsen and Chuang way (``NC``),
 	or in the way as in https://arxiv.org/pdf/1210.0974,pdf (``AM``).
 
@@ -69,7 +69,7 @@ More detailed information on each can be found in the sections below.
 	the unitary decomposition pass is not generally available yet; it is in some private OpenQL branch.
 
 - scheduler:
-    of each kernel's circuit the gates are scheduled at a particular cycle starting from 0
+	of each kernel's circuit the gates are scheduled at a particular cycle starting from 0
 	(by filling in the gate's ``cycle`` attribute) that matches the gates' dependences, their duration,
 	the constraints imposed by their resource use, the buffer values defined for the platform, and
 	the latency value defined for each gate; multiple gates may start in the same cycle;
@@ -84,19 +84,20 @@ More detailed information on each can be found in the sections below.
 	which is defined by the ``scheduler`` option value: ``ASAP``, ``ALAP`` and some other options.
 
 - decomposition before scheduling:
-    classical non-primitive gates are decomposed to primitives
+	classical non-primitive gates are decomposed to primitives
 	(e.g. ``eq`` is transformed to ``cmp`` followed by an empty cycle and an ``fbr_eq``);
 	after measurements an ``fmr`` is inserted provided the measurement had a classical register operand.
 
 - clifford optimization:
-    dependency chains of one-qubit clifford gates operating on the same qubit
-    are replaced by equivalent sequences of primitive gates when the latter leads to a shorter execution time.
-    Clifford gates are recognized by their name and use is made of the property that clifford gates form a group of 24 elements.
+	dependency chains of one-qubit clifford gates operating on the same qubit
+	are replaced by equivalent sequences of primitive gates when the latter leads to a shorter execution time.
+	Clifford gates are recognized by their name and use is made of the property
+	that clifford gates form a group of 24 elements.
 	The clifford optimization pass is not generally available yet; it is in the OpenQL mapper branch.
-    Clifford optimization is called before and after the mapper pass.
+	Clifford optimization is called before and after the mapper pass.
 
 - mapper:
-    the circuits of all kernels are transformed
+	the circuits of all kernels are transformed
 	such that for any two-qubit gate the operand qubits are connected
 	(are NN, Nearest Neighbor) in the platform's topology;
 	this is done by a kernel-level initial placement pass and when it fails, by a subsequent heuristic;
@@ -110,36 +111,36 @@ More detailed information on each can be found in the sections below.
 	It is not complete in the sense that it ignores transfer of the v2r map between kernels.
 
 - rcscheduler:
-    see scheduler; resource constraints are taken into account; the result reflects the timing required during execution,
-    i.e. also taking into account any further non-OpenQL passes and run-time stages such as:
-    * QISA assembly
-    * classical code execution (from here on these passes are executed as run-time stages)
-    * quantum microcode generation
-    * micro operation to signal and microwave conversion
-    * execution unit reprogramming and inter operation reset times
-    * signal communication line delays
-    * execution time and feed-back delays
-    The resulting circuit is stored in the usual manner and as a sequence of bundles.
+	see scheduler; resource constraints are taken into account; the result reflects the timing required during execution,
+	i.e. also taking into account any further non-OpenQL passes and run-time stages such as:
+	* QISA assembly
+	* classical code execution (from here on these passes are executed as run-time stages)
+	* quantum microcode generation
+	* micro operation to signal and microwave conversion
+	* execution unit reprogramming and inter operation reset times
+	* signal communication line delays
+	* execution time and feed-back delays
+	The resulting circuit is stored in the usual manner and as a sequence of bundles.
 
 - decomposition after scheduling:
-    two-qubit flux gates are decomposed to a series of one-qubit flux gates
+	two-qubit flux gates are decomposed to a series of one-qubit flux gates
 	of the form ``sqf q0`` to be executed in the same cycle;
 	this is done only when the ``cz_mode`` option has the value ``auto``;
 	such a gate is generated for each operand and for all qubits that need to be detuned;
 	see the detuned_qubits resource description in the CC-Light platform configuration file for details.
 
 - opcode and control store file generation:
-    currently disabled as not used by CC-Light
+	currently disabled as not used by CC-Light
 
 - QISA generation:
-    * bundle to QISA translation:
-        * deterministic sorting of gates per bundle
-        * instruction prefix and wait instruction insertion
-        * classical gate to QISA classical instruction translation
-        * SOMQ generation and mask to mask register assignment (should include mask instruction generation)
-        * insertion of wait states between meas and fmr (should be done by scheduler)
-    * mask instruction generation
-    * QISA file writing
+	* bundle to QISA translation:
+		* deterministic sorting of gates per bundle
+		* instruction prefix and wait instruction insertion
+		* classical gate to QISA classical instruction translation
+		* SOMQ generation and mask to mask register assignment (should include mask instruction generation)
+		* insertion of wait states between meas and fmr (should be done by scheduler)
+	* mask instruction generation
+	* QISA file writing
 
 :Note: Some passes are called from the platform independent compiler, other ones from the back-end compiler. That is a platform dependent issue and therefore described with the platform.
 
