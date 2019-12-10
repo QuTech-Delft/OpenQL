@@ -13,19 +13,19 @@ While the instruction-level code is platform-specific, the quantum assembly code
 
    installation
    start
-   changelog
-   contributors
 
 .. toctree::
    :maxdepth: 3
    :caption: OpenQL Basics:
 
-   platform
    quantum_gate
-   classical_instructions
-   kernel
    program
+   kernel
+   classical_instructions
+   platform
    compiler_passes
+   changelog
+   contributors
 
 
 
@@ -37,8 +37,6 @@ While the instruction-level code is platform-specific, the quantum assembly code
 .. apidocs/kernel
 .. apidocs/program
 .. apidocs/platform
-
-   
 
 
 Indices and tables
