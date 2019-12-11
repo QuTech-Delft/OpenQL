@@ -1,12 +1,12 @@
 # OPENQL configuration file for CC backend
 Version: 20190507 Draft
 
-This document describes the JSON configuration file format for OpenQL in conjunction 
+This document describes the JSON configuration file format for OpenQL in conjunction
 with the CC backend
 
 ## Standard OpenQL features
 ### Standard parameters
-This section describes parameters that are independent of the OpenQL backend used and 
+This section describes parameters that are independent of the OpenQL backend used and
 should therefore be compatible with other backends.
 
 Path | Type | Values | Note
@@ -18,7 +18,7 @@ Path | Type | Values | Note
 `instructions/<key>/duration`|Int| | duration in [ns]
 `instructions/<key>/latency`|Int| | optional instruction latency in [ns] (effect unclear)
 `instructions/<key>/matrix`| | | the process matrix. Required, but generally does not contain useful information
-`instructions/<key>/qubits`|Optional| | 
+`instructions/<key>/qubits`|Optional| |
 `gate_decomposition`|Optional|
 
 
@@ -39,7 +39,7 @@ Parametrized gate decompositions can be specified in `gate_decomposition` sectio
 
     "rx180 %0" : ["x %0"]
 
-Based on this, `k.gate('rx180', 3)` will be decomposed to x(q3). Similarly, multi-qubit gate-decompositions can be 
+Based on this, `k.gate('rx180', 3)` will be decomposed to x(q3). Similarly, multi-qubit gate-decompositions can be
 specified as:
 
     "cnot %0,%1" : ["ry90 %0", "cz %0,%1", "ry90 %1"]
@@ -57,10 +57,10 @@ This section describes parameters that are specific for the OpenQL CC backend.
 
 Path | Type | Values | Note
 ---|---|---|---
-`instructions/<key>/cc/signal/type`| | | 
-`instructions/<key>/cc/signal/operand_idx`| | | 
-`instructions/<key>/cc/signal/value`| | | 
-`instructions/<key>/cc/signal_ref`| | | 
+`instructions/<key>/cc/signal/type`| | |
+`instructions/<key>/cc/signal/operand_idx`| | |
+`instructions/<key>/cc/signal/value`| | |
+`instructions/<key>/cc/signal_ref`| | |
 
 'value' supports the following macro expansions:
 * {gateName}
@@ -68,8 +68,8 @@ Path | Type | Values | Note
 * {instrumentGroup}
 * {qubit}
 
-Note that for the CC - contrary to the CC-light - the final hardrware output is entirely *determined* by the contents of 
-the configuration file, there is no builtin knowledge of instrument connectivity or codeword organization.
+Note that for the CC - contrary to the CC-light - the final hardware output is entirely *determined* by the contents of
+the configuration file, there is no built-in knowledge of instrument connectivity or codeword organization.
 
 ## Unused parameters
 ### Non-implemented parameters
@@ -86,7 +86,7 @@ hardware_settings/readout_mw_buffer
 hardware_settings/readout_flux_buffer
 hardware_settings/readout_readout_buffer
 instructions/<key>/disable_optimization
-alias 
+alias
 ```
 ### CC-light parameters
 ```
