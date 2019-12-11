@@ -24,10 +24,13 @@ While the instruction-level code is platform-specific, the quantum assembly code
    classical_instructions
    platform
    compiler_passes
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Colophon:
+
    changelog
    contributors
-
-
 
 .. toctree::
    :maxdepth: 1
