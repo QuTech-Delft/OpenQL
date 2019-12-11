@@ -2,7 +2,8 @@
 import os
 import shutil
 
-dirs = ['build', 'cbuild', 'dist', 'openql.egg-info', ]
+dirs = ['build', 'cbuild', 'dist', 'openql.egg-info',
+		'swig/qutechtools.egg-info', 'swig/openql.egg-info']
 files = ['']
 
 for dir in dirs:

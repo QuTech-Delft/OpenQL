@@ -4,7 +4,7 @@ OpenQL framework has been created initially by Nader Khammassi.
 Note: please fill your contributions in this file
 
 
-- **[Nader Khammassi](https://github.com/Nader-Khammassi)**
+- [Nader Khammassi](https://github.com/Nader-Khammassi)
     -   CBox Backend
     -   Configuration file support
     -   QASM loader for QASM syntax check
@@ -14,7 +14,7 @@ Note: please fill your contributions in this file
 
 
 
-- **[Imran Ashraf](https://github.com/imranashraf)**
+- [Imran Ashraf](https://github.com/imranashraf)
     -   support for hybrid classical/quantum compilation
     -   support for control flow (selection and repitition)
     -   kernel un-compute/conjugation feature
@@ -39,16 +39,16 @@ Note: please fill your contributions in this file
 
 
 
-- **[Adriaan Rol](https://github.com/AdriaanRol)**
+- [Adriaan Rol](https://github.com/AdriaanRol)
     -   Contributed to the Hardware Configuration Specification
     -   Utilizing qisa-as in unit-tests
     -   Testing OpenQL on the Hardware
 
-- **[Xiang Fu](https://github.com/gtaifu)**
+- [Xiang Fu](https://github.com/gtaifu)
     -   Contributed to the Hardware Configuration Specification
     -   Testing OpenQL on the Hardware
 
-- **[Wouter Vlothuizen](https://github.com/wvlothuizen)**
+- [Wouter Vlothuizen](https://github.com/wvlothuizen)
     -   backend for Central Controller (CC)
     -   new simplified qubit numbering scheme (rotated surface code fabric by 45 deg)
     -   support for comments in JSON file
