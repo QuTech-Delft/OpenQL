@@ -9,14 +9,16 @@ While the instruction-level code is platform-specific, the quantum assembly code
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Getting Started
 
+   overview
    installation
    start
 
+
 .. toctree::
    :maxdepth: 3
-   :caption: OpenQL Basics:
+   :caption: OpenQL Basics
 
    quantum_gate
    program
@@ -25,12 +27,14 @@ While the instruction-level code is platform-specific, the quantum assembly code
    platform
    compiler_passes
 
+
 .. toctree::
    :maxdepth: 1
-   :caption: Colophon:
+   :caption: Colophon
 
    changelog
    contributors
+
 
 .. toctree::
    :maxdepth: 1

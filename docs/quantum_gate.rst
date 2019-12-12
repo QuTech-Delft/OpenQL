@@ -1,7 +1,7 @@
 Quantum Gates
 =============
 
-Gates in OpenQL are the constructs that refer to operations to be executed somehow on the quantum computing platform.
+Gates in OpenQL are the constructs that refer to operations to be executed somehow on the computing platform.
 
 A gate refers to an operation and to zero or more operands.
 

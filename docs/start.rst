@@ -1,5 +1,5 @@
-Getting Started
-===============
+Creating your first Program
+===========================
 
 
 To begin, start up python however you like. You can open a jupyter notebook (type ``jupyter notebook`` in your terminal),
@@ -37,7 +37,7 @@ Create a kernel
 
     k = ql.Kernel("aKernel", platform, nqubits)
 
-Populate kernel using default and custom gates
+Populate this kernel using default and custom gates
 
 .. code:: python
 
