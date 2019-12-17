@@ -15,8 +15,11 @@ The following platforms are supported by OpenQL:
 	- :ref:`ccplatform`
 	- :ref:`cboxplatform`
 
+:Note: Quantumsim and QX are not really platforms. They are means to simulate a particular (hardware) platform. In the mapper branch quantumsim code generation is controlled by an option.  This option is checked at the end of the platform independent compiler and near the end of the CC-Light backend, and will cause quantumsim to simulate the circuit before and after mapping and rcscheduling for CC-Light, respectively.
 
-A platform can be created in OpenQL by using ``Platform()`` API as show below:
+:Note: We are planning to use DQCsim, a platform to connect to simulators. In that context, software simulator platforms are connected to by DQCsim, and OpenQL just provides compilation support to a particular hardware platform.
+
+A platform can be created in OpenQL by using ``Platform()`` API as shown below:
 
 .. code:: python
 

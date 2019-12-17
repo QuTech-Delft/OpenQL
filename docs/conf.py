@@ -41,6 +41,8 @@ templates_path = ['_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
+# Some or just temporary files,
+# other ones files 'include::'d by another .rst file.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 
 	'platform_*.rst', 'mapping.rst', 'scheduling.rst', 'decomposition.rst',

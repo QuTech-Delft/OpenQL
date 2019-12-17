@@ -1,3 +1,5 @@
+.. _quantum_gates:
+
 Quantum Gates
 =============
 
@@ -80,9 +82,11 @@ Classical gates can be subdivided in:
 - simple gates; a classical gate that cannot change control flow; these are almost all classical gates
 
 - control gates; a classical gate that may change control flow;
-  examples are branch, stop and conditional branch instructions
+  examples are branch, stop and conditional branch gates
 
 
+
+.. _quantum_gate_attributes_in_the_internal_representation:
 
 Quantum gate attributes in the internal representation
 ------------------------------------------------------
@@ -110,47 +114,51 @@ Quantum gate attributes can be subdivided in the following kinds:
 
 Below the OpenQL gate attributes are summarized in a table together with their key characteristics.
 
-+---------------+-----------+-----------------+------------------+------------+---------------------+
-| Attribute     | kind      | example         | used by          | updated by | C++ type            |
-+===============+===========+=================+==================+============+=====================+
-| name          | structural| "CZ q0,q1"      | all passes       | never      | std::string         |
-+---------------+           +-----------------+                  +            +---------------------+
-| operands      |           | [q0,q1]         |                  |            | std::vector<size_t> |
-+---------------+           +-----------------+                  +            +---------------------+
-| creg_operands |           | [r23]           |                  |            | std::vector<size_t> |
-+---------------+           +-----------------+                  +            +---------------------+
-| angle         |           | 3.14152         |                  |            | double              |
-+---------------+           +-----------------+                  +            +---------------------+
-| type          |           | __cphase_gate__ |                  |            | gate_type_t         |
-+---------------+-----------+-----------------+------------------+            +---------------------+
-| duration      | semantic  | 80              | schedulers, etc. |            | size_t              |
-+---------------+           +-----------------+------------------+            +---------------------+
-| mat           |           |                 | optimizer pass   |            | cmat_t              |
-+---------------+-----------+-----------------+------------------+------------+---------------------+
-| cycle         | result    | 4               | code generation  | scheduler  | size_t              |
-+---------------+-----------+-----------------+------------------+------------+---------------------+
++---------------+-----------+-----------------+------------+------------+----------------+
+| Attribute     | kind      | example         | used by    | updated by | C++ type       |
++===============+===========+=================+============+============+================+
+| name          | structural| "CZ q0,q1"      | all passes | never      | string         |
++---------------+           +-----------------+            +            +----------------+
+| operands      |           | [q0,q1]         |            |            | vector<size_t> |
++---------------+           +-----------------+            +            +----------------+
+| creg_operands |           | [r23]           |            |            | vector<size_t> |
++---------------+           +-----------------+            +            +----------------+
+| angle         |           | numpy.pi        |            |            | double         |
++---------------+           +-----------------+            +            +----------------+
+| type          |           | __t_gate__      |            |            | gate_type_t    |
++---------------+-----------+-----------------+------------+            +----------------+
+| duration      | semantic  | 80              | schedulers,|            | size_t         |
+|               |           |                 | etc.       |            |                |
++---------------+           +-----------------+------------+            +----------------+
+| mat           |           |                 | optimizer  |            | cmat_t         |
+|               |           |                 | pass       |            |                |
++---------------+-----------+-----------------+------------+------------+----------------+
+| cycle         | result    | 4               | code       | scheduler  | size_t         |
+|               |           |                 | generation |            |                |
++---------------+-----------+-----------------+------------+------------+----------------+
 
 Custom gates have an additional set of attributes,
 primarily supporting the initialization of the gate attributes from configuration file parameters.
 
 Some further notes on the gate attributes:
 
-- the name of a gate includes the string representations of their operands in case of a specialized gate;
+- the name of a gate includes the string representations of its qubit operands in case of a specialized gate;
   so in general, when given a name, one has to take care to isolate the operation from it;
   one may assume that the operation is a single identifier optionally followed by white space and the operands
 
-- gates are most directly distinguished by their name although distinguishing by their type would be better;
-  the latter conveys the semantic definition and is independent of the representation
-  (e.g. "mrx90", "mx90", "Rmx90" all could be names of a -90 degrees X rotation);
-  but the enumeration type of type can never include all possible gates
-  (e.g. those with arbitrary angles, any number of operands, etc.)
+- gates are most directly distinguished by their name
 
-- qubit and classical operands are represented by unsigned valued indices starting from 0 in their respective register spaces;
-  angle is in radians;
-  duration is in nanoseconds;
-  the matrix is a two-dimensional complex double valued matrix with dimensions equal to twice the number of operands;
+:Note: Distinguishing gates internally in the compiler by their name is problematic; distinguishing by their type (see the table above) would be better; the latter conveys the semantic definition and is independent of the representation (e.g. ``mrx90``, ``mx90``, ``Rmx90`` all could be names of a -90 degrees X rotation); furthermore, a name is something of the external representation and is mapped to the internal representation using the platform configuration file; however, the enumeration type of type can never include all possible gates (e.g. those with arbitrary angles, any number of operands, etc.) so the type inevitably can be imprecise; but it should be precise when the type refers to the operation only, i.e. excluding the operands
 
-- cycle is in units of cycle_time as defined in the platform; the undefined value is std::numeric_limits<int>::max().
+- qubit and classical operands are represented by unsigned valued indices starting from 0 in their respective register spaces
+
+- ``angle`` is in radians; it specifies the value of the arbitrary angle of those operations that need one; it is initialized only from an explicit specification as parameter value to a gate creation API
+
+- ``duration`` is in nanoseconds, just as the timing specifications in the platform configuration file; scheduling-like passes divide it (rounding up) by the cycle_time to compute the number of cycles that an operation takes; it is initialized implicitly when the gate is a default gate and explicitly from the configuration file when the gate is a custom gate
+
+- ``mat`` is of a two-dimensional complex double valued matrix type with dimensions equal to twice the number of operands; it is only used by the optimizer pass; it is initialized implicitly when the gate is a default gate and explicitly from the configuration file when the gate is a custom gate
+
+- ``cycle`` is in units of cycle_time as defined in the platform; the undefined value is ``std::numeric_limits<int>::max()``.
   A gate's cycle attribute gets defined by applying a scheduler or a mapper pass,
   and remains defined until any pass is done that invalidates the cycle attribute.
   As long as the gate's cycle attribute is defined (and until it is invalidated),
@@ -165,75 +173,81 @@ Some further notes on the gate attributes:
 | type                | operands                   | kind         |
 +=====================+============================+==============+
 | __identity_gate__   | 1 qubit                    | rotation     |
++---------------------+                            +              +
+| __hadamard_gate__   |                            |              |
++---------------------+                            +              +
+| __pauli_x_gate__    |                            |              |
++---------------------+                            +              +
+| __pauli_y_gate__    |                            |              |
++---------------------+                            +              +
+| __pauli_z_gate__    |                            |              |
++---------------------+                            +              +
+| __phase_gate__      |                            |              |
++---------------------+                            +              +
+| __phasedag_gate__   |                            |              |
++---------------------+                            +              +
+| __t_gate__          |                            |              |
++---------------------+                            +              +
+| __tdag_gate__       |                            |              |
++---------------------+                            +              +
+| __rx90_gate__       |                            |              |
++---------------------+                            +              +
+| __mrx90_gate__      |                            |              |
++---------------------+                            +              +
+| __rx180_gate__      |                            |              |
++---------------------+                            +              +
+| __ry90_gate__       |                            |              |
++---------------------+                            +              +
+| __mry90_gate__      |                            |              |
++---------------------+                            +              +
+| __ry180_gate__      |                            |              |
++---------------------+----------------------------+              +
+| __rx_gate__         | 1 qubit, 1 angle           |              |
++---------------------+                            +              +
+| __ry_gate__         |                            |              |
++---------------------+                            +              +
+| __rz_gate__         |                            |              |
++---------------------+----------------------------+              +
+| __cnot_gate__       | 2 qubits                   |              |
++---------------------+                            +              +
+| __cphase_gate__     |                            |              |
++---------------------+                            +              +
+| __swap_gate__       |                            |              |
++---------------------+----------------------------+              +
+| __toffoli_gate__    | 3 qubits                   |              |
 +---------------------+----------------------------+--------------+
-| __hadamard_gate__   | 1 qubit                    | rotation     |
+| __custom_gate__     | defined by config file                    |
++---------------------+                                           +
+| __composite_gate__  |                                           |
 +---------------------+----------------------------+--------------+
-| __pauli_x_gate__    | 1 qubit                    | rotation     |
-+---------------------+----------------------------+--------------+
-| __pauli_y_gate__    | 1 qubit                    | rotation     |
-+---------------------+----------------------------+--------------+
-| __pauli_z_gate__    | 1 qubit                    | rotation     |
-+---------------------+----------------------------+--------------+
-| __phase_gate__      | 1 qubit                    | rotation     |
-+---------------------+----------------------------+--------------+
-| __phasedag_gate__   | 1 qubit                    | rotation     |
-+---------------------+----------------------------+--------------+
-| __t_gate__          | 1 qubit                    | rotation     |
-+---------------------+----------------------------+--------------+
-| __tdag_gate__       | 1 qubit                    | rotation     |
-+---------------------+----------------------------+--------------+
-| __rx90_gate__       | 1 qubit                    | rotation     |
-+---------------------+----------------------------+--------------+
-| __mrx90_gate__      | 1 qubit                    | rotation     |
-+---------------------+----------------------------+--------------+
-| __rx1 qubite__      | 1 qubit                    | rotation     |
-| __ry90_gate__       | 1 qubit                    | rotation     |
-| __mry90_gate__      | 1 qubit                    | rotation     |
-| __ry180_gate__      | 1 qubit                    | rotation     |
-+---------------------+----------------------------+--------------+
-| __rx_gate__         | 1 qubit, 1 angle           | rotation     |
-| __ry_gate__         | 1 qubit, 1 angle           | rotation     |
-| __rz_gate__         | 1 qubit, 1 angle           | rotation     |
-+---------------------+----------------------------+--------------+
-| __prepz_gate__      | 1 qubit                    | rotation     |
-+---------------------+----------------------------+--------------+
-| __cnot_gate__       | 2 qubits                   | rotation     |
-+---------------------+----------------------------+--------------+
-| __cphase_gate__     | 2 qubits                   | rotation     |
-+---------------------+----------------------------+--------------+
-| __toffoli_gate__    | 3 qubits                   | rotation     |
-+---------------------+----------------------------+--------------+
-| __custom_gate__     | defined by config file     |              |
-+---------------------+----------------------------+--------------+
-| __composite_gate__  | defined by config file     |              |
-+---------------------+----------------------------+--------------+
+| __prepz_gate__      |                            | preparation  |
++---------------------+                            +--------------+
 | __measure_gate__    | 1 qubit                    | measurement  |
 +---------------------+----------------------------+--------------+
 | __display__         | 0 or more qubits           | directive    |
-+---------------------+----------------------------+--------------+
-| __display_binary__  | 0 or more qubits           | directive    |
++---------------------+                            +              +
+| __display_binary__  |                            |              |
 +---------------------+----------------------------+--------------+
 | __nop_gate__        | none                       | scheduling   |
-+---------------------+----------------------------+--------------+
-| __dummy_gate__      | none                       | scheduling   |
-+---------------------+----------------------------+--------------+
-| __swap_gate__       | 2 qubits                   | rotation     |
-+---------------------+----------------------------+--------------+
-| __wait_gate__       | 0 or more qubits, duration | scheduling   |
++---------------------+                            +              +
+| __dummy_gate__      |                            |              |
++---------------------+----------------------------+              +
+| __wait_gate__       | 0 or more qubits, duration |              |
 +---------------------+----------------------------+--------------+
 | __classical_gate__  | 0 or more classical regs.  | classical    |
 +---------------------+----------------------------+--------------+
 
-There is an API for each of the above gates types using default gates.
-Some notes:
+There is an API for each of the above gate types using default gates.
+
+Some notes on the semantics of these gates:
 
 - the wait gate waits for all its (qubit) operands to be ready;
   then it takes a duration of the given number of cycles for each of its qubit operands to execute;
   in external representations it is usually possible to not specify operands, it then applies to all qubits of the program;
-  the barrier gate is sometimes found in external representations
+  the ``barrier`` gate is sometimes found in external representations
   but is identical to a wait with 0 duration on its operand qubits (or all when none were specified)
 
-- the nop gate is identical to "wait 1", i.e. a one cycle execution duration applied to all program qubits
+- the nop gate is identical to ``wait 1``, i.e. a one cycle execution duration applied to all program qubits
 
 - dummy gates are SOURCE and SINK; these gates don't have an external representation;
   these are internal to the scheduler
@@ -243,6 +257,8 @@ Some notes:
   but have a type that reflects its semantics
 
 
+
+.. _input_external_representation:
 
 Input external representation
 -----------------------------
@@ -256,33 +272,39 @@ each containing a single circuit,
 each circuit being a vector of gates.
 
 Gates are created using an API of the general form:
-"k.gate(name, qubit operand vector, classical operand vector, duration, angle)",
+
+.. code::
+
+    k.gate(name, qubit operand vector, classical operand vector, duration, angle)
+
 in which particular operands can be empty or 0 depending on the particular kind of gate that is created.
 Gate creation upon a call to this API goes through the following steps to create the internal representation:
 
-# the qubit and/or classical register operand indices are checked for validity,
-  i.e. to be in the range of 0 to the number specified in the program creation API minus 1
+#. the qubit and/or classical register operand indices are checked for validity,
+   i.e. to be in the range of 0 to the number specified in the program creation API minus 1
 
-# if the configuration file contains a definition for a specialized composite gate matching it, it is taken;
-  the parameter substitution in the gates of the decomposition specification is done;
-  each resulting gate must be available as (specialized or parameterized, and non-composite) custom gate,
-  or as a default gate; the decomposition is applied and all resulting gates are created and added to the circuit
+#. if the configuration file contains a definition for a specialized composite gate matching it, it is taken;
+   the qubit parameter substitution in the gates of the decomposition specification is done;
+   each resulting gate must be available as (specialized or parameterized, and non-composite) custom gate,
+   or as a default gate; the decomposition is applied and all resulting gates are created and added to the circuit
 
-# otherwise, if a parameterized composite gate is available, take it;
-  the parameter substitution in the gates of the decomposition specification is done;
-  each resulting gate must be available as (specialized or parameterized, and non-composite) custom gate,
-  or as a default gate; the decomposition is applied and all resulting gates are created and added to the circuit
+#. otherwise, if a parameterized composite gate is available, take it;
+   the parameter substitution in the gates of the decomposition specification is done;
+   each resulting gate must be available as (specialized or parameterized, and non-composite) custom gate,
+   or as a default gate; the decomposition is applied and all resulting gates are created and added to the circuit
 
-# otherwise, if a specialized custom gate is available, take it;
+#. otherwise, if a specialized custom gate is available, create it with the attributes specified as parameter of the API call above
 
-# otherwise, if a parameterized custom gate is available, take it;
+#. otherwise, if a parameterized custom gate is available, create it with the attributes specified as parameter of the API call above
 
-# otherwise, if a default gate (predefined internally in OpenQL) is available, take it;
+#. otherwise, if a default gate (predefined internally in OpenQL) is available, create it with the attributes specified as parameter of the API call above
 
-# otherwise, it is an error
+#. otherwise, it is an error
 
 
 
+
+.. _output_external_representation:
 
 Output external representation
 ------------------------------

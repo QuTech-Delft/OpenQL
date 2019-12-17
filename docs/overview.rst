@@ -14,7 +14,8 @@ OpenQL compiler structure
 
 An OpenQL compiler reads a quantum program written in some external representation,
 performs some analysis and transformation passes on it, and prints the result out to an external representation again.
-Internally in the compiler the passes operate on a common internal representation of the program, equal to all passes.
+Internally in the compiler the passes operate on a common internal representation of the program,
+IR for short, which is equal to all passes.
 
 Understanding this internal representation is key to understanding the operation of an OpenQL compiler.
 It is structured as an attributed tree of objects.
@@ -32,7 +33,7 @@ i.e. a sequential gate that represents a (conditional) branch.
 All passes operate at the program level.
 Each performs its work on all kernels before it completes and another pass can run.
 The order of the passes is predefined by OpenQL, but there are ways to enable/disable individual passes.
-The effect of a pass is to update the internal representation, IR for short.
+The effect of a pass is to update the internal representation.
 This can amount to computing attributes, replacing gates by other ones, rearranging gates, and so on.
 
 The objective of an OpenQL compiler is to produce an output external representation of the input program

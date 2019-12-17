@@ -14,16 +14,16 @@ sources.
 	- OSx
 
 
-Installing Pre-built package
------------------------------
+Installing the pre-built package
+--------------------------------
 
-Pre-built packges are avialable for openql.
+Pre-built packages are available for OpenQL.
 
 
 Pre-built Wheels
 ^^^^^^^^^^^^^^^^
 
-This is perhaps the most easiest way to get OpenQL running on your machine.
+This is perhaps the easiest way to get OpenQL running on your machine.
 Pre-built OpenQL wheels are available for 64-bit Windows, Linux and OSX. These
 wheels are available for Python 3.5, 3.6 and 3.7. OpenQL can be installed by
 the command:
@@ -41,14 +41,15 @@ the command:
 Conda package
 ^^^^^^^^^^^^^
 
-Openql can be installed as a conda package (currently on Linux and Windows) by:
+OpenQL can be installed as a conda package (currently on Linux and Windows only) by:
 
 ::
 
     conda install -c imran.ashraf openql 
 
 
-conda packages can also be built locally by using the recipie available in conda-recipe directory, by running the following command from OpenQL directory:
+Conda packages can also be built locally by using the recipe available in the conda-recipe directory,
+by running the following command from the OpenQL directory:
 
 ::
 
@@ -66,14 +67,14 @@ Compilation from sources
 
 Compiling OpenQL from sources involves
 
-- Setting up required packages
+- Setting-up required packages
 - Obtaining OpenQL
 
 
 Required Packages
 ^^^^^^^^^^^^^^^^^
 
-The following packges are required to compile OpenQL from sources:
+The following packages are required to compile OpenQL from sources:
 
 - g++ compiler with C++11 support (Linux)
 - MSVC 2015 with update 3 or above (Windows)
@@ -95,14 +96,14 @@ Notes for Windows Users
 
     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
 
-- Install [PowerShell Community Extensions](https://www.google.com "PowerShell Community Extensions")
+- Install [PowerShell Community Extensions] (https://www.google.com "PowerShell Community Extensions")
 - MSVC 2015 should be added to the path by using the following command:
 
 ::
 
     Invoke-BatchFile "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
 
-- To make your life easier, you can add this command to the profile you are using for power shell, avoiding the need to manually run this command every time you open a power shell. You can see the path of profile by `echo $PROFILE`. Create/Edit this fille to add the above command.
+- To make your life easier, you can add this command to the profile you are using for power shell, avoiding the need to manually run this command every time you open a power shell. You can see the path of this profile by `echo $PROFILE`. Create/Edit this file to add the above command.
 
 - Python.exe and swig.exe should be in the path of power shell. To test if swig.exe is the path, run:
 
@@ -113,7 +114,7 @@ Notes for Windows Users
 - Make sure the following variables are defined:
 
     - PYTHON_INCLUDE (should point to the directory containing Python.h)
-    - PYTHON_LIB (should point to the python library pythonXX.lib, where XX is for python version number)
+    - PYTHON_LIB (should point to the python library pythonXX.lib, where XX is for the python version number)
 
 
 
@@ -146,7 +147,7 @@ Or in editable mode by the command:
 Compiling C++ OpenQL tests and programs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Existing tests and programs can be compiled by the following instructions. You can use an existing example as a starting point and write your own programs. Make sure to include them in CMakeLists.txt file to inform cmake to compile it as well.
+Existing tests and programs can be compiled by the following instructions. You can use an existing example as a starting point and write your own programs. Make sure to include them in the CMakeLists.txt file to inform cmake to compile it as well.
 
 
 Linux/OSX
@@ -162,7 +163,7 @@ Existing tests and programs can be compiled on Linux OS by the following command
     make       # compiles the source code into the current directory. 
 
 
-To execute the given examples/test, go to e.g., `OpenQL/cbuild/examples` and execute one of the files e.g.,  `./simple`. The output will be saved to the output directory next to the file.
+To execute the given examples/test, go to e.g., `OpenQL/cbuild/examples` and execute one of the files e.g.,  `./simple`. The output will be saved in the output directory next to the file.
 
 If one wants to compile and run a single file without adding it to CMakeLists.txt, e.g., `example.cc`, the following instructions should be followed:
 

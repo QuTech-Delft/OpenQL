@@ -1,3 +1,5 @@
+.. _creating_your_first_program:
+
 Creating your first Program
 ===========================
 

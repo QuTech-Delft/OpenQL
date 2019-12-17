@@ -36,3 +36,5 @@ are called one by one in the order specified by the OpenQL compiler's internals.
 After compilation, the compile method returns, and one can still inspect the internal representation.
 Compilation will have resulted in the creation of several external representations,
 to be used by e.g. simulation, assembly/execution or human inspection.
+
+[API TBD]

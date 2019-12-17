@@ -453,6 +453,7 @@ These decompositions are simple macros (in-place substitutions) which allow
 programmer to manually specify a decomposition. These take place at the time
 of creation of a gate in a kernel. This means the scheduler will schedule decomposed
 instructions. OpenQL can also perform Control and Unitary decompositions which
-are discussed in :ref:'decompositions'.
+are discussed in :ref:'decomposition'.
+
 
 
