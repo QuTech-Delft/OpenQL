@@ -19,6 +19,7 @@ env
 *.cache
 swig/openql.py
 swig/openql/openql.py
+swig/qutechopenql.egg-info
 
 # Test files
 test_output

@@ -20,10 +20,12 @@ Installing the pre-built package
 Pre-built packages are available for OpenQL.
 
 
+
 Pre-built Wheels
 ^^^^^^^^^^^^^^^^
 
 This is perhaps the easiest way to get OpenQL running on your machine.
+
 Pre-built OpenQL wheels are available for 64-bit Windows, Linux and OSX. These
 wheels are available for Python 3.5, 3.6 and 3.7. OpenQL can be installed by
 the command:
