@@ -30,10 +30,12 @@ control passes on to another kernel, which can be the next one in the vector or 
 
 After having completed adding kernels, the program has been completely specified.
 It is represented by a vector of kernels, each with a circuit.
-And in this form, the program is compiled by invoking its compile method.
-The platform independent compiler passes and then the platform dependent compiler passes
+And in this form, the program is compiled by invoking its ``p.compile()`` method.
+
+In the ``p.compile()`` method,
+the platform independent compiler passes and then the platform dependent compiler passes
 are called one by one in the order specified by the OpenQL compiler's internals.
-After compilation, the compile method returns, and one can still inspect the internal representation.
+After compilation, the ``p.compile()`` method returns, with the internal representation still available.
 Compilation will have resulted in the creation of several external representations,
 to be used by e.g. simulation, assembly/execution or human inspection.
 

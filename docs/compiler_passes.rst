@@ -157,7 +157,7 @@ More detailed information on each can be found in the sections below.
 	currently disabled as not used by CC-Light
 
 - QISA generation
-	* bundle to QISA translation:
+	* bundle to QISA translation
 		* deterministic sorting of gates per bundle
 		* instruction prefix and wait instruction insertion
 		* classical gate to QISA classical instruction translation

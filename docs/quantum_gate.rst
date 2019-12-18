@@ -164,7 +164,8 @@ Some further notes on the gate attributes:
   As long as the gate's cycle attribute is defined (and until it is invalidated),
   the gates must be ordered in the circuit in non-decreasing cycle order.
   Also, there is then a derived internal circuit representation, the bundles representation, stored in a kernel's attribute.
-  This internal bundles representation is used during QISA generation instead of the original circuit.
+  See :ref:`circuits_and_bundles_in_the_internal_representation`.
+
   The cycle attribute invalidation generally is the result of gate creation, or any optimization or decomposition pass.
 
 - type is an enumeration type; the following table enumerates the possible types and their characteristics:
@@ -256,6 +257,34 @@ Some notes on the semantics of these gates:
   these shouldn't have this type because it doesn't serve a purpose
   but have a type that reflects its semantics
 
+
+.. _circuits_and_bundles_in_the_internal_representation:
+
+Circuits and bundles in the internal representation
+---------------------------------------------------
+
+A circuit of one kernel is represented by a vector of gates in the internal representation,
+and is a structural attribute of the kernel object.
+The gates in this vector are assumed to be executed from the first to the last in the vector.
+
+During a scheduling pass, the ``cycle`` attribute of each gate gets defined.
+See its definition in :ref:`quantum_gate_attributes_in_the_internal_representation`.
+The gates in the vector then are ordered in non-decreasing cycle order.
+
+The schedulers also produce a ``bundled`` version of each circuit.
+The circuit is then represented by a list of bundles
+in which each bundle represents the gates that are to be started in a particular cycle.
+Each bundle is structured as a list of sections and each section as a list of gates (actually gate pointers).
+The gates in each section share the same operation but have different operands, obviously.
+The latter prepares for code generation for a SIMD instruction set
+in which a single instruction with one operation can have multiple operands.
+Each bundle has two additional attributes:
+
+- ``start_cycle`` representing the cycle in which all gates of the bundle start
+
+- ``duration_in_cycles`` representing the maximum duration in cycles of the gates in the bundle
+
+This internal bundles representation is used during QISA generation instead of the original circuit.
 
 
 .. _input_external_representation:
