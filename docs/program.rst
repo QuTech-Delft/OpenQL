@@ -16,17 +16,15 @@ The name can be used as seed to create output file names and is used in informat
 The main structural attribute of a program is its vector of kernels.
 This vector is in the simplest form initialized by adding kernels one by one to it.
 The order of execution is then the order of the kernels in the vector.
-But there are also program APIs to create control flow between kernels such as if/then, if/then/else, do/while and for.
-These take one or more kernels such as the then-part or the loop-body, add sequential control gates to the involved kernels to represent the desired control flow,
-and add the resulting kernels to the vector of kernels of the program;
-these APIs also take the particular condition or number of iterations as parameter.
+But there are also program APIs to create control flow between kernels
+such as if/then, if/then/else, do/while and for.
+These take one or more kernels representing the then-part, the else-part, or the loop-body,
+and add special kernels around them to represent the control flow.
+These latter APIs also take the particular branch condition
+or the number of iterations as parameter.
 
-Internally in a kernel's circuit, one never finds a control gate:
-the gates of a kernel's circuit are always executed sequentially.
-During execution, control flow change can only occur at the end of a circuit, after its last gate;
-the latter is the only gate of a circuit which can be a control gate.
-When executing a control gate,
-control passes on to another kernel, which can be the next one in the vector or a particular named one.
+The gates of a kernel's circuit are always executed sequentially.
+At the end of a circuit, control passes on to the next kernel in the program's vector of kernels.
 
 After having completed adding kernels, the program has been completely specified.
 It is represented by a vector of kernels, each with a circuit.

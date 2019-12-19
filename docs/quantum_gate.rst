@@ -77,14 +77,6 @@ Particular classes of quantum gates can be further recognized:
   have the same semantic attributes
 
 
-Classical gates can be subdivided in:
-
-- simple gates; a classical gate that cannot change control flow; these are almost all classical gates
-
-- control gates; a classical gate that may change control flow;
-  examples are branch, stop and conditional branch gates
-
-
 
 .. _quantum_gate_attributes_in_the_internal_representation:
 
@@ -152,21 +144,23 @@ Some further notes on the gate attributes:
 
 - qubit and classical operands are represented by unsigned valued indices starting from 0 in their respective register spaces
 
-- ``angle`` is in radians; it specifies the value of the arbitrary angle of those operations that need one; it is initialized only from an explicit specification as parameter value to a gate creation API
+- ``angle`` is in radians; it specifies the value of the arbitrary angle of those operations that need one; it is initialized only from an explicit specification as parameter value of a gate creation API
 
-- ``duration`` is in nanoseconds, just as the timing specifications in the platform configuration file; scheduling-like passes divide it (rounding up) by the cycle_time to compute the number of cycles that an operation takes; it is initialized implicitly when the gate is a default gate and explicitly from the configuration file when the gate is a custom gate
+- ``duration`` is in nanoseconds, just as the timing specifications in the platform configuration file; scheduling-like passes divide it (rounding up) by the cycle_time to compute the number of cycles that an operation takes; it is initialized implicitly when the gate is a default gate or a custom gate, or explicitly from a parameter value of a gate creation API
 
-- ``mat`` is of a two-dimensional complex double valued matrix type with dimensions equal to twice the number of operands; it is only used by the optimizer pass; it is initialized implicitly when the gate is a default gate and explicitly from the configuration file when the gate is a custom gate
+- ``mat`` is of a two-dimensional complex double valued matrix type with dimensions equal to twice the number of operands; it is only used by the optimizer pass; it is initialized implicitly when the gate is a default gate or a custom gate
 
-- ``cycle`` is in units of cycle_time as defined in the platform; the undefined value is ``std::numeric_limits<int>::max()``.
+- ``cycle`` is in units of cycle_time as defined in the platform;
+  the undefined value is ``std::numeric_limits<int>::max()`` also known as ``INT_MAX``.
   A gate's cycle attribute gets defined by applying a scheduler or a mapper pass,
   and remains defined until any pass is done that invalidates the cycle attribute.
   As long as the gate's cycle attribute is defined (and until it is invalidated),
   the gates must be ordered in the circuit in non-decreasing cycle order.
-  Also, there is then a derived internal circuit representation, the bundles representation, stored in a kernel's attribute.
+  Also, there is then a derived internal circuit representation, the bundled representation.
   See :ref:`circuits_and_bundles_in_the_internal_representation`.
 
-  The cycle attribute invalidation generally is the result of gate creation, or any optimization or decomposition pass.
+  The cycle attribute invalidation generally is the result of adding a gate to a circuit,
+  or any optimization or decomposition pass.
 
 - type is an enumeration type; the following table enumerates the possible types and their characteristics:
 
