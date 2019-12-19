@@ -343,8 +343,7 @@ the sequential QASM representation is the only possible external QASM representa
 Gates are specified one by one, each on a separate line.
 A gate meant to execute after another gate should appear on a later line than the latter gate,
 i.e. the gates are topologically sorted with respect to their intended execution order.
-Kernels start with a label which names the kernel and serves as branch target in control gates.
-Kernels optionally end with a control gate.
+Kernels start with a label which names the kernel and serves as branch target in control transfers.
 
 Once the gate's cycle attribute has been defined (and until it is invalidated),
 in addition to the sequential QASM representation above (ignoring the cycle attribute values),
@@ -357,5 +356,4 @@ Each subsequent line represents a subsequent cycle.
 When there isn't a gate that starts execution in a particular cycle,
 a wait gate is specified instead with as integral argument the number of cycles to wait.
 As with the sequential QASM representation,
-kernels start with a label which names the kernel and serves as branch target in control gates,
-and kernels optionally end with a control gate.
+kernels start with a label which names the kernel and serves as branch target in control transfers.
