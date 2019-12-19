@@ -16,7 +16,7 @@ Note: please fill your contributions in this file
 
 - [Imran Ashraf](https://github.com/imranashraf)
     -   support for hybrid classical/quantum compilation
-    -   support for control flow (selection and repitition)
+    -   support for control flow (selection and repetition)
     -   kernel un-compute/conjugation feature
     -   multi-qubit control decomposition
     -   toffoli decompositions
@@ -26,7 +26,6 @@ Note: please fill your contributions in this file
             - resource-constrained scheduling
             - parallel (SIMD and VLIW) QISA code generation
     -   flexible platform constraints specification and its implementation
-    -   platform topology specification and its implementation
     -   support for multi-qubit gates
     -   scheduling (ASAP/ALAP) algorithms
     -   parametrized gate decomposition
@@ -36,7 +35,6 @@ Note: please fill your contributions in this file
     -   conda recipies and packages
     -   single qubit flux operations
     -   cQASM v1.0 support
-
 
 
 - [Adriaan Rol](https://github.com/AdriaanRol)
@@ -54,3 +52,28 @@ Note: please fill your contributions in this file
     -   support for comments in JSON file
     -   show line number and position on JSON syntax errors
     -   cleanup
+
+- [Hans van Someren](https://github.com/jvansomeren)
+    -   OpenQL documentation
+    -   uniform scheduling algorithm
+    -   forward and backward list scheduling algorithms
+    -   resource constrained list scheduling algorithms
+    -   resource constraint framework design
+    -   resource constraint description for CC-Light architecture
+    -   backward resource constraint checking
+    -   gate commutation while scheduling
+    -   clifford gate sequence optimization
+    -   gate creation during optimization
+    -   staged decomposition description
+    -   generalized passes, dumping and reporting
+    -   platform topology specification and its implementation
+    -   single qubit flux operations design
+    -   initial placement mapping implementation
+    -   basic routing implementation
+    -   latency sensitive routing
+    -   resource constrained routing
+    -   scheduler integration into routing
+    -   use moves next to swaps while routing
+    -   crossbar spin qubit scheduling and resource management
+    -   recursive look-back and look-ahead routing
+    -   arbitrary topology routing

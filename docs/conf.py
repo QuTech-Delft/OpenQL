@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'OpenQL'
-copyright = '2016, Nader Khammassi & Imran Ashraf, QuTech, TU Delft'
-author = 'Nader Khammassi & Imran Ashraf, QuTech, TU Delft'
+copyright = '2019, Imran Ashraf and Hans van Someren, QuTech, TU Delft'
+author = 'Imran Ashraf and Hans van Someren, QuTech, TU Delft'
 
 master_doc = 'index'
 
