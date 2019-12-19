@@ -35,6 +35,7 @@ Note: please fill your contributions in this file
     -   conda recipies and packages
     -   single qubit flux operations
     -   cQASM v1.0 support
+    -   OpenQL documentation
 
 
 - [Adriaan Rol](https://github.com/AdriaanRol)
@@ -54,16 +55,15 @@ Note: please fill your contributions in this file
     -   cleanup
 
 - [Hans van Someren](https://github.com/jvansomeren)
-    -   OpenQL documentation
     -   uniform scheduling algorithm
-    -   forward and backward list scheduling algorithms
-    -   resource constrained list scheduling algorithms
     -   resource constraint framework design
     -   resource constraint description for CC-Light architecture
+    -   resource constrained list scheduling algorithms
     -   backward resource constraint checking
+    -   forward and backward list scheduling algorithms
     -   gate commutation while scheduling
     -   clifford gate sequence optimization
-    -   gate creation during optimization
+    -   out of order gate creation
     -   staged decomposition description
     -   generalized passes, dumping and reporting
     -   platform topology specification and its implementation
@@ -74,6 +74,7 @@ Note: please fill your contributions in this file
     -   resource constrained routing
     -   scheduler integration into routing
     -   use moves next to swaps while routing
-    -   crossbar spin qubit scheduling and resource management
+    -   crossbar spin-qubit scheduling and resource management
     -   recursive look-back and look-ahead routing
     -   arbitrary topology routing
+    -   OpenQL documentation
