@@ -1,4 +1,4 @@
 Classical Instructions
 ======================
 
-details fo supported classical instructions
+Details for supported classical instructions [TBD].

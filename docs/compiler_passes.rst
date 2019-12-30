@@ -31,7 +31,7 @@ Examples of such facilities are:
 - Writing a report out to a file containing a summary of the IR;
 	e.g. the number of kernels,
 	the numer of one-qubit, two-qubit and more-qubit gates,
-	which qubits were uses and which not,
+	which qubits were used and which not,
 	the wall clock time that compilation took until this point,
 	etc.
 	This facility is not available yet; it is in the OpenQL mapper branch.
@@ -50,7 +50,7 @@ is considered code generation for the quantumsim platform and is therefore consi
 
 .. _summaries_of_compiler_passes:
 
-Summaries of compiler passes
+Summary of compiler passes
 ----------------------------
 
 Compiler passes in OpenQL are the compiler elements that, when called one after the other,
@@ -78,7 +78,7 @@ More detailed information on each can be found in the sections below.
 
 - decompose_toffoli
 	each toffoli gate in the IR is replaced by a gate sequence with at most two-qubit gates;
-	depending on the value of the equally named option, it does this in the Neilsen and Chuang way (``NC``),
+	depending on the value of the equally named option; it does this in the Neilsen and Chuang way (``NC``),
 	or in the way as in https://arxiv.org/pdf/1210.0974,pdf (``AM``).
 	See :ref:`decomposition`.
 
@@ -114,7 +114,7 @@ More detailed information on each can be found in the sections below.
 	Clifford gates are recognized by their name and use is made of the property
 	that clifford gates form a group of 24 elements.
 	The clifford optimization pass is not generally available yet; it is in the OpenQL mapper branch.
-	Clifford optimization is called before and after the mapper pass.
+	Clifford optimization is called before and after the mapping pass.
 	See :ref:`optimization`.
 
 - mapping
@@ -125,16 +125,17 @@ More detailed information on each can be found in the sections below.
 	the heuristic essentially transforms each circuit from start to end;
 	doing this, it maintains a map from virtual (program) qubits to real qubits (``v2r``);
 	each time that it encounters a two-qubit gate that in the current map is not NN,
-	it inserts SWAP gates before this gate that gradually make the operand qubits NN;
-	when inserting the SWAP, it updates the v2r map accordingly.
+	it inserts swap gates before this gate that gradually make the operand qubits NN;
+	when inserting the swap, it updates the v2r map accordingly.
 	There are many refinements to this algorithm that can be controlled through options and the configuration file.
-	The mapper pass is not generally available yet; it is in the OpenQL mapper branch.
+	The mapping pass is not generally available yet; it is in the OpenQL mapper branch.
 	It is not complete in the sense that it ignores transfer of the v2r map between kernels.
 	See :ref:`mapping`.
 
 - rcscheduler
-	see scheduler; resource constraints are taken into account; the result reflects the timing required during execution,
+	resource constraints are taken into account; the result reflects the timing required during execution,
 	i.e. also taking into account any further non-OpenQL passes and run-time stages such as:
+
 	* QISA assembly
 	* classical code execution (from here on these passes are executed as run-time stages)
 	* quantum microcode generation
@@ -142,6 +143,7 @@ More detailed information on each can be found in the sections below.
 	* execution unit reprogramming and inter operation reset times
 	* signal communication line delays
 	* execution time and feed-back delays
+
 	The resulting circuit is stored in the usual manner and as a sequence of bundles.
 	See :ref:`scheduling`.
 
@@ -157,12 +159,15 @@ More detailed information on each can be found in the sections below.
 	currently disabled as not used by CC-Light
 
 - QISA generation
+
 	* bundle to QISA translation
+
 		* deterministic sorting of gates per bundle
 		* instruction prefix and wait instruction insertion
 		* classical gate to QISA classical instruction translation
 		* SOMQ generation and mask to mask register assignment (should include mask instruction generation)
 		* insertion of wait states between meas and fmr (should be done by scheduler)
+
 	* mask instruction generation
 	* QISA file writing
 

@@ -91,7 +91,7 @@ Compile the program
     p.compile()
 
 
-This will generate the output files in *test_output* directory.
+This will generate the output files in the *test_output* directory.
 
 A good place to get started with with your own programs might be to copy `examples/getting_started.py` to some folder of your choice and start modifying it. For further examples, have a look at the test programs inside the "tests" directory.
 

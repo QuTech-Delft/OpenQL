@@ -1,6 +1,6 @@
 .. _optimization:
 
-Circuit Optimization
+Optimization
 --------------------
 
 Optimization of circuits [TBD]

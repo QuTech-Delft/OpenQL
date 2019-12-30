@@ -46,7 +46,8 @@ These entry points each create a ``sched``  object of class ``Scheduler`` and ca
   This graph is a Directed Acyclic Graph (DAG).
   In this graph, the nodes represent the gates and the directed edges the dependences.
   The top of the graph is a newly created SOURCE gate, the bottom is a newly created SINK gate.
-  With respect to dependences, the SOURCE and SINK gates behave as if they update all qubits and classical registers.
+  With respect to dependences,
+  the SOURCE and SINK gates behave as if they update all qubits and classical registers with 0 duration.
   Gates are added in the order of presence in the circuit
   and linked in dependence chains according to their operation and operands.
 
@@ -127,6 +128,8 @@ The gates in the circuit are ordered with non-decreasing cycle value.
 The cycle values are consistent with all constraints imposed during scheduling
 and with the scheduling strategy that has been specified through the options or by selection of the entry point.
 
+:Note: There are no gates for control flow; so these are not defined in the configuration file; these are not scheduled in the usual way; these are not translated to QASM and external representations in the usual way. See :ref:`kernel`.
+
 .. _scheduling_options:
 
 Options
@@ -192,20 +195,13 @@ With respect to dependence creation,
 the latter ones are assumed to use and update each of their operands during the operation;
 and the former ones each have a specific definition regarding the use and update of their operands:
 
-``measure`` also updates its corresponding classical register;
+- ``measure`` also updates its corresponding classical register;
 
-``display`` and the classical gates use/update all qubits and classical registers (so these act as barriers);
+- ``display`` and the classical gates use/update all qubits and classical registers (so these act as barriers);
 
-``cnot`` uses and doesn't update its control operand,
-and it commutes with ``cnot``/``cz``/``cphase`` with equal control operand;
-``cnot`` uses and updates its target operand,
-it commutes with ``cnot`` with equal target operand;
+- ``cnot`` uses and doesn't update its control operand, and it commutes with ``cnot``/``cz``/``cphase`` with equal control operand; ``cnot`` uses and updates its target operand, it commutes with ``cnot`` with equal target operand;
 
-``cz``/``cphase`` commutes with ``cnot``/``cz``/``cphase`` with equal first operand,
-and it commutes with ``cz``/``cphase`` with equal second operand.
-
-This commutation is exploited to aim for a shorter latency circuit
-when the ``scheduler_commute`` option is in effect.
+- ``cz``/``cphase`` commutes with ``cnot``/``cz``/``cphase`` with equal first operand, and it commutes with ``cz``/``cphase`` with equal second operand.  This commutation is exploited to aim for a shorter latency circuit when the ``scheduler_commute`` option is in effect.
 
 When scheduling without resource constraints
 the cycle attributes of the gates are initialized consistent with an ASAP (i.e. downward/forward)
@@ -227,16 +223,18 @@ Not all gates that are available (not blocked by dependences on non-scheduled ga
 It must be made sure in addition that
 those scheduled gates that it depends on, actually have completed their execution (using its ``duration``)
 and that the resources are available for it.
-Furthermore, making a selection from the gates that remain determines the optimality of the scheduling result.
+Furthermore, making a selection from the gates that remain after ignoring these,
+determines the optimality of the scheduling result.
 The implemented list scheduler is a critical path scheduler,
 i.e. it prefers to schedule the most critical gate first.
-The criticality of a gate is estimates
-the effect of delaying scheduling it on the latency of the resulting circuit,
-and is determined by computing the length of the longest dependence chain from the gate to the SINK gate.
+The criticality of a gate estimates
+the effect that delaying scheduling the gate has on the latency of the resulting circuit,
+and is determined by computing the length of the longest dependence chain from the gate to the SINK gate;
+the higher this value, the higher the gate's scheduling priority in the current cycle is.
 
 The scheduler relies on the dependence graph representation of the circuit.
 At the start only the SOURCE gate is available.
-Then one by one, according to an optimality criterion, a gate is selected from the list of available ones
+Then one by one, according to a criterion, a gate is selected from the list of available ones
 and added to the schedule. Having scheduled the gate, it is taken out of the available list;
 after having scheduled a gate,
 some new gates may become available because they don't depend on non-scheduled gates anymore;
@@ -266,13 +264,13 @@ all its resources are set to occupied for the duration of its execution.
 The resource manager offer methods for this check (``bool rm.available()``) and commit (``rm.reserve()``).
 Doing this check and committing for a particular gate, some additional gate attributes are required:
 
-``operation_name`` initialized from the configuration file ``cc_light_instr`` gate attribute representing the operation of the gate; it is used by the ``qwgs`` resource type only
+- ``operation_name`` initialized from the configuration file ``cc_light_instr`` gate attribute representing the operation of the gate; it is used by the ``qwgs`` resource type only
 
-``operation_type`` initialized from the configuration file ``type`` gate attribute representing the kind of operation of the gate: ``mw`` for rotation gates, ``readout`` for measurement gates, and ``flux`` for one and two-qubit flux gates; it is used by each resource type
+- ``operation_type`` initialized from the configuration file ``type`` gate attribute representing the kind of operation of the gate: ``mw`` for rotation gates, ``readout`` for measurement gates, and ``flux`` for one and two-qubit flux gates; it is used by each resource type
 
-``instruction_type`` initialized from the configuration file ``cc_light_instr_type`` which is not used by any resource type
+- ``instruction_type`` initialized from the configuration file ``cc_light_instr_type`` which is not used by any resource type
 
-Each of these gate configuration file attribute is required to be present and correctly filled
+Each of these gate configuration file attributes is required to be present and correctly filled
 for the resource manager to correctly function.
 
 :Note: This interface needs to be revised: ``cc_light_instr_type`` is never used; but foremost, the interface is CC_Light dependent. By giving the platform dependent resource manager access to the platform configuration file, it can fetch the gate's attributes necessary for its particular method itself and these can be omitted from the interfaces of the platform independent resource manager and the scheduler.
@@ -294,14 +292,14 @@ Buffer delays can be specified in the platform configuration file in the ``hardw
 Insertion makes use of the ``type`` attribute of the gate in the platform configuration file,
 the one which can have the values ``mw``, ``readout`` and ``flux``.
 For each bundle, it checks for each gate in the bundle,
-whether there is a buffer delay specified with a gate in the previous bundle,
+whether there is a non-zero buffer delay specified with a gate in the previous bundle,
 and if any, takes the maximum of those buffer delays, and adds it (converted to cycles)
 to the bundle's ``start_cycle`` attribute. Moreover, when the previous bundle got shifted in time
-because of an earlier bundle delay, the same shift is applied first to the current bundle.
+because of earlier bundle delays, the same shift is applied first to the current bundle.
 In this way, the schedule gets stretched for all qubits at the same time.
 This is a valid thing to do and doesn't invalidate dependences nor resource constraints.
 
-:Note: Buffer insertion only has effect on the ``start_cycle`` attributes of the bundles and not on the ``cycle`` attributes of the gates. It would be better to do buffer insertion on the circuit and to bundling afterwards, so that circuit and bundles are consistent.
+:Note: Buffer insertion only has effect on the ``start_cycle`` attributes of the bundles and not on the ``cycle`` attributes of the gates. It would be better to do buffer insertion on the circuit and to do bundling afterwards, so that circuit and bundles are consistent.
 
 In the backward case, the scheduler traverses the dependence graph bottom-up, scheduling the SINK gate first.
 Gates become available for scheduling at a particular cycle

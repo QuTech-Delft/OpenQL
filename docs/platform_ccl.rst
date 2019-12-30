@@ -1,22 +1,19 @@
 .. _cclplatform:
 
-CC-Light Platform Configuration File
-------------------------------------
-
-:Note: The platform comfiguration file for its structure is platform independent. So, either the text below is split into a platform independent structure definition (and put one level higher) and a platform dependent content, or the whole thing is copied for other platforms and then adapted (which is not wise considering updates).
-
-
+CC-Light Platform
+-----------------
 
 The file `hardware_configuration_cc_light.json
 <https://github.com/QE-Lab/OpenQL/blob/develop/tests/hardware_config_cc_light.json>`_
 available inside the ``tests`` directory is an example configuration file for
 the CC-Light platform with 7 qubits.
+
 This file consists of several sections (in arbitrary order) which are described below.
 
-``eqasm_compiler`` is just a field with a single value.
-It specifies the backend compiler to be used for this CC-Light platform, which in this case has the name ``cc_light_compiler``.
+``eqasm_compiler`` specifies the backend compiler to be used for this CC-Light platform,
+which in this case has the name ``cc_light_compiler``.
 The backend compiler is called after the platform independent passes, and calls several private passes by itself.
-This backend compiler and its passes are described in detail in :ref:'Compiler_Passes'.
+This backend compiler and its passes are described in detail in :ref:`compiler_passes`.
 One of these is the code generation pass.
 
 .. code::
@@ -25,46 +22,12 @@ One of these is the code generation pass.
 
 ``hardware_settings`` is used to configure various
 hardware settings of the platform as shown below. These settings affect the
-scheduling of instructions.
+scheduling of instructions. Please refer to :ref:`platform` for a full description and an example.
 
-.. code-block:: html
-	:linenos:
-
-	"hardware_settings":
-	{
-		"qubit_number": 7,
-		"cycle_time" : 20,
-
-		"mw_mw_buffer": 0,
-		"mw_flux_buffer": 0,
-		"mw_readout_buffer": 0,
-		"flux_mw_buffer": 0,
-		"flux_flux_buffer": 0,
-		"flux_readout_buffer": 0,
-		"readout_mw_buffer": 0,
-		"readout_flux_buffer": 0,
-		"readout_readout_buffer": 0
-	}
-
-``qubit_number`` indicates the number of (real) qubits available in the platform.
-Instructions that addresss qubits do this by providing a qubit index in the range of 0 to qubit_number-1.
-Using an index outside this range will raise an error.
-
-``cycle_time`` is the clock cycle time.
-As all other timing specifications in the configuration file it is specified in nanoseconds.
-Only at multiples of this cycle time, instructions can start executing.
-The schedulers assign a cycle value to each instruction, which means that that instruction can start executing
-a number of nanoseconds after program execution start
-that equals that cycle value multiplied by the clock cycle time value.
-
-The other entries of the ``hardware_settings`` section specify various buffer times to be
-inserted between various operations due to control electronics setup. For example,
-``mw_mw_buffer`` can be used to specify time to be inserted between a microwave
-operation followed by another microwave operation. See :ref:'Scheduling' for details.
-
-``topology`` specifies the mapping of qubit indices to qubit positions in the platform, as well as the mapping of edge indices to edges in the platform.
-An edge is a connection between a pair of qubits.
+``topology`` specifies the mapping of qubit indices to qubit positions in the platform, as well as the mapping of connection indices to connections in the platform.
+A connection is a directed connection in the platform between a pair of qubits that supports qubit interaction.
 It is directed to distinguish the control and target qubits of two-qubit gates.
+In a platform topology's connection graph, qubits are the nodes, and connection are the edges.
 
 Figure :numref:`fig_qubit_numbering_ccl` shows these numberings in the 7 qubit CC-Light platform.
 
@@ -73,10 +36,10 @@ Figure :numref:`fig_qubit_numbering_ccl` shows these numberings in the 7 qubit C
 .. figure:: ./qubit_number.png
     :width: 800px
     :align: center
-    :alt: Qubit and edge numbering in the 7 qubits CC-Light Platform
+    :alt: Connection graph with qubit and connection (edge)  numbering in the 7 qubits CC-Light Platform
     :figclass: align-center
 
-    Qubit and edge numbering in the 7 qubits CC-Light Platform
+    Connection graph with qubit and connection (edge) numbering in the 7 qubits CC-Light Platform
 
 
 The ``topology``  section starts with
@@ -134,14 +97,15 @@ The qubit indices specified here must correspond to available qubits in the plat
 
 
 These mappings are used in:
+
 * the QISA, the instruction set of the platform, notably in the instructions that set the masks stored in the mask registers that are used in the instructions of two-qubit gates to address the operands.
 * the mapper pass that maps virtual qubit indices to real qubit indices. It is described in detail in :ref:`mapping`.
-* the postdecomposition pass that ...
+* the postdecomposition pass that maps two-qubit flux instructions to sets of one-qubit flux instructions.
 
 
-``resources`` is the section that is used to specify/configure various resources available
-in the platform as discussed below. Specification of these resources affects
-scheduling and mapping of gates. The configuration of the various resources
+``resources`` is the section that is used to specify/configure various resource types available
+in the platform as discussed below. Specification of these resource types affects
+scheduling and mapping of gates. The configuration of the various resource types
 in `hardware_configuration_cc_light.json
 <https://github.com/QE-Lab/OpenQL/blob/develop/tests/hardware_config_cc_light.json>`_
 assumes that the CC-Light architecture has the following relations between devices, connections, qubits and operations:
@@ -216,8 +180,8 @@ Each qubit that can be used by an instruction of 'mw' type,
 should be specified at most once in the combination of sets of connected qubits.
 For instance, the line with ``"0"`` specifies that ``qwg 0`` is connected to
 qubits 0 and 1. This is based on the ``AWG-8 1, channel 0`` entry in
-Table :numref:`table_ccl_connections` This information is utilized by the
-scheduler to perform resource-constraint aware scheduling of instructions.
+Table :numref:`table_ccl_connections`. This information is utilized by the
+scheduler to perform resource-constraint aware scheduling of gates.
 
 ``meas_units``: This resource type is similar to ``qwgs``; the difference is
 that it is not constraining on the operations to be equal
@@ -350,7 +314,7 @@ execute a single-qubit rotation (an instruction of 'mw' type).
 	}
 
 
-``instructions``: Instructions can be specified/configured in ``instructions`` section.
+``instructions``: Instructions can be specified/configured in the ``instructions`` section.
 Examples of a 1-qubit and a 2-qubit instruction are shown below:
 
 .. code-block:: html
@@ -391,69 +355,34 @@ Examples of a 1-qubit and a 2-qubit instruction are shown below:
 	   ...
 	}
 
-``x q0`` is the name of the instruction which will be used to refer to this
-instruction inside the OpenQL program. The ``duration`` specifies the time
-duration required to complete this instruction. Due to control electronics, it
-is sometimes required to add a positive or negative latency to an instruction.
-This can be specified by ``latency`` field. This field is divided by cycle
-time and rounded up to obtain an integer number of cycles. After scheduling is
-performed, an instruction is shifted back or forth in time depending upon
-calculated cycles corresponding to the latency field.
+Please refer to :ref:`platform` for a description of the CC-Light independent attributes.
+The CC-Light dependent attributes are:
 
+``cc_light_instr_type`` is used to
+specify the type of instruction based on number of qubits.
+Please refer to :ref:`scheduling` for their use by the rcscheduler.
 
-``qubits`` refer to the list of qubit operands.
-
-``matrix`` specifies the process matrix representing this instruction.
-If optimization is enabled, this matrix will be used by the optimizer to fuse
-operations together, as discussed in :ref:'optimization'. This can be left
-un-specified if optimization is disabled.
-
-``disable_optimization`` is used to enable/disable optimization of this
-instruction. Setting ``disable_optimization`` to ``true`` will mean that this
-instruction cannot be compiled away during optimization.
-
-An instruction can be of microwave, flux or readout type which is
-specified by the ``type`` field. ``cc_light_instr_type`` field is used to
-specify the type of instruction based on number of qubits. ``cc_light_instr``
-specifies the name of this instruction used in CC-Light architecture. This name
+``cc_light_instr`` specifies the name of this instruction used in CC-Light architecture. This name
 will be used in the generated output code.
+Please refer to :ref:`scheduling` for their use by the rcscheduler.
 
 ``cc_light_codeword``, ``cc_light_right_codeword``, ``cc_light_left_codeword``
-and ``cc_light_opcode`` are used in the generation of control store file for
+and ``cc_light_opcode`` are used in the generation of the control store file for
 CC-Light platform. For single qubit instructions, ``cc_light_codeword`` refers
-to the codeword to be used for this instruction. Recall that quantum pipeline
+to the codeword to be used for this instruction. Recall that the quantum pipeline
 contains a VLIW front end with two VLIW lanes, each lane processing one
 quantum operation. ``cc_light_right_codeword`` and ``cc_light_left_codeword``
-is used to specify the codewords used for the left and right operation in
+are used to specify the codewords used for the left and right operation in
 two-qubit instruction. ``cc_light_opcode`` specifies the opcode used for this
 instruction.
 
 .. warning::
-	At the moment, generation of control-store file is disabled in
+	At the moment, generation of the control-store file is disabled in
 	the compiler as this was not being used in experiments.
 
 
-``gate_decomposition``: Gate decompositions can also be specified in the configuration file in the
-``gate_decomposition`` section. Examples of two decompositions are shown below.
-``%0`` and ``%1`` refer to the first argument and the second argument. This means
-according to the decomposition on Line 2, ``rx180 %0`` will allow us to
-decompose ``rx180 q0`` to ``x q0``. Similarly, the decomposition on Line 3 will
-allow us to decompose ``cnot q2, q0`` to three instructions, namely:
-``ry90 q2``, ``cz q2, q0`` and ``ry90 q0``.
-
-.. code-block:: html
-    :linenos:
-
-	"gate_decomposition": {
-		"rx180 %0" : ["x %0"],
-		"cnot %0,%1" : ["ry90 %0","cz %0,%1","ry90 %1"]
-	}
-
-These decompositions are simple macros (in-place substitutions) which allow
-programmer to manually specify a decomposition. These take place at the time
-of creation of a gate in a kernel. This means the scheduler will schedule decomposed
-instructions. OpenQL can also perform Control and Unitary decompositions which
-are discussed in :ref:'decomposition'.
+``gate_decomposition`` Gate decompositions can also be specified in the configuration file in the
+``gate_decomposition`` section. Please refer to :ref:`platform` for a description and full example of this section.
 
 
 

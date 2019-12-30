@@ -140,7 +140,7 @@ Some further notes on the gate attributes:
 
 - gates are most directly distinguished by their name
 
-:Note: Distinguishing gates internally in the compiler by their name is problematic; distinguishing by their type (see the table above) would be better; the latter conveys the semantic definition and is independent of the representation (e.g. ``mrx90``, ``mx90``, ``Rmx90`` all could be names of a -90 degrees X rotation); furthermore, a name is something of the external representation and is mapped to the internal representation using the platform configuration file; however, the enumeration type of type can never include all possible gates (e.g. those with arbitrary angles, any number of operands, etc.) so the type inevitably can be imprecise; but it should be precise when the type refers to the operation only, i.e. excluding the operands
+:Note: Distinguishing gates internally in the compiler by their name is problematic; distinguishing by their type (see the table below) would be better; the latter conveys the semantic definition and is independent of the representation (e.g. ``mrx90``, ``mx90``, and ``Rmx90`` all could be names of a -90 degrees X rotation); furthermore, a name is something of the external representation and is mapped to the internal representation using the platform configuration file; however, the enumeration type of type can never include all possible gates (e.g. those with arbitrary angles, any number of operands, etc.) so the type inevitably can be imprecise; but it can be precise when the type refers to the operation only, i.e. excluding the operands
 
 - qubit and classical operands are represented by unsigned valued indices starting from 0 in their respective register spaces
 
@@ -164,73 +164,74 @@ Some further notes on the gate attributes:
 
 - type is an enumeration type; the following table enumerates the possible types and their characteristics:
 
-+---------------------+----------------------------+--------------+
-| type                | operands                   | kind         |
-+=====================+============================+==============+
-| __identity_gate__   | 1 qubit                    | rotation     |
-+---------------------+                            +              +
-| __hadamard_gate__   |                            |              |
-+---------------------+                            +              +
-| __pauli_x_gate__    |                            |              |
-+---------------------+                            +              +
-| __pauli_y_gate__    |                            |              |
-+---------------------+                            +              +
-| __pauli_z_gate__    |                            |              |
-+---------------------+                            +              +
-| __phase_gate__      |                            |              |
-+---------------------+                            +              +
-| __phasedag_gate__   |                            |              |
-+---------------------+                            +              +
-| __t_gate__          |                            |              |
-+---------------------+                            +              +
-| __tdag_gate__       |                            |              |
-+---------------------+                            +              +
-| __rx90_gate__       |                            |              |
-+---------------------+                            +              +
-| __mrx90_gate__      |                            |              |
-+---------------------+                            +              +
-| __rx180_gate__      |                            |              |
-+---------------------+                            +              +
-| __ry90_gate__       |                            |              |
-+---------------------+                            +              +
-| __mry90_gate__      |                            |              |
-+---------------------+                            +              +
-| __ry180_gate__      |                            |              |
-+---------------------+----------------------------+              +
-| __rx_gate__         | 1 qubit, 1 angle           |              |
-+---------------------+                            +              +
-| __ry_gate__         |                            |              |
-+---------------------+                            +              +
-| __rz_gate__         |                            |              |
-+---------------------+----------------------------+              +
-| __cnot_gate__       | 2 qubits                   |              |
-+---------------------+                            +              +
-| __cphase_gate__     |                            |              |
-+---------------------+                            +              +
-| __swap_gate__       |                            |              |
-+---------------------+----------------------------+              +
-| __toffoli_gate__    | 3 qubits                   |              |
-+---------------------+----------------------------+--------------+
-| __custom_gate__     | defined by config file                    |
-+---------------------+                                           +
-| __composite_gate__  |                                           |
-+---------------------+----------------------------+--------------+
-| __prepz_gate__      |                            | preparation  |
-+---------------------+                            +--------------+
-| __measure_gate__    | 1 qubit                    | measurement  |
-+---------------------+----------------------------+--------------+
-| __display__         | 0 or more qubits           | directive    |
-+---------------------+                            +              +
-| __display_binary__  |                            |              |
-+---------------------+----------------------------+--------------+
-| __nop_gate__        | none                       | scheduling   |
-+---------------------+                            +              +
-| __dummy_gate__      |                            |              |
-+---------------------+----------------------------+              +
-| __wait_gate__       | 0 or more qubits, duration |              |
-+---------------------+----------------------------+--------------+
-| __classical_gate__  | 0 or more classical regs.  | classical    |
-+---------------------+----------------------------+--------------+
++---------------------+----------------------------+------------------------+--------------+
+| type                | operands                   | example                | kind         |
++=====================+============================+========================+==============+
+| __identity_gate__   | 1 qubit                    | i q[0]                 | rotation     |
++---------------------+                            +------------------------+              +
+| __hadamard_gate__   |                            | h q[0]                 |              |
++---------------------+                            +------------------------+              +
+| __pauli_x_gate__    |                            | x q[0]                 |              |
++---------------------+                            +------------------------+              +
+| __pauli_y_gate__    |                            | y q[0]                 |              |
++---------------------+                            +------------------------+              +
+| __pauli_z_gate__    |                            | z q[0]                 |              |
++---------------------+                            +------------------------+              +
+| __phase_gate__      |                            | z q[0]                 |              |
++---------------------+                            +------------------------+              +
+| __phasedag_gate__   |                            | zdag q[0]              |              |
++---------------------+                            +------------------------+              +
+| __t_gate__          |                            | t q[0]                 |              |
++---------------------+                            +------------------------+              +
+| __tdag_gate__       |                            | tdag q[0]              |              |
++---------------------+                            +------------------------+              +
+| __rx90_gate__       |                            | rx90 q[0]              |              |
++---------------------+                            +------------------------+              +
+| __mrx90_gate__      |                            | xm90 q[0]              |              |
++---------------------+                            +------------------------+              +
+| __rx180_gate__      |                            | x q[0]                 |              |
++---------------------+                            +------------------------+              +
+| __ry90_gate__       |                            | ry90 q[0]              |              |
++---------------------+                            +------------------------+              +
+| __mry90_gate__      |                            | ym90 q[0]              |              |
++---------------------+                            +------------------------+              +
+| __ry180_gate__      |                            | y q[0]                 |              |
++---------------------+----------------------------+------------------------+              +
+| __rx_gate__         | 1 qubit, 1 angle           | rx q[0],3.14           |              |
++---------------------+                            +------------------------+              +
+| __ry_gate__         |                            | ry q[0],3.14           |              |
++---------------------+                            +------------------------+              +
+| __rz_gate__         |                            | rz q[0],3.14           |              |
++---------------------+----------------------------+------------------------+              +
+| __cnot_gate__       | 2 qubits                   | cnot q[0],q[1]         |              |
++---------------------+                            +------------------------+              +
+| __cphase_gate__     |                            | cz q[0],q[1]           |              |
++---------------------+                            +------------------------+              +
+| __swap_gate__       |                            | swap q[0],q[1]         |              |
++---------------------+----------------------------+------------------------+              +
+| __toffoli_gate__    | 3 qubits                   | toffoli q[0],q[1],q[2] |              |
++---------------------+----------------------------+------------------------+--------------+
+| __prepz_gate__      |                            | prepz q[0]             | preparation  |
++---------------------+                            +------------------------+--------------+
+| __measure_gate__    | 1 qubit                    | measure q[0]           | measurement  |
++---------------------+----------------------------+------------------------+--------------+
+| __nop_gate__        | none                       | nop                    | scheduling   |
++---------------------+                            +------------------------+              +
+| __dummy_gate__      |                            | sink                   |              |
++---------------------+----------------------------+------------------------+              +
+| __wait_gate__       | 0 or more qubits, duration | wait 1                 |              |
++---------------------+----------------------------+------------------------+--------------+
+| __display__         | 0 or more qubits           | display                | directive    |
++---------------------+                            +------------------------+              +
+| __display_binary__  |                            | display_binary         |              |
++---------------------+----------------------------+------------------------+--------------+
+| __classical_gate__  | 0 or more classical regs.  | add r[0],r[1]          | classical    |
++---------------------+----------------------------+------------------------+--------------+
+| __custom_gate__     | defined by config file                                             |
++---------------------+                                                                    +
+| __composite_gate__  |                                                                    |
++---------------------+----------------------------+------------------------+--------------+
+
 
 There is an API for each of the above gate types using default gates.
 

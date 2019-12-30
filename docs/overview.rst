@@ -3,18 +3,33 @@ Overview
 
 OpenQL is a framework for high-level quantum programming in C++/Python.
 The framework provides a compiler for compiling and optimizing quantum code.
-Getting an overview of the structure of this compiler, is the topic of this section.
-Next sections will explain how to install it and how to make a first program.
 
-Further sections will introduce you to the basic components of an OpenQL compiler,
-and to the available APIs.
+This document
+-------------
+
+The first three chapters introduce OpenQL,
+help to install it,
+and show how to create a first OpenQL program.
+They are here for people who want to get going with OpenQL as quickly as possible.
+For people just wanting an overview of OpenQL, these, except for the installation chapter, are a must read.
+
+Further chapters introduce to the basic concepts of OpenQL.
+They contain a lot of conceptual texts, and inevitable for a good understanding of the system.
+What kind of gates does OpenQL support, which are the internal and which are the external representations?
+What is a program, what is a kernel and to which extent are classical instructions supported?
+Omni-present in OpenQL is the platform, literally in the form of the platform configuration file
+that parameterizes most passes on the supported platform.
+And finally the compiler passes, in a summary as well as in an extensive description with functional description
+and sets of options listened too.
+
+The document concludes with lists of APIs and indices.
 
 OpenQL compiler structure
 -------------------------
 
 An OpenQL compiler reads a quantum program written in some external representation,
-performs some analysis and transformation passes on it,
-and prints the result out to an external representation again.
+performs several analysis and transformation passes on it,
+and prints the result to an external representation again.
 Internally in the compiler the passes operate on a common internal representation of the program,
 IR for short, which is equal to all passes.
 
