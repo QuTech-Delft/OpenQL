@@ -69,8 +69,9 @@ private:
 	double gatefid_1 = std::stod(ql::options::get("maxfidelity_1qbgatefid")); //
 	double gatefid_2 = std::stod(ql::options::get("maxfidelity_2qbgatefid")); //
 	double idlefid = std::stod(ql::options::get("maxfidelity_idlefid")); //Quantumsim averaged over all axes is 0.9867. With T1 only it is 0.9866
-	std::string fidelity_estimator;
-	std::string output_mode;
+	// std::string fidelity_estimator;
+	std::string output_mode = ql::options::get("maxfidelity_outputmode"); 
+
 	json qubit_attributes;
 	std::vector<string> allowed_gates = {"prepz", "x", "x45", "x90", "xm45", "xm90", "y", "y45", "y90", "ym45", "ym90", "cz", "measure"};
 
@@ -84,10 +85,9 @@ private:
 
 public:
 
-	Metrics(size_t Nqubits, std::string estimator = "bounded_fidelity", std::string output_mode = "average" )
+	Metrics(size_t Nqubits)
 	{
 		this->Nqubits = Nqubits;
-		this->output_mode=output_mode;
 
 		if (output_mode != "worst" && output_mode != "gaussian" && output_mode != "average")
 		{

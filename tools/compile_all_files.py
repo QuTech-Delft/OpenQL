@@ -56,6 +56,11 @@ if __name__ == "__main__":
 	output_dir_name = 'test_output/mapper=' + mapper
 
 	#add other options here (overring the options above will not work! change the value in the options above instead!)
+	ql.set_option("maxfidelity_1qbgatefid", "0.999")
+	ql.set_option("maxfidelity_2qbgatefid", "0.99")
+	ql.set_option("maxfidelity_idlefid", "0.999334")
+	ql.set_option("maxfidelity_outputmode", "average")
+
 	ql.set_option('decompose_toffoli', "no") # = "no";
 	ql.set_option("prescheduler", "yes") # = "yes";
 	ql.set_option("cz_mode", "manual") # = "manual";
@@ -72,7 +77,6 @@ if __name__ == "__main__":
 	ql.set_option("mapselectmaxwidth", "min") # = "min";
 	ql.set_option("mapselectswaps", "all") # = "all";
 	ql.set_option("mapreverseswap", "yes") # = "yes";
-
 
 
 	for file in files:
