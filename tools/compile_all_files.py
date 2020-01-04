@@ -4,7 +4,8 @@ import importlib
 import argparse
 from openql import openql as ql
 import sys
-
+from io import StringIO
+from joblib import Parallel, delayed, cpu_count
 
 
 if __name__ == "__main__":
@@ -78,11 +79,58 @@ if __name__ == "__main__":
 	ql.set_option("mapselectswaps", "all") # = "all";
 	ql.set_option("mapreverseswap", "yes") # = "yes";
 
+	#=== Serial Compilation
+	# for file in files:
+	# 	imported = importlib.import_module(os.path.join(file.replace(".py", "")))
+	# 	try:
+	# 		imported.circuit('test_mapper17.json', scheduler = scheduler, mapper = mapper, uniform_sched = scheduler_uniform, new_scheduler = scheduler_post179,  moves = mapusemoves, maptiebreak = maptiebreak, measurement = measurement, optimize = optimize, output_dir_name = output_dir_name, log_level = log_level)
+	# 	except Exception as e:
+	# 		print(str(e))
 
-	for file in files:
+	#=== Parallel Compilation
+	def parallel_import_compile(file):
 		imported = importlib.import_module(os.path.join(file.replace(".py", "")))
 		try:
 			imported.circuit('test_mapper17.json', scheduler = scheduler, mapper = mapper, uniform_sched = scheduler_uniform, new_scheduler = scheduler_post179,  moves = mapusemoves, maptiebreak = maptiebreak, measurement = measurement, optimize = optimize, output_dir_name = output_dir_name, log_level = log_level)
 		except Exception as e:
 			print(str(e))
+	
+	# Parallel(n_jobs=cpu_count(), verbose=8)(delayed(parallel_import_compile)(file) for file in files)
 
+
+	#============== Store the options in a file
+	parameters = ["unique_output: " + ql.get_option("unique_output") + '\n'  ,
+				  "optimize: " + ql.get_option("optimize") + '\n'  ,
+				  "use_default_gates: " + ql.get_option("use_default_gates") + '\n'  ,
+				  "decompose_toffoli: " + ql.get_option("decompose_toffoli") + '\n'  ,
+				  "quantumsim: " + ql.get_option("quantumsim") + '\n'  ,
+				  "prescheduler: " + ql.get_option("prescheduler") + '\n'  ,
+				  "scheduler: " + ql.get_option("scheduler") + '\n'  ,
+				  "scheduler_uniform: " + ql.get_option("scheduler_uniform") + '\n'  ,
+				  "clifford_premapper: " + ql.get_option("clifford_premapper") + '\n'  ,
+				  "mapper: " +           ql.get_option("mapper") + '\n'  ,
+				  "mapinitone2one: " +   ql.get_option("mapinitone2one") + '\n'  ,
+				  "initialplace: " +     ql.get_option("initialplace") + '\n'  ,
+				  "initialplace2qhorizon: " +ql.get_option("initialplace2qhorizon") + '\n'  ,
+				  "maplookahead: " +     ql.get_option("maplookahead") + '\n'  ,
+				  "mappathselect: " +    ql.get_option("mappathselect") + '\n'  ,
+				  "maptiebreak: " +      ql.get_option("maptiebreak") + '\n'  ,
+				  "mapusemoves: " +      ql.get_option("mapusemoves") + '\n'  ,
+				  "mapreverseswap: " +   ql.get_option("mapreverseswap") + '\n'  ,
+				  "mapselectswaps: " +   ql.get_option("mapselectswaps") + '\n'  ,
+				  "clifford_postmapper: " + ql.get_option("clifford_postmapper") + '\n'  ,
+				  "scheduler_post179: " + ql.get_option("scheduler_post179") + '\n'  ,
+				  "scheduler_commute: " + ql.get_option("scheduler_commute") + '\n'  ,
+				  "cz_mode: " + ql.get_option("cz_mode") + '\n'  ,
+				  "mapassumezeroinitstate: " + ql.get_option("mapassumezeroinitstate") + '\n' ,
+				  "maprecNN2q: " + ql.get_option("maprecNN2q") + '\n' ,
+				  "mapselectmaxlevel: " + ql.get_option("mapselectmaxlevel") + '\n' ,
+				  "mapselectmaxwidth: " + ql.get_option("mapselectmaxwidth") + '\n' ,
+
+				  "maxfidelity_1qbgatefid: " + ql.get_option("maxfidelity_1qbgatefid") + '\n'  , 
+				  "maxfidelity_2qbgatefid: " + ql.get_option("maxfidelity_2qbgatefid") + '\n'  , 
+				  "maxfidelity_idlefid: "	 + ql.get_option("maxfidelity_idlefid") + '\n'   ,
+				  "maxfidelity_outputmode: " + ql.get_option("maxfidelity_outputmode") + '\n'
+	]
+	with open(os.path.join('test_files', output_dir_name,'parameters.txt'), 'w') as fopen:
+		fopen.writelines(parameters)
