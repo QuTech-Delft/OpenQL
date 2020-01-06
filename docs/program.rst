@@ -22,6 +22,7 @@ These take one or more kernels representing the then-part, the else-part, or the
 and add special kernels around them to represent the control flow.
 These latter APIs also take the particular branch condition
 or the number of iterations as parameter.
+See :ref:`kernel` for an overview of these APIs and see :ref:`classical_gate_attributes_in_the_internal_representation` for a definition of the control flow internal representation.
 
 The gates of a kernel's circuit are always executed sequentially.
 At the end of a circuit, control passes on to the next kernel in the program's vector of kernels.

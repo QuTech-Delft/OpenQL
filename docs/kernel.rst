@@ -47,6 +47,9 @@ The kernel's name functions as a label to be used in control transfers.
 
 :Note: Scheduling around control flow, i.e. defining durations, dependences, relation to resources, is irregularly organized as well; a property of scheduling is that once scheduling of the main code has been done, all later additional scheduling must not disturb the first schedule, and thus that usually to accomplish this, more strict constraints are applied with less optimal code as result; and any attempt is error-prone as well.  It also means that the number of cycles to transfer control flow from one kernel to the next kernel is not modeled and that loop scheduling and other forms of inter-kernel scheduling are unnecessarily hard to support.
 
+See :ref:`classical_output_external_representation` for more information on the QASM representation of control flow.
+The kernel attribute ``br_condition`` is a classical operation as defined in that section as well.
+
 In OpenQL this kernel object also supports adding gates to its circuit using the kernel API.
 To that end, a kernel object has attributes such as ``qubit_count``, and ``creg_count``
 to check validity of the operands of the gates that are to be created.

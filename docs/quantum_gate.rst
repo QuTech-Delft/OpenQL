@@ -17,11 +17,11 @@ This is useful in the description of the passes below.
 
 First, gates can be subdivided according to where their execution has effect:
 
-- quantum gates; these have at least one qubit as (implicit or explicit) operand and execute in the quantum computing hardware
+- quantum gates; these gates execute in the quantum computing hardware; these gates have at least one qubit as (implicit or explicit) operand; these gates can have classical registers as operand as well and may rely on some execution capability in classical hardware
 
-- classical gates; these don't have any qubit as operand, only zero or more classical registers and execute in classical hardware
+- classical gates; these gates execute in classical hardware only; these don't have any qubit as operand, only zero or more classical registers
 
-- directives; these look like gates but don't influence execution, e.g. the display gate; these execute neither in quantum nor in classical hardware
+- directives; these gates execute neither in quantum nor in classical hardware; these look like gates but don't influence execution, e.g. the display gate
 
 
 Quantum gates can be subdivided in several ways from the number of operands they take; this becomes relevant when gates are mapped on the quantum computing platform:
@@ -42,7 +42,7 @@ Quantum gates can also be subdivided seen from the state of a qubit:
 - rotation gates; gates that perform unitary rotations on the state of the operand qubits;
   examples are identity, x, rx(pi), cnot, swap, and toffoli.
 
-- measurement gates; gates that measure out the operand qubits, leaving them in a base state
+- measurement gates; gates that measure out the operand qubits, leaving them in a base state; the measurement result can be left in a classical register
 
 - scheduling gates; gates that only influence execution timing regarding the operand qubits;
   they provide a cycle window for the qubit state to be operated upon before further use;
@@ -158,14 +158,13 @@ Some further notes on the gate attributes:
   the gates must be ordered in the circuit in non-decreasing cycle order.
   Also, there is then a derived internal circuit representation, the bundled representation.
   See :ref:`circuits_and_bundles_in_the_internal_representation`.
-
   The cycle attribute invalidation generally is the result of adding a gate to a circuit,
   or any optimization or decomposition pass.
 
 - type is an enumeration type; the following table enumerates the possible types and their characteristics:
 
 +---------------------+----------------------------+------------------------+--------------+
-| type                | operands                   | example                | kind         |
+| type                | operands                   | example in QASM        | kind         |
 +=====================+============================+========================+==============+
 | __identity_gate__   | 1 qubit                    | i q[0]                 | rotation     |
 +---------------------+                            +------------------------+              +
@@ -177,9 +176,9 @@ Some further notes on the gate attributes:
 +---------------------+                            +------------------------+              +
 | __pauli_z_gate__    |                            | z q[0]                 |              |
 +---------------------+                            +------------------------+              +
-| __phase_gate__      |                            | z q[0]                 |              |
+| __phase_gate__      |                            | s q[0]                 |              |
 +---------------------+                            +------------------------+              +
-| __phasedag_gate__   |                            | zdag q[0]              |              |
+| __phasedag_gate__   |                            | sdag q[0]              |              |
 +---------------------+                            +------------------------+              +
 | __t_gate__          |                            | t q[0]                 |              |
 +---------------------+                            +------------------------+              +
@@ -231,6 +230,10 @@ Some further notes on the gate attributes:
 +---------------------+                                                                    +
 | __composite_gate__  |                                                                    |
 +---------------------+----------------------------+------------------------+--------------+
+
+The example column shows in the form of an example the QASM representation of the gate.
+For custom gates, the QASM representation is the gate name followed by the representation of the operands,
+as with the default gates.
 
 
 There is an API for each of the above gate types using default gates.
@@ -339,6 +342,9 @@ There are two closely related output external representations supported, both di
 
 - bundled QASM
 
+In both representations,
+the QASM representation of a single gate is as defined in the *example in QASM* column in the table above.
+
 When the gate's cycle attribute is still undefined,
 the sequential QASM representation is the only possible external QASM representation.
 Gates are specified one by one, each on a separate line.
@@ -347,8 +353,8 @@ i.e. the gates are topologically sorted with respect to their intended execution
 Kernels start with a label which names the kernel and serves as branch target in control transfers.
 
 Once the gate's cycle attribute has been defined (and until it is invalidated),
-in addition to the sequential QASM representation above (ignoring the cycle attribute values),
-the bundled QASM representation can be generated that does reflect the cycle attribute values.
+and in addition to the sequential QASM representation above (that ignores the cycle attribute values),
+the bundled QASM representation can be generated that instead reflects the cycle attribute values.
 
 Each line in the bundled QASM representation
 represents the gates that start execution in one particular cycle
