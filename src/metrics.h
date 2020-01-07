@@ -107,7 +107,18 @@ public:
 
 		if (output_mode == "worst"){
 			IOUT("\nOutput mode: worst");
-			return *std::min_element(fids.begin(),fids.end()); //Have to check if it is a problem that the vector contains nulls
+			// return *std::min_element(fids.begin(),fids.end()); //Have to check if it is a problem that the vector contains nulls
+			double minimum = 1.0;
+			for (auto x : fids)
+			{
+				if (not std::isnan(x))
+				{
+					if (x < minimum)
+						minimum = x;
+				}
+				
+			}
+			return minimum;
 		}
 
 		else if (output_mode == "average") 
