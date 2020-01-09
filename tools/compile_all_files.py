@@ -9,7 +9,7 @@ from joblib import Parallel, delayed, cpu_count
 
 #very confusing function!
 def generate_new_dest_dir(input, mapper):
-	folders = [name for name in os.listdir(input) if os.path.isdir(os.path.join(input,name)) and ("mapper="+mapper in name)]
+	folders = [name for name in os.listdir(input) if os.path.isdir(os.path.join(input,name)) and ("mapper="+mapper+"_" in name)]
 	if folders:
 		new_number = max([int(folder.split("mapper="+mapper+"_")[1]) for folder in folders])+1
 	else:
@@ -18,10 +18,13 @@ def generate_new_dest_dir(input, mapper):
 
 
 if __name__ == "__main__":
-	# parser = argparse.ArgumentParser(description='Validate OpenQL compiler')
-	# # parser.add_argument('indir', type=str, help='Input dir for circuits')
-	# parser.add_argument('indir', type=str, default= 'no', help='Input dir for circuits')
-	# args = parser.parse_args()
+	parser = argparse.ArgumentParser(description='Validate OpenQL compiler')
+	parser.add_argument('-m', type=str, help='mapper')
+	parser.add_argument('--1qb', type=str, help='maxfidelity_1qbgatefid')
+	parser.add_argument('--2qb', type=str, help='maxfidelity_2qbgatefid')
+	parser.add_argument('--idle', type=str, help='maxfidelity_idlefid')
+	parser.add_argument('--output', type=str, help='maxfidelity_outputmode')
+	args = parser.parse_args()
 
 	# indir = args.indir
 	indir = './test_files/'
@@ -53,23 +56,23 @@ if __name__ == "__main__":
 
 	#Some compiler options
 	log_level = 'LOG_NOTHING'
-	scheduler = 'ALAP'
-	mapper = 'minextendrc'
-	optimize = 'no'
-	scheduler_uniform = 'no'
-	initialplace = 'no'
-	scheduler_post179 = 'yes'
-	scheduler_commute = 'yes'
-	mapusemoves = 'no'
-	maptiebreak = 'first'
+	scheduler = 'ALAP' #= ALAP
+	optimize = 'no' #= no
+	scheduler_uniform = 'no' #= no
+	initialplace = 'no' #= no
+	scheduler_post179 = 'yes' #= yes
+	scheduler_commute = 'yes' #= yes
+	mapusemoves = 'no'  #= yes 
+	maptiebreak = 'first' #= random
 
 	# output_dir_name = 'test_output/mapper=' + mapper
 
 	#add other options here (overring the options above will not work! change the value in the options above instead!)
+	mapper = 'maxfidelity' #= minextendrc
 	ql.set_option("maxfidelity_1qbgatefid", "0.999")
 	ql.set_option("maxfidelity_2qbgatefid", "0.99")
 	ql.set_option("maxfidelity_idlefid", "0.9867")
-	ql.set_option("maxfidelity_outputmode", "worst")
+	ql.set_option("maxfidelity_outputmode", "average")
 
 	ql.set_option('decompose_toffoli', "no") # = "no";
 	ql.set_option("prescheduler", "yes") # = "yes";
@@ -181,4 +184,7 @@ if __name__ == "__main__":
 	print("Wrote files to:", output_dir_name)
 	print("Writing parameters to:", 'test_files', output_dir_name,'parameters.txt')
 	with open(os.path.join('test_files', output_dir_name,'parameters.txt'), 'w') as fopen:
+		fopen.writelines(parameters)
+	with open(os.path.join('test_files', 'test_output','parameters_all.txt'), 'a') as fopen:
+		fopen.writelines(["\n\n\n", "=== " + result_dir + " ==="])
 		fopen.writelines(parameters)
