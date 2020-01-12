@@ -35,6 +35,7 @@
 #%%			
 from openql import openql as ql
 import random
+import cirq
 
 probs = {}
 #%%
@@ -87,7 +88,7 @@ def random_circuit(qubits, gate_load, depth, two_qubit_fraction, seed = None):
 
 	cycle_free = list(range(qubits))
 	next_cycle_free = list(range(qubits))
-	for cycle in list(range(depth):)
+	for cycle in range(depth):
 
 		cycle_free = next_cycle_free
 		next_cycle_free = list(range(qubits))
@@ -98,6 +99,8 @@ def random_circuit(qubits, gate_load, depth, two_qubit_fraction, seed = None):
 			if dice < two_qubit_fraction*gate_load:
 				operands = random.sample(cycle_free, 2)
 				k.gate('cz', [operands[0], operands[1]])
+				print(type(cycle_free))
+				print(type(next_cycle_free))
 				cycle_free.remove(operands[0])
 				cycle_free.remove(operands[1])
 				next_cycle_free.remove(operands[0])
@@ -124,7 +127,14 @@ def random_circuit(qubits, gate_load, depth, two_qubit_fraction, seed = None):
 
 
 #%%
-circ = random_circuit(4,0.5, 5, 0)
+circ = random_circuit(4,0.5, 10
+, 0)
+platform  = ql.Platform('test_platform', "test_files/test_mapper17.json")
+p = ql.Program('4gt4_v0_73', platform, 10)
+p.add_kernel(circ)
+print(p.qasm())
 
-#%%	
-save_random_circuit(qubits, gate_load)
+
+
+
+# %%
