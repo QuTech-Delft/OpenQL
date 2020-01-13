@@ -643,11 +643,16 @@ void codegen_cc::latencyCompensation()
             SS2S("# latency compensation").c_str());    // FIXME: add instrumentName/instrumentRef/latency
     }
 #else   // user settable delay via register
+ #if 0  // original seq_bar semantics
         emit("",                "add",      "R63,1,R0",         "# R63 externally set by user, prevent 0 value which would wrap counter");
         emit("",                "seq_bar",  "20",               "# synchronization");
         emit("syncLoop:",       "seq_out",  "0x00000000,1",     "# 20 ns delay");
         emit("",                "loop",     "R0,@syncLoop",     "# ");
         emit("mainLoop:",       "",         "",                 "# ");
+ #else  // new seq_bar semantics (firmware from 20191219 onwards)
+        emit("",                "seq_bar",  "",                 "# synchronization, delay set externally through SET_SEQ_BAR_CNT");
+        emit("mainLoop:",       "",         "",                 "# ");
+ #endif
 #endif
 }
 
