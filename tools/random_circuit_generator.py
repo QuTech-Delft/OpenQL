@@ -94,34 +94,37 @@ def random_circuit(qubits, gate_load, depth, two_qubit_fraction, seed = None):
 		next_cycle_free = list(range(qubits))
 
 		free_qubits = len(cycle_free)
-		dice = random.random()
-		if free_qubits >= 2: #it might be faster to just do a shuffle on the free qubit list and then just pop the qubits (choosing them and removing from the free_list)
-			if dice < two_qubit_fraction*gate_load:
-				operands = random.sample(cycle_free, 2)
-				k.gate('cz', [operands[0], operands[1]])
-				print(type(cycle_free))
-				print(type(next_cycle_free))
-				cycle_free.remove(operands[0])
-				cycle_free.remove(operands[1])
-				next_cycle_free.remove(operands[0])
-				next_cycle_free.remove(operands[1])
-			elif two_qubit_fraction*gate_load <= dice < gate_load:
-				gate = random.choice(gates_1qb)
-				operand = random.choice(cycle_free)
-				k.gate(gate, [operand])
-				cycle_free.remove(operand)
-			else: #idling case: no gate applied, we just mark the qubit as busy
-				operand = random.choice(cycle_free)
-				cycle_free.remove(operand)
-		else:
-			if dice <= gate_load:
-				gate = random.choice(gates_1qb)
-				operand = random.choice(cycle_free)
-				k.gate(gate, [operand])
-				cycle_free.remove(operand)
-			else: #idling case: no gate applied, we just mark the qubit as busy
-				operand = random.choice(cycle_free)
-				cycle_free.remove(operand)
+		while free_qubits != 0:
+			dice = random.random()
+			if free_qubits >= 2: #it might be faster to just do a shuffle on the free qubit list and then just pop the qubits (choosing them and removing from the free_list)
+				if dice < two_qubit_fraction*gate_load:
+					operands = random.sample(cycle_free, 2)
+					k.gate('cz', [operands[0], operands[1]])
+					print(type(cycle_free))
+					print(type(next_cycle_free))
+					cycle_free.remove(operands[0])
+					cycle_free.remove(operands[1])
+					next_cycle_free.remove(operands[0])
+					next_cycle_free.remove(operands[1])
+				elif two_qubit_fraction*gate_load <= dice < gate_load:
+					gate = random.choice(gates_1qb)
+					print(cycle_free)
+					operand = random.choice(cycle_free)
+					k.gate(gate, [operand])
+					cycle_free.remove(operand)
+				else: #idling case: no gate applied, we just mark the qubit as busy
+					operand = random.choice(cycle_free)
+					print(cycle_free)
+					cycle_free.remove(operand)
+			else:
+				if dice <= gate_load:
+					gate = random.choice(gates_1qb)
+					operand = random.choice(cycle_free)
+					k.gate(gate, [operand])
+					cycle_free.remove(operand)
+				else: #idling case: no gate applied, we just mark the qubit as busy
+					operand = random.choice(cycle_free)
+					cycle_free.remove(operand)
 
 	return k
 
@@ -135,6 +138,9 @@ p.add_kernel(circ)
 print(p.qasm())
 
 
+
+
+# %%
 
 
 # %%
