@@ -14,6 +14,7 @@
 #define OPT_SUPPORT_STATIC_CODEWORDS    1
 #define OPT_VCD_OUTPUT                  1   // output Value Change Dump file for GTKWave viewer
 #define OPT_RUN_ONCE                    0   // 0=loop indefinitely (CC-light emulation)
+#define OPT_CALCULATE_LATENCIES         0   // fixed compensation based on instrument latencies
 
 #include "json.h"
 #include "platform.h"
@@ -93,25 +94,25 @@ public:
     std::string getCode();
     std::string getMap();
 
-    void program_start(std::string prog_name);
-    void program_finish(std::string prog_name);
+    void program_start(const std::string &prog_name);
+    void program_finish(const std::string &prog_name);
     void kernel_start();
-    void kernel_finish(std::string kernelName, size_t duration_in_cycles);
-    void bundle_start(std::string cmnt);
+    void kernel_finish(const std::string &kernelName, size_t duration_in_cycles);
+    void bundle_start(const std::string &cmnt);
     void bundle_finish(size_t start_cycle, size_t duration_in_cycles, bool isLastBundle);
-    void comment(std::string c);
+    void comment(const std::string &c);
 
     // Quantum instructions
-    void custom_gate(std::string iname, std::vector<size_t> qops, std::vector<size_t> cops, double angle, size_t start_cycle, size_t duration_ns);
+    void custom_gate(std::string iname, const std::vector<size_t> &qops, const std::vector<size_t> &cops, double angle, size_t start_cycle, size_t duration_ns);
     void nop_gate();
 
     // Classical operations on kernels
-    void if_start(size_t op0, std::string opName, size_t op1);
-    void else_start(size_t op0, std::string opName, size_t op1);
-    void for_start(std::string label, int iterations);
-    void for_end(std::string label);
-    void do_while_start(std::string label);
-    void do_while_end(std::string label, size_t op0, std::string opName, size_t op1);
+    void if_start(size_t op0, const std::string &opName, size_t op1);
+    void else_start(size_t op0, const std::string &opName, size_t op1);
+    void for_start(const std::string &label, int iterations);
+    void for_end(const std::string &label);
+    void do_while_start(const std::string &label);
+    void do_while_end(const std::string &label, size_t op0, const std::string *opName, size_t op1);
 
     // Classical arithmetic instructions
     void add();
@@ -123,11 +124,11 @@ private:
 
     // @param   label       must include trailing ":"
     // @param   comment     must include leading "#"
-    void emit(const char *label, const char *instr, std::string qops, const char *comment="");
+    void emit(const char *label, const char *instr, const std::string &qops, const char *comment="");
 
     // helpers
     void latencyCompensation();
-    void padToCycle(size_t lastStartCycle, size_t start_cycle, int slot, std::string instrumentName);
+    void padToCycle(size_t lastStartCycle, size_t start_cycle, int slot, const std::string &instrumentName);
     uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
 
     // Functions processing JSON
@@ -135,7 +136,7 @@ private:
     const json &findInstrumentDefinition(const std::string &name);
 
     // find instrument/group providing instructionSignalType for qubit
-    tSignalInfo findSignalInfoForQubit(std::string instructionSignalType, size_t qubit);
+    tSignalInfo findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit);
 
     tJsonNodeInfo findSignalDefinition(const json &instruction, const std::string &iname) const;
 }; // class

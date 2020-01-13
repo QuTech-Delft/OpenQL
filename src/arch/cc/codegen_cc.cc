@@ -58,7 +58,7 @@ std::string codegen_cc::getMap()
     return SS2S(std::setw(4) << map << std::endl);
 }
 
-void codegen_cc::program_start(std::string prog_name)
+void codegen_cc::program_start(const std::string &prog_name)
 {
     // emit program header
     cccode << std::left;    // assumed by emit()
@@ -115,7 +115,7 @@ void codegen_cc::program_start(std::string prog_name)
 #endif
 }
 
-void codegen_cc::program_finish(std::string prog_name)
+void codegen_cc::program_finish(const std::string &prog_name)
 {
 #if OPT_RUN_ONCE   // program runs once only
         emit("", "stop");
@@ -142,7 +142,7 @@ void codegen_cc::kernel_start()
     ql::utils::zero(lastStartCycle);       // FIXME: actually, bundle.start_cycle starts counting at 1
 }
 
-void codegen_cc::kernel_finish(std::string kernelName, size_t duration_in_cycles)
+void codegen_cc::kernel_finish(const std::string &kernelName, size_t duration_in_cycles)
 {
 #if OPT_VCD_OUTPUT
     // NB: timing starts anew for every kernel
@@ -154,7 +154,7 @@ void codegen_cc::kernel_finish(std::string kernelName, size_t duration_in_cycles
 }
 
 // bundle_start: clear groupInfo, which maintains the work that needs to be performed for bundle
-void codegen_cc::bundle_start(std::string cmnt)
+void codegen_cc::bundle_start(const std::string &cmnt)
 {
     size_t slotsUsed = jsonInstruments.size();   // FIXME: assuming all instruments use a slot
     groupInfo.assign(slotsUsed, std::vector<tGroupInfo>(MAX_GROUPS, {"", 0, -1}));
@@ -358,7 +358,7 @@ void codegen_cc::bundle_finish(size_t start_cycle, size_t duration_in_cycles, bo
     comment("");    // blank line to separate bundles
 }
 
-void codegen_cc::comment(std::string c)
+void codegen_cc::comment(const std::string &c)
 {
     if(verboseCode) emit(c.c_str());
 }
@@ -368,7 +368,11 @@ void codegen_cc::comment(std::string c)
 \************************************************************************/
 
 // single/two/N qubit gate, including readout
-void codegen_cc::custom_gate(std::string iname, std::vector<size_t> qops, std::vector<size_t> cops, double angle, size_t start_cycle, size_t duration_ns)
+void codegen_cc::custom_gate(
+        const std::string &iname,
+        const std::vector<size_t> &qops,
+        const std::vector<size_t> &cops,
+        double angle, size_t start_cycle, size_t duration_ns)
 {
 #if 1   // FIXME: test for angle parameter
     if(angle != 0.0) {
@@ -526,39 +530,39 @@ void codegen_cc::nop_gate()
 | Classical operations on kernels
 \************************************************************************/
 
-void codegen_cc::if_start(size_t op0, std::string opName, size_t op1)
+void codegen_cc::if_start(size_t op0, const std::string &opName, size_t op1)
 {
     comment(SS2S("# IF_START(R" << op0 << " " << opName << " R" << op1 << ")"));
     FATAL("FIXME: not implemented");
 }
 
-void codegen_cc::else_start(size_t op0, std::string opName, size_t op1)
+void codegen_cc::else_start(size_t op0, const std::string &opName, size_t op1)
 {
     comment(SS2S("# ELSE_START(R" << op0 << " " << opName << " R" << op1 << ")"));
     FATAL("FIXME: not implemented");
 }
 
-void codegen_cc::for_start(std::string label, int iterations)
+void codegen_cc::for_start(const std::string &label, int iterations)
 {
     comment(SS2S("# FOR_START(" << iterations << ")"));
     // FIXME: reserve register
     emit((label+":").c_str(), "move", SS2S(iterations << ",R63"), "# R63 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
 }
 
-void codegen_cc::for_end(std::string label)
+void codegen_cc::for_end(const std::string &label)
 {
     comment("# FOR_END");
     // FIXME: free register
     emit("", "loop", SS2S("R63,@" << label), "# R63 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
 }
 
-void codegen_cc::do_while_start(std::string label)
+void codegen_cc::do_while_start(const std::string &label)
 {
     comment("# DO_WHILE_START");
     emit((label+":").c_str(), "", SS2S(""), "# ");        // FIXME: just a label
 }
 
-void codegen_cc::do_while_end(std::string label, size_t op0, std::string opName, size_t op1)
+void codegen_cc::do_while_end(const std::string &label, size_t op0, const std::string &opName, size_t op1)
 {
     comment(SS2S("# DO_WHILE_END(R" << op0 << " " << opName << " R" << op1 << ")"));
     emit("", "jmp", SS2S("@" << label), "# endless loop'");        // FIXME: just endless loop
@@ -589,7 +593,7 @@ void codegen_cc::emit(const char *labelOrComment, const char *instr)
     }
 }
 
-void codegen_cc::emit(const char *label, const char *instr, std::string qops, const char *comment)
+void codegen_cc::emit(const char *label, const char *instr, const std::string &qops, const char *comment)
 {
     cccode << std::setw(16) << label << std::setw(16) << instr << std::setw(24) << qops << comment << std::endl;
 }
@@ -604,12 +608,14 @@ void codegen_cc::emit(const char *label, const char *instr, std::string qops, co
 // FIXME: is 'seq_bar 1' safe in the sense that we will never get an empty queue?
 void codegen_cc::latencyCompensation()
 {
+    comment("# synchronous start and latency compensation");
+
+#if OPT_CALCULATE_LATENCIES    // fixed compensation based on instrument latencies
     std::map<int, int> slotLatencies;   // maps slot to latency
 
     // get latencies per slot, iterating over instruments
     for(size_t instrIdx=0; instrIdx<jsonInstruments.size(); instrIdx++) {
         const json &instrument = jsonInstruments[instrIdx];
-        std::string instrumentName = instrument["name"];
         std::string instrumentRef = instrument["ref_instrument_definition"];
         int slot = instrument["controller"]["slot"];    // FIXME: assuming controller being cc
 
@@ -629,8 +635,6 @@ void codegen_cc::latencyCompensation()
     DOUT("maxLatency = " << maxLatency);
 
     // align latencies
-    comment("# synchronous start and latency compensation");
-#if 0   // FIXME: fixed compensation based on instrument latencies
     for(auto it=slotLatencies.begin(); it!=slotLatencies.end(); it++) {
         int slot = it->first;
         int latency = it->second;
@@ -656,7 +660,7 @@ void codegen_cc::latencyCompensation()
 #endif
 }
 
-void codegen_cc::padToCycle(size_t lastStartCycle, size_t start_cycle, int slot, std::string instrumentName)
+void codegen_cc::padToCycle(size_t lastStartCycle, size_t start_cycle, int slot, const std::string &instrumentName)
 {
     // compute prePadding: time to bridge to align timing
     ssize_t prePadding = start_cycle - lastStartCycle;
@@ -776,7 +780,7 @@ const json &codegen_cc::findInstrumentDefinition(const std::string &name)
 
 
 // find instrument/group providing instructionSignalType for qubit
-codegen_cc::tSignalInfo codegen_cc::findSignalInfoForQubit(std::string instructionSignalType, size_t qubit)
+codegen_cc::tSignalInfo codegen_cc::findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit)
 {
     tSignalInfo ret = {-1, -1};
     bool signalTypeFound = false;

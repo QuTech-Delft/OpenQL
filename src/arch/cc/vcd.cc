@@ -21,14 +21,14 @@ void Vcd::start()
 }
 
 
-void Vcd::scope(tScopeType type, std::string name)
+void Vcd::scope(tScopeType type, const std::string &name)
 {
     // FIXME: handle type
     vcd << "$scope " << "module" << " " << name << " $end" << std::endl;
 }
 
 
-int Vcd::registerVar(std::string name, tVarType type, tScopeType scope)
+int Vcd::registerVar(const std::string &name, tVarType type, tScopeType scope)
 {
     // FIXME: incomplete
     const int width = 20;
@@ -63,7 +63,7 @@ std::string Vcd::getVcd()
 }
 
 
-void Vcd::change(int var, int timestamp, std::string value)
+void Vcd::change(int var, int timestamp, const std::string &value)
 {
     auto tsIt = timestampMap.find(timestamp);
     if(tsIt != timestampMap.end()) {    // timestamp found
@@ -104,4 +104,5 @@ void Vcd::change(int var, int timestamp, std::string value)
 
 void Vcd::change(int var, int timestamp, int value)
 {
+    // FIXME
 }
