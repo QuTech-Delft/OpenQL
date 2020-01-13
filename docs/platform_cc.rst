@@ -1,15 +1,57 @@
 .. _ccplatform:
 
 Central Controller Platform Configuration
--------------------------
+-----------------------------------------
 
 This section describes the JSON configuration file format for OpenQL in conjunction
 with the Central Controller (CC) backend
 
-## Standard OpenQL features
-### Standard parameters
+CC backend specific parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This section describes parameters that are specific for the OpenQL CC backend.
+
+Instruction additions
+*********************
+
+.. table::
+    :align: center
+
+    =========================================== =========== ====================    ================
+    Path                                        Type        Values                  Note
+    =========================================== =========== ====================    ================
+    instructions/<key>/cc/signal/type
+    instructions/<key>/cc/signal/operand_idx
+    instructions/<key>/cc/signal/value
+    instructions/<key>/cc/signal_ref
+    =========================================== =========== ====================    ================
+
+'value' supports the following macro expansions:
+* {gateName}
+* {instrumentName}
+* {instrumentGroup}
+* {qubit}
+
+Note that for the CC - contrary to the CC-light - the final hardware output is entirely *determined* by the contents of
+the configuration file, there is no built-in knowledge of instrument connectivity or codeword organization.
+
+CC Backend configuration
+************************
+
+FIXME: add description
+
+
+Standard OpenQL features
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+FIXME: just refer to relevant section. Kept here until we're sure this has been absorbed elsewhere
+
+Standard parameters
+*******************
+
 This section describes parameters that are independent of the OpenQL backend used and
 should therefore be compatible with other backends.
+
 
 .. table::
     :align: center
@@ -29,7 +71,9 @@ should therefore be compatible with other backends.
     =================================== =========== ====================    ================
 
 
-#### Instruction names
+Instruction names
+*****************
+
 The following syntaxes can be used for instruction names (i.e. the <key> in instructions/<key> as described above:
 
 - "<name>"
@@ -39,9 +83,9 @@ FIXME: special treatment of names by scheduler/backend
 - "readout" : backend
 - "measure"
 
+Parametrized gate-decomposition
+*******************************
 
-
-#### Parametrized gate-decomposition
 Parametrized gate decompositions can be specified in gate_decomposition section, as shown below:
 
     "rx180 %0" : ["x %0"]
@@ -52,34 +96,22 @@ specified as:
     "cnot %0,%1" : ["ry90 %0", "cz %0,%1", "ry90 %1"]
 
 
-#### Specialized gate-decomposition
+Specialized gate-decomposition
+******************************
+
 Specialized gate decompositions can be specified in gate_decomposition section, as shown below:
 
     "rx180 q0" : ["x q0"]
     "cz_park q0,q1" : ["cz q0,q1", "park q3"]
 
 
-## CC backend specific parameters
-This section describes parameters that are specific for the OpenQL CC backend.
 
-Path | Type | Values | Note
----|---|---|---
-instructions/<key>/cc/signal/type| | |
-instructions/<key>/cc/signal/operand_idx| | |
-instructions/<key>/cc/signal/value| | |
-instructions/<key>/cc/signal_ref| | |
+Unused parameters
+^^^^^^^^^^^^^^^^^
 
-'value' supports the following macro expansions:
-* {gateName}
-* {instrumentName}
-* {instrumentGroup}
-* {qubit}
+Non-implemented parameters
+**************************
 
-Note that for the CC - contrary to the CC-light - the final hardware output is entirely *determined* by the contents of
-the configuration file, there is no built-in knowledge of instrument connectivity or codeword organization.
-
-## Unused parameters
-### Non-implemented parameters
 This section describes parameters that occur in documentation or example files, but are not actually implemented.
 
 
@@ -95,7 +127,8 @@ hardware_settings/readout_readout_buffer
 instructions/<key>/disable_optimization
 alias
 
-### CC-light parameters
+CC-light parameters
+*******************
 
 instructions/<key>/cc_light_instr_type
 instructions/<key>/cc_light_cond
@@ -105,6 +138,3 @@ instructions/<key>/cc_light_left_codeword
 instructions/<key>/cc_light_right_codeword
 resources/*
 topology/*
-
-
-
