@@ -117,7 +117,7 @@ Some further notes on the gate attributes:
 
 - ``type``: Is always *__classical_gate__*. Classical gates are distinguished by their name.
 
-:Note: That classical gates are distinguished by their name and not by some type, is not as problematic as for quantum gates. The names of classical gates are internal to OpenQL and have to relation to an external representation.
+:Note: That classical gates are distinguished by their name and not by some type, is not as problematic as for quantum gates. The names of classical gates are internal to OpenQL and have no relation to an external representation.
 
 - ``duration``: Has a built-in value of 20.
 
