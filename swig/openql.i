@@ -76,17 +76,18 @@ str
 
 %feature("docstring") set_option
 """ Sets any of the following OpenQL options:
-     Opt. Name   :   Default     : Possible values
-    'log_level'  : LOG_NOTHING   : 'LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}'
-    'output_dir' : 'test_output' : <output directory>
-    'optimize'   :   'no'        : 'yes/no'
-    'use_default_gates' : 'yes'  : 'yes/no'
-    'decompose_toffoli' :  'no'  : 'yes/no'
-    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
-    'scheduler_uniform' : 'no'   : 'yes/no'
-    'scheduler_commute' : 'no'   : 'yes/no'
-    'scheduler_post179' : 'yes'  : 'yes/no'
-    'cz_mode' : 'manual'         : 'auto/manual'
+
+ Opt. Name   :   Defaults     : Possible values
+'log_level'  : LOG_NOTHING   : 'LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}'
+'output_dir' : 'test_output' : <output directory>
+'optimize'   :   'no'        : 'yes/no'
+'use_default_gates' : 'yes'  : 'yes/no'
+'decompose_toffoli' :  'no'  : 'yes/no'
+'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
+'scheduler_uniform' : 'no'   : 'yes/no'
+'scheduler_commute' : 'no'   : 'yes/no'
+'scheduler_post179' : 'yes'  : 'yes/no'
+'cz_mode' : 'manual'         : 'auto/manual'
 
 Parameters
 ----------
@@ -98,17 +99,18 @@ arg2 : str
 
 %feature("docstring") get_option
 """ Returns value of any of the following OpenQL options:
-     Opt. Name   :   Default     : Possible values
-    'log_level'  : LOG_NOTHING   : 'LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}'
-    'output_dir' : 'test_output' : <output directory>
-    'optimize'   :   'no'        : 'yes/no'
-    'use_default_gates' : 'yes'  : 'yes/no'
-    'decompose_toffoli' :  'no'  : 'yes/no'
-    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
-    'scheduler_uniform' : 'no'   : 'yes/no'
-    'scheduler_commute' : 'no'   : 'yes/no'
-    'scheduler_post179' : 'yes'  : 'yes/no'
-    'cz_mode' : 'manual'         : 'auto/manual'
+
+ Opt. Name   :   Default     : Possible values
+'log_level'  : LOG_NOTHING   : 'LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}'
+'output_dir' : 'test_output' : <output directory>
+'optimize'   :   'no'        : 'yes/no'
+'use_default_gates' : 'yes'  : 'yes/no'
+'decompose_toffoli' :  'no'  : 'yes/no'
+'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
+'scheduler_uniform' : 'no'   : 'yes/no'
+'scheduler_commute' : 'no'   : 'yes/no'
+'scheduler_post179' : 'yes'  : 'yes/no'
+'cz_mode' : 'manual'         : 'auto/manual'
 
 Parameters
 ----------
@@ -728,7 +730,7 @@ arg2: int
 
 
 %feature("docstring") Program::compile
-""" Compiles the program.
+""" Compiles the program
 
 Parameters
 ----------
@@ -737,7 +739,8 @@ None
 
 
 %feature("docstring") Program::qasm
-""" Returns program QASM
+""" Generates and returns program QASM
+
 Parameters
 ----------
 None
@@ -745,10 +748,13 @@ None
 Returns
 -------
 str
-    qasm """
+    qasm
+"""
+
 
 %feature("docstring") Program::microcode
 """ Returns program microcode
+
 Parameters
 ----------
 None
@@ -756,7 +762,8 @@ None
 Returns
 -------
 str
-    microcode """
+    microcode
+"""
 
 
 

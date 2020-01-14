@@ -9,11 +9,10 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('../swig'))
 
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../swig'))
 
 # -- Project information -----------------------------------------------------
 
@@ -31,6 +30,8 @@ master_doc = 'index'
 extensions = [
     'm2r',
     'sphinx.ext.todo',
+ 	'sphinx.ext.autodoc',
+ 	'sphinx.ext.napoleon'
 ]
 
 source_suffix = ['.rst', '.md']

@@ -30,12 +30,12 @@ OpenQL is a framework for high-level quantum programming in C++/Python. The fram
    :maxdepth: 1
    :caption: API Reference
 
-.. apidocs/gate
-.. apidocs/kernel
-.. apidocs/program
-.. apidocs/platform
+   api/platform
+   api/kernel
+   api/program
+   api/operation
+   api/creg
 
-   
 
 
 Indices and tables
@@ -44,3 +44,6 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. .. automodule:: openql.openql
+..    :members: get_version, set_option, get_option, print_options
