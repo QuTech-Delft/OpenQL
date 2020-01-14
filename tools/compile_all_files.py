@@ -186,5 +186,5 @@ if __name__ == "__main__":
 	with open(os.path.join('test_files', output_dir_name,'parameters.txt'), 'w') as fopen:
 		fopen.writelines(parameters)
 	with open(os.path.join('test_files', 'test_output','parameters_all.txt'), 'a') as fopen:
-		fopen.writelines(["\n\n\n", "=== " + result_dir + " ==="])
+		fopen.writelines(["\n\n\n", "=== " + result_dir + " ===\n"])
 		fopen.writelines(parameters)
