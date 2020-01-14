@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
 	curdir = os.getcwd()
 	# os.chdir(os.path.join(curdir, indir))
-	files = glob.glob('./test_files/*.py')
+	files = glob.glob(indir + '*.py')
 	files = list(map(os.path.basename, files))
 	files = list(map(lambda x: x.replace('.py', ''), files))
 	# os.chdir(curdir)
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 	scheduler_post179 = 'yes' #= yes
 	scheduler_commute = 'yes' #= yes
 	mapusemoves = 'no'  #= yes 
-	maptiebreak = 'first' #= random
+	maptiebreak = 'random' #= random
 
 	# output_dir_name = 'test_output/mapper=' + mapper
 
@@ -71,7 +71,7 @@ if __name__ == "__main__":
 	mapper = 'maxfidelity' #= minextendrc
 	ql.set_option("maxfidelity_1qbgatefid", "0.999")
 	ql.set_option("maxfidelity_2qbgatefid", "0.99")
-	ql.set_option("maxfidelity_idlefid", "0.9867")
+	ql.set_option("maxfidelity_idlefid", "0.999334")
 	ql.set_option("maxfidelity_outputmode", "average")
 
 	ql.set_option('decompose_toffoli', "no") # = "no";

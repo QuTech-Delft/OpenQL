@@ -27,6 +27,7 @@ test_output
 # Tools
 tools/test_output
 tools/test_files/test_vault/all
+tools/test_files/
 tools/metrics
 tools/.stignore
 
