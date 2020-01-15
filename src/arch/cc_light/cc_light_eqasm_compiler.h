@@ -59,7 +59,7 @@ public:
         }
         else
         {
-            COUT(" !!!! Handle cases requiring more registers");
+            WOUT(" !!!! Handle cases requiring more registers");
         }
     }
 
@@ -71,7 +71,7 @@ public:
         }
         else
         {
-            COUT(" !!!! Handle cases requiring more registers");
+            WOUT(" !!!! Handle cases requiring more registers");
         }
     }
 
@@ -84,7 +84,7 @@ public:
         }
         else
         {
-            COUT(" !!!! Handle cases requiring more registers");
+            WOUT(" !!!! Handle cases requiring more registers");
         }
     }
 
