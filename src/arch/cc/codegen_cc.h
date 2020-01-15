@@ -40,7 +40,7 @@ private: // types
 
     typedef struct {
         std::string signalValue;
-        size_t duration_ns;
+        size_t durationInNs;
         ssize_t readoutCop;     // NB: we use ssize_t iso size_t so we can encode 'unused' (-1)
 #if OPT_SUPPORT_STATIC_CODEWORDS
         int staticCodewordOverride;
@@ -94,16 +94,20 @@ public:
     std::string getCode();
     std::string getMap();
 
-    void program_start(const std::string &prog_name);
-    void program_finish(const std::string &prog_name);
+    void program_start(const std::string &progName);
+    void program_finish(const std::string &progName);
     void kernel_start();
-    void kernel_finish(const std::string &kernelName, size_t duration_in_cycles);
+    void kernel_finish(const std::string &kernelName, size_t durationInCycles);
     void bundle_start(const std::string &cmnt);
-    void bundle_finish(size_t start_cycle, size_t duration_in_cycles, bool isLastBundle);
+    void bundle_finish(size_t startCycle, size_t durationInCycles, bool isLastBundle);
     void comment(const std::string &c);
 
     // Quantum instructions
-    void custom_gate(std::string iname, const std::vector<size_t> &qops, const std::vector<size_t> &cops, double angle, size_t start_cycle, size_t duration_ns);
+    void custom_gate(
+            const std::string &iname,
+            const std::vector<size_t> &qops,
+            const std::vector<size_t> &cops,
+            double angle, size_t startCycle, size_t durationInNs);
     void nop_gate();
 
     // Classical operations on kernels
@@ -112,7 +116,7 @@ public:
     void for_start(const std::string &label, int iterations);
     void for_end(const std::string &label);
     void do_while_start(const std::string &label);
-    void do_while_end(const std::string &label, size_t op0, const std::string *opName, size_t op1);
+    void do_while_end(const std::string &label, size_t op0, const std::string &opName, size_t op1);
 
     // Classical arithmetic instructions
     void add();
@@ -128,7 +132,7 @@ private:
 
     // helpers
     void latencyCompensation();
-    void padToCycle(size_t lastStartCycle, size_t start_cycle, int slot, const std::string &instrumentName);
+    void padToCycle(size_t lastStartCycle, size_t startCycle, int slot, const std::string &instrumentName);
     uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
 
     // Functions processing JSON

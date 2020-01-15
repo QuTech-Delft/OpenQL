@@ -174,7 +174,7 @@ void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel
 }
 
 
-void eqasm_backend_cc::compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform)
+void eqasm_backend_cc::compile(std::string prog_name, ql::circuit &ckt, ql::quantum_platform &platform)
 {
     FATAL("Circuit compilation not implemented, because it does not support classical kernel operations");
 }
@@ -416,7 +416,7 @@ void eqasm_backend_cc::codegen_bundles(ql::ir::bundles_t &bundles, const ql::qua
 
 
 // based on: cc_light_eqasm_compiler.h::load_hw_settings
-void eqasm_backend_cc::load_hw_settings(const ql::quantum_platform& platform)
+void eqasm_backend_cc::load_hw_settings(const ql::quantum_platform &platform)
 {
 #if 0   // NB: Visual Studio does not like empty array
     const struct {

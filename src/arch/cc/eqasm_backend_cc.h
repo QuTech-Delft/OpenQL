@@ -30,8 +30,8 @@ public:
     eqasm_backend_cc();
     ~eqasm_backend_cc();
 
-    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, const ql::quantum_platform &platform);
-    void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform);
+    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, const ql::quantum_platform &platform) override;
+    void compile(std::string prog_name, ql::circuit &ckt, ql::quantum_platform &platform) override;
 
 private:
     std::string kernelLabel(ql::quantum_kernel &k);
@@ -39,16 +39,11 @@ private:
     void codegen_kernel_prologue(ql::quantum_kernel &k);
     void codegen_kernel_epilogue(ql::quantum_kernel &k);
     void codegen_bundles(ql::ir::bundles_t &bundles, const ql::quantum_platform &platform);
-    void load_hw_settings(const ql::quantum_platform& platform);
+    void load_hw_settings(const ql::quantum_platform &platform);
 
 private: // vars
     codegen_cc codegen;
     int bundleIdx;
-
-    // parameters from JSON file:
-#if 0   // FIXME: unused
-    size_t buffer_matrix[__operation_types_num__][__operation_types_num__];
-#endif
 }; // class
 
 } // arch
