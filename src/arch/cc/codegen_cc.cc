@@ -763,7 +763,7 @@ void codegen_cc::load_backend_settings()
     for(size_t slot=0; slot<ccSetupSlots.size(); slot++) {
         const json &instrument = ccSetupSlots[slot]["instrument"];
         std::string instrumentName = instrument["name"];
-        std::string signalType = instrument["ref_signals_type"];
+        std::string signalType = instrument["signal_type"];
 
         DOUT("found instrument: name='" << instrumentName << "', signal type='" << signalType << "'");
     }
@@ -793,7 +793,7 @@ codegen_cc::tSignalInfo codegen_cc::findSignalInfoForQubit(const std::string &in
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<jsonInstruments->size(); instrIdx++) {
         const json &instrument = (*jsonInstruments)[instrIdx];
-        std::string instrumentSignalType = instrument["ref_signals_type"];
+        std::string instrumentSignalType = instrument["signal_type"];
         if(instrumentSignalType == instructionSignalType) {
             signalTypeFound = true;
             std::string instrumentName = instrument["name"];

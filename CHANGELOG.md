@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - CC backend: changed JSON field "signal_ref" to "ref_signal"
+- idem: "ref_signals_type" to "signal_type"
 
 ### Removed
 -

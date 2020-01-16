@@ -201,7 +201,7 @@ Where:
 
 * ``<key>`` is a name which can be referred to from key 'instructions/<>/cc/ref_signal'. It defines an array of records with the fields below:
 
-    * ``type`` defines a signal type. This is used to select an instrument that provides that signal type through key 'instruments/ref_signals_type'. The types are entirely user defined, there is no builtin notion of their meaning.
+    * ``type`` defines a signal type. This is used to select an instrument that provides that signal type through key 'instruments/*/signal_type'. The types are entirely user defined, there is no builtin notion of their meaning.
     * ``operand_idx`` states the operand index of the instruction/gate this signal refers to. Signals must be defined for all operand_idx the gate refers to, so a 3-qubit gate needs to define 0 through 2. Several signals with the same operand_idx can be defined to select several signal types, as shown in "single-qubit-mw" which has both "mw" (provided by an AWG) and "switch" (provided by a VSM)
     .. FIXME: rewrite
     * ``value`` defines a vector of signal names. Supports the following macro expansions:
@@ -228,7 +228,7 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
         {
             "name": "ro_0",
             "qubits": [[6], [11], [], [], [], [], [], [], []],
-            "ref_signals_type": "measure",
+            "signal_type": "measure",
             "ref_instrument_definition": "zi-uhfqa",
             "ref_control_mode": "uhfqa-9ch",
             "controller": {
@@ -240,7 +240,7 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
         {
             "name": "ro_1",
             "qubits": [[0], [1], [2], [3], [7], [8], [12], [13], [15]],
-            "ref_signals_type": "measure",
+            "signal_type": "measure",
             "ref_instrument_definition": "zi-uhfqa",
             "ref_control_mode": "uhfqa-9ch",
             "controller": {
@@ -252,7 +252,7 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
         {
             "name": "ro_2",
             "qubits": [[4], [5], [9], [10], [14], [16], [], [], []],
-            "ref_signals_type": "measure",
+            "signal_type": "measure",
             "ref_instrument_definition": "zi-uhfqa",
             "ref_control_mode": "uhfqa-9ch",
             "controller": {
@@ -269,7 +269,7 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
                 [2, 8, 14],                                         // [freq L]
                 [1, 4, 6, 10, 12, 15]                               // [freq H]
             ],
-            "ref_signals_type": "mw",
+            "signal_type": "mw",
             "ref_instrument_definition": "zi-hdawg",
             "ref_control_mode": "awg8-mw-vsm-hack",
             "controller": {
@@ -284,7 +284,7 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
                 [0, 5, 9, 13],                                      // [freq Mg]
                 [3, 7, 11, 16]                                      // [freq My]
             ],
-            "ref_signals_type": "mw",
+            "signal_type": "mw",
             "ref_instrument_definition": "zi-hdawg",
             "ref_control_mode": "awg8-mw-vsm-hack",
             "controller": {
@@ -303,7 +303,7 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
                 [0], [5], [9], [13], [], [], [], [],                // [freq Mg]
                 [3], [7], [11], [16], [], [], [], []                // [freq My]
             ],
-            "ref_signals_type": "switch",
+            "signal_type": "switch",
             "ref_instrument_definition": "qutech-vsm",
             "ref_control_mode": "vsm-32ch",
             "controller": {
@@ -317,7 +317,7 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
         {
             "name": "flux_0",
             "qubits": [[0], [1], [2], [3], [4], [5], [6], [7]],
-            "ref_signals_type": "flux",
+            "signal_type": "flux",
             "ref_instrument_definition": "zi-hdawg",
             "ref_control_mode": "awg8-flux",
             "controller": {
@@ -329,7 +329,7 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
         {
             "name": "flux_1",
             "qubits": [[8], [9], [10], [11], [12], [13], [14], [15]],
-            "ref_signals_type": "flux",
+            "signal_type": "flux",
             "ref_instrument_definition": "zi-hdawg",
             "ref_control_mode": "awg8-flux",
             "controller": {
@@ -341,7 +341,7 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
         {
             "name": "flux_2",
             "qubits": [[16], [], [], [], [], [], [], []],
-            "ref_signals_type": "flux",
+            "signal_type": "flux",
             "ref_instrument_definition": "zi-hdawg",
             "ref_control_mode": "awg8-flux",
             "controller": {
@@ -357,9 +357,8 @@ Where:
 * ``name`` a friendly name for the instrument
 * ``ref_instrument_definition`` selects record under 'instrument_definitions', which must exits or an error is raised
 * ``ref_control_mode`` selects record under 'control_modes', which must exits or an error is raised
-* ``ref_signals_type`` defines which signal type this instrument instance provides.
-.. describe matching process against 'signals/*/type'
-.. FIXME: rename to 'signals_type'
+* ``signal_type`` defines which signal type this instrument instance provides.
+.. FIXME: describe matching process against 'signals/*/type'
 * ``qubits`` G groups of 1 or more qubits. G must match one of the available group sizes of 'instrument_definitions/<ref_instrument_definition>/control_group_sizes'. If more than 1 qubits are stated per group - e.g. for an AWG used in conjunction with a VSM - they may not produce conflicting signals at any time slot, or an error is raised
 * ``controller/slot`` the slot number of the CC this instrument is connected to
 * ``controller/name`` reserved for future use

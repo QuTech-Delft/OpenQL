@@ -254,7 +254,7 @@
 				{
 					"name": "ro_0",
                     "qubits": [[6], [11], [], [], [], [], [], [], []],
-                    "ref_signals_type": "measure",
+                    "signal_type": "measure",
 					"ref_instrument_definition": "zi-uhfqa",
                     "ref_control_mode": "uhfqa-9ch",
 					"controller": {
@@ -266,7 +266,7 @@
 				{
 					"name": "ro_1",
                     "qubits": [[0], [1], [2], [3], [7], [8], [12], [13], [15]],
-                    "ref_signals_type": "measure",
+                    "signal_type": "measure",
 					"ref_instrument_definition": "zi-uhfqa",
                     "ref_control_mode": "uhfqa-9ch",
 					"controller": {
@@ -278,7 +278,7 @@
 				{
 					"name": "ro_2",
                     "qubits": [[4], [5], [9], [10], [14], [16], [], [], []],
-                    "ref_signals_type": "measure",
+                    "signal_type": "measure",
 					"ref_instrument_definition": "zi-uhfqa",
                     "ref_control_mode": "uhfqa-9ch",
 					"controller": {
@@ -296,7 +296,7 @@
                         [2, 8, 14],                                         // [freq L]
                         [1, 4, 6, 10, 12, 15]                               // [freq H]
                     ],
-                    "ref_signals_type": "mw",
+                    "signal_type": "mw",
 					"ref_instrument_definition": "zi-hdawg",
                     "ref_control_mode": "awg8-mw-vsm",
 					"controller": {
@@ -311,7 +311,7 @@
                         [0, 5, 9, 13],                                      // [freq Mg]
                         [3, 7, 11, 16]                                      // [freq My]
                     ],
-                    "ref_signals_type": "mw",
+                    "signal_type": "mw",
 					"ref_instrument_definition": "zi-hdawg",
                     "ref_control_mode": "awg8-mw-vsm",
 					"controller": {
@@ -330,7 +330,7 @@
                         [0], [5], [9], [13], [], [], [], [],                // [freq Mg]
                         [3], [7], [11], [16], [], [], [], []                // [freq My]
                     ],
-                    "ref_signals_type": "switch",
+                    "signal_type": "switch",
 					"ref_instrument_definition": "qutech-vsm",
                     "ref_control_mode": "vsm-32ch",
 					"controller": {
@@ -344,7 +344,7 @@
 				{
 					"name": "flux_0",
                     "qubits": [[0], [1], [2], [3], [4], [5], [6], [7]],
-                    "ref_signals_type": "flux",
+                    "signal_type": "flux",
 					"ref_instrument_definition": "zi-hdawg",
                     "ref_control_mode": "awg8-flux",
 //                    "ref_control_mode": "awg8-flux-vector-8",
@@ -357,7 +357,7 @@
 				{
 					"name": "flux_1",
                     "qubits": [[8], [9], [10], [11], [12], [13], [14], [15]],
-                    "ref_signals_type": "flux",
+                    "signal_type": "flux",
 					"ref_instrument_definition": "zi-hdawg",
                     "ref_control_mode": "awg8-flux",
 //                    "ref_control_mode": "awg8-flux-vector-8",
@@ -370,7 +370,7 @@
 				{
 					"name": "flux_2",
                     "qubits": [[16], [], [], [], [], [], [], []],
-                    "ref_signals_type": "flux",
+                    "signal_type": "flux",
 					"ref_instrument_definition": "zi-hdawg",
                     "ref_control_mode": "awg8-flux",
 //                    "ref_control_mode": "awg8-flux-vector-8",

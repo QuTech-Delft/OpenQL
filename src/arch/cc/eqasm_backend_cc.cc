@@ -10,6 +10,7 @@
     Change log:
     20200116:
     - changed JSON field "signal_ref" to "ref_signal" to improve consistency
+    - idem "ref_signals_type" to "signal_type"
 
     Todo:
     - finish support for classical instructions
