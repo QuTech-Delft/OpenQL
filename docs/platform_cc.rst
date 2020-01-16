@@ -75,7 +75,7 @@ Where:
 
 * ``channels`` defines the number of logical channels of the instrument. For most instruments there is one logical channel per physical channel, but the 'zi-uhfqa' provides 9 logical channels on one physical channel pair.
 * ``control_group_sizes`` states possible arrangements of channels operating as a vector
-.. FIXME: example
+.. FIXME: add example
 ..    // * ``latency`` latency from trigger to output in [ns]. FIXME: currently not implemented
 
 
@@ -125,9 +125,9 @@ Subsection ``control_modes`` defines modes to control instruments. These define 
             ],
             "trigger_bits": [31]
         },
-        "awg8-flux-vector-8": {                    // single code word for 8 flux channels. FIXME: no official mode yet
+        "awg8-flux-vector-8": {                    // single code word for 8 flux channels.
             "control_bits": [
-                [7,6,5,4,3,2,1,0]     // FIXME: how many bits are available
+                [7,6,5,4,3,2,1,0]
             ],
             "trigger_bits": [31]
         },
@@ -193,7 +193,6 @@ Subsection ``signals`` provides a signal library that gate definitions can refer
                 "operand_idx": 1,                                   // target
                 "value": ["flux-1-{qubit}"]
             }
-            // FIXME: CZ(a,b) and CZ(a,c) requires different waveforms on a
         ]
     },  // signals
 
@@ -205,7 +204,7 @@ Where:
     * ``operand_idx`` states the operand index of the instruction/gate this signal refers to. Signals must be defined for all operand_idx the gate refers to, so a 3-qubit gate needs to define 0 through 2. Several signals with the same operand_idx can be defined to select several signal types, as shown in "single-qubit-mw" which has both "mw" (provided by an AWG) and "switch" (provided by a VSM)
     .. FIXME: rewrite
     * ``value`` defines a vector of signal names. Supports the following macro expansions:
-    .. FIXME: describe the (future) use of field value
+    .. FIXME: describe the (future) use of field 'value'
 
         * {gateName}
         * {instrumentName}
@@ -224,7 +223,6 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
 
     "instruments": [
         // readout.
-        // FIXME: must match 'resources/meas_units' if resource constraint scheduler is used
         {
             "name": "ro_0",
             "qubits": [[6], [11], [], [], [], [], [], [], []],
@@ -232,35 +230,12 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
             "ref_instrument_definition": "zi-uhfqa",
             "ref_control_mode": "uhfqa-9ch",
             "controller": {
-                "name": "cc",   // FIXME
+                "name": "cc",
                 "slot": 0,
                 "io_module": "CC-CONN-DIO"
             }
         },
-        {
-            "name": "ro_1",
-            "qubits": [[0], [1], [2], [3], [7], [8], [12], [13], [15]],
-            "signal_type": "measure",
-            "ref_instrument_definition": "zi-uhfqa",
-            "ref_control_mode": "uhfqa-9ch",
-            "controller": {
-                "name": "cc",   // FIXME
-                "slot": 1,
-                "io_module": "CC-CONN-DIO"
-            }
-        },
-        {
-            "name": "ro_2",
-            "qubits": [[4], [5], [9], [10], [14], [16], [], [], []],
-            "signal_type": "measure",
-            "ref_instrument_definition": "zi-uhfqa",
-            "ref_control_mode": "uhfqa-9ch",
-            "controller": {
-                "name": "cc",   // FIXME
-                "slot": 2,
-                "io_module": "CC-CONN-DIO"
-            }
-        },
+        // ...
 
         // microwave.
         {
@@ -273,26 +248,12 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
             "ref_instrument_definition": "zi-hdawg",
             "ref_control_mode": "awg8-mw-vsm-hack",
             "controller": {
-                "name": "cc",   // FIXME
+                "name": "cc",
                 "slot": 3,
                 "io_module": "CC-CONN-DIO-DIFF"
             }
         },
-        {
-            "name": "mw_1",
-            "qubits": [                                             // ancilla qubits:
-                [0, 5, 9, 13],                                      // [freq Mg]
-                [3, 7, 11, 16]                                      // [freq My]
-            ],
-            "signal_type": "mw",
-            "ref_instrument_definition": "zi-hdawg",
-            "ref_control_mode": "awg8-mw-vsm-hack",
-            "controller": {
-                "name": "cc",   // FIXME
-                "slot": 4,
-                "io_module": "CC-CONN-DIO-DIFF"
-            }
-        },
+        // ...
 
         // VSM
         {
@@ -307,7 +268,7 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
             "ref_instrument_definition": "qutech-vsm",
             "ref_control_mode": "vsm-32ch",
             "controller": {
-                "name": "cc",   // FIXME
+                "name": "cc",
                 "slot": 5,
                 "io_module": "cc-conn-vsm"
             }
@@ -321,35 +282,12 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
             "ref_instrument_definition": "zi-hdawg",
             "ref_control_mode": "awg8-flux",
             "controller": {
-                "name": "cc",   // FIXME
+                "name": "cc",
                 "slot": 6,
                 "io_module": "CC-CONN-DIO-DIFF"
             }
         },
-        {
-            "name": "flux_1",
-            "qubits": [[8], [9], [10], [11], [12], [13], [14], [15]],
-            "signal_type": "flux",
-            "ref_instrument_definition": "zi-hdawg",
-            "ref_control_mode": "awg8-flux",
-            "controller": {
-                "name": "cc",   // FIXME
-                "slot": 7,
-                "io_module": "CC-CONN-DIO-DIFF"
-            }
-        },
-        {
-            "name": "flux_2",
-            "qubits": [[16], [], [], [], [], [], [], []],
-            "signal_type": "flux",
-            "ref_instrument_definition": "zi-hdawg",
-            "ref_control_mode": "awg8-flux",
-            "controller": {
-                "name": "cc",   // FIXME
-                "slot": 8,
-                "io_module": "CC-CONN-DIO-DIFF"
-            }
-        }
+        // ...
     ] // instruments
 
 Where:
