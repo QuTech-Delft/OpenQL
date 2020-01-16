@@ -3,11 +3,11 @@
 Kernel
 ======
 
-A kernel models a circuit with quantum gates ending in one or more measurements.
+A kernel conventionally models a circuit with quantum gates ending in one or more measurements.
 In OpenQL, this has been extended with:
 
 - control flow that can jump at the end of a kernel to the start of another kernel; see this section
-- classical gates mixed with quantum gates in a single circuit with the design objective to support control flow changes; see :ref:`classical_instructions`
+- classical gates mixed with quantum gates (including measurements) in a single circuit with the design objective to support control flow changes; see :ref:`classical_instructions`; measurements are just gates with classical results and can be anywhere, bridging quantum code to classical code; a kernel doesn't necessarily have to contain a measurement
 
 In OpenQL a ``kernel`` is an object; it has a name, a type,
 and a circuit as its main structural attributes.
@@ -30,13 +30,15 @@ Let us first look at some example Python OpenQL code (adapted from *tests/test_h
    num_cregs = 10
 
    p = ql.Program('test_classical', platform, num_qubits, num_cregs)
+   kfirst = ql.Kernel('First', platform, num_qubits, num_cregs)
 
    # create classical registers
-   rd = ql.CReg()
    rs1 = ql.CReg()
    rs2 = ql.CReg()
 
    # if (rs1 == rs2) then Thenpart else Elsepart endif
+   kfirst.classical(rs1, ql.Operation(...))
+   kfirst.classical(rs2, ql.Operation(...))
    kthen = ql.Kernel('Thenpart', platform, num_qubits, num_cregs)
    kthen.gate('x', [0])
    kelse = ql.Kernel('Elsepart', platform, num_qubits, num_cregs)
@@ -44,21 +46,23 @@ Let us first look at some example Python OpenQL code (adapted from *tests/test_h
    p.add_if_else(kthen, kelse, ql.Operation(rs1, '==', rs2))
 
    # loop 10 times over Loopbody endloop;
-   # Afterloop
    kloopbody = ql.Kernel('Loopbody', platform, num_qubits, num_cregs)
    kloopbody.gate('x', [0])
+   p.add_for(kloopbody, 10)
+   # Afterloop
    kafterloop = ql.Kernel('Afterloop', platform, num_qubits, num_cregs)
    kafterloop.gate('y', [0])
-   p.add_for(kloopbody, 10)
    p.add_kernel(kafterloop)
 
    # do Dowhileloopbody while (rs1 < rs2)
-   # Afterdowhile
    kdowhileloopbody = ql.Kernel('Dowhileloopbody', platform, num_qubits, num_cregs)
    kdowhileloopbody.gate('x', [0])
+   kdowhileloopbody.classical(rs1, ql.Operation(...))
+   kdowhileloopbody.classical(rs2, ql.Operation(...))
+   p.add_do_while(kdowhileloopbody, ql.Operation(rs1, '<', rs2))
+   # Afterdowhile
    kafterdowhile = ql.Kernel('Afterdowhile', platform, num_qubits, num_cregs)
    kafterdowhile.gate('y', [0])
-   p.add_do_while(kdowhileloopbody, ql.Operation(rs1, '<', rs2))
    p.add_kernel(kafterdowhile)
 
    p.compile()
@@ -73,9 +77,9 @@ We see that ordinary kernels are created and filled with a single gate; these ar
 These kernels serve as the thenpart, elsepart, loopbody, etc.
 And then we see three examples of the creation of a control-flow construct, with the ordinary kernels as parameters.
 
-After this, we'll have the following 14 kernels in the ``kernels`` vector of program ``test_classical``
+After this, we'll have the following 15 kernels in the ``kernels`` vector of program ``test_classical``
 (some are named after their ``type``, see below):
-``IF_START``, ``Thenpart``, ``IF_END``, ``ELSE_START``, ``Elsepart``, ``ELSE_END``,
+``First``, ``IF_START``, ``Thenpart``, ``IF_END``, ``ELSE_START``, ``Elsepart``, ``ELSE_END``,
 ``FOR_START``, ``Loopbody``, ``FOR_END``, ``Afterloop``,
 ``DO_WHILE_START``, ``Dowhileloopbody``, ``DO_WHILE_END``, ``Afterdowhile``.
 
@@ -126,9 +130,11 @@ Further information on these attributes:
 
 - ``circuit`` (the real kernel attribute name is ``c`` but this is very non-descriptive) contains the gates and is empty for non-``STATIC`` kernels
 
-- ``br_condition`` is an expression as defined above and as created by a call to an ``operation()`` method (see :ref:`classical_gate_attributes_in_the_internal_representation`);;
-  it must be of ``RELATIONAL`` type; it stores the condition under which the (first) body of the conditional construct is executed;
-  this is the kernel referenced by ``then`` in case of an if or an if-else; and this is the kernel representing the loop's body in case of a do-while.
+- ``br_condition`` is an expression that is created by a call to an ``Operation()`` method
+  (see :ref:`classical_instructions`); it represents a condition so it must be of ``RELATIONAL`` type;
+  this attribute stores the condition under which the (first) body of the conditional construct is executed;
+  the latter is the kernel referenced by ``then`` in case of an if or an if-else;
+  and it is the kernel representing the loop's body in case of a do-while.
   ``body``, ``then``, and ``else`` all stand for references to the other kernels in the respective constructs.
   Similarly, ``loopcond``, and ``thencond`` stand for the expressions representing the condition.
 
@@ -177,9 +183,11 @@ The kernel's ``name`` functions as a label to be used in control transfers.
 
 :Note: There aren't gates for control flow (*control gates*), only kernel attributes.
 
-:Note: Control flow gates cannot be configured in the platform configuration file, and cannot be scheduled.
+:Note: Control flow gates cannot be configured in the platform configuration file.
 
-:Note: Code generation of control flow, i.e. the mapping from the internal representation to the target platform's instruction set and to QASM requires code that is at a different place than the mapping of gates; it is differently organized; it follows a different model of translation.
+:Note: Control flow instructions/gates cannot be scheduled.
+
+:Note: Code generation of control flow, i.e. the mapping from the internal representation to the target platform's instruction set and to QASM requires code inside the OpenQL compiler that is at a different place than the mapping of gates in the internal representation to the target platform's instruction set or QASM; that there have to be these parallel pieces of code inside the OpenQL compiler complicates the compiler unnecessarily.
 
 :Note: Scheduling around control flow, i.e. defining durations, dependences, relation to resources, is irregularly organized as well; a property of scheduling is that once scheduling of the main code has been done, all later additional scheduling must not disturb the first schedule, and thus that usually to accomplish this, more strict constraints are applied with less optimal code as result; and any attempt is error-prone as well.  It also means that the number of cycles to transfer control flow from one kernel to the next kernel is not modeled and that loop scheduling and other forms of inter-kernel scheduling are unnecessarily hard to support.
 

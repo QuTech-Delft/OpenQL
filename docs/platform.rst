@@ -268,16 +268,20 @@ Examples of a 1-qubit and a 2-qubit instruction are shown below:
 	}
 
 ``x q0`` is the name of the instruction which will be used to refer to this
-instruction inside the OpenQL program. The ``duration`` specifies the time
-duration required to complete this instruction. Due to control electronics, it
-is sometimes required to add a positive or negative latency to an instruction.
-This can be specified by the ``latency`` field. This field is divided by cycle
-time and rounded up to obtain an integer number of cycles. After scheduling is
-performed, an instruction is shifted back or forth in time depending upon
-the calculated cycles corresponding to the latency field.
+instruction inside the OpenQL program. ``x`` would also be allowed as name. The former defines a ``specialized gate``, the latter defines a ``generalized gate``; please refer to :ref:`quantum_gates` for the definitions of these terms and to :ref:`input_external_representation` for the use of these two forms of instruction definitions.
 
+* ``duration`` specifies the time duration required to complete this instruction.
+
+* ``latency``; due to control electronics, it
+  is sometimes required to add a positive or negative latency to an instruction.
+  This can be specified by the ``latency`` field. This field is divided by cycle
+  time and rounded up to obtain an integer number of cycles. After scheduling is
+  performed, an instruction is shifted back or forth in time depending upon
+  the calculated cycles corresponding to the latency field.
 
 * ``qubits`` refer to the list of qubit operands.
+
+  :Note: This field has to match the operands in the name of the instruction, if specified there. This is checked. Otherwise there is no use of this field. So there is redundancy here.
 
 * ``matrix`` specifies the process matrix representing this instruction.
   If optimization is enabled, this matrix will be used by the optimizer to fuse
@@ -288,7 +292,10 @@ the calculated cycles corresponding to the latency field.
   instruction. Setting ``disable_optimization`` to ``true`` will mean that this
   instruction cannot be compiled away during optimization.
 
+  :Note: This is not implemented. Propose to do so. Then have to define what is exactly means: compiling away is interpreted as the gate with this flag ``true`` will never be deleted from a circuit once created, nor that the circuit that contains it will be deleted.
+
 * ``type`` indicates whether the instruction is a microwave (``mw``), flux (``flux``) or readout (``readout``).
+  This is used by the resource manager to select the resources of a gate for scheduling.
 
 
 

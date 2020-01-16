@@ -32,11 +32,11 @@ Let us first look at some example code (taken from *tests/test_hybrid.py*):
    # comparison
    k1.classical(rd, ql.Operation(rs1, '==', rs2))
 
-   # initialize (r1 = 2)
-   k1.classical(rs1, ql.Operation(2))
+   # initialize (rd = 2)
+   k1.classical(rd, ql.Operation(2))
 
-   # assign (r1 = r2)
-   k1.classical(rs1, ql.Operation(rs2))
+   # assign (rd = rs1)
+   k1.classical(rd, ql.Operation(rs1))
 
    # measure
    k1.gate('measure', [0], rs1)
