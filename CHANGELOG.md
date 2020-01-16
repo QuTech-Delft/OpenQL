@@ -2,15 +2,30 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+
+## [ next ] - [ TBD ]
+### Added
+-
+
+### Changed
+- CC backend: changed JSON field "signal_ref" to "ref_signal"
+
+### Removed
+-
+
+### Fixed
+
+
+
 ## [ 0.8.0 ] - [ 2019-10-31 ]
 ### Added
 - support for CC backend
 
 ### Changed
-- 
+-
 
 ### Removed
-- 
+-
 
 ### Fixed
 - fixed issue with duplicate kernel names
@@ -160,7 +175,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 -
 
 ### Removed
-- 
+-
 
 ### Fixed
 - getting started example
@@ -202,7 +217,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 -
 
 ### Removed
-- 
+-
 
 ### Fixed
 - varying prepz duration
@@ -221,7 +236,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 -
 
 ### Removed
-- 
+-
 
 ### Fixed
 -

@@ -7,6 +7,10 @@
  */
 
 /*
+    Change log:
+    20200116:
+    - changed JSON field "signal_ref" to "ref_signal" to improve consistency
+
     Todo:
     - finish support for classical instructions
     - finish support for kernel conditionality

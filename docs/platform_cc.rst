@@ -199,7 +199,7 @@ Subsection ``signals`` provides a signal library that gate definitions can refer
 
 Where:
 
-* ``<key>`` is a name which can be referred to from key 'instructions/<>/cc/signal_ref'. It defines an array of records with the fields below:
+* ``<key>`` is a name which can be referred to from key 'instructions/<>/cc/ref_signal'. It defines an array of records with the fields below:
 
     * ``type`` defines a signal type. This is used to select an instrument that provides that signal type through key 'instruments/ref_signals_type'. The types are entirely user defined, there is no builtin notion of their meaning.
     * ``operand_idx`` states the operand index of the instruction/gate this signal refers to. Signals must be defined for all operand_idx the gate refers to, so a 3-qubit gate needs to define 0 through 2. Several signals with the same operand_idx can be defined to select several signal types, as shown in "single-qubit-mw" which has both "mw" (provided by an AWG) and "switch" (provided by a VSM)
@@ -379,7 +379,7 @@ The CC backend extends section "instructions/<key>" with a subsection "cc" as sh
         "type": "mw",
         "cc_light_instr": "y",
         "cc": {
-            "signal_ref": "single-qubit-mw",
+            "ref_signal": "single-qubit-mw",
             "static_codeword_override": 2
         }
     },
@@ -409,8 +409,7 @@ The CC backend extends section "instructions/<key>" with a subsection "cc" as sh
 
 Where:
 
-* ``cc/signal_ref`` points to a signal definition in ``hardware_settings/eqasm_backend_cc/signals``, which must exist or an error is raised
-.. FIXME: rename ref_signal
+* ``cc/ref_signal`` points to a signal definition in ``hardware_settings/eqasm_backend_cc/signals``, which must exist or an error is raised
 * ``cc/signal`` defines a signal in place, in an identical fashion as ``hardware_settings/eqasm_backend_cc/signals``
 * ``cc/static_codeword_override`` provides a user defined codeword for this instruction. Currently, this key is compulsory, but in the future, codewords will be assigned automatically to make better use of limited codeword space
 

@@ -838,14 +838,14 @@ codegen_cc::tJsonNodeInfo codegen_cc::findSignalDefinition(const json &instructi
     tJsonNodeInfo signalInfo;
     std::string instructionPath = "instructions/"+iname;
     JSON_ASSERT(instruction, "cc", instructionPath);
-    if(JSON_EXISTS(instruction["cc"], "signal_ref")) {
-        std::string signalRef = instruction["cc"]["signal_ref"];
-        signalInfo.node = (*jsonSignals)[signalRef];  // poor man's JSON pointer
+    if(JSON_EXISTS(instruction["cc"], "ref_signal")) {
+        std::string refSignal = instruction["cc"]["ref_signal"];
+        signalInfo.node = (*jsonSignals)[refSignal];  // poor man's JSON pointer
         if(signalInfo.node.size() == 0) {
             FATAL("Error in JSON definition of instruction '" << iname <<
-                  "': signal_ref '" << signalRef << "' does not resolve");
+                  "': ref_signal '" << refSignal << "' does not resolve");
         }
-        signalInfo.path = "signals/"+signalRef;
+        signalInfo.path = "signals/"+refSignal;
     } else {
         signalInfo.node = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");
         DOUT("signal for '" << instruction << "': " << signalInfo.node);
