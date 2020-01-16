@@ -5,9 +5,11 @@ Compiler Passes
 
 Most of the passes in their function and implementation are platform independent,
 deriving their platform dependent information from options and/or the configuration file.
-This holds also for rcscheduling and mapping, although one wouldn't think so first,
-since these are called from the platform dependent part of the compiler now.
+This holds also for mapping, although one wouldn't think so first,
+since it is called from the platform dependent part of the compiler now.
 All passes like this are summarized below first and are described extensively platform independently later in this section.
+
+:Note: Some passes are called from the platform independent compiler, other ones from the back-end compiler. That is a platform dependent issue and therefore described with the platform.
 
 Their description includes:
 
@@ -16,8 +18,12 @@ Their description includes:
 - the particular options they listen to; there usually is an option to disable it; also there are ways to dump the IR before and/or after it although this is not generally possible yet
 - the function they perform, in terms of the IR and the options
 
-Other passes, of which the function and implementation is platform dependent, can be found with the platforms.
+Other passes, of which the implementation (i.e. source code etc.) is platform dependent,
+can be found with the platforms.
 An example of the latter passes is QISA (i.e. instruction) generation in CC-Light.
+In the lists below, these passes are indicated to be platform dependent.
+
+.. include:: decomposition.rst
 
 Passes have some general facilities available to them; these are not passes themselves since they don't transform the IR.
 Examples of such facilities are:
@@ -57,6 +63,11 @@ Compiler passes in OpenQL are the compiler elements that, when called one after 
 gradually transform the OpenQL input program to some platform defined output program.
 The following passes are available and usually called in this order.
 More detailed information on each can be found in the sections below.
+
+When it is indicated that a pass is CC-Light (or any other platform) dependent,
+it means that its implementation with respect to source code is platform dependent.
+A pass of which the source code is platform independent, can behave platform dependently
+by its parameterization by the platform configuration file.
 
 - program reading
 	not a real pass now;
@@ -102,11 +113,13 @@ More detailed information on each can be found in the sections below.
 	which is defined by the ``scheduler`` option value: ``ASAP``, ``ALAP`` and some other options.
 	See :ref:`scheduling`.
 
-- decomposition before scheduling
+- decomposition before scheduling (CC-Light dependent)
 	classical non-primitive gates are decomposed to primitives
 	(e.g. ``eq`` is transformed to ``cmp`` followed by an empty cycle and an ``fbr_eq``);
 	after measurements an ``fmr`` is inserted provided the measurement had a classical register operand.
 	See :ref:`decomposition`.
+
+    :Note: That this pass is CC-Light dependent in its code is wrong and must be solved.
 
 - clifford optimization
 	dependency chains of one-qubit clifford gates operating on the same qubit
@@ -132,7 +145,7 @@ More detailed information on each can be found in the sections below.
 	It is not complete in the sense that it ignores transfer of the v2r map between kernels.
 	See :ref:`mapping`.
 
-- rcscheduler
+- rcscheduler (CC-Light dependent)
 	resource constraints are taken into account; the result reflects the timing required during execution,
 	i.e. also taking into account any further non-OpenQL passes and run-time stages such as:
 
@@ -147,7 +160,9 @@ More detailed information on each can be found in the sections below.
 	The resulting circuit is stored in the usual manner and as a sequence of bundles.
 	See :ref:`scheduling`.
 
-- decomposition after scheduling
+    :Note: That this pass is CC-Light dependent in its code is wrong and must be solved.
+
+- decomposition after scheduling (CC-Light dependent)
 	two-qubit flux gates are decomposed to a series of one-qubit flux gates
 	of the form ``sqf q0`` to be executed in the same cycle;
 	this is done only when the ``cz_mode`` option has the value ``auto``;
@@ -155,10 +170,10 @@ More detailed information on each can be found in the sections below.
 	see the detuned_qubits resource description in the CC-Light platform configuration file for details.
 	See :ref:`decomposition`.
 
-- opcode and control store file generation
+- opcode and control store file generation (CC-Light dependent)
 	currently disabled as not used by CC-Light
 
-- QISA generation
+- QISA generation (CC-Light dependent)
 
 	* bundle to QISA translation
 
@@ -173,9 +188,6 @@ More detailed information on each can be found in the sections below.
 
 	See :ref:`platform`.
 
-:Note: Some passes are called from the platform independent compiler, other ones from the back-end compiler. That is a platform dependent issue and therefore described with the platform.
-
-.. include:: decomposition.rst
 .. include:: optimization.rst
 .. include:: scheduling.rst
 .. include:: mapping.rst
