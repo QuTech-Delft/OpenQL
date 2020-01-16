@@ -31,8 +31,12 @@ extensions = [
     'm2r',
     'sphinx.ext.todo',
  	'sphinx.ext.autodoc',
- 	'sphinx.ext.napoleon'
+ 	'sphinx.ext.napoleon',
+ 	'sphinx.ext.autosummary'
 ]
+
+autodoc_default_flags = ['members']
+# autosummary_generate = True
 
 source_suffix = ['.rst', '.md']
 
