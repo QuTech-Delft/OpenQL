@@ -7,8 +7,11 @@ Central Controller Platform Configuration
 CC configuration file
 ^^^^^^^^^^^^^^^^^^^^^
 
+.. FIXME: improve readability
+
 This section describes the JSON configuration file format for OpenQL in conjunction
 with the Central Controller (CC) backend. Note that for the CC - contrary to the CC-light - the final hardware output is entirely *determined* by the contents of the configuration file, there is no built-in knowledge of instrument connectivity or codeword organization.
+
 The CC configuration file consists of several sections described below.
 
 To select the CC backend, the following is required:
@@ -27,7 +30,7 @@ To select the CC backend, the following is required:
 hardware settings of the platform as shown below. These settings affect the
 scheduling of instructions. Please refer to :ref:`platform` for a full description and an example.
 
-This section describes parameters that occur in documentation or example files, but are not actually implemented.
+The following settings are not used by the CC backend:
 
 * hardware_settings/mw_mw_buffer
 * hardware_settings/mw_flux_buffer
@@ -149,6 +152,7 @@ Where:
 
 * ``<key>`` is a name which can be referred to from key 'instruments/[]/ref_control_mode'
 * ``control_bits`` defines G groups of B bits, with:
+
     - G determines which the 'instrument_definitions/<key>/control_group_sizes' used
     - B is an ordered list of bits (MSB to LSB) used for the code word
 * ``trigger_bits`` vector of bits used to trigger the instrument. Must either be size 1 (common trigger) or size G (separate trigger per group)
@@ -196,14 +200,18 @@ Subsection ``signals`` provides a signal library that gate definitions can refer
 Where:
 
 * ``<key>`` is a name which can be referred to from key 'instructions/<>/cc/signal_ref'. It defines an array of records with the fields below:
+
     * ``type`` defines a signal type. This is used to select an instrument that provides that signal type through key 'instruments/ref_signals_type'. The types are entirely user defined, there is no builtin notion of their meaning.
     * ``operand_idx`` states the operand index of the instruction/gate this signal refers to. Signals must be defined for all operand_idx the gate refers to, so a 3-qubit gate needs to define 0 through 2. Several signals with the same operand_idx can be defined to select several signal types, as shown in "single-qubit-mw" which has both "mw" (provided by an AWG) and "switch" (provided by a VSM)
+    .. FIXME: rewrite
     * ``value`` defines a vector of signal names. Supports the following macro expansions:
+    .. FIXME: describe the (future) use of field value
+
         * {gateName}
         * {instrumentName}
         * {instrumentGroup}
         * {qubit}
-.. FIXME: expand
+        .. FIXME: expand
 
 
 Instruments
@@ -255,7 +263,6 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
         },
 
         // microwave.
-        // FIXME: must match 'resources/qwgs' if resource constraint scheduler is used
         {
             "name": "mw_0",
             "qubits": [                                             // data qubits:
@@ -313,7 +320,6 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
             "ref_signals_type": "flux",
             "ref_instrument_definition": "zi-hdawg",
             "ref_control_mode": "awg8-flux",
-    //                    "ref_control_mode": "awg8-flux-vector-8",
             "controller": {
                 "name": "cc",   // FIXME
                 "slot": 6,
@@ -326,7 +332,6 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
             "ref_signals_type": "flux",
             "ref_instrument_definition": "zi-hdawg",
             "ref_control_mode": "awg8-flux",
-    //                    "ref_control_mode": "awg8-flux-vector-8",
             "controller": {
                 "name": "cc",   // FIXME
                 "slot": 7,
@@ -339,7 +344,6 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
             "ref_signals_type": "flux",
             "ref_instrument_definition": "zi-hdawg",
             "ref_control_mode": "awg8-flux",
-    //                    "ref_control_mode": "awg8-flux-vector-8",
             "controller": {
                 "name": "cc",   // FIXME
                 "slot": 8,
@@ -355,7 +359,7 @@ Where:
 * ``ref_control_mode`` selects record under 'control_modes', which must exits or an error is raised
 * ``ref_signals_type`` defines which signal type this instrument instance provides.
 .. describe matching process against 'signals/*/type'
-.. FIXME: rename signals_type
+.. FIXME: rename to 'signals_type'
 * ``qubits`` G groups of 1 or more qubits. G must match one of the available group sizes of 'instrument_definitions/<ref_instrument_definition>/control_group_sizes'. If more than 1 qubits are stated per group - e.g. for an AWG used in conjunction with a VSM - they may not produce conflicting signals at any time slot, or an error is raised
 * ``controller/slot`` the slot number of the CC this instrument is connected to
 * ``controller/name`` reserved for future use
@@ -412,22 +416,24 @@ Where:
 
 The following standard OpenQL fields are used:
 
-* ``<key>`` name for the instruction. The following syntaxes can be used for instruction names
+* ``<key>`` name for the instruction. The following syntaxes can be used for instruction names:
+
     - "<name>"
     - "<name><qubits>"
-.. FIXME: special treatment of names by scheduler/backend
-.. - "readout" : backend
-.. - "measure"
+    .. FIXME: special treatment of names by scheduler/backend
+    .. - "readout" : backend
+    .. - "measure"
 * ``duration`` duration in [ns]
 * ``matrix`` the process matrix. Required, but only used if optimization is enabled
-* ``type`` instruction type used by scheduler, one of builtin names "mw", "flux", FIXME. Has no relation with signal type definition of CC backend, even though we use the same string values there
-* ``cc_light_instr`` required by scheduler. FIXME: expand on this
+* ``type`` instruction type used by scheduler, one of the builtin names "mw", "flux" or "measure". Has no relation with signal type definition of CC backend, even though we use the same string values there
+* ``cc_light_instr`` required by scheduler.
+.. FIXME: expand on this
 * ``latency`` optional instruction latency in [ns], used by scheduler
 * ``qubits`` optional
 
 The following fields in 'instructions' are not used by the CC backend:
 
-* ``cc_light_instr_type``
+* ``cc_light_instr_type``  FIXME: is used in scheduler.h
 * ``cc_light_cond``
 * ``cc_light_opcode``
 * ``cc_light_codeword``
@@ -436,15 +442,22 @@ The following fields in 'instructions' are not used by the CC backend:
 * ``disable_optimization`` not implemented in OpenQL
 
 
-FIXME: compiler options
+Converting quantum gates to instrument codewords
+*******************************************************
+
+FIXME: TBW
+
+
+Compiler options
+^^^^^^^^^^^^^^^^
+
+FIXME: TBW
+
+
+CC backend output files
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-
-
-CC backend output files:
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-FIXME
+FIXME: TBW: .vq1asm, .vcd
 
 Standard OpenQL features
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -472,8 +485,3 @@ Specialized gate decompositions can be specified in gate_decomposition section, 
 
     "rx180 q0" : ["x q0"]
     "cz_park q0,q1" : ["cz q0,q1", "park q3"]
-
-
-
-
-

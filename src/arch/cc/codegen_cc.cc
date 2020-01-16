@@ -89,11 +89,11 @@ void codegen_cc::program_start(const std::string &progName)
     vcd.upscope();
 
     // define signal variables
-    size_t instrsUsed = jsonInstruments.size();
+    size_t instrsUsed = jsonInstruments->size();
     vcd.scope(vcd.ST_MODULE, "signals");
     vcdVarSignal.assign(instrsUsed, std::vector<int>(MAX_GROUPS, {0}));
     for(size_t instrIdx=0; instrIdx<instrsUsed; instrIdx++) {
-        const json &instrument = jsonInstruments[instrIdx];
+        const json &instrument = (*jsonInstruments)[instrIdx];
         std::string instrumentName = instrument["name"];
         const json &qubits = instrument["qubits"];
         for(size_t group=0; group<qubits.size(); group++) {
@@ -107,7 +107,7 @@ void codegen_cc::program_start(const std::string &progName)
     vcd.scope(vcd.ST_MODULE, "codewords");
     vcdVarCodeword.resize(platform->qubit_number);
     for(size_t instrIdx=0; instrIdx<instrsUsed; instrIdx++) {
-        const json &instrument = jsonInstruments[instrIdx];
+        const json &instrument = (*jsonInstruments)[instrIdx];
         std::string instrumentName = instrument["name"];
         vcdVarCodeword[instrIdx] = vcd.registerVar(instrumentName, Vcd::VT_STRING);
     }
@@ -156,7 +156,7 @@ void codegen_cc::kernel_finish(const std::string &kernelName, size_t durationInC
 // bundle_start: clear groupInfo, which maintains the work that needs to be performed for bundle
 void codegen_cc::bundle_start(const std::string &cmnt)
 {
-    size_t slotsUsed = jsonInstruments.size();   // FIXME: assuming all instruments use a slot
+    size_t slotsUsed = jsonInstruments->size();   // FIXME: assuming all instruments use a slot
     groupInfo.assign(slotsUsed, std::vector<tGroupInfo>(MAX_GROUPS, {"", 0, -1}));
 
     comment(cmnt);
@@ -170,8 +170,8 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
     }
 
     // iterate over instruments
-    for(size_t instrIdx=0; instrIdx<jsonInstruments.size(); instrIdx++) {
-        const json &instrument = jsonInstruments[instrIdx];
+    for(size_t instrIdx=0; instrIdx<jsonInstruments->size(); instrIdx++) {
+        const json &instrument = (*jsonInstruments)[instrIdx];
         std::string instrumentName = instrument["name"];
         int slot = instrument["controller"]["slot"];    // FIXME: assuming controller being cc
 
@@ -189,7 +189,7 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                 // FIXME: check existence of keys below to ease end user debugging on configuration errors
                 // find control mode & bits for instrument&group
                 std::string controlModeRef = instrument["ref_control_mode"];
-                const json &controlMode = jsonControlModes[controlModeRef];     // the control mode definition for our instrument
+                const json &controlMode = (*jsonControlModes)[controlModeRef];     // the control mode definition for our instrument
                 size_t nrControlBitsGroups = controlMode["control_bits"].size();// how many groups of control bits does the control mode specify
                 // determine which group to use
                 size_t controlModeGroup = -1;
@@ -467,7 +467,7 @@ void codegen_cc::custom_gate(
 
         tSignalInfo si = findSignalInfoForQubit(instructionSignalType, qubit);
 // FIXME: add JSON_ASSERTs
-        const json &instrument = jsonInstruments[si.instrIdx];
+        const json &instrument = (*jsonInstruments)[si.instrIdx];
         std::string instrumentName = instrument["name"];
         int slot = instrument["controller"]["slot"];
 
@@ -614,8 +614,8 @@ void codegen_cc::latencyCompensation()
     std::map<int, int> slotLatencies;   // maps slot to latency
 
     // get latencies per slot, iterating over instruments
-    for(size_t instrIdx=0; instrIdx<jsonInstruments.size(); instrIdx++) {
-        const json &instrument = jsonInstruments[instrIdx];
+    for(size_t instrIdx=0; instrIdx<jsonInstruments->size(); instrIdx++) {
+        const json &instrument = (*jsonInstruments)[instrIdx];
         std::string instrumentRef = instrument["ref_instrument_definition"];
         int slot = instrument["controller"]["slot"];    // FIXME: assuming controller being cc
 
@@ -733,25 +733,25 @@ uint32_t codegen_cc::assignCodeword(const std::string &instrumentName, int instr
 void codegen_cc::load_backend_settings()
 {
     // remind some main JSON areas
-    jsonBackendSettings = platform->hardware_settings["eqasm_backend_cc"];
-    jsonInstrumentDefinitions = jsonBackendSettings["instrument_definitions"];
-    jsonControlModes = jsonBackendSettings["control_modes"];
-    jsonInstruments = jsonBackendSettings["instruments"];
-    jsonSignals = jsonBackendSettings["signals"];
+    const json &jsonBackendSettings = platform->hardware_settings["eqasm_backend_cc"];
+    jsonInstrumentDefinitions = &jsonBackendSettings["instrument_definitions"];
+    jsonControlModes = &jsonBackendSettings["control_modes"];
+    jsonInstruments = &jsonBackendSettings["instruments"];
+    jsonSignals = &jsonBackendSettings["signals"];
 
 
 #if 0   // FIXME: print some info, which also helps detecting errors early on
     // read instrument definitions
-    // FIXME: the following requires json>v3.1.0:  for(auto& id : jsonInstrumentDefinitions.items()) {
-    for(size_t i=0; i<jsonInstrumentDefinitions.size(); i++) {
+    // FIXME: the following requires json>v3.1.0:  for(auto& id : jsonInstrumentDefinitions->items()) {
+    for(size_t i=0; i<jsonInstrumentDefinitions->size(); i++) {
         std::string idName = jsonInstrumentDefinitions[i];        // NB: uses type conversion to get node value
         DOUT("found instrument definition: '" << idName <<"'");
     }
 
     // read control modes
-    for(size_t i=0; i<jsonControlModes.size(); i++)
+    for(size_t i=0; i<jsonControlModes->size(); i++)
     {
-        const json &name = jsonControlModes[i]["name"];
+        const json &name = (*jsonControlModes)[i]["name"];
         DOUT("found control mode '" << name <<"'");
     }
 
@@ -774,8 +774,8 @@ void codegen_cc::load_backend_settings()
 #if OPT_CALCULATE_LATENCIES
 const json &codegen_cc::findInstrumentDefinition(const std::string &name)
 {
-    if JSON_EXISTS(jsonInstrumentDefinitions, name) {
-        return jsonInstrumentDefinitions[name];
+    if JSON_EXISTS(*jsonInstrumentDefinitions, name) {
+        return (*jsonInstrumentDefinitions)[name];
     } else {
         FATAL("Could not find key 'name'=" << name << "in JSON section 'instrument_definitions'");
     }
@@ -791,8 +791,8 @@ codegen_cc::tSignalInfo codegen_cc::findSignalInfoForQubit(const std::string &in
     bool qubitFound = false;
 
     // iterate over instruments
-    for(size_t instrIdx=0; instrIdx<jsonInstruments.size(); instrIdx++) {
-        const json &instrument = jsonInstruments[instrIdx];
+    for(size_t instrIdx=0; instrIdx<jsonInstruments->size(); instrIdx++) {
+        const json &instrument = (*jsonInstruments)[instrIdx];
         std::string instrumentSignalType = instrument["ref_signals_type"];
         if(instrumentSignalType == instructionSignalType) {
             signalTypeFound = true;
@@ -840,7 +840,7 @@ codegen_cc::tJsonNodeInfo codegen_cc::findSignalDefinition(const json &instructi
     JSON_ASSERT(instruction, "cc", instructionPath);
     if(JSON_EXISTS(instruction["cc"], "signal_ref")) {
         std::string signalRef = instruction["cc"]["signal_ref"];
-        signalInfo.node = jsonSignals[signalRef];  // poor man's JSON pointer
+        signalInfo.node = (*jsonSignals)[signalRef];  // poor man's JSON pointer
         if(signalInfo.node.size() == 0) {
             FATAL("Error in JSON definition of instruction '" << iname <<
                   "': signal_ref '" << signalRef << "' does not resolve");

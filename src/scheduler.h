@@ -151,7 +151,7 @@ public:
                 auto bname = buf1+ "_" + buf2 + "_buffer";
                 if(platform.hardware_settings.count(bname) > 0)
                 {
-                    buffer_cycles_map[ bpair ] = std::ceil( 
+                    buffer_cycles_map[ bpair ] = std::ceil(
                         static_cast<float>(platform.hardware_settings[bname]) / cycle_time);
                 }
                 // DOUT("Initializing " << bname << ": "<< buffer_cycles_map[bpair]);
@@ -475,7 +475,7 @@ public:
             {
                 DOUT(". considering " << name[consNode] << " as cz");
                 // CZs Read all operands for post179
-                // CZs Read all operands and write last one for pre179 
+                // CZs Read all operands and write last one for pre179
                 size_t operandNo=0;
                 auto operands = ins->operands;
                 for( auto operand : operands )
@@ -633,7 +633,7 @@ public:
                     {
                         LastDs[operand].clear();
                     }
-                    
+
                     operandNo++;
                 } // end of operand for
             } // end of if/else
@@ -648,7 +648,7 @@ public:
 	        node[instruction[consNode]] = consNode;
 	        name[consNode] = instruction[consNode]->qasm();
 	        t=consNode;
-	
+
 	        DOUT("adding deps to SINK");
 	        // add deps to the dummy target node to close the dependence chains
 	        // it behaves as a W to every qubit and creg
@@ -679,7 +679,7 @@ public:
 	                }
 	            }
 	        }
-	
+
             // useless because there is nothing after t but destruction
 	        for( auto operand : qubits )
 	        {
@@ -984,6 +984,7 @@ private:
                 std::string instruction_type; // single / two qubit
                 size_t operation_duration = std::ceil( static_cast<float>(curr_ins->duration) / cycle_time);
 
+                // FIXME: platform dependent fields
                 if(platform.instruction_settings.count(id) > 0)
                 {
                     COUT("New count logic, Found " << id);
@@ -1163,7 +1164,7 @@ private:
 
 
     // the following with rc and buffer-buffer delays
-    ql::ir::bundles_t schedule_asap_pre179(ql::arch::resource_manager_t & rm, 
+    ql::ir::bundles_t schedule_asap_pre179(ql::arch::resource_manager_t & rm,
         const ql::quantum_platform & platform, std::string & sched_dot)
     {
         DOUT("RC Scheduling ASAP to get bundles ...");
@@ -1352,6 +1353,7 @@ private:
                 std::string instruction_type; // single / two qubit
                 size_t operation_duration = std::ceil( static_cast<float>(curr_ins->duration) / cycle_time);
 
+                // FIXME: platform dependent fields
                 if(platform.instruction_settings.count(id) > 0)
                 {
                     if(platform.instruction_settings[id].count("cc_light_instr") > 0)
@@ -1622,7 +1624,7 @@ private:
     }
 
     // the following with rc and buffer-buffer delays
-    ql::ir::bundles_t schedule_alap_pre179(ql::arch::resource_manager_t & rm, 
+    ql::ir::bundles_t schedule_alap_pre179(ql::arch::resource_manager_t & rm,
         const ql::quantum_platform & platform, std::string & sched_dot)
     {
         DOUT("RC Scheduling ALAP to get bundles ...");
@@ -2191,7 +2193,7 @@ private:
     ql::ir::bundles_t bundler(ql::circuit& circ)
     {
         ql::ir::bundles_t bundles;          // result bundles
-    
+
         ql::ir::bundle_t    currBundle;     // current bundle at currCycle that is being filled
         size_t              currCycle = 0;  // cycle at which bundle is to be scheduled
 
@@ -2246,7 +2248,7 @@ private:
             asec.push_back(gp);
             currBundle.parallel_sections.push_back(asec);
             DOUT("... gate: " << gp->qasm() << " in private parallel section");
-            currBundle.duration_in_cycles = std::max(currBundle.duration_in_cycles, (gp->duration+cycle_time-1)/cycle_time); 
+            currBundle.duration_in_cycles = std::max(currBundle.duration_in_cycles, (gp->duration+cycle_time-1)/cycle_time);
         }
         if (!currBundle.parallel_sections.empty())
         {
@@ -2276,7 +2278,7 @@ private:
     {
         DOUT("Scheduling ASAP post179 ...");
         set_cycle(ql::forward_scheduling);
-        
+
         sort_by_cycle();
 
         DOUT("Scheduling ASAP [DONE]");
@@ -2739,6 +2741,7 @@ private:
     // get the gate parameters that need to be passed to the resource manager;
     // it would have been nicer if they would have been made available by the platform
     // directly to the resource manager since this function makes the mapper dependent on cc_light
+    // FIXME: platform dependent fields
     void GetGateParameters(std::string id, const ql::quantum_platform& platform, std::string& operation_name, std::string& operation_type, std::string& instruction_type)
     {
         DOUT("... getting gate parameters of " << id);
@@ -2802,9 +2805,9 @@ private:
         {
             // are resources available?
             if ( n == s || n == t
-                || gp->type() == ql::gate_type_t::__dummy_gate__ 
-                || gp->type() == ql::gate_type_t::__classical_gate__ 
-                || gp->type() == ql::gate_type_t::__wait_gate__ 
+                || gp->type() == ql::gate_type_t::__dummy_gate__
+                || gp->type() == ql::gate_type_t::__classical_gate__
+                || gp->type() == ql::gate_type_t::__wait_gate__
                )
             {
                 return true;
@@ -2834,7 +2837,7 @@ private:
                                 const ql::quantum_platform& platform, ql::arch::resource_manager_t& rm, bool & success)
     {
         success = false;                        // whether a node was found and returned
-        
+
         DOUT("avlist(@" << curr_cycle << "):");
         for ( auto n : avlist)
         {
@@ -2898,12 +2901,12 @@ private:
         {
             bool success;
             ListDigraph::Node   selected_node;
-            
+
             selected_node = SelectAvailable(avlist, dir, curr_cycle, platform, rm, success);
             if (!success)
             {
                 // i.e. none from avlist was found suitable to schedule in this cycle
-                AdvanceCurrCycle(dir, curr_cycle); 
+                AdvanceCurrCycle(dir, curr_cycle);
                 // so try again; eventually instrs complete and machine is empty
                 continue;
             }
@@ -2914,9 +2917,9 @@ private:
             gp->cycle = curr_cycle;                     // scheduler result, including s and t
             if (selected_node != s
                 && selected_node != t
-                && gp->type() != ql::gate_type_t::__dummy_gate__ 
-                && gp->type() != ql::gate_type_t::__classical_gate__ 
-                && gp->type() != ql::gate_type_t::__wait_gate__ 
+                && gp->type() != ql::gate_type_t::__dummy_gate__
+                && gp->type() != ql::gate_type_t::__classical_gate__
+                && gp->type() != ql::gate_type_t::__wait_gate__
                )
             {
                 std::string operation_name;
@@ -3153,7 +3156,7 @@ private:
                     }
                     best_predgp->cycle = curr_cycle;        // what it is all about
                     gates_per_cycle[curr_cycle].push_back(best_predgp);
-                   
+
                     // recompute targets
                     if (non_empty_bundle_count == 0) break;     // nothing to do
                     avg_gates_per_cycle = double(gate_count)/curr_cycle;

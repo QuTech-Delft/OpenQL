@@ -67,12 +67,11 @@ private: // vars
     json inputLutTable;                                         // input LUT usage per instrument group
     size_t lastStartCycle[MAX_SLOTS];
 
-    // some JSON nodes we need access to. FIXME: use pointers/const json & for efficiency?
-    json jsonBackendSettings;
-    json jsonInstrumentDefinitions;
-    json jsonControlModes;
-    json jsonInstruments;
-    json jsonSignals;
+    // some JSON nodes we need access to
+    const json *jsonInstrumentDefinitions;
+    const json *jsonControlModes;
+    const json *jsonInstruments;
+    const json *jsonSignals;
 
     const ql::quantum_platform *platform;
 
