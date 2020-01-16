@@ -131,40 +131,40 @@ The following classical gates are supported:
 +-------+-------------------------------+----------------+---------------+--------------------------------------------+
 | name  | operands                      | operation type | inv operation | OpenQL example                             |
 +=======+===============================+================+===============+============================================+
-| "add" | 1 dest and 2 src reg indices  | ARITHMETIC     |               | k.classical(rd, operation(rs1, '+', rs2))  |
+| "add" | 1 dest and 2 src reg indices  | ARITHMETIC     |               | k.classical(rd, Operation(rs1, '+', rs2))  |
 +-------+                               +                +               +--------------------------------------------+
-| "sub" |                               |                |               | k.classical(rd, operation(rs1, '-', rs2))  |
+| "sub" |                               |                |               | k.classical(rd, Operation(rs1, '-', rs2))  |
 +-------+                               +----------------+---------------+--------------------------------------------+
-| "eq"  |                               | RELATIONAL     | "ne"          | k.classical(rd, operation(rs1, '==', rs2)) |
+| "eq"  |                               | RELATIONAL     | "ne"          | k.classical(rd, Operation(rs1, '==', rs2)) |
 +-------+                               +                +---------------+--------------------------------------------+
-| "ne"  |                               |                | "eq"          | k.classical(rd, operation(rs1, '!=', rs2)) |
+| "ne"  |                               |                | "eq"          | k.classical(rd, Operation(rs1, '!=', rs2)) |
 +-------+                               +                +---------------+--------------------------------------------+
-| "lt"  |                               |                | "ge"          | k.classical(rd, operation(rs1, '<', rs2))  |
+| "lt"  |                               |                | "ge"          | k.classical(rd, Operation(rs1, '<', rs2))  |
 +-------+                               +                +---------------+--------------------------------------------+
-| "gt"  |                               |                | "le"          | k.classical(rd, operation(rs1, '>', rs2))  |
+| "gt"  |                               |                | "le"          | k.classical(rd, Operation(rs1, '>', rs2))  |
 +-------+                               +                +---------------+--------------------------------------------+
-| "le"  |                               |                | "gt"          | k.classical(rd, operation(rs1, '<=', rs2)) |
+| "le"  |                               |                | "gt"          | k.classical(rd, Operation(rs1, '<=', rs2)) |
 +-------+                               +                +---------------+--------------------------------------------+
-| "ge"  |                               |                | "lt"          | k.classical(rd, operation(rs1, '>=', rs2)) |
+| "ge"  |                               |                | "lt"          | k.classical(rd, Operation(rs1, '>=', rs2)) |
 +-------+                               +----------------+---------------+--------------------------------------------+
-| "and" |                               | BITWISE        |               | k.classical(rd, operation(rs1, '&', rs2))  |
+| "and" |                               | BITWISE        |               | k.classical(rd, Operation(rs1, '&', rs2))  |
 +-------+                               +                +               +--------------------------------------------+
-| "or"  |                               |                |               | k.classical(rd, operation(rs1, '|', rs2))  |
+| "or"  |                               |                |               | k.classical(rd, Operation(rs1, '|', rs2))  |
 +-------+                               +                +               +--------------------------------------------+
-| "xor" |                               |                |               | k.classical(rd, operation(rs1, '^', rs2))  |
+| "xor" |                               |                |               | k.classical(rd, Operation(rs1, '^', rs2))  |
 +-------+-------------------------------+                +               +--------------------------------------------+
-| "not" | 1 dest and 1 src reg index    |                |               | k.classical(rd, operation('~', rs))        |
+| "not" | 1 dest and 1 src reg index    |                |               | k.classical(rd, Operation('~', rs))        |
 +-------+                               +----------------+               +--------------------------------------------+
-| "mov" |                               | ARITHMETIC     |               | k.classical(rd, operation(rs))             |
+| "mov" |                               | ARITHMETIC     |               | k.classical(rd, Operation(rs))             |
 +-------+-------------------------------+                +               +--------------------------------------------+
-| "ldi" | 1 dest reg index, 1 imm_value |                |               | k.classical(rd, operation(3))              |
+| "ldi" | 1 dest reg index, 1 imm_value |                |               | k.classical(rd, Operation(3))              |
 +-------+-------------------------------+----------------+               +--------------------------------------------+
 | "nop" | none                          | undefined      |               | k.classical('nop')                         |
 +-------+-------------------------------+----------------+---------------+--------------------------------------------+
 
 In the above:
 
-``operation()`` creates an expression (binary, unary, register, or immediate); apart from in the OpenQL interface as shown above, it is also used as expression in the internal representation of the *br_condition* attribute of a kernel
+``Operation()`` creates an expression (binary, unary, register, or immediate); apart from in the OpenQL interface as shown above, it is also used as expression in the internal representation of the *br_condition* attribute of a kernel
 
 ``operation type`` indicates the type of operation which is mainly used for checking
 
@@ -178,6 +178,15 @@ In circuits and bundles, no difference is made between classical and quantum gat
 Classical gates are scheduled based on their operands and duration.
 The ``cycle`` attribute reflects the cycle in which the gate is executed, as usual.
 
+Scheduling of classical instructions is assigning cycle values to these so that the register dependences of these are guaranteed to be met (ordinary scheduler); when resource constraints would be involved, those should be adhered to as well (rcscheduler). The ``cycle_time`` would have to be the greatest common divider of the ``duration`` of all gates, classical and quantum.
+
+Classical instructions may depend on quantum gates when they retrieve the result of measurement.
+Quantum gates may have a control dependence on classical code because of a conditional branch; with immediate feedback, in which a single gate is performed conditionally on the value of a classical register, there also is a dependence of a quantum gate on a classically computed value.
+
+From these dependences, an exact cycle value of the start of execution of each gate can be computed,
+relative to the start of execution of a kernel/circuit.
+Any constraints (maximum number of classical instructions to start in one cycle, maximum number of quantum gates to start in one cycle,
+overlapping resource uses) have to encoded in resources which are then adhered to by the rcscheduler.
 
 .. _classical_input_external_representation:
 
