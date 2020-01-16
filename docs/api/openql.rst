@@ -1,7 +1,8 @@
-openql.openql
-=============
+openql
+======
 
 .. automodule:: openql.openql
+   :noindex:
 
    
    

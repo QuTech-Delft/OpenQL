@@ -1,9 +1,9 @@
-openql.openql.CReg
-==================
+Operation
+=========
 
 .. currentmodule:: openql.openql
 
-.. autoclass:: CReg
+.. autoclass:: Operation
 
    
    .. automethod:: __init__
@@ -13,7 +13,7 @@ openql.openql.CReg
 
    .. autosummary::
    
-      ~CReg.__init__
+      ~Operation.__init__
    
    
 
@@ -23,7 +23,5 @@ openql.openql.CReg
 
    .. autosummary::
    
-      ~CReg.creg
-      ~CReg.thisown
-   
+      ~Operation.operation
    

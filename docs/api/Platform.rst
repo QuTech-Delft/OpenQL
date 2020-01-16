@@ -1,5 +1,5 @@
-openql.openql.Platform
-======================
+Platform
+========
 
 .. currentmodule:: openql.openql
 
@@ -27,6 +27,4 @@ openql.openql.Platform
       ~Platform.config_file
       ~Platform.name
       ~Platform.platform
-      ~Platform.thisown
-   
    

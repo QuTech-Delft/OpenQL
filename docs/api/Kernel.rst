@@ -1,5 +1,5 @@
-openql.openql.Kernel
-====================
+Kernel
+======
 
 .. currentmodule:: openql.openql
 
@@ -61,6 +61,5 @@ openql.openql.Kernel
       ~Kernel.name
       ~Kernel.platform
       ~Kernel.qubit_count
-      ~Kernel.thisown
    
    

@@ -1,5 +1,5 @@
-openql.openql.Program
-=====================
+Program
+=======
 
 .. currentmodule:: openql.openql
 

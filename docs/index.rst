@@ -28,20 +28,13 @@ OpenQL is a framework for high-level quantum programming in C++/Python. The fram
    :maxdepth: 1
    :caption: API Reference
 
-   api
+   api/openql
+   api/Kernel
+   api/Program
+   api/Platform
+   api/Operation
+   api/CReg
 
-
-
-.. .. toctree::
-..    :maxdepth: 1
-..    :caption: API Reference
-
-..    api/openql
-..    api/kernel
-..    api/program
-..    api/platform
-..    api/operation
-..    api/creg
 
 
 
