@@ -1,14 +1,11 @@
-
-
+#include <iostream>
 #include <openql_i.h>
 
 int main(int argc, char ** argv)
 {
-  ql::utils::logger::set_log_level("LOG_NOTHING");
-  ql::options::set("write_qasm_files", "yes");
-
   // create platform
-  ql::quantum_platform platf("seven_qubits_chip", "hardware_config_cc_light.json");
+  ql::quantum_platform platf("seven_qubits_chip",
+    "/data/repos/quantum_repos/openql/tests/hardware_config_cc_light.json");
 
   // create program
   ql::quantum_program prog("aProgram", platf, 2);
