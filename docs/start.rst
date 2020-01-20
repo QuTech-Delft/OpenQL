@@ -2,8 +2,14 @@ Getting Started
 ===============
 
 
-To begin, start up python however you like. You can open a jupyter notebook (type ``jupyter notebook`` in your terminal),
-open an interactive python notebook in your terminal (with ``ipython3``), or simply launch python in your terminal (type ``python3``)
+To begin working with OpenQL, you can start up python however you like. You can open a jupyter notebook (type ``jupyter notebook`` in your terminal), open an interactive python notebook in your terminal (with ``ipython3``), or simply launch python in your terminal (by typing ``python3``).
+
+.. _helloworld:
+
+Hello World
+-----------
+
+In this section we will run 'Hello World' example of OpenQL. The first step is to import openql which can be done by:
 
 .. code:: python
 
@@ -16,7 +22,7 @@ Next, create a platform
 
 	platform = ql.Platform("myPlatform", config_fn)
 
-For this example we will be working on 3 qubits. So let us define variable so that we can use it at multiple places in our code.
+For this example we will be working on 3 qubits. So let us define a variable so that we can use it at multiple places in our code.
 
 .. code:: python
 
@@ -68,3 +74,37 @@ A good place to get started with with your own programs might be to copy `exampl
 .. todo::
 
     discuss the generated output files
+
+
+Notebooks
+---------
+
+Following Jupyter notebooks are available in ``<OpenQL Root Dir>/examples/notebooks`` directory:
+
+ccLightClassicalDemo.ipynb
+    This notebook provides an introduction to compilation for ccLight with an emphasis on:
+
+    - hybrid quantum/classical code generation
+    - control-flow in terms of:
+        - if, if-else
+        - for loop
+        - do-while loop
+    - getting measurement results
+
+
+Examples
+--------
+
+Following Jupyter notebooks are available in ``<OpenQL Root Dir>/examples`` directory:
+
+getting_started.py
+    The Hello World example discussed in helloworld_ section.
+
+rb_single.py
+    Single qubit randomized benchmarking.
+
+
+Tests
+-----
+
+Various tests are also available in ``<OpenQL Root Dir>/tests`` directory which can also be used as examples testing various features of OpenQL.
