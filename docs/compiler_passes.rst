@@ -23,8 +23,6 @@ can be found with the platforms.
 An example of the latter passes is QISA (i.e. instruction) generation in CC-Light.
 In the lists below, these passes are indicated to be platform dependent.
 
-.. include:: decomposition.rst
-
 Passes have some general facilities available to them; these are not passes themselves since they don't transform the IR.
 Examples of such facilities are:
 
@@ -188,6 +186,7 @@ by its parameterization by the platform configuration file.
 
 	See :ref:`platform`.
 
+.. include:: decomposition.rst
 .. include:: optimization.rst
 .. include:: scheduling.rst
 .. include:: mapping.rst
