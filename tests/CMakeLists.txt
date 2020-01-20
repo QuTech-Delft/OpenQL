@@ -2,6 +2,7 @@ INCLUDE_DIRECTORIES(
   ${PROJECT_SOURCE_DIR}/src
   ${PROJECT_SOURCE_DIR}/examples
   ${PROJECT_SOURCE_DIR}/tests
+  ${PROJECT_SOURCE_DIR}/swig
 )
 
 # here are the C++ tests which will be compiled from this directory
@@ -31,3 +32,5 @@ CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/hardware_config_qx.json
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/cc/test_cfg_cc.json
 	test_cfg_cc.json COPYONLY)
 
+ADD_EXECUTABLE(test_mapper test_mapper.cc )
+TARGET_LINK_LIBRARIES(test_mapper ${LEMON_LIBRARIES} ql)
