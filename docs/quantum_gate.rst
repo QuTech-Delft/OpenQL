@@ -24,17 +24,6 @@ First, gates can be subdivided according to where their execution has effect:
 - directives; these gates execute neither in quantum nor in classical hardware; these look like gates but don't influence execution, e.g. the display gate
 
 
-Quantum gates can be subdivided in several ways from the number of operands they take; this becomes relevant when gates are mapped on the quantum computing platform:
-
-- one-qubit gates; quantum gates operating on one qubit
-
-- two-qubit gates; quantum gates operating on two qubits;
-  these are the main objective in mapping since two-qubit gates require their qubit operands to be connected in the hardware
-
-- multi-qubit gates; quantum gates operating (implicitly or explicitly) on more than two qubits;
-  these must be decomposed to one-qubit and two-qubit gates because more-qubit primitive gates are not supported by the quantum platform
-
-
 Quantum gates can also be subdivided seen from the state of a qubit:
 
 - preparation gates; (usually one-qubit) gates taking qubits in an undefined state and bringing them in a particular defined state
@@ -49,6 +38,17 @@ Quantum gates can also be subdivided seen from the state of a qubit:
   examples are the wait and barrier gates
 
 
+Quantum gates can further be subdivided from the number of operands they take; this becomes relevant when gates are mapped on the quantum computing platform:
+
+- one-qubit gates; quantum gates operating on one qubit
+
+- two-qubit gates; quantum gates operating on two qubits;
+  two-qubit rotation gates are the main objective in mapping since these gates require their qubit operands to be connected in the hardware
+
+- multi-qubit gates; quantum gates operating (implicitly or explicitly) on more than two qubits;
+  multi-qubit rotation gates must be decomposed to one-qubit and two-qubit gates because more-qubit primitive rotation gates are not supported by the quantum platform
+
+
 Particular classes of quantum gates can be further recognized:
 
 - primitive gates; quantum gates natively supported by instructions of the quantum computing platform
@@ -56,7 +56,7 @@ Particular classes of quantum gates can be further recognized:
 - pauli gates; the Identity, X, Y and Z rotation gates
 
 - clifford gates;
-  a group of quantum gates (of 24 elements / equivalence classes)
+  the one-qubit clifford gates form a group of 24 elements / equivalence classes
   each composed from a sequence of one or more rotations by a multiple of 90 degrees in one dimension (X, Y or Z)
 
 - default gates; quantum gates predefined by OpenQL

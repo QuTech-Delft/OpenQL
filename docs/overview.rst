@@ -15,8 +15,8 @@ For people just wanting an overview of OpenQL, these, except for the installatio
 
 Further chapters introduce to the basic concepts of OpenQL.
 They contain a lot of conceptual texts, and inevitable for a good understanding of the system.
-What kind of gates does OpenQL support, which are the internal and which are the external representations?
 What is a program, what is a kernel and to which extent are classical instructions supported?
+What kind of gates does OpenQL support, which are the internal and which are the external representations?
 Omni-present in OpenQL is the platform, literally in the form of the platform configuration file
 that parameterizes most passes on the supported platform.
 And finally the compiler passes, in a summary as well as in an extensive description with functional description

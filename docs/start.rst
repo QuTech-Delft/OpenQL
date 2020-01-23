@@ -43,7 +43,7 @@ Next, create a platform by:
 	platform = ql.Platform("myPlatform", config_file_name)
 
 where, ``config_file_name`` is the name of the configuration file in JSON format
-which specifies the platform. For details, refer to :ref:`platform`.
+which specifies the platform, e.g. ``hardware_configuration_cc_light.json``. For details, refer to :ref:`platform`.
 
 For this example we will be working on 3 qubits.
 So let us define a variable for the number of qubits.

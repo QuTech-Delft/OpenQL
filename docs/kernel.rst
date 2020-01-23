@@ -19,8 +19,11 @@ After executing the last gate,
 control will be transferred to the next kernel in the vector of kernels.
 This vector of kernels is an attribute of the governing program object.
 
+You saw a first kernel which was a ``STATIC`` one being created in the example program in :ref:`program`.
+
 Kernels of other types are used to represent control flow.
 This is the topic of the remainder of this section.
+If you are not interested in this now, you can read this later.
 
 Let us first look at some example Python OpenQL code (adapted from *tests/test_hybrid.py*):
 

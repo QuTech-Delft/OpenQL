@@ -1,3 +1,5 @@
+.. _program:
+
 Program
 =======
 
@@ -5,6 +7,35 @@ In the OpenQL programming model, one first creates the platform object and then 
 After that, one creates kernels with gates and adds these kernels to the program.
 Finally, one compiles the program and executes it.
 At any time, options can be set and got.
+
+We saw an example of this in :ref:`creating_your_first_program`.
+Here it is again but then with everything glued together:
+
+.. code:: python
+
+    from openql import openql as ql
+
+    platform = ql.Platform("myPlatform", "hardware_configuration_cc_light.json")
+
+    nqubits = 3
+
+    p = ql.Program("aProgram", platform, nqubits)
+
+    k = ql.Kernel("aKernel", platform, nqubits)
+
+    for i in range(nqubits):
+        k.gate('prepz', [i])
+
+    k.gate('x', [0])
+    k.gate('h', [1])
+    k.gate('cz', [2, 0])
+    k.gate('measure', [0])
+    k.gate('measure', [1])
+
+    p.add_kernel(k)
+
+    p.compile()
+
 
 Platform creation takes a name (to use in information messages) and the name of the platform configuration file.
 The latter is used to initialize the platform attributes, e.g. to create custom gates.

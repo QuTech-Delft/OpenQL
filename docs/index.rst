@@ -20,9 +20,9 @@ While the instruction-level code is platform-specific, the quantum assembly code
    :maxdepth: 2
    :caption: OpenQL Basics
 
-   quantum_gate
    program
    kernel
+   quantum_gate
    classical_instructions
    platform
    compiler_passes
