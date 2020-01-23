@@ -1363,9 +1363,9 @@ int main(int argc, char ** argv)
     // ql::utils::logger::set_log_level("LOG_NOTHING");
     ql::options::set("unique_output", "yes");
 
-    // ql::options::set("write_qasm_files", "yes"); 
+    ql::options::set("write_qasm_files", "yes"); 
     ql::options::set("write_report_files", "yes"); 
-    // ql::options::set("print_dot_graphs", "yes"); 
+    ql::options::set("print_dot_graphs", "yes"); 
 
     ql::options::set("clifford_premapper", "yes"); 
     ql::options::set("mapper", "minextendrc"); 
@@ -1388,8 +1388,9 @@ int main(int argc, char ** argv)
     ql::options::set("scheduler_commute", "yes");
     ql::options::set("prescheduler", "yes");
 
-#ifdef  RUNALL
     test_recursion("recursion", "noroutingfirst", "no", "0", "min");
+
+#ifdef  RUNALL
     test_recursion("recursion", "all", "no", std::getenv("mapselectmaxlevel"), "min");
     test_recursion("recursion", "all", "no", std::getenv("mapselectmaxlevel"), "minplusone");
     test_recursion("recursion", "all", "no", std::getenv("mapselectmaxlevel"), "minplushalfmin");
@@ -1398,10 +1399,6 @@ int main(int argc, char ** argv)
 	test_diogo2("diogo2", "noroutingfirst", "yes", "minextendrc");
     test_diogo2("diogo2", "noroutingfirst", "yes", "maxfidelity");
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 42a6bea0cf65fc6b69df1b33c9876214d49e0f83
     test_dot("dot", "no", "ASAP");
     test_dot("dot", "no", "ALAP");
     test_dot("dot", "yes", "ASAP");
@@ -1701,6 +1698,7 @@ int main(int argc, char ** argv)
     test_lingling7sub("lingling7sub", "all", "yes", "1", "minplusmin");
     test_lingling7sub("lingling7sub", "all", "yes", "2", "minplusmin");
     test_lingling7sub("lingling7sub", "all", "yes", "3", "minplusmin");
+#endif
 
     return 0;
 }
