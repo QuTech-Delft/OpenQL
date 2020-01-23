@@ -38,18 +38,19 @@ Quantum gates can also be subdivided seen from the state of a qubit:
   examples are the wait and barrier gates
 
 
-Quantum gates can further be subdivided from the number of operands they take; this becomes relevant when gates are mapped on the quantum computing platform:
+Quantum gates can further be subdivided from the number of operands they take; this becomes relevant when gates are mapped on a quantum computing platform that only supports two-qubit rotation gates when the operand qubits are physically adjacent, as is the case in CC-Light:
 
 - one-qubit gates; quantum gates operating on one qubit
 
 - two-qubit gates; quantum gates operating on two qubits;
-  two-qubit rotation gates are the main objective in mapping since these gates require their qubit operands to be connected in the hardware
+  e.g. two-qubit rotation gates are the main objective in the current mapping pass since these gates require their qubit operands to be connected in CC-Light
 
 - multi-qubit gates; quantum gates operating (implicitly or explicitly) on more than two qubits;
-  multi-qubit rotation gates must be decomposed to one-qubit and two-qubit gates because more-qubit primitive rotation gates are not supported by the quantum platform
+  e.g. multi-qubit rotation gates must be decomposed to one-qubit and two-qubit gates because more-qubit primitive rotation gates are not supported by CC-Light
 
 
-Particular classes of quantum gates can be further recognized:
+Particular classes of quantum gates can be further recognized; these definitions are given
+mainly to refer to from other chapters of this documentation, especially from the compiler passes chapter and the quantum gate chapter:
 
 - primitive gates; quantum gates natively supported by instructions of the quantum computing platform
 
