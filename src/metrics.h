@@ -89,7 +89,7 @@ public:
 	{
 		this->Nqubits = Nqubits;
 
-		if (output_mode != "worst" && output_mode != "gaussian" && output_mode != "average")
+		if (output_mode != "worst" && output_mode != "gaussian" && output_mode != "average" && output_mode != "product")
 		{
 			EOUT("Invalid metrics_output_method provided: " << output_mode);
 			throw ql::exception("invalid metrics_output_mode", false);
@@ -138,6 +138,23 @@ public:
 			double average = sum / num_active;
 			DOUT("Average fidelity:" + std::to_string(average));
 			return average;			
+		}
+
+		else if (output_mode == "product") 
+		{
+			
+			double product = 1;
+			for (auto x : fids)
+			{
+				if (not std::isnan(x))
+				{
+					product *= x;
+				}
+			}
+			DOUT("Product fidelities :" + std::to_string(product));
+			// double average = sum / num_active;
+			// DOUT("Average fidelity:" + std::to_string(average));
+			return product;			
 		}
 
 		// else if (output_mode == "gaussian") //DOES NOT WORK

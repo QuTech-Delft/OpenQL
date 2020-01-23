@@ -89,7 +89,7 @@ namespace ql
           app->add_set_ignore_case("--cz_mode", opt_name2opt_val["cz_mode"], {"manual", "auto"}, "CZ mode", true);
 
           app->add_set_ignore_case("--mapper", opt_name2opt_val["mapper"], {"no", "base", "baserc", "minextend", "minextendrc", "maxfidelity"}, "Mapper heuristic", true);
-          app->add_set_ignore_case("--maxfidelity_outputmode", opt_name2opt_val["maxfidelity_outputmode"], {"worst", "average"}, "Mapper maxfidelity heuristic score generation", true);
+          app->add_set_ignore_case("--maxfidelity_outputmode", opt_name2opt_val["maxfidelity_outputmode"], {"worst", "average", "product"}, "Mapper maxfidelity heuristic score generation", true);
           app->add_set_ignore_case("--maxfidelity_1qbgatefid", opt_name2opt_val["maxfidelity_1qbgatefid"], {"0.999", "0.9996"}, "Mapper maxfidelity heuristic average 1-qubit gate fidelity", true);
           app->add_set_ignore_case("--maxfidelity_2qbgatefid", opt_name2opt_val["maxfidelity_2qbgatefid"], {"0.99", "0.96", "0.93"}, "Mapper maxfidelity heuristic average 2-qubit gate fidelity", true);
           app->add_set_ignore_case("--maxfidelity_idlefid", opt_name2opt_val["maxfidelity_idlefid"], {"0.9867", "0.999334", "0.993356", "0.999999999999999"}, "Mapper maxfidelity heuristic average idle-qubit gate fidelity", true);
