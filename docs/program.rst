@@ -41,7 +41,6 @@ Platform creation takes a name (to use in information messages) and the name of 
 The latter is used to initialize the platform attributes, e.g. to create custom gates.
 
 A program is created by specifying a name, the platform, and the numbers of quantum and classical registers.
-The latter defaults to 0.
 The name can be used as seed to create output file names and is used in information messages.
 
 The main structural attribute of a program is its vector of kernels.

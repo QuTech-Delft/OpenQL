@@ -145,7 +145,9 @@ Some further notes on the gate attributes:
 
 - qubit and classical operands are represented by unsigned valued indices starting from 0 in their respective register spaces
 
-- ``angle`` is in radians; it specifies the value of the arbitrary angle of those operations that need one; it is initialized only from an explicit specification as parameter value of a gate creation API
+- ``angle`` is in radians; it specifies the value of the arbitrary angle of those operations that need one;
+  it is initialized only from an explicit specification as parameter value of the ``gate`` creation API;
+  expressions initializing this parameter are usually based on some definition of ``pi`` such as from ``numpy``
 
 - ``duration`` is in nanoseconds, just as the timing specifications in the platform configuration file; scheduling-like passes divide it (rounding up) by the cycle_time to compute the number of cycles that an operation takes; it is initialized implicitly when the gate is a default gate or a custom gate, or explicitly from a parameter value of a gate creation API
 
