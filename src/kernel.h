@@ -27,8 +27,6 @@
 #endif // __disable_lemon__
 #include "platform.h"
 
-#define PI M_PI
-
 
 namespace ql
 {
@@ -55,8 +53,8 @@ public: // FIXME: should be private
     circuit       c;
     ql::ir::bundles_t bundles;
     operation     br_condition;
-private:
     size_t        cycle_time;                               // FIXME: just a copy of platform.cycle_time
+private:
     instruction_map_t instruction_map;
 
 public:

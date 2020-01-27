@@ -1,4 +1,4 @@
-#define INITIALPLACE 1
+//#define INITIALPLACE 1
 /**
  * @file   mapper.h
  * @date   06/2018 - now
@@ -412,7 +412,7 @@ class FreeCycle
 {
 private:
 
-    ql::quantum_platform   *platformp;// platform description
+    const ql::quantum_platform   *platformp;// platform description
     size_t                  nq;      // size of the map; after initialization, will always be the same
     size_t                  ct;      // multiplication factor from cycles to nano-seconds (unit of duration)
     std::vector<size_t>     fcv;     // fcv[real qubit index i]: qubit i is free from this cycle on
@@ -435,7 +435,7 @@ FreeCycle()
     // DOUT("Constructing FreeCycle");
 }
 
-void Init(ql::quantum_platform *p)
+void Init(const ql::quantum_platform *p)
 {
     // DOUT("FreeCycle::Init()");
     ql::arch::cc_light_resource_manager_t lrm(*p, ql::forward_scheduling);   // allocated here and copied below to rm because of platform parameter
@@ -518,7 +518,7 @@ void Print(std::string s)
 // get the gate parameters that need to be passed to the resource manager;
 // it would have been nicer if they would have been made available by the platform
 // directly to the resource manager since this function makes the mapper dependent on cc_light
-static void GetGateParameters(std::string id, ql::quantum_platform *platformp, std::string& operation_name, std::string& operation_type, std::string& instruction_type)
+static void GetGateParameters(std::string id, const ql::quantum_platform *platformp, std::string& operation_name, std::string& operation_type, std::string& instruction_type)
 {
     if ( !platformp->instruction_settings[id]["cc_light_instr"].is_null() )
     {
@@ -708,7 +708,7 @@ private:
 
     size_t                  nq;         // width of Past, Virt2Real, UseCount maps in number of real qubits
     size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
-    ql::quantum_platform    *platformp; // platform describing resources for scheduling
+    const ql::quantum_platform    *platformp; // platform describing resources for scheduling
     ql::quantum_kernel      *kernelp;   // current kernel for creating gates
 
     Virt2Real               v2r;        // state: current Virt2Real map, imported/exported to kernel
@@ -740,7 +740,7 @@ Past()
 }
 
 // past initializer
-void Init(ql::quantum_platform *p, ql::quantum_kernel *k)
+void Init(const ql::quantum_platform *p, ql::quantum_kernel *k)
 {
     // DOUT("Past::Init");
     platformp = p;
@@ -1337,7 +1337,7 @@ void Out(ql::circuit& oc)
 class Alter
 {
 public:
-    ql::quantum_platform   *platformp;  // descriptions of resources for scheduling
+    const ql::quantum_platform   *platformp;  // descriptions of resources for scheduling
     ql::quantum_kernel     *kernelp;    // kernel class pointer to allow calling kernel private methods
     size_t                  nq;         // width of Past and Virt2Real map is number of real qubits
     size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
@@ -1360,7 +1360,7 @@ Alter()
 
 // Alter initializer
 // This should only be called after a virgin construction and not after cloning a path.
-void Init(ql::quantum_platform* p, ql::quantum_kernel* k)
+void Init(const ql::quantum_platform* p, ql::quantum_kernel* k)
 {
     // DOUT("Alter::Init(number of qubits=" << nq);
     platformp = p;
@@ -1574,7 +1574,7 @@ void Extend(Past currPast, Past basePast)
     auto mapperopt = ql::options::get("mapper");
     if ("maxfidelity" == mapperopt)
     {
-        score = ql::metrics::quick_fidelity(past.lg);
+        score = ql::quick_fidelity(past.lg);
     }
     else
     {
@@ -1690,7 +1690,7 @@ enum GridForms
 class Grid
 {
 public:
-    ql::quantum_platform* platformp;    // current platform: topology
+    const ql::quantum_platform* platformp;    // current platform: topology
     size_t nq;                          // number of qubits in the platform
                                         // Grid configuration, all constant after initialization
     gridform_t form;                    // form of grid
@@ -1706,7 +1706,7 @@ public:
 // Grid initializer
 // initialize mapper internal grid maps from configuration
 // this remains constant over multiple kernels on the same platform
-void Init(ql::quantum_platform* p)
+void Init(const ql::quantum_platform* p)
 {
     DOUT("Grid::Init");
     platformp = p;
@@ -2076,7 +2076,7 @@ class InitialPlace
 {
 private:
                                         // parameters, constant for a kernel
-    ql::quantum_platform   *platformp;  // platform
+    const ql::quantum_platform   *platformp;  // platform
     size_t                  nlocs;      // number of locations, real qubits; index variables k and l
     size_t                  nvq;        // same range as nlocs; when not, take set from config and create v2i earlier
     Grid                   *gridp;      // current grid with Distance function
@@ -2101,7 +2101,7 @@ std::string ipr2string(ipr_t ipr)
 }
 
 // kernel-once initialization
-void Init(Grid* g, ql::quantum_platform *p)
+void Init(Grid* g, const ql::quantum_platform *p)
 {
     // DOUT("InitialPlace Init ...");
     platformp = p;
@@ -2661,7 +2661,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& iptimetake
 class Future
 {
 public:
-    ql::quantum_platform            *platformp;
+    const ql::quantum_platform            *platformp;
     Scheduler                       *schedp;        // a pointer, since dependence graph doesn't change
     ql::circuit                     input_gatepv;   // input circuit when not using scheduler based avlist
 
@@ -2670,7 +2670,7 @@ public:
     ql::circuit::iterator           input_gatepp;   // state: alternative iterator in input_gatepv
 
 // just program wide initialization
-void Init( ql::quantum_platform *p)
+void Init( const ql::quantum_platform *p)
 {
     // DOUT("Future::Init ...");
     platformp = p;
@@ -2894,7 +2894,7 @@ class Mapper
 private:
                                     // Initialized by Mapper::Init
                                     // OpenQL wide configuration, all constant after initialization
-    ql::quantum_platform platform;  // current platform: topology and gate definitions
+    const ql::quantum_platform *platformp;// current platform: topology and gate definitions
     ql::quantum_kernel   *kernelp;  // (copy of) current kernel (class) with free private circuit and methods
                                     // primarily to create gates in Past; Past is part of Mapper and of each Alter
                                     
@@ -2950,7 +2950,7 @@ void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, std::list<Alter> & r
         // add src to this path (so that it becomes a distance 0 path with one qubit, src)
         // and add the Alter to the result list 
         Alter  a;
-        a.Init(&platform, kernelp);
+        a.Init(platformp, kernelp);
         a.targetgp = gp;
         a.Add2Front(src);
         resla.push_back(a);
@@ -3498,7 +3498,7 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
             auto mapperopt = ql::options::get("mapper");
             if ("maxfidelity" == mapperopt)
             {
-                a.score = ql::metrics::quick_fidelity(past_copy.lg);
+                a.score = ql::quick_fidelity(past_copy.lg);
             }
             else
             {
@@ -3561,12 +3561,12 @@ void MapCircuit(ql::quantum_kernel& kernel, Virt2Real& v2r)
     Past    mainPast;       // past window, contains output schedule, storing all gates until taken out
     Scheduler sched;        // new scheduler instance (from src/scheduler.h) used for its dependence graph
 
-    future.Init(&platform);
+    future.Init(platformp);
     future.SetCircuit(kernel, sched, nq, nc); // constructs depgraph, initializes avlist, ready for producing gates
     kernel.c.clear();       // future has copied kernel.c to private data; kernel.c ready for use by new_gate
     kernelp = &kernel;      // keep kernel to call kernelp->gate() inside Past.new_gate(), to create new gates
 
-    mainPast.Init(&platform, kernelp);  // mainPast and Past clones inside Alters ready for generating output schedules into
+    mainPast.Init(platformp, kernelp);  // mainPast and Past clones inside Alters ready for generating output schedules into
     mainPast.ImportV2r(v2r);    // give it the current mapping/state
     // mainPast.DPRINT("start mapping");
 
@@ -3595,7 +3595,7 @@ void MakePrimitives(ql::quantum_kernel& kernel)
     kernel.c.clear();                           // kernel.c ready for use by new_gate
 
     Past            mainPast;                   // output window in which gates are scheduled
-    mainPast.Init(&platform, kernelp);
+    mainPast.Init(platformp, kernelp);
 
     for( auto & gp : input_gatepv )
     {
@@ -3691,7 +3691,7 @@ void Map(ql::quantum_kernel& kernel)
         ipr_t           ipok;           // one of several ip result possibilities
         double          iptimetaken;      // time solving the initial placement took, in seconds
         
-        ip.Init(&grid, &platform);
+        ip.Init(&grid, platformp);
         ip.Place(kernel.c, v2r, ipok, iptimetaken, initialplaceopt); // compute mapping (in v2r) using ip model, may fail
         DOUT("InitialPlace: kernel=" << kernel.name << " initialplace=" << initialplaceopt << " initialplace2qhorizon=" << initialplace2qhorizonopt << " result=" << ip.ipr2string(ipok) << " iptimetaken=" << iptimetaken << " seconds [DONE]");
 #else
@@ -3720,18 +3720,18 @@ void Map(ql::quantum_kernel& kernel)
 // lots could be split off for the whole program, once that is needed
 //
 // initialization for a particular kernel is separate (in Map entry)
-void Init(const ql::quantum_platform& p)
+void Init(const ql::quantum_platform *p)
 {
     // DOUT("Mapping initialization ...");
     // DOUT("... Grid initialization: platform qubits->coordinates, ->neighbors, distance ...");
-    platform = p;
-    nq = p.qubit_number;
-    // nc = p.creg_number;  // nc should come from platform, but doesn't; is taken from kernel in Map
+    platformp = p;
+    nq = p->qubit_number;
+    // nc = p->creg_number;  // nc should come from platform, but doesn't; is taken from kernel in Map
     RandomInit();
     // DOUT("... platform/real number of qubits=" << nq << ");
-    cycle_time = p.cycle_time;
+    cycle_time = p->cycle_time;
 
-    grid.Init(&platform);
+    grid.Init(platformp);
 
     // DOUT("Mapping initialization [DONE]");
 }   // end Init

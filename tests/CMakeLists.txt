@@ -5,12 +5,6 @@ INCLUDE_DIRECTORIES(
   ${PROJECT_SOURCE_DIR}/swig
 )
 
-ADD_EXECUTABLE(test_mapper test_mapper.cc )
-TARGET_LINK_LIBRARIES(test_mapper ${LEMON_LIBRARIES} )
-
-# ADD_EXECUTABLE(test_rcbug test_rcbug.cc )
-# TARGET_LINK_LIBRARIES(test_rcbug ${LEMON_LIBRARIES} )
-
 # here are the C++ tests which will be compiled from this directory
 # ADD_EXECUTABLE(program_test program_test.cc )
 # TARGET_LINK_LIBRARIES(program_test ${LEMON_LIBRARIES} )

@@ -954,7 +954,7 @@ public:
         ql::report::report_qasm(prog_name, kernels, platform, "in", "mapper");
 
         Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
-        mapper.Init(platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
+        mapper.Init(&platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
 
         std::ofstream   ofs;
         ofs = ql::report::report_open(prog_name, "out", "mapper");

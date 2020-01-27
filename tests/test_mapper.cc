@@ -1,6 +1,9 @@
 #include <iostream>
 #include <openql_i.h>
-#include "metrics.h"
+
+namespace ql {
+    double quick_fidelity_circuit(ql::circuit);
+}
 
 void
 test_recursion(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
@@ -68,7 +71,9 @@ test_diogo(std::string v, std::string param1, std::string param2, std::string pa
 
     prog.compile( );
 
-    IOUT("Final Fidelity: " << ql::metrics::quick_fidelity(k.c));
+    double qf = ql::quick_fidelity_circuit(k.c);
+
+    IOUT("Final Fidelity: " << qf);
     IOUT("THE END!");
 }
 
@@ -112,8 +117,10 @@ test_diogo2(std::string v, std::string param1, std::string param2, std::string p
 
     prog.compile( );
 
-    IOUT("Final Fidelity: " << ql::metrics::quick_fidelity(k.c));
-    IOUT("THE END");
+    double qf = ql::quick_fidelity_circuit(k.c);
+
+    IOUT("Final Fidelity: " << qf);
+    IOUT("THE END!");
 }
 
 // simple program to test (post179) dot printing by the scheduler

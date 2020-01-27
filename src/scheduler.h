@@ -2102,7 +2102,7 @@ public:
 #define ALAP_SINK_CYCLE    (MAX_CYCLE/2)
 
     // cycle assignment without RC depending on direction: forward:ASAP, backward:ALAP;
-    // without RC, this is all there is to schedule, apart from forming the bundles in bundler()
+    // without RC, this is all there is to schedule, apart from forming the bundles in ql::ir::bundler()
     // set_cycle iterates over the circuit's gates and set_cycle_gate over the dependences of each gate
     // please note that set_cycle_gate expects a caller like set_cycle which iterates gp forward through the circuit
     void set_cycle_gate(ql::gate* gp, ql::scheduling_direction_t dir)
@@ -2195,11 +2195,12 @@ public:
         // }
     }
 
+#ifdef  DO_NOT_USE_BUNDLER_MOVED_TO_IR_H
     // return bundles for the given circuit;
     // assumes gatep->cycle attribute reflects the cycle assignment;
     // assumes circuit being a vector of gate pointers is ordered by this cycle value;
     // create bundles in a single scan over the circuit, using currBundle and currCycle as state
-    ql::ir::bundles_t bundler(ql::circuit& circ)
+    ql::ir::bundles_t bundler(ql::circuit& circ, size_t cycle_time)
     {
         ql::ir::bundles_t bundles;          // result bundles
     
@@ -2288,6 +2289,7 @@ public:
         DOUT("bundler [DONE]");
         return bundles;
     }
+#endif
 
     // ASAP scheduler without RC, updating circuit and returning bundles
     ql::ir::bundles_t schedule_asap_post179(std::string & sched_dot)
@@ -2304,7 +2306,7 @@ public:
         }
 
         DOUT("Scheduling ASAP [DONE]");
-        return bundler(*circp);
+        return ql::ir::bundler(*circp, cycle_time);
     }
 
     // ALAP scheduler without RC, updating circuit and returning bundles
@@ -2322,7 +2324,7 @@ public:
         }
 
         DOUT("Scheduling ALAP [DONE]");
-        return bundler(*circp);
+        return ql::ir::bundler(*circp, cycle_time);
     }
 
 
@@ -3013,7 +3015,7 @@ public:
         latency_compensation(circp, platform);
 
         ql::ir::bundles_t   bundles;
-        bundles = bundler(*circp);
+        bundles = ql::ir::bundler(*circp, cycle_time);
 
         insert_buffer_delays(bundles, platform);
 
@@ -3272,7 +3274,7 @@ public:
             );
 
         // prefer standard bundler over using the gates_per_cycle data structure
-        bundles = bundler(*circp);
+        bundles = ql::ir::bundler(*circp, cycle_time);
 
         DOUT("Scheduling ALAP UNIFORM to get bundles [DONE]");
         return bundles;

@@ -8,7 +8,9 @@
 //TODO: ATM, this does not support operations after measurement (eg. preparing again and reusing a qubit)
 //The above will produce undefined behaviour
 
-#pragma once
+#ifndef METRICS_H
+#define METRICS_H
+
 #include <cmath> 
 #include <vector>
 #include <map>
@@ -18,7 +20,7 @@
 #include "utils.h" 
 #include "options.h"
 #include "platform.h"
-#include "mapper.h"
+//#include "mapper.h"
 
 
 
@@ -42,8 +44,8 @@ void my_print(std::vector<T> const &input, const char *id_name)
 
 namespace ql
 {
-namespace metrics
-{
+// namespace metrics
+// {
 
 
 // ql::circuit random_circuit_generator(double Nqubits, size_t Ncycles, double idle_fraction, double two_qb_gate_fraction ){
@@ -126,7 +128,7 @@ public:
 		this->gatefid_1 = gatefid_1;
 		this->gatefid_2 = gatefid_2;
 		this->decoherence_time = decoherence_time;
-	};
+	}
 
 	void Init(size_t Nqubits, ql::quantum_platform* platform)
 	{
@@ -326,14 +328,14 @@ public:
 		PRINTER(fids);
 		//Concatenating data into a single value, to serve as metric
 		return create_output(fids);
-	};
+	}
 
 }; //class end
 
 
 	double quick_fidelity(std::list< ql::gate * > gate_list )
 	{
-		ql::metrics::Metrics estimator(17);
+		ql::Metrics estimator(17);
 		std::vector<double> previous_fids;
 		ql::circuit circuit;
 		std::copy(std::begin(gate_list), std::end(gate_list), std::back_inserter(circuit));
@@ -344,7 +346,7 @@ public:
 
 	double quick_fidelity_circuit(ql::circuit circuit )
 	{
-		ql::metrics::Metrics estimator(17);
+		ql::Metrics estimator(17);
 		std::vector<double> previous_fids;
 		double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
 		fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
@@ -353,7 +355,7 @@ public:
 
 	double quick_fidelity(ql::circuit circuit )
 	{
-		ql::metrics::Metrics estimator(17);
+		ql::Metrics estimator(17);
 		std::vector<double> previous_fids;
 		double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
 		fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
@@ -768,5 +770,6 @@ public:
 
 
 
-} //metrics namespace end
+// } //metrics namespace end
 } //ql namespace end
+#endif // METRICS_H

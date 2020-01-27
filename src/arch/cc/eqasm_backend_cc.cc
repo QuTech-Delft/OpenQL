@@ -26,10 +26,19 @@
 #include <ir.h>
 #include <circuit.h>
 #include <scheduler.h>
+
+#ifdef FOUND_A_SOLUTION_FOR_SCHEDULING
+// including header files from cc_light causes duplicate function definitions
+// HvS didn't want to debug this while merging the develop branch into the mapper branch
+// so this is taken out entirely
+// FIXME
+
 #if OPT_CC_SCHEDULE_RC
  #include <arch/cc_light/cc_light_resource_manager.h>
 #else
  #include <arch/cc_light/cc_light_scheduler.h>
+#endif
+
 #endif
 
 
@@ -108,11 +117,17 @@ void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel
         IOUT("Compiling kernel: " << kernel.name);
         codegen_kernel_prologue(kernel);
 
+#if FOUND_A_SOLUTION_FOR_SCHEDULING
+
 #if OPT_CC_SCHEDULE_KERNEL_H    // FIXME: WIP
-        // FIXME: try kernel.h::schedule()
-        std::string kernel_sched_qasm;
-        std::string kernel_sched_dot;
-        kernel.schedule(platform, kernel_sched_qasm, kernel_sched_dot);
+        ql::circuit& ckt = kernel.c;
+        if (!ckt.empty()) {
+            // FIXME: try kernel.h::schedule()
+            std::string kernel_sched_qasm;
+            std::string kernel_sched_dot;
+            std::string kernel_dot;
+            kernel.schedule(platform, kernel_sched_qasm, kernel_dot, kernel_sched_dot);
+            ql::ir::bundles_t bundles = ql::ir::bundler(kernel.c, platform.cycle_time);
 #else
         ql::circuit& ckt = kernel.c;
         if (!ckt.empty()) {
@@ -127,7 +142,8 @@ void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel
              * requiring us to define a field "cc_light_instr" for every instruction in the JSON configuration file.
              * That function could and should be generalized.
              */
-            ql::ir::bundles_t bundles = cc_light_schedule(ckt, platform, platform.qubit_number, creg_count);
+            std::string     sched_dot;
+            ql::ir::bundles_t bundles = cc_light_schedule(ckt, platform, sched_dot, platform.qubit_number, creg_count);
 #endif
 #endif
 
@@ -150,6 +166,11 @@ void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel
         } else {
             DOUT("Empty kernel: " << kernel.name);                      // NB: normal situation for kernels with classical control
         }
+
+#else
+        // FIXME
+        FATAL("eqasm_backend_cc.cc uses cc_light scheduling/resource manager; reimplement this");
+#endif
 
         codegen_kernel_epilogue(kernel);
     }
