@@ -9,8 +9,9 @@
 #define QL_OPTIONS_H
 
 #include <utils.h>
+#include <exception.h>
 #include <CLI/CLI.hpp>
-#include <iostream>
+//#include <iostream>
 
 namespace ql
 {
@@ -39,6 +40,8 @@ namespace ql
           opt_name2opt_val["scheduler_commute"] = "yes";
           opt_name2opt_val["prescheduler"] = "yes";
           opt_name2opt_val["scheduler_post179"] = "yes";
+          opt_name2opt_val["backend_cc_map_input_file"] = "";
+
           opt_name2opt_val["cz_mode"] = "manual";
           opt_name2opt_val["print_dot_graphs"] = "no";
 
@@ -65,7 +68,7 @@ namespace ql
           opt_name2opt_val["write_report_files"] = "no";
 
           // add options with default values and list of possible values
-          app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"], 
+          app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"],
             {"LOG_NOTHING", "LOG_CRITICAL", "LOG_ERROR", "LOG_WARNING", "LOG_INFO", "LOG_DEBUG"}, "Log levels", true);
           app->add_option("--output_dir", opt_name2opt_val["output_dir"], "Name of output directory", true);
           app->add_set_ignore_case("--unique_output", opt_name2opt_val["unique_output"], {"no", "yes"}, "Make output files unique", true);
@@ -81,6 +84,7 @@ namespace ql
           app->add_set_ignore_case("--clifford_postmapper", opt_name2opt_val["clifford_postmapper"], {"yes", "no"}, "clifford optimize after mapping yes or not", true);
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "MA"}, "Type of decomposition used for toffoli", true);
           app->add_set_ignore_case("--quantumsim", opt_name2opt_val["quantumsim"], {"no", "yes", "qsoverlay"}, "Produce quantumsim output, and of which kind", true);
+          app->add_option("--backend_cc_map_input_file", opt_name2opt_val["backend_cc_map_input_file"], "Name of CC input map file", true);
           app->add_set_ignore_case("--cz_mode", opt_name2opt_val["cz_mode"], {"manual", "auto"}, "CZ mode", true);
 
           app->add_set_ignore_case("--mapper", opt_name2opt_val["mapper"], {"no", "base", "baserc", "minextend", "minextendrc", "maxfidelity"}, "Mapper heuristic", true);
@@ -131,6 +135,7 @@ namespace ql
                     << "scheduler_commute: " << opt_name2opt_val["scheduler_commute"] << std::endl
                     << "cz_mode: " << opt_name2opt_val["cz_mode"] << std::endl
                     << "print_dot_graphs: " << opt_name2opt_val["print_dot_graphs"] << std::endl;
+          // FIXME: incomplete, function seems unused
       }
 
       void help()
@@ -169,18 +174,19 @@ namespace ql
       }
   };
 
-  namespace options
+  namespace options // FIXME: why wrap?
   {
-      static ql::Options ql_options("OpenQL Options");
-      void print()
+//      static ql::Options ql_options("OpenQL Options");
+      extern ql::Options ql_options;
+      inline void print()
       {
           ql_options.help();
       }
-      void print_current_values()
+      inline void print_current_values()
       {
           ql_options.print_current_values();
       }
-      void set(std::string opt_name, std::string opt_value)
+      inline void set(std::string opt_name, std::string opt_value)
       {
           ql_options.set(opt_name, opt_value);
 
@@ -189,7 +195,7 @@ namespace ql
           else if(opt_name == "output_dir")
               ql::utils::make_output_dir(opt_value);
       }
-      std::string get(std::string opt_name)
+      inline std::string get(std::string opt_name)
       {
           return ql_options.get(opt_name);
       }
@@ -198,7 +204,7 @@ namespace ql
 
 #endif
 
-/*        
+/*  FIXME: remove
         void set(std::string opt_name, std::string opt_value)
         {
             if( _options.find(opt_name) != _options.end() )
@@ -216,7 +222,7 @@ namespace ql
             }
             else
             {
-                std::cerr << "[OPENQL] " << __FILE__ <<":"<< __LINE__ 
+                std::cerr << "[OPENQL] " << __FILE__ <<":"<< __LINE__
                           <<" Error: Un-known option:"<< opt_name << std::endl;
             }
         }
@@ -227,7 +233,7 @@ namespace ql
             for(auto elem : _options)
             {
                 std::cout << "    " << elem.first << " : " << elem.second << "\n";
-            }            
+            }
         }
 */
 

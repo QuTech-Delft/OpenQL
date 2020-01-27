@@ -17,7 +17,8 @@ except:
 
 def assemble(QASM_fn):
     if assembler_present:
-        lq1 = lq(qasm_file_path=QASM_fn)
+        lq1 = lq()
+        lq1.parse_file(qasm_file_path=QASM_fn)
         failure = lq1.getParseResult()
         if failure:
             # TODO does libQASM tracks last error

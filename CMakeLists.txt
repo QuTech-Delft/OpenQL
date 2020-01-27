@@ -1,8 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
+# policies from version 3.1 onwards (can be removed if min required version >= 3.1)
+CMAKE_POLICY(SET CMP0054 NEW)
 
-SET(PROJECT_NAME "OPENQL")
-
-PROJECT(${PROJECT_NAME})
+PROJECT(OPENQL)
 
 SET(CMAKE_BUILD_TYPE Release CACHE STRING
     "Type of build (None Debug Release RelWithDebInfo MinSizeRel)" FORCE)
@@ -60,6 +60,7 @@ IF("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -Wall -Wfatal-errors -Wno-unused-local-typedef -ggdb")
 ENDIF("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
+ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(examples)
 ADD_SUBDIRECTORY(tests)
 ADD_SUBDIRECTORY(swig)

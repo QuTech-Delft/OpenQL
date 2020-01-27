@@ -1,16 +1,5 @@
-#include <string>
-#include <vector>
 #include <iostream>
-#include <fstream>
-#include <algorithm>
-#include <sstream>
-#include <cassert>
-#include <cstdlib>
-
-#include <time.h>
-
-#include <openql.h>
-
+#include <openql_i.h>
 #include "metrics.h"
 
 void

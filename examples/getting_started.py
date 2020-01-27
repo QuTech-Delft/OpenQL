@@ -13,18 +13,13 @@ def hello_openql():
     # if you copy this example somewhere else, make sure to provide
     # correct path of configuration file copy the configuration file
     # to the same directory and update the path
-    # config_fn = os.path.join(curdir, '../tests/test_cfg_none.json')
     config_fn = os.path.join(curdir, '../tests/hardware_config_cc_light.json')
     platform = ql.Platform("myPlatform", config_fn)
 
-    sweep_points = [1]
     nqubits = 3
 
     # create a program
     p = ql.Program("aProgram", platform, nqubits)
-
-    # set sweep points
-    p.set_sweep_points(sweep_points, len(sweep_points))
 
     # create a kernel
     k = ql.Kernel("aKernel", platform, nqubits)

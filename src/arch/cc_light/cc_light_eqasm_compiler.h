@@ -9,6 +9,7 @@
 #ifndef QL_CC_LIGHT_EQASM_COMPILER_H
 #define QL_CC_LIGHT_EQASM_COMPILER_H
 
+#include <compile_options.h>
 #include <utils.h>
 #include <platform.h>
 #include <kernel.h>
@@ -864,7 +865,7 @@ public:
                     sec_src_it != bundles_src_it->parallel_sections.end();
                     ++sec_src_it)
                 {
-                    for(auto ins_src_it = sec_src_it->begin(); 
+                    for(auto ins_src_it = sec_src_it->begin();
                         ins_src_it != sec_src_it->end();
                         ++ins_src_it )
                     {
@@ -885,7 +886,7 @@ public:
                             {
                                 FATAL("custom instruction not found for : " << id << " !");
                             }
-                            
+
                             bool is_flux_2_qubit = ( (operation_type == "flux") );
                             if( is_flux_2_qubit )
                             {
@@ -1601,7 +1602,7 @@ private:
                 if (i.count("cc_light_instr") <=0 )
                     throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
 
-                DOUT("..... composing constrol store line ..."); 
+                DOUT("..... composing constrol store line ...");
                 DOUT("..... opcode_ss generation ...");
                 opcode_ss << "def_q_arg_st[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
                 DOUT("..... optype computation...");
