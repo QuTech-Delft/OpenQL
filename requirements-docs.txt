@@ -1,3 +1,4 @@
 sphinx>=1.6
 sphinx-autodoc-typehints
 m2r
+cmake
