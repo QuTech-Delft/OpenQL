@@ -76,17 +76,22 @@ str
 
 %feature("docstring") set_option
 """ Sets any of the following OpenQL options:
-     Opt. Name   :   Default     : Possible values
-    'log_level'  : LOG_NOTHING   : 'LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}'
-    'output_dir' : 'test_output' : <output directory>
-    'optimize'   :   'no'        : 'yes/no'
-    'use_default_gates' : 'yes'  : 'yes/no'
-    'decompose_toffoli' :  'no'  : 'yes/no'
-    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
-    'scheduler_uniform' : 'no'   : 'yes/no'
-    'scheduler_commute' : 'no'   : 'yes/no'
-    'scheduler_post179' : 'yes'  : 'yes/no'
-    'cz_mode' : 'manual'         : 'auto/manual'
+
+===================  ============= ==================================================
+Opt. Name               Defaults                       Possible values
+===================  ============= ==================================================
+log_level             LOG_NOTHING   LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}
+output_dir            test_output   <output directory>
+optimize              no            yes/no
+use_default_gates     yes           yes/no
+decompose_toffoli     no            yes/no
+scheduler             ASAP          ASAP/ALAP
+scheduler_uniform     no            yes/no
+scheduler_commute     no            yes/no
+scheduler_post179     yes           yes/no
+cz_mode               manual        auto/manual
+===================  ============= ==================================================
+
 
 Parameters
 ----------
@@ -98,17 +103,21 @@ arg2 : str
 
 %feature("docstring") get_option
 """ Returns value of any of the following OpenQL options:
-     Opt. Name   :   Default     : Possible values
-    'log_level'  : LOG_NOTHING   : 'LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}'
-    'output_dir' : 'test_output' : <output directory>
-    'optimize'   :   'no'        : 'yes/no'
-    'use_default_gates' : 'yes'  : 'yes/no'
-    'decompose_toffoli' :  'no'  : 'yes/no'
-    'scheduler'  : 'ASAP'        : 'ASAP/ALAP'
-    'scheduler_uniform' : 'no'   : 'yes/no'
-    'scheduler_commute' : 'no'   : 'yes/no'
-    'scheduler_post179' : 'yes'  : 'yes/no'
-    'cz_mode' : 'manual'         : 'auto/manual'
+
+===================  ============= ==================================================
+Opt. Name               Defaults                       Possible values
+===================  ============= ==================================================
+log_level             LOG_NOTHING   LOG_{NOTHING/CRITICAL/ERROR/WARNING/INFO/DEBUG}
+output_dir            test_output   <output directory>
+optimize              no            yes/no
+use_default_gates     yes           yes/no
+decompose_toffoli     no            yes/no
+scheduler             ASAP          ASAP/ALAP
+scheduler_uniform     no            yes/no
+scheduler_commute     no            yes/no
+scheduler_post179     yes           yes/no
+cz_mode               manual        auto/manual
+===================  ============= ==================================================
 
 Parameters
 ----------
@@ -401,44 +410,50 @@ arg3 : int
 %feature("docstring") Kernel::clifford
 """ Applies clifford operation of the specified id on the qubit.
 
+The ids and the corresponding operations are:
+
+====  ==========================
+ id    Operations
+====  ==========================
+0       ['I']
+1       ['Y90', 'X90']
+2       ['mX90', 'mY90']
+3       ['X180']
+4       ['mY90', 'mX90']
+5       ['X90', 'mY90']
+6       ['Y180']
+7       ['mY90', 'X90']
+8       ['X90', 'Y90']
+9       ['X180', 'Y180']
+10      ['Y90', 'mX90']
+11      ['mX90', 'Y90']
+12      ['Y90', 'X180']
+13      ['mX90']
+14      ['X90', 'mY90', 'mX90']
+15      ['mY90']
+16      ['X90']
+17      ['X90', 'Y90', 'X90']
+18      ['mY90', 'X180']
+19      ['X90', 'Y180']
+20      ['X90', 'mY90', 'X90']
+21      ['Y90']
+22      ['mX90', 'Y180']
+23      ['X90', 'Y90', 'mX90']
+====  ==========================
+
 Parameters
 ----------
 arg1 : int
     clifford operation id
 arg2 : int
     target qubit
-
-The ids and the corresponding operations are:
-0 : ['I']
-1 : ['Y90', 'X90']
-2 : ['mX90', 'mY90']
-3 : ['X180']
-4 : ['mY90', 'mX90']
-5 : ['X90', 'mY90']
-6 : ['Y180']
-7 : ['mY90', 'X90']
-8 : ['X90', 'Y90']
-9 : ['X180', 'Y180']
-10: ['Y90', 'mX90']
-11: ['mX90', 'Y90']
-12: ['Y90', 'X180']
-13: ['mX90']
-14: ['X90', 'mY90', 'mX90']
-15: ['mY90']
-16: ['X90']
-17: ['X90', 'Y90', 'X90']
-18: ['mY90', 'X180']
-19: ['X90', 'Y180']
-20: ['X90', 'mY90', 'X90']
-21: ['Y90']
-22: ['mX90', 'Y180']
-23: ['X90', 'Y90', 'mX90']
 """
 
 %feature("docstring") Kernel::wait
-""" inserts explicit wait on specified qubits. wait with duration '0'
-    is equivalent to barrier on specified list of qubits. If no qubits
-    are specified, then wait/barrier is applied on all the qubits.
+""" inserts explicit wait of specified duration on specified qubits.
+
+    wait with duration '0' is equivalent to barrier on specified list of qubits.
+    If no qubits are specified, then wait/barrier is applied on all the qubits.
 
 
 Parameters
@@ -450,8 +465,9 @@ arg2 : int
 """
 
 %feature("docstring") Kernel::barrier
-""" inserts explicit barrier on specified qubits. wait with duration '0'
-    is also equivalent to applying barrier on specified list of qubits.
+""" inserts explicit barrier on specified qubits.
+
+    wait with duration '0' is also equivalent to applying barrier on specified list of qubits.
     If no qubits are specified, then barrier is applied on all the qubits.
 
 Parameters
@@ -728,7 +744,7 @@ arg2: int
 
 
 %feature("docstring") Program::compile
-""" Compiles the program.
+""" Compiles the program
 
 Parameters
 ----------
@@ -737,7 +753,8 @@ None
 
 
 %feature("docstring") Program::qasm
-""" Returns program QASM
+""" Generates and returns program QASM
+
 Parameters
 ----------
 None
@@ -745,10 +762,13 @@ None
 Returns
 -------
 str
-    qasm """
+    qasm
+"""
+
 
 %feature("docstring") Program::microcode
 """ Returns program microcode
+
 Parameters
 ----------
 None
@@ -756,7 +776,8 @@ None
 Returns
 -------
 str
-    microcode """
+    microcode
+"""
 
 
 
