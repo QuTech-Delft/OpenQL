@@ -79,7 +79,7 @@ A good place to get started with with your own programs might be to copy `exampl
 Notebooks
 ---------
 
-Following Jupyter notebooks are available in ``<OpenQL Root Dir>/examples/notebooks`` directory:
+Following Jupyter notebooks are available in the ``<OpenQL Root Dir>/examples/notebooks`` directory:
 
 ccLightClassicalDemo.ipynb
     This notebook provides an introduction to compilation for ccLight with an emphasis on:
@@ -95,7 +95,7 @@ ccLightClassicalDemo.ipynb
 Examples
 --------
 
-Following Jupyter notebooks are available in ``<OpenQL Root Dir>/examples`` directory:
+Following Jupyter notebooks are available in the ``<OpenQL Root Dir>/examples`` directory:
 
 getting_started.py
     The Hello World example discussed in helloworld_ section.
@@ -107,4 +107,4 @@ rb_single.py
 Tests
 -----
 
-Various tests are also available in ``<OpenQL Root Dir>/tests`` directory which can also be used as examples testing various features of OpenQL.
+Various tests are also available in the ``<OpenQL Root Dir>/tests`` directory which can also be used as examples testing various features of OpenQL.
