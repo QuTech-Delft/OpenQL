@@ -190,6 +190,25 @@ namespace ql
             DOUT("bundler [DONE]");
             return bundles;
         }
+
+        inline void DebugBundles(std::string at, bundles_t& bundles)
+        {
+            DOUT("DebugBundles at: " << at << " showing " << bundles.size() << " bundles");
+            for (bundle_t & abundle : bundles)
+            {
+                DOUT("... quantum bundle with nsections: " << abundle.parallel_sections.size());
+                for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
+                {
+                    DOUT("... section with ngates: " << secIt->size());
+                    for ( auto gp : (*secIt))
+                    {
+                        // auto n = get_cc_light_instruction_name(gp->name, platform);
+                        DOUT("... ... gate: " << gp->qasm() << " name: " << gp->name << " cc_light_iname: " << "?");
+                    }
+                }
+            }
+        }
+
     } // namespace ir
 } //namespace ql
 
