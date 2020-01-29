@@ -1,4 +1,5 @@
-//#define INITIALPLACE 1
+#define INITIALPLACE 1
+// commenting out the #define INITIALPLACE above, takes out all what's needed for initial placement
 /**
  * @file   mapper.h
  * @date   06/2018 - now
@@ -20,6 +21,13 @@
 #include "gate.h"
 #include "scheduler.h"
 #include "metrics.h"
+
+#ifdef INITIALPLACE
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <lemon/lp.h>
+#endif // INITIALPLACE
 
 // Note on the use of constructors and Init functions for classes of the mapper
 // -----------------------------------------------------------------------------
@@ -1993,7 +2001,8 @@ void AngleSortNbs()
 };  // end class Grid
 
 
-
+#ifdef INITIALPLACE
+using namespace lemon;
 // =========================================================================================
 // InitialPlace: initial placement solved as an MIP, mixed integer linear program
 // the initial placement is modelled as a Quadratic Assignment Problem
@@ -2054,13 +2063,6 @@ void AngleSortNbs()
 //  10s     run ip max for 10 seconds; when timed out, just use heuristics
 //  1sx     run ip max for 1 second; when timed out, stop the compiler
 //  1s      run ip max for 1 second; when timed out, just use heuristics
-
-#ifdef INITIALPLACE
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <lemon/lp.h>
-using namespace lemon;
 
 typedef
 enum InitialPlaceResults
@@ -2624,7 +2626,7 @@ void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& iptimetake
 }
     
 };  // end class InitialPlace
-#endif
+#endif // INITIALPLACE
 
 // =========================================================================================
 // Future: input window for mapper
@@ -3694,10 +3696,10 @@ void Map(ql::quantum_kernel& kernel)
         ip.Init(&grid, platformp);
         ip.Place(kernel.c, v2r, ipok, iptimetaken, initialplaceopt); // compute mapping (in v2r) using ip model, may fail
         DOUT("InitialPlace: kernel=" << kernel.name << " initialplace=" << initialplaceopt << " initialplace2qhorizon=" << initialplace2qhorizonopt << " result=" << ip.ipr2string(ipok) << " iptimetaken=" << iptimetaken << " seconds [DONE]");
-#else
+#else // ifdef INITIALPLACE
         DOUT("InitialPlace code commented out; please uncomment #define INITIALPLACE in src/mapper.h when wanted [DONE]");
         WOUT("InitialPlace code commented out; please uncomment #define INITIALPLACE in src/mapper.h when wanted [DONE]");
-#endif
+#endif // ifdef INITIALPLACE
     }
     v2r.DPRINT("After InitialPlace");
 
@@ -3739,4 +3741,4 @@ void Init(const ql::quantum_platform *p)
 
 };  // end class Mapper
 
-#endif
+#endif // ifndef QL_MAPPER_H
