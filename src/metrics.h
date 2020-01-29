@@ -108,7 +108,7 @@ public:
 		if (output_mode == "worst"){
 			IOUT("\nOutput mode: worst");
 			// return *std::min_element(fids.begin(),fids.end()); //Have to check if it is a problem that the vector contains nulls
-			double minimum = 1.0;
+			double minimum = 0.0;
 			for (auto x : fids)
 			{
 				if (not std::isnan(x))
@@ -143,12 +143,12 @@ public:
 		else if (output_mode == "product") 
 		{
 			
-			double product = 1;
+			double product = 0;
 			for (auto x : fids)
 			{
 				if (not std::isnan(x))
 				{
-					product *= x;
+					product += x; //No log because all values are already in logarithm format
 				}
 			}
 			DOUT("Product fidelities :" + std::to_string(product));
@@ -200,7 +200,7 @@ public:
 		{
 			if (ql::options::get("maxfidelity_loglevel") == "debug")
 				IOUT("Bounded fid: EMPTY VECTOR - Initializing. Nqubits = " + std::to_string(Nqubits));
-			fids.resize(Nqubits, 1.0); //Initiallize a fidelity vector, if one is not provided
+			fids.resize(Nqubits, 0.0); //Initiallize a fidelity vector, if one is not provided
 			//TODO: non initialized qubits should have undefined fidelity. It shouldn't be taken into account.
 		}
 		else
@@ -231,7 +231,7 @@ public:
 			else if (gate->name == "prepz")
 			{
 				size_t qubit = gate->operands[0]; 
-				fids[qubit] = 1.0;
+				fids[qubit] = 0.0;
 				last_op_endtime[qubit] = gate->cycle + gate->duration / CYCLE_TIME;
 				continue;
 			}
@@ -263,9 +263,8 @@ public:
 
 
 				// fids[qubit] *= std::exp(-((double)idled_time)/decoherence_time_cycles); // Update fidelity with idling-caused decoherence
-				fids[qubit] *= std::pow(idlefid, idled_time); // Update fidelity with idling-caused decoherence
-				
-				fids[qubit] *= gatefid_1; //Update fidelity after gate
+				fids[qubit] += log(std::pow(idlefid, idled_time)); // Update fidelity with idling-caused decoherence
+				fids[qubit] += log(gatefid_1); //Update fidelity after gate
 			}
 			else if (type_op == 2)
 			{
@@ -287,15 +286,15 @@ public:
 				}
 				// fids[qubit_c] *= std::exp(-(double) idled_time_c/decoherence_time_cycles); // Update fidelity with idling-caused decoherence
 				// fids[qubit_t] *= std::exp(-(double)idled_time_t/decoherence_time_cycles); // Update fidelity with idling-caused decoherence
-				fids[qubit_c] *= std::pow(idlefid, idled_time_c); // Update fidelity with idling-caused decoherence
-				fids[qubit_t] *= std::pow(idlefid, idled_time_t); // Update fidelity with idling-caused decoherence
+				fids[qubit_c] += log(std::pow(idlefid, idled_time_c)); // Update fidelity with idling-caused decoherence
+				fids[qubit_t] += log(std::pow(idlefid, idled_time_t)); // Update fidelity with idling-caused decoherence
 				
 				if (ql::options::get("maxfidelity_loglevel") == "debug"){
 					IOUT("Fidelity after idlying: ");
 					PRINTER(fids);
 				}
 
-				fids[qubit_c] *=  fids[qubit_t] * gatefid_2; //Update fidelity after gate
+				fids[qubit_c] +=  fids[qubit_t] + log(gatefid_2); //Update fidelity after gate
 				fids[qubit_t] = fids[qubit_c];  					//Update fidelity after gate
 
 				//TODO - Convert the code into a for loop with range 2, to get the compiler's for optimization (and possible paralellization?)
@@ -308,14 +307,15 @@ public:
 			}
 				
 		}
-		size_t end_cycle = circ.back()->cycle + circ.back()->duration/CYCLE_TIME; 
-		for (size_t i=0; i < Nqubits; i++ )
-		{
-			size_t idled_time_final = end_cycle - last_op_endtime[i];
-			// fids[i] *= std::exp(-(double) idled_time_final/decoherence_time_cycles);
-			fids[i] *= std::pow(idlefid, idled_time_final);
+		//Add decoherence after last gates for each qubit (in a square circuit style)
+		// size_t end_cycle = circ.back()->cycle + circ.back()->duration/CYCLE_TIME; 
+		// for (size_t i=0; i < Nqubits; i++ )
+		// {
+		// 	size_t idled_time_final = end_cycle - last_op_endtime[i];
+		// 	// fids[i] *= std::exp(-(double) idled_time_final/decoherence_time_cycles);
+		// 	fids[i] += log(std::pow(idlefid, idled_time_final));
 
-		}
+		// }
 
 		//Now we should still add decoherence effect in case the last gate was a two-qubit gate (the other qubits still decohere in the meantime!)
 
@@ -359,7 +359,7 @@ public:
 
 	double quick_fidelity_circuit(const ql::circuit & circuit )
 	{
-		size_t Nqubits = 17; //So be gotten from the json file/mapper when called
+		size_t Nqubits = 17; //To be gotten from the json file/mapper when called
 		ql::metrics::Metrics estimator(Nqubits);
 		std::vector<bool> used_qubits = check_used_qubits(Nqubits, circuit);
 		if (ql::options::get("maxfidelity_loglevel") == "debug")
@@ -375,7 +375,8 @@ public:
 		for (size_t i=0; i < Nqubits ; i++)
 		{
 			if (used_qubits[i])
-				previous_fids[i] = 1.0;
+				// previous_fids[i] = 1.0;
+				previous_fids[i] = 0.0;
 		}  
 
 		// fids.resize(Nqubits, 1.0);
