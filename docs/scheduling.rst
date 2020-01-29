@@ -22,7 +22,8 @@ which is defined by the ``scheduler`` option value: ``ASAP``, ``ALAP`` and some 
 Entry points
 ^^^^^^^^^^^^
 
-The following entry points are supported:
+The following two entry points are supported,
+one for the non-constrained and one for the resource-constrained scheduler:
 
 - ``p.schedule()``
   In the context of ``program`` object ``p``, this method schedules the circuits of the kernels of the program,
@@ -39,7 +40,7 @@ The following entry points are supported:
 
 :Note: These entry points need to be harmonized to fit in the generalized pass model: same class, program-level interface, no result except in IR, buffer and latency compensation split off to separate passes.
 
-These entry points each create a ``sched``  object of class ``Scheduler`` and call a selection of its methods:
+The above entry points each create a ``sched``  object of class ``Scheduler`` and call a selection of its methods:
 
 - ``sched.init(circuit, platform, num_qubits, num_creg)``
   A dependence graph representation of the specified circuit is constructed.
@@ -70,6 +71,8 @@ These entry points each create a ``sched``  object of class ``Scheduler`` and ca
 - ``bundles = sched.bundler(circuit)``
   Construct the bundled representation of the circuit. The cycle attribute of each gate of the circuit must be valid,
   and the gates in the circuit must have been sorted by their cycle value.
+
+:Note: In the mapper branch, the bundler has been moved and made an interface of ``ql::ir::`` while also the ``bundle`` type and other bundle interfaces are defined.
 
 - ``bundles = sched.schedule_asap(sched_dot)``
   The cycle attributes of the gates are initialized consistent with an ASAP (i.e. downward) walk over the dependence graph.
