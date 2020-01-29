@@ -7,8 +7,8 @@
  *          functions is correct
  */
 
-#ifndef QL_ARCH_CC_CODEGEN_CC_H
-#define QL_ARCH_CC_CODEGEN_CC_H
+#ifndef ARCH_CC_CODEGEN_CC_H
+#define ARCH_CC_CODEGEN_CC_H
 
 // options
 #define OPT_SUPPORT_STATIC_CODEWORDS    1
@@ -52,41 +52,9 @@ private: // types
         std::string path;
     } tJsonNodeInfo;
 
-private: // vars
-    static const int MAX_SLOTS = 12;
-    static const int MAX_GROUPS = 32;                           // enough for VSM
-
-    bool verboseCode = true;                                    // output extra comments in generated code. FIXME: not yet configurable
-    bool mapPreloaded = false;
-
-    std::stringstream cccode;                                   // the code generated for the CC
-
-    // codegen state
-    std::vector<std::vector<tGroupInfo>> groupInfo;             // matrix[instrIdx][group]
-    json codewordTable;                                         // codewords versus signals per instrument group
-    json inputLutTable;                                         // input LUT usage per instrument group
-    size_t lastStartCycle[MAX_SLOTS];
-
-    // some JSON nodes we need access to
-    const json *jsonInstrumentDefinitions;
-    const json *jsonControlModes;
-    const json *jsonInstruments;
-    const json *jsonSignals;
-
-    const ql::quantum_platform *platform;
-
-#if OPT_VCD_OUTPUT
-    size_t kernelStartTime;
-    Vcd vcd;
-    int vcdVarKernel;
-    std::vector<int> vcdVarQubit;
-    std::vector<std::vector<int>> vcdVarSignal;
-    std::vector<int> vcdVarCodeword;
-#endif
-
 public:
-    codegen_cc() {}
-    ~codegen_cc() {}
+    codegen_cc() = default;
+    ~codegen_cc() = default;
 
     // Generic
     void init(const ql::quantum_platform &platform);
@@ -121,7 +89,39 @@ public:
     void add();
     // FIXME: etc
 
-private:
+private:    // vars
+    static const int MAX_SLOTS = 12;
+    static const int MAX_GROUPS = 32;                           // enough for VSM
+
+    bool verboseCode = true;                                    // output extra comments in generated code. FIXME: not yet configurable
+    bool mapPreloaded = false;
+
+    std::stringstream cccode;                                   // the code generated for the CC
+
+    // codegen state
+    std::vector<std::vector<tGroupInfo>> groupInfo;             // matrix[instrIdx][group]
+    json codewordTable;                                         // codewords versus signals per instrument group
+    json inputLutTable;                                         // input LUT usage per instrument group
+    size_t lastStartCycle[MAX_SLOTS];
+
+    // some JSON nodes we need access to
+    const json *jsonInstrumentDefinitions;
+    const json *jsonControlModes;
+    const json *jsonInstruments;
+    const json *jsonSignals;
+
+    const ql::quantum_platform *platform;
+
+#if OPT_VCD_OUTPUT
+    size_t kernelStartTime;
+    Vcd vcd;
+    int vcdVarKernel;
+    std::vector<int> vcdVarQubit;
+    std::vector<std::vector<int>> vcdVarSignal;
+    std::vector<int> vcdVarCodeword;
+#endif
+
+private:    // funcs
     // Some helpers to ease nice assembly formatting
     void emit(const char *labelOrComment, const char *instr="");
 
@@ -144,5 +144,4 @@ private:
     tJsonNodeInfo findSignalDefinition(const json &instruction, const std::string &iname) const;
 }; // class
 
-
-#endif  // ndef QL_ARCH_CC_CODEGEN_CC_H
+#endif  // ndef ARCH_CC_CODEGEN_CC_H

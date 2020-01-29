@@ -6,8 +6,8 @@
  * @remark based on cc_light_eqasm_compiler.h, commit f34c0d9
  */
 
-#ifndef QL_ARCH_CC_EQASM_BACKEND_CC_H
-#define QL_ARCH_CC_EQASM_BACKEND_CC_H
+#ifndef ARCH_CC_EQASM_BACKEND_CC_H
+#define ARCH_CC_EQASM_BACKEND_CC_H
 
 #include "codegen_cc.h"
 
@@ -27,8 +27,8 @@ namespace arch
 class eqasm_backend_cc : public eqasm_compiler
 {
 public:
-    eqasm_backend_cc();
-    ~eqasm_backend_cc();
+    eqasm_backend_cc() = default;
+    ~eqasm_backend_cc() = default;
 
     void compile(std::string prog_name, std::vector<quantum_kernel> kernels, const ql::quantum_platform &platform) override;
     void compile(std::string prog_name, ql::circuit &ckt, ql::quantum_platform &platform) override;
@@ -49,5 +49,5 @@ private: // vars
 } // arch
 } // ql
 
-#endif // QL_ARCH_CC_EQASM_BACKEND_CC_H
+#endif // ARCH_CC_EQASM_BACKEND_CC_H
 

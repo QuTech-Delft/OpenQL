@@ -226,7 +226,7 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                     // find or assign code word
                     uint32_t codeword = 0;
                     bool codewordOverriden = false;
-#if OPT_SUPPORT_STATIC_CODEWORDS    // FIXME: this does not provide support only, but actually requires static codewords
+#if OPT_SUPPORT_STATIC_CODEWORDS    // FIXME: this does not only provide support, but actually requires static codewords
                     int staticCodewordOverride = groupInfo[instrIdx][group].staticCodewordOverride;
                     codeword = staticCodewordOverride;
                     codewordOverriden = true;
