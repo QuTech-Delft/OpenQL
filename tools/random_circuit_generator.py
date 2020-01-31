@@ -37,6 +37,7 @@ from openql import openql as ql
 import random
 import os
 import pickle
+from joblib import Parallel, delayed, cpu_count
 # import cirq
 # from numba import jit
 
@@ -212,7 +213,7 @@ def random_circuit_mirrored(qubits, size, two_qubit_fraction, seed = None):
 	gate_list = []
 
 
-	for i in range(size):
+	for i in range(round(size/2)):
 		dice = random.random()
 		if dice < two_qubit_fraction:
 			gate = 'cz'
@@ -347,9 +348,10 @@ import numpy as np
 from tqdm import tqdm
 samples = 5
 qubits = 10
-for size in tqdm(range(5, 3000, 100)):
-	for two_qubit_fraction in np.arange(0,1,0.2):
+for size in tqdm(range(100, 4000, 100)):
+	for two_qubit_fraction in np.arange(0,1.2,0.2):
 		circ_list = [random_circuit_mirrored(qubits, size, two_qubit_fraction) for sample in range(samples)]
+		#Don't use parallel with random
 		save_random_circ_list(circ_list, qubits, size, two_qubit_fraction)
 
 # %%

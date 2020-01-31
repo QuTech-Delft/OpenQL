@@ -367,6 +367,11 @@ public:
         return program->qasm();
     }
 
+	double score()
+    {
+        return ql::metrics::quick_fidelity_circuit(program->kernels.at(0).c);
+    }
+
     std::string microcode()
     {
 #if OPT_MICRO_CODE
