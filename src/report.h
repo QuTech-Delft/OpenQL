@@ -13,6 +13,7 @@
 #include <options.h>
 #include <kernel.h>
 #include <ir.h>
+#include <metrics.h>
 
 namespace ql
 {
