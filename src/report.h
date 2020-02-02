@@ -356,6 +356,7 @@ namespace report
         ofs << prefix << "----- classical operations: " << get_classical_operations_count(k.c, platform) << "\n";
         ofs << prefix << "----- qubits used: " << qubits_used << "\n";
         ofs << prefix << "----- qubit cycles use:" << ql::utils::to_string(usedcyclecount) << "\n";
+        ofs << prefix << "----- Metrics Score:" << ql::utils::to_string(ql::metrics::quick_fidelity_circuit(k.c)) << "\n";
         // DOUT("... reporting report_kernel_statistics [done]");
     }
 
