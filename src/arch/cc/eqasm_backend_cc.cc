@@ -76,7 +76,6 @@ QASM_CLASSICAL_INSTRUCTION_LIST
 
 
 
-
 namespace ql
 {
 namespace arch
