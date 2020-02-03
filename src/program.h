@@ -13,6 +13,7 @@
 #include <options.h>
 #include <platform.h>
 #include <kernel.h>
+#include "metrics.h"
 #include <report.h>
 #include <interactionMatrix.h>
 #include <eqasm_compiler.h>
