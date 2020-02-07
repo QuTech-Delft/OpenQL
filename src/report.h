@@ -14,8 +14,13 @@
 #include <kernel.h>
 #include <ir.h>
 
+
 namespace ql
 {
+namespace metrics
+{
+	extern double quick_fidelity_circuit(const ql::circuit & circuit );
+}
 namespace report
 {
 
