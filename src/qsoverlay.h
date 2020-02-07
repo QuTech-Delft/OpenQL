@@ -203,19 +203,19 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 			//Add gate timing, if circuit was compiled.
 			if (qs_name == "prepz")
 			{
-				if (compiled)
+				// if (compiled)
 					fout << ", time = " << std::to_string((gate->cycle-1)*ns_per_cycle + gate->duration );
 			}
 
 			else if (qs_name == "Measure")
 			{
 				fout << ", output_bit = " << "'" << gate->operands[0] << "_out'";
-				if (compiled)
+				// if (compiled)
 					fout << ", time = " << std::to_string((gate->cycle-1)*ns_per_cycle + gate->duration/4);
 			}
 			else
 			{
-				if (compiled)
+				// if (compiled)
 					fout << ", time = " << std::to_string((gate->cycle-1)*ns_per_cycle + gate->duration/2);
 			}
 			fout << ")\n";
@@ -224,7 +224,7 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 		//Now we use the qubit_end_cycle values to correct the circuit builder list
 		
 		
-		if (compiled)
+		// if (compiled)
 		{
 			fout << "\n";
 			fout << "	b.times = {";
