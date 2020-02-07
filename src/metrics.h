@@ -44,8 +44,8 @@ void my_print(std::vector<T> const &input, const char *id_name)
 
 namespace ql
 {
-namespace metrics
-{
+// namespace metrics
+// {
 
 
 // ql::circuit random_circuit_generator(double Nqubits, size_t Ncycles, double idle_fraction, double two_qb_gate_fraction ){
@@ -360,7 +360,7 @@ public:
 	double quick_fidelity_circuit(const ql::circuit & circuit )
 	{
 		size_t Nqubits = 17; //To be gotten from the json file/mapper when called
-		ql::metrics::Metrics estimator(Nqubits);
+		ql::Metrics estimator(Nqubits);
 		std::vector<bool> used_qubits = check_used_qubits(Nqubits, circuit);
 		if (ql::options::get("maxfidelity_loglevel") == "debug")
 		{
@@ -387,7 +387,7 @@ public:
 
 	double quick_fidelity(const std::list< ql::gate * > &gate_list )
 	{
-		// ql::metrics::Metrics estimator(17);
+		// ql::Metrics estimator(17);
 		// std::vector<double> previous_fids;
 		// PRINTER(gate_list);
 		ql::circuit circuit;
@@ -401,7 +401,7 @@ public:
 
 	// double quick_fidelity(ql::circuit circuit )
 	// {
-	// 	ql::metrics::Metrics estimator(17);
+	// 	ql::Metrics estimator(17);
 	// 	std::vector<double> previous_fids;
 	// 	double fidelity = estimator.bounded_fidelity(circuit, previous_fids);
 	// 	fidelity =- fidelity; //Symmetric value because lower score is considered better in mapper.h
@@ -816,5 +816,5 @@ public:
 
 
 
-} //metrics namespace end
+// } //metrics namespace end
 } //ql namespace end
