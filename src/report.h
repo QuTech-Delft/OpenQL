@@ -365,7 +365,35 @@ namespace report
         ofs << prefix << "----- classical operations: " << get_classical_operations_count(k.c, platform) << "\n";
         ofs << prefix << "----- qubits used: " << qubits_used << "\n";
         ofs << prefix << "----- qubit cycles use:" << ql::utils::to_string(usedcyclecount) << "\n";
-        ofs << prefix << "----- Metrics Score:" << ql::utils::to_string(ql::quick_fidelity_circuit(k.c)) << "\n";
+
+		std::string maxfidelity_1qbgatefid = ql::options::get('maxfidelity_1qbgatefid');
+		std::string maxfidelity_2qbgatefid = ql::options::get('maxfidelity_2qbgatefid');
+		std::string maxfidelity_idlefid = ql::options::get('maxfidelity_idlefid');
+		std::string maxfidelity_outputmode = ql::options::get('maxfidelity_outputmode');
+
+		ql::options::set('maxfidelity_1qbgatefid', "0.999");
+		ql::options::set('maxfidelity_2qbgatefid', "0.9968");
+		ql::options::set('maxfidelity_idlefid', "0.9991");
+		ql::options::set('maxfidelity_outputmode', "product");
+        ofs << prefix << "----- Metrics Score1:" << ql::utils::to_string(ql::quick_fidelity_circuit(k.c)) << "\n";
+
+		ql::options::set('maxfidelity_1qbgatefid', "0.999");
+		ql::options::set('maxfidelity_2qbgatefid', "0.99");
+		ql::options::set('maxfidelity_idlefid', "0.999334");
+		ql::options::set('maxfidelity_outputmode', "product");
+        ofs << prefix << "----- Metrics Score2:" << ql::utils::to_string(ql::quick_fidelity_circuit(k.c)) << "\n";
+
+		ql::options::set('maxfidelity_1qbgatefid', "0.999");
+		ql::options::set('maxfidelity_2qbgatefid', "0.99");
+		ql::options::set('maxfidelity_idlefid', "0.9867");
+		ql::options::set('maxfidelity_outputmode', "product");
+        ofs << prefix << "----- Metrics Score3:" << ql::utils::to_string(ql::quick_fidelity_circuit(k.c)) << "\n";
+
+
+		ql::options::set('maxfidelity_1qbgatefid', maxfidelity_1qbgatefid);
+		ql::options::set('maxfidelity_2qbgatefid', maxfidelity_2qbgatefid);
+		ql::options::set('maxfidelity_idlefid', maxfidelity_idlefid);
+		ql::options::set('maxfidelity_outputmode', maxfidelity_outputmode);
         // DOUT("... reporting report_kernel_statistics [done]");
     }
 
