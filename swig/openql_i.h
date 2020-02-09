@@ -19,6 +19,14 @@
 #include <openql.h>
 #include <classical.h>
 
+// namespace ql
+// {
+// 	namespace metrics
+// 	{
+// 		extern double quick_fidelity_circuit(const ql::circuit & circuit );
+// 	}
+// }
+
 static std::string get_version()
 {
     return OPENQL_VERSION_STRING;
@@ -367,10 +375,10 @@ public:
         return program->qasm();
     }
 
-	double score()
-    {
-        return ql::metrics::quick_fidelity_circuit(program->kernels.at(0).c);
-    }
+	// double score()
+    // {
+    //     return ql::metrics::quick_fidelity_circuit(program->kernels.at(0).c);
+    // }
 
     std::string microcode()
     {
