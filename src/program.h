@@ -463,6 +463,11 @@ class quantum_program
           return vers;
       }
 
+		// double score() //At the moment only supports single kernel scoring (at(0))
+		// {
+		// 	return ql::metrics::quick_fidelity_circuit(kernels.at(0).get_circuit());
+		// }
+
       int compile()
       {
          IOUT("compiling " << name << " ...");

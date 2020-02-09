@@ -377,6 +377,11 @@ public:
 
 	// double score()
     // {
+    //     return program->score();
+    // }
+
+	// double score()
+    // {
     //     return ql::metrics::quick_fidelity_circuit(program->kernels.at(0).c);
     // }
 
