@@ -40,7 +40,7 @@ if __name__ == "__main__":
 	for file in files:
 		imported = importlib.import_module(os.path.join(file.replace(".py", "")))
 		try:
-			imported.circuit('test_mapper17.json', scheduler = 'ALAP', moves='yes', measurement = False, output_dir_name = 'test_output')
+			imported.circuit('test_mapper_s17.json', scheduler = 'ALAP', moves='yes', measurement = False, output_dir_name = 'test_output')
 		except:
 			continue
 
