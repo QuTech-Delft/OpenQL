@@ -715,7 +715,7 @@ private:
         {
             for(i=0; i<all_qubits.size()-1; i++)
             {
-                instr_parameterized += "q" + std::to_string(all_qubits[i]) + " ";
+                instr_parameterized += "q" + std::to_string(all_qubits[i]) + ",";
             }
             if(all_qubits.size() >= 1)
             {
@@ -821,7 +821,7 @@ private:
         {
             for(i=0; i<all_qubits.size()-1; i++)
             {
-                instr_parameterized += "%" + std::to_string(i) + " ";
+                instr_parameterized += "%" + std::to_string(i) + ",";
             }
             if(all_qubits.size() >= 1)
             {

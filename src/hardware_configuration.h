@@ -153,7 +153,7 @@ public:
                 DOUT("");
                 DOUT("Adding composite instr : " << comp_ins);
                 comp_ins = sanitize_instruction_name(comp_ins);
-                comp_ins = std::regex_replace(comp_ins, comma_space_pattern, " ");
+                comp_ins = std::regex_replace(comp_ins, comma_space_pattern, ",");
                 DOUT("Adjusted composite instr : " << comp_ins);
 
                 // format in json.instructions:
@@ -181,19 +181,7 @@ public:
                     str::lower_case(sub_ins);
                     DOUT("Adding sub instr: " << sub_ins);
                     sub_ins = sanitize_instruction_name(sub_ins);
-#ifdef MAPPER_NO_SPACE_SEPARATING_OPERANDS
-                    sub_ins = std::regex_replace(sub_ins, comma_space_pattern, " ");
-                    DOUT("After comma removal sub instr: " << sub_ins);
-                    std::string sub_ins_adjusted(sub_ins);      // why this?
-
-                    // format in json's sub_instructions:
-                    //  "^(\s)*token(\s)+token(\s)*(,|\s)(\s)*token(\s*)$"
-                    //  so with a comma or a space between any operands and possible spaces everywhere
-                    //
-                    // format of key and value (which is a custom_gate)'s name in instruction_map:
-                    //  "^(token(\stoken)*))$"
-                    //  so with one space between any operands
-#endif
+                    sub_ins = std::regex_replace(sub_ins, comma_space_pattern, ",");
                     if ( instruction_map.find(sub_ins) != instruction_map.end() )
                     {
                         // i.e. subinstruction as is is also defined as instruction (with all operands)
