@@ -626,8 +626,7 @@ private:
         if(qubits.size() > 0)
         {
             for (size_t i=0; i<(qubits.size()-1); ++i)
-                // instr += "q" + std::to_string(qubits[i]) + ","; // original
-                instr += "q" + std::to_string(qubits[i]) + " "; // HvS
+                instr += "q" + std::to_string(qubits[i]) + ",";
             if(qubits.size() >= 1) // to make if work with gates without operands
                 instr += "q" + std::to_string(qubits[qubits.size()-1]);
         }

@@ -124,8 +124,7 @@ public:
             json attr = *it; //.value();
 
             name = sanitize_instruction_name(name);
-            // name = std::regex_replace(name, comma_space_pattern, ","); // original
-            name = std::regex_replace(name, comma_space_pattern, " "); // HvS
+            name = std::regex_replace(name, comma_space_pattern, ",");
 
             // check for duplicate operations
             if (instruction_map.find(name) != instruction_map.end())
