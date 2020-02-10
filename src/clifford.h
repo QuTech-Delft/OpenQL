@@ -57,7 +57,8 @@ public:
             else if (gp->operands.size() != 1)                      // gates like CNOT/CZ/TOFFOLI
             {
                 // non-unary quantum gates like wait/cnot/cz/toffoli
-                // interpret cliffstate and create corresponding gate sequence, for each operand qubit
+                // interpret cliffstate and emit corresponding gate sequence, for each operand qubit
+                // and then emit new gate
                 for (auto q: gp->operands)
                 {
                     sync(kernel, q);
@@ -73,7 +74,7 @@ public:
                 if (cl != -1)
                 {
                     // unary quantum clifford gates like x/y/z/h/xm90/y90/s/...
-                    // don't copy gate to output but accumulate gate in cliffstate
+                    // don't emit gate but accumulate gate in cliffstate
                     // also record accumulated cycles to compute savings
                     cliffcycles[q] += (gp->duration+ct-1)/ct;
                     int s = cliffstate[q];
@@ -84,6 +85,7 @@ public:
                 {
                     // unary quantum non-clifford gates like wait/meas/prepz/...
                     // interpret cliffstate and create corresponding gate sequence, for this operand qubit
+                    // before new gate is emitted
                     DOUT("... unary gate not a clifford gate: " << gp->qasm());
                     sync(kernel, q);
                     kernel.c.push_back(gp);
