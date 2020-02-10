@@ -375,10 +375,10 @@ public:
         return program->qasm();
     }
 
-	// double score()
-    // {
-    //     return program->score();
-    // }
+	double score()
+    {
+        return program->score();
+    }
 
 	// double score()
     // {

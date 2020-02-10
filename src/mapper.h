@@ -20,8 +20,8 @@
 #include "gate.h"
 #include "scheduler.h"
 // #include "metrics.h"
-extern double ql::quick_fidelity_circuit(const ql::circuit &circuit);
-extern double ql::quick_fidelity(const std::list< ql::gate * > &gate_list );
+extern double ql::metrics::quick_fidelity_circuit(const ql::circuit &circuit);
+extern double ql::metrics::quick_fidelity(const std::list< ql::gate * > &gate_list );
 
 
 
@@ -1578,7 +1578,7 @@ void Extend(Past currPast, Past basePast)
     auto mapperopt = ql::options::get("mapper");
     if ("maxfidelity" == mapperopt)
     {
-        score = ql::quick_fidelity(past.lg);
+        score = ql::metrics::quick_fidelity(past.lg);
 		// score = ql::metrics::quick_fidelity(past.lg);
     }
     else
@@ -3503,7 +3503,7 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
             auto mapperopt = ql::options::get("mapper");
             if ("maxfidelity" == mapperopt)
             {
-                a.score = ql::quick_fidelity(past_copy.lg);
+                a.score = ql::metrics::quick_fidelity(past_copy.lg);
 				        // a.score = ql::metrics::quick_fidelity(past_copy.lg);
             }
             else
