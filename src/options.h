@@ -31,7 +31,7 @@ namespace ql
           opt_name2opt_val["output_dir"] = "test_output";
           opt_name2opt_val["unique_output"] = "no";
           opt_name2opt_val["optimize"] = "no";
-          opt_name2opt_val["use_default_gates"] = "no";
+          opt_name2opt_val["use_default_gates"] = "yes";
           opt_name2opt_val["decompose_toffoli"] = "no";
           opt_name2opt_val["quantumsim"] = "no";
 
@@ -45,10 +45,10 @@ namespace ql
           opt_name2opt_val["cz_mode"] = "manual";
           opt_name2opt_val["print_dot_graphs"] = "no";
 
-          opt_name2opt_val["clifford_premapper"] = "yes";
-          opt_name2opt_val["clifford_postmapper"] = "yes";
+          opt_name2opt_val["clifford_premapper"] = "no";
+          opt_name2opt_val["clifford_postmapper"] = "no";
 
-          opt_name2opt_val["mapper"] = "minextendrc";
+          opt_name2opt_val["mapper"] = "no";
           opt_name2opt_val["mapassumezeroinitstate"] = "no";
           opt_name2opt_val["mapinitone2one"] = "yes";
           opt_name2opt_val["mapprepinitsstate"] = "no";
