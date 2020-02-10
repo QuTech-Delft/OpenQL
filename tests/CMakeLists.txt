@@ -28,14 +28,14 @@ CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/hardware_config_cc_light.json
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/hardware_config_qx.json
 	hardware_config_qx.json COPYONLY)
 
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_mapper.json
-	test_mapper.json COPYONLY)
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_mapper_s7.json
+	test_mapper_s7.json COPYONLY)
 
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_mapper17.json
-	test_mapper17.json COPYONLY)
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_mapper_s17.json
+	test_mapper_s17.json COPYONLY)
 
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_rig.json
-	test_rig.json COPYONLY)
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_mapper_rig.json
+	test_mapper_rig.json COPYONLY)
 
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/cc/test_cfg_cc.json
 	test_cfg_cc.json COPYONLY)

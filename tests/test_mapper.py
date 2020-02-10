@@ -2,7 +2,9 @@
 #
 # tests combination of prescheduler, clifford, mapper, clifford and postscheduler in cc_light context
 #   by generating .qisa and comparing the generated one with a golden one after assembly
-# assumes config files test_mapper.json and test_mapper17.json
+#
+# assumes config files: test_mapper_rig.json, test_mapper_s7.json and test_mapper_s17.json
+#
 # written to avoid initial placement since that is not portable
 # (although turning it on with options and enabling it by uncommenting first line of src/mapper.h would test it)
 # for option assumptions, see setUp below
@@ -44,7 +46,7 @@ class Test_mapper(unittest.TestCase):
         ql.set_option('mapper', 'minextendrc')
         ql.set_option('mapinitone2one', 'yes')
         ql.set_option('initialplace', 'no')
-        ql.set_option('initialplaceprefix', '0')
+        ql.set_option('initialplace2qhorizon', '0')
         ql.set_option('mapusemoves', 'yes')
         ql.set_option('mapreverseswap', 'yes')
         ql.set_option('mappathselect', 'all')
@@ -57,14 +59,14 @@ class Test_mapper(unittest.TestCase):
         ql.set_option('write_report_files', 'no')
 
 
-    def test_maxcut(self):
+    def test_mapper_maxcut(self):
         # rigetti test copied from Venturelli's paper
         v = 'maxcut'
-        config = os.path.join(rootDir, "test_rig.json")
+        config = os.path.join(rootDir, "test_mapper_rig.json")
         num_qubits = 8
 
         # create and set platform
-        prog_name = "test_" + v
+        prog_name = "test_mapper_" + v
         kernel_name = "kernel_" + v
         starmon = ql.Platform("starmon", config)
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
@@ -93,18 +95,18 @@ class Test_mapper(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
-    def test_oneNN(self):
+    def test_mapper_oneNN(self):
         # just check whether mapper works for trivial case
         # parameters
         v = 'oneNN'
-        config = os.path.join(rootDir, "test_mapper.json")
+        config = os.path.join(rootDir, "test_mapper_s7.json")
         num_qubits = 7
 
         # create and set platform
-        prog_name = "test_" + v
+        prog_name = "test_mapper_" + v
         kernel_name = "kernel_" + v
         starmon = ql.Platform("starmon", config)
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
@@ -121,21 +123,21 @@ class Test_mapper(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
-    def test_allNN(self):
-        # a list of all cnots that are NN in trivial/natural mapping (as in test_mapper.json)
+    def test_mapper_allNN(self):
+        # a list of all cnots that are NN in trivial/natural mapping (as in test_mapper_s7.json)
         #   (s7 is 3 rows: 2 data qubits (0 and 1), 3 ancillas (2 to 4), and 2 data qubits (5 and 6))
         # so no swaps are inserted and map is not changed
         # also tests commutation of cnots in mapper and postscheduler
         # parameters
         v = 'allNN'
-        config = os.path.join(rootDir, "test_mapper.json")
+        config = os.path.join(rootDir, "test_mapper_s7.json")
         num_qubits = 7
 
         # create and set platform
-        prog_name = "test_" + v
+        prog_name = "test_mapper_" + v
         kernel_name = "kernel_" + v
         starmon = ql.Platform("starmon", config)
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
@@ -169,10 +171,10 @@ class Test_mapper(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
-    def test_oneD2(self):
+    def test_mapper_oneD2(self):
         # one cnot with operands that are at distance 2 in s7
         # initial placement should find this
         # otherwise ...
@@ -181,11 +183,11 @@ class Test_mapper(unittest.TestCase):
         # this introduces 1 swap/move and so uses an ancilla
         # parameters
         v = 'oneD2'
-        config = os.path.join(rootDir, "test_mapper.json")
+        config = os.path.join(rootDir, "test_mapper_s7.json")
         num_qubits = 7
 
         # create and set platform
-        prog_name = "test_" + v
+        prog_name = "test_mapper_" + v
         kernel_name = "kernel_" + v
         starmon = ql.Platform("starmon", config)
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
@@ -204,10 +206,10 @@ class Test_mapper(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
-    def test_oneD4(self):
+    def test_mapper_oneD4(self):
         # one cnot with operands that are at distance 4 in s7
         # initial placement should find this
         # otherwise ...
@@ -216,11 +218,11 @@ class Test_mapper(unittest.TestCase):
         # this introduces 3 swaps/moves
         # parameters
         v = 'oneD4'
-        config = os.path.join(rootDir, "test_mapper.json")
+        config = os.path.join(rootDir, "test_mapper_s7.json")
         num_qubits = 7
 
         # create and set platform
-        prog_name = "test_" + v
+        prog_name = "test_mapper_" + v
         kernel_name = "kernel_" + v
         starmon = ql.Platform("starmon", config)
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
@@ -239,20 +241,20 @@ class Test_mapper(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
-    def test_allD(self):
+    def test_mapper_allD(self):
         # all possible cnots in s7, in lexicographic order
         # there is no initial mapping that maps this right so initial placement cannot find it
         # so the heuristics must act and insert swaps/moves
         # parameters
         v = 'allD'
-        config = os.path.join(rootDir, "test_mapper.json")
+        config = os.path.join(rootDir, "test_mapper_s7.json")
         num_qubits = 7
 
         # create and set platform
-        prog_name = "test_" + v
+        prog_name = "test_mapper_" + v
         kernel_name = "kernel_" + v
         starmon = ql.Platform("starmon", config)
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
@@ -276,10 +278,10 @@ class Test_mapper(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
-    def test_allDopt(self):
+    def test_mapper_allDopt(self):
         # all possible cnots in s7, avoiding collisions:
         # - the pair of possible CNOTs in both directions hopefully in parallel
         # - these pairs ordered from low distance to high distance to avoid disturbance by swaps
@@ -289,11 +291,11 @@ class Test_mapper(unittest.TestCase):
         # so the heuristics must act and insert swaps/moves
         # parameters
         v = 'allDopt'
-        config = os.path.join(rootDir, "test_mapper.json")
+        config = os.path.join(rootDir, "test_mapper_s7.json")
         num_qubits = 7
 
         # create and set platform
-        prog_name = "test_" + v
+        prog_name = "test_mapper_" + v
         kernel_name = "kernel_" + v
         starmon = ql.Platform("starmon", config)
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
@@ -353,10 +355,10 @@ class Test_mapper(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
-    def test_allIP(self):
+    def test_mapper_allIP(self):
         # longest string of cnots with operands that could be at distance 1 in s7
         # matches intel NISQ application
         # initial placement should find this
@@ -365,11 +367,11 @@ class Test_mapper(unittest.TestCase):
         # the heuristics must act and insert swaps/moves
         # parameters
         v = 'allIP'
-        config = os.path.join(rootDir, "test_mapper.json")
+        config = os.path.join(rootDir, "test_mapper_s7.json")
         num_qubits = 7
 
         # create and set platform
-        prog_name = "test_" + v
+        prog_name = "test_mapper_" + v
         kernel_name = "kernel_" + v
         starmon = ql.Platform("starmon", config)
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
@@ -393,19 +395,19 @@ class Test_mapper(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
 
-    def test_lingling5(self):
+    def test_mapper_lingling5(self):
         # parameters
         # 'realistic' circuit
         v = 'lingling5'
-        config = os.path.join(rootDir, "test_mapper17.json")
+        config = os.path.join(rootDir, "test_mapper_s17.json")
         num_qubits = 7
 
         # create and set platform
-        prog_name = "test_" + v
+        prog_name = "test_mapper_" + v
         kernel_name = "kernel_" + v
         starmon = ql.Platform("starmon", config)
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
@@ -547,18 +549,18 @@ class Test_mapper(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
 
-    def test_lingling7(self):
+    def test_mapper_lingling7(self):
         # parameters
         v = 'lingling7'
-        config = os.path.join(rootDir, "test_mapper17.json")
+        config = os.path.join(rootDir, "test_mapper_s17.json")
         num_qubits = 9
 
         # create and set platform
-        prog_name = "test_" + v
+        prog_name = "test_mapper_" + v
         kernel_name = "kernel_" + v
         starmon = ql.Platform("starmon", config)
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
@@ -686,7 +688,7 @@ class Test_mapper(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         assemble(QISA_fn)
-        # self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
 
