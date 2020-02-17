@@ -258,7 +258,7 @@ public:
     {
         name = oper.operation_name;
         duration = 20;
-        operands.push_back(dest.id);
+        creg_operands.push_back(dest.id);
         if(name == "ldi")
         {
             imm_value = (oper.operands[0])->value;
@@ -267,7 +267,7 @@ public:
         {
             for(auto & op : oper.operands)
             {
-                operands.push_back(op->id);
+                creg_operands.push_back(op->id);
             }
         }
     }
@@ -291,13 +291,13 @@ public:
     instruction_t qasm()
     {
         std::string iopers;
-        int sz = operands.size();
+        int sz = creg_operands.size();
         for(int i=0; i<sz; ++i)
         {
             if(i==sz-1)
-                iopers += " r" + std::to_string(operands[i]);
+                iopers += " r" + std::to_string(creg_operands[i]);
             else
-                iopers += " r" + std::to_string(operands[i]) + ",";
+                iopers += " r" + std::to_string(creg_operands[i]) + ",";
         }
 
         if(name == "ldi")

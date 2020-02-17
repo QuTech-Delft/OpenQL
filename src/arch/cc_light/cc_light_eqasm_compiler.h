@@ -266,17 +266,23 @@ public:
         str::lower_case(operation);
         name=operation;
         duration = 20;
-        operands=opers;
-        int sz = operands.size();
+        creg_operands=opers;
+        int sz = creg_operands.size();
         if((   (name == "add") || (name == "sub")
             || (name == "and") || (name == "or") || (name == "xor")
            ) && (sz == 3))
         {
             DOUT("Adding 3 operand operation: " << name);
         }
-        else if(((name == "not") || (name == "fmr") || (name == "cmp")) && (sz == 2))
+        else if(((name == "not") || (name == "cmp")) && (sz == 2))
         {
             DOUT("Adding 2 operand operation: " << name);
+        }
+        else if( (name == "fmr")  && (sz == 2))
+        {
+            creg_operands= { opers[0] };
+            operands= { opers[1] };
+            DOUT("Adding 2 operand fmr operation: " << name);
         }
         else if( ( (name == "ldi") ||
             (name == "fbr_eq") || (name == "fbr_ne") || (name == "fbr_lt") ||
@@ -304,13 +310,13 @@ public:
     instruction_t qasm()
     {
         std::string iopers;
-        int sz = operands.size();
+        int sz = creg_operands.size();
         for(int i=0; i<sz; ++i)
         {
             if(i==sz-1)
-                iopers += " r" + std::to_string(operands[i]);
+                iopers += " r" + std::to_string(creg_operands[i]);
             else
-                iopers += " r" + std::to_string(operands[i]) + ",";
+                iopers += " r" + std::to_string(creg_operands[i]) + ",";
         }
 
         if(name == "ldi")
@@ -320,8 +326,8 @@ public:
         }
         else if(name == "fmr")
         {
-            return name + " r" + std::to_string(operands[0]) +
-                          ", q" + std::to_string(operands[1]);
+            return name + " r" + std::to_string(creg_operands[0]) +
+                          ", q" + std::to_string(operands[0]);
         }
         else
             return name + iopers;
@@ -350,7 +356,7 @@ std::string classical_instruction2qisa(ql::arch::classical_cc* classical_ins)
 {
     std::stringstream ssclassical;
     auto & iname =  classical_ins->name;
-    auto & iopers = classical_ins->operands;
+    auto & iopers = classical_ins->creg_operands;
     int iopers_count = iopers.size();
 
     if(  (iname == "add") || (iname == "sub") ||
@@ -373,7 +379,7 @@ std::string classical_instruction2qisa(ql::arch::classical_cc* classical_ins)
     }
     else if(iname == "fmr")
     {
-        ssclassical << "fmr r" << iopers[0] << ", q" << iopers[1];
+        ssclassical << "fmr r" << iopers[0] << ", q" << classical_ins->operands[0];
     }
     else if(iname == "fbr_eq")
     {
@@ -514,11 +520,11 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
 
                     ssinst << cc_light_instr_name << " " << rname;
                 }
+            }
 
-                if( std::next(secIt) != abundle.parallel_sections.end() )
-                {
-                    ssinst << " | ";
-                }
+            if( std::next(secIt) != abundle.parallel_sections.end() )
+            {
+                ssinst << " | ";
             }
         }
         if(classical_bundle)
@@ -857,7 +863,7 @@ public:
 
             for (
                 auto bundles_src_it = bundles_src.begin(), bundles_dst_it = bundles_dst.begin();
-                bundles_src_it != bundles_src.end(), bundles_dst_it != bundles_dst.end();
+                bundles_src_it != bundles_src.end() && bundles_dst_it != bundles_dst.end();
                 ++bundles_src_it, ++bundles_dst_it
                 )
             {
@@ -1052,6 +1058,8 @@ public:
     {
         DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");
 
+        ql::report::report_qasm(prog_name, kernels, platform, "in0", "cc_light_compiler");
+
         load_hw_settings(platform);
         // check whether json instruction entries have cc_light_instr attribute
         const json& instruction_settings = platform.instruction_settings;
@@ -1062,6 +1070,7 @@ public:
                 FATAL("cc_light_instr not found for " << i);
             }
         }
+        ql::report::report_qasm(prog_name, kernels, platform, "in1", "cc_light_compiler");
 
         for(auto &kernel : kernels)
         {
@@ -1179,12 +1188,15 @@ public:
             auto & iname =  ins->name;
             str::lower_case(iname);
             DOUT("decomposing instruction " << iname << "...");
-            auto & iopers = ins->operands;
-            int iopers_count = iopers.size();
+            auto & icopers = ins->creg_operands;
+            auto & iqopers = ins->operands;
+            int icopers_count = icopers.size();
+            int iqopers_count = iqopers.size();
+            DOUT("decomposing instruction " << iname << " operands=" << ql::utils::to_string(iqopers) << " creg_operands=" << ql::utils::to_string(icopers));
             auto itype = ins->type();
             if(__classical_gate__ == itype)
             {
-                DOUT("    classical instruction");
+                DOUT("    classical instruction: " << ins->qasm());
 
                 if( (iname == "add") || (iname == "sub") ||
                     (iname == "and") || (iname == "or") || (iname == "xor") ||
@@ -1192,31 +1204,39 @@ public:
                   )
                 {
                     // decomp_ckt.push_back(ins);
-                    decomp_ckt.push_back(new ql::arch::classical_cc(iname, iopers));
+                    decomp_ckt.push_back(new ql::arch::classical_cc(iname, icopers));
+                    DOUT("    classical instruction decomposed: " << decomp_ckt.back()->qasm());
                 }
                 else if( (iname == "eq") || (iname == "ne") || (iname == "lt") ||
                          (iname == "gt") || (iname == "le") || (iname == "ge")
                        )
                 {
-                    decomp_ckt.push_back(new ql::arch::classical_cc("cmp", {iopers[1], iopers[2]}));
+                    decomp_ckt.push_back(new ql::arch::classical_cc("cmp", {icopers[1], icopers[2]}));
+                    DOUT("    classical instruction decomposed: " << decomp_ckt.back()->qasm());
                     decomp_ckt.push_back(new ql::arch::classical_cc("nop", {}));
-                    decomp_ckt.push_back(new ql::arch::classical_cc("fbr_"+iname, {iopers[0]}));
+                    DOUT("                                      " << decomp_ckt.back()->qasm());
+                    decomp_ckt.push_back(new ql::arch::classical_cc("fbr_"+iname, {icopers[0]}));
+                    DOUT("                                      " << decomp_ckt.back()->qasm());
                 }
                 else if(iname == "mov")
                 {
                     // r28 is used as temp, TODO use creg properly to create temporary
                     decomp_ckt.push_back(new ql::arch::classical_cc("ldi", {28}, 0));
-                    decomp_ckt.push_back(new ql::arch::classical_cc("add", {iopers[0], iopers[1], 28}));
+                    DOUT("    classical instruction decomposed: " << decomp_ckt.back()->qasm());
+                    decomp_ckt.push_back(new ql::arch::classical_cc("add", {icopers[0], icopers[1], 28}));
+                    DOUT("                                      " << decomp_ckt.back()->qasm());
                 }
                 else if(iname == "ldi")
                 {
-                    auto imval = ((ql::classical*)ins)->imm_value;
-                    decomp_ckt.push_back(new ql::arch::classical_cc("ldi", iopers, imval));
+                    auto imval = ((classical_cc*)ins)->imm_value;
+                    DOUT("    classical instruction decomposed: imval=" << imval);
+                    decomp_ckt.push_back(new ql::arch::classical_cc("ldi", {icopers[0]}, imval));
+                    DOUT("    classical instruction decomposed: " << decomp_ckt.back()->qasm());
                 }
                 else
                 {
-                    EOUT("Unknown decomposition of classical operation '" << iname << "' with '" << iopers_count << "' operands!");
-                    throw ql::exception("Unknown classical operation '"+iname+"' with'"+std::to_string(iopers_count)+"' operands!", false);
+                    EOUT("Unknown decomposition of classical operation '" << iname << "' with '" << icopers_count << "' operands!");
+                    throw ql::exception("Unknown classical operation '"+iname+"' with'"+std::to_string(icopers_count)+"' operands!", false);
                 }
             }
             else
@@ -1236,15 +1256,15 @@ public:
                     }
                     else
                     {
-                        EOUT("instruction settings not found for '" << iname << "' with '" << iopers_count << "' operands!");
-                        throw ql::exception("instruction settings not found for '"+iname+"' with'"+std::to_string(iopers_count)+"' operands!", false);
+                        EOUT("instruction settings not found for '" << iname << "' with '" << iqopers_count << "' operands!");
+                        throw ql::exception("instruction settings not found for '"+iname+"' with'"+std::to_string(iqopers_count)+"' operands!", false);
                     }
                     bool is_measure = (operation_type == "readout");
                     if(is_measure)
                     {
                         // insert measure
                         DOUT("    readout instruction ");
-                        auto qop = iopers[0];
+                        auto qop = iqopers[0];
                         decomp_ckt.push_back(ins);
                         if( ql::gate_type_t::__custom_gate__ == itype )
                         {

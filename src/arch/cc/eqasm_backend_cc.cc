@@ -203,7 +203,7 @@ void eqasm_backend_cc::compile(std::string prog_name, ql::circuit& ckt, ql::quan
 void eqasm_backend_cc::codegen_classical_instruction(ql::gate *classical_ins)
 {
     auto &iname =  classical_ins->name;
-    auto &iopers = classical_ins->operands;
+    auto &iopers = classical_ins->creg_operands;
     int iopers_count = iopers.size();
 
     if(  (iname == QASM_ADD) || (iname == QASM_SUB) ||
