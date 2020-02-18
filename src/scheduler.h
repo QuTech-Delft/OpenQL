@@ -379,6 +379,7 @@ public:
             else if(ins->type() == ql::gate_type_t::__classical_gate__)
             {
                 DOUT(". considering " << name[consNode] << " as classical gate");
+                // Read+Write each classical operand
                 for( auto coperand : ins->creg_operands )
                 {
                     DOUT("... Classical operand: " << coperand);
@@ -631,9 +632,9 @@ public:
 #endif  // HAVEGENERALCONTROLUNITARIES
             else
             {
-                DOUT(". considering " << name[consNode] << " as general quantum gate");
-                // general quantum gate, Read+Write on each operand
-                size_t operandNo=0;
+                DOUT(". considering " << name[consNode] << " as no special gate (catch-all, generic rules)");
+                // Read+Write on each quantum operand
+                // Read+Write on each classical operand
                 auto operands = ins->operands;
                 for( auto operand : operands )
                 {
@@ -657,9 +658,33 @@ public:
                     {
                         LastDs[operand].clear();
                     }
-                    
-                    operandNo++;
                 } // end of operand for
+
+                // Read+Write each classical operand
+                for( auto coperand : ins->creg_operands )
+                {
+                    DOUT("... Classical operand: " << coperand);
+                    add_dep(LastWriter[qubit_count+coperand], consID, WAW, qubit_count+coperand);
+                    for(auto & readerID : LastReaders[qubit_count+coperand])
+                    {
+                        add_dep(readerID, consID, WAR, qubit_count+coperand);
+                    }
+                    if (ql::options::get("scheduler_post179") == "yes")
+                    {
+                        for(auto & readerID : LastDs[qubit_count+coperand])
+                        {
+                            add_dep(readerID, consID, WAD, qubit_count+coperand);
+                        }
+                    }
+
+                    // now update LastWriter and so clear LastReaders/LastDs
+                    LastWriter[qubit_count+coperand] = consID;
+                    LastReaders[qubit_count+coperand].clear();
+                    if (ql::options::get("scheduler_post179") == "yes")
+                    {
+                        LastDs[qubit_count+coperand].clear();
+                    }
+                } // end of coperand for
             } // end of if/else
             DOUT(". instruction done: " << ins->qasm());
         } // end of instruction for
