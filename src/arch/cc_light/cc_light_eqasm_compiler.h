@@ -1727,7 +1727,7 @@ private:
     {
         IOUT("Writing scheduled Quantumsim program");
         ofstream fout;
-        string qfname( ql::options::get("output_dir") + "/" + prog_name + "_quantumsim_" + suffix + ".py");
+        string qfname( ql::options::get("output_dir") + "/" + "quantumsim_" + prog_name + "_" + suffix + ".py");
         DOUT("Writing scheduled Quantumsim program to " << qfname);
         IOUT("Writing scheduled Quantumsim program to " << qfname);
         fout.open( qfname, ios::binary);
