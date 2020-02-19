@@ -708,7 +708,7 @@ private:
             std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
         bool added = false;
-        DOUT("Checking if specialized decomposition is available for " << gate_name);
+        DOUT("Checking if specialized composite gate is available for " << gate_name);
         std::string instr_parameterized = gate_name + " ";
         size_t i;
         if(all_qubits.size() > 0)
@@ -722,12 +722,12 @@ private:
                 instr_parameterized += "q" + std::to_string(all_qubits[i]);
             }
         }
-        DOUT("decomposed specialized instruction name: " << instr_parameterized);
+        DOUT("specialized instruction name: " << instr_parameterized);
 
         auto it = instruction_map.find(instr_parameterized);
         if( it != instruction_map.end() )
         {
-            DOUT("specialized composite gate found for " << instr_parameterized);
+            DOUT("specialized gate found for " << instr_parameterized);
             composite_gate * gptr = (composite_gate *)(it->second);
             if( __composite_gate__ == gptr->type() )
             {
@@ -735,7 +735,7 @@ private:
             }
             else
             {
-                DOUT("Not a composite gate type");
+                DOUT("not a composite gate type");
                 return false;
             }
 
@@ -812,7 +812,7 @@ private:
             std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
         bool added = false;
-        DOUT("Checking if parameterized decomposition is available for " << gate_name);
+        DOUT("Checking if parameterized composite gate is available for " << gate_name);
 
         // construct instruction name from gate_name and actual qubit parameters
         std::string instr_parameterized = gate_name + " ";
@@ -828,13 +828,13 @@ private:
                 instr_parameterized += "%" + std::to_string(i);
             }
         }
-        DOUT("decomposed parameterized instruction name: " << instr_parameterized);
+        DOUT("parameterized instruction name: " << instr_parameterized);
 
         // check for composite ins
         auto it = instruction_map.find(instr_parameterized);
         if( it != instruction_map.end() )
         {
-            DOUT("parameterized composite gate found for " << instr_parameterized);
+            DOUT("parameterized gate found for " << instr_parameterized);
             composite_gate * gptr = (composite_gate *)(it->second);
             if( __composite_gate__ == gptr->type() )
             {
@@ -1003,7 +1003,7 @@ public:
         DOUT("Adding gate : " << gname << " with " << ql::utils::to_string(qubits,"qubits"));
 
         // specialized composite gate check
-        DOUT("trying to add specialized decomposed gate for: " << gname);
+        DOUT("trying to add specialized composite gate for: " << gname);
         bool spec_decom_added = add_spec_decomposed_gate_if_available(gname, qubits);
         if(spec_decom_added)
         {
@@ -1013,7 +1013,7 @@ public:
         else
         {
             // parameterized composite gate check
-            DOUT("trying to add parameterized decomposed gate for: " << gname);
+            DOUT("trying to add parameterized composite gate for: " << gname);
             bool param_decom_added = add_param_decomposed_gate_if_available(gname, qubits);
             if(param_decom_added)
             {
