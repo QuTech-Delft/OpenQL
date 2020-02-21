@@ -77,6 +77,7 @@ Where:
 * ``control_group_sizes`` states possible arrangements of channels operating as a vector
 .. FIXME: add example
 ..    // * ``latency`` latency from trigger to output in [ns]. FIXME: currently not implemented
+.. FIXME: describe concept of 'group'
 
 
 Control modes
@@ -156,6 +157,7 @@ Where:
     - G determines which the 'instrument_definitions/<key>/control_group_sizes' used
     - B is an ordered list of bits (MSB to LSB) used for the code word
 * ``trigger_bits`` vector of bits used to trigger the instrument. Must either be size 1 (common trigger) or size G (separate trigger per group)
+FIXME: examples
 * ``result_bits`` reserved for future use
 * ``data_valid_bits`` reserved for future use
 
