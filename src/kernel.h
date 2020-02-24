@@ -975,7 +975,7 @@ public:
                         bool default_available = add_default_gate_if_available(gname, qubits, cregs, duration);
                         if( default_available )
                         {
-                            WOUT("default gate added for " << gname);
+                            DOUT("default gate added for " << gname);   // FIXME: used to be WOUT, but that gives a warning for every "wait" and spams the log
                         }
                         else
                         {
