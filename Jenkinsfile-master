@@ -45,7 +45,7 @@ pipeline {
                             pip3 install --upgrade setuptools
                             pip3 --cache-dir /var/pip_cache install pytest numpy &&
                             pip3 install -e . &&
-                            python3 libqasm/setup.py install &&
+#                            python3 libqasm/setup.py install &&
                             pip3 install eQASM_Assembler/qisa-as
                        '''
                 }
