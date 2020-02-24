@@ -838,7 +838,7 @@ codegen_cc::tJsonNodeInfo codegen_cc::findSignalDefinition(const json &instructi
     tJsonNodeInfo signalInfo;
     std::string instructionPath = "instructions/"+iname;
     JSON_ASSERT(instruction, "cc", instructionPath);
-    if(JSON_EXISTS(instruction["cc"], "ref_signal")) {
+    if(JSON_EXISTS(instruction["cc"], "ref_signal")) {                          // optional syntax: "ref_signal"
         std::string refSignal = instruction["cc"]["ref_signal"];
         signalInfo.node = (*jsonSignals)[refSignal];  // poor man's JSON pointer
         if(signalInfo.node.size() == 0) {
@@ -846,7 +846,7 @@ codegen_cc::tJsonNodeInfo codegen_cc::findSignalDefinition(const json &instructi
                   "': ref_signal '" << refSignal << "' does not resolve");
         }
         signalInfo.path = "signals/"+refSignal;
-    } else {
+    } else {                                                                    // alternative syntax: "signal"
         signalInfo.node = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");
         DOUT("signal for '" << instruction << "': " << signalInfo.node);
         signalInfo.path = instructionPath+"/cc/signal";
