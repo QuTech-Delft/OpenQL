@@ -8,7 +8,7 @@
  */
 
 // constants:
-#define CC_BACKEND_VERSION_STRING       "0.2.4"
+#define CC_BACKEND_VERSION_STRING       "0.2.5"
 
 
 #include "codegen_cc.h"
@@ -605,7 +605,6 @@ void codegen_cc::emit(const char *label, const char *instr, const std::string &q
 | helpers
 \************************************************************************/
 
-// FIXME: is 'seq_bar 1' safe in the sense that we will never get an empty queue?
 void codegen_cc::latencyCompensation()
 {
     comment("# synchronous start and latency compensation");
@@ -648,6 +647,7 @@ void codegen_cc::latencyCompensation()
     }
 #else   // user settable delay via register
  #if 0  // original seq_bar semantics
+        // FIXME: is 'seq_bar 1' safe in the sense that we will never get an empty queue?
         emit("",                "add",      "R63,1,R0",         "# R63 externally set by user, prevent 0 value which would wrap counter");
         emit("",                "seq_bar",  "20",               "# synchronization");
         emit("syncLoop:",       "seq_out",  "0x00000000,1",     "# 20 ns delay");
@@ -847,7 +847,7 @@ codegen_cc::tJsonNodeInfo codegen_cc::findSignalDefinition(const json &instructi
         }
         signalInfo.path = "signals/"+refSignal;
     } else {                                                                    // alternative syntax: "signal"
-        signalInfo.node = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");
+        signalInfo.node = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");   // FIXME: return json& ?
         DOUT("signal for '" << instruction << "': " << signalInfo.node);
         signalInfo.path = instructionPath+"/cc/signal";
     }
