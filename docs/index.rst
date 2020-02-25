@@ -47,9 +47,14 @@ While the instruction-level code is platform-specific, the quantum assembly code
    api/Operation
    api/CReg
 
+.. toctree::
+   :maxdepth: 3
+   :caption: Tutorials:
+
+   qx_example
+
 
 Indices and tables
-==================
 
 * :ref:`genindex`
 * :ref:`modindex`
