@@ -34,6 +34,7 @@ class quantum_program
       size_t                qubit_count;
       size_t                creg_count;
       std::string           eqasm_compiler_name;
+      bool                  needs_backend_compiler;
       ql::eqasm_compiler *  backend_compiler;
 
 

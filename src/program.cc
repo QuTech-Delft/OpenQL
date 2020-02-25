@@ -25,6 +25,7 @@ quantum_program::quantum_program(std::string n, quantum_platform platf, size_t n
         : name(n), platform(platf), qubit_count(nqubits), creg_count(ncregs)
 {
     default_config = true;
+    needs_backend_compiler = true;
     eqasm_compiler_name = platform.eqasm_compiler_name;
     backend_compiler    = NULL;
     if (eqasm_compiler_name =="")
@@ -34,11 +35,12 @@ quantum_program::quantum_program(std::string n, quantum_platform platf, size_t n
     }
     else if (eqasm_compiler_name == "none")
     {
-
+        needs_backend_compiler = false;;
     }
     else if (eqasm_compiler_name == "qx")
     {
         // at the moment no qx specific thing is done
+        needs_backend_compiler = false;;
     }
     else if (eqasm_compiler_name == "qumis_compiler")
     {
@@ -507,9 +509,15 @@ int quantum_program::compile()
 
     DOUT("eqasm_compiler_name: " << eqasm_compiler_name);
 
+    if (! needs_backend_compiler)
+    {
+        WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
+        return 0;
+    }
+
     if (backend_compiler == NULL)
     {
-        WOUT("no eqasm compiler has been specified in the configuration file, only qasm code has been compiled.");
+        EOUT("No known eqasm compiler has been specified in the configuration file.");
         return 0;
     }
     else
@@ -525,7 +533,7 @@ int quantum_program::compile()
         else
         {
             DOUT("Skipped call to backend_compiler->compile for " << eqasm_compiler_name);
-   
+
             // FIXME(WJV): I would suggest to move the fusing to a backend that wants it, and then:
             // - always call:  backend_compiler->compile(name, kernels, platform);
             // - remove from eqasm_compiler.h: compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& p);
@@ -589,7 +597,7 @@ int quantum_program::compile()
     {
         IOUT("sweep points file not generated as sweep point array is empty !");
     }
-	IOUT("compilation of program '" << name << "' done.");
+    IOUT("compilation of program '" << name << "' done.");
 
     return 0;
 }

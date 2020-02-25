@@ -17,6 +17,7 @@ class Test_dependence(unittest.TestCase):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ASAP')
+        ql.set_option('scheduler_commute', 'no')
         ql.set_option('log_level', 'LOG_WARNING')
         ql.set_option('write_qasm_files', 'yes')
 
