@@ -189,8 +189,8 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                 // FIXME: check existence of keys below to ease end user debugging on configuration errors
                 // find control mode & bits for instrument&group
                 std::string controlModeRef = instrument["ref_control_mode"];
-                const json &controlMode = (*jsonControlModes)[controlModeRef];     // the control mode definition for our instrument
-                size_t nrControlBitsGroups = controlMode["control_bits"].size();// how many groups of control bits does the control mode specify
+                const json &controlMode = (*jsonControlModes)[controlModeRef];      // the control mode definition for our instrument
+                size_t nrControlBitsGroups = controlMode["control_bits"].size();    // how many groups of control bits does the control mode specify
                 // determine which group to use
                 size_t controlModeGroup = -1;
                 if(nrControlBitsGroups == 1) {                  // vector mode: group addresses channel within vector
