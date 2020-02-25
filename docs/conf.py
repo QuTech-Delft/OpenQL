@@ -17,8 +17,8 @@ sys.path.insert(0, os.path.abspath('../swig'))
 # -- Project information -----------------------------------------------------
 
 project = 'OpenQL'
-copyright = '2016, Nader Khammassi & Imran Ashraf, QuTech, TU Delft'
-author = 'Nader Khammassi & Imran Ashraf, QuTech, TU Delft'
+copyright = '2019, Imran Ashraf and Hans van Someren, QuTech, TU Delft'
+author = 'Imran Ashraf and Hans van Someren, QuTech, TU Delft'
 
 master_doc = 'index'
 
@@ -46,8 +46,12 @@ templates_path = ['_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
+# Some or just temporary files,
+# other ones files 'include::'d by another .rst file.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 
+	'platform_*.rst', 'mapping.rst', 'scheduling.rst', 'decomposition.rst',
+	'optimization.rst', 'scheduling_ccl.rst', 'scheduling_cc.rst']
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -66,3 +70,6 @@ html_static_path = ['_static']
 
 [extensions]
 todo_include_todos=True
+
+# to enable figure numbering
+numfig = True
