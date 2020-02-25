@@ -45,10 +45,10 @@ pipeline {
                             pip3 install --upgrade setuptools
                             pip3 --cache-dir /var/pip_cache install pytest numpy &&
                             pip3 install -e .
-                       '''
 # FIXME: moved out of sh command to get CI on PR-244 working
 #                            python3 libqasm/setup.py install &&
 #                            pip3 install eQASM_Assembler/qisa-as
+                       '''
                 }
            }
         }
