@@ -62,7 +62,7 @@ pipeline {
                 dir(PERSIST_WORKSPACE) {
                     sh '''
                             . ./env/bin/activate &&
-                            pytest --ignore=eQASM_Assembler/ --ignore=libqasm/ --ignore test_QASM_assembler_present --ignore test_QISA_assembler_present
+                            pytest --ignore=eQASM_Assembler/ --ignore=libqasm/ --ignore test_QASM_assembler_present.py --ignore test_QISA_assembler_present.py
                        '''
                 }
             }
