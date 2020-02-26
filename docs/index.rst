@@ -1,45 +1,60 @@
 Welcome to OpenQL's documentation!
 ==================================
 
-OpenQL is a framework for high-level quantum programming in C++/Python. The framework provides a compiler for compiling and optimizing quantum code. The compiler produces the intermediate quantum assembly language and the compiled micro-code for various target platforms. While the microcode is platform-specific, the quantum assembly code (qasm) is hardware-agnostic and can be simulated on the QX simulator.
+OpenQL is a framework for high-level quantum programming in C++/Python.
+The framework provides a compiler for compiling and optimizing quantum code.
+The compiler produces quantum assembly and instruction-level code for various target platforms.
+While the instruction-level code is platform-specific, the quantum assembly code (QASM) is hardware-agnostic and can be simulated on one of the simulators.
 
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Getting Started
 
+   overview
    installation
    start
-   changelog
-   contributors
+
 
 .. toctree::
-   :maxdepth: 3
-   :caption: OpenQL Basics:
+   :maxdepth: 2
+   :caption: OpenQL Basics
 
-   platform
+   program
+   kernel
    quantum_gate
    classical_instructions
-   kernel
-   program
+   platform
    compiler_passes
 
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Colophon
+
+   changelog
+   contributors
 
 
 .. toctree::
    :maxdepth: 1
    :caption: API Reference
 
-.. apidocs/gate
-.. apidocs/kernel
-.. apidocs/program
-.. apidocs/platform
+   api/openql
+   api/Kernel
+   api/Program
+   api/Platform
+   api/Operation
+   api/CReg
 
-   
+.. toctree::
+   :maxdepth: 3
+   :caption: Tutorials:
+
+   qx_example
 
 
 Indices and tables
-==================
 
 * :ref:`genindex`
 * :ref:`modindex`
