@@ -15,7 +15,7 @@ The following platforms are supported by OpenQL:
 	- :ref:`ccplatform`
 	- :ref:`cboxplatform`
 
-:Note: Quantumsim and QX are not really platforms. They are means to simulate a particular (hardware) platform. In the mapper branch quantumsim code generation is controlled by an option.  This option is checked at the end of the platform independent compiler and near the end of the CC-Light backend, and will cause quantumsim to simulate the circuit before and after mapping and rcscheduling for CC-Light, respectively.
+:Note: Quantumsim and QX are not really platforms. They are means to simulate a particular (hardware) platform. Qasm files for use by QX and python scripts to interface to quantumsim are generated for any hardware platform under the control of options. See the descriptions of the QX and Quantumsim platforms referred to above.
 
 :Note: We are planning to use DQCsim, a platform to connect to simulators. In that context, software simulator platforms are connected to by DQCsim, and OpenQL just provides compilation support to a particular hardware platform.
 
@@ -100,8 +100,7 @@ The specification of this attribute is mandatory.
 The ``eqasm_compiler`` attribute can take the following values; these correspond to the platforms that are supported:
 
 * ``none``: no backend compiler is called
-* ``qx``: backend compiler to prepare for QX
-* ``quantumsim_compiler``: backend compiler to prepare for Quantumsim
+* ``qx``: no backend compiler is called; see above how to generate a qasm file for QX
 * ``cc_light_compiler``: backend compiler for CC_Light
 * ``eqasm_backend_cc``: backend compiler for CC
 * ``qumis_compiler``: backend compiler to CBOX

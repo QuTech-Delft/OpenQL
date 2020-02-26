@@ -46,7 +46,6 @@ dependency chains of one-qubit clifford gates operating on the same qubit
 are replaced by equivalent sequences of primitive gates when the latter leads to a shorter execution time.
 Clifford gates are recognized by their name and use is made of the property
 that clifford gates form a group of 24 elements.
-The clifford optimization pass is not generally available yet; it is in the OpenQL mapper branch.
 Clifford optimization is called before and after the mapping pass.
 
 

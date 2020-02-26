@@ -85,7 +85,7 @@ A classical gate has all general gate attributes, of which some are not used, an
 +===============+===========+====================+============+============+================+
 | name          | structural| "add"              | all passes | never      | string         |
 +---------------+           +--------------------+            +            +----------------+
-| operands      |           | [r0,r1]            |            |            | vector<size_t> |
+| creg_operands |           | [r0,r1]            |            |            | vector<size_t> |
 +---------------+           +--------------------+            +            +----------------+
 | imm_value     |           | 3                  |            |            | int            |
 +---------------+           +--------------------+            +            +----------------+
@@ -97,7 +97,7 @@ A classical gate has all general gate attributes, of which some are not used, an
 | cycle         | result    | 4                  | code       | scheduler  | size_t         |
 |               |           |                    | generation |            |                |
 +---------------+-----------+--------------------+------------+------------+----------------+
-| creg_operands |           |                    | never      |            |                |
+| operands      |           |                    | never      |            |                |
 +---------------+           +                    +            +            +                +
 | angle         |           |                    |            |            |                |
 +---------------+           +                    +            +            +                +
@@ -108,10 +108,7 @@ Some further notes on the gate attributes:
 
 - ``name``: The internal name. Happens to correspond to the gate name in the output QASM representation.
 
-- ``operands``: Please note that the classical gates have their operands in the *operands* attribute.
-  The *creg_operands* are only used by quantum gates that take classical registers as operand.
-
-:Note: That classical gates have their operands in the *operands* attribute, is confusing. There may even be bugs in the implementation, e.g. in the creation of the scheduler's dependence graph.
+- ``creg_operands``: Please note that for all gates the classical operands are in the *creg_operands* attribute, and the quantum operands are in the *operands* attribute.
 
 - ``imm_value``: An immediate integer valued operand is kept here.
 
@@ -123,7 +120,7 @@ Some further notes on the gate attributes:
 
 :Note: That the value of duration is built-in, is strange. A first better value would be *cycle_time*.
 
-- ``creg_operands``, ``angle``, and ``mat`` are not used as attributes by classical gates.
+- ``operands``, ``angle``, and ``mat`` are not used as attributes by classical gates.
 
 
 The following classical gates are supported:

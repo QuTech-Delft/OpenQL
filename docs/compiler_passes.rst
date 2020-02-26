@@ -29,7 +29,6 @@ Examples of such facilities are:
 - Writing the IR out in an external representation (QASM 1.0) to a file;
 	the name of the file should relate to the point in compilation relative to the called passes where
 	the IR is written.
-	This facility is not generally available yet; it is in the OpenQL mapper branch.
 	The pass specific version that is available is described with the respective pass.
 
 - Writing a report out to a file containing a summary of the IR;
@@ -38,13 +37,11 @@ Examples of such facilities are:
 	which qubits were used and which not,
 	the wall clock time that compilation took until this point,
 	etc.
-	This facility is not available yet; it is in the OpenQL mapper branch.
 
 - Writing a string to a file for off-line inspection
 	such as writing (in dot format) the gate dependence graph which is a scheduling pass internal data structure.
 	The writing to a file of a string is a general facility
 	but the generation of the string representation of the internal data structure is pass dependent.
-	This facility is not generally available yet; it is in the OpenQL mapper branch.
 	The pass specific version that is available is described with the respective pass.
 
 Writing the IR out to a file in a form suitable for a particular subsequent tool such as quantumsim
@@ -124,7 +121,6 @@ by its parameterization by the platform configuration file.
 	are replaced by equivalent sequences of primitive gates when the latter leads to a shorter execution time.
 	Clifford gates are recognized by their name and use is made of the property
 	that clifford gates form a group of 24 elements.
-	The clifford optimization pass is not generally available yet; it is in the OpenQL mapper branch.
 	Clifford optimization is called before and after the mapping pass.
 	See :ref:`optimization`.
 
@@ -139,7 +135,6 @@ by its parameterization by the platform configuration file.
 	it inserts swap gates before this gate that gradually make the operand qubits NN;
 	when inserting the swap, it updates the v2r map accordingly.
 	There are many refinements to this algorithm that can be controlled through options and the configuration file.
-	The mapping pass is not generally available yet; it is in the OpenQL mapper branch.
 	It is not complete in the sense that it ignores transfer of the v2r map between kernels.
 	See :ref:`mapping`.
 
