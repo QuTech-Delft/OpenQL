@@ -37,8 +37,6 @@ SET(CLI11_INCLUDE_DIRS
   "${PROJECT_SOURCE_DIR}/deps/CLI11/include"
 )
 
-##MESSAGE( STATUS "CLI11_INCLUDE_DIRS: " ${CLI11_INCLUDE_DIRS} )
-
 ## These are the include directories used by the compiler.
 INCLUDE_DIRECTORIES(
   ${LEMON_INCLUDE_DIRS}
