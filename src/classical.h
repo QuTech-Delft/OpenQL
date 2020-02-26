@@ -256,12 +256,14 @@ public:
 
     classical(creg& dest, operation & oper)
     {
+        DOUT("Classical gate constructor with destination for " << oper.operation_name);
         name = oper.operation_name;
         duration = 20;
         creg_operands.push_back(dest.id);
         if(name == "ldi")
         {
             imm_value = (oper.operands[0])->value;
+            DOUT("... setting imm_value of " << oper.operation_name << " to " << imm_value);
         }
         else
         {
@@ -274,6 +276,7 @@ public:
 
     classical(std::string operation)
     {
+        DOUT("Classical gate constructor for " << operation);
         str::lower_case(operation);
         if((operation == "nop"))
         {

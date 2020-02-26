@@ -1423,6 +1423,7 @@ public:
      */
     custom_gate(string_t name)
     {
+        DOUT("Custom gate constructor for " << name);
         this->name = name;
     }
 
@@ -1431,6 +1432,7 @@ public:
      */
     custom_gate(const custom_gate& g)
     {
+        DOUT("Custom gate copy constructor for " << g.name);
         name = g.name;
         creg_operands = g.creg_operands;
         parameters = g.parameters;
@@ -1460,6 +1462,7 @@ public:
 #endif
                 operation_type(operation_type)
     {
+        DOUT("Custom gate explicit constructor for " << name);
         this->name = name;
         this->duration = duration;
 #if OPT_USED_HARDWARE
@@ -1473,6 +1476,7 @@ public:
      */
     custom_gate(string_t name, string_t& file_name)
     {
+        DOUT("Custom gate load from json file for " << name);
         this->name = name;
         std::ifstream f(file_name);
         if (f.is_open())
@@ -1491,6 +1495,7 @@ public:
      */
     custom_gate(std::string& name, json& instr)
     {
+        DOUT("Custom gate load from json map for " << name);
         this->name = name;
         load(instr);
     }

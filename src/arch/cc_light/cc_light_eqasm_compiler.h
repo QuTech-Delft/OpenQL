@@ -262,7 +262,12 @@ public:
     int imm_value;
     classical_cc(std::string operation, std::vector<size_t> opers, int ivalue=0)
     {
-        DOUT("adding classical_cc " << operation);
+        DOUT("Classical_cc constructor for operation " << operation);
+        DOUT("... operands:");
+        for (auto o : opers) DOUT ("...... " << o << " ");
+        DOUT("...... ivalue= " << ivalue);
+
+        // DOUT("adding classical_cc " << operation);
         str::lower_case(operation);
         name=operation;
         duration = 20;
@@ -291,6 +296,7 @@ public:
         {
             if( (name == "ldi") )
             {
+                DOUT("... setting imm_value of classical_cc gate for operation " << operation << " to " << ivalue);
                 imm_value = ivalue;
             }
             DOUT("Adding 1 operand operation: " << name);
@@ -1228,7 +1234,8 @@ public:
                 }
                 else if(iname == "ldi")
                 {
-                    auto imval = ((classical_cc*)ins)->imm_value;
+                    // auto imval = ((classical_cc*)ins)->imm_value;
+                    auto imval = ((classical*)ins)->imm_value;
                     DOUT("    classical instruction decomposed: imval=" << imval);
                     decomp_ckt.push_back(new ql::arch::classical_cc("ldi", {icopers[0]}, imval));
                     DOUT("    classical instruction decomposed: " << decomp_ckt.back()->qasm());

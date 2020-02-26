@@ -196,7 +196,7 @@ namespace ql
             DOUT("DebugBundles at: " << at << " showing " << bundles.size() << " bundles");
             for (bundle_t & abundle : bundles)
             {
-                DOUT("... quantum bundle with nsections: " << abundle.parallel_sections.size());
+                DOUT("... bundle with nsections: " << abundle.parallel_sections.size());
                 for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
                 {
                     DOUT("... section with ngates: " << secIt->size());
