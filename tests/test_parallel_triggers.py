@@ -15,7 +15,7 @@ def first_example():
     sweep_points = [1, 2]
     num_qubits = 2
     p = ql.Program("program", platform, num_qubits)
-    p.set_sweep_points(sweep_points, len(sweep_points))
+    p.set_sweep_points(sweep_points)
 
     # populate kernel using default gates
     k = ql.Kernel("kernel", platform, num_qubits)

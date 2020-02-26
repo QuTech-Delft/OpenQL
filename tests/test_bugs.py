@@ -85,8 +85,8 @@ class Test_bugs(unittest.TestCase):
     def test_stateful_behavior(self):
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
-        # ql.set_option('log_level', 'LOG_WARNING')
-        ql.set_option('log_level', 'LOG_DEBUG')
+        ql.set_option('log_level', 'LOG_WARNING')
+        # ql.set_option('log_level', 'LOG_DEBUG')
 
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform("myPlatform", config_fn)
