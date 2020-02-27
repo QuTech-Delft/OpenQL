@@ -68,12 +68,6 @@ The above entry points each create a ``sched``  object of class ``Scheduler`` an
 
   This ``sched.init`` method is called by both entry points for each circuit of the program.
 
-- ``bundles = sched.bundler(circuit)``
-  Construct the bundled representation of the circuit. The cycle attribute of each gate of the circuit must be valid,
-  and the gates in the circuit must have been sorted by their cycle value.
-
-:Note: In the mapper branch, the bundler has been moved and made an interface of ``ql::ir::`` while also the ``bundle`` type and other bundle interfaces are defined.
-
 - ``bundles = sched.schedule_asap(sched_dot)``
   The cycle attributes of the gates are initialized consistent with an ASAP (i.e. downward) walk over the dependence graph.
   Subsequently, the gates in the circuit are sorted by their cycle value;

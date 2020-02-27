@@ -26,23 +26,42 @@ In the lists below, these passes are indicated to be platform dependent.
 Passes have some general facilities available to them; these are not passes themselves since they don't transform the IR.
 Examples of such facilities are:
 
-- Writing the IR out in an external representation (QASM 1.0) to a file;
-	the name of the file should relate to the point in compilation relative to the called passes where
-	the IR is written.
-	The pass specific version that is available is described with the respective pass.
+- ``ql::report::report_qasm(prog_name, kernels, platform, relplacename, passname)``:
+    Writing the IR out in an external representation (QASM 1.0) to a file
+    when option ``write_qasm_files`` has the value ``yes``.
+    The file is stored in the default output directory;
+    the name of the file is composed from the program name (``prog_name``), the place relative to the pass (``relplacename``),
+    and the pass name (``passname``), all separated by ``_``, and the result suffixed by ``.qasm``.
+    The pass indicates before or after which the IR is written to file.
+    The place relative to the pass indicates e.g. ``in`` or ``out``, meaning before or after the pass, respectively.
+    In this way, multiple qasm files can be written per compile, and be easily related to the point in compilation
+    where the writing was done.
 
-- Writing a report out to a file containing a summary of the IR;
-	e.g. the number of kernels,
-	the numer of one-qubit, two-qubit and more-qubit gates,
-	which qubits were used and which not,
-	the wall clock time that compilation took until this point,
-	etc.
+- ``ql::report::report_bundles(prog_name, kernels, platform, relplacename, passname)``:
+    Identical to ``report_qasm`` but the QASM is written as bundles.
 
-- Writing a string to a file for off-line inspection
-	such as writing (in dot format) the gate dependence graph which is a scheduling pass internal data structure.
-	The writing to a file of a string is a general facility
-	but the generation of the string representation of the internal data structure is pass dependent.
-	The pass specific version that is available is described with the respective pass.
+- ``ql::report::report_statistics(prog_name, kernels, platform, relplacename, passname, prefix)``:
+    Identical to ``report_qasm`` but the IR itself is not written but a summary of it,
+    e.g. the number of kernels,
+    the numer of one-qubit, two-qubit and more-qubit gates,
+    which qubits were used and which not,
+    the wall clock time that compilation took until this point,
+    etc.
+    This is done for each kernel separately and for the whole program;
+    additional interfaces are available for making the individual reports
+    and adding pass specific lines to the reports.
+    The ``prefix`` string is prepended to each line in the report file, e.g. to make it qasm comment.
+    Furthermore the suffix is ``.report``.
+    And writing the report is only done
+    when option ``write_report_files`` has the value ``yes``.
+
+- ``ql::utils::write_file(filename, contentstring)``:
+    Writing a content string to the file with given ``filename``
+    in the default output directory for off-line inspection.
+    An example is writing (in dot format) the gate dependence graph which is a scheduling pass internal data structure.
+    The writing to a file of a string is a general facility
+    but the generation of the string representation of the internal data structure is pass dependent.
+    The options controlling this are also pass specific.
 
 Writing the IR out to a file in a form suitable for a particular subsequent tool such as quantumsim
 is considered code generation for the quantumsim platform and is therefore considered a pass.
@@ -165,6 +184,12 @@ by its parameterization by the platform configuration file.
 
 - opcode and control store file generation (CC-Light dependent)
 	currently disabled as not used by CC-Light
+
+- write_quantumsim_program
+    writes the current IR as a python script that interfaces with quantumsim
+
+- write_qsoverlay_program
+    writes the current IR as a python script that interfaces with the qsoverlay module of quantumsim
 
 - QISA generation (CC-Light dependent)
 
