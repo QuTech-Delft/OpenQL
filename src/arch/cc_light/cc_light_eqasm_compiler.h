@@ -259,7 +259,7 @@ class classical_cc : public gate
 {
 public:
     cmat_t m;
-    int imm_value;
+    // int imm_value;
     classical_cc(std::string operation, std::vector<size_t> opers, int ivalue=0)
     {
         DOUT("Classical_cc constructor for operation " << operation);
@@ -296,8 +296,8 @@ public:
         {
             if( (name == "ldi") )
             {
-                DOUT("... setting imm_value of classical_cc gate for operation " << operation << " to " << ivalue);
-                imm_value = ivalue;
+                DOUT("... setting int_operand of classical_cc gate for operation " << operation << " to " << ivalue);
+                int_operand = ivalue;
             }
             DOUT("Adding 1 operand operation: " << name);
         }
@@ -327,7 +327,7 @@ public:
 
         if(name == "ldi")
         {
-            iopers += ", " + std::to_string(imm_value);
+            iopers += ", " + std::to_string(int_operand);
             return "ldi" + iopers;
         }
         else if(name == "fmr")
@@ -380,7 +380,7 @@ std::string classical_instruction2qisa(ql::arch::classical_cc* classical_ins)
         }
         if(iname == "ldi")
         {
-            ssclassical << ", " + std::to_string(classical_ins->imm_value);
+            ssclassical << ", " + std::to_string(classical_ins->int_operand);
         }
     }
     else if(iname == "fmr")
@@ -1234,8 +1234,8 @@ public:
                 }
                 else if(iname == "ldi")
                 {
-                    // auto imval = ((classical_cc*)ins)->imm_value;
-                    auto imval = ((classical*)ins)->imm_value;
+                    // auto imval = ((classical_cc*)ins)->int_operand;
+                    auto imval = ((classical*)ins)->int_operand;
                     DOUT("    classical instruction decomposed: imval=" << imval);
                     decomp_ckt.push_back(new ql::arch::classical_cc("ldi", {icopers[0]}, imval));
                     DOUT("    classical instruction decomposed: " << decomp_ckt.back()->qasm());

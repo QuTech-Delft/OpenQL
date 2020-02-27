@@ -86,7 +86,6 @@ class Test_bugs(unittest.TestCase):
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('log_level', 'LOG_WARNING')
-        # ql.set_option('log_level', 'LOG_DEBUG')
 
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform("myPlatform", config_fn)
@@ -125,7 +124,6 @@ class Test_bugs(unittest.TestCase):
             QISA_fn_2 = os.path.join(output_dir, p.name+'_'+str(i+1)+'.qisa')
             self.assertTrue( file_compare(QISA_fn_1, QISA_fn_2))
 
-        ql.set_option('log_level', 'LOG_WARNING')
 
 if __name__ == '__main__':
     unittest.main()

@@ -219,6 +219,7 @@ public:
     std::string name = "";
     std::vector<size_t> operands;
     std::vector<size_t> creg_operands;
+    int int_operand;
     size_t duration;
     double angle;                            // for arbitrary rotations
     size_t  cycle = MAX_CYCLE;               // cycle after scheduling; MAX_CYCLE indicates undefined

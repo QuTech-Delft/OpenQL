@@ -251,7 +251,7 @@ public:
 class classical : public gate
 {
 public:
-    int imm_value;
+    // int imm_value;
     cmat_t m;
 
     classical(creg& dest, operation & oper)
@@ -262,8 +262,8 @@ public:
         creg_operands.push_back(dest.id);
         if(name == "ldi")
         {
-            imm_value = (oper.operands[0])->value;
-            DOUT("... setting imm_value of " << oper.operation_name << " to " << imm_value);
+            int_operand = (oper.operands[0])->value;
+            DOUT("... setting int_operand of " << oper.operation_name << " to " << int_operand);
         }
         else
         {
@@ -305,7 +305,7 @@ public:
 
         if(name == "ldi")
         {
-            return "ldi" + iopers + ", " + std::to_string(imm_value);
+            return "ldi" + iopers + ", " + std::to_string(int_operand);
         }
         else
             return name + iopers;
