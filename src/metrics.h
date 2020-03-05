@@ -44,20 +44,6 @@ void my_print(std::vector<T> const &input, const char *id_name)
 
 namespace ql
 {
-// namespace metrics
-// {
-
-
-// ql::circuit random_circuit_generator(double Nqubits, size_t Ncycles, double idle_fraction, double two_qb_gate_fraction ){
-// 	for ( size_t cycle ; cycle < Ncycles ; cycle++ )
-// 	{
-// 		for (auto qubit : Nqubits)
-
-// 	}
-	
-
-// }
-
 
 class Metrics {
 

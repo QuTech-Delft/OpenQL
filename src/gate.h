@@ -1556,9 +1556,11 @@ public:
             l_attr = "duration";
             duration = instr["duration"];
             DOUT("duration: " << instr["duration"]);
+#if OPT_USED_HARDWARE
             // FIXME: code commented out:
             // strings_t hdw = instr["hardware"];
             // used_hardware.assign(hdw.begin(), hdw.end());
+#endif
             l_attr = "matrix";
             auto mat = instr["matrix"];
             DOUT("matrix: " << instr["matrix"]);
