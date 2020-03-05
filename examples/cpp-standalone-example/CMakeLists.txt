@@ -72,4 +72,4 @@ SET_TARGET_PROPERTIES(openql_lib PROPERTIES
 
 # TODO: change the name of .cc file which you want compile if not example.cc
 ADD_EXECUTABLE(example example.cc )
-TARGET_LINK_LIBRARIES(example ${LEMON_LIBRARIES} openql_lib)
+TARGET_LINK_LIBRARIES(example openql_lib ${LEMON_LIBRARIES} )

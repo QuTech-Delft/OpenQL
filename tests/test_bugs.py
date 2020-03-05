@@ -124,5 +124,6 @@ class Test_bugs(unittest.TestCase):
             QISA_fn_2 = os.path.join(output_dir, p.name+'_'+str(i+1)+'.qisa')
             self.assertTrue( file_compare(QISA_fn_1, QISA_fn_2))
 
+
 if __name__ == '__main__':
     unittest.main()

@@ -12,8 +12,7 @@ INCLUDE_DIRECTORIES(
 # we keep an executable because it is easier to track the origin of exceptions using GDB.
 # Must be built manually to limit default build time
 ADD_EXECUTABLE(test_cc EXCLUDE_FROM_ALL cc/test_cc.cc )
-TARGET_LINK_LIBRARIES(test_cc ${LEMON_LIBRARIES} ql )
-
+TARGET_LINK_LIBRARIES(test_cc ql ${LEMON_LIBRARIES} )
 
 # create output directory for test outputs
 ADD_CUSTOM_TARGET(tests-output-directory ALL
@@ -29,8 +28,17 @@ CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/hardware_config_cc_light.json
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/hardware_config_qx.json
 	hardware_config_qx.json COPYONLY)
 
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_mapper_s7.json
+	test_mapper_s7.json COPYONLY)
+
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_mapper_s17.json
+	test_mapper_s17.json COPYONLY)
+
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_mapper_rig.json
+	test_mapper_rig.json COPYONLY)
+
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/cc/test_cfg_cc.json
 	test_cfg_cc.json COPYONLY)
 
 ADD_EXECUTABLE(test_mapper test_mapper.cc )
-TARGET_LINK_LIBRARIES(test_mapper ${LEMON_LIBRARIES} ql)
+TARGET_LINK_LIBRARIES(test_mapper ql ${LEMON_LIBRARIES} )

@@ -6,6 +6,7 @@ import numpy as np
 rootDir = os.path.dirname(os.path.realpath(__file__))
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
+num_qubits = 9
 
 
 '''
@@ -13,7 +14,7 @@ output_dir = os.path.join(curdir, 'test_output')
 '''
 
 def init(platform):
-        init_k   = ql.Kernel('init', platform)
+        init_k   = ql.Kernel('init', platform, num_qubits)
         
         # oracle qubit
         oracle = 4
@@ -30,7 +31,7 @@ def init(platform):
 
 
 def grover(platform):
-        grover_k = ql.Kernel('grover', platform)
+        grover_k = ql.Kernel('grover', platform, num_qubits)
         # oracle qubit
         oracle = 4
         # name search space
@@ -91,20 +92,21 @@ def grover_algorithm():
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ASAP')
         ql.set_option('log_level', 'LOG_CRITICAL')
+        ql.set_option('write_qasm_files', 'yes')
 
-        config_fn = os.path.join(curdir, 'hardware_config_qx.json')
+        config_fn = os.path.join(curdir, '../tests/hardware_config_qx.json')
         platform  = ql.Platform('platform_none', config_fn)
-        num_qubits = 9
+        # num_qubits = 9
         # oracle qubit
         oracle = 4
         
         # create a grover program
-        p = ql.Program('test_grover', num_qubits, platform)
+        p = ql.Program('test_grover', platform, num_qubits, 0)
         
         # kernels
         init_k   = init(platform)
         grover_k = grover(platform)
-        result_k = ql.Kernel('result', platform)
+        result_k = ql.Kernel('result', platform, num_qubits)
        
         # result
         result_k.hadamard(oracle)
@@ -119,7 +121,7 @@ def grover_algorithm():
 
         # build the program 
         p.add_kernel(init_k)
-        p.add_kernel(grover_k,3)
+        p.add_kernel(grover_k)
         p.add_kernel(result_k)
         ql.set_option('decompose_toffoli', 'NC')
         p.compile()

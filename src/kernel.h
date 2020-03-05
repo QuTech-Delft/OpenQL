@@ -27,8 +27,6 @@
 #endif // __disable_lemon__
 #include "platform.h"
 
-#define PI M_PI
-
 
 namespace ql
 {
@@ -53,9 +51,10 @@ public: // FIXME: should be private
     size_t        creg_count;
     kernel_type_t type;
     circuit       c;
+    ql::ir::bundles_t bundles;
     operation     br_condition;
-private:
     size_t        cycle_time;                               // FIXME: just a copy of platform.cycle_time
+private:
     instruction_map_t instruction_map;
 
 public:
@@ -405,6 +404,11 @@ public:
         }
     }
 
+    // a default gate is the last resort of user gate resolution and is of a build-in form, as below in the code;
+    // the "using_default_gates" option can be used to enable ("yes") or disable ("no") default gates;
+    // the use of default gates is deprecated; use the .json configuration file instead;
+    //
+    // if a default gate definition is available for the given gate name and qubits, add it to circuit and return true
     /************************************************************************\
     | Gate management
     \************************************************************************/
@@ -608,6 +612,10 @@ private:
         return result;
     }
 
+    // if a specialized custom gate ("e.g. cz q0,q4") is available, add it to circuit and return true
+    // if a parameterized custom gate ("e.g. cz") is available, add it to circuit and return true
+    //
+    // note that there is no check for the found gate being a composite gate
     bool add_custom_gate_if_available(std::string & gname, std::vector<size_t> qubits,
                                       std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
@@ -626,6 +634,7 @@ private:
         instruction_map_t::iterator it = instruction_map.find(instr);
         if (it != instruction_map.end())
         {
+            // a specialized custom gate is of the form: "cz q0 q3"
             custom_gate* g = new custom_gate(*(it->second));
             for(auto & qubit : qubits)
                 g->operands.push_back(qubit);
@@ -639,6 +648,7 @@ private:
         else
         {
             // otherwise, check if there is a parameterized custom gate (i.e. not specialized for arguments)
+            // this one is of the form: "cz", i.e. just the gate's name
             instruction_map_t::iterator it = instruction_map.find(gname);
             if (it != instruction_map.end())
             {
@@ -666,6 +676,8 @@ private:
         return added;
     }
 
+    // return the subinstructions of a composite gate
+    // while doing, test whether the subinstructions have a definition (so they cannot be specialized or default ones!)
     void get_decomposed_ins( ql::composite_gate * gptr, std::vector<std::string> & sub_instructons )
     {
         auto & sub_gates = gptr->gs;
@@ -686,31 +698,36 @@ private:
         }
     }
 
+    // if specialized composed gate: "e.g. cz q0,q3" available, with composition of subinstructions, return true
+    //      also check each subinstruction for presence of a custom_gate (or a default gate)
+    // otherwise, return false
+    // don't add anything to circuit
+    //
     // add specialized decomposed gate, example JSON definition: "cl_14 q1": ["rx90 %0", "rym90 %0", "rxm90 %0"]
     bool add_spec_decomposed_gate_if_available(std::string gate_name,
             std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
         bool added = false;
-        DOUT("Checking if specialized decomposition is available for " << gate_name);
+        DOUT("Checking if specialized composite gate is available for " << gate_name);
         std::string instr_parameterized = gate_name + " ";
         size_t i;
         if(all_qubits.size() > 0)
         {
             for(i=0; i<all_qubits.size()-1; i++)
             {
-                instr_parameterized += "q" + std::to_string(all_qubits[i]) + " ";
+                instr_parameterized += "q" + std::to_string(all_qubits[i]) + ",";
             }
             if(all_qubits.size() >= 1)
             {
                 instr_parameterized += "q" + std::to_string(all_qubits[i]);
             }
         }
-        DOUT("decomposed specialized instruction name: " << instr_parameterized);
+        DOUT("specialized instruction name: " << instr_parameterized);
 
         auto it = instruction_map.find(instr_parameterized);
         if( it != instruction_map.end() )
         {
-            DOUT("specialized composite gate found for " << instr_parameterized);
+            DOUT("specialized gate found for " << instr_parameterized);
             composite_gate * gptr = (composite_gate *)(it->second);
             if( __composite_gate__ == gptr->type() )
             {
@@ -718,7 +735,7 @@ private:
             }
             else
             {
-                DOUT("Not a composite gate type");
+                DOUT("not a composite gate type");
                 return false;
             }
 
@@ -749,6 +766,7 @@ private:
                 DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
                 // custom gate check
+                // when found, custom_added is true, and the expanded subinstruction was added to the circuit
                 bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
                 if(!custom_added)
                 {
@@ -784,12 +802,17 @@ private:
         return added;
     }
 
+    // if composite gate: "e.g. cz %0 %1" available, return true;
+    //      also check each subinstruction for availability as a custom gate (or default gate)
+    // if not, return false
+    // don't add anything to circuit
+    //
     // add parameterized decomposed gate, example JSON definition: "cl_14 %0": ["rx90 %0", "rym90 %0", "rxm90 %0"]
     bool add_param_decomposed_gate_if_available(std::string gate_name,
             std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
         bool added = false;
-        DOUT("Checking if parameterized decomposition is available for " << gate_name);
+        DOUT("Checking if parameterized composite gate is available for " << gate_name);
 
         // construct instruction name from gate_name and actual qubit parameters
         std::string instr_parameterized = gate_name + " ";
@@ -798,20 +821,20 @@ private:
         {
             for(i=0; i<all_qubits.size()-1; i++)
             {
-                instr_parameterized += "%" + std::to_string(i) + " ";
+                instr_parameterized += "%" + std::to_string(i) + ",";
             }
             if(all_qubits.size() >= 1)
             {
                 instr_parameterized += "%" + std::to_string(i);
             }
         }
-        DOUT("decomposed parameterized instruction name: " << instr_parameterized);
+        DOUT("parameterized instruction name: " << instr_parameterized);
 
         // check for composite ins
         auto it = instruction_map.find(instr_parameterized);
         if( it != instruction_map.end() )
         {
-            DOUT("parameterized composite gate found for " << instr_parameterized);
+            DOUT("parameterized gate found for " << instr_parameterized);
             composite_gate * gptr = (composite_gate *)(it->second);
             if( __composite_gate__ == gptr->type() )
             {
@@ -855,6 +878,7 @@ private:
                 DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
                 // custom gate check
+                // when found, custom_added is true, and the expanded subinstruction was added to the circuit
                 bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
                 if(!custom_added)
                 {
@@ -909,6 +933,9 @@ public:
 
     /**
      * custom gate with arbitrary number of operands
+     * check qubit/creg indices against platform parameters; fail fatally if an index is out of range
+     * find matching gate in kernel's and platform's gate_definition; when no match, fail
+     * return the gate (or its decomposition) by appending it to kernel.c, the current kernel's circuit
      */
     void gate(std::string gname, std::vector<size_t> qubits = {},
               std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
@@ -917,8 +944,7 @@ public:
         {
             if( qno >= qubit_count )
             {
-                EOUT("Number of qubits in platform: " << std::to_string(qubit_count) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
-                throw ql::exception("[x] error : ql::kernel::gate() : Number of qubits in platform: "+std::to_string(qubit_count)+", specified qubit numbers out of range for gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" !",false);
+                FATAL("Number of qubits in platform: " << std::to_string(qubit_count) << ", specified qubit numbers out of range for gate: '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
             }
         }
 
@@ -926,11 +952,46 @@ public:
         {
             if( cno >= creg_count )
             {
-                EOUT("Out of range operand(s) for '" << gname << "' with " << ql::utils::to_string(cregs,"cregs") );
-                throw ql::exception("Out of range operand(s) for '"+gname+"' with " +ql::utils::to_string(cregs,"cregs")+" !",false);
+                FATAL("Out of range operand(s) for '" << gname << "' with " << ql::utils::to_string(cregs,"cregs") );
             }
         }
 
+        if (!gate_nonfatal(gname, qubits, cregs, duration, angle))
+        {
+            FATAL("Unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
+        }
+    }
+
+    // terminology:
+    // - composite/custom/default (in decreasing order of priority during lookup in the gate definition):
+    //      - composite gate: a gate definition with subinstructions; when matched, decompose and add the subinstructions
+    //      - custom gate: a fully configurable gate definition, with all kinds of attributes; there is no decomposition
+    //      - default gate: a gate definition build-in in this compiler; see above for the definition
+    //          deprecated; setting option "use_default_gates" from "yes" to "no" turns it off
+    // - specialized/parameterized (in decreasing order of priority during lookup in the gate definition)
+    //      - specialized: a gate definition that is special for its operands, i.e. the operand qubits must match
+    //      - parameterized: a gate definition that can be used for all possible qubit operands
+    //
+    // the following order of checks is used below:
+    // check if specialized composite gate is available
+    //      e.g. whether "cz q0,q3" is available as composite gate, where subinstructions are available as custom gates
+    // if not, check if parameterized composite gate is available
+    //      e.g. whether "cz %0,%1" is in gate_definition, where subinstructions are available as custom gates
+    // if not, check if a specialized custom gate is available
+    //      e.g. whether "cz q0,q3" is available as non-composite gate
+    // if not, check if a parameterized custom gate is available
+    //      e.g. whether "cz" is in gate_definition as non-composite gate
+    // if not, check if a default gate is available
+    //      e.g. whether "cz" is available as default gate
+    // if not, then error
+    /**
+     * custom gate with arbitrary number of operands
+     * as gate above but return whether gate was successfully matched in gate_definition, next to gate in kernel.c
+     */
+    bool gate_nonfatal(std::string gname, std::vector<size_t> qubits = {},
+              std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
+    {
+        bool added = false;
         // check if specialized composite gate is available
         // if not, check if parameterized composite gate is available
         // if not, check if a specialized custom gate is available
@@ -942,27 +1003,35 @@ public:
         DOUT("Adding gate : " << gname << " with " << ql::utils::to_string(qubits,"qubits"));
 
         // specialized composite gate check
-        DOUT("trying to add specialized decomposed gate for: " << gname);
+        DOUT("trying to add specialized composite gate for: " << gname);
         bool spec_decom_added = add_spec_decomposed_gate_if_available(gname, qubits);
         if(spec_decom_added)
         {
+            added = true;
             DOUT("specialized decomposed gates added for " << gname);
         }
         else
         {
             // parameterized composite gate check
-            DOUT("trying to add parameterized decomposed gate for: " << gname);
+            DOUT("trying to add parameterized composite gate for: " << gname);
             bool param_decom_added = add_param_decomposed_gate_if_available(gname, qubits);
             if(param_decom_added)
             {
+                added = true;
                 DOUT("decomposed gates added for " << gname);
             }
             else
             {
                 // specialized/parameterized custom gate check
                 DOUT("adding custom gate for " << gname);
+                // when found, custom_added is true, and the gate was added to the circuit
                 bool custom_added = add_custom_gate_if_available(gname, qubits, cregs, duration, angle);
-                if(!custom_added)
+                if(custom_added)
+                {
+                    added = true;
+                    DOUT("custom gate added for " << gname);
+                }
+                else
                 {
                     if(ql::options::get("use_default_gates") == "yes")
                     {
@@ -972,27 +1041,14 @@ public:
                         bool default_available = add_default_gate_if_available(gname, qubits, cregs, duration);
                         if( default_available )
                         {
+                            added = true;
                             WOUT("default gate added for " << gname);
                         }
-                        else
-                        {
-                            EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
-                            throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
-                        }
                     }
-                    else
-                    {
-                        EOUT("unknown gate '" << gname << "' with " << ql::utils::to_string(qubits,"qubits") );
-                        throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+gname+"' with " +ql::utils::to_string(qubits,"qubits")+" is not supported by the target platform !",false);
-                    }
-                }
-                else
-                {
-                    DOUT("custom gate added for " << gname);
                 }
             }
         }
-        DOUT("");
+        return added;
     }
 
     /**
@@ -1126,9 +1182,13 @@ public:
 
     void optimize()
     {
+        DOUT("kernel " << name << " optimize(): circuit before optimizing: ");
+        print(c);
+        DOUT("... end circuit");
         ql::rotations_merging rm;
         if (contains_measurements(c))
         {
+            DOUT("kernel contains measurements ...");
             // decompose the circuit
             std::vector<circuit*> cs = split_circuit(c);
             std::vector<circuit > cs_opt;
@@ -1153,7 +1213,9 @@ public:
         {
             c = rm.optimize(c);
         }
-
+        DOUT("kernel " << name << " optimize(): circuit after optimizing: ");
+        print(c);
+        DOUT("... end circuit");
     }
 
     void decompose_toffoli()
@@ -1250,6 +1312,13 @@ public:
             EOUT("Unknown scheduler");
             throw ql::exception("Unknown scheduler!", false);
         }
+        DOUT( scheduler << " scheduling the quantum kernel '" << name << "' DONE");
+
+        // schedulers assigned gatep->cycle; sort circuit on this
+        typedef ql::gate *      gate_p;
+        std::sort(c.begin(), c.end(),
+                [&](gate_p g1, gate_p g2) { return g1->cycle < g2->cycle; }
+        );
 
         sched_qasm = get_prologue() + kqasm + get_epilogue();
 
@@ -1627,38 +1696,38 @@ public:
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, PI/2);
+                controlled_rx(tq, cq, M_PI/2);
             }
             else if( __mrx90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, -1*PI/2);
+                controlled_rx(tq, cq, -1*M_PI/2);
             }
             else if( __rx180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, PI);
+                controlled_rx(tq, cq, M_PI);
                 // controlled_x(tq, cq);
             }
             else if( __ry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, PI/4);
+                controlled_ry(tq, cq, M_PI/4);
             }
             else if( __mry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, -1*PI/4);
+                controlled_ry(tq, cq, -1*M_PI/4);
             }
             else if( __ry180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, PI);
+                controlled_ry(tq, cq, M_PI);
                 // controlled_y(tq, cq);
             }
             else

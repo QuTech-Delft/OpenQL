@@ -8,12 +8,12 @@
 
 #include "program.h"
 
+#include <report.h>
 #include <utils.h>
 #include <options.h>
 #include <interactionMatrix.h>
 #include <arch/cbox/cbox_eqasm_compiler.h>
 #include <arch/cc_light/cc_light_eqasm_compiler.h>
-#include <arch/quantumsim_eqasm_compiler.h>
 #include <arch/cc/eqasm_backend_cc.h>
 
 static unsigned long phi_node_count = 0;    // FIXME: number across quantum_program instances
@@ -25,6 +25,7 @@ quantum_program::quantum_program(std::string n, quantum_platform platf, size_t n
         : name(n), platform(platf), qubit_count(nqubits), creg_count(ncregs)
 {
     default_config = true;
+    needs_backend_compiler = true;
     eqasm_compiler_name = platform.eqasm_compiler_name;
     backend_compiler    = NULL;
     if (eqasm_compiler_name =="")
@@ -34,11 +35,12 @@ quantum_program::quantum_program(std::string n, quantum_platform platf, size_t n
     }
     else if (eqasm_compiler_name == "none")
     {
-
+        needs_backend_compiler = false;;
     }
     else if (eqasm_compiler_name == "qx")
     {
         // at the moment no qx specific thing is done
+        needs_backend_compiler = false;;
     }
     else if (eqasm_compiler_name == "qumis_compiler")
     {
@@ -47,10 +49,6 @@ quantum_program::quantum_program(std::string n, quantum_platform platf, size_t n
     else if (eqasm_compiler_name == "cc_light_compiler" )
     {
         backend_compiler = new ql::arch::cc_light_eqasm_compiler();
-    }
-    else if (eqasm_compiler_name == "quantumsim_compiler" )
-    {
-        backend_compiler = new ql::arch::quantumsim_eqasm_compiler();
     }
     else if (eqasm_compiler_name == "eqasm_backend_cc" )
     {
@@ -67,9 +65,6 @@ quantum_program::quantum_program(std::string n, quantum_platform platf, size_t n
         EOUT("number of qubits requested in program '" + std::to_string(qubit_count) + "' is greater than the qubits available in platform '" + std::to_string(platform.qubit_number) + "'" );
         throw ql::exception("[x] error : number of qubits requested in program '"+std::to_string(qubit_count)+"' is greater than the qubits available in platform '"+std::to_string(platform.qubit_number)+"' !",false);
     }
-
-    // FIXME: also check creg_count against platform
-    // FIXME: what is the reason we can specify qubit_count and creg_count here anyway
 }
 
 void quantum_program::add(ql::quantum_kernel &k)
@@ -403,11 +398,55 @@ std::string quantum_program::uc_header()
 }
 #endif
 
+/*
+ * support a unique file called 'get("output_dir")/name.unique'
+ * it is a seed to create unique output files (qasm, report, etc.) for the same program (with name 'name')
+ * - when the unique file is not there, it is created with the value 0 (which is then the current value)
+ *   otherwise, it just reads the current value from that file
+ * - it then increments the current value by 1, stores it in the file and returns this value
+ * since this may be the first time that the output_dir is used, it warns when that doesn't exist
+ */
+int quantum_program::bump_unique_file_version()
+{
+    std::stringstream ss_unique;
+    ss_unique << ql::options::get("output_dir") << "/" << name << ".unique";
 
+    std::fstream ufs;
+    int vers;
+
+    // retrieve old version number
+    ufs.open (ss_unique.str(), std::fstream::in);
+    if (!ufs.is_open())
+    {
+        // no file there, initialize old version number to 0
+        ufs.open(ss_unique.str(), std::fstream::out);
+        if (!ufs.is_open())
+        {
+            FATAL("Cannot create: " << ss_unique.str() << ". Probably output directory " << ql::options::get("output_dir") << " does not exist");
+        }
+        ufs << 0 << std::endl;
+        vers = 0;
+    }
+    else
+    {
+        // read stored number
+        ufs >> vers;
+    }
+    ufs.close();
+
+    // increment to get new one, store it for later and return
+    vers++;
+    ufs.open(ss_unique.str(), std::fstream::out);
+    ufs << vers << std::endl;
+    ufs.close();
+
+    return vers;
+}
 
 int quantum_program::compile()
 {
-    IOUT("compiling ...");
+    IOUT("compiling " << name << " ...");
+    WOUT("compiling " << name << " ...");
 #if !OPT_MICRO_CODE
     WOUT("deprecation warning: this version was compiled with support for CBOX microcode disabled in main code (CBOX backend not affected)");
 #endif
@@ -441,35 +480,64 @@ int quantum_program::compile()
         throw ql::exception("Error: Unknown option '"+tdopt+"' set for decompose_toffoli !",false);
     }
 
-  if( ql::options::get("write_qasm_files") == "yes")
-  {
+    if (ql::options::get("unique_output") == "yes")
+    {
+        int vers;
+        vers = bump_unique_file_version();
+        if (vers > 1)
+        {
+            name = ( name + to_string(vers) );
+            DOUT("new program name after bump_unique_file_version: " << name << " based on version: " << vers);
+        }
+    }
+
+    if( ql::options::get("write_qasm_files") == "yes")
+    {
         std::stringstream ss_qasm;
         ss_qasm << ql::options::get("output_dir") << "/" << name << ".qasm";
         std::string s = qasm();
 
         IOUT("writing un-scheduled qasm to '" << ss_qasm.str() << "' ...");
         ql::utils::write_file(ss_qasm.str(), s);
+        DOUT("writing done");
     }
 
-    schedule();
+    if( ql::options::get("prescheduler") == "yes" )
+    {
+        schedule();
+    }
+
+    DOUT("eqasm_compiler_name: " << eqasm_compiler_name);
+
+    if (! needs_backend_compiler)
+    {
+        WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
+        return 0;
+    }
 
     if (backend_compiler == NULL)
     {
-        WOUT("no eqasm compiler has been specified in the configuration file, only qasm code has been compiled.");
+        EOUT("No known eqasm compiler has been specified in the configuration file.");
         return 0;
     }
     else
     {
-        if (eqasm_compiler_name == "cc_light_compiler" || eqasm_compiler_name == "eqasm_backend_cc")
+        if (eqasm_compiler_name == "cc_light_compiler"
+            || eqasm_compiler_name == "eqasm_backend_cc"
+            )
         {
+            DOUT("About to call backend_compiler->compile for " << eqasm_compiler_name);
             backend_compiler->compile(name, kernels, platform);
+            DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
         }
         else
         {
+            DOUT("Skipped call to backend_compiler->compile for " << eqasm_compiler_name);
+
             // FIXME(WJV): I would suggest to move the fusing to a backend that wants it, and then:
             // - always call:  backend_compiler->compile(name, kernels, platform);
             // - remove from eqasm_compiler.h: compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& p);
-
+   
             IOUT("fusing quantum kernels...");
             ql::circuit fused;
             for (size_t k=0; k<kernels.size(); ++k)
@@ -480,7 +548,7 @@ int quantum_program::compile()
                     fused.insert(fused.end(), kc.begin(), kc.end());
                 }
             }
-
+   
             try
             {
                 IOUT("compiling eqasm code...");
@@ -491,10 +559,10 @@ int quantum_program::compile()
                 EOUT("[x] error : eqasm_compiler.compile() : compilation interrupted due to fatal error.");
                 throw e;
             }
-
+   
             IOUT("writing eqasm code to '" << ( ql::options::get("output_dir") + "/" + name+".asm"));
             backend_compiler->write_eqasm( ql::options::get("output_dir") + "/" + name + ".asm");
-
+   
             IOUT("writing traces to '" << ( ql::options::get("output_dir") + "/trace.dat"));
             backend_compiler->write_traces( ql::options::get("output_dir") + "/trace.dat");
         }
@@ -529,15 +597,17 @@ int quantum_program::compile()
     {
         IOUT("sweep points file not generated as sweep point array is empty !");
     }
-
-     IOUT("compilation of program '" << name << "' done.");
+    IOUT("compilation of program '" << name << "' done.");
 
     return 0;
 }
 
+
 // schedule and write scheduled qasm. Note that the backend may use a different scheduler with different results
 void quantum_program::schedule()
 {
+    ql::report::report_statistics(name, kernels, platform, "in", "prescheduler", "# ");
+
     std::string sched_qasm("version 1.0\n");
     sched_qasm += "# this file has been automatically generated by the OpenQL compiler please do not modify it manually.\n";
     sched_qasm += "qubits " + std::to_string(qubit_count) + "\n";
@@ -571,6 +641,8 @@ void quantum_program::schedule()
         IOUT("writing scheduled qasm to '" << fname << "' ...");
         ql::utils::write_file(fname, sched_qasm);
     }
+
+    ql::report::report_statistics(name, kernels, platform, "out", "prescheduler", "# ");
 }
 
 void quantum_program::print_interaction_matrix()
