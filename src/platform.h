@@ -28,6 +28,7 @@ public:
     ql::instruction_map_t   instruction_map;          // supported operations
     json                    instruction_settings;     // instruction settings (to use by the eqasm backend)
     json                    hardware_settings;        // additional hardware settings (to use by the eqasm backend)
+
     json                    resources;
     json                    topology;
     json                    aliases;                  // workaround the generic instruction composition

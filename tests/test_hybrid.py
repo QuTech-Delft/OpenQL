@@ -22,7 +22,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
-        num_cregs = 10
+        num_cregs = 32
 
         p = ql.Program('test_classical', platform, num_qubits, num_cregs)
         sweep_points = [1, 2]

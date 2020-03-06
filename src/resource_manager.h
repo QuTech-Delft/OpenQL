@@ -58,7 +58,7 @@ public:
 
 class ql::arch::resource_manager_t
 {
-public:
+protected:
 
     std::vector<resource_t*> resource_ptrs;
 
@@ -75,6 +75,8 @@ public:
     resource_manager_t(const ql::quantum_platform & platform, scheduling_direction_t dir)
     {
     }
+
+public:
 
     void Print(std::string s)
     {

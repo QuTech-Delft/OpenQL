@@ -273,8 +273,15 @@ See its definition in :ref:`quantum_gate_attributes_in_the_internal_representati
 The gates in the vector then are ordered in non-decreasing cycle order.
 
 The schedulers also produce a ``bundled`` version of each circuit.
-The circuit is then represented by a list of bundles
+That is done by the ``bundler`` function available as ``ql::ir::bundler(circuit, cycle_time)``.
+It constructs and returns the bundled representation of the given circuit.
+The cycle attribute of each gate of the circuit must be valid,
+and the gates in the circuit must have been sorted by their cycle value.
+
+In the internal bundles representation
+a circuit is represented by a list of bundles
 in which each bundle represents the gates that are to be started in a particular cycle.
+A bundle can contain a mixture of quantum and classical gates.
 Each bundle is structured as a list of sections and each section as a list of gates (actually gate pointers).
 The gates in each section share the same operation but have different operands, obviously.
 The latter prepares for code generation for a SIMD instruction set
@@ -301,7 +308,7 @@ a program (object) consisting of a vector of kernels,
 each containing a single circuit,
 each circuit being a vector of gates.
 
-Gates are created using an API of the general form:
+Quantum gates are created using an API of the general form:
 
 .. code::
 

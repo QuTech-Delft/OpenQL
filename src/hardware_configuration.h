@@ -130,6 +130,13 @@ public:
             if (instruction_map.find(name) != instruction_map.end())
                 WOUT("instruction '" << name << "' redefined : the old definition is overwritten !");
 
+            // format in json.instructions:
+            //  "^(\s)*token(\s)*[(\s)token(\s)*(,(\s)*token(\s*))*]$"
+            //  so with a comma between any operands and possible spaces everywhere
+            //
+            // format of key and value (which is a custom_gate)'s name in instruction_map:
+            //  "^(token|(token token(,token)*))$"
+            //  so with a comma between any operands
             instruction_map[name] = load_instruction(name, attr);
             DOUT("instruction " << name << " loaded.");
         }
@@ -146,8 +153,16 @@ public:
                 DOUT("");
                 DOUT("Adding composite instr : " << comp_ins);
                 comp_ins = sanitize_instruction_name(comp_ins);
-                comp_ins = std::regex_replace(comp_ins, comma_space_pattern, " ");
+                comp_ins = std::regex_replace(comp_ins, comma_space_pattern, ",");
                 DOUT("Adjusted composite instr : " << comp_ins);
+
+                // format in json.instructions:
+                //  "^(\s)*token(\s)+token(\s)*(,|\s)(\s)*token(\s*)$"
+                //  so with a comma or a space between any operands and possible spaces everywhere
+                //
+                // format of key and value (which is a custom_gate)'s name in instruction_map:
+                //  "^(token(\stoken)*))$"
+                //  so with one space between any operands
 
                 // check for duplicate operations
                 if (instruction_map.find(comp_ins) != instruction_map.end())
@@ -166,9 +181,11 @@ public:
                     str::lower_case(sub_ins);
                     DOUT("Adding sub instr: " << sub_ins);
                     sub_ins = sanitize_instruction_name(sub_ins);
-
+                    sub_ins = std::regex_replace(sub_ins, comma_space_pattern, ",");
                     if ( instruction_map.find(sub_ins) != instruction_map.end() )
                     {
+                        // i.e. subinstruction as is is also defined as instruction (with all operands)
+
                         // using existing sub ins
                         DOUT("using existing sub instr : " << sub_ins);
                         gs.push_back( instruction_map[sub_ins] );

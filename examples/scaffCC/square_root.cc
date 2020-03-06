@@ -6,7 +6,7 @@
 #include <sstream>
 #include <cassert>
 
-#include "ql/openql.h"
+#include "src/openql.h"
 
 #define n 6 // problem size (log of database size)
 #define pi 3.141592653589793238462643383279502884197

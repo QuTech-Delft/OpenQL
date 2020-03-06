@@ -222,9 +222,10 @@ public:
     std::string name = "";
     std::vector<size_t> operands;
     std::vector<size_t> creg_operands;
+    int int_operand;
     size_t duration;
     double angle;                            // for arbitrary rotations
-    size_t  cycle;                           // set after scheduling with resulting cycle in which gate was scheduled
+    size_t  cycle = MAX_CYCLE;               // cycle after scheduling; MAX_CYCLE indicates undefined
     virtual instruction_t qasm()       = 0;
 #if OPT_MICRO_CODE
     virtual instruction_t micro_code() = 0;  // to do : deprecated
@@ -1430,6 +1431,7 @@ public:
      */
     custom_gate(string_t name)
     {
+        DOUT("Custom gate constructor for " << name);
         this->name = name;
     }
 
@@ -1438,6 +1440,7 @@ public:
      */
     custom_gate(const custom_gate& g)
     {
+        DOUT("Custom gate copy constructor for " << g.name);
         name = g.name;
         creg_operands = g.creg_operands;
 #if OPT_CUSTOM_GATE_PARAMETERS
@@ -1475,6 +1478,7 @@ public:
                 , operation_type(operation_type)
 #endif
     {
+        DOUT("Custom gate explicit constructor for " << name);
         this->name = name;
         this->duration = duration;
 #if OPT_USED_HARDWARE
@@ -1491,6 +1495,7 @@ public:
      */
     custom_gate(string_t name, string_t& file_name)
     {
+        DOUT("Custom gate load from json file for " << name);
         this->name = name;
         std::ifstream f(file_name);
         if (f.is_open())
@@ -1509,6 +1514,7 @@ public:
      */
     custom_gate(std::string& name, json& instr)
     {
+        DOUT("Custom gate load from json map for " << name);
         this->name = name;
         load(instr);
     }
@@ -1545,11 +1551,12 @@ public:
      */
     void load(json& instr)
     {
+        DOUT("loading instruction '" << name << "'...");
         std::string l_attr = "(none)";
         try
         {
             l_attr = "qubits";
-            // DOUT("qubits: " << instr["qubits"]);
+            DOUT("qubits: " << instr["qubits"]);
 #if OPT_CUSTOM_GATE_PARAMETERS
             parameters = instr["qubits"].size();
 #else
@@ -1575,6 +1582,7 @@ public:
 #endif
             l_attr = "duration";
             duration = instr["duration"];
+            DOUT("duration: " << instr["duration"]);
 #if OPT_USED_HARDWARE
             // FIXME: code commented out:
             // strings_t hdw = instr["hardware"];
@@ -1583,6 +1591,7 @@ public:
             l_attr = "matrix";
             // FIXME: make matrix optional, default to NaN
             auto mat = instr["matrix"];
+            DOUT("matrix: " << instr["matrix"]);
             m.m[0] = complex_t(mat[0][0], mat[0][1]);
             m.m[1] = complex_t(mat[1][0], mat[1][1]);
             m.m[2] = complex_t(mat[2][0], mat[2][1]);
@@ -1597,6 +1606,7 @@ public:
         if ( instr.count("cc_light_instr") > 0)
         {
             arch_operation_name = instr["cc_light_instr"];
+            DOUT("cc_light_instr: " << instr["cc_light_instr"]);
         }
     }
 
