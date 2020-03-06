@@ -99,7 +99,7 @@ namespace arch
 
 // compile for Central Controller
 // NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
-void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel> kernels, const ql::quantum_platform &platform)
+void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel> &kernels, const ql::quantum_platform &platform)
 {
 #if 1   // FIXME: patch for issue #164, should be moved to caller
     if(kernels.size() == 0) {
