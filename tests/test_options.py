@@ -38,10 +38,10 @@ class Test_options(unittest.TestCase):
 
         ql.set_option('use_default_gates', 'yes')
         ql.set_option('use_default_gates', 'no')
-        
+
         ql.set_option('decompose_toffoli', 'no')
         ql.set_option('decompose_toffoli', 'NC')
-        ql.set_option('decompose_toffoli', 'MA')
+        ql.set_option('decompose_toffoli', 'AM')
 
 
     def test_nok(self):
@@ -71,7 +71,7 @@ class Test_options(unittest.TestCase):
 
         ql.set_option('optimize', 'yes')
         self.assertEqual(ql.get_option('optimize'), 'yes')
-        
+
 
         ql.set_option('scheduler', 'ALAP')
         self.assertEqual(ql.get_option('scheduler'), 'ALAP')
@@ -82,7 +82,7 @@ class Test_options(unittest.TestCase):
 
         ql.set_option('use_default_gates', 'yes')
         self.assertEqual(ql.get_option('use_default_gates'), 'yes')
-        
+
         ql.set_option('decompose_toffoli', 'NC')
         self.assertEqual(ql.get_option('decompose_toffoli'), 'NC')
 
