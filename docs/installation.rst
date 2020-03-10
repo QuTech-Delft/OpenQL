@@ -47,7 +47,7 @@ OpenQL can be installed as a conda package (currently on Linux and Windows only)
 
 ::
 
-    conda install -c imran.ashraf openql 
+    conda install -c imran.ashraf openql
 
 
 Conda packages can also be built locally by using the recipe available in the conda-recipe directory,
@@ -143,7 +143,7 @@ Or in editable mode by the command:
 
 ::
 
-    pip install  -e .
+    pip install  -e .[develop]
 
 
 Compiling C++ OpenQL tests and programs
@@ -160,9 +160,9 @@ Existing tests and programs can be compiled on Linux OS by the following command
 ::
 
     mkdir cbuild
-    cd cbuild 
+    cd cbuild
     cmake ..   # generates the make file based on CMakeLists.txt in the OpenQL directory
-    make       # compiles the source code into the current directory. 
+    make       # compiles the source code into the current directory.
 
 
 
@@ -186,15 +186,17 @@ Windows
 Running the tests
 -----------------
 
-In order to pass all the tests, *qisa-as* and *libqasm* should be installed first. Follow `qisa-as <https://github.com/QE-Lab/eQASM_Assembler>`_ and
-`libqasm <https://github.com/QE-Lab/libqasm>`_ instructions to install python interfaces of these modules. Once *qisa-as* and *libqasm* are installed, you can run all the tests by:
+In order to pass all the python tests, the openql package should be installed in editable mode.
+Also, *qisa-as* and *libqasm* should be installed first. Follow `qisa-as <https://github.com/QE-Lab/eQASM_Assembler>`_
+and `libqasm <https://github.com/QE-Lab/libqasm>`_ instructions to install python interfaces of these modules.
+Once *qisa-as* and *libqasm* are installed, you can run all the tests by:
 
 ::
 
-    py.test -v
+    pytest -v
 
 
-Or
+or
 
 ::
 
