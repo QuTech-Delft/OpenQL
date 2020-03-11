@@ -7,10 +7,16 @@
  */
 
 /*
+    Change log:
+    20200116:
+    - changed JSON field "signal_ref" to "ref_signal" to improve consistency
+    - idem "ref_signals_type" to "signal_type"
+
     Todo:
     - finish support for classical instructions
     - finish support for kernel conditionality
     - allow runtime selection of scheduler
+    - port https://github.com/QE-Lab/OpenQL/pull/238 to CC
 */
 
 
@@ -86,23 +92,14 @@ QASM_CLASSICAL_INSTRUCTION_LIST
 
 
 
-
 namespace ql
 {
 namespace arch
 {
 
-eqasm_backend_cc::eqasm_backend_cc()
-{
-}
-
-eqasm_backend_cc::~eqasm_backend_cc()
-{
-}
-
 // compile for Central Controller
 // NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
-void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel> kernels, const ql::quantum_platform &platform)
+void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel> &kernels, const ql::quantum_platform &platform)
 {
 #if 1   // FIXME: patch for issue #164, should be moved to caller
     if(kernels.size() == 0) {
@@ -193,7 +190,7 @@ void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel
 }
 
 
-void eqasm_backend_cc::compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform)
+void eqasm_backend_cc::compile(std::string prog_name, ql::circuit &ckt, ql::quantum_platform &platform)
 {
     FATAL("Circuit compilation not implemented, because it does not support classical kernel operations");
 }
@@ -206,34 +203,16 @@ void eqasm_backend_cc::codegen_classical_instruction(ql::gate *classical_ins)
     auto &iopers = classical_ins->creg_operands;
     int iopers_count = iopers.size();
 
-    if(  (iname == QASM_ADD) || (iname == QASM_SUB) ||
-         (iname == QASM_AND) || (iname == QASM_OR) || (iname == QASM_NOT) || (iname == QASM_XOR) ||
-         (iname == QASM_LDI) || (iname == QASM_MOV) ||
-         (iname == QASM_NOP)
+    if(  iname == QASM_ADD || iname == QASM_SUB ||
+         iname == QASM_AND || iname == QASM_OR  || iname == QASM_NOT || iname == QASM_XOR ||
+         iname == QASM_LDI || iname == QASM_MOV ||
+         iname == QASM_NOP
       )
-
     {
         FATAL("Classical instruction not implemented: " << iname);
-
-#if 0   // FIXME: adapt for CC, this is still CC-light
-        ret << iname;
-        for(int i=0; i<iopers_count; ++i)
-        {
-            if(i==iopers_count-1)
-                ret << " r" <<  iopers[i];
-            else
-                ret << " r" << iopers[i] << ",";
-        }
-        if(iname == QASM_LDI)
-        {
-//                ret << ", " + std::to_string(classical_ins->imm_value);
-        }
-#endif
     }
-
-    // inserted from decompose_instructions
-    else if( (iname == QASM_EQ) || (iname == QASM_NE) || (iname == QASM_LT) ||
-             (iname == QASM_GT) || (iname == QASM_LE) || (iname == QASM_GE)
+    else if( iname == QASM_EQ || iname == QASM_NE || iname == QASM_LT ||
+             iname == QASM_GT || iname == QASM_LE || iname == QASM_GE
            )
     {
         FATAL("Classical instruction not implemented: " << iname);
@@ -435,14 +414,14 @@ void eqasm_backend_cc::codegen_bundles(ql::ir::bundles_t &bundles, const ql::qua
 
 
 // based on: cc_light_eqasm_compiler.h::load_hw_settings
-void eqasm_backend_cc::load_hw_settings(const ql::quantum_platform& platform)
+void eqasm_backend_cc::load_hw_settings(const ql::quantum_platform &platform)
 {
-#if 0   // NB: Visual Studio does not like empty array
+#if 0   // FIXME: currently unused, may be of future use
     const struct {
         size_t  *var;
         std::string name;
     } hw_settings[] = {
-#if 0   // FIXME: unused. Convert to cycle
+#if 0   // FIXME: Convert to cycle. // NB: Visual Studio does not like empty array
         { &mw_mw_buffer,            "mw_mw_buffer" },
         { &mw_flux_buffer,          "mw_flux_buffer" },
         { &mw_readout_buffer,       "mw_readout_buffer" },

@@ -106,6 +106,7 @@ public:
     /**
      * debug
      */
+#if OPT_LACKS_SWIG_INTERFACE
     void print_gates_definition()
     {
         for (instruction_map_t::iterator i=instruction_map.begin(); i!=instruction_map.end(); i++)
@@ -116,6 +117,7 @@ public:
 #endif
         }
     }
+#endif // OPT_LACKS_SWIG_INTERFACE
 
     std::string get_gates_definition()
     {
@@ -676,6 +678,7 @@ private:
         return added;
     }
 
+    // FIXME: move to class composite_gate?
     // return the subinstructions of a composite gate
     // while doing, test whether the subinstructions have a definition (so they cannot be specialized or default ones!)
     void get_decomposed_ins( ql::composite_gate * gptr, std::vector<std::string> & sub_instructons )
@@ -1042,7 +1045,7 @@ public:
                         if( default_available )
                         {
                             added = true;
-                            WOUT("default gate added for " << gname);
+                            DOUT("default gate added for " << gname);   // FIXME: used to be WOUT, but that gives a warning for every "wait" and spams the log
                         }
                     }
                 }
@@ -1328,11 +1331,13 @@ public:
     /**
      * load custom instructions from a json file
      */
+#if OPT_CUSTOM_GATE_LOAD
     int load_custom_instructions(std::string file_name="instructions.json")
     {
         load_instructions(instruction_map, file_name);
         return 0;
     }
+#endif
 
     /************************************************************************\
     | Controlled gates
@@ -1580,6 +1585,9 @@ public:
         cnot(cq, tq);
     }
 
+    /************************************************************************\
+    | Kernel manipulations: controlled & conjugate
+    \************************************************************************/
 
     void controlled_single(ql::quantum_kernel *k, size_t control_qubit, size_t ancilla_qubit)
     {

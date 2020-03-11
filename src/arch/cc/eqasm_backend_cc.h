@@ -6,8 +6,8 @@
  * @remark based on cc_light_eqasm_compiler.h, commit f34c0d9
  */
 
-#ifndef QL_ARCH_CC_EQASM_BACKEND_CC_H
-#define QL_ARCH_CC_EQASM_BACKEND_CC_H
+#ifndef ARCH_CC_EQASM_BACKEND_CC_H
+#define ARCH_CC_EQASM_BACKEND_CC_H
 
 #include "codegen_cc.h"
 
@@ -27,11 +27,11 @@ namespace arch
 class eqasm_backend_cc : public eqasm_compiler
 {
 public:
-    eqasm_backend_cc();
-    ~eqasm_backend_cc();
+    eqasm_backend_cc() = default;
+    ~eqasm_backend_cc() = default;
 
-    void compile(std::string prog_name, std::vector<quantum_kernel> kernels, const ql::quantum_platform &platform);
-    void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform);
+    void compile(std::string prog_name, std::vector<quantum_kernel> &kernels, const ql::quantum_platform &platform) override;
+    void compile(std::string prog_name, ql::circuit &ckt, ql::quantum_platform &platform) override;
 
 private:
     std::string kernelLabel(ql::quantum_kernel &k);
@@ -39,20 +39,15 @@ private:
     void codegen_kernel_prologue(ql::quantum_kernel &k);
     void codegen_kernel_epilogue(ql::quantum_kernel &k);
     void codegen_bundles(ql::ir::bundles_t &bundles, const ql::quantum_platform &platform);
-    void load_hw_settings(const ql::quantum_platform& platform);
+    void load_hw_settings(const ql::quantum_platform &platform);
 
 private: // vars
     codegen_cc codegen;
     int bundleIdx;
-
-    // parameters from JSON file:
-#if 0   // FIXME: unused
-    size_t buffer_matrix[__operation_types_num__][__operation_types_num__];
-#endif
 }; // class
 
 } // arch
 } // ql
 
-#endif // QL_ARCH_CC_EQASM_BACKEND_CC_H
+#endif // ARCH_CC_EQASM_BACKEND_CC_H
 

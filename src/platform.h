@@ -33,7 +33,7 @@ public:
     json                    topology;
     json                    aliases;                  // workaround the generic instruction composition
 
-#if OPT_TARGET_PLATFORM   // FIXME: constructed object is not useable
+#if OPT_TARGET_PLATFORM   // FIXME: constructed object is not usable
     quantum_platform() : name("default")
     {
     }

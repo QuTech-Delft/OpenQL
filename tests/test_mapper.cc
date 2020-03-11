@@ -15,7 +15,7 @@ test_recursion(std::string v, std::string param1, std::string param2, std::strin
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -47,7 +47,7 @@ test_diogo(std::string v, std::string param1, std::string param2, std::string pa
 
 
     ql::quantum_platform starmon("starmon", "test_mapper_s17.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -63,8 +63,8 @@ test_diogo(std::string v, std::string param1, std::string param2, std::string pa
     ql::options::set("maprecNN2q", param2);
     ql::options::set("mapper", param3);
 
-    ql::options::set("clifford_premapper", "no"); 
-    ql::options::set("clifford_postmapper", "no"); 
+    ql::options::set("clifford_premapper", "no");
+    ql::options::set("clifford_postmapper", "no");
     ql::options::set("scheduler_post179", "yes");
     ql::options::set("scheduler", "ALAP");
 
@@ -88,7 +88,7 @@ test_diogo2(std::string v, std::string param1, std::string param2, std::string p
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper_s17.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -109,8 +109,8 @@ test_diogo2(std::string v, std::string param1, std::string param2, std::string p
     ql::options::set("maprecNN2q", param2);
     ql::options::set("mapper", param3);
 
-    ql::options::set("clifford_premapper", "no"); 
-    ql::options::set("clifford_postmapper", "no"); 
+    ql::options::set("clifford_premapper", "no");
+    ql::options::set("clifford_postmapper", "no");
     ql::options::set("scheduler_post179", "yes");
     ql::options::set("scheduler", "ALAP");
 
@@ -135,7 +135,7 @@ test_dot(std::string v, std::string param1, std::string param2)
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -151,7 +151,7 @@ test_dot(std::string v, std::string param1, std::string param2)
 
     prog.add(k);
 
-    ql::options::set("mapper", "no"); 
+    ql::options::set("mapper", "no");
 
     ql::options::set("scheduler_post179", param1);
     ql::options::set("scheduler", param2);
@@ -171,7 +171,7 @@ test_rc(std::string v, std::string param1, std::string param2, std::string param
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -201,7 +201,7 @@ test_someNN(std::string v, std::string param1, std::string param2, std::string p
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -254,7 +254,7 @@ test_oneD2(std::string v, std::string param1, std::string param2, std::string pa
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -293,7 +293,7 @@ test_oneD4(std::string v, std::string param1, std::string param2, std::string pa
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -335,7 +335,7 @@ test_string(std::string v, std::string param1, std::string param2, std::string p
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -379,7 +379,7 @@ test_allDopt(std::string v, std::string param1, std::string param2, std::string 
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -476,7 +476,7 @@ test_allD(std::string v, std::string param1, std::string param2, std::string par
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -506,7 +506,7 @@ test_allD2(std::string v, std::string param1, std::string param2, std::string pa
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -593,7 +593,7 @@ test_daniel2(std::string v, std::string param1, std::string param2, std::string 
     float sweep_points[] = { 1, 2 };
 
     ql::quantum_platform starmon("starmon", "test_mapper_s17.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, n);
 
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
@@ -855,7 +855,7 @@ test_lingling5esm(std::string v, std::string param1, std::string param2, std::st
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper_s17.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -1013,7 +1013,7 @@ test_lingling7esm(std::string v, std::string param1, std::string param2, std::st
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper_s17.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -1155,7 +1155,7 @@ test_lingling7sub(std::string v, std::string param1, std::string param2, std::st
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper_s17.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -1311,7 +1311,7 @@ test_maxcut(std::string v, std::string param1, std::string param2, std::string p
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_mapper_rig.json");
-    ql::set_platform(starmon);
+    //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -1360,27 +1360,27 @@ int main(int argc, char ** argv)
     // ql::utils::logger::set_log_level("LOG_NOTHING");
     ql::options::set("unique_output", "yes");
 
-    ql::options::set("write_qasm_files", "yes"); 
-    ql::options::set("write_report_files", "yes"); 
-    ql::options::set("print_dot_graphs", "yes"); 
-    ql::options::set("use_default_gates", "no"); 
+    ql::options::set("write_qasm_files", "yes");
+    ql::options::set("write_report_files", "yes");
+    ql::options::set("print_dot_graphs", "yes");
+    ql::options::set("use_default_gates", "no");
 
-    ql::options::set("clifford_premapper", "yes"); 
-    ql::options::set("mapper", "minextendrc"); 
-    ql::options::set("mapinitone2one", "yes"); 
+    ql::options::set("clifford_premapper", "yes");
+    ql::options::set("mapper", "minextendrc");
+    ql::options::set("mapinitone2one", "yes");
 //parameter1  ql::options::set("maplookahead", "noroutingfirst");
     ql::options::set("mapselectswaps", "all");
-    ql::options::set("initialplace", "no"); 
-    ql::options::set("initialplace2qhorizon", "10"); 
-    ql::options::set("mappathselect", "all"); 
-    ql::options::set("mapusemoves", "yes"); 
+    ql::options::set("initialplace", "no");
+    ql::options::set("initialplace2qhorizon", "10");
+    ql::options::set("mappathselect", "all");
+    ql::options::set("mapusemoves", "yes");
     ql::options::set("mapreverseswap", "yes");
-//parameter3  ql::options::set("mapselectmaxlevel", "0"); 
-//parameter2  ql::options::set("maprecNN2q", "no"); 
-//parameter4  ql::options::set("mapselectmaxwidth", "min"); 
-    ql::options::set("maptiebreak", "random"); 
+//parameter3  ql::options::set("mapselectmaxlevel", "0");
+//parameter2  ql::options::set("maprecNN2q", "no");
+//parameter4  ql::options::set("mapselectmaxwidth", "min");
+    ql::options::set("maptiebreak", "random");
 
-    ql::options::set("clifford_postmapper", "yes"); 
+    ql::options::set("clifford_postmapper", "yes");
     ql::options::set("scheduler_post179", "yes");
     ql::options::set("scheduler", "ALAP");
     ql::options::set("scheduler_commute", "yes");

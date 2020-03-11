@@ -30,10 +30,13 @@ typedef std::string instruction_t;
 namespace ql
 {
 
+#if OPT_MICRO_CODE
 typedef std::string qasm_inst_t;
 typedef std::string ucode_inst_t;
+#endif
 
 typedef std::string string_t;
+#if OPT_CUSTOM_GATE_EXPLICIT_CTOR
 typedef std::vector<std::string> strings_t;
 typedef std::vector<std::string> ucode_sequence_t;      // FIXME: should be removed
 
@@ -42,7 +45,7 @@ typedef enum
     flux_t,
     rf_t
 } instruction_type_t;
-
+#endif
 
 
 #if OPT_MICRO_CODE
@@ -1407,11 +1410,15 @@ class custom_gate : public gate
 {
 public:
     cmat_t              m;                // matrix representation
+#if OPT_CUSTOM_GATE_PARAMETERS
     size_t              parameters;       // number of parameters : single qubit, two qubits ... etc
+#endif
 #if OPT_MICRO_CODE
     ucode_sequence_t    qumis;            // microcode sequence
 #endif
+#if OPT_CUSTOM_GATE_OPERATION_TYPE
     instruction_type_t  operation_type;   // operation type : rf/flux
+#endif
 #if OPT_USED_HARDWARE
     strings_t           used_hardware;    // used hardware
 #endif
@@ -1436,11 +1443,15 @@ public:
         DOUT("Custom gate copy constructor for " << g.name);
         name = g.name;
         creg_operands = g.creg_operands;
+#if OPT_CUSTOM_GATE_PARAMETERS
         parameters = g.parameters;
+#endif
 #if OPT_MICRO_CODE
         qumis.assign(g.qumis.begin(), g.qumis.end());
 #endif
+#if OPT_CUSTOM_GATE_OPERATION_TYPE
         operation_type = g.operation_type;
+#endif
         duration  = g.duration;
 #if OPT_USED_HARDWARE
         used_hardware.assign(g.used_hardware.begin(), g.used_hardware.end());
@@ -1454,14 +1465,18 @@ public:
     /**
      * explicit ctor
      */
+#if OPT_CUSTOM_GATE_EXPLICIT_CTOR   // FIXME
     custom_gate(string_t& name, cmat_t& m,
                 size_t parameters, size_t duration, size_t latency,
                 instruction_type_t& operation_type, ucode_sequence_t& qumis, strings_t hardware) :
-                m(m), parameters(parameters),
+                m(m)
+                , parameters(parameters)
 #if OPT_MICRO_CODE
-                qumis(qumis),
+                , qumis(qumis)
 #endif
-                operation_type(operation_type)
+#if OPT_CUSTOM_GATE_OPERATION_TYPE
+                , operation_type(operation_type)
+#endif
     {
         DOUT("Custom gate explicit constructor for " << name);
         this->name = name;
@@ -1471,7 +1486,10 @@ public:
             used_hardware.push_back(hardware[i]);
 #endif
     }
+#endif
 
+
+#if OPT_CUSTOM_GATE_LOAD    // unused, but see comment in hardware_configuration.h::load_instruction
     /**
      * load from json
      */
@@ -1500,6 +1518,7 @@ public:
         this->name = name;
         load(instr);
     }
+#endif
 
     /**
      * match qubit id
@@ -1533,12 +1552,16 @@ public:
     void load(json& instr)
     {
         DOUT("loading instruction '" << name << "'...");
-        std::string l_attr = "qubits";
+        std::string l_attr = "(none)";
         try
         {
             l_attr = "qubits";
             DOUT("qubits: " << instr["qubits"]);
+#if OPT_CUSTOM_GATE_PARAMETERS
             parameters = instr["qubits"].size();
+#else
+            size_t parameters = instr["qubits"].size();
+#endif
             for (size_t i=0; i<parameters; ++i)
             {
                 std::string qid = instr["qubits"][i];
@@ -1549,10 +1572,14 @@ public:
                 }
                 operands.push_back(qubit_id(qid));
             }
-            // FIXME: code commented out:
+            // FIXME: code was commented out:
+#if OPT_MICRO_CODE
             // ucode_sequence_t ucs = instr["qumis"];
             // qumis.assign(ucs.begin(), ucs.end());
+#endif
+#if OPT_CUSTOM_GATE_OPERATION_TYPE
             // operation_type = instr["type"];
+#endif
             l_attr = "duration";
             duration = instr["duration"];
             DOUT("duration: " << instr["duration"]);
@@ -1562,6 +1589,7 @@ public:
             // used_hardware.assign(hdw.begin(), hdw.end());
 #endif
             l_attr = "matrix";
+            // FIXME: make matrix optional, default to NaN
             auto mat = instr["matrix"];
             DOUT("matrix: " << instr["matrix"]);
             m.m[0] = complex_t(mat[0][0], mat[0][1]);
@@ -1586,7 +1614,9 @@ public:
     {
         println("[-] custom gate : ");
         println("    |- name     : " << name);
+#if OPT_CUSTOM_GATE_PARAMETERS
         println("    |- n_params : " << parameters);
+#endif
         utils::print_vector(operands,"[openql]     |- qubits   :"," , ");
         println("    |- duration : " << duration);
         println("    |- matrix   : [" << m.m[0] << ", " << m.m[1] << ", " << m.m[2] << ", " << m.m[3] << "]");

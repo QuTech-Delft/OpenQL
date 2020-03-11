@@ -210,7 +210,7 @@ public:
             }
         }
 
-        // FIXME: code commented out
+        // FIXME: code commented out: unfinished alias support (TBC)
         // // load aliases
         // if (config.count("aliases") > 0)
         // {
@@ -241,9 +241,11 @@ public:
         // }
     }
 
+private:
     /**
      * load_instruction
      */
+    // FIXME: replace by gate.h::custom_gate(std::string& name, json& instr)
     ql::custom_gate * load_instruction(std::string name, json& instr)
     {
         custom_gate * g = new custom_gate(name);
