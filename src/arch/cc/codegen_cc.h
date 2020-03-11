@@ -49,8 +49,8 @@ private: // types
     } tGroupInfo;
 
     typedef struct {
-        json node;
-        std::string path;
+        json node;              // a copy of the node found
+        std::string path;       // path of the node, for reporting purposes
     } tJsonNodeInfo;
 
 public:

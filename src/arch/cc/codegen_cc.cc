@@ -38,7 +38,7 @@ void codegen_cc::init(const ql::quantum_platform &platform)
     if(map_input_file != "") {
         DOUT("loading map_input_file='" << map_input_file << "'");
         json map = ql::load_json(map_input_file);
-        codewordTable = map["codeword_table"];
+        codewordTable = map["codeword_table"];      // FIXME: use json_get
         mapPreloaded = true;
     }
 }
@@ -171,9 +171,10 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
 
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<jsonInstruments->size(); instrIdx++) {
-        const json &instrument = (*jsonInstruments)[instrIdx];
-        std::string instrumentName = instrument["name"];
-        int slot = instrument["controller"]["slot"];    // FIXME: assuming controller being cc
+        const json &jsonInstrument = (*jsonInstruments)[instrIdx];      // NB: always exists
+        std::string instrumentName = json_get<std::string>(jsonInstrument, "name", SS2S("instruments["<<instrIdx<<"]"));
+        JSON_ASSERT(jsonInstrument, "controller", instrumentName);
+        int slot = json_get<int>(jsonInstrument["controller"], "slot", instrumentName+"/controller");    // FIXME: assuming controller being cc
 
         // collect info for all groups within slot, i.e. one connected instrument
         // FIXME: the term 'group' is used in a diffused way: 1) index of signal vectors, 2) ...
@@ -186,11 +187,11 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
             if(groupInfo[instrIdx][group].signalValue != "") {              // signal defined, i.e.: we need to output something
                 isSlotUsed = true;
 
-                // FIXME: check existence of keys below to ease end user debugging on configuration errors
                 // find control mode & bits for instrument&group
-                std::string controlModeRef = instrument["ref_control_mode"];
-                const json &controlMode = (*jsonControlModes)[controlModeRef];      // the control mode definition for our instrument
-                size_t nrControlBitsGroups = controlMode["control_bits"].size();    // how many groups of control bits does the control mode specify
+                std::string controlModeRef = json_get<std::string>(jsonInstrument, "ref_control_mode", instrumentName);
+                JSON_ASSERT(*jsonControlModes, controlModeRef, "control_modes")
+                const json &jsonControlMode = (*jsonControlModes)[controlModeRef];      // the control mode definition for our instrument
+                size_t nrControlBitsGroups = jsonControlMode["control_bits"].size();    // how many groups of control bits does the control mode specify
                 // determine which group to use
                 size_t controlModeGroup = -1;
                 if(nrControlBitsGroups == 1) {                  // vector mode: group addresses channel within vector
@@ -201,10 +202,10 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                     FATAL("instrument '" << instrumentName
                           << "' uses " << nrGroups
                           << " groups, but control mode '" << controlModeRef
-                          << "' only defines " << nrControlBitsGroups);
+                          << "' only defines " << nrControlBitsGroups
+                          << " groups in 'control_bits'");
                 }
-
-                const json &groupControlBits = controlMode["control_bits"][controlModeGroup];
+                const json &groupControlBits = jsonControlMode["control_bits"][controlModeGroup];
 
 
                 // find or create codeword/mask fragment for this group
@@ -252,13 +253,13 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                 digOut |= groupDigOut;
 
                 // add trigger to digOut
-                size_t nrTriggerBits = controlMode["trigger_bits"].size();
+                size_t nrTriggerBits = jsonControlMode["trigger_bits"].size();
                 if(nrTriggerBits == 0) {         // no trigger
                     // do nothing
                 } else if(nrTriggerBits == 1) {  // single trigger for all groups
-                    digOut |= 1 << (int)controlMode["trigger_bits"][0];
+                    digOut |= 1 << (int)jsonControlMode["trigger_bits"][0];
                 } else {                        // trigger per group
-                    digOut |= 1 << (int)controlMode["trigger_bits"][group];
+                    digOut |= 1 << (int)jsonControlMode["trigger_bits"][group];
                     // FIXME: check validity of nrTriggerBits
                 }
 
@@ -270,8 +271,8 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                 // NB: this does not allow for readout without signal generation (by the same instrument), which might be needed in the future
                 // FIXME: move out of this loop
                 // FIXME: test for groupInfo[instrIdx][group].readoutCop >= 0
-                if(JSON_EXISTS(controlMode, "result_bits")) {                               // this instrument mode produces results
-                    const json &resultBits = controlMode["result_bits"][group];
+                if(JSON_EXISTS(jsonControlMode, "result_bits")) {                               // this instrument mode produces results
+                    const json &resultBits = jsonControlMode["result_bits"][group];
                     size_t nrResultBits = resultBits.size();
                     if(nrResultBits == 1) {                     // single bit
                         digIn |= 1<<(int)resultBits[0];         // NB: we assume the result is active high, which is correct for UHF-QC
@@ -287,7 +288,7 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                         }
 #endif
                     } else {    // NB: nrResultBits==0 will not arrive at this point
-                        std::string controlModeName = controlMode;                          // convert to string
+                        std::string controlModeName = jsonControlMode;                      // convert to string
                         FATAL("JSON key '" << controlModeName << "/result_bits' must have 1 bit per group");
                     }
                 }
@@ -774,6 +775,7 @@ void codegen_cc::load_backend_settings()
 #if OPT_CALCULATE_LATENCIES
 const json &codegen_cc::findInstrumentDefinition(const std::string &name)
 {
+    // FIXME: use json_get
     if JSON_EXISTS(*jsonInstrumentDefinitions, name) {
         return (*jsonInstrumentDefinitions)[name];
     } else {
@@ -847,7 +849,7 @@ codegen_cc::tJsonNodeInfo codegen_cc::findSignalDefinition(const json &instructi
         }
         signalInfo.path = "signals/"+refSignal;
     } else {                                                                    // alternative syntax: "signal"
-        signalInfo.node = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");   // FIXME: return json& ?
+        signalInfo.node = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");
         DOUT("signal for '" << instruction << "': " << signalInfo.node);
         signalInfo.path = instructionPath+"/cc/signal";
     }
