@@ -646,7 +646,7 @@ void codegen_cc::latencyCompensation()
             SS2S("# latency compensation").c_str());    // FIXME: add instrumentName/instrumentRef/latency
     }
 #else   // user settable delay via register
- #if 0  // original seq_bar semantics
+ #if OPT_OLD_SEQBAR_SEMANTICS  // original seq_bar semantics
         // FIXME: is 'seq_bar 1' safe in the sense that we will never get an empty queue?
         emit("",                "add",      "R63,1,R0",         "# R63 externally set by user, prevent 0 value which would wrap counter");
         emit("",                "seq_bar",  "20",               "# synchronization");
