@@ -203,9 +203,6 @@ const complex_t nop_c      [] /*__attribute__((aligned(64)))*/ =
 class gate
 {
 public:
-#if OPT_UNFINISHED_OPTIMIZATION
-    bool optimization_enabled = true;
-#endif
     std::string name = "";
     std::vector<size_t> operands;
     std::vector<size_t> creg_operands;
