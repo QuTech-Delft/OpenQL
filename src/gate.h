@@ -1228,26 +1228,7 @@ public:
 #endif
 
 
-#if OPT_CUSTOM_GATE_LOAD    // unused, but see comment in hardware_configuration.h::load_instruction
-    /**
-     * load from json
-     */
-    custom_gate(string_t name, string_t& file_name)
-    {
-        DOUT("Custom gate load from json file for " << name);
-        this->name = name;
-        std::ifstream f(file_name);
-        if (f.is_open())
-        {
-            json instr;
-            f >> instr;
-            load(instr);
-            f.close();
-        }
-        else
-            EOUT("json file not found !");
-    }
-
+#if 0    // FIXME: unused, but see comment in hardware_configuration.h::load_instruction
     /**
      * load instruction from json map
      */
