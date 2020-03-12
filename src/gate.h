@@ -1174,9 +1174,6 @@ public:
 #if OPT_CUSTOM_GATE_OPERATION_TYPE
     instruction_type_t  operation_type;   // operation type : rf/flux
 #endif
-#if OPT_USED_HARDWARE
-    strings_t           used_hardware;    // used hardware
-#endif
     std::string         arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
 
 public:
@@ -1205,9 +1202,6 @@ public:
         operation_type = g.operation_type;
 #endif
         duration  = g.duration;
-#if OPT_USED_HARDWARE
-        used_hardware.assign(g.used_hardware.begin(), g.used_hardware.end());
-#endif
         m.m[0] = g.m.m[0];
         m.m[1] = g.m.m[1];
         m.m[2] = g.m.m[2];
@@ -1230,10 +1224,6 @@ public:
         DOUT("Custom gate explicit constructor for " << name);
         this->name = name;
         this->duration = duration;
-#if OPT_USED_HARDWARE
-        for (size_t i=0; i<hardware.size(); i++)
-            used_hardware.push_back(hardware[i]);
-#endif
     }
 #endif
 
@@ -1327,11 +1317,6 @@ public:
             l_attr = "duration";
             duration = instr["duration"];
             DOUT("duration: " << instr["duration"]);
-#if OPT_USED_HARDWARE
-            // FIXME: code commented out:
-            // strings_t hdw = instr["hardware"];
-            // used_hardware.assign(hdw.begin(), hdw.end());
-#endif
             l_attr = "matrix";
             // FIXME: make matrix optional, default to NaN
             auto mat = instr["matrix"];

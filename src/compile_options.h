@@ -2,7 +2,6 @@
 #define _QL_COMPILE_OPTIONS_H
 
 // the options below actually do not change the Python API at all if disabled
-#define OPT_USED_HARDWARE               0   // inclusion of custom_gate::used_hardware, which isn't really used
 #define OPT_CUSTOM_GATE_LOAD            0   // inclusion of custom_gate::load, which isn't really used
 #define OPT_CUSTOM_GATE_OPERATION_TYPE  0   // inclusion of custom_gate::operation_type, which isn't really used
 #define OPT_CUSTOM_GATE_EXPLICIT_CTOR   0   // inclusion of custom_gate::custom_gate(everything), which isn't really used

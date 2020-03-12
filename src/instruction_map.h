@@ -110,10 +110,6 @@ inline int load_instructions(instruction_map_t& instruction_map, std::string fil
         instruction_type_t type = (t == "rf" ? rf_t : flux_t );
         g->operation_type = type;
         g->duration = instr["duration"];
-#if OPT_USED_HARDWARE
-        strings_t hdw = instr["hardware"];
-        g->used_hardware.assign(hdw.begin(), hdw.end());
-#endif
         auto mat = instr["matrix"];
         g->m.m[0] = complex_t(mat[0][0], mat[0][1]);
         g->m.m[1] = complex_t(mat[1][0], mat[1][1]);
