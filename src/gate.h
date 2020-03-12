@@ -1171,9 +1171,6 @@ public:
 #if OPT_CUSTOM_GATE_PARAMETERS
     size_t              parameters;       // number of parameters : single qubit, two qubits ... etc
 #endif
-#if OPT_CUSTOM_GATE_OPERATION_TYPE
-    instruction_type_t  operation_type;   // operation type : rf/flux
-#endif
     std::string         arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
 
 public:
@@ -1198,9 +1195,6 @@ public:
 #if OPT_CUSTOM_GATE_PARAMETERS
         parameters = g.parameters;
 #endif
-#if OPT_CUSTOM_GATE_OPERATION_TYPE
-        operation_type = g.operation_type;
-#endif
         duration  = g.duration;
         m.m[0] = g.m.m[0];
         m.m[1] = g.m.m[1];
@@ -1217,9 +1211,6 @@ public:
                 instruction_type_t& operation_type, ucode_sequence_t& qumis, strings_t hardware) :
                 m(m)
                 , parameters(parameters)
-#if OPT_CUSTOM_GATE_OPERATION_TYPE
-                , operation_type(operation_type)
-#endif
     {
         DOUT("Custom gate explicit constructor for " << name);
         this->name = name;
@@ -1292,9 +1283,6 @@ public:
                 }
                 operands.push_back(qubit_id(qid));
             }
-#if OPT_CUSTOM_GATE_OPERATION_TYPE
-            // operation_type = instr["type"];
-#endif
             l_attr = "duration";
             duration = instr["duration"];
             DOUT("duration: " << instr["duration"]);
