@@ -1,9 +1,6 @@
 #ifndef _QL_COMPILE_OPTIONS_H
 #define _QL_COMPILE_OPTIONS_H
 
-// deprecation options, should be removed in the future.
-#define OPT_MICRO_CODE                  0   // enable old support for CBOX microcode
-
 // the options below actually do not change the Python API at all if disabled
 #define OPT_TARGET_PLATFORM             0   // use target_platform, which is not actually used
 #define OPT_UNFINISHED_OPTIMIZATION     0   // enable unfinished optimization that actually did nothing

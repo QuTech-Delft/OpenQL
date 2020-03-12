@@ -18,16 +18,7 @@
 
 namespace ql
 {
-
-#if OPT_MICRO_CODE
-typedef std::string qasm_inst_t;
-typedef std::string ucode_inst_t;
-#endif
-
 typedef std::map<std::string, ql::custom_gate *> instruction_map_t;
-#if OPT_MICRO_CODE
-typedef std::map<qasm_inst_t, ucode_inst_t> dep_instruction_map_t;
-#endif
 
 
 namespace utils
@@ -115,10 +106,6 @@ inline int load_instructions(instruction_map_t& instruction_map, std::string fil
         custom_gate * g = new custom_gate(instruction_name);
         g->name = instruction_name; // instr["name"];
         g->parameters = instr["parameters"];
-#if OPT_MICRO_CODE
-        ucode_sequence_t ucs = instr["qumis"];
-        g->qumis.assign(ucs.begin(), ucs.end());
-#endif
         std::string t = instr["type"];
         instruction_type_t type = (t == "rf" ? rf_t : flux_t );
         g->operation_type = type;

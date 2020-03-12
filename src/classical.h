@@ -311,13 +311,6 @@ public:
             return name + iopers;
     }
 
-#if OPT_MICRO_CODE
-    instruction_t micro_code()
-    {
-        return ql::dep_instruction_map["nop"];
-    }
-#endif
-
     gate_type_t type()
     {
         return __classical_gate__;

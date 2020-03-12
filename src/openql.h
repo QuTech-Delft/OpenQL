@@ -19,14 +19,6 @@ namespace ql
  * openql types
  */
 
-#if OPT_MICRO_CODE
-/**
- * configurable instruction map
- */
-/* static */ dep_instruction_map_t dep_instruction_map;
-#endif
-
-
 #if OPT_TARGET_PLATFORM
 // target platform
 ql::quantum_platform           target_platform;

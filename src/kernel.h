@@ -112,9 +112,6 @@ public:
         for (instruction_map_t::iterator i=instruction_map.begin(); i!=instruction_map.end(); i++)
         {
             COUT("[-] gate '" << i->first << "'");
-#if OPT_MICRO_CODE
-            COUT(" |- qumis : \n" << i->second->micro_code());
-#endif
         }
     }
 #endif // OPT_LACKS_SWIG_INTERFACE
@@ -1161,27 +1158,6 @@ public:
     {
         c.push_back(new ql::classical(operation));
     }
-
-#if OPT_MICRO_CODE
-    /**
-     * micro code
-     */
-    std::string micro_code()
-    {
-        std::stringstream ss;
-        // ss << "." << name;
-        // if (iterations > 1)
-        // ss << "(" << iterations << ")\n";
-        // else
-        // ss << "\n";
-        for (size_t i=0; i<c.size(); ++i)
-        {
-            ss << c[i]->micro_code() << "\n";
-            // std::cout << c[i]->qasm() << std::endl;
-        }
-        return ss.str();
-    }
-#endif
 
     void optimize()
     {
