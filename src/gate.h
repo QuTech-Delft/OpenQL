@@ -30,17 +30,6 @@ typedef std::string instruction_t;
 namespace ql
 {
 typedef std::string string_t;
-#if OPT_CUSTOM_GATE_EXPLICIT_CTOR
-typedef std::vector<std::string> strings_t;
-typedef std::vector<std::string> ucode_sequence_t;      // FIXME: should be removed
-
-typedef enum
-{
-    flux_t,
-    rf_t
-} instruction_type_t;
-#endif
-
 
 // gate types
 typedef enum __gate_type_t
@@ -1201,22 +1190,6 @@ public:
         m.m[2] = g.m.m[2];
         m.m[3] = g.m.m[3];
     }
-
-    /**
-     * explicit ctor
-     */
-#if OPT_CUSTOM_GATE_EXPLICIT_CTOR   // FIXME
-    custom_gate(string_t& name, cmat_t& m,
-                size_t parameters, size_t duration, size_t latency,
-                instruction_type_t& operation_type, ucode_sequence_t& qumis, strings_t hardware) :
-                m(m)
-                , parameters(parameters)
-    {
-        DOUT("Custom gate explicit constructor for " << name);
-        this->name = name;
-        this->duration = duration;
-    }
-#endif
 
 
 #if 0    // FIXME: unused, but see comment in hardware_configuration.h::load_instruction
