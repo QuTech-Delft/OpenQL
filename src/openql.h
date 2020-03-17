@@ -32,14 +32,13 @@ namespace ql
 ql::quantum_platform           target_platform;
 #endif
 
+#if OPT_TARGET_PLATFORM
+// NB: set_plaform is already removed from SWIG interface
 void set_platform(ql::quantum_platform platform)
 {
-#if OPT_TARGET_PLATFORM
     target_platform = platform;
-#else
-    WOUT("set_platform() is not necessary and will therefore be deprecated");
-#endif
 }
+#endif
 }
 
 #endif // OPENQL_H
