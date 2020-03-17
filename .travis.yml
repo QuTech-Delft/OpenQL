@@ -1,0 +1,43 @@
+language: python
+sudo: false
+dist: xenial
+
+os:
+  - linux
+
+python:
+  - "3.6"
+
+cache: pip
+
+before_install:
+  - python --version
+  - pip install -U pip
+  - pip install -U pytest
+
+install:
+  - cd deps
+  - git clone https://github.com/QE-Lab/libqasm.git
+  - cd libqasm
+  - pip install . 
+  - cd ..
+  - git clone https://github.com/QE-Lab/eQASM_Assembler.git
+  - cd eQASM_Assembler/qisa-as
+  - git checkout development
+  - python setup.py install
+  - cd ../../../.
+  - pip install .
+
+script: pytest
+
+addons:
+  apt:
+    packages:
+      - swig
+      - flex
+      - bison
+  homebrew:
+    packages:
+      - swig
+      - cmake
+    update: true
