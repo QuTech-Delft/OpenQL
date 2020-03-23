@@ -450,7 +450,7 @@ What needs to be done when multiple alternatives compare equal, is specified lat
   - ``no:``
     no mapping is done. The output circuit is identical to the input circuit.
 
-  - ``base:``
+  - ``base`` and ``baserc:``
     map the circuit:
     use as metric just the length of the paths between the mapped operands of each two-qubit gate,
     and minimize this length for each two-qubit gate that is mapped;
@@ -472,8 +472,35 @@ What needs to be done when multiple alternatives compare equal, is specified lat
     map the circuit:
     as in ``minextend``, but taking resource constraints into account when scheduling-in the swaps/moves.
 
-When after evaluating the metric for each alternative, multiple alternatives remain,
-a selection is made based on the value of the following option:
+After having evaluated the metric for each alternative, multiple alternatives may remain, all with the best value.
+For the ``minextend`` and ``minextendrc`` strategies, there are options to select from these by looking ahead further,
+i.e. beyond the metric evaluation of this alternative for mapping one two-qubit gate.
+This ``recursion`` assumes that the current alternative is selected, its swaps/moves are added to the circuit
+the ``v2r`` map is updated, and the availability set is updated.
+And then in this new situation the implementation recurses
+by selecting one or more two-qubit gates to map next, generating alternatives, evaluating these alternatives
+against the metric, and deciding which alternatives are the best.
+This recursion can go deeper and deeper until a particular depth has been reached..
+Then of the resulting tree of alternatives, for all the leaves representing the deepest alternatives,
+the metric is computed from the root to the leaf and compared to each other.
+From these leaves, the best is taken; when multiple alternatives compare equally well from root to leaf,
+the ``maptiebreak`` option decides which one to take, as usual.
+
+The following options control the recursion:
+
+- ``mapselectmaxlevel:``
+  TBD HERE
+
+- ``mapselectmaxwidth:``
+  TBD
+
+- ``maprecNN2q:``
+  TBD
+
+With or without recursion, for ``base``` strategy as well as for the ``minextend`` and ``minextendrc`` strategies,
+when at the end multiple alternatives compare equally well, a decision has to be taken which two-qubit gate
+to route and map next.
+This selection is made based on the value of the following option:
 
 - ``maptiebreak:``
   When multiple alternatives remain for a particular strategy with the same best evaluation value,
@@ -584,16 +611,6 @@ This scheduling-in is controlled by the following options:
     when scheduling a SWAP,
     exploiting the knowledge that the execution of a SWAP for one of the qubits starts one cycle later,
     a reversal of the real qubit operands might allow scheduling it one cycle earlier
-
-Recursion:
-
-HERE
-
-- ``mapselectmaxlevel:``
-
-- ``mapselectmaxwidth:``
-
-- ``maprecNN2q:``
 
 
 
