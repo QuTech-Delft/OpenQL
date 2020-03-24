@@ -28,8 +28,8 @@ both are available after each of the two mapping passes.
   This module essentially transforms each circuit in a linear scan over the circuit,
   from start to end, maintaining the ``v2r`` and ``rs`` maps.
   Each time that it encounters a two-qubit gate that in the current map is not NN,
-  it inserts SWAP gates before this gate that make the operand qubits NN (this is called ``routing`` the qubits);
-  when inserting a SWAP, it updates the ``v2r`` and ``rs`` maps accordingly.
+  it inserts ``swap`` gates before this gate that make the operand qubits NN (this is called ``routing`` the qubits);
+  when inserting a ``swap``, it updates the ``v2r`` and ``rs`` maps accordingly.
   There are many refinements to this algorithm that can be controlled through options and the configuration file.
   The module will find the minimum number of swaps to make the mapped operands of each two-qubit gate NN
   in the mapping that applies just before it.
@@ -145,7 +145,7 @@ if the configuration file contains a definition for a gate with the name of the 
 then that one is created and replaces the original gate.
 Note that when this created gate is defined in the ``gate_decomposition`` section,
 the net effect is that the specified decomposition is done.
-When a SWAP or MOVE gate is created to be inserted in the circuit, first a ``swap_real`` (or ``move_real``) is attempted
+When a ``swap`` or ``move`` gate is created to be inserted in the circuit, first a ``swap_real`` (or ``move_real``) is attempted
 to be created instead before creating a ``swap`` or ``move``; this also allows the gate to be decomposed to more primitive
 gates during mapping.
 
@@ -231,7 +231,7 @@ Before anything else, for each kernel again, the ``v2r`` and ``rs`` are initiali
 
   - ``yes`` (best):
     each real qubit is assumed to be in a zero state (e.g. ``|0>``)
-    that allows a SWAP with it to be replaced by a (cheaper) MOVE;
+    that allows a ``swap`` with it to be replaced by a (cheaper) ``move``;
     this corresponds to the state with value ``rs_wasinited``.
 
 Initial Placement
@@ -303,7 +303,7 @@ Subsequently the ``Heuristics`` start for the kernel given in the ``Map`` method
 - The scheduler's dependence graph is used to feed the Heuristics with gates to map and to look-ahead:
   see :ref:`mapping_dependence_graph`.
 
-- To map a non-NN two-qubit gate, various routing alternatives, to be implemented by SWAP/MOVE sequences, are generated:
+- To map a non-NN two-qubit gate, various routing alternatives, to be implemented by ``swap``/``move`` sequences, are generated:
   see :ref:`mapping_generating_routing_alternatives`.
 
 - Depending on the metric chosen, the alternatives are evaluated:
@@ -335,14 +335,14 @@ The mapper listens to the following scheduler options:
 
 - ``scheduler_commute``:
   Because the mapper uses the dependence graph that is also generated for the scheduler,
-  the alternatives that are made available by commutation of CZs/CNOTs, can be made available to the mapper:
+  the alternatives that are made available by commutation of ``cz``s/``cnot``s, can be made available to the mapper:
 
   - ``no`` (default for backward-compatibility):
-    don’t allow two-qubit gates to commute (CZ/CNOT) in the dependence graph;
+    don’t allow two-qubit gates to commute (``cz``/``cnot``) in the dependence graph;
     they are kept in original circuit order and presented to the mapper in this order
 
   - ``yes`` (best):
-    allow commutation of two-qubit CZ/CNOT gates;
+    allow commutation of two-qubit ``cz``/``cnot`` gates;
     e.g. when one isn't nearest-neighbor
     but one that comes later in the circuit but commutes  with the earlier one is NN now,
     allow the later one to be mapped before the earlier one
@@ -440,7 +440,7 @@ a rectangle in the grid with the mapped qubit operands at opposite sides of the 
 A shortest distance leads to a minimal number of swaps/moves.
 For each route between qubits at a distance ``d``,
 there are furthermore ``d`` possible places in the route where to do the two-qubit gate;
-the other ``d-1`` places in the route will be a SWAP or a MOVE.
+the other ``d-1`` places in the route will be a ``swap`` or a ``move``.
 
 The implementation supports an arbitrarily formed connection graph, so not only a rectangular grid.
 All that matter are the distances between the qubits.
@@ -533,14 +533,14 @@ To know the circuit's latency extension of an alternative,
 the mapped gates are represented as a scheduled circuit, i.e. with gates with a defined ``cycle`` attribute,
 and the gates ordered in the circuit with non-decreasing ``cycle`` value.
 In case the ``mapper`` option has the ``minextendrc`` value, also the state of all resources is maintained.
-When a SWAP or MOVE gate is added, it is ASAP scheduled (optionally taking the resource constraints into account)
+When a ``swap`` or ``move`` gate is added, it is ASAP scheduled (optionally taking the resource constraints into account)
 into the circuit and the corresponding cycle value is assigned to the ``cycle`` attribute of the added gate.
-Note that when SWAP or MOVE is defined by a composite gate, the decomposed sequence is scheduled-in instead.
+Note that when ``swap`` or ``move`` is defined by a composite gate, the decomposed sequence is scheduled-in instead.
 
-The objective of this is to maximize the parallel execution of gates and especially SWAPS/MOVES.
+The objective of this is to maximize the parallel execution of gates and especially ``swap``s/``move``s.
 Indeed, the smaller the latency extension of a circuit, the more parallelism was created,
 i.e. the more the ILP was enlarged.
-When SWAPS/MOVES are not inserted as primitive gates
+When ``swap``s/``move``s are not inserted as primitive gates
 but the equivalent decomposed sequences are inserted, ILP will be improved even more.
 
 This scheduling-in is done separately for each alternative: for each alternative, the swaps/moves are added
@@ -549,19 +549,19 @@ and the end-result evaluated.
 This scheduling-in is controlled by the following options:
 
 - ``mapusemoves``:
-  Use MOVE instead of SWAP where possible.
-  In the current implementation, a MOVE is implemented as a sequence of two CNOTs
-  while a SWAP is implemented as a sequence of three CNOTs.
+  Use ``move`` instead of ``swap`` where possible.
+  In the current implementation, a ``move`` is implemented as a sequence of two ``cnot``s
+  while a ``swap`` is implemented as a sequence of three ``cnot``s.
 
   - ``no``:
     don't
 
   - ``yes`` (default, best):
-    do, when swapping with an ancillary qubit which is known to be in the zero state (``|0>`` for moves with 2 CNOTs);
+    do, when swapping with an ancillary qubit which is known to be in the zero state (``|0>`` for moves with 2 ``cnot``s);
     when not in the initial state,
     insert a ``move_init`` sequence (when defined in the configuration file, the defined sequence,
     otherwise a prepz followed by a hadamard) when it doesn't additionally extend the circuit;
-    when a ``move_init`` sequence would extend the circuit, don't insert the MOVE
+    when a ``move_init`` sequence would extend the circuit, don't insert the ``move``
 
   - ``0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20``:
     yes, and insert a ``move_init`` sequence to get the ancillary qubit in the initial state, if needed;
@@ -571,20 +571,20 @@ This scheduling-in is controlled by the following options:
     Please note that the ``mapassumezeroinitstate`` option defines whether the implementation of the mapper
     can assume that each qubit starts off in the initial state;
     this increases the likelihood that moves are inserted,
-    and makes all these considerations of only inserting a MOVE
+    and makes all these considerations of only inserting a ``move``
     when a ``move_init`` can bring the ancillary qubit in the initial state somehow
     without additional circuit extension, of no use.
 
 - ``mapprepinitsstate``:
-  Does a PREPZ initialize the state, i.e. leave the state of a qubit in the ``|0>`` state?
+  Does a ``prepz`` initialize the state, i.e. leave the state of a qubit in the ``|0>`` state?
   When so, this can be reflected in the ``rs`` map.
 
   - ``no`` (default, playing safe):
-    no, it doesn't; a PREPZ during mapping will, as any other quantum gate,
+    no, it doesn't; a ``prepz`` during mapping will, as any other quantum gate,
     set the state of the operand qubits to ``rs_hasstate`` in the ``rs`` map
 
   - ``yes`` (best):
-    a PREPZ during mapping will set the state of the operand qubits to ``rs_wasinited``;
+    a ``prepz`` during mapping will set the state of the operand qubits to ``rs_wasinited``;
     any other gate will set the state of the operand qubits to ``rs_hasstate``
 
 - ``mapselectswaps``:
@@ -602,25 +602,25 @@ This scheduling-in is controlled by the following options:
     insert all swaps/moves as usual
 
   - ``one``:
-    insert only one SWAP/MOVE; take the one swapping/moving the mapped first operand qubit
+    insert only one ``swap``/``move``; take the one swapping/moving the mapped first operand qubit
 
   - ``earliest``:
-    insert only one SWAP/MOVE; take the one that can be scheduled earliest
+    insert only one ``swap``/``move``; take the one that can be scheduled earliest
     from the one swapping/moving the mapped first operand qubit
     and the one swapping/moving the mapped second operand qubit
 
 - ``mapreverseswap``:
-  Since SWAP is symmetrical in effect (the states of the qubits are exchanged)
+  Since ``swap`` is symmetrical in effect (the states of the qubits are exchanged)
   but not in implementation (the gates on the second operand start one cycle earlier and end one cycle later),
-  interchanging the operands may cause a SWAP to be scheduled at different cycles.
-  Reverse operand real qubits of SWAP when beneficial:
+  interchanging the operands may cause a ``swap`` to be scheduled at different cycles.
+  Reverse operand real qubits of ``swap`` when beneficial:
 
   - ``no``:
     don't
 
   - ``yes`` (best, default):
-    when scheduling a SWAP,
-    exploiting the knowledge that the execution of a SWAP for one of the qubits starts one cycle later,
+    when scheduling a ``swap``,
+    exploiting the knowledge that the execution of a ``swap`` for one of the qubits starts one cycle later,
     a reversal of the real qubit operands might allow scheduling it one cycle earlier
 
 
@@ -737,7 +737,7 @@ This selection is made based on the value of the following option:
     select the first of the alternatives generated for the most critical two-qubit gate (when there were more)
 
 Having selected a single best alternative, the decision has been made to route and map its corresponding two-qubit gate.
-This means, scheduling in the result circuit the SWAPs/MOVEs that route the mapped operand qubits,
+This means, scheduling in the result circuit the ``swap``s/``move``s that route the mapped operand qubits,
 updating the ``v2r`` and ``rs`` maps on the fly; 
 see :ref:`mapping_look_back` for the details of this scheduling.
 And then map the two-qubit gate;
@@ -763,16 +763,16 @@ The configuration file contains the following sections that are recognized by th
    when creating a gate matching an entry in this section, the set of gates specified by the decomposition description of the entry is created instead; the mapper exploits the decomposition support that the configuration file offers by this section in the following way:
 
    - ``reading the circuit``
-     When a gate specified as a composite gate is created in an OpenQL program, its decomposition is created instead. So a CNOT in the OpenQL program but specified as two unary gate with a CZ in the middle, is input by the mapper as this latter sequence.
+     When a gate specified as a composite gate is created in an OpenQL program, its decomposition is created instead. So a ``cnot`` in the OpenQL program but specified as two unary gate with a ``cz`` in the middle, is input by the mapper as this latter sequence.
 
    - ``swap support``
-     A SWAP is a composite gate, usually consisting of 3 CNOTs; those CNOTs usually are decomposed to a sequence of gates itself. The mapper supports generating SWAP as a primitive; or generating its shallow decomposition (e.g. to CNOTs); or generating its full decomposition (e.g. to the primitive gate set). The former leads to a more readable intermediate qasm file; the latter to more precise evaluation of the mapper selection criteria. Relying on the configuration file, when generating a SWAP, the mapper first attempts to create a gate with the name ``swap_real``, and when that fails, create a gate with the name ``swap``. The same machinery is used to create a MOVE.
+     A ``swap`` is a composite gate, usually consisting of 3 ``cnot``s; those ``cnot``s usually are decomposed to a sequence of gates itself. The mapper supports generating ``swap`` as a primitive; or generating its shallow decomposition (e.g. to ``cnot``s); or generating its full decomposition (e.g. to the primitive gate set). The former leads to a more readable intermediate qasm file; the latter to more precise evaluation of the mapper selection criteria. Relying on the configuration file, when generating a ``swap``, the mapper first attempts to create a gate with the name ``swap_real``, and when that fails, create a gate with the name ``swap``. The same machinery is used to create a ``move``.
 
    - ``making gates real``
      Each gate input to the mapper is a virtual gate, defined to operate on virtual qubits. After mapping, the output gates are real gates, operating on real qubits. Making gates real is the translation from the former to the latter. This is usually done by replacing the virtual qubits by their corresponding real qubits. But support is provided to also replace the gate itself: when a gate is made real, the mapper first tries to create a gate with the same name but with ``_real`` appended to its name (and using the mapped, real qubits); if that fails, it keeps the original gate and uses that (with the mapped, real qubits) in the result circuit.
 
    - ``ancilliary initialization``
-     For a MOVE to be done instead of a SWAP, the target qubit must be in a particular state. For CC-LIGHT this is the ``|+>`` state. To support other target platforms, the ``move_init`` gate is defined to prepare a qubit in that state for the particular target platform. It decomposes to a PREPZ followed by a Hadamard for CC-LIGHT.
+     For a ``move`` to be done instead of a ``swap``, the target qubit must be in a particular state. For CC-Light this is the ``|+>`` state. To support other target platforms, the ``move_init`` gate is defined to prepare a qubit in that state for the particular target platform. It decomposes to a ``prepz`` followed by a ``Hadamard`` for CC-Light.
 
    - ``making all gates primitive``
      After mapping, the output gates will still have to undergo a final schedule with resource constraints before code can be generated for them. Best results are obtained when then all gates are primitive. The mapper supports a decomposition step to make that possible and this is typically used to decompose leftover swaps and moves to primitives: when a gate is made primitive, the mapper first tries to create a gate with the same name but with ``_prim`` appended to its name; if that fails, it keeps the original gate and uses that in the result circuit that is input to the scheduler.
