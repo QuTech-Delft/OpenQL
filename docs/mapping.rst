@@ -92,13 +92,13 @@ among which the scheduler class for obtaining the dependence graph.  The followi
     This vector shows the state after initialization of the mapper and before initial placement and/or the heuristics.
     State values can be:
     
-    - ``rs_nostate:``
+    - ``rs_nostate``:
       no statically known quantum state and no dynamically useful quantum state to preserve
       
-    - ``rs_wasinited:``
+    - ``rs_wasinited``:
       known to be in zero base state (``|0>``)
 
-    - ``rs_hasstate:``
+    - ``rs_hasstate``:
       useful but statically unknown quantum state; must be preserved
     
   - ``v2r_ip``
@@ -182,7 +182,7 @@ Most if not all options can be combined to compose a favorite mapping strategy, 
 With the options, also the effects that they have on the function of the mapper are described.
 
 The options and function are described in the order of their virtual encountering by a particular gate that is mapped.
-Please remember that the heuristic essentially performs a linear scan over the gates of the circuit
+Please remember that the heuristics essentially perform a linear scan over the gates of the circuit
 to route the qubits, map and transform the gates.
 
 Initialization and configuration
@@ -206,30 +206,30 @@ Subsequently, ``Map`` is called for each kernel/circuit in the program.
 It will attempt ``Initial Placement`` and then the ``heuristics``.
 Before anything else, for each kernel again, the ``v2r`` and ``rs`` are initialized, each under control of an option:
 
-- ``mapinitone2one:``
+- ``mapinitone2one``:
   Definition of the initialization of the ``v2r`` map at the start of the mapping of each kernel;
   this ``v2r`` will apply at the start of initial placement.
 
-  - ``no:``
+  - ``no``:
     there is no initial mapping of virtual to real qubits;
     each virtual qubit is allocated to the first free real qubit on the fly, when it is mapped
 
-  - ``yes:``
+  - ``yes`` (default for back-ward compatibility):
     the initial mapping is 1 to 1:
     a virtual qubit with index ``qi`` is mapped to its real ``qi`` counterpart (so: same index)
 
 
-- ``mapassumezeroinitstate:``
+- ``mapassumezeroinitstate``:
   Definition of the initialization of the ``rs`` map at the start of the mapping of each kernel;
   this ``rs`` will apply at the start of initial placement.
   Values can be: ``rs_nostate`` (no useful state), ``rs_wasinited`` (zero state),
   and ``rs_hasstate`` (useful but unknown state).
 
-  - ``no:``
+  - ``no`` (default for back-ward compatibility):
     each real qubit is assumed not to contain any useful state nor is it known that it is in a particular base state;
     this corresponds to the state with value ``rs_nostate``.
 
-  - ``yes:``
+  - ``yes`` (best):
     each real qubit is assumed to be in a zero state (e.g. ``|0>``)
     that allows a SWAP with it to be replaced by a (cheaper) MOVE;
     this corresponds to the state with value ``rs_wasinited``.
@@ -237,44 +237,60 @@ Before anything else, for each kernel again, the ``v2r`` and ``rs`` are initiali
 Initial Placement
 """"""""""""""""""""""""""""""""""""
 
-Then ``Initial Placement`` is started. See the start of :ref:`mapping` of a description of initial placement.
+After initialization and configuration, ``Initial Placement`` is started.
+See the start of :ref:`mapping` of a description of initial placement.
 Since initial placement may take a lot of computer time, provisions have been implemented to time it out;
 this comes in use during benchmark runs.
 Initial placement is run under the control of two options:
 
-- ``initialplace:``
+- ``initialplace``:
   Definition of initial placement operation.
   Initial placement, when run, may be 100% successful (all two-qubit gates were made NN);
   be moderately successful (not all two-qubit gates were made NN, only some) or fail to find a solution:
 
-  - ``no:``
+  - ``no`` (default):
     no initial placement is attempted
 
-  - ``yes:``
+  - ``yes`` (best, optimal result):
     do initial placement starting from the initial ``v2r`` mapping;
     since initial placement employs an Integer Linear Programming model as the base of implementation,
     finding an initial placement may take quite a while.
 
-  - ``1s, 10s, 1m, 10m, 1h:``
+  - ``1s, 10s, 1m, 10m, 1h`` (best, limit time, still a result):
+    put a soft time limit on the execution time of initial placement;
     do initial placement as with ``yes``
     but limit execution time to the indicated maximum (one second, 10 seconds, one minute, etc.);
     when it is not successfull in this time, it fails, and subsequently the heuristics is started, which cannot fail.
 
-  - ``1sx, 10sx, 1mx, 10mx, 1hx:``
+  - ``1sx, 10sx, 1mx, 10mx, 1hx``:
+    put a hard time limit on the execution time of initial placement;
     do initial placement as with ``yes``
     but limit execution time to the indicated maximum (one second, 10 seconds, one minute, etc.);
     when it is not successfull in this time, it fails, and subsequently the compiler fails as well.
 
-- ``initialplace2qhorizon:``
-  The initial placement algorithm considers a number of initial two-qubit gates in the circuit to determine a mapping.
+- ``initialplace2qhorizon``:
+  The initial placement algorithm considers only a specified
+  number of two-qubit gates from the start of the circuit (a ``horizon``) to determine a mapping.
   This limits computer time but also may make a suboptimal result more useful.
   Option values are:
 
-  - ``0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100:``
+  - ``0`` (default, optimal result):
+    When ``0`` is specified as option value, there is no limit; all two-qubit gates of the circuit are taken into account.
+    
+  - ``10, 20, 30, 40, 50, 60, 70, 80, 90, 100``:
     The initial placement algorithm considers only this number of initial two-qubit gates in the circuit
     to determine a mapping.
-    When ``0`` is specified as option value, there is no limit; this is the default.
     
+Best result would be obtained by running Initial Placement optionally twice (this is not implemented):
+
+- Once with a modified model in which only the result with all two-qubit gates NN is successful.
+  When it succeeds, mapping has completed.
+  Depending on the resources one wants to spend on this, a soft time limit could be set.
+
+- Otherwise, attempt to get a good starting mapping by running Initial Placement
+  with a soft time limit (of e.g. 1 minute) and with a two-qubit horizon (of e.g. 10 to 20 gates).
+  What ever the result is, run the Heuristics afterwards.
+
 This concludes ``Initial Placement``.
 The ``v2r`` and ``rs`` at this time are stored in attributes for retrieval by the caller of the ``Map`` method.
 See :ref:`mapping_input_and_output_intermediate_representation`.
@@ -282,7 +298,33 @@ See :ref:`mapping_input_and_output_intermediate_representation`.
 Routing and Mapping Heuristics
 """"""""""""""""""""""""""""""""""""
 
-Then the ``Heuristics`` start for the kernel given in the ``Map`` method call.
+Subsequently the ``Heuristics`` start for the kernel given in the ``Map`` method call.
+
+- The scheduler's dependence graph is used to feed the Heuristics with gates to map and to look-ahead:
+  see :ref:`mapping_dependence_graph`.
+
+- To map a non-NN two-qubit gate, various routing alternatives, to be implemented by SWAP/MOVE sequences, are generated:
+  see :ref:`mapping_generating_routing_alternatives`.
+
+- Depending on the metric chosen, the alternatives are evaluated:
+  see :ref:`mapping_comparing_alternatives`.
+
+- When minimizing circuit latency extension, ILP is maximized by maintaining a scheduled circuit representation:
+  see :ref:`mapping_look_back`.
+
+- Looking farther ahead beyond the mapping of the current two-qubit gate,
+  the router recurses considering the effects of its mapping on subsequent two-qubit gates:
+  see :ref:`mapping_looking_farther_ahead`.
+
+- Finally, the evaluations of the alternatives are compared,
+  the best one selected and the two-qubit gate routed and mapped:
+  see :ref:`mapping_deciding_for_the_best`.
+
+.. _mapping_dependence_graph:
+
+Dependence Graph and Look-Ahead, Which Gate(s) To Map Next
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
 The mapper optionally uses the dependence graph representation of the circuit to enlarge
 the number of alternatives it can consider,
 and to make use of the ``criticality`` of gates in the decision which one to map next.
@@ -291,21 +333,21 @@ to choose from which one to map next: initially it contains just the ``SOURCE`` 
 See :ref:`scheduling`, and below for more information on the availability list's properties.
 The mapper listens to the following scheduler options:
 
-- ``scheduler_commute:``
+- ``scheduler_commute``:
   Because the mapper uses the dependence graph that is also generated for the scheduler,
   the alternatives that are made available by commutation of CZs/CNOTs, can be made available to the mapper:
 
-  - ``no:``
+  - ``no`` (default for backward-compatibility):
     don’t allow two-qubit gates to commute (CZ/CNOT) in the dependence graph;
     they are kept in original circuit order and presented to the mapper in this order
 
-  - ``yes:``
+  - ``yes`` (best):
     allow commutation of two-qubit CZ/CNOT gates;
     e.g. when one isn't nearest-neighbor
     but one that comes later in the circuit but commutes  with the earlier one is NN now,
     allow the later one to be mapped before the earlier one
 
-- ``print_dot_graphs``
+- ``print_dot_graphs``:
   When it has the value ``yes``, the mapper produces in the output directory
   in multiple files each with as name the name of the kernel followed by ``_mapper.dot``
   a ``dot`` representation of the dependence graph of the kernel's circuit at the start of the mapper heuristics,
@@ -336,13 +378,13 @@ and is computed in a single linear backward scan over the dependencd graph (Dijk
 
 Deciding for the next two-qubit gate to map, is done based on the following option:
 
-- ``maplookahead:``
+- ``maplookahead``:
   How does the mapper exploit the lookahead offered by the dependence graph constructed from the input circuit?
 
-  - ``no:``
+  - ``no``:
     the mapper ignores the dependence graph and takes the gates to be mapped one by one from the circuit
 
-  - ``critical:``
+  - ``critical``:
     gates that by definition do not need routing, are mapped first (and kind of flushed):
     these include the classical gates, scheduling gates (such as ``wait``), and the single qubit quantum gates;
     and of the remaining (only two qubit) quantum gates
@@ -353,7 +395,7 @@ Deciding for the next two-qubit gate to map, is done based on the following opti
     so criticality has higher priority to select the one to be mapped next,
     than NN (see ``noroutingfirst`` for the opposite approach)
 
-  - ``noroutingfirst:``
+  - ``noroutingfirst`` (default, best):
     gates that by definition do not need routing, are mapped first (and kind of flushed):
     these include the classical gates, scheduling gates (such as ``wait``), and the single qubit quantum gates;
     in this, this ``noroutingfirst`` option has the same effect as ``critical``;
@@ -363,7 +405,7 @@ Deciding for the next two-qubit gate to map, is done based on the following opti
     and when none such are left, only then take the most critical one;
     so NN has higher priority to select the one to be mapped next, than criticality
 
-  - ``all:``
+  - ``all`` (promising in combination with recursion):
     as with noroutingfirst but don't select the most critical one, select them all;
     so at each moment gates that do not need routing, are mapped first (and kind of flushed);
     these thus include the NN two-qubit gates;
@@ -372,6 +414,11 @@ Deciding for the next two-qubit gate to map, is done based on the following opti
     i.e. for all remaining (two qubit non-NN) gates generate alternatives
     and find the best from these according to the chosen metric
     (see the ``mapper`` option below); and then select that best one to route/map next
+
+.. _mapping_generating_routing_alternatives:
+
+Generating Routing Alternatives
+""""""""""""""""""""""""""""""""""""
 
 Having selected one (or more) two-qubit gates to map next, for each two-qubit gate the routing alternatives are explored.
 Subsequently, those alternatives will be compared using the selected metric and the best one selected; see further below.
@@ -406,14 +453,14 @@ to be computed.
 
 The generation of those alternatives is controlled by the following option:
 
-- ``mappathselect:``
+- ``mappathselect``:
   When generating alternatives of shortest paths between two real qubits:
 
-  - ``all:``
+  - ``all`` (default, best):
     select all possible alternatives:
     those following all possible shortest paths and in each path each possible placement of the two-qubit gate
 
-  - ``borders:``
+  - ``borders``:
     only select those alternatives
     that correspond to following the borders of the rectangle spanning between the two extreme real qubits;
     so on top of the at most two paths along the borders, there still are all alternatives of
@@ -440,17 +487,22 @@ directly at the qubit that is the mapped first operand of the gate;
 the last alternative will be the one that anti-clock-wise follows the border and has the two-qubit gate placed
 directly at the qubit that is the mapped last operand of the gate.
 
+.. _mapping_comparing_alternatives:
+
+Comparing Alternatives, Which Metric To Use
+""""""""""""""""""""""""""""""""""""""""""""""""""
+
 With all alternatives available, it is time to compare them using the defined metric.
 The metric to use is defined by the ``strategy`` option, called for historic reasons ``mapper``.
 What needs to be done when multiple alternatives compare equal, is specified later.
 
-- ``mapper:``
+- ``mapper``:
   The basic mapper strategy (metric of mapper result optimization) that is employed:
 
-  - ``no:``
+  - ``no`` (default for back-ward compatibility):
     no mapping is done. The output circuit is identical to the input circuit.
 
-  - ``base`` and ``baserc:``
+  - ``base`` and ``baserc``:
     map the circuit:
     use as metric just the length of the paths between the mapped operands of each two-qubit gate,
     and minimize this length for each two-qubit gate that is mapped;
@@ -459,7 +511,7 @@ What needs to be done when multiple alternatives compare equal, is specified lat
     with alternatives for multiple two-qubit gates, those two-qubit gates
     are preferred that lead to the least swaps/moves.
 
-  - ``minextend:``
+  - ``minextend`` (best):
     map the circuit:
     use as metric the extension of the circuit by each of the shortest paths
     between the mapped operands of each two-qubit gate,
@@ -468,55 +520,14 @@ What needs to be done when multiple alternatives compare equal, is specified lat
     and just subtracting the depths before and after doing that;
     the various options controlling this scheduling-in, will be specified later below.
 
-  - ``minextendrc:``
+  - ``minextendrc``:
     map the circuit:
     as in ``minextend``, but taking resource constraints into account when scheduling-in the swaps/moves.
 
-After having evaluated the metric for each alternative, multiple alternatives may remain, all with the best value.
-For the ``minextend`` and ``minextendrc`` strategies, there are options to select from these by looking ahead further,
-i.e. beyond the metric evaluation of this alternative for mapping one two-qubit gate.
-This ``recursion`` assumes that the current alternative is selected, its swaps/moves are added to the circuit
-the ``v2r`` map is updated, and the availability set is updated.
-And then in this new situation the implementation recurses
-by selecting one or more two-qubit gates to map next, generating alternatives, evaluating these alternatives
-against the metric, and deciding which alternatives are the best.
-This recursion can go deeper and deeper until a particular depth has been reached..
-Then of the resulting tree of alternatives, for all the leaves representing the deepest alternatives,
-the metric is computed from the root to the leaf and compared to each other.
-From these leaves, the best is taken; when multiple alternatives compare equally well from root to leaf,
-the ``maptiebreak`` option decides which one to take, as usual.
+.. _mapping_look_back:
 
-The following options control the recursion:
-
-- ``mapselectmaxlevel:``
-  TBD HERE
-
-- ``mapselectmaxwidth:``
-  TBD
-
-- ``maprecNN2q:``
-  TBD
-
-With or without recursion, for ``base``` strategy as well as for the ``minextend`` and ``minextendrc`` strategies,
-when at the end multiple alternatives compare equally well, a decision has to be taken which two-qubit gate
-to route and map next.
-This selection is made based on the value of the following option:
-
-- ``maptiebreak:``
-  When multiple alternatives remain for a particular strategy with the same best evaluation value,
-  decide how to select the best single one:
-
-  - ``first:``
-    select the first of the set
-
-  - ``last:``
-    select the last of the set
-
-  - ``random:``
-    select in a random way from the set
-
-  - ``critical:``
-    select the first of the alternatives generated for the most critical two-qubit gate (when there were more)
+Look-Back, Maximize Instruction-Level Parallelism By Scheduling
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 To know the circuit's latency extension of an alternative,
 the mapped gates are represented as a scheduled circuit, i.e. with gates with a defined ``cycle`` attribute,
@@ -537,22 +548,22 @@ and the end-result evaluated.
 
 This scheduling-in is controlled by the following options:
 
-- ``mapusemoves:``
+- ``mapusemoves``:
   Use MOVE instead of SWAP where possible.
   In the current implementation, a MOVE is implemented as a sequence of two CNOTs
   while a SWAP is implemented as a sequence of three CNOTs.
 
-  - ``no:``
+  - ``no``:
     don't
 
-  - ``yes:``
+  - ``yes`` (default, best):
     do, when swapping with an ancillary qubit which is known to be in the zero state (``|0>`` for moves with 2 CNOTs);
     when not in the initial state,
     insert a ``move_init`` sequence (when defined in the configuration file, the defined sequence,
     otherwise a prepz followed by a hadamard) when it doesn't additionally extend the circuit;
     when a ``move_init`` sequence would extend the circuit, don't insert the MOVE
 
-  - ``0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20:``
+  - ``0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20``:
     yes, and insert a ``move_init`` sequence to get the ancillary qubit in the initial state, if needed;
     but only when the number of cycles of circuit extension that this ``move_init`` causes,
     is less-equal than 0, 1, ``...`` 20 cycles.
@@ -564,19 +575,19 @@ This scheduling-in is controlled by the following options:
     when a ``move_init`` can bring the ancillary qubit in the initial state somehow
     without additional circuit extension, of no use.
 
-- ``mapprepinitsstate:``
+- ``mapprepinitsstate``:
   Does a PREPZ initialize the state, i.e. leave the state of a qubit in the ``|0>`` state?
   When so, this can be reflected in the ``rs`` map.
 
-  - ``no:``
+  - ``no`` (default, playing safe):
     no, it doesn't; a PREPZ during mapping will, as any other quantum gate,
     set the state of the operand qubits to ``rs_hasstate`` in the ``rs`` map
 
-  - ``yes:``
+  - ``yes`` (best):
     a PREPZ during mapping will set the state of the operand qubits to ``rs_wasinited``;
     any other gate will set the state of the operand qubits to ``rs_hasstate``
 
-- ``mapselectswaps:``
+- ``mapselectswaps``:
   When scheduling-in swaps/moves at the end for the best alternative found,
   this option selects that potentially not all required swaps/moves are inserted.
   When not all are inserted but only one, the distance of the mapped operand qubits of the two-qubit gate
@@ -587,32 +598,153 @@ This scheduling-in is controlled by the following options:
   So the alternatives are compared with all swaps/moves inserted
   but only during the final real insertion after having selected the best alternative, just one is inserted.
 
-  - ``all:``
+  - ``all`` (best, default):
     insert all swaps/moves as usual
 
-  - ``one:``
+  - ``one``:
     insert only one SWAP/MOVE; take the one swapping/moving the mapped first operand qubit
 
-  - ``earliest:``
+  - ``earliest``:
     insert only one SWAP/MOVE; take the one that can be scheduled earliest
     from the one swapping/moving the mapped first operand qubit
     and the one swapping/moving the mapped second operand qubit
 
-- ``mapreverseswap:``
+- ``mapreverseswap``:
   Since SWAP is symmetrical in effect (the states of the qubits are exchanged)
   but not in implementation (the gates on the second operand start one cycle earlier and end one cycle later),
   interchanging the operands may cause a SWAP to be scheduled at different cycles.
   Reverse operand real qubits of SWAP when beneficial:
 
-  - ``no:``
+  - ``no``:
     don't
 
-  - ``yes:``
+  - ``yes`` (best, default):
     when scheduling a SWAP,
     exploiting the knowledge that the execution of a SWAP for one of the qubits starts one cycle later,
     a reversal of the real qubit operands might allow scheduling it one cycle earlier
 
 
+.. _mapping_looking_farther_ahead:
+
+Looking Farther Ahead, Recurse To Find Best Alternative
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+Looking farther ahead beyond the mapping of the current two-qubit gate,
+the router recurses considering the effects of its mapping on subsequent two-qubit gates.
+
+After having evaluated the metric for each alternative, multiple alternatives may remain, all with the best value.
+For the ``minextend`` and ``minextendrc`` strategies, there are options to select from these by looking ahead further,
+i.e. beyond the metric evaluation of this alternative for mapping one two-qubit gate.
+This ``recursion`` assumes that the current alternative is selected, its swaps/moves are added to the circuit
+the ``v2r`` map is updated, and the availability set is updated.
+And then in this new situation the implementation recurses
+by selecting one or more two-qubit gates to map next, generating alternatives, evaluating these alternatives
+against the metric, and deciding which alternatives are the best.
+This recursion can go deeper and deeper until a particular depth has been reached.
+Then of the resulting tree of alternatives, for all the leaves representing the deepest alternatives,
+the metric is computed from the root to the leaf and compared to each other.
+In this way suboptimalities of individual choices can be balanced to a more optimal combination.
+From these leaves, the best is taken; when multiple alternatives compare equally well from root to leaf,
+the ``maptiebreak`` option decides which one to take, as usual; see below there.
+
+The following options control this recursion:
+
+- ``mapselectmaxlevel``:
+  Looking farther ahead beyond the mapping of the current two-qubit gate,
+  the router recurses considering the effects of its mapping on subsequent two-qubit gates.
+  The level specifies the recursion depth: how many two-qubits in a row are considered beyond the current one.
+  This generates a tree of alternatives.
+
+  - ``0`` (default, back-ward compatible):
+    no recursion is done
+
+  - ``1, 2, 3, 4, 5, 6, 7, 8, 9, 10``:
+    the indicated number of recursions is done;
+    initial experiments show that a value of ``3`` produces reasonable results,
+    and that recursion depth of ``5`` and higher are infeasible because of resource demand explosion
+
+  - ``inf``:
+    there is no limit to the number of recursions;
+    this makes the resource demand of the heuristics explode
+
+- ``mapselectmaxwidth``:
+  Not all alternatives are equally promising, so only some best are selected to recurse on.
+  The width specifies the recursion width: for how many alternatives the recursion is actually done.
+  The specification of the width is done relative to the number of alternatives
+  that came out as best at the current recursion level.
+  
+  - ``min`` (default):
+    only recurse on those alternatives that came out as best at this point
+
+  - ``minplusone``:
+    only recurse on those alternatives that came out as best at this point, plus one second-best
+
+  - ``minplushalfmin`` (best combination of optimality and resources:
+    only recurse on those alternatives that came out as best at this point, plus some number of second-bests:
+    half the number more than the number of best ones
+
+  - ``minplusmin``:
+    only recurse on those alternatives that came out as best at this point, plus some number of second-bests:
+    twice the number of best ones
+
+  - ``all``:
+    don't put a limit on the recursion width
+
+- ``maprecNN2q``:
+  In ``maplookahead`` with value ``all``, as with ``noroutingfirst``, two-qubit gates which are already NN,
+  are immediately mapped, kind of flushing them.
+  However, in recursion this creates an imbalance:
+  at each level optionally several more than just one two-qubit gate are mapped and this makes the results of
+  the alternatives largely incomparable.
+  Comparision would be easier to understand when at each level only one two-qubit gate would be mapped.
+  This option specifies independently of the ``maplookahead`` option that is chosen and that is applied before
+  going into recursion, whether in the recursion this immediate mapping/flushing of NN two-qubit gates is done.
+  
+  - ``no`` (default, best):
+    no, NN two-qubit gates are not immediately mapped and flushed until only non-NN two-qubit gates remain;;
+    at each recursion level exactly one two-qubit gate is mapped
+
+  - ``yes``:
+    yes, NN two-qubit gates are immediately mapped and flushed until only non-NN two-qubit gates remain;
+    this makes recursion more greedy but makes interpreting the evaluations of the alternatives harder
+
+.. _mapping_deciding_for_the_best:
+
+Deciding For The Best, Committing To The Best
+"""""""""""""""""""""""""""""""""""""""""""""""
+
+With or without recursion, for ``base`` strategy as well as for the ``minextend`` and ``minextendrc`` strategies,
+when at the end multiple alternatives compare equally well, a decision has to be taken which two-qubit gate
+to route and map.
+This selection is made based on the value of the following option:
+
+- ``maptiebreak``:
+  When multiple alternatives remain for a particular strategy with the same best evaluation value,
+  decide how to select the best single one:
+
+  - ``first``:
+    select the first of the set
+
+  - ``last``:
+    select the last of the set
+
+  - ``random`` (default, best, non-deterministic):
+    select in a random way from the set;
+    when testing and comparing mapping strategies, this option introduces non-determinism and non-reproducibility,
+    which precludes reasoning about the strategies unless many samples are taken and statistically analyzed
+
+  - ``critical`` (deterministic, second best):
+    select the first of the alternatives generated for the most critical two-qubit gate (when there were more)
+
+Having selected a single best alternative, the decision has been made to route and map its corresponding two-qubit gate.
+This means, scheduling in the result circuit the SWAPs/MOVEs that route the mapped operand qubits,
+updating the ``v2r`` and ``rs`` maps on the fly; 
+see :ref:`mapping_look_back` for the details of this scheduling.
+And then map the two-qubit gate;
+see :ref:`mapping_input_and_output_intermediate_representation` for what mapping involves.
+
+After this, in the dependence graph a next gate is looked for to map next
+and the heuristics start over again.
 
 ..  _Configuration_file_definitions_for_mapper_control:
 
