@@ -83,7 +83,7 @@ among which the scheduler class for obtaining the dependence graph.  The followi
 
   - ``v2r_in``
     Vector with for each virtual qubit index its mapping to a real qubit index
-    (or ``UNDEFINED_QUBIT`` represented by a very large positive value,
+    (or ``UNDEFINED_QUBIT`` represented by ``INT_MAX``,
     indicating that the virtual qubit index is not mapped to a real qubit),
     after initialization of the mapper and before initial placement and/or the heuristics.
 
@@ -103,7 +103,7 @@ among which the scheduler class for obtaining the dependence graph.  The followi
     
   - ``v2r_ip``
     Vector with for each virtual qubit index its mapping to a real qubit index
-    (or ``UNDEFINED_QUBIT`` represented by a very large positive value,
+    (or ``UNDEFINED_QUBIT`` represented by ``INT_MAX``,
     indicating that the virtual qubit index is not mapped to a real qubit),
     after initial placement but before the heuristics.
 
@@ -113,7 +113,7 @@ among which the scheduler class for obtaining the dependence graph.  The followi
     
   - ``v2r_out``
     Vector with for each virtual qubit index its mapping to a real qubit index
-    (or ``UNDEFINED_QUBIT`` represented by a very large positive value,
+    (or ``UNDEFINED_QUBIT`` represented by ``INT_MAX``,
     indicating that the virtual qubit index is not mapped to a real qubit),
     after the heuristics.
 
