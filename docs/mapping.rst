@@ -186,7 +186,7 @@ Please remember that the heuristics essentially perform a linear scan over the g
 to route the qubits, map and transform the gates.
 
 Initialization and configuration
-""""""""""""""""""""""""""""""""""""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 The ``Init`` method initializes the mapper for the given platform but independently of a particular kernel and circuit.
 This includes sanity checking and initializing the mapper's representation
@@ -235,7 +235,7 @@ Before anything else, for each kernel again, the ``v2r`` and ``rs`` are initiali
     this corresponds to the state with value ``rs_wasinited``.
 
 Initial Placement
-""""""""""""""""""""""""""""""""""""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 After initialization and configuration, ``Initial Placement`` is started.
 See the start of :ref:`mapping` of a description of initial placement.
@@ -296,7 +296,7 @@ The ``v2r`` and ``rs`` at this time are stored in attributes for retrieval by th
 See :ref:`mapping_input_and_output_intermediate_representation`.
 
 Routing and Mapping Heuristics
-""""""""""""""""""""""""""""""""""""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Subsequently the ``Heuristics`` start for the kernel given in the ``Map`` method call.
 
@@ -323,7 +323,7 @@ Subsequently the ``Heuristics`` start for the kernel given in the ``Map`` method
 .. _mapping_dependence_graph:
 
 Dependence Graph and Look-Ahead, Which Gate(s) To Map Next
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 The mapper optionally uses the dependence graph representation of the circuit to enlarge
 the number of alternatives it can consider,
@@ -418,7 +418,7 @@ Deciding for the next two-qubit gate to map, is done based on the following opti
 .. _mapping_generating_routing_alternatives:
 
 Generating Routing Alternatives
-""""""""""""""""""""""""""""""""""""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Having selected one (or more) two-qubit gates to map next, for each two-qubit gate the routing alternatives are explored.
 Subsequently, those alternatives will be compared using the selected metric and the best one selected; see further below.
@@ -490,7 +490,7 @@ directly at the qubit that is the mapped last operand of the gate.
 .. _mapping_comparing_alternatives:
 
 Comparing Alternatives, Which Metric To Use
-""""""""""""""""""""""""""""""""""""""""""""""""""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 With all alternatives available, it is time to compare them using the defined metric.
 The metric to use is defined by the ``strategy`` option, called for historic reasons ``mapper``.
@@ -527,7 +527,7 @@ What needs to be done when multiple alternatives compare equal, is specified lat
 .. _mapping_look_back:
 
 Look-Back, Maximize Instruction-Level Parallelism By Scheduling
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 To know the circuit's latency extension of an alternative,
 the mapped gates are represented as a scheduled circuit, i.e. with gates with a defined ``cycle`` attribute,
@@ -627,7 +627,7 @@ This scheduling-in is controlled by the following options:
 .. _mapping_looking_farther_ahead:
 
 Looking Farther Ahead, Recurse To Find Best Alternative
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Looking farther ahead beyond the mapping of the current two-qubit gate,
 the router recurses considering the effects of its mapping on subsequent two-qubit gates.
@@ -711,7 +711,7 @@ The following options control this recursion:
 .. _mapping_deciding_for_the_best:
 
 Deciding For The Best, Committing To The Best
-"""""""""""""""""""""""""""""""""""""""""""""""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 With or without recursion, for ``base`` strategy as well as for the ``minextend`` and ``minextendrc`` strategies,
 when at the end multiple alternatives compare equally well, a decision has to be taken which two-qubit gate
