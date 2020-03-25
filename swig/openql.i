@@ -779,7 +779,40 @@ str
     microcode
 """
 
+%feature("docstring") cQasmReader
+""" cQasmReader class specifies an interface to add cqasm programs to a program."""
 
+%feature("docstring") cQasmReader::~cQasmReader
+""" Destructs a cQasmReader object. """
+
+%feature("docstring") cQasmReader::cQasmReader
+""" Constructs a cQasmReader object.
+
+Parameters
+----------
+arg1 : platform
+    Instance of an OpenQL Platform.
+arg2 : program
+    Program class to which the kernels with cqasm quantum instructions are added.
+"""
+
+%feature("docstring") cQasmReader::string2circuit
+""" Adds a cqasm program defined in a string.
+
+Parameters
+----------
+arg1 : str
+    The cqasm that is added to the program.
+"""
+
+%feature("docstring") cQasmReader::file2circuit
+""" Adds a cqasm program read from a file.
+
+Parameters
+----------
+arg1 : str
+    File path to the file specifying the cqasm that is added to the program.
+"""
 
 
 // Include the header file with above prototypes

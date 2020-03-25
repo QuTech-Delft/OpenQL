@@ -80,7 +80,7 @@ def get_version(verbose=0):
                 m = matcher.match(ln)
                 if m:
                     version = m.group(1)
-                    break;
+                    break
 
     except Exception as E:
         print(E)
@@ -90,6 +90,7 @@ def get_version(verbose=0):
         print('get_version: %s' % version)
 
     return version
+
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -113,8 +114,9 @@ setup(name='qutechopenql',
       url='https://github.com/QE-Lab/OpenQL',
       license=read('LICENSE'),
       packages=['openql'],
-      cmdclass={'bdist_wheel': bdist_wheel},      
+      cmdclass={'bdist_wheel': bdist_wheel},
       package_dir={'': 'swig'},
       include_package_data=True,
       package_data={'openql': [clibSwig]},
+      extras_require={'develop': ['pytest', 'numpy']},
       zip_safe=False)

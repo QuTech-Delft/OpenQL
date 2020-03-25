@@ -1,0 +1,3 @@
+[submodule "deps/libqasm"]
+	path = deps/libqasm
+	url = https://github.com/QE-Lab/libqasm.git
