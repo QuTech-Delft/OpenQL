@@ -32,7 +32,6 @@ install:
   - cd ..
   - git clone https://github.com/QE-Lab/eQASM_Assembler.git
   - cd eQASM_Assembler/qisa-as
-  - git checkout development
   - pip install .
   - cd ../../../.
   - pip install .
