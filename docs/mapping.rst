@@ -335,7 +335,7 @@ The mapper listens to the following scheduler options:
 
 - ``scheduler_commute``:
   Because the mapper uses the dependence graph that is also generated for the scheduler,
-  the alternatives that are made available by commutation of ``cz``s/``cnot``s, can be made available to the mapper:
+  the alternatives that are made available by commutation of ``cz``\ s/``cnot``\ s, can be made available to the mapper:
 
   - ``no`` (default for backward-compatibility):
     don’t allow two-qubit gates to commute (``cz``/``cnot``) in the dependence graph;
@@ -552,16 +552,16 @@ This scheduling-in is controlled by the following options:
 - ``mapusemoves``:
   Use ``move`` instead of ``swap`` where possible.
   In the current implementation, a ``move``
-  is implemented as a sequence of two ``cnot``s
+  is implemented as a sequence of two ``cnot``\ s
   while a ``swap`` is implemented
-  as a sequence of three ``cnot``s.
+  as a sequence of three ``cnot``\ s.
 
   - ``no``:
     don't
 
   - ``yes`` (default, best):
     do, when swapping with an ancillary qubit which is known to be in the zero state (``|0>``
-    for moves with 2 ``cnot``s);
+    for moves with 2 ``cnot``\ s);
     when not in the initial state,
     insert a ``move_init`` sequence (when defined in the configuration file, the defined sequence,
     otherwise a prepz followed by a hadamard) when it doesn't additionally extend the circuit;
@@ -795,12 +795,12 @@ The configuration file contains the following sections that are recognized by th
 
    - *swap support*
      A ``swap`` is a composite gate,
-     usually consisting of 3 ``cnot``s;
+     usually consisting of 3 ``cnot``\ s;
      those ``cnot``\ s usually are decomposed to a sequence of gates itself.
      The mapper supports generating ``swap``
      as a primitive;
      or generating its shallow decomposition (e.g.
-     to ``cnot``s);
+     to ``cnot``\ s);
      or generating its full decomposition (e.g.
      to the primitive gate set).
      The former leads to a more readable intermediate qasm file;
