@@ -470,9 +470,9 @@ It is thus not supported to turn off to generate alternatives
 for the possible placements of the two-qubit gate along each path.
 
 The alternatives are ordered; this is relevant for the ``maptiebreak`` option below.
-The alternatives are:
+The alternatives are ordered:
 
-- first ordered by the two-qubit gate for which they are an alternative; the most critical two-qubit gate is first;
+- first by the two-qubit gate for which they are an alternative; the most critical two-qubit gate is first;
   remember that there can be more than one two-qubit gate when ``all`` was selected for the ``maplookahead`` option.
 
 - then by the followed path; each path is represented by
