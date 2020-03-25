@@ -182,7 +182,7 @@ Most if not all options can be combined to compose a favorite mapping strategy, 
 With the options, also the effects that they have on the function of the mapper are described.
 
 The options and function are described in the order of their virtual encountering by a particular gate that is mapped.
-Please remember that heuristic routing and mapping essentially perform a linear scan over the gates of the circuit
+Please remember that heuristic routing and mapping essentially performs a linear scan over the gates of the circuit
 to route the qubits, map and transform the gates.
 
 Initialization and configuration
@@ -358,8 +358,10 @@ its availability list is used just as in the scheduler:
 
 - the list at each moment contains those gates that have not been mapped but can be mapped now
 
-- the availability list forms a *cut* of the dependence graph:
-  all predecessors of the ones in this list have been mapped, all successors have not been mapped
+- the availability list forms a kind of *cut* of the dependence graph:
+  all predecessors of the gates in the list and recursively all their predecessors have been mapped,
+  all other gates have not been mapped (the *cut* is really the set of dependences between
+  the set of mapped and the set of non-mapped gates)
 
 - each moment a gate has been mapped, it is taken out of the availability list;
   those of its successor dependence gates of which all predecessors have been mapped,
@@ -370,11 +372,11 @@ to find which two-qubit to map next, to make a selection from all that are avail
 or take just the most critical one,
 to try multiple ones and evaluate each alternative to map it, comparing those alternatives against
 one of the metrics (see later), and even go into recursion (see later as well),
-i.e. looking further ahead to see what the effects on subsequent two-qubit gates are when mapping the current one.
+i.e. looking farther ahead to see what the effects on subsequent two-qubit gates are when mapping the current one.
 
 In this context the *criticality* of a gate is an important property of a gate:
-the *criticality* of a gate is the length of the longest dependence path from the gate to the SINK gate
-and is computed in a single linear backward scan over the dependencd graph (Dijkstra's algorithm).
+the *criticality* of a gate is the length of the longest dependence path from the gate to the ``SINK`` gate
+and is computed in a single linear backward scan over the dependence graph (Dijkstra's algorithm).
 
 Deciding for the next two-qubit gate to map, is done based on the following option:
 
@@ -382,7 +384,7 @@ Deciding for the next two-qubit gate to map, is done based on the following opti
   How does the mapper exploit the lookahead offered by the dependence graph constructed from the input circuit?
 
   - ``no``:
-    the mapper ignores the dependence graph and takes the gates to be mapped one by one from the circuit
+    the mapper ignores the dependence graph and takes the gates to be mapped one by one from the input circuit
 
   - ``critical``:
     gates that by definition do not need routing, are mapped first (and kind of flushed):
@@ -390,7 +392,7 @@ Deciding for the next two-qubit gate to map, is done based on the following opti
     and of the remaining (only two qubit) quantum gates
     the most critical gate is selected first to be routed and mapped next;
     the rationale of taking the most critical gate is
-    that that one the most cycles are expected until the end of the circuit,
+    that after that one the most cycles are expected until the end of the circuit,
     and so a wrong routing decision of a critical gate is likely to have most effect on the mapped circuit's latency;
     so criticality has higher priority to select the one to be mapped next,
     than NN (see ``noroutingfirst`` for the opposite approach)
