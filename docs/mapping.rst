@@ -408,7 +408,7 @@ Deciding for the next two-qubit gate to map, is done based on the following opti
     so NN has higher priority to select the one to be mapped next, than criticality
 
   - ``all`` (promising in combination with recursion):
-    as with noroutingfirst but don't select the most critical one, select them all;
+    as with ``noroutingfirst`` but don't select the most critical one, select them all;
     so at each moment gates that do not need routing, are mapped first (and kind of flushed);
     these thus include the NN two-qubit gates;
     this mapping and flushing stops when only non-NN two-qubit gates remain;
@@ -428,8 +428,8 @@ Subsequently, those alternatives will be compared using the selected metric and 
 But first the routing alternatives have to be generated.
 When the mapped operands of a two-qubit gate are not NN, they must be made NN by swapping/moving one or both
 over nearest-neighbor connections in the target platform's grid topology towards each other.
-Only then the two-qubit gate can be done;
-the mapper will inserts those swaps/moves before the two-qubit gate in the circuit.
+Only then the two-qubit gate can be executed;
+the mapper will insert those ``swap``\ s and ``move``\ s before the two-qubit gate in the circuit.
 
 There are usually many routes between the qubits.
 The current implementation only selects the ones with the shortest distance, and these can still be many.
