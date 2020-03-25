@@ -76,7 +76,7 @@ among which the scheduler class for obtaining the dependence graph.  The followi
   These can be retrieved by the caller of ``Map``:
 
   - ``nswapsadded``
-    Number of swaps and moves inserted.
+    Number of ``swap``s and ``move``s inserted.
 
   - ``nmovesadded``
     Number of moves inserted.
@@ -537,27 +537,31 @@ When a ``swap`` or ``move`` gate is added, it is ASAP scheduled (optionally taki
 into the circuit and the corresponding cycle value is assigned to the ``cycle`` attribute of the added gate.
 Note that when ``swap`` or ``move`` is defined by a composite gate, the decomposed sequence is scheduled-in instead.
 
-The objective of this is to maximize the parallel execution of gates and especially ``swap``s/``move``s.
+The objective of this is to maximize the parallel execution of gates and especially of ``swap``s and ``move``s.
 Indeed, the smaller the latency extension of a circuit, the more parallelism was created,
 i.e. the more the ILP was enlarged.
-When ``swap``s/``move``s are not inserted as primitive gates
+When ``swap``s and ``move``s are not inserted as primitive gates
 but the equivalent decomposed sequences are inserted, ILP will be improved even more.
 
-This scheduling-in is done separately for each alternative: for each alternative, the swaps/moves are added
+This scheduling-in is done separately for each alternative: for each alternative,
+the ``swap``s or ``move``s are added
 and the end-result evaluated.
 
 This scheduling-in is controlled by the following options:
 
 - ``mapusemoves``:
   Use ``move`` instead of ``swap`` where possible.
-  In the current implementation, a ``move`` is implemented as a sequence of two ``cnot``s
-  while a ``swap`` is implemented as a sequence of three ``cnot``s.
+  In the current implementation, a ``move``
+  is implemented as a sequence of two ``cnot``s
+  while a ``swap`` is implemented
+  as a sequence of three ``cnot``s.
 
   - ``no``:
     don't
 
   - ``yes`` (default, best):
-    do, when swapping with an ancillary qubit which is known to be in the zero state (``|0>`` for moves with 2 ``cnot``s);
+    do, when swapping with an ancillary qubit which is known to be in the zero state (``|0>``
+    for moves with 2 ``cnot``s);
     when not in the initial state,
     insert a ``move_init`` sequence (when defined in the configuration file, the defined sequence,
     otherwise a prepz followed by a hadamard) when it doesn't additionally extend the circuit;
@@ -588,24 +592,29 @@ This scheduling-in is controlled by the following options:
     any other gate will set the state of the operand qubits to ``rs_hasstate``
 
 - ``mapselectswaps``:
-  When scheduling-in swaps/moves at the end for the best alternative found,
-  this option selects that potentially not all required swaps/moves are inserted.
+  When scheduling-in ``swap``s
+  and ``move``s at the end for the best alternative found,
+  this option selects that potentially not all required ``swap``s
+  and ``move``s are inserted.
   When not all are inserted but only one, the distance of the mapped operand qubits of the two-qubit gate
   for which the best alternative was generated, will be one less, and after insertion
   heuristic routing and mapping starts over generating alternatives for the new situation.
 
-  Please note that during evaluation of the alternatives, all swaps/moves are inserted.
-  So the alternatives are compared with all swaps/moves inserted
+  Please note that during evaluation of the alternatives, all ``swap``s
+  and ``move``s are inserted.
+  So the alternatives are compared with all ``swap``s
+  and ``move``s inserted
   but only during the final real insertion after having selected the best alternative, just one is inserted.
 
   - ``all`` (best, default):
-    insert all swaps/moves as usual
+    insert all ``swap``s
+    and ``move``s as usual
 
   - ``one``:
-    insert only one ``swap``/``move``; take the one swapping/moving the mapped first operand qubit
+    insert only one ``swap`` or ``move``; take the one swapping/moving the mapped first operand qubit
 
   - ``earliest``:
-    insert only one ``swap``/``move``; take the one that can be scheduled earliest
+    insert only one ``swap`` or ``move``; take the one that can be scheduled earliest
     from the one swapping/moving the mapped first operand qubit
     and the one swapping/moving the mapped second operand qubit
 
@@ -635,7 +644,8 @@ the router recurses considering the effects of its mapping on subsequent two-qub
 After having evaluated the metric for each alternative, multiple alternatives may remain, all with the best value.
 For the ``minextend`` and ``minextendrc`` strategies, there are options to select from these by looking ahead further,
 i.e. beyond the metric evaluation of this alternative for mapping one two-qubit gate.
-This ``recursion`` assumes that the current alternative is selected, its swaps/moves are added to the circuit
+This ``recursion`` assumes that the current alternative is selected, its ``swap``s
+and ``move``s are added to the circuit
 the ``v2r`` map is updated, and the availability set is updated.
 And then in this new situation the implementation recurses
 by selecting one or more two-qubit gates to map next, generating alternatives, evaluating these alternatives
@@ -737,7 +747,8 @@ This selection is made based on the value of the following option:
     select the first of the alternatives generated for the most critical two-qubit gate (when there were more)
 
 Having selected a single best alternative, the decision has been made to route and map its corresponding two-qubit gate.
-This means, scheduling in the result circuit the ``swap``s/``move``s that route the mapped operand qubits,
+This means, scheduling in the result circuit the ``swap``s
+and ``move``s that route the mapped operand qubits,
 updating the ``v2r`` and ``rs`` maps on the fly; 
 see :ref:`mapping_look_back` for the details of this scheduling.
 And then map the two-qubit gate;
@@ -754,31 +765,108 @@ Configuration file definitions for mapper control
 The configuration file contains the following sections that are recognized by the mapper:
 
 - ``hardware_settings``
-   the number of real qubits in the platform, and the cycle time in nanoseconds to convert instruction duration into cycles used by the various scheduling actions are taken from here
+   the number of real qubits in the platform,
+   and the cycle time in nanoseconds to convert instruction duration
+   into cycles used by the various scheduling actions are taken from here
 
 - ``instructions``
-   the mapper assumes that the OpenQL circuit was read in and that gates were created according to the specifications of these in the configuration file: the name of each encountered gate is looked up in this section and, if not found, in the gate_decomposition section; if found, that gate (or those gates) are created; the duration field specifies the duration of each gate in nanoseconds; the type and various cc_light fields of each instruction are used as parameters to select applicable resource constraints in the resource-constrained scheduler
+   the mapper assumes that the OpenQL circuit was read
+   in and that gates were created according to the specifications of these in the configuration file:
+   the name of each encountered gate is looked up in this section and,
+   if not found,
+   in the gate_decomposition section;
+   if found,
+   that gate (or those gates) are created;
+   the duration field specifies the duration of each gate in nanoseconds;
+   the type and various cc_light fields of each instruction
+   are used as parameters to select applicable resource constraints in the resource-constrained scheduler
 
 - ``gate_decomposition``
-   when creating a gate matching an entry in this section, the set of gates specified by the decomposition description of the entry is created instead; the mapper exploits the decomposition support that the configuration file offers by this section in the following way:
+   when creating a gate matching an entry in this section,
+   the set of gates specified by the decomposition description of the entry is created instead;
+   the mapper exploits the decomposition support
+   that the configuration file offers by this section in the following way:
 
    - *reading the circuit*
-     When a gate specified as a composite gate is created in an OpenQL program, its decomposition is created instead. So a ``cnot`` in the OpenQL program but specified as two unary gate with a ``cz`` in the middle, is input by the mapper as this latter sequence.
+     When a gate specified as a composite gate is created in an OpenQL program,
+     its decomposition is created instead.
+     So a ``cnot`` in the OpenQL program but specified as two unary gate with a ``cz`` in the middle,
+     is input by the mapper as this latter sequence.
 
    - *swap support*
-     A ``swap`` is a composite gate, usually consisting of 3 ``cnot``s; those ``cnot``s usually are decomposed to a sequence of gates itself. The mapper supports generating ``swap`` as a primitive; or generating its shallow decomposition (e.g. to ``cnot``s); or generating its full decomposition (e.g. to the primitive gate set). The former leads to a more readable intermediate qasm file; the latter to more precise evaluation of the mapper selection criteria. Relying on the configuration file, when generating a ``swap``, the mapper first attempts to create a gate with the name ``swap_real``, and when that fails, create a gate with the name ``swap``. The same machinery is used to create a ``move``.
+     A ``swap`` is a composite gate,
+     usually consisting of 3 ``cnot``s;
+     those ``cnot``s usually are decomposed to a sequence of gates itself.
+     The mapper supports generating ``swap``
+     as a primitive;
+     or generating its shallow decomposition (e.g.
+     to ``cnot``s);
+     or generating its full decomposition (e.g.
+     to the primitive gate set).
+     The former leads to a more readable intermediate qasm file;
+     the latter to more precise evaluation of the mapper selection criteria.
+     Relying on the configuration file,
+     when generating a ``swap``,
+     the mapper first attempts to create a gate with the name ``swap_real``,
+     and when that fails,
+     create a gate with the name ``swap``.
+     The same machinery is used to create a ``move``.
 
    - *making gates real*
-     Each gate input to the mapper is a virtual gate, defined to operate on virtual qubits. After mapping, the output gates are real gates, operating on real qubits. Making gates real is the translation from the former to the latter. This is usually done by replacing the virtual qubits by their corresponding real qubits. But support is provided to also replace the gate itself: when a gate is made real, the mapper first tries to create a gate with the same name but with ``_real`` appended to its name (and using the mapped, real qubits); if that fails, it keeps the original gate and uses that (with the mapped, real qubits) in the result circuit.
-*
+     Each gate input to the mapper is a virtual gate,
+     defined to operate on virtual qubits.
+     After mapping,
+     the output gates are real gates,
+     operating on real qubits.
+     Making gates real is the translation from the former to the latter.
+     This is usually done by replacing the virtual qubits by their corresponding real qubits.
+     But support is provided to also replace the gate itself:
+     when a gate is made real,
+     the mapper first tries to create a gate with the same name 
+     but with ``_real`` appended to its name (and using the mapped,
+     real qubits);
+     if that fails,
+     it keeps the original gate and uses that (with the mapped,
+     real qubits) in the result circuit.
+
    - *ancilliary initialization*
-     For a ``move`` to be done instead of a ``swap``, the target qubit must be in a particular state. For CC-Light this is the ``|+>`` state. To support other target platforms, the ``move_init`` gate is defined to prepare a qubit in that state for the particular target platform. It decomposes to a ``prepz`` followed by a ``Hadamard`` for CC-Light.
+     For a ``move`` to be done instead of a ``swap``,
+     the target qubit must be in a particular state.
+     For CC-Light this is the ``|+>`` state.
+     To support other target platforms,
+     the ``move_init`` gate is defined to prepare a qubit in that state for the particular target platform.
+     It decomposes to a ``prepz`` followed by a ``Hadamard`` for CC-Light.
 
    - *making all gates primitive*
-     After mapping, the output gates will still have to undergo a final schedule with resource constraints before code can be generated for them. Best results are obtained when then all gates are primitive. The mapper supports a decomposition step to make that possible and this is typically used to decompose leftover swaps and moves to primitives: when a gate is made primitive, the mapper first tries to create a gate with the same name but with ``_prim`` appended to its name; if that fails, it keeps the original gate and uses that in the result circuit that is input to the scheduler.
+     After mapping,
+     the output gates will still have to undergo a final schedule 
+     with resource constraints before code can be generated for them.
+     Best results are obtained when then all gates are primitive.
+     The mapper supports a decomposition step 
+     to make that possible and this is typically used to decompose leftover ``swap``s
+     and ``move``s to primitives:
+     when a gate is made primitive,
+     the mapper first tries to create a gate with the same name but with ``_prim`` appended to its name;
+     if that fails,
+     it keeps the original gate and uses that in the result circuit that is input to the scheduler.
 
 - ``topology``
-  A qubit grid's topology is defined by the neighbor relation among its qubits. Each qubit has an ``id`` (its index, used as a gate operand and in the resources descriptions) in the range of ``0`` to the number of qubits in the platform minus 1. Qubits are connected by directed pairs, called edges. Each edge has an ``id`` (its index, also used in the resources descriptions) in some contiguous range starting from ``0``, a source qubit and a destination qubit. Two grid forms are supported: the ``xy`` form and the ``irregular`` form. In grids of the ``xy`` form, there must be two additional attributes: ``x_size`` and ``y_size``, and the qubits have in addition an X and a Y coordinate: these coordinates in the X (Y) direction are in the range of ``0`` to ``x_size-1`` (``y_size-1``).
+  A qubit grid's topology is defined by the neighbor relation among its qubits.
+  Each qubit has an ``id`` (its index,
+  used as a gate operand and in the resources descriptions) 
+  in the range of ``0`` to the number of qubits in the platform minus 1.
+  Qubits are connected by directed pairs,
+  called edges.
+  Each edge has an ``id`` (its index,
+  also used in the resources descriptions) in some contiguous range starting from ``0``,
+  a source qubit and a destination qubit.
+  Two grid forms are supported:
+  the ``xy`` form and the ``irregular`` form.
+  In grids of the ``xy`` form,
+  there must be two additional attributes:
+  ``x_size`` and ``y_size``,
+  and the qubits have in addition an X and a Y coordinate:
+  these coordinates in the X (Y) direction are in the range of ``0`` to ``x_size-1`` (``y_size-1``).
 
 - ``resources``
   See the scheduler's documentation.
