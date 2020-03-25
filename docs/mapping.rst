@@ -6,12 +6,12 @@ Mapping
 The circuits of all kernels are transformed
 such that after mapping for any two-qubit gate the operand qubits are connected
 (are NN, Nearest Neighbor) in the platform's topology;
-this is done by a kernel-level initial placement pass and when it fails, by a subsequent heuristic pass.
+this is done by a kernel-level initial placement pass and when it fails, by a subsequent heuristic routing and mapping pass.
 Both maintain a map from virtual (program) qubits to real qubits (``v2r``)
 and a map from each real qubit index to its state (``rs``);
 both are available after each of the two mapping passes.
 
-- ``initial placement``
+- *initial placement*
   This module attempts to find a single mapping of the virtual qubits of a circuit to the real qubits (``v2r`` map)
   of the platform's qubit topology,
   that minimizes the sum of the distances between the two mapped operands of all two-qubit gates in the circuit.
@@ -24,11 +24,11 @@ both are available after each of the two mapping passes.
   Also, the result is only really useful when in the mapping found all mapped operands of two-qubit gates are NN.
   So, there is no guarantee for success: it may take too long and the result may not be optimal.
 
-- ``heuristic``
+- *heuristic routing and mapping*
   This module essentially transforms each circuit in a linear scan over the circuit,
   from start to end, maintaining the ``v2r`` and ``rs`` maps.
   Each time that it encounters a two-qubit gate that in the current map is not NN,
-  it inserts ``swap`` gates before this gate that make the operand qubits NN (this is called ``routing`` the qubits);
+  it inserts ``swap`` gates before this gate that make the operand qubits NN (this is called *routing* the qubits);
   when inserting a ``swap``, it updates the ``v2r`` and ``rs`` maps accordingly.
   There are many refinements to this algorithm that can be controlled through options and the configuration file.
   The module will find the minimum number of swaps to make the mapped operands of each two-qubit gate NN
@@ -85,11 +85,11 @@ among which the scheduler class for obtaining the dependence graph.  The followi
     Vector with for each virtual qubit index its mapping to a real qubit index
     (or ``UNDEFINED_QUBIT`` represented by ``INT_MAX``,
     indicating that the virtual qubit index is not mapped to a real qubit),
-    after initialization of the mapper and before initial placement and/or the heuristics.
+    after initialization and before initial placement and/or heuristic routing and mapping.
 
   - ``rs_in``
     Vector with for each real qubit index its state.
-    This vector shows the state after initialization of the mapper and before initial placement and/or the heuristics.
+    This vector shows the state after initialization of the mapper and before initial placement and/or heuristic routing and mapping.
     State values can be:
     
     - ``rs_nostate``:
@@ -105,21 +105,21 @@ among which the scheduler class for obtaining the dependence graph.  The followi
     Vector with for each virtual qubit index its mapping to a real qubit index
     (or ``UNDEFINED_QUBIT`` represented by ``INT_MAX``,
     indicating that the virtual qubit index is not mapped to a real qubit),
-    after initial placement but before the heuristics.
+    after initial placement but before heuristic routing and mapping.
 
   - ``rs_ip``
     Vector with for each real qubit index its state (see ``rs_in`` above ofr the values),
-    after initial placement but before the heuristics.
+    after initial placement but before heuristic routing and mapping.
     
   - ``v2r_out``
     Vector with for each virtual qubit index its mapping to a real qubit index
     (or ``UNDEFINED_QUBIT`` represented by ``INT_MAX``,
     indicating that the virtual qubit index is not mapped to a real qubit),
-    after the heuristics.
+    after heuristic routing and mapping.
 
   - ``rs_out``
     Vector with for each real qubit index its state (see ``rs_in`` above for the values),
-    after the heuristics.
+    after heuristic routing and mapping.
   
 
 .. _mapping_input_and_output_intermediate_representation:
@@ -182,7 +182,7 @@ Most if not all options can be combined to compose a favorite mapping strategy, 
 With the options, also the effects that they have on the function of the mapper are described.
 
 The options and function are described in the order of their virtual encountering by a particular gate that is mapped.
-Please remember that the heuristics essentially perform a linear scan over the gates of the circuit
+Please remember that heuristic routing and mapping essentially perform a linear scan over the gates of the circuit
 to route the qubits, map and transform the gates.
 
 Initialization and configuration
@@ -203,7 +203,7 @@ For larger and more regular connection grids,
 the implementation contains a provision to replace this by a distance function.
 
 Subsequently, ``Map`` is called for each kernel/circuit in the program.
-It will attempt ``Initial Placement`` and then the ``heuristics``.
+It will attempt initial placement and then heuristic routing and mapping.
 Before anything else, for each kernel again, the ``v2r`` and ``rs`` are initialized, each under control of an option:
 
 - ``mapinitone2one``:
@@ -237,7 +237,7 @@ Before anything else, for each kernel again, the ``v2r`` and ``rs`` are initiali
 Initial Placement
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-After initialization and configuration, ``Initial Placement`` is started.
+After initialization and configuration, initial placement is started.
 See the start of :ref:`mapping` of a description of initial placement.
 Since initial placement may take a lot of computer time, provisions have been implemented to time it out;
 this comes in use during benchmark runs.
@@ -260,7 +260,7 @@ Initial placement is run under the control of two options:
     put a soft time limit on the execution time of initial placement;
     do initial placement as with ``yes``
     but limit execution time to the indicated maximum (one second, 10 seconds, one minute, etc.);
-    when it is not successfull in this time, it fails, and subsequently the heuristics is started, which cannot fail.
+    when it is not successfull in this time, it fails, and subsequently heuristic routing and mapping is started, which cannot fail.
 
   - ``1sx, 10sx, 1mx, 10mx, 1hx``:
     put a hard time limit on the execution time of initial placement;
@@ -281,26 +281,26 @@ Initial placement is run under the control of two options:
     The initial placement algorithm considers only this number of initial two-qubit gates in the circuit
     to determine a mapping.
     
-Best result would be obtained by running Initial Placement optionally twice (this is not implemented):
+Best result would be obtained by running initial placement optionally twice (this is not implemented):
 
 - Once with a modified model in which only the result with all two-qubit gates NN is successful.
   When it succeeds, mapping has completed.
   Depending on the resources one wants to spend on this, a soft time limit could be set.
 
-- Otherwise, attempt to get a good starting mapping by running Initial Placement
+- Otherwise, attempt to get a good starting mapping by running initial placement
   with a soft time limit (of e.g. 1 minute) and with a two-qubit horizon (of e.g. 10 to 20 gates).
-  What ever the result is, run the Heuristics afterwards.
+  What ever the result is, run heuristic routing and mapping afterwards.
 
-This concludes ``Initial Placement``.
+This concludes initial placement.
 The ``v2r`` and ``rs`` at this time are stored in attributes for retrieval by the caller of the ``Map`` method.
 See :ref:`mapping_input_and_output_intermediate_representation`.
 
-Routing and Mapping Heuristics
+Heuristic Routing and Mapping
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Subsequently the ``Heuristics`` start for the kernel given in the ``Map`` method call.
+Subsequently heuristic routing and mapping starts for the kernel given in the ``Map`` method call.
 
-- The scheduler's dependence graph is used to feed the Heuristics with gates to map and to look-ahead:
+- The scheduler's dependence graph is used to feed heuristic routing and mapping with gates to map and to look-ahead:
   see :ref:`mapping_dependence_graph`.
 
 - To map a non-NN two-qubit gate, various routing alternatives, to be implemented by ``swap``/``move`` sequences, are generated:
@@ -327,7 +327,7 @@ Dependence Graph and Look-Ahead, Which Gate(s) To Map Next
 
 The mapper optionally uses the dependence graph representation of the circuit to enlarge
 the number of alternatives it can consider,
-and to make use of the ``criticality`` of gates in the decision which one to map next.
+and to make use of the *criticality* of gates in the decision which one to map next.
 To this end, it calls the scheduler's ``init`` method, and sets up the availability list of gates as set of gates
 to choose from which one to map next: initially it contains just the ``SOURCE`` gates.
 See :ref:`scheduling`, and below for more information on the availability list's properties.
@@ -350,7 +350,7 @@ The mapper listens to the following scheduler options:
 - ``print_dot_graphs``:
   When it has the value ``yes``, the mapper produces in the output directory
   in multiple files each with as name the name of the kernel followed by ``_mapper.dot``
-  a ``dot`` representation of the dependence graph of the kernel's circuit at the start of the mapper heuristics,
+  a ``dot`` representation of the dependence graph of the kernel's circuit at the start of heuristic routing and mapping,
   in which the gates are ordered along a timeline according to their cycle attribute.
 
 With the dependence graph available to the mapper,
@@ -372,8 +372,8 @@ to try multiple ones and evaluate each alternative to map it, comparing those al
 one of the metrics (see later), and even go into recursion (see later as well),
 i.e. looking further ahead to see what the effects on subsequent two-qubit gates are when mapping the current one.
 
-In this context the ``criticality`` of a gate is an important property of a gate:
-the ``criticality`` of a gate is the length of the longest dependence path from the gate to the SINK gate
+In this context the *criticality* of a gate is an important property of a gate:
+the *criticality* of a gate is the length of the longest dependence path from the gate to the SINK gate
 and is computed in a single linear backward scan over the dependencd graph (Dijkstra's algorithm).
 
 Deciding for the next two-qubit gate to map, is done based on the following option:
@@ -592,7 +592,7 @@ This scheduling-in is controlled by the following options:
   this option selects that potentially not all required swaps/moves are inserted.
   When not all are inserted but only one, the distance of the mapped operand qubits of the two-qubit gate
   for which the best alternative was generated, will be one less, and after insertion
-  the mapping heuristics start over generating alternatives for the new situation.
+  heuristic routing and mapping starts over generating alternatives for the new situation.
 
   Please note that during evaluation of the alternatives, all swaps/moves are inserted.
   So the alternatives are compared with all swaps/moves inserted
@@ -665,7 +665,7 @@ The following options control this recursion:
 
   - ``inf``:
     there is no limit to the number of recursions;
-    this makes the resource demand of the heuristics explode
+    this makes the resource demand of heuristic routing and mapping explode
 
 - ``mapselectmaxwidth``:
   Not all alternatives are equally promising, so only some best are selected to recurse on.
@@ -744,7 +744,7 @@ And then map the two-qubit gate;
 see :ref:`mapping_input_and_output_intermediate_representation` for what mapping involves.
 
 After this, in the dependence graph a next gate is looked for to map next
-and the heuristics start over again.
+and heuristic routing and mapping starts over again.
 
 ..  _Configuration_file_definitions_for_mapper_control:
 
@@ -762,23 +762,23 @@ The configuration file contains the following sections that are recognized by th
 - ``gate_decomposition``
    when creating a gate matching an entry in this section, the set of gates specified by the decomposition description of the entry is created instead; the mapper exploits the decomposition support that the configuration file offers by this section in the following way:
 
-   - ``reading the circuit``
+   - *reading the circuit*
      When a gate specified as a composite gate is created in an OpenQL program, its decomposition is created instead. So a ``cnot`` in the OpenQL program but specified as two unary gate with a ``cz`` in the middle, is input by the mapper as this latter sequence.
 
-   - ``swap support``
+   - *swap support*
      A ``swap`` is a composite gate, usually consisting of 3 ``cnot``s; those ``cnot``s usually are decomposed to a sequence of gates itself. The mapper supports generating ``swap`` as a primitive; or generating its shallow decomposition (e.g. to ``cnot``s); or generating its full decomposition (e.g. to the primitive gate set). The former leads to a more readable intermediate qasm file; the latter to more precise evaluation of the mapper selection criteria. Relying on the configuration file, when generating a ``swap``, the mapper first attempts to create a gate with the name ``swap_real``, and when that fails, create a gate with the name ``swap``. The same machinery is used to create a ``move``.
 
-   - ``making gates real``
+   - *making gates real*
      Each gate input to the mapper is a virtual gate, defined to operate on virtual qubits. After mapping, the output gates are real gates, operating on real qubits. Making gates real is the translation from the former to the latter. This is usually done by replacing the virtual qubits by their corresponding real qubits. But support is provided to also replace the gate itself: when a gate is made real, the mapper first tries to create a gate with the same name but with ``_real`` appended to its name (and using the mapped, real qubits); if that fails, it keeps the original gate and uses that (with the mapped, real qubits) in the result circuit.
-
-   - ``ancilliary initialization``
+*
+   - *ancilliary initialization*
      For a ``move`` to be done instead of a ``swap``, the target qubit must be in a particular state. For CC-Light this is the ``|+>`` state. To support other target platforms, the ``move_init`` gate is defined to prepare a qubit in that state for the particular target platform. It decomposes to a ``prepz`` followed by a ``Hadamard`` for CC-Light.
 
-   - ``making all gates primitive``
+   - *making all gates primitive*
      After mapping, the output gates will still have to undergo a final schedule with resource constraints before code can be generated for them. Best results are obtained when then all gates are primitive. The mapper supports a decomposition step to make that possible and this is typically used to decompose leftover swaps and moves to primitives: when a gate is made primitive, the mapper first tries to create a gate with the same name but with ``_prim`` appended to its name; if that fails, it keeps the original gate and uses that in the result circuit that is input to the scheduler.
 
 - ``topology``
-  A qubit grid's topology is defined by the neighbor relation among its qubits. Each qubit has an ``id`` (its index, used as a gate operand and in the resources descriptions) in the range of ``0`` to the number of qubits in the platform minus 1. Qubits are connected by directed pairs, called edges. Each edge has an ``id`` (its index, also used in the resources descriptions) in some contiguous range starting from ``0``, a source qubit and a destination qubit. Two grid forms are supported: the ``xy`` form and the ``irregular`` form. In grids of the ``xy`` form, there must be two additional attributes: ``x_size`` and ``y_size``, and the qubits have in addition an ``x`` and a ``y`` coordinate: these coordinates in the X (Y) direction are in the range of ``0`` to ``x_size-1`` (``y_size-1``).
+  A qubit grid's topology is defined by the neighbor relation among its qubits. Each qubit has an ``id`` (its index, used as a gate operand and in the resources descriptions) in the range of ``0`` to the number of qubits in the platform minus 1. Qubits are connected by directed pairs, called edges. Each edge has an ``id`` (its index, also used in the resources descriptions) in some contiguous range starting from ``0``, a source qubit and a destination qubit. Two grid forms are supported: the ``xy`` form and the ``irregular`` form. In grids of the ``xy`` form, there must be two additional attributes: ``x_size`` and ``y_size``, and the qubits have in addition an X and a Y coordinate: these coordinates in the X (Y) direction are in the range of ``0`` to ``x_size-1`` (``y_size-1``).
 
 - ``resources``
   See the scheduler's documentation.
