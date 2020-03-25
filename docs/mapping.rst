@@ -439,7 +439,7 @@ and is maximal when the distances in the x and y directions are equal.
 All shortest paths between two qubits in such a grid stay within
 a rectangle in the grid with the mapped qubit operands at opposite sides of the diagonal.
 
-A shortest distance leads to a minimal number of swaps/moves.
+A shortest distance leads to a minimal number of ``swap``\ s and ``move``\ s.
 For each route between qubits at a distance ``d``,
 there are furthermore ``d`` possible places in the route where to do the two-qubit gate;
 the other ``d-1`` places in the route will be a ``swap`` or a ``move``.
@@ -511,7 +511,7 @@ What needs to be done when multiple alternatives compare equal, is specified lat
     with only alternatives for one two-qubit gate, all alternatives have the same shortest path,
     so all alternatives qualify equally;
     with alternatives for multiple two-qubit gates, those two-qubit gates
-    are preferred that lead to the least swaps/moves.
+    are preferred that lead to the least ``swap``\ s and ``move``\ s.
 
   - ``minextend`` (best):
     map the circuit:
@@ -524,7 +524,7 @@ What needs to be done when multiple alternatives compare equal, is specified lat
 
   - ``minextendrc``:
     map the circuit:
-    as in ``minextend``, but taking resource constraints into account when scheduling-in the swaps/moves.
+    as in ``minextend``, but taking resource constraints into account when scheduling-in the ``swap``\ s and ``move``\ s.
 
 .. _mapping_look_back:
 
