@@ -440,9 +440,9 @@ All shortest paths between two qubits in such a grid stay within
 a rectangle in the grid with the mapped qubit operands at opposite sides of the diagonal.
 
 A shortest distance leads to a minimal number of ``swap``\ s and ``move``\ s.
-For each route between qubits at a distance ``d``,
-there are furthermore ``d`` possible places in the route where to do the two-qubit gate;
-the other ``d-1`` places in the route will be a ``swap`` or a ``move``.
+For each route between qubits at a distance *d*,
+there are furthermore *d* possible places in the route where to do the two-qubit gate;
+the other *d-1* places in the route will be a ``swap`` or a ``move``.
 
 The implementation supports an arbitrarily formed connection graph, so not only a rectangular grid.
 All that matter are the distances between the qubits.
@@ -474,15 +474,15 @@ for the possible placements of the two-qubit gate along each path.
 The alternatives are ordered; this is relevant for the ``maptiebreak`` option below.
 The alternatives are ordered:
 
-- first by the two-qubit gate for which they are an alternative; the most critical two-qubit gate is first;
+- first by the *two-qubit gate* for which they are an alternative; the most critical two-qubit gate is first;
   remember that there can be more than one two-qubit gate when ``all`` was selected for the ``maplookahead`` option.
 
-- then by the followed path; each path is represented by
+- then by the *followed path*; each path is represented by
   a sequence of transitions from the mapped first operand qubit to the mapped second operand qubit.
   The paths are ordered such that of any set of paths with a common prefix
   these are ordered by a clock-wise order of the successor qubits as seen from the last qubit of the common prefix.
 
-- and then by the placement of the two-qubit gate; the placements are ordered from start to end of the path.
+- and then by the *placement* of the two-qubit gate; the placements are ordered from start to end of the path.
 
 So, the first alternative will be the one that clock-wise follows the border and has the two-qubit gate placed
 directly at the qubit that is the mapped first operand of the gate;
@@ -504,7 +504,7 @@ What needs to be done when multiple alternatives compare equal, is specified lat
   - ``no`` (default for back-ward compatibility):
     no mapping is done. The output circuit is identical to the input circuit.
 
-  - ``base`` and ``baserc``:
+  - ``base``:
     map the circuit:
     use as metric just the length of the paths between the mapped operands of each two-qubit gate,
     and minimize this length for each two-qubit gate that is mapped;
@@ -644,9 +644,9 @@ Looking farther ahead beyond the mapping of the current two-qubit gate,
 the router recurses considering the effects of its mapping on subsequent two-qubit gates.
 
 After having evaluated the metric for each alternative, multiple alternatives may remain, all with the best value.
-For the ``minextend`` and ``minextendrc`` strategies, there are options to select from these by looking ahead further,
+For the ``minextend`` and ``minextendrc`` strategies, there are options to select from these by looking ahead farther,
 i.e. beyond the metric evaluation of this alternative for mapping one two-qubit gate.
-This ``recursion`` assumes that the current alternative is selected, its ``swap``\ s
+This *recursion* assumes that the current alternative is selected, its ``swap``\ s
 and ``move``\ s are added to the circuit
 the ``v2r`` map is updated, and the availability set is updated.
 And then in this new situation the implementation recurses
@@ -713,7 +713,7 @@ The following options control this recursion:
   going into recursion, whether in the recursion this immediate mapping/flushing of NN two-qubit gates is done.
   
   - ``no`` (default, best):
-    no, NN two-qubit gates are not immediately mapped and flushed until only non-NN two-qubit gates remain;;
+    no, NN two-qubit gates are not immediately mapped and flushed until only non-NN two-qubit gates remain;
     at each recursion level exactly one two-qubit gate is mapped
 
   - ``yes``:
@@ -725,8 +725,8 @@ The following options control this recursion:
 Deciding For The Best, Committing To The Best
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-With or without recursion, for ``base`` strategy as well as for the ``minextend`` and ``minextendrc`` strategies,
-when at the end multiple alternatives compare equally well, a decision has to be taken which two-qubit gate
+With or without recursion, for the ``base`` strategy as well as for the ``minextend`` and ``minextendrc`` strategies,
+when at the end multiple alternatives still compare equally well, a decision has to be taken which two-qubit gate
 to route and map.
 This selection is made based on the value of the following option:
 
@@ -776,11 +776,11 @@ The configuration file contains the following sections that are recognized by th
    in and that gates were created according to the specifications of these in the configuration file:
    the name of each encountered gate is looked up in this section and,
    if not found,
-   in the gate_decomposition section;
+   in the ``gate_decomposition`` section;
    if found,
    that gate (or those gates) are created;
-   the duration field specifies the duration of each gate in nanoseconds;
-   the type and various cc_light fields of each instruction
+   the ``duration`` field specifies the duration of each gate in nanoseconds;
+   the ``type`` and various ``cc_light`` fields of each instruction
    are used as parameters to select applicable resource constraints in the resource-constrained scheduler
 
 - ``gate_decomposition``
@@ -792,56 +792,44 @@ The configuration file contains the following sections that are recognized by th
    - *reading the circuit*
      When a gate specified as a composite gate is created in an OpenQL program,
      its decomposition is created instead.
-     So a ``cnot`` in the OpenQL program but specified as two unary gate with a ``cz`` in the middle,
+     So a ``cnot`` in the OpenQL program that is specified in the ``gate_decomposition``
+     section as e.g. two ``hadamard``\ s with a ``cz`` in the middle,
      is input by the mapper as this latter sequence.
 
    - *swap support*
      A ``swap`` is a composite gate,
      usually consisting of 3 ``cnot``\ s;
-     those ``cnot``\ s usually are decomposed to a sequence of gates itself.
-     The mapper supports generating ``swap``
-     as a primitive;
-     or generating its shallow decomposition (e.g.
-     to ``cnot``\ s);
-     or generating its full decomposition (e.g.
-     to the primitive gate set).
+     those ``cnot``\ s usually are decomposed to a sequence of primitive gates itself.
+     The mapper supports generating ``swap`` as a primitive;
+     or generating its shallow decomposition (e.g.  to ``cnot``\ s);
+     or generating its full decomposition (e.g.  to the primitive gate set).
      The former leads to a more readable intermediate qasm file;
      the latter to more precise evaluation of the mapper selection criteria.
-     Relying on the configuration file,
-     when generating a ``swap``,
+     Relying on the configuration file, when generating a ``swap``,
      the mapper first attempts to create a gate with the name ``swap_real``,
-     and when that fails,
-     create a gate with the name ``swap``.
+     and when that fails, create a gate with the name ``swap``.
      The same machinery is used to create a ``move``.
 
    - *making gates real*
      Each gate input to the mapper is a virtual gate,
      defined to operate on virtual qubits.
-     After mapping,
-     the output gates are real gates,
-     operating on real qubits.
-     Making gates real is the translation from the former to the latter.
+     After mapping, the output gates are real gates, operating on real qubits.
+     *Making gates real* is the translation from the former to the latter.
      This is usually done by replacing the virtual qubits by their corresponding real qubits.
      But support is provided to also replace the gate itself:
-     when a gate is made real,
-     the mapper first tries to create a gate with the same name 
-     but with ``_real`` appended to its name (and using the mapped,
-     real qubits);
-     if that fails,
-     it keeps the original gate and uses that (with the mapped,
+     when a gate is made real, the mapper first tries to create a gate with the same name 
+     but with ``_real`` appended to its name (and using the mapped, real qubits);
+     if that fails, it keeps the original gate and uses that (with the mapped,
      real qubits) in the result circuit.
 
    - *ancilliary initialization*
-     For a ``move`` to be done instead of a ``swap``,
-     the target qubit must be in a particular state.
-     For CC-Light this is the ``|+>`` state.
-     To support other target platforms,
+     For a ``move`` to be done instead of a ``swap``, the target qubit must be in a particular state.
+     For CC-Light this is the ``|+>`` state.  To support other target platforms,
      the ``move_init`` gate is defined to prepare a qubit in that state for the particular target platform.
      It decomposes to a ``prepz`` followed by a ``Hadamard`` for CC-Light.
 
    - *making all gates primitive*
-     After mapping,
-     the output gates will still have to undergo a final schedule 
+     After mapping, the output gates will still have to undergo a final schedule 
      with resource constraints before code can be generated for them.
      Best results are obtained when then all gates are primitive.
      The mapper supports a decomposition step 
@@ -854,11 +842,9 @@ The configuration file contains the following sections that are recognized by th
 
 - ``topology``
   A qubit grid's topology is defined by the neighbor relation among its qubits.
-  Each qubit has an ``id`` (its index,
-  used as a gate operand and in the resources descriptions) 
+  Each qubit has an ``id`` (its index, used as a gate operand and in the resources descriptions) 
   in the range of ``0`` to the number of qubits in the platform minus 1.
-  Qubits are connected by directed pairs,
-  called edges.
+  Qubits are connected by directed pairs, called *edge*\ s.
   Each edge has an ``id`` (its index,
   also used in the resources descriptions) in some contiguous range starting from ``0``,
   a source qubit and a destination qubit.
