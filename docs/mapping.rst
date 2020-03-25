@@ -76,7 +76,7 @@ among which the scheduler class for obtaining the dependence graph.  The followi
   These can be retrieved by the caller of ``Map``:
 
   - ``nswapsadded``
-    Number of ``swap`` s and ``move`` s inserted.
+    Number of ``swap``\ s and ``move``\ s inserted.
 
   - ``nmovesadded``
     Number of moves inserted.
@@ -537,14 +537,14 @@ When a ``swap`` or ``move`` gate is added, it is ASAP scheduled (optionally taki
 into the circuit and the corresponding cycle value is assigned to the ``cycle`` attribute of the added gate.
 Note that when ``swap`` or ``move`` is defined by a composite gate, the decomposed sequence is scheduled-in instead.
 
-The objective of this is to maximize the parallel execution of gates and especially of ``swap`` s and ``move`` s.
+The objective of this is to maximize the parallel execution of gates and especially of ``swap``\ s and ``move``\ s.
 Indeed, the smaller the latency extension of a circuit, the more parallelism was created,
 i.e. the more the ILP was enlarged.
-When ``swap`` s and ``move`` s are not inserted as primitive gates
+When ``swap``\ s and ``move``\ s are not inserted as primitive gates
 but the equivalent decomposed sequences are inserted, ILP will be improved even more.
 
 This scheduling-in is done separately for each alternative: for each alternative,
-the ``swap`` s or ``move`` s are added
+the ``swap``\ s or ``move``\ s are added
 and the end-result evaluated.
 
 This scheduling-in is controlled by the following options:
@@ -592,23 +592,23 @@ This scheduling-in is controlled by the following options:
     any other gate will set the state of the operand qubits to ``rs_hasstate``
 
 - ``mapselectswaps``:
-  When scheduling-in ``swap`` s
-  and ``move`` s at the end for the best alternative found,
-  this option selects that potentially not all required ``swap`` s
-  and ``move`` s are inserted.
+  When scheduling-in ``swap``\ s
+  and ``move``\ s at the end for the best alternative found,
+  this option selects that potentially not all required ``swap``\ s
+  and ``move``\ s are inserted.
   When not all are inserted but only one, the distance of the mapped operand qubits of the two-qubit gate
   for which the best alternative was generated, will be one less, and after insertion
   heuristic routing and mapping starts over generating alternatives for the new situation.
 
-  Please note that during evaluation of the alternatives, all ``swap`` s
-  and ``move`` s are inserted.
-  So the alternatives are compared with all ``swap`` s
-  and ``move`` s inserted
+  Please note that during evaluation of the alternatives, all ``swap``\ s
+  and ``move``\ s are inserted.
+  So the alternatives are compared with all ``swap``\ s
+  and ``move``\ s inserted
   but only during the final real insertion after having selected the best alternative, just one is inserted.
 
   - ``all`` (best, default):
-    insert all ``swap`` s
-    and ``move`` s as usual
+    insert all ``swap``\ s
+    and ``move``\ s as usual
 
   - ``one``:
     insert only one ``swap`` or ``move``; take the one swapping/moving the mapped first operand qubit
@@ -644,8 +644,8 @@ the router recurses considering the effects of its mapping on subsequent two-qub
 After having evaluated the metric for each alternative, multiple alternatives may remain, all with the best value.
 For the ``minextend`` and ``minextendrc`` strategies, there are options to select from these by looking ahead further,
 i.e. beyond the metric evaluation of this alternative for mapping one two-qubit gate.
-This ``recursion`` assumes that the current alternative is selected, its ``swap`` s
-and ``move`` s are added to the circuit
+This ``recursion`` assumes that the current alternative is selected, its ``swap``\ s
+and ``move``\ s are added to the circuit
 the ``v2r`` map is updated, and the availability set is updated.
 And then in this new situation the implementation recurses
 by selecting one or more two-qubit gates to map next, generating alternatives, evaluating these alternatives
@@ -747,8 +747,8 @@ This selection is made based on the value of the following option:
     select the first of the alternatives generated for the most critical two-qubit gate (when there were more)
 
 Having selected a single best alternative, the decision has been made to route and map its corresponding two-qubit gate.
-This means, scheduling in the result circuit the ``swap`` s
-and ``move`` s that route the mapped operand qubits,
+This means, scheduling in the result circuit the ``swap``\ s
+and ``move``\ s that route the mapped operand qubits,
 updating the ``v2r`` and ``rs`` maps on the fly; 
 see :ref:`mapping_look_back` for the details of this scheduling.
 And then map the two-qubit gate;
@@ -796,7 +796,7 @@ The configuration file contains the following sections that are recognized by th
    - *swap support*
      A ``swap`` is a composite gate,
      usually consisting of 3 ``cnot``s;
-     those ``cnot`` s usually are decomposed to a sequence of gates itself.
+     those ``cnot``\ s usually are decomposed to a sequence of gates itself.
      The mapper supports generating ``swap``
      as a primitive;
      or generating its shallow decomposition (e.g.
@@ -843,8 +843,8 @@ The configuration file contains the following sections that are recognized by th
      with resource constraints before code can be generated for them.
      Best results are obtained when then all gates are primitive.
      The mapper supports a decomposition step 
-     to make that possible and this is typically used to decompose leftover ``swap`` s
-     and ``move`` s to primitives:
+     to make that possible and this is typically used to decompose leftover ``swap``\ s
+     and ``move``\ s to primitives:
      when a gate is made primitive,
      the mapper first tries to create a gate with the same name but with ``_prim`` appended to its name;
      if that fails,
