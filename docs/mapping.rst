@@ -6,10 +6,10 @@ Mapping
 The circuits of all kernels are transformed
 such that after mapping for any two-qubit gate the operand qubits are connected
 (are NN, Nearest Neighbor) in the platform's topology;
-this is done by a kernel-level initial placement pass and when it fails, by a subsequent heuristic routing and mapping pass.
+this is done by a kernel-level initial placement and when it fails, by subsequent heuristic routing and mapping.
 Both maintain a map from virtual (program) qubits to real qubits (``v2r``)
 and a map from each real qubit index to its state (``rs``);
-both are available after each of the two mapping passes.
+both are available after each of the two mapping subpasses.
 
 - *initial placement*
   This module attempts to find a single mapping of the virtual qubits of a circuit to the real qubits (``v2r`` map)
@@ -63,7 +63,7 @@ among which the scheduler class for obtaining the dependence graph.  The followi
   and initializing the mapper's representation of the platform's topology from the platform's configuration file.
 
 - ``Mapper.Map(kernel)``
-  Perform mapping on the kernel, i.e. replace the kernel's circuit by an equivalent but mapped circuit.
+  Perform mapping on the kernel, i.e. replace the kernel's circuit by an equivalent but *mapped* circuit.
   Each kernel is mapped independently of any other kernel.
   Of each gate the ``cycle`` attribute is assigned, and the resulting circuit is scheduled;
   which constraints are obeyed in this schedule depends on the mapping strategy (the value of the ``mapper`` attribute).
@@ -79,7 +79,7 @@ among which the scheduler class for obtaining the dependence graph.  The followi
     Number of ``swap``\ s and ``move``\ s inserted.
 
   - ``nmovesadded``
-    Number of moves inserted.
+    Number of ``move``\ s inserted.
 
   - ``v2r_in``
     Vector with for each virtual qubit index its mapping to a real qubit index
@@ -108,7 +108,7 @@ among which the scheduler class for obtaining the dependence graph.  The followi
     after initial placement but before heuristic routing and mapping.
 
   - ``rs_ip``
-    Vector with for each real qubit index its state (see ``rs_in`` above ofr the values),
+    Vector with for each real qubit index its state (see ``rs_in`` above for the values),
     after initial placement but before heuristic routing and mapping.
     
   - ``v2r_out``
@@ -128,15 +128,15 @@ Input and output intermediate representation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The mapper expects kernels with or without a circuit.
-When with a circuit, the ``cycle`` attribute need not be valid.
+When with a circuit, the ``cycle`` attributes of the gates need not be valid.
 Gates that are supported on input are one-qubit ``measure``, no-operand ``display``, any classical gate,
 ``cnot``, ``cz``/``cphase``, and any other quantum and scheduling gate.
 The mapper refuses multi-qubit quantum gates as input with more than two quantum operands.
 
-The mapper produces a circuit with the same gates but then mapped (see below),
+The mapper produces a circuit with the same gates but then *mapped* (see below),
 with the real qubit operands of two-qubit gates made nearest-neighbor in the platform's topology,
 and with additional quantum gates inserted to implement the swapping or moving of qubit states.
-The mapping of any (quantum, classical, etc.) gate
+The *mapping* of any (quantum, classical, etc.) gate
 entails replacing the virtual qubit operand indices by the real qubit operand indices
 corresponding to the mapping of virtual to real qubit indices applicable at the time of execution of the gate;
 furthermore the gate itself (when a quantum gate) is optionally replaced at the time of its mapping
