@@ -56,15 +56,6 @@ class TestcQasmReader(unittest.TestCase):
         qasm_rdr.string2circuit(qasm_str)
         program.compile()
 
-        # qasm_file_path = os.path.join(output_dir, 'test_single_bit_kernel_operations.qasm')
-        # config_fn = os.path.join(curdir, '../hardware_config_cc_light.json')
-        # platform = ql.Platform('seven_qubits_chip', config_fn)
-        # number_qubits = platform.get_qubit_number()
-        # program = ql.Program('test_single_bit_kernel_operations2', platform, number_qubits)
-        # qasm_rdr = ql.cQasmReader(platform, program)
-        # qasm_rdr.file2circuit(qasm_file_path)
-        # program.compile()
-
     def test_sub_circuit_programs(self):
         config_fn = os.path.join(curdir, '../hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
