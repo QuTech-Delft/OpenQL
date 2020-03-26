@@ -15,7 +15,7 @@
 #define OPT_VCD_OUTPUT                  1   // output Value Change Dump file for GTKWave viewer
 #define OPT_RUN_ONCE                    0   // 0=loop indefinitely (CC-light emulation)
 #define OPT_CALCULATE_LATENCIES         0   // fixed compensation based on instrument latencies
-#define OPT_OLD_SEQBAR_SEMANTICS        0   // support old semantics of seqbar instruction
+#define OPT_OLD_SEQBAR_SEMANTICS        1   // support old semantics of seqbar instruction
 
 #include "json.h"
 #include "platform.h"
@@ -103,7 +103,7 @@ private:    // vars
     std::vector<std::vector<tGroupInfo>> groupInfo;             // matrix[instrIdx][group]
     json codewordTable;                                         // codewords versus signals per instrument group
     json inputLutTable;                                         // input LUT usage per instrument group
-    size_t lastStartCycle[MAX_SLOTS];
+    size_t lastEndCycle[MAX_SLOTS];
 
     // some JSON nodes we need access to
     const json *jsonInstrumentDefinitions;
@@ -132,7 +132,7 @@ private:    // funcs
 
     // helpers
     void latencyCompensation();
-    void padToCycle(size_t lastStartCycle, size_t startCycle, int slot, const std::string &instrumentName);
+    void padToCycle(size_t lastEndCycle, size_t startCycle, int slot, const std::string &instrumentName);
     uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
 
     // Functions processing JSON

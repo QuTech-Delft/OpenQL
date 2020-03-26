@@ -103,6 +103,22 @@ void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel
              */
             ql::ir::bundles_t bundles = cc_light_schedule(ckt, platform, platform.qubit_number, creg_count);
 #endif
+
+#if 1   // FIXME
+            // write kernel as QASM
+            int num_qubits = -1;    // FIXME: get from platform.hardwaresettings
+            if( ql::options::get("write_qasm_files") == "yes")
+            {
+                // write scheduled bundles with parallelism as simple QASM file
+                std::stringstream sched_qasm;
+                sched_qasm <<"qubits " << num_qubits << "\n\n"
+                           << ".fused_kernels";
+                string fname(ql::options::get("output_dir") + "/" + prog_name + "_" + kernel.name + "_scheduled.qasm");
+                IOUT("Writing Resource-contrained scheduled QASM to " << fname);
+                sched_qasm << ql::ir::qasm(bundles);
+                ql::utils::write_file(fname, sched_qasm.str());
+            }
+#endif
             codegen.kernel_start();
             codegen_bundles(bundles, platform);
             codegen.kernel_finish(kernel.name, bundles.back().start_cycle+bundles.back().duration_in_cycles);
@@ -284,6 +300,7 @@ void eqasm_backend_cc::codegen_bundles(ql::ir::bundles_t &bundles, const ql::qua
 
     for(ql::ir::bundle_t &bundle : bundles) {
         // generate bundle header
+        DOUT(SS2S("Bundle " << bundleIdx << ": start_cycle=" << bundle.start_cycle << ", duration_in_cycles=" << bundle.duration_in_cycles));
         codegen.bundle_start(SS2S("## Bundle " << bundleIdx++
                                   << ": start_cycle=" << bundle.start_cycle
                                   << ", duration_in_cycles=" << bundle.duration_in_cycles << ":"
@@ -297,6 +314,7 @@ void eqasm_backend_cc::codegen_bundles(ql::ir::bundles_t &bundles, const ql::qua
             ql::gate *firstInstr = *section->begin();
             auto firstInstrType = firstInstr->type();
             if(firstInstrType == __classical_gate__) {
+                DOUT(SS2S("Classical bundle: instr='" << firstInstr->name << "'"));
                 if(section->size() != 1) {
                     FATAL("Inconsistency detected in bundle contents: classical gate with parallel sections");
                 }
@@ -310,6 +328,7 @@ void eqasm_backend_cc::codegen_bundles(ql::ir::bundles_t &bundles, const ql::qua
                     ql::gate *instr = *insIt;
                     ql::gate_type_t itype = instr->type();
                     std::string iname = instr->name;
+                    DOUT(SS2S("Bundle section: instr='" << iname << "'"));
 
                     switch(itype) {
                         case __nop_gate__:       // a quantum "nop", see gate.h
@@ -321,6 +340,7 @@ void eqasm_backend_cc::codegen_bundles(ql::ir::bundles_t &bundles, const ql::qua
                             break;
 
                         case __custom_gate__:
+                            DOUT(SS2S("Custom gate: instr='" << iname << "'" << ", duration=" << instr->duration));
                             codegen.custom_gate(iname, instr->operands, instr->creg_operands, instr->angle, bundle.start_cycle, instr->duration);
                             break;
 
