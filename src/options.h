@@ -55,8 +55,8 @@ namespace ql
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "AM"}, "Type of decomposition used for toffoli", true);
           app->add_option("--backend_cc_map_input_file", opt_name2opt_val["backend_cc_map_input_file"], "Name of CC input map file", true);
           app->add_set_ignore_case("--cz_mode", opt_name2opt_val["cz_mode"], {"manual", "auto"}, "CZ mode", true);
-          app->add_set_ignore_case("--print_dot_graphs", opt_name2opt_val["print_dot_graphs"], {"yes", "no"}, "print (un-)secheduled graphs in DOT format", true);
-          app->add_set_ignore_case("--write_qasm_files", opt_name2opt_val["write_qasm_files"], {"yes", "no"}, "write (un-)secheduled (with and without resource-constraint) qasm files", true);
+          app->add_set_ignore_case("--print_dot_graphs", opt_name2opt_val["print_dot_graphs"], {"yes", "no"}, "print (un-)scheduled graphs in DOT format", true);
+          app->add_set_ignore_case("--write_qasm_files", opt_name2opt_val["write_qasm_files"], {"yes", "no"}, "write (un-)scheduled (with and without resource-constraint) qasm files", true);
       }
 
       void print_current_values()

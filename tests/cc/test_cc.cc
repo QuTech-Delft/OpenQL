@@ -338,18 +338,48 @@ void test_wait( std::string scheduler, std::string scheduler_uniform)
     prog.compile();
 }
 
+// FIXME: test to find quantum inspire problems 20200325
+void test_qi_example( std::string scheduler, std::string scheduler_uniform)
+{
+    // create and set platform
+    ql::quantum_platform s5("s5", "cc_s5_direct_iq.json");
+
+    const int num_qubits = 5;
+    const int num_cregs = 5;
+    ql::quantum_program prog(("test_qi_example_" + scheduler + "_uniform_" + scheduler_uniform), s5, num_qubits, num_cregs);
+    ql::quantum_program sp1(("sp1"), s5, num_qubits, num_cregs);
+    ql::quantum_kernel k("aKernel", s5, num_qubits, num_cregs);
+
+    k.gate("prepz", {0, 1, 2, 3, 4});
+    k.gate("ry180", {0, 2});     // FIXME: "y" does not work, but gate decomposition should handle?
+    k.gate("wait");
+    k.gate("cz", {0, 2});
+    k.gate("wait");
+    k.gate("y90", 2);
+    k.gate("measure", {0, 1, 2, 3, 4});
+
+    prog.add(k);
+
+    ql::options::set("scheduler", scheduler);
+    ql::options::set("scheduler_uniform", scheduler_uniform);
+    ql::options::set("write_qasm_files", "yes");    // so we can see bundles
+    prog.compile();
+}
+
 
 int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_DEBUG");      // LOG_DEBUG, LOG_INFO
 
-    test_classical("ALAP", "no");
 #if 0
+    test_classical("ALAP", "no");
     test_qec_pipelined("ALAP", "no");
     test_do_while_nested_for("ALAP", "no");
-#endif
     test_rabi("ALAP", "no");
     test_wait("ALAP", "no");
+#endif
+
+    test_qi_example("ALAP", "no");
 
     return 0;
 }

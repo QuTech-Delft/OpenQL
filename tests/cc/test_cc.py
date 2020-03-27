@@ -161,10 +161,34 @@ class Test_central_controller(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
+    def test_qi_example(self):
+        ql.set_option('output_dir', output_dir)
+        ql.set_option('optimize', 'no')
+        ql.set_option('scheduler', 'ALAP')
+        ql.set_option('scheduler_uniform', 'yes')
+        ql.set_option('log_level', 'LOG_WARNING')
+
+        platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
+
+        p = ql.Program('test_qi_example', platform, 5, num_cregs)
+        k = ql.Kernel('kernel_0', platform, 5, num_cregs)
+
+        k.gate("prepz", [0, 1, 2, 3, 4])
+        k.gate("ry180", [0, 2])     # FIXME: "y" does not work, but gate decomposition should handle?
+        k.gate("cz", [0, 2])
+        k.gate("y90", [2])
+        k.gate("measure", [0, 1, 2, 3, 4])
+
+        p.add_kernel(k)
+        p.compile()
+
+
+
     # FIXME: add:
     # - qec_pipelined
     # - nested loops
     # - long program (RB)
+
 
 
 if __name__ == '__main__':

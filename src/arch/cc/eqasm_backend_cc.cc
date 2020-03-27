@@ -21,7 +21,6 @@
 
 
 // options:
-#define OPT_CC_SCHEDULE_KERNEL_H    0       // 1=use scheduler from kernel.h iso cclight, overrides next option
 #define OPT_CC_SCHEDULE_RC          0       // 1=use resource constraint scheduler
 
 #include "eqasm_backend_cc.h"
@@ -57,22 +56,10 @@
     X(QASM_LE, "le")   \
     X(QASM_GE, "ge")
 
-#if 0   // FIXME
-// generate enum for instructions
-#define X(_enum, _string) _enum
-enum eQASM {
-    QASM_CLASSICAL_INSTRUCTION_LIST
-};
-#undef X
-#endif
-
-
 // generate constants for instructions
 #define X(_enum, _string) static const char *_enum = _string;
 QASM_CLASSICAL_INSTRUCTION_LIST
 #undef X
-
-
 
 
 namespace ql
@@ -84,11 +71,7 @@ namespace arch
 // NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
 void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel> kernels, const ql::quantum_platform &platform)
 {
-#if 1   // FIXME: patch for issue #164, should be moved to caller
-    if(kernels.size() == 0) {
-        FATAL("Trying to compile empty kernel");
-    }
-#endif
+    // NB: caller tests for empty kernels, so we need not check
     DOUT("Compiling " << kernels.size() << " kernels to generate Central Controller program ... ");
 
     // init
@@ -104,12 +87,6 @@ void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel
         IOUT("Compiling kernel: " << kernel.name);
         codegen_kernel_prologue(kernel);
 
-#if OPT_CC_SCHEDULE_KERNEL_H    // FIXME: WIP
-        // FIXME: try kernel.h::schedule()
-        std::string kernel_sched_qasm;
-        std::string kernel_sched_dot;
-        kernel.schedule(platform, kernel_sched_qasm, kernel_sched_dot);
-#else
         ql::circuit& ckt = kernel.c;
         if (!ckt.empty()) {
             auto creg_count = kernel.creg_count;     // FIXME: there is no platform.creg_count
@@ -125,21 +102,22 @@ void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel
              */
             ql::ir::bundles_t bundles = cc_light_schedule(ckt, platform, platform.qubit_number, creg_count);
 #endif
+
+#if 1   // FIXME
+            // write kernel as QASM
+            int num_qubits = -1;    // FIXME: get from platform.hardwaresettings
+            if( ql::options::get("write_qasm_files") == "yes")
+            {
+                // write scheduled bundles with parallelism as simple QASM file
+                std::stringstream sched_qasm;
+                sched_qasm <<"qubits " << num_qubits << "\n\n"
+                           << ".fused_kernels";
+                string fname(ql::options::get("output_dir") + "/" + prog_name + "_" + kernel.name + "_scheduled.qasm");
+                IOUT("Writing Resource-contrained scheduled QASM to " << fname);
+                sched_qasm << ql::ir::qasm(bundles);
+                ql::utils::write_file(fname, sched_qasm.str());
+            }
 #endif
-
-
-#if 0   // FIXME: from CClight, where it is called from the 'circuit' compile() function, i.e. never in practice
-            // write RC scheduled bundles with parallelism as simple QASM file
-            // FIXME: writes only single kernel, ah well, overwrites file for every kernel
-            std::stringstream sched_qasm;
-            sched_qasm << "qubits " << platform.qubit_number << "\n\n"
-                       << ".fused_kernels";
-            string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
-            IOUT("Writing Resource-contraint scheduled QASM to " << fname);
-            sched_qasm << ql::ir::qasm(bundles);
-            ql::utils::write_file(fname, sched_qasm.str());
-#endif
-
             codegen.kernel_start();
             codegen_bundles(bundles, platform);
             codegen.kernel_finish(kernel.name, bundles.back().start_cycle+bundles.back().duration_in_cycles);
@@ -224,8 +202,6 @@ void eqasm_backend_cc::codegen_kernel_prologue(ql::quantum_kernel &k)
 {
     codegen.comment(SS2S("### Kernel: '" << k.name << "'"));
 
-    // FIXME: insert waits to compensate latencies.
-
     switch(k.type) {
         case kernel_type_t::IF_START:
         {
@@ -278,8 +254,6 @@ void eqasm_backend_cc::codegen_kernel_prologue(ql::quantum_kernel &k)
 // based on cc_light_eqasm_compiler.h::get_epilogue
 void eqasm_backend_cc::codegen_kernel_epilogue(ql::quantum_kernel &k)
 {
-    // FIXME: insert waits to align kernel duration (in presence of latency compensation)
-
     switch(k.type) {
         case kernel_type_t::FOR_END:
         {
@@ -299,11 +273,8 @@ void eqasm_backend_cc::codegen_kernel_epilogue(ql::quantum_kernel &k)
         }
 
         case kernel_type_t::IF_END:
-            // do nothing? FIXME
-            break;
-
         case kernel_type_t::ELSE_END:
-            // do nothing? FIXME
+            // do nothing
             break;
 
         case kernel_type_t::STATIC:
@@ -328,6 +299,7 @@ void eqasm_backend_cc::codegen_bundles(ql::ir::bundles_t &bundles, const ql::qua
 
     for(ql::ir::bundle_t &bundle : bundles) {
         // generate bundle header
+        DOUT(SS2S("Bundle " << bundleIdx << ": start_cycle=" << bundle.start_cycle << ", duration_in_cycles=" << bundle.duration_in_cycles));
         codegen.bundle_start(SS2S("## Bundle " << bundleIdx++
                                   << ": start_cycle=" << bundle.start_cycle
                                   << ", duration_in_cycles=" << bundle.duration_in_cycles << ":"
@@ -341,6 +313,7 @@ void eqasm_backend_cc::codegen_bundles(ql::ir::bundles_t &bundles, const ql::qua
             ql::gate *firstInstr = *section->begin();
             auto firstInstrType = firstInstr->type();
             if(firstInstrType == __classical_gate__) {
+                DOUT(SS2S("Classical bundle: instr='" << firstInstr->name << "'"));
                 if(section->size() != 1) {
                     FATAL("Inconsistency detected in bundle contents: classical gate with parallel sections");
                 }
@@ -354,6 +327,7 @@ void eqasm_backend_cc::codegen_bundles(ql::ir::bundles_t &bundles, const ql::qua
                     ql::gate *instr = *insIt;
                     ql::gate_type_t itype = instr->type();
                     std::string iname = instr->name;
+                    DOUT(SS2S("Bundle section: instr='" << iname << "'"));
 
                     switch(itype) {
                         case __nop_gate__:       // a quantum "nop", see gate.h
@@ -365,6 +339,7 @@ void eqasm_backend_cc::codegen_bundles(ql::ir::bundles_t &bundles, const ql::qua
                             break;
 
                         case __custom_gate__:
+                            DOUT(SS2S("Custom gate: instr='" << iname << "'" << ", duration=" << instr->duration));
                             codegen.custom_gate(iname, instr->operands, instr->creg_operands, instr->angle, bundle.start_cycle, instr->duration);
                             break;
 
