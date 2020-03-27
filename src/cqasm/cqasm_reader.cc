@@ -139,7 +139,9 @@ namespace ql
         {
             size_t qubit1 = operation.getQubitsInvolved(1).getSelectedQubits().getIndices()[index];
             size_t qubit2 = operation.getQubitsInvolved(2).getSelectedQubits().getIndices()[index];
+            kernel.gate("wait");
             kernel.gate(gate_type, {qubit1, qubit2});
+            kernel.gate("wait");
         }
     }
 
