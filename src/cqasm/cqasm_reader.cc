@@ -253,7 +253,7 @@ namespace ql
         }
         else if (gate_type == "measure_all")
         {
-            for (size_t qubit = 0; qubit < number_of_qubits; qubit++)
+            for (size_t qubit = 0; int(qubit) < number_of_qubits; qubit++)
             {
                 kernel.gate(translate_gate_type("measure_z"), qubit);
             }

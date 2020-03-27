@@ -2,13 +2,14 @@
 #define _QL_CQASM_READER_H
 
 #include <string>
-class ql::quantum_kernel;
-class ql::quantum_platform;
-class ql::quantum_program;
 #include "qasm_semantic.hpp"
 
 namespace ql
 {
+    class quantum_kernel;
+    class quantum_platform;
+    class quantum_program;
+
     class cqasm_reader
     {
     public:
