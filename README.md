@@ -19,7 +19,7 @@ OpenQL can be installed in a number of ways, See [Installation](https://openql.r
 Example python tests and programs can be found in the 'tests' and 'examples' directories. These can be executed as 'python tests/simplePyTest.py'.
 
 Example C++ tests and programs can be found in 'tests' and 'examples'
-directories. Executables for these will be generated in 'build/tests' and 'build/examples' directory. An executable can be executed as: './example'
+directories. Executables for these will be generated in 'cbuild/tests' and 'cbuild/examples' directory. An executable can be executed as: './example'
 
 
 
