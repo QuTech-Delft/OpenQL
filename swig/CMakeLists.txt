@@ -29,11 +29,11 @@ SET_PROPERTY(SOURCE openql.i PROPERTY SWIG_FLAGS -castmode -modern -keyword -w51
 IF (${CMAKE_VERSION} VERSION_LESS "3.8.0")
 	SWIG_ADD_MODULE(openql python openql.i)
 ELSE()
-  SWIG_ADD_LIBRARY( openql
-                    TYPE MODULE
-                    LANGUAGE python
-                    SOURCES openql.i
-                  )
+    SWIG_ADD_LIBRARY( openql
+                      TYPE MODULE
+                      LANGUAGE python
+                      SOURCES openql.i
+                    )
 ENDIF()
 
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

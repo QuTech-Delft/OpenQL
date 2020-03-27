@@ -32,7 +32,8 @@ namespace ql
         libQasm *libqasm = new libQasm();
         libqasm->parse_string(cqasm_str.c_str());
         int result = libqasm->getParseResult();
-        if (!result) {
+        if (!result)
+        {
             add_cqasm(libqasm->getQasmRepresentation());
         }
         else
@@ -47,7 +48,8 @@ namespace ql
         libQasm *libqasm = new libQasm();
         libqasm->parse_file(cqasm_file_path.c_str());
         int result = libqasm->getParseResult();
-        if (!result) {
+        if (!result)
+        {
             add_cqasm(libqasm->getQasmRepresentation());
         }
         else
@@ -100,10 +102,12 @@ namespace ql
 
             // add the kernel to program
             num_kernels++;
-            if (numIterations > 1) {
+            if (numIterations > 1)
+            {
                 program.add_for(kernel, numIterations);
             }
-            else {
+            else
+            {
                 program.add(kernel);
             }
         }
@@ -247,7 +251,7 @@ namespace ql
         }
         else if (gate_type == "measure_all")
         {
-            for (size_t qubit = 0; qubit < number_of_qubits; qubit++)
+            for (size_t qubit = 0; int(qubit) < number_of_qubits; qubit++)
             {
                 kernel.gate(translate_gate_type("measure_z"), qubit);
             }

@@ -8,7 +8,7 @@ void test_single_bit_kernel_operations()
     IOUT("test_single_bit_kernel_operations");
     // create platform
     ql::quantum_platform platform("seven_qubits_chip", "hardware_config_cc_light.json");
-    int num_qubits = platform.get_qubit_number();
+    size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::quantum_program program("qasm_single_bit_kernel_operations", platform, num_qubits);
 
@@ -48,7 +48,7 @@ void test_parameterized_single_bit_kernel_operations()
     IOUT("test_parameterized_single_bit_kernel_operations");
     // create platform
     ql::quantum_platform platform("seven_qubits_chip", "hardware_config_cc_light.json");
-    int num_qubits = platform.get_qubit_number();
+    size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::quantum_program program("qasm_parameterized_single_bit_kernel_operations", platform, num_qubits);
 
@@ -73,7 +73,7 @@ void test_dual_bit_kernel_operations()
     IOUT("test_dual_bit_kernel_operations");
     // create platform
     ql::quantum_platform platform("seven_qubits_chip", "hardware_config_cc_light.json");
-    int num_qubits = platform.get_qubit_number();
+    size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::quantum_program program("qasm_dual_bit_kernel_operations", platform, num_qubits);
 
@@ -98,7 +98,7 @@ void test_parameterized_dual_bit_kernel_operations()
     IOUT("test_parameterized_dual_bit_kernel_operations");
     // create platform
     ql::quantum_platform platform("seven_qubits_chip", "hardware_config_cc_light.json");
-    int num_qubits = platform.get_qubit_number();
+    size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::quantum_program program("qasm_parameterized_dual_bit_kernel_operations", platform, num_qubits);
 
@@ -123,7 +123,7 @@ void test_triple_bit_kernel_operations()
     ql::options::set("decompose_toffoli", "AM");
     // create platform
     ql::quantum_platform platform("seven_qubits_chip", "hardware_config_cc_light.json");
-    int num_qubits = platform.get_qubit_number();
+    size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::quantum_program program("qasm_triple_bit_kernel_operations", platform, num_qubits);
 
@@ -146,7 +146,7 @@ void test_sub_circuit_program()
     IOUT("test_sub_circuit_program");
     // create platform
     ql::quantum_platform platform("seven_qubits_chip", "hardware_config_cc_light.json");
-    int num_qubits = platform.get_qubit_number();
+    size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::quantum_program program("qasm_sub_circuit_program", platform, num_qubits);
 
@@ -172,7 +172,7 @@ void test_parallel_program()
     IOUT("test_parallel_program");
     // create platform
     ql::quantum_platform platform("seven_qubits_chip", "hardware_config_cc_light.json");
-    int num_qubits = platform.get_qubit_number();
+    size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::quantum_program program("qasm_parallel_program", platform, num_qubits);
 
@@ -197,7 +197,7 @@ void test_special_gates()
     IOUT("test_parallel_programs");
     // create platform
     ql::quantum_platform platform("seven_qubits_chip", "hardware_config_cc_light.json");
-    int num_qubits = platform.get_qubit_number();
+    size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::quantum_program program("qasm_special_gates", platform, num_qubits);
 
@@ -227,7 +227,7 @@ void test_add_multiple_parts_of_cqasm()
     IOUT("test_add_multiple_programs");
     // create platform
     ql::quantum_platform platform("seven_qubits_chip", "hardware_config_cc_light.json");
-    int num_qubits = platform.get_qubit_number();
+    size_t num_qubits = platform.get_qubit_number();
     // create program
     ql::quantum_program program("qasm_add_multiple_programs", platform, num_qubits);
 
@@ -257,15 +257,39 @@ void test_add_multiple_parts_of_cqasm()
     program.compile();
 }
 
+void test_qi_example()
+{
+    IOUT("test_qi_example");
+    // create platform
+    ql::quantum_platform platform("seven_qubits_chip", "hardware_config_cc_light.json");
+    size_t num_qubits = platform.get_qubit_number();
+    // create program
+    ql::quantum_program program("qasm_qi_example", platform, num_qubits);
+
+    ql::cqasm_reader cqasm_rdr(platform, program);
+    cqasm_rdr.string2circuit(
+    "version 1.0\n"
+    "qubits 5\n"
+    "prep_z q[0,1,2,3,4]\n"
+    "y q[0,2]\n"
+    "cz q[0], q[2]\n"
+    "y90 q[2]\n"
+    "measure_all\n");
+
+    // compile the resulting program
+    program.compile();
+}
+
 int main(int argc, char ** argv)
 {
     //ql::utils::logger::set_log_level("LOG_NOTHING");
-    ql::utils::logger::set_log_level("LOG_INFO");
+    ql::utils::logger::set_log_level("LOG_WARNING");
     ql::options::set("write_qasm_files", "yes");
 
     try {
         COUT("Testing cqasm_reader");
         //the following tests run successfully for configuration hardware_config_cc_light.json
+        test_qi_example();
         test_add_multiple_parts_of_cqasm();
         test_single_bit_kernel_operations();
         test_sub_circuit_program();
@@ -275,7 +299,7 @@ int main(int argc, char ** argv)
         //test_parameterized_single_bit_kernel_operations();
         //test_dual_bit_kernel_operations();
         //test_parameterized_dual_bit_kernel_operations();
-        test_triple_bit_kernel_operations();
+        //test_triple_bit_kernel_operations();
         //test_special_gates();
     }
     catch (const std::runtime_error& e)

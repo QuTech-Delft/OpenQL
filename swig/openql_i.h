@@ -214,7 +214,7 @@ public:
     {
         kernel->toffoli(q0,q1,q2);
     }
-    void clifford(size_t id, size_t q0)
+    void clifford(int id, size_t q0)
     {
         kernel->clifford(id, q0);
     }

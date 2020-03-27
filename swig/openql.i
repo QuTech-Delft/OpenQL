@@ -597,8 +597,6 @@ None
 %feature("docstring") Program
 """ Program class which contains one or more kernels."""
 
-%feature("docstring") Program::~Program
-""" Destructs a program object."""
 
 %feature("docstring") Program::Program
 """ Constructs a program object.
@@ -781,10 +779,8 @@ str
     microcode
 """
 
-
 %feature("docstring") cQasmReader
 """ cQasmReader class specifies an interface to add cqasm programs to a program."""
-
 
 %feature("docstring") cQasmReader::~cQasmReader
 """ Destructs a cQasmReader object. """
@@ -817,6 +813,7 @@ Parameters
 arg1 : str
     File path to the file specifying the cqasm that is added to the program.
 """
+
 
 // Include the header file with above prototypes
 %include "openql_i.h"

@@ -76,4 +76,4 @@ Note: please fill your contributions in this file
     -   OpenQL documentation
 
 - [Fer Grooteman](https://github.com/QFer)
-    -   Added interface (C++ and Python) to compile cQASM 1.0
+    -   added interface (C++ and Python) to compile cQASM 1.0
