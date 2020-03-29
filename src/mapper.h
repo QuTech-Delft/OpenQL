@@ -523,25 +523,6 @@ void Print(std::string s)
     // rm.Print("... in FreeCycle: ");
 }
 
-// get the gate parameters that need to be passed to the resource manager;
-// it would have been nicer if they would have been made available by the platform
-// directly to the resource manager since this function makes the mapper dependent on cc_light
-static void GetGateParameters(std::string id, const ql::quantum_platform *platformp, std::string& operation_name, std::string& operation_type, std::string& instruction_type)
-{
-    if ( !platformp->instruction_settings[id]["cc_light_instr"].is_null() )
-    {
-        operation_name = platformp->instruction_settings[id]["cc_light_instr"];
-    }
-    if ( !platformp->instruction_settings[id]["type"].is_null() )
-    {
-        operation_type = platformp->instruction_settings[id]["type"];
-    }
-    if ( !platformp->instruction_settings[id]["cc_light_instr_type"].is_null() )
-    {
-        instruction_type = platformp->instruction_settings[id]["cc_light_instr_type"];
-    }
-}
-
 // return whether gate with first operand qubit r0 can be scheduled earlier than with operand qubit r1
 bool IsFirstOperandEarlier(size_t r0, size_t r1)
 {
@@ -605,17 +586,13 @@ size_t StartCycle(ql::gate *g)
     if (mapopt == "baserc" || mapopt == "minextendrc")
     {
         size_t      baseStartCycle = startCycle;
-        size_t      duration = (g->duration+ct-1)/ct;   // rounded-up unsigned integer division
-        auto&       id = g->name;
-        std::string operation_name(id);
-        std::string operation_type;
-        std::string instruction_type;
 
-        GetGateParameters(id, platformp, operation_name, operation_type, instruction_type);
         while (startCycle < MAX_CYCLE)
         {
-            if (rm.available(startCycle, g, operation_name, operation_type, instruction_type, duration))
+            // DOUT("Startcycle for " << g->qasm() << ": available? at startCycle=" << startCycle);
+            if (rm.available(startCycle, g, *platformp))
             {
+                // DOUT(" ... [" << startCycle << "] resources available for " << g->qasm());
                 break;
             }   
             else
@@ -666,14 +643,7 @@ void Add(ql::gate *g, size_t startCycle)
     auto        mapopt = ql::options::get("mapper");
     if (mapopt == "baserc" || mapopt == "minextendrc")
     {
-        auto&       id = g->name;
-        std::string operation_name(id);
-        std::string operation_type;
-        std::string instruction_type;
-        size_t      duration = (g->duration+ct-1)/ct;   // rounded-up unsigned integer division
-
-        GetGateParameters(id, platformp, operation_name, operation_type, instruction_type);
-        rm.reserve(startCycle, g, operation_name, operation_type, instruction_type, duration);
+        rm.reserve(startCycle, g, *platformp);
     }
 }
 

@@ -41,10 +41,8 @@ public:
         DOUT("constructing resource: " << n << " for direction (0:fwd,1:bwd): " << dir);
     }
 
-    virtual bool available(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
-        std::string & operation_type, std::string & instruction_type, size_t operation_duration) = 0;
-    virtual void reserve(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
-        std::string & operation_type, std::string & instruction_type, size_t operation_duration) = 0;
+    virtual bool available(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform) = 0;
+    virtual void reserve(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform) = 0;
     virtual ~resource_t() {}
     virtual resource_t* clone() const & = 0;
     virtual resource_t* clone() && = 0;
@@ -113,14 +111,13 @@ public:
         return *this;
     }
 
-    bool available(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
-        std::string & operation_type, std::string & instruction_type, size_t operation_duration)
+    bool available(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
         // COUT("checking availability of resources for: " << ins->qasm());
         for(auto rptr : resource_ptrs)
         {
             // DOUT("... checking availability for resource " << rptr->name);
-            if( rptr->available(op_start_cycle, ins, operation_name, operation_type, instruction_type, operation_duration) == false)
+            if( rptr->available(op_start_cycle, ins, platform) == false)
             {
                 // DOUT("... resource " << rptr->name << "not available");
                 return false;
@@ -130,14 +127,13 @@ public:
         return true;
     }
 
-    void reserve(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
-        std::string & operation_type, std::string & instruction_type, size_t operation_duration)
+    void reserve(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
         // COUT("reserving resources for: " << ins->qasm());
         for(auto rptr : resource_ptrs)
         {
             // DOUT("... reserving resource " << rptr->name);
-            rptr->reserve(op_start_cycle, ins, operation_name, operation_type, instruction_type, operation_duration);
+            rptr->reserve(op_start_cycle, ins, platform);
         }
         // DOUT("all resources reserved for: " << ins->qasm());
     }

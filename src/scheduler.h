@@ -1534,58 +1534,6 @@ public:
         }
     }
 
-    // reading platform dependent gate attributes for rc scheduling
-    //
-    // get the gate parameters that need to be passed to the resource manager;
-    // it would have been nicer if they would have been made available by the platform
-    // directly to the resource manager since this function makes the mapper dependent on cc_light
-    void GetGateParameters(std::string id, const ql::quantum_platform& platform, std::string& operation_name, std::string& operation_type, std::string& instruction_type)
-    {
-        DOUT("... getting gate parameters of " << id);
-        if (platform.instruction_settings.count(id) > 0)
-        {
-            DOUT("...... extracting operation_name");
-	        if ( !platform.instruction_settings[id]["cc_light_instr"].is_null() )
-	        {
-	            operation_name = platform.instruction_settings[id]["cc_light_instr"];
-	        }
-            else
-            {
-	            operation_name = id;
-                DOUT("...... faking operation_name to " << operation_name);
-            }
-
-            DOUT("...... extracting operation_type");
-	        if ( !platform.instruction_settings[id]["type"].is_null() )
-	        {
-	            operation_type = platform.instruction_settings[id]["type"];
-	        }
-            else
-            {
-	            operation_type = "cc_light_type";
-                DOUT("...... faking operation_type to " << operation_type);
-            }
-
-            DOUT("...... extracting instruction_type");
-	        if ( !platform.instruction_settings[id]["cc_light_instr_type"].is_null() )
-	        {
-	            instruction_type = platform.instruction_settings[id]["cc_light_instr_type"];
-	        }
-            else
-            {
-	            instruction_type = "cc_light";
-                DOUT("...... faking instruction_type to " << instruction_type);
-            }
-        }
-        else
-        {
-            DOUT("Error: platform doesn't support gate '" << id << "'");
-            EOUT("Error: platform doesn't support gate '" << id << "'");
-            throw ql::exception("[x] Error : platform doesn't support gate!",false);
-        }
-        DOUT("... getting gate parameters [done]");
-    }
-
     // a gate must wait until all its operand are available, i.e. the gates having computed them have completed,
     // and must wait until all resources required for the gate's execution are available;
     // return true when immediately schedulable
@@ -1609,13 +1557,7 @@ public:
             {
                 return true;
             }
-            std::string operation_name;
-            std::string operation_type;
-            std::string instruction_type;
-            size_t      operation_duration = std::ceil( static_cast<float>(gp->duration) / cycle_time);
-            // size_t      operation_duration = (gp->duration+cycle_time-1) / cycle_time;
-            GetGateParameters(gp->name, platform, operation_name, operation_type, instruction_type);
-            if (rm.available(curr_cycle, gp, operation_name, operation_type, instruction_type, operation_duration))
+            if (rm.available(curr_cycle, gp, platform))
             {
                 return true;
             }
@@ -1720,15 +1662,7 @@ public:
                 && gp->type() != ql::gate_type_t::__wait_gate__ 
                )
             {
-                std::string operation_name;
-                std::string operation_type;
-                std::string instruction_type;
-                size_t      operation_duration = 0;
-
-                GetGateParameters(gp->name, platform, operation_name, operation_type, instruction_type);
-                // operation_duration = (gp->duration+cycle_time-1) / cycle_time;
-                operation_duration = std::ceil( static_cast<float>(gp->duration) / cycle_time);
-                rm.reserve(curr_cycle, gp, operation_name, operation_type, instruction_type, operation_duration);
+                rm.reserve(curr_cycle, gp, platform);
             }
             TakeAvailable(selected_node, avlist, scheduled, dir);   // update avlist/scheduled/cycle
             // more nodes that could be scheduled in this cycle, will be found in an other round of the loop
@@ -2133,84 +2067,43 @@ public:
 
 public:
 
-// =========== scheduling entry points switching out to pre179 or post179
+// =========== scheduling entry points
 
     ql::ir::bundles_t schedule_asap(std::string & sched_dot)
     {
-        if (ql::options::get("scheduler_post179") == "no")
-        {
-            return schedule_asap_post179(sched_dot);
-        }
-        else
-        {
-            return schedule_asap_post179(sched_dot);
-        }
+        return schedule_asap_post179(sched_dot);
     }
 
     ql::ir::bundles_t schedule_asap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform,
         std::string & sched_dot)
     {
-        if (ql::options::get("scheduler_post179") == "no")
-        {
-            return schedule_asap_post179(rm, platform, sched_dot);
-        }
-        else
-        {
-            return schedule_asap_post179(rm, platform, sched_dot);
-        }
+        return schedule_asap_post179(rm, platform, sched_dot);
     }
 
     ql::ir::bundles_t schedule_alap(std::string & sched_dot)
     {
-        if (ql::options::get("scheduler_post179") == "no")
-        {
-            return schedule_alap_post179(sched_dot);
-        }
-        else
-        {
-            return schedule_alap_post179(sched_dot);
-        }
+        return schedule_alap_post179(sched_dot);
     }
 
     ql::ir::bundles_t schedule_alap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform,
         std::string & sched_dot)
     {
-        if (ql::options::get("scheduler_post179") == "no")
-        {
-            return schedule_alap_post179(rm, platform, sched_dot);
-        }
-        else
-        {
-            return schedule_alap_post179(rm, platform, sched_dot);
-        }
+        return schedule_alap_post179(rm, platform, sched_dot);
     }
 
     ql::ir::bundles_t schedule_alap_uniform()
     {
-        if (ql::options::get("scheduler_post179") == "no")
-        {
-            return schedule_alap_uniform_post179();
-        }
-        else
-        {
-            return schedule_alap_uniform_post179();
-        }
+        return schedule_alap_uniform_post179();
     }
 
     void get_dot(std::string & dot)
     {
-        if (ql::options::get("scheduler_post179") == "no")
-        {
-        }
-        else
-        {
-            set_cycle(ql::forward_scheduling);
-            sort_by_cycle();
+        set_cycle(ql::forward_scheduling);
+        sort_by_cycle();
 
-            stringstream ssdot;
-            get_dot_post179(false, true, ssdot, ql::forward_scheduling);
-            dot = ssdot.str();
-        }
+        stringstream ssdot;
+        get_dot_post179(false, true, ssdot, ql::forward_scheduling);
+        dot = ssdot.str();
     }
 };
 

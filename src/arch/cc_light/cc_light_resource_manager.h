@@ -44,9 +44,16 @@ public:
         }
     }
 
-    bool available(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
-        std::string & operation_type, std::string & instruction_type, size_t operation_duration)
+    bool available(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
+        std::string operation_type("cc_light_type");
+        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
+        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
+        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
+        {
+            operation_type = platform.instruction_settings[ins->name]["type"];
+        }
+
         for( auto q : ins->operands )
         {
             if (forward_scheduling == direction)
@@ -72,9 +79,15 @@ public:
         return true;
     }
 
-    void reserve(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
-        std::string & operation_type, std::string & instruction_type, size_t operation_duration)
+    void reserve(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
+        std::string operation_type("cc_light_type");
+        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
+        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
+        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
+        {
+            operation_type = platform.instruction_settings[ins->name]["type"];
+        }
         for( auto q : ins->operands )
         {
             state[q] = (forward_scheduling == direction ?  op_start_cycle + operation_duration : op_start_cycle );
@@ -128,9 +141,20 @@ public:
         }
     }
 
-    bool available(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
-        std::string & operation_type, std::string & instruction_type, size_t operation_duration)
+    bool available(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
+        std::string operation_name(ins->name);
+        std::string operation_type("cc_light_type");
+        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
+        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
+        if ( !platform.instruction_settings[ins->name]["cc_light_instr"].is_null() )
+        {
+            operation_name = platform.instruction_settings[ins->name]["cc_light_instr"];
+        }
+        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
+        {
+            operation_type = platform.instruction_settings[ins->name]["type"];
+        }
         bool is_mw = (operation_type == "mw");
         if( is_mw )
         {
@@ -161,9 +185,20 @@ public:
         return true;
     }
 
-    void reserve(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
-        std::string & operation_type, std::string & instruction_type, size_t operation_duration)
+    void reserve(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
+        std::string operation_name(ins->name);
+        std::string operation_type("cc_light_type");
+        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
+        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
+        if ( !platform.instruction_settings[ins->name]["cc_light_instr"].is_null() )
+        {
+            operation_name = platform.instruction_settings[ins->name]["cc_light_instr"];
+        }
+        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
+        {
+            operation_type = platform.instruction_settings[ins->name]["type"];
+        }
         bool is_mw = (operation_type == "mw");
         if( is_mw )
         {
@@ -236,9 +271,15 @@ public:
         }
     }
 
-    bool available(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
-        std::string & operation_type, std::string & instruction_type, size_t operation_duration)
+    bool available(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
+        std::string operation_type("cc_light_type");
+        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
+        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
+        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
+        {
+            operation_type = platform.instruction_settings[ins->name]["type"];
+        }
         bool is_measure = (operation_type == "readout");
         if( is_measure )
         {
@@ -277,9 +318,15 @@ public:
         return true;
     }
 
-    void reserve(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
-        std::string & operation_type, std::string & instruction_type, size_t operation_duration)
+    void reserve(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
+        std::string operation_type("cc_light_type");
+        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
+        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
+        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
+        {
+            operation_type = platform.instruction_settings[ins->name]["type"];
+        }
         bool is_measure = (operation_type == "readout");
         if( is_measure )
         {
@@ -348,9 +395,15 @@ public:
         }
     }
 
-    bool available(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
-        std::string & operation_type, std::string & instruction_type, size_t operation_duration)
+    bool available(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
+        std::string operation_type("cc_light_type");
+        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
+        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
+        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
+        {
+            operation_type = platform.instruction_settings[ins->name]["type"];
+        }
         auto gname = ins->name;
         bool is_flux = (operation_type == "flux");
         if( is_flux )
@@ -411,9 +464,15 @@ public:
         return true;
     }
 
-    void reserve(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
-        std::string & operation_type, std::string & instruction_type, size_t operation_duration)
+    void reserve(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
+        std::string operation_type("cc_light_type");
+        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
+        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
+        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
+        {
+            operation_type = platform.instruction_settings[ins->name]["type"];
+        }
         auto gname = ins->name;
         bool is_flux = (operation_type == "flux");
         if( is_flux )
@@ -545,9 +604,16 @@ public:
 
     // When a two-qubit flux gate, check whether the qubits it would detune are not busy with a rotation.
     // When a one-qubit rotation, check whether the qubit is not detuned (busy with a flux gate).
-    bool available(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
-        std::string & operation_type, std::string & instruction_type, size_t operation_duration)
+    bool available(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
+        std::string operation_type("cc_light_type");
+        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
+        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
+        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
+        {
+            operation_type = platform.instruction_settings[ins->name]["type"];
+        }
+
         auto gname = ins->name;
         bool is_flux = (operation_type == "flux");
         if( is_flux )
@@ -643,9 +709,15 @@ public:
 
     // A two-qubit flux gate must set the qubits it would detune to detuned, busy with a flux gate.
     // A one-qubit rotation gate must set its operand qubit to busy, busy with a rotation.
-    void reserve(size_t op_start_cycle, ql::gate * ins, std::string & operation_name,
-        std::string & operation_type, std::string & instruction_type, size_t operation_duration)
+    void reserve(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
+        std::string operation_type("cc_light_type");
+        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
+        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
+        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
+        {
+            operation_type = platform.instruction_settings[ins->name]["type"];
+        }
         auto gname = ins->name;
         bool is_flux = (operation_type == "flux");
         if( is_flux )
