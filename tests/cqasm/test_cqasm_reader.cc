@@ -282,7 +282,6 @@ void test_qi_example()
 
 int main(int argc, char ** argv)
 {
-    //ql::utils::logger::set_log_level("LOG_NOTHING");
     ql::utils::logger::set_log_level("LOG_WARNING");
     ql::options::set("write_qasm_files", "yes");
 

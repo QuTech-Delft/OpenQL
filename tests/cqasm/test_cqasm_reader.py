@@ -12,8 +12,10 @@ class TestcQasmReader(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
+        ql.set_option('log_level', 'LOG_WARNING')
         ql.set_option('output_dir', output_dir)
         ql.set_option("write_qasm_files", "yes")
+        ql.set_option("quantumsim", "no")
 
     def test_invalid_qasm(self):
         config_fn = os.path.join(curdir, '../hardware_config_cc_light.json')
