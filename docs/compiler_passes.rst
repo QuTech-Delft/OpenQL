@@ -152,7 +152,7 @@ by its parameterization by the platform configuration file.
 	doing this, it maintains a map from virtual (program) qubits to real qubits (``v2r``);
 	each time that it encounters a two-qubit gate that in the current map is not NN,
 	it inserts swap gates before this gate that gradually make the operand qubits NN;
-	when inserting the swap, it updates the v2r map accordingly.
+	when inserting a swap, it updates the v2r map accordingly.
 	There are many refinements to this algorithm that can be controlled through options and the configuration file.
 	It is not complete in the sense that it ignores transfer of the v2r map between kernels.
 	See :ref:`mapping`.
