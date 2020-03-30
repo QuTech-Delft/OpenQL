@@ -1,4 +1,4 @@
 [submodule "deps/libqasm"]
 	path = deps/libqasm
 	url = git@github.com:QE-Lab/libqasm.git
-	branch = develop
+	branch = 0f238e828dfd483ab0abf3497910909c3ea9b81d
