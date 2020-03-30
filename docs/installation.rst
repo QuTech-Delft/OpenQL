@@ -247,4 +247,4 @@ Some targets must be built manually, like test_cc or test_cqasm_reader. To build
 
     nmake test_cqasm_reader
     cd tests
-    .\test_cqasm_reader.exe
+    .\test_cqasm_reader
