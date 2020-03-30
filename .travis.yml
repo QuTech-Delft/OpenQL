@@ -6,7 +6,7 @@ matrix:
     - name: "Python 3.7 on macOS 10.14"
       os: osx
       osx_image: xcode11.3
-      language: shell
+      language: generic
       env:
         - export PATH="/usr/local/opt/flex/bin:$PATH"
         - export LDFLAGS="-L/usr/local/opt/flex/lib:$LDFLAGS"
@@ -21,21 +21,26 @@ matrix:
       python: 3.7
 
 before_install:
+  - python3 -m pip install -U pip
+  - python3 -m pip install -U pytest
   - python3 --version
-  - pip3 install -U pip
-  - pip3 install -U pytest
+  - pip3 --version
+
+
 install:
   - cd deps
-  - git clone https://github.com/QE-Lab/libqasm.git
-  - cd libqasm
-  - pip install . 
+  - git clone https://github.com/imranashraf/travis-libqasm.git
+  - cd travis-libqasm
+  - python3 -m pip install . 
   - cd ..
-  - git clone https://github.com/QE-Lab/eQASM_Assembler.git
-  - cd eQASM_Assembler/qisa-as
-  - pip install .
+  - git clone https://github.com/imranashraf/travis-eQASM_Assembler.git
+  - cd travis-eQASM_Assembler/qisa-as
+  - python3 -m pip install . 
   - cd ../../../.
-  - pip install .
+  - python3 -m pip install . 
 script: python3 -m pytest
+
+
 
 addons:
   apt:
@@ -46,6 +51,7 @@ addons:
       - bison
   homebrew:
     packages:
+      - python3
       - cmake
       - swig
       - flex
