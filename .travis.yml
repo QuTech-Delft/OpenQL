@@ -38,7 +38,7 @@ install:
   - python3 -m pip install . 
   - cd ../../../.
   - python3 -m pip install . 
-script: pytest
+script: python3 -m pytest
 
 
 
@@ -51,7 +51,7 @@ addons:
       - bison
   homebrew:
     packages:
-      - python
+      - python3
       - cmake
       - swig
       - flex
