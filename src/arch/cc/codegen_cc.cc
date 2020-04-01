@@ -553,7 +553,8 @@ void codegen_cc::for_start(const std::string &label, int iterations)
 {
     comment(SS2S("# FOR_START(" << iterations << ")"));
     // FIXME: reserve register
-    emit((label+":").c_str(), "move", SS2S(iterations << ",R63"), "# R63 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
+    emit("", "move", SS2S(iterations << ",R63"), "# R63 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
+    emit((label+":").c_str(), "", SS2S(""), "# ");        // just a label
 }
 
 void codegen_cc::for_end(const std::string &label)
