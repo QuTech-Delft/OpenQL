@@ -1,4 +1,4 @@
 [submodule "deps/libqasm"]
 	path = deps/libqasm
-	url = https://github.com/imranashraf/travis-libqasm.git
-	branch = master
+	url = https://github.com/QE-Lab/libqasm.git
+	branch = develop

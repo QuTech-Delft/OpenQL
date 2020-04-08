@@ -14,12 +14,6 @@ INCLUDE_DIRECTORIES(
 ADD_EXECUTABLE(test_cc EXCLUDE_FROM_ALL cc/test_cc.cc )
 TARGET_LINK_LIBRARIES(test_cc ${LEMON_LIBRARIES} ql )
 
-# Must be built manually to limit default build time
-ADD_EXECUTABLE(test_cqasm_reader EXCLUDE_FROM_ALL cqasm/test_cqasm_reader.cc )
-ADD_DEPENDENCIES(test_cqasm_reader lexgramstatic)
-SET_PROPERTY(TARGET test_cqasm_reader PROPERTY CXX_STANDARD 11)
-TARGET_LINK_LIBRARIES(test_cqasm_reader ql ${LEMON_LIBRARIES} lexgramstatic)
-
 # create output directory for test outputs
 ADD_CUSTOM_TARGET(tests-output-directory ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory test_output)

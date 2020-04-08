@@ -221,13 +221,13 @@ To execute the given examples or tests, go to e.g., ```OpenQL/cbuild/examples```
 
 If one wants to compile and run a single file without adding it to CMakeLists.txt, e.g., ```example.cc```, he can use the standalone example provided in ```examples/cpp-standalone-example``` directory.
 
-Some targets must be built manually, like test_cc or test_cqasm_reader. To build test_cqasm_reader, from the cbuild directory do:
+Some targets must be built manually, like test_cc. To build test_cc, from the cbuild directory do:
 
 ::
 
-    make test_cqasm_reader
+    make test_cc
     cd tests
-    ./test_cqasm_reader
+    ./test_cc
 
 
 
@@ -240,11 +240,3 @@ Windows
     cd cbuild
     cmake -G "NMake Makefiles" ..
     nmake
-
-Some targets must be built manually, like test_cc or test_cqasm_reader. To build test_cqasm_reader, from the cbuild directory do:
-
-::
-
-    nmake test_cqasm_reader
-    cd tests
-    .\test_cqasm_reader
