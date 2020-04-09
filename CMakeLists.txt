@@ -1,16 +1,13 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
+# policies from version 3.1 onwards (can be removed if min required version >= 3.1)
+CMAKE_POLICY(SET CMP0054 NEW)
 
-SET(PROJECT_NAME "OPENQL")
+PROJECT(OPENQL)
 
-PROJECT(${PROJECT_NAME})
-
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  # Set default build type to RelWithDebInfo
-  set(CMAKE_BUILD_TYPE Release CACHE STRING
+SET(CMAKE_BUILD_TYPE Release CACHE STRING
     "Type of build (None Debug Release RelWithDebInfo MinSizeRel)" FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
+SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
     "RelWithDebInfo" "MinSizeRel")
-endif()
 
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -48,25 +45,23 @@ SET(EIGEN_UNSUPPORTED_INCLUDE_DIRS
   "${CMAKE_SOURCE_DIR}/deps"
 )
 
-##MESSAGE( STATUS "CLI11_INCLUDE_DIRS: " ${CLI11_INCLUDE_DIRS} )
-
 ## These are the include directories used by the compiler.
-
 INCLUDE_DIRECTORIES(
-  ${PROJECT_SOURCE_DIR}
   ${LEMON_INCLUDE_DIRS}
   ${CLI11_INCLUDE_DIRS}
+<<<<<<< HEAD
   ${EIGEN_INCLUDE_DIRS}
   ${EIGEN_UNSUPPORTED_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/src
 )
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
-  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -Wfatal-errors -ggdb")
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -Wall -Wfatal-errors -ggdb ")
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -Wfatal-errors -ggdb -lpthread")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -Wall -Wfatal-errors -ggdb -lpthread")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 IF(MSVC)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++11 /MP  /D_USE_MATH_DEFINES ")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++11 /MP /D_USE_MATH_DEFINES")
 ENDIF(MSVC)
 
 IF("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
@@ -74,6 +69,7 @@ IF("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -Wall -Wfatal-errors -Wno-unused-local-typedef -ggdb")
 ENDIF("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
-ADD_SUBDIRECTORY(programs)
+ADD_SUBDIRECTORY(src)
+ADD_SUBDIRECTORY(examples)
 ADD_SUBDIRECTORY(tests)
-ADD_SUBDIRECTORY(openql)
+ADD_SUBDIRECTORY(swig)

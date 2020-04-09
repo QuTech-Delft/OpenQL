@@ -15,9 +15,8 @@
 
 #include <time.h>
 
-#include "ql/openql.h"
-#include "ql/utils.h"
-
+#include <openql.h>
+#include <utils.h>
 
 #define CFG_FILE_JSON   "test_cfg_cc.json"
 
@@ -25,22 +24,21 @@
 // based on tests/test_hybrid.py
 void test_classical(std::string scheduler, std::string scheduler_uniform)
 {
-    const int num_qubits = 25;
+    const int num_qubits = 17;
     const int num_cregs = 3;
 
-   // create and set platform
+    // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
 
     // create program
     ql::quantum_program prog(("test_classical_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
     ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
 
     // quantum operations
-    for (int j=6; j<19; j++) {
+    for (int j=6; j<17; j++) {
         k.gate("x", j);
     }
-    k.wait({6,7,8,9,10,11,12,13,14,15,16,17,18}, 0);      // help scheduler
+    k.wait({6,7,8,9,10,11,12,13,14,15,16}, 0);      // help scheduler
 
     // 1/2/3 qubit flux
 #if 0 // misaligns cz and park_cz (using old scheduler)
@@ -57,17 +55,17 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
     k.gate("park_cz", 11);  // NB: not necessarily correct qubit
 
     k.gate("cz", 12, 13);
-    k.gate("park_cz", 17);
+    k.gate("park_cz", 15);
 
     k.gate("cz", 10, 15);
     k.gate("park_cz", 16);
 #endif
-    k.wait({6,7,11,12,13,17,10,15,16}, 0); // help scheduler
+    k.wait({6,7,8,9,10,11,12,13,14,15,16}, 0);      // help scheduler
 
     k.gate("cz_park", std::vector<size_t> {6, 7, 11});
-    k.gate("cz_park", std::vector<size_t> {12, 13, 17});
-    k.gate("cz_park", std::vector<size_t> {10, 15, 16});
-    k.wait({6,7,11,12,13,17,10,15,16}, 0); // help scheduler
+    k.gate("cz_park", std::vector<size_t> {12, 13, 15});
+    k.gate("cz_park1", std::vector<size_t> {10, 15, 16});   // FIXME:
+    k.wait({6,7,8,9,10,11,12,13,14,15,16}, 0);      // help scheduler
 
     // gate with angle parameter
     double angle = 1.23456; // just some number
@@ -149,18 +147,20 @@ $2 = 0
 
     ql::options::set("scheduler", scheduler);
     ql::options::set("scheduler_uniform", scheduler_uniform);
-    prog.compile( );
+#if 0   // FIXME
+    ql::options::set("backend_cc_map_input_file", "test_output/test_classical_ALAP_uniform_no.map");
+#endif
+    prog.compile();
 }
 
 
 void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
 {
-    const int num_qubits = 25;
+    const int num_qubits = 17;
     const int num_cregs = 3;
 
    // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
 
     // create program
     ql::quantum_program prog(("test_qec_pipelined_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
@@ -173,17 +173,17 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     //
     // class SurfaceCode, qubits, tiles, width, getNeighbourN, getNeighbourE, getNeighbourW, getNeighbourS, getX, getZ, getData
 
-    const int x = 7;
-    const int xN = x-5;
-    const int xE = x+1;
-    const int xS = x+5;
-    const int xW = x-1;
+    const unsigned int x = 7;
+    const unsigned int xN = x-5;
+    const unsigned int xE = x+1;
+    const unsigned int xS = x+5;
+    const unsigned int xW = x-1;
 
-    const int z = 11;
-    const int zN = z-5;
-    const int zE = z+1;
-    const int zS = z+5;
-    const int zW = z-1;
+    const unsigned int z = 11;
+    const unsigned int zN = z-5;
+    const unsigned int zE = z+1;
+    const unsigned int zS = z+5;
+    const unsigned int zW = z-1;
 
     // X stabilizers
     k.gate("rym90", x);
@@ -191,23 +191,35 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     k.gate("rym90", xE);
     k.gate("rym90", xW);
     k.gate("rym90", xS);
-    k.wait({x, xN, xE, xW, xS}, 0);
+//    k.wait({x, xN, xE, xW, xS}, 0);
+    // FIXME: above line does not work with new scheduler.h
+    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}, 0);
 
     k.gate("cz", x, xE);
     k.gate("cz", x, xN);
     k.gate("cz", x, xS);
     k.gate("cz", x, xW);
-    k.wait({x, xN, xE, xW, xS}, 0);
+//    k.wait({x, xN, xE, xW, xS}, 0);
+    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}, 0);
 
     k.gate("ry90", x);
     k.gate("ry90", xN);
     k.gate("ry90", xE);
     k.gate("ry90", xW);
     k.gate("ry90", xS);
-    k.wait({x, xN, xE, xW, xS}, 0);
+//    k.wait({x, xN, xE, xW, xS}, 0);
+    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}, 0);
+
+    // FIXME:
+    // - qubits participating in CZ need phase correction, which may be part of gate, or separate
+    // - similar for qubits not participating
+    // - phase corrections performed using flux lines:
+    //      + duration?
+    //      + possible in parallel without doing 2 qubits gate?
 
     k.gate("measure", std::vector<size_t> {x}, std::vector<size_t> {0});
-    k.wait({x}, 0);
+//    k.wait({x}, 0);
+    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}, 0);
 
     // Z stabilizers
     k.gate("rym90", z);
@@ -224,7 +236,7 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
 
     ql::options::set("scheduler", scheduler);
     ql::options::set("scheduler_uniform", scheduler_uniform);
-    prog.compile( );
+    prog.compile();
 }
 
 
@@ -232,15 +244,12 @@ void test_do_while_nested_for(std::string scheduler, std::string scheduler_unifo
 {
    // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
 
     // create program
-    const int num_qubits = 25;
+    const int num_qubits = 17;
     const int num_cregs = 3;
     ql::quantum_program prog(("test_do_while_nested_for_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
-    ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
-
-    // FIXME: sweep points
+//    ql::quantum_kernel k("kernel7.0", s17, num_qubits, num_cregs);
 
     ql::quantum_program sp1(("sp1"), s17, num_qubits, num_cregs);
     ql::quantum_program sp2(("sp2"), s17, num_qubits, num_cregs);
@@ -269,403 +278,78 @@ void test_do_while_nested_for(std::string scheduler, std::string scheduler_unifo
 
     ql::options::set("scheduler", scheduler);
     ql::options::set("scheduler_uniform", scheduler_uniform);
-    prog.compile( );
+    prog.compile();
 }
 
-#if 0 // Python
-    p = ql.Program('test_do_while_nested_for', platform, num_qubits, num_cregs)
-    sweep_points = [1,2]
-    p.set_sweep_points(sweep_points, len(sweep_points))
-
-    sp1 = ql.Program('subprogram1', platform, num_qubits, num_cregs)
-    sp2 = ql.Program('subprogram2', platform, num_qubits, num_cregs)
-
-    k1 = ql.Kernel('aKernel1', platform, num_qubits, num_cregs)
-    k2 = ql.Kernel('aKernel2', platform, num_qubits, num_cregs)
-
-    # create classical registers
-    rd = ql.CReg()
-    rs1 = ql.CReg()
-    rs2 = ql.CReg()
-
-    # quanutm operations
-    k1.gate('x', [0])
-    k2.gate('y', [0])
-
-    sp1.add_do_while(k1, ql.Operation(rs1, '>=', rs2))
-    sp2.add_for(sp1, 100)
-    p.add_program(sp2)
-
-    p.compile()
-
-    QISA_fn = os.path.join(output_dir, p.name_+'.qisa')
-    assemble(QISA_fn)
-#endif
 
 
 
+void test_rabi( std::string scheduler, std::string scheduler_uniform)
+{
+    // create and set platform
+    ql::quantum_platform s17("s17", "test_cfg_cc_demo.json");
 
-// a simple first test
-// the x gates serve to separate the cnot gates wrt dependences
-// this creates big bundles with 7 x gates
-// and small bundles with just a cnot
-// after uniform scheduling, one or more x gates
-// should have been moved next to the cnot
-// those will move that do not have operands that overlap those of the cnot
-void
-test_0( std::string scheduler, std::string scheduler_uniform)
+    const int num_qubits = 17;
+    const int num_cregs = 3;
+    ql::quantum_program prog(("test_rabi_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
+    ql::quantum_program sp1(("sp1"), s17, num_qubits, num_cregs);
+    ql::quantum_kernel k1("aKernel1", s17, num_qubits, num_cregs);
+
+    ql::creg rs1;
+    ql::creg rs2;
+    size_t qubit = 10;     // connects to uhfqa-0 and awg8-mw-0
+
+    k1.gate("x", qubit);
+    k1.gate("measure", std::vector<size_t> {qubit}, std::vector<size_t> {1});
+
+    ql::operation op1 = ql::operation(rs1, std::string(">="), rs2); // FIXME: bogus condition, endless loop
+    sp1.add_do_while(k1, op1);
+    prog.add_program(sp1);
+
+    ql::options::set("scheduler", scheduler);
+    ql::options::set("scheduler_uniform", scheduler_uniform);
+    prog.compile();
+}
+
+
+void test_wait( std::string scheduler, std::string scheduler_uniform)
 {
     // create and set platform
     ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
 
-    // create program
-    ql::quantum_program prog(("test_0_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
-    ql::quantum_kernel k("kernel7.0", s17, 7, 0);
+    const int num_qubits = 17;
+    const int num_cregs = 3;
+    ql::quantum_program prog(("test_wait_" + scheduler + "_uniform_" + scheduler_uniform), s17, num_qubits, num_cregs);
+    ql::quantum_program sp1(("sp1"), s17, num_qubits, num_cregs);
+    ql::quantum_kernel k("aKernel", s17, num_qubits, num_cregs);
 
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 0,2);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 6,3);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 1,4);
+    size_t qubit = 10;     // connects to uhfqa-0 and awg8-mw-0
+
+    for(int delay=1; delay<=10; delay++) {
+        k.gate("x", qubit);
+        k.wait({qubit}, delay*20);
+        k.gate("y", qubit);
+    }
 
     prog.add(k);
 
     ql::options::set("scheduler", scheduler);
     ql::options::set("scheduler_uniform", scheduler_uniform);
-    prog.compile( );
+    prog.compile();
 }
 
-// just as the previous one
-// but then more of the same
-void
-test_1( std::string scheduler, std::string scheduler_uniform)
-{
-    // create and set platform
-    ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
-
-    // create program
-    ql::quantum_program prog(("test_1_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
-    ql::quantum_kernel k("kernel7.1", s17, 7, 0);
-
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 0,2);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 6,3);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 1,4);
-
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 2,5);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 3,1);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 4,6);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 2,0);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 3,6);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 4,1);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 5,2);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 1,3);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 6,4);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-
-    prog.add(k);
-
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
-    prog.compile( );
-}
-
-// big bundles with x gates
-// alternated with cnot bundles
-// these cnots were chosen to be mutually independent
-// so will be going all 3 in one bundle
-// the single independent x will be moved with it
-void
-test_2( std::string scheduler, std::string scheduler_uniform)
-{
-    // create and set platform
-    ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
-
-    // create program
-    ql::quantum_program prog(("test_2_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
-    ql::quantum_kernel k("kernel7.2", s17, 7, 0);
-
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 0,2);
-    k.gate("cnot", 6,3);
-    k.gate("cnot", 1,4);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 2,5);
-    k.gate("cnot", 3,1);
-    k.gate("cnot", 4,6);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 2,0);
-    k.gate("cnot", 3,6);
-    k.gate("cnot", 4,1);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 5,2);
-    k.gate("cnot", 1,3);
-    k.gate("cnot", 6,4);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-
-    prog.add(k);
-
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
-    prog.compile( );
-}
-
-// again big bundles with x gates
-// alternated with cnot bundles;
-// these cnots were chosen to be largely dependent
-// this already creates smaller bundles but more of them
-void
-test_3( std::string scheduler, std::string scheduler_uniform)
-{
-    // create and set platform
-    ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
-
-    // create program
-    ql::quantum_program prog(("test_3_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
-    ql::quantum_kernel k("kernel7.3", s17, 7, 0);
-
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 6,3);
-    k.gate("cnot", 0,2);
-    k.gate("cnot", 1,3);
-    k.gate("cnot", 1,4);
-    k.gate("cnot", 0,3);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 2,5);
-    k.gate("cnot", 3,1);
-    k.gate("cnot", 2,0);
-    k.gate("cnot", 3,6);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 4,1);
-    k.gate("cnot", 3,0);
-    k.gate("cnot", 4,6);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-    k.gate("cnot", 3,5);
-    k.gate("cnot", 5,2);
-    k.gate("cnot", 6,4);
-    k.gate("cnot", 5,3);
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-
-    prog.add(k);
-
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
-    prog.compile( );
-}
-
-// as with test 3 but now without the big x bundles
-// just the cnots in lexicographic order
-// the worst you can imagine,
-// creating the smallest bundles
-void
-test_4( std::string scheduler, std::string scheduler_uniform)
-{
-    // create and set platform
-    ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
-
-    // create program
-    ql::quantum_program prog(("test_4_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
-    ql::quantum_kernel k("kernel7.4", s17, 7, 0);
-
-    for (int j=0; j<7; j++)
-        k.gate("x", j);
-
-    k.gate("cnot", 0,2);
-    k.gate("cnot", 0,3);
-    k.gate("cnot", 1,3);
-    k.gate("cnot", 1,4);
-    k.gate("cnot", 2,0);
-    k.gate("cnot", 2,5);
-    k.gate("cnot", 3,0);
-    k.gate("cnot", 3,1);
-    k.gate("cnot", 3,5);
-    k.gate("cnot", 3,6);
-    k.gate("cnot", 4,1);
-    k.gate("cnot", 4,6);
-    k.gate("cnot", 5,2);
-    k.gate("cnot", 5,3);
-    k.gate("cnot", 6,3);
-    k.gate("cnot", 6,4);
-
-    prog.add(k);
-
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
-    prog.compile( );
-}
-
-void
-test_5( std::string scheduler, std::string scheduler_uniform)
-{
-    // create and set platform
-    ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
-
-    // create program
-    ql::quantum_program prog(("test_5_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
-    ql::quantum_kernel k("kernel7.5", s17, 7, 0);
-
-    // empty kernel
-
-    prog.add(k);
-
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
-    prog.compile( );
-}
-
-// code with a lot of preps at the start, meas at the end and some work in the middle
-// all is equally critical so gain here
-void
-test_6( std::string scheduler, std::string scheduler_uniform)
-{
-    // create and set platform
-    ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
-
-    // create program
-    ql::quantum_program prog(("test_6_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
-    ql::quantum_kernel k("kernel7.6", s17, 7, 0);
-
-    k.gate("prepz", 0);
-    k.gate("prepz", 1);
-    k.gate("prepz", 2);
-    k.gate("prepz", 3);
-    k.gate("prepz", 4);
-    k.gate("prepz", 5);
-    k.gate("prepz", 6);
-
-    k.gate("t", 0);
-    k.gate("t", 1);
-    k.gate("t", 2);
-    k.gate("t", 3);
-    k.gate("t", 4);
-    k.gate("t", 5);
-    k.gate("t", 6);
-
-    k.gate("measz", 0);
-    k.gate("measz", 1);
-    k.gate("measz", 2);
-    k.gate("measz", 3);
-    k.gate("measz", 4);
-    k.gate("measz", 5);
-    k.gate("measz", 6);
-
-    prog.add(k);
-
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
-    prog.compile( );
-}
-
-// code with a lot of preps at the start
-void
-test_7( std::string scheduler, std::string scheduler_uniform)
-{
-    // create and set platform
-    ql::quantum_platform s17("s17", CFG_FILE_JSON);
-    ql::set_platform(s17);
-
-    // create program
-    ql::quantum_program prog(("test_7_" + scheduler + "_uniform_" + scheduler_uniform), s17, 7, 0);
-    ql::quantum_kernel k("kernel7.7", s17, 7, 0);
-
-    k.gate("prepz", 0);
-    k.gate("prepz", 1);
-    k.gate("prepz", 2);
-    k.gate("prepz", 3);
-    k.gate("prepz", 4);
-    k.gate("prepz", 5);
-    k.gate("prepz", 6);
-
-    k.gate("h", 0);	// qubit 0 critical
-    k.gate("t", 0);
-    k.gate("h", 0);
-    k.gate("t", 0);
-
-    k.gate("h", 2);	// qubit 2 loaded
-    k.gate("t", 2);
-
-    k.gate("h", 4);	// qubit 4 medium loaded
-
-    for (int j=0; j<7; j++)	// all qubits some load at the end
-        k.gate("x", j);
-
-    prog.add(k);
-
-    ql::options::set("scheduler", scheduler);
-    ql::options::set("scheduler_uniform", scheduler_uniform);
-    prog.compile( );
-}
 
 int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_DEBUG");      // LOG_DEBUG, LOG_INFO
 
     test_classical("ALAP", "no");
+#if 0
     test_qec_pipelined("ALAP", "no");
     test_do_while_nested_for("ALAP", "no");
-
-#if 0
-    test_0("ALAP", "no");
-    test_0("ALAP", "yes");
-    test_1("ALAP", "no");
-    test_1("ALAP", "yes");
-    test_2("ALAP", "no");
-    test_2("ALAP", "yes");
-    test_3("ALAP", "no");
-    test_3("ALAP", "yes");
-    test_4("ALAP", "no");
-    test_4("ALAP", "yes");
-    test_5("ALAP", "no");
-    test_5("ALAP", "yes");
-    test_6("ALAP", "no");
-    test_6("ALAP", "yes");
-    test_7("ALAP", "no");
-    test_7("ALAP", "yes");
 #endif
+    test_rabi("ALAP", "no");
+    test_wait("ALAP", "no");
+
     return 0;
 }

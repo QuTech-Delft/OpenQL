@@ -20,6 +20,7 @@ class Test_qubits(unittest.TestCase):
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('log_level', 'LOG_WARNING')
+        ql.set_option('write_qasm_files', 'yes')
 
     def test_1_qubit(self):
         nqubits = 1
@@ -35,7 +36,7 @@ class Test_qubits(unittest.TestCase):
         k.measure(0)
 
         p = ql.Program("1_qubit_program", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         p.add_kernel(k)  # add kernel to program
         p.compile()
@@ -58,7 +59,7 @@ class Test_qubits(unittest.TestCase):
         k.measure(2)
 
         p = ql.Program("2_qubit_program", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         p.add_kernel(k)  # add kernel to program
         p.compile()
@@ -81,7 +82,7 @@ class Test_qubits(unittest.TestCase):
         k.measure(2)
 
         p = ql.Program("3_qubit_program", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
 
         p.add_kernel(k)  # add kernel to program
 

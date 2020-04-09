@@ -105,10 +105,36 @@ class Test_kernel(unittest.TestCase):
         k2.measure(2)
 
         p = ql.Program("aProgram", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k1)
         p.add_kernel(k2)
 
+        p.compile()
+
+    def test_duplicate_kernel_name(self):
+        nqubits = 3
+
+        p = ql.Program("aProgram", platf, nqubits)
+        k1 = ql.Kernel("aKernel1", platf, nqubits)
+        k2 = ql.Kernel("aKernel2", platf, nqubits)
+        k3 = ql.Kernel("aKernel1", platf, nqubits)
+
+        k1.gate('x', [0])
+        k2.gate('x', [0])
+        k3.gate('x', [0])
+
+        # add the kernel to the program
+        p.add_kernel(k1)
+        p.add_kernel(k2)
+
+        # following call to add_kernel should fail as k3 has duplicate name
+        try:
+            p.add_kernel(k3)
+            raise
+        except:
+            pass
+
+        # compile the program
         p.compile()
 
 

@@ -78,7 +78,7 @@ class Test_program(unittest.TestCase):
     # error. This test checks if an exception is indeed raised!
     def test_empty_program(self):
         p = ql.Program("rb_program", platf, 2)
-        p.set_sweep_points([2,3], 2)
+        p.set_sweep_points([2,3])
         with self.assertRaises(Exception) as cm:
             p.compile()
 
@@ -98,7 +98,7 @@ class Test_program(unittest.TestCase):
 
         sweep_points = [2]
         p = ql.Program("rb_program", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         # print( p.qasm() )
         p.compile()
@@ -121,7 +121,7 @@ class Test_program(unittest.TestCase):
 
         # sweep points is not specified the program does not work but don't
         # know what it does...
-        p.set_sweep_points([10], 10)
+        p.set_sweep_points([10])
         p.add_kernel(k)  # add kernel to program
         p.compile()
 
@@ -155,7 +155,7 @@ class Test_program(unittest.TestCase):
             k.measure(q)
 
         p.add_kernel(k)
-        p.set_sweep_points( [nr_sweep_pts], nr_sweep_pts)
+        p.set_sweep_points( [nr_sweep_pts])
 
         p.compile()
 

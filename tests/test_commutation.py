@@ -15,6 +15,7 @@ class Test_commutation(unittest.TestCase):
         ql.set_option("scheduler_uniform", "no")
         ql.set_option('log_level', 'LOG_WARNING')
         ql.set_option('scheduler', 'ASAP')
+        ql.set_option('write_qasm_files', 'yes')
 
     def test_cnot_controlcommute(self):
         config_fn = os.path.join(curdir, 'test_179.json')
@@ -46,7 +47,7 @@ class Test_commutation(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("test_cnot_controlcommute", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -84,7 +85,7 @@ class Test_commutation(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("test_cnot_targetcommute", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -122,7 +123,7 @@ class Test_commutation(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("test_cz_anycommute", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -164,7 +165,7 @@ class Test_commutation(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program("test_cnot_mixedcommute", platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
