@@ -67,7 +67,7 @@ inline json load_json(std::string file_name)
             {
                 // go through file once again to find error position
                 unsigned int lineNr = 1;
-                unsigned int absPos = 0;
+                size_t absPos = 0;
                 fs.clear();
                 fs.seekg(0, std::ios::beg);
                 while (getline(fs, line)) {
