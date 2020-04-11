@@ -27,7 +27,7 @@ class Test_bugs(unittest.TestCase):
         config_fn = os.path.join(curdir, 'test_config_default.json')
         platf = ql.Platform("starmon", config_fn)
         p = ql.Program('test_bug', platf, num_qubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         k = ql.Kernel('kernel1', platf, num_qubits)
 
         qubit = 1
@@ -55,8 +55,8 @@ class Test_bugs(unittest.TestCase):
 
         p1 = ql.Program("order1_prog", platform, nqubits, nregs)
         p2 = ql.Program("order2_prog", platform, nqubits, nregs)
-        p1.set_sweep_points(sweep_points, len(sweep_points))
-        p2.set_sweep_points(sweep_points, len(sweep_points))
+        p1.set_sweep_points(sweep_points)
+        p2.set_sweep_points(sweep_points)
         k1 = ql.Kernel("aKernel", platform, nqubits, nregs)
         k2 = ql.Kernel("aKernel", platform, nqubits, nregs)
 
@@ -95,7 +95,7 @@ class Test_bugs(unittest.TestCase):
         nregs = 3
 
         p = ql.Program("statelessProgram", platform, nqubits, nregs)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         k = ql.Kernel("aKernel", platform, nqubits, nregs)
 
         k.prepz(0)
@@ -123,6 +123,7 @@ class Test_bugs(unittest.TestCase):
             QISA_fn_1 = os.path.join(output_dir, p.name+'_'+str(i)+'.qisa')
             QISA_fn_2 = os.path.join(output_dir, p.name+'_'+str(i+1)+'.qisa')
             self.assertTrue( file_compare(QISA_fn_1, QISA_fn_2))
+
 
 if __name__ == '__main__':
     unittest.main()

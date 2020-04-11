@@ -31,6 +31,7 @@ class Test_cqasm(unittest.TestCase):
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ASAP')
         ql.set_option('log_level', 'LOG_INFO')
+        ql.set_option('write_qasm_files', 'yes')
 
 
     def test_cqasm_default_gates(self):
@@ -67,7 +68,7 @@ class Test_cqasm(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program('test_cqasm_default_gates', platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 
@@ -114,7 +115,7 @@ class Test_cqasm(unittest.TestCase):
         sweep_points = [2]
 
         p = ql.Program('test_cqasm_custom_gates', platf, nqubits)
-        p.set_sweep_points(sweep_points, len(sweep_points))
+        p.set_sweep_points(sweep_points)
         p.add_kernel(k)
         p.compile()
 

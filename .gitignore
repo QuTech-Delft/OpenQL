@@ -1,9 +1,12 @@
+# Build files
 build
 cbuild
 dist
 openql.egg-info
 lab
+env
 
+# Temp files
 *.dot
 *.qc
 *.dat
@@ -14,8 +17,14 @@ lab
 *.pyd
 *.pyc
 *.cache
-openql/openql.py
-*/test_output/*
-tests/cc/test_output
+swig/openql.py
+swig/openql/openql.py
+swig/qutechopenql.egg-info
+
+# Test files
+test_output
 .ipynb_checkpoints
-doc/notebooks/test_output
+
+docs/_build
+docs/_static
+docs/_templates

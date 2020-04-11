@@ -1,7 +1,7 @@
 OpenQL C++ Coding Conventions
 =============================
 
-In order to maintain the code homogeneous and consistent, all contibutors are invited to follow this coding convetion.
+In order to maintain the code homogeneous and consistent, all contibutors are invited to follow this coding convention.
 
 
 ## Files Naming ##
