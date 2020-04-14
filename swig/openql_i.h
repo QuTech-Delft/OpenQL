@@ -14,13 +14,11 @@
 #include <sstream>
 #include <cassert>
 #include <time.h>
-#include <complex>
 
 #include <version.h>
 #include <openql.h>
 #include <classical.h>
 #include <unitary.h>
-
 
 static std::string get_version()
 {
@@ -103,8 +101,10 @@ public:
     }
 };
 
-// typedef std::complex<double> Complex;
 
+/**
+ * quantum unitary matrix interface
+ */
 class Unitary
 {
 public:
@@ -127,6 +127,7 @@ public:
         delete(unitary);
     }
 };
+
 
 /**
  * quantum kernel interface
