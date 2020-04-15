@@ -187,7 +187,8 @@ class Test_central_controller(unittest.TestCase):
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('scheduler_uniform', 'yes')
-        ql.set_option('log_level', 'LOG_DEBUG')
+        #ql.set_option('log_level', 'LOG_DEBUG')
+        ql.set_option('log_level', 'LOG_WARNING')
 
         platform = ql.Platform(platform_name, os.path.join(curdir, 'cc_s5_direct_iq.json'))
 
