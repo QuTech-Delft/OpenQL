@@ -857,6 +857,7 @@ private:
                 }
                 DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
+                // FIXME: following code block exists several times in this file
                 // custom gate check
                 bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
                 if(!custom_added)

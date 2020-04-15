@@ -1430,7 +1430,8 @@ public:
      */
     custom_gate(string_t name)
     {
-        this->name = name;
+        this->name = name;  // just remember name, e.g. "x", "x %0" or "x q0", expansion is done by add_custom_gate_if_available().
+        // FIXME: no syntax check is performed
     }
 
     /**
@@ -1706,7 +1707,7 @@ public:
         for (gate * g : seq)
         {
             gs.push_back(g);
-            duration += g->duration;
+            duration += g->duration;    // FIXME: not true if gates operate in parallel
             operands.insert(operands.end(), g->operands.begin(), g->operands.end());
         }
     }
@@ -1734,7 +1735,7 @@ public:
 
     cmat_t mat()
     {
-        return m;
+        return m;   // FIXME: never initialized
     }
 };
 
