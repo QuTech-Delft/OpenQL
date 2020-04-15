@@ -548,7 +548,7 @@ class Test_advance(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         assemble(QISA_fn)
 
-
+    @unittest.skip
     def test_ccl_buffers(self):
 
         tests = [

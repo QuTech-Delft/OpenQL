@@ -8,9 +8,6 @@ from test_QISA_assembler_present import assemble
 rootDir = os.path.dirname(os.path.realpath(__file__))
 
 curdir = os.path.dirname(__file__)
-# config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
-# platf = ql.Platform("starmon", config_fn)
-# hardware_config_cc_light.json  OR  test_cfg_CCL.json
 config_fn = os.path.join(curdir, 'hardware_config_cc_light.json') 
 platf = ql.Platform('seven_qubits_chip', config_fn)
 
@@ -21,7 +18,7 @@ ql.set_option('optimize', 'no')
 ql.set_option('scheduler', 'ALAP')
 ql.set_option('log_level', 'LOG_WARNING')
 
-
+@unittest.skip
 class Test_single_qubit_seqs_CCL(unittest.TestCase):
 
     def test_bug(self):

@@ -1,6 +1,6 @@
 # OpenQL Framework #
 
-[![Documentation Status](https://readthedocs.org/projects/openql/badge/?version=latest)](https://openql.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/openql/badge/?version=latest)](https://openql.readthedocs.io/en/latest/?badge=latest) [![Build Status](https://travis-ci.com/QE-Lab/OpenQL.svg?branch=develop)](https://travis-ci.com/QE-Lab/OpenQL)
 
 OpenQL is a framework for high-level quantum programming in C++/Python. The framework provides a compiler for compiling and optimizing quantum code. The compiler produces the intermediate quantum assembly language and the compiled micro-code for various target platforms. While the microcode is platform-specific, the quantum assembly code (qasm) is hardware-agnostic and can be simulated on the QX simulator. For detailed documentation see [here](https://openql.readthedocs.io).
 
@@ -19,7 +19,7 @@ OpenQL can be installed in a number of ways, See [Installation](https://openql.r
 Example python tests and programs can be found in the 'tests' and 'examples' directories. These can be executed as 'python tests/simplePyTest.py'.
 
 Example C++ tests and programs can be found in 'tests' and 'examples'
-directories. Executables for these will be generated in 'build/tests' and 'build/examples' directory. An executable can be executed as: './example'
+directories. Executables for these will be generated in 'cbuild/tests' and 'cbuild/examples' directory. An executable can be executed as: './example'
 
 
 

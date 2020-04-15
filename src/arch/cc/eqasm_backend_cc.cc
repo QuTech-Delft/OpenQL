@@ -25,7 +25,6 @@
 #define OPT_CC_SCHEDULE_RC          0       // 1=use resource constraint scheduler
 
 #include "eqasm_backend_cc.h"
-#include "codegen_cc.h"
 
 #include <options.h>
 #include <platform.h>

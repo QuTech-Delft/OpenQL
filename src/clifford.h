@@ -94,8 +94,11 @@ public:
             DOUT("... gate: " << gp->qasm() << " DONE");
         }
         sync_all(kernel);
-        kernel.c.front()->cycle = MAX_CYCLE;    // invalidate cycle attributes
-        kernel.c.back()->cycle = MAX_CYCLE;     // invalidate cycle attributes
+        if (kernel.c.size() > 0)
+        {
+            kernel.c.front()->cycle = MAX_CYCLE;    // invalidate cycle attributes
+            kernel.c.back()->cycle = MAX_CYCLE;     // invalidate cycle attributes
+        }
 
         DOUT("Clifford " << fromwhere << " on kernel " << kernel.name << " saved " << total_saved << " cycles [DONE]");
     }
