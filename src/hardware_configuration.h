@@ -187,8 +187,8 @@ public:
                         // is not already available
                         FATAL("custom instruction not found for '" << sub_ins << "'");
                     }
-                }
 #endif
+                }
                 instruction_map[comp_ins] = new composite_gate(comp_ins, gs);
             }
         }
