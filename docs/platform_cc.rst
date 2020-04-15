@@ -395,7 +395,11 @@ FIXME: TBW
 CC backend output files
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-FIXME: TBW: .vq1asm, .vcd
+FIXME: TBW:
+
+.vq1asm: 'Vectored Q1 assembly' file for the Central Controller
+
+.vcd: timing file, can be viewed using GTKWave (http://gtkwave.sourceforge.net)
 
 Standard OpenQL features
 ^^^^^^^^^^^^^^^^^^^^^^^^
