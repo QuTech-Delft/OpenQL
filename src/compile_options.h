@@ -14,4 +14,7 @@
 #define OPT_CUSTOM_GATE_PARAMETERS      0   // inclusion of custom_gate::parameters, which isn't really used
 #define OPT_LACKS_SWIG_INTERFACE        0   // functions not exposed through SWIG
 
+// new features
+#define OPT_DECOMPOSE_WAIT_BARRIER      1   // allow wait/barrier in JSON section gate_decomposition
+
 #endif // ndef _QL_COMPILE_OPTIONS_H
