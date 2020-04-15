@@ -127,6 +127,11 @@ public:
         }
 
         // load optional section gate_decomposition
+        // Examples:
+        // - Parametrized gate-decomposition: "cl_2 %0": ["rxm90 %0", "rym90 %0"]
+        // - Specialized gate-decomposition:  "rx180 q0" : ["x q0"]
+
+
         if (config.count("gate_decomposition") > 0)
         {
             const json &gate_decomposition = config["gate_decomposition"];
@@ -159,23 +164,22 @@ public:
 
                     if ( instruction_map.find(sub_ins) != instruction_map.end() )
                     {
-                        // using existing sub ins, e.g. from '"rx180 q0" : ["x q0"]'
+                        // using existing sub ins, e.g. "x q0" or "x %0"
                         DOUT("using existing sub instr : " << sub_ins);
                         gs.push_back( instruction_map[sub_ins] );
                     }
-                    else if( sub_ins.find("%") != std::string::npos )
+                    else if( sub_ins.find("%") != std::string::npos )               // parameterized composite gate? FIXME: no syntax check
                     {
-                        // adding new sub ins if not already available, e.g. from '"rx180 %0" : ["x %0"]'
-                        // this can be done for parameterized custom instructions
+                        // adding new sub ins if not already available, e.g. "x %0"
                         DOUT("adding new sub instr : " << sub_ins);
-                        // sub-ins can only be custom instructions
                         instruction_map[sub_ins] = new custom_gate(sub_ins);
                         gs.push_back( instruction_map[sub_ins] );
                     }
-#if 1   // FIXME: allow wait/barrier
+#if OPT_DECOMPOSE_WAIT_BARRIER   // allow wait/barrier, e.g. "barrier q2,q3,q4"
                     else
                     {
-                        // FIXME: just save whatever we find as a *custom* gate, and hope that that will expand to a builtin gate by add_default_gate_if_available
+                        // FIXME: just save whatever we find as a *custom* gate (there is no better alternative)
+                        // FIXME: also see additions (hacks) to kernel.h
                         DOUT("adding new sub instr : " << sub_ins);
                         instruction_map[sub_ins] = new custom_gate(sub_ins);
                         gs.push_back( instruction_map[sub_ins] );

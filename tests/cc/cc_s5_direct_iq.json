@@ -266,11 +266,11 @@
 
         "cnot %0 %1": ["rym90 %1", "cz %0 %1", "ry90 %1"],
 
-        "cz q0 q2": ["sf_cz_se q0", "sf_cz_nw q2"],
-        "cz q2 q0": ["sf_cz_se q0", "sf_cz_nw q2"],
+        "cz q0 q2": ["barrier q0,q2", "sf_cz_se q0", "sf_cz_nw q2", "barrier q0,q2"],
+        "cz q2 q0": ["barrier q0,q2", "sf_cz_se q0", "sf_cz_nw q2", "barrier q0,q2"],
 
-        "cz q1 q2": ["sf_cz_sw q1", "sf_cz_ne q2"],
-        "cz q2 q1": ["sf_cz_sw q1", "sf_cz_ne q2"],
+        "cz q1 q2": ["barrier q1,q2", "sf_cz_sw q1", "sf_cz_ne q2", "barrier q1,q2"],
+        "cz q2 q1": ["barrier q1,q2", "sf_cz_sw q1", "sf_cz_ne q2", "barrier q1,q2"],
 
         "cz q3 q2": ["barrier q2,q3,q4", "sf_cz_sw q2", "sf_cz_ne q3", "sf_park q4", "barrier q2,q3,q4"],
         "cz q2 q3": ["barrier q2,q3,q4", "sf_cz_sw q2", "sf_cz_ne q3", "sf_park q4", "barrier q2,q3,q4"],

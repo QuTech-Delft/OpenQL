@@ -614,8 +614,13 @@ private:
                                       std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
         bool added = false;
-
-        // first check if a specialized custom gate is available
+#if OPT_DECOMPOSE_WAIT_BARRIER  // hack to skip wait/barrier
+        if(gname=="wait" || gname=="barrier")
+        {
+            return added;   // return, so a default gate will be attempted
+        }
+#endif
+        // construct canonical name
         std::string instr = gname + " ";
         if(qubits.size() > 0)
         {
@@ -625,6 +630,7 @@ private:
                 instr += "q" + std::to_string(qubits[qubits.size()-1]);
         }
 
+        // first check if a specialized custom gate is available
         instruction_map_t::iterator it = instruction_map.find(instr);
         if (it != instruction_map.end())
         {
@@ -644,6 +650,7 @@ private:
             instruction_map_t::iterator it = instruction_map.find(gname);
             if (it != instruction_map.end())
             {
+                // FIXME: body identical to above, just perform two finds with single body
                 custom_gate* g = new custom_gate(*(it->second));
                 for(auto & qubit : qubits)
                     g->operands.push_back(qubit);
@@ -695,6 +702,8 @@ private:
     {
         bool added = false;
         DOUT("Checking if specialized decomposition is available for " << gate_name);
+
+        // construct canonical name
         std::string instr_parameterized = gate_name + " ";
         size_t i;
         if(all_qubits.size() > 0)
@@ -710,9 +719,11 @@ private:
         }
         DOUT("decomposed specialized instruction name: " << instr_parameterized);
 
+        // find the name
         auto it = instruction_map.find(instr_parameterized);
         if( it != instruction_map.end() )
         {
+            // check gate type
             DOUT("specialized composite gate found for " << instr_parameterized);
             composite_gate * gptr = (composite_gate *)(it->second);
             if( __composite_gate__ == gptr->type() )
@@ -725,13 +736,14 @@ private:
                 return false;
             }
 
-
+            // perform decomposition
             std::vector<std::string> sub_instructons;
             get_decomposed_ins( gptr, sub_instructons );
             for(auto & sub_ins : sub_instructons)
             {
+                // extract name and qubits
                 DOUT("Adding sub ins: " << sub_ins);
-                std::replace( sub_ins.begin(), sub_ins.end(), ',', ' ');
+                std::replace( sub_ins.begin(), sub_ins.end(), ',', ' ');    // FIXME: perform all conversions in sanitize_instruction_name()
                 DOUT(" after comma removal, sub ins: " << sub_ins);
                 std::istringstream iss(sub_ins);
 
@@ -892,6 +904,10 @@ private:
         }
         return added;
     }
+
+/************************************************************************\
+| Public: gate
+\************************************************************************/
 
 public:
     /**
