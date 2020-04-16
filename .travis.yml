@@ -23,6 +23,7 @@ matrix:
 before_install:
   - python3 -m pip install -U pip
   - python3 -m pip install -U pytest
+  - python3 -m pip install -U qxelarator
   - python3 --version
   - pip3 --version
   - while sleep 5m; do echo "=====[ $SECONDS seconds, OpenQL still building... ]====="; done &
