@@ -33,12 +33,6 @@ public:
     json                    topology;
     json                    aliases;                  // workaround the generic instruction composition
 
-#if OPT_TARGET_PLATFORM   // FIXME: constructed object is not usable
-    quantum_platform() : name("default")
-    {
-    }
-#endif
-
     quantum_platform(std::string name, std::string configuration_file_name);
     void print_info() const;
     size_t get_qubit_number() const  // FIXME: qubit_number is public anyway
