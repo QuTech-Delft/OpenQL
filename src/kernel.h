@@ -3,6 +3,7 @@
  * @date   04/2017
  * @author Nader Khammassi
  *         Imran Ashraf
+ *         Anneriet Krol
  * @brief  openql kernel
  */
 
@@ -13,6 +14,8 @@
 #include <algorithm>
 #include <iterator>
 
+
+#define PI M_PI
 #include "compile_options.h"
 #include "json.h"
 #include "utils.h"
@@ -1059,12 +1062,35 @@ public:
     // to add unitary to kernel
     void gate(ql::unitary u, std::vector<size_t> qubits)
     {
+        double u_size = uint64_log2((int) u.size())/2;
+        if(u_size != qubits.size())
+        {
+            EOUT("Unitary " << u.name <<" has been applied to the wrong number of qubits! " << qubits.size() << " and not " << u_size);
+            throw ql::exception("Unitary '"+u.name+"' has been applied to the wrong number of qubits. Cannot be added to kernel! "  + std::to_string(qubits.size()) +" and not "+ std::to_string(u_size), false);
+        
+        }
+        for(uint i = 0; i< qubits.size()-1; i++)
+        {
+            for(uint j = i+1; j < qubits.size(); j++)
+            {
+                if(qubits[i] == qubits[j])
+                {
+                EOUT("Qubit numbers used more than once in Unitary: " << u.name << ". Double qubit is number " << qubits[j]);
+                throw ql::exception("Qubit numbers used more than once in Unitary: " + u.name + ". Double qubit is number " + std::to_string(qubits[j]), false);
+                }
+                        
+            }
+        }
         // applying unitary to gates
         COUT("Applying unitary '" << u.name << "' to " << ql::utils::to_string(qubits, "qubits: ") );
         if(u.is_decomposed)
         {
+
             COUT("Adding decomposed unitary to kernel ...");
-            // TODO: add decomposed gates here
+            DOUT("The list is this many items long: " << u.instructionlist.size());
+            //COUT("Instructionlist" << ql::utils::to_string(u.instructionlist));
+            int end_index = recursiveRelationsForUnitaryDecomposition(u,qubits, u_size, 0);
+            DOUT("Total number of gates added: " << end_index);
         }
         else
         {
@@ -1073,7 +1099,131 @@ public:
         }
     }
 
-    // FIXME: is this really QASM, or CC-light eQASM?
+    //recursive gate count function
+    //n is number of qubits
+    //i is the start point for the instructionlist
+    int recursiveRelationsForUnitaryDecomposition(ql::unitary &u, std::vector<size_t> qubits, int n, int i)
+    {
+        // DOUT("Adding a new unitary starting at index: "<< i << ", to " << n << ql::utils::to_string(qubits, " qubits: "));
+        if (n > 1)
+        {
+            // Need to be checked here because it changes the structure of the decomposition.
+            // This checks whether the first qubit is affected, if not, it applies a unitary to the all qubits except the first one.
+           int numberforcontrolledrotation = std::pow(2, n - 1);                     //number of gates per rotation
+
+            // code for last one not affected
+            if (u.instructionlist[i] == 100.0)
+            {
+                COUT("[kernel.h] Optimization: last qubit is not affected, skip one step in the recursion. New start_index: " << i+1);
+                std::vector<size_t> subvector(qubits.begin() + 1, qubits.end());
+                return recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, i + 1) + 1; // for the number 10.0
+            }
+            else if (u.instructionlist[i] == 200.0)
+            {
+                std::vector<size_t> subvector(qubits.begin(), qubits.end() - 1);
+
+                // This is a special case of only demultiplexing
+                if (u.instructionlist[i+1] == 300.0)
+                {
+                   
+                    // Two numbers that aren't rotation gate angles
+                    int start_counter = i + 2;
+                    COUT("[kernel.h] Optimization: first qubit not affected, skip one step in the recursion. New start_index: " << start_counter);
+
+                    return recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter) + 2; //for the numbers 20 and 30
+                }
+                else
+                {
+                    int start_counter = i + 1;
+                    COUT("[kernel.h] Optimization: only demultiplexing will be performed. New start_index: " << start_counter);
+
+                    start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
+                    multicontrolled_rz(u.instructionlist, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
+                    start_counter += numberforcontrolledrotation; //multicontrolled rotation always has the same number of gates
+                    start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
+                    return start_counter - i;
+                }
+            }
+            else
+            {
+                // The new qubit vector that is passed to the recursive function
+                std::vector<size_t> subvector(qubits.begin(), qubits.end() - 1);
+                int start_counter = i;
+                start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
+                multicontrolled_rz(u.instructionlist, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
+                start_counter += numberforcontrolledrotation;
+                start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
+                multicontrolled_ry(u.instructionlist, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
+                start_counter += numberforcontrolledrotation;
+                start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
+                multicontrolled_rz(u.instructionlist, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
+                start_counter += numberforcontrolledrotation;
+                start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
+                return start_counter -i; //it is just the total
+            }
+        }
+        else //n=1
+        {
+            // DOUT("Adding the zyz decomposition gates at index: "<< i);
+            // zyz gates happen on the only qubit in the list.
+            c.push_back(new ql::rz(qubits.back(), u.instructionlist[i]));
+            c.push_back(new ql::ry(qubits.back(), u.instructionlist[i + 1]));
+            c.push_back(new ql::rz(qubits.back(), u.instructionlist[i + 2]));
+            // How many gates this took
+            return 3;
+        }
+    }
+
+    //controlled qubit is the first in the list.
+    void multicontrolled_rz(std::vector<double> &instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
+    {
+        // DOUT("Adding a multicontrolled rz-gate at start index " << start_index << ", to " << ql::utils::to_string(qubits, "qubits: "));
+        int idx;
+        //The first one is always controlled from the last to the first qubit.
+        c.push_back(new ql::rz(qubits.back(),-instruction_list[start_index]));
+        c.push_back(new ql::cnot(qubits[0], qubits.back()));
+        for(int i = 1; i < end_index - start_index; i++)
+        {
+            idx = uint64_log2(((i)^((i)>>1))^((i+1)^((i+1)>>1)));
+            c.push_back(new ql::rz(qubits.back(),-instruction_list[i+start_index]));                
+            c.push_back(new ql::cnot(qubits[idx], qubits.back()));
+        }
+        // The last one is always controlled from the next qubit to the first qubit
+        c.push_back(new ql::rz(qubits.back(),-instruction_list[end_index]));
+        c.push_back(new ql::cnot(qubits.end()[-2], qubits.back()));
+    }
+
+    //controlled qubit is the first in the list.
+    void multicontrolled_ry( std::vector<double> &instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
+    {
+        // DOUT("Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << ql::utils::to_string(qubits, "qubits: "));
+        int idx;
+        
+        //The first one is always controlled from the last to the first qubit.
+        c.push_back(new ql::ry(qubits.back(),-instruction_list[start_index]));
+        c.push_back(new ql::cnot(qubits[0], qubits.back()));
+
+        for(int i = 1; i < end_index - start_index; i++)
+        { 
+            idx = uint64_log2 (((i)^((i)>>1))^((i+1)^((i+1)>>1)));
+            c.push_back(new ql::ry(qubits.back(),-instruction_list[i+start_index]));
+            c.push_back(new ql::cnot(qubits[idx], qubits.back()));
+        }
+        // Last one is controlled from the next qubit to the first one. 
+        c.push_back(new ql::ry(qubits.back(),-instruction_list[end_index]));
+        c.push_back(new ql::cnot(qubits.end()[-2], qubits.back())); 
+    }
+    // source: https://stackoverflow.com/questions/994593/how-to-do-an-integer-log2-in-c user Todd Lehman
+    int uint64_log2(uint64_t n)
+    {
+    #define S(k) if (n >= (UINT64_C(1) << k)) { i += k; n >>= k; }
+
+    int i = -(n == 0); S(32); S(16); S(8); S(4); S(2); S(1); return i;
+
+    #undef S
+    }
+
+
     /**
      * qasm output
      */
@@ -1181,7 +1331,6 @@ public:
     {
         c.push_back(new ql::classical(operation));
     }
-
 #if OPT_MICRO_CODE
     /**
      * micro code

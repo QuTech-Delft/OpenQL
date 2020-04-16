@@ -105,6 +105,9 @@ public:
 
 // typedef std::complex<double> Complex;
 
+/**
+ * quantum unitary matrix interface
+ */
 class Unitary
 {
 public:
@@ -127,6 +130,7 @@ public:
         delete(unitary);
     }
 };
+
 
 /**
  * quantum kernel interface
