@@ -20,30 +20,7 @@
 
 namespace ql
 {
-/**
- * openql types
- */
-
-#if OPT_MICRO_CODE
-/**
- * configurable instruction map
- */
-/* static */ dep_instruction_map_t dep_instruction_map;
-#endif
-
-
-#if OPT_TARGET_PLATFORM
-// target platform
-ql::quantum_platform           target_platform;
-#endif
-
-#if OPT_TARGET_PLATFORM
-// NB: set_plaform is already removed from SWIG interface
-void set_platform(ql::quantum_platform platform)
-{
-    target_platform = platform;
-}
-#endif
+    // FIXME: nothing remains after cleanup
 }
 
 #endif // OPENQL_H

@@ -339,13 +339,6 @@ public:
             return name + iopers;
     }
 
-#if OPT_MICRO_CODE
-    instruction_t micro_code()
-    {
-        return ql::dep_instruction_map["nop"];
-    }
-#endif
-
     gate_type_t type()
     {
         return __classical_gate__;
@@ -1057,9 +1050,9 @@ public:
     {
         FATAL("cc_light_eqasm_compiler::compile interface with circuit not supported");
     }
-                      
+
     // kernel level compilation
-    void compile(std::string prog_name, std::vector<quantum_kernel>& kernels, 
+    void compile(std::string prog_name, std::vector<quantum_kernel>& kernels,
         const ql::quantum_platform& platform)
     {
         DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");

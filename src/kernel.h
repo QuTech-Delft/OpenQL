@@ -111,18 +111,6 @@ public:
     /**
      * debug
      */
-#if OPT_LACKS_SWIG_INTERFACE
-    void print_gates_definition()
-    {
-        for (instruction_map_t::iterator i=instruction_map.begin(); i!=instruction_map.end(); i++)
-        {
-            COUT("[-] gate '" << i->first << "'");
-#if OPT_MICRO_CODE
-            COUT(" |- qumis : \n" << i->second->micro_code());
-#endif
-        }
-    }
-#endif // OPT_LACKS_SWIG_INTERFACE
 
     std::string get_gates_definition()
     {
@@ -1331,26 +1319,6 @@ public:
     {
         c.push_back(new ql::classical(operation));
     }
-#if OPT_MICRO_CODE
-    /**
-     * micro code
-     */
-    std::string micro_code()
-    {
-        std::stringstream ss;
-        // ss << "." << name;
-        // if (iterations > 1)
-        // ss << "(" << iterations << ")\n";
-        // else
-        // ss << "\n";
-        for (size_t i=0; i<c.size(); ++i)
-        {
-            ss << c[i]->micro_code() << "\n";
-            // std::cout << c[i]->qasm() << std::endl;
-        }
-        return ss.str();
-    }
-#endif
 
     void optimize()
     {
@@ -1496,17 +1464,6 @@ public:
 
 #endif // __disable_lemon__
     }
-
-    /**
-     * load custom instructions from a json file
-     */
-#if OPT_CUSTOM_GATE_LOAD
-    int load_custom_instructions(std::string file_name="instructions.json")
-    {
-        load_instructions(instruction_map, file_name);
-        return 0;
-    }
-#endif
 
     /************************************************************************\
     | Controlled gates

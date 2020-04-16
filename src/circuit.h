@@ -83,27 +83,6 @@ namespace ql
         }
         return false;
     }
-
-#if OPT_UNFINISHED_OPTIMIZATION
-    /**
-     * detect unoptimizable gates
-     */
-    inline bool contains_unoptimizable_gates(circuit &x)
-    {
-        for (size_t i=0; i<x.size(); i++)
-        {
-            if (x[i]->type() == __measure_gate__)
-                return true;
-            if (x[i]->type() == __prepz_gate__)
-                return true;
-            if (!(x[i]->optimization_enabled))
-                return true;
-        }
-        return false;
-    }
-#endif
-
-
 }
 
 #endif // CIRCUIT_H
