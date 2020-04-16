@@ -348,6 +348,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         # self.assertAlmostEqual(helper_prob(matrix[8]), helper_regex(c0)[2], 5)
         # self.assertAlmostEqual(helper_prob(matrix[12]), helper_regex(c0)[3], 5)
 
+    @unittest.skip
     def test_non_90_degree_angle(self):
         config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
         platform = ql.Platform('platform_none', config_fn)

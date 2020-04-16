@@ -40,5 +40,5 @@ CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_mapper_rig.json
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/cc/test_cfg_cc.json
 	test_cfg_cc.json COPYONLY)
 
-ADD_EXECUTABLE(test_mapper test_mapper.cc )
-TARGET_LINK_LIBRARIES(test_mapper ${LEMON_LIBRARIES} ql)
+# ADD_EXECUTABLE(test_mapper test_mapper.cc )
+# TARGET_LINK_LIBRARIES(test_mapper ${LEMON_LIBRARIES} ql)
