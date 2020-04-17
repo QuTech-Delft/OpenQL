@@ -26,8 +26,8 @@ namespace arch
 class qubit_resource_t : public resource_t
 {
 public:
-    qubit_resource_t* clone() const & { return new qubit_resource_t(*this);}
-    qubit_resource_t* clone() && { return new qubit_resource_t(std::move(*this)); }
+    qubit_resource_t* clone() const & { DOUT("Cloning/copying qubit_resource_t"); return new qubit_resource_t(*this);}
+    qubit_resource_t* clone() && { DOUT("Cloning/moving qubit_resource_t"); return new qubit_resource_t(std::move(*this)); }
 
     // fwd: qubit q is busy till cycle=state[q], i.e. all cycles < state[q] it is busy, i.e. start_cycle must be >= state[q]
     // bwd: qubit q is busy from cycle=state[q], i.e. all cycles >= state[q] it is busy, i.e. start_cycle+duration must be <= state[q]
@@ -101,8 +101,8 @@ public:
 class qwg_resource_t : public resource_t
 {
 public:
-    qwg_resource_t* clone() const & { return new qwg_resource_t(*this);}
-    qwg_resource_t* clone() && { return new qwg_resource_t(std::move(*this)); }
+    qwg_resource_t* clone() const & { DOUT("Cloning/copying qwg_resource_t"); return new qwg_resource_t(*this);}
+    qwg_resource_t* clone() && { DOUT("Cloning/moving qwg_resource_t"); return new qwg_resource_t(std::move(*this)); }
 
     std::vector<size_t> fromcycle;          // qwg is busy from cycle==fromcycle[qwg], inclusive
     std::vector<size_t> tocycle;            // qwg is busy to cycle==tocycle[qwg], not inclusive
@@ -240,8 +240,8 @@ public:
 class meas_resource_t : public resource_t
 {
 public:
-    meas_resource_t* clone() const & { return new meas_resource_t(*this);}
-    meas_resource_t* clone() && { return new meas_resource_t(std::move(*this)); }
+    meas_resource_t* clone() const & { DOUT("Cloning/copying meas_resource_t"); return new meas_resource_t(*this);}
+    meas_resource_t* clone() && { DOUT("Cloning/moving meas_resource_t"); return new meas_resource_t(std::move(*this)); }
 
     std::vector<size_t> fromcycle;  // last measurement start cycle
     std::vector<size_t> tocycle;    // is busy till cycle
@@ -344,8 +344,8 @@ public:
 class edge_resource_t : public resource_t
 {
 public:
-    edge_resource_t* clone() const & { return new edge_resource_t(*this);}
-    edge_resource_t* clone() && { return new edge_resource_t(std::move(*this)); }
+    edge_resource_t* clone() const & { DOUT("Cloning/copying edge_resource_t"); return new edge_resource_t(*this);}
+    edge_resource_t* clone() && { DOUT("Cloning/moving edge_resource_t"); return new edge_resource_t(std::move(*this)); }
 
     // fwd: edge is busy till cycle=state[edge], i.e. all cycles < state[edge] it is busy, i.e. start_cycle must be >= state[edge]
     // bwd: edge is busy from cycle=state[edge], i.e. all cycles >= state[edge] it is busy, i.e. start_cycle+duration must be <= state[edge]
@@ -542,8 +542,8 @@ public:
 class detuned_qubits_resource_t : public resource_t
 {
 public:
-    detuned_qubits_resource_t* clone() const & { return new detuned_qubits_resource_t(*this);}
-    detuned_qubits_resource_t* clone() && { return new detuned_qubits_resource_t(std::move(*this)); }
+    detuned_qubits_resource_t* clone() const & { DOUT("Cloning/copying detuned_qubits_resource_t"); return new detuned_qubits_resource_t(*this);}
+    detuned_qubits_resource_t* clone() && { DOUT("Cloning/moving detuned_qubits_resource_t"); return new detuned_qubits_resource_t(std::move(*this)); }
 
     std::vector<size_t> fromcycle;                              // qubit q is busy from cycle fromcycle[q]
     std::vector<size_t> tocycle;                                // till cycle tocycle[q]
@@ -816,18 +816,20 @@ public:
     ~detuned_qubits_resource_t() {}
 };
 
-class cc_light_resource_manager_t : public resource_manager_t
+class cc_light_resource_manager_t : public platform_resource_manager_t
 {
 public:
-    cc_light_resource_manager_t() : resource_manager_t()
+    cc_light_resource_manager_t* clone() const & { DOUT("Cloning/copying cc_light_resource_manager_t"); return new cc_light_resource_manager_t(*this);}
+    cc_light_resource_manager_t* clone() && { DOUT("Cloning/moving cc_light_resource_manager_t"); return new cc_light_resource_manager_t(std::move(*this)); }
+
+    cc_light_resource_manager_t() : platform_resource_manager_t()
     {
-        DOUT("Constructing virgin cc_light_resouce_manager_t");
+        DOUT("Constructing virgin cc_light_resource_manager_t");
     }
 
-
-    cc_light_resource_manager_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_manager_t(platform, dir)
+    cc_light_resource_manager_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : platform_resource_manager_t(platform, dir)
     {
-        DOUT("Constructing inited resouce_manager_t");
+        DOUT("Constructing (platform,dir) parameterized platform_resource_manager_t");
         DOUT("New one for direction " << dir << " with no of resources : " << platform.resources.size() );
         for (json::const_iterator it = platform.resources.begin(); it != platform.resources.end(); ++it)
         {
@@ -866,7 +868,11 @@ public:
                 throw ql::exception("[x] Error : Un-modelled resource: "+n+" !",false);
             }
         }
-        // DOUT("Done constructing inited resouce_manager_t");
+        DOUT("Done constructing inited platform_resource_manager_t");
+    }
+    ~cc_light_resource_manager_t()
+    {
+        DOUT("Destroying cc_light_resource_manager_t");
     }
 };
 

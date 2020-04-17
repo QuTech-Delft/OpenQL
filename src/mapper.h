@@ -17,7 +17,7 @@
 #include "utils.h"
 #include "platform.h"
 #include "kernel.h"
-#include "arch/cc_light/cc_light_resource_manager.h"
+#include "resource_manager.h"
 #include "gate.h"
 #include "scheduler.h"
 #include "metrics.h"
@@ -39,8 +39,7 @@
 // or by copying an existing object to it.
 // The constructors are trivial by this and can be synthesized by default.
 //
-// Construction of skeleton objects requires the used classes to provide such (non-parameterized) constructors;
-// therefore, such a constructor was added to class resource_manager_t in cc_light_resource_manager.h
+// Construction of skeleton objects requires the used classes to provide such (non-parameterized) constructors.
 
 
 // =========================================================================================
@@ -424,7 +423,7 @@ private:
     size_t                  nq;      // size of the map; after initialization, will always be the same
     size_t                  ct;      // multiplication factor from cycles to nano-seconds (unit of duration)
     std::vector<size_t>     fcv;     // fcv[real qubit index i]: qubit i is free from this cycle on
-    ql::arch::cc_light_resource_manager_t rm;  // actual resources occupied by scheduled gates
+    ql::arch::resource_manager_t rm;  // actual resources occupied by scheduled gates
 
 
 // access free cycle value of qubit i
@@ -437,26 +436,26 @@ public:
 
 // explicit FreeCycle constructor
 // needed for virgin construction
-// default constructor was deleted because it cannot construct cc_light_resource_manager_t without parameters
+// default constructor was deleted because it cannot construct resource_manager_t without parameters
 FreeCycle()
 {
-    // DOUT("Constructing FreeCycle");
+    DOUT("Constructing FreeCycle");
 }
 
 void Init(const ql::quantum_platform *p)
 {
-    // DOUT("FreeCycle::Init()");
-    ql::arch::cc_light_resource_manager_t lrm(*p, ql::forward_scheduling);   // allocated here and copied below to rm because of platform parameter
-    // DOUT("... created local resource manager");
+    DOUT("FreeCycle::Init()");
+    ql::arch::resource_manager_t lrm(*p, ql::forward_scheduling);   // allocated here and copied below to rm because of platform parameter
+    DOUT("... created FreeCycle Init local resource_manager");
     platformp = p;
     nq = platformp->qubit_number;
     ct = platformp->cycle_time;
-    // DOUT("... FreeCycle: nq=" << nq << ", ct=" << ct << "), initializing to all 0 cycles");
+    DOUT("... FreeCycle: nq=" << nq << ", ct=" << ct << "), initializing to all 0 cycles");
     fcv.clear();
     fcv.resize(nq, 1);   // this 1 implies that cycle of first gate will be 1 and not 0; OpenQL convention!?!?
-    // DOUT("... about to copy local resource manager to FreeCycle member rm");
+    DOUT("... about to copy FreeCycle Init local resource_manager to FreeCycle member rm");
     rm = lrm;
-    // DOUT("... done copy local resource manager to FreeCycle member rm");
+    DOUT("... done copy FreeCycle Init local resource_manager to FreeCycle member rm");
 }
 
 // depth of the FreeCycle map
@@ -690,7 +689,7 @@ private:
     ql::quantum_kernel      *kernelp;   // current kernel for creating gates
 
     Virt2Real               v2r;        // state: current Virt2Real map, imported/exported to kernel
-    FreeCycle               fc;         // state: FreeCycle map of this Past
+    FreeCycle               fc;         // state: FreeCycle map (including resource_manager) of this Past
     typedef ql::gate *      gate_p;
     std::list<gate_p>       waitinglg;  // . . .  list of q gates in this Past, topological order, waiting to be scheduled in
                                         //        waitinglg only contains gates from Add and final Schedule call
@@ -714,13 +713,13 @@ public:
 // needed for virgin construction
 Past()
 {
-    // DOUT("Constructing Past");
+    DOUT("Constructing Past");
 }
 
 // past initializer
 void Init(const ql::quantum_platform *p, ql::quantum_kernel *k)
 {
-    // DOUT("Past::Init");
+    DOUT("Past::Init");
     platformp = p;
     kernelp = k;
 
@@ -1333,14 +1332,14 @@ public:
 // needed for virgin construction
 Alter()
 {
-    // DOUT("Constructing Alter");
+    DOUT("Constructing Alter");
 }
 
 // Alter initializer
 // This should only be called after a virgin construction and not after cloning a path.
 void Init(const ql::quantum_platform* p, ql::quantum_kernel* k)
 {
-    // DOUT("Alter::Init(number of qubits=" << nq);
+    DOUT("Alter::Init(number of qubits=" << nq);
     platformp = p;
     kernelp = k;
 

@@ -1692,6 +1692,9 @@ public:
             sched_dot = ssdot.str();
         }
 
+        // end scheduling
+        // from here split off
+
         latency_compensation(circp, platform);
 
         ql::ir::bundles_t   bundles;
