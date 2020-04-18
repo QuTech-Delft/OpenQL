@@ -77,3 +77,6 @@ Note: please fill your contributions in this file
 
 - [Fer Grooteman](https://github.com/QFer)
     -   added interface (C++ and Python) to compile cQASM 1.0
+
+- [Anneriet Krol](https://github.com/anneriet)
+    -   unitary decomposition support
