@@ -3,16 +3,16 @@ cache: pip
 
 matrix:
   include:      
-    - name: "Python 3.7 on macOS 10.14"
-      os: osx
-      osx_image: xcode11.3
-      language: generic
-      env:
-        - export PATH="/usr/local/opt/flex/bin:$PATH"
-        - export LDFLAGS="-L/usr/local/opt/flex/lib:$LDFLAGS"
-        - export CPPFLAGS="-I/usr/local/opt/flex/include:$CPPFLAGS"
-        - export PATH="/usr/local/opt/bison/bin:$PATH"
-        - export LDFLAGS="-L/usr/local/opt/bison/lib:$LDFLAGS"
+    # - name: "Python 3.7 on macOS 10.14"
+    #   os: osx
+    #   osx_image: xcode11.3
+    #   language: generic
+    #   env:
+    #     - export PATH="/usr/local/opt/flex/bin:$PATH"
+    #     - export LDFLAGS="-L/usr/local/opt/flex/lib:$LDFLAGS"
+    #     - export CPPFLAGS="-I/usr/local/opt/flex/include:$CPPFLAGS"
+    #     - export PATH="/usr/local/opt/bison/bin:$PATH"
+    #     - export LDFLAGS="-L/usr/local/opt/bison/lib:$LDFLAGS"
 
     - name: "Python 3.7 on xenial"
       os: linux

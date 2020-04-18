@@ -472,7 +472,6 @@ class Test_conjugated_kernel(unittest.TestCase):
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
-        qx.__del__
         
         self.assertAlmostEqual(helper_prob(matrix[2]), helper_regex(c0)[0], 5)
         self.assertAlmostEqual(helper_prob(matrix[6]), helper_regex(c0)[1], 5)
