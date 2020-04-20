@@ -23,17 +23,17 @@ namespace ql
 namespace arch
 {
 
-class qubit_resource_t : public resource_t
+class ccl_qubit_resource_t : public resource_t
 {
 public:
-    qubit_resource_t* clone() const & { DOUT("Cloning/copying qubit_resource_t"); return new qubit_resource_t(*this);}
-    qubit_resource_t* clone() && { DOUT("Cloning/moving qubit_resource_t"); return new qubit_resource_t(std::move(*this)); }
+    ccl_qubit_resource_t* clone() const & { DOUT("Cloning/copying ccl_qubit_resource_t"); return new ccl_qubit_resource_t(*this);}
+    ccl_qubit_resource_t* clone() && { DOUT("Cloning/moving ccl_qubit_resource_t"); return new ccl_qubit_resource_t(std::move(*this)); }
 
     // fwd: qubit q is busy till cycle=state[q], i.e. all cycles < state[q] it is busy, i.e. start_cycle must be >= state[q]
     // bwd: qubit q is busy from cycle=state[q], i.e. all cycles >= state[q] it is busy, i.e. start_cycle+duration must be <= state[q]
     std::vector<size_t> state;
 
-    qubit_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("qubits", dir)
+    ccl_qubit_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("qubits", dir)
     {
         // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
@@ -94,15 +94,15 @@ public:
             DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " qubit: " << q << " reserved till/from cycle: " << state[q]);
         }
     }
-    ~qubit_resource_t() {}
+    ~ccl_qubit_resource_t() {}
 };
 
 
-class qwg_resource_t : public resource_t
+class ccl_qwg_resource_t : public resource_t
 {
 public:
-    qwg_resource_t* clone() const & { DOUT("Cloning/copying qwg_resource_t"); return new qwg_resource_t(*this);}
-    qwg_resource_t* clone() && { DOUT("Cloning/moving qwg_resource_t"); return new qwg_resource_t(std::move(*this)); }
+    ccl_qwg_resource_t* clone() const & { DOUT("Cloning/copying ccl_qwg_resource_t"); return new ccl_qwg_resource_t(*this);}
+    ccl_qwg_resource_t* clone() && { DOUT("Cloning/moving ccl_qwg_resource_t"); return new ccl_qwg_resource_t(std::move(*this)); }
 
     std::vector<size_t> fromcycle;          // qwg is busy from cycle==fromcycle[qwg], inclusive
     std::vector<size_t> tocycle;            // qwg is busy to cycle==tocycle[qwg], not inclusive
@@ -115,7 +115,7 @@ public:
     std::vector<std::string> operations;    // with operation_name==operations[qwg]
     std::map<size_t,size_t> qubit2qwg;      // on qwg==qubit2qwg[q]
 
-    qwg_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : 
+    ccl_qwg_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : 
         resource_t("qwgs", dir)
     {
         // DOUT("... creating " << name << " resource");
@@ -234,20 +234,20 @@ public:
             }
         }
     }
-    ~qwg_resource_t() {}
+    ~ccl_qwg_resource_t() {}
 };
 
-class meas_resource_t : public resource_t
+class ccl_meas_resource_t : public resource_t
 {
 public:
-    meas_resource_t* clone() const & { DOUT("Cloning/copying meas_resource_t"); return new meas_resource_t(*this);}
-    meas_resource_t* clone() && { DOUT("Cloning/moving meas_resource_t"); return new meas_resource_t(std::move(*this)); }
+    ccl_meas_resource_t* clone() const & { DOUT("Cloning/copying ccl_meas_resource_t"); return new ccl_meas_resource_t(*this);}
+    ccl_meas_resource_t* clone() && { DOUT("Cloning/moving ccl_meas_resource_t"); return new ccl_meas_resource_t(std::move(*this)); }
 
     std::vector<size_t> fromcycle;  // last measurement start cycle
     std::vector<size_t> tocycle;    // is busy till cycle
     std::map<size_t,size_t> qubit2meas;
 
-    meas_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : 
+    ccl_meas_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : 
         resource_t("meas_units", dir)
     {
         // DOUT("... creating " << name << " resource");
@@ -338,14 +338,14 @@ public:
             }
         }
     }
-    ~meas_resource_t() {}
+    ~ccl_meas_resource_t() {}
 };
 
-class edge_resource_t : public resource_t
+class ccl_edge_resource_t : public resource_t
 {
 public:
-    edge_resource_t* clone() const & { DOUT("Cloning/copying edge_resource_t"); return new edge_resource_t(*this);}
-    edge_resource_t* clone() && { DOUT("Cloning/moving edge_resource_t"); return new edge_resource_t(std::move(*this)); }
+    ccl_edge_resource_t* clone() const & { DOUT("Cloning/copying ccl_edge_resource_t"); return new ccl_edge_resource_t(*this);}
+    ccl_edge_resource_t* clone() && { DOUT("Cloning/moving ccl_edge_resource_t"); return new ccl_edge_resource_t(std::move(*this)); }
 
     // fwd: edge is busy till cycle=state[edge], i.e. all cycles < state[edge] it is busy, i.e. start_cycle must be >= state[edge]
     // bwd: edge is busy from cycle=state[edge], i.e. all cycles >= state[edge] it is busy, i.e. start_cycle+duration must be <= state[edge]
@@ -354,7 +354,7 @@ public:
     std::map< qubits_pair_t, size_t > qubits2edge;      // constant helper table to find edge between a pair of qubits
     std::map<size_t, std::vector<size_t> > edge2edges;  // constant "edges" table from configuration file
 
-    edge_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("edges", dir)
+    ccl_edge_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : resource_t("edges", dir)
     {
         // DOUT("... creating " << name << " resource");
         count = platform.resources[name]["count"];
@@ -514,7 +514,7 @@ public:
             }
         }
     }
-    ~edge_resource_t() {}
+    ~ccl_edge_resource_t() {}
 };
 
 // A two-qubit flux gate lowers the frequency of its source qubit to get near the freq of its target qubit.
@@ -539,11 +539,11 @@ public:
 // so the second, third, etc. of these "flux"s can be scheduled in parallel to the first but not earlier than fromcycle[q],
 // since till that cycle is was likely to be busy with "mw", which doesn't allow a "flux" in parallel. Similar for backward scheduling.
 // The other members contain internal copies of the resource description and grid configuration of the json file.
-class detuned_qubits_resource_t : public resource_t
+class ccl_detuned_qubits_resource_t : public resource_t
 {
 public:
-    detuned_qubits_resource_t* clone() const & { DOUT("Cloning/copying detuned_qubits_resource_t"); return new detuned_qubits_resource_t(*this);}
-    detuned_qubits_resource_t* clone() && { DOUT("Cloning/moving detuned_qubits_resource_t"); return new detuned_qubits_resource_t(std::move(*this)); }
+    ccl_detuned_qubits_resource_t* clone() const & { DOUT("Cloning/copying ccl_detuned_qubits_resource_t"); return new ccl_detuned_qubits_resource_t(*this);}
+    ccl_detuned_qubits_resource_t* clone() && { DOUT("Cloning/moving ccl_detuned_qubits_resource_t"); return new ccl_detuned_qubits_resource_t(std::move(*this)); }
 
     std::vector<size_t> fromcycle;                              // qubit q is busy from cycle fromcycle[q]
     std::vector<size_t> tocycle;                                // till cycle tocycle[q]
@@ -553,7 +553,7 @@ public:
     std::map< qubits_pair_t, size_t > qubitpair2edge;           // map: pair of qubits to edge (from grid configuration)
     std::map<size_t, std::vector<size_t> > edge_detunes_qubits; // map: edge to vector of qubits that edge detunes (resource desc.)
 
-    detuned_qubits_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : 
+    ccl_detuned_qubits_resource_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : 
         resource_t("detuned_qubits", dir)
     {
         // DOUT("... creating " << name << " resource");
@@ -813,7 +813,7 @@ public:
             }
         }
     }
-    ~detuned_qubits_resource_t() {}
+    ~ccl_detuned_qubits_resource_t() {}
 };
 
 class cc_light_resource_manager_t : public platform_resource_manager_t
@@ -839,27 +839,27 @@ public:
             // DOUT("... about to create " << n << " resource");
             if( n == "qubits")
             {
-                resource_t * ares = new qubit_resource_t(platform, dir);
+                resource_t * ares = new ccl_qubit_resource_t(platform, dir);
                 resource_ptrs.push_back( ares );
             }
             else if( n == "qwgs")
             {
-                resource_t * ares = new qwg_resource_t(platform, dir);
+                resource_t * ares = new ccl_qwg_resource_t(platform, dir);
                 resource_ptrs.push_back( ares );
             }
             else if( n == "meas_units")
             {
-                resource_t * ares = new meas_resource_t(platform, dir);
+                resource_t * ares = new ccl_meas_resource_t(platform, dir);
                 resource_ptrs.push_back( ares );
             }
             else if( n == "edges")
             {
-                resource_t * ares = new edge_resource_t(platform, dir);
+                resource_t * ares = new ccl_edge_resource_t(platform, dir);
                 resource_ptrs.push_back( ares );
             }
             else if( n == "detuned_qubits")
             {
-                resource_t * ares = new detuned_qubits_resource_t(platform, dir);
+                resource_t * ares = new ccl_detuned_qubits_resource_t(platform, dir);
                 resource_ptrs.push_back( ares );
             }
             else
