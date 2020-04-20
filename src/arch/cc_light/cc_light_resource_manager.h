@@ -23,6 +23,48 @@ namespace ql
 namespace arch
 {
 
+
+// ============ interfaces to access platform dependent attributes of a gate
+
+// in configuration file, duration is in nanoseconds, while here we prefer it to have it in cycles
+// it is needed to define the extend of the resource occupation in case of multi-cycle operations
+size_t ccl_get_operation_duration(ql::gate *ins, const ql::quantum_platform &platform)
+{
+    return std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
+}
+
+
+// operation type is "mw" (for microwave), "flux", or "readout"
+// it reflects the different resources used to implement the various gates and that resource management must distinguish
+std::string ccl_get_operation_type(ql::gate *ins, const ql::quantum_platform &platform)
+{
+    std::string operation_type("cc_light_type");
+    JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
+    if ( !platform.instruction_settings[ins->name]["type"].is_null() )
+    {
+        operation_type = platform.instruction_settings[ins->name]["type"];
+    }
+    return operation_type;
+}
+
+// operation name is used to know which operations are the same when one qwg steers several qubits using the vsm
+std::string ccl_get_operation_name(ql::gate *ins, const ql::quantum_platform &platform)
+{
+    std::string operation_name(ins->name);
+    JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
+    if ( !platform.instruction_settings[ins->name]["cc_light_instr"].is_null() )
+    {
+        operation_name = platform.instruction_settings[ins->name]["cc_light_instr"];
+    }
+    return operation_name;
+}
+
+
+
+// ============ classes of resources that _may_ appear in a configuration file
+// these are a superset of those allocated by the cc_light_resource_manager_t constructor below
+
+// Each qubit can be used by only one gate at a time.
 class ccl_qubit_resource_t : public resource_t
 {
 public:
@@ -46,13 +88,8 @@ public:
 
     bool available(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
-        std::string operation_type("cc_light_type");
-        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
-        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
-        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
-        {
-            operation_type = platform.instruction_settings[ins->name]["type"];
-        }
+        size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+        std::string operation_type = ccl_get_operation_type(ins, platform);
 
         for( auto q : ins->operands )
         {
@@ -81,13 +118,9 @@ public:
 
     void reserve(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
-        std::string operation_type("cc_light_type");
-        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
-        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
-        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
-        {
-            operation_type = platform.instruction_settings[ins->name]["type"];
-        }
+        std::string operation_type = ccl_get_operation_type(ins, platform);
+        size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+
         for( auto q : ins->operands )
         {
             state[q] = (forward_scheduling == direction ?  op_start_cycle + operation_duration : op_start_cycle );
@@ -98,6 +131,9 @@ public:
 };
 
 
+// Single-qubit rotation gates (instructions of 'mw' type) are controlled by qwgs.
+// Each qwg controls a private set of qubits.
+// A qwg can control multiple qubits at the same time, but only when they perform the same gate and start at the same time.
 class ccl_qwg_resource_t : public resource_t
 {
 public:
@@ -143,18 +179,10 @@ public:
 
     bool available(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
-        std::string operation_name(ins->name);
-        std::string operation_type("cc_light_type");
-        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
-        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
-        if ( !platform.instruction_settings[ins->name]["cc_light_instr"].is_null() )
-        {
-            operation_name = platform.instruction_settings[ins->name]["cc_light_instr"];
-        }
-        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
-        {
-            operation_type = platform.instruction_settings[ins->name]["type"];
-        }
+        std::string operation_type = ccl_get_operation_type(ins, platform);
+        std::string operation_name = ccl_get_operation_name(ins, platform);
+        size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+
         bool is_mw = (operation_type == "mw");
         if( is_mw )
         {
@@ -187,18 +215,10 @@ public:
 
     void reserve(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
-        std::string operation_name(ins->name);
-        std::string operation_type("cc_light_type");
-        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
-        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
-        if ( !platform.instruction_settings[ins->name]["cc_light_instr"].is_null() )
-        {
-            operation_name = platform.instruction_settings[ins->name]["cc_light_instr"];
-        }
-        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
-        {
-            operation_type = platform.instruction_settings[ins->name]["type"];
-        }
+        std::string operation_type = ccl_get_operation_type(ins, platform);
+        std::string operation_name = ccl_get_operation_name(ins, platform);
+        size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+
         bool is_mw = (operation_type == "mw");
         if( is_mw )
         {
@@ -237,6 +257,9 @@ public:
     ~ccl_qwg_resource_t() {}
 };
 
+// Single-qubit measurements (instructions of 'readout' type) are controlled by measurement units.
+// Each one controls a private set of qubits.
+// A measurement unit can control multiple qubits at the same time, but only when they start at the same time.
 class ccl_meas_resource_t : public resource_t
 {
 public:
@@ -273,13 +296,9 @@ public:
 
     bool available(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
-        std::string operation_type("cc_light_type");
-        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
-        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
-        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
-        {
-            operation_type = platform.instruction_settings[ins->name]["type"];
-        }
+        std::string operation_type = ccl_get_operation_type(ins, platform);
+        size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+
         bool is_measure = (operation_type == "readout");
         if( is_measure )
         {
@@ -320,13 +339,9 @@ public:
 
     void reserve(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
-        std::string operation_type("cc_light_type");
-        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
-        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
-        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
-        {
-            operation_type = platform.instruction_settings[ins->name]["type"];
-        }
+        std::string operation_type = ccl_get_operation_type(ins, platform);
+        size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+
         bool is_measure = (operation_type == "readout");
         if( is_measure )
         {
@@ -341,6 +356,15 @@ public:
     ~ccl_meas_resource_t() {}
 };
 
+// Two-qubit flux gates only operate on neighboring qubits, i.e. qubits connected by an edge.
+// A two-qubit flux gate operates by lowering (detuning) the frequency of the operand qubit
+// with the highest frequency to get close to the frequency of the other operand qubit.
+// But any two qubits which have close frequencies execute a two-qubit flux gate:
+// this may happen between the detuned frequency qubit and each of its other neighbors with a frequency close to this;
+// to prevent this, those neighbors must have their frequency detuned (lowered out of the way, parked) as well.
+// A parked qubit cannot engage in any gate, so also not a two-qubit gate.
+// As a consequence, for each edge executing a two-qubit gate,
+// certain other edges cannot execute a two-qubit gate in parallel.
 class ccl_edge_resource_t : public resource_t
 {
 public:
@@ -397,13 +421,9 @@ public:
 
     bool available(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
-        std::string operation_type("cc_light_type");
-        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
-        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
-        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
-        {
-            operation_type = platform.instruction_settings[ins->name]["type"];
-        }
+        std::string operation_type = ccl_get_operation_type(ins, platform);
+        size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+
         auto gname = ins->name;
         bool is_flux = (operation_type == "flux");
         if( is_flux )
@@ -424,9 +444,7 @@ public:
                 {
                     auto edge_no = qubits2edge[aqpair];
 
-                    DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle 
-                        << ", edge: " << edge_no << " is busy till/from cycle : " << state[edge_no] 
-                        << " for operation: " << ins->name);
+                    DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " is busy till/from cycle : " << state[edge_no] << " for operation: " << ins->name);
 
                     std::vector<size_t> edges2check(edge2edges[edge_no]);
                     edges2check.push_back(edge_no);
@@ -466,13 +484,9 @@ public:
 
     void reserve(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
-        std::string operation_type("cc_light_type");
-        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
-        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
-        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
-        {
-            operation_type = platform.instruction_settings[ins->name]["type"];
-        }
+        std::string operation_type = ccl_get_operation_type(ins, platform);
+        size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+
         auto gname = ins->name;
         bool is_flux = (operation_type == "flux");
         if( is_flux )
@@ -504,9 +518,7 @@ public:
                         state[e] = op_start_cycle;
                     }
                 }
-                DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle 
-                    << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] 
-                    << " for operation: " << ins->name);
+                DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] << " for operation: " << ins->name);
             }
 	    else
             {
@@ -606,13 +618,8 @@ public:
     // When a one-qubit rotation, check whether the qubit is not detuned (busy with a flux gate).
     bool available(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
-        std::string operation_type("cc_light_type");
-        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
-        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
-        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
-        {
-            operation_type = platform.instruction_settings[ins->name]["type"];
-        }
+        std::string operation_type = ccl_get_operation_type(ins, platform);
+        size_t      operation_duration = ccl_get_operation_duration(ins, platform);
 
         auto gname = ins->name;
         bool is_flux = (operation_type == "flux");
@@ -711,13 +718,9 @@ public:
     // A one-qubit rotation gate must set its operand qubit to busy, busy with a rotation.
     void reserve(size_t op_start_cycle, ql::gate * ins, const ql::quantum_platform & platform)
     {
-        std::string operation_type("cc_light_type");
-        size_t      operation_duration = std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
-        JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
-        if ( !platform.instruction_settings[ins->name]["type"].is_null() )
-        {
-            operation_type = platform.instruction_settings[ins->name]["type"];
-        }
+        std::string operation_type = ccl_get_operation_type(ins, platform);
+        size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+
         auto gname = ins->name;
         bool is_flux = (operation_type == "flux");
         if( is_flux )
@@ -816,6 +819,12 @@ public:
     ~ccl_detuned_qubits_resource_t() {}
 };
 
+
+
+// ============ platform specific resource_manager matching config file resources sections with resource classes above
+// each config file resources section must have a resource class above
+// not all resource classes above need to be actually used and specified in a config file; only those specified, are used
+
 class cc_light_resource_manager_t : public platform_resource_manager_t
 {
 public:
@@ -824,9 +833,12 @@ public:
 
     cc_light_resource_manager_t() : platform_resource_manager_t()
     {
-        DOUT("Constructing virgin cc_light_resource_manager_t");
+        // DOUT("Constructing virgin cc_light_resource_manager_t");
     }
 
+    // Allocate those resources that were specified in the config file.
+    // Those that are not specified, are not allocatd, so are not used in scheduling/mapping.
+    // The resource names tested below correspond to the names of the resources sections in the config file.
     cc_light_resource_manager_t(const ql::quantum_platform & platform, scheduling_direction_t dir) : platform_resource_manager_t(platform, dir)
     {
         DOUT("Constructing (platform,dir) parameterized platform_resource_manager_t");
@@ -864,15 +876,14 @@ public:
             }
             else
             {
-                COUT("Error : Un-modelled resource: '" << n << "'");
-                throw ql::exception("[x] Error : Un-modelled resource: "+n+" !",false);
+                FATAL("Error : Un-modelled resource, i.e. resource not supported by implementation: '" << n << "'");
             }
         }
-        DOUT("Done constructing inited platform_resource_manager_t");
+        // DOUT("Done constructing inited platform_resource_manager_t");
     }
     ~cc_light_resource_manager_t()
     {
-        DOUT("Destroying cc_light_resource_manager_t");
+        // DOUT("Destroying cc_light_resource_manager_t");
     }
 };
 
