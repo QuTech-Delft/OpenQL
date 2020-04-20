@@ -258,21 +258,18 @@ then all the resources for executing the gate are checked to be available
 from cycle ``t`` till (and not including) ``t`` plus the gate's ``duration`` in cycles;
 and when actually committing to scheduling the gate at cycle ``t``,
 all its resources are set to occupied for the duration of its execution.
-The resource manager offer methods for this check (``bool rm.available()``) and commit (``rm.reserve()``).
-Doing this check and committing for a particular gate, some additional gate attributes are required:
+The resource manager offers methods for this check (``bool rm.available()``) and commit (``rm.reserve()``).
+Doing this check and committing for a particular gate, some additional gate attributes may be required by the resource manager.
+For the CC-Light resource manager, these additional gate attributes are:
 
-- ``operation_name`` initialized from the configuration file ``cc_light_instr`` gate attribute representing the operation of the gate; it is used by the ``qwgs`` resource type only
+- ``operation_name`` initialized from the configuration file ``cc_light_instr`` gate attribute representing the operation of the gate; it is used by the ``qwgs`` resource type only; two gates having the same ``operation_name`` are assumed to use the same wave form
 
 - ``operation_type`` initialized from the configuration file ``type`` gate attribute representing the kind of operation of the gate: ``mw`` for rotation gates, ``readout`` for measurement gates, and ``flux`` for one and two-qubit flux gates; it is used by each resource type
 
-- ``instruction_type`` initialized from the configuration file ``cc_light_instr_type`` which is not used by any resource type
+This concludes the description of the involvement of the resource manager in the scheduling of a gate.
 
-Each of these gate configuration file attributes is required to be present and correctly filled
-for the resource manager to correctly function.
-
-:Note: This interface needs to be revised: ``cc_light_instr_type`` is never used; but foremost, the interface is CC_Light dependent. By giving the platform dependent resource manager access to the platform configuration file, it can fetch the gate's attributes necessary for its particular method itself and these can be omitted from the interfaces of the platform independent resource manager and the scheduler.
-
-When the available list became empty, all cycle values were assigned and scheduling is almost done.
+The list scheduler algorithm uses a so-called availability list to represent gates that can be scheduled; see above.
+When the available list becomes empty, all cycle values were assigned and scheduling is almost done.
 The gates in the circuit are then first sorted on their cycle value.
 
 Then latency compensation is done:
