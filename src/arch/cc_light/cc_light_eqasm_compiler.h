@@ -339,13 +339,6 @@ public:
             return name + iopers;
     }
 
-#if OPT_MICRO_CODE
-    instruction_t micro_code()
-    {
-        return ql::dep_instruction_map["nop"];
-    }
-#endif
-
     gate_type_t type()
     {
         return __classical_gate__;
@@ -730,7 +723,7 @@ public:
 public:
 
     // FIXME: should be private
-    std::string get_prologue(ql::quantum_kernel &k)
+    std::string get_qisa_prologue(ql::quantum_kernel &k)
     {
         std::stringstream ss;
 
@@ -779,7 +772,7 @@ public:
         return ss.str();
     }
 
-    std::string get_epilogue(ql::quantum_kernel &k)
+    std::string get_qisa_epilogue(ql::quantum_kernel &k)
     {
         std::stringstream ss;
 
@@ -992,7 +985,7 @@ public:
             duration<double> time_span = t2 - t1;
             timetaken = time_span.count();
 
-            kernel.bundles = mapper.Bundler(kernel);    // assignment to kernel.bundles only for reporting below
+            kernel.bundles = ql::ir::bundler(kernel.c, ns_per_cycle);   // assignment to kernel.bundles only for reporting below
 
             ql::report::report_kernel_statistics(ofs, kernel, platform, "# ");
             std::stringstream ss;
@@ -1153,12 +1146,12 @@ public:
         for(auto &kernel : kernels)
         {
             sskernels_qisa << "\n" << kernel.name << ":" << std::endl;
-            sskernels_qisa << get_prologue(kernel);
+            sskernels_qisa << get_qisa_prologue(kernel);
             if (! kernel.c.empty())
             {
                 sskernels_qisa << bundles2qisa(kernel.bundles, platform, mask_manager);
             }
-            sskernels_qisa << get_epilogue(kernel);
+            sskernels_qisa << get_qisa_epilogue(kernel);
         }
         sskernels_qisa << "\n    br always, start" << "\n"
                   << "    nop \n"
@@ -1379,77 +1372,6 @@ public:
     }
 
     /**
-     * optimize
-     */
-    void reschedule(bool verbose=false)
-    {
-        IOUT("instruction rescheduling...");
-        IOUT("resource dependency analysis...");
-        IOUT("buffer insertion...");
-#if 0
-        std::vector<size_t>           hw_res_av(__trigger_width__+__awg_number__,0);
-        std::vector<size_t>           qu_res_av(num_qubits,0);
-        std::vector<operation_type_t> hw_res_op(__trigger_width__+__awg_number__,__none__);
-        std::vector<operation_type_t> qu_res_op(num_qubits,__none__);
-
-        for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
-        {
-            resources_t      hw_res  = instr->used_resources;
-            qubit_set_t      qu_res  = instr->used_qubits;
-            operation_type_t type    = instr->get_operation_type();
-            size_t latest_hw = 0;
-            size_t buf_hw    = 0;
-            size_t latest_qu = 0;
-            size_t buf_qu    = 0;
-            // hardware dependency
-            for (size_t r=0; r<hw_res.size(); ++r)
-            {
-                if (hw_res.test(r))
-                {
-                    size_t rbuf = buffer_size(hw_res_op[r],type);
-                    buf_hw      = ((rbuf > buf_hw) ? rbuf : buf_hw);
-                    latest_hw   = (hw_res_av[r] > latest_hw ? hw_res_av[r] : latest_hw);
-                }
-            }
-
-            // qubit dependency
-            for (size_t q : qu_res) // qubits used by the instr
-            {
-                size_t rbuf  = buffer_size(qu_res_op[q],type);
-                buf_qu       = ((rbuf > buf_qu) ? rbuf : buf_qu);
-                latest_qu    = (qu_res_av[q] > latest_qu ? qu_res_av[q] : latest_qu);
-            }
-
-            // println("latest_hw: " << latest_hw);
-            // println("latest_qu: " << latest_qu);
-
-            size_t latest = std::max(latest_hw,latest_qu);
-            size_t buf    = std::max(buf_hw,buf_qu);
-
-            //if (buf)
-            // println("[!] inserting buffer...");
-
-            instr->start = latest+buf;
-            // update latest hw record
-            for (size_t r=0; r<hw_res.size(); ++r)
-            {
-                if (hw_res.test(r))
-                {
-                    hw_res_av[r] = (instr->start+instr->duration);
-                    hw_res_op[r] = (type);
-                }
-            }
-            // update latest hw record
-            for (size_t q : qu_res) // qubits used by the instr
-            {
-                qu_res_av[q] = (instr->start+instr->duration);
-                qu_res_op[q] = (type);
-            }
-        }
-#endif
-    }
-
-    /**
      * buffer size
      */
     size_t buffer_size(operation_type_t t1, operation_type_t t2)
@@ -1462,37 +1384,6 @@ public:
      */
     void write_traces(std::string file_name="")
     {
-#if 0
-        ql::arch::channels_t channels;
-        if (cc_light_eqasm_instructions.empty())
-        {
-            println("[!] warning : empty cc_light_eqasm code : not traces to dump !");
-            return;
-        }
-
-        for (size_t i=0; i<__trigger_width__; i++)
-        {
-            std::string ch = "TRIG_"+std::to_string(i);
-            channels.push_back(ch);
-        }
-
-        for (size_t i=0; i<__awg_number__; i++)
-        {
-            std::string ch = "AWG_"+std::to_string(i);
-            channels.push_back(ch);
-        }
-
-        ql::arch::time_diagram diagram(channels,total_exec_time,4);
-
-        for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
-        {
-            instruction_traces_t trs = instr->trace();
-            for (instruction_trace_t t : trs)
-                diagram.add_trace(t);
-        }
-
-        diagram.dump(ql::options::get("output_dir") + "/trace.dat");
-#endif
     }
 
 

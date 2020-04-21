@@ -100,7 +100,9 @@ namespace ql
         // return bundles for the given circuit;
         // assumes gatep->cycle attribute reflects the cycle assignment;
         // assumes circuit being a vector of gate pointers is ordered by this cycle value;
-        // create bundles in a single scan over the circuit, using currBundle and currCycle as state
+        // create bundles in a single scan over the circuit, using currBundle and currCycle as state:
+        // - currBundle: bundle that is being put together; currBundle copied into output bundles when the bundle has been done
+        // - currCycle: cycle at which currBundle will be put; equals cycle value of all contained gates
         inline bundles_t bundler(ql::circuit& circ, size_t cycle_time)
         {
             bundles_t bundles;          // result bundles
@@ -126,22 +128,21 @@ namespace ql
                 size_t newCycle = gp->cycle;        // taking cycle values from circuit, so excludes SOURCE and SINK!
                 if (newCycle < currCycle)
                 {
-                    EOUT("Error: circuit not ordered by cycle value");
-                    throw ql::exception("[x] Error: circuit not ordered by cycle value",false);
+                    FATAL("Error: circuit not ordered by cycle value");
                 }
                 if (newCycle > currCycle)
                 {
                     if (!currBundle.parallel_sections.empty())
                     {
                         // finish currBundle at currCycle
-                        DOUT(".. bundle at cycle " << currCycle << " duration in cycles: " << currBundle.duration_in_cycles);
-                        for (auto &s : currBundle.parallel_sections)
-                        {
-                            for (auto &sgp: s)
-                            {
-                                DOUT("... with gate(@" << sgp->cycle << ")  " << sgp->qasm());
-                            }
-                        }
+                        // DOUT(".. bundle at cycle " << currCycle << " duration in cycles: " << currBundle.duration_in_cycles);
+                        // for (auto &s : currBundle.parallel_sections)
+                        // {
+                        //     for (auto &sgp: s)
+                        //     {
+                        //         DOUT("... with gate(@" << sgp->cycle << ")  " << sgp->qasm());
+                        //     }
+                        // }
                         bundles.push_back(currBundle);
                         DOUT(".. ready with bundle at cycle " << currCycle);
                         currBundle.parallel_sections.clear();
@@ -149,7 +150,7 @@ namespace ql
     
                     // new empty currBundle at newCycle
                     currCycle = newCycle;
-                    DOUT(".. bundling at cycle: " << currCycle);
+                    // DOUT(".. bundling at cycle: " << currCycle);
                     currBundle.start_cycle = currCycle;
                     currBundle.duration_in_cycles = 0;
                 }
@@ -158,20 +159,20 @@ namespace ql
                 section_t asec;
                 asec.push_back(gp);
                 currBundle.parallel_sections.push_back(asec);
-                DOUT("... gate: " << gp->qasm() << " in private parallel section");
+                // DOUT("... gate: " << gp->qasm() << " in private parallel section");
                 currBundle.duration_in_cycles = std::max(currBundle.duration_in_cycles, (gp->duration+cycle_time-1)/cycle_time); 
             }
             if (!currBundle.parallel_sections.empty())
             {
                 // finish currBundle (which is last bundle) at currCycle
-                DOUT("... bundle at cycle " << currCycle << " duration in cycles: " << currBundle.duration_in_cycles);
-                for (auto &s : currBundle.parallel_sections)
-                {
-                    for (auto &sgp: s)
-                    {
-                        DOUT("... with gate(@" << sgp->cycle << ")  " << sgp->qasm());
-                    }
-                }
+                // DOUT("... bundle at cycle " << currCycle << " duration in cycles: " << currBundle.duration_in_cycles);
+                // for (auto &s : currBundle.parallel_sections)
+                // {
+                //     for (auto &sgp: s)
+                //     {
+                //         DOUT("... with gate(@" << sgp->cycle << ")  " << sgp->qasm());
+                //     }
+                // }
                 bundles.push_back(currBundle);
                 DOUT(".. ready with bundle at cycle " << currCycle);
             }

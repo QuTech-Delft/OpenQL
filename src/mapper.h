@@ -3586,54 +3586,6 @@ void MakePrimitives(ql::quantum_kernel& kernel)
     DOUT("MakePrimitives circuit [DONE]");
 }   // end MakePrimitives
 
-// alternative bundler using gate->cycle attribute instead of lemon's cycle map
-// it assumes that the gate->cycle attribute reflect the cycle assignment of a particular schedule
-// independent entry in mapper class
-ql::ir::bundles_t Bundler(ql::quantum_kernel& kernel)
-{
-    ql::ir::bundles_t bundles;
-
-    typedef std::vector<ql::gate*> insInOneCycle;
-    std::map<size_t,insInOneCycle> insInAllCycles;
-
-    // DOUT("Bundler ...");
-    size_t TotalCycles = 0;
-    for ( auto & gp : kernel.c)
-    {
-        if( gp->type() != ql::gate_type_t::__wait_gate__ )
-        {
-            insInAllCycles[gp->cycle].push_back( gp );
-            TotalCycles = std::max(TotalCycles, gp->cycle);
-        }
-    }
-
-    for(size_t currCycle=0; currCycle<=TotalCycles; ++currCycle)
-    {
-        auto it = insInAllCycles.find(currCycle);
-        ql::ir::bundle_t abundle;
-        abundle.start_cycle = currCycle;
-        size_t bduration = 0;
-        if( it != insInAllCycles.end() )
-        {
-            auto nInsThisCycle = insInAllCycles[currCycle].size();
-            for(size_t i=0; i<nInsThisCycle; ++i )
-            {
-                ql::ir::section_t asec;
-                auto & ins = insInAllCycles[currCycle][i];
-                asec.push_back(ins);
-                abundle.parallel_sections.push_back(asec);
-                size_t iduration = ins->duration;
-                bduration = std::max(bduration, iduration);
-            }
-            abundle.duration_in_cycles = (bduration+cycle_time-1)/cycle_time; 
-            bundles.push_back(abundle);
-        }
-    }
-
-    // DOUT("Bundler [DONE]");
-    return bundles;
-}
-
 // map kernel's circuit, main mapper entry once per kernel
 void Map(ql::quantum_kernel& kernel)
 {
