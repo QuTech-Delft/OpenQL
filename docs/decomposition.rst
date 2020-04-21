@@ -38,34 +38,63 @@ TBD
 
 Unitary decomposition
 ^^^^^^^^^^^^^^^^^^^^^
+Unitary decomposion allows a developer of quantum algorithms to specify a quantum gate as a unitary matrix, which is then split into a circuit consisting of ``ry``, ``rz`` and ``cnot`` gates. 
 
+To use it, define a ``Unitary`` with a name and a  (complex) list containing all the values in the unitary matrix in order from the top left to the bottom right.  The matrix needs to be unitary to be a valid quantum gate, otherwise an error will be raised by the compilation step.
 
-Entry points
-%%%%%%%%%%%%
++--------------+----------------------------+---------------------------+---------------------------------------+
+| Name         | operands                   | C++ type                  | example                               |
++==============+============================+===========================+=======================================+
+| Unitary      | name                       | string                    | "U_name"                              |
+|              +----------------------------+---------------------------+---------------------------------------+
+|              | unitary matrix             | vector<complex<double>>   | [0.5+0.5j,0.5-0.5j,0.5-0.5j,0.5+0.5j] |         
++--------------+----------------------------+---------------------------+---------------------------------------+
 
-The following entry points are supported:
+The unitary is first decomposed, by calling the ``.decompose()`` function on it. Only then can it be added to the kernel as a normal gate to the number of qubits corresponding to the unitary matrix size. This looks like:
 
-- ``entry()``
-  TBD
+.. code::
 
-Input and output intermediate representation
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    u1 = ql.Unitary("U_name", [0.5+0.5j,0.5-0.5j,0.5-0.5j,0.5+0.5j])
+    u1.decompose()
+    k.gate(u1, [0])
 
-TBD.
+Which generates a circuit of a ``rz(-0.5 pi)``, ``ry(-0.5 pi)`` and a ``rz(0.5 pi)`` gate on qubit 0, or an equivalent. 
 
-Options
-%%%%%%%%%
+For a two-qubit unitary gate or matrix, it looks like:
 
-The following options are supported:
+.. code::
 
-- ``option``
-  TBD
+    list_matrix = [1, 0	      , 0       , 0, 
+                   0, 0.5+0.5j, 0.5-0.5j, 0,
+                   0, 0.5-0.5j, 0.5+0.5j, 0,
+                   0, 0       , 0       , 1]
+    u1 = ql.Unitary("U_name", list_matrix)
+    u1.decompose()
+    k.gate(u1, [0,1])
 
-Function
-%%%%%%%%%
+This generates a circuit of 24 gates of which 6 ``cnots``, spanning qubits 0 and 1. The rest are ``ry`` and ``rz`` gates on both qubits. 
 
-TBD
+The unitary gate has no limit in how many qubits it can apply to. But the matrix size for an n-qubit gate scales as 2^n*2^n, which means the number of elements in the matrix scales with 4^n. This is also the scaling rate of the execution time of the decomposition algorithm and of the number of gates generated in the circuit. Caution is advised for decomposing large matrices both for compilation time and for the size of the resulting quantum circuit.
 
+..
+    Decomposition before scheduling
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^   
+    Entry points
+    %%%%%%%%%%%%
+    The following entry points are supported:
+    - ``entry()``
+    TBD
+    Input and output intermediate representation
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    TBD.  
+    Options
+    %%%%%%%%%  
+    The following options are supported:  
+    - ``option``
+      TBD
+    Function
+    %%%%%%%%%
+    TBD
 
 Decomposition before scheduling
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
