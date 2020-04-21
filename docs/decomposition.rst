@@ -111,7 +111,7 @@ This generates a circuit of 24 gates of which 6 ``cnots``, spanning qubits 0 and
 
 The unitary gate has no limit in how many qubits it can apply to. But the matrix size for an n-qubit gate scales as 2^n*2^n, which means the number of elements in the matrix scales with 4^n. This is also the scaling rate of the execution time of the decomposition algorithm and of the number of gates generated in the circuit. Caution is advised for decomposing large matrices both for compilation time and for the size of the resulting quantum circuit.
 
-More detailed information can be found at https://repository.tudelft.nl/islandora/object/uuid%3A9c60d13d-4f42-4d8b-bc23-5de92d7b9600 
+More detailed information can be found at http://resolver.tudelft.nl/uuid:9c60d13d-4f42-4d8b-bc23-5de92d7b9600 
 
 ..
     Decomposition before scheduling
