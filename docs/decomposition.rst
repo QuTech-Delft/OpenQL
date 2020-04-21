@@ -58,7 +58,15 @@ The unitary is first decomposed, by calling the ``.decompose()`` function on it.
     u1.decompose()
     k.gate(u1, [0])
 
-Which generates a circuit of a ``rz(-0.5 pi)``, ``ry(-0.5 pi)`` and a ``rz(0.5 pi)`` gate on qubit 0, or an equivalent. 
+Which generates this circuit:
+
+.. code::
+
+    rz q[0], -1.570796
+    ry q[0], -1.570796
+    rz q[0], 1.570796
+
+The circuit generated might also have different angles, though not different gates, and result in the same effect on the qubits, this is because a matrix can have multiple valid decompositions. 
 
 For a two-qubit unitary gate or matrix, it looks like:
 
@@ -72,9 +80,38 @@ For a two-qubit unitary gate or matrix, it looks like:
     u1.decompose()
     k.gate(u1, [0,1])
 
-This generates a circuit of 24 gates of which 6 ``cnots``, spanning qubits 0 and 1. The rest are ``ry`` and ``rz`` gates on both qubits. 
+This generates a circuit of 24 gates of which 6 ``cnots``, spanning qubits 0 and 1. The rest are ``ry`` and ``rz`` gates on both qubits, which looks like this:
+
+.. code::
+
+    rz q[0], -0.785398
+    ry q[0], -1.570796
+    rz q[0], -3.926991
+    rz q[1], -0.785398
+    cnot q[0],q[1]
+    rz q[1], 1.570796
+    cnot q[0],q[1]
+    rz q[0], 2.356194
+    ry q[0], -1.570796
+    rz q[0], -3.926991
+    ry q[1], 0.785398
+    cnot q[0],q[1]
+    ry q[1], 0.785398
+    cnot q[0],q[1]
+    rz q[0], -0.000000
+    ry q[0], -1.570796
+    rz q[0], 3.926991
+    rz q[1], 0.785398
+    cnot q[0],q[1]
+    rz q[1], -1.570796
+    cnot q[0],q[1]
+    rz q[0], 3.926991
+    ry q[0], -1.570796
+    rz q[0], -2.356194
 
 The unitary gate has no limit in how many qubits it can apply to. But the matrix size for an n-qubit gate scales as 2^n*2^n, which means the number of elements in the matrix scales with 4^n. This is also the scaling rate of the execution time of the decomposition algorithm and of the number of gates generated in the circuit. Caution is advised for decomposing large matrices both for compilation time and for the size of the resulting quantum circuit.
+
+More detailed information can be found at https://repository.tudelft.nl/islandora/object/uuid%3A9c60d13d-4f42-4d8b-bc23-5de92d7b9600 
 
 ..
     Decomposition before scheduling
