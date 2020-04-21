@@ -28,7 +28,7 @@ namespace arch
 
 // in configuration file, duration is in nanoseconds, while here we prefer it to have it in cycles
 // it is needed to define the extend of the resource occupation in case of multi-cycle operations
-size_t ccl_get_operation_duration(ql::gate *ins, const ql::quantum_platform &platform)
+inline size_t ccl_get_operation_duration(ql::gate *ins, const ql::quantum_platform &platform)
 {
     return std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
 }
@@ -36,7 +36,7 @@ size_t ccl_get_operation_duration(ql::gate *ins, const ql::quantum_platform &pla
 
 // operation type is "mw" (for microwave), "flux", or "readout"
 // it reflects the different resources used to implement the various gates and that resource management must distinguish
-std::string ccl_get_operation_type(ql::gate *ins, const ql::quantum_platform &platform)
+inline std::string ccl_get_operation_type(ql::gate *ins, const ql::quantum_platform &platform)
 {
     std::string operation_type("cc_light_type");
     JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
@@ -48,7 +48,7 @@ std::string ccl_get_operation_type(ql::gate *ins, const ql::quantum_platform &pl
 }
 
 // operation name is used to know which operations are the same when one qwg steers several qubits using the vsm
-std::string ccl_get_operation_name(ql::gate *ins, const ql::quantum_platform &platform)
+inline std::string ccl_get_operation_name(ql::gate *ins, const ql::quantum_platform &platform)
 {
     std::string operation_name(ins->name);
     JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);

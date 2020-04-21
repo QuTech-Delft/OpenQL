@@ -55,9 +55,9 @@
     - ALAP with UNIFORM bundle lengths: using dependences only, aim at ALAP but with equally length bundles
     ASAP/ALAP can be controlled by the "scheduler" option. Similarly for UNIFORM ("scheduler_uniform").
     With/out resource constraints are separate method calls.
-    The current code implements behavior before and after solving issue 179, selectable by an option ("scheduler_post179").
-    The post179 behavior supports commutation and in general produces more efficient/shorter scheduled circuits;
-    that the scheduler commutes gates when possible is enabled by default and can be controlled by option "scheduler_commute".
+
+    Commutation support during scheduling in general produces more efficient/shorter scheduled circuits.
+    It is enabled by option "scheduler_commute".
  */
 
 #include <lemon/list_graph.h>
@@ -232,8 +232,6 @@ public:
             // Furthermore Writes can model barriers on a qubit (see Wait, Display, etc.), because Writes sequentialize.
             // The dependence graph creation below models a graph suitable for all functions, including chains of live qubits.
 
-            if (ql::options::get("scheduler_post179") == "yes")
-            {
             // Control-operands of Controlled Unitaries commute, independent of the Unitary,
             // i.e. these gates need not be kept in order.
             // But, of course, those qubit uses should be ordered after (/before) the last (/next) non-control use of the qubit.
@@ -271,18 +269,16 @@ public:
             // that there is no order among Ds nor among Rs, but D after R and R after D sequentialize.
             // With this, the dependence graph is claimed to represent the commutations as above.
             //
-            // The post179 schedulers are list schedulers, i.e. they maintain a list of gates in their algorithm,
+            // The schedulers are list schedulers, i.e. they maintain a list of gates in their algorithm,
             // of gates available for being scheduled because they are not blocked by dependences on non-scheduled gates.
-            // Therefore, the post179 schedulers are able to select the best one from a set of commutable gates.
-            }
-
-            // each type of gate has a different 'signature' of events; switch out to each one
+            // Therefore, the schedulers are able to select the best one from a set of commutable gates.
 
             // TODO: define signature in .json file similar to how gcc defines instructions
             // and then have a signature interpreter here; then we don't have this long if-chain
             // and, more importantly, we don't have the knowledge of particular gates here;
-            // the default signature would be that of a default gate, modifying each qubit operand;
-            // that also solves
+            // the default signature would be that of a default gate, modifying each qubit operand.
+
+            // each type of gate has a different 'signature' of events; switch out to each one
             if(iname == "measure")
             {
                 DOUT(". considering " << name[consNode] << " as measure");
@@ -296,12 +292,9 @@ public:
                     {
                         add_dep(readerID, consID, WAR, operand);
                     }
-                    if (ql::options::get("scheduler_post179") == "yes")
+                    for(auto & readerID : LastDs[operand])
                     {
-                        for(auto & readerID : LastDs[operand])
-                        {
-                            add_dep(readerID, consID, WAD, operand);
-                        }
+                        add_dep(readerID, consID, WAD, operand);
                     }
                 }
 
@@ -320,23 +313,17 @@ public:
                 {
                     DOUT(".. Update LastWriter for operand: " << operand);
                     LastWriter[operand] = consID;
-                    if (ql::options::get("scheduler_post179") == "yes")
-                    {
-                        DOUT(".. Clearing LastReaders for operand: " << operand);
-                        LastReaders[operand].clear();
-                        LastDs[operand].clear();
-                    }
+                    DOUT(".. Clearing LastReaders for operand: " << operand);
+                    LastReaders[operand].clear();
+                    LastDs[operand].clear();
                     DOUT(".. Update LastWriter done");
                 }
                 for( auto coperand : ins->creg_operands )
                 {
                     DOUT(".. Update LastWriter for coperand: " << coperand);
                     LastWriter[qubit_count+coperand] = consID;
-                    if (ql::options::get("scheduler_post179") == "yes")
-                    {
-                        DOUT(".. Clearing LastReaders for coperand: " << coperand);
-                        LastReaders[qubit_count+coperand].clear();
-                    }
+                    DOUT(".. Clearing LastReaders for coperand: " << coperand);
+                    LastReaders[qubit_count+coperand].clear();
                     DOUT(".. Update LastWriter done");
                 }
                 DOUT(". measure done");
@@ -356,12 +343,9 @@ public:
                     {
                         add_dep(readerID, consID, WAR, operand);
                     }
-                    if (ql::options::get("scheduler_post179") == "yes")
+                    for(auto & readerID : LastDs[operand])
                     {
-                        for(auto & readerID : LastDs[operand])
-                        {
-                            add_dep(readerID, consID, WAD, operand);
-                        }
+                        add_dep(readerID, consID, WAD, operand);
                     }
                 }
 
@@ -369,11 +353,8 @@ public:
                 for( auto operand : qubits )
                 {
                     LastWriter[operand] = consID;
-                    if (ql::options::get("scheduler_post179") == "yes")
-                    {
-                        LastReaders[operand].clear();
-                        LastDs[operand].clear();
-                    }
+                    LastReaders[operand].clear();
+                    LastDs[operand].clear();
                 }
             }
             else if(ins->type() == ql::gate_type_t::__classical_gate__)
@@ -388,12 +369,9 @@ public:
                     {
                         add_dep(readerID, consID, WAR, qubit_count+coperand);
                     }
-                    if (ql::options::get("scheduler_post179") == "yes")
+                    for(auto & readerID : LastDs[qubit_count+coperand])
                     {
-                        for(auto & readerID : LastDs[qubit_count+coperand])
-                        {
-                            add_dep(readerID, consID, WAD, qubit_count+coperand);
-                        }
+                        add_dep(readerID, consID, WAD, qubit_count+coperand);
                     }
                 }
 
@@ -401,11 +379,8 @@ public:
                 for( auto coperand : ins->creg_operands )
                 {
                     LastWriter[qubit_count+coperand] = consID;
-                    if (ql::options::get("scheduler_post179") == "yes")
-                    {
-                        LastReaders[qubit_count+coperand].clear();
-                        LastDs[qubit_count+coperand].clear();
-                    }
+                    LastReaders[qubit_count+coperand].clear();
+                    LastDs[qubit_count+coperand].clear();
                 }
             }
             else if (  iname == "cnot"
@@ -421,46 +396,31 @@ public:
                     if( operandNo == 0)
                     {
                         add_dep(LastWriter[operand], consID, RAW, operand);
-	                    if (ql::options::get("scheduler_post179") == "no"
-	                    ||  ql::options::get("scheduler_commute") == "no")
+	                    if (ql::options::get("scheduler_commute") == "no")
                         {
                             for(auto & readerID : LastReaders[operand])
                             {
                                 add_dep(readerID, consID, RAR, operand);
                             }
                         }
-                        if (ql::options::get("scheduler_post179") == "yes")
+                        for(auto & readerID : LastDs[operand])
                         {
-                            for(auto & readerID : LastDs[operand])
-                            {
-                                add_dep(readerID, consID, RAD, operand);
-                            }
+                            add_dep(readerID, consID, RAD, operand);
                         }
                     }
                     else
                     {
-	                    if (ql::options::get("scheduler_post179") == "no")
+                        add_dep(LastWriter[operand], consID, DAW, operand);
+	                    if (ql::options::get("scheduler_commute") == "no")
                         {
-                            add_dep(LastWriter[operand], consID, WAW, operand);
-                            for(auto & readerID : LastReaders[operand])
+                            for(auto & readerID : LastDs[operand])
                             {
-                                add_dep(readerID, consID, WAR, operand);
+                                add_dep(readerID, consID, DAD, operand);
                             }
                         }
-                        else
+                        for(auto & readerID : LastReaders[operand])
                         {
-                            add_dep(LastWriter[operand], consID, DAW, operand);
-	                        if (ql::options::get("scheduler_commute") == "no")
-                            {
-                                for(auto & readerID : LastDs[operand])
-                                {
-                                    add_dep(readerID, consID, DAD, operand);
-                                }
-                            }
-                            for(auto & readerID : LastReaders[operand])
-                            {
-                                add_dep(readerID, consID, DAR, operand);
-                            }
+                            add_dep(readerID, consID, DAR, operand);
                         }
                     }
                     operandNo++;
@@ -474,21 +434,11 @@ public:
                     {
                         // update LastReaders for this operand 0
                         LastReaders[operand].push_back(consID);
-                        if (ql::options::get("scheduler_post179") == "yes")
-                        {
-                            LastDs[operand].clear();
-                        }
+                        LastDs[operand].clear();
                     }
                     else
                     {
-	                    if (ql::options::get("scheduler_post179") == "no")
-                        {
-	                        LastWriter[operand] = consID;
-                        }
-                        else
-                        {
-                            LastDs[operand].push_back(consID);
-                        }
+                        LastDs[operand].push_back(consID);
 	                    LastReaders[operand].clear();
                     }
                     operandNo++;
@@ -499,43 +449,23 @@ public:
                     )
             {
                 DOUT(". considering " << name[consNode] << " as cz");
-                // CZs Read all operands for post179
-                // CZs Read all operands and write last one for pre179 
+                // CZs Read all operands
                 size_t operandNo=0;
                 auto operands = ins->operands;
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    if (ql::options::get("scheduler_post179") == "no")
+                    if (ql::options::get("scheduler_commute") == "no")
                     {
-                        add_dep(LastWriter[operand], consID, RAW, operand);
                         for(auto & readerID : LastReaders[operand])
                         {
                             add_dep(readerID, consID, RAR, operand);
                         }
-	                    if( operandNo != 0)
-	                    {
-                            add_dep(LastWriter[operand], consID, WAW, operand);
-                            for(auto & readerID : LastReaders[operand])
-                            {
-                                add_dep(readerID, consID, WAR, operand);
-                            }
-	                    }
                     }
-                    else
+                    add_dep(LastWriter[operand], consID, RAW, operand);
+                    for(auto & readerID : LastDs[operand])
                     {
-                        if (ql::options::get("scheduler_commute") == "no")
-                        {
-                            for(auto & readerID : LastReaders[operand])
-                            {
-                                add_dep(readerID, consID, RAR, operand);
-                            }
-                        }
-                        add_dep(LastWriter[operand], consID, RAW, operand);
-                        for(auto & readerID : LastDs[operand])
-                        {
-                            add_dep(readerID, consID, RAD, operand);
-                        }
+                        add_dep(readerID, consID, RAD, operand);
                     }
                     operandNo++;
                 } // end of operand for
@@ -544,23 +474,8 @@ public:
                 operandNo=0;
                 for( auto operand : operands )
                 {
-                    if (ql::options::get("scheduler_post179") == "no")
-                    {
-	                    if( operandNo == 0)
-	                    {
-	                        LastReaders[operand].push_back(consID);
-	                    }
-	                    else
-	                    {
-	                        LastWriter[operand] = consID;
-	                        LastReaders[operand].clear();
-	                    }
-                    }
-                    else
-                    {
-                        LastDs[operand].clear();
-                        LastReaders[operand].push_back(consID);
-                    }
+                    LastDs[operand].clear();
+                    LastReaders[operand].push_back(consID);
                     operandNo++;
                 }
             }
@@ -580,29 +495,22 @@ public:
                 {
                     DOUT(".. Operand: " << operand);
                     add_dep(LastWriter[operand], consID, RAW, operand);
-                    if (ql::options::get("scheduler_post179") == "no"
-                    ||  ql::options::get("scheduler_commute") == "no")
+                    if (ql::options::get("scheduler_commute") == "no")
                     {
                         for(auto & readerID : LastReaders[operand])
                         {
                             add_dep(readerID, consID, RAR, operand);
                         }
                     }
-                    if (ql::options::get("scheduler_post179") == "yes")
+                    for(auto & readerID : LastDs[operand])
                     {
-                        for(auto & readerID : LastDs[operand])
-                        {
-                            add_dep(readerID, consID, RAD, operand);
-                        }
+                        add_dep(readerID, consID, RAD, operand);
                     }
 
                     if( operandNo < op_count-1 )
                     {
                         LastReaders[operand].push_back(consID);
-                        if (ql::options::get("scheduler_post179") == "yes")
-                        {
-                            LastDs[operand].clear();
-                        }
+                        LastDs[operand].clear();
                     }
                     else
                     {
@@ -611,20 +519,14 @@ public:
                         {
                             add_dep(readerID, consID, WAR, operand);
                         }
-                        if (ql::options::get("scheduler_post179") == "yes")
+                        for(auto & readerID : LastDs[operand])
                         {
-                            for(auto & readerID : LastDs[operand])
-                            {
-                                add_dep(readerID, consID, WAD, operand);
-                            }
+                            add_dep(readerID, consID, WAD, operand);
                         }
 
                         LastWriter[operand] = consID;
                         LastReaders[operand].clear();
-                        if (ql::options::get("scheduler_post179") == "yes")
-                        {
-                            LastDs[operand].clear();
-                        }
+                        LastDs[operand].clear();
                     }
                     operandNo++;
                 } // end of operand for
@@ -644,20 +546,14 @@ public:
                     {
                         add_dep(readerID, consID, WAR, operand);
                     }
-                    if (ql::options::get("scheduler_post179") == "yes")
+                    for(auto & readerID : LastDs[operand])
                     {
-                        for(auto & readerID : LastDs[operand])
-                        {
-                            add_dep(readerID, consID, WAD, operand);
-                        }
+                        add_dep(readerID, consID, WAD, operand);
                     }
 
                     LastWriter[operand] = consID;
                     LastReaders[operand].clear();
-                    if (ql::options::get("scheduler_post179") == "yes")
-                    {
-                        LastDs[operand].clear();
-                    }
+                    LastDs[operand].clear();
                 } // end of operand for
 
                 // Read+Write each classical operand
@@ -669,21 +565,15 @@ public:
                     {
                         add_dep(readerID, consID, WAR, qubit_count+coperand);
                     }
-                    if (ql::options::get("scheduler_post179") == "yes")
+                    for(auto & readerID : LastDs[qubit_count+coperand])
                     {
-                        for(auto & readerID : LastDs[qubit_count+coperand])
-                        {
-                            add_dep(readerID, consID, WAD, qubit_count+coperand);
-                        }
+                        add_dep(readerID, consID, WAD, qubit_count+coperand);
                     }
 
                     // now update LastWriter and so clear LastReaders/LastDs
                     LastWriter[qubit_count+coperand] = consID;
                     LastReaders[qubit_count+coperand].clear();
-                    if (ql::options::get("scheduler_post179") == "yes")
-                    {
-                        LastDs[qubit_count+coperand].clear();
-                    }
+                    LastDs[qubit_count+coperand].clear();
                 } // end of coperand for
             } // end of if/else
             DOUT(". instruction done: " << ins->qasm());
@@ -721,12 +611,9 @@ public:
 	            {
 	                add_dep(readerID, consID, WAR, operand);
 	            }
-	            if (ql::options::get("scheduler_post179") == "yes")
+	            for(auto & readerID : LastDs[operand])
 	            {
-	                for(auto & readerID : LastDs[operand])
-	                {
-	                    add_dep(readerID, consID, WAD, operand);
-	                }
+	                add_dep(readerID, consID, WAD, operand);
 	            }
 	        }
 	
@@ -736,10 +623,7 @@ public:
 	            DOUT(".. Sink operand, clearing: " << operand);
 	            LastWriter[operand] = consID;
 	            LastReaders[operand].clear();
-	            if (ql::options::get("scheduler_post179") == "yes")
-	            {
-	                LastDs[operand].clear();
-	            }
+	            LastDs[operand].clear();
 	        }
         }
 
@@ -811,16 +695,16 @@ public:
 private:
 
 
-// =========== post179 plain schedulers, just ASAP and ALAP, without RC
+// =========== plain schedulers, just ASAP and ALAP, without RC
 
 /*
     Summary
 
-    The post179 schedulers are linear list schedulers, i.e.
+    The schedulers are linear list schedulers, i.e.
     - they scan linearly through the code, forward or backward
     - and while doing, they maintain a list of gates, of gates that are available for being scheduled
       because they are not blocked by dependences on non-scheduled gates.
-    Therefore, the post179 schedulers are able to select the best one from multiple available gates.
+    Therefore, the schedulers are able to select the best one from multiple available gates.
     Not all gates that are available (not blocked by dependences on non-scheduled gates) can actually be scheduled.
     It must be made sure in addition that:
     - those scheduled gates that it depends on, actually have completed their execution
@@ -1038,16 +922,16 @@ public:
 #endif
 
     // ASAP scheduler without RC, updating circuit and returning bundles
-    ql::ir::bundles_t schedule_asap_post179(std::string & sched_dot)
+    ql::ir::bundles_t schedule_asap(std::string & sched_dot)
     {
-        DOUT("Scheduling ASAP post179 ...");
+        DOUT("Scheduling ASAP ...");
         set_cycle(ql::forward_scheduling);
         sort_by_cycle();
 
         if (ql::options::get("print_dot_graphs") == "yes")
         {
             stringstream ssdot;
-            get_dot_post179(false, true, ssdot, ql::forward_scheduling);
+            get_dot(false, true, ssdot);
             sched_dot = ssdot.str();
         }
 
@@ -1056,16 +940,16 @@ public:
     }
 
     // ALAP scheduler without RC, updating circuit and returning bundles
-    ql::ir::bundles_t schedule_alap_post179(std::string & sched_dot)
+    ql::ir::bundles_t schedule_alap(std::string & sched_dot)
     {
-        DOUT("Scheduling ALAP post179 ...");
+        DOUT("Scheduling ALAP ...");
         set_cycle(ql::backward_scheduling);
         sort_by_cycle();
 
         if (ql::options::get("print_dot_graphs") == "yes")
         {
             stringstream ssdot;
-            get_dot_post179(false, true, ssdot, ql::backward_scheduling);
+            get_dot(false, true, ssdot);
             sched_dot = ssdot.str();
         }
 
@@ -1074,10 +958,10 @@ public:
     }
 
 
-// =========== post179 schedulers with RC, latency compensation and buffer-buffer delay insertion
+// =========== schedulers with RC, latency compensation and buffer-buffer delay insertion
     // Most code from here on deals with scheduling with Resource Constraints.
-    // Then the cycles as assigned from the depgraph shift, because of resource conflicts
-    // and then at each point all available nodes should be considered for scheduling
+    // Then the cycles as computed from the depgraph alone start to drift because of resource conflicts,
+    // and then it is more optimal to at each point consider all available nodes for scheduling
     // to avoid largely suboptimal results (issue 179), i.e. apply list scheduling.
 
     // latency compensation
@@ -1615,7 +1499,7 @@ public:
     // - bundles are collected from the circuit
     // - latency compensation and buffer-buffer delay insertion done
     // the bundles are returned, with private start/duration attributes
-    ql::ir::bundles_t schedule_post179(ql::circuit* circp, ql::scheduling_direction_t dir,
+    ql::ir::bundles_t schedule(ql::circuit* circp, ql::scheduling_direction_t dir,
             const ql::quantum_platform& platform, ql::arch::resource_manager_t& rm, std::string& sched_dot)
     {
         DOUT("Scheduling " << (ql::forward_scheduling == dir?"ASAP":"ALAP") << " with RC ...");
@@ -1688,7 +1572,7 @@ public:
         if (ql::options::get("print_dot_graphs") == "yes")
         {
             stringstream ssdot;
-            get_dot_post179(false, true, ssdot, dir);
+            get_dot(false, true, ssdot);
             sched_dot = ssdot.str();
         }
 
@@ -1706,28 +1590,28 @@ public:
         return bundles;
     }
 
-    ql::ir::bundles_t schedule_asap_post179(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
+    ql::ir::bundles_t schedule_asap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
     {
         ql::ir::bundles_t   bundles;
-        DOUT("Scheduling ASAP post179");
-        bundles = schedule_post179(circp, ql::forward_scheduling, platform, rm, sched_dot);
+        DOUT("Scheduling ASAP");
+        bundles = schedule(circp, ql::forward_scheduling, platform, rm, sched_dot);
 
-        DOUT("Scheduling ASAP post179 [DONE]");
+        DOUT("Scheduling ASAP [DONE]");
         return bundles;
     }
 
-    ql::ir::bundles_t schedule_alap_post179(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
+    ql::ir::bundles_t schedule_alap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
     {
         ql::ir::bundles_t   bundles;
-        DOUT("Scheduling ALAP post179");
-        bundles = schedule_post179(circp, ql::backward_scheduling, platform, rm, sched_dot);
+        DOUT("Scheduling ALAP");
+        bundles = schedule(circp, ql::backward_scheduling, platform, rm, sched_dot);
 
-        DOUT("Scheduling ALAP post179 [DONE]");
+        DOUT("Scheduling ALAP [DONE]");
         return bundles;
     }
 
-// =========== post179 uniform
-    ql::ir::bundles_t schedule_alap_uniform_post179()
+// =========== uniform
+    ql::ir::bundles_t schedule_alap_uniform()
     {
         // algorithm based on "Balanced Scheduling and Operation Chaining in High-Level Synthesis for FPGA Designs"
         // by David C. Zaretsky, Gaurav Mittal, Robert P. Dick, and Prith Banerjee
@@ -1963,15 +1847,14 @@ public:
         return bundles;
     }
 
-// =========== printing dot of the dependence graph for post179
-    void get_dot_post179(
+// =========== printing dot of the dependence graph
+    void get_dot(
                 bool WithCritical,
                 bool WithCycles,
-                std::ostream& dotout,
-                ql::scheduling_direction_t dir
+                std::ostream& dotout
                 )
     {
-        DOUT("Get_dot post179");
+        DOUT("Get_dot");
         Path<ListDigraph> p;
         ListDigraph::ArcMap<bool> isInCritical(graph);
         if(WithCritical)
@@ -2065,38 +1948,7 @@ public:
         }
 
         dotout << "}" << endl;
-        DOUT("Get_dot post179 [DONE]");
-    }
-
-public:
-
-// =========== scheduling entry points
-
-    ql::ir::bundles_t schedule_asap(std::string & sched_dot)
-    {
-        return schedule_asap_post179(sched_dot);
-    }
-
-    ql::ir::bundles_t schedule_asap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform,
-        std::string & sched_dot)
-    {
-        return schedule_asap_post179(rm, platform, sched_dot);
-    }
-
-    ql::ir::bundles_t schedule_alap(std::string & sched_dot)
-    {
-        return schedule_alap_post179(sched_dot);
-    }
-
-    ql::ir::bundles_t schedule_alap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform,
-        std::string & sched_dot)
-    {
-        return schedule_alap_post179(rm, platform, sched_dot);
-    }
-
-    ql::ir::bundles_t schedule_alap_uniform()
-    {
-        return schedule_alap_uniform_post179();
+        DOUT("Get_dot[DONE]");
     }
 
     void get_dot(std::string & dot)
@@ -2105,7 +1957,7 @@ public:
         sort_by_cycle();
 
         stringstream ssdot;
-        get_dot_post179(false, true, ssdot, ql::forward_scheduling);
+        get_dot(false, true, ssdot);
         dot = ssdot.str();
     }
 };
