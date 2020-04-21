@@ -105,8 +105,7 @@ The above entry points each create a ``sched``  object of class ``Scheduler`` an
   for each circuit of the program when non-uniform ALAP scheduling.
   See :ref:`scheduling_function` for a more extensive description.
 
-Only in older versions of the scheduler (when the option ``scheduler_post179`` is set to ``no``)
-and in the scheduler of the mapper branch, in the ``sched_dot`` parameter of the methods above
+In the ``sched_dot`` parameter of the methods above
 a ``dot`` representation of the dependence graph of the kernel's circuit is constructed,
 in which the gates are ordered along a timeline according to their cycle attribute.
 
@@ -144,11 +143,6 @@ The following options are supported:
   With the value ``yes``, the scheduler creates a uniform schedule of the circuit.
   With the value ``no``, it doesn't.
   Default value is ``no``.
-
-- ``scheduler_post179``
-  With the value ``yes``, the scheduler uses the latest implementation that solves issue 179.
-  With the value ``no``, the scheduler uses the last implementation before issue 179 was solved.
-  Default value is ``yes``.
 
 - ``scheduler_commute``
   With the value ``yes``, the scheduler exploits commutation rules for ``cnot``, and ``cz``/``cphase``
@@ -207,8 +201,6 @@ Subsequently, the gates in the circuit are sorted by their cycle value;
 and the ``bundler`` called to produce a bundled version of the IR to return.
 
 The remaining part of this subsection describes scheduling with resource constraints.
-It only describes the functionality of the scheduling implementation after solving issue 179,
-i.e. after the transition of scheduling gates one by one to list scheduling.
 
 The implementation of this list scheduler is parameterized on doing a forward or a backward schedule.
 The former is used to create an ASAP schedule and the latter is used to create an ALAP schedule.
