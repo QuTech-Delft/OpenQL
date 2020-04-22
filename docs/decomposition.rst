@@ -38,7 +38,7 @@ TBD
 
 Unitary decomposition
 ^^^^^^^^^^^^^^^^^^^^^
-Unitary decomposion allows a developer of quantum algorithms to specify a quantum gate as a unitary matrix, which is then split into a circuit consisting of ``ry``, ``rz`` and ``cnot`` gates. 
+Unitary decomposition allows a developer of quantum algorithms to specify a quantum gate as a unitary matrix, which is then split into a circuit consisting of ``ry``, ``rz`` and ``cnot`` gates. 
 
 To use it, define a ``Unitary`` with a name and a  (complex) list containing all the values in the unitary matrix in order from the top left to the bottom right.  The matrix needs to be unitary to be a valid quantum gate, otherwise an error will be raised by the compilation step.
 
