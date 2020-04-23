@@ -12,6 +12,7 @@
 
 // options
 #define OPT_SUPPORT_STATIC_CODEWORDS    1
+#define OPT_STATIC_CODEWORDS_ARRAYS     1   // JSON field static_codeword_override is an array with one element per qubit parameter
 #define OPT_VCD_OUTPUT                  1   // output Value Change Dump file for GTKWave viewer
 #define OPT_RUN_ONCE                    0   // 0=loop indefinitely (CC-light emulation)
 #define OPT_CALCULATE_LATENCIES         0   // fixed compensation based on instrument latencies
@@ -24,34 +25,29 @@
 #endif
 
 #include <string>
-#include <cstddef>  // for size_t etc.
-#ifdef _MSC_VER     // MS Visual C++ does not know about ssize_t
-  #include <type_traits>
-  typedef std::make_signed<size_t>::type ssize_t;
-#endif
+
+typedef struct {
+    json node;                  // a copy of the node found
+    std::string path;           // path of the node, for reporting purposes
+} tJsonNodeInfo;
 
 
 class codegen_cc
 {
 private: // types
     typedef struct {
-        int instrIdx;           // the index into JSON "eqasm_backend_cc/instruments" that provides the signal
-        int group;              // the group within the instrument that provides the signal
+        int instrIdx;               // the index into JSON "eqasm_backend_cc/instruments" that provides the signal
+        int group;                  // the group of channels within the instrument that provides the signal
     } tSignalInfo;
 
     typedef struct {
         std::string signalValue;
-        size_t durationInNs;
-        ssize_t readoutCop;     // NB: we use ssize_t iso size_t so we can encode 'unused' (-1)
+        unsigned int durationInNs;
+        int readoutCop;             // NB: we encode 'unused' as -1
 #if OPT_SUPPORT_STATIC_CODEWORDS
         int staticCodewordOverride;
 #endif
-    } tGroupInfo;
-
-    typedef struct {
-        json node;              // a copy of the node found
-        std::string path;       // path of the node, for reporting purposes
-    } tJsonNodeInfo;
+    } tGroupInfo;                   // information for an instrument group (of channels), for a single instruction
 
 public:
     codegen_cc() = default;
@@ -103,7 +99,7 @@ private:    // vars
     std::vector<std::vector<tGroupInfo>> groupInfo;             // matrix[instrIdx][group]
     json codewordTable;                                         // codewords versus signals per instrument group
     json inputLutTable;                                         // input LUT usage per instrument group
-    size_t lastEndCycle[MAX_SLOTS];
+    unsigned int lastEndCycle[MAX_SLOTS];
 
     // some JSON nodes we need access to
     const json *jsonInstrumentDefinitions;
@@ -114,7 +110,7 @@ private:    // vars
     const ql::quantum_platform *platform;
 
 #if OPT_VCD_OUTPUT
-    size_t kernelStartTime;
+    unsigned int kernelStartTime;
     Vcd vcd;
     int vcdVarKernel;
     std::vector<int> vcdVarQubit;
@@ -141,8 +137,6 @@ private:    // funcs
 
     // find instrument/group providing instructionSignalType for qubit
     tSignalInfo findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit);
-
-    tJsonNodeInfo findSignalDefinition(const json &instruction, const std::string &iname) const;
 }; // class
 
 #endif  // ndef ARCH_CC_CODEGEN_CC_H

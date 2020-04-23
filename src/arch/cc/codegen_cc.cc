@@ -17,9 +17,64 @@
 #include <version.h>
 #include <options.h>
 
-#ifdef _MSC_VER // MS Visual C++ does not know about ssize_t
-  #include <type_traits>
-  typedef std::make_signed<size_t>::type ssize_t;
+/************************************************************************\
+| Static functions processing JSON
+\************************************************************************/
+
+// find JSON signal definition for instruction, either inline or via 'ref_signal'
+static tJsonNodeInfo findSignalDefinition(const json &instruction, const std::string &iname)
+{
+    tJsonNodeInfo nodeInfo;
+    std::string instructionPath = "instructions/"+iname;
+    JSON_ASSERT(instruction, "cc", instructionPath);
+    if(JSON_EXISTS(instruction["cc"], "ref_signal")) {                          // optional syntax: "ref_signal"
+        std::string refSignal = instruction["cc"]["ref_signal"];
+        nodeInfo.node = (*jsonSignals)[refSignal];                              // poor man's JSON pointer
+        if(nodeInfo.node.size() == 0) {
+            FATAL("Error in JSON definition of instruction '" << iname <<
+                  "': ref_signal '" << refSignal << "' does not resolve");
+        }
+        nodeInfo.path = "signals/"+refSignal;
+    } else {                                                                    // alternative syntax: "signal"
+        nodeInfo.node = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");
+        DOUT("signal for '" << instruction << "': " << nodeInfo.node);
+        nodeInfo.path = instructionPath+"/cc/signal";
+    }
+    return nodeInfo;
+}
+
+
+#if OPT_SUPPORT_STATIC_CODEWORDS
+int findStaticCodewordOverride(const json &instruction, int operandIdx, const std::string &iname)
+{
+    // look for optional codeword override
+    int staticCodewordOverride = -1;    // -1 means unused
+    if(JSON_EXISTS(instruction["cc"], "static_codeword_override")) {    // optional keyword
+ #if OPT_STATIC_CODEWORDS_ARRAYS
+        const json &override = instruction["cc"]["static_codeword_override"];
+        if(override.is_array()) {
+            if(override.size > operandIdx) {
+                staticCodewordOverride = override[operandIdx];
+            } else {
+                FATAL("Array size of static_codeword_override for instruction '" << iname << "' insufficient");
+            }
+        } else {
+            FATAL("Key static_codeword_override for instruction '" << iname << "' should be an array");
+        }
+ #else
+        staticCodewordOverride = instruction["cc"]["static_codeword_override"];
+ #endif
+        DOUT("Found static_codeword_override=" << staticCodewordOverride <<
+             " for instruction '" << iname << "'");
+    }
+ #if 1 // FIXME: require override
+    if(staticCodewordOverride < 0) {
+        FATAL("No static codeword defined for instruction '" << iname <<
+            "' (we currently require it because automatic assignment is disabled)");
+    }
+ #endif
+    return staticCodewordOverride;
+}
 #endif
 
 /************************************************************************\
@@ -148,7 +203,7 @@ void codegen_cc::kernel_finish(const std::string &kernelName, size_t durationInC
 {
 #if OPT_VCD_OUTPUT
     // NB: timing starts anew for every kernel
-    size_t durationInNs = durationInCycles*platform->cycle_time;
+    unsigned int durationInNs = durationInCycles*platform->cycle_time;
     vcd.change(vcdVarKernel, kernelStartTime, kernelName);     // start of kernel
     vcd.change(vcdVarKernel, kernelStartTime + durationInNs, "");               // end of kernel
     kernelStartTime += durationInNs;
@@ -158,7 +213,7 @@ void codegen_cc::kernel_finish(const std::string &kernelName, size_t durationInC
 // bundle_start: clear groupInfo, which maintains the work that needs to be performed for bundle
 void codegen_cc::bundle_start(const std::string &cmnt)
 {
-    size_t slotsUsed = jsonInstruments->size();   // FIXME: assuming all instruments use a slot
+    unsigned int slotsUsed = jsonInstruments->size();   // FIXME: assuming all instruments use a slot
     groupInfo.assign(slotsUsed, std::vector<tGroupInfo>(MAX_GROUPS, {"", 0, -1}));
 
     comment(cmnt);
@@ -194,7 +249,7 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                 const json controlMode = json_get<const json>(*jsonControlModes, refControlMode, "control_modes");     // the control mode definition for our instrument
                 size_t nrControlBitsGroups = controlMode["control_bits"].size();    // how many groups of control bits does the control mode specify
                 // determine which group to use
-                size_t controlModeGroup = -1;
+                int controlModeGroup = -1;
                 if(nrControlBitsGroups == 0) {
                     FATAL("'control_bits' not defined in 'control_modes/" << refControlMode <<"'");
                 } else if(nrControlBitsGroups == 1) {                       // vector mode: group addresses channel within vector
@@ -273,7 +328,7 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                 } // FIXME: e.g. HDAWG does not support > 1 trigger bit. dual-QWG required 2 trigger bits
 
                 // compute slot duration
-                size_t durationInCycles = platform->time_to_cycles(groupInfo[instrIdx][group].durationInNs);
+                unsigned int durationInCycles = platform->time_to_cycles(groupInfo[instrIdx][group].durationInNs);
                 if(durationInCycles > slotDurationInCycles) slotDurationInCycles = durationInCycles;
 
                 // handle readout
@@ -303,8 +358,8 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                 }
 #if OPT_VCD_OUTPUT
                 // generate signal output for group
-                size_t startTime = kernelStartTime + startCycle*platform->cycle_time;
-                size_t durationInNs = groupInfo[instrIdx][group].durationInNs;
+                unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
+                unsigned int durationInNs = groupInfo[instrIdx][group].durationInNs;
                 std::string signalValue = groupInfo[instrIdx][group].signalValue;
                 int var = vcdVarSignal[instrIdx][group];
                 std::string val = SS2S(groupDigOut) + "=" + signalValue;
@@ -316,8 +371,8 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
 
 #if OPT_VCD_OUTPUT
         // generate codeword output for instrument
-        size_t startTime = kernelStartTime + startCycle*platform->cycle_time;
-        size_t durationInNs = slotDurationInCycles*platform->cycle_time;
+        unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
+        unsigned int durationInNs = slotDurationInCycles*platform->cycle_time;
         int var = vcdVarCodeword[instrIdx];
         std::string val = SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut);
         vcd.change(var, startTime, val);                // start of signal
@@ -391,6 +446,7 @@ void codegen_cc::custom_gate(
 #endif
     bool isReadout = false;
 
+    // generate comment
     if("readout" == platform->find_instruction_type(iname))          // handle readout
     /* FIXME: we only use the "readout" instruction_type and don't care about the rest because the terms "mw" and "flux" don't fully
      * cover gate functionality. It would be nice if custom gates could mimic ql::gate_type_t
@@ -410,7 +466,7 @@ void codegen_cc::custom_gate(
     } else { // handle all other instruction types
         // generate comment. NB: we don't have a particular limit for the number of operands
         std::stringstream cmnt;
-        cmnt << " # gate '" << iname << " ";
+        cmnt << " # gate '" << iname << " ";    // FIXME: make QASM compatible, use library function?
         for(size_t i=0; i<qops.size(); i++) {
             cmnt << qops[i];
             if(i<qops.size()-1) cmnt << ",";
@@ -419,67 +475,48 @@ void codegen_cc::custom_gate(
         comment(cmnt.str());
     }
 
+    // find instruction (gate definition)
     const json &instruction = platform->find_instruction(iname);
 
 #if OPT_VCD_OUTPUT
-    // generate qubit output
-    size_t startTime = kernelStartTime + startCycle*platform->cycle_time;
+    // generate qubit VCD output
+    unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
     for(size_t i=0; i<qops.size(); i++) {
         // FIXME: improve name for 2q gates
         int var = vcdVarQubit[qops[i]];
-        vcd.change(var, startTime, iname);             // start of instruction
+        vcd.change(var, startTime, iname);              // start of instruction
         vcd.change(var, startTime+durationInNs, "");    // end of instruction
     }
 #endif
 
-#if OPT_SUPPORT_STATIC_CODEWORDS
-    // look for optional codeword override
-    int staticCodewordOverride = -1;    // -1 means unused
-    if(JSON_EXISTS(instruction["cc"], "static_codeword_override")) {
-        staticCodewordOverride = instruction["cc"]["static_codeword_override"];
-        DOUT("Found static_codeword_override=" << staticCodewordOverride <<
-             " for instruction '" << iname << "'");
-    }
- #if 1 // FIXME: require override
-    if(staticCodewordOverride < 0) {
-        FATAL("No static codeword defined for instruction '" << iname <<
-            "' (we currently require it because automatic assignment is disabled)");
-    }
- #endif
-#endif
-
-    // find signal definition for iname
+    // find signal vector definition for instruction
     tJsonNodeInfo nodeInfo = findSignalDefinition(instruction, iname);
     const json signal = nodeInfo.node;
     std::string signalPath = nodeInfo.path;
 
-    // iterate over signals defined for instruction
+    // iterate over signal vector defined for instruction
     for(size_t s=0; s<signal.size(); s++) {
         // get the qubit to work on
         std::string signalSPath = SS2S(signalPath<<"["<<s<<"]");        // for JSON error reporting
-        size_t operandIdx = json_get<size_t>(signal[s], "operand_idx", signalSPath);
-
+        unsigned int operandIdx = json_get<unsigned int>(signal[s], "operand_idx", signalSPath);
         if(operandIdx >= qops.size()) {
             FATAL("Error in JSON definition of instruction '" << iname <<
                   "': illegal operand number " << operandIdx <<
                   "' exceeds expected maximum of " << qops.size()-1)
         }
-        size_t qubit = qops[operandIdx];
+        unsigned int qubit = qops[operandIdx];
 
-
-        // get the instrument and group that generates the signal
+        // get the signal type (e.g. "mw", "flux", etc), instrument and CC slot
         std::string instructionSignalType = json_get<std::string>(signal[s], "type", signalSPath);
-        JSON_ASSERT(signal[s], "value", signalSPath);                   // NB: json_get<const json&> unavailable
-        const json &instructionSignalValue = signal[s]["value"];
-
         tSignalInfo si = findSignalInfoForQubit(instructionSignalType, qubit);
         const json &instrument = (*jsonInstruments)[si.instrIdx];       // should exist
         std::string instrumentName = json_get<std::string>(instrument, "name", SS2S("instruments["<<si.instrIdx<<"]"));
         JSON_ASSERT(instrument, "controller", instrumentName);          // first check intermediate node
         int slot = json_get<int>(instrument["controller"], "slot", instrumentName+"/controller");    // FIXME: assuming controller being cc
 
-
-        // expand macros in signalValue
+        // get signal value and expand macros
+        // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment
+        const json instructionSignalValue = json_get<const json>(signal[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
         std::string signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
         ql::utils::replace(signalValueString, std::string("\""), std::string(""));   // get rid of quotes
         ql::utils::replace(signalValueString, std::string("{gateName}"), iname);
@@ -498,7 +535,8 @@ void codegen_cc::custom_gate(
         if(groupInfo[si.instrIdx][si.group].signalValue == "") {                         // signal not yet used
             groupInfo[si.instrIdx][si.group].signalValue = signalValueString;
 #if OPT_SUPPORT_STATIC_CODEWORDS
-            groupInfo[si.instrIdx][si.group].staticCodewordOverride = staticCodewordOverride;   // NB: -1 means unused
+            groupInfo[si.instrIdx][si.group].staticCodewordOverride =
+                    findStaticCodewordOverride(instruction, operandIdx, iname);   // NB: -1 means unused
 #endif
         } else if(groupInfo[si.instrIdx][si.group].signalValue == signalValueString) {   // signal unchanged
             // do nothing
@@ -671,7 +709,7 @@ void codegen_cc::latencyCompensation()
 void codegen_cc::padToCycle(size_t lastEndCycle, size_t startCycle, int slot, const std::string &instrumentName)
 {
     // compute prePadding: time to bridge to align timing
-    ssize_t prePadding = startCycle - lastEndCycle;
+    int prePadding = startCycle - lastEndCycle;
     if(prePadding < 0) {
         EOUT(getCode());        // show what we made
         FATAL("Inconsistency detected in bundle contents: time travel not yet possible in this version: prePadding=" << prePadding <<
@@ -849,26 +887,4 @@ codegen_cc::tSignalInfo codegen_cc::findSignalInfoForQubit(const std::string &in
     }
 
     return ret;
-}
-
-
-codegen_cc::tJsonNodeInfo codegen_cc::findSignalDefinition(const json &instruction, const std::string &iname) const
-{
-    tJsonNodeInfo nodeInfo;
-    std::string instructionPath = "instructions/"+iname;
-    JSON_ASSERT(instruction, "cc", instructionPath);
-    if(JSON_EXISTS(instruction["cc"], "ref_signal")) {                          // optional syntax: "ref_signal"
-        std::string refSignal = instruction["cc"]["ref_signal"];
-        nodeInfo.node = (*jsonSignals)[refSignal];                              // poor man's JSON pointer
-        if(nodeInfo.node.size() == 0) {
-            FATAL("Error in JSON definition of instruction '" << iname <<
-                  "': ref_signal '" << refSignal << "' does not resolve");
-        }
-        nodeInfo.path = "signals/"+refSignal;
-    } else {                                                                    // alternative syntax: "signal"
-        nodeInfo.node = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");
-        DOUT("signal for '" << instruction << "': " << nodeInfo.node);
-        nodeInfo.path = instructionPath+"/cc/signal";
-    }
-    return nodeInfo;
 }
