@@ -78,3 +78,6 @@ Note: please fill your contributions in this file
     -   recursive look-back and look-ahead routing
     -   arbitrary topology routing
     -   OpenQL documentation
+
+- [Fer Grooteman](https://github.com/QFer)
+    -   added interface (C++ and Python) to compile cQASM 1.0

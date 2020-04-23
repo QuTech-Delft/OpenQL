@@ -258,14 +258,19 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
 
                 // add trigger to digOut
                 size_t nrTriggerBits = controlMode["trigger_bits"].size();
-                if(nrTriggerBits == 0) {         // no trigger
+                if(nrTriggerBits == 0) {                                    // no trigger
                     // do nothing
-                } else if(nrTriggerBits == 1) {  // single trigger for all groups
+                } else if(nrTriggerBits == 1) {                             // single trigger for all groups
                     digOut |= 1 << (int)controlMode["trigger_bits"][0];
-                } else {                        // trigger per group
+                } else if(nrTriggerBits == nrGroups) {                      // trigger per group
                     digOut |= 1 << (int)controlMode["trigger_bits"][group];
-                    // FIXME: check validity of nrTriggerBits
-                }
+                } else {
+                    FATAL("instrument '" << instrumentName
+                          << "' uses " << nrGroups
+                          << " groups, but control mode '" << refControlMode
+                          << "' defines " << nrTriggerBits
+                          << " trigger bits in 'trigger_bits' (must be 1 or #groups)");
+                } // FIXME: e.g. HDAWG does not support > 1 trigger bit. dual-QWG required 2 trigger bits
 
                 // compute slot duration
                 size_t durationInCycles = platform->time_to_cycles(groupInfo[instrIdx][group].durationInNs);
@@ -548,7 +553,8 @@ void codegen_cc::for_start(const std::string &label, int iterations)
 {
     comment(SS2S("# FOR_START(" << iterations << ")"));
     // FIXME: reserve register
-    emit((label+":").c_str(), "move", SS2S(iterations << ",R63"), "# R63 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
+    emit("", "move", SS2S(iterations << ",R63"), "# R63 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
+    emit((label+":").c_str(), "", SS2S(""), "# ");        // just a label
 }
 
 void codegen_cc::for_end(const std::string &label)

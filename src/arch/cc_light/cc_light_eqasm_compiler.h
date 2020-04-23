@@ -921,7 +921,7 @@ public:
 
             for (
                 auto bundles_src_it = bundles_src.begin(), bundles_dst_it = bundles_dst.begin();
-                bundles_src_it != bundles_src.end(), bundles_dst_it != bundles_dst.end();
+                bundles_src_it != bundles_src.end() && bundles_dst_it != bundles_dst.end();
                 ++bundles_src_it, ++bundles_dst_it
                 )
             {

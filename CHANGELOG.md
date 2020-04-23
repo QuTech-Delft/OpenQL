@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [ next ] - [ TBD ]
 ### Added
--
+- interface (C++ and Python) to compile cQASM 1.0
 
 ### Changed
 - CC backend:
@@ -16,10 +16,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - implemented option to output scheduled QASM files
 
 ### Removed
--
+
 
 ### Fixed
--
+
 
 
 ## [ 0.8.0 ] - [ 2019-10-31 ]
@@ -27,10 +27,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - support for CC backend
 
 ### Changed
--
+
 
 ### Removed
--
+
 
 ### Fixed
 - fixed issue with duplicate kernel names
@@ -39,7 +39,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [ 0.7.1 ] - [ 2019-09-02 ]
 ### Added
--
+
 
 ### Changed
 - re-factored folders

@@ -1521,7 +1521,7 @@ public:
     {
         if (str[0] != 'q')
             return false;
-        uint32_t l = str.length();
+        size_t l = str.length();
         if (l>=1)
         {
             for (size_t i=1; i<l; ++i)

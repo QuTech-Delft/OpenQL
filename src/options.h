@@ -52,7 +52,7 @@ namespace ql
           app->add_set_ignore_case("--scheduler_commute", opt_name2opt_val["scheduler_commute"], {"yes", "no"}, "Commute gates when possible, or not", true);
           app->add_set_ignore_case("--use_default_gates", opt_name2opt_val["use_default_gates"], {"yes", "no"}, "Use default gates or not", true);
           app->add_set_ignore_case("--optimize", opt_name2opt_val["optimize"], {"yes", "no"}, "optimize or not", true);
-          app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "MA"}, "Type of decomposition used for toffoli", true);
+          app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "AM"}, "Type of decomposition used for toffoli", true);
           app->add_option("--backend_cc_map_input_file", opt_name2opt_val["backend_cc_map_input_file"], "Name of CC input map file", true);
           app->add_set_ignore_case("--cz_mode", opt_name2opt_val["cz_mode"], {"manual", "auto"}, "CZ mode", true);
           app->add_set_ignore_case("--print_dot_graphs", opt_name2opt_val["print_dot_graphs"], {"yes", "no"}, "print (un-)scheduled graphs in DOT format", true);
