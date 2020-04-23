@@ -52,7 +52,7 @@ To use it, define a ``Unitary`` with a name and a  (complex) list containing all
 
 The unitary is first decomposed, by calling the ``.decompose()`` function on it. Only then can it be added to the kernel as a normal gate to the number of qubits corresponding to the unitary matrix size. This looks like:
 
-.. code::
+.. code:: python
 
     u1 = ql.Unitary("U_name", [0.5+0.5j,0.5-0.5j,0.5-0.5j,0.5+0.5j])
     u1.decompose()
@@ -70,7 +70,7 @@ The circuit generated might also have different angles, though not different gat
 
 For a two-qubit unitary gate or matrix, it looks like:
 
-.. code::
+.. code:: python
 
     list_matrix = [1, 0	      , 0       , 0, 
                    0, 0.5+0.5j, 0.5-0.5j, 0,
