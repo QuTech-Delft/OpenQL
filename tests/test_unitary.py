@@ -6,9 +6,13 @@ from qxelarator import qxelarator
 import re
 import numpy as np
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
+
 curdir = os.path.dirname(__file__)
+config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
+platform = ql.Platform('platform_none', config_fn)
+rootDir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
+
 qx = qxelarator.QX()
 c0 = ""
 
@@ -31,11 +35,9 @@ class Test_conjugated_kernel(unittest.TestCase):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ASAP')
-        ql.set_option('log_level', 'LOG_WARNING')
+        ql.set_option('log_level', 'LOG_NOTHING')
 
     def test_unitary_basic(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 3
         p = ql.Program('test_unitary_pass', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -52,8 +54,6 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.compile()
 
     def test_unitary_called_hadamard(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 3
         p = ql.Program('test_unitary_called_hadamard', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -68,8 +68,6 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.compile()
 	
     def test_unitary_undecomposed(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 3
         p = ql.Program('test_unitary_pass', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -85,8 +83,6 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'Unitary \'u1\' not decomposed. Cannot be added to kernel!')
 
     def test_unitary_wrongnumberofqubits(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 3
         p = ql.Program('test_unitary_pass', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -102,8 +98,6 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 2 and not 1.000000')
     
     def test_unitary_wrongnumberofqubits_toofew(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 3
         p = ql.Program('test_unitary_pass', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -120,84 +114,90 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 1 and not 2.000000')
 
     def test_unitary_decompose_I(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 1
         p = ql.Program('test_unitary_I', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
-        u = ql.Unitary('u1', [  complex(1.0, 0.0), complex(0.0, 0.0),
-                                complex(0.0, 0.0), complex(1.0, 0.0)])
+        matrix = [  complex(1.0, 0.0), complex(0.0, 0.0),  complex(0.0, 0.0), complex(1.0, 0.0) ]
+        u = ql.Unitary('u1', matrix)
         u.decompose()
+        k.hadamard(0)
         k.gate(u, [0])
 
         p.add_kernel(k)
         p.compile()
-        
-        gold_fn = rootDir + '/golden/test_unitary_I.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-        self.assertTrue( file_compare(qasm_fn, gold_fn) )
+
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+        self.assertAlmostEqual(0.5*(helper_prob(matrix[0])+helper_prob(matrix[1])), helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(0.5*(helper_prob(matrix[2])+helper_prob(matrix[3])), helper_regex(c0)[0], 5)
 
     def test_unitary_decompose_X(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 1
         p = ql.Program('test_unitary_X', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
-        u = ql.Unitary('u1', [  complex(0.0, 0.0), complex(1.0, 0.0),
-                                complex(1.0, 0.0), complex(0.0, 0.0)])
+        matrix = [  complex(0.0, 0.0), complex(1.0, 0.0),
+                    complex(1.0, 0.0), complex(0.0, 0.0)]
+        u = ql.Unitary('u1', matrix)
         u.decompose()
         k.gate(u, [0])
 
         p.add_kernel(k)
         p.compile()
         
-        gold_fn = rootDir + '/golden/test_unitary_X.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-        self.assertTrue( file_compare(qasm_fn, gold_fn) )
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+        self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(helper_prob(matrix[2]), helper_regex(c0)[1], 5)
 
     def test_unitary_decompose_Y(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 1
         p = ql.Program('test_unitary_Y', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
-        u = ql.Unitary('u1', [  complex(0.0, 0.0), complex(0.0, -1.0),
-                                complex(0.0, 1.0), complex(0.0, 0.0)])
+        matrix = [  complex(0.0, 0.0), complex(0.0, -1.0),
+                    complex(0.0, 1.0), complex(0.0, 0.0)]
+        u = ql.Unitary('u1', matrix)
         u.decompose()
         k.gate(u, [0])
 
         p.add_kernel(k)
         p.compile()
         
-        gold_fn = rootDir + '/golden/test_unitary_Y.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-        self.assertTrue( file_compare(qasm_fn, gold_fn) )
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+        self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(helper_prob(matrix[2]), helper_regex(c0)[1], 5)
  
     def test_unitary_decompose_Z(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 1
         p = ql.Program('test_unitary_Z', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
 
-        u = ql.Unitary('u1', [  complex(1.0, 0.0), complex(0.0, 0.0),
-                                complex(0.0, 0.0), complex(-1.0, 0.0)])
+        matrix =  [  complex(1.0, 0.0), complex(0.0, 0.0),
+                     complex(0.0, 0.0), complex(-1.0, 0.0)]
+        u = ql.Unitary('u1', matrix )
         u.decompose()
+        k.gate("hadamard", [0])
         k.gate(u, [0])
+        k.gate("hadamard", [0])
 
         p.add_kernel(k)
         p.compile()
         
-        gold_fn = rootDir + '/golden/test_unitary_Z.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-        self.assertTrue( file_compare(qasm_fn, gold_fn) )   
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+		#HZH = X, so the result should be |0> + |1>
+        self.assertAlmostEqual(0, helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(1, helper_regex(c0)[1], 5)
+   
 
     def test_unitary_decompose_IYZ(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 1
         p = ql.Program('test_unitary_IYZ', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -206,25 +206,28 @@ class Test_conjugated_kernel(unittest.TestCase):
                                 complex(1.0, 0.0), complex(0.0, 0.0)])
         u.decompose()
         k.gate(u, [0])
-        u = ql.Unitary('y', [  complex(0.0, 0.0), complex(0.0, -1.0),
+        u = ql.Unitary('Y', [  complex(0.0, 0.0), complex(0.0, -1.0),
                                 complex(0.0, 1.0), complex(0.0, 0.0)])
         u.decompose()
         k.gate(u, [0])
         u = ql.Unitary('Z', [  complex(1.0, 0.0), complex(0.0, 0.0),
                                 complex(0.0, 0.0), complex(-1.0, 0.0)])
         u.decompose()
+        k.gate("hadamard", [0])
         k.gate(u, [0])
 
         p.add_kernel(k)
         p.compile()
         
-        gold_fn = rootDir + '/golden/test_unitary_IYZ.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-        self.assertTrue( file_compare(qasm_fn, gold_fn) )   
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+
+        #jXYZ = I, so this should change nothing about the state.
+        self.assertAlmostEqual(0.5, helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(0.5, helper_regex(c0)[1], 5)  
 
     def test_unitary_decompose_IYZ_differentorder(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 1
         p = ql.Program('test_unitary_IYZ', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -240,6 +243,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         u.decompose()
         u1.decompose()
         u2.decompose()
+
+        k.gate("hadamard", [0])
         k.gate(u, [0])
         k.gate(u1, [0])
         k.gate(u2, [0])
@@ -247,13 +252,15 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
         
-        gold_fn = rootDir + '/golden/test_unitary_IYZ.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-        self.assertTrue( file_compare(qasm_fn, gold_fn) )   
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+
+        #jXYZ = I, so this should change nothing about the state.
+        self.assertAlmostEqual(0.5, helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(0.5, helper_regex(c0)[1], 5)  
 
     def test_unitary_decompose_nonunitary(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 1
         p = ql.Program('test_unitary_nonunitary', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -272,8 +279,6 @@ class Test_conjugated_kernel(unittest.TestCase):
   
   # input for the unitary decomposition needs to be an array
     def test_unitary_decompose_matrixinsteadofarray(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 1
         p = ql.Program('test_unitary_wrongtype', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -284,8 +289,6 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
     def test_unitary_decompose_2qubit_CNOT(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 2
         p = ql.Program('test_unitary_2qubitCNOT', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -296,10 +299,7 @@ class Test_conjugated_kernel(unittest.TestCase):
                                complex(0.0, 0.0), complex(0.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0)]
         u = ql.Unitary('cnot',matrix)
         u.decompose()
-        # k.x(1)
-        k.display()
         k.gate(u, [0, 1])
-        k.display()
         p.add_kernel(k)
         p.compile()
 
@@ -307,18 +307,12 @@ class Test_conjugated_kernel(unittest.TestCase):
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
-        print("cnot: ", c0)
-        print("helper cnot", helper_regex(c0))
 
-
+        #only two states are nonzero
         self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
-        # self.assertAlmostEqual(helper_prob(matrix[4]), helper_regex(c0)[1], 5)
-        # self.assertAlmostEqual(helper_prob(matrix[8]), helper_regex(c0)[2], 5)
-        # self.assertAlmostEqual(helper_prob(matrix[12]), helper_regex(c0)[3], 5) 
+        self.assertAlmostEqual(helper_prob(matrix[4]), helper_regex(c0)[1], 5)
 
     def test_unitary_decompose_2qubit_CNOT_2(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 2
         p = ql.Program('test_unitary_2qubitCNOT', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -330,9 +324,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         u = ql.Unitary('cnot2',matrix)
         u.decompose()
         k.x(1)
-        k.display()
         k.gate(u, [0, 1])
-        k.display()
         p.add_kernel(k)
         p.compile()
 
@@ -340,18 +332,13 @@ class Test_conjugated_kernel(unittest.TestCase):
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
-        print("cnot: ", c0)
-        print("helper cnot", helper_regex(c0))
 
+        #only two states are nonzero
         self.assertAlmostEqual(0.0, helper_regex(c0)[0], 5)
         self.assertAlmostEqual(1.0, helper_regex(c0)[1], 5)
-        # self.assertAlmostEqual(helper_prob(matrix[8]), helper_regex(c0)[2], 5)
-        # self.assertAlmostEqual(helper_prob(matrix[12]), helper_regex(c0)[3], 5)
 
-    @unittest.skip
+
     def test_non_90_degree_angle(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 2
         p = ql.Program('test_unitary_non_90_degree_angle', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -368,14 +355,15 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
         
-        # Tested for correctness using QX
-        gold_fn = rootDir + '/golden/test_unitary-decomp_non_90+degree_angle.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-        self.assertTrue( file_compare(qasm_fn, gold_fn) )   
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
+        qx.execute()
+        c0 = qx.get_state()
+        self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
+        self.assertAlmostEqual(helper_prob(matrix[4]), helper_regex(c0)[1], 5)
+        self.assertAlmostEqual(helper_prob(matrix[8]), helper_regex(c0)[2], 5)
+        self.assertAlmostEqual(helper_prob(matrix[12]), helper_regex(c0)[3], 5)   
 
     def test_usingqx_00(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 2
         p = ql.Program('test_usingqx00', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -406,8 +394,6 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
     def test_usingqx_01(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 2
         p = ql.Program('test_usingqx01', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -426,7 +412,6 @@ class Test_conjugated_kernel(unittest.TestCase):
         u1 = ql.Unitary("testname",matrix)
         u1.decompose()   
         k.gate(u1, [0,1])
-        k.display()
 
         p.add_kernel(k)
         p.compile()
@@ -444,8 +429,6 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
     def test_usingqx_10(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 2
         p = ql.Program('test_usingqx10', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -481,8 +464,6 @@ class Test_conjugated_kernel(unittest.TestCase):
 
     
     def test_usingqx_11(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 2
         p = ql.Program('test_usingqx11', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -516,8 +497,6 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(helper_prob(matrix[15]), helper_regex(c0)[3], 5)
     
     def test_usingqx_bellstate(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 2
         p = ql.Program('test_usingqxbellstate', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -537,10 +516,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         u1.decompose()
         k.hadamard(0)
         k.cnot(0, 1)
-        k.display()
 
         k.gate(u1, [0,1])
-        k.display()
 
         p.add_kernel(k)
         p.compile()
@@ -555,8 +532,6 @@ class Test_conjugated_kernel(unittest.TestCase):
 
     
     def test_usingqx_fullyentangled(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 2
         p = ql.Program('test_usingqxfullentangled', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -577,10 +552,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.hadamard(0)
         k.hadamard(1)
         k.cnot(0, 1)
-        k.display()
 
         k.gate(u1, [0,1])
-        k.display()
 
         p.add_kernel(k)
         p.compile()
@@ -594,8 +567,6 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.25*helper_prob((matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[3], 5)
 
     def test_usingqx_fullyentangled_3qubit(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 3
         p = ql.Program('test_usingqxfullentangled_3qubit', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -641,10 +612,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.cnot(0, 1)
         k.cnot(0, 2)
         k.cnot(1, 2)
-        k.display()
 
         k.gate(u1, [0,1, 2])
-        k.display()
 
         p.add_kernel(k)
         p.compile()
@@ -662,8 +631,6 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
 
     def test_usingqx_fullyentangled_4qubit(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 4
         p = ql.Program('test_usingqxfullentangled_4qubit', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -713,10 +680,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.cnot(1, 2)
         k.cnot(1, 3)
         k.cnot(2, 3)
-        k.display()
 
         k.gate(u1, [0, 1, 2, 3])
-        k.display()
 
         p.add_kernel(k)
         p.compile()
@@ -744,8 +709,6 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
     def test_usingqx_fullyentangled_5qubit(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 5
         p = ql.Program('test_usingqxfullentangled_5qubit', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -782,12 +745,9 @@ class Test_conjugated_kernel(unittest.TestCase):
         0.35296504-9.29569583e-02j,  0.30139399+2.02446885e-01j, -0.1043556 -1.29299775e-01j,  0.19156652+1.16499747e-02j,  0.20865974-1.46798336e-01j, -0.13729311-1.50569340e-02j,  0.02152623+1.61941611e-01j,  0.05963193-1.30770158e-01j,  0.06462617-1.66387108e-01j, -0.11403091-8.19783097e-02j, -0.17890047-3.87091987e-02j,  0.05041442+2.34797464e-02j,  0.33716094-2.18366246e-01j,  0.04749898+7.95121529e-02j, -0.14276611+5.91160893e-03j,  0.0727171 -6.38166930e-02j, -0.03268621+7.25536789e-02j, -0.00994355-5.45862875e-02j, -0.10977213+1.11554079e-01j,  0.01783962-2.78702484e-01j, -0.00306595+2.65697928e-02j,  0.1392672 -1.06298955e-01j, -0.10153158-8.24641251e-02j, -0.2693985 +6.47512729e-02j,  0.03236581+4.07523974e-02j, -0.14424473+2.51731413e-01j, -0.01873542-2.47536237e-02j, -0.01356796-8.16033886e-02j, -0.07272296-1.47884513e-01j,  0.01967111-1.46373935e-01j,  0.23073323-8.09684340e-02j,  0.14428689+1.18128043e-01j, -0.06420706+1.47110727e-01j, -0.014288  -1.01535529e-01j,
         0.05505723+1.85830802e-02j,  0.00835002+2.95374366e-02j,  0.00710951+4.40654128e-02j,  0.17926977-3.38549657e-01j]
 
-
-        k.display()
         u1 = ql.Unitary("testname",matrix)
         u1.decompose()
         k.gate(u1, [0, 1, 2, 3, 4])
-        k.display()
 
         p.add_kernel(k)
         p.compile()
@@ -831,8 +791,6 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
     def test_usingqx_fullyentangled_5qubit_10011(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 5
         p = ql.Program('test_usingqxfullentangled_5qubit_10011', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -875,9 +833,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.x(4)
         k.x(1)
         k.x(0)
-        k.display()
         k.gate(u1, [0, 1, 2, 3, 4])
-        k.display()
 
         p.add_kernel(k)
         p.compile()
@@ -920,8 +876,6 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(helper_prob(matrix[19+992]), helper_regex(c0)[31], 5)
 
     def test_adding2tothepower6unitary(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 6
         p = ql.Program('test_6qubitjustadding', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -1069,8 +1023,6 @@ class Test_conjugated_kernel(unittest.TestCase):
 
     
     def test_usingqx_sparseunitary(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 5
         p = ql.Program('test_usingqxsparseunitary', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -1120,10 +1072,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.cnot(1, 2)
         k.cnot(1, 3)
         k.cnot(2, 3)
-        k.display()
 
         k.gate(u1, [0, 1, 2, 3])
-        k.display()
 
         p.add_kernel(k)
         p.compile()
@@ -1150,8 +1100,6 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
     def test_extremelysparseunitary(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 4
         p = ql.Program('test_usingqx_extremelysparseunitary_newname', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -1186,10 +1134,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.cnot(1, 2)
         k.cnot(1, 3)
         k.cnot(2, 3)
-        k.display()
 
         k.gate(u1, [0, 1, 2, 3])
-        k.display()
 
         p.add_kernel(k)
         p.compile()
@@ -1215,8 +1161,6 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.0625*helper_prob((matrix[240] + matrix[241]+ matrix[242]+ matrix[243]+ matrix[244]+ matrix[245]+ matrix[246]+ matrix[247]+ matrix[248] + matrix[249]+ matrix[250]+ matrix[251]+ matrix[252]+ matrix[253]+ matrix[254]+ matrix[255])), helper_regex(c0)[15], 5)
   
     def test_sparse2qubitunitary(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 2
         p = ql.Program('test_usingqx_sparse2qubit', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -1229,7 +1173,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         u1 = ql.Unitary("testname",matrix)
         u1.decompose()
         k.gate(u1, [0, 1])
-        k.display()
+
 
         p.add_kernel(k)
         p.compile()
@@ -1245,8 +1189,6 @@ class Test_conjugated_kernel(unittest.TestCase):
 
   
     def test_sparse2qubitunitaryotherqubit(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 2
         p = ql.Program('test_usingqx_sparse2qubitotherqubit', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -1259,14 +1201,13 @@ class Test_conjugated_kernel(unittest.TestCase):
         u1 = ql.Unitary("sparse2_qubit_unitary_other_qubit",matrix)
         u1.decompose()
         k.gate(u1, [0, 1])
-        k.display()
+
 
         p.add_kernel(k)
         p.compile()
         qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
-        print("test: sparse_unitary", c0)
 
         self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
         self.assertAlmostEqual(helper_prob(matrix[4]), 0, 5) # Zero probabilities do not show up in the output list
@@ -1275,8 +1216,6 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
     def test_sparse2qubitunitaryotherqubitcheck(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 1
         p = ql.Program('test_usingqx_sparse2qubitotherqubit_test', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -1286,7 +1225,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         u1 = ql.Unitary("testname",matrix)
         u1.decompose()
         k.gate(u1, [0])
-        k.display()
+
 
         p.add_kernel(k)
         p.compile()
@@ -1297,11 +1236,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
         self.assertAlmostEqual(helper_prob(matrix[1]), helper_regex(c0)[1], 5) # Zero probabilities do not show up in the output list
 
-##################################################################3
-# Need to put in thesis
+
     def test_sparse2qubit_multiplexor(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 2
         p = ql.Program('test_usingqx_sparse2qubit_multiplexor', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -1314,9 +1250,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         u1.decompose()
         k.hadamard(0)
         k.hadamard(1)
-        k.display()
         k.gate(u1, [0, 1])
-        k.display()
 
         p.add_kernel(k)
         p.compile()
@@ -1331,8 +1265,6 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.25*helper_prob((matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[3], 5)
 
     def test_decomposition_rotatedtoffoli(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 3
         p = ql.Program('test_usingqx_rotatedtoffoli', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -1345,16 +1277,15 @@ class Test_conjugated_kernel(unittest.TestCase):
                  [0, 0, 0, 0, 0, 1, 0, 0],
                  [0, 0, 0, 0, 0, 0, 0, 1],
                  [0, 0, 0, 0, 0, 0, 1, 0]])).flatten()
-        print(matrix)
 
         u1 = ql.Unitary("rotatedtoffoli",matrix)
         u1.decompose()
         k.hadamard(0)
         k.hadamard(1)
         k.hadamard(2)
-        k.display()
+
         k.gate(u1, [0, 1, 2])
-        k.display()
+
 
         p.add_kernel(k)
         p.compile()
@@ -1371,14 +1302,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_regex(c0)[6], 5)
         self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
 
-        # Tested for correctness using QX
-        # gold_fn = rootDir + '/golden/test_unitary-decomp_rotatedtoffoli.qasm'
-        # qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) ) 
-
     def test_decomposition_toffoli(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 3
         p = ql.Program('test_usingqx_toffoli', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -1392,15 +1316,12 @@ class Test_conjugated_kernel(unittest.TestCase):
                  [0, 0, 0, 0, 0, 0, 0, 1],
                  [0, 0, 0, 0, 0, 0, 1, 0]]).flatten()
 
-        print(matrix)
         u1 = ql.Unitary("rotatedtoffoli",matrix)
         u1.decompose()
         k.hadamard(0)
         k.hadamard(1)
         k.hadamard(2)
-        k.display()
         k.gate(u1, [0, 1, 2])
-        k.display()
 
         p.add_kernel(k)
         p.compile()
@@ -1417,14 +1338,8 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_regex(c0)[6], 5)
         self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
 
-        # Tested for correctness using QX
-        # gold_fn = rootDir + '/golden/test_unitary-decomp_rotatedtoffoli.qasm'
-        # qasm_fn = os.path.join(output_dir, p.name+'.qasm')
-        # self.assertTrue( file_compare(qasm_fn, gold_fn) ) 
 
     def test_decomposition_controlled_U(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 3
         p = ql.Program('test_usingqx_toffoli', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -1438,15 +1353,13 @@ class Test_conjugated_kernel(unittest.TestCase):
                  [0, 0, 0, 0, 0, 0, 0.30279949-0.60010283j, -0.58058628-0.45946559j],
                  [0, 0, 0, 0, 0 ,0, 0.04481146-0.73904059j,  0.64910478+0.17456782j]]).flatten()
 
-        print(matrix)
         u1 = ql.Unitary("arbitrarycontrolled",matrix)
         u1.decompose()
-        k.display()
         k.hadamard(0)
         k.hadamard(1)
         k.hadamard(2)
         k.gate(u1, [0, 1, 2])
-        k.display()
+
 
         p.add_kernel(k)
         p.compile()
@@ -1464,8 +1377,6 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
    
     def test_decomposition_mscthesisaritra(self):
-        config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
-        platform = ql.Platform('platform_none', config_fn)
         num_qubits = 4
         p = ql.Program('test_usingqx_mscthesisaritra', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
@@ -1494,7 +1405,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         k.hadamard(2)
         k.hadamard(3)
         k.gate(u1, [0, 1, 2, 3])
-        k.display()
+
 
         p.add_kernel(k)
         p.compile()
