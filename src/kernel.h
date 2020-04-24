@@ -1074,8 +1074,8 @@ public:
         if(u.is_decomposed)
         {
 
-            COUT("Adding decomposed unitary to kernel ...");
-            DOUT("The list is this many items long: " << u.instructionlist.size());
+            DOUT("Adding decomposed unitary to kernel ...");
+            IOUT("The list is this many items long: " << u.instructionlist.size());
             //COUT("Instructionlist" << ql::utils::to_string(u.instructionlist));
             int end_index = recursiveRelationsForUnitaryDecomposition(u,qubits, u_size, 0);
             DOUT("Total number of gates added: " << end_index);
@@ -1102,7 +1102,7 @@ public:
             // code for last one not affected
             if (u.instructionlist[i] == 100.0)
             {
-                COUT("[kernel.h] Optimization: last qubit is not affected, skip one step in the recursion. New start_index: " << i+1);
+                DOUT("[kernel.h] Optimization: last qubit is not affected, skip one step in the recursion. New start_index: " << i+1);
                 std::vector<size_t> subvector(qubits.begin() + 1, qubits.end());
                 return recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, i + 1) + 1; // for the number 10.0
             }
@@ -1116,14 +1116,14 @@ public:
                    
                     // Two numbers that aren't rotation gate angles
                     int start_counter = i + 2;
-                    COUT("[kernel.h] Optimization: first qubit not affected, skip one step in the recursion. New start_index: " << start_counter);
+                    DOUT("[kernel.h] Optimization: first qubit not affected, skip one step in the recursion. New start_index: " << start_counter);
 
                     return recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter) + 2; //for the numbers 20 and 30
                 }
                 else
                 {
                     int start_counter = i + 1;
-                    COUT("[kernel.h] Optimization: only demultiplexing will be performed. New start_index: " << start_counter);
+                    DOUT("[kernel.h] Optimization: only demultiplexing will be performed. New start_index: " << start_counter);
 
                     start_counter += recursiveRelationsForUnitaryDecomposition(u, subvector, n - 1, start_counter);
                     multicontrolled_rz(u.instructionlist, start_counter, start_counter + numberforcontrolledrotation - 1, qubits);
