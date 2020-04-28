@@ -16,7 +16,7 @@
 #define OPT_VCD_OUTPUT                  1   // output Value Change Dump file for GTKWave viewer
 #define OPT_RUN_ONCE                    0   // 0=loop indefinitely (CC-light emulation)
 #define OPT_CALCULATE_LATENCIES         0   // fixed compensation based on instrument latencies
-#define OPT_OLD_SEQBAR_SEMANTICS        1   // support old semantics of seqbar instruction
+#define OPT_OLD_SEQBAR_SEMANTICS        0   // support old semantics of seqbar instruction
 
 #include "json.h"
 #include "platform.h"

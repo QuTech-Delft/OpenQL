@@ -13,11 +13,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - renamed JSON field "signal_ref" to "ref_signal"
     - renamed JSON field "ref_signals_type" to "signal_type"
     - added compile time option for new seq_bar semantics (cc firmware from 20191219 onwards)
-    version 0.8.1.dcl-3:
     - improved reporting on JSON semantic errors
     - implemented option to output scheduled QASM files
     version 0.8.1.dcl-4:
     - changed JSON field static_codeword_override to be a vector with one element per qubit parameter
+    - enabled new seq_bar semantics (requires compatible PycQED version)
 
 ### Removed
 
