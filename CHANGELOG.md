@@ -19,7 +19,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ### Fixed
-
+    - changed register used for FOR loop, so it doesn't clash with delay setting
 
 
 ## [ 0.8.0 ] - [ 2019-10-31 ]
