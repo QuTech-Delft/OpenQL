@@ -11,10 +11,12 @@ ENDIF()
 
 PROJECT(OPENQL)
 
+IF (NOT CMAKE_BUILD_TYPE)
 SET(CMAKE_BUILD_TYPE Release CACHE STRING
     "Type of build (None Debug Release RelWithDebInfo MinSizeRel)" FORCE)
 SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
     "RelWithDebInfo" "MinSizeRel")
+ENDIF()
 
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
