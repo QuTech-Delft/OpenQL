@@ -4,4 +4,4 @@
 
 	 NB: OPENQL_VERSION_STRING is also decoded by setup.py
 */
-#define OPENQL_VERSION_STRING "0.8.1.dcl-3"
+#define OPENQL_VERSION_STRING "0.8.1.dcl-4"
