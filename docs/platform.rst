@@ -217,7 +217,7 @@ scheduling and mapping of gates.
 
 The ``resources`` section specifies zero or more resource types
 that are predefined by the mandatory platform dependent resource manager.
-For CC-Light, these resource types are ``qubits``, ``qwgs``, ``meas_units``, and ``edges``.
+For CC-Light, these resource types are ``qubits``, ``qwgs``, ``meas_units``, ``edges``, and ``detuned_qubits``.
 The presence of one in the configuration file
 indicates that the resource-constrained scheduler should take it into account
 when trying to schedule operations in parallel, i.e. with overlapping executions.
@@ -294,7 +294,7 @@ instruction inside the OpenQL program. ``x`` would also be allowed as name. The 
   :Note: This is not implemented. Propose to do so. Then have to define what is exactly means: compiling away is interpreted as the gate with this flag ``true`` will never be deleted from a circuit once created, nor that the circuit that contains it will be deleted.
 
 * ``type`` indicates whether the instruction is a microwave (``mw``), flux (``flux``) or readout (``readout``).
-  This is used by the resource manager to select the resources of a gate for scheduling.
+  This is used in CC-Light by the resource manager to select the resources of a gate for scheduling.
 
 
 

@@ -127,12 +127,13 @@ assumes that the CC-Light architecture has the following relations between devic
 	 VSM                        --              0~6              microwave masking 
 	=====================    =============   =============      =================== 
 
-The ``resources`` section specifies zero or more resource types
-that are predefined by the resource manager that is part of the scheduler.
-These resource types are ``qubits``, ``qwgs``, ``meas_units``, and ``edges``.
+The ``resources`` section specifies zero or more resource types.
+Each of these must be predefined by the platform's resource manager.
+For CC-Light, these resource types are ``qubits``, ``qwgs``, ``meas_units``, ``edges`` and ``detuned_qubits``.
 The presence of one in the configuration file
 indicates that the resource-constrained scheduler should take it into account
-when trying to schedule operations in parallel, i.e. with overlapping executions.
+when trying to schedule operations in parallel, i.e. with overlapping executions;
+absence of one in the configuration file thus indicates that this resource is ignored by the scheduler.
 Although their names suggest otherwise, they are just vehicles to configure the scheduler
 and need not correspond to real resources present in the hardware.
 
@@ -359,12 +360,12 @@ Please refer to :ref:`platform` for a description of the CC-Light independent at
 The CC-Light dependent attributes are:
 
 ``cc_light_instr_type`` is used to
-specify the type of instruction based on number of qubits.
-Please refer to :ref:`scheduling` for their use by the rcscheduler.
+specify the type of instruction based on the number of expected qubits.
+Please refer to :ref:`scheduling` for its use by the rcscheduler.
 
 ``cc_light_instr`` specifies the name of this instruction used in CC-Light architecture. This name
-will be used in the generated output code.
-Please refer to :ref:`scheduling` for their use by the rcscheduler.
+is used in the generation of the output code and in the implementation of the checking of the ``qwg`` resource.
+Please refer to :ref:`scheduling` for its use by the rcscheduler.
 
 ``cc_light_codeword``, ``cc_light_right_codeword``, ``cc_light_left_codeword``
 and ``cc_light_opcode`` are used in the generation of the control store file for

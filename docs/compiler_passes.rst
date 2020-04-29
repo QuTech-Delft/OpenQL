@@ -133,8 +133,6 @@ by its parameterization by the platform configuration file.
 	after measurements an ``fmr`` is inserted provided the measurement had a classical register operand.
 	See :ref:`decomposition`.
 
-    :Note: That this pass is CC-Light dependent in its code is wrong and must be solved.
-
 - clifford optimization
 	dependency chains of one-qubit clifford gates operating on the same qubit
 	are replaced by equivalent sequences of primitive gates when the latter leads to a shorter execution time.
@@ -157,9 +155,9 @@ by its parameterization by the platform configuration file.
 	It is not complete in the sense that it ignores transfer of the v2r map between kernels.
 	See :ref:`mapping`.
 
-- rcscheduler (CC-Light dependent)
+- rcscheduler
 	resource constraints are taken into account; the result reflects the timing required during execution,
-	i.e. also taking into account any further non-OpenQL passes and run-time stages such as:
+	i.e. also taking into account any further non-OpenQL passes and run-time stages such as (for CC_Light):
 
 	* QISA assembly
 	* classical code execution (from here on these passes are executed as run-time stages)
@@ -171,8 +169,6 @@ by its parameterization by the platform configuration file.
 
 	The resulting circuit is stored in the usual manner and as a sequence of bundles.
 	See :ref:`scheduling`.
-
-    :Note: That this pass is CC-Light dependent in its code is wrong and must be solved.
 
 - decomposition after scheduling (CC-Light dependent)
 	two-qubit flux gates are decomposed to a series of one-qubit flux gates
