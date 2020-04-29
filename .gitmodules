@@ -1,0 +1,7 @@
+[submodule "deps/libqasm"]
+	path = deps/libqasm
+	url = https://github.com/QE-Lab/libqasm.git
+	branch = develop
+[submodule "deps/eigen"]
+	path = deps/eigen
+	url = https://gitlab.com/libeigen/eigen.git

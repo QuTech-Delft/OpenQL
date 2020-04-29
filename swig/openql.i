@@ -12,12 +12,15 @@
 %include "std_vector.i"
 %include "exception.i"
 %include "std_string.i"
+%include "std_complex.i"
+
 
 namespace std {
    %template(vectori) vector<int>;
    %template(vectorui) vector<size_t>;
    %template(vectorf) vector<float>;
    %template(vectord) vector<double>;
+   %template(vectorc) vector<std::complex<double>>;
 };
 
 %{
@@ -235,6 +238,40 @@ Parameters
 arg1 : int
     immediate value
 """
+
+
+
+%feature("docstring") Unitary
+""" Unitary class to hold the matrix and its decomposition"""
+
+
+%feature("docstring") Unitary::Unitary
+""" Constructs a unitary
+
+Parameters
+----------
+arg1 : str
+    name of the unitary
+arg2 : matrix
+    complex unitary matrix
+
+Returns
+-------
+None
+"""
+
+%feature("docstring") Unitary::decompose
+""" Decomposes the unitary matrix
+
+Parameters
+----------
+None
+
+Returns
+-------
+None
+"""
+
 
 
 
@@ -533,6 +570,18 @@ arg3 : CReg
 """
 
 
+%feature("docstring") Kernel::gate
+""" adds unitary to kernel.
+
+Parameters
+----------
+arg1 : Unitary
+    unitary matrix
+arg2 : []
+    list of qubits
+"""
+
+
 
 %feature("docstring") Kernel::classical
 """ adds classical operation kernel.
@@ -779,7 +828,40 @@ str
     microcode
 """
 
+%feature("docstring") cQasmReader
+""" cQasmReader class specifies an interface to add cqasm programs to a program."""
 
+%feature("docstring") cQasmReader::~cQasmReader
+""" Destructs a cQasmReader object. """
+
+%feature("docstring") cQasmReader::cQasmReader
+""" Constructs a cQasmReader object.
+
+Parameters
+----------
+arg1 : platform
+    Instance of an OpenQL Platform.
+arg2 : program
+    Program class to which the kernels with cqasm quantum instructions are added.
+"""
+
+%feature("docstring") cQasmReader::string2circuit
+""" Adds a cqasm program defined in a string.
+
+Parameters
+----------
+arg1 : str
+    The cqasm that is added to the program.
+"""
+
+%feature("docstring") cQasmReader::file2circuit
+""" Adds a cqasm program read from a file.
+
+Parameters
+----------
+arg1 : str
+    File path to the file specifying the cqasm that is added to the program.
+"""
 
 
 // Include the header file with above prototypes

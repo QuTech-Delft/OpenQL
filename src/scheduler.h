@@ -132,7 +132,7 @@ public:
         ListDigraph::Node srcNode = graph.nodeFromId(srcID);
         ListDigraph::Node tgtNode = graph.nodeFromId(tgtID);
         ListDigraph::Arc arc = graph.addArc(srcNode,tgtNode);
-        weight[arc] = std::ceil( static_cast<float>(instruction[srcNode]->duration) / cycle_time);
+        weight[arc] = int(std::ceil( static_cast<float>(instruction[srcNode]->duration) / cycle_time));
         // weight[arc] = (instruction[srcNode]->duration + cycle_time -1)/cycle_time;
         cause[arc] = operand;
         depType[arc] = deptype;
@@ -165,8 +165,8 @@ public:
                 auto bname = buf1+ "_" + buf2 + "_buffer";
                 if(platform.hardware_settings.count(bname) > 0)
                 {
-                    buffer_cycles_map[ bpair ] = std::ceil( 
-                        static_cast<float>(platform.hardware_settings[bname]) / cycle_time);
+                    buffer_cycles_map[ bpair ] = size_t(std::ceil(
+                        static_cast<float>(platform.hardware_settings[bname]) / cycle_time));
                 }
                 // DOUT("Initializing " << bname << ": "<< buffer_cycles_map[bpair]);
             }
@@ -589,7 +589,7 @@ public:
 	        node[instruction[consNode]] = consNode;
 	        name[consNode] = instruction[consNode]->qasm();
 	        t=consNode;
-	
+
 	        // add deps to the dummy target node to close the dependence chains
 	        // it behaves as a W to every qubit and creg
 	        //
@@ -616,7 +616,7 @@ public:
 	                add_dep(readerID, consID, WAD, operand);
 	            }
 	        }
-	
+
             // useless because there is nothing after t but destruction
 	        for( auto operand : operands )
 	        {
@@ -884,8 +884,8 @@ public:
                 if(platform.instruction_settings[id].count("latency") > 0)
                 {
                     float latency_ns = platform.instruction_settings[id]["latency"];
-                    latency_cycles = (std::ceil( static_cast<float>(std::abs(latency_ns)) / cycle_time)) *
-                                            ql::utils::sign_of(latency_ns);
+                    latency_cycles = long(std::ceil( static_cast<float>(std::abs(latency_ns)) / cycle_time)) *
+                                          ql::utils::sign_of(latency_ns);
                     compensated_one = true;
 
                     gp->cycle = gp->cycle + latency_cycles;
@@ -1338,9 +1338,9 @@ public:
         {
             // are resources available?
             if ( n == s || n == t
-                || gp->type() == ql::gate_type_t::__dummy_gate__ 
-                || gp->type() == ql::gate_type_t::__classical_gate__ 
-                || gp->type() == ql::gate_type_t::__wait_gate__ 
+                || gp->type() == ql::gate_type_t::__dummy_gate__
+                || gp->type() == ql::gate_type_t::__classical_gate__
+                || gp->type() == ql::gate_type_t::__wait_gate__
                )
             {
                 return true;
@@ -1365,7 +1365,7 @@ public:
                                 const ql::quantum_platform& platform, ql::arch::resource_manager_t& rm, bool & success)
     {
         success = false;                        // whether a node was found and returned
-        
+
         DOUT("avlist(@" << curr_cycle << "):");
         for ( auto n : avlist)
         {
@@ -1429,12 +1429,12 @@ public:
         {
             bool success;
             ListDigraph::Node   selected_node;
-            
+
             selected_node = SelectAvailable(avlist, dir, curr_cycle, platform, rm, success);
             if (!success)
             {
                 // i.e. none from avlist was found suitable to schedule in this cycle
-                AdvanceCurrCycle(dir, curr_cycle); 
+                AdvanceCurrCycle(dir, curr_cycle);
                 // so try again; eventually instrs complete and machine is empty
                 continue;
             }
@@ -1445,9 +1445,9 @@ public:
             gp->cycle = curr_cycle;                     // scheduler result, including s and t
             if (selected_node != s
                 && selected_node != t
-                && gp->type() != ql::gate_type_t::__dummy_gate__ 
-                && gp->type() != ql::gate_type_t::__classical_gate__ 
-                && gp->type() != ql::gate_type_t::__wait_gate__ 
+                && gp->type() != ql::gate_type_t::__dummy_gate__
+                && gp->type() != ql::gate_type_t::__classical_gate__
+                && gp->type() != ql::gate_type_t::__wait_gate__
                )
             {
                 rm.reserve(curr_cycle, gp, platform);
@@ -1640,7 +1640,7 @@ public:
                     DOUT("... considering: " << predgp->qasm() << " @cycle=" << predgp->cycle << " remaining=" << remaining[pred_node]);
 
                     // candidate's result, when moved, must be ready before end-of-circuit and before used
-                    predgp_completion_cycle = curr_cycle + std::ceil(static_cast<float>(predgp->duration)/cycle_time);
+                    predgp_completion_cycle = curr_cycle + size_t(std::ceil(static_cast<float>(predgp->duration)/cycle_time));
                     // predgp_completion_cycle = curr_cycle + (predgp->duration+cycle_time-1)/cycle_time;
                     if (predgp_completion_cycle > cycle_count + 1)  // at SINK is ok, later not
                     {
@@ -1690,7 +1690,7 @@ public:
                     }
                     best_predgp->cycle = curr_cycle;        // what it is all about
                     gates_per_cycle[curr_cycle].push_back(best_predgp);
-                   
+
                     // recompute targets
                     if (non_empty_bundle_count == 0) break;     // nothing to do
                     avg_gates_per_cycle = double(gate_count)/curr_cycle;

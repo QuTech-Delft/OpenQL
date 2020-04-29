@@ -1050,9 +1050,9 @@ public:
     {
         FATAL("cc_light_eqasm_compiler::compile interface with circuit not supported");
     }
-                      
+
     // kernel level compilation
-    void compile(std::string prog_name, std::vector<quantum_kernel>& kernels, 
+    void compile(std::string prog_name, std::vector<quantum_kernel>& kernels,
         const ql::quantum_platform& platform)
     {
         DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");
