@@ -96,8 +96,7 @@ public:
         genMk();
 
         decomp_function(_matrix, numberofbits); //needed because the matrix is read in columnmajor
-        
-        // COUT("CSD time, zyz_time, multiplexing_time, csd1, csd2, demult\n" << CSD_time.count() << "\t" << zyz_time.count() << "\t" << multiplexing_time.count() << "\t" << CSD_time2.count() << "\t" << CSD_time3.count()<< "\t" << demultiplexing_time.count());
+ 
         DOUT("Done decomposing");
         is_decomposed = true;
     }
@@ -382,12 +381,10 @@ public:
         // complex_matrix W;
         if(check == check.adjoint())
         {
-            COUT("Demultiplexing matrix is self-adjoint()");
+            IOUT("Demultiplexing matrix is self-adjoint()");
             Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> eigslv(check);
             D.noalias() = ((complex_matrix) eigslv.eigenvalues()).cwiseSqrt();
-            COUT("D"<< D);
             V.noalias() = eigslv.eigenvectors();
-            COUT("V"<< V);
             W.noalias() = D.asDiagonal()*V.adjoint()*U2;
         }
         else
