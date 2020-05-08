@@ -32,7 +32,7 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
         p.set_sweep_points(np.arange(len(allXY), dtype=float))
 
         for i, xy in enumerate(allXY):
-            k = Kernel("allXY"+str(i), platform=platf, qubit_count=nqubits)
+            k = Kernel("allXY"+str(i), platf, nqubits)
             k.prepz(0)
             k.gate(xy[0], [0])
             k.gate(xy[1], [0])
@@ -58,7 +58,7 @@ class Test_single_qubit_seqs_CBox(unittest.TestCase):
             # and will produce and invalid qasm
             n = 'echo_tau_{}ns'.format(tau) 
             n = n.replace(".","_")
-            k = Kernel(n, platform=platf, qubit_count=nqubits)
+            k = Kernel(n, platf, nqubits)
             k.prepz(0)
             k.rx90(0)
             # This is a dirty hack that repeats the I gate
