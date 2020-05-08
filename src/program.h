@@ -57,11 +57,6 @@ public:
     void set_platform(quantum_platform & platform);
     std::string qasm();
 
-#if OPT_MICRO_CODE
-    std::string microcode();
-    std::string uc_header();
-#endif
-
     int bump_unique_file_version();
 
     int compile();

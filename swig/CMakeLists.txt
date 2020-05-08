@@ -1,17 +1,16 @@
 FIND_PACKAGE(SWIG REQUIRED)
 INCLUDE(${SWIG_USE_FILE})
 
-
-if(${CMAKE_VERSION} VERSION_LESS "3.12.0") 
-	FIND_PACKAGE(PythonInterp)
-	if (${PYTHONINTERP_FOUND})
+IF(${CMAKE_VERSION} VERSION_LESS "3.12.0")
+	FIND_PACKAGE(PythonInterp 3 REQUIRED)
+	IF (${PYTHONINTERP_FOUND})
 	    FIND_PACKAGE(PythonLibs "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
-	endif()
+	ENDIF()
 	INCLUDE_DIRECTORIES( ${PYTHON_INCLUDE_DIRS} )
-else()
-	find_package (Python COMPONENTS Interpreter Development)
+ELSE()
+	FIND_PACKAGE (Python COMPONENTS Interpreter Development)
 	INCLUDE_DIRECTORIES( ${Python_INCLUDE_DIRS} )
-endif()
+ENDIF()
 
 INCLUDE_DIRECTORIES(
     ${LEMON_INCLUDE_DIRS}
@@ -21,30 +20,29 @@ INCLUDE_DIRECTORIES(
 
 SET_SOURCE_FILES_PROPERTIES(openql.i PROPERTIES CPLUSPLUS ON)
 
-SET_PROPERTY(SOURCE openql.i PROPERTY SWIG_FLAGS -castmode -modern -keyword)
+SET_PROPERTY(SOURCE openql.i PROPERTY SWIG_FLAGS -castmode -modern -keyword -w511)
 #WJV
 # -modern is deprecated
 # -keyword gives lots of warnings
 #SET_PROPERTY(SOURCE openql.i PROPERTY SWIG_FLAGS -castmode)
 
-if (${CMAKE_VERSION} VERSION_LESS "3.8.0")
+IF (${CMAKE_VERSION} VERSION_LESS "3.8.0")
 	SWIG_ADD_MODULE(openql python openql.i)
-else()
-  SWIG_ADD_LIBRARY( openql
-                    TYPE MODULE
-                    LANGUAGE python
-                    SOURCES openql.i
-                  )
-endif()
+ELSE()
+    SWIG_ADD_LIBRARY( openql
+                      TYPE MODULE
+                      LANGUAGE python
+                      SOURCES openql.i
+                    )
+ENDIF()
 
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    SWIG_LINK_LIBRARIES(openql ${LEMON_LIBRARIES} ql)
-    set_target_properties(_openql PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
-else ()
-    if(${CMAKE_VERSION} VERSION_LESS "3.12.0") 
-        SWIG_LINK_LIBRARIES(openql ${PYTHON_LIBRARIES} ${LEMON_LIBRARIES} ql)
-    else()
-        SWIG_LINK_LIBRARIES(openql ${Python_LIBRARIES} ${LEMON_LIBRARIES} ql)
-    endif()
-endif()
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    SWIG_LINK_LIBRARIES(openql ${LEMON_LIBRARIES} ql lexgramstatic)
+    SET_TARGET_PROPERTIES(_openql PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+ELSE()
+    IF (${CMAKE_VERSION} VERSION_LESS "3.12.0")
+        SWIG_LINK_LIBRARIES(openql ${PYTHON_LIBRARIES} ${LEMON_LIBRARIES} ql lexgramstatic)
+    ELSE()
+        SWIG_LINK_LIBRARIES(openql ${Python_LIBRARIES} ${LEMON_LIBRARIES} ql lexgramstatic)
+    ENDIF()
+ENDIF()

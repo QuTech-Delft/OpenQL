@@ -1387,7 +1387,6 @@ int main(int argc, char ** argv)
     ql::options::set("prescheduler", "yes");
 
     test_recursion("recursion", "noroutingfirst", "no", "0", "min");
-
 #ifdef  RUNALL
     test_recursion("recursion", "all", "no", std::getenv("mapselectmaxlevel"), "min");
     test_recursion("recursion", "all", "no", std::getenv("mapselectmaxlevel"), "minplusone");

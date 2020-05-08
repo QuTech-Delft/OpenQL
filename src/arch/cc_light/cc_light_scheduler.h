@@ -19,7 +19,7 @@
 #include <ir.h>
 #include <circuit.h>
 #include <scheduler.h>
-#include <arch/cc_light/cc_light_resource_manager.h>
+#include <resource_manager.h>
 
 #include <iomanip>
 #include <map>
@@ -169,7 +169,7 @@ ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
         throw ql::exception("Unknown scheduler!", false);
 
     }
-    cc_light_resource_manager_t rm(platform, direction);
+    resource_manager_t rm(platform, direction);
 
     Scheduler sched;
     sched.init(ckt, platform, nqubits, ncreg);

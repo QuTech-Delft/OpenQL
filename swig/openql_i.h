@@ -14,10 +14,13 @@
 #include <sstream>
 #include <cassert>
 #include <time.h>
+#include <complex>
 
 #include <version.h>
 #include <openql.h>
 #include <classical.h>
+#include <unitary.h>
+
 
 static std::string get_version()
 {
@@ -97,6 +100,34 @@ public:
     ~Operation()
     {
         delete(operation);
+    }
+};
+
+// typedef std::complex<double> Complex;
+
+/**
+ * quantum unitary matrix interface
+ */
+class Unitary
+{
+public:
+    string name;
+    ql::unitary * unitary;
+
+    Unitary(std::string name, std::vector<std::complex<double>> matrix) : name(name)
+    {
+        unitary = new ql::unitary(name, matrix);
+    }
+
+    void decompose()
+    {
+        unitary->decompose();
+    }
+
+    ~Unitary()
+    {
+        // destroy unitary
+        delete(unitary);
     }
 };
 
@@ -222,7 +253,7 @@ public:
     {
         kernel->toffoli(q0,q1,q2);
     }
-    void clifford(size_t id, size_t q0)
+    void clifford(int id, size_t q0)
     {
         kernel->clifford(id, q0);
     }
@@ -252,6 +283,11 @@ public:
     void gate(std::string name, std::vector<size_t> qubits, CReg & destination)
     {
         kernel->gate(name, qubits, {(destination.creg)->id} );
+    }
+
+    void gate(Unitary &u, std::vector<size_t> qubits)
+    {
+        kernel->gate(*(u.unitary), qubits);
     }
 
     void classical(CReg & destination, Operation& operation)
@@ -403,7 +439,41 @@ public:
     ~Program()
     {
         // std::cout << "program::~program()" << std::endl;
-        delete(program);
+        // leave deletion to SWIG, otherwise the python unit test framework fails
+        // delete(program);
+    }
+};
+
+/**
+ * cqasm reader interface
+ */
+class cQasmReader
+{
+public:
+    ql::cqasm_reader *cqasm_reader_;
+    Platform platform;
+    Program program;
+
+    cQasmReader(const Platform& q_platform, Program& q_program) :
+        platform(q_platform), program(q_program)
+    {
+        cqasm_reader_ = new ql::cqasm_reader(*(platform.platform), *(program.program));
+    }
+
+    void string2circuit(std::string cqasm_str)
+    {
+        cqasm_reader_->string2circuit(cqasm_str);
+    }
+
+    void file2circuit(std::string cqasm_file_path)
+    {
+        cqasm_reader_->file2circuit(cqasm_file_path);
+    }
+
+    ~cQasmReader()
+    {
+        // leave deletion to SWIG, otherwise the python unit test framework fails
+        // delete cqasm_reader_;
     }
 };
 
