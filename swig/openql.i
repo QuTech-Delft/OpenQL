@@ -24,7 +24,6 @@ namespace std {
 #include "openql_i.h"
 %}
 
-
 /*
 %pythoncode %{
 import os, errno
@@ -779,8 +778,26 @@ str
     microcode
 """
 
+%feature("docstring") Compiler
+""" Compiler class which contains one or more compiler passes."""
 
+%feature("docstring") Compiler::Compiler
+""" Constructs a compiler object.
 
+Parameters
+----------
+arg1 : str
+    name of the compiler
+"""
+
+%feature("docstring") Compiler::compile
+""" Compiles the program
+
+Parameters
+----------
+arg1 : Program
+    program object to be compiled.
+"""
 
 // Include the header file with above prototypes
 %include "openql_i.h"

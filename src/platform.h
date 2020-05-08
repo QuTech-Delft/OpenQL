@@ -39,6 +39,12 @@ public:
     }
 #endif
 
+    /**
+     * @brief   Quantum platform constructor
+     * @note    Empty constructor needed temporary for program without platform. To remove when old API 
+     *          is deprecated
+     */
+    quantum_platform() {}
     quantum_platform(std::string name, std::string configuration_file_name);
     void print_info() const;
     size_t get_qubit_number() const  // FIXME: qubit_number is public anyway

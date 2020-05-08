@@ -21,6 +21,16 @@ static unsigned long phi_node_count = 0;    // FIXME: number across quantum_prog
 namespace ql
 {
 
+    /**
+     * @brief   Quantum program constructor
+     * @param   n   Name of the program
+     */
+quantum_program::quantum_program(std::string n)
+    : name(n)
+{
+    DOUT("Constructor for quantum_program:  " << n);
+}
+    
 quantum_program::quantum_program(std::string n, quantum_platform platf, size_t nqubits, size_t ncregs)
         : name(n), platform(platf), qubit_count(nqubits), creg_count(ncregs)
 {
@@ -70,6 +80,7 @@ quantum_program::quantum_program(std::string n, quantum_platform platf, size_t n
 void quantum_program::add(ql::quantum_kernel &k)
 {
     // check sanity of supplied qubit/classical operands for each gate
+    /** @todo-RN: move this check to a backend platform validation pass for the target platform 
     ql::circuit& kc = k.get_circuit();
     for( auto & g : kc )
     {
@@ -90,7 +101,7 @@ void quantum_program::add(ql::quantum_kernel &k)
                         ")");
             }
         }
-    }
+    }*/
 
     for (auto kernel : kernels)
     {
