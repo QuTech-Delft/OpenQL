@@ -498,6 +498,24 @@ public:
         compiler->compile(program.program);
     }
     
+    void add_pass(std::string realPassName, std::string symbolicPassName)
+    {
+        DOUT(" Add pass " << realPassName << " under alias name  " << symbolicPassName); 
+        compiler->addPass(realPassName,symbolicPassName);
+    }
+    
+    void add_pass(std::string realPassName)
+    {
+        DOUT(" Add pass " << realPassName << " with no alias"); 
+        compiler->addPass(realPassName);
+    }
+
+    void set_pass_option(std::string passName, std::string optionName, std::string optionValue)
+    {
+        DOUT(" Set option " << optionName << " = " << optionValue << " for pass " << passName); 
+        compiler->setPassOption(passName,optionName, optionValue);
+    }
+
 };
 
 #endif

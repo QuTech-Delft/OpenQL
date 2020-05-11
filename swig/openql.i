@@ -883,5 +883,38 @@ arg1 : Program
     program object to be compiled.
 """
 
+%feature("docstring") Compiler::add_pass
+""" Adds a compiler pass under an alias name
+
+Parameters
+----------
+arg1 : str
+    name of the real pass to be added.
+arg2 : str
+    alias name of the pass to be added. 
+"""
+
+%feature("docstring") Compiler::add_pass
+""" Adds a compiler pass under its real name
+
+Parameters
+----------
+arg1 : str
+    name of the real pass to be added.
+"""
+
+%feature("docstring") Compiler::set_pass_option
+""" Sets a compiler pass option
+
+Parameters
+----------
+arg1 : str
+    name (real or alias) of the compiler pass to be added.
+arg2 : str
+    option name of the option to be configured. 
+arg3 : str
+    value of the option. 
+"""
+
 // Include the header file with above prototypes
 %include "openql_i.h"
