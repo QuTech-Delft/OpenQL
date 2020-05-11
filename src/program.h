@@ -39,6 +39,7 @@ public:
 
 
 public:
+    quantum_program(std::string n);
     quantum_program(std::string n, quantum_platform platf, size_t nqubits, size_t ncregs = 0);
 
     void add(ql::quantum_kernel &k);
@@ -63,6 +64,8 @@ public:
     void print_interaction_matrix();
     void write_interaction_matrix();
     void set_sweep_points(float * swpts, size_t size);
+    
+    std::vector<quantum_kernel> get_kernels() { return kernels; };
 
 };
 

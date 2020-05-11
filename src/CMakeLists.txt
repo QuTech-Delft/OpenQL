@@ -5,6 +5,9 @@ GET_FILENAME_COMPONENT(PARENT_DIR ${PROJECT_SOURCE_DIR} DIRECTORY)
 ADD_LIBRARY(ql
   platform.cc
   program.cc
+  compiler.cc
+  passmanager.cc
+  passes.cc
   exception.cc
   arch/cc/eqasm_backend_cc.cc
   arch/cc/codegen_cc.cc

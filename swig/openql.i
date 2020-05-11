@@ -27,7 +27,6 @@ namespace std {
 #include "openql_i.h"
 %}
 
-
 /*
 %pythoncode %{
 import os, errno
@@ -863,6 +862,26 @@ arg1 : str
     File path to the file specifying the cqasm that is added to the program.
 """
 
+%feature("docstring") Compiler
+""" Compiler class which contains one or more compiler passes."""
+
+%feature("docstring") Compiler::Compiler
+""" Constructs a compiler object.
+
+Parameters
+----------
+arg1 : str
+    name of the compiler
+"""
+
+%feature("docstring") Compiler::compile
+""" Compiles the program
+
+Parameters
+----------
+arg1 : Program
+    program object to be compiled.
+"""
 
 // Include the header file with above prototypes
 %include "openql_i.h"
