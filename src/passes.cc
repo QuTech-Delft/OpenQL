@@ -8,6 +8,7 @@
  */
 
 #include "passes.h"
+#include "cqasm/cqasm_reader.h"
 
 #include <iostream>
 
@@ -72,9 +73,9 @@ void ReaderPass::runOnProgram(ql::quantum_program *program)
     ///@todo-rn: call or import the actual reader pass from the openql file
     
     ///@todo-rn: set pass options with platform file, now hard-coded for testing , which I still have to do!
-    ql::cqasm_reader* reader = new ql::cqasm_reader(new ql::quantum_platform("testPlatform","hardware_config_cc_light.json"), program);
+    /*ql::cqasm_reader* reader = new ql::cqasm_reader(new ql::quantum_platform("testPlatform","hardware_config_cc_light.json"), program);
     
-    reader->file2circuit(cqasm_file_path);
+    reader->file2circuit(cqasm_file_path);*/
 }
 
     /**
