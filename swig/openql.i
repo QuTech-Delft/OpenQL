@@ -883,7 +883,7 @@ arg1 : Program
     program object to be compiled.
 """
 
-%feature("docstring") Compiler::add_pass
+%feature("docstring") Compiler::add_pass_alias
 """ Adds a compiler pass under an alias name
 
 Parameters

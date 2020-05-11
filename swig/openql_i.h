@@ -498,7 +498,7 @@ public:
         compiler->compile(program.program);
     }
     
-    void add_pass(std::string realPassName, std::string symbolicPassName)
+    void add_pass_alias(std::string realPassName, std::string symbolicPassName)
     {
         DOUT(" Add pass " << realPassName << " under alias name  " << symbolicPassName); 
         compiler->addPass(realPassName,symbolicPassName);
