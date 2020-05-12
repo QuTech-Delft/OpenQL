@@ -112,22 +112,22 @@ class Unitary
 {
 public:
     string name;
-    ql::unitary * unitary;
+//    ql::unitary * unitary;
 
     Unitary(std::string name, std::vector<std::complex<double>> matrix) : name(name)
     {
-        unitary = new ql::unitary(name, matrix);
+//        unitary = new ql::unitary(name, matrix);
     }
 
     void decompose()
     {
-        unitary->decompose();
+ //       unitary->decompose();
     }
 
     ~Unitary()
     {
         // destroy unitary
-        delete(unitary);
+//        delete(unitary);
     }
 };
 
@@ -287,7 +287,9 @@ public:
 
     void gate(Unitary &u, std::vector<size_t> qubits)
     {
+#ifdef __UNITARY_PROCESSING__
         kernel->gate(*(u.unitary), qubits);
+#endif
     }
 
     void classical(CReg & destination, Operation& operation)
@@ -498,6 +500,24 @@ public:
         compiler->compile(program.program);
     }
     
+    void add_pass_alias(std::string realPassName, std::string symbolicPassName)
+    {
+        DOUT(" Add pass " << realPassName << " under alias name  " << symbolicPassName); 
+        compiler->addPass(realPassName,symbolicPassName);
+    }
+    
+    void add_pass(std::string realPassName)
+    {
+        DOUT(" Add pass " << realPassName << " with no alias"); 
+        compiler->addPass(realPassName);
+    }
+
+    void set_pass_option(std::string passName, std::string optionName, std::string optionValue)
+    {
+        DOUT(" Set option " << optionName << " = " << optionValue << " for pass " << passName); 
+        compiler->setPassOption(passName,optionName, optionValue);
+    }
+
 };
 
 #endif

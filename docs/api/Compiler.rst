@@ -15,6 +15,9 @@ Compiler
    
       ~Compiler.__init__
       ~Compiler.compile
+      ~Compiler.add_pass
+      ~Compiler.add_pass_alias
+      ~Compiler.set_pass_option
    
    .. rubric:: Attributes
 

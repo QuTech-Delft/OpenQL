@@ -17,11 +17,11 @@
 #include <gate.h>
 #include <exception.h>
 
-#include <Eigen/MatrixFunctions>
-#include <src/misc/lapacke.h>
+//#include <Eigen/MatrixFunctions>
+//#include <src/misc/lapacke.h>
 
 // #include <chrono>
-
+/** @todo-rn: removed to avoid long compilation time ==> TOFIX
 namespace ql
 {
 
@@ -524,5 +524,5 @@ public:
 
 
 }
-
+*/
 #endif // _UNITARY_H

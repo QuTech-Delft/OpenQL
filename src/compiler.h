@@ -25,6 +25,9 @@ public:
     quantum_compiler(std::string name);
 
     void compile(ql::quantum_program*);
+    void addPass(std::string realPassName, std::string symbolicPassName);
+    void addPass(std::string realPassName);
+    void setPassOption(std::string passName, std::string optionName, std::string optionValue);
     
 private:
   
@@ -32,8 +35,6 @@ private:
     
     std::string           name;
     ql::PassManager       *passManager;
-    
-
 };
 
 } // ql
