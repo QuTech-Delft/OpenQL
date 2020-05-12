@@ -5,6 +5,3 @@
 [submodule "deps/eigen"]
 	path = deps/eigen
 	url = https://gitlab.com/libeigen/eigen.git
-	sparse-checkout = init
-	sparse-checkout = set
-	shallow = true
