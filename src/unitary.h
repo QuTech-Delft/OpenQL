@@ -17,10 +17,8 @@
 #include <gate.h>
 #include <exception.h>
 
-#include <Eigen/MatrixFunctions>
-#include <src/misc/lapacke.h>
-
-// #include <chrono>
+#include <unsupported/Eigen/MatrixFunctions>
+#include <Eigen/src/misc/lapacke.h>
 
 namespace ql
 {
