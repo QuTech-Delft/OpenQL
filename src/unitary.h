@@ -18,7 +18,7 @@
 #include <exception.h>
 
 #include <unsupported/Eigen/MatrixFunctions>
-#include <Eigen/src/misc/lapacke.h>
+//#include <Eigen/src/misc/lapacke.h>
 
 namespace ql
 {
