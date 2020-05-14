@@ -106,25 +106,25 @@ One thing the QuantumSim plugin does that the QX plugin doesn't is report the ac
     {
       "qubits": [
         {
-          "value": 0
+          "value": 0,
           "raw": 0,
           "average": 0.0,
           "json": {"probability": 0.5},
-          "binary": [[0, 0, 0, 0, 0, 0, 224, 63]],
+          "binary": [[0, 0, 0, 0, 0, 0, 224, 63]]
         },
         {
-          "value": 0
+          "value": 0,
           "raw": 0,
           "average": 0.0,
           "json": {"probability": 0.5},
-          "binary": [[0, 0, 0, 0, 0, 0, 224, 63]],
+          "binary": [[0, 0, 0, 0, 0, 0, 224, 63]]
         },
         {
-          "value": 0
+          "value": 0,
           "raw": 0,
           "average": 0.0,
           "json": {"probability": 0.5},
-          "binary": [[0, 0, 0, 0, 0, 0, 224, 63]],
+          "binary": [[0, 0, 0, 0, 0, 0, 224, 63]]
         }
       ]
     }
