@@ -57,7 +57,6 @@ public:
      * @note    Only works for custom instructions defined in JSON
        FIXME:   it may be more useful to get the information directly from JSON, because arch_operation_name is not really generic
      */
-    std::string get_instruction_name(std::string &iname) const;
 
     // find settings for custom gate, preventing JSON exceptions
     const json& find_instruction(std::string iname) const;

@@ -3550,6 +3550,7 @@ void MapCircuit(ql::quantum_kernel& kernel, Virt2Real& v2r)
     ql::circuit outCirc;
     mainPast.Out(outCirc);
     kernel.c.swap(outCirc);
+    kernel.cycles_valid = false;
     mainPast.ExportV2r(v2r);
     nswapsadded = mainPast.NumberOfSwapsAdded();
     nmovesadded = mainPast.NumberOfMovesAdded();
@@ -3582,6 +3583,7 @@ void MakePrimitives(ql::quantum_kernel& kernel)
     ql::circuit     outCirc;                    // ultimate output gate stream
     mainPast.Out(outCirc);
     kernel.c.swap(outCirc);
+    kernel.cycles_valid = false;
 
     DOUT("MakePrimitives circuit [DONE]");
 }   // end MakePrimitives

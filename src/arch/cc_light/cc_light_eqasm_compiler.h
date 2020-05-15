@@ -413,14 +413,99 @@ std::string classical_instruction2qisa(ql::arch::classical_cc* classical_ins)
     return ssclassical.str();
 }
 
+// FIXME HvS cc_light_instr is name of attribute in json file, in gate: arch_operation_name, here in instruction_map?
+// FIXME HvS attribute of gate or just in json? Generalization to arch_operation_name is unnecessary
+inline std::string get_cc_light_instruction_name(std::string & id, const ql::quantum_platform & platform)
+{
+    std::string cc_light_instr_name;
+    auto it = platform.instruction_map.find(id);
+    if (it != platform.instruction_map.end())
+    {
+        custom_gate* g = it->second;
+        cc_light_instr_name = g->arch_operation_name;
+        if(cc_light_instr_name.empty())
+        {
+            FATAL("cc_light_instr not defined for instruction: " << id << " !");
+        }
+        // DOUT("cc_light_instr name: " << cc_light_instr_name);
+    }
+    else
+    {
+        FATAL("custom instruction not found for : " << id << " !");
+    }
+    return cc_light_instr_name;
+}
 
-std::string bundles2qisa(ql::ir::bundles_t & bundles,
+std::string ir2qisa(quantum_kernel & kernel,
     const ql::quantum_platform & platform, MaskManager & gMaskManager)
 {
     IOUT("Generating CC-Light QISA");
 
-    std::stringstream ssbundles, sspre, ssinst;
-    size_t curr_cycle=0;
+    ql::ir::bundles_t   bundles1;
+    assert(kernel.cycles_valid);
+    bundles1 = ql::ir::bundler(kernel.c, platform.cycle_time);
+
+    IOUT("Combining parallel sections...");
+    // combine parallel instructions of same type from different sections into a single section
+    // this prepares for SIMD; each section will be a SIMD; of a quantum SIMD all operands are combined in a mask
+    ql::ir::DebugBundles("Before combining parallel sections", bundles1);
+    for (ql::ir::bundle_t & abundle : bundles1)
+    {
+        auto secIt1 = abundle.parallel_sections.begin();
+
+        for( ; secIt1 != abundle.parallel_sections.end(); ++secIt1 )
+        {
+            for( auto secIt2 = std::next(secIt1); secIt2 != abundle.parallel_sections.end(); ++secIt2)
+            {
+                auto insIt1 = secIt1->begin();
+                auto insIt2 = secIt2->begin();
+                if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
+                {
+                    auto id1 = (*insIt1)->name;
+                    auto id2 = (*insIt2)->name;
+                    auto itype1 = (*insIt1)->type();
+                    auto itype2 = (*insIt2)->type();
+                    if (itype1 == __classical_gate__ || itype2 == __classical_gate__)
+                    {
+                        DOUT("Not splicing " << id1 << " and " << id2);
+                        continue;
+                    }
+
+                    auto n1 = get_cc_light_instruction_name(id1, platform);
+                    auto n2 = get_cc_light_instruction_name(id2, platform);
+                    if( n1 == n2 )
+                    {
+                        DOUT("Splicing " << id1 << "/" << n1 << " and " << id2 << "/" << n2);
+                        (*secIt1).splice(insIt1, (*secIt2) );
+                    }
+                    else
+                    {
+                        DOUT("Not splicing " << id1 << "/" << n1 << " and " << id2 << "/" << n2);
+                    }
+                }
+            }
+        }
+    }
+    ql::ir::DebugBundles("After combining", bundles1);
+    IOUT("Removing empty sections...");
+    // remove empty sections
+    ql::ir::bundles_t bundles2;
+    for (ql::ir::bundle_t & abundle1 : bundles1)
+    {
+        ql::ir::bundle_t abundle2;
+        abundle2.start_cycle = abundle1.start_cycle;
+        abundle2.duration_in_cycles = abundle1.duration_in_cycles;
+        for(auto & sec : abundle1.parallel_sections)
+        {
+            if( !sec.empty() )
+            {
+                abundle2.parallel_sections.push_back(sec);
+            }
+        }
+        bundles2.push_back(abundle2);
+    }
+    bundles1.clear();
+    ql::ir::DebugBundles("After removing empty sections", bundles2);
 
     // sort sections to get consistent output across multiple runs. The output
     // is correct even without this sorting. Sorting is important to test the similarity
@@ -432,7 +517,9 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
     // y s1 | x s0
     // However, with sorting it will always generate:
     // x s0 | y s1
-    for (ql::ir::bundle_t & abundle : bundles)
+    //
+    IOUT("Sorting sections alphabetically according to instruction name ...");
+    for (ql::ir::bundle_t & abundle : bundles2)
     {
         // sorts instructions alphabetically
         abundle.parallel_sections.sort( []
@@ -446,7 +533,14 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
             });
     }
 
-    for (ql::ir::bundle_t & abundle : bundles)
+    // And now generate qisa
+    // each section of a bundle will become a SIMD (all operations in a section are the same, see above)
+    // for the operands of the SIMD, a mask will be used
+    //
+    // kernel prologue (start label) and epilogue are generated by the caller or ir2qisa
+    std::stringstream ssqisa;   // output qisa in here
+    size_t curr_cycle=0; // first instruction should be with pre-interval 1, 'bs 1' FIXME HvS start in cycle 0
+    for (ql::ir::bundle_t & abundle : bundles2)
     {
         std::string iname;
         std::stringstream sspre, ssinst;
@@ -534,176 +628,39 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
                 // two extra instructions need to be added between meas and fmr
                 if(delta > 2)
                 {
-                    ssbundles << "    qwait " << 1 << "\n";
-                    ssbundles << "    qwait " << delta-1 << "\n";
+                    ssqisa << "    qwait " << 1 << "\n";
+                    ssqisa << "    qwait " << delta-1 << "\n";
                 }
                 else
                 {
-                    ssbundles << "    qwait " << 1 << "\n";
-                    ssbundles << "    qwait " << 1 << "\n";
+                    ssqisa << "    qwait " << 1 << "\n";
+                    ssqisa << "    qwait " << 1 << "\n";
                 }
             }
             else
             {
                 if(delta > 1)
-                    ssbundles << "    qwait " << delta << "\n";
+                    ssqisa << "    qwait " << delta << "\n";
             }
-            ssbundles << "    " << ssinst.str() << "\n";
+            ssqisa << "    " << ssinst.str() << "\n";
         }
         else
         {
-            // ssbundles << sspre.str() << ssinst.str() << "\t\t# @" << bcycle << "\n";
-            ssbundles << sspre.str() << ssinst.str() << "\n";
+            // FIXME HvS next addition could be an option, assuming # comment convention of qisa
+            // ssqisa << sspre.str() << ssinst.str() << "\t\t# @" << bcycle << "\n";
+            ssqisa << sspre.str() << ssinst.str() << "\n";
         }
         curr_cycle+=delta;
     }
 
-    auto & lastBundle = bundles.back();
+    auto & lastBundle = bundles2.back();
     int lbduration = lastBundle.duration_in_cycles;
     if(lbduration>1)
-        ssbundles << "    qwait " << lbduration << "\n";
+        ssqisa << "    qwait " << lbduration << "\n";
 
     IOUT("Generating CC-Light QISA [Done]");
-    return ssbundles.str();
+    return ssqisa.str();
 }
-
-void WriteCCLightQisa(std::string prog_name, const ql::quantum_platform & platform, MaskManager & gMaskManager,
-    ql::ir::bundles_t & bundles)
-{
-    IOUT("Generating CC-Light QISA");
-
-    ofstream fout;
-    string qisafname( ql::options::get("output_dir") + "/" + prog_name + ".qisa");
-    fout.open( qisafname, ios::binary);
-    if ( fout.fail() )
-    {
-        EOUT("opening file " << qisafname << std::endl
-                 << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
-        return;
-    }
-
-
-    std::stringstream ssbundles;
-    ssbundles << "start:" << "\n";
-    ssbundles << bundles2qisa(bundles, platform, gMaskManager);
-    ssbundles << "    br always, start" << "\n"
-              << "    nop \n"
-              << "    nop" << endl;
-
-
-    IOUT("Writing CC-Light QISA to " << qisafname);
-    fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
-    fout.close();
-    IOUT("Generating CC-Light QISA [Done]");
-}
-
-
-void WriteCCLightQisaTimeStamped(std::string prog_name, const ql::quantum_platform & platform, MaskManager & gMaskManager,
-    ql::ir::bundles_t & bundles)
-{
-    IOUT("Generating Time-stamped CC-Light QISA");
-    ofstream fout;
-    string qisafname( ql::options::get("output_dir") + "/" + prog_name + ".tqisa");
-    fout.open( qisafname, ios::binary);
-    if ( fout.fail() )
-    {
-        EOUT("opening file " << qisafname << std::endl
-                 << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
-        return;
-    }
-
-
-    std::stringstream ssbundles;
-    size_t curr_cycle=0; // first instruction should be with pre-interval 1, 'bs 1'
-    ssbundles << "start:" << "\n";
-    for (ql::ir::bundle_t & abundle : bundles)
-    {
-        auto bcycle = abundle.start_cycle;
-        auto delta = bcycle - curr_cycle;
-
-        if(delta < 8)
-            ssbundles << std::setw(8) << curr_cycle << ":    bs " << delta << "    ";
-        else
-            ssbundles << std::setw(8) << curr_cycle << ":    qwait " << delta-1 << "\n"
-                      << std::setw(8) << curr_cycle + (delta-1) << ":    bs 1    ";
-
-        for(auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt)
-        {
-            qubit_set_t squbits;
-            qubit_pair_set_t dqubits;
-            auto firstInsIt = secIt->begin();
-
-            auto id = (*(firstInsIt))->name;
-            std::string cc_light_instr_name = get_cc_light_instruction_name(id, platform);
-            auto itype = (*(firstInsIt))->type();
-            auto nOperands = ((*firstInsIt)->operands).size();
-            if(itype == __nop_gate__)
-            {
-                ssbundles << cc_light_instr_name;
-            }
-            else
-            {
-                for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
-                {
-                    if( 1 == nOperands )
-                    {
-                        auto & op = (*insIt)->operands[0];
-                        squbits.push_back(op);
-                    }
-                    else if( 2 == nOperands )
-                    {
-                        auto & op1 = (*insIt)->operands[0];
-                        auto & op2 = (*insIt)->operands[1];
-                        dqubits.push_back( qubit_pair_t(op1,op2) );
-                    }
-                    else
-                    {
-                        throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
-                    }
-                }
-                std::string rname;
-                if( 1 == nOperands )
-                {
-                    rname = gMaskManager.getRegName(squbits);
-                }
-                else if( 2 == nOperands )
-                {
-                    rname = gMaskManager.getRegName(dqubits);
-                }
-                else
-                {
-                    throw ql::exception("Error : only 1 and 2 operand instructions are supported by cc light masks !",false);
-                }
-
-                ssbundles << cc_light_instr_name << " " << rname;
-            }
-
-            if(std::next(secIt) != abundle.parallel_sections.end())
-            {
-                ssbundles << " | ";
-            }
-        }
-        curr_cycle+=delta;
-        ssbundles << "\n";
-    }
-
-    auto & lastBundle = bundles.back();
-    int lbduration = lastBundle.duration_in_cycles;
-    if( lbduration>1 )
-        ssbundles << std::setw(8) << curr_cycle   << ":    qwait " << lbduration << "\n";
-    curr_cycle+=lbduration;
-    ssbundles << std::setw(8) << curr_cycle++ << ":    br always, start" << "\n";
-    ssbundles << std::setw(8) << curr_cycle++ << ":    nop \n";
-    ssbundles << std::setw(8) << curr_cycle++ << ":    nop" << endl;
-
-    IOUT("Writing Time-stamped CC-Light QISA to " << qisafname);
-    fout << gMaskManager.getMaskInstructions() << endl << ssbundles.str() << endl;
-    fout.close();
-
-    IOUT("Generating Time-stamped CC-Light QISA [Done]");
-}
-
-
 
 /**
  * cclight eqasm compiler
@@ -817,7 +774,23 @@ public:
     }
 
 
-    void decompose_post_schedule(ql::ir::bundles_t & bundles_dst,
+    void decompose_post_schedule(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
+    {
+        for(auto &kernel : kernels)
+        {
+            IOUT("Decomposing meta-instructions kernel after post-scheduling: " << kernel.name);
+            if (! kernel.c.empty())
+            {
+                assert(kernel.cycles_valid);
+                ql::ir::bundles_t bundles = ql::ir::bundler(kernel.c, platform.cycle_time);
+                decompose_post_schedule_bundles(bundles, platform);
+                kernel.c = ql::ir::circuiter(bundles);
+                assert(kernel.cycles_valid);
+            }
+        }
+    }
+
+    void decompose_post_schedule_bundles(ql::ir::bundles_t & bundles_dst,
         const ql::quantum_platform& platform)
     {
         auto bundles_src = bundles_dst;
@@ -934,7 +907,7 @@ public:
         DOUT("Clifford optimization on program " << prog_name << " at " << opt << " ...");
 
         ql::report::report_statistics(prog_name, kernels, platform, "in", opt, "# ");
-        ql::report::report_qasm(prog_name, kernels, platform, "in", opt);
+        ql::report::report_ir(prog_name, kernels, platform, "in", opt);
 
         Clifford cliff;
         for(auto &kernel : kernels)
@@ -943,7 +916,7 @@ public:
         }
 
         ql::report::report_statistics(prog_name, kernels, platform, "out", opt, "# ");
-        ql::report::report_qasm(prog_name, kernels, platform, "out", opt);
+        ql::report::report_ir(prog_name, kernels, platform, "out", opt);
     }
 
     void map(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
@@ -956,7 +929,7 @@ public:
         }
 
         ql::report::report_statistics(prog_name, kernels, platform, "in", "mapper", "# ");
-        ql::report::report_qasm(prog_name, kernels, platform, "in", "mapper");
+        ql::report::report_ir(prog_name, kernels, platform, "in", "mapper");
 
         Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
         mapper.Init(&platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
@@ -985,8 +958,6 @@ public:
             duration<double> time_span = t2 - t1;
             timetaken = time_span.count();
 
-            kernel.bundles = ql::ir::bundler(kernel.c, ns_per_cycle);   // assignment to kernel.bundles only for reporting below
-
             ql::report::report_kernel_statistics(ofs, kernel, platform, "# ");
             std::stringstream ss;
             ss << "# ----- swaps added: " << mapper.nswapsadded << "\n";
@@ -1011,13 +982,13 @@ public:
         ql::report::report_string(ofs, ss.str());
         ql::report::report_close(ofs);
 
-        ql::report::report_bundles(prog_name, kernels, platform, "out", "mapper");
+        ql::report::report_ir(prog_name, kernels, platform, "out", "mapper");
     }
 
     void schedule(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform, std::string opt)
     {
         ql::report::report_statistics(prog_name, kernels, platform, "in", "rcscheduler", "# ");
-        ql::report::report_qasm(prog_name, kernels, platform, "in", "rcscheduler");
+        ql::report::report_ir(prog_name, kernels, platform, "in", "rcscheduler");
 
         for(auto &kernel : kernels)
         {
@@ -1027,7 +998,8 @@ public:
                 auto num_creg = kernel.creg_count;
                 std::string     sched_dot;
 
-                kernel.bundles = cc_light_schedule_rc(kernel.c, platform, sched_dot, num_qubits, num_creg);
+                cc_light_schedule_rc(kernel.c, platform, sched_dot, num_qubits, num_creg);
+                kernel.cycles_valid = true; // FIXME HvS move this back into call to right after sort_cycle
 
                 if (ql::options::get("print_dot_graphs") == "yes")
                 {
@@ -1040,7 +1012,7 @@ public:
         }
 
         ql::report::report_statistics(prog_name, kernels, platform, "out", "rcscheduler", "# ");
-        ql::report::report_bundles(prog_name, kernels, platform, "out", "rcscheduler");
+        ql::report::report_ir(prog_name, kernels, platform, "out", "rcscheduler");
     }
 
     /*
@@ -1057,7 +1029,7 @@ public:
     {
         DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");
 
-        ql::report::report_qasm(prog_name, kernels, platform, "in0", "cc_light_compiler");
+        ql::report::report_ir(prog_name, kernels, platform, "in0", "cc_light_compiler");
 
         load_hw_settings(platform);
         // check whether json instruction entries have cc_light_instr attribute
@@ -1069,11 +1041,10 @@ public:
                 FATAL("cc_light_instr not found for " << i);
             }
         }
-        ql::report::report_qasm(prog_name, kernels, platform, "in1", "cc_light_compiler");
+        ql::report::report_ir(prog_name, kernels, platform, "in1", "cc_light_compiler");
 
         for(auto &kernel : kernels)
         {
-            kernel.bundles.clear();         // circuit change coming; destroy bundles
             IOUT("Decomposing kernel: " << kernel.name);
             if (! kernel.c.empty())
             {
@@ -1084,13 +1055,13 @@ public:
             }
         }
 
-        ql::report::report_qasm(prog_name, kernels, platform, "in", "cc_light_compiler");
+        ql::report::report_ir(prog_name, kernels, platform, "in", "cc_light_compiler");
         ql::report::report_statistics(prog_name, kernels, platform, "in", "cc_light_compiler", "# ");
 
         if (ql::options::get("quantumsim") == "yes")
             write_quantumsim_program(prog_name, num_qubits, kernels, platform, "");
-		else if (ql::options::get("quantumsim") == "qsoverlay")
-			write_qsoverlay_program(prog_name, num_qubits, kernels, platform, "", ns_per_cycle, false);
+        else if (ql::options::get("quantumsim") == "qsoverlay")
+            write_qsoverlay_program(prog_name, num_qubits, kernels, platform, "", platform.cycle_time, false);
 
         // compute timetaken, start interval timer here
         double    total_timetaken = 0.0;
@@ -1119,23 +1090,15 @@ public:
         ss << "# Total time taken: " << total_timetaken << "\n";
         ql::report::report_string(ofs, ss.str());
         ql::report::report_close(ofs);
-        ql::report::report_bundles(prog_name, kernels, platform, "out", "cc_light_compiler");
+        ql::report::report_ir(prog_name, kernels, platform, "out", "cc_light_compiler");
 
         // decompose meta-instructions after scheduling
-        for(auto &kernel : kernels)
-        {
-            IOUT("Decomposing meta-instructions kernel after post-scheduling: " << kernel.name);
-            if (! kernel.c.empty())
-            {
-                decompose_post_schedule(kernel.bundles, platform);
-                // after this, kernel.bundles is valid, kernel.circuit is old/invalid
-            }
-        }
+        decompose_post_schedule(prog_name, kernels, platform);
 
         if (ql::options::get("quantumsim") == "yes")
             write_quantumsim_program(prog_name, num_qubits, kernels, platform, "mapped");
-		else if (ql::options::get("quantumsim") == "qsoverlay")
-			write_qsoverlay_program(prog_name, num_qubits, kernels, platform, "mapped", ns_per_cycle, true);
+        else if (ql::options::get("quantumsim") == "qsoverlay")
+            write_qsoverlay_program(prog_name, num_qubits, kernels, platform, "mapped", platform.cycle_time, true);
 
         // generate_opcode_cs_files(platform);
 
@@ -1149,7 +1112,7 @@ public:
             sskernels_qisa << get_qisa_prologue(kernel);
             if (! kernel.c.empty())
             {
-                sskernels_qisa << bundles2qisa(kernel.bundles, platform, mask_manager);
+                sskernels_qisa << ir2qisa(kernel, platform, mask_manager);
             }
             sskernels_qisa << get_qisa_epilogue(kernel);
         }
@@ -1785,26 +1748,29 @@ private:
         DOUT("Adding Gates to Quantumsim program");
         {
             // global writes
-            std::stringstream ssbundles;
-            ssbundles << "\n    sampler = uniform_noisy_sampler(readout_error=readout_error, seed=42)\n";
-            ssbundles << "\n    # add gates\n";
-            fout << ssbundles.str();
+            std::stringstream ssqs;
+            ssqs << "\n    sampler = uniform_noisy_sampler(readout_error=readout_error, seed=42)\n";
+            ssqs << "\n    # add gates\n";
+            fout << ssqs.str();
         }
         for(auto &kernel : kernels)
         {
             DOUT("... adding gates, a new kernel");
-            if (kernel.bundles.empty())
+            assert(kernel.cycles_valid);
+            ql::ir::bundles_t bundles = ql::ir::bundler(kernel.c, platform.cycle_time);
+
+            if (bundles.empty())
             {
                 IOUT("No bundles for adding gates");
             }
             else
             {
-                for ( ql::ir::bundle_t & abundle : kernel.bundles)
+                for ( ql::ir::bundle_t & abundle : bundles)
                 {
                     DOUT("... adding gates, a new bundle");
                     auto bcycle = abundle.start_cycle;
 
-                    std::stringstream ssbundles;
+                    std::stringstream ssqs;
                     for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
                     {
                         DOUT("... adding gates, a new section in a bundle");
@@ -1818,21 +1784,21 @@ private:
                             {
                                 DOUT("... adding gates, a measure");
                                 auto op = operands.back();
-                                ssbundles << "    c.add_qubit(\"m" << op << "\")\n";
-                                ssbundles << "    c.add_gate("
+                                ssqs << "    c.add_qubit(\"m" << op << "\")\n";
+                                ssqs << "    c.add_gate("
                                           << "ButterflyGate("
                                           << "\"q" << op <<"\", "
                                           << "time=" << ((bcycle-1)*ns_per_cycle) << ", "
                                           << "p_exc=0,"
                                           << "p_dec= 0.005)"
                                           << ")\n" ;
-                                ssbundles << "    c.add_measurement("
+                                ssqs << "    c.add_measurement("
                                     << "\"q" << op << "\", "
                                     << "time=" << ((bcycle - 1)*ns_per_cycle) + (duration/4) << ", "
                                     << "output_bit=\"m" << op << "\", "
                                     << "sampler=sampler"
                                     << ")\n";
-                                ssbundles << "    c.add_gate("
+                                ssqs << "    c.add_gate("
                                     << "ButterflyGate("
                                     << "\"q" << op << "\", "
                                     << "time=" << ((bcycle - 1)*ns_per_cycle) + duration/2 << ", "
@@ -1845,45 +1811,45 @@ private:
                                 iname == "x90" or iname == "xm90")
                             {
                                 DOUT("... adding gates, another gate");
-                                ssbundles <<  "    c.add_gate("<< iname << "(" ;
+                                ssqs <<  "    c.add_gate("<< iname << "(" ;
                                 size_t noperands = operands.size();
                                 if( noperands > 0 )
                                 {
                                     for(auto opit = operands.begin(); opit != operands.end()-1; opit++ )
-                                        ssbundles << "\"q" << *opit <<"\", ";
-                                    ssbundles << "\"q" << operands.back()<<"\"";
+                                        ssqs << "\"q" << *opit <<"\", ";
+                                    ssqs << "\"q" << operands.back()<<"\"";
                                 }
-                                ssbundles << ", time=" << ((bcycle - 1)*ns_per_cycle) + (duration/2) << ", dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle))" << endl;
+                                ssqs << ", time=" << ((bcycle - 1)*ns_per_cycle) + (duration/2) << ", dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle))" << endl;
                             }
                             else if( iname == "cz")
                             {
                                DOUT("... adding gates, another gate");
-                                ssbundles <<  "    c.add_gate("<< iname << "(" ;
+                                ssqs <<  "    c.add_gate("<< iname << "(" ;
                                 size_t noperands = operands.size();
                                 if( noperands > 0 )
                                 {
                                     for(auto opit = operands.begin(); opit != operands.end()-1; opit++ )
-                                        ssbundles << "\"q" << *opit <<"\", ";
-                                    ssbundles << "\"q" << operands.back()<<"\"";
+                                        ssqs << "\"q" << *opit <<"\", ";
+                                    ssqs << "\"q" << operands.back()<<"\"";
                                 }
-                                ssbundles << ", time=" << ((bcycle - 1)*ns_per_cycle) + (duration/2) << ", dephase_var=dephase_var))" << endl;
+                                ssqs << ", time=" << ((bcycle - 1)*ns_per_cycle) + (duration/2) << ", dephase_var=dephase_var))" << endl;
                             }
                             else
                             {
                                 DOUT("... adding gates, another gate");
-                                ssbundles <<  "    c.add_gate("<< iname << "(" ;
+                                ssqs <<  "    c.add_gate("<< iname << "(" ;
                                 size_t noperands = operands.size();
                                 if( noperands > 0 )
                                 {
                                     for(auto opit = operands.begin(); opit != operands.end()-1; opit++ )
-                                        ssbundles << "\"q" << *opit <<"\", ";
-                                    ssbundles << "\"q" << operands.back()<<"\"";
+                                        ssqs << "\"q" << *opit <<"\", ";
+                                    ssqs << "\"q" << operands.back()<<"\"";
                                 }
-                                ssbundles << ", time=" << ((bcycle - 1)*ns_per_cycle) + (duration/2) << "))" << endl;
+                                ssqs << ", time=" << ((bcycle - 1)*ns_per_cycle) + (duration/2) << "))" << endl;
                             }
                         }
                     }
-                    fout << ssbundles.str();
+                    fout << ssqs.str();
                 }
                 fout << "    return c";
                 fout << "    \n\n";

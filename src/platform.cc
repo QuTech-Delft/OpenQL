@@ -63,28 +63,6 @@ void quantum_platform::print_info() const
         println("  |-- " << (*i).first);
 }
 
-
-std::string quantum_platform::get_instruction_name(std::string &iname) const
-{
-    std::string instr_name;
-    auto it = instruction_map.find(iname);
-    if (it != instruction_map.end())
-    {
-        custom_gate* g = it->second;
-        instr_name = g->arch_operation_name;
-        if(instr_name.empty())
-        {
-            FATAL("JSON file: field 'arch_operation_name' not defined for instruction '" << iname << "'");
-        }
-    }
-    else
-    {
-        FATAL("JSON file: custom instruction not found: '" << iname << "'");
-    }
-    return instr_name;
-}
-
-
 // find settings for custom gate, preventing JSON exceptions
 const json& quantum_platform::find_instruction(std::string iname) const
 {

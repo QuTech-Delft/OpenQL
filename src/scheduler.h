@@ -805,32 +805,32 @@ public:
     }
 
     // sort circuit by the gates' cycle attribute in non-decreasing order
-    void sort_by_cycle()
+    void sort_by_cycle(ql::circuit *cp)
     {
         DOUT("... before sorting on cycle value");
-        // for ( ql::circuit::iterator gpit = circp->begin(); gpit != circp->end(); gpit++)
+        // for ( ql::circuit::iterator gpit = cp->begin(); gpit != cp->end(); gpit++)
         // {
         //     ql::gate*           gp = *gpit;
         //     DOUT("...... (@" << gp->cycle << ") " << gp->qasm());
         // }
 
         // std::sort doesn't preserve the original order of elements that have equal values but std::stable_sort does
-        std::stable_sort(circp->begin(), circp->end(), cycle_lessthan);
+        std::stable_sort(cp->begin(), cp->end(), cycle_lessthan);
 
         DOUT("... after sorting on cycle value");
-        // for ( ql::circuit::iterator gpit = circp->begin(); gpit != circp->end(); gpit++)
+        // for ( ql::circuit::iterator gpit = cp->begin(); gpit != cp->end(); gpit++)
         // {
         //     ql::gate*           gp = *gpit;
         //     DOUT("...... (@" << gp->cycle << ") " << gp->qasm());
         // }
     }
 
-    // ASAP scheduler without RC, updating circuit and returning bundles
-    ql::ir::bundles_t schedule_asap(std::string & sched_dot)
+    // ASAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
+    void schedule_asap(std::string & sched_dot)
     {
         DOUT("Scheduling ASAP ...");
         set_cycle(ql::forward_scheduling);
-        sort_by_cycle();
+        sort_by_cycle(circp);
 
         if (ql::options::get("print_dot_graphs") == "yes")
         {
@@ -840,15 +840,14 @@ public:
         }
 
         DOUT("Scheduling ASAP [DONE]");
-        return ql::ir::bundler(*circp, cycle_time);
     }
 
-    // ALAP scheduler without RC, updating circuit and returning bundles
-    ql::ir::bundles_t schedule_alap(std::string & sched_dot)
+    // ALAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
+    void schedule_alap(std::string & sched_dot)
     {
         DOUT("Scheduling ALAP ...");
         set_cycle(ql::backward_scheduling);
-        sort_by_cycle();
+        sort_by_cycle(circp);
 
         if (ql::options::get("print_dot_graphs") == "yes")
         {
@@ -858,7 +857,6 @@ public:
         }
 
         DOUT("Scheduling ALAP [DONE]");
-        return ql::ir::bundler(*circp, cycle_time);
     }
 
 
@@ -897,7 +895,7 @@ public:
         if (compensated_one)
         {
             DOUT("... sorting on cycle value after latency compensation");
-            sort_by_cycle();
+            sort_by_cycle(circp);
 
             DOUT("... printing schedule after latency compensation");
             for ( auto & gp : *circp)
@@ -913,8 +911,21 @@ public:
     }
 
     // insert buffer - buffer delays
-    void insert_buffer_delays(ql::ir::bundles_t& bundles, const ql::quantum_platform& platform)
+    /*
+        The intended functionality and the use of insertion of buffer delays are not clear;
+        see tests/test_cc_light.py for examples of use, though.
+        Currently the functionality and code below strongly depend on bundles:
+        only a previous bundle and the current bundle are checked for a pair of operations
+        but the intended delay could be required between a bundler farther back because the duration is longer
+        so the current implementation may not do what it intends.
+        Below, the code is updated to modularity, but it is an exact copy of what it was,
+        with creating bundles from the circuit and updating the circuit from the bundles around it.
+        Once clarity is gained on intended functionality and use, it can be rewritten and corrected.
+    */
+    void insert_buffer_delays(ql::circuit& circ, const ql::quantum_platform& platform)
     {
+        ql::ir::bundles_t bundles = ql::ir::bundler(circ, cycle_time);
+
         DOUT("Buffer-buffer delay insertion ... ");
         std::vector<std::string> operations_prev_bundle;
         size_t buffer_cycles_accum = 0;
@@ -953,6 +964,9 @@ public:
             abundle.start_cycle = abundle.start_cycle + buffer_cycles_accum;
             operations_prev_bundle = operations_curr_bundle;
         }
+
+        circ = ql::ir::circuiter(bundles);
+
         DOUT("Buffer-buffer delay insertion [DONE] ");
     }
 
@@ -1403,7 +1417,7 @@ public:
     // - bundles are collected from the circuit
     // - latency compensation and buffer-buffer delay insertion done
     // the bundles are returned, with private start/duration attributes
-    ql::ir::bundles_t schedule(ql::circuit* circp, ql::scheduling_direction_t dir,
+    void schedule(ql::circuit* circp, ql::scheduling_direction_t dir,
             const ql::quantum_platform& platform, ql::arch::resource_manager_t& rm, std::string& sched_dot)
     {
         DOUT("Scheduling " << (ql::forward_scheduling == dir?"ASAP":"ALAP") << " with RC ...");
@@ -1457,7 +1471,7 @@ public:
         }
 
         DOUT("... sorting on cycle value");
-        sort_by_cycle();
+        sort_by_cycle(circp);
 
         if (ql::backward_scheduling == dir)
         {
@@ -1472,6 +1486,7 @@ public:
             }
             instruction[s]->cycle -= SOURCECycle;   // i.e. becomes 0
         }
+        // FIXME HvS cycles_valid now
 
         if (ql::options::get("print_dot_graphs") == "yes")
         {
@@ -1485,37 +1500,27 @@ public:
 
         latency_compensation(circp, platform);
 
-        ql::ir::bundles_t   bundles;
-        bundles = ql::ir::bundler(*circp, cycle_time);
-
-        insert_buffer_delays(bundles, platform);
+        insert_buffer_delays(*circp, platform);
 
         DOUT("Scheduling " << (ql::forward_scheduling == dir?"ASAP":"ALAP") << " with RC [DONE]");
-        return bundles;
     }
 
-    ql::ir::bundles_t schedule_asap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
+    void schedule_asap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
     {
-        ql::ir::bundles_t   bundles;
         DOUT("Scheduling ASAP");
-        bundles = schedule(circp, ql::forward_scheduling, platform, rm, sched_dot);
-
+        schedule(circp, ql::forward_scheduling, platform, rm, sched_dot);
         DOUT("Scheduling ASAP [DONE]");
-        return bundles;
     }
 
-    ql::ir::bundles_t schedule_alap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
+    void schedule_alap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
     {
-        ql::ir::bundles_t   bundles;
         DOUT("Scheduling ALAP");
-        bundles = schedule(circp, ql::backward_scheduling, platform, rm, sched_dot);
-
+        schedule(circp, ql::backward_scheduling, platform, rm, sched_dot);
         DOUT("Scheduling ALAP [DONE]");
-        return bundles;
     }
 
 // =========== uniform
-    ql::ir::bundles_t schedule_alap_uniform()
+    void schedule_alap_uniform()
     {
         // algorithm based on "Balanced Scheduling and Operation Chaining in High-Level Synthesis for FPGA Designs"
         // by David C. Zaretsky, Gaurav Mittal, Robert P. Dick, and Prith Banerjee
@@ -1539,7 +1544,6 @@ public:
         // Hence, the result resembles an ALAP schedule with excess bundle lengths solved by moving nodes down ("rolling pin").
 
         DOUT("Scheduling ALAP UNIFORM to get bundles ...");
-        ql::ir::bundles_t bundles;
 
         // initialize gp->cycle as ASAP cycles as first approximation of result;
         // note that the circuit doesn't contain the SOURCE and SINK gates but the dependence graph does;
@@ -1719,7 +1723,8 @@ public:
         }   // end curr_cycle loop; curr_cycle is bundle which must be enlarged when too small
 
         // new cycle values computed; reflect this in circuit's gate order
-        sort_by_cycle();
+        sort_by_cycle(circp);
+        // FIXME HvS cycles_valid now
 
         // recompute and print statistics reporting on uniform scheduling performance
         max_gates_per_cycle = 0;
@@ -1744,11 +1749,7 @@ public:
             << "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
             );
 
-        // prefer standard bundler over using the gates_per_cycle data structure
-        bundles = ql::ir::bundler(*circp, cycle_time);
-
-        DOUT("Scheduling ALAP UNIFORM to get bundles [DONE]");
-        return bundles;
+        DOUT("Scheduling ALAP UNIFORM [DONE]");
     }
 
 // =========== printing dot of the dependence graph
@@ -1858,7 +1859,7 @@ public:
     void get_dot(std::string & dot)
     {
         set_cycle(ql::forward_scheduling);
-        sort_by_cycle();
+        sort_by_cycle(circp);
 
         stringstream ssdot;
         get_dot(false, true, ssdot);

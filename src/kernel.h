@@ -26,10 +26,7 @@
 #include "ir.h"
 #include "unitary.h"
 
-
-#ifndef __disable_lemon__
- #include "scheduler.h"
-#endif // __disable_lemon__
+#include "scheduler.h"
 #include "platform.h"
 
 
@@ -56,9 +53,9 @@ public: // FIXME: should be private
     size_t        creg_count;
     kernel_type_t type;
     circuit       c;
-    ql::ir::bundles_t bundles;
+    bool          cycles_valid;
     operation     br_condition;
-    size_t        cycle_time;                               // FIXME: just a copy of platform.cycle_time
+    size_t        cycle_time;                               // FIXME HvS just a copy of platform.cycle_time
 private:
     instruction_map_t instruction_map;
 
@@ -73,6 +70,7 @@ public:
     {
         instruction_map = platform.instruction_map;
         cycle_time = platform.cycle_time;
+        cycles_valid = true;
         // FIXME: check qubit_count and creg_count against platform
         // FIXME: what is the reason we can specify qubit_count and creg_count here anyway
     }
@@ -168,6 +166,7 @@ public:
         std::string gname("rx");    // FIXME: unused
         // to do : rotation decomposition
         c.push_back(new ql::rx(qubit,angle));
+        cycles_valid = false;
     }
 
     void ry(size_t qubit, double angle)
@@ -175,6 +174,7 @@ public:
         std::string gname("ry");    // FIXME: unused
         // to do : rotation decomposition
         c.push_back(new ql::ry(qubit,angle));
+        cycles_valid = false;
     }
 
     void rz(size_t qubit, double angle)
@@ -182,6 +182,7 @@ public:
         std::string gname("rz");    // FIXME: unused
         // to do : rotation decomposition
         c.push_back(new ql::rz(qubit,angle));
+        cycles_valid = false;
     }
 
     void s(size_t qubit)
@@ -278,6 +279,7 @@ public:
     {
         // TODO add custom gate check if needed
         c.push_back(new ql::toffoli(qubit1, qubit2, qubit3));
+        cycles_valid = false;
     }
 
     void swap(size_t qubit1, size_t qubit2)
@@ -293,6 +295,7 @@ public:
     void display()
     {
         c.push_back(new ql::display());
+        cycles_valid = false;
     }
 
     /**
@@ -603,6 +606,11 @@ private:
         }
         else
             result = false;
+
+        if (result)
+        {
+            cycles_valid = false;
+        }
 
         return result;
     }
@@ -1044,6 +1052,10 @@ public:
                 }
             }
         }
+        if (added)
+        {
+            cycles_valid = false;
+        }
         return added;
     }
 
@@ -1079,6 +1091,7 @@ public:
             //COUT("Instructionlist" << ql::utils::to_string(u.instructionlist));
             int end_index = recursiveRelationsForUnitaryDecomposition(u,qubits, u_size, 0);
             DOUT("Total number of gates added: " << end_index);
+            cycles_valid = false;
         }
         else
         {
@@ -1179,6 +1192,7 @@ public:
         // The last one is always controlled from the next qubit to the first qubit
         c.push_back(new ql::rz(qubits.back(),-instruction_list[end_index]));
         c.push_back(new ql::cnot(qubits.end()[-2], qubits.back()));
+        cycles_valid = false;
     }
 
     //controlled qubit is the first in the list.
@@ -1200,6 +1214,7 @@ public:
         // Last one is controlled from the next qubit to the first one. 
         c.push_back(new ql::ry(qubits.back(),-instruction_list[end_index]));
         c.push_back(new ql::cnot(qubits.end()[-2], qubits.back())); 
+        cycles_valid = false;
     }
     // source: https://stackoverflow.com/questions/994593/how-to-do-an-integer-log2-in-c user Todd Lehman
     int uint64_log2(uint64_t n)
@@ -1313,11 +1328,13 @@ public:
         }
 
         c.push_back(new ql::classical(destination, oper));
+        cycles_valid = false;
     }
 
     void classical(std::string operation)
     {
         c.push_back(new ql::classical(operation));
+        cycles_valid = false;
     }
 
     void optimize()
@@ -1353,6 +1370,7 @@ public:
         {
             c = rm.optimize(c);
         }
+        cycles_valid = false;
         DOUT("kernel " << name << " optimize(): circuit after optimizing: ");
         print(c);
         DOUT("... end circuit");
@@ -1389,6 +1407,7 @@ public:
                 ql::circuit& toff_ckt = toff_kernel.get_circuit();
                 cit = c.erase(cit);
                 cit = c.insert(cit, toff_ckt.begin(), toff_ckt.end());
+                cycles_valid = false;
             }
         }
         DOUT("decompose_toffoli() [Done] ");
@@ -1402,7 +1421,6 @@ public:
         std::string scheduler_uniform = ql::options::get("scheduler_uniform");
         std::string kqasm("");
 
-#ifndef __disable_lemon__
         IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
 
         Scheduler sched;
@@ -1413,56 +1431,29 @@ public:
             sched.get_dot(dot);
         }
 
-
-        if("ASAP" == scheduler)
+        if ("ASAP" == scheduler && "no" == scheduler_uniform)
         {
-            if ("yes" == scheduler_uniform)
-            {
-                EOUT("Uniform scheduling not supported with ASAP; please turn on ALAP to perform uniform scheduling");     // FIXME: FATAL?
-            }
-            else if ("no" == scheduler_uniform)
-            {
-                ql::ir::bundles_t bundles = sched.schedule_asap(sched_dot);
-                kqasm = ql::ir::qasm(bundles);
-            }
-            else
-            {
-                EOUT("Unknown scheduler_uniform option value");
-            }
+            sched.schedule_asap(sched_dot); // result in current kernel's circuit (k.c)
         }
-        else if("ALAP" == scheduler)
+        else if ("ALAP" == scheduler && "yes" == scheduler_uniform)
         {
-            if ("yes" == scheduler_uniform)
-            {
-                ql::ir::bundles_t bundles = sched.schedule_alap_uniform();
-                kqasm = ql::ir::qasm(bundles);
-            }
-            else if ("no" == scheduler_uniform)
-            {
-                ql::ir::bundles_t bundles = sched.schedule_alap(sched_dot);
-                kqasm = ql::ir::qasm(bundles);
-            }
-            else
-            {
-                EOUT("Unknown scheduler_uniform option value");
-            }
+            sched.schedule_alap_uniform(); // result in current kernel's circuit (k.c)
+        }
+        else if ("ALAP" == scheduler && "no" == scheduler_uniform)
+        {
+            sched.schedule_alap(sched_dot); // result in current kernel's circuit (k.c)
         }
         else
         {
-            EOUT("Unknown scheduler");
-            throw ql::exception("Unknown scheduler!", false);
+            FATAL("Not supported scheduler options combination: scheduler=" << scheduler << " and scheduler_uniform=" << scheduler_uniform);
         }
         DOUT( scheduler << " scheduling the quantum kernel '" << name << "' DONE");
+        cycles_valid = true;
 
-        // schedulers assigned gatep->cycle; sort circuit on this
-        typedef ql::gate *      gate_p;
-        std::sort(c.begin(), c.end(),
-                [&](gate_p g1, gate_p g2) { return g1->cycle < g2->cycle; }
-        );
-
+        ql::ir::bundles_t bundles;
+        bundles = ql::ir::bundler(c, cycle_time);
+        kqasm = ql::ir::qasm(bundles);
         sched_qasm = get_prologue() + kqasm + get_epilogue();
-
-#endif // __disable_lemon__
     }
 
     /************************************************************************\
