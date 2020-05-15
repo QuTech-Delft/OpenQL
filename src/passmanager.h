@@ -23,12 +23,15 @@ public:
     PassManager(std::string n);
 
     void compile(ql::quantum_program*);
+    void addPassNamed(std::string realPassName, std::string symbolicPassName);
+    AbstractPass* createPass(std::string passName, std::string aliasName);
+    AbstractPass* findPass(std::string passName);
 
 private: 
     void addPass (AbstractPass *pass);
     
     std::string           name;
-    std::list <class AbstractPass*> passes; 
+    std::list <class AbstractPass*> passes;
 
 };
 
