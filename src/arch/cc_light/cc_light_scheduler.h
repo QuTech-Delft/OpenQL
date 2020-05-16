@@ -32,7 +32,7 @@ namespace ql
 {
 namespace arch
 {
-void cc_light_schedule_rc(ql::circuit & ckt, 
+void cc_light_schedule(ql::circuit & ckt, 
     const ql::quantum_platform & platform, std::string & dot, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Resource constraint scheduling of CC-Light instructions ...");

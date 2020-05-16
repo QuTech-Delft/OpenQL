@@ -998,7 +998,7 @@ public:
                 auto num_creg = kernel.creg_count;
                 std::string     sched_dot;
 
-                cc_light_schedule_rc(kernel.c, platform, sched_dot, num_qubits, num_creg);
+                cc_light_schedule(kernel.c, platform, sched_dot, num_qubits, num_creg);
                 kernel.cycles_valid = true; // FIXME HvS move this back into call to right after sort_cycle
 
                 if (ql::options::get("print_dot_graphs") == "yes")
