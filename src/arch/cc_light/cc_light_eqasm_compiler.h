@@ -1029,8 +1029,6 @@ public:
     {
         DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");
 
-        ql::report::report_ir(prog_name, kernels, platform, "in0", "cc_light_compiler");
-
         load_hw_settings(platform);
         // check whether json instruction entries have cc_light_instr attribute
         const json& instruction_settings = platform.instruction_settings;
@@ -1041,7 +1039,6 @@ public:
                 FATAL("cc_light_instr not found for " << i);
             }
         }
-        ql::report::report_ir(prog_name, kernels, platform, "in1", "cc_light_compiler");
 
         for(auto &kernel : kernels)
         {
