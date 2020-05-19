@@ -14,6 +14,7 @@
 #include <iostream>
 #include <fstream>
 #include <list>
+#include "circuit.h"
 
 namespace ql
 {
@@ -59,7 +60,6 @@ namespace ql
             std::stringstream ssqasm;
             size_t curr_cycle=1;        // FIXME HvS prefer to start at 0; also see depgraph creation
 
-            ssqasm << '\n';             // FIXME HvS cf report_ir: qasm vs bundles, does this newline correspond to starting at cycle 1?
             for (bundle_t & abundle : bundles)
             {
                 auto st_cycle = abundle.start_cycle;

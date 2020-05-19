@@ -8,10 +8,10 @@
 
 #include "program.h"
 
-#include <report.h>
 #include <utils.h>
 #include <options.h>
 #include <interactionMatrix.h>
+#include <scheduler.h>
 #include <arch/cbox/cbox_eqasm_compiler.h>
 #include <arch/cc_light/cc_light_eqasm_compiler.h>
 #include <arch/cc/eqasm_backend_cc.h>
@@ -402,10 +402,35 @@ int quantum_program::compile()
     WOUT("compiling " << name << " ...");
     if (kernels.empty())
     {
-        EOUT("compiling a program with no kernels");
-        throw ql::exception("Error: compiling a program with no kernels !",false);
+        FATAL("compiling a program with no kernels !");
     }
 
+    // initialization of program.unique_name that is used by file name generation for reporting and printing
+    // it is the program's name with a suffix appended that represents the number of the run of the program
+    //
+    // objective of this all is that of a later run of the same program, the output files don't overwrite the earlier ones
+    //
+    // do this only if unique_output option is set; if not, just use the program's name and let files overwrite
+    // when set, maintain a seed with the run number; the first run is version 1; the first run uses the program's name
+    // the second and later use the version (2 or larger) as suffix to the program's name
+    unique_name = name;
+    if (ql::options::get("unique_output") == "yes")
+    {
+        int vers;
+        vers = bump_unique_file_version();
+        if (vers > 1)
+        {
+            unique_name = ( name + to_string(vers) );
+            DOUT("new program name after bump_unique_file_version: " << unique_name << " based on version: " << vers);
+        }
+    }
+
+    // from here on front-end passes
+
+    // writer pass of the plain qasm file
+    ql::write_ir(this, platform, ".qasm");
+
+    // optimize pass
     if( ql::options::get("optimize") == "yes" )
     {
         IOUT("optimizing quantum kernels...");
@@ -413,6 +438,7 @@ int quantum_program::compile()
             kernels[k].optimize();
     }
 
+    // decompose_toffoli pass
     auto tdopt = ql::options::get("decompose_toffoli");
     if( tdopt == "AM" || tdopt == "NC" )
     {
@@ -426,36 +452,20 @@ int quantum_program::compile()
     }
     else
     {
-        EOUT("Unknown option '" << tdopt << "' set for decompose_toffoli");
-        throw ql::exception("Error: Unknown option '"+tdopt+"' set for decompose_toffoli !",false);
+        FATAL("Unknown option '" << tdopt << "' set for decompose_toffoli");
     }
 
-    if (ql::options::get("unique_output") == "yes")
-    {
-        int vers;
-        vers = bump_unique_file_version();
-        if (vers > 1)
-        {
-            name = ( name + to_string(vers) );
-            DOUT("new program name after bump_unique_file_version: " << name << " based on version: " << vers);
-        }
-    }
-
-    if( ql::options::get("write_qasm_files") == "yes")
-    {
-        std::stringstream ss_qasm;
-        ss_qasm << ql::options::get("output_dir") << "/" << name << ".qasm";
-        std::string s = qasm();
-
-        IOUT("writing un-scheduled qasm to '" << ss_qasm.str() << "' ...");
-        ql::utils::write_file(ss_qasm.str(), s);
-        DOUT("writing done");
-    }
-
+    // prescheduler pass
     if( ql::options::get("prescheduler") == "yes" )
     {
-        schedule();
+        ql::schedule(this, platform, "prescheduler");
     }
+
+    // writer pass of the scheduled qasm file
+    ql::write_ir(this, platform, "_scheduled.qasm");
+
+
+    // from here backend passes
 
     DOUT("eqasm_compiler_name: " << eqasm_compiler_name);
 
@@ -477,7 +487,7 @@ int quantum_program::compile()
             )
         {
             DOUT("About to call backend_compiler->compile for " << eqasm_compiler_name);
-            backend_compiler->compile(name, kernels, platform);
+            backend_compiler->compile(this, platform);
             DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
         }
         else
@@ -485,7 +495,7 @@ int quantum_program::compile()
             DOUT("Skipped call to backend_compiler->compile for " << eqasm_compiler_name);
 
             // FIXME(WJV): I would suggest to move the fusing to a backend that wants it, and then:
-            // - always call:  backend_compiler->compile(name, kernels, platform);
+            // - always call:  backend_compiler->compile(program, platform);
             // - remove from eqasm_compiler.h: compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& p);
 
             IOUT("fusing quantum kernels...");
@@ -502,7 +512,7 @@ int quantum_program::compile()
             try
             {
                 IOUT("compiling eqasm code...");
-                backend_compiler->compile(name, fused, platform);
+                backend_compiler->compile(unique_name, fused, platform);
             }
             catch (ql::exception &e)
             {
@@ -510,8 +520,8 @@ int quantum_program::compile()
                 throw e;
             }
 
-            IOUT("writing eqasm code to '" << ( ql::options::get("output_dir") + "/" + name+".asm"));
-            backend_compiler->write_eqasm( ql::options::get("output_dir") + "/" + name + ".asm");
+            IOUT("writing eqasm code to '" << ( ql::options::get("output_dir") + "/" + unique_name+".asm"));
+            backend_compiler->write_eqasm( ql::options::get("output_dir") + "/" + unique_name + ".asm");
 
             IOUT("writing traces to '" << ( ql::options::get("output_dir") + "/trace.dat"));
             backend_compiler->write_traces( ql::options::get("output_dir") + "/trace.dat");
@@ -529,7 +539,7 @@ int quantum_program::compile()
         if (default_config)
         {
             std::stringstream ss_config;
-            ss_config << ql::options::get("output_dir") << "/" << name << "_config.json";
+            ss_config << ql::options::get("output_dir") << "/" << unique_name << "_config.json";
             std::string conf_file_name = ss_config.str();
             IOUT("writing sweep points to '" << conf_file_name << "'...");
             ql::utils::write_file(conf_file_name, config);
@@ -550,49 +560,6 @@ int quantum_program::compile()
     IOUT("compilation of program '" << name << "' done.");
 
     return 0;
-}
-
-
-// schedule and write scheduled qasm. Note that the backend may use a different scheduler with different results
-void quantum_program::schedule()
-{
-    ql::report::report_statistics(name, kernels, platform, "in", "prescheduler", "# ");
-
-    std::string sched_qasm("version 1.0\n");
-    sched_qasm += "# this file has been automatically generated by the OpenQL compiler please do not modify it manually.\n";
-    sched_qasm += "qubits " + std::to_string(qubit_count) + "\n";
-
-    IOUT("scheduling the quantum program");
-    for (auto k : kernels)
-    {
-        std::string kernel_sched_qasm;
-        std::string dot;
-        std::string kernel_sched_dot;
-        k.schedule(platform, kernel_sched_qasm, dot, kernel_sched_dot);
-        sched_qasm += kernel_sched_qasm + '\n';
-
-        if(ql::options::get("print_dot_graphs") == "yes")
-        {
-            string fname;
-            fname = ql::options::get("output_dir") + "/" + k.get_name() + "_dependence_graph.dot";
-            IOUT("writing scheduled dot to '" << fname << "' ...");
-            ql::utils::write_file(fname, dot);
-
-            std::string scheduler = ql::options::get("scheduler");
-            fname = ql::options::get("output_dir") + "/" + k.get_name() + scheduler + "_scheduled.dot";
-            IOUT("writing scheduled dot to '" << fname << "' ...");
-            ql::utils::write_file(fname, kernel_sched_dot);
-        }
-    }
-
-    if( ql::options::get("write_qasm_files") == "yes")
-    {
-        string fname = ql::options::get("output_dir") + "/" + name + "_scheduled.qasm";
-        IOUT("writing scheduled qasm to '" << fname << "' ...");
-        ql::utils::write_file(fname, sched_qasm);
-    }
-
-    ql::report::report_statistics(name, kernels, platform, "out", "prescheduler", "# ");
 }
 
 void quantum_program::print_interaction_matrix()

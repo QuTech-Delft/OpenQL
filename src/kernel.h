@@ -29,7 +29,6 @@
 //  #include "unitary.h"
 //#endif
 
-#include "scheduler.h"
 #include "platform.h"
 
 
@@ -1239,6 +1238,7 @@ public:
     std::string get_prologue()
     {
         std::stringstream ss;
+	    ss << "\n";
         ss << "." << name << "\n";
         // ss << name << ":\n";
 
@@ -1416,49 +1416,6 @@ public:
             }
         }
         DOUT("decompose_toffoli() [Done] ");
-    }
-
-    // schedule support for program.h::schedule()
-    void schedule(quantum_platform platform, std::string& sched_qasm,
-        std::string & dot, std::string& sched_dot)
-    {
-        std::string scheduler = ql::options::get("scheduler");
-        std::string scheduler_uniform = ql::options::get("scheduler_uniform");
-        std::string kqasm("");
-
-        IOUT( scheduler << " scheduling the quantum kernel '" << name << "'...");
-
-        Scheduler sched;
-        sched.init(c, platform, qubit_count, creg_count);
-
-        if(ql::options::get("print_dot_graphs") == "yes")
-        {
-            sched.get_dot(dot);
-        }
-
-        if ("ASAP" == scheduler && "no" == scheduler_uniform)
-        {
-            sched.schedule_asap(sched_dot); // result in current kernel's circuit (k.c)
-        }
-        else if ("ALAP" == scheduler && "yes" == scheduler_uniform)
-        {
-            sched.schedule_alap_uniform(); // result in current kernel's circuit (k.c)
-        }
-        else if ("ALAP" == scheduler && "no" == scheduler_uniform)
-        {
-            sched.schedule_alap(sched_dot); // result in current kernel's circuit (k.c)
-        }
-        else
-        {
-            FATAL("Not supported scheduler options combination: scheduler=" << scheduler << " and scheduler_uniform=" << scheduler_uniform);
-        }
-        DOUT( scheduler << " scheduling the quantum kernel '" << name << "' DONE");
-        cycles_valid = true;
-
-        ql::ir::bundles_t bundles;
-        bundles = ql::ir::bundler(c, cycle_time);
-        kqasm = ql::ir::qasm(bundles);
-        sched_qasm = get_prologue() + kqasm + get_epilogue();
     }
 
     /************************************************************************\

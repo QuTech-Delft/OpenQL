@@ -17,7 +17,7 @@
 #include <ir.h>
 #include <eqasm_compiler.h>
 #include <arch/cc_light/cc_light_eqasm.h>
-#include <arch/cc_light/cc_light_scheduler.h>
+#include <scheduler.h>
 #include <mapper.h>
 #include <clifford.h>
 #include <qsoverlay.h>
@@ -774,23 +774,23 @@ public:
     }
 
 
-    void decompose_post_schedule(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
+    void ccl_decompose_post_schedule(quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
     {
-        for(auto &kernel : kernels)
+        for(auto &kernel : programp->kernels)
         {
             IOUT("Decomposing meta-instructions kernel after post-scheduling: " << kernel.name);
             if (! kernel.c.empty())
             {
                 assert(kernel.cycles_valid);
                 ql::ir::bundles_t bundles = ql::ir::bundler(kernel.c, platform.cycle_time);
-                decompose_post_schedule_bundles(bundles, platform);
+                ccl_decompose_post_schedule_bundles(bundles, platform);
                 kernel.c = ql::ir::circuiter(bundles);
                 assert(kernel.cycles_valid);
             }
         }
     }
 
-    void decompose_post_schedule_bundles(ql::ir::bundles_t & bundles_dst,
+    void ccl_decompose_post_schedule_bundles(ql::ir::bundles_t & bundles_dst,
         const ql::quantum_platform& platform)
     {
         auto bundles_src = bundles_dst;
@@ -897,29 +897,29 @@ public:
         IOUT("Post scheduling decomposition [Done]");
     }
 
-    void clifford_optimize(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform, std::string opt)
+    void clifford_optimize(quantum_program* programp, const ql::quantum_platform& platform, std::string opt)
     {
         if (ql::options::get(opt) == "no")
         {
-            DOUT("Clifford optimization on program " << prog_name << " at " << opt << " not DONE");
+            DOUT("Clifford optimization on program " << programp->name << " at " << opt << " not DONE");
             return;
         }
-        DOUT("Clifford optimization on program " << prog_name << " at " << opt << " ...");
+        DOUT("Clifford optimization on program " << programp->name << " at " << opt << " ...");
 
-        ql::report::report_statistics(prog_name, kernels, platform, "in", opt, "# ");
-        ql::report::report_ir(prog_name, kernels, platform, "in", opt);
+        ql::report_statistics(programp, platform, "in", opt, "# ");
+        ql::report_ir(programp, platform, "in", opt);
 
         Clifford cliff;
-        for(auto &kernel : kernels)
+        for(auto &kernel : programp->kernels)
         {
             cliff.Optimize(kernel, opt);
         }
 
-        ql::report::report_statistics(prog_name, kernels, platform, "out", opt, "# ");
-        ql::report::report_ir(prog_name, kernels, platform, "out", opt);
+        ql::report_statistics(programp, platform, "out", opt, "# ");
+        ql::report_ir(programp, platform, "out", opt);
     }
 
-    void map(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
+    void map(quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
     {
         auto mapopt = ql::options::get("mapper");
         if (mapopt == "no" )
@@ -928,19 +928,19 @@ public:
             return;
         }
 
-        ql::report::report_statistics(prog_name, kernels, platform, "in", "mapper", "# ");
-        ql::report::report_ir(prog_name, kernels, platform, "in", "mapper");
+        ql::report_statistics(programp, platform, "in", passname, "# ");
+        ql::report_ir(programp, platform, "in", passname);
 
         Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
         mapper.Init(&platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
 
         std::ofstream   ofs;
-        ofs = ql::report::report_open(prog_name, "out", "mapper");
+        ofs = ql::report_open(programp, "out", passname);
 
         size_t  total_swaps = 0;        // for reporting, data is mapper specific
         size_t  total_moves = 0;        // for reporting, data is mapper specific
         double  total_timetaken = 0.0;  // total over kernels of time taken by mapper
-        for(auto &kernel : kernels)
+        for(auto &kernel : programp->kernels)
         {
             IOUT("Mapping kernel: " << kernel.name);
 
@@ -952,13 +952,15 @@ public:
             mapper.Map(kernel);
                 // kernel.qubit_count starts off as number of virtual qubits, i.e. highest indexed qubit minus 1
                 // kernel.qubit_count is updated by Map to highest index of real qubits used minus -1
+            programp->qubit_count = platform.qubit_number;
+                // program.qubit_count is updated to platform.qubit_number
 
             // computing timetaken, stop interval timer
             high_resolution_clock::time_point t2 = high_resolution_clock::now();
             duration<double> time_span = t2 - t1;
             timetaken = time_span.count();
 
-            ql::report::report_kernel_statistics(ofs, kernel, platform, "# ");
+            ql::report_kernel_statistics(ofs, kernel, platform, "# ");
             std::stringstream ss;
             ss << "# ----- swaps added: " << mapper.nswapsadded << "\n";
             ss << "# ----- of which moves added: " << mapper.nmovesadded << "\n";
@@ -968,51 +970,21 @@ public:
             ss << "# ----- realqubit states before mapper:" << ql::utils::to_string(mapper.rs_in) << "\n";
             ss << "# ----- realqubit states after mapper:" << ql::utils::to_string(mapper.rs_out) << "\n";
             ss << "# ----- time taken: " << timetaken << "\n";
-            ql::report::report_string(ofs, ss.str());
+            ql::report_string(ofs, ss.str());
 
             total_swaps += mapper.nswapsadded;
             total_moves += mapper.nmovesadded;
             total_timetaken += timetaken;
         }
-        ql::report::report_totals_statistics(ofs, kernels, platform, "# ");
+        ql::report_totals_statistics(ofs, programp->kernels, platform, "# ");
         std::stringstream ss;
         ss << "# Total no. of swaps: " << total_swaps << "\n";
         ss << "# Total no. of moves of swaps: " << total_moves << "\n";
         ss << "# Total time taken: " << total_timetaken << "\n";
-        ql::report::report_string(ofs, ss.str());
-        ql::report::report_close(ofs);
+        ql::report_string(ofs, ss.str());
+        ql::report_close(ofs);
 
-        ql::report::report_ir(prog_name, kernels, platform, "out", "mapper");
-    }
-
-    void schedule(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform, std::string opt)
-    {
-        ql::report::report_statistics(prog_name, kernels, platform, "in", "rcscheduler", "# ");
-        ql::report::report_ir(prog_name, kernels, platform, "in", "rcscheduler");
-
-        for(auto &kernel : kernels)
-        {
-            IOUT("Scheduling kernel: " << kernel.name);
-            if (! kernel.c.empty())
-            {
-                auto num_creg = kernel.creg_count;
-                std::string     sched_dot;
-
-                cc_light_schedule(kernel.c, platform, sched_dot, num_qubits, num_creg);
-                kernel.cycles_valid = true; // FIXME HvS move this back into call to right after sort_cycle
-
-                if (ql::options::get("print_dot_graphs") == "yes")
-                {
-                    std::stringstream fname;
-                    fname << ql::options::get("output_dir") << "/" << kernel.name << "_" << opt << ".dot";
-                    IOUT("writing " << opt << " dependence graph dot file to '" << fname.str() << "' ...");
-                    ql::utils::write_file(fname.str(), sched_dot);
-                }
-            }
-        }
-
-        ql::report::report_statistics(prog_name, kernels, platform, "out", "rcscheduler", "# ");
-        ql::report::report_ir(prog_name, kernels, platform, "out", "rcscheduler");
+        ql::report_ir(programp, platform, "out", passname);
     }
 
     /*
@@ -1024,10 +996,10 @@ public:
     }
 
     // kernel level compilation
-    void compile(std::string prog_name, std::vector<quantum_kernel>& kernels,
-        const ql::quantum_platform& platform)
+    void compile(quantum_program* programp, const ql::quantum_platform& platform)
     {
-        DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");
+        DOUT("Compiling " << programp->kernels.size() << " kernels to generate CCLight eQASM ... ");
+        std::string unique_name = programp->unique_name;
 
         load_hw_settings(platform);
         // check whether json instruction entries have cc_light_instr attribute
@@ -1040,7 +1012,7 @@ public:
             }
         }
 
-        for(auto &kernel : kernels)
+        for(auto &kernel : programp->kernels)
         {
             IOUT("Decomposing kernel: " << kernel.name);
             if (! kernel.c.empty())
@@ -1052,26 +1024,26 @@ public:
             }
         }
 
-        ql::report::report_ir(prog_name, kernels, platform, "in", "cc_light_compiler");
-        ql::report::report_statistics(prog_name, kernels, platform, "in", "cc_light_compiler", "# ");
+        ql::report_ir(programp, platform, "in", "cc_light_compiler");
+        ql::report_statistics(programp, platform, "in", "cc_light_compiler", "# ");
 
         if (ql::options::get("quantumsim") == "yes")
-            write_quantumsim_program(prog_name, num_qubits, kernels, platform, "");
+            write_quantumsim_program(programp, num_qubits, platform, "");
         else if (ql::options::get("quantumsim") == "qsoverlay")
-            write_qsoverlay_program(prog_name, num_qubits, kernels, platform, "", platform.cycle_time, false);
+            write_qsoverlay_program(programp, num_qubits, platform, "", platform.cycle_time, false);
 
         // compute timetaken, start interval timer here
         double    total_timetaken = 0.0;
         using namespace std::chrono;
         high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
-        clifford_optimize(prog_name, kernels, platform, "clifford_premapper");
+        clifford_optimize(programp, platform, "clifford_premapper");
 
-        map(prog_name, kernels, platform);
+        map(programp, platform, "mapper");
 
-        clifford_optimize(prog_name, kernels, platform, "clifford_postmapper");
+        clifford_optimize(programp, platform, "clifford_postmapper");
 
-        schedule(prog_name, kernels, platform, "rcscheduler");
+        ql::rcschedule(programp, platform, "rcscheduler");
 
         // computing timetaken, stop interval timer
         high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -1080,22 +1052,22 @@ public:
 
         // report totals over all kernels, over all eqasm passes contributing to mapping
         std::ofstream   ofs;
-        ofs = ql::report::report_open(prog_name, "out", "cc_light_compiler");
-        for (auto& k : kernels) { ql::report::report_kernel_statistics(ofs, k, platform, "# "); }
-        ql::report::report_totals_statistics(ofs, kernels, platform, "# ");
+        ofs = ql::report_open(programp, "out", "cc_light_compiler");
+        for (auto& k : programp->kernels) { ql::report_kernel_statistics(ofs, k, platform, "# "); }
+        ql::report_totals_statistics(ofs, programp->kernels, platform, "# ");
         std::stringstream ss;
         ss << "# Total time taken: " << total_timetaken << "\n";
-        ql::report::report_string(ofs, ss.str());
-        ql::report::report_close(ofs);
-        ql::report::report_ir(prog_name, kernels, platform, "out", "cc_light_compiler");
+        ql::report_string(ofs, ss.str());
+        ql::report_close(ofs);
+        ql::report_ir(programp, platform, "out", "cc_light_compiler");
 
         // decompose meta-instructions after scheduling
-        decompose_post_schedule(prog_name, kernels, platform);
+        ccl_decompose_post_schedule(programp, platform, "ccl_decompose_post_schedule");
 
         if (ql::options::get("quantumsim") == "yes")
-            write_quantumsim_program(prog_name, num_qubits, kernels, platform, "mapped");
+            write_quantumsim_program(programp, num_qubits, platform, "mapped");
         else if (ql::options::get("quantumsim") == "qsoverlay")
-            write_qsoverlay_program(prog_name, num_qubits, kernels, platform, "mapped", platform.cycle_time, true);
+            write_qsoverlay_program(programp, num_qubits, platform, "mapped", platform.cycle_time, true);
 
         // generate_opcode_cs_files(platform);
 
@@ -1103,7 +1075,7 @@ public:
         MaskManager mask_manager;
         std::stringstream ssqisa, sskernels_qisa;
         sskernels_qisa << "start:" << std::endl;
-        for(auto &kernel : kernels)
+        for(auto &kernel : programp->kernels)
         {
             sskernels_qisa << "\n" << kernel.name << ":" << std::endl;
             sskernels_qisa << get_qisa_prologue(kernel);
@@ -1121,7 +1093,7 @@ public:
 
         // write cc-light qisa file
         std::ofstream fout;
-        std::string qisafname( ql::options::get("output_dir") + "/" + prog_name + ".qisa");
+        std::string qisafname( ql::options::get("output_dir") + "/" + unique_name + ".qisa");
         IOUT("Writing CC-Light QISA to " << qisafname);
         fout.open( qisafname, ios::binary);
         if ( fout.fail() )
@@ -1580,12 +1552,11 @@ private:
 private:
     // write cc_light scheduled bundles for quantumsim
     // when cc_light independent, it should be extracted and put in src/quantumsim.h
-    void write_quantumsim_program( std::string prog_name, size_t num_qubits,
-        std::vector<quantum_kernel>& kernels, const ql::quantum_platform & platform, std::string suffix)
+    void write_quantumsim_program( quantum_program* programp, size_t num_qubits, const ql::quantum_platform & platform, std::string suffix)
     {
         IOUT("Writing scheduled Quantumsim program");
         ofstream fout;
-        string qfname( ql::options::get("output_dir") + "/" + "quantumsim_" + prog_name + "_" + suffix + ".py");
+        string qfname( ql::options::get("output_dir") + "/" + "quantumsim_" + programp->unique_name + "_" + suffix + ".py");
         DOUT("Writing scheduled Quantumsim program to " << qfname);
         IOUT("Writing scheduled Quantumsim program to " << qfname);
         fout.open( qfname, ios::binary);
@@ -1668,7 +1639,7 @@ private:
 
         fout << "\n# create a circuit\n";
         fout << "def circuit_generated(t1=np.inf, t2=np.inf, dephasing_axis=None, dephasing_angle=None, dephase_var=0, readout_error=0.0) :\n";
-        fout << "    c = Circuit(title=\"" << prog_name << "\")\n";
+        fout << "    c = Circuit(title=\"" << programp->unique_name << "\")\n";
 
         DOUT("Adding qubits to Quantumsim program");
         fout << "\n    # add qubits\n";
@@ -1699,11 +1670,11 @@ private:
         size_t count =  platform.hardware_settings["qubit_number"];
 
         // want to ignore unused qubits below
-        MapperAssert (kernels.size() <= 1);
+        MapperAssert (programp->kernels.size() <= 1);
         std::vector<size_t> check_usecount;
         check_usecount.resize(count, 0);
 
-        for (auto & gp: kernels.front().c)
+        for (auto & gp: programp->kernels.front().c)
         {
             switch(gp->type())
             {
@@ -1750,7 +1721,7 @@ private:
             ssqs << "\n    # add gates\n";
             fout << ssqs.str();
         }
-        for(auto &kernel : kernels)
+        for(auto &kernel : programp->kernels)
         {
             DOUT("... adding gates, a new kernel");
             assert(kernel.cycles_valid);
@@ -1850,12 +1821,12 @@ private:
                 }
                 fout << "    return c";
                 fout << "    \n\n";
-                ql::report::report_kernel_statistics(fout, kernel, platform, "    # ");
+                ql::report_kernel_statistics(fout, kernel, platform, "    # ");
             }
         }
-        ql::report::report_string(fout, "    \n");
-        ql::report::report_string(fout, "    # Program-wide statistics:\n");
-        ql::report::report_totals_statistics(fout, kernels, platform, "    # ");
+        ql::report_string(fout, "    \n");
+        ql::report_string(fout, "    # Program-wide statistics:\n");
+        ql::report_totals_statistics(fout, programp->kernels, platform, "    # ");
         fout << "    return c";
 
         fout.close();

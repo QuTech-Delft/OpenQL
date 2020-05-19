@@ -12,8 +12,7 @@
 
 #include <fstream>
 
-#include <circuit.h>
-#include <kernel.h>
+#include <program.h>
 #include <platform.h>
 
 typedef std::vector<std::string> eqasm_t;
@@ -41,7 +40,7 @@ namespace ql
         /*
          * compiles multiple kernels to a single eQASM
          */
-        virtual void compile(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& plat)
+        virtual void compile(ql::quantum_program* programp, const ql::quantum_platform& plat)
         {
         }
 

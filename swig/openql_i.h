@@ -111,7 +111,7 @@ public:
 class Unitary
 {
 public:
-    string name;
+    std::string name;
 //    ql::unitary * unitary;
 
     Unitary(std::string name, std::vector<std::complex<double>> matrix) : name(name)
