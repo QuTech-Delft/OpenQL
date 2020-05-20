@@ -234,7 +234,7 @@ namespace ql
      * write the IR
      * in a file with a name that contains the program unique name and the given extension
      */
-    void write_ir(ql::quantum_program*          programp,
+    void write_ir_extension(ql::quantum_program*          programp,
                 const ql::quantum_platform&     platform,
                 const std::string               extension
                )
@@ -243,6 +243,26 @@ namespace ql
         fname = report_compose_write_name(programp->unique_name, extension);
         report_write_ir(fname, programp, platform);
     }
+
+    /*
+     * write the IR
+     * in a file with a name that contains the program unique name and an extension defined by the pass_name
+     */
+    void write_ir(ql::quantum_program*          programp,
+                const ql::quantum_platform&     platform,
+                const std::string               pass_name
+               )
+    {
+        std::string       extension;
+
+        // next is ugly; must be done by built-in pass class option with different value for each concrete pass
+        if (pass_name == "initialqasmwriter") extension = ".qasm";
+        else if (pass_name == "scheduledqasmwriter") extension = "_scheduled.qasm";
+        else FATAL("write_ir: pass_name " << pass_name << " unknown; don't know which extension to generate");
+
+        write_ir_extension(programp, platform, extension);
+    }
+
 
     /*
      * composes the report file's name
@@ -455,6 +475,79 @@ namespace ql
         report_totals_statistics(ofs, programp->kernels, platform, comment_prefix);
         report_close(ofs);
         // DOUT("... reporting report_statistics [done]");
+    }
+
+    /*
+     * support a unique file called 'get("output_dir")/name.unique'
+     * it is a seed to create unique output files (qasm, report, etc.) for the same program (with name 'name')
+     * - when the unique file is not there, it is created with the value 0 (which is then the current value)
+     *   otherwise, it just reads the current value from that file
+     * - it then increments the current value by 1, stores it in the file and returns this value
+     * since this may be the first time that the output_dir is used, it warns when that doesn't exist
+     */
+    int report_bump_unique_file_version(ql::quantum_program* programp)
+    {
+        std::stringstream ss_unique;
+        ss_unique << ql::options::get("output_dir") << "/" << programp->name << ".unique";
+    
+        std::fstream ufs;
+        int vers;
+    
+        // retrieve old version number
+        ufs.open (ss_unique.str(), std::fstream::in);
+        if (!ufs.is_open())
+        {
+            // no file there, initialize old version number to 0
+            ufs.open(ss_unique.str(), std::fstream::out);
+            if (!ufs.is_open())
+            {
+                FATAL("Cannot create: " << ss_unique.str() << ". Probably output directory " << ql::options::get("output_dir") << " does not exist");
+            }
+            ufs << 0 << std::endl;
+            vers = 0;
+        }
+        else
+        {
+            // read stored number
+            ufs >> vers;
+        }
+        ufs.close();
+    
+        // increment to get new one, store it for a later run (so in a file) and return
+        vers++;
+        ufs.open(ss_unique.str(), std::fstream::out);
+        ufs << vers << std::endl;
+        ufs.close();
+    
+        return vers;
+    }
+
+    /*
+     * initialization of program.unique_name that is used by file name generation for reporting and printing
+     * it is the program's name with a suffix appended that represents the number of the run of the program
+     *
+     * objective of this all is that of a later run of the same program, the output files don't overwrite the earlier ones
+     *
+     * do this only if unique_output option is set; if not, just use the program's name and let files overwrite
+     * when set, maintain a seed with the run number; the first run is version 1; the first run uses the program's name
+     * the second and later use the version (2 or larger) as suffix to the program's name
+     */
+    void report_init(ql::quantum_program*      programp,
+                const ql::quantum_platform&    platform,
+                const std::string              pass_name
+               )
+    {
+	    programp->unique_name = programp->name;
+	    if (ql::options::get("unique_output") == "yes")
+	    {
+	        int vers;
+	        vers = report_bump_unique_file_version(programp);
+	        if (vers > 1)
+	        {
+	            programp->unique_name = ( programp->name + std::to_string(vers) );
+	            DOUT("Unique program name after bump_unique_file_version: " << programp->unique_name << " based on version: " << vers);
+	        }
+	    }
     }
 
 } // ql namespace

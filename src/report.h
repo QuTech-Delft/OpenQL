@@ -15,12 +15,12 @@ namespace ql
 {
     /*
      * write IR as an independent pass
-     * - write_ir(programp, platform, extension)
+     * - write_ir(programp, platform, pass_name)
      *      writes the IR of each kernel; in bundles format when cycles_valid of each kernel
      *
-     * reporting IR before ("in") and after ("out") executing a pass ("passname")
+     * reporting IR before ("in") and after ("out") executing a pass ("pass_name")
      * only when global option write_qasm_files is "yes".
-     * - report_ir(programp, platform, in or out, passname):
+     * - report_ir(programp, platform, in or out, pass_name):
      *      writes the IR of each kernel; in bundles format when cycles_valid of each kernel
      *
      * reporting statistics before ("in") and after ("out") executing a pass ("pass_name")
@@ -40,15 +40,19 @@ namespace ql
      *      with the totals of the statistics of the given kernels 
      * - report_string: add the given string to the ofstream
      * - report_close: close the report file's ofstream again
+     *
+     * initialization
+     * - report_init(programp, platform, pass_name)
+     *      initializes unique_name facility to have different file names for different compiler runs
      */
 
     /*
      * write the IR
-     * in a file with a name that contains the program unique name and the given extension
+     * in a file with a name that contains the program unique name and an extension defined by the pass_name
      */
     void write_ir(ql::quantum_program*          programp,
                 const ql::quantum_platform&     platform,
-                const std::string               extension
+                const std::string               pass_name
                );
 
     /*
@@ -114,6 +118,21 @@ namespace ql
                 const std::string               in_or_out,
                 const std::string               pass_name,
                 const std::string               comment_prefix
+               );
+
+    /*
+     * initialization of program.unique_name that is used by file name generation for reporting and printing
+     * it is the program's name with a suffix appended that represents the number of the run of the program
+     *
+     * objective of this all is that of a later run of the same program, the output files don't overwrite the earlier ones
+     *
+     * do this only if unique_output option is set; if not, just use the program's name and let files overwrite
+     * when set, maintain a seed with the run number; the first run is version 1; the first run uses the program's name
+     * the second and later use the version (2 or larger) as suffix to the program's name
+     */
+    void report_init(ql::quantum_program*      programp,
+                const ql::quantum_platform&    platform,
+                const std::string              pass_name
                );
 
 } // ql namespace
