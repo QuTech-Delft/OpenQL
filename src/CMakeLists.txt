@@ -6,6 +6,7 @@ ADD_LIBRARY(ql
   platform.cc
   program.cc
   compiler.cc
+  decompose_toffoli.cc
   optimizer.cc
   passmanager.cc
   passes.cc

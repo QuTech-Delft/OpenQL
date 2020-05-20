@@ -57,7 +57,6 @@ public: // FIXME: should be private
     bool          cycles_valid;
     operation     br_condition;
     size_t        cycle_time;                               // FIXME HvS just a copy of platform.cycle_time
-private:
     instruction_map_t instruction_map;
 
 public:
@@ -1339,43 +1338,6 @@ public:
     {
         c.push_back(new ql::classical(operation));
         cycles_valid = false;
-    }
-
-    void decompose_toffoli()
-    {
-        DOUT("decompose_toffoli()");
-        for( auto cit = c.begin(); cit != c.end(); ++cit )
-        {
-            auto g = *cit;
-            ql::gate_type_t gtype = g->type();
-            std::vector<size_t> goperands = g->operands;
-
-            ql::quantum_kernel toff_kernel("toff_kernel");
-            toff_kernel.instruction_map = instruction_map;
-            toff_kernel.qubit_count = qubit_count;
-            toff_kernel.cycle_time = cycle_time;
-
-            if( __toffoli_gate__ == gtype )
-            {
-                size_t cq1 = goperands[0];
-                size_t cq2 = goperands[1];
-                size_t tq = goperands[2];
-                auto opt = ql::options::get("decompose_toffoli");
-                if ( opt == "AM" )
-                {
-                    toff_kernel.controlled_cnot_AM(tq, cq1, cq2);
-                }
-                else
-                {
-                    toff_kernel.controlled_cnot_NC(tq, cq1, cq2);
-                }
-                ql::circuit& toff_ckt = toff_kernel.get_circuit();
-                cit = c.erase(cit);
-                cit = c.insert(cit, toff_ckt.begin(), toff_ckt.end());
-                cycles_valid = false;
-            }
-        }
-        DOUT("decompose_toffoli() [Done] ");
     }
 
     /************************************************************************\
