@@ -193,13 +193,6 @@ OptimizerPass::OptimizerPass(std::string name)
 void OptimizerPass::runOnProgram(ql::quantum_program *programp)
 {
     DOUT("run OptimizePass with name = " << getPassName() << " on program " << programp->name);
-    
-    if( ql::options::get("optimize") == "yes" )
-    {
-        IOUT("optimizing quantum kernels...");
-        for (auto& k : programp->kernels)
-            k.optimize();
-    }
 }
   
     /**

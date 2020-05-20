@@ -1914,32 +1914,35 @@ void schedule_kernel(quantum_kernel& kernel, quantum_platform platform,
  */
 void schedule(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
 {
-    ql::report_statistics(programp, platform, "in", passname, "# ");
-    ql::report_ir(programp, platform, "in", passname);
-
-    IOUT("scheduling the quantum program");
-    for (auto& k : programp->kernels)
+    if( ql::options::get("prescheduler") == "yes" )
     {
-        std::string dot;
-        std::string kernel_sched_dot;
-        schedule_kernel(k, platform, dot, kernel_sched_dot);
-
-        if(ql::options::get("print_dot_graphs") == "yes")
+        ql::report_statistics(programp, platform, "in", passname, "# ");
+        ql::report_ir(programp, platform, "in", passname);
+    
+        IOUT("scheduling the quantum program");
+        for (auto& k : programp->kernels)
         {
-            string fname;
-            fname = ql::options::get("output_dir") + "/" + k.get_name() + "_dependence_graph.dot";
-            IOUT("writing scheduled dot to '" << fname << "' ...");
-            ql::utils::write_file(fname, dot);
-
-            std::string scheduler_opt = ql::options::get("scheduler");
-            fname = ql::options::get("output_dir") + "/" + k.get_name() + scheduler_opt + "_scheduled.dot";
-            IOUT("writing scheduled dot to '" << fname << "' ...");
-            ql::utils::write_file(fname, kernel_sched_dot);
+            std::string dot;
+            std::string kernel_sched_dot;
+            schedule_kernel(k, platform, dot, kernel_sched_dot);
+    
+            if(ql::options::get("print_dot_graphs") == "yes")
+            {
+                string fname;
+                fname = ql::options::get("output_dir") + "/" + k.get_name() + "_dependence_graph.dot";
+                IOUT("writing scheduled dot to '" << fname << "' ...");
+                ql::utils::write_file(fname, dot);
+    
+                std::string scheduler_opt = ql::options::get("scheduler");
+                fname = ql::options::get("output_dir") + "/" + k.get_name() + scheduler_opt + "_scheduled.dot";
+                IOUT("writing scheduled dot to '" << fname << "' ...");
+                ql::utils::write_file(fname, kernel_sched_dot);
+            }
         }
+    
+        ql::report_statistics(programp, platform, "out", passname, "# ");
+        ql::report_ir(programp, platform, "out", passname);
     }
-
-    ql::report_statistics(programp, platform, "out", passname, "# ");
-    ql::report_ir(programp, platform, "out", passname);
 }
 
 void rcschedule_kernel(ql::quantum_kernel& kernel,

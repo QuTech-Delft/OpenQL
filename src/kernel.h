@@ -22,7 +22,6 @@
 #include "options.h"
 #include "gate.h"
 #include "classical.h"
-#include "optimizer.h"
 #include "ir.h"
 
 //#ifdef __UNITARY_PROCESSING__
@@ -1340,45 +1339,6 @@ public:
     {
         c.push_back(new ql::classical(operation));
         cycles_valid = false;
-    }
-
-    void optimize()
-    {
-        DOUT("kernel " << name << " optimize(): circuit before optimizing: ");
-        print(c);
-        DOUT("... end circuit");
-        ql::rotations_merging rm;
-        if (contains_measurements(c))
-        {
-            DOUT("kernel contains measurements ...");
-            // decompose the circuit
-            std::vector<circuit*> cs = split_circuit(c);
-            std::vector<circuit > cs_opt;
-            for (size_t i=0; i<cs.size(); ++i)
-            {
-                if (!contains_measurements(*cs[i]))
-                {
-                    circuit opt = rm.optimize(*cs[i]);
-                    cs_opt.push_back(opt);
-                }
-                else
-                    cs_opt.push_back(*cs[i]);
-            }
-            // for (int i=0; i<cs_opt.size(); ++i)
-            // print(cs_opt[i]);
-            c.clear( );
-            for (size_t i=0; i<cs_opt.size(); ++i)
-                for (size_t j=0; j<cs_opt[i].size(); j++)
-                    c.push_back(cs_opt[i][j]);
-        }
-        else
-        {
-            c = rm.optimize(c);
-        }
-        cycles_valid = false;
-        DOUT("kernel " << name << " optimize(): circuit after optimizing: ");
-        print(c);
-        DOUT("... end circuit");
     }
 
     void decompose_toffoli()

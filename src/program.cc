@@ -12,6 +12,7 @@
 #include <options.h>
 #include <interactionMatrix.h>
 #include <scheduler.h>
+#include <optimizer.h>
 #include <arch/cbox/cbox_eqasm_compiler.h>
 #include <arch/cc_light/cc_light_eqasm_compiler.h>
 #include <arch/cc/eqasm_backend_cc.h>
@@ -369,13 +370,8 @@ int quantum_program::compile()
     // writer pass of the initial qasm file (program.qasm)
     ql::write_ir(this, platform, "initialqasmwriter");
 
-    // optimize pass
-    if( ql::options::get("optimize") == "yes" )
-    {
-        IOUT("optimizing quantum kernels...");
-        for (size_t k=0; k<kernels.size(); ++k)
-            kernels[k].optimize();
-    }
+    // rotation_optimize pass
+    rotation_optimize(this, platform, "rotation_optimize");
 
     // decompose_toffoli pass
     auto tdopt = ql::options::get("decompose_toffoli");
@@ -395,10 +391,7 @@ int quantum_program::compile()
     }
 
     // prescheduler pass
-    if( ql::options::get("prescheduler") == "yes" )
-    {
-        ql::schedule(this, platform, "prescheduler");
-    }
+    ql::schedule(this, platform, "prescheduler");
 
     // writer pass of the scheduled qasm file (program_scheduled.qasm)
     ql::write_ir(this, platform, "scheduledqasmwriter");
