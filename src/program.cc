@@ -68,14 +68,12 @@ quantum_program::quantum_program(std::string n, quantum_platform platf, size_t n
     }
     else
     {
-        EOUT("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
-        throw std::exception();
+        FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }
 
     if(qubit_count > platform.qubit_number)
     {
-        EOUT("number of qubits requested in program '" + std::to_string(qubit_count) + "' is greater than the qubits available in platform '" + std::to_string(platform.qubit_number) + "'" );
-        throw ql::exception("[x] error : number of qubits requested in program '"+std::to_string(qubit_count)+"' is greater than the qubits available in platform '"+std::to_string(platform.qubit_number)+"' !",false);
+        FATAL("number of qubits requested in program '" + std::to_string(qubit_count) + "' is greater than the qubits available in platform '" + std::to_string(platform.qubit_number) + "'" );
     }
 }
 
@@ -356,7 +354,7 @@ int quantum_program::compile()
     ql::write_ir(this, platform, "scheduledqasmwriter");
 
 
-    // from here backend passes
+    // from here on backend passes
 
     DOUT("eqasm_compiler_name: " << eqasm_compiler_name);
 
@@ -375,6 +373,7 @@ int quantum_program::compile()
     {
         if (eqasm_compiler_name == "cc_light_compiler"
             || eqasm_compiler_name == "eqasm_backend_cc"
+            || eqasm_compiler_name == "qumis_compiler"
             )
         {
             DOUT("About to call backend_compiler->compile for " << eqasm_compiler_name);
@@ -383,39 +382,7 @@ int quantum_program::compile()
         }
         else
         {
-            DOUT("Skipped call to backend_compiler->compile for " << eqasm_compiler_name);
-
-            // FIXME(WJV): I would suggest to move the fusing to a backend that wants it, and then:
-            // - always call:  backend_compiler->compile(program, platform);
-            // - remove from eqasm_compiler.h: compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& p);
-
-            IOUT("fusing quantum kernels...");
-            ql::circuit fused;
-            for (size_t k=0; k<kernels.size(); ++k)
-            {
-                ql::circuit& kc = kernels[k].get_circuit();
-                for(size_t i=0; i<kernels[k].iterations; i++)
-                {
-                    fused.insert(fused.end(), kc.begin(), kc.end());
-                }
-            }
-
-            try
-            {
-                IOUT("compiling eqasm code...");
-                backend_compiler->compile(unique_name, fused, platform);
-            }
-            catch (ql::exception &e)
-            {
-                EOUT("[x] error : eqasm_compiler.compile() : compilation interrupted due to fatal error.");
-                throw e;
-            }
-
-            IOUT("writing eqasm code to '" << ( ql::options::get("output_dir") + "/" + unique_name+".asm"));
-            backend_compiler->write_eqasm( ql::options::get("output_dir") + "/" + unique_name + ".asm");
-
-            IOUT("writing traces to '" << ( ql::options::get("output_dir") + "/trace.dat"));
-            backend_compiler->write_traces( ql::options::get("output_dir") + "/trace.dat");
+            FATAL("Backend compiler not supported: " << eqasm_compiler_name);
         }
     }
 

@@ -31,7 +31,7 @@ public:
     ~eqasm_backend_cc() = default;
 
     void compile(quantum_program* programp, const ql::quantum_platform &platform) override;
-    void compile(std::string prog_name, ql::circuit &ckt, ql::quantum_platform &platform) override;
+    // void compile(std::string prog_name, ql::circuit &ckt, ql::quantum_platform &platform) override;
 
 private:
     std::string kernelLabel(ql::quantum_kernel &k);

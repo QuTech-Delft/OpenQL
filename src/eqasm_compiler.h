@@ -35,7 +35,7 @@ namespace ql
 	     * compile must be implemented by all compilation backends.
          * compiles a single (fused) circuit
 	     */
-        virtual void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& plat) = 0;
+        // virtual void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& plat) = 0;
 
         /*
          * compiles multiple kernels to a single eQASM

@@ -29,15 +29,10 @@
 #include <options.h>
 #include <platform.h>
 #include <ir.h>
-#include <circuit.h>
-// #include <scheduler.h>
-// Including cc_light_resource_manager.h was of no use, hence it was deleted.
-// #include <arch/cc_light/cc_light_resource_manager.h>
-//
-// Including cc_light_scheduler.h caused duplicate function definitions during make;
+// Including scheduler.h causes duplicate function definitions during make/linking;
 // instead of including it with its function bodies, declare those functions here and now ...
-// WIP to create cc_schedule[_rc] after having solved scheduler's dependence on cc_light (HvS)
-// #include <arch/cc_light/cc_light_scheduler.h>
+// FIXME HvS create schedule.cc (but this waits until scheduler and mapper have been disentangled)
+// #include <scheduler.h>
 namespace ql
 {
     namespace arch
@@ -46,6 +41,8 @@ namespace ql
     void ql:schedule(quantum_program* programp, const ql::quantum_platform & platform, std::string passname);
 #else
 #if OPT_CC_SCHEDULE_RC
+    // FIXME To make rcschedule work on CC, make a src/arch/cc/cc_resource_manager.h
+    // and update src/resource_manager.h to include it and create a cc_resource_manager.
     void ql::rcschedule(quantum_program* programp, const ql::quantum_platform & platform, std::string passname);
 #endif
 #endif
@@ -116,7 +113,6 @@ void eqasm_backend_cc::compile(quantum_program* programp, const ql::quantum_plat
     codegen.program_start(programp->unique_name);
 
     // generate code for all kernels
-    // FIXME: try kernel.h::schedule()
 #if OPT_CC_SCHEDULE_KERNEL_H    // FIXME: WIP
     ql::schedule(programp, platform, "prescheduler");
 #else
@@ -160,11 +156,6 @@ void eqasm_backend_cc::compile(quantum_program* programp, const ql::quantum_plat
     DOUT("Compiling Central Controller program [Done]");
 }
 
-
-void eqasm_backend_cc::compile(std::string prog_name, ql::circuit &ckt, ql::quantum_platform &platform)
-{
-    FATAL("Circuit compilation not implemented, because it does not support classical kernel operations");
-}
 
 // based on cc_light_eqasm_compiler.h::classical_instruction2qisa/decompose_instructions
 // NB: input instructions defined in classical.h::classical

@@ -54,10 +54,6 @@ public:
     WriterPass(std::string name);
     
     void runOnProgram(ql::quantum_program *program);
-    
-private:
-    std::string qasm();
-    int bump_unique_file_version(std::string name);
 };
 
 /**
