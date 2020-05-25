@@ -30,6 +30,9 @@ namespace ql
           opt_name2opt_val["log_level"] = "LOG_NOTHING";
           opt_name2opt_val["output_dir"] = "test_output";
           opt_name2opt_val["unique_output"] = "no";
+          opt_name2opt_val["write_qasm_files"] = "no";
+          opt_name2opt_val["write_report_files"] = "no";
+
           opt_name2opt_val["optimize"] = "no";
           opt_name2opt_val["use_default_gates"] = "yes";
           opt_name2opt_val["decompose_toffoli"] = "no";
@@ -63,9 +66,6 @@ namespace ql
           opt_name2opt_val["maptiebreak"] = "random";
           opt_name2opt_val["mapusemoves"] = "yes";
           opt_name2opt_val["mapreverseswap"] = "yes";
-
-          opt_name2opt_val["write_qasm_files"] = "yes";
-          opt_name2opt_val["write_report_files"] = "yes";
 
           // add options with default values and list of possible values
           app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"],
