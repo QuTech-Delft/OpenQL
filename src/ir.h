@@ -104,23 +104,6 @@ namespace ql
             return ssqasm.str();
         }
 
-        inline void write_qasm(bundles_t & bundles)
-        {
-            std::ofstream fout;
-            std::string fname( ql::options::get("output_dir") + "/ir.qasm" );
-            fout.open( fname, std::ios::binary);
-            if ( fout.fail() )
-            {
-                EOUT("Error opening file " << fname << std::endl
-                         << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
-                return;
-            }
-
-            fout << qasm(bundles);
-            fout.close();
-        }
-
-
         // create a bundled internal representation from the circuit with valid cycle information
         //
         // assumes gatep->cycle attribute reflects the cycle assignment;

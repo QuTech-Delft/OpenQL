@@ -907,7 +907,7 @@ public:
         DOUT("Clifford optimization on program " << programp->name << " at " << opt << " ...");
 
         ql::report_statistics(programp, platform, "in", opt, "# ");
-        ql::report_ir(programp, platform, "in", opt);
+        ql::report_qasm(programp, platform, "in", opt);
 
         Clifford cliff;
         for(auto &kernel : programp->kernels)
@@ -916,7 +916,7 @@ public:
         }
 
         ql::report_statistics(programp, platform, "out", opt, "# ");
-        ql::report_ir(programp, platform, "out", opt);
+        ql::report_qasm(programp, platform, "out", opt);
     }
 
     void map(quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
@@ -929,7 +929,7 @@ public:
         }
 
         ql::report_statistics(programp, platform, "in", passname, "# ");
-        ql::report_ir(programp, platform, "in", passname);
+        ql::report_qasm(programp, platform, "in", passname);
 
         Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
         mapper.Init(&platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
@@ -984,7 +984,7 @@ public:
         ql::report_string(ofs, ss.str());
         ql::report_close(ofs);
 
-        ql::report_ir(programp, platform, "out", passname);
+        ql::report_qasm(programp, platform, "out", passname);
     }
 
     /*
@@ -1024,7 +1024,7 @@ public:
             }
         }
 
-        ql::report_ir(programp, platform, "in", "cc_light_compiler");
+        ql::report_qasm(programp, platform, "in", "cc_light_compiler");
         ql::report_statistics(programp, platform, "in", "cc_light_compiler", "# ");
 
         if (ql::options::get("quantumsim") == "yes")
@@ -1059,7 +1059,7 @@ public:
         ss << "# Total time taken: " << total_timetaken << "\n";
         ql::report_string(ofs, ss.str());
         ql::report_close(ofs);
-        ql::report_ir(programp, platform, "out", "cc_light_compiler");
+        ql::report_qasm(programp, platform, "out", "cc_light_compiler");
 
         // decompose meta-instructions after scheduling
         ccl_decompose_post_schedule(programp, platform, "ccl_decompose_post_schedule");

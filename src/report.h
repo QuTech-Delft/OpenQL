@@ -14,14 +14,14 @@
 namespace ql
 {
     /*
-     * write IR as an independent pass
-     * - write_ir(programp, platform, pass_name)
-     *      writes the IR of each kernel; in bundles format when cycles_valid of each kernel
+     * write qasm as an independent pass
+     * - write_qasm(programp, platform, pass_name)
+     *      writes the qasm of each kernel; it is in bundles format only when cycles_valid of all kernels
      *
-     * reporting IR before ("in") and after ("out") executing a pass ("pass_name")
+     * reporting qasm before ("in") and after ("out") executing a pass ("pass_name")
      * only when global option write_qasm_files is "yes".
-     * - report_ir(programp, platform, in or out, pass_name):
-     *      writes the IR of each kernel; in bundles format when cycles_valid of each kernel
+     * - report_qasm(programp, platform, in or out, pass_name):
+     *      writes qasm of each kernel; it is in bundles format only when cycles_valid of all kernels
      *
      * reporting statistics before ("in") and after ("out") executing a pass ("pass_name")
      * only when option write_report_files is "yes":
@@ -42,24 +42,24 @@ namespace ql
      * - report_close: close the report file's ofstream again
      *
      * initialization
-     * - report_init(programp, platform, pass_name)
+     * - report_init(programp, platform)
      *      initializes unique_name facility to have different file names for different compiler runs
      */
 
     /*
-     * write the IR
+     * write qasm
      * in a file with a name that contains the program unique name and an extension defined by the pass_name
      */
-    void write_ir(ql::quantum_program*          programp,
+    void write_qasm(ql::quantum_program*        programp,
                 const ql::quantum_platform&     platform,
                 const std::string               pass_name
                );
 
     /*
-     * reports the IR
+     * reports qasm
      * in a file with a name that contains the program unique name and the place from where the report is done
      */
-    void report_ir(ql::quantum_program*         programp,
+    void report_qasm(ql::quantum_program*         programp,
                 const ql::quantum_platform&     platform,
                 const std::string               in_or_out,
                 const std::string               pass_name
@@ -131,8 +131,7 @@ namespace ql
      * the second and later use the version (2 or larger) as suffix to the program's name
      */
     void report_init(ql::quantum_program*      programp,
-                const ql::quantum_platform&    platform,
-                const std::string              pass_name
+                const ql::quantum_platform&    platform
                );
 
 } // ql namespace

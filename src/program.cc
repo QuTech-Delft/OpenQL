@@ -42,12 +42,11 @@ quantum_program::quantum_program(std::string n, quantum_platform platf, size_t n
     backend_compiler    = NULL;
     if (eqasm_compiler_name =="")
     {
-        EOUT("eqasm compiler name must be specified in the hardware configuration file !");
-        throw std::exception();
+        FATAL("eqasm compiler name must be specified in the hardware configuration file !");
     }
     else if (eqasm_compiler_name == "none")
     {
-        needs_backend_compiler = false;;
+        needs_backend_compiler = false;
     }
     else if (eqasm_compiler_name == "qx")
     {
@@ -57,14 +56,17 @@ quantum_program::quantum_program(std::string n, quantum_platform platf, size_t n
     else if (eqasm_compiler_name == "qumis_compiler")
     {
         backend_compiler = new ql::arch::cbox_eqasm_compiler();
+        assert(backend_compiler);
     }
     else if (eqasm_compiler_name == "cc_light_compiler" )
     {
         backend_compiler = new ql::arch::cc_light_eqasm_compiler();
+        assert(backend_compiler);
     }
     else if (eqasm_compiler_name == "eqasm_backend_cc" )
     {
         backend_compiler = new ql::arch::eqasm_backend_cc();
+        assert(backend_compiler);
     }
     else
     {
@@ -75,6 +77,10 @@ quantum_program::quantum_program(std::string n, quantum_platform platf, size_t n
     {
         FATAL("number of qubits requested in program '" + std::to_string(qubit_count) + "' is greater than the qubits available in platform '" + std::to_string(platform.qubit_number) + "'" );
     }
+
+    // report/write_qasm initialization
+    ql::report_init(this, platform);
+
 }
 
 void quantum_program::add(ql::quantum_kernel &k)
@@ -335,11 +341,8 @@ int quantum_program::compile()
 
     // from here on front-end passes
 
-    // report/write_ir initialization pass
-    ql::report_init(this, platform, "report_init");
-
     // writer pass of the initial qasm file (program.qasm)
-    ql::write_ir(this, platform, "initialqasmwriter");
+    ql::write_qasm(this, platform, "initialqasmwriter");
 
     // rotation_optimize pass
     rotation_optimize(this, platform, "rotation_optimize");
@@ -351,14 +354,14 @@ int quantum_program::compile()
     ql::schedule(this, platform, "prescheduler");
 
     // writer pass of the scheduled qasm file (program_scheduled.qasm)
-    ql::write_ir(this, platform, "scheduledqasmwriter");
+    ql::write_qasm(this, platform, "scheduledqasmwriter");
 
 
     // from here on backend passes
 
     DOUT("eqasm_compiler_name: " << eqasm_compiler_name);
 
-    if (! needs_backend_compiler)
+    if (!needs_backend_compiler)
     {
         WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
         return 0;
@@ -371,19 +374,9 @@ int quantum_program::compile()
     }
     else
     {
-        if (eqasm_compiler_name == "cc_light_compiler"
-            || eqasm_compiler_name == "eqasm_backend_cc"
-            || eqasm_compiler_name == "qumis_compiler"
-            )
-        {
-            DOUT("About to call backend_compiler->compile for " << eqasm_compiler_name);
-            backend_compiler->compile(this, platform);
-            DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
-        }
-        else
-        {
-            FATAL("Backend compiler not supported: " << eqasm_compiler_name);
-        }
+        DOUT("About to call backend_compiler->compile for " << eqasm_compiler_name);
+        backend_compiler->compile(this, platform);
+        DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
     }
 
     if (sweep_points.size())

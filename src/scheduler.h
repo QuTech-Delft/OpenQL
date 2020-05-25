@@ -1917,7 +1917,7 @@ void schedule(ql::quantum_program* programp, const ql::quantum_platform& platfor
     if( ql::options::get("prescheduler") == "yes" )
     {
         ql::report_statistics(programp, platform, "in", passname, "# ");
-        ql::report_ir(programp, platform, "in", passname);
+        ql::report_qasm(programp, platform, "in", passname);
     
         IOUT("scheduling the quantum program");
         for (auto& k : programp->kernels)
@@ -1941,7 +1941,7 @@ void schedule(ql::quantum_program* programp, const ql::quantum_platform& platfor
         }
     
         ql::report_statistics(programp, platform, "out", passname, "# ");
-        ql::report_ir(programp, platform, "out", passname);
+        ql::report_qasm(programp, platform, "out", passname);
     }
 }
 
@@ -1981,7 +1981,7 @@ void rcschedule_kernel(ql::quantum_kernel& kernel,
 void rcschedule(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
 {
     ql::report_statistics(programp, platform, "in", passname, "# ");
-    ql::report_ir(programp, platform, "in", passname);
+    ql::report_qasm(programp, platform, "in", passname);
 
     for(auto &kernel : programp->kernels)
     {
@@ -2005,7 +2005,7 @@ void rcschedule(ql::quantum_program* programp, const ql::quantum_platform& platf
     }
 
     ql::report_statistics(programp, platform, "out", passname, "# ");
-    ql::report_ir(programp, platform, "out", passname);
+    ql::report_qasm(programp, platform, "out", passname);
 }
 
 } // ql namespace

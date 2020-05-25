@@ -64,8 +64,8 @@ namespace ql
           opt_name2opt_val["mapusemoves"] = "yes";
           opt_name2opt_val["mapreverseswap"] = "yes";
 
-          opt_name2opt_val["write_qasm_files"] = "no";
-          opt_name2opt_val["write_report_files"] = "no";
+          opt_name2opt_val["write_qasm_files"] = "yes";
+          opt_name2opt_val["write_report_files"] = "yes";
 
           // add options with default values and list of possible values
           app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"],
