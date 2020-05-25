@@ -19,7 +19,7 @@ namespace ql
      *
      * reporting qasm before ("in") and after ("out") executing a pass ("passname")
      * only when global option write_qasm_files is "yes".
-     * - report_ir(programp, platform, in or out, passname):
+     * - report_qasm(programp, platform, in or out, passname):
      *      writes the qasm of each kernel; in bundles format when cycles_valid of each kernel
      *
      * reporting statistics before ("in") and after ("out") executing a pass ("pass_name")
@@ -284,7 +284,7 @@ namespace ql
      * reports the qasm
      * in a file with a name that contains the program name and the place from where the report is done
      */
-    void report_ir(quantum_program*             programp,
+    void report_qasm(quantum_program*           programp,
                 const ql::quantum_platform&     platform,
                 const std::string               in_or_out,
                 const std::string               pass_name
