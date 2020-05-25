@@ -414,11 +414,6 @@ public:
         program->compile();
     }
 
-    std::string qasm()
-    {
-        return program->qasm();
-    }
-
     std::string microcode()
     {
 #if OPT_MICRO_CODE

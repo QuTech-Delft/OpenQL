@@ -69,7 +69,6 @@ class Test_program(unittest.TestCase):
             'write_interaction_matrix',
             'compile',
             'microcode',
-            'qasm',
             'set_sweep_points',
             'get_sweep_points']
         self.assertTrue(set(program_methods).issubset(dir(p)))
