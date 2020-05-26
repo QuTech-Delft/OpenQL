@@ -59,6 +59,11 @@ namespace ql
         {
             std::stringstream ssqasm;
             size_t curr_cycle=1;        // FIXME HvS prefer to start at 0; also see depgraph creation
+            std::string skipgate = "wait";
+            if (ql::options::get("issue_skip_319") == "yes")
+            {
+                skipgate = "skip";
+            }
 
             for (bundle_t & abundle : bundles)
             {
@@ -66,7 +71,7 @@ namespace ql
                 auto delta = st_cycle - curr_cycle;
                 // DOUT("Printing bundle with st_cycle: " << st_cycle);
                 if(delta>1)
-                    ssqasm << "    wait " << delta-1 << '\n';   // FIXME HvS wait in external representation is like barrier; replace wait here by skip
+                    ssqasm << "    " << skipgate << " " << delta-1 << '\n';
                 // else
                 //   ssqasm << '\n';
 
@@ -98,7 +103,7 @@ namespace ql
                 auto & last_bundle = bundles.back();
                 int lsduration = last_bundle.duration_in_cycles;
                 if( lsduration > 1 )
-                    ssqasm << "    wait " << lsduration -1 << '\n';
+                    ssqasm << "    " << skipgate << " " << lsduration -1 << '\n';
             }
 
             return ssqasm.str();
@@ -128,7 +133,7 @@ namespace ql
             for (auto & gp: circ)
             {
                 DOUT(". adding gate(@" << gp->cycle << ")  " << gp->qasm());
-                if ( gp->type() == ql::gate_type_t::__wait_gate__ ||
+                if ( gp->type() == ql::gate_type_t::__wait_gate__ ||    // FIXME HvS: wait must be written as well
                      gp->type() == ql::gate_type_t::__dummy_gate__
                    )
                 {

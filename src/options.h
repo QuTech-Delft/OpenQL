@@ -37,6 +37,7 @@ namespace ql
           opt_name2opt_val["use_default_gates"] = "yes";
           opt_name2opt_val["decompose_toffoli"] = "no";
           opt_name2opt_val["quantumsim"] = "no";
+          opt_name2opt_val["issue_skip_319"] = "no";
 
           opt_name2opt_val["scheduler"] = "ALAP";
           opt_name2opt_val["scheduler_uniform"] = "no";
@@ -84,6 +85,7 @@ namespace ql
           app->add_set_ignore_case("--clifford_postmapper", opt_name2opt_val["clifford_postmapper"], {"yes", "no"}, "clifford optimize after mapping yes or not", true);
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "AM"}, "Type of decomposition used for toffoli", true);
           app->add_set_ignore_case("--quantumsim", opt_name2opt_val["quantumsim"], {"no", "yes", "qsoverlay"}, "Produce quantumsim output, and of which kind", true);
+          app->add_set_ignore_case("--issue_skip_319", opt_name2opt_val["issue_skip_319"], {"no", "yes"}, "Issue skip instead of wait in bundles", true);
           app->add_option("--backend_cc_map_input_file", opt_name2opt_val["backend_cc_map_input_file"], "Name of CC input map file", true);
           app->add_set_ignore_case("--cz_mode", opt_name2opt_val["cz_mode"], {"manual", "auto"}, "CZ mode", true);
 
@@ -116,6 +118,7 @@ namespace ql
                     << "use_default_gates: " << opt_name2opt_val["use_default_gates"] << std::endl
                     << "decompose_toffoli: " << opt_name2opt_val["decompose_toffoli"] << std::endl
                     << "quantumsim: " << opt_name2opt_val["quantumsim"] << std::endl
+                    << "issue_skip_319: " << opt_name2opt_val["issue_skip_319"] << std::endl
                     << "prescheduler: " << opt_name2opt_val["prescheduler"] << std::endl
                     << "scheduler: " << opt_name2opt_val["scheduler"] << std::endl
                     << "scheduler_uniform: " << opt_name2opt_val["scheduler_uniform"] << std::endl
