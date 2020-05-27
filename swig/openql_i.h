@@ -103,7 +103,7 @@ public:
     }
 };
 
-// typedef std::complex<double> Complex;
+typedef std::complex<double> Complex;
 
 /**
  * quantum unitary matrix interface
@@ -112,22 +112,22 @@ class Unitary
 {
 public:
     std::string name;
-//    ql::unitary * unitary;
+    ql::unitary * unitary;
 
     Unitary(std::string name, std::vector<std::complex<double>> matrix) : name(name)
     {
-//        unitary = new ql::unitary(name, matrix);
+        unitary = new ql::unitary(name, matrix);
     }
 
     void decompose()
     {
- //       unitary->decompose();
+        unitary->decompose();
     }
 
     ~Unitary()
     {
         // destroy unitary
-//        delete(unitary);
+        delete(unitary);
     }
 };
 
@@ -287,9 +287,7 @@ public:
 
     void gate(Unitary &u, std::vector<size_t> qubits)
     {
-#ifdef __UNITARY_PROCESSING__
         kernel->gate(*(u.unitary), qubits);
-#endif
     }
 
     void classical(CReg & destination, Operation& operation)
