@@ -144,9 +144,9 @@ public:
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
     void init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
     {
-        DOUT("Dependence graph creation ...");
-        qubit_count = qcount;
-        creg_count = ccount;
+        DOUT("Dependence graph creation ... #qubits = " << platform.qubit_number);
+        qubit_count = platform.qubit_number;///qcount; @todo-rn: DDG creation should not depend on #qubits
+        creg_count = platform.qubit_number;///ccount; @todo-rn: DDG creation should not depend on #cregs
         size_t qubit_creg_count = qubit_count + creg_count;
         DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", total=" << qubit_creg_count);
         cycle_time = platform.cycle_time;

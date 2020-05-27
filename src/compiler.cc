@@ -64,9 +64,16 @@ void quantum_compiler::setPassOption(std::string passName, std::string optionNam
 {
     DOUT(" Set option " << optionName << " = " << optionValue << " for pass " << passName); 
     
-    AbstractPass *pass = passManager->findPass(passName);  
-    assert(pass);
-    pass->setPassOption(optionName, optionValue);
+    if (passName == "ALL")
+    {
+        passManager->setPassOptionAll(optionName, optionValue);
+    }
+    else
+    {
+        AbstractPass *pass = passManager->findPass(passName);  
+        assert(pass);
+        pass->setPassOption(optionName, optionValue);
+    }
 }
 
     /**

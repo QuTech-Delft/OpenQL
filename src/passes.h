@@ -23,9 +23,11 @@ class AbstractPass
 public:
     virtual void runOnProgram(ql::quantum_program *program){};
     
+    AbstractPass(std::string name);
     std::string  getPassName();
     void setPassName(std::string name);
     void setPassOption(std::string optionName, std::string optionValue);
+    class PassOptions* getPassOptions() {return passOptions;};
     void createPassOptions();
     
 private:
@@ -39,7 +41,11 @@ private:
 class ReaderPass: public AbstractPass 
 {
 public:
-    ReaderPass(std::string name);
+    /**
+     * @brief  Reader pass constructor
+     * @param  Name of the read pass
+     */
+    ReaderPass(std::string name):AbstractPass(name){};
     
     void runOnProgram(ql::quantum_program *program);
     
@@ -51,7 +57,11 @@ public:
 class WriterPass: public AbstractPass 
 {
 public:
-    WriterPass(std::string name);
+    /**
+     * @brief  Writer pass constructor
+     * @param  Name of the read pass
+     */
+    WriterPass(std::string name):AbstractPass(name){};
     
     void runOnProgram(ql::quantum_program *program);
 };
@@ -59,10 +69,29 @@ public:
 /**
  * Optimizer Pass 
  */
-class OptimizerPass: public AbstractPass 
+class RotationOptimizerPass: public AbstractPass 
 {
 public:
-    OptimizerPass(std::string name);
+    /**
+     * @brief  Rotation optimizer pass constructor
+     * @param  Name of the optimized pass
+     */
+    RotationOptimizerPass(std::string name):AbstractPass(name){};
+    
+    void runOnProgram(ql::quantum_program *program);
+};
+
+/**
+ * Decompose Toffoli Pass 
+ */
+class DecomposeToffoliPass: public AbstractPass 
+{
+public:
+    /**
+     * @brief  Rotation optimizer pass constructor
+     * @param  Name of the optimized pass
+     */
+    DecomposeToffoliPass(std::string name):AbstractPass(name){};
     
     void runOnProgram(ql::quantum_program *program);
 };
@@ -73,11 +102,44 @@ public:
 class SchedulerPass: public AbstractPass 
 {
 public:
-    SchedulerPass(std::string name);
+    /**
+     * @brief  Scheduler pass constructor
+     * @param  Name of the scheduler pass
+     */
+    SchedulerPass(std::string name):AbstractPass(name){};
 
     void runOnProgram(ql::quantum_program *program);
 };
 
+/**
+ * Backend Compiler Pass 
+ */
+class BackendCompilerPass: public AbstractPass 
+{
+public:
+    /**
+     * @brief  Scheduler pass constructor
+     * @param  Name of the scheduler pass
+     */
+    BackendCompilerPass(std::string name):AbstractPass(name){};
+
+    void runOnProgram(ql::quantum_program *program);
+};
+
+/**
+ * Report Statistics Pass 
+ */
+class ReportStatisticsPass: public AbstractPass 
+{
+public:
+    /**
+     * @brief  Statistics pass constructor
+     * @param  Name of the scheduler pass
+     */
+    ReportStatisticsPass(std::string name):AbstractPass(name){};
+
+    void runOnProgram(ql::quantum_program *program);
+};
 
 /**
  * Pass Options Class
@@ -88,8 +150,8 @@ public:
       PassOptions(std::string app_name);
       void print_current_values();
       void help();
-      void set(std::string opt_name, std::string opt_value);
-      std::string get(std::string opt_name);
+      void setOption(std::string opt_name, std::string opt_value);
+      std::string getOption(std::string opt_name);
       
 private:
       CLI::App * app;

@@ -22,9 +22,27 @@ PassManager::PassManager(std::string name): name(name) {}
      */
 void PassManager::compile(ql::quantum_program *program)
 {
+
+   bool hasPlatform = false;
+   
    DOUT("In PassManager::compile ... ");
    for(auto pass : passes)
     {
+        ///@todo-rn: implement option to check if following options are actually needed for a pass
+        ///@note-rn: currently(0.8.1.dev), all passes require platform as API parameter, and some passes depend on the nqubits internally. Therefore, these are passed through by setting the program with these fields here. However, this should change in the future since compiling for a simulator might not require a platform, and the number of qubits could be optional.
+        
+        if(!program->qubit_count)
+            program->qubit_count = (size_t)(std::stoi(pass->getPassOptions()->getOption("nqubits")));
+        assert(program->qubit_count);
+        
+        if(!hasPlatform)
+        {
+            std::string hwconfig = pass->getPassOptions()->getOption("hwconfig");   
+            program->platform = *(new ql::quantum_platform("testPlatform",hwconfig));
+            hasPlatform = true;
+        }
+        assert(program->platform);
+   
         pass->runOnProgram(program);
     }
 }
@@ -54,20 +72,30 @@ void PassManager::addPassNamed(std::string realPassName, std::string symbolicPas
 AbstractPass* PassManager::createPass(std::string passName, std::string aliasName)
 {
     DOUT("In PassManager::createPass");
-    AbstractPass *pass;
     
     /// @todo-rn: check that aliasname has not been used before!
+    bool passfound = false;
+    AbstractPass* pass;
     
     /** Search between available passes in OpenQL. 
      * @note PassManager::createPass defines the collection of passes available in OpenQL. Whenever a new pass is added to the compiler, this list should be extended in order for the pass to be found.
      */
     
-    if (passName == "Reader") return new ReaderPass(aliasName);
-    if (passName == "Writer") return new WriterPass(aliasName);
-    if (passName == "Optimizer") return new OptimizerPass(aliasName);
-    if (passName == "Scheduler") return new SchedulerPass(aliasName);
+    if (passName == "Reader") {pass = new ReaderPass(aliasName); passfound = true;}
+    if (passName == "Writer") {pass = new WriterPass(aliasName); passfound = true;}
+    if (passName == "RotationOptimizer") {pass = new RotationOptimizerPass(aliasName); passfound = true;}
+    if (passName == "DecomposeToffoli") {pass = new DecomposeToffoliPass(aliasName); passfound = true;}
+    if (passName == "Scheduler") {pass = new SchedulerPass(aliasName); passfound = true;}
+    if (passName == "BackendCompiler") {pass = new BackendCompilerPass(aliasName); passfound = true;}
+    if (passName == "ReportStatistics") {pass = new ReportStatisticsPass(aliasName); passfound = true;}
     
-    WOUT("========================= Pass not found! ============================");
+    if (!passfound) 
+    {
+        EOUT(" !!!Error: Pass " << aliasName << " not found!!!");
+        exit(1);
+    }
+
+    return pass;
 }
 
     /**
@@ -78,7 +106,8 @@ AbstractPass* PassManager::createPass(std::string passName, std::string aliasNam
 AbstractPass* PassManager::findPass(std::string passName)
 {
     DOUT("In PassManager::findPass");
-    
+    AbstractPass *pass;
+    bool passFound = false;
     std::list<class AbstractPass*>::iterator it;
     
     for( it = passes.begin(); it != passes.end(); ++it)
@@ -86,11 +115,19 @@ AbstractPass* PassManager::findPass(std::string passName)
         if((*it)->getPassName() == passName)
         {
             DOUT(" Found pass " << passName);
-            return (*it);
+            pass = (*it);
+            passFound = true;
+            break;
         }
     }
     
-    WOUT(" PASS " << passName << " not found!");
+    if(!passFound)
+    {
+        EOUT("!!!Error: Pass " << passName << " not found!");
+        exit(1);
+    }
+    
+    return pass;    
 }
 
     /**
@@ -102,5 +139,25 @@ void PassManager::addPass(AbstractPass* pass)
     DOUT("In PassManager::addPass");
     passes.push_back(pass);
 }
+
+    /**
+     * @brief   Sets global option, i.e., for all passes
+     * @param   optionName String option name
+     * @param   optionValue String value of the option
+     */
+void PassManager::setPassOptionAll(std::string optionName, std::string optionValue)
+{
+    DOUT("In PassManager::setPassOptionAll");
+    
+    std::list<class AbstractPass*>::iterator it;
+    
+    for( it = passes.begin(); it != passes.end(); ++it)
+    {
+        DOUT(" Pass: " << (*it)->getPassName() << " --> set option " << optionName << " to " << optionValue << std::endl);
+        
+        (*it)->setPassOption(optionName, optionValue);
+    }    
+}
+
 
 } // ql
