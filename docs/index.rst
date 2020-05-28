@@ -52,6 +52,7 @@ While the instruction-level code is platform-specific, the quantum assembly code
    :caption: Tutorials:
 
    qx_example
+   dqcsim_example
 
 
 Indices and tables

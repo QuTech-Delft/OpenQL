@@ -251,29 +251,32 @@ public:
 class classical : public gate
 {
 public:
-    int imm_value;
+    // int imm_value;
     cmat_t m;
 
     classical(creg& dest, operation & oper)
     {
+        DOUT("Classical gate constructor with destination for " << oper.operation_name);
         name = oper.operation_name;
         duration = 20;
-        operands.push_back(dest.id);
+        creg_operands.push_back(dest.id);
         if(name == "ldi")
         {
-            imm_value = (oper.operands[0])->value;
+            int_operand = (oper.operands[0])->value;
+            DOUT("... setting int_operand of " << oper.operation_name << " to " << int_operand);
         }
         else
         {
             for(auto & op : oper.operands)
             {
-                operands.push_back(op->id);
+                creg_operands.push_back(op->id);
             }
         }
     }
 
     classical(std::string operation)
     {
+        DOUT("Classical gate constructor for " << operation);
         str::lower_case(operation);
         if((operation == "nop"))
         {
@@ -291,29 +294,22 @@ public:
     instruction_t qasm()
     {
         std::string iopers;
-        int sz = operands.size();
+        int sz = creg_operands.size();
         for(int i=0; i<sz; ++i)
         {
             if(i==sz-1)
-                iopers += " r" + std::to_string(operands[i]);
+                iopers += " r" + std::to_string(creg_operands[i]);
             else
-                iopers += " r" + std::to_string(operands[i]) + ",";
+                iopers += " r" + std::to_string(creg_operands[i]) + ",";
         }
 
         if(name == "ldi")
         {
-            return "ldi" + iopers + ", " + std::to_string(imm_value);
+            return "ldi" + iopers + ", " + std::to_string(int_operand);
         }
         else
             return name + iopers;
     }
-
-#if OPT_MICRO_CODE
-    instruction_t micro_code()
-    {
-        return ql::dep_instruction_map["nop"];
-    }
-#endif
 
     gate_type_t type()
     {

@@ -13,6 +13,7 @@ class Test_wait(unittest.TestCase):
 
     def setUp(self):
         ql.set_option('output_dir', output_dir)
+        ql.set_option('use_default_gates', 'no')
         ql.set_option('log_level', 'LOG_WARNING')
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ASAP')
@@ -20,6 +21,7 @@ class Test_wait(unittest.TestCase):
         ql.set_option("scheduler_commute", 'no')
         
 
+    @unittest.skip
     def test_wait_simple(self):
 
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
@@ -42,6 +44,7 @@ class Test_wait(unittest.TestCase):
         gold_fn = rootDir + '/golden/test_wait_simple.qisa'
         self.assertTrue(file_compare(QISA_fn, gold_fn))
 
+    @unittest.skip
     def test_wait_parallel(self):
 
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
@@ -65,6 +68,7 @@ class Test_wait(unittest.TestCase):
         gold_fn = rootDir + '/golden/test_wait_parallel.qisa'
         self.assertTrue(file_compare(QISA_fn, gold_fn))
 
+    @unittest.skip
     def test_wait_sweep(self):
 
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
@@ -102,8 +106,8 @@ class Test_wait(unittest.TestCase):
         gold_fn = rootDir + '/golden/test_wait_sweep.qisa'
         self.assertTrue(file_compare(QISA_fn, gold_fn))
 
+    @unittest.skip
     def test_wait_multi(self):
-
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]

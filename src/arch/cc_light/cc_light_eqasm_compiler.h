@@ -18,6 +18,9 @@
 #include <eqasm_compiler.h>
 #include <arch/cc_light/cc_light_eqasm.h>
 #include <arch/cc_light/cc_light_scheduler.h>
+#include <mapper.h>
+#include <clifford.h>
+#include <qsoverlay.h>
 
 // eqasm code : set of cc_light_eqasm instructions
 typedef std::vector<ql::arch::cc_light_eqasm_instr_t> eqasm_t;
@@ -256,24 +259,35 @@ class classical_cc : public gate
 {
 public:
     cmat_t m;
-    int imm_value;
+    // int imm_value;
     classical_cc(std::string operation, std::vector<size_t> opers, int ivalue=0)
     {
-        DOUT("adding classical_cc " << operation);
+        DOUT("Classical_cc constructor for operation " << operation);
+        DOUT("... operands:");
+        for (auto o : opers) DOUT ("...... " << o << " ");
+        DOUT("...... ivalue= " << ivalue);
+
+        // DOUT("adding classical_cc " << operation);
         str::lower_case(operation);
         name=operation;
         duration = 20;
-        operands=opers;
-        int sz = operands.size();
+        creg_operands=opers;
+        int sz = creg_operands.size();
         if((   (name == "add") || (name == "sub")
             || (name == "and") || (name == "or") || (name == "xor")
            ) && (sz == 3))
         {
             DOUT("Adding 3 operand operation: " << name);
         }
-        else if(((name == "not") || (name == "fmr") || (name == "cmp")) && (sz == 2))
+        else if(((name == "not") || (name == "cmp")) && (sz == 2))
         {
             DOUT("Adding 2 operand operation: " << name);
+        }
+        else if( (name == "fmr")  && (sz == 2))
+        {
+            creg_operands= { opers[0] };
+            operands= { opers[1] };
+            DOUT("Adding 2 operand fmr operation: " << name);
         }
         else if( ( (name == "ldi") ||
             (name == "fbr_eq") || (name == "fbr_ne") || (name == "fbr_lt") ||
@@ -282,7 +296,8 @@ public:
         {
             if( (name == "ldi") )
             {
-                imm_value = ivalue;
+                DOUT("... setting int_operand of classical_cc gate for operation " << operation << " to " << ivalue);
+                int_operand = ivalue;
             }
             DOUT("Adding 1 operand operation: " << name);
         }
@@ -301,35 +316,28 @@ public:
     instruction_t qasm()
     {
         std::string iopers;
-        int sz = operands.size();
+        int sz = creg_operands.size();
         for(int i=0; i<sz; ++i)
         {
             if(i==sz-1)
-                iopers += " r" + std::to_string(operands[i]);
+                iopers += " r" + std::to_string(creg_operands[i]);
             else
-                iopers += " r" + std::to_string(operands[i]) + ",";
+                iopers += " r" + std::to_string(creg_operands[i]) + ",";
         }
 
         if(name == "ldi")
         {
-            iopers += ", " + std::to_string(imm_value);
+            iopers += ", " + std::to_string(int_operand);
             return "ldi" + iopers;
         }
         else if(name == "fmr")
         {
-            return name + " r" + std::to_string(operands[0]) +
-                          ", q" + std::to_string(operands[1]);
+            return name + " r" + std::to_string(creg_operands[0]) +
+                          ", q" + std::to_string(operands[0]);
         }
         else
             return name + iopers;
     }
-
-#if OPT_MICRO_CODE
-    instruction_t micro_code()
-    {
-        return ql::dep_instruction_map["nop"];
-    }
-#endif
 
     gate_type_t type()
     {
@@ -347,7 +355,7 @@ std::string classical_instruction2qisa(ql::arch::classical_cc* classical_ins)
 {
     std::stringstream ssclassical;
     auto & iname =  classical_ins->name;
-    auto & iopers = classical_ins->operands;
+    auto & iopers = classical_ins->creg_operands;
     int iopers_count = iopers.size();
 
     if(  (iname == "add") || (iname == "sub") ||
@@ -365,12 +373,12 @@ std::string classical_instruction2qisa(ql::arch::classical_cc* classical_ins)
         }
         if(iname == "ldi")
         {
-            ssclassical << ", " + std::to_string(classical_ins->imm_value);
+            ssclassical << ", " + std::to_string(classical_ins->int_operand);
         }
     }
     else if(iname == "fmr")
     {
-        ssclassical << "fmr r" << iopers[0] << ", q" << iopers[1];
+        ssclassical << "fmr r" << iopers[0] << ", q" << classical_ins->operands[0];
     }
     else if(iname == "fbr_eq")
     {
@@ -511,11 +519,11 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
 
                     ssinst << cc_light_instr_name << " " << rname;
                 }
+            }
 
-                if( std::next(secIt) != abundle.parallel_sections.end() )
-                {
-                    ssinst << " | ";
-                }
+            if( std::next(secIt) != abundle.parallel_sections.end() )
+            {
+                ssinst << " | ";
             }
         }
         if(classical_bundle)
@@ -559,7 +567,7 @@ std::string bundles2qisa(ql::ir::bundles_t & bundles,
     return ssbundles.str();
 }
 
-void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
+void WriteCCLightQisa(std::string prog_name, const ql::quantum_platform & platform, MaskManager & gMaskManager,
     ql::ir::bundles_t & bundles)
 {
     IOUT("Generating CC-Light QISA");
@@ -590,7 +598,7 @@ void WriteCCLightQisa(std::string prog_name, ql::quantum_platform & platform, Ma
 }
 
 
-void WriteCCLightQisaTimeStamped(std::string prog_name, ql::quantum_platform & platform, MaskManager & gMaskManager,
+void WriteCCLightQisaTimeStamped(std::string prog_name, const ql::quantum_platform & platform, MaskManager & gMaskManager,
     ql::ir::bundles_t & bundles)
 {
     IOUT("Generating Time-stamped CC-Light QISA");
@@ -714,75 +722,8 @@ public:
 
 public:
 
-
-    /*
-     * program-level compilation of qasm to cc_light_eqasm
-     */
-    void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform)
-    {
-        IOUT("[-] compiling qasm code ...");
-        if (ckt.empty())
-        {
-            EOUT("empty circuit, eqasm compilation aborted !");
-            return;
-        }
-        IOUT("[-] loading circuit (" <<  ckt.size() << " gates)...");
-
-        load_hw_settings(platform);
-
-        // generate_opcode_cs_files(platform);
-
-
-        // schedule
-        // ql::ir sched_ir = cc_light_schedule(ckt, platform, num_qubits);
-
-        // schedule with platform resource constraints
-        ql::ir::bundles_t bundles = cc_light_schedule_rc(ckt, platform, num_qubits);
-
-        if( ql::options::get("write_qasm_files") == "yes")
-        {
-            // write RC scheduled bundles with parallelism as simple QASM file
-            std::stringstream sched_qasm;
-            sched_qasm <<"qubits " << num_qubits << "\n\n"
-                       << ".fused_kernels";
-            string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
-            IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << fname);
-            sched_qasm << ql::ir::qasm(bundles);
-            ql::utils::write_file(fname, sched_qasm.str());
-        }
-
-        MaskManager mask_manager;
-        // write scheduled bundles with parallelism in cc-light syntax
-        WriteCCLightQisa(prog_name, platform, mask_manager, bundles);
-
-        // write scheduled bundles with parallelism in cc-light syntax with time-stamps
-        WriteCCLightQisaTimeStamped(prog_name, platform, mask_manager, bundles);
-
-
-        // time analysis
-        // total_exec_time = time_analysis();
-
-        // compensate for latencies
-        // compensate_latency();
-
-        // reschedule
-        // resechedule();
-
-        // dump_instructions();
-
-        // decompose meta-instructions
-        // decompose_pre_schedule();
-
-        // reorder instructions
-        // reorder_instructions();
-
-        // insert waits
-
-        emit_eqasm();
-    }
-
     // FIXME: should be private
-    std::string get_prologue(ql::quantum_kernel &k)
+    std::string get_qisa_prologue(ql::quantum_kernel &k)
     {
         std::stringstream ss;
 
@@ -831,7 +772,7 @@ public:
         return ss.str();
     }
 
-    std::string get_epilogue(ql::quantum_kernel &k)
+    std::string get_qisa_epilogue(ql::quantum_kernel &k)
     {
         std::stringstream ss;
 
@@ -983,82 +924,240 @@ public:
         IOUT("Post scheduling decomposition [Done]");
     }
 
+    void clifford_optimize(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform, std::string opt)
+    {
+        if (ql::options::get(opt) == "no")
+        {
+            DOUT("Clifford optimization on program " << prog_name << " at " << opt << " not DONE");
+            return;
+        }
+        DOUT("Clifford optimization on program " << prog_name << " at " << opt << " ...");
+
+        ql::report::report_statistics(prog_name, kernels, platform, "in", opt, "# ");
+        ql::report::report_qasm(prog_name, kernels, platform, "in", opt);
+
+        Clifford cliff;
+        for(auto &kernel : kernels)
+        {
+            cliff.Optimize(kernel, opt);
+        }
+
+        ql::report::report_statistics(prog_name, kernels, platform, "out", opt, "# ");
+        ql::report::report_qasm(prog_name, kernels, platform, "out", opt);
+    }
+
+    void map(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform)
+    {
+        auto mapopt = ql::options::get("mapper");
+        if (mapopt == "no" )
+        {
+            IOUT("Not mapping kernels");
+            return;
+        }
+
+        ql::report::report_statistics(prog_name, kernels, platform, "in", "mapper", "# ");
+        ql::report::report_qasm(prog_name, kernels, platform, "in", "mapper");
+
+        Mapper mapper;  // virgin mapper creation; for role of Init functions, see comment at top of mapper.h
+        mapper.Init(&platform); // platform specifies number of real qubits, i.e. locations for virtual qubits
+
+        std::ofstream   ofs;
+        ofs = ql::report::report_open(prog_name, "out", "mapper");
+
+        size_t  total_swaps = 0;        // for reporting, data is mapper specific
+        size_t  total_moves = 0;        // for reporting, data is mapper specific
+        double  total_timetaken = 0.0;  // total over kernels of time taken by mapper
+        for(auto &kernel : kernels)
+        {
+            IOUT("Mapping kernel: " << kernel.name);
+
+            // compute timetaken, start interval timer here
+            double    timetaken = 0.0;
+            using namespace std::chrono;
+            high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
+            mapper.Map(kernel);
+                // kernel.qubit_count starts off as number of virtual qubits, i.e. highest indexed qubit minus 1
+                // kernel.qubit_count is updated by Map to highest index of real qubits used minus -1
+
+            // computing timetaken, stop interval timer
+            high_resolution_clock::time_point t2 = high_resolution_clock::now();
+            duration<double> time_span = t2 - t1;
+            timetaken = time_span.count();
+
+            kernel.bundles = ql::ir::bundler(kernel.c, ns_per_cycle);   // assignment to kernel.bundles only for reporting below
+
+            ql::report::report_kernel_statistics(ofs, kernel, platform, "# ");
+            std::stringstream ss;
+            ss << "# ----- swaps added: " << mapper.nswapsadded << "\n";
+            ss << "# ----- of which moves added: " << mapper.nmovesadded << "\n";
+            ss << "# ----- virt2real map before mapper:" << ql::utils::to_string(mapper.v2r_in) << "\n";
+            ss << "# ----- virt2real map after initial placement:" << ql::utils::to_string(mapper.v2r_ip) << "\n";
+            ss << "# ----- virt2real map after mapper:" << ql::utils::to_string(mapper.v2r_out) << "\n";
+            ss << "# ----- realqubit states before mapper:" << ql::utils::to_string(mapper.rs_in) << "\n";
+            ss << "# ----- realqubit states after mapper:" << ql::utils::to_string(mapper.rs_out) << "\n";
+            ss << "# ----- time taken: " << timetaken << "\n";
+            ql::report::report_string(ofs, ss.str());
+
+            total_swaps += mapper.nswapsadded;
+            total_moves += mapper.nmovesadded;
+            total_timetaken += timetaken;
+        }
+        ql::report::report_totals_statistics(ofs, kernels, platform, "# ");
+        std::stringstream ss;
+        ss << "# Total no. of swaps: " << total_swaps << "\n";
+        ss << "# Total no. of moves of swaps: " << total_moves << "\n";
+        ss << "# Total time taken: " << total_timetaken << "\n";
+        ql::report::report_string(ofs, ss.str());
+        ql::report::report_close(ofs);
+
+        ql::report::report_bundles(prog_name, kernels, platform, "out", "mapper");
+    }
+
+    void schedule(std::string prog_name, std::vector<quantum_kernel>& kernels, const ql::quantum_platform& platform, std::string opt)
+    {
+        ql::report::report_statistics(prog_name, kernels, platform, "in", "rcscheduler", "# ");
+        ql::report::report_qasm(prog_name, kernels, platform, "in", "rcscheduler");
+
+        for(auto &kernel : kernels)
+        {
+            IOUT("Scheduling kernel: " << kernel.name);
+            if (! kernel.c.empty())
+            {
+                auto num_creg = kernel.creg_count;
+                std::string     sched_dot;
+
+                kernel.bundles = cc_light_schedule_rc(kernel.c, platform, sched_dot, num_qubits, num_creg);
+
+                if (ql::options::get("print_dot_graphs") == "yes")
+                {
+                    std::stringstream fname;
+                    fname << ql::options::get("output_dir") << "/" << kernel.name << "_" << opt << ".dot";
+                    IOUT("writing " << opt << " dependence graph dot file to '" << fname.str() << "' ...");
+                    ql::utils::write_file(fname.str(), sched_dot);
+                }
+            }
+        }
+
+        ql::report::report_statistics(prog_name, kernels, platform, "out", "rcscheduler", "# ");
+        ql::report::report_bundles(prog_name, kernels, platform, "out", "rcscheduler");
+    }
+
+    /*
+     * program-level compilation of qasm to cc_light_eqasm
+     */
+    void compile(std::string prog_name, ql::circuit& ckt, ql::quantum_platform& platform)
+    {
+        FATAL("cc_light_eqasm_compiler::compile interface with circuit not supported");
+    }
+
     // kernel level compilation
-    void compile(std::string prog_name, std::vector<quantum_kernel> kernels,
+    void compile(std::string prog_name, std::vector<quantum_kernel>& kernels,
         const ql::quantum_platform& platform)
     {
         DOUT("Compiling " << kernels.size() << " kernels to generate CCLight eQASM ... ");
 
-        load_hw_settings(platform);
+        ql::report::report_qasm(prog_name, kernels, platform, "in0", "cc_light_compiler");
 
+        load_hw_settings(platform);
+        // check whether json instruction entries have cc_light_instr attribute
         const json& instruction_settings = platform.instruction_settings;
         for(const json & i : instruction_settings)
         {
-            std::string instr_name;
             if(i.count("cc_light_instr") <= 0)
             {
-                EOUT("cc_light_instr not found for " << i);
-                throw ql::exception("cc_light_instr not found", false);
+                FATAL("cc_light_instr not found for " << i);
             }
-            else
+        }
+        ql::report::report_qasm(prog_name, kernels, platform, "in1", "cc_light_compiler");
+
+        for(auto &kernel : kernels)
+        {
+            kernel.bundles.clear();         // circuit change coming; destroy bundles
+            IOUT("Decomposing kernel: " << kernel.name);
+            if (! kernel.c.empty())
             {
-                instr_name = i["cc_light_instr"];
+                // decompose meta-instructions
+                ql::circuit decomposed_ckt;
+                decompose_pre_schedule(kernel.c, decomposed_ckt, platform);
+                kernel.c = decomposed_ckt;
             }
         }
 
-        // generate_opcode_cs_files(platform);
-        MaskManager mask_manager;
+        ql::report::report_qasm(prog_name, kernels, platform, "in", "cc_light_compiler");
+        ql::report::report_statistics(prog_name, kernels, platform, "in", "cc_light_compiler", "# ");
 
-        std::stringstream ssqasm, ssqisa, sskernels_qisa;
+        if (ql::options::get("quantumsim") == "yes")
+            write_quantumsim_program(prog_name, num_qubits, kernels, platform, "");
+		else if (ql::options::get("quantumsim") == "qsoverlay")
+			write_qsoverlay_program(prog_name, num_qubits, kernels, platform, "", ns_per_cycle, false);
+
+        // compute timetaken, start interval timer here
+        double    total_timetaken = 0.0;
+        using namespace std::chrono;
+        high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
+        clifford_optimize(prog_name, kernels, platform, "clifford_premapper");
+
+        map(prog_name, kernels, platform);
+
+        clifford_optimize(prog_name, kernels, platform, "clifford_postmapper");
+
+        schedule(prog_name, kernels, platform, "rcscheduler");
+
+        // computing timetaken, stop interval timer
+        high_resolution_clock::time_point t2 = high_resolution_clock::now();
+        duration<double> time_span = t2 - t1;
+        total_timetaken = time_span.count();
+
+        // report totals over all kernels, over all eqasm passes contributing to mapping
+        std::ofstream   ofs;
+        ofs = ql::report::report_open(prog_name, "out", "cc_light_compiler");
+        for (auto& k : kernels) { ql::report::report_kernel_statistics(ofs, k, platform, "# "); }
+        ql::report::report_totals_statistics(ofs, kernels, platform, "# ");
+        std::stringstream ss;
+        ss << "# Total time taken: " << total_timetaken << "\n";
+        ql::report::report_string(ofs, ss.str());
+        ql::report::report_close(ofs);
+        ql::report::report_bundles(prog_name, kernels, platform, "out", "cc_light_compiler");
+
+        // decompose meta-instructions after scheduling
+        for(auto &kernel : kernels)
+        {
+            IOUT("Decomposing meta-instructions kernel after post-scheduling: " << kernel.name);
+            if (! kernel.c.empty())
+            {
+                decompose_post_schedule(kernel.bundles, platform);
+                // after this, kernel.bundles is valid, kernel.circuit is old/invalid
+            }
+        }
+
+        if (ql::options::get("quantumsim") == "yes")
+            write_quantumsim_program(prog_name, num_qubits, kernels, platform, "mapped");
+		else if (ql::options::get("quantumsim") == "qsoverlay")
+			write_qsoverlay_program(prog_name, num_qubits, kernels, platform, "mapped", ns_per_cycle, true);
+
+        // generate_opcode_cs_files(platform);
+
+        // generate qisa
+        MaskManager mask_manager;
+        std::stringstream ssqisa, sskernels_qisa;
         sskernels_qisa << "start:" << std::endl;
         for(auto &kernel : kernels)
         {
-            IOUT("Compiling kernel: " << kernel.name);
             sskernels_qisa << "\n" << kernel.name << ":" << std::endl;
-            sskernels_qisa << get_prologue(kernel);
-            ql::circuit decomp_ckt;
-            ql::circuit& ckt = kernel.c;
-            auto num_creg = kernel.creg_count;
-            if (! ckt.empty())
+            sskernels_qisa << get_qisa_prologue(kernel);
+            if (! kernel.c.empty())
             {
-                // decompose meta-instructions
-                decompose_pre_schedule(ckt, decomp_ckt, platform);
-
-                // schedule with platform resource constraints
-                ql::ir::bundles_t bundles =
-                    cc_light_schedule_rc(decomp_ckt, platform, num_qubits, num_creg);
-
-        std::stringstream sched_qasm;
-        sched_qasm <<"qubits " << num_qubits << "\n\n"
-                   << ".fused_kernels";
-        string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
-        IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << fname);
-        sched_qasm << ql::ir::qasm(bundles);
-        ql::utils::write_file(fname, sched_qasm.str());
-
-                // decompose meta-instructions after scheduling
-                decompose_post_schedule(bundles, platform);
-
-                sskernels_qisa << bundles2qisa(bundles, platform, mask_manager);
-                ssqasm << ql::ir::qasm(bundles) << std::endl;
+                sskernels_qisa << bundles2qisa(kernel.bundles, platform, mask_manager);
             }
-            sskernels_qisa << get_epilogue(kernel);
+            sskernels_qisa << get_qisa_epilogue(kernel);
         }
-
         sskernels_qisa << "\n    br always, start" << "\n"
                   << "    nop \n"
                   << "    nop" << std::endl;
-
         ssqisa << mask_manager.getMaskInstructions() << sskernels_qisa.str();
-
-        if( ql::options::get("write_qasm_files") == "yes")
-        {
-            // write RC scheduled bundles with parallelism as QASM file
-            ssqasm <<"qubits " << num_qubits << "\n\n";
-            string fname( ql::options::get("output_dir") + "/" + prog_name + "_scheduled_rc.qasm");
-            IOUT("Writing Recourse-contraint scheduled CC-Light QASM to " << fname);
-            ql::utils::write_file(fname, ssqasm.str());
-        }
+        // std::cout << ssqisa.str();
 
         // write cc-light qisa file
         std::ofstream fout;
@@ -1071,7 +1170,6 @@ public:
                      << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
             return;
         }
-
         fout << ssqisa.str() << endl;
         fout.close();
 
@@ -1089,12 +1187,15 @@ public:
             auto & iname =  ins->name;
             str::lower_case(iname);
             DOUT("decomposing instruction " << iname << "...");
-            auto & iopers = ins->operands;
-            int iopers_count = iopers.size();
+            auto & icopers = ins->creg_operands;
+            auto & iqopers = ins->operands;
+            int icopers_count = icopers.size();
+            int iqopers_count = iqopers.size();
+            DOUT("decomposing instruction " << iname << " operands=" << ql::utils::to_string(iqopers) << " creg_operands=" << ql::utils::to_string(icopers));
             auto itype = ins->type();
             if(__classical_gate__ == itype)
             {
-                DOUT("    classical instruction");
+                DOUT("    classical instruction: " << ins->qasm());
 
                 if( (iname == "add") || (iname == "sub") ||
                     (iname == "and") || (iname == "or") || (iname == "xor") ||
@@ -1102,31 +1203,40 @@ public:
                   )
                 {
                     // decomp_ckt.push_back(ins);
-                    decomp_ckt.push_back(new ql::arch::classical_cc(iname, iopers));
+                    decomp_ckt.push_back(new ql::arch::classical_cc(iname, icopers));
+                    DOUT("    classical instruction decomposed: " << decomp_ckt.back()->qasm());
                 }
                 else if( (iname == "eq") || (iname == "ne") || (iname == "lt") ||
                          (iname == "gt") || (iname == "le") || (iname == "ge")
                        )
                 {
-                    decomp_ckt.push_back(new ql::arch::classical_cc("cmp", {iopers[1], iopers[2]}));
+                    decomp_ckt.push_back(new ql::arch::classical_cc("cmp", {icopers[1], icopers[2]}));
+                    DOUT("    classical instruction decomposed: " << decomp_ckt.back()->qasm());
                     decomp_ckt.push_back(new ql::arch::classical_cc("nop", {}));
-                    decomp_ckt.push_back(new ql::arch::classical_cc("fbr_"+iname, {iopers[0]}));
+                    DOUT("                                      " << decomp_ckt.back()->qasm());
+                    decomp_ckt.push_back(new ql::arch::classical_cc("fbr_"+iname, {icopers[0]}));
+                    DOUT("                                      " << decomp_ckt.back()->qasm());
                 }
                 else if(iname == "mov")
                 {
                     // r28 is used as temp, TODO use creg properly to create temporary
                     decomp_ckt.push_back(new ql::arch::classical_cc("ldi", {28}, 0));
-                    decomp_ckt.push_back(new ql::arch::classical_cc("add", {iopers[0], iopers[1], 28}));
+                    DOUT("    classical instruction decomposed: " << decomp_ckt.back()->qasm());
+                    decomp_ckt.push_back(new ql::arch::classical_cc("add", {icopers[0], icopers[1], 28}));
+                    DOUT("                                      " << decomp_ckt.back()->qasm());
                 }
                 else if(iname == "ldi")
                 {
-                    auto imval = ((ql::classical*)ins)->imm_value;
-                    decomp_ckt.push_back(new ql::arch::classical_cc("ldi", iopers, imval));
+                    // auto imval = ((classical_cc*)ins)->int_operand;
+                    auto imval = ((classical*)ins)->int_operand;
+                    DOUT("    classical instruction decomposed: imval=" << imval);
+                    decomp_ckt.push_back(new ql::arch::classical_cc("ldi", {icopers[0]}, imval));
+                    DOUT("    classical instruction decomposed: " << decomp_ckt.back()->qasm());
                 }
                 else
                 {
-                    EOUT("Unknown decomposition of classical operation '" << iname << "' with '" << iopers_count << "' operands!");
-                    throw ql::exception("Unknown classical operation '"+iname+"' with'"+std::to_string(iopers_count)+"' operands!", false);
+                    EOUT("Unknown decomposition of classical operation '" << iname << "' with '" << icopers_count << "' operands!");
+                    throw ql::exception("Unknown classical operation '"+iname+"' with'"+std::to_string(icopers_count)+"' operands!", false);
                 }
             }
             else
@@ -1146,15 +1256,15 @@ public:
                     }
                     else
                     {
-                        EOUT("instruction settings not found for '" << iname << "' with '" << iopers_count << "' operands!");
-                        throw ql::exception("instruction settings not found for '"+iname+"' with'"+std::to_string(iopers_count)+"' operands!", false);
+                        EOUT("instruction settings not found for '" << iname << "' with '" << iqopers_count << "' operands!");
+                        throw ql::exception("instruction settings not found for '"+iname+"' with'"+std::to_string(iqopers_count)+"' operands!", false);
                     }
                     bool is_measure = (operation_type == "readout");
                     if(is_measure)
                     {
                         // insert measure
                         DOUT("    readout instruction ");
-                        auto qop = iopers[0];
+                        auto qop = iqopers[0];
                         decomp_ckt.push_back(ins);
                         if( ql::gate_type_t::__custom_gate__ == itype )
                         {
@@ -1166,9 +1276,9 @@ public:
                             }
                             else
                             {
-                                WOUT("Unknown classical operand for measure/readout operation: '" << iname <<
-                                    ". This will soon be depricated in favour of measure instruction with fmr" <<
-                                    " to store measurement outcome to classical register.");
+                                // WOUT("Unknown classical operand for measure/readout operation: '" << iname <<
+                                //     ". This will soon be depricated in favour of measure instruction with fmr" <<
+                                //     " to store measurement outcome to classical register.");
                             }
                         }
                         else
@@ -1262,77 +1372,6 @@ public:
     }
 
     /**
-     * optimize
-     */
-    void resechedule(bool verbose=false)
-    {
-        IOUT("instruction rescheduling...");
-        IOUT("resource dependency analysis...");
-        IOUT("buffer insertion...");
-#if 0
-        std::vector<size_t>           hw_res_av(__trigger_width__+__awg_number__,0);
-        std::vector<size_t>           qu_res_av(num_qubits,0);
-        std::vector<operation_type_t> hw_res_op(__trigger_width__+__awg_number__,__none__);
-        std::vector<operation_type_t> qu_res_op(num_qubits,__none__);
-
-        for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
-        {
-            resources_t      hw_res  = instr->used_resources;
-            qubit_set_t      qu_res  = instr->used_qubits;
-            operation_type_t type    = instr->get_operation_type();
-            size_t latest_hw = 0;
-            size_t buf_hw    = 0;
-            size_t latest_qu = 0;
-            size_t buf_qu    = 0;
-            // hardware dependency
-            for (size_t r=0; r<hw_res.size(); ++r)
-            {
-                if (hw_res.test(r))
-                {
-                    size_t rbuf = buffer_size(hw_res_op[r],type);
-                    buf_hw      = ((rbuf > buf_hw) ? rbuf : buf_hw);
-                    latest_hw   = (hw_res_av[r] > latest_hw ? hw_res_av[r] : latest_hw);
-                }
-            }
-
-            // qubit dependency
-            for (size_t q : qu_res) // qubits used by the instr
-            {
-                size_t rbuf  = buffer_size(qu_res_op[q],type);
-                buf_qu       = ((rbuf > buf_qu) ? rbuf : buf_qu);
-                latest_qu    = (qu_res_av[q] > latest_qu ? qu_res_av[q] : latest_qu);
-            }
-
-            // println("latest_hw: " << latest_hw);
-            // println("latest_qu: " << latest_qu);
-
-            size_t latest = std::max(latest_hw,latest_qu);
-            size_t buf    = std::max(buf_hw,buf_qu);
-
-            //if (buf)
-            // println("[!] inserting buffer...");
-
-            instr->start = latest+buf;
-            // update latest hw record
-            for (size_t r=0; r<hw_res.size(); ++r)
-            {
-                if (hw_res.test(r))
-                {
-                    hw_res_av[r] = (instr->start+instr->duration);
-                    hw_res_op[r] = (type);
-                }
-            }
-            // update latest hw record
-            for (size_t q : qu_res) // qubits used by the instr
-            {
-                qu_res_av[q] = (instr->start+instr->duration);
-                qu_res_op[q] = (type);
-            }
-        }
-#endif
-    }
-
-    /**
      * buffer size
      */
     size_t buffer_size(operation_type_t t1, operation_type_t t2)
@@ -1345,37 +1384,6 @@ public:
      */
     void write_traces(std::string file_name="")
     {
-#if 0
-        ql::arch::channels_t channels;
-        if (cc_light_eqasm_instructions.empty())
-        {
-            println("[!] warning : empty cc_light_eqasm code : not traces to dump !");
-            return;
-        }
-
-        for (size_t i=0; i<__trigger_width__; i++)
-        {
-            std::string ch = "TRIG_"+std::to_string(i);
-            channels.push_back(ch);
-        }
-
-        for (size_t i=0; i<__awg_number__; i++)
-        {
-            std::string ch = "AWG_"+std::to_string(i);
-            channels.push_back(ch);
-        }
-
-        ql::arch::time_diagram diagram(channels,total_exec_time,4);
-
-        for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
-        {
-            instruction_traces_t trs = instr->trace();
-            for (instruction_trace_t t : trs)
-                diagram.add_trace(t);
-        }
-
-        diagram.dump(ql::options::get("output_dir") + "/trace.dat");
-#endif
     }
 
 
@@ -1608,9 +1616,291 @@ private:
         else
             return __unknown_operation__;
     }
+
+private:
+    // write cc_light scheduled bundles for quantumsim
+    // when cc_light independent, it should be extracted and put in src/quantumsim.h
+    void write_quantumsim_program( std::string prog_name, size_t num_qubits,
+        std::vector<quantum_kernel>& kernels, const ql::quantum_platform & platform, std::string suffix)
+    {
+        IOUT("Writing scheduled Quantumsim program");
+        ofstream fout;
+        string qfname( ql::options::get("output_dir") + "/" + "quantumsim_" + prog_name + "_" + suffix + ".py");
+        DOUT("Writing scheduled Quantumsim program to " << qfname);
+        IOUT("Writing scheduled Quantumsim program to " << qfname);
+        fout.open( qfname, ios::binary);
+        if ( fout.fail() )
+        {
+            EOUT("opening file " << qfname << std::endl
+                     << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
+            return;
+        }
+
+        fout << "# Quantumsim program generated OpenQL\n"
+             << "# Please modify at your will to obtain extra information from Quantumsim\n\n";
+
+        fout << "import numpy as np\n"
+             << "from quantumsim.circuit import Circuit\n"
+             << "from quantumsim.circuit import uniform_noisy_sampler\n"
+             << "from quantumsim.circuit import ButterflyGate\n"
+             << endl;
+
+        fout << "from quantumsim.circuit import IdlingGate as i\n"
+             << "from quantumsim.circuit import RotateY as ry\n"
+             << "from quantumsim.circuit import RotateX as rx\n"
+             << "from quantumsim.circuit import RotateZ as rz\n"
+             << "from quantumsim.circuit import Hadamard as h\n"
+             << "from quantumsim.circuit import NoisyCPhase as cz\n"
+             << "from quantumsim.circuit import CNOT as cnot\n"
+             << "from quantumsim.circuit import Swap as swap\n"
+             << "from quantumsim.circuit import CPhaseRotation as cr\n"
+             << "from quantumsim.circuit import ConditionalGate as ConditionalGate\n"
+             << "from quantumsim.circuit import RotateEuler as RotateEuler\n"
+             << "from quantumsim.circuit import ResetGate as ResetGate\n"
+             << "from quantumsim.circuit import Measurement as measure\n"
+             << "import quantumsim.sparsedm as sparsedm\n"
+             << "\n"
+             << "# print('GPU is used:', sparsedm.using_gpu)\n"
+             << "\n"
+             << "\n"
+             << "def t(q, time):\n"
+             << "    return RotateEuler(q, time=time, theta=0, phi=np.pi/4, lamda=0)\n"
+             << "\n"
+             << "def tdag(q, time):\n"
+             << "    return RotateEuler(q, time=time, theta=0, phi=-np.pi/4, lamda=0)\n"
+             << "\n"
+             << "def measure_z(q, time, sampler):\n"
+             << "    return measure(q, time, sampler)\n"
+             << "\n"
+             << "def z(q, time):\n"
+             << "    return rz(q, time, angle=np.pi)\n"
+             << "\n"
+             << "def x(q, time, dephasing_axis, dephasing_angle):\n"
+             << "    return rx(q, time, angle=np.pi, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+             << "\n"
+             << "def y(q, time, dephasing_axis, dephasing_angle):\n"
+             << "    return ry(q, time, angle=np.pi, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+             << "\n"
+             << "def x90(q, time, dephasing_axis, dephasing_angle):\n"
+             << "    return rx(q, time, angle=np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+             << "\n"
+             << "def y90(q, time, dephasing_axis, dephasing_angle):\n"
+             << "    return ry(q, time, angle=np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+             << "\n"
+             << "def xm90(q, time, dephasing_axis, dephasing_angle):\n"
+             << "    return rx(q, time, angle=-np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+             << "\n"
+             << "def ym90(q, time, dephasing_axis, dephasing_angle):\n"
+             << "    return ry(q, time, angle=-np.pi/2, dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle)\n"
+             << "\n"
+             << "def x45(q, time):\n"
+             << "    return rx(q, time, angle=np.pi/4)\n"
+             << "\n"
+             << "def xm45(q, time):\n"
+             << "    return rx(q, time, angle=-np.pi/4)\n"
+             << "\n"
+             //<< "def cz(q, time, dephase_var):\n"
+             //<< "    return cphase(q, time, dephase_var=dephase_var)\n"
+             << "\n"
+             << "def prepz(q, time):\n"
+             << "    return ResetGate(q, time, state=0)\n\n"
+             << endl;
+
+        fout << "\n# create a circuit\n";
+        fout << "def circuit_generated(t1=np.inf, t2=np.inf, dephasing_axis=None, dephasing_angle=None, dephase_var=0, readout_error=0.0) :\n";
+        fout << "    c = Circuit(title=\"" << prog_name << "\")\n";
+
+        DOUT("Adding qubits to Quantumsim program");
+        fout << "\n    # add qubits\n";
+        json config;
+        try
+        {
+            config = load_json(platform.configuration_file_name);
+        }
+        catch (json::exception e)
+        {
+            throw ql::exception("[x] error : ql::quantumsim_compiler::load() :  failed to load the hardware config file : malformed json file ! : \n    "+
+                                std::string(e.what()),false);
+        }
+
+        // load qubit attributes
+        json qubit_attributes = config["qubit_attributes"];
+        if (qubit_attributes.is_null())
+        {
+            EOUT("qubit_attributes is not specified in the hardware config file !");
+            throw ql::exception("[x] error: quantumsim_compiler: qubit_attributes is not specified in the hardware config file !",false);
+        }
+        json relaxation_times = qubit_attributes["relaxation_times"];
+        if (relaxation_times.is_null())
+        {
+            EOUT("relaxation_times is not specified in the hardware config file !");
+            throw ql::exception("[x] error: quantumsim_compiler: relaxation_times is not specified in the hardware config file !",false);
+        }
+        size_t count =  platform.hardware_settings["qubit_number"];
+
+        // want to ignore unused qubits below
+        MapperAssert (kernels.size() <= 1);
+        std::vector<size_t> check_usecount;
+        check_usecount.resize(count, 0);
+
+        for (auto & gp: kernels.front().c)
+        {
+            switch(gp->type())
+            {
+            case __classical_gate__:
+            case __wait_gate__:
+                break;
+            default:    // quantum gate
+                for (auto v: gp->operands)
+                {
+                    check_usecount[v]++;
+                }
+                break;
+            }
+        }
+
+        for (json::iterator it = relaxation_times.begin(); it != relaxation_times.end(); ++it)
+        {
+            size_t q = stoi(it.key());
+            if (q >= count)
+            {
+                EOUT("qubit_attribute.relaxation_time.qubit number is not in qubits available in the platform");
+                throw ql::exception("[x] error: qubit_attribute.relaxation_time.qubit number is not in qubits available in the platform",false);
+            }
+            if (check_usecount[q] == 0)
+            {
+                DOUT("... qubit " << q << " is not used; skipping it");
+                continue;
+            }
+            auto & rt = it.value();
+            if (rt.size() < 2)
+            {
+                EOUT("each qubit must have at least two relaxation times");
+                throw ql::exception("[x] error: each qubit must have at least two relaxation times",false);
+            }
+            // fout << "    c.add_qubit(\"q" << q <<"\", " << rt[0] << ", " << rt[1] << ")\n" ;
+            fout << "    c.add_qubit(\"q" << q << "\", t1=t1, t2=t2)\n" ;
+        }
+
+        DOUT("Adding Gates to Quantumsim program");
+        {
+            // global writes
+            std::stringstream ssbundles;
+            ssbundles << "\n    sampler = uniform_noisy_sampler(readout_error=readout_error, seed=42)\n";
+            ssbundles << "\n    # add gates\n";
+            fout << ssbundles.str();
+        }
+        for(auto &kernel : kernels)
+        {
+            DOUT("... adding gates, a new kernel");
+            if (kernel.bundles.empty())
+            {
+                IOUT("No bundles for adding gates");
+            }
+            else
+            {
+                for ( ql::ir::bundle_t & abundle : kernel.bundles)
+                {
+                    DOUT("... adding gates, a new bundle");
+                    auto bcycle = abundle.start_cycle;
+
+                    std::stringstream ssbundles;
+                    for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
+                    {
+                        DOUT("... adding gates, a new section in a bundle");
+                        for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
+                        {
+                            auto & iname = (*insIt)->name;
+                            auto & operands = (*insIt)->operands;
+                            auto duration = (*insIt)->duration;     // duration in nano-seconds
+                            // size_t operation_duration = std::ceil( static_cast<float>(duration) / ns_per_cycle);
+                            if( iname == "measure")
+                            {
+                                DOUT("... adding gates, a measure");
+                                auto op = operands.back();
+                                ssbundles << "    c.add_qubit(\"m" << op << "\")\n";
+                                ssbundles << "    c.add_gate("
+                                          << "ButterflyGate("
+                                          << "\"q" << op <<"\", "
+                                          << "time=" << ((bcycle-1)*ns_per_cycle) << ", "
+                                          << "p_exc=0,"
+                                          << "p_dec= 0.005)"
+                                          << ")\n" ;
+                                ssbundles << "    c.add_measurement("
+                                    << "\"q" << op << "\", "
+                                    << "time=" << ((bcycle - 1)*ns_per_cycle) + (duration/4) << ", "
+                                    << "output_bit=\"m" << op << "\", "
+                                    << "sampler=sampler"
+                                    << ")\n";
+                                ssbundles << "    c.add_gate("
+                                    << "ButterflyGate("
+                                    << "\"q" << op << "\", "
+                                    << "time=" << ((bcycle - 1)*ns_per_cycle) + duration/2 << ", "
+                                    << "p_exc=0,"
+                                    << "p_dec= 0.015)"
+                                    << ")\n";
+
+                            }
+                            else if( iname == "y90" or iname == "ym90" or iname == "y" or iname == "x" or
+                                iname == "x90" or iname == "xm90")
+                            {
+                                DOUT("... adding gates, another gate");
+                                ssbundles <<  "    c.add_gate("<< iname << "(" ;
+                                size_t noperands = operands.size();
+                                if( noperands > 0 )
+                                {
+                                    for(auto opit = operands.begin(); opit != operands.end()-1; opit++ )
+                                        ssbundles << "\"q" << *opit <<"\", ";
+                                    ssbundles << "\"q" << operands.back()<<"\"";
+                                }
+                                ssbundles << ", time=" << ((bcycle - 1)*ns_per_cycle) + (duration/2) << ", dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle))" << endl;
+                            }
+                            else if( iname == "cz")
+                            {
+                               DOUT("... adding gates, another gate");
+                                ssbundles <<  "    c.add_gate("<< iname << "(" ;
+                                size_t noperands = operands.size();
+                                if( noperands > 0 )
+                                {
+                                    for(auto opit = operands.begin(); opit != operands.end()-1; opit++ )
+                                        ssbundles << "\"q" << *opit <<"\", ";
+                                    ssbundles << "\"q" << operands.back()<<"\"";
+                                }
+                                ssbundles << ", time=" << ((bcycle - 1)*ns_per_cycle) + (duration/2) << ", dephase_var=dephase_var))" << endl;
+                            }
+                            else
+                            {
+                                DOUT("... adding gates, another gate");
+                                ssbundles <<  "    c.add_gate("<< iname << "(" ;
+                                size_t noperands = operands.size();
+                                if( noperands > 0 )
+                                {
+                                    for(auto opit = operands.begin(); opit != operands.end()-1; opit++ )
+                                        ssbundles << "\"q" << *opit <<"\", ";
+                                    ssbundles << "\"q" << operands.back()<<"\"";
+                                }
+                                ssbundles << ", time=" << ((bcycle - 1)*ns_per_cycle) + (duration/2) << "))" << endl;
+                            }
+                        }
+                    }
+                    fout << ssbundles.str();
+                }
+                fout << "    return c";
+                fout << "    \n\n";
+                ql::report::report_kernel_statistics(fout, kernel, platform, "    # ");
+            }
+        }
+        ql::report::report_string(fout, "    \n");
+        ql::report::report_string(fout, "    # Program-wide statistics:\n");
+        ql::report::report_totals_statistics(fout, kernels, platform, "    # ");
+        fout << "    return c";
+
+        fout.close();
+        IOUT("Writing scheduled Quantumsim program [Done]");
+    }
+
 };
 }
 }
 
 #endif // QL_CC_LIGHT_EQASM_COMPILER_H
-

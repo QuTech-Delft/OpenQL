@@ -65,6 +65,7 @@ class Test_central_controller(unittest.TestCase):
         p.compile()
 
     # Quantum Error Correction cycle
+    @unittest.skip
     def test_qec(self):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')

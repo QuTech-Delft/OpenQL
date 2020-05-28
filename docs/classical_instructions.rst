@@ -85,9 +85,9 @@ A classical gate has all general gate attributes, of which some are not used, an
 +===============+===========+====================+============+============+================+
 | name          | structural| "add"              | all passes | never      | string         |
 +---------------+           +--------------------+            +            +----------------+
-| operands      |           | [r0,r1]            |            |            | vector<size_t> |
+| creg_operands |           | [r0,r1]            |            |            | vector<size_t> |
 +---------------+           +--------------------+            +            +----------------+
-| imm_value     |           | 3                  |            |            | int            |
+| int_operand   |           | 3                  |            |            | int            |
 +---------------+           +--------------------+            +            +----------------+
 | type          |           | __classical_gate__ |            |            | gate_type_t    |
 +---------------+-----------+--------------------+------------+            +----------------+
@@ -97,7 +97,7 @@ A classical gate has all general gate attributes, of which some are not used, an
 | cycle         | result    | 4                  | code       | scheduler  | size_t         |
 |               |           |                    | generation |            |                |
 +---------------+-----------+--------------------+------------+------------+----------------+
-| creg_operands |           |                    | never      |            |                |
+| operands      |           |                    | never      |            |                |
 +---------------+           +                    +            +            +                +
 | angle         |           |                    |            |            |                |
 +---------------+           +                    +            +            +                +
@@ -108,12 +108,9 @@ Some further notes on the gate attributes:
 
 - ``name``: The internal name. Happens to correspond to the gate name in the output QASM representation.
 
-- ``operands``: Please note that the classical gates have their operands in the *operands* attribute.
-  The *creg_operands* are only used by quantum gates that take classical registers as operand.
+- ``creg_operands``: Please note that for all gates the classical operands are in the *creg_operands* attribute, and the quantum operands are in the *operands* attribute.
 
-:Note: That classical gates have their operands in the *operands* attribute, is confusing. There may even be bugs in the implementation, e.g. in the creation of the scheduler's dependence graph.
-
-- ``imm_value``: An immediate integer valued operand is kept here.
+- ``int_operand``: An immediate integer valued operand is kept here.
 
 - ``type``: Is always *__classical_gate__*. Classical gates are distinguished by their name.
 
@@ -123,44 +120,44 @@ Some further notes on the gate attributes:
 
 :Note: That the value of duration is built-in, is strange. A first better value would be *cycle_time*.
 
-- ``creg_operands``, ``angle``, and ``mat`` are not used as attributes by classical gates.
+- ``operands``, ``angle``, and ``mat`` are not used as attributes by classical gates.
 
 
 The following classical gates are supported:
 
-+-------+-------------------------------+----------------+---------------+--------------------------------------------+
-| name  | operands                      | operation type | inv operation | OpenQL example                             |
-+=======+===============================+================+===============+============================================+
-| "add" | 1 dest and 2 src reg indices  | ARITHMETIC     |               | k.classical(rd, Operation(rs1, '+', rs2))  |
-+-------+                               +                +               +--------------------------------------------+
-| "sub" |                               |                |               | k.classical(rd, Operation(rs1, '-', rs2))  |
-+-------+                               +----------------+---------------+--------------------------------------------+
-| "eq"  |                               | RELATIONAL     | "ne"          | k.classical(rd, Operation(rs1, '==', rs2)) |
-+-------+                               +                +---------------+--------------------------------------------+
-| "ne"  |                               |                | "eq"          | k.classical(rd, Operation(rs1, '!=', rs2)) |
-+-------+                               +                +---------------+--------------------------------------------+
-| "lt"  |                               |                | "ge"          | k.classical(rd, Operation(rs1, '<', rs2))  |
-+-------+                               +                +---------------+--------------------------------------------+
-| "gt"  |                               |                | "le"          | k.classical(rd, Operation(rs1, '>', rs2))  |
-+-------+                               +                +---------------+--------------------------------------------+
-| "le"  |                               |                | "gt"          | k.classical(rd, Operation(rs1, '<=', rs2)) |
-+-------+                               +                +---------------+--------------------------------------------+
-| "ge"  |                               |                | "lt"          | k.classical(rd, Operation(rs1, '>=', rs2)) |
-+-------+                               +----------------+---------------+--------------------------------------------+
-| "and" |                               | BITWISE        |               | k.classical(rd, Operation(rs1, '&', rs2))  |
-+-------+                               +                +               +--------------------------------------------+
-| "or"  |                               |                |               | k.classical(rd, Operation(rs1, '|', rs2))  |
-+-------+                               +                +               +--------------------------------------------+
-| "xor" |                               |                |               | k.classical(rd, Operation(rs1, '^', rs2))  |
-+-------+-------------------------------+                +               +--------------------------------------------+
-| "not" | 1 dest and 1 src reg index    |                |               | k.classical(rd, Operation('~', rs))        |
-+-------+                               +----------------+               +--------------------------------------------+
-| "mov" |                               | ARITHMETIC     |               | k.classical(rd, Operation(rs))             |
-+-------+-------------------------------+                +               +--------------------------------------------+
-| "ldi" | 1 dest reg index, 1 imm_value |                |               | k.classical(rd, Operation(3))              |
-+-------+-------------------------------+----------------+               +--------------------------------------------+
-| "nop" | none                          | undefined      |               | k.classical('nop')                         |
-+-------+-------------------------------+----------------+---------------+--------------------------------------------+
++-------+---------------------------------+----------------+---------------+--------------------------------------------+
+| name  | operands                        | operation type | inv operation | OpenQL example                             |
++=======+=================================+================+===============+============================================+
+| "add" | 1 dest and 2 src reg indices    | ARITHMETIC     |               | k.classical(rd, Operation(rs1, '+', rs2))  |
++-------+                                 +                +               +--------------------------------------------+
+| "sub" |                                 |                |               | k.classical(rd, Operation(rs1, '-', rs2))  |
++-------+                                 +----------------+---------------+--------------------------------------------+
+| "eq"  |                                 | RELATIONAL     | "ne"          | k.classical(rd, Operation(rs1, '==', rs2)) |
++-------+                                 +                +---------------+--------------------------------------------+
+| "ne"  |                                 |                | "eq"          | k.classical(rd, Operation(rs1, '!=', rs2)) |
++-------+                                 +                +---------------+--------------------------------------------+
+| "lt"  |                                 |                | "ge"          | k.classical(rd, Operation(rs1, '<', rs2))  |
++-------+                                 +                +---------------+--------------------------------------------+
+| "gt"  |                                 |                | "le"          | k.classical(rd, Operation(rs1, '>', rs2))  |
++-------+                                 +                +---------------+--------------------------------------------+
+| "le"  |                                 |                | "gt"          | k.classical(rd, Operation(rs1, '<=', rs2)) |
++-------+                                 +                +---------------+--------------------------------------------+
+| "ge"  |                                 |                | "lt"          | k.classical(rd, Operation(rs1, '>=', rs2)) |
++-------+                                 +----------------+---------------+--------------------------------------------+
+| "and" |                                 | BITWISE        |               | k.classical(rd, Operation(rs1, '&', rs2))  |
++-------+                                 +                +               +--------------------------------------------+
+| "or"  |                                 |                |               | k.classical(rd, Operation(rs1, '|', rs2))  |
++-------+                                 +                +               +--------------------------------------------+
+| "xor" |                                 |                |               | k.classical(rd, Operation(rs1, '^', rs2))  |
++-------+---------------------------------+                +               +--------------------------------------------+
+| "not" | 1 dest and 1 src reg index      |                |               | k.classical(rd, Operation('~', rs))        |
++-------+                                 +----------------+               +--------------------------------------------+
+| "mov" |                                 | ARITHMETIC     |               | k.classical(rd, Operation(rs))             |
++-------+---------------------------------+                +               +--------------------------------------------+
+| "ldi" | 1 dest reg index, 1 int_operand |                |               | k.classical(rd, Operation(3))              |
++-------+---------------------------------+----------------+               +--------------------------------------------+
+| "nop" | none                            | undefined      |               | k.classical('nop')                         |
++-------+---------------------------------+----------------+---------------+--------------------------------------------+
 
 In the above:
 
@@ -242,7 +239,7 @@ The following table shows the QASM representation of a single classical gate:
 +-------+                                                     +---------------------+
 | "mov" |                                                     | mov r0, r1          |
 +-------+-----------------------------------------------------+---------------------+
-| "ldi" | 0 as dest reg index, 3 as imm_value                 | ldi r0, 3           |
+| "ldi" | 0 as dest reg index, 3 as int_operand               | ldi r0, 3           |
 +-------+-----------------------------------------------------+---------------------+
 | "nop" | none                                                | nop                 |
 +-------+-----------------------------------------------------+---------------------+

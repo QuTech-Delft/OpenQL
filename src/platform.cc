@@ -30,6 +30,7 @@ quantum_platform::quantum_platform(std::string name, std::string configuration_f
     ql::hardware_configuration hwc(configuration_file_name);
     hwc.load(instruction_map, instruction_settings, hardware_settings, resources, topology, aliases);
     eqasm_compiler_name = hwc.eqasm_compiler_name;
+    DOUT("eqasm_compiler_name= " << eqasm_compiler_name);
 
     if(hardware_settings.count("qubit_number") <= 0)
     {

@@ -20,6 +20,7 @@ class Test_qubits(unittest.TestCase):
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('log_level', 'LOG_WARNING')
+        ql.set_option('write_qasm_files', 'yes')
 
     def test_1_qubit(self):
         nqubits = 1

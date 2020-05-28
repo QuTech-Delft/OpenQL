@@ -1,8 +1,8 @@
-project(ql)
+PROJECT(ql)
 
-get_filename_component(PARENT_DIR ${PROJECT_SOURCE_DIR} DIRECTORY)
+GET_FILENAME_COMPONENT(PARENT_DIR ${PROJECT_SOURCE_DIR} DIRECTORY)
 
-add_library(ql
+ADD_LIBRARY(ql
   platform.cc
   program.cc
   exception.cc
@@ -13,10 +13,10 @@ add_library(ql
   )
 
 # support 'include <ql/foo.h>'
-#target_include_directories(ql SYSTEM
+#TARGET_INCLUDE_DIRECTORIES(ql SYSTEM
 #  PUBLIC ${PARENT_DIR}
 #  )
 
-set_target_properties(ql PROPERTIES POSITION_INDEPENDENT_CODE ON)
+SET_TARGET_PROPERTIES(ql PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-unset(PARENT_DIR)
+UNSET(PARENT_DIR)

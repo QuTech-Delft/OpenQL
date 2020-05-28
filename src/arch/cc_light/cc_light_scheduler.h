@@ -19,7 +19,7 @@
 #include <ir.h>
 #include <circuit.h>
 #include <scheduler.h>
-#include <arch/cc_light/cc_light_resource_manager.h>
+#include <resource_manager.h>
 
 #include <iomanip>
 #include <map>
@@ -56,17 +56,16 @@ inline std::string get_cc_light_instruction_name(std::string & id, const ql::qua
     return cc_light_instr_name;
 }
 
-
-inline ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
-    const ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
+ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt, 
+    const ql::quantum_platform & platform, std::string & dot, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Scheduling CC-Light instructions ...");
+
     Scheduler sched;
     sched.init(ckt, platform, nqubits, ncreg);
 
     ql::ir::bundles_t bundles1;
     std::string schedopt = ql::options::get("scheduler");
-    std::string dot;    
     if ("ASAP" == schedopt)
     {
         bundles1 = sched.schedule_asap(dot);
@@ -82,46 +81,49 @@ inline ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
 
     }
 
-    // combine parallel instructions of same type from different sections
+    ql::ir::DebugBundles("After scheduling", bundles1);
+
+    // combine parallel instrcutions of same type from different sections
     // into a single section
     for (ql::ir::bundle_t & abundle : bundles1)
     {
         auto secIt1 = abundle.parallel_sections.begin();
-        auto firstInsIt = secIt1->begin();
-        auto itype = (*(firstInsIt))->type();
 
-        if(__classical_gate__ == itype)
+        for( ; secIt1 != abundle.parallel_sections.end(); ++secIt1 )
         {
-            continue;
-        }
-        else
-        {
-            for( ; secIt1 != abundle.parallel_sections.end(); ++secIt1 )
+            for( auto secIt2 = std::next(secIt1); secIt2 != abundle.parallel_sections.end(); ++secIt2)
             {
-                for( auto secIt2 = std::next(secIt1); secIt2 != abundle.parallel_sections.end(); ++secIt2)
+                auto insIt1 = secIt1->begin();
+                auto insIt2 = secIt2->begin();
+                if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
                 {
-                    auto insIt1 = secIt1->begin();
-                    auto insIt2 = secIt2->begin();
-                    if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
+                    auto id1 = (*insIt1)->name;
+                    auto id2 = (*insIt2)->name;
+                    auto itype1 = (*insIt1)->type();
+                    auto itype2 = (*insIt2)->type();
+                    if (itype1 == __classical_gate__ || itype2 == __classical_gate__)
                     {
-                        auto id1 = (*insIt1)->name;
-                        auto id2 = (*insIt2)->name;
-                        auto n1 = get_cc_light_instruction_name(id1, platform);
-                        auto n2 = get_cc_light_instruction_name(id2, platform);
-                        if( n1 == n2 )
-                        {
-                            // DOUT("splicing " << n1 << " and " << n2);
-                            (*secIt1).splice(insIt1, (*secIt2) );
-                        }
-                        // else
-                        // {
-                        //     DOUT("Not splicing " << n1 << " and " << n2);
-                        // }
+                        DOUT("Not splicing " << id1 << " and " << id2);
+                        continue;
                     }
+
+                    auto n1 = get_cc_light_instruction_name(id1, platform);
+                    auto n2 = get_cc_light_instruction_name(id2, platform);
+                    if( n1 == n2 )
+                    {
+                        DOUT("Splicing " << id1 << "/" << n1 << " and " << id2 << "/" << n2);
+                        (*secIt1).splice(insIt1, (*secIt2) );
+                    }
+                    // else
+                    // {
+                    //     DOUT("Not splicing " << id1 << "/" << n1 << " and " << id2 << "/" << n2);
+                    // }
                 }
             }
         }
     }
+
+    ql::ir::DebugBundles("After combining", bundles1);
 
     // remove empty sections
     ql::ir::bundles_t bundles2;
@@ -140,15 +142,17 @@ inline ql::ir::bundles_t cc_light_schedule(ql::circuit & ckt,
         bundles2.push_back(abundle2);
     }
 
+    ql::ir::DebugBundles("After removing empty sections", bundles2);
+
     IOUT("Scheduling CC-Light instructions [Done].");
     return bundles2;
 }
 
-
-inline ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
-    const ql::quantum_platform & platform, size_t nqubits, size_t ncreg = 0)
+ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt, 
+    const ql::quantum_platform & platform, std::string & dot, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Resource constraint scheduling of CC-Light instructions ...");
+
     scheduling_direction_t  direction;
     std::string schedopt = ql::options::get("scheduler");
     if ("ASAP" == schedopt)
@@ -165,12 +169,11 @@ inline ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
         throw ql::exception("Unknown scheduler!", false);
 
     }
-    cc_light_resource_manager_t rm(platform, direction);
+    resource_manager_t rm(platform, direction);
 
     Scheduler sched;
     sched.init(ckt, platform, nqubits, ncreg);
     ql::ir::bundles_t bundles1;
-    std::string dot;
     if ("ASAP" == schedopt)
     {
         bundles1 = sched.schedule_asap(rm, platform, dot);
@@ -187,46 +190,48 @@ inline ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
     }
 
     IOUT("Combining parallel sections...");
+    ql::ir::DebugBundles("After scheduling_rc", bundles1);
+
     // combine parallel instrcutions of same type from different sections
     // into a single section
     for (ql::ir::bundle_t & abundle : bundles1)
     {
         auto secIt1 = abundle.parallel_sections.begin();
-        auto firstInsIt = secIt1->begin();
-        auto itype = (*(firstInsIt))->type();
 
-        if(__classical_gate__ == itype)
+        for( ; secIt1 != abundle.parallel_sections.end(); ++secIt1 )
         {
-            continue;
-        }
-        else
-        {
-            for( ; secIt1 != abundle.parallel_sections.end(); ++secIt1 )
+            for( auto secIt2 = std::next(secIt1); secIt2 != abundle.parallel_sections.end(); ++secIt2)
             {
-                for( auto secIt2 = std::next(secIt1); secIt2 != abundle.parallel_sections.end(); ++secIt2)
+                auto insIt1 = secIt1->begin();
+                auto insIt2 = secIt2->begin();
+                if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
                 {
-                    auto insIt1 = secIt1->begin();
-                    auto insIt2 = secIt2->begin();
-                    if(insIt1 != secIt1->end() && insIt2 != secIt2->end() )
+                    auto id1 = (*insIt1)->name;
+                    auto id2 = (*insIt2)->name;
+                    auto itype1 = (*insIt1)->type();
+                    auto itype2 = (*insIt2)->type();
+                    if (itype1 == __classical_gate__ || itype2 == __classical_gate__)
                     {
-                        auto id1 = (*insIt1)->name;
-                        auto id2 = (*insIt2)->name;
-                        auto n1 = get_cc_light_instruction_name(id1, platform);
-                        auto n2 = get_cc_light_instruction_name(id2, platform);
-                        if( n1 == n2 )
-                        {
-                            DOUT("splicing " << n1 << " and " << n2);
-                            (*secIt1).splice(insIt1, (*secIt2) );
-                        }
-                        else
-                        {
-                            DOUT("Not splicing " << n1 << " and " << n2);
-                        }
+                        DOUT("Not splicing " << id1 << " and " << id2);
+                        continue;
+                    }
+
+                    auto n1 = get_cc_light_instruction_name(id1, platform);
+                    auto n2 = get_cc_light_instruction_name(id2, platform);
+                    if( n1 == n2 )
+                    {
+                        DOUT("Splicing " << id1 << "/" << n1 << " and " << id2 << "/" << n2);
+                        (*secIt1).splice(insIt1, (*secIt2) );
+                    }
+                    else
+                    {
+                        DOUT("Not splicing " << id1 << "/" << n1 << " and " << id2 << "/" << n2);
                     }
                 }
             }
         }
     }
+    ql::ir::DebugBundles("After combinging", bundles1);
 
     IOUT("Removing empty sections...");
     // remove empty sections
@@ -245,6 +250,7 @@ inline ql::ir::bundles_t cc_light_schedule_rc(ql::circuit & ckt,
         }
         bundles2.push_back(abundle2);
     }
+    ql::ir::DebugBundles("After removing empty sections", bundles2);
 
     IOUT("Resource constraint scheduling of CC-Light instructions [Done].");
     return bundles2;

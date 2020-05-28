@@ -19,8 +19,8 @@ CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/hardware_config_qx.json
 # Uncomment the programs which you want to compile
 # you can also add your own programs on the similar lines
 
-ADD_EXECUTABLE(simple simple.cc )
-TARGET_LINK_LIBRARIES(simple ${LEMON_LIBRARIES} ql)
+# ADD_EXECUTABLE(simple simple.cc )
+# TARGET_LINK_LIBRARIES(simple ql ${LEMON_LIBRARIES} )
 
 # ADD_EXECUTABLE(rb_single rb_single.cc )
 # TARGET_LINK_LIBRARIES(rb_single ${LEMON_LIBRARIES} )
