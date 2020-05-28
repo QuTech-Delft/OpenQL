@@ -1889,21 +1889,21 @@ void schedule_kernel(quantum_kernel& kernel, quantum_platform platform,
         sched.get_dot(dot);
     }
 
-    if ("ASAP" == scheduler && "no" == scheduler_uniform)
-    {
-        sched.schedule_asap(sched_dot); // result in current kernel's circuit (k.c)
-    }
-    else if ("ALAP" == scheduler && "yes" == scheduler_uniform)
+    if ("yes" == scheduler_uniform)
     {
         sched.schedule_alap_uniform(); // result in current kernel's circuit (k.c)
     }
-    else if ("ALAP" == scheduler && "no" == scheduler_uniform)
+    else if ("ASAP" == scheduler)
+    {
+        sched.schedule_asap(sched_dot); // result in current kernel's circuit (k.c)
+    }
+    else if ("ALAP" == scheduler)
     {
         sched.schedule_alap(sched_dot); // result in current kernel's circuit (k.c)
     }
     else
     {
-        FATAL("Not supported scheduler options combination: scheduler=" << scheduler << " and scheduler_uniform=" << scheduler_uniform);
+        FATAL("Not supported scheduler option: scheduler=" << scheduler);
     }
     DOUT( scheduler << " scheduling the quantum kernel '" << kernel.name << "' DONE");
     kernel.cycles_valid = true;
