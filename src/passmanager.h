@@ -26,6 +26,7 @@ public:
     void addPassNamed(std::string realPassName, std::string symbolicPassName);
     AbstractPass* createPass(std::string passName, std::string aliasName);
     AbstractPass* findPass(std::string passName);
+    void setPassOptionAll(std::string optionName, std::string optionValue);
 
 private: 
     void addPass (AbstractPass *pass);

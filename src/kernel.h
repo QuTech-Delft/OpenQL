@@ -23,11 +23,7 @@
 #include "gate.h"
 #include "classical.h"
 #include "ir.h"
-
-//#ifdef __UNITARY_PROCESSING__
-//  #include "unitary.h"
-//#endif
-
+#include "unitary.h"
 #include "platform.h"
 
 
@@ -944,8 +940,8 @@ public:
     void gate(std::string gname, std::vector<size_t> qubits = {},
               std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
     {
-        /** @todo-rn: move these check to a platform-specific backend after qubits are initialized
-         * for(auto & qno : qubits)
+        /// @todo-rn: move these check to a platform-specific backend after qubits are initialized
+          for(auto & qno : qubits)
         {
             if( qno >= qubit_count )
             {
@@ -959,7 +955,7 @@ public:
             {
                 FATAL("Out of range operand(s) for '" << gname << "' with " << ql::utils::to_string(cregs,"cregs") );
             }
-        }*/
+        }
 
         if (!gate_nonfatal(gname, qubits, cregs, duration, angle))
         {
@@ -1060,7 +1056,6 @@ public:
         return added;
     }
     
-#ifdef __UNITARY_PROCESSING__
     // to add unitary to kernel
     void gate(ql::unitary u, std::vector<size_t> qubits)
     {
@@ -1227,7 +1222,6 @@ public:
 
     #undef S
     }
-#endif
 
     /**
      * qasm output

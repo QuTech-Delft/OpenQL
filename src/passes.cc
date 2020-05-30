@@ -8,12 +8,58 @@
  */
 
 #include "passes.h"
+#include "report.h"
+#include "optimizer.h"
+#include "decompose_toffoli.h"
 #include "cqasm/cqasm_reader.h"
 
 #include <iostream>
 
 namespace ql
 {
+    class eqasm_compiler
+    {
+        public:
+            virtual void compile(ql::quantum_program* programp, const ql::quantum_platform& plat);
+    };
+    
+    namespace arch
+    {
+        class cbox_eqasm_compiler: public eqasm_compiler
+        {
+            public:
+                cbox_eqasm_compiler(){}
+        };
+
+        class cc_light_eqasm_compiler: public eqasm_compiler
+        {
+            public:
+                cc_light_eqasm_compiler(){}
+        };
+
+        class eqasm_backend_cc: public eqasm_compiler
+        {
+            public:
+                eqasm_backend_cc(){}
+        };
+    }
+}
+
+namespace ql
+{
+
+extern void schedule(ql::quantum_program*, const ql::quantum_platform&, std::string);
+
+    /**
+     * @brief  Scheduler pass constructor
+     * @param  Name of the scheduler pass
+     */
+AbstractPass::AbstractPass(std::string name)
+{ 
+    DOUT("In AbstractPass::AbstractPass set name " << name << std::endl);
+    setPassName(name); 
+    createPassOptions(); 
+}
 
     /**
      * @brief   Gets the name of the pass
@@ -42,7 +88,7 @@ void AbstractPass::setPassOption(std::string optionName, std::string optionValue
 {
     DOUT("In AbstractPass::setPassOption");
     
-    passOptions->set(optionName, optionValue);  
+    passOptions->setOption(optionName, optionValue);  
 }
 
     /**
@@ -54,94 +100,113 @@ void AbstractPass::createPassOptions()
 }
 
     /**
-     * @brief  Reader pass constructor
-     * @param  Name of the read pass
-     */
-ReaderPass::ReaderPass(std::string name) 
-{ 
-    setPassName(name); 
-    createPassOptions();
-}
-
-    /**
      * @brief  Apply the pass to the input program
      * @param  Program object to be read
      */
-void ReaderPass::runOnProgram(ql::quantum_program *programp)
+void ReaderPass::runOnProgram(ql::quantum_program *program)
 {
-    DOUT("run ReaderPass with name = " << getPassName() << " on program " << programp->name);
-    ///@todo-rn: call or import the actual reader pass from the openql file
+    DOUT("run ReaderPass with name = " << getPassName() << " on program " << program->name);
     
-    ///@todo-rn: set pass options with platform file, now hard-coded for testing , which I still have to do!
-    /*ql::cqasm_reader* reader = new ql::cqasm_reader(new ql::quantum_platform("testPlatform","hardware_config_cc_light.json"), programp);
+    ql::cqasm_reader* reader = new ql::cqasm_reader(program->platform, *program);
     
-    reader->file2circuit(cqasm_file_path);*/
-}
+DOUT("!!!!!!!!!!! start reader !!!!!!!!");    
 
-    /**
-     * @brief  Writer pass constructor
-     * @param  Name of the read pass
-     */
-WriterPass::WriterPass(std::string name) 
-{ 
-    setPassName(name); 
-    createPassOptions();
+    reader->file2circuit("test_output/"+program->name+".qasm");
 }
 
     /**
      * @brief  Apply the pass to the input program
      * @param  Program object to be write
      */
-void WriterPass::runOnProgram(ql::quantum_program *programp)
+void WriterPass::runOnProgram(ql::quantum_program *program)
 {
-    DOUT("run WriterPass with name = " << getPassName() << " on program " << programp->name);
-    ///@todo-rn: call or import the actual reader pass from the openql file
-    
-    std::string name = programp->name;
-    int qubit_count = 0;
-    
-}
+    DOUT("run WriterPass with name = " << getPassName() << " on program " << program->name);
 
-    /**
-     * @brief  Optimizer pass constructor
-     * @param  Name of the optimized pass
-     */
-OptimizerPass::OptimizerPass(std::string name) 
-{ 
-    setPassName(name); 
-    createPassOptions();
+    // report/write_qasm initialization
+    ql::report_init(program, program->platform);
+    
+    // writer pass of the initial qasm file (program.qasm)
+    ql::write_qasm(program, program->platform, "initialqasmwriter");
 }
 
     /**
      * @brief  Apply the pass to the input program
      * @param  Program object to be read
      */
-void OptimizerPass::runOnProgram(ql::quantum_program *programp)
+void RotationOptimizerPass::runOnProgram(ql::quantum_program *program)
 {
-    DOUT("run OptimizePass with name = " << getPassName() << " on program " << programp->name);
+    DOUT("run RotationOptimizerPass with name = " << getPassName() << " on program " << program->name);
+    
+    rotation_optimize(program, program->platform, "rotation_optimize");
 }
   
     /**
-     * @brief  Scheduler pass constructor
-     * @param  Name of the scheduler pass
+     * @brief  Apply the pass to the input program
+     * @param  Program object to be read
      */
-SchedulerPass::SchedulerPass(std::string name)
-{ 
-    DOUT("In SchedulerPass::SchedulerPass");
-    setPassName(name); 
-    createPassOptions(); 
+void DecomposeToffoliPass::runOnProgram(ql::quantum_program *program)
+{
+    DOUT("run DecomposeToffoliPass with name = " << getPassName() << " on program " << program->name);
+    
+    // decompose_toffoli pass
+    ql::decompose_toffoli(program, program->platform, "decompose_toffoli");
 }
 
     /**
      * @brief  Apply the pass to the input program
      * @param  Program object to be read
      */
-void SchedulerPass::runOnProgram(ql::quantum_program *programp)
+void SchedulerPass::runOnProgram(ql::quantum_program *program)
 {
-    DOUT("run ReadPass with name = " << getPassName() << " on program " << programp->name);
+    DOUT("run SchedulerPass with name = " << getPassName() << " on program " << program->name);
     
-    ///@todo-rn: import the scheduler here and disentangle from platform. Needed to make a difference between prescheduler and rcscheduler, whereas the first can be used just for platform-independent simulations
-    //programp->schedule(); 
+    // prescheduler pass
+    ql::schedule(program, program->platform, "prescheduler");
+}
+
+    /**
+     * @brief  Apply the pass to the input program
+     * @param  Program object to be read
+     */
+void BackendCompilerPass::runOnProgram(ql::quantum_program *program)
+{
+    DOUT("run BackendCompilerPass with name = " << getPassName() << " on program " << program->name);
+    
+    ql::eqasm_compiler* backend_compiler;
+    
+    std::string eqasm_compiler_name = program->platform.eqasm_compiler_name;
+    //getPassOptions()->getOption("eqasm_compiler_name");
+    
+    if (eqasm_compiler_name == "qumis_compiler")
+    {
+        backend_compiler = new ql::arch::cbox_eqasm_compiler();
+        assert(backend_compiler);
+    }
+    else if (eqasm_compiler_name == "cc_light_compiler" )
+    {
+        backend_compiler = new ql::arch::cc_light_eqasm_compiler();
+        assert(backend_compiler);
+    }
+    else if (eqasm_compiler_name == "eqasm_backend_cc" )
+    {
+        backend_compiler = new ql::arch::eqasm_backend_cc();
+        assert(backend_compiler);
+    }
+    else
+    {
+        FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
+    }
+
+    backend_compiler->compile(program, program->platform);
+}
+
+    /**
+     * @brief  Report Statistics for the input program
+     * @param  Program object to be read
+     */
+void ReportStatisticsPass::runOnProgram(ql::quantum_program *program)
+{
+    ql::report_statistics(program, program->platform, "todo-inout", getPassName(), "# ");
 }
 
     /**
@@ -156,10 +221,16 @@ PassOptions::PassOptions(std::string app_name="passOpts")
     // default values
     opt_name2opt_val["write_qasm_files"] = "no";
     opt_name2opt_val["read_qasm_files"] = "no";
+    opt_name2opt_val["hwconfig"] = "none";
+    opt_name2opt_val["nqubits"] = "100";
+    opt_name2opt_val["eqasm_compiler_name"] = "cc_light_compiler";
 
     // add options with default values and list of possible values
     app->add_set_ignore_case("--write_qasm_files", opt_name2opt_val["write_qasm_files"], {"yes", "no"}, "write (un-)scheduled (with and without resource-constraint) qasm files", true);
     app->add_set_ignore_case("--read_qasm_files", opt_name2opt_val["read_qasm_files"], {"yes", "no"}, "read (un-)scheduled (with and without resource-constraint) qasm files", true);
+    app->add_option("--hwconfig", opt_name2opt_val["hwconfig"], "path to the platform configuration file", true);
+    app->add_option("--nqubits", opt_name2opt_val["nqubits"], "number of qubits used by the program", true);
+    app->add_set_ignore_case("--eqasm_compiler_name", opt_name2opt_val["eqasm_compiler_name"], {"qumis_compiler", "cc_light_compiler", "eqasm_backend_cc"}, "Set the compiler backend", true);
 }
 
     /**
@@ -169,7 +240,10 @@ void PassOptions::print_current_values()
 {
     ///@todo-rn: update this list with meaningful pass options
     std::cout << "write_qasm_files: " << opt_name2opt_val["write_qasm_files"] << std::endl
-              << "read_qasm_files: " << opt_name2opt_val["read_qasm_files"] << std::endl;
+              << "read_qasm_files: " << opt_name2opt_val["read_qasm_files"] << std::endl
+              << "hwconfig: " << opt_name2opt_val["hwconfig"] << std::endl
+              << "nqubits: " << opt_name2opt_val["nqubits"] << std::endl
+              << "eqasm_compiler_name: " << opt_name2opt_val["eqasm_compiler_name"] << std::endl;
 }
 
     /**
@@ -185,7 +259,7 @@ void PassOptions::help()
      * @param   opt_name String option name
      * @param   opt_value String value of the option
      */
-void PassOptions::set(std::string opt_name, std::string opt_value)
+void PassOptions::setOption(std::string opt_name, std::string opt_value)
 {
     DOUT("In PassOptions: setting option " << opt_name << " to value " << opt_value << std::endl);
     try
@@ -196,8 +270,9 @@ void PassOptions::set(std::string opt_name, std::string opt_value)
     catch (const std::exception &e)
     {
        app->reset();
-       EOUT("Un-known option:"<< e.what());
-       throw ql::exception("Error parsing options. "+std::string(e.what())+" !",false);
+       EOUT("Un-known option: "<< e.what());
+       throw ql::exception("Error parsing options. "+std::string(e.what())+" ! \n Allowed values are: \n"+app->help(opt_name),false);
+
     }
     app->reset();
 }
@@ -207,7 +282,7 @@ void PassOptions::set(std::string opt_name, std::string opt_value)
      * @param opt_name Name of the options
      * @return Value of the option
      */
-std::string PassOptions::get(std::string opt_name)
+std::string PassOptions::getOption(std::string opt_name)
 {
     std::string opt_value("UNKNOWN");
     if( opt_name2opt_val.find(opt_name) != opt_name2opt_val.end() )
@@ -216,7 +291,9 @@ std::string PassOptions::get(std::string opt_name)
     }
     else
     {
-        EOUT("Un-known option:"<< opt_name);
+        EOUT("Un-known option: "<< opt_name << "\n Allowed values are: \n");
+        std::cout << app->help(opt_name);
+        exit(1);
     }
     return opt_value;
 }
