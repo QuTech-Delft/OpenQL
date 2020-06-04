@@ -20,6 +20,8 @@
 #include <scheduler.h>
 #include <mapper.h>
 #include <clifford.h>
+#include <latency_compensation.h>
+#include <buffer_insertion.h>
 #include <qsoverlay.h>
 
 // eqasm code : set of cc_light_eqasm instructions
@@ -1044,6 +1046,10 @@ public:
         clifford_optimize(programp, platform, "clifford_postmapper");
 
         ql::rcschedule(programp, platform, "rcscheduler");
+
+        ql::ccl_latency_compensation(programp, platform, "latency_compensation");
+
+        ql::ccl_insert_buffer_delays(programp, platform, "ccl_buffer_insertion");
 
         // computing timetaken, stop interval timer
         high_resolution_clock::time_point t2 = high_resolution_clock::now();

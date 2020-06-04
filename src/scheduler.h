@@ -108,7 +108,6 @@ public:
     ql::circuit*    circp;                      // current and result circuit, passed from Init to each scheduler
 
     // scheduler support
-    std::map< std::pair<std::string,std::string>, size_t> buffer_cycles_map;
     std::map<ListDigraph::Node,size_t>  remaining;  // remaining[node] == cycles until end; critical path representation
 
 
@@ -151,28 +150,6 @@ public:
         DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", total=" << qubit_creg_count);
         cycle_time = platform.cycle_time;
         circp = &ckt;
-
-        // populate buffer map
-        // 'none' type is a dummy type and 0 buffer cycles will be inserted for
-        // instructions of type 'none'
-        //
-        // this has nothing to do with dependence graph generation but with scheduling
-        // so should be in resource-constrained scheduler constructor
-        std::vector<std::string> buffer_names = {"none", "mw", "flux", "readout"};
-        for(auto & buf1 : buffer_names)
-        {
-            for(auto & buf2 : buffer_names)
-            {
-                auto bpair = std::pair<std::string,std::string>(buf1,buf2);
-                auto bname = buf1+ "_" + buf2 + "_buffer";
-                if(platform.hardware_settings.count(bname) > 0)
-                {
-                    buffer_cycles_map[ bpair ] = size_t(std::ceil(
-                        static_cast<float>(platform.hardware_settings[bname]) / cycle_time));
-                }
-                // DOUT("Initializing " << bname << ": "<< buffer_cycles_map[bpair]);
-            }
-        }
 
         // dependences are created with a current gate as target
         // and with those previous gates as source that have an operand match:
@@ -862,115 +839,11 @@ public:
     }
 
 
-// =========== schedulers with RC, latency compensation and buffer-buffer delay insertion
+// =========== schedulers with RC
     // Most code from here on deals with scheduling with Resource Constraints.
     // Then the cycles as computed from the depgraph alone start to drift because of resource conflicts,
     // and then it is more optimal to at each point consider all available nodes for scheduling
     // to avoid largely suboptimal results (issue 179), i.e. apply list scheduling.
-
-    // latency compensation
-    void latency_compensation(ql::circuit* circp, const ql::quantum_platform& platform)
-    {
-        DOUT("Latency compensation ...");
-        bool    compensated_one = false;
-        for ( auto & gp : *circp)
-        {
-            auto & id = gp->name;
-            // DOUT("Latency compensating instruction: " << id);
-            long latency_cycles=0;
-
-            if(platform.instruction_settings.count(id) > 0)
-            {
-                if(platform.instruction_settings[id].count("latency") > 0)
-                {
-                    float latency_ns = platform.instruction_settings[id]["latency"];
-                    latency_cycles = long(std::ceil( static_cast<float>(std::abs(latency_ns)) / cycle_time)) *
-                                          ql::utils::sign_of(latency_ns);
-                    compensated_one = true;
-
-                    gp->cycle = gp->cycle + latency_cycles;
-                    DOUT( "... compensated to @" << gp->cycle << " <- " << id << " with " << latency_cycles );
-                }
-            }
-        }
-
-        if (compensated_one)
-        {
-            DOUT("... sorting on cycle value after latency compensation");
-            sort_by_cycle(circp);
-
-            DOUT("... printing schedule after latency compensation");
-            for ( auto & gp : *circp)
-            {
-                DOUT("...... @(" << gp->cycle << "): " << gp->qasm());
-            }
-        }
-        else
-        {
-            DOUT("... no gate latency compensated");
-        }
-        DOUT("Latency compensation [DONE]");
-    }
-
-    // insert buffer - buffer delays
-    /*
-        The intended functionality and the use of insertion of buffer delays are not clear;
-        see tests/test_cc_light.py for examples of use, though.
-        Currently the functionality and code below strongly depend on bundles:
-        only a previous bundle and the current bundle are checked for a pair of operations
-        but the intended delay could be required between a bundler farther back because the duration is longer
-        so the current implementation may not do what it intends.
-        Below, the code is updated to modularity, but it is an exact copy of what it was,
-        with creating bundles from the circuit and updating the circuit from the bundles around it.
-        Once clarity is gained on intended functionality and use, it can be rewritten and corrected.
-    */
-    void insert_buffer_delays(ql::circuit& circ, const ql::quantum_platform& platform)
-    {
-        ql::ir::bundles_t bundles = ql::ir::bundler(circ, cycle_time);
-
-        DOUT("Buffer-buffer delay insertion ... ");
-        std::vector<std::string> operations_prev_bundle;
-        size_t buffer_cycles_accum = 0;
-        for(ql::ir::bundle_t & abundle : bundles)
-        {
-            std::vector<std::string> operations_curr_bundle;
-            for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
-            {
-                for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
-                {
-                    auto & id = (*insIt)->name;
-                    std::string op_type("none");
-                    if(platform.instruction_settings.count(id) > 0)
-                    {
-                        if(platform.instruction_settings[id].count("type") > 0)
-                        {
-                            op_type = platform.instruction_settings[id]["type"];
-                        }
-                    }
-                    operations_curr_bundle.push_back(op_type);
-                }
-            }
-
-            size_t buffer_cycles = 0;
-            for(auto & op_prev : operations_prev_bundle)
-            {
-                for(auto & op_curr : operations_curr_bundle)
-                {
-                    auto temp_buf_cycles = buffer_cycles_map[ std::pair<std::string,std::string>(op_prev, op_curr) ];
-                    DOUT("... considering buffer_" << op_prev << "_" << op_curr << ": " << temp_buf_cycles);
-                    buffer_cycles = std::max(temp_buf_cycles, buffer_cycles);
-                }
-            }
-            DOUT( "... inserting buffer : " << buffer_cycles);
-            buffer_cycles_accum += buffer_cycles;
-            abundle.start_cycle = abundle.start_cycle + buffer_cycles_accum;
-            operations_prev_bundle = operations_curr_bundle;
-        }
-
-        circ = ql::ir::circuiter(bundles);
-
-        DOUT("Buffer-buffer delay insertion [DONE] ");
-    }
 
     // In critical-path scheduling, usually more-critical instructions are preferred;
     // an instruction is more-critical when its ASAP and ALAP values differ less.
@@ -1416,8 +1289,6 @@ public:
     // what is done, is:
     // - the cycle attribute of the gates will be set according to the scheduling method
     // - *circp (the original and result circuit) is sorted in the new cycle order
-    // - bundles are collected from the circuit
-    // - latency compensation and buffer-buffer delay insertion done
     // the bundles are returned, with private start/duration attributes
     void schedule(ql::circuit* circp, ql::scheduling_direction_t dir,
             const ql::quantum_platform& platform, ql::arch::resource_manager_t& rm, std::string& sched_dot)
@@ -1498,11 +1369,6 @@ public:
         }
 
         // end scheduling
-        // from here split off
-
-        latency_compensation(circp, platform);
-
-        insert_buffer_delays(*circp, platform);
 
         DOUT("Scheduling " << (ql::forward_scheduling == dir?"ASAP":"ALAP") << " with RC [DONE]");
     }
