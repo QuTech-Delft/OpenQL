@@ -28,7 +28,7 @@ namespace ql
         with creating bundles from the circuit and updating the circuit from the bundles around it.
         Once clarity is gained on intended functionality and use, it can be rewritten and corrected.
     */
-    inline void insert_buffer_delays_kernel(ql::quantum_kernel& kernel, const ql::quantum_platform & platform)
+    void insert_buffer_delays_kernel(ql::quantum_kernel& kernel, const ql::quantum_platform & platform)
     {
         DOUT("Buffer-buffer delay insertion ... ");
 
@@ -102,7 +102,7 @@ namespace ql
         DOUT("Buffer-buffer delay insertion [DONE] ");
     }
 
-    void ccl_insert_buffer_delays(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
+    void insert_buffer_delays(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
     {
         ql::report_statistics(programp, platform, "in", passname, "# ");
         ql::report_qasm(programp, platform, "in", passname);

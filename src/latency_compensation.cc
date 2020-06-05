@@ -26,7 +26,7 @@ namespace ql
     static void lc_sort_by_cycle(ql::circuit *cp)
     {
         // std::sort doesn't preserve the original order of elements that have equal values but std::stable_sort does
-        std::stable_sort(cp->begin(), cp->end(), cycle_lessthan);
+        std::stable_sort(cp->begin(), cp->end(), lc_cycle_lessthan);
     }
 
     void latency_compensation_kernel(ql::quantum_kernel& kernel, const ql::quantum_platform & platform)
@@ -75,7 +75,7 @@ namespace ql
         DOUT("Latency compensation [DONE]");
     }
 
-    void ccl_latency_compensation(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
+    void latency_compensation(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
     {
         ql::report_statistics(programp, platform, "in", passname, "# ");
         ql::report_qasm(programp, platform, "in", passname);

@@ -1047,9 +1047,9 @@ public:
 
         ql::rcschedule(programp, platform, "rcscheduler");
 
-        ql::ccl_latency_compensation(programp, platform, "latency_compensation");
+        ql::latency_compensation(programp, platform, "ccl_latency_compensation");
 
-        ql::ccl_insert_buffer_delays(programp, platform, "ccl_buffer_insertion");
+        ql::insert_buffer_delays(programp, platform, "ccl_insert_buffer_delays");
 
         // computing timetaken, stop interval timer
         high_resolution_clock::time_point t2 = high_resolution_clock::now();

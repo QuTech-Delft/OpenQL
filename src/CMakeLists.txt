@@ -7,6 +7,8 @@ ADD_LIBRARY(ql
   program.cc
   compiler.cc
   decompose_toffoli.cc
+  buffer_insertion.cc
+  latency_compensation.cc
   optimizer.cc
   passmanager.cc
   passes.cc
