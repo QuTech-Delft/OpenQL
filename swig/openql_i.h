@@ -19,7 +19,10 @@
 #include <version.h>
 #include <openql.h>
 #include <classical.h>
-#include <unitary.h>
+
+#ifndef REMOVE_UNITARY
+// #include <unitary.h>
+#endif //REMOVE_UNITARY
 
 
 static std::string get_version()
@@ -108,6 +111,8 @@ typedef std::complex<double> Complex;
 /**
  * quantum unitary matrix interface
  */
+#ifndef REMOVE_UNITARY
+/*
 class Unitary
 {
 public:
@@ -130,7 +135,8 @@ public:
         delete(unitary);
     }
 };
-
+*/
+#endif //REMOVE_UNITARY
 
 /**
  * quantum kernel interface
@@ -284,12 +290,12 @@ public:
     {
         kernel->gate(name, qubits, {(destination.creg)->id} );
     }
-
-    void gate(Unitary &u, std::vector<size_t> qubits)
-    {
-        kernel->gate(*(u.unitary), qubits);
-    }
-
+#ifndef REMOVE_UNITARY
+//    void gate(Unitary &u, std::vector<size_t> qubits)
+//    {
+//        kernel->gate(*(u.unitary), qubits);
+//    }
+#endif //REMOVE_UNITARY
     void classical(CReg & destination, Operation& operation)
     {
         kernel->classical(*(destination.creg), *(operation.operation));
