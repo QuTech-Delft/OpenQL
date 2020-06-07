@@ -22,8 +22,6 @@ PassManager::PassManager(std::string name): name(name) {}
      */
 void PassManager::compile(ql::quantum_program *program)
 {
-
-   bool hasPlatform = false;
    
    DOUT("In PassManager::compile ... ");
    for(auto pass : passes)
@@ -35,15 +33,20 @@ void PassManager::compile(ql::quantum_program *program)
             program->qubit_count = (size_t)(std::stoi(pass->getPassOptions()->getOption("nqubits")));
         assert(program->qubit_count);
         
-        if(!hasPlatform)
+        //If the old interface is used, platform is already set, so it is not needed to look for platform option and configure the platform from there
+        if(!program->platformInitialized)
         {
             std::string hwconfig = pass->getPassOptions()->getOption("hwconfig");   
             program->platform = *(new ql::quantum_platform("testPlatform",hwconfig));
-            hasPlatform = true;
         }
         assert(program->platform);
    
-        pass->runOnProgram(program);
+        if(!pass->getSkip())
+        {
+            pass->initPass(program);
+            pass->runOnProgram(program);
+            pass->finalizePass(program);
+        }
     }
 }
    

@@ -14,8 +14,8 @@ class Test_modularity(unittest.TestCase):
       ql.set_option('scheduler', 'ASAP')
       ql.set_option('log_level', 'LOG_WARNING')
       ql.set_option('unique_output', 'yes')
-      ql.set_option('write_qasm_files', 'yes')
-      ql.set_option('write_report_files', 'yes')
+      ql.set_option('write_qasm_files', 'no')
+      ql.set_option('write_report_files', 'no')
 
 
   def test_modularity(self):
@@ -31,24 +31,28 @@ class Test_modularity(unittest.TestCase):
       c.add_pass("RotationOptimizer");
       c.add_pass("DecomposeToffoli");
       c.add_pass("Scheduler");
-      c.add_pass("ReportStatistics");
-      c.add_pass("Writer");
+      #c.add_pass("ReportStatistics");
+      #c.add_pass("Writer");
       c.add_pass("BackendCompiler");
-      c.add_pass("Writer");
+      #c.add_pass("Writer");
 
 #TODO: The backend compiler will eventually be split into smaller backend passes that should be instantiated here in the same way.
       c.set_pass_option("BackendCompiler", "eqasm_compiler_name", "cc_light_compiler"); 
 
 #TODO: currently, all passes require the platform, that is why the options is set for ALL passes. However, this should change and be set only for backend passes
-      c.set_pass_option("ALL", "hwconfig", config_fn);
-      c.set_pass_option("ALL", "nqubits", "3");
+      c.set_pass_option("ALL", "skip", "no");
+      c.set_pass_option("ALL", "write_qasm_files", "yes");
+      c.set_pass_option("ALL", "write_report_files", "yes");
+      #c.set_pass_option("ALL", "hwconfig", config_fn);
 
 #TODO: this needs to be removed! and set as option for a simulator backend or read from platform configuration file
       nqubits = 3 
 
-      p = ql.Program("testProgram");
+      platform  = ql.Platform('starmon', config_fn)
 
-      k = ql.Kernel("aKernel")
+      p = ql.Program("testProgram", platform, nqubits, 0)
+
+      k = ql.Kernel("aKernel", platform, nqubits, 0)
 
 #TODO: this should become an initialization of the platform, an implicit pass that initializes the data segment!
       for i in range(nqubits):

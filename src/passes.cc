@@ -59,6 +59,7 @@ AbstractPass::AbstractPass(std::string name)
     DOUT("In AbstractPass::AbstractPass set name " << name << std::endl);
     setPassName(name); 
     createPassOptions(); 
+    appendStatistics("AbstractPass: statistics created\n");
 }
 
     /**
@@ -97,6 +98,87 @@ void AbstractPass::setPassOption(std::string optionName, std::string optionValue
 void AbstractPass::createPassOptions()
 {
     passOptions = new PassOptions(getPassName());
+}
+
+    /**
+     * @brief   Queries the skip option of the pass
+     * @return  bool representing wheather the pass should be skipped
+     */
+bool AbstractPass::getSkip()
+{
+    if(getPassOptions()->getOption("skip") == "yes")
+        return true;
+    else 
+        return false;
+}
+
+    /**
+     * @brief   Modifies/Stores statistics about the pass
+     */
+void AbstractPass::appendStatistics(std::string statistic)
+{
+    statistics += statistic;
+}
+    
+    /**
+     * @brief   Initializes the pass by printing useful information
+     */
+void AbstractPass::initPass(ql::quantum_program *program)
+{
+    if(getPassOptions()->getOption("write_qasm_files") == "yes")
+    {
+        //temporary store old value 
+        ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
+        std::string writeQasmLocal = ql::options::get("write_qasm_files");
+        ql::options::set("write_qasm_files", "yes");
+        
+        ql::report_qasm(program, program->platform, "in", getPassName());
+        
+        ql::options::set("write_qasm_files", writeQasmLocal);
+        
+    }
+    
+    if(getPassOptions()->getOption("write_report_files") == "yes")
+    {
+        //temporary store old value 
+        ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
+        std::string writeReportLocal = ql::options::get("write_report_files");
+        ql::options::set("write_report_files", "yes");
+        
+        ql::report_statistics(program, program->platform, "in", getPassName(), "# ");
+        
+        ql::options::set("write_report_files", writeReportLocal);
+    }
+}
+
+    /**
+     * @brief   Finilazes the pass by printing useful information and cleaning
+     */
+void AbstractPass::finalizePass(ql::quantum_program *program)
+{
+    if(getPassOptions()->getOption("write_qasm_files") == "yes")
+    {
+        //temporary store old value 
+        ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
+        std::string writeQasmLocal = ql::options::get("write_qasm_files");
+        ql::options::set("write_qasm_files", "yes");
+        
+        ql::report_qasm(program, program->platform, "out", getPassName());
+        
+        ql::options::set("write_qasm_files", writeQasmLocal);
+    }
+    
+    if(getPassOptions()->getOption("write_report_files") == "yes")
+    {
+        //temporary store old value 
+        ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
+        std::string writeReportLocal = ql::options::get("write_report_files");
+        ql::options::set("write_report_files", "yes");
+        
+        ql::report_statistics(program, program->platform, "out", getPassName(), "# "+getPassStatistics());
+        
+        ql::options::set("write_report_files", writeReportLocal);
+    }
 }
 
     /**
@@ -162,6 +244,8 @@ void SchedulerPass::runOnProgram(ql::quantum_program *program)
     
     // prescheduler pass
     ql::schedule(program, program->platform, "prescheduler");
+    
+    appendStatistics("FOR EXAMPLE: ADD HERE WHAT STATISTIC YOU WANT TO PASS!\n");
 }
 
     /**
@@ -219,6 +303,8 @@ PassOptions::PassOptions(std::string app_name="passOpts")
 
     ///@todo-rn: update this list with meaningful pass options
     // default values
+    opt_name2opt_val["skip"] = "no";
+    opt_name2opt_val["write_report_files"] = "no";
     opt_name2opt_val["write_qasm_files"] = "no";
     opt_name2opt_val["read_qasm_files"] = "no";
     opt_name2opt_val["hwconfig"] = "none";
@@ -226,6 +312,8 @@ PassOptions::PassOptions(std::string app_name="passOpts")
     opt_name2opt_val["eqasm_compiler_name"] = "cc_light_compiler";
 
     // add options with default values and list of possible values
+    app->add_set_ignore_case("--skip", opt_name2opt_val["skip"], {"yes", "no"}, "skip running the pass", true);
+    app->add_set_ignore_case("--write_report_files", opt_name2opt_val["write_report_files"], {"yes", "no"}, "report compiler statistics", true);
     app->add_set_ignore_case("--write_qasm_files", opt_name2opt_val["write_qasm_files"], {"yes", "no"}, "write (un-)scheduled (with and without resource-constraint) qasm files", true);
     app->add_set_ignore_case("--read_qasm_files", opt_name2opt_val["read_qasm_files"], {"yes", "no"}, "read (un-)scheduled (with and without resource-constraint) qasm files", true);
     app->add_option("--hwconfig", opt_name2opt_val["hwconfig"], "path to the platform configuration file", true);
@@ -240,6 +328,8 @@ void PassOptions::print_current_values()
 {
     ///@todo-rn: update this list with meaningful pass options
     std::cout << "write_qasm_files: " << opt_name2opt_val["write_qasm_files"] << std::endl
+              << "write_report_files: " << opt_name2opt_val["write_report_files"] << std::endl
+              << "skip: " << opt_name2opt_val["skip"] << std::endl
               << "read_qasm_files: " << opt_name2opt_val["read_qasm_files"] << std::endl
               << "hwconfig: " << opt_name2opt_val["hwconfig"] << std::endl
               << "nqubits: " << opt_name2opt_val["nqubits"] << std::endl
