@@ -23,11 +23,9 @@ class eqasm_compiler;
  */
 class quantum_program
 {
-protected:
+public:
     bool                        default_config;
     std::string                 config_file_name;
-
-public:
     std::vector<quantum_kernel> kernels;
     std::string           name;
     std::string           unique_name;

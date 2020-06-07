@@ -14,6 +14,7 @@
 #include <scheduler.h>
 #include <optimizer.h>
 #include <decompose_toffoli.h>
+#include <write_sweep_points.h>
 #include <arch/cbox/cbox_eqasm_compiler.h>
 #include <arch/cc_light/cc_light_eqasm_compiler.h>
 #include <arch/cc/eqasm_backend_cc.h>
@@ -356,17 +357,13 @@ int quantum_program::compile()
     // writer pass of the scheduled qasm file (program_scheduled.qasm)
     ql::write_qasm(this, platform, "scheduledqasmwriter");
 
-
-    // from here on backend passes
-
+    // backend passes
     DOUT("eqasm_compiler_name: " << eqasm_compiler_name);
-
     if (!needs_backend_compiler)
     {
         WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
         return 0;
     }
-
     if (backend_compiler == NULL)
     {
         EOUT("No known eqasm compiler has been specified in the configuration file.");
@@ -379,35 +376,9 @@ int quantum_program::compile()
         DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
     }
 
-    if (sweep_points.size())
-    {
-        std::stringstream ss_swpts;
-        ss_swpts << "{ \"measurement_points\" : [";
-        for (size_t i=0; i<sweep_points.size()-1; i++)
-            ss_swpts << sweep_points[i] << ", ";
-        ss_swpts << sweep_points[sweep_points.size()-1] << "] }";
-        std::string config = ss_swpts.str();
-        if (default_config)
-        {
-            std::stringstream ss_config;
-            ss_config << ql::options::get("output_dir") << "/" << unique_name << "_config.json";
-            std::string conf_file_name = ss_config.str();
-            IOUT("writing sweep points to '" << conf_file_name << "'...");
-            ql::utils::write_file(conf_file_name, config);
-        }
-        else
-        {
-            std::stringstream ss_config;
-            ss_config << ql::options::get("output_dir") << "/" << config_file_name;
-            std::string conf_file_name = ss_config.str();
-            IOUT("writing sweep points to '" << conf_file_name << "'...");
-            ql::utils::write_file(conf_file_name, config);
-        }
-    }
-    else
-    {
-        IOUT("sweep points file not generated as sweep point array is empty !");
-    }
+    // generate sweep_points file
+    ql::write_sweep_points(this, platform, "write_sweep_points");
+
     IOUT("compilation of program '" << name << "' done.");
 
     return 0;

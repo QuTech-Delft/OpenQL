@@ -9,6 +9,7 @@ ADD_LIBRARY(ql
   decompose_toffoli.cc
   buffer_insertion.cc
   latency_compensation.cc
+  write_sweep_points.cc
   optimizer.cc
   passmanager.cc
   passes.cc
