@@ -29,9 +29,15 @@ public:
     void setPassOption(std::string optionName, std::string optionValue);
     class PassOptions* getPassOptions() {return passOptions;};
     void createPassOptions();
+    bool getSkip();
+    void initPass(ql::quantum_program *program);
+    void finalizePass(ql::quantum_program *program);
+    void appendStatistics(std::string statistic);
+    std::string getPassStatistics() {return statistics;};
     
 private:
     std::string        passName;
+    std::string        statistics;
     class PassOptions *passOptions;
 };
 

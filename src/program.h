@@ -31,6 +31,7 @@ public:
     std::string           unique_name;
     std::vector<float>    sweep_points;
     ql::quantum_platform  platform;
+    bool                  platformInitialized;
     size_t                qubit_count;
     size_t                creg_count;
     std::string           eqasm_compiler_name;

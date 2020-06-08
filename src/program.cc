@@ -31,6 +31,7 @@ namespace ql
 quantum_program::quantum_program(std::string n)
     : name(n)
 {
+    platformInitialized = false;
     DOUT("Constructor for quantum_program:  " << n);
 }
     
@@ -39,6 +40,7 @@ quantum_program::quantum_program(std::string n, quantum_platform platf, size_t n
 {
     default_config = true;
     needs_backend_compiler = true;
+    platformInitialized = true;
     eqasm_compiler_name = platform.eqasm_compiler_name;
     backend_compiler    = NULL;
     if (eqasm_compiler_name =="")
@@ -87,7 +89,6 @@ quantum_program::quantum_program(std::string n, quantum_platform platf, size_t n
 void quantum_program::add(ql::quantum_kernel &k)
 {
     // check sanity of supplied qubit/classical operands for each gate
-    /** @todo-RN: move this check to a backend platform validation pass for the target platform 
     ql::circuit& kc = k.get_circuit();
     for( auto & g : kc )
     {
@@ -108,7 +109,7 @@ void quantum_program::add(ql::quantum_kernel &k)
                         ")");
             }
         }
-    }*/
+    }
 
     for (auto kernel : kernels)
     {
