@@ -254,6 +254,12 @@ namespace ql
                 kernel.gate(translate_gate_type("measure_z"), qubit);
             }
         }
+        else if (gate_type == "skip")
+        {
+            // maintain a current_cycle value:
+            //      size_t wait_time = operation.getWaitTime();
+            //      current_cycle += wait_time;
+        }
         else if (gate_type == "wait")
         {
             size_t wait_time = operation.getWaitTime();
@@ -314,6 +320,7 @@ namespace ql
         assert(translate_gate_type("crk") == "crk");
         assert(translate_gate_type("cr") == "cr");
         assert(translate_gate_type("display") == "display");
+        assert(translate_gate_type("skip") == "skip");
         assert(translate_gate_type("wait") == "wait");
         assert(translate_gate_type("display_binary") == "display_binary");
         assert(translate_gate_type("measure_parity") == "measure_parity");

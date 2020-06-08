@@ -17,14 +17,17 @@
 #include <gate.h>
 #include <exception.h>
 
+#ifndef REMOVE_UNITARY
 #include <Eigen/MatrixFunctions>
 #include <src/misc/lapacke.h>
+#endif //REMOVE_UNITARY
 
-// #include <chrono>
+#include <chrono>
 
+/// @todo-rn: FIX to avoid long compilation times 
 namespace ql
 {
-
+#ifndef REMOVE_UNITARY
 class unitary
 {
 private:
@@ -521,7 +524,7 @@ public:
         DOUT("destructing unitary: " << name);
     }
 };
-
+#endif //REMOVE_UNITARY
 
 }
 

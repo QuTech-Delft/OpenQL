@@ -3542,14 +3542,15 @@ void MapCircuit(ql::quantum_kernel& kernel, Virt2Real& v2r)
     // mainPast.DPRINT("start mapping");
 
     MapGates(future, mainPast, mainPast);
-    mainPast.FlushAll();
+    mainPast.FlushAll();                // all output to mainPast.outlg, the output window of mainPast
 
     // mainPast.DPRINT("end mapping");
 
     DOUT("... retrieving outCirc from mainPast.outlg; swapping outCirc with kernel.c, kernel.c contains output circuit");
     ql::circuit outCirc;
-    mainPast.Out(outCirc);
-    kernel.c.swap(outCirc);
+    mainPast.Out(outCirc);                          // copy (final part of) mainPast's output window into this outCirc
+    kernel.c.swap(outCirc);                         // and then to kernel.c
+    kernel.cycles_valid = true;                     // decomposition was scheduled in; see Past.Add() and Past.Schedule()
     mainPast.ExportV2r(v2r);
     nswapsadded = mainPast.NumberOfSwapsAdded();
     nmovesadded = mainPast.NumberOfMovesAdded();
@@ -3571,10 +3572,10 @@ void MakePrimitives(ql::quantum_kernel& kernel)
     for( auto & gp : input_gatepv )
     {
         ql::circuit tmpCirc;
-        mainPast.MakePrimitive(gp, tmpCirc);
+        mainPast.MakePrimitive(gp, tmpCirc);    // decompose gp into tmpCirc; on failure, copy gp into tmpCirc
         for (auto newgp : tmpCirc)
         {
-            mainPast.AddAndSchedule(newgp);
+            mainPast.AddAndSchedule(newgp);     // decomposition is scheduled in gate by gate
         }
     }
     mainPast.FlushAll();
@@ -3582,6 +3583,7 @@ void MakePrimitives(ql::quantum_kernel& kernel)
     ql::circuit     outCirc;                    // ultimate output gate stream
     mainPast.Out(outCirc);
     kernel.c.swap(outCirc);
+    kernel.cycles_valid = true;                 // decomposition was scheduled in above
 
     DOUT("MakePrimitives circuit [DONE]");
 }   // end MakePrimitives
