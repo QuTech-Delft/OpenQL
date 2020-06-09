@@ -149,11 +149,7 @@ namespace ql
         {
             //convert crk to cr
             double k = operation.getRotationAngle();
-<<<<<<< HEAD
             angle = PI/pow(2, k);
-=======
-            angle = 2 * PI/pow(2, k);
->>>>>>> d0106025d714647612cacfac9f7d6e4f6e13ad51
             kernel_type = "cr";
         }
         else
