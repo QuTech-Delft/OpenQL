@@ -105,14 +105,6 @@ void eqasm_backend_cc::compile(std::string prog_name, std::vector<quantum_kernel
 
         ql::circuit& ckt = kernel.c;
         if (!ckt.empty()) {
-#if OPT_CC_SCHEDULE_KERNEL_H    // FIXME: WIP
-            // FIXME: try kernel.h::schedule()
-            std::string kernel_sched_qasm;
-            std::string kernel_sched_dot;
-            std::string kernel_dot;
-            kernel.schedule(platform, kernel_sched_qasm, kernel_dot, kernel_sched_dot);
-            ql::ir::bundles_t bundles = ql::ir::bundler(kernel.c, platform.cycle_time);
-#else
             auto creg_count = kernel.creg_count;     // FIXME: there is no platform.creg_count
 
 #if OPT_CC_SCHEDULE_RC
