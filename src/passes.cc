@@ -12,6 +12,7 @@
 #include "optimizer.h"
 #include "decompose_toffoli.h"
 #include "cqasm/cqasm_reader.h"
+#include "visualizer.h"
 
 #include <iostream>
 
@@ -291,6 +292,12 @@ void BackendCompilerPass::runOnProgram(ql::quantum_program *program)
 void ReportStatisticsPass::runOnProgram(ql::quantum_program *program)
 {
     ql::report_statistics(program, program->platform, "todo-inout", getPassName(), "# ");
+}
+
+void VisualizerPass::runOnProgram(ql::quantum_program *program)
+{
+    Layout layout;
+    ql::visualize(program, layout);
 }
 
     /**

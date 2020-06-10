@@ -6,6 +6,9 @@
 using namespace cimg_library;
 using namespace ql;
 
+namespace ql
+{
+
 int main()
 {
 	// TODO: implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
@@ -34,9 +37,18 @@ int main()
 	return 0;
 }
 
-void visualize(const std::vector<ql::gate*> gates, const Layout layout)
+void visualize(const ql::quantum_program* program, const Layout layout)
+//void visualize(const std::vector<ql::gate*> gates, const Layout layout)
 {
 	validateLayout(layout);
+
+    // Get the gate list from the program.
+    const std::vector<ql::gate*> gates;
+    const std::vector<ql::quantum_kernel> kernels = program->kernels;
+    for (const ql::quantum_kernel* kernel : kernels)
+    {
+        gates.insert( gates.end(), kernel->circuit.begin(), kernel->circuit.end() );
+    }
 
 	// Calculate amount of cycles.
 	unsigned int amountOfCycles = 0;
@@ -520,3 +532,5 @@ void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout
 	image.draw_line(x0, y0, x1, y1, node.backgroundColor.data());
 	image.draw_line(x0, y1, x1, y0, node.backgroundColor.data());
 }
+
+} // ql

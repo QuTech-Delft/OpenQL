@@ -34,6 +34,7 @@ class Test_modularity(unittest.TestCase):
       #c.add_pass("ReportStatistics");
       #c.add_pass("Writer");
       c.add_pass("BackendCompiler");
+      c.add_pass("Visualizer");
       #c.add_pass("Writer");
 
 #TODO: The backend compiler will eventually be split into smaller backend passes that should be instantiated here in the same way.

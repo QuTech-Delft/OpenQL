@@ -147,6 +147,14 @@ public:
     void runOnProgram(ql::quantum_program *program);
 };
 
+class VisualizerPass: public AbstractPass
+{
+public:
+    VisualizerPass(std::string name):AbstractPass(name){};
+
+    void runOnProgram(ql::quantum_program *program);
+};
+
 /**
  * Pass Options Class
  */

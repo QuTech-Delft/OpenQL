@@ -2,6 +2,9 @@
 #include <gate.h>
 #include <CImg.h>
 
+namespace ql
+{
+
 enum BitType {CLASSICAL, QUANTUM};
 enum NodeType {NONE, GATE, CONTROL, NOT, CROSS};
 
@@ -212,7 +215,8 @@ struct CircuitData
 	const unsigned int amountOfCycles;
 };
 
-void visualize(const std::vector<ql::gate*> gates, const Layout layout);
+void visualize(const ql::quantum_program* program, const Layout layout);
+//void visualize(const std::vector<ql::gate*> gates, const Layout layout);
 
 void validateLayout(const Layout layout);
 
@@ -496,3 +500,5 @@ std::vector<ql::gate*> getDummyGates()
 
 	return gates;
 }
+
+} // ql
