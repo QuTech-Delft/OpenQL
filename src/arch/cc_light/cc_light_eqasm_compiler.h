@@ -884,7 +884,7 @@ public:
                             {
                                 if(platform.instruction_settings[id].count("type") > 0)
                                 {
-                                    operation_type = platform.instruction_settings[id]["type"];
+                                    operation_type = platform.instruction_settings[id]["type"].get<std::string>();
                                 }
                             }
                             else
@@ -1252,7 +1252,7 @@ public:
                     std::string operation_type;
                     if (instruction_settings.find(iname) != instruction_settings.end())
                     {
-                        operation_type = instruction_settings[iname]["type"];
+                        operation_type = instruction_settings[iname]["type"].get<std::string>();
                     }
                     else
                     {
@@ -1470,7 +1470,7 @@ private:
             }
             else
             {
-                instr_name = i["cc_light_instr"];
+                instr_name = i["cc_light_instr"].get<std::string>();
             }
             DOUT("... instr_name=" << instr_name);
 
