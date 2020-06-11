@@ -1,6 +1,67 @@
 #include <openql_i.h>
 
 void
+test_dpt(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
+{
+    int n = 5;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    float sweep_points[] = { 1 };
+
+    ql::quantum_platform starmon("starmon5", "test_mapper_s5.json");
+    //ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, n, 0);
+    ql::quantum_kernel k(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
+    k.gate("prepz", 0);
+    k.gate("prepz", 1);
+    k.gate("prepz", 2);
+    k.gate("prepz", 3);
+    k.gate("prepz", 4);
+
+    k.gate("h", 0);
+    k.gate("h", 1);
+    k.gate("h", 3);
+    k.gate("h", 4);
+
+    k.gate("cnot", 0,2);
+    k.gate("cnot", 1,2);
+    k.gate("cnot", 3,2);
+    k.gate("cnot", 4,2);
+
+    k.gate("rz", {0}, {}, 20, 1.74533);
+    k.gate("rz", {1}, {}, 20, 1.74533);
+    k.gate("rz", {2}, {}, 20, 1.74533);
+    k.gate("rz", {3}, {}, 20, 1.74533);
+    k.gate("rz", {4}, {}, 20, 1.74533);
+
+    k.gate("cnot", 4,2);
+    k.gate("cnot", 3,2);
+    k.gate("cnot", 1,2);
+    k.gate("cnot", 0,2);
+
+    k.gate("h", 0);
+    k.gate("h", 1);
+    k.gate("h", 3);
+    k.gate("h", 4);
+
+    k.gate("measure", 0);
+    k.gate("measure", 1);
+    k.gate("measure", 3);
+    k.gate("measure", 4);
+
+    prog.add(k);
+
+    ql::options::set("maplookahead", param1);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
+
+    prog.compile( );
+}
+
+void
 test_lee(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
 {
     int n = 7;
@@ -1317,7 +1378,7 @@ int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_DEBUG");
     // ql::utils::logger::set_log_level("LOG_NOTHING");
-    ql::options::set("unique_output", "yes");
+    ql::options::set("unique_output", "no");
 
     ql::options::set("write_qasm_files", "yes");
     ql::options::set("write_report_files", "yes");
@@ -1345,318 +1406,10 @@ int main(int argc, char ** argv)
     ql::options::set("scheduler_commute", "yes");
     ql::options::set("prescheduler", "yes");
 
-    test_lee("lee", "noroutingfirst", "no", "0", "min");
+//  test_lee("lee", "noroutingfirst", "no", "0", "min");
+    test_dpt("dpt", "noroutingfirst", "no", "0", "min");
 
-#ifdef  RUNALL
-    test_recursion("recursion", "noroutingfirst", "no", "0", "min");
-    test_recursion("recursion", "all", "no", std::getenv("mapselectmaxlevel"), "min");
-    test_recursion("recursion", "all", "no", std::getenv("mapselectmaxlevel"), "minplusone");
-    test_recursion("recursion", "all", "no", std::getenv("mapselectmaxlevel"), "minplushalfmin");
-    test_recursion("recursion", "all", "no", std::getenv("mapselectmaxlevel"), "minplusmin");
-
-	test_diogo2("diogo2", "noroutingfirst", "yes", "minextendrc");
-    test_diogo2("diogo2", "noroutingfirst", "yes", "maxfidelity");
-
-    test_dot("dot", "no", "ASAP");
-    test_dot("dot", "no", "ALAP");
-    test_dot("dot", "yes", "ASAP");
-    test_dot("dot", "yes", "ALAP");
-
-//  NN:
-
-    test_rc("rc", "noroutingfirst", "no", "0", "min");
-
-    test_someNN("someNN", "noroutingfirst", "no", "0", "min");
-
-//  nonNN but solvable by Initial Placement:
-    test_oneD2("oneD2", "noroutingfirst", "no", "0", "min");
-    test_oneD4("oneD4", "noroutingfirst", "no", "0", "min");
-
-    test_string("string", "noroutingfirst", "no", "0", "min");
-    test_string("string", "all", "no", "0", "min");
-    test_string("string", "all", "no", "1", "min");
-    test_string("string", "all", "no", "2", "min");
-    test_string("string", "all", "no", "3", "min");
-    test_string("string", "all", "no", "0", "minplusone");
-    test_string("string", "all", "no", "1", "minplusone");
-    test_string("string", "all", "no", "2", "minplusone");
-    test_string("string", "all", "no", "3", "minplusone");
-    test_string("string", "all", "no", "0", "minplushalfmin");
-    test_string("string", "all", "no", "1", "minplushalfmin");
-    test_string("string", "all", "no", "2", "minplushalfmin");
-    test_string("string", "all", "no", "3", "minplushalfmin");
-    test_string("string", "all", "no", "0", "minplusmin");
-    test_string("string", "all", "no", "1", "minplusmin");
-    test_string("string", "all", "no", "2", "minplusmin");
-    test_string("string", "all", "no", "3", "minplusmin");
-    test_string("string", "all", "yes", "0", "min");
-    test_string("string", "all", "yes", "1", "min");
-    test_string("string", "all", "yes", "2", "min");
-    test_string("string", "all", "yes", "3", "min");
-    test_string("string", "all", "yes", "0", "minplusone");
-    test_string("string", "all", "yes", "1", "minplusone");
-    test_string("string", "all", "yes", "2", "minplusone");
-    test_string("string", "all", "yes", "3", "minplusone");
-    test_string("string", "all", "yes", "0", "minplushalfmin");
-    test_string("string", "all", "yes", "1", "minplushalfmin");
-    test_string("string", "all", "yes", "2", "minplushalfmin");
-    test_string("string", "all", "yes", "3", "minplushalfmin");
-    test_string("string", "all", "yes", "0", "minplusmin");
-    test_string("string", "all", "yes", "1", "minplusmin");
-    test_string("string", "all", "yes", "2", "minplusmin");
-    test_string("string", "all", "yes", "3", "minplusmin");
-
-//  nonNN, still not too large:
-    test_maxcut("maxcut", "noroutingfirst", "no", "0", "min");
-    test_maxcut("maxcut", "all", "no", "0", "min");
-    test_maxcut("maxcut", "all", "no", "1", "min");
-    test_maxcut("maxcut", "all", "no", "2", "min");
-    test_maxcut("maxcut", "all", "no", "3", "min");
-    test_maxcut("maxcut", "all", "no", "0", "minplusone");
-    test_maxcut("maxcut", "all", "no", "1", "minplusone");
-    test_maxcut("maxcut", "all", "no", "2", "minplusone");
-    test_maxcut("maxcut", "all", "no", "3", "minplusone");
-    test_maxcut("maxcut", "all", "no", "0", "minplushalfmin");
-    test_maxcut("maxcut", "all", "no", "1", "minplushalfmin");
-    test_maxcut("maxcut", "all", "no", "2", "minplushalfmin");
-    test_maxcut("maxcut", "all", "no", "3", "minplushalfmin");
-    test_maxcut("maxcut", "all", "no", "0", "minplusmin");
-    test_maxcut("maxcut", "all", "no", "1", "minplusmin");
-    test_maxcut("maxcut", "all", "no", "2", "minplusmin");
-    test_maxcut("maxcut", "all", "no", "3", "minplusmin");
-    test_maxcut("maxcut", "noroutingfirst", "yes", "0", "min");
-    test_maxcut("maxcut", "all", "yes", "0", "min");
-    test_maxcut("maxcut", "all", "yes", "1", "min");
-    test_maxcut("maxcut", "all", "yes", "2", "min");
-    test_maxcut("maxcut", "all", "yes", "3", "min");
-    test_maxcut("maxcut", "all", "yes", "0", "minplusone");
-    test_maxcut("maxcut", "all", "yes", "1", "minplusone");
-    test_maxcut("maxcut", "all", "yes", "2", "minplusone");
-    test_maxcut("maxcut", "all", "yes", "3", "minplusone");
-    test_maxcut("maxcut", "all", "yes", "0", "minplushalfmin");
-    test_maxcut("maxcut", "all", "yes", "1", "minplushalfmin");
-    test_maxcut("maxcut", "all", "yes", "2", "minplushalfmin");
-    test_maxcut("maxcut", "all", "yes", "3", "minplushalfmin");
-    test_maxcut("maxcut", "all", "yes", "0", "minplusmin");
-    test_maxcut("maxcut", "all", "yes", "1", "minplusmin");
-    test_maxcut("maxcut", "all", "yes", "2", "minplusmin");
-    test_maxcut("maxcut", "all", "yes", "3", "minplusmin");
-
-    test_allDopt("allDopt", "noroutingfirst", "no", "0", "min");
-    test_allDopt("allDopt", "all", "no", "0", "min");
-    test_allDopt("allDopt", "all", "no", "1", "min");
-    test_allDopt("allDopt", "all", "no", "2", "min");
-    test_allDopt("allDopt", "all", "no", "3", "min");
-    test_allDopt("allDopt", "all", "no", "0", "minplusone");
-    test_allDopt("allDopt", "all", "no", "1", "minplusone");
-    test_allDopt("allDopt", "all", "no", "2", "minplusone");
-    test_allDopt("allDopt", "all", "no", "3", "minplusone");
-    test_allDopt("allDopt", "all", "no", "0", "minplushalfmin");
-    test_allDopt("allDopt", "all", "no", "1", "minplushalfmin");
-    test_allDopt("allDopt", "all", "no", "2", "minplushalfmin");
-    test_allDopt("allDopt", "all", "no", "3", "minplushalfmin");
-    test_allDopt("allDopt", "all", "no", "0", "minplusmin");
-    test_allDopt("allDopt", "all", "no", "1", "minplusmin");
-    test_allDopt("allDopt", "all", "no", "2", "minplusmin");
-    test_allDopt("allDopt", "all", "no", "3", "minplusmin");
-    test_allDopt("allDopt", "noroutingfirst", "yes", "0", "min");
-    test_allDopt("allDopt", "all", "yes", "0", "min");
-    test_allDopt("allDopt", "all", "yes", "1", "min");
-    test_allDopt("allDopt", "all", "yes", "2", "min");
-    test_allDopt("allDopt", "all", "yes", "3", "min");
-    test_allDopt("allDopt", "all", "yes", "0", "minplusone");
-    test_allDopt("allDopt", "all", "yes", "1", "minplusone");
-    test_allDopt("allDopt", "all", "yes", "2", "minplusone");
-    test_allDopt("allDopt", "all", "yes", "3", "minplusone");
-    test_allDopt("allDopt", "all", "yes", "0", "minplushalfmin");
-    test_allDopt("allDopt", "all", "yes", "1", "minplushalfmin");
-    test_allDopt("allDopt", "all", "yes", "2", "minplushalfmin");
-    test_allDopt("allDopt", "all", "yes", "3", "minplushalfmin");
-    test_allDopt("allDopt", "all", "yes", "0", "minplusmin");
-    test_allDopt("allDopt", "all", "yes", "1", "minplusmin");
-    test_allDopt("allDopt", "all", "yes", "2", "minplusmin");
-    test_allDopt("allDopt", "all", "yes", "3", "minplusmin");
-
-
-    test_allD2("allD2", "all", "no", "2", "min");
-    test_allD2("allD2", "all", "no", "3", "min");
-
-    test_allD("allD", "noroutingfirst", "no", "0", "min");
-    test_allD("allD", "all", "no", "2", "min");
-    test_allD("allD", "all", "no", "3", "min");
-    test_allD("allD", "all", "no", "2", "minplusone");
-    test_allD("allD", "all", "no", "3", "minplusone");
-    test_allD("allD", "all", "no", "2", "minplushalfmin");
-    test_allD("allD", "all", "no", "3", "minplushalfmin");
-    test_allD("allD", "all", "no", "2", "minplusmin");
-    test_allD("allD", "all", "no", "3", "minplusmin");
-    test_allD("allD", "all", "no", "0", "min");
-    test_allD("allD", "all", "no", "1", "min");
-    test_allD("allD", "all", "no", "0", "minplusone");
-    test_allD("allD", "all", "no", "1", "minplusone");
-    test_allD("allD", "all", "no", "0", "minplushalfmin");
-    test_allD("allD", "all", "no", "1", "minplushalfmin");
-    test_allD("allD", "all", "no", "0", "minplusmin");
-    test_allD("allD", "all", "no", "1", "minplusmin");
-    test_allD("allD", "noroutingfirst", "yes", "0", "min");
-    test_allD("allD", "all", "yes", "0", "min");
-    test_allD("allD", "all", "yes", "1", "min");
-    test_allD("allD", "all", "yes", "2", "min");
-    test_allD("allD", "all", "yes", "3", "min");
-    test_allD("allD", "all", "yes", "0", "minplusone");
-    test_allD("allD", "all", "yes", "1", "minplusone");
-    test_allD("allD", "all", "yes", "2", "minplusone");
-    test_allD("allD", "all", "yes", "3", "minplusone");
-    test_allD("allD", "all", "yes", "0", "minplushalfmin");
-    test_allD("allD", "all", "yes", "1", "minplushalfmin");
-    test_allD("allD", "all", "yes", "2", "minplushalfmin");
-    test_allD("allD", "all", "yes", "3", "minplushalfmin");
-    test_allD("allD", "all", "yes", "0", "minplusmin");
-    test_allD("allD", "all", "yes", "1", "minplusmin");
-    test_allD("allD", "all", "yes", "2", "minplusmin");
-    test_allD("allD", "all", "yes", "3", "minplusmin");
-
-//  nonNN, realistic:
-    test_daniel2("daniel2", "noroutingfirst", "no", "0", "min");
-    test_daniel2("daniel2", "all", "no", "0", "min");
-    test_daniel2("daniel2", "all", "no", "1", "min");
-    test_daniel2("daniel2", "all", "no", "2", "min");
-    test_daniel2("daniel2", "all", "no", "3", "min");
-    test_daniel2("daniel2", "all", "no", "0", "minplusone");
-    test_daniel2("daniel2", "all", "no", "1", "minplusone");
-    test_daniel2("daniel2", "all", "no", "2", "minplusone");
-    test_daniel2("daniel2", "all", "no", "3", "minplusone");
-    test_daniel2("daniel2", "all", "no", "0", "minplushalfmin");
-    test_daniel2("daniel2", "all", "no", "1", "minplushalfmin");
-    test_daniel2("daniel2", "all", "no", "2", "minplushalfmin");
-    test_daniel2("daniel2", "all", "no", "3", "minplushalfmin");
-    test_daniel2("daniel2", "all", "no", "0", "minplusmin");
-    test_daniel2("daniel2", "all", "no", "1", "minplusmin");
-    test_daniel2("daniel2", "all", "no", "2", "minplusmin");
-    test_daniel2("daniel2", "all", "no", "3", "minplusmin");
-    test_daniel2("daniel2", "noroutingfirst", "yes", "0", "min");
-    test_daniel2("daniel2", "all", "yes", "0", "min");
-    test_daniel2("daniel2", "all", "yes", "1", "min");
-    test_daniel2("daniel2", "all", "yes", "2", "min");
-    test_daniel2("daniel2", "all", "yes", "3", "min");
-    test_daniel2("daniel2", "all", "yes", "0", "minplusone");
-    test_daniel2("daniel2", "all", "yes", "1", "minplusone");
-    test_daniel2("daniel2", "all", "yes", "2", "minplusone");
-    test_daniel2("daniel2", "all", "yes", "3", "minplusone");
-    test_daniel2("daniel2", "all", "yes", "0", "minplushalfmin");
-    test_daniel2("daniel2", "all", "yes", "1", "minplushalfmin");
-    test_daniel2("daniel2", "all", "yes", "2", "minplushalfmin");
-    test_daniel2("daniel2", "all", "yes", "3", "minplushalfmin");
-    test_daniel2("daniel2", "all", "yes", "0", "minplusmin");
-    test_daniel2("daniel2", "all", "yes", "1", "minplusmin");
-    test_daniel2("daniel2", "all", "yes", "2", "minplusmin");
-    test_daniel2("daniel2", "all", "yes", "3", "minplusmin");
-
-    test_lingling5esm("lingling5esm", "noroutingfirst", "no", "0", "min");
-    test_lingling5esm("lingling5esm", "all", "no", "0", "min");
-    test_lingling5esm("lingling5esm", "all", "no", "1", "min");
-    test_lingling5esm("lingling5esm", "all", "no", "2", "min");
-    test_lingling5esm("lingling5esm", "all", "no", "3", "min");
-    test_lingling5esm("lingling5esm", "all", "no", "0", "minplusone");
-    test_lingling5esm("lingling5esm", "all", "no", "1", "minplusone");
-    test_lingling5esm("lingling5esm", "all", "no", "2", "minplusone");
-    test_lingling5esm("lingling5esm", "all", "no", "3", "minplusone");
-    test_lingling5esm("lingling5esm", "all", "no", "0", "minplushalfmin");
-    test_lingling5esm("lingling5esm", "all", "no", "1", "minplushalfmin");
-    test_lingling5esm("lingling5esm", "all", "no", "2", "minplushalfmin");
-    test_lingling5esm("lingling5esm", "all", "no", "3", "minplushalfmin");
-    test_lingling5esm("lingling5esm", "all", "no", "0", "minplusmin");
-    test_lingling5esm("lingling5esm", "all", "no", "1", "minplusmin");
-    test_lingling5esm("lingling5esm", "all", "no", "2", "minplusmin");
-    test_lingling5esm("lingling5esm", "all", "no", "3", "minplusmin");
-    test_lingling5esm("lingling5esm", "noroutingfirst", "yes", "0", "min");
-    test_lingling5esm("lingling5esm", "all", "yes", "0", "min");
-    test_lingling5esm("lingling5esm", "all", "yes", "1", "min");
-    test_lingling5esm("lingling5esm", "all", "yes", "2", "min");
-    test_lingling5esm("lingling5esm", "all", "yes", "3", "min");
-    test_lingling5esm("lingling5esm", "all", "yes", "0", "minplusone");
-    test_lingling5esm("lingling5esm", "all", "yes", "1", "minplusone");
-    test_lingling5esm("lingling5esm", "all", "yes", "2", "minplusone");
-    test_lingling5esm("lingling5esm", "all", "yes", "3", "minplusone");
-    test_lingling5esm("lingling5esm", "all", "yes", "0", "minplushalfmin");
-    test_lingling5esm("lingling5esm", "all", "yes", "1", "minplushalfmin");
-    test_lingling5esm("lingling5esm", "all", "yes", "2", "minplushalfmin");
-    test_lingling5esm("lingling5esm", "all", "yes", "3", "minplushalfmin");
-    test_lingling5esm("lingling5esm", "all", "yes", "0", "minplusmin");
-    test_lingling5esm("lingling5esm", "all", "yes", "1", "minplusmin");
-    test_lingling5esm("lingling5esm", "all", "yes", "2", "minplusmin");
-    test_lingling5esm("lingling5esm", "all", "yes", "3", "minplusmin");
-
-    test_lingling7esm("lingling7esm", "noroutingfirst", "no", "0", "min");
-    test_lingling7esm("lingling7esm", "all", "no", "0", "min");
-    test_lingling7esm("lingling7esm", "all", "no", "1", "min");
-    test_lingling7esm("lingling7esm", "all", "no", "2", "min");
-    test_lingling7esm("lingling7esm", "all", "no", "3", "min");
-    test_lingling7esm("lingling7esm", "all", "no", "0", "minplusone");
-    test_lingling7esm("lingling7esm", "all", "no", "1", "minplusone");
-    test_lingling7esm("lingling7esm", "all", "no", "2", "minplusone");
-    test_lingling7esm("lingling7esm", "all", "no", "3", "minplusone");
-    test_lingling7esm("lingling7esm", "all", "no", "0", "minplushalfmin");
-    test_lingling7esm("lingling7esm", "all", "no", "1", "minplushalfmin");
-    test_lingling7esm("lingling7esm", "all", "no", "2", "minplushalfmin");
-    test_lingling7esm("lingling7esm", "all", "no", "3", "minplushalfmin");
-    test_lingling7esm("lingling7esm", "all", "no", "0", "minplusmin");
-    test_lingling7esm("lingling7esm", "all", "no", "1", "minplusmin");
-    test_lingling7esm("lingling7esm", "all", "no", "2", "minplusmin");
-    test_lingling7esm("lingling7esm", "all", "no", "3", "minplusmin");
-    test_lingling7esm("lingling7esm", "noroutingfirst", "yes", "0", "min");
-    test_lingling7esm("lingling7esm", "all", "yes", "0", "min");
-    test_lingling7esm("lingling7esm", "all", "yes", "1", "min");
-    test_lingling7esm("lingling7esm", "all", "yes", "2", "min");
-    test_lingling7esm("lingling7esm", "all", "yes", "3", "min");
-    test_lingling7esm("lingling7esm", "all", "yes", "0", "minplusone");
-    test_lingling7esm("lingling7esm", "all", "yes", "1", "minplusone");
-    test_lingling7esm("lingling7esm", "all", "yes", "2", "minplusone");
-    test_lingling7esm("lingling7esm", "all", "yes", "3", "minplusone");
-    test_lingling7esm("lingling7esm", "all", "yes", "0", "minplushalfmin");
-    test_lingling7esm("lingling7esm", "all", "yes", "1", "minplushalfmin");
-    test_lingling7esm("lingling7esm", "all", "yes", "2", "minplushalfmin");
-    test_lingling7esm("lingling7esm", "all", "yes", "3", "minplushalfmin");
-    test_lingling7esm("lingling7esm", "all", "yes", "0", "minplusmin");
-    test_lingling7esm("lingling7esm", "all", "yes", "1", "minplusmin");
-    test_lingling7esm("lingling7esm", "all", "yes", "2", "minplusmin");
-    test_lingling7esm("lingling7esm", "all", "yes", "3", "minplusmin");
-
-    test_lingling7sub("lingling7sub", "noroutingfirst", "no", "0", "min");
-    test_lingling7sub("lingling7sub", "all", "no", "0", "min");
-    test_lingling7sub("lingling7sub", "all", "no", "1", "min");
-    test_lingling7sub("lingling7sub", "all", "no", "2", "min");
-    test_lingling7sub("lingling7sub", "all", "no", "3", "min");
-    test_lingling7sub("lingling7sub", "all", "no", "0", "minplusone");
-    test_lingling7sub("lingling7sub", "all", "no", "1", "minplusone");
-    test_lingling7sub("lingling7sub", "all", "no", "2", "minplusone");
-    test_lingling7sub("lingling7sub", "all", "no", "3", "minplusone");
-    test_lingling7sub("lingling7sub", "all", "no", "0", "minplushalfmin");
-    test_lingling7sub("lingling7sub", "all", "no", "1", "minplushalfmin");
-    test_lingling7sub("lingling7sub", "all", "no", "2", "minplushalfmin");
-    test_lingling7sub("lingling7sub", "all", "no", "3", "minplushalfmin");
-    test_lingling7sub("lingling7sub", "all", "no", "0", "minplusmin");
-    test_lingling7sub("lingling7sub", "all", "no", "1", "minplusmin");
-    test_lingling7sub("lingling7sub", "all", "no", "2", "minplusmin");
-    test_lingling7sub("lingling7sub", "all", "no", "3", "minplusmin");
-    test_lingling7sub("lingling7sub", "noroutingfirst", "yes", "0", "min");
-    test_lingling7sub("lingling7sub", "all", "yes", "0", "min");
-    test_lingling7sub("lingling7sub", "all", "yes", "1", "min");
-    test_lingling7sub("lingling7sub", "all", "yes", "2", "min");
-    test_lingling7sub("lingling7sub", "all", "yes", "3", "min");
-    test_lingling7sub("lingling7sub", "all", "yes", "0", "minplusone");
-    test_lingling7sub("lingling7sub", "all", "yes", "1", "minplusone");
-    test_lingling7sub("lingling7sub", "all", "yes", "2", "minplusone");
-    test_lingling7sub("lingling7sub", "all", "yes", "3", "minplusone");
-    test_lingling7sub("lingling7sub", "all", "yes", "0", "minplushalfmin");
-    test_lingling7sub("lingling7sub", "all", "yes", "1", "minplushalfmin");
-    test_lingling7sub("lingling7sub", "all", "yes", "2", "minplushalfmin");
-    test_lingling7sub("lingling7sub", "all", "yes", "3", "minplushalfmin");
-    test_lingling7sub("lingling7sub", "all", "yes", "0", "minplusmin");
-    test_lingling7sub("lingling7sub", "all", "yes", "1", "minplusmin");
-    test_lingling7sub("lingling7sub", "all", "yes", "2", "minplusmin");
-    test_lingling7sub("lingling7sub", "all", "yes", "3", "minplusmin");
-#endif
+//  test_recursion("recursion", "noroutingfirst", "no", "0", "min");
 
     return 0;
 }

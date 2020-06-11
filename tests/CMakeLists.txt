@@ -28,6 +28,9 @@ CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/hardware_config_cc_light.json
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/hardware_config_qx.json
 	hardware_config_qx.json COPYONLY)
 
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_mapper_s5.json
+	test_mapper_s5.json COPYONLY)
+
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_mapper_s7.json
 	test_mapper_s7.json COPYONLY)
 
@@ -40,5 +43,5 @@ CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_mapper_rig.json
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/cc/test_cfg_cc.json
 	test_cfg_cc.json COPYONLY)
 
-# ADD_EXECUTABLE(test_mapper test_mapper.cc )
-# TARGET_LINK_LIBRARIES(test_mapper ${LEMON_LIBRARIES} ql)
+ADD_EXECUTABLE(test_mapper test_mapper.cc )
+TARGET_LINK_LIBRARIES(test_mapper ql lexgramstatic ${LEMON_LIBRARIES} )
