@@ -171,15 +171,12 @@ private:
         else if (gname == "i")           return 0;
         else if (gname == "pauli_x")     return 3;
         else if (gname == "x")           return 3;
-        else if (gname == "rx")          return 3;
         else if (gname == "rx180")       return 3;
         else if (gname == "pauli_y")     return 6;
         else if (gname == "y")           return 6;
-        else if (gname == "ry")          return 6;
         else if (gname == "ry180")       return 6;
         else if (gname == "pauli_z")     return 9;
         else if (gname == "z")           return 9;
-        else if (gname == "rz")          return 9;
         else if (gname == "hadamard")    return 12;
         else if (gname == "h")           return 12;
         else if (gname == "xm90")        return 13;
