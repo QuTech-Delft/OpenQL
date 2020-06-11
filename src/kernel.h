@@ -16,7 +16,7 @@
 
 #define REMOVE_UNITARY 1
 
-#define PI M_PI
+#define K_PI 3.141592653589793238462643383279502884197169399375105820974944592307816406L
 #include "compile_options.h"
 #include "json.h"
 #include "utils.h"
@@ -1704,38 +1704,38 @@ public:
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, M_PI/2);
+                controlled_rx(tq, cq, K_PI/2);
             }
             else if( __mrx90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, -1*M_PI/2);
+                controlled_rx(tq, cq, -1*K_PI/2);
             }
             else if( __rx180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, M_PI);
+                controlled_rx(tq, cq, K_PI);
                 // controlled_x(tq, cq);
             }
             else if( __ry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, M_PI/4);
+                controlled_ry(tq, cq, K_PI/4);
             }
             else if( __mry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, -1*M_PI/4);
+                controlled_ry(tq, cq, -1*K_PI/4);
             }
             else if( __ry180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, M_PI);
+                controlled_ry(tq, cq, K_PI);
                 // controlled_y(tq, cq);
             }
             else
