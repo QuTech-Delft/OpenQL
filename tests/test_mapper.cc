@@ -1,9 +1,56 @@
-
-
 #include <openql_i.h>
 
-namespace ql {
-    double quick_fidelity_circuit(ql::circuit);
+void
+test_lee(std::string v, std::string param1, std::string param2, std::string param3, std::string param4)
+{
+    int n = 7;
+    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
+    float sweep_points[] = { 1 };
+
+    ql::quantum_platform starmon("starmon", "test_mapper_s7.json");
+    //ql::set_platform(starmon);
+    ql::quantum_program prog(prog_name, starmon, n, 0);
+    ql::quantum_kernel k(kernel_name, starmon, n, 0);
+    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
+
+    k.gate("x", 0);
+    k.gate("x", 1);
+    k.gate("x", 2);
+    k.gate("x", 3);
+    k.gate("h", 4);
+    k.gate("h", 0);
+    k.gate("h", 1);
+    k.gate("ry", {4}, {}, 20, -3.0);
+    k.gate("cnot", 0,2);
+    k.gate("cnot", 1,3);
+    k.gate("cnot", 0,1);
+    k.gate("cnot", 2,3);
+    k.gate("rz", {1}, {}, 20, -0.2);
+    k.gate("rz", {3}, {}, 20, -0.2);
+    k.gate("cnot", 0,1);
+    k.gate("cnot", 2,3);
+    k.gate("cnot", 0,2);
+    k.gate("cnot", 1,3);
+    k.gate("rx", {0}, {}, 20, 0.3);
+    k.gate("rx", {1}, {}, 20, 0.3);
+    k.gate("cnot", 0,2);
+    k.gate("cnot", 1,3);
+    k.gate("ry", {2}, {}, 20, 1.5);
+    k.gate("ry", {3}, {}, 20, 1.5);
+    k.gate("cz", 2,4);
+    k.gate("cz", 3,4);
+    k.gate("h", 4);
+    k.gate("measure", 4);
+
+    prog.add(k);
+
+    ql::options::set("maplookahead", param1);
+    ql::options::set("maprecNN2q", param2);
+    ql::options::set("mapselectmaxlevel", param3);
+    ql::options::set("mapselectmaxwidth", param4);
+
+    prog.compile( );
 }
 
 void
@@ -34,94 +81,6 @@ test_recursion(std::string v, std::string param1, std::string param2, std::strin
     ql::options::set("mapselectmaxwidth", param4);
 
     prog.compile( );
-}
-
-void
-test_diogo(std::string v, std::string param1, std::string param2, std::string param3)
-{
-    int n = 17;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapper=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapper=" + param3;
-
-    float sweep_points[] = { 1 };
-
-
-    ql::quantum_platform starmon("starmon", "test_mapper_s17.json");
-    //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
-
-    k.gate("x", 1);
-    k.gate("cz", 6,7);
-    k.gate("cz", 5,6);
-    k.gate("cz", 1,5);
-
-    prog.add(k);
-
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapper", param3);
-
-    ql::options::set("clifford_premapper", "no");
-    ql::options::set("clifford_postmapper", "no");
-    ql::options::set("scheduler_post179", "yes");
-    ql::options::set("scheduler", "ALAP");
-
-    ql::options::set("quantumsim", "yes");
-
-    prog.compile( );
-
-    double qf = ql::quick_fidelity_circuit(k.c);
-
-    IOUT("Final Fidelity: " << qf);
-    IOUT("THE END!");
-}
-
-void
-test_diogo2(std::string v, std::string param1, std::string param2, std::string param3)
-{
-    int n = 17;
-    std::string prog_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapper=" + param3;
-    std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapper=" + param3;
-
-    float sweep_points[] = { 1 };
-
-    ql::quantum_platform starmon("starmon", "test_mapper_s17.json");
-    //ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
-
-    k.gate("x", 1);
-    k.gate("cz", 6,7);
-    k.gate("cz", 5,6);
-    k.gate("cz", 1,5);
-    // k.gate("y", 2);
-    // k.gate("h", 3);
-    // k.gate("measure", 2);
-    // k.gate("measure", 3);
-
-
-    prog.add(k);
-
-    ql::options::set("maplookahead", param1);
-    ql::options::set("maprecNN2q", param2);
-    ql::options::set("mapper", param3);
-
-    ql::options::set("clifford_premapper", "no");
-    ql::options::set("clifford_postmapper", "no");
-    ql::options::set("scheduler_post179", "yes");
-    ql::options::set("scheduler", "ALAP");
-
-    ql::options::set("quantumsim", "qsoverlay");
-
-    prog.compile( );
-
-    double qf = ql::quick_fidelity_circuit(k.c);
-
-    IOUT("Final Fidelity: " << qf);
-    IOUT("THE END!");
 }
 
 // simple program to test (post179) dot printing by the scheduler
@@ -1370,8 +1329,8 @@ int main(int argc, char ** argv)
     ql::options::set("mapinitone2one", "yes");
 //parameter1  ql::options::set("maplookahead", "noroutingfirst");
     ql::options::set("mapselectswaps", "all");
-    ql::options::set("initialplace", "no");
-    ql::options::set("initialplace2qhorizon", "10");
+    ql::options::set("initialplace", "yes");
+    ql::options::set("initialplace2qhorizon", "0");
     ql::options::set("mappathselect", "all");
     ql::options::set("mapusemoves", "yes");
     ql::options::set("mapreverseswap", "yes");
@@ -1386,8 +1345,10 @@ int main(int argc, char ** argv)
     ql::options::set("scheduler_commute", "yes");
     ql::options::set("prescheduler", "yes");
 
-    test_recursion("recursion", "noroutingfirst", "no", "0", "min");
+    test_lee("lee", "noroutingfirst", "no", "0", "min");
+
 #ifdef  RUNALL
+    test_recursion("recursion", "noroutingfirst", "no", "0", "min");
     test_recursion("recursion", "all", "no", std::getenv("mapselectmaxlevel"), "min");
     test_recursion("recursion", "all", "no", std::getenv("mapselectmaxlevel"), "minplusone");
     test_recursion("recursion", "all", "no", std::getenv("mapselectmaxlevel"), "minplushalfmin");
