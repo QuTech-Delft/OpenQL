@@ -158,6 +158,7 @@ OpenQL sources for each release can be downloaded from github `releases <https:/
 ::
 
     git clone https://github.com/QE-Lab/OpenQL.git
+    
 
 
 Compiling OpenQL as Python Package
@@ -177,6 +178,11 @@ Or in editable mode by the command:
 
     pip install  -e .[develop]
 
+To reduce the compile time, sparse checkout of the Eigen library can be used by executing the partial-checkout.sh script in the OpenQL root directory. This needs to be done after updating the submodules like above, by running this command:
+
+::
+
+    ./sparse-checkout.sh
 
 Running the tests
 
