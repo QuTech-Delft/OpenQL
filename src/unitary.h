@@ -22,6 +22,8 @@
 
 // #include <chrono>
 
+typedef unsigned int uint;
+
 namespace ql
 {
 
