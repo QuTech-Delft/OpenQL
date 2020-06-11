@@ -47,6 +47,11 @@ elif platform == "darwin":
 
 elif platform == "win32":
     print('Detected Windows OS, installing openql ... ')
+    print(os.path)
+    cmd = 'cd ../deps/eigen/ && git apply ../../patches/eigen.patch'
+    proc = subprocess.Popen(cmd, shell=True)
+    proc.communicate()
+    os.chdir(buildDir)
     cmd = 'cmake -G "NMake Makefiles" ..'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
@@ -54,6 +59,10 @@ elif platform == "win32":
     cmd = 'nmake'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
+    cmd = 'cd ../deps/eigen/ && git checkout Eigen/src/misc/lapacke.h'
+    proc = subprocess.Popen(cmd, shell=True)
+    proc.communicate()
+    os.chdir(buildDir)
     clibname = "_openql.pyd"
 
 else:

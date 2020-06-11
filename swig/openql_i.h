@@ -103,7 +103,7 @@ public:
     }
 };
 
-// typedef std::complex<double> Complex;
+typedef std::complex<double> Complex;
 
 /**
  * quantum unitary matrix interface
@@ -111,7 +111,7 @@ public:
 class Unitary
 {
 public:
-    string name;
+    std::string name;
     ql::unitary * unitary;
 
     Unitary(std::string name, std::vector<std::complex<double>> matrix) : name(name)
@@ -143,10 +143,18 @@ public:
     size_t qubit_count;
     size_t creg_count;
     ql::quantum_kernel * kernel;
-
+  
+    Kernel(std::string name):
+        name(name)
+    {
+        DOUT(" API::Kernel named: " << name);
+        kernel = new ql::quantum_kernel(name);
+    }
+    
     Kernel(std::string name, Platform platform, size_t qubit_count, size_t creg_count=0):
         name(name), platform(platform), qubit_count(qubit_count), creg_count(creg_count)
     {
+        WOUT("Kernel(name,Platform,#qbit,#creg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
         kernel = new ql::quantum_kernel(name, *(platform.platform), qubit_count, creg_count);
     }
     void identity(size_t q0)
@@ -323,14 +331,20 @@ public:
     size_t creg_count;
     ql::quantum_program *program;
 
-    Program() {}
-
+    Program(std::string name):
+        name(name)
+    {
+        DOUT("SWIG Program(name) constructor for name: " << name);
+        program = new ql::quantum_program(name);
+    }
+        
     Program(std::string name, Platform & platform, size_t qubit_count, size_t creg_count=0):
         name(name), platform(platform), qubit_count(qubit_count), creg_count(creg_count)
-    {
+    { 
+        WOUT("Program(name,Platform,#qbit,#creg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
         program = new ql::quantum_program(name, *(platform.platform), qubit_count, creg_count);
     }
-
+    
     void set_sweep_points(std::vector<float> sweep_points)
     {
         WOUT("This will soon be deprecated according to issue #76");
@@ -398,11 +412,6 @@ public:
         program->compile();
     }
 
-    std::string qasm()
-    {
-        return program->qasm();
-    }
-
     std::string microcode()
     {
 #if OPT_MICRO_CODE
@@ -461,6 +470,47 @@ public:
         // leave deletion to SWIG, otherwise the python unit test framework fails
         // delete cqasm_reader_;
     }
+};
+
+
+/**
+ * quantum compiler interface
+ */
+class Compiler
+{
+public:
+    std::string           name;
+    ql::quantum_compiler *compiler;
+ 
+    Compiler(std::string name) : name(name) 
+    {
+        compiler = new ql::quantum_compiler(name);
+    }
+    
+    void compile(Program program) 
+    {
+        DOUT(" Compiler " << name << " compiles program  " << program.name); 
+        compiler->compile(program.program);
+    }
+    
+    void add_pass_alias(std::string realPassName, std::string symbolicPassName)
+    {
+        DOUT(" Add pass " << realPassName << " under alias name  " << symbolicPassName); 
+        compiler->addPass(realPassName,symbolicPassName);
+    }
+    
+    void add_pass(std::string realPassName)
+    {
+        DOUT(" Add pass " << realPassName << " with no alias"); 
+        compiler->addPass(realPassName);
+    }
+
+    void set_pass_option(std::string passName, std::string optionName, std::string optionValue)
+    {
+        DOUT(" Set option " << optionName << " = " << optionValue << " for pass " << passName); 
+        compiler->setPassOption(passName,optionName, optionValue);
+    }
+
 };
 
 #endif

@@ -55,9 +55,9 @@
     - ALAP with UNIFORM bundle lengths: using dependences only, aim at ALAP but with equally length bundles
     ASAP/ALAP can be controlled by the "scheduler" option. Similarly for UNIFORM ("scheduler_uniform").
     With/out resource constraints are separate method calls.
-    The current code implements behavior before and after solving issue 179, selectable by an option ("scheduler_post179").
-    The post179 behavior supports commutation and in general produces more efficient/shorter scheduled circuits;
-    that the scheduler commutes gates when possible is enabled by default and can be controlled by option "scheduler_commute".
+
+    Commutation support during scheduling in general produces more efficient/shorter scheduled circuits.
+    It is enabled by option "scheduler_commute".
  */
 
 #include <lemon/list_graph.h>
@@ -68,9 +68,11 @@
 
 #include "utils.h"
 #include "gate.h"
+#include "kernel.h"
 #include "circuit.h"
 #include "ir.h"
 #include "resource_manager.h"
+#include "report.h"
 
 using namespace std;
 using namespace lemon;
@@ -106,7 +108,6 @@ public:
     ql::circuit*    circp;                      // current and result circuit, passed from Init to each scheduler
 
     // scheduler support
-    std::map< std::pair<std::string,std::string>, size_t> buffer_cycles_map;
     std::map<ListDigraph::Node,size_t>  remaining;  // remaining[node] == cycles until end; critical path representation
 
 
@@ -142,35 +143,13 @@ public:
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
     void init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
     {
-        DOUT("Dependence graph creation ...");
-        qubit_count = qcount;
-        creg_count = ccount;
+        DOUT("Dependence graph creation ... #qubits = " << platform.qubit_number);
+        qubit_count = platform.qubit_number;///qcount; @todo-rn: DDG creation should not depend on #qubits
+        creg_count = platform.qubit_number;///ccount; @todo-rn: DDG creation should not depend on #cregs
         size_t qubit_creg_count = qubit_count + creg_count;
         DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", total=" << qubit_creg_count);
         cycle_time = platform.cycle_time;
         circp = &ckt;
-
-        // populate buffer map
-        // 'none' type is a dummy type and 0 buffer cycles will be inserted for
-        // instructions of type 'none'
-        //
-        // this has nothing to do with dependence graph generation but with scheduling
-        // so should be in resource-constrained scheduler constructor
-        std::vector<std::string> buffer_names = {"none", "mw", "flux", "readout"};
-        for(auto & buf1 : buffer_names)
-        {
-            for(auto & buf2 : buffer_names)
-            {
-                auto bpair = std::pair<std::string,std::string>(buf1,buf2);
-                auto bname = buf1+ "_" + buf2 + "_buffer";
-                if(platform.hardware_settings.count(bname) > 0)
-                {
-                    buffer_cycles_map[ bpair ] = size_t(std::ceil(
-                        static_cast<float>(platform.hardware_settings[bname]) / cycle_time));
-                }
-                // DOUT("Initializing " << bname << ": "<< buffer_cycles_map[bpair]);
-            }
-        }
 
         // dependences are created with a current gate as target
         // and with those previous gates as source that have an operand match:
@@ -232,8 +211,6 @@ public:
             // Furthermore Writes can model barriers on a qubit (see Wait, Display, etc.), because Writes sequentialize.
             // The dependence graph creation below models a graph suitable for all functions, including chains of live qubits.
 
-            if (ql::options::get("scheduler_post179") == "yes")
-            {
             // Control-operands of Controlled Unitaries commute, independent of the Unitary,
             // i.e. these gates need not be kept in order.
             // But, of course, those qubit uses should be ordered after (/before) the last (/next) non-control use of the qubit.
@@ -271,18 +248,16 @@ public:
             // that there is no order among Ds nor among Rs, but D after R and R after D sequentialize.
             // With this, the dependence graph is claimed to represent the commutations as above.
             //
-            // The post179 schedulers are list schedulers, i.e. they maintain a list of gates in their algorithm,
+            // The schedulers are list schedulers, i.e. they maintain a list of gates in their algorithm,
             // of gates available for being scheduled because they are not blocked by dependences on non-scheduled gates.
-            // Therefore, the post179 schedulers are able to select the best one from a set of commutable gates.
-            }
-
-            // each type of gate has a different 'signature' of events; switch out to each one
+            // Therefore, the schedulers are able to select the best one from a set of commutable gates.
 
             // TODO: define signature in .json file similar to how gcc defines instructions
             // and then have a signature interpreter here; then we don't have this long if-chain
             // and, more importantly, we don't have the knowledge of particular gates here;
-            // the default signature would be that of a default gate, modifying each qubit operand;
-            // that also solves
+            // the default signature would be that of a default gate, modifying each qubit operand.
+
+            // each type of gate has a different 'signature' of events; switch out to each one
             if(iname == "measure")
             {
                 DOUT(". considering " << name[consNode] << " as measure");
@@ -296,12 +271,9 @@ public:
                     {
                         add_dep(readerID, consID, WAR, operand);
                     }
-                    if (ql::options::get("scheduler_post179") == "yes")
+                    for(auto & readerID : LastDs[operand])
                     {
-                        for(auto & readerID : LastDs[operand])
-                        {
-                            add_dep(readerID, consID, WAD, operand);
-                        }
+                        add_dep(readerID, consID, WAD, operand);
                     }
                 }
 
@@ -320,23 +292,17 @@ public:
                 {
                     DOUT(".. Update LastWriter for operand: " << operand);
                     LastWriter[operand] = consID;
-                    if (ql::options::get("scheduler_post179") == "yes")
-                    {
-                        DOUT(".. Clearing LastReaders for operand: " << operand);
-                        LastReaders[operand].clear();
-                        LastDs[operand].clear();
-                    }
+                    DOUT(".. Clearing LastReaders for operand: " << operand);
+                    LastReaders[operand].clear();
+                    LastDs[operand].clear();
                     DOUT(".. Update LastWriter done");
                 }
                 for( auto coperand : ins->creg_operands )
                 {
                     DOUT(".. Update LastWriter for coperand: " << coperand);
                     LastWriter[qubit_count+coperand] = consID;
-                    if (ql::options::get("scheduler_post179") == "yes")
-                    {
-                        DOUT(".. Clearing LastReaders for coperand: " << coperand);
-                        LastReaders[qubit_count+coperand].clear();
-                    }
+                    DOUT(".. Clearing LastReaders for coperand: " << coperand);
+                    LastReaders[qubit_count+coperand].clear();
                     DOUT(".. Update LastWriter done");
                 }
                 DOUT(". measure done");
@@ -356,12 +322,9 @@ public:
                     {
                         add_dep(readerID, consID, WAR, operand);
                     }
-                    if (ql::options::get("scheduler_post179") == "yes")
+                    for(auto & readerID : LastDs[operand])
                     {
-                        for(auto & readerID : LastDs[operand])
-                        {
-                            add_dep(readerID, consID, WAD, operand);
-                        }
+                        add_dep(readerID, consID, WAD, operand);
                     }
                 }
 
@@ -369,11 +332,8 @@ public:
                 for( auto operand : qubits )
                 {
                     LastWriter[operand] = consID;
-                    if (ql::options::get("scheduler_post179") == "yes")
-                    {
-                        LastReaders[operand].clear();
-                        LastDs[operand].clear();
-                    }
+                    LastReaders[operand].clear();
+                    LastDs[operand].clear();
                 }
             }
             else if(ins->type() == ql::gate_type_t::__classical_gate__)
@@ -388,12 +348,9 @@ public:
                     {
                         add_dep(readerID, consID, WAR, qubit_count+coperand);
                     }
-                    if (ql::options::get("scheduler_post179") == "yes")
+                    for(auto & readerID : LastDs[qubit_count+coperand])
                     {
-                        for(auto & readerID : LastDs[qubit_count+coperand])
-                        {
-                            add_dep(readerID, consID, WAD, qubit_count+coperand);
-                        }
+                        add_dep(readerID, consID, WAD, qubit_count+coperand);
                     }
                 }
 
@@ -401,11 +358,8 @@ public:
                 for( auto coperand : ins->creg_operands )
                 {
                     LastWriter[qubit_count+coperand] = consID;
-                    if (ql::options::get("scheduler_post179") == "yes")
-                    {
-                        LastReaders[qubit_count+coperand].clear();
-                        LastDs[qubit_count+coperand].clear();
-                    }
+                    LastReaders[qubit_count+coperand].clear();
+                    LastDs[qubit_count+coperand].clear();
                 }
             }
             else if (  iname == "cnot"
@@ -421,46 +375,31 @@ public:
                     if( operandNo == 0)
                     {
                         add_dep(LastWriter[operand], consID, RAW, operand);
-	                    if (ql::options::get("scheduler_post179") == "no"
-	                    ||  ql::options::get("scheduler_commute") == "no")
+	                    if (ql::options::get("scheduler_commute") == "no")
                         {
                             for(auto & readerID : LastReaders[operand])
                             {
                                 add_dep(readerID, consID, RAR, operand);
                             }
                         }
-                        if (ql::options::get("scheduler_post179") == "yes")
+                        for(auto & readerID : LastDs[operand])
                         {
-                            for(auto & readerID : LastDs[operand])
-                            {
-                                add_dep(readerID, consID, RAD, operand);
-                            }
+                            add_dep(readerID, consID, RAD, operand);
                         }
                     }
                     else
                     {
-	                    if (ql::options::get("scheduler_post179") == "no")
+                        add_dep(LastWriter[operand], consID, DAW, operand);
+	                    if (ql::options::get("scheduler_commute") == "no")
                         {
-                            add_dep(LastWriter[operand], consID, WAW, operand);
-                            for(auto & readerID : LastReaders[operand])
+                            for(auto & readerID : LastDs[operand])
                             {
-                                add_dep(readerID, consID, WAR, operand);
+                                add_dep(readerID, consID, DAD, operand);
                             }
                         }
-                        else
+                        for(auto & readerID : LastReaders[operand])
                         {
-                            add_dep(LastWriter[operand], consID, DAW, operand);
-	                        if (ql::options::get("scheduler_commute") == "no")
-                            {
-                                for(auto & readerID : LastDs[operand])
-                                {
-                                    add_dep(readerID, consID, DAD, operand);
-                                }
-                            }
-                            for(auto & readerID : LastReaders[operand])
-                            {
-                                add_dep(readerID, consID, DAR, operand);
-                            }
+                            add_dep(readerID, consID, DAR, operand);
                         }
                     }
                     operandNo++;
@@ -474,21 +413,11 @@ public:
                     {
                         // update LastReaders for this operand 0
                         LastReaders[operand].push_back(consID);
-                        if (ql::options::get("scheduler_post179") == "yes")
-                        {
-                            LastDs[operand].clear();
-                        }
+                        LastDs[operand].clear();
                     }
                     else
                     {
-	                    if (ql::options::get("scheduler_post179") == "no")
-                        {
-	                        LastWriter[operand] = consID;
-                        }
-                        else
-                        {
-                            LastDs[operand].push_back(consID);
-                        }
+                        LastDs[operand].push_back(consID);
 	                    LastReaders[operand].clear();
                     }
                     operandNo++;
@@ -499,43 +428,23 @@ public:
                     )
             {
                 DOUT(". considering " << name[consNode] << " as cz");
-                // CZs Read all operands for post179
-                // CZs Read all operands and write last one for pre179
+                // CZs Read all operands
                 size_t operandNo=0;
                 auto operands = ins->operands;
                 for( auto operand : operands )
                 {
                     DOUT(".. Operand: " << operand);
-                    if (ql::options::get("scheduler_post179") == "no")
+                    if (ql::options::get("scheduler_commute") == "no")
                     {
-                        add_dep(LastWriter[operand], consID, RAW, operand);
                         for(auto & readerID : LastReaders[operand])
                         {
                             add_dep(readerID, consID, RAR, operand);
                         }
-	                    if( operandNo != 0)
-	                    {
-                            add_dep(LastWriter[operand], consID, WAW, operand);
-                            for(auto & readerID : LastReaders[operand])
-                            {
-                                add_dep(readerID, consID, WAR, operand);
-                            }
-	                    }
                     }
-                    else
+                    add_dep(LastWriter[operand], consID, RAW, operand);
+                    for(auto & readerID : LastDs[operand])
                     {
-                        if (ql::options::get("scheduler_commute") == "no")
-                        {
-                            for(auto & readerID : LastReaders[operand])
-                            {
-                                add_dep(readerID, consID, RAR, operand);
-                            }
-                        }
-                        add_dep(LastWriter[operand], consID, RAW, operand);
-                        for(auto & readerID : LastDs[operand])
-                        {
-                            add_dep(readerID, consID, RAD, operand);
-                        }
+                        add_dep(readerID, consID, RAD, operand);
                     }
                     operandNo++;
                 } // end of operand for
@@ -544,23 +453,8 @@ public:
                 operandNo=0;
                 for( auto operand : operands )
                 {
-                    if (ql::options::get("scheduler_post179") == "no")
-                    {
-	                    if( operandNo == 0)
-	                    {
-	                        LastReaders[operand].push_back(consID);
-	                    }
-	                    else
-	                    {
-	                        LastWriter[operand] = consID;
-	                        LastReaders[operand].clear();
-	                    }
-                    }
-                    else
-                    {
-                        LastDs[operand].clear();
-                        LastReaders[operand].push_back(consID);
-                    }
+                    LastDs[operand].clear();
+                    LastReaders[operand].push_back(consID);
                     operandNo++;
                 }
             }
@@ -580,29 +474,22 @@ public:
                 {
                     DOUT(".. Operand: " << operand);
                     add_dep(LastWriter[operand], consID, RAW, operand);
-                    if (ql::options::get("scheduler_post179") == "no"
-                    ||  ql::options::get("scheduler_commute") == "no")
+                    if (ql::options::get("scheduler_commute") == "no")
                     {
                         for(auto & readerID : LastReaders[operand])
                         {
                             add_dep(readerID, consID, RAR, operand);
                         }
                     }
-                    if (ql::options::get("scheduler_post179") == "yes")
+                    for(auto & readerID : LastDs[operand])
                     {
-                        for(auto & readerID : LastDs[operand])
-                        {
-                            add_dep(readerID, consID, RAD, operand);
-                        }
+                        add_dep(readerID, consID, RAD, operand);
                     }
 
                     if( operandNo < op_count-1 )
                     {
                         LastReaders[operand].push_back(consID);
-                        if (ql::options::get("scheduler_post179") == "yes")
-                        {
-                            LastDs[operand].clear();
-                        }
+                        LastDs[operand].clear();
                     }
                     else
                     {
@@ -611,20 +498,14 @@ public:
                         {
                             add_dep(readerID, consID, WAR, operand);
                         }
-                        if (ql::options::get("scheduler_post179") == "yes")
+                        for(auto & readerID : LastDs[operand])
                         {
-                            for(auto & readerID : LastDs[operand])
-                            {
-                                add_dep(readerID, consID, WAD, operand);
-                            }
+                            add_dep(readerID, consID, WAD, operand);
                         }
 
                         LastWriter[operand] = consID;
                         LastReaders[operand].clear();
-                        if (ql::options::get("scheduler_post179") == "yes")
-                        {
-                            LastDs[operand].clear();
-                        }
+                        LastDs[operand].clear();
                     }
                     operandNo++;
                 } // end of operand for
@@ -644,20 +525,14 @@ public:
                     {
                         add_dep(readerID, consID, WAR, operand);
                     }
-                    if (ql::options::get("scheduler_post179") == "yes")
+                    for(auto & readerID : LastDs[operand])
                     {
-                        for(auto & readerID : LastDs[operand])
-                        {
-                            add_dep(readerID, consID, WAD, operand);
-                        }
+                        add_dep(readerID, consID, WAD, operand);
                     }
 
                     LastWriter[operand] = consID;
                     LastReaders[operand].clear();
-                    if (ql::options::get("scheduler_post179") == "yes")
-                    {
-                        LastDs[operand].clear();
-                    }
+                    LastDs[operand].clear();
                 } // end of operand for
 
                 // Read+Write each classical operand
@@ -669,21 +544,15 @@ public:
                     {
                         add_dep(readerID, consID, WAR, qubit_count+coperand);
                     }
-                    if (ql::options::get("scheduler_post179") == "yes")
+                    for(auto & readerID : LastDs[qubit_count+coperand])
                     {
-                        for(auto & readerID : LastDs[qubit_count+coperand])
-                        {
-                            add_dep(readerID, consID, WAD, qubit_count+coperand);
-                        }
+                        add_dep(readerID, consID, WAD, qubit_count+coperand);
                     }
 
                     // now update LastWriter and so clear LastReaders/LastDs
                     LastWriter[qubit_count+coperand] = consID;
                     LastReaders[qubit_count+coperand].clear();
-                    if (ql::options::get("scheduler_post179") == "yes")
-                    {
-                        LastDs[qubit_count+coperand].clear();
-                    }
+                    LastDs[qubit_count+coperand].clear();
                 } // end of coperand for
             } // end of if/else
             DOUT(". instruction done: " << ins->qasm());
@@ -721,12 +590,9 @@ public:
 	            {
 	                add_dep(readerID, consID, WAR, operand);
 	            }
-	            if (ql::options::get("scheduler_post179") == "yes")
+	            for(auto & readerID : LastDs[operand])
 	            {
-	                for(auto & readerID : LastDs[operand])
-	                {
-	                    add_dep(readerID, consID, WAD, operand);
-	                }
+	                add_dep(readerID, consID, WAD, operand);
 	            }
 	        }
 
@@ -736,10 +602,7 @@ public:
 	            DOUT(".. Sink operand, clearing: " << operand);
 	            LastWriter[operand] = consID;
 	            LastReaders[operand].clear();
-	            if (ql::options::get("scheduler_post179") == "yes")
-	            {
-	                LastDs[operand].clear();
-	            }
+	            LastDs[operand].clear();
 	        }
         }
 
@@ -811,16 +674,16 @@ public:
 private:
 
 
-// =========== post179 plain schedulers, just ASAP and ALAP, without RC
+// =========== plain schedulers, just ASAP and ALAP, without RC
 
 /*
     Summary
 
-    The post179 schedulers are linear list schedulers, i.e.
+    The schedulers are linear list schedulers, i.e.
     - they scan linearly through the code, forward or backward
     - and while doing, they maintain a list of gates, of gates that are available for being scheduled
       because they are not blocked by dependences on non-scheduled gates.
-    Therefore, the post179 schedulers are able to select the best one from multiple available gates.
+    Therefore, the schedulers are able to select the best one from multiple available gates.
     Not all gates that are available (not blocked by dependences on non-scheduled gates) can actually be scheduled.
     It must be made sure in addition that:
     - those scheduled gates that it depends on, actually have completed their execution
@@ -921,252 +784,66 @@ public:
     }
 
     // sort circuit by the gates' cycle attribute in non-decreasing order
-    void sort_by_cycle()
+    void sort_by_cycle(ql::circuit *cp)
     {
         DOUT("... before sorting on cycle value");
-        // for ( ql::circuit::iterator gpit = circp->begin(); gpit != circp->end(); gpit++)
+        // for ( ql::circuit::iterator gpit = cp->begin(); gpit != cp->end(); gpit++)
         // {
         //     ql::gate*           gp = *gpit;
         //     DOUT("...... (@" << gp->cycle << ") " << gp->qasm());
         // }
 
         // std::sort doesn't preserve the original order of elements that have equal values but std::stable_sort does
-        std::stable_sort(circp->begin(), circp->end(), cycle_lessthan);
+        std::stable_sort(cp->begin(), cp->end(), cycle_lessthan);
 
         DOUT("... after sorting on cycle value");
-        // for ( ql::circuit::iterator gpit = circp->begin(); gpit != circp->end(); gpit++)
+        // for ( ql::circuit::iterator gpit = cp->begin(); gpit != cp->end(); gpit++)
         // {
         //     ql::gate*           gp = *gpit;
         //     DOUT("...... (@" << gp->cycle << ") " << gp->qasm());
         // }
     }
 
-#ifdef  DO_NOT_USE_BUNDLER_MOVED_TO_IR_H
-    // return bundles for the given circuit;
-    // assumes gatep->cycle attribute reflects the cycle assignment;
-    // assumes circuit being a vector of gate pointers is ordered by this cycle value;
-    // create bundles in a single scan over the circuit, using currBundle and currCycle as state
-    ql::ir::bundles_t bundler(ql::circuit& circ, size_t cycle_time)
+    // ASAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
+    void schedule_asap(std::string & sched_dot)
     {
-        ql::ir::bundles_t bundles;          // result bundles
-
-        ql::ir::bundle_t    currBundle;     // current bundle at currCycle that is being filled
-        size_t              currCycle = 0;  // cycle at which bundle is to be scheduled
-
-        currBundle.start_cycle = currCycle; // starts off as empty bundle starting at currCycle
-        currBundle.duration_in_cycles = 0;
-
-        DOUT("bundler ...");
-
-        for (auto & gp: circ)
-        {
-            DOUT(". adding gate(@" << gp->cycle << ")  " << gp->qasm());
-            if ( gp->type() == ql::gate_type_t::__wait_gate__ ||
-                 gp->type() == ql::gate_type_t::__dummy_gate__
-               )
-            {
-                DOUT("... ignoring: " << gp->qasm());
-                continue;
-            }
-            size_t newCycle = gp->cycle;        // taking cycle values from circuit, so excludes SOURCE and SINK!
-            if (newCycle < currCycle)
-            {
-                EOUT("Error: circuit not ordered by cycle value");
-                throw ql::exception("[x] Error: circuit not ordered by cycle value",false);
-            }
-            if (newCycle > currCycle)
-            {
-                if (!currBundle.parallel_sections.empty())
-                {
-                    // finish currBundle at currCycle
-                    DOUT(".. bundle at cycle " << currCycle << " duration in cycles: " << currBundle.duration_in_cycles);
-                    for (auto &s : currBundle.parallel_sections)
-                    {
-                        for (auto &sgp: s)
-                        {
-                            DOUT("... with gate(@" << sgp->cycle << ")  " << sgp->qasm());
-                        }
-                    }
-                    bundles.push_back(currBundle);
-                    DOUT(".. ready with bundle at cycle " << currCycle);
-                    currBundle.parallel_sections.clear();
-                }
-
-                // new empty currBundle at newCycle
-                currCycle = newCycle;
-                DOUT(".. bundling at cycle: " << currCycle);
-                currBundle.start_cycle = currCycle;
-                currBundle.duration_in_cycles = 0;
-            }
-
-            // add gp to currBundle
-            ql::ir::section_t asec;
-            asec.push_back(gp);
-            currBundle.parallel_sections.push_back(asec);
-            DOUT("... gate: " << gp->qasm() << " in private parallel section");
-            currBundle.duration_in_cycles = std::max(currBundle.duration_in_cycles, (gp->duration+cycle_time-1)/cycle_time);
-        }
-        if (!currBundle.parallel_sections.empty())
-        {
-            // finish currBundle (which is last bundle) at currCycle
-            DOUT("... bundle at cycle " << currCycle << " duration in cycles: " << currBundle.duration_in_cycles);
-            for (auto &s : currBundle.parallel_sections)
-            {
-                for (auto &sgp: s)
-                {
-                    DOUT("... with gate(@" << sgp->cycle << ")  " << sgp->qasm());
-                }
-            }
-            bundles.push_back(currBundle);
-            DOUT(".. ready with bundle at cycle " << currCycle);
-        }
-
-        // currCycle == cycle of last gate of circuit scheduled
-        // duration_in_cycles later the system starts idling
-        // depth is the difference between the cycle in which it starts idling and the cycle it started execution
-        if (bundles.empty())
-        {
-            DOUT("Depth: " << 0);
-        }
-        else
-        {
-            DOUT("Depth: " << currCycle + currBundle.duration_in_cycles - bundles.front().start_cycle);
-        }
-        DOUT("bundler [DONE]");
-        return bundles;
-    }
-#endif
-
-    // ASAP scheduler without RC, updating circuit and returning bundles
-    ql::ir::bundles_t schedule_asap_post179(std::string & sched_dot)
-    {
-        DOUT("Scheduling ASAP post179 ...");
+        DOUT("Scheduling ASAP ...");
         set_cycle(ql::forward_scheduling);
-        sort_by_cycle();
+        sort_by_cycle(circp);
 
         if (ql::options::get("print_dot_graphs") == "yes")
         {
             stringstream ssdot;
-            get_dot_post179(false, true, ssdot, ql::forward_scheduling);
+            get_dot(false, true, ssdot);
             sched_dot = ssdot.str();
         }
 
         DOUT("Scheduling ASAP [DONE]");
-        return ql::ir::bundler(*circp, cycle_time);
     }
 
-    // ALAP scheduler without RC, updating circuit and returning bundles
-    ql::ir::bundles_t schedule_alap_post179(std::string & sched_dot)
+    // ALAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
+    void schedule_alap(std::string & sched_dot)
     {
-        DOUT("Scheduling ALAP post179 ...");
+        DOUT("Scheduling ALAP ...");
         set_cycle(ql::backward_scheduling);
-        sort_by_cycle();
+        sort_by_cycle(circp);
 
         if (ql::options::get("print_dot_graphs") == "yes")
         {
             stringstream ssdot;
-            get_dot_post179(false, true, ssdot, ql::backward_scheduling);
+            get_dot(false, true, ssdot);
             sched_dot = ssdot.str();
         }
 
         DOUT("Scheduling ALAP [DONE]");
-        return ql::ir::bundler(*circp, cycle_time);
     }
 
 
-// =========== post179 schedulers with RC, latency compensation and buffer-buffer delay insertion
+// =========== schedulers with RC
     // Most code from here on deals with scheduling with Resource Constraints.
-    // Then the cycles as assigned from the depgraph shift, because of resource conflicts
-    // and then at each point all available nodes should be considered for scheduling
+    // Then the cycles as computed from the depgraph alone start to drift because of resource conflicts,
+    // and then it is more optimal to at each point consider all available nodes for scheduling
     // to avoid largely suboptimal results (issue 179), i.e. apply list scheduling.
-
-    // latency compensation
-    void latency_compensation(ql::circuit* circp, const ql::quantum_platform& platform)
-    {
-        DOUT("Latency compensation ...");
-        bool    compensated_one = false;
-        for ( auto & gp : *circp)
-        {
-            auto & id = gp->name;
-            // DOUT("Latency compensating instruction: " << id);
-            long latency_cycles=0;
-
-            if(platform.instruction_settings.count(id) > 0)
-            {
-                if(platform.instruction_settings[id].count("latency") > 0)
-                {
-                    float latency_ns = platform.instruction_settings[id]["latency"];
-                    latency_cycles = long(std::ceil( static_cast<float>(std::abs(latency_ns)) / cycle_time)) *
-                                          ql::utils::sign_of(latency_ns);
-                    compensated_one = true;
-
-                    gp->cycle = gp->cycle + latency_cycles;
-                    DOUT( "... compensated to @" << gp->cycle << " <- " << id << " with " << latency_cycles );
-                }
-            }
-        }
-
-        if (compensated_one)
-        {
-            DOUT("... sorting on cycle value after latency compensation");
-            sort_by_cycle();
-
-            DOUT("... printing schedule after latency compensation");
-            for ( auto & gp : *circp)
-            {
-                DOUT("...... @(" << gp->cycle << "): " << gp->qasm());
-            }
-        }
-        else
-        {
-            DOUT("... no gate latency compensated");
-        }
-        DOUT("Latency compensation [DONE]");
-    }
-
-    // insert buffer - buffer delays
-    void insert_buffer_delays(ql::ir::bundles_t& bundles, const ql::quantum_platform& platform)
-    {
-        DOUT("Buffer-buffer delay insertion ... ");
-        std::vector<std::string> operations_prev_bundle;
-        size_t buffer_cycles_accum = 0;
-        for(ql::ir::bundle_t & abundle : bundles)
-        {
-            std::vector<std::string> operations_curr_bundle;
-            for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
-            {
-                for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
-                {
-                    auto & id = (*insIt)->name;
-                    std::string op_type("none");
-                    if(platform.instruction_settings.count(id) > 0)
-                    {
-                        if(platform.instruction_settings[id].count("type") > 0)
-                        {
-                            op_type = platform.instruction_settings[id]["type"];
-                        }
-                    }
-                    operations_curr_bundle.push_back(op_type);
-                }
-            }
-
-            size_t buffer_cycles = 0;
-            for(auto & op_prev : operations_prev_bundle)
-            {
-                for(auto & op_curr : operations_curr_bundle)
-                {
-                    auto temp_buf_cycles = buffer_cycles_map[ std::pair<std::string,std::string>(op_prev, op_curr) ];
-                    DOUT("... considering buffer_" << op_prev << "_" << op_curr << ": " << temp_buf_cycles);
-                    buffer_cycles = std::max(temp_buf_cycles, buffer_cycles);
-                }
-            }
-            DOUT( "... inserting buffer : " << buffer_cycles);
-            buffer_cycles_accum += buffer_cycles;
-            abundle.start_cycle = abundle.start_cycle + buffer_cycles_accum;
-            operations_prev_bundle = operations_curr_bundle;
-        }
-        DOUT("Buffer-buffer delay insertion [DONE] ");
-    }
 
     // In critical-path scheduling, usually more-critical instructions are preferred;
     // an instruction is more-critical when its ASAP and ALAP values differ less.
@@ -1534,58 +1211,6 @@ public:
         }
     }
 
-    // reading platform dependent gate attributes for rc scheduling
-    //
-    // get the gate parameters that need to be passed to the resource manager;
-    // it would have been nicer if they would have been made available by the platform
-    // directly to the resource manager since this function makes the mapper dependent on cc_light
-    void GetGateParameters(std::string id, const ql::quantum_platform& platform, std::string& operation_name, std::string& operation_type, std::string& instruction_type)
-    {
-        DOUT("... getting gate parameters of " << id);
-        if (platform.instruction_settings.count(id) > 0)
-        {
-            DOUT("...... extracting operation_name");
-	        if ( !platform.instruction_settings[id]["cc_light_instr"].is_null() )
-	        {
-	            operation_name = platform.instruction_settings[id]["cc_light_instr"];
-	        }
-            else
-            {
-	            operation_name = id;
-                DOUT("...... faking operation_name to " << operation_name);
-            }
-
-            DOUT("...... extracting operation_type");
-	        if ( !platform.instruction_settings[id]["type"].is_null() )
-	        {
-	            operation_type = platform.instruction_settings[id]["type"];
-	        }
-            else
-            {
-	            operation_type = "cc_light_type";
-                DOUT("...... faking operation_type to " << operation_type);
-            }
-
-            DOUT("...... extracting instruction_type");
-	        if ( !platform.instruction_settings[id]["cc_light_instr_type"].is_null() )
-	        {
-	            instruction_type = platform.instruction_settings[id]["cc_light_instr_type"];
-	        }
-            else
-            {
-	            instruction_type = "cc_light";
-                DOUT("...... faking instruction_type to " << instruction_type);
-            }
-        }
-        else
-        {
-            DOUT("Error: platform doesn't support gate '" << id << "'");
-            EOUT("Error: platform doesn't support gate '" << id << "'");
-            throw ql::exception("[x] Error : platform doesn't support gate!",false);
-        }
-        DOUT("... getting gate parameters [done]");
-    }
-
     // a gate must wait until all its operand are available, i.e. the gates having computed them have completed,
     // and must wait until all resources required for the gate's execution are available;
     // return true when immediately schedulable
@@ -1609,13 +1234,7 @@ public:
             {
                 return true;
             }
-            std::string operation_name;
-            std::string operation_type;
-            std::string instruction_type;
-            size_t      operation_duration = size_t(std::ceil( static_cast<float>(gp->duration) / cycle_time));
-            // size_t      operation_duration = (gp->duration+cycle_time-1) / cycle_time;
-            GetGateParameters(gp->name, platform, operation_name, operation_type, instruction_type);
-            if (rm.available(curr_cycle, gp, operation_name, operation_type, instruction_type, operation_duration))
+            if (rm.available(curr_cycle, gp, platform))
             {
                 return true;
             }
@@ -1670,10 +1289,8 @@ public:
     // what is done, is:
     // - the cycle attribute of the gates will be set according to the scheduling method
     // - *circp (the original and result circuit) is sorted in the new cycle order
-    // - bundles are collected from the circuit
-    // - latency compensation and buffer-buffer delay insertion done
     // the bundles are returned, with private start/duration attributes
-    ql::ir::bundles_t schedule_post179(ql::circuit* circp, ql::scheduling_direction_t dir,
+    void schedule(ql::circuit* circp, ql::scheduling_direction_t dir,
             const ql::quantum_platform& platform, ql::arch::resource_manager_t& rm, std::string& sched_dot)
     {
         DOUT("Scheduling " << (ql::forward_scheduling == dir?"ASAP":"ALAP") << " with RC ...");
@@ -1720,22 +1337,14 @@ public:
                 && gp->type() != ql::gate_type_t::__wait_gate__
                )
             {
-                std::string operation_name;
-                std::string operation_type;
-                std::string instruction_type;
-                size_t      operation_duration = 0;
-
-                GetGateParameters(gp->name, platform, operation_name, operation_type, instruction_type);
-                // operation_duration = (gp->duration+cycle_time-1) / cycle_time;
-                operation_duration = size_t(std::ceil( static_cast<float>(gp->duration) / cycle_time));
-                rm.reserve(curr_cycle, gp, operation_name, operation_type, instruction_type, operation_duration);
+                rm.reserve(curr_cycle, gp, platform);
             }
             TakeAvailable(selected_node, avlist, scheduled, dir);   // update avlist/scheduled/cycle
             // more nodes that could be scheduled in this cycle, will be found in an other round of the loop
         }
 
         DOUT("... sorting on cycle value");
-        sort_by_cycle();
+        sort_by_cycle(circp);
 
         if (ql::backward_scheduling == dir)
         {
@@ -1750,47 +1359,36 @@ public:
             }
             instruction[s]->cycle -= SOURCECycle;   // i.e. becomes 0
         }
+        // FIXME HvS cycles_valid now
 
         if (ql::options::get("print_dot_graphs") == "yes")
         {
             stringstream ssdot;
-            get_dot_post179(false, true, ssdot, dir);
+            get_dot(false, true, ssdot);
             sched_dot = ssdot.str();
         }
 
-        latency_compensation(circp, platform);
-
-        ql::ir::bundles_t   bundles;
-        bundles = ql::ir::bundler(*circp, cycle_time);
-
-        insert_buffer_delays(bundles, platform);
+        // end scheduling
 
         DOUT("Scheduling " << (ql::forward_scheduling == dir?"ASAP":"ALAP") << " with RC [DONE]");
-        return bundles;
     }
 
-    ql::ir::bundles_t schedule_asap_post179(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
+    void schedule_asap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
     {
-        ql::ir::bundles_t   bundles;
-        DOUT("Scheduling ASAP post179");
-        bundles = schedule_post179(circp, ql::forward_scheduling, platform, rm, sched_dot);
-
-        DOUT("Scheduling ASAP post179 [DONE]");
-        return bundles;
+        DOUT("Scheduling ASAP");
+        schedule(circp, ql::forward_scheduling, platform, rm, sched_dot);
+        DOUT("Scheduling ASAP [DONE]");
     }
 
-    ql::ir::bundles_t schedule_alap_post179(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
+    void schedule_alap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
     {
-        ql::ir::bundles_t   bundles;
-        DOUT("Scheduling ALAP post179");
-        bundles = schedule_post179(circp, ql::backward_scheduling, platform, rm, sched_dot);
-
-        DOUT("Scheduling ALAP post179 [DONE]");
-        return bundles;
+        DOUT("Scheduling ALAP");
+        schedule(circp, ql::backward_scheduling, platform, rm, sched_dot);
+        DOUT("Scheduling ALAP [DONE]");
     }
 
-// =========== post179 uniform
-    ql::ir::bundles_t schedule_alap_uniform_post179()
+// =========== uniform
+    void schedule_alap_uniform()
     {
         // algorithm based on "Balanced Scheduling and Operation Chaining in High-Level Synthesis for FPGA Designs"
         // by David C. Zaretsky, Gaurav Mittal, Robert P. Dick, and Prith Banerjee
@@ -1814,7 +1412,6 @@ public:
         // Hence, the result resembles an ALAP schedule with excess bundle lengths solved by moving nodes down ("rolling pin").
 
         DOUT("Scheduling ALAP UNIFORM to get bundles ...");
-        ql::ir::bundles_t bundles;
 
         // initialize gp->cycle as ASAP cycles as first approximation of result;
         // note that the circuit doesn't contain the SOURCE and SINK gates but the dependence graph does;
@@ -1994,7 +1591,8 @@ public:
         }   // end curr_cycle loop; curr_cycle is bundle which must be enlarged when too small
 
         // new cycle values computed; reflect this in circuit's gate order
-        sort_by_cycle();
+        sort_by_cycle(circp);
+        // FIXME HvS cycles_valid now
 
         // recompute and print statistics reporting on uniform scheduling performance
         max_gates_per_cycle = 0;
@@ -2019,22 +1617,17 @@ public:
             << "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
             );
 
-        // prefer standard bundler over using the gates_per_cycle data structure
-        bundles = ql::ir::bundler(*circp, cycle_time);
-
-        DOUT("Scheduling ALAP UNIFORM to get bundles [DONE]");
-        return bundles;
+        DOUT("Scheduling ALAP UNIFORM [DONE]");
     }
 
-// =========== printing dot of the dependence graph for post179
-    void get_dot_post179(
+// =========== printing dot of the dependence graph
+    void get_dot(
                 bool WithCritical,
                 bool WithCycles,
-                std::ostream& dotout,
-                ql::scheduling_direction_t dir
+                std::ostream& dotout
                 )
     {
-        DOUT("Get_dot post179");
+        DOUT("Get_dot");
         Path<ListDigraph> p;
         ListDigraph::ArcMap<bool> isInCritical(graph);
         if(WithCritical)
@@ -2128,90 +1721,159 @@ public:
         }
 
         dotout << "}" << endl;
-        DOUT("Get_dot post179 [DONE]");
-    }
-
-public:
-
-// =========== scheduling entry points switching out to pre179 or post179
-
-    ql::ir::bundles_t schedule_asap(std::string & sched_dot)
-    {
-        if (ql::options::get("scheduler_post179") == "no")
-        {
-            return schedule_asap_post179(sched_dot);
-        }
-        else
-        {
-            return schedule_asap_post179(sched_dot);
-        }
-    }
-
-    ql::ir::bundles_t schedule_asap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform,
-        std::string & sched_dot)
-    {
-        if (ql::options::get("scheduler_post179") == "no")
-        {
-            return schedule_asap_post179(rm, platform, sched_dot);
-        }
-        else
-        {
-            return schedule_asap_post179(rm, platform, sched_dot);
-        }
-    }
-
-    ql::ir::bundles_t schedule_alap(std::string & sched_dot)
-    {
-        if (ql::options::get("scheduler_post179") == "no")
-        {
-            return schedule_alap_post179(sched_dot);
-        }
-        else
-        {
-            return schedule_alap_post179(sched_dot);
-        }
-    }
-
-    ql::ir::bundles_t schedule_alap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform,
-        std::string & sched_dot)
-    {
-        if (ql::options::get("scheduler_post179") == "no")
-        {
-            return schedule_alap_post179(rm, platform, sched_dot);
-        }
-        else
-        {
-            return schedule_alap_post179(rm, platform, sched_dot);
-        }
-    }
-
-    ql::ir::bundles_t schedule_alap_uniform()
-    {
-        if (ql::options::get("scheduler_post179") == "no")
-        {
-            return schedule_alap_uniform_post179();
-        }
-        else
-        {
-            return schedule_alap_uniform_post179();
-        }
+        DOUT("Get_dot[DONE]");
     }
 
     void get_dot(std::string & dot)
     {
-        if (ql::options::get("scheduler_post179") == "no")
-        {
-        }
-        else
-        {
-            set_cycle(ql::forward_scheduling);
-            sort_by_cycle();
+        set_cycle(ql::forward_scheduling);
+        sort_by_cycle(circp);
 
-            stringstream ssdot;
-            get_dot_post179(false, true, ssdot, ql::forward_scheduling);
-            dot = ssdot.str();
-        }
+        stringstream ssdot;
+        get_dot(false, true, ssdot);
+        dot = ssdot.str();
     }
 };
+
+namespace ql
+{
+
+// schedule support for program.h::schedule()
+void schedule_kernel(quantum_kernel& kernel, quantum_platform platform,
+    std::string & dot, std::string& sched_dot)
+{
+    std::string scheduler = ql::options::get("scheduler");
+    std::string scheduler_uniform = ql::options::get("scheduler_uniform");
+
+    IOUT( scheduler << " scheduling the quantum kernel '" << kernel.name << "'...");
+
+    Scheduler sched;
+    sched.init(kernel.c, platform, kernel.qubit_count, kernel.creg_count);
+
+    if(ql::options::get("print_dot_graphs") == "yes")
+    {
+        sched.get_dot(dot);
+    }
+
+    if ("yes" == scheduler_uniform)
+    {
+        sched.schedule_alap_uniform(); // result in current kernel's circuit (k.c)
+    }
+    else if ("ASAP" == scheduler)
+    {
+        sched.schedule_asap(sched_dot); // result in current kernel's circuit (k.c)
+    }
+    else if ("ALAP" == scheduler)
+    {
+        sched.schedule_alap(sched_dot); // result in current kernel's circuit (k.c)
+    }
+    else
+    {
+        FATAL("Not supported scheduler option: scheduler=" << scheduler);
+    }
+    DOUT( scheduler << " scheduling the quantum kernel '" << kernel.name << "' DONE");
+    kernel.cycles_valid = true;
+}
+
+/*
+ * main entry to the non resource-constrained scheduler
+ */
+void schedule(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
+{
+    if( ql::options::get("prescheduler") == "yes" )
+    {
+        ql::report_statistics(programp, platform, "in", passname, "# ");
+        ql::report_qasm(programp, platform, "in", passname);
+    
+        IOUT("scheduling the quantum program");
+        for (auto& k : programp->kernels)
+        {
+            std::string dot;
+            std::string kernel_sched_dot;
+            schedule_kernel(k, platform, dot, kernel_sched_dot);
+    
+            if(ql::options::get("print_dot_graphs") == "yes")
+            {
+                string fname;
+                fname = ql::options::get("output_dir") + "/" + k.get_name() + "_dependence_graph.dot";
+                IOUT("writing scheduled dot to '" << fname << "' ...");
+                ql::utils::write_file(fname, dot);
+    
+                std::string scheduler_opt = ql::options::get("scheduler");
+                fname = ql::options::get("output_dir") + "/" + k.get_name() + scheduler_opt + "_scheduled.dot";
+                IOUT("writing scheduled dot to '" << fname << "' ...");
+                ql::utils::write_file(fname, kernel_sched_dot);
+            }
+        }
+    
+        ql::report_statistics(programp, platform, "out", passname, "# ");
+        ql::report_qasm(programp, platform, "out", passname);
+    }
+}
+
+void rcschedule_kernel(ql::quantum_kernel& kernel,
+    const ql::quantum_platform & platform, std::string & dot, size_t nqubits, size_t ncreg = 0)
+{
+    IOUT("Resource constraint scheduling ...");
+
+    std::string schedopt = ql::options::get("scheduler");
+    if ("ASAP" == schedopt)
+    {
+        Scheduler sched;
+        sched.init(kernel.c, platform, nqubits, ncreg);
+
+        ql::arch::resource_manager_t rm(platform, forward_scheduling);
+        sched.schedule_asap(rm, platform, dot);
+    }
+    else if ("ALAP" == schedopt)
+    {
+        Scheduler sched;
+        sched.init(kernel.c, platform, nqubits, ncreg);
+
+        ql::arch::resource_manager_t rm(platform, backward_scheduling);
+        sched.schedule_alap(rm, platform, dot);
+    }
+    else
+    {
+        FATAL("Not supported scheduler option: scheduler=" << schedopt);
+    }
+
+    IOUT("Resource constraint scheduling [Done].");
+}
+
+/*
+ * main entry point of the rcscheduler
+ */
+void rcschedule(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
+{
+    ql::report_statistics(programp, platform, "in", passname, "# ");
+    ql::report_qasm(programp, platform, "in", passname);
+
+    for(auto &kernel : programp->kernels)
+    {
+        IOUT("Scheduling kernel: " << kernel.name);
+        if (! kernel.c.empty())
+        {
+            auto num_creg = kernel.creg_count;
+            std::string     sched_dot;
+
+            rcschedule_kernel(kernel, platform, sched_dot, platform.qubit_number, num_creg);
+            kernel.cycles_valid = true; // FIXME HvS move this back into call to right after sort_cycle
+
+            if (ql::options::get("print_dot_graphs") == "yes")
+            {
+                std::stringstream fname;
+                fname << ql::options::get("output_dir") << "/" << kernel.name << "_" << passname << ".dot";
+                IOUT("writing " << passname << " dependence graph dot file to '" << fname.str() << "' ...");
+                ql::utils::write_file(fname.str(), sched_dot);
+            }
+        }
+    }
+
+    ql::report_statistics(programp, platform, "out", passname, "# ");
+    ql::report_qasm(programp, platform, "out", passname);
+}
+
+} // ql namespace
 
 #endif

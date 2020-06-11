@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('../swig'))
 
 project = 'OpenQL'
 copyright = '2016, Nader Khammassi & Imran Ashraf, QuTech, TU Delft'
-author = 'Nader Khammassi & Imran Ashraf, QuTech, TU Delft'
+author = 'QuTech, TU Delft'
 
 master_doc = 'index'
 

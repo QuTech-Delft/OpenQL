@@ -69,7 +69,6 @@ class Test_program(unittest.TestCase):
             'write_interaction_matrix',
             'compile',
             'microcode',
-            'qasm',
             'set_sweep_points',
             'get_sweep_points']
         self.assertTrue(set(program_methods).issubset(dir(p)))
@@ -82,7 +81,7 @@ class Test_program(unittest.TestCase):
         with self.assertRaises(Exception) as cm:
             p.compile()
 
-        self.assertEqual(str(cm.exception), 'Error: compiling a program with no kernels !')
+        self.assertEqual(str(cm.exception), 'Error : compiling a program with no kernels !')
 
 
     def test_simple_program(self):

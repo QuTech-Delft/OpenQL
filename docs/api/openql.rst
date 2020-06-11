@@ -28,3 +28,4 @@ openql
       Operation
       Platform
       Program
+      Compiler

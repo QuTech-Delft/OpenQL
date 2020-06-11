@@ -8,6 +8,7 @@
 #ifndef QL_CBOX_EQASM_COMPILER_H
 #define QL_CBOX_EQASM_COMPILER_H
 
+#include <kernel.h>
 #include <platform.h>
 #include <eqasm_compiler.h>
 #include <arch/cbox/qumis.h>
@@ -63,8 +64,42 @@ namespace ql
             /*
              * compile qasm to qumis
              */
-            // eqasm_t
-            void compile(std::string prog_name, ql::circuit& c, ql::quantum_platform& platform)
+            void compile(quantum_program* programp, const ql::quantum_platform& platform)
+            {
+                DOUT("Compiling " << programp->kernels.size() << " kernels to generate CBOX eQASM ... ");
+                std::string unique_name = programp->unique_name;
+        
+                IOUT("fusing quantum kernels...");
+                for(auto &kernel : programp->kernels)
+                {
+                    ql::circuit     fused;
+                    ql::circuit& kc = kernel.get_circuit();
+                    for(size_t i=0; i<kernel.iterations; i++)
+                    {
+                        fused.insert(fused.end(), kc.begin(), kc.end());
+                    }
+
+                    try
+                    {
+                        IOUT("compiling eqasm code ...");
+                        compile_circuit(unique_name, fused, platform);
+                    }
+                    catch (ql::exception &e)
+                    {
+                        EOUT("[x] error : eqasm_compiler.compile() : compilation interrupted due to fatal error.");
+                        throw e;
+                    }
+
+                    IOUT("writing eqasm code to '" << ( ql::options::get("output_dir") + "/" + unique_name+".asm"));
+                    write_eqasm( ql::options::get("output_dir") + "/" + unique_name + ".asm");
+
+                    IOUT("writing traces to '" << ( ql::options::get("output_dir") + "/trace.dat"));
+                    write_traces( ql::options::get("output_dir") + "/trace.dat");
+                }
+            }
+
+        private:
+            void compile_circuit(std::string prog_name, ql::circuit& c, const ql::quantum_platform& platform)
             {
                IOUT("[-] compiling qasm code ...");
                if (c.empty())
@@ -91,7 +126,7 @@ namespace ql
 
                eqasm_t eqasm_code;
                // ql::instruction_map_t& instr_map = platform.instruction_map;
-               json& instruction_settings       = platform.instruction_settings;
+               const json& instruction_settings       = platform.instruction_settings;
 
                std::string params[] = { "qubit_number", "cycle_time", "mw_mw_buffer", "mw_flux_buffer", "mw_readout_buffer", "flux_mw_buffer",
                   "flux_flux_buffer", "flux_readout_buffer", "readout_mw_buffer", "readout_flux_buffer", "readout_readout_buffer" };
@@ -159,7 +194,7 @@ namespace ql
                   {
                      if (instruction_settings[id]["qumis_instr"].is_null())
                         throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : 'qumis_instr' for instruction '"+id+"' is not specified !",false);
-                     operation             = instruction_settings[id]["qumis_instr"];
+                     operation             = instruction_settings[id]["qumis_instr"].get<std::string>();
                      size_t duration       = __ns_to_cycle((size_t)instruction_settings[id]["duration"]);
                      size_t latency        = 0;
 
@@ -204,28 +239,28 @@ namespace ql
                      if (operation == "pulse")
                      {
                         // println("pulse id: " << id);
-                        json& j_params = instruction_settings[id]["qumis_instr_kw"];
+                        const json& j_params = instruction_settings[id]["qumis_instr_kw"];
                         process_pulse(j_params, duration, type, latency, g->operands, id);
                         // println("pulse code : " << qumis_instructions.back()->code());
                      }
                      else if (operation == "codeword_trigger")
                      {
                         // println("cw id: " << id);
-                        json& j_params = instruction_settings[id]["qumis_instr_kw"];
+                        const json& j_params = instruction_settings[id]["qumis_instr_kw"];
                         // process_codeword_trigger(j_params, duration, type, latency, g->operands, id);
                         process_codeword_trigger(j_params, duration, type, latency, used_qubits, id);
                      }
                      else if (operation == "pulse_trigger")
                      {
                         // println("cw id: " << id);
-                        json& j_params = instruction_settings[id]["qumis_instr_kw"];
+                        const json& j_params = instruction_settings[id]["qumis_instr_kw"];
                         // process_pulse_trigger(j_params, duration, type, latency, g->operands, id);
                         process_pulse_trigger(j_params, duration, type, latency, used_qubits, id);
                      }
                      else if (operation == "trigger_sequence")
                      {
                         // println("cw id: " << id);
-                        json& j_params = instruction_settings[id]["qumis_instr_kw"];
+                        const json& j_params = instruction_settings[id]["qumis_instr_kw"];
                         // process_trigger_sequence(j_params, duration, type, latency, g->operands, id);
                         // process_trigger_sequence(j_params, duration, type, latency, qubits, id);
                         process_trigger_sequence(j_params, duration, type, latency, used_qubits, id);
@@ -233,7 +268,7 @@ namespace ql
                      else if  ((operation == "trigger") && (type == __measurement__))
                      {
                         // println("measurement (trig) id: " << id);
-                        json& j_params = instruction_settings[id]["qumis_instr_kw"];
+                        const json& j_params = instruction_settings[id]["qumis_instr_kw"];
                         std::string qumis_instr = instruction_settings[id]["qumis_instr"];
                         // process_measure(j_params, qumis_instr, duration, type, latency, g->operands, id);
                         process_measure(j_params, qumis_instr, duration, type, latency, used_qubits, id);
@@ -241,7 +276,7 @@ namespace ql
                      else if  ((operation == "trigger"))
                      {
                         // println("trig id: " << id);
-                        json& j_params = instruction_settings[id]["qumis_instr_kw"];
+                        const json& j_params = instruction_settings[id]["qumis_instr_kw"];
                         std::string qumis_instr = instruction_settings[id]["qumis_instr"];
                         // process_trigger(j_params, qumis_instr, duration, type, latency, g->operands, id);
                         process_trigger(j_params, qumis_instr, duration, type, latency, used_qubits, id);
@@ -286,6 +321,7 @@ namespace ql
 
                // return eqasm_code;
             }
+        public:
 
             /**
              * match qubit id
@@ -859,7 +895,7 @@ namespace ql
             /**
              * process pulse
              */
-            void process_pulse(json& j_params, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
+            void process_pulse(const json& j_params, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
             {
                // println("processing pulse instruction...");
                // check for hardware configuration integrity
@@ -884,7 +920,7 @@ namespace ql
             /**
              * process codeword trigger
              */
-            void process_codeword_trigger(json& j_params, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
+            void process_codeword_trigger(const json& j_params, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
             {
                // println("processing codeword trigger instruction...");
                // check for hardware configuration integrity
@@ -937,7 +973,7 @@ namespace ql
             /**
              * process pulse trigger
              */
-            void process_pulse_trigger(json& j_params, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
+            void process_pulse_trigger(const json& j_params, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
             {
                // println("processing codeword trigger instruction...");
                // check for hardware configuration integrity
@@ -981,7 +1017,7 @@ namespace ql
             /**
              * process trigger sequence
              */
-            void process_trigger_sequence(json& j_params, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
+            void process_trigger_sequence(const json& j_params, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
             {
                // println("processing codeword trigger instruction...");
                // check for hardware configuration integrity
@@ -1021,7 +1057,7 @@ namespace ql
             /**
              * process readout
              */
-            void process_measure(json& j_params, std::string instr, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
+            void process_measure(const json& j_params, std::string instr, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
             {
                // println("processing measure instruction...");
                qumis_instruction * qumis_instr;
@@ -1069,7 +1105,7 @@ namespace ql
             /**
              * process trigger
              */
-            void process_trigger(json& j_params, std::string instr, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
+            void process_trigger(const json& j_params, std::string instr, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
             {
                // println("processing trigger instruction...");
                qumis_instruction * trig;

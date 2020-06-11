@@ -105,8 +105,7 @@ The above entry points each create a ``sched``  object of class ``Scheduler`` an
   for each circuit of the program when non-uniform ALAP scheduling.
   See :ref:`scheduling_function` for a more extensive description.
 
-Only in older versions of the scheduler (when the option ``scheduler_post179`` is set to ``no``)
-and in the scheduler of the mapper branch, in the ``sched_dot`` parameter of the methods above
+In the ``sched_dot`` parameter of the methods above
 a ``dot`` representation of the dependence graph of the kernel's circuit is constructed,
 in which the gates are ordered along a timeline according to their cycle attribute.
 
@@ -144,11 +143,6 @@ The following options are supported:
   With the value ``yes``, the scheduler creates a uniform schedule of the circuit.
   With the value ``no``, it doesn't.
   Default value is ``no``.
-
-- ``scheduler_post179``
-  With the value ``yes``, the scheduler uses the latest implementation that solves issue 179.
-  With the value ``no``, the scheduler uses the last implementation before issue 179 was solved.
-  Default value is ``yes``.
 
 - ``scheduler_commute``
   With the value ``yes``, the scheduler exploits commutation rules for ``cnot``, and ``cz``/``cphase``
@@ -207,8 +201,6 @@ Subsequently, the gates in the circuit are sorted by their cycle value;
 and the ``bundler`` called to produce a bundled version of the IR to return.
 
 The remaining part of this subsection describes scheduling with resource constraints.
-It only describes the functionality of the scheduling implementation after solving issue 179,
-i.e. after the transition of scheduling gates one by one to list scheduling.
 
 The implementation of this list scheduler is parameterized on doing a forward or a backward schedule.
 The former is used to create an ASAP schedule and the latter is used to create an ALAP schedule.
@@ -258,21 +250,18 @@ then all the resources for executing the gate are checked to be available
 from cycle ``t`` till (and not including) ``t`` plus the gate's ``duration`` in cycles;
 and when actually committing to scheduling the gate at cycle ``t``,
 all its resources are set to occupied for the duration of its execution.
-The resource manager offer methods for this check (``bool rm.available()``) and commit (``rm.reserve()``).
-Doing this check and committing for a particular gate, some additional gate attributes are required:
+The resource manager offers methods for this check (``bool rm.available()``) and commit (``rm.reserve()``).
+Doing this check and committing for a particular gate, some additional gate attributes may be required by the resource manager.
+For the CC-Light resource manager, these additional gate attributes are:
 
-- ``operation_name`` initialized from the configuration file ``cc_light_instr`` gate attribute representing the operation of the gate; it is used by the ``qwgs`` resource type only
+- ``operation_name`` initialized from the configuration file ``cc_light_instr`` gate attribute representing the operation of the gate; it is used by the ``qwgs`` resource type only; two gates having the same ``operation_name`` are assumed to use the same wave form
 
 - ``operation_type`` initialized from the configuration file ``type`` gate attribute representing the kind of operation of the gate: ``mw`` for rotation gates, ``readout`` for measurement gates, and ``flux`` for one and two-qubit flux gates; it is used by each resource type
 
-- ``instruction_type`` initialized from the configuration file ``cc_light_instr_type`` which is not used by any resource type
+This concludes the description of the involvement of the resource manager in the scheduling of a gate.
 
-Each of these gate configuration file attributes is required to be present and correctly filled
-for the resource manager to correctly function.
-
-:Note: This interface needs to be revised: ``cc_light_instr_type`` is never used; but foremost, the interface is CC_Light dependent. By giving the platform dependent resource manager access to the platform configuration file, it can fetch the gate's attributes necessary for its particular method itself and these can be omitted from the interfaces of the platform independent resource manager and the scheduler.
-
-When the available list became empty, all cycle values were assigned and scheduling is almost done.
+The list scheduler algorithm uses a so-called availability list to represent gates that can be scheduled; see above.
+When the available list becomes empty, all cycle values were assigned and scheduling is almost done.
 The gates in the circuit are then first sorted on their cycle value.
 
 Then latency compensation is done:

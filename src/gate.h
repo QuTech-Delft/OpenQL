@@ -1266,7 +1266,7 @@ public:
 
         if ( instr.count("cc_light_instr") > 0)
         {
-            arch_operation_name = instr["cc_light_instr"];
+            arch_operation_name = instr["cc_light_instr"].get<std::string>();
             DOUT("cc_light_instr: " << instr["cc_light_instr"]);
         }
     }
