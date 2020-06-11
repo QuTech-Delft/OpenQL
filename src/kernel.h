@@ -14,7 +14,6 @@
 #include <algorithm>
 #include <iterator>
 
-#define REMOVE_UNITARY 1
 
 #define K_PI 3.141592653589793238462643383279502884197169399375105820974944592307816406L
 #include "compile_options.h"
@@ -24,11 +23,7 @@
 #include "gate.h"
 #include "classical.h"
 #include "ir.h"
-
-#ifndef REMOVE_UNITARY
 #include "unitary.h"
-#endif //REMOVE_UNITARY
-
 #include "platform.h"
 
 
@@ -1060,7 +1055,7 @@ public:
         }
         return added;
     }
-#ifndef REMOVE_UNITARY    
+    
     // to add unitary to kernel
     void gate(ql::unitary u, std::vector<size_t> qubits)
     {
@@ -1176,7 +1171,7 @@ public:
             return 3;
         }
     }
-#endif //REMOVE_UNITARY
+
     //controlled qubit is the first in the list.
     void multicontrolled_rz(std::vector<double> &instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
     {

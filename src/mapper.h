@@ -1705,7 +1705,7 @@ void Init(const ql::quantum_platform* p)
     }
     else
     {
-        formstr = platformp->topology["form"];
+        formstr = platformp->topology["form"].get<std::string>();
     }
     if (formstr == "xy") { form = gf_xy; }
     if (formstr == "irregular") { form = gf_irregular; }
