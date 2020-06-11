@@ -42,7 +42,7 @@ inline std::string ccl_get_operation_type(ql::gate *ins, const ql::quantum_platf
     JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
     if ( !platform.instruction_settings[ins->name]["type"].is_null() )
     {
-        operation_type = platform.instruction_settings[ins->name]["type"];
+        operation_type = platform.instruction_settings[ins->name]["type"].get<std::string>();
     }
     return operation_type;
 }
@@ -54,7 +54,7 @@ inline std::string ccl_get_operation_name(ql::gate *ins, const ql::quantum_platf
     JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
     if ( !platform.instruction_settings[ins->name]["cc_light_instr"].is_null() )
     {
-        operation_name = platform.instruction_settings[ins->name]["cc_light_instr"];
+        operation_name = platform.instruction_settings[ins->name]["cc_light_instr"].get<std::string>();
     }
     return operation_name;
 }

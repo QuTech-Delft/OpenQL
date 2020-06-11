@@ -24,7 +24,8 @@
 
 #include <chrono>
 
-/// @todo-rn: FIX to avoid long compilation times 
+typedef unsigned int uint;
+
 namespace ql
 {
 #ifndef REMOVE_UNITARY
