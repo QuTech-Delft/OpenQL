@@ -8,6 +8,8 @@ test_dpt(std::string v, std::string param1, std::string param2, std::string para
     std::string kernel_name = "test_" + v + "_maplookahead=" + param1 + "_maprecNN2q=" + param2 + "_mapselectmaxlevel=" + param3 + "_mapselectmaxwidth=" + param4;
     float sweep_points[] = { 1 };
 
+    ql::options::set("clifford_prescheduler", "yes");
+
     ql::quantum_platform starmon("starmon5", "test_mapper_s5.json");
     //ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
@@ -59,6 +61,8 @@ test_dpt(std::string v, std::string param1, std::string param2, std::string para
     ql::options::set("mapselectmaxwidth", param4);
 
     prog.compile( );
+
+    ql::options::set("clifford_prescheduler", "no");
 }
 
 void
@@ -1384,6 +1388,9 @@ int main(int argc, char ** argv)
     ql::options::set("write_report_files", "yes");
     ql::options::set("print_dot_graphs", "yes");
     ql::options::set("use_default_gates", "no");
+
+    ql::options::set("clifford_prescheduler", "no");
+    ql::options::set("clifford_postscheduler", "no");
 
     ql::options::set("clifford_premapper", "yes");
     ql::options::set("mapper", "minextendrc");

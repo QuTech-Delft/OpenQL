@@ -49,6 +49,8 @@ namespace ql
           opt_name2opt_val["cz_mode"] = "manual";
           opt_name2opt_val["print_dot_graphs"] = "no";
 
+          opt_name2opt_val["clifford_prescheduler"] = "no";
+          opt_name2opt_val["clifford_postscheduler"] = "no";
           opt_name2opt_val["clifford_premapper"] = "no";
           opt_name2opt_val["clifford_postmapper"] = "no";
 
@@ -81,6 +83,8 @@ namespace ql
           app->add_set_ignore_case("--scheduler_commute", opt_name2opt_val["scheduler_commute"], {"yes", "no"}, "Commute gates when possible, or not", true);
           app->add_set_ignore_case("--use_default_gates", opt_name2opt_val["use_default_gates"], {"yes", "no"}, "Use default gates or not", true);
           app->add_set_ignore_case("--optimize", opt_name2opt_val["optimize"], {"yes", "no"}, "optimize or not", true);
+          app->add_set_ignore_case("--clifford_prescheduler", opt_name2opt_val["clifford_prescheduler"], {"yes", "no"}, "clifford optimize before prescheduler yes or not", true);
+          app->add_set_ignore_case("--clifford_postscheduler", opt_name2opt_val["clifford_postscheduler"], {"yes", "no"}, "clifford optimize after prescheduler yes or not", true);
           app->add_set_ignore_case("--clifford_premapper", opt_name2opt_val["clifford_premapper"], {"yes", "no"}, "clifford optimize before mapping yes or not", true);
           app->add_set_ignore_case("--clifford_postmapper", opt_name2opt_val["clifford_postmapper"], {"yes", "no"}, "clifford optimize after mapping yes or not", true);
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "AM"}, "Type of decomposition used for toffoli", true);
@@ -119,9 +123,11 @@ namespace ql
                     << "decompose_toffoli: " << opt_name2opt_val["decompose_toffoli"] << std::endl
                     << "quantumsim: " << opt_name2opt_val["quantumsim"] << std::endl
                     << "issue_skip_319: " << opt_name2opt_val["issue_skip_319"] << std::endl
+                    << "clifford_prescheduler: " << opt_name2opt_val["clifford_prescheduler"] << std::endl
                     << "prescheduler: " << opt_name2opt_val["prescheduler"] << std::endl
                     << "scheduler: " << opt_name2opt_val["scheduler"] << std::endl
                     << "scheduler_uniform: " << opt_name2opt_val["scheduler_uniform"] << std::endl
+                    << "clifford_postscheduler: " << opt_name2opt_val["clifford_postscheduler"] << std::endl
                     << "clifford_premapper: " << opt_name2opt_val["clifford_premapper"] << std::endl
                     << "mapper: "           << opt_name2opt_val["mapper"] << std::endl
                     << "mapinitone2one: "   << opt_name2opt_val["mapinitone2one"] << std::endl

@@ -14,6 +14,7 @@
 #include <scheduler.h>
 #include <optimizer.h>
 #include <decompose_toffoli.h>
+#include <clifford.h>
 #include <write_sweep_points.h>
 #include <arch/cbox/cbox_eqasm_compiler.h>
 #include <arch/cc_light/cc_light_eqasm_compiler.h>
@@ -352,8 +353,14 @@ int quantum_program::compile()
     // decompose_toffoli pass
     ql::decompose_toffoli(this, platform, "decompose_toffoli");
 
+    // clifford optimize
+    ql::clifford_optimize(this, platform, "clifford_prescheduler");
+
     // prescheduler pass
     ql::schedule(this, platform, "prescheduler");
+
+    // clifford optimize
+    ql::clifford_optimize(this, platform, "clifford_postscheduler");
 
     // writer pass of the scheduled qasm file (program_scheduled.qasm)
     ql::write_qasm(this, platform, "scheduledqasmwriter");

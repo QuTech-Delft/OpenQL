@@ -11,6 +11,7 @@ ADD_LIBRARY(ql
   latency_compensation.cc
   write_sweep_points.cc
   optimizer.cc
+  clifford.cc
   passmanager.cc
   passes.cc
   report.cc

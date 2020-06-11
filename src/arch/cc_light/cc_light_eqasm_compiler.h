@@ -899,28 +899,6 @@ public:
         IOUT("Post scheduling decomposition [Done]");
     }
 
-    void clifford_optimize(quantum_program* programp, const ql::quantum_platform& platform, std::string opt)
-    {
-        if (ql::options::get(opt) == "no")
-        {
-            DOUT("Clifford optimization on program " << programp->name << " at " << opt << " not DONE");
-            return;
-        }
-        DOUT("Clifford optimization on program " << programp->name << " at " << opt << " ...");
-
-        ql::report_statistics(programp, platform, "in", opt, "# ");
-        ql::report_qasm(programp, platform, "in", opt);
-
-        Clifford cliff;
-        for(auto &kernel : programp->kernels)
-        {
-            cliff.Optimize(kernel, opt);
-        }
-
-        ql::report_statistics(programp, platform, "out", opt, "# ");
-        ql::report_qasm(programp, platform, "out", opt);
-    }
-
     void map(quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
     {
         auto mapopt = ql::options::get("mapper");
@@ -1039,11 +1017,11 @@ public:
         using namespace std::chrono;
         high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
-        clifford_optimize(programp, platform, "clifford_premapper");
+        ql::clifford_optimize(programp, platform, "clifford_premapper");
 
         map(programp, platform, "mapper");
 
-        clifford_optimize(programp, platform, "clifford_postmapper");
+        ql::clifford_optimize(programp, platform, "clifford_postmapper");
 
         ql::rcschedule(programp, platform, "rcscheduler");
 
