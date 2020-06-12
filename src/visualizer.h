@@ -1,5 +1,5 @@
 #include <cstdint>
-#include <gate.h>
+#include <program.h>
 #include <CImg.h>
 
 namespace ql
@@ -8,27 +8,27 @@ namespace ql
 enum BitType {CLASSICAL, QUANTUM};
 enum NodeType {NONE, GATE, CONTROL, NOT, CROSS};
 
-std::array<unsigned char, 3> white = { 255, 255, 255 };
-std::array<unsigned char, 3> black = { 0, 0, 0 };
-std::array<unsigned char, 3> gray = { 128, 128, 128 };
-std::array<unsigned char, 3> lightblue = { 70, 210, 230 };
-std::array<unsigned char, 3> purple = { 225, 118, 225 };
-std::array<unsigned char, 3> green = { 112, 222, 90 };
-std::array<unsigned char, 3> yellow = { 200, 200, 20 };
-std::array<unsigned char, 3> red = { 255, 105, 97 };
+const std::array<unsigned char, 3> white = { 255, 255, 255 };
+const std::array<unsigned char, 3> black = { 0, 0, 0 };
+const std::array<unsigned char, 3> gray = { 128, 128, 128 };
+const std::array<unsigned char, 3> lightblue = { 70, 210, 230 };
+const std::array<unsigned char, 3> purple = { 225, 118, 225 };
+const std::array<unsigned char, 3> green = { 112, 222, 90 };
+const std::array<unsigned char, 3> yellow = { 200, 200, 20 };
+const std::array<unsigned char, 3> red = { 255, 105, 97 };
 
 struct Position4
 {
-	int x0;
-	int y0;
-	int x1;
-	int y1;
+	long x0;
+	long y0;
+	long x1;
+	long y1;
 };
 
 struct Position2
 {
-	int x;
-	int y;
+	long x;
+	long y;
 };
 
 struct NodePositionData
@@ -216,7 +216,6 @@ struct CircuitData
 };
 
 void visualize(const ql::quantum_program* program, const Layout layout);
-//void visualize(const std::vector<ql::gate*> gates, const Layout layout);
 
 void validateLayout(const Layout layout);
 
@@ -232,7 +231,7 @@ void drawControlNode(cimg_library::CImg<unsigned char>& image, const Layout layo
 void drawNotNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData);
 void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData);
 
-//TODO: remove these functions for release version
+/*//TODO: remove these functions for release version
 std::vector<ql::gate*> getTeleportationCircuit()
 {
 	std::vector<ql::gate*> gates;
@@ -499,6 +498,6 @@ std::vector<ql::gate*> getDummyGates()
 	gates.push_back(gate6);
 
 	return gates;
-}
+}*/
 
 } // ql

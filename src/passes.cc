@@ -296,7 +296,9 @@ void ReportStatisticsPass::runOnProgram(ql::quantum_program *program)
 
 void VisualizerPass::runOnProgram(ql::quantum_program *program)
 {
-    Layout layout;
+    DOUT("run VisualizerPass with name = " << getPassName() << " on program " << program->name);
+    
+    ql::Layout layout;
     ql::visualize(program, layout);
 }
 

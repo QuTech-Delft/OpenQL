@@ -1,16 +1,13 @@
 #include <iostream>
-#include <CImg.h>
 #include <visualizer.h>
-#include <gate.h>
 
 using namespace cimg_library;
-using namespace ql;
 
 namespace ql
 {
 
-int main()
-{
+//int main()
+//{
 	// TODO: implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
 	// TODO: implement actual measurement symbol
 	// TODO: option to display the classical bit lines
@@ -21,11 +18,11 @@ int main()
 	// TODO: generate default gate visuals from the configuration file
 	// TODO: representing the gates as waveforms
 
-	Layout layout;
+//	Layout layout;
 
-	visualize(getTeleportationCircuit(), layout);
-	visualize(getDemoCircuit1(), layout);
-	visualize(getDemoCircuit2(), layout);
+//	visualize(getTeleportationCircuit(), layout);
+//	visualize(getDemoCircuit1(), layout);
+//	visualize(getDemoCircuit2(), layout);
 
 	//layout.bitLine.groupClassicalLines = true;
 	//layout.cycles.compressCycles = true;
@@ -34,8 +31,8 @@ int main()
 	//visualize(getDemoCircuit1(), layout);
 	//visualize(getDemoCircuit2(), layout);
 	
-	return 0;
-}
+//	return 0;
+//}
 
 void visualize(const ql::quantum_program* program, const Layout layout)
 //void visualize(const std::vector<ql::gate*> gates, const Layout layout)
@@ -43,11 +40,12 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 	validateLayout(layout);
 
     // Get the gate list from the program.
-    const std::vector<ql::gate*> gates;
-    const std::vector<ql::quantum_kernel> kernels = program->kernels;
-    for (const ql::quantum_kernel* kernel : kernels)
+    std::vector<ql::gate*> gates;
+    std::vector<ql::quantum_kernel> kernels = program->kernels;
+    for (ql::quantum_kernel kernel : kernels)
     {
-        gates.insert( gates.end(), kernel->circuit.begin(), kernel->circuit.end() );
+        circuit c = kernel.get_circuit();
+        gates.insert( gates.end(), c.begin(), c.end() );
     }
 
 	// Calculate amount of cycles.
@@ -187,7 +185,7 @@ unsigned int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std
 
 	// If both minAmount and maxAmount are at their original values, the list of operands for all the gates was empty.
 	// This means there are no operands of the given type for these gates and we return 0.
-	if (minAmount == -1 && maxAmount == 0)
+	if (minAmount == (unsigned int) -1 && maxAmount == 0)
 		return 0;
 	else
 		return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
@@ -277,8 +275,8 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 	CImg<unsigned char> imageTextDimensions;
 	const unsigned char color = 1;
 	imageTextDimensions.draw_text(0, 0, text, &color, 0, 1, layout.bitLine.fontHeight);
-	const unsigned int textWidth = imageTextDimensions.width();
-	const unsigned int textHeight = imageTextDimensions.height();
+	//const unsigned int textWidth = imageTextDimensions.width();
+	//const unsigned int textHeight = imageTextDimensions.height();
 	const unsigned int xLabel = x0 + 8;
 	const unsigned int yLabel = y - layout.bitLine.groupedClassicalLineGap - 3 - 13;
 	image.draw_text(xLabel, yLabel, text, layout.bitLine.cBitLabelColor.data(), 0, 1, layout.bitLine.fontHeight);

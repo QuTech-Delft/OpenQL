@@ -13,6 +13,7 @@ ADD_LIBRARY(ql
   optimizer.cc
   passmanager.cc
   passes.cc
+  visualizer.cc
   report.cc
   exception.cc
   arch/cc/eqasm_backend_cc.cc
