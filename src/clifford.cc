@@ -26,15 +26,42 @@ public:
         ct = kernel.cycle_time;
         DOUT("Clifford " << passname << " on kernel " << kernel.name << " ...");
 
-        // copy circuit kernel.c to take input from
+        // copy circuit kernel.c to take input from;
         // output will fill kernel.c again
         ql::circuit input_circuit = kernel.c;
         kernel.c.clear();
 
-        cliffstate.resize(nq, 0);       // 0 is identity; for all qubits state is identity
+        cliffstate.resize(nq, 0);       // 0 is identity; for all qubits accumulated state is set to identity
         cliffcycles.resize(nq, 0);      // for all qubits, no accumulated cycles
         total_saved = 0;                // reset saved, just for reporting
 
+        /*
+        The main idea of this optimization is that there are 24 clifford gates and these form a group,
+        i.e. any sequence of clifford gates is in effect equivalent to one clifford from the group.
+
+        Make a linear scan from begin to end over the circuit;
+        attempt to find sequences of consecutive clifford gates operating on qubit q;
+        these series can be interwoven, so have to be found in parallel.
+        Each sequence can potentially be replaced by an equivalent shorter one from the group of 24 cliffords,
+        reducing the number of cycles that the sequence takes, the circuit latency and the gate count.
+
+        The clifford group is represented by:
+        - int string2cs(std::string gname): the clifford state of a gate with the given name; identity is 0
+        - a state diagram clifftrans[24][24] that represents for two given clifford (sequences),
+          to which clifford the combination is equivalent to;
+          so clifford(sequence1; sequence2) == clifftrans[clifford(sequence1)][clifford(sequence2)].
+        - size_t cs2cycles(int cs): the minimum number of cycles needed to implement a clifford of state cs
+        - void k.clifford(int csq, size_t q): generates minimal clifford sequence for state csq and qubit q
+        
+        Therefore, maintain for each qubit q while scanning:
+        - cliffstate[q]:    clifford state of sequence until now per qubit; initially identity
+        - cliffcycles[q]:   number of cycles of the sequence until now per qubit; initially 0
+        Each time a clifford c is encountered for qubit q, the clifford c is incorporated into cliffstate[q]
+        by making the transition: cliffstate[q] = clifftrans[cliffstate[q]][string2cs(c)],
+        and updating cliffcycles[q].
+        And when finding a gate that ends a sequence of cliffords ('synchronization point'),
+        the minimal sequence corresponding to the accumulated sequence is output before the new gate.
+        */
         for (auto gp: input_circuit)
         {
             DOUT("... gate: " << gp->qasm());
@@ -65,16 +92,16 @@ public:
                 // unary quantum gates like x/y/z/h/xm90/y90/s/wait/meas/prepz
                 size_t q = gp->operands[0];
                 std::string gname = gp->name;
-                int cl = string2c(gname);
-                if (cl != -1)
+                int cs = string2cs(gname);
+                if (cs != -1)
                 {
                     // unary quantum clifford gates like x/y/z/h/xm90/y90/s/...
                     // don't emit gate but accumulate gate in cliffstate
                     // also record accumulated cycles to compute savings
                     cliffcycles[q] += (gp->duration+ct-1)/ct;
-                    int s = cliffstate[q];
-                    DOUT("... from " << c2string(s) << " to " << c2string(clifftrans[s][cl]));
-                    cliffstate[q]  = clifftrans[s][cl];
+                    int csq = cliffstate[q];
+                    DOUT("... from " << cs2string(csq) << " to " << cs2string(clifftrans[csq][cs]));
+                    cliffstate[q]  = clifftrans[csq][cs];
                 }
                 else
                 {
@@ -115,13 +142,13 @@ private:
     // create gate sequence for accumulated cliffords of qubit q, output it and reset state
     void sync(quantum_kernel& k, size_t q)
     {
-        int s = cliffstate[q];
-        if (s != 0)
+        int csq = cliffstate[q];
+        if (csq != 0)
         {
-            DOUT("... sync q[" << q << "]: generating clifford " << c2string(s));
-            k.clifford(s, q);          // generates clifford(s) in kernel.c
+            DOUT("... sync q[" << q << "]: generating clifford " << cs2string(csq));
+            k.clifford(csq, q);          // generates clifford(csq) in kernel.c
             size_t  acc_cycles = cliffcycles[q];
-            size_t  ins_cycles = c2cycles(s);
+            size_t  ins_cycles = cs2cycles(csq);
             DOUT("... qubit q[" << q << "]: accumulated: " << acc_cycles << ", inserted: " << ins_cycles);
             if (acc_cycles > ins_cycles) DOUT("... qubit q[" << q << "]: saved " << (acc_cycles-ins_cycles) << " cycles");
             if (acc_cycles < ins_cycles) DOUT("... qubit q[" << q << "]: additional " << (ins_cycles-acc_cycles) << " cycles");
@@ -160,7 +187,7 @@ private:
     };
 
     // find the clifford state from identity to given clifford gate by name
-    int string2c(std::string gname)
+    int string2cs(std::string gname)
     {
         if (gname == "identity")    return 0;
         else if (gname == "i")           return 0;
@@ -189,9 +216,9 @@ private:
 
     // find the duration of the gate sequence corresponding to given clifford state
     // should be implemented using configuration file, searching for created gates and retrieving durations
-    size_t c2cycles(int cl)
+    size_t cs2cycles(int cs)
     {
-        switch(cl) {
+        switch(cs) {
         case 0 : return 0;
         case 1 : return 2;
         case 2 : return 2;
@@ -221,9 +248,9 @@ private:
     }
 
     // return the gate sequence as string for debug output corresponding to given clifford state
-    std::string c2string(int cl)
+    std::string cs2string(int cs)
     {
-        switch(cl) {
+        switch(cs) {
         case 0 : return("[id;]");
         case 1 : return("[y90; x90;]");
         case 2 : return("[xm90; ym90;]");
