@@ -1,3 +1,16 @@
+/*#include <visualizer.h>
+
+namespace ql
+{
+
+void visualize(const ql::quantum_program* program, const Layout layout)
+{
+    // do nothing
+}
+
+}*/
+
+
 #include <iostream>
 #include <visualizer.h>
 
@@ -5,38 +18,19 @@ using namespace cimg_library;
 
 namespace ql
 {
-
-//int main()
-//{
-	// TODO: implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
-	// TODO: implement actual measurement symbol
-	// TODO: option to display the classical bit lines
-	// TODO: display wait/barrier
-	// TODO: gate duration outlines in gate color
-	// TODO: different types of cycle/duration(ns) labels
-	// TODO: 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
-	// TODO: generate default gate visuals from the configuration file
-	// TODO: representing the gates as waveforms
-
-//	Layout layout;
-
-//	visualize(getTeleportationCircuit(), layout);
-//	visualize(getDemoCircuit1(), layout);
-//	visualize(getDemoCircuit2(), layout);
-
-	//layout.bitLine.groupClassicalLines = true;
-	//layout.cycles.compressCycles = true;
-
-	//visualize(getTeleportationCircuit(), layout);
-	//visualize(getDemoCircuit1(), layout);
-	//visualize(getDemoCircuit2(), layout);
-	
-//	return 0;
-//}
+// TODO: implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
+// TODO: implement actual measurement symbol
+// TODO: option to display the classical bit lines
+// TODO: display wait/barrier
+// TODO: gate duration outlines in gate color
+// TODO: different types of cycle/duration(ns) labels
+// TODO: 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
+// TODO: generate default gate visuals from the configuration file
+// TODO: representing the gates as waveforms
 
 void visualize(const ql::quantum_program* program, const Layout layout)
-//void visualize(const std::vector<ql::gate*> gates, const Layout layout)
 {
+    IOUT("starting visualization...");
 	validateLayout(layout);
 
     // Get the gate list from the program.
@@ -47,23 +41,9 @@ void visualize(const ql::quantum_program* program, const Layout layout)
         circuit c = kernel.get_circuit();
         gates.insert( gates.end(), c.begin(), c.end() );
     }
-
+    
 	// Calculate amount of cycles.
-	unsigned int amountOfCycles = 0;
-	for (const gate* gate : gates)
-	{
-		const unsigned int gateCycle = (unsigned int)gate->cycle;
-		if (gateCycle > amountOfCycles)
-			amountOfCycles = gateCycle;
-	}
-	amountOfCycles++; // because the cycles start at zero, we add one to get the true amount of cycles
-	const gate* lastGate = gates.at(gates.size() - 1);
-	const unsigned int lastGateDuration = (unsigned int)lastGate->duration;
-	const unsigned int lastGateDurationInCycles = lastGateDuration / 40;
-	if (lastGateDurationInCycles > 1)
-	{
-		amountOfCycles += lastGateDurationInCycles - 1;
-	}
+    unsigned int amountOfCycles = calculateAmountOfCycles(gates);
 
 	// Compress the circuit in terms of cycles and gate duration if the option has been set.
 	if (layout.cycles.compressCycles)
@@ -111,11 +91,13 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 	const unsigned int amountOfCbits = calculateAmountOfBits(gates, &gate::creg_operands);
 	CircuitData circuitData = { amountOfQubits, amountOfCbits, amountOfCycles };
 
+    
 	// Calculate image width and height based on the amount of cycles and amount of operands. The height depends on whether classical bit lines are grouped or not.
 	const unsigned int width = (layout.bitLine.drawLabels ? layout.bitLine.labelColumnWidth : 0) + amountOfCycles * layout.grid.cellSize + 2 * layout.grid.borderSize;
 	const unsigned int amountOfRows = amountOfQubits + (layout.bitLine.groupClassicalLines ? (amountOfCbits > 0 ? 1 : 0) : amountOfCbits);
 	const unsigned int height = (layout.cycles.showCycleNumbers ? layout.cycles.rowHeight : 0) + amountOfRows * layout.grid.cellSize + 2 * layout.grid.borderSize;
 
+    
 	// Initialize image.
 	const unsigned int numberOfChannels = 3;
 	CImg<unsigned char> image(width, height, 1, numberOfChannels);
@@ -154,6 +136,8 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 
 	// Display the image.
 	image.display("Quantum Circuit");
+
+    IOUT("visualization complete...");
 }
 
 void validateLayout(const Layout layout)
@@ -189,6 +173,27 @@ unsigned int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std
 		return 0;
 	else
 		return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
+}
+
+unsigned int calculateAmountOfCycles(const std::vector<ql::gate*> gates)
+{
+    unsigned int amountOfCycles = 0;
+	for (const gate* gate : gates)
+	{
+		const unsigned int gateCycle = (unsigned int)gate->cycle;
+		if (gateCycle > amountOfCycles)
+			amountOfCycles = gateCycle;
+	}
+	amountOfCycles++; // because the cycles start at zero, we add one to get the true amount of cycles
+	const gate* lastGate = gates.at(gates.size() - 1);
+	const unsigned int lastGateDuration = (unsigned int)lastGate->duration;
+	const unsigned int lastGateDurationInCycles = lastGateDuration / 40;
+	if (lastGateDurationInCycles > 1)
+	{
+		amountOfCycles += lastGateDurationInCycles - 1;
+	}
+
+    return amountOfCycles;
 }
 
 void drawCycleNumbers(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData)

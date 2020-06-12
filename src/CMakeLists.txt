@@ -5,6 +5,7 @@ GET_FILENAME_COMPONENT(PARENT_DIR ${PROJECT_SOURCE_DIR} DIRECTORY)
 ADD_LIBRARY(ql
   platform.cc
   program.cc
+  visualizer.cc
   compiler.cc
   decompose_toffoli.cc
   buffer_insertion.cc
@@ -13,7 +14,6 @@ ADD_LIBRARY(ql
   optimizer.cc
   passmanager.cc
   passes.cc
-  visualizer.cc
   report.cc
   exception.cc
   arch/cc/eqasm_backend_cc.cc

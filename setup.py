@@ -29,7 +29,7 @@ if platform == "linux" or platform == "linux2":
     cmd = 'cmake ..'
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
-    cmd = 'make -j{}'.format(nprocs)
+    cmd = 'make VERBOSE=1 -j{}'.format(nprocs)
     proc = subprocess.Popen(cmd, shell=True)
     proc.communicate()
     clibname = "_openql.so"
