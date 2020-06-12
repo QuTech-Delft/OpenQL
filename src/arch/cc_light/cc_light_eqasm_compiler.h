@@ -979,9 +979,18 @@ public:
     void compile(quantum_program* programp, const ql::quantum_platform& platform)
     {
         DOUT("Compiling " << programp->kernels.size() << " kernels to generate CCLight eQASM ... ");
-        std::string unique_name = programp->unique_name;
 
+        // load from config file
+        // qubit_count and cycle_count were already read during platform creation
+        // buffer[][] reading can be postponed till buffer_insertion optimization
+        // so this call can be deleted then
         load_hw_settings(platform);
+
+        // cc_light_instr is needed by some cc_light backend passes and by resource_management
+        // let it be loaded into gate's arch_operation_name during instruction loading and be used from there,
+        // i.e. from there on don't access cc_light_instr anymore but gate attribute
+        // also do the check below during instruction loading
+        // so this loop can be deleted then
         // check whether json instruction entries have cc_light_instr attribute
         const json& instruction_settings = platform.instruction_settings;
         for(const json & i : instruction_settings)
@@ -992,6 +1001,8 @@ public:
             }
         }
 
+        // decompose_pre_schedule pass
+        // to be put in a separate backend .h and .cc file
         for(auto &kernel : programp->kernels)
         {
             IOUT("Decomposing kernel: " << kernel.name);
@@ -1004,14 +1015,23 @@ public:
             }
         }
 
+        // just reporting just before backend entering (scheduling, mapping etc.)
+        // is not a standard thing so can be deleted
+        // but there is no write_statistics pass yet
+        // so make that pass in src/report.cc
+        // and then these can be deleted
         ql::report_qasm(programp, platform, "in", "cc_light_compiler");
         ql::report_statistics(programp, platform, "in", "cc_light_compiler", "# ");
 
+        // move to a quantumsim writing pass for backward compatibility
+        // dqcsim must take over
         if (ql::options::get("quantumsim") == "yes")
             write_quantumsim_program(programp, num_qubits, platform, "");
         else if (ql::options::get("quantumsim") == "qsoverlay")
             write_qsoverlay_program(programp, num_qubits, platform, "", platform.cycle_time, false);
 
+        // overall timing should be done by the pass manager
+        // can then be deleted here
         // compute timetaken, start interval timer here
         double    total_timetaken = 0.0;
         using namespace std::chrono;
@@ -1019,6 +1039,11 @@ public:
 
         ql::clifford_optimize(programp, platform, "clifford_premapper");
 
+        // map function definition must be moved to src/mapper.h and src/mapper.cc
+        // splitting src/mapper.h into src/mapper.h and src/mapper.cc is intricate
+        // because mapper shares ddg code with scheduler
+        // this implies that those latter interfaces must be made public in scheduler.h before splitting
+        // scheduler.h and mapper.h
         map(programp, platform, "mapper");
 
         ql::clifford_optimize(programp, platform, "clifford_postmapper");
@@ -1029,11 +1054,13 @@ public:
 
         ql::insert_buffer_delays(programp, platform, "ccl_insert_buffer_delays");
 
+        // timing to be moved to pass manager
         // computing timetaken, stop interval timer
         high_resolution_clock::time_point t2 = high_resolution_clock::now();
         duration<double> time_span = t2 - t1;
         total_timetaken = time_span.count();
 
+        // reporting to be moved to write_statistics pass
         // report totals over all kernels, over all eqasm passes contributing to mapping
         std::ofstream   ofs;
         ofs = ql::report_open(programp, "out", "cc_light_compiler");
@@ -1046,16 +1073,21 @@ public:
         ql::report_qasm(programp, platform, "out", "cc_light_compiler");
 
         // decompose meta-instructions after scheduling
+        // new pass
         ccl_decompose_post_schedule(programp, platform, "ccl_decompose_post_schedule");
 
+        // another call to a quantumsim writing pass for backward compatibility
         if (ql::options::get("quantumsim") == "yes")
             write_quantumsim_program(programp, num_qubits, platform, "mapped");
         else if (ql::options::get("quantumsim") == "qsoverlay")
             write_qsoverlay_program(programp, num_qubits, platform, "mapped", platform.cycle_time, true);
 
+        // delete this; is not used
         // generate_opcode_cs_files(platform);
 
         // generate qisa
+        // remainder is qisa generation
+        // move all this to one new pass: qisa_generation
         MaskManager mask_manager;
         std::stringstream ssqisa, sskernels_qisa;
         sskernels_qisa << "start:" << std::endl;
@@ -1077,6 +1109,7 @@ public:
 
         // write cc-light qisa file
         std::ofstream fout;
+        std::string unique_name = programp->unique_name;
         std::string qisafname( ql::options::get("output_dir") + "/" + unique_name + ".qisa");
         IOUT("Writing CC-Light QISA to " << qisafname);
         fout.open( qisafname, ios::binary);
@@ -1088,6 +1121,7 @@ public:
         }
         fout << ssqisa.str() << endl;
         fout.close();
+        // end qisa_generation pass
 
         DOUT("Compiling CCLight eQASM [Done]");
     }
