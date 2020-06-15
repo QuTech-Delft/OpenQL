@@ -770,9 +770,25 @@ public:
         return ss.str();
     }
 
+    void ccl_decompose_pre_schedule(quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
+    {
+        ql::report_statistics(programp, platform, "in", passname, "# ");
+        ql::report_qasm(programp, platform, "in", passname);
+
+        for(auto &kernel : programp->kernels)
+        {
+	    ccl_decompose_pre_schedule_kernel(kernel, platform);
+        }
+
+        ql::report_statistics(programp, platform, "out", passname, "# ");
+        ql::report_qasm(programp, platform, "out", passname);
+    }
 
     void ccl_decompose_post_schedule(quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
     {
+        ql::report_statistics(programp, platform, "in", passname, "# ");
+        ql::report_qasm(programp, platform, "in", passname);
+
         for(auto &kernel : programp->kernels)
         {
             IOUT("Decomposing meta-instructions kernel after post-scheduling: " << kernel.name);
@@ -785,6 +801,8 @@ public:
                 assert(kernel.cycles_valid);
             }
         }
+        ql::report_statistics(programp, platform, "out", passname, "# ");
+        ql::report_qasm(programp, platform, "out", passname);
     }
 
     void ccl_decompose_post_schedule_bundles(ql::ir::bundles_t & bundles_dst,
@@ -987,6 +1005,41 @@ public:
         }
     }
 
+    // unified entry for quantumsim script writing
+    // will be moved to dqcsim eventually, which must read cqasm with cycle information; is that sufficient?
+    void write_quantumsim_script(quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
+    {
+        ql::report_statistics(programp, platform, "in", passname, "# ");
+        ql::report_qasm(programp, platform, "in", passname);
+
+	// for backward compatibility, use passname to distinguish between calls from different places
+	bool compiled;
+	std::string suffix;
+	if (passname == "write_quantumsim_script_unmapped")
+	{
+	    compiled = false;
+	    suffix = "";
+	}
+	else if (passname == "write_quantumsim_script_mapped")
+	{
+	    compiled = true;
+	    suffix = "mapped";
+	}
+	else
+	{
+	    FATAL("Write_quantumsim_script: unknown passname: " << passname);
+	}
+
+        // dqcsim must take over
+        if (ql::options::get("quantumsim") == "yes")
+            write_quantumsim_program(programp, platform.qubit_number, platform, suffix);
+        else if (ql::options::get("quantumsim") == "qsoverlay")
+            write_qsoverlay_program(programp, platform.qubit_number, platform, suffix, platform.cycle_time, compiled);
+
+        ql::report_statistics(programp, platform, "out", passname, "# ");
+        ql::report_qasm(programp, platform, "out", passname);
+    }
+
     /*
      * program-level compilation of qasm to cc_light_eqasm
      */
@@ -1000,44 +1053,27 @@ public:
     {
         DOUT("Compiling " << programp->kernels.size() << " kernels to generate CCLight eQASM ... ");
 
-        // could also be in back-end constructor, or even be deleted
-        ccl_prep_code_generation(programp, platform, "ccl_prep_code_generation");
-
-        // decompose_pre_schedule pass
-        // to be put in a separate backend .h and .cc file
-        for(auto &kernel : programp->kernels)
-        {
-            IOUT("Decomposing kernel: " << kernel.name);
-            if (! kernel.c.empty())
-            {
-                // decompose meta-instructions
-                ql::circuit decomposed_ckt;
-                decompose_pre_schedule(kernel.c, decomposed_ckt, platform);
-                kernel.c = decomposed_ckt;
-            }
-        }
-
-        // just reporting just before backend entering (scheduling, mapping etc.)
-        // is not a standard thing so can be deleted
-        // but there is no write_statistics pass yet
-        // so make that pass in src/report.cc
-        // and then these can be deleted
-        ql::report_qasm(programp, platform, "in", "cc_light_compiler");
-        ql::report_statistics(programp, platform, "in", "cc_light_compiler", "# ");
-
-        // move to a quantumsim writing pass for backward compatibility
-        // dqcsim must take over
-        if (ql::options::get("quantumsim") == "yes")
-            write_quantumsim_program(programp, platform.qubit_number, platform, "");
-        else if (ql::options::get("quantumsim") == "qsoverlay")
-            write_qsoverlay_program(programp, platform.qubit_number, platform, "", platform.cycle_time, false);
-
         // overall timing should be done by the pass manager
-        // can then be deleted here
+        // can be deleted here when so
+	//
+	// each pass can also have a local timer;
+	// can also be done by pass manager in parallel to skip option
+	//
         // compute timetaken, start interval timer here
         double    total_timetaken = 0.0;
         using namespace std::chrono;
         high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
+	// see comment with definition
+        // could also be in back-end constructor, or even be deleted
+        ccl_prep_code_generation(programp, platform, "ccl_prep_code_generation");
+
+        // decompose_pre_schedule pass
+	// is very much concerned with generation of classical code
+        ccl_decompose_pre_schedule(programp, platform, "ccl_decompose_pre_schedule");
+
+	// this call could also have been at end of back-end-independent passes
+        write_quantumsim_script(programp, platform, "write_quantumsim_script_unmapped");
 
         ql::clifford_optimize(programp, platform, "clifford_premapper");
 
@@ -1055,6 +1091,15 @@ public:
         ql::latency_compensation(programp, platform, "ccl_latency_compensation");
 
         ql::insert_buffer_delays(programp, platform, "ccl_insert_buffer_delays");
+
+        // decompose meta-instructions after scheduling
+        ccl_decompose_post_schedule(programp, platform, "ccl_decompose_post_schedule");
+
+	// just before code generation, emit quantumsim script to best match target architecture
+        write_quantumsim_script(programp, platform, "write_quantumsim_script_mapped");
+
+	// and now for real
+        qisa_code_generation(programp, platform, "qisa_code_generation");
 
         // timing to be moved to pass manager
         // computing timetaken, stop interval timer
@@ -1074,67 +1119,24 @@ public:
         ql::report_close(ofs);
         ql::report_qasm(programp, platform, "out", "cc_light_compiler");
 
-        // decompose meta-instructions after scheduling
-        // new pass
-        ccl_decompose_post_schedule(programp, platform, "ccl_decompose_post_schedule");
-
-        // another call to a quantumsim writing pass for backward compatibility
-        if (ql::options::get("quantumsim") == "yes")
-            write_quantumsim_program(programp, platform.qubit_number, platform, "mapped");
-        else if (ql::options::get("quantumsim") == "qsoverlay")
-            write_qsoverlay_program(programp, platform.qubit_number, platform, "mapped", platform.cycle_time, true);
-
-        // delete this; is not used
-        // generate_opcode_cs_files(platform);
-
-        // generate qisa
-        // remainder is qisa generation
-        // move all this to one new pass: qisa_generation
-        MaskManager mask_manager;
-        std::stringstream ssqisa, sskernels_qisa;
-        sskernels_qisa << "start:" << std::endl;
-        for(auto &kernel : programp->kernels)
-        {
-            sskernels_qisa << "\n" << kernel.name << ":" << std::endl;
-            sskernels_qisa << get_qisa_prologue(kernel);
-            if (! kernel.c.empty())
-            {
-                sskernels_qisa << ir2qisa(kernel, platform, mask_manager);
-            }
-            sskernels_qisa << get_qisa_epilogue(kernel);
-        }
-        sskernels_qisa << "\n    br always, start" << "\n"
-                  << "    nop \n"
-                  << "    nop" << std::endl;
-        ssqisa << mask_manager.getMaskInstructions() << sskernels_qisa.str();
-        // std::cout << ssqisa.str();
-
-        // write cc-light qisa file
-        std::ofstream fout;
-        std::string unique_name = programp->unique_name;
-        std::string qisafname( ql::options::get("output_dir") + "/" + unique_name + ".qisa");
-        IOUT("Writing CC-Light QISA to " << qisafname);
-        fout.open( qisafname, ios::binary);
-        if ( fout.fail() )
-        {
-            EOUT("opening file " << qisafname << std::endl
-                     << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
-            return;
-        }
-        fout << ssqisa.str() << endl;
-        fout.close();
-        // end qisa_generation pass
-
         DOUT("Compiling CCLight eQASM [Done]");
     }
 
     /**
      * decompose
      */
-    void decompose_pre_schedule(ql::circuit& ckt, ql::circuit& decomp_ckt, const ql::quantum_platform& platform)
+    // decompose meta-instructions
+    void ccl_decompose_pre_schedule_kernel(ql::quantum_kernel& kernel, const ql::quantum_platform & platform)
     {
+        IOUT("Decomposing kernel: " << kernel.name);
+        if (kernel.c.empty())
+        {
+	    return;
+	}
+        ql::circuit decomp_ckt;	// collect result circuit in here and before return swap with kernel.c
+
         DOUT("decomposing instructions...");
-        for( auto ins : ckt )
+        for( auto ins : kernel.c )
         {
             auto & iname =  ins->name;
             str::lower_case(iname);
@@ -1247,288 +1249,49 @@ public:
                 }
             }
         }
+        kernel.c = decomp_ckt;;
 
-        /*
-        cc_light_eqasm_program_t decomposed;
-        for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
-        {
-        cc_light_eqasm_program_t dec = instr->decompose();
-          for (cc_light_eqasm_instruction * i : dec)
-             decomposed.push_back(i);
-            }
-            cc_light_eqasm_instructions.swap(decomposed);
-        */
         DOUT("decomposing instructions...[Done]");
     }
 
-
-    /**
-     * display instruction and start time
-     */
-    void dump_instructions()
+    // qisa_code_generation pass
+    // generates qisa from IR
+    void qisa_code_generation(quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
     {
-        println("[d] instructions dump:");
-        for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
+        MaskManager mask_manager;
+        std::stringstream ssqisa, sskernels_qisa;
+        sskernels_qisa << "start:" << std::endl;
+        for(auto &kernel : programp->kernels)
         {
-            size_t t = instr->start;
-            std::cout << t << " : " << instr->code() << std::endl;
+            sskernels_qisa << "\n" << kernel.name << ":" << std::endl;
+            sskernels_qisa << get_qisa_prologue(kernel);
+            if (! kernel.c.empty())
+            {
+                sskernels_qisa << ir2qisa(kernel, platform, mask_manager);
+            }
+            sskernels_qisa << get_qisa_epilogue(kernel);
         }
-    }
+        sskernels_qisa << "\n    br always, start" << "\n"
+                  << "    nop \n"
+                  << "    nop" << std::endl;
+        ssqisa << mask_manager.getMaskInstructions() << sskernels_qisa.str();
+        // std::cout << ssqisa.str();
 
-
-    /**
-     * reorder instructions
-     */
-    void reorder_instructions()
-    {
-        // IOUT("reodering instructions...");
-        // std::sort(cc_light_eqasm_instructions.begin(),cc_light_eqasm_instructions.end(), cc_light_eqasm_comparator);
-    }
-
-    /**
-     * time analysis
-     */
-    size_t time_analysis(bool verbose=false)
-    {
-        IOUT("time analysis...");
-        // update start time : find biggest latency
-        size_t max_latency = 0;
-        for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
+        // write cc-light qisa file
+        std::ofstream fout;
+        std::string unique_name = programp->unique_name;
+        std::string qisafname( ql::options::get("output_dir") + "/" + unique_name + ".qisa");
+        IOUT("Writing CC-Light QISA to " << qisafname);
+        fout.open( qisafname, ios::binary);
+        if ( fout.fail() )
         {
-            size_t l = instr->latency;
-            max_latency = (l > max_latency ? l : max_latency);
+            EOUT("opening file " << qisafname << std::endl
+                     << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
+            return;
         }
-        // set refrence time to max latency (avoid negative reference)
-        size_t time = max_latency; // 0;
-        for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
-        {
-            // println(time << ":");
-            // println(instr->code());
-            // instr->start = time;
-            instr->set_start(time);
-            time        += instr->duration; //+1;
-        }
-        return time;
-    }
-
-
-
-    /**
-     * compensate for latencies
-     */
-    void compensate_latency(bool verbose=false)
-    {
-        IOUT("latency compensation...");
-        for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
-            instr->compensate_latency();
-    }
-
-    /**
-     * dump traces
-     */
-    void write_traces(std::string file_name="")
-    {
-    }
-
-
-private:
-    void generate_opcode_cs_files(const ql::quantum_platform& platform)
-    {
-        DOUT("Generating opcode file ...");
-        const json& instruction_settings       = platform.instruction_settings;
-
-        std::stringstream opcode_ss;
-
-        opcode_ss << "# Classic instructions (single instruction format)\n";
-        opcode_ss << "def_opcode[\"nop\"]      = 0x00\n";
-        opcode_ss << "def_opcode[\"br\"]       = 0x01\n";
-        opcode_ss << "def_opcode[\"stop\"]     = 0x08\n";
-        opcode_ss << "def_opcode[\"cmp\"]      = 0x0d\n";
-        opcode_ss << "def_opcode[\"ldi\"]      = 0x16\n";
-        opcode_ss << "def_opcode[\"ldui\"]     = 0x17\n";
-        opcode_ss << "def_opcode[\"or\"]       = 0x18\n";
-        opcode_ss << "def_opcode[\"xor\"]      = 0x19\n";
-        opcode_ss << "def_opcode[\"and\"]      = 0x1a\n";
-        opcode_ss << "def_opcode[\"not\"]      = 0x1b\n";
-        opcode_ss << "def_opcode[\"add\"]      = 0x1e\n";
-        opcode_ss << "def_opcode[\"sub\"]      = 0x1f\n";
-        opcode_ss << "# quantum-classical mixed instructions (single instruction format)\n";
-        opcode_ss << "def_opcode[\"fbr\"]      = 0x14\n";
-        opcode_ss << "def_opcode[\"fmr\"]      = 0x15\n";
-        opcode_ss << "# quantum instructions (single instruction format)\n";
-        opcode_ss << "def_opcode[\"smis\"]     = 0x20\n";
-        opcode_ss << "def_opcode[\"smit\"]     = 0x28\n";
-        opcode_ss << "def_opcode[\"qwait\"]    = 0x30\n";
-        opcode_ss << "def_opcode[\"qwaitr\"]   = 0x38\n";
-        opcode_ss << "# quantum instructions (double instruction format)\n";
-        opcode_ss << "# no arguments\n";
-        opcode_ss << "def_q_arg_none[\"qnop\"] = 0x00\n";
-
-        DOUT("Generating control store file ...");
-        std::stringstream control_store;
-
-        control_store << "         Condition  OpTypeLeft  CW_Left  OpTypeRight  CW_Right\n";
-        control_store << "     0:      0          0          0          0           0    \n";
-
-        std::map<std::string,size_t> instr_name_2_opcode;
-        std::set<size_t> opcode_set;
-        size_t opcode=0;
-        for (const json & i : instruction_settings)
-        {
-            std::string instr_name;
-            DOUT("Looking for instruction: " << i);
-            if (i.count("cc_light_instr") <= 0)
-            {
-                EOUT("cc_light_instr not found for " << i);
-                throw ql::exception("cc_light_instr not found for <> ", false);
-            }
-            else
-            {
-                instr_name = i["cc_light_instr"].get<std::string>();
-            }
-            DOUT("... instr_name=" << instr_name);
-
-            if (i.count("cc_light_opcode") <= 0)
-                throw ql::exception("[x] error : ql::eqasm_compiler::compile() : missing opcode for instruction '"+instr_name,false);
-            else
-                opcode = i["cc_light_opcode"];
-            DOUT("... opcode=" << opcode);
-
-            auto mapit = instr_name_2_opcode.find(instr_name);
-            if( mapit != instr_name_2_opcode.end() )
-            {
-                // found
-                if( opcode != mapit->second )
-                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : multiple opcodes for instruction '"+instr_name,false);
-            }
-            else
-            {
-                // not found
-                instr_name_2_opcode[instr_name] = opcode;
-            }
-            DOUT("..... mapit done mapt->second:" << mapit->second); DOUT(".....instr_name_2_opcode[instr_name]=" << instr_name_2_opcode[instr_name]);
-
-            if (i["cc_light_instr_type"] == "single_qubit_gate")
-            {
-                DOUT("..... in single_qubit_gate ...");
-                if (opcode_set.find(opcode) != opcode_set.end())
-                    continue;
-
-                // opcode range check
-                DOUT("..... opcode found");
-                if (i["type"] == "readout")
-                {
-                    if (opcode < 0x4 || opcode > 0x7)
-                        throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for measure instruction '"+instr_name+"' : should be in [0x04..0x07] range : current opcode: "+std::to_string(opcode),false);
-                }
-                else if (opcode < 1 || opcode > 127)
-                {
-                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for single qubit gate instruction '"+instr_name+"' : should be in [1..127] range : current opcode: "+std::to_string(opcode),false);
-                }
-                DOUT("..... inserting opcode in opcode_set ...");
-                opcode_set.insert(opcode);
-
-                size_t condition  = (i.count("cc_light_cond")<=0? 0 :i["cc_light_cond"].get<size_t>());
-                DOUT("..... condition=" << condition);
-
-                if (i.count("cc_light_instr") <=0 )
-                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
-
-                DOUT("..... composing constrol store line ...");
-                DOUT("..... opcode_ss generation ...");
-                opcode_ss << "def_q_arg_st[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
-                DOUT("..... optype computation...");
-                auto optype     = (i["type"] == "mw" ? 1 : (i["type"] == "flux" ? 2 : ((i["type"] == "readout" ? 3 : 0))));
-                DOUT("..... optype:" << optype);
-                auto codeword   = i["cc_light_codeword"];
-                DOUT("..... codeword:" << codeword);
-                control_store << "     " << i["cc_light_opcode"] << ":     " << condition << "          " << optype << "          " << codeword << "          0          0\n";
-                DOUT("..... done line");
-            }
-            else if (i["cc_light_instr_type"] == "two_qubit_gate")
-            {
-                size_t opcode     = i["cc_light_opcode"];
-                if (opcode_set.find(opcode) != opcode_set.end())
-                    continue;
-                if (opcode < 127 || opcode > 255)
-                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : invalid opcode for two qubits gate instruction '"+instr_name+"' : should be in [128..255] range : current opcode: "+std::to_string(opcode),false);
-                opcode_set.insert(opcode);
-
-                size_t condition  = (i.count("cc_light_cond") <= 0? 0 :i["cc_light_cond"].get<size_t>());
-
-                if (i.count("cc_light_instr") <= 0)
-                    throw ql::exception("[x] error : ql::eqasm_compiler::compile() : 'cc_light_instr' attribute missing in gate definition (opcode: "+std::to_string(opcode),false);
-                // opcode_ss << "def_opcode[" << i["cc_light_instr"] << "]\t= " << opcode << "\n";
-                opcode_ss << "def_q_arg_tt[" << i["cc_light_instr"] << "]\t= " << std::showbase << std::hex << opcode << "\n";
-                auto optype     = (i["type"] == "mw" ? 1 : (i["type"] == "flux" ? 2 : ((i["type"] == "readout" ? 3 : 0))));
-                auto codeword_l = i["cc_light_left_codeword"];
-                auto codeword_r = i["cc_light_right_codeword"];
-                control_store << "     " << i["cc_light_opcode"] << ":     " << condition << "          " << optype << "          " << codeword_l << "          " << optype << "          " << codeword_r << "\n";
-            }
-            else
-                throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : invalid 'cc_light_instr_type' for instruction !",false);
-        }
-
-        DOUT("... writing cs.txt=" << opcode);
-        std::string cs_filename = ql::options::get("output_dir") + "/cs.txt";
-        IOUT("writing control store file to '" << cs_filename << "' ...");
-        ql::utils::write_file(cs_filename, control_store.str());
-
-        DOUT("... writing qisa_opcodes.qmap=" << opcode);
-        std::string im_filename = ql::options::get("output_dir") + "/qisa_opcodes.qmap";
-        IOUT("writing qisa instruction file to '" << im_filename << "' ...");
-        ql::utils::write_file(im_filename, opcode_ss.str());
-    }
-
-    /**
-     * emit qasm code
-     */
-    void emit_eqasm(bool verbose=false)
-    {
-        IOUT("emitting eqasm...");
-        eqasm_code.clear();
-        // eqasm_code.push_back("wait 1");       // add wait 1 at the begining
-        // eqasm_code.push_back("mov r14, 0");   // 0: infinite loop
-        // eqasm_code.push_back("start:");       // label
-        size_t t = 0;
-        for (cc_light_eqasm_instruction * instr : cc_light_eqasm_instructions)
-        {
-            size_t start = instr->start;
-            size_t dt = start-t;
-            if (dt)
-            {
-                // eqasm_code.push_back("wait "+std::to_string(dt));
-                // t = start;
-            }
-            eqasm_code.push_back(instr->code());
-        }
-        // eqasm_code.push_back("wait "+std::to_string(cc_light_eqasm_instructions.back()->duration));
-        // eqasm_code.push_back("beq r14, r14 start");  // loop
-        IOUT("emitting eqasm code done.");
-    }
-
-    /**
-     * process
-     */
-    void process_single_qubit_gate(std::string instr_name, size_t duration, operation_type_t type, size_t latency, qubit_set_t& qubits, std::string& qasm_label)
-    {
-        cc_light_single_qubit_gate * instr = new cc_light_single_qubit_gate(instr_name,single_qubit_mask(qubits[0]));
-        cc_light_eqasm_instructions.push_back(instr);
-    }
-
-    /**
-     * return operation type
-     */
-    operation_type_t operation_type(std::string type)
-    {
-        if (type == "mw")
-            return __rf__;
-        else if (type == "flux")
-            return __flux__;
-        else if (type == "readout")
-            return __measurement__;
-        else
-            return __unknown_operation__;
+        fout << ssqisa.str() << endl;
+        fout.close();
+        // end qisa_generation pass
     }
 
 private:
