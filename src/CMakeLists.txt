@@ -10,6 +10,7 @@ ADD_LIBRARY(ql
   arch/cc/codegen_cc.cc
   arch/cc/vcd.cc
   cqasm/cqasm_reader.cc
+  unitary.cc
   )
 
 # support 'include <ql/foo.h>'
