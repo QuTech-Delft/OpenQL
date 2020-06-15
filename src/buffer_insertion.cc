@@ -30,8 +30,7 @@ namespace ql
     */
     void insert_buffer_delays_kernel(ql::quantum_kernel& kernel, const ql::quantum_platform & platform)
     {
-        DOUT("Buffer-buffer delay insertion ... ");
-
+        DOUT("Loading buffer settings ...");
         std::map< std::pair<std::string,std::string>, size_t> buffer_cycles_map;
 
         // populate buffer map
@@ -40,6 +39,7 @@ namespace ql
         //
         // this has nothing to do with dependence graph generation but with scheduling
         // so should be in resource-constrained scheduler constructor
+
         std::vector<std::string> buffer_names = {"none", "mw", "flux", "readout"};
         for(auto & buf1 : buffer_names)
         {
@@ -55,6 +55,8 @@ namespace ql
                 // DOUT("Initializing " << bname << ": "<< buffer_cycles_map[bpair]);
             }
         }
+
+        DOUT("Buffer-buffer delay insertion ... ");
 
         ql::circuit* circp = &kernel.c;
         ql::ir::bundles_t bundles = ql::ir::bundler(*circp, platform.cycle_time);

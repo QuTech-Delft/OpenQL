@@ -672,12 +672,7 @@ class cc_light_eqasm_compiler : public eqasm_compiler
 public:
 
     cc_light_eqasm_program_t cc_light_eqasm_instructions;
-    size_t          num_qubits;
-    size_t          ns_per_cycle;
     size_t          total_exec_time = 0;
-    size_t          buffer_matrix[__operation_types_num__][__operation_types_num__];
-
-#define __ns_to_cycle(t) ((size_t)t/(size_t)ns_per_cycle)
 
 public:
 
@@ -980,12 +975,6 @@ public:
     {
         DOUT("Compiling " << programp->kernels.size() << " kernels to generate CCLight eQASM ... ");
 
-        // load from config file
-        // qubit_count and cycle_count were already read during platform creation
-        // buffer[][] reading can be postponed till buffer_insertion optimization
-        // so this call can be deleted then
-        load_hw_settings(platform);
-
         // cc_light_instr is needed by some cc_light backend passes and by resource_management
         // let it be loaded into gate's arch_operation_name during instruction loading and be used from there,
         // i.e. from there on don't access cc_light_instr anymore but gate attribute
@@ -1026,9 +1015,9 @@ public:
         // move to a quantumsim writing pass for backward compatibility
         // dqcsim must take over
         if (ql::options::get("quantumsim") == "yes")
-            write_quantumsim_program(programp, num_qubits, platform, "");
+            write_quantumsim_program(programp, platform.qubit_number, platform, "");
         else if (ql::options::get("quantumsim") == "qsoverlay")
-            write_qsoverlay_program(programp, num_qubits, platform, "", platform.cycle_time, false);
+            write_qsoverlay_program(programp, platform.qubit_number, platform, "", platform.cycle_time, false);
 
         // overall timing should be done by the pass manager
         // can then be deleted here
@@ -1078,9 +1067,9 @@ public:
 
         // another call to a quantumsim writing pass for backward compatibility
         if (ql::options::get("quantumsim") == "yes")
-            write_quantumsim_program(programp, num_qubits, platform, "mapped");
+            write_quantumsim_program(programp, platform.qubit_number, platform, "mapped");
         else if (ql::options::get("quantumsim") == "qsoverlay")
-            write_qsoverlay_program(programp, num_qubits, platform, "mapped", platform.cycle_time, true);
+            write_qsoverlay_program(programp, platform.qubit_number, platform, "mapped", platform.cycle_time, true);
 
         // delete this; is not used
         // generate_opcode_cs_files(platform);
@@ -1322,14 +1311,6 @@ public:
     }
 
     /**
-     * buffer size
-     */
-    size_t buffer_size(operation_type_t t1, operation_type_t t2)
-    {
-        return buffer_matrix[t1][t2];
-    }
-
-    /**
      * dump traces
      */
     void write_traces(std::string file_name="")
@@ -1338,36 +1319,6 @@ public:
 
 
 private:
-
-    void load_hw_settings(const ql::quantum_platform& platform)
-    {
-        std::string params[] = { "qubit_number", "cycle_time", "mw_mw_buffer", "mw_flux_buffer", "mw_readout_buffer", "flux_mw_buffer",
-                                 "flux_flux_buffer", "flux_readout_buffer", "readout_mw_buffer", "readout_flux_buffer", "readout_readout_buffer"
-                               };
-        size_t p = 0;
-
-        DOUT("Loading hardware settings ...");
-        try
-        {
-            num_qubits                                      = platform.hardware_settings[params[p++]];
-            ns_per_cycle                                    = platform.hardware_settings[params[p++]];
-
-            buffer_matrix[__rf__][__rf__]                   = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-            buffer_matrix[__rf__][__flux__]                 = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-            buffer_matrix[__rf__][__measurement__]          = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-            buffer_matrix[__flux__][__rf__]                 = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-            buffer_matrix[__flux__][__flux__]               = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-            buffer_matrix[__flux__][__measurement__]        = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-            buffer_matrix[__measurement__][__rf__]          = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-            buffer_matrix[__measurement__][__flux__]        = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-            buffer_matrix[__measurement__][__measurement__] = __ns_to_cycle(platform.hardware_settings[params[p++]]);
-        }
-        catch (json::exception &e)
-        {
-            throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter '"+params[p-1]+"'\n\t"+ std::string(e.what()),false);
-        }
-    }
-
     void generate_opcode_cs_files(const ql::quantum_platform& platform)
     {
         DOUT("Generating opcode file ...");
@@ -1765,7 +1716,7 @@ private:
                             auto & iname = (*insIt)->name;
                             auto & operands = (*insIt)->operands;
                             auto duration = (*insIt)->duration;     // duration in nano-seconds
-                            // size_t operation_duration = std::ceil( static_cast<float>(duration) / ns_per_cycle);
+                            // size_t operation_duration = std::ceil( static_cast<float>(duration) / platform.cycle_time);
                             if( iname == "measure")
                             {
                                 DOUT("... adding gates, a measure");
@@ -1774,20 +1725,20 @@ private:
                                 ssqs << "    c.add_gate("
                                           << "ButterflyGate("
                                           << "\"q" << op <<"\", "
-                                          << "time=" << ((bcycle-1)*ns_per_cycle) << ", "
+                                          << "time=" << ((bcycle-1)*platform.cycle_time) << ", "
                                           << "p_exc=0,"
                                           << "p_dec= 0.005)"
                                           << ")\n" ;
                                 ssqs << "    c.add_measurement("
                                     << "\"q" << op << "\", "
-                                    << "time=" << ((bcycle - 1)*ns_per_cycle) + (duration/4) << ", "
+                                    << "time=" << ((bcycle - 1)*platform.cycle_time) + (duration/4) << ", "
                                     << "output_bit=\"m" << op << "\", "
                                     << "sampler=sampler"
                                     << ")\n";
                                 ssqs << "    c.add_gate("
                                     << "ButterflyGate("
                                     << "\"q" << op << "\", "
-                                    << "time=" << ((bcycle - 1)*ns_per_cycle) + duration/2 << ", "
+                                    << "time=" << ((bcycle - 1)*platform.cycle_time) + duration/2 << ", "
                                     << "p_exc=0,"
                                     << "p_dec= 0.015)"
                                     << ")\n";
@@ -1805,7 +1756,7 @@ private:
                                         ssqs << "\"q" << *opit <<"\", ";
                                     ssqs << "\"q" << operands.back()<<"\"";
                                 }
-                                ssqs << ", time=" << ((bcycle - 1)*ns_per_cycle) + (duration/2) << ", dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle))" << endl;
+                                ssqs << ", time=" << ((bcycle - 1)*platform.cycle_time) + (duration/2) << ", dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle))" << endl;
                             }
                             else if( iname == "cz")
                             {
@@ -1818,7 +1769,7 @@ private:
                                         ssqs << "\"q" << *opit <<"\", ";
                                     ssqs << "\"q" << operands.back()<<"\"";
                                 }
-                                ssqs << ", time=" << ((bcycle - 1)*ns_per_cycle) + (duration/2) << ", dephase_var=dephase_var))" << endl;
+                                ssqs << ", time=" << ((bcycle - 1)*platform.cycle_time) + (duration/2) << ", dephase_var=dephase_var))" << endl;
                             }
                             else
                             {
@@ -1831,7 +1782,7 @@ private:
                                         ssqs << "\"q" << *opit <<"\", ";
                                     ssqs << "\"q" << operands.back()<<"\"";
                                 }
-                                ssqs << ", time=" << ((bcycle - 1)*ns_per_cycle) + (duration/2) << "))" << endl;
+                                ssqs << ", time=" << ((bcycle - 1)*platform.cycle_time) + (duration/2) << "))" << endl;
                             }
                         }
                     }
