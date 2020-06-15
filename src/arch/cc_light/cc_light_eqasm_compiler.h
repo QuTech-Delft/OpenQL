@@ -962,6 +962,31 @@ public:
         ql::report_qasm(programp, platform, "out", passname);
     }
 
+    // cc_light_instr is needed by some cc_light backend passes and by cc_light resource_management:
+    // - each bundle section will only have gates with the same cc_light_instr name; prepares for SIMD/SOMQ
+    // - in resource management with VSMs, gates with same cc_light_instr can use same QWG in parallel
+    // arch_operation_name is attempt to generalize this but is only in custom gate;
+    //   so using default gates in a context where arch_operation_name is needed, would crash (e.g. wait gate)
+    // it depends on that a primitive gate is one-to-one with a qisa instruction;
+    //   this is something done by design now but perhaps not future-proof, e.g. towards an other backend for e.g. spin qubits
+    //
+    // FIXME HvS this mess must be cleaned up; so I didn't touch it further
+    //
+    // perhaps can be replaced by semantic definition (e.g. x90 :=: ( type=ROTATION axis=X angle=90 ) )
+    // and check on equality of these instead
+    // but what if there are two x90s, with different physical attributes (e.g. different amplitudes?)? Does this happen?
+    void ccl_prep_code_generation(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
+    {
+        const json& instruction_settings = platform.instruction_settings;
+        for(const json & i : instruction_settings)
+        {
+            if(i.count("cc_light_instr") <= 0)
+            {
+                FATAL("cc_light_instr not found for " << i);
+            }
+        }
+    }
+
     /*
      * program-level compilation of qasm to cc_light_eqasm
      */
@@ -975,20 +1000,8 @@ public:
     {
         DOUT("Compiling " << programp->kernels.size() << " kernels to generate CCLight eQASM ... ");
 
-        // cc_light_instr is needed by some cc_light backend passes and by resource_management
-        // let it be loaded into gate's arch_operation_name during instruction loading and be used from there,
-        // i.e. from there on don't access cc_light_instr anymore but gate attribute
-        // also do the check below during instruction loading
-        // so this loop can be deleted then
-        // check whether json instruction entries have cc_light_instr attribute
-        const json& instruction_settings = platform.instruction_settings;
-        for(const json & i : instruction_settings)
-        {
-            if(i.count("cc_light_instr") <= 0)
-            {
-                FATAL("cc_light_instr not found for " << i);
-            }
-        }
+        // could also be in back-end constructor, or even be deleted
+        ccl_prep_code_generation(programp, platform, "ccl_prep_code_generation");
 
         // decompose_pre_schedule pass
         // to be put in a separate backend .h and .cc file
