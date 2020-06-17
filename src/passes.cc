@@ -294,6 +294,10 @@ void ReportStatisticsPass::runOnProgram(ql::quantum_program *program)
     ql::report_statistics(program, program->platform, "todo-inout", getPassName(), "# ");
 }
 
+    /**
+     * @brief  Visualize the quantum program
+     * @param  Program object to be read
+     */
 void VisualizerPass::runOnProgram(ql::quantum_program *program)
 {
     DOUT("run VisualizerPass with name = " << getPassName() << " on program " << program->name);

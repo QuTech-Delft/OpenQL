@@ -1,16 +1,3 @@
-/*#include <visualizer.h>
-
-namespace ql
-{
-
-void visualize(const ql::quantum_program* program, const Layout layout)
-{
-    // do nothing
-}
-
-}*/
-
-
 #include <iostream>
 #include <visualizer.h>
 
