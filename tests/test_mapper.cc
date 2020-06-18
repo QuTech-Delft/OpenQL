@@ -9,6 +9,7 @@ test_dpt(std::string v, std::string param1, std::string param2, std::string para
     float sweep_points[] = { 1 };
 
     ql::options::set("clifford_prescheduler", "yes");
+    ql::options::set("clifford_postscheduler", "yes");
 
     ql::quantum_platform starmon("starmon5", "test_mapper_s5.json");
     //ql::set_platform(starmon);
@@ -32,11 +33,26 @@ test_dpt(std::string v, std::string param1, std::string param2, std::string para
     k.gate("cnot", 3,2);
     k.gate("cnot", 4,2);
 
-    k.gate("rz", {0}, {}, 20, 1.74533);
-    k.gate("rz", {1}, {}, 20, 1.74533);
-    k.gate("rz", {2}, {}, 20, 1.74533);
-    k.gate("rz", {3}, {}, 20, 1.74533);
-    k.gate("rz", {4}, {}, 20, 1.74533);
+// Rz(pi t) decomposes to Ry(pi/2) Rx(- pi t) Ry(-pi/2)
+    k.gate("y90", 0);
+    k.gate("rz", {0}, {}, 20, -1.74533);
+    k.gate("ym90", 0);
+
+    k.gate("y90", 1);
+    k.gate("rz", {1}, {}, 20, -1.74533);
+    k.gate("ym90", 1);
+
+    k.gate("y90", 2);
+    k.gate("rz", {2}, {}, 20, -1.74533);
+    k.gate("ym90", 2);
+
+    k.gate("y90", 3);
+    k.gate("rz", {3}, {}, 20, -1.74533);
+    k.gate("ym90", 3);
+
+    k.gate("y90", 4);
+    k.gate("rz", {4}, {}, 20, -1.74533);
+    k.gate("ym90", 4);
 
     k.gate("cnot", 4,2);
     k.gate("cnot", 3,2);
@@ -63,6 +79,7 @@ test_dpt(std::string v, std::string param1, std::string param2, std::string para
     prog.compile( );
 
     ql::options::set("clifford_prescheduler", "no");
+    ql::options::set("clifford_postscheduler", "no");
 }
 
 void
