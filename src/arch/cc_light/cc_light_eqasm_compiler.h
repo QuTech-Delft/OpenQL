@@ -27,6 +27,12 @@
 // eqasm code : set of cc_light_eqasm instructions
 typedef std::vector<ql::arch::cc_light_eqasm_instr_t> eqasm_t;
 
+void ccl_assert_fail(const char *f, int l, const char *s)
+{
+    FATAL("assert " << s << " failed in file " << f << " at line " << l);
+}
+#define CclAssert(condition)   { if (!(condition)) { ccl_assert_fail(__FILE__, __LINE__, #condition); } }
+
 namespace ql
 {
 namespace arch
@@ -444,7 +450,7 @@ std::string ir2qisa(quantum_kernel & kernel,
     IOUT("Generating CC-Light QISA");
 
     ql::ir::bundles_t   bundles1;
-    assert(kernel.cycles_valid);
+    CclAssert(kernel.cycles_valid);
     bundles1 = ql::ir::bundler(kernel.c, platform.cycle_time);
 
     IOUT("Combining parallel sections...");
@@ -794,11 +800,11 @@ public:
             IOUT("Decomposing meta-instructions kernel after post-scheduling: " << kernel.name);
             if (! kernel.c.empty())
             {
-                assert(kernel.cycles_valid);
+                CclAssert(kernel.cycles_valid);
                 ql::ir::bundles_t bundles = ql::ir::bundler(kernel.c, platform.cycle_time);
                 ccl_decompose_post_schedule_bundles(bundles, platform);
                 kernel.c = ql::ir::circuiter(bundles);
-                assert(kernel.cycles_valid);
+                CclAssert(kernel.cycles_valid);
             }
         }
         ql::report_statistics(programp, platform, "out", passname, "# ");
@@ -1469,7 +1475,7 @@ private:
         for(auto &kernel : programp->kernels)
         {
             DOUT("... adding gates, a new kernel");
-            assert(kernel.cycles_valid);
+            CclAssert(kernel.cycles_valid);
             ql::ir::bundles_t bundles = ql::ir::bundler(kernel.c, platform.cycle_time);
 
             if (bundles.empty())
