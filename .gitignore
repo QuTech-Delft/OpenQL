@@ -28,3 +28,7 @@ test_output
 docs/_build
 docs/_static
 docs/_templates
+
+# tim
+CMakeLists.txt
+.gitignore

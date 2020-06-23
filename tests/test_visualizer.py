@@ -5,7 +5,7 @@ import os
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
 
-class Test_modularity(unittest.TestCase):
+class Test_visualizer(unittest.TestCase):
 
   @classmethod
   def setUpClass(self):
