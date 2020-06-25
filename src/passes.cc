@@ -289,9 +289,7 @@ void BackendCompilerPass::runOnProgram(ql::quantum_program *program)
         backend_compiler = std::unique_ptr<ql::eqasm_compiler>(new ql::arch::cbox_eqasm_compiler());
     else if (eqasm_compiler_name == "cc_light_compiler" )
     {
-//std::cout<<" ====== DEBUG PRINT FOR DEBUG(1): BEFORE Create Backendcompile\n";
         backend_compiler = std::unique_ptr<ql::eqasm_compiler>(new ql::arch::cc_light_eqasm_compiler());
-//std::cout<<" ====== DEBUG PRINT FOR DEBUG(1): AFTER Create Backendcompile\n";
     }
     else if (eqasm_compiler_name == "eqasm_backend_cc" )
         backend_compiler = std::unique_ptr<ql::eqasm_compiler>(new ql::arch::eqasm_backend_cc());
@@ -300,9 +298,6 @@ void BackendCompilerPass::runOnProgram(ql::quantum_program *program)
         FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }
 
-    ///@todo-rn: DEBUG STRANGE BEHAVIOR!! whitout this line 27 tests are failing!!! The reason is that the backend is not called, which in turn does not create the qisa output files for comparison. Most test fails are then caused by not finding qisa output file to compare against golden output! Does this have to do with forward declaration of compile mehtod?
-    std::cout << "TODO-rn: DEBUG(1) TEST FAILS IF REMOVE THIS PRINT!" << eqasm_compiler_name << std::endl;
-    
     ///@todo-rn: Decide how to construct backend:
     // 1) we can run backend as one big composite engine, e.g., 
     //assert(backend_compiler);
