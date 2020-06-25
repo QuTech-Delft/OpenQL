@@ -21,10 +21,11 @@ class Test_bugs(unittest.TestCase):
     # @unittest.expectedFailure
     # @unittest.skip
     def test_typecast(self):
+        self.setUpClass()
         sweep_points = [1,2]
         num_circuits = 1
         num_qubits = 2
-        config_fn = os.path.join(curdir, 'test_config_default.json')
+        config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platf = ql.Platform("starmon", config_fn)
         p = ql.Program('test_bug', platf, num_qubits)
         p.set_sweep_points(sweep_points)
@@ -83,6 +84,7 @@ class Test_bugs(unittest.TestCase):
     # case strange errors. So multiple (NCOMPILES) runs of compile are executed
     # to make sure there is no error and output generated in all these runs is same
     def test_stateful_behavior(self):
+        self.setUpClass()
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('log_level', 'LOG_WARNING')

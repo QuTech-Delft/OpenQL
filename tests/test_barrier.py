@@ -23,7 +23,7 @@ class Test_barrier(unittest.TestCase):
 
     # barrier on specified qubits
     def test_barrier(self):
-
+        self.setUp()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
@@ -53,7 +53,7 @@ class Test_barrier(unittest.TestCase):
 
     # barrier on specified qubits with 'wait' and duration = 0
     def test_wait_barrier(self):
-
+        self.setUp()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
@@ -81,7 +81,7 @@ class Test_barrier(unittest.TestCase):
 
     # barrier on all qubits with barrier
     def test_barrier_all_1(self):
-
+        self.setUp()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
@@ -127,7 +127,7 @@ class Test_barrier(unittest.TestCase):
 
     # barrier on all qubits with generalized gate API using 'barrier'
     def test_barrier_all_2(self):
-
+        self.setUp()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
@@ -172,7 +172,7 @@ class Test_barrier(unittest.TestCase):
 
     # barrier on all qubits with generalized gate API using wait with duration 0
     def test_barrier_all_3(self):
-
+        self.setUp()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]

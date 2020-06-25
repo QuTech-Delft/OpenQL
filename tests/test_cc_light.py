@@ -219,7 +219,7 @@ class Test_basic(unittest.TestCase):
 
 
     def test_smit_all_bundled(self):
-
+        self.setUpClass()
         # You can specify a config location, here we use a default config
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
