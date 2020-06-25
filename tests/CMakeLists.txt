@@ -19,8 +19,8 @@ ADD_CUSTOM_TARGET(tests-output-directory ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory test_output)
 
 # copy configuration files
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_cfg_cbox.json
-	test_cfg_cbox.json COPYONLY)
+#MARKED-FOR-REMOVE-CBOX-RN: CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_cfg_cbox.json
+#MARKED-FOR-REMOVE-CBOX-RN:	test_cfg_cbox.json COPYONLY)
 
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/hardware_config_cc_light.json
 	hardware_config_cc_light.json COPYONLY)
