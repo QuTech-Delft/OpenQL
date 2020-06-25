@@ -21,6 +21,8 @@
 #include <classical.h>
 #include <unitary.h>
 
+#include "compiler.h"
+
 
 static std::string get_version()
 {
@@ -409,7 +411,9 @@ public:
 
     void compile()
     {
-        program->compile();
+        //program->compile();
+
+        program->compile_modular();
     }
 
     std::string microcode()

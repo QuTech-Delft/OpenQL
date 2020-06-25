@@ -90,6 +90,15 @@ namespace ql
                );
 
     /*
+     * get statistics of the circuit of the given kernel for the mapper pass
+     */
+    void get_kernel_statistics(std::string*           ofs,
+                quantum_kernel&                 k,
+                const ql::quantum_platform&     platform,
+                const std::string               comment_prefix
+               );
+
+    /*
      * report given string which is assumed to be closed by an endl by the caller
      */
     void report_string(std::ofstream&   ofs,
@@ -106,6 +115,15 @@ namespace ql
                );
 
     /*
+     * get only the totals of the statistics of the circuits of the given kernels
+     */
+    void get_totals_statistics(std::string*           ofs,
+                std::vector<quantum_kernel>&    kernels,
+                const ql::quantum_platform&     platform,
+                const std::string               comment_prefix
+               );
+    
+    /*
      * reports the statistics of the circuits of the given kernels individually and in total
      * by appending them to the report file of the given program and place from where the report is done;
      * this report file is first created/truncated
@@ -120,6 +138,14 @@ namespace ql
                 const std::string               comment_prefix
                );
 
+    void report_statistics(ql::quantum_program* programp,
+                const ql::quantum_platform&     platform,
+                const std::string               in_or_out,
+                const std::string               pass_name,
+                const std::string               comment_prefix,
+                const std::string               additionalStatistics
+               );
+    
     /*
      * initialization of program.unique_name that is used by file name generation for reporting and printing
      * it is the program's name with a suffix appended that represents the number of the run of the program

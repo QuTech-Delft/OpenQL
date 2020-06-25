@@ -61,6 +61,8 @@ public:
     int bump_unique_file_version();
 
     int compile();
+    int compile_modular();
+
     void print_interaction_matrix();
     void write_interaction_matrix();
     void set_sweep_points(float * swpts, size_t size);

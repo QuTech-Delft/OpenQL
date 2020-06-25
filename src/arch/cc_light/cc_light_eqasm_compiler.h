@@ -918,9 +918,9 @@ public:
         IOUT("Post scheduling decomposition [Done]");
     }
 
-    void map(quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
+    void map(quantum_program* programp, const ql::quantum_platform& platform, std::string passname, std::string* mapStatistics)
     {
-        auto mapopt = ql::options::get("mapper");
+       auto mapopt = ql::options::get("mapper");
         if (mapopt == "no" )
         {
             IOUT("Not mapping kernels");
@@ -974,6 +974,9 @@ public:
             total_swaps += mapper.nswapsadded;
             total_moves += mapper.nmovesadded;
             total_timetaken += timetaken;
+            
+            ql::get_kernel_statistics(mapStatistics, kernel, platform, "# ");
+            *mapStatistics += ss.str();
         }
         ql::report_totals_statistics(ofs, programp->kernels, platform, "# ");
         std::stringstream ss;
@@ -984,6 +987,11 @@ public:
         ql::report_close(ofs);
 
         ql::report_qasm(programp, platform, "out", passname);
+        
+        
+        // add total statistics
+        ql::get_totals_statistics(mapStatistics, programp->kernels, platform, "# ");
+        *mapStatistics += ss.str();
     }
 
     // cc_light_instr is needed by some cc_light backend passes and by cc_light resource_management:
@@ -999,6 +1007,7 @@ public:
     // perhaps can be replaced by semantic definition (e.g. x90 :=: ( type=ROTATION axis=X angle=90 ) )
     // and check on equality of these instead
     // but what if there are two x90s, with different physical attributes (e.g. different amplitudes?)? Does this happen?
+    
     void ccl_prep_code_generation(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
     {
         const json& instruction_settings = platform.instruction_settings;
@@ -1057,6 +1066,7 @@ public:
     // kernel level compilation
     void compile(quantum_program* programp, const ql::quantum_platform& platform)
     {
+//std::cout << " ============= DEBUG PRINT FOR DEBUG(1): In cc_light BACKEND COMPILER \n";
         DOUT("Compiling " << programp->kernels.size() << " kernels to generate CCLight eQASM ... ");
 
         // overall timing should be done by the pass manager
@@ -1088,7 +1098,8 @@ public:
         // because mapper shares ddg code with scheduler
         // this implies that those latter interfaces must be made public in scheduler.h before splitting
         // scheduler.h and mapper.h
-        map(programp, platform, "mapper");
+        std::string emptystring = "";
+        map(programp, platform, "mapper", &emptystring);
 
         ql::clifford_optimize(programp, platform, "clifford_postmapper");
 
@@ -1137,8 +1148,8 @@ public:
         IOUT("Decomposing kernel: " << kernel.name);
         if (kernel.c.empty())
         {
-	    return;
-	}
+            return;
+        }
         ql::circuit decomp_ckt;	// collect result circuit in here and before return swap with kernel.c
 
         DOUT("decomposing instructions...");
