@@ -23,6 +23,7 @@ class Test_qubits(unittest.TestCase):
         ql.set_option('write_qasm_files', 'yes')
 
     def test_1_qubit(self):
+        self.setUpClass()
         nqubits = 1
         sweep_points = [2]
 
@@ -46,6 +47,7 @@ class Test_qubits(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_2_qubit(self):
+        self.setUpClass()
         nqubits = 3
         sweep_points = [2]
         k = ql.Kernel("aKernel", platf, nqubits)
@@ -69,6 +71,7 @@ class Test_qubits(unittest.TestCase):
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_3_qubit(self):
+        self.setUpClass()
         nqubits = 3
         sweep_points = [2]
 

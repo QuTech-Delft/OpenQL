@@ -235,6 +235,36 @@
             "cc_light_instr": "z",
             "cc_light_opcode": 8
         },
+        "rx": {
+            "duration": 60,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "rx",
+            "cc_light_opcode": 6
+        },
+        "ry": {
+            "duration": 60,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "ry",
+            "cc_light_opcode": 7
+        },
+        "rz": {
+            "duration": 60,
+            "latency": 0,
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "rz",
+            "cc_light_opcode": 8
+        },
         "h": {
             "duration": 40,
             "latency": 0,

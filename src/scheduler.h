@@ -68,9 +68,11 @@
 
 #include "utils.h"
 #include "gate.h"
+#include "kernel.h"
 #include "circuit.h"
 #include "ir.h"
 #include "resource_manager.h"
+#include "report.h"
 
 using namespace std;
 using namespace lemon;
@@ -106,7 +108,6 @@ public:
     ql::circuit*    circp;                      // current and result circuit, passed from Init to each scheduler
 
     // scheduler support
-    std::map< std::pair<std::string,std::string>, size_t> buffer_cycles_map;
     std::map<ListDigraph::Node,size_t>  remaining;  // remaining[node] == cycles until end; critical path representation
 
 
@@ -128,7 +129,7 @@ public:
     // operand is in qubit_creg combined index space
     void add_dep(int srcID, int tgtID, enum DepTypes deptype, int operand)
     {
-        DOUT(".. adddep ...");
+        DOUT(".. adddep ... from srcID " << srcID << " to tgtID " << tgtID << "   opnd=" << operand << ", dep=" << DepTypesNames[deptype]);
         ListDigraph::Node srcNode = graph.nodeFromId(srcID);
         ListDigraph::Node tgtNode = graph.nodeFromId(tgtID);
         ListDigraph::Arc arc = graph.addArc(srcNode,tgtNode);
@@ -142,35 +143,13 @@ public:
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
     void init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
     {
-        DOUT("Dependence graph creation ...");
-        qubit_count = qcount;
-        creg_count = ccount;
+        DOUT("Dependence graph creation ... #qubits = " << platform.qubit_number);
+        qubit_count = qcount; ///@todo-rn: DDG creation should not depend on #qubits
+        creg_count = ccount; ///@todo-rn: DDG creation should not depend on #cregs
         size_t qubit_creg_count = qubit_count + creg_count;
         DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", total=" << qubit_creg_count);
         cycle_time = platform.cycle_time;
         circp = &ckt;
-
-        // populate buffer map
-        // 'none' type is a dummy type and 0 buffer cycles will be inserted for
-        // instructions of type 'none'
-        //
-        // this has nothing to do with dependence graph generation but with scheduling
-        // so should be in resource-constrained scheduler constructor
-        std::vector<std::string> buffer_names = {"none", "mw", "flux", "readout"};
-        for(auto & buf1 : buffer_names)
-        {
-            for(auto & buf2 : buffer_names)
-            {
-                auto bpair = std::pair<std::string,std::string>(buf1,buf2);
-                auto bname = buf1+ "_" + buf2 + "_buffer";
-                if(platform.hardware_settings.count(bname) > 0)
-                {
-                    buffer_cycles_map[ bpair ] = size_t(std::ceil(
-                        static_cast<float>(platform.hardware_settings[bname]) / cycle_time));
-                }
-                // DOUT("Initializing " << bname << ": "<< buffer_cycles_map[bpair]);
-            }
-        }
 
         // dependences are created with a current gate as target
         // and with those previous gates as source that have an operand match:
@@ -805,32 +784,32 @@ public:
     }
 
     // sort circuit by the gates' cycle attribute in non-decreasing order
-    void sort_by_cycle()
+    void sort_by_cycle(ql::circuit *cp)
     {
         DOUT("... before sorting on cycle value");
-        // for ( ql::circuit::iterator gpit = circp->begin(); gpit != circp->end(); gpit++)
+        // for ( ql::circuit::iterator gpit = cp->begin(); gpit != cp->end(); gpit++)
         // {
         //     ql::gate*           gp = *gpit;
         //     DOUT("...... (@" << gp->cycle << ") " << gp->qasm());
         // }
 
         // std::sort doesn't preserve the original order of elements that have equal values but std::stable_sort does
-        std::stable_sort(circp->begin(), circp->end(), cycle_lessthan);
+        std::stable_sort(cp->begin(), cp->end(), cycle_lessthan);
 
         DOUT("... after sorting on cycle value");
-        // for ( ql::circuit::iterator gpit = circp->begin(); gpit != circp->end(); gpit++)
+        // for ( ql::circuit::iterator gpit = cp->begin(); gpit != cp->end(); gpit++)
         // {
         //     ql::gate*           gp = *gpit;
         //     DOUT("...... (@" << gp->cycle << ") " << gp->qasm());
         // }
     }
 
-    // ASAP scheduler without RC, updating circuit and returning bundles
-    ql::ir::bundles_t schedule_asap(std::string & sched_dot)
+    // ASAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
+    void schedule_asap(std::string & sched_dot)
     {
         DOUT("Scheduling ASAP ...");
         set_cycle(ql::forward_scheduling);
-        sort_by_cycle();
+        sort_by_cycle(circp);
 
         if (ql::options::get("print_dot_graphs") == "yes")
         {
@@ -840,15 +819,14 @@ public:
         }
 
         DOUT("Scheduling ASAP [DONE]");
-        return ql::ir::bundler(*circp, cycle_time);
     }
 
-    // ALAP scheduler without RC, updating circuit and returning bundles
-    ql::ir::bundles_t schedule_alap(std::string & sched_dot)
+    // ALAP scheduler without RC, setting gate cycle values and sorting the resulting circuit
+    void schedule_alap(std::string & sched_dot)
     {
         DOUT("Scheduling ALAP ...");
         set_cycle(ql::backward_scheduling);
-        sort_by_cycle();
+        sort_by_cycle(circp);
 
         if (ql::options::get("print_dot_graphs") == "yes")
         {
@@ -858,103 +836,14 @@ public:
         }
 
         DOUT("Scheduling ALAP [DONE]");
-        return ql::ir::bundler(*circp, cycle_time);
     }
 
 
-// =========== schedulers with RC, latency compensation and buffer-buffer delay insertion
+// =========== schedulers with RC
     // Most code from here on deals with scheduling with Resource Constraints.
     // Then the cycles as computed from the depgraph alone start to drift because of resource conflicts,
     // and then it is more optimal to at each point consider all available nodes for scheduling
     // to avoid largely suboptimal results (issue 179), i.e. apply list scheduling.
-
-    // latency compensation
-    void latency_compensation(ql::circuit* circp, const ql::quantum_platform& platform)
-    {
-        DOUT("Latency compensation ...");
-        bool    compensated_one = false;
-        for ( auto & gp : *circp)
-        {
-            auto & id = gp->name;
-            // DOUT("Latency compensating instruction: " << id);
-            long latency_cycles=0;
-
-            if(platform.instruction_settings.count(id) > 0)
-            {
-                if(platform.instruction_settings[id].count("latency") > 0)
-                {
-                    float latency_ns = platform.instruction_settings[id]["latency"];
-                    latency_cycles = long(std::ceil( static_cast<float>(std::abs(latency_ns)) / cycle_time)) *
-                                          ql::utils::sign_of(latency_ns);
-                    compensated_one = true;
-
-                    gp->cycle = gp->cycle + latency_cycles;
-                    DOUT( "... compensated to @" << gp->cycle << " <- " << id << " with " << latency_cycles );
-                }
-            }
-        }
-
-        if (compensated_one)
-        {
-            DOUT("... sorting on cycle value after latency compensation");
-            sort_by_cycle();
-
-            DOUT("... printing schedule after latency compensation");
-            for ( auto & gp : *circp)
-            {
-                DOUT("...... @(" << gp->cycle << "): " << gp->qasm());
-            }
-        }
-        else
-        {
-            DOUT("... no gate latency compensated");
-        }
-        DOUT("Latency compensation [DONE]");
-    }
-
-    // insert buffer - buffer delays
-    void insert_buffer_delays(ql::ir::bundles_t& bundles, const ql::quantum_platform& platform)
-    {
-        DOUT("Buffer-buffer delay insertion ... ");
-        std::vector<std::string> operations_prev_bundle;
-        size_t buffer_cycles_accum = 0;
-        for(ql::ir::bundle_t & abundle : bundles)
-        {
-            std::vector<std::string> operations_curr_bundle;
-            for( auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt )
-            {
-                for(auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt )
-                {
-                    auto & id = (*insIt)->name;
-                    std::string op_type("none");
-                    if(platform.instruction_settings.count(id) > 0)
-                    {
-                        if(platform.instruction_settings[id].count("type") > 0)
-                        {
-                            op_type = platform.instruction_settings[id]["type"].get<std::string>();
-                        }
-                    }
-                    operations_curr_bundle.push_back(op_type);
-                }
-            }
-
-            size_t buffer_cycles = 0;
-            for(auto & op_prev : operations_prev_bundle)
-            {
-                for(auto & op_curr : operations_curr_bundle)
-                {
-                    auto temp_buf_cycles = buffer_cycles_map[ std::pair<std::string,std::string>(op_prev, op_curr) ];
-                    DOUT("... considering buffer_" << op_prev << "_" << op_curr << ": " << temp_buf_cycles);
-                    buffer_cycles = std::max(temp_buf_cycles, buffer_cycles);
-                }
-            }
-            DOUT( "... inserting buffer : " << buffer_cycles);
-            buffer_cycles_accum += buffer_cycles;
-            abundle.start_cycle = abundle.start_cycle + buffer_cycles_accum;
-            operations_prev_bundle = operations_curr_bundle;
-        }
-        DOUT("Buffer-buffer delay insertion [DONE] ");
-    }
 
     // In critical-path scheduling, usually more-critical instructions are preferred;
     // an instruction is more-critical when its ASAP and ALAP values differ less.
@@ -1400,10 +1289,8 @@ public:
     // what is done, is:
     // - the cycle attribute of the gates will be set according to the scheduling method
     // - *circp (the original and result circuit) is sorted in the new cycle order
-    // - bundles are collected from the circuit
-    // - latency compensation and buffer-buffer delay insertion done
     // the bundles are returned, with private start/duration attributes
-    ql::ir::bundles_t schedule(ql::circuit* circp, ql::scheduling_direction_t dir,
+    void schedule(ql::circuit* circp, ql::scheduling_direction_t dir,
             const ql::quantum_platform& platform, ql::arch::resource_manager_t& rm, std::string& sched_dot)
     {
         DOUT("Scheduling " << (ql::forward_scheduling == dir?"ASAP":"ALAP") << " with RC ...");
@@ -1457,7 +1344,7 @@ public:
         }
 
         DOUT("... sorting on cycle value");
-        sort_by_cycle();
+        sort_by_cycle(circp);
 
         if (ql::backward_scheduling == dir)
         {
@@ -1472,6 +1359,7 @@ public:
             }
             instruction[s]->cycle -= SOURCECycle;   // i.e. becomes 0
         }
+        // FIXME HvS cycles_valid now
 
         if (ql::options::get("print_dot_graphs") == "yes")
         {
@@ -1481,41 +1369,26 @@ public:
         }
 
         // end scheduling
-        // from here split off
-
-        latency_compensation(circp, platform);
-
-        ql::ir::bundles_t   bundles;
-        bundles = ql::ir::bundler(*circp, cycle_time);
-
-        insert_buffer_delays(bundles, platform);
 
         DOUT("Scheduling " << (ql::forward_scheduling == dir?"ASAP":"ALAP") << " with RC [DONE]");
-        return bundles;
     }
 
-    ql::ir::bundles_t schedule_asap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
+    void schedule_asap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
     {
-        ql::ir::bundles_t   bundles;
         DOUT("Scheduling ASAP");
-        bundles = schedule(circp, ql::forward_scheduling, platform, rm, sched_dot);
-
+        schedule(circp, ql::forward_scheduling, platform, rm, sched_dot);
         DOUT("Scheduling ASAP [DONE]");
-        return bundles;
     }
 
-    ql::ir::bundles_t schedule_alap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
+    void schedule_alap(ql::arch::resource_manager_t & rm, const ql::quantum_platform & platform, std::string& sched_dot)
     {
-        ql::ir::bundles_t   bundles;
         DOUT("Scheduling ALAP");
-        bundles = schedule(circp, ql::backward_scheduling, platform, rm, sched_dot);
-
+        schedule(circp, ql::backward_scheduling, platform, rm, sched_dot);
         DOUT("Scheduling ALAP [DONE]");
-        return bundles;
     }
 
 // =========== uniform
-    ql::ir::bundles_t schedule_alap_uniform()
+    void schedule_alap_uniform()
     {
         // algorithm based on "Balanced Scheduling and Operation Chaining in High-Level Synthesis for FPGA Designs"
         // by David C. Zaretsky, Gaurav Mittal, Robert P. Dick, and Prith Banerjee
@@ -1539,7 +1412,6 @@ public:
         // Hence, the result resembles an ALAP schedule with excess bundle lengths solved by moving nodes down ("rolling pin").
 
         DOUT("Scheduling ALAP UNIFORM to get bundles ...");
-        ql::ir::bundles_t bundles;
 
         // initialize gp->cycle as ASAP cycles as first approximation of result;
         // note that the circuit doesn't contain the SOURCE and SINK gates but the dependence graph does;
@@ -1719,7 +1591,8 @@ public:
         }   // end curr_cycle loop; curr_cycle is bundle which must be enlarged when too small
 
         // new cycle values computed; reflect this in circuit's gate order
-        sort_by_cycle();
+        sort_by_cycle(circp);
+        // FIXME HvS cycles_valid now
 
         // recompute and print statistics reporting on uniform scheduling performance
         max_gates_per_cycle = 0;
@@ -1744,11 +1617,7 @@ public:
             << "; ..._per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
             );
 
-        // prefer standard bundler over using the gates_per_cycle data structure
-        bundles = ql::ir::bundler(*circp, cycle_time);
-
-        DOUT("Scheduling ALAP UNIFORM to get bundles [DONE]");
-        return bundles;
+        DOUT("Scheduling ALAP UNIFORM [DONE]");
     }
 
 // =========== printing dot of the dependence graph
@@ -1858,12 +1727,153 @@ public:
     void get_dot(std::string & dot)
     {
         set_cycle(ql::forward_scheduling);
-        sort_by_cycle();
+        sort_by_cycle(circp);
 
         stringstream ssdot;
         get_dot(false, true, ssdot);
         dot = ssdot.str();
     }
 };
+
+namespace ql
+{
+
+// schedule support for program.h::schedule()
+void schedule_kernel(quantum_kernel& kernel, quantum_platform platform,
+    std::string & dot, std::string& sched_dot)
+{
+    std::string scheduler = ql::options::get("scheduler");
+    std::string scheduler_uniform = ql::options::get("scheduler_uniform");
+
+    IOUT( scheduler << " scheduling the quantum kernel '" << kernel.name << "'...");
+
+    Scheduler sched;
+    sched.init(kernel.c, platform, kernel.qubit_count, kernel.creg_count);
+
+    if(ql::options::get("print_dot_graphs") == "yes")
+    {
+        sched.get_dot(dot);
+    }
+
+    if ("yes" == scheduler_uniform)
+    {
+        sched.schedule_alap_uniform(); // result in current kernel's circuit (k.c)
+    }
+    else if ("ASAP" == scheduler)
+    {
+        sched.schedule_asap(sched_dot); // result in current kernel's circuit (k.c)
+    }
+    else if ("ALAP" == scheduler)
+    {
+        sched.schedule_alap(sched_dot); // result in current kernel's circuit (k.c)
+    }
+    else
+    {
+        FATAL("Not supported scheduler option: scheduler=" << scheduler);
+    }
+    DOUT( scheduler << " scheduling the quantum kernel '" << kernel.name << "' DONE");
+    kernel.cycles_valid = true;
+}
+
+/*
+ * main entry to the non resource-constrained scheduler
+ */
+void schedule(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
+{
+    if( ql::options::get("prescheduler") == "yes" )
+    {
+        ql::report_statistics(programp, platform, "in", passname, "# ");
+        ql::report_qasm(programp, platform, "in", passname);
+    
+        IOUT("scheduling the quantum program");
+        for (auto& k : programp->kernels)
+        {
+            std::string dot;
+            std::string kernel_sched_dot;
+            schedule_kernel(k, platform, dot, kernel_sched_dot);
+    
+            if(ql::options::get("print_dot_graphs") == "yes")
+            {
+                string fname;
+                fname = ql::options::get("output_dir") + "/" + k.get_name() + "_dependence_graph.dot";
+                IOUT("writing scheduled dot to '" << fname << "' ...");
+                ql::utils::write_file(fname, dot);
+    
+                std::string scheduler_opt = ql::options::get("scheduler");
+                fname = ql::options::get("output_dir") + "/" + k.get_name() + scheduler_opt + "_scheduled.dot";
+                IOUT("writing scheduled dot to '" << fname << "' ...");
+                ql::utils::write_file(fname, kernel_sched_dot);
+            }
+        }
+    
+        ql::report_statistics(programp, platform, "out", passname, "# ");
+        ql::report_qasm(programp, platform, "out", passname);
+    }
+}
+
+void rcschedule_kernel(ql::quantum_kernel& kernel,
+    const ql::quantum_platform & platform, std::string & dot, size_t nqubits, size_t ncreg = 0)
+{
+    IOUT("Resource constraint scheduling ...");
+
+    std::string schedopt = ql::options::get("scheduler");
+    if ("ASAP" == schedopt)
+    {
+        Scheduler sched;
+        sched.init(kernel.c, platform, nqubits, ncreg);
+
+        ql::arch::resource_manager_t rm(platform, forward_scheduling);
+        sched.schedule_asap(rm, platform, dot);
+    }
+    else if ("ALAP" == schedopt)
+    {
+        Scheduler sched;
+        sched.init(kernel.c, platform, nqubits, ncreg);
+
+        ql::arch::resource_manager_t rm(platform, backward_scheduling);
+        sched.schedule_alap(rm, platform, dot);
+    }
+    else
+    {
+        FATAL("Not supported scheduler option: scheduler=" << schedopt);
+    }
+
+    IOUT("Resource constraint scheduling [Done].");
+}
+
+/*
+ * main entry point of the rcscheduler
+ */
+void rcschedule(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
+{
+    ql::report_statistics(programp, platform, "in", passname, "# ");
+    ql::report_qasm(programp, platform, "in", passname);
+
+    for(auto &kernel : programp->kernels)
+    {
+        IOUT("Scheduling kernel: " << kernel.name);
+        if (! kernel.c.empty())
+        {
+            auto num_creg = kernel.creg_count;
+            std::string     sched_dot;
+
+            rcschedule_kernel(kernel, platform, sched_dot, platform.qubit_number, num_creg);
+            kernel.cycles_valid = true; // FIXME HvS move this back into call to right after sort_cycle
+
+            if (ql::options::get("print_dot_graphs") == "yes")
+            {
+                std::stringstream fname;
+                fname << ql::options::get("output_dir") << "/" << kernel.name << "_" << passname << ".dot";
+                IOUT("writing " << passname << " dependence graph dot file to '" << fname.str() << "' ...");
+                ql::utils::write_file(fname.str(), sched_dot);
+            }
+        }
+    }
+
+    ql::report_statistics(programp, platform, "out", passname, "# ");
+    ql::report_qasm(programp, platform, "out", passname);
+}
+
+} // ql namespace
 
 #endif

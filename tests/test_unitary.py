@@ -289,6 +289,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
     def test_unitary_decompose_2qubit_CNOT(self):
+        self.setUpClass()
         num_qubits = 2
         p = ql.Program('test_unitary_2qubitCNOT', platform, num_qubits)
         k = ql.Kernel('akernel', platform, num_qubits)
