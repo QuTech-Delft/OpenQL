@@ -51,6 +51,7 @@ addons:
       - swig
       - flex
       - bison
+      - glpk
   homebrew:
     packages:
       - python3
