@@ -411,9 +411,9 @@ public:
 
     void compile()
     {
-        program->compile();
+        //program->compile();
 
-        //program->compile_modular();
+        program->compile_modular();
     }
 
     std::string microcode()
