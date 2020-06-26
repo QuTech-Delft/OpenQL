@@ -10,12 +10,9 @@ curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
 
 class Test_bugs(unittest.TestCase):
-    def setUp(self):
-        ql.set_option('output_dir', output_dir)
-
     @classmethod
     def setUpClass(self):
-        self.setUp():
+        ql.set_option('output_dir', output_dir)
         ql.set_option('output_dir', output_dir)
         ql.set_option('use_default_gates', 'yes')
 
