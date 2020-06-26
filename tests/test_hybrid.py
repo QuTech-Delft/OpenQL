@@ -67,6 +67,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
 
     def test_if(self):
+        self.setUpClass()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
@@ -98,6 +99,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
         assemble(QISA_fn)
 
     def test_if_else(self):
+        self.setUpClass()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
@@ -129,6 +131,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
 
     def test_for(self):
+        self.setUpClass()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
@@ -160,6 +163,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
 
     def test_do_while(self):
+        self.setUpClass()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
@@ -191,6 +195,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
 
     def test_do_while_nested_for(self):
+        self.setUpClass()
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         num_qubits = 5
