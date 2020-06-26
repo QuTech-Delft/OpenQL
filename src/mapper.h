@@ -1,4 +1,4 @@
-// #define INITIALPLACE 1
+#define INITIALPLACE 1
 // commenting out the #define INITIALPLACE above, takes out all what's needed for initial placement
 /**
  * @file   mapper.h
