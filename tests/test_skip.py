@@ -20,7 +20,7 @@ class Test_skip(unittest.TestCase):
         ql.set_option('output_dir', output_dir)     # this uses output_dir set above
 
         ql.set_option('log_level', 'LOG_NOTHING')
-        ql.set_option('write_qasm_files', 'no')
+        ql.set_option('write_qasm_files', 'yes')
         ql.set_option('write_report_files', 'no')
         ql.set_option('unique_output', 'no')
 
@@ -36,6 +36,7 @@ class Test_skip(unittest.TestCase):
         ql.set_option('mapper', 'no')
         
     def test_skip_yes(self):
+        self.setUp()
         # just check whether skip works for trivial case
         # parameters
         ql.set_option('issue_skip_319', 'yes')
@@ -62,7 +63,7 @@ class Test_skip(unittest.TestCase):
         prog.compile()
 
         GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '_scheduled.qasm')
-        QASM_fn = os.path.join(output_dir, prog.name+'_scheduled.qasm')
+        QASM_fn = os.path.join(output_dir, prog.name+'_scheduledqasmwriter_out.qasm')
 
         assemble(QASM_fn)
         self.assertTrue(file_compare(QASM_fn, GOLD_fn))

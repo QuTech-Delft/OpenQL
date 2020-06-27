@@ -52,7 +52,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/test_conjugate.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'.qasm')
+        qasm_fn = os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm')
         self.assertTrue(file_compare(qasm_fn, gold_fn))
 
 

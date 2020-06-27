@@ -135,7 +135,6 @@ void AbstractPass::initPass(ql::quantum_program *program)
 {
     if(getPassOptions()->getOption("write_qasm_files") == "yes")
     {
-std::cout<< " do i enter here?\n";
         //temporary store old value 
         ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
         std::string writeQasmLocal = ql::options::get("write_qasm_files");
@@ -167,7 +166,6 @@ void AbstractPass::finalizePass(ql::quantum_program *program)
 {
     if(getPassOptions()->getOption("write_qasm_files") == "yes")
     {
-std::cout<< " do i enter here? finalizeIR\n";
         //temporary store old value 
         ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
         std::string writeQasmLocal = ql::options::get("write_qasm_files");
@@ -205,7 +203,7 @@ void ReaderPass::runOnProgram(ql::quantum_program *program)
     
     DOUT("!!!!!!!!!!! start reader !!!!!!!!");    
 
-    reader->file2circuit("test_output/"+program->name+".qasm");
+    reader->file2circuit("test_output/"+program->name+"_outputIR_out.qasm");
 }
 
     /**
@@ -220,7 +218,6 @@ void WriterPass::runOnProgram(ql::quantum_program *program)
     //ql::report_init(program, program->platform);
     
     // writer pass of the initial qasm file (program.qasm)
-//     ql::write_qasm(program, program->platform, getPassName());
     ql::report_qasm(program, program->platform, "out", getPassName());
     
     if (getPassName() != "initialqasmwriter" && getPassName() != "scheduledqasmwriter")
@@ -300,7 +297,6 @@ void BackendCompilerPass::runOnProgram(ql::quantum_program *program)
     {
         FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }
-    std::cout << "before call backed compile\n";
 
     ///@todo-rn: Decide how to construct backend:
     // 1) we can run backend as one big composite engine, e.g., 
@@ -309,7 +305,7 @@ void BackendCompilerPass::runOnProgram(ql::quantum_program *program)
     // OR 
     // 2) in the user program add one for one individual backed passes.
     
-    //backend_compiler.reset();    
+    backend_compiler.reset();    
 }
 
     /**
@@ -349,7 +345,7 @@ void CCLDecomposePreSchedule::runOnProgram(ql::quantum_program *program)
     
     ccl_backend_compiler->ccl_decompose_pre_schedule(program, program->platform, getPassName());
     
-    //ccl_backend_compiler.reset();
+    ccl_backend_compiler.reset();
 }
 
     /**
@@ -362,7 +358,7 @@ void WriteQuantumSimPass::runOnProgram(ql::quantum_program *program)
     
     ccl_backend_compiler->write_quantumsim_script(program, program->platform, getPassName());
     
-    //ccl_backend_compiler.reset();
+    ccl_backend_compiler.reset();
 }
 
     /**
@@ -372,7 +368,6 @@ void WriteQuantumSimPass::runOnProgram(ql::quantum_program *program)
 void CliffordOptimizePass::runOnProgram(ql::quantum_program *program)
 {
     ql::clifford_optimize(program, program->platform, getPassName());
-    std::cout << " finished clifford_optimize\n";
 }
 
     /**
@@ -389,7 +384,7 @@ void MapPass::runOnProgram(ql::quantum_program *program)
     
     appendStatistics(stats);
     
-    //ccl_backend_compiler.reset();
+    ccl_backend_compiler.reset();
 }
 
     /**
@@ -429,7 +424,7 @@ void CCLDecomposePostSchedulePass::runOnProgram(ql::quantum_program *program)
     
     ccl_backend_compiler->ccl_decompose_post_schedule(program, program->platform, getPassName());
     
-    //ccl_backend_compiler.reset();
+    ccl_backend_compiler.reset();
 }
 
     /**
@@ -442,7 +437,7 @@ void QisaCodeGenerationPass::runOnProgram(ql::quantum_program *program)
 
     ccl_backend_compiler->qisa_code_generation(program, program->platform, getPassName());
     
-    //ccl_backend_compiler.reset();
+    ccl_backend_compiler.reset();
 }
 
     /**

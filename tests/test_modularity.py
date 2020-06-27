@@ -27,16 +27,12 @@ class Test_modularity(unittest.TestCase):
 
       c.add_pass_alias("Writer", "outputIR") # NOTE: pass writer deletes the program!
       c.add_pass("Reader") 
-      c.add_pass_alias("Writer", "outputIR")
-      #c.add_pass("Reader") 
-      #c.add_pass("RotationOptimizer")
-      #c.add_pass("DecomposeToffoli")
-      #c.add_pass("Scheduler")
-      #c.add_pass_alias("Writer", "scheduledqasmwriter")
-      #c.add_pass_alias("CliffordOptimize", "clifford_prescheduler")
-      #c.add_pass("Scheduler")
-      #c.add_pass_alias("CliffordOptimize", "clifford_postscheduler")
-      #c.add_pass_alias("Writer","scheduledqasmwriter")
+      c.add_pass("RotationOptimizer")
+      c.add_pass("DecomposeToffoli")
+      c.add_pass_alias("CliffordOptimize", "clifford_prescheduler")
+      c.add_pass("Scheduler")
+      c.add_pass_alias("CliffordOptimize", "clifford_postscheduler")
+      c.add_pass_alias("Writer","scheduledqasmwriter")
 
 ## From here CC-light backed passes start; not called though to show how only front-end can be used
       #c.add_pass("CCLPrepCodeGeneration") #CCLPrepCodeGeneration
@@ -53,7 +49,8 @@ class Test_modularity(unittest.TestCase):
       #c.add_pass("QisaCodeGeneration") # QisaCodeGenerationPass
 
       c.set_pass_option("ALL", "skip", "no");
-      c.set_pass_option("ALL", "write_qasm_files", "no");
+      c.set_pass_option("outputIR", "write_qasm_files", "yes");
+      c.set_pass_option("scheduledqasmwriter", "write_qasm_files", "yes");
       c.set_pass_option("ALL", "write_report_files", "no");
 
       nqubits = 3 
