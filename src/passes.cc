@@ -297,6 +297,7 @@ void BackendCompilerPass::runOnProgram(ql::quantum_program *program)
     {
         FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }
+    std::cout << "before call backed compile\n";
 
     ///@todo-rn: Decide how to construct backend:
     // 1) we can run backend as one big composite engine, e.g., 
@@ -305,7 +306,7 @@ void BackendCompilerPass::runOnProgram(ql::quantum_program *program)
     // OR 
     // 2) in the user program add one for one individual backed passes.
     
-    backend_compiler.reset();    
+    //backend_compiler.reset();    
 }
 
     /**
@@ -345,7 +346,7 @@ void CCLDecomposePreSchedule::runOnProgram(ql::quantum_program *program)
     
     ccl_backend_compiler->ccl_decompose_pre_schedule(program, program->platform, getPassName());
     
-    ccl_backend_compiler.reset();
+    //ccl_backend_compiler.reset();
 }
 
     /**
@@ -358,7 +359,7 @@ void WriteQuantumSimPass::runOnProgram(ql::quantum_program *program)
     
     ccl_backend_compiler->write_quantumsim_script(program, program->platform, getPassName());
     
-    ccl_backend_compiler.reset();
+    //ccl_backend_compiler.reset();
 }
 
     /**
@@ -368,6 +369,7 @@ void WriteQuantumSimPass::runOnProgram(ql::quantum_program *program)
 void CliffordOptimizePass::runOnProgram(ql::quantum_program *program)
 {
     ql::clifford_optimize(program, program->platform, getPassName());
+    std::cout << " finished clifford_optimize\n";
 }
 
     /**
@@ -384,7 +386,7 @@ void MapPass::runOnProgram(ql::quantum_program *program)
     
     appendStatistics(stats);
     
-    ccl_backend_compiler.reset();
+    //ccl_backend_compiler.reset();
 }
 
     /**
@@ -424,7 +426,7 @@ void CCLDecomposePostSchedulePass::runOnProgram(ql::quantum_program *program)
     
     ccl_backend_compiler->ccl_decompose_post_schedule(program, program->platform, getPassName());
     
-    ccl_backend_compiler.reset();
+    //ccl_backend_compiler.reset();
 }
 
     /**
@@ -437,7 +439,7 @@ void QisaCodeGenerationPass::runOnProgram(ql::quantum_program *program)
 
     ccl_backend_compiler->qisa_code_generation(program, program->platform, getPassName());
     
-    ccl_backend_compiler.reset();
+    //ccl_backend_compiler.reset();
 }
 
     /**

@@ -439,7 +439,7 @@ public:
     {
         // std::cout << "program::~program()" << std::endl;
         // leave deletion to SWIG, otherwise the python unit test framework fails
-        delete(program);
+        //delete(program);
     }
 };
 

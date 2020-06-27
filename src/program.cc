@@ -407,7 +407,7 @@ int quantum_program::compile_modular()
     
     ql::options::reset_options();
 
-    compiler.reset();
+    //compiler.reset();
     
     return 0;
 }
