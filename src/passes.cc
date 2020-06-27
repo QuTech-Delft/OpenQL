@@ -203,6 +203,22 @@ void ReaderPass::runOnProgram(ql::quantum_program *program)
     
     DOUT("!!!!!!!!!!! start reader !!!!!!!!");    
 
+    // reset kernels if they are not empty, needed for the case when the reader pass 
+    // is used after a Writer pass within the sequence os passes and not at the start 
+    // of the compiler when there is no IR
+    auto it = program->kernels.begin();
+
+    for(;it != program->kernels.end(); it++)
+    {
+        ql::quantum_kernel ktmp = (*it);//->kernels.erase(*it);
+        std::cout << ktmp.name << std::endl;
+        ktmp.c.clear();
+    }
+        
+    program->kernels.clear();
+    
+    ///@todo-rn: come up with a parametrized naming scheme to do this printing. This should reflect
+    // if the pass is outputing non- or scheduled qasm depending if it is used before or after sched
     reader->file2circuit("test_output/"+program->name+"_outputIR_out.qasm");
 }
 
@@ -220,20 +236,8 @@ void WriterPass::runOnProgram(ql::quantum_program *program)
     // writer pass of the initial qasm file (program.qasm)
     ql::report_qasm(program, program->platform, "out", getPassName());
     
-    if (getPassName() != "initialqasmwriter" && getPassName() != "scheduledqasmwriter")
-    { ///@note-rn: temoporary hack to make the writer pass for those 2 configurations soft (i.e., do not delete the subcircuits) so that it does not require a reader pass after it!. This is needed until we fix the synchronization between hardware configuration files and openql tests. Until then a Reader pass would be needed after a hard Write pass. However, a Reader pass will make some unit tests to fail due to a mismatch between the instructions in the tests (i.e., prepz) and included/defined in the hardware config files CONFLICTING with the prepz instr not being available in libQASM.
-        
-        auto it = program->kernels.begin();
-
-        for(;it != program->kernels.end(); it++)
-        {
-            ql::quantum_kernel ktmp = (*it);//->kernels.erase(*it);
-            std::cout << ktmp.name << std::endl;
-            ktmp.c.clear();
-        }
-        
-        program->kernels.clear();
-    }
+//     if (getPassName() != "initialqasmwriter" && getPassName() != "scheduledqasmwriter")
+//     { ///@note-rn: temoporary hack to make the writer pass for those 2 configurations soft (i.e., do not delete the subcircuits) so that it does not require a reader pass after it!. This is needed until we fix the synchronization between hardware configuration files and openql tests. Until then a Reader pass would be needed after a hard Write pass. However, a Reader pass will make some unit tests to fail due to a mismatch between the instructions in the tests (i.e., prepz) and included/defined in the hardware config files CONFLICTING with the prepz instr not being available in libQASM.
 }
 
     /**

@@ -399,9 +399,6 @@ int quantum_program::compile_modular()
     //compile with program    
     compiler->compile(this);
     
-    // generate sweep_points file ==> TOOD: delete?
-    ql::write_sweep_points(this, platform, "write_sweep_points");
-
     IOUT("compilation of program '" << name << "' done.");
     
     ql::options::reset_options();
