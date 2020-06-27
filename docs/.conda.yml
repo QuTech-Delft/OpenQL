@@ -7,6 +7,5 @@ dependencies:
     - flex=2.6
     - pip
     - pip:
-        - "python3-sphinx<2"
-        - m2r
+        - -r file:docs/requirements-docs.txt
 
