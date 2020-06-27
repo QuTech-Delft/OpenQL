@@ -12,7 +12,7 @@ class Test_modularity(unittest.TestCase):
       ql.set_option('output_dir', output_dir)
       ql.set_option('optimize', 'no')
       ql.set_option('scheduler', 'ASAP')
-      ql.set_option('log_level', 'LOG_DEBUG')
+      ql.set_option('log_level', 'LOG_WARNING')
       ql.set_option('unique_output', 'no')
       ql.set_option('write_qasm_files', 'no')
       ql.set_option('write_report_files', 'no')
@@ -20,6 +20,7 @@ class Test_modularity(unittest.TestCase):
 
 
   def test_modularity(self):
+      self.setUpClass()
       config_fn = os.path.join(curdir, 'hwcfg_cc_light_modular.json')
 
       c = ql.Compiler("testCompiler")
@@ -27,15 +28,15 @@ class Test_modularity(unittest.TestCase):
       c.add_pass_alias("Writer", "outputIR") # NOTE: pass writer deletes the program!
       c.add_pass("Reader") 
       c.add_pass_alias("Writer", "outputIR")
-      c.add_pass("Reader") 
-      c.add_pass("RotationOptimizer")
-      c.add_pass("DecomposeToffoli")
-      c.add_pass("Scheduler")
-      c.add_pass_alias("Writer", "scheduledqasmwriter")
-      c.add_pass_alias("CliffordOptimize", "clifford_prescheduler")
-      c.add_pass("Scheduler")
-      c.add_pass_alias("CliffordOptimize", "clifford_postscheduler")
-      c.add_pass_alias("Writer","scheduledqasmwriter")
+      #c.add_pass("Reader") 
+      #c.add_pass("RotationOptimizer")
+      #c.add_pass("DecomposeToffoli")
+      #c.add_pass("Scheduler")
+      #c.add_pass_alias("Writer", "scheduledqasmwriter")
+      #c.add_pass_alias("CliffordOptimize", "clifford_prescheduler")
+      #c.add_pass("Scheduler")
+      #c.add_pass_alias("CliffordOptimize", "clifford_postscheduler")
+      #c.add_pass_alias("Writer","scheduledqasmwriter")
 
 ## From here CC-light backed passes start; not called though to show how only front-end can be used
       #c.add_pass("CCLPrepCodeGeneration") #CCLPrepCodeGeneration

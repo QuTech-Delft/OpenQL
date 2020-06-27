@@ -135,6 +135,7 @@ void AbstractPass::initPass(ql::quantum_program *program)
 {
     if(getPassOptions()->getOption("write_qasm_files") == "yes")
     {
+std::cout<< " do i enter here?\n";
         //temporary store old value 
         ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
         std::string writeQasmLocal = ql::options::get("write_qasm_files");
@@ -166,6 +167,7 @@ void AbstractPass::finalizePass(ql::quantum_program *program)
 {
     if(getPassOptions()->getOption("write_qasm_files") == "yes")
     {
+std::cout<< " do i enter here? finalizeIR\n";
         //temporary store old value 
         ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
         std::string writeQasmLocal = ql::options::get("write_qasm_files");

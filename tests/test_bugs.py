@@ -13,7 +13,6 @@ class Test_bugs(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         ql.set_option('output_dir', output_dir)
-        ql.set_option('output_dir', output_dir)
         ql.set_option('use_default_gates', 'yes')
 
     # @unittest.expectedFailure

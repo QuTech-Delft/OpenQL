@@ -185,6 +185,7 @@ namespace ql
      */
     void report_write_qasm(std::stringstream& fname, quantum_program* programp, const ql::quantum_platform& platform)
     {
+std::cout<< "in report_write_qasm (THIS CREATES THE OUTPUT FILE!)\n";
         // DOUT("... reporting report_write_qasm");
         std::stringstream out_qasm;
         out_qasm << "version 1.0\n";
@@ -239,6 +240,7 @@ namespace ql
                 const std::string               extension
                )
     {
+std::cout << "in write_qasm_extension\n";
         std::stringstream fname;
         fname = report_compose_write_name(programp->unique_name, extension);
         report_write_qasm(fname, programp, platform);
@@ -254,7 +256,7 @@ namespace ql
                )
     {
         std::string       extension;
-
+std::cout << "in write_qasm\n";
         // next is ugly; must be done by built-in pass class option with different value for each concrete pass
         if (pass_name == "initialqasmwriter" || pass_name == "outputIR") extension = ".qasm";
         else if (pass_name == "scheduledqasmwriter" || pass_name == "outputIRscheduled") extension = "_scheduled.qasm";
@@ -290,6 +292,7 @@ namespace ql
                 const std::string               pass_name
                )
     {
+std::cout << "write_qasm_files = " << ql::options::get("write_qasm_files") << std::endl;
         if( ql::options::get("write_qasm_files") == "yes")
         {
             std::stringstream fname;
