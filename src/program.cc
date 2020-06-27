@@ -344,8 +344,8 @@ int quantum_program::compile_modular()
     }
     
     //constuct compiler
-//    std::unique_ptr<ql::quantum_compiler> compiler(new ql::quantum_compiler("Hard Coded Compiler"));
-    ql::quantum_compiler* compiler = new ql::quantum_compiler("Hard Coded Compiler");
+    std::unique_ptr<ql::quantum_compiler> compiler(new ql::quantum_compiler("Hard Coded Compiler"));
+//    ql::quantum_compiler* compiler = new ql::quantum_compiler("Hard Coded Compiler");
         
     //add passes
     ///@note-rn: WriterPass needs Reader pass to recreate the subciruits! ==> However, then Reader needs to be used to recreate the subcircuits. However, if I do that tests will fail because the harddware configuration file is in synq with qasm reader and tests (error: unrecognized instr prepz)
@@ -407,7 +407,7 @@ int quantum_program::compile_modular()
     
     ql::options::reset_options();
 
-//     compiler.reset();
+    compiler.reset();
     
     return 0;
 }
