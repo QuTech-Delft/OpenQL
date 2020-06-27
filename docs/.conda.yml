@@ -8,6 +8,6 @@ dependencies:
     - flex=2.6
     - pip
     - pip:
-        - sphinx-autodoc-typehints=1.5.0
+        - sphinx-autodoc-typehints==1.5.0
         - m2r
 
