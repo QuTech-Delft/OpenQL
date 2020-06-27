@@ -1,6 +1,5 @@
 dependencies:
     - python=3.7
-    - "sphinx>=1.8,<2"
     - setuptools
     - swig
     - cmake
@@ -8,5 +7,6 @@ dependencies:
     - flex=2.6
     - pip
     - pip:
+        - "sphinx>=1.8,<2"
         - m2r
 
