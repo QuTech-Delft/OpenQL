@@ -7,6 +7,6 @@ dependencies:
     - flex=2.6
     - pip
     - pip:
-        - "sphinx>=1.8,<2"
+        - "python3-sphinx<2"
         - m2r
 
