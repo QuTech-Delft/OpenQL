@@ -1,6 +1,6 @@
 dependencies:
     - python=3.7
-    - sphinx==1.8.5
+    - "sphinx>=1.8,<2"
     - setuptools
     - swig
     - cmake
