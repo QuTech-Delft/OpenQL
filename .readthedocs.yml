@@ -16,13 +16,13 @@ formats:
 python:
   version: 3.7
   install:
-    - requirements: docs/requirements-docs.txt
+#    - requirements: docs/requirements-docs.txt
     - method: pip
       path: .
-      extra_requirements:
-        - sphinx>=1.6
-        - sphinx-autodoc-typehints==1.5.0
-        - m2r
+#      extra_requirements:
+#        - sphinx>=1.6
+#        - sphinx-autodoc-typehints==1.5.0
+#        - m2r
 #    - method: setuptools
 #      path: .
 
