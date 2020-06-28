@@ -36,8 +36,9 @@ install:
   - python3 -m pip install . 
   - cd ../../../.
   - git submodule update --init --recursive
-  - python3 -m pip install . 
   - cd deps/libqasm
+  - python3 -m pip install . 
+  - cd ../../.
   - python3 -m pip install . 
 script: python3 -m pytest
 

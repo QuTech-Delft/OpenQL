@@ -25,6 +25,7 @@ While the instruction-level code is platform-specific, the quantum assembly code
    quantum_gate
    classical_instructions
    platform
+   compiler
    compiler_passes
 
 
