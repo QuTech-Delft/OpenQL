@@ -7,7 +7,7 @@ from utils import file_compare
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
 curdir = os.path.dirname(__file__)
-output_dir = os.path.join(curdir, 'test_output')
+output_dir = os.path.join(rootDir, 'test_output')
 
 class Test_bugs(unittest.TestCase):
     @classmethod
