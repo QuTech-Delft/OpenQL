@@ -118,6 +118,8 @@ namespace ql
         inline void write_file(std::string file_name, const std::string& content)
         {
             std::ofstream file;
+std::cout << "Try open file " <<  file_name << std::endl;
+           
             file.open(file_name);
 std::cout << "opened file = " <<  file.fail() << std::endl;
             if ( file.fail() )
