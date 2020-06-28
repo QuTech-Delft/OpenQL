@@ -72,6 +72,7 @@ class Test_bugs(unittest.TestCase):
         p2.add_kernel(k2)
 
         p1.compile()
+        self.setUpClass()
         p2.compile()
         self.assertTrue( file_compare(
             os.path.join(output_dir, p1.name+'.qisa'),
@@ -116,6 +117,7 @@ class Test_bugs(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         for i in range(NCOMPILES):
             p.compile()
+            self.setUpClass()
             QISA_fn_i = os.path.join(output_dir, p.name+'_'+str(i)+'.qisa')
             os.rename(QISA_fn,QISA_fn_i)
 

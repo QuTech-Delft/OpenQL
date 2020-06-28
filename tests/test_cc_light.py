@@ -648,6 +648,7 @@ class Test_advance(unittest.TestCase):
 
             p.add_kernel(k)
             p.compile()
+            self.setUpClass()
 
             QISA_fn = os.path.join(output_dir, p.name+'.qisa')
             gold_fn = rootDir + '/golden/test_ccl_latencies_'+str(testNo)+'.qisa'
