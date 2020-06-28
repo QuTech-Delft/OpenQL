@@ -119,6 +119,7 @@ namespace ql
         {
             std::ofstream file;
             file.open(file_name);
+std::cout << "opened file = " <<  file.fail() << std::endl;
             if ( file.fail() )
             {
                 std::cout << "[x] error opening file '" << file_name << "' !" << std::endl

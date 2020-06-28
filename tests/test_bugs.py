@@ -14,7 +14,7 @@ class Test_bugs(unittest.TestCase):
     def setUpClass(self):
         ql.set_option('output_dir', output_dir)
         ql.set_option('use_default_gates', 'yes')
-        ql.set_option('log_level', 'LOG_DEBUG')
+        ql.set_option('log_level', 'LOG_WARNING')
 
     # @unittest.expectedFailure
     # @unittest.skip
