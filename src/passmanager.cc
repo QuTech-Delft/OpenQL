@@ -49,10 +49,10 @@ void PassManager::compile(ql::quantum_program *program)
             pass->runOnProgram(program);
             pass->finalizePass(program);
         }
-        
+    }
+    
         // generate sweep_points file ==> TOOD: delete?
         ql::write_sweep_points(program, program->platform, "write_sweep_points");
-    }
 }
    
     /**
