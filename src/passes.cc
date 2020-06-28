@@ -219,7 +219,8 @@ void ReaderPass::runOnProgram(ql::quantum_program *program)
     
     ///@todo-rn: come up with a parametrized naming scheme to do this printing. This should reflect
     // if the pass is outputing non- or scheduled qasm depending if it is used before or after sched
-    reader->file2circuit("test_output/"+program->name+"_outputIR_out.qasm");
+    // currently this works only when Writer pass creating the qasm file is called outputIR
+    reader->file2circuit(ql::options::get("output_dir")+"/"+program->name+"_outputIR_out.qasm");
 }
 
     /**
