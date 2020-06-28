@@ -616,7 +616,6 @@ class Test_advance(unittest.TestCase):
 
 
     def test_ccl_latencies(self):
-        self.setUpClass()
 
         tests = [
                 # 'y q3' has a latency of 0 ns
@@ -634,6 +633,7 @@ class Test_advance(unittest.TestCase):
                 ]
 
         for testNo, testKernel in tests:
+            self.setUpClass()
             print('Running test_ccl_latencies No: {}'.format(testNo))
             config_fn = os.path.join(curdir, 'test_cfg_cc_light_buffers_latencies.json')
             platform  = ql.Platform('seven_qubits_chip', config_fn)
@@ -648,7 +648,6 @@ class Test_advance(unittest.TestCase):
 
             p.add_kernel(k)
             p.compile()
-            self.setUpClass()
 
             QISA_fn = os.path.join(output_dir, p.name+'.qisa')
             gold_fn = rootDir + '/golden/test_ccl_latencies_'+str(testNo)+'.qisa'

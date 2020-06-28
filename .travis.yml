@@ -31,17 +31,13 @@ before_install:
 
 install:
   - cd deps
-#  - git clone https://github.com/imranashraf/travis-libqasm.git
-#  - cd travis-libqasm
-#  - python3 -m pip install . 
-#  - cd ..
-#  - git clone https://github.com/imranashraf/travis-eQASM_Assembler.git
-#  - cd travis-eQASM_Assembler/qisa-as  
   - git clone https://github.com/QE-Lab/eQASM_Assembler.git
   - cd eQASM_Assembler/qisa-as  
   - python3 -m pip install . 
   - cd ../../../.
   - git submodule update --init --recursive
+  - python3 -m pip install . 
+  - cd deps/libqasm
   - python3 -m pip install . 
 script: python3 -m pytest
 
