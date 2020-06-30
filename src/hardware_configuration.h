@@ -63,7 +63,7 @@ public:
         }
         else
         {
-            eqasm_compiler_name = config["eqasm_compiler"];
+            eqasm_compiler_name = config["eqasm_compiler"].get<std::string>();
         }
 
         // load hardware_settings

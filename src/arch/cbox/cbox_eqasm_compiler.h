@@ -159,7 +159,7 @@ namespace ql
                   {
                      if (instruction_settings[id]["qumis_instr"].is_null())
                         throw ql::exception("[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : 'qumis_instr' for instruction '"+id+"' is not specified !",false);
-                     operation             = instruction_settings[id]["qumis_instr"];
+                     operation             = instruction_settings[id]["qumis_instr"].get<std::string>();
                      size_t duration       = __ns_to_cycle((size_t)instruction_settings[id]["duration"]);
                      size_t latency        = 0;
 

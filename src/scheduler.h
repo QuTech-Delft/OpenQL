@@ -931,7 +931,7 @@ public:
                     {
                         if(platform.instruction_settings[id].count("type") > 0)
                         {
-                            op_type = platform.instruction_settings[id]["type"];
+                            op_type = platform.instruction_settings[id]["type"].get<std::string>();
                         }
                     }
                     operations_curr_bundle.push_back(op_type);
