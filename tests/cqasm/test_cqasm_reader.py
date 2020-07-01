@@ -27,7 +27,7 @@ class TestcQasmReader(unittest.TestCase):
                    "prop_z q[0]\n"    \
                    "measure_z q[0]\n"
         qasm_rdr = ql.cQasmReader(platform, program)
-        with self.assertRaisesRegex(RuntimeError, r"syntax error, unexpected NAME, expecting $end | Line: 3"):
+        with self.assertRaisesRegex(RuntimeError, r"Error at <unknown>:3:1..12: failed to resolve prop_z"):
             qasm_rdr.string2circuit(qasm_str)
 
     def test_single_bit_kernel_operations(self):
