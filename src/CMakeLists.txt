@@ -13,6 +13,8 @@ ADD_LIBRARY(ql
   unitary.cc
   )
 
+TARGET_LINK_LIBRARIES(ql cqasm)
+
 # support 'include <ql/foo.h>'
 #TARGET_INCLUDE_DIRECTORIES(ql SYSTEM
 #  PUBLIC ${PARENT_DIR}
