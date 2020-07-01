@@ -91,6 +91,7 @@ AbstractPass* PassManager::createPass(std::string passName, std::string aliasNam
     if (passName == "Scheduler") {pass = new SchedulerPass(aliasName); passfound = true;}
     if (passName == "BackendCompiler") {pass = new BackendCompilerPass(aliasName); passfound = true;}
     if (passName == "ReportStatistics") {pass = new ReportStatisticsPass(aliasName); passfound = true;}
+    if (passName == "Visualizer") {pass = new VisualizerPass(aliasName); passfound = true;}
     
     if (!passfound) 
     {

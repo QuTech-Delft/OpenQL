@@ -12,6 +12,7 @@
 #include "optimizer.h"
 #include "decompose_toffoli.h"
 #include "cqasm/cqasm_reader.h"
+#include "visualizer.h"
 
 #include <iostream>
 
@@ -291,6 +292,18 @@ void BackendCompilerPass::runOnProgram(ql::quantum_program *program)
 void ReportStatisticsPass::runOnProgram(ql::quantum_program *program)
 {
     ql::report_statistics(program, program->platform, "todo-inout", getPassName(), "# ");
+}
+
+    /**
+     * @brief  Visualizes the input program
+     * @param  Program object to be read
+     */
+void VisualizerPass::runOnProgram(ql::quantum_program *program)
+{
+    DOUT("run VisualizerPass with name = " << getPassName() << " on program " << program->name);
+
+    ql::Layout layout;
+    ql::visualize(program, layout);
 }
 
     /**

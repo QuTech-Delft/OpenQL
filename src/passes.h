@@ -148,6 +148,21 @@ public:
 };
 
 /**
+ * Visualizer Pass 
+ */
+class VisualizerPass: public AbstractPass 
+{
+public:
+    /**
+     * @brief  Visualizer pass constructor
+     * @param  Name of the visualizer pass
+     */
+    VisualizerPass(std::string name):AbstractPass(name){};
+
+    void runOnProgram(ql::quantum_program *program);
+};
+
+/**
  * Pass Options Class
  */
 class PassOptions
