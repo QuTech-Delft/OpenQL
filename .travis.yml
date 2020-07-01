@@ -39,6 +39,7 @@ install:
   - python3 -m pip install .
   - cd ../../../.
   - python3 -m pip install .
+  - ls -lR .
   - python3 -m pytest
 
 # FIXME: moved to install, in search of problem that CI fails
