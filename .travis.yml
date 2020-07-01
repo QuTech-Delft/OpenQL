@@ -2,7 +2,7 @@ language: shell
 cache: pip
 
 matrix:
-  include:      
+  include:
     # - name: "Python 3.7 on macOS 10.14"
     #   os: osx
     #   osx_image: xcode11.3
@@ -28,21 +28,21 @@ before_install:
   - pip3 --version
   - while sleep 5m; do echo "=====[ $SECONDS seconds, OpenQL still building... ]====="; done &
 
-
 install:
   - cd deps
   - git clone https://github.com/imranashraf/travis-libqasm.git
   - cd travis-libqasm
-  - python3 -m pip install . 
+  - python3 -m pip install .
   - cd ..
   - git clone https://github.com/imranashraf/travis-eQASM_Assembler.git
   - cd travis-eQASM_Assembler/qisa-as
-  - python3 -m pip install . 
+  - python3 -m pip install .
   - cd ../../../.
-  - python3 -m pip install . 
-script: python3 -m pytest
+  - python3 -m pip install .
+  - python3 -m pytest
 
-
+# FIXME: moved to install, in search of problem that CI fails
+#script: python3 -m pytest
 
 addons:
   apt:
