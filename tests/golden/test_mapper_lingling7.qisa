@@ -18,7 +18,9 @@ smis s16, {6, 8}
 smis s17, {0, 6} 
 smis s18, {5, 7} 
 smis s19, {2, 5} 
-smis s20, {0, 1, 4, 7, 8} 
+smis s20, {5, 6, 7} 
+smis s21, {5, 8} 
+smis s22, {0, 1, 2, 3, 4, 7} 
 smit t0, {(7, 5)} 
 smit t1, {(7, 4)} 
 smit t2, {(3, 6), (7, 5)} 
@@ -45,10 +47,10 @@ smit t22, {(6, 2), (7, 5)}
 smit t23, {(4, 7)} 
 smit t24, {(2, 0), (5, 8)} 
 smit t25, {(5, 1)} 
-smit t26, {(5, 8), (6, 3)} 
-smit t27, {(1, 4)} 
-smit t28, {(2, 6), (4, 1)} 
-smit t29, {(5, 1), (6, 8)} 
+smit t26, {(5, 1), (6, 8)} 
+smit t27, {(1, 4), (2, 6)} 
+smit t28, {(4, 1), (5, 8)} 
+smit t29, {(1, 4)} 
 start:
 
 kernel_lingling7:
@@ -171,41 +173,42 @@ kernel_lingling7:
     1    cz t25
     2    y90 s5
     1    cz t25
+    2    cz t6
+    2    ym90 s5 | y90 s1
+    1    cz t17
     1    ym90 s3
-    1    cz t26
-    2    ym90 s5 | y90 s1 | cz t8
-    1    y90 s2 | cz t17
-    1    ym90 s6 | x s2
-    1    cz t21
-    2    y90 s5
+    1    cz t10
+    1    ym90 s1 | y90 s5
+    1    y90 s2 | cz t26
+    1    x s2
     1    cz t15
-    2    cz t15
-    2    ym90 s15 | y90 s6
-    1    cz t8
-    1    ym90 s1
-    1    ym90 s6 | y90 s15 | cz t25
-    1    cz t13
-    1    y90 s1 | y s4
-    1    y90 s6 | cz t27
-    1    cz t21
-    1    ym90 s1 | y90 s4
-    1    cz t28
+    1    y s4
+    1    ym90 s6 | y90 s1
+    1    cz t27
     2    ym90 s2 | y90 s5
     1    cz t9
     2    ym90 s5 | y90 s2
     1    cz t15
-    2    y90 s18
-    1    y90 s3 | cz t20
-    1    cz t5
-    1    ym90 s15 | y90 s1
-    1    cz t29
-    2    y90 s14
-    1    x s5
-    1    measz s14
-    qwait 10
-    1    ym90 s4
-    1    cz t27
     2    y90 s20
+    1    cz t3
+    1    ym90 s1 | y90 s4
+    1    cz t28
+    1    ym90 s6 | y90 s3
+    1    cz t12
+    1    y90 s1
+    1    cz t25
+    1    ym90 s2 | y90 s6
+    1    cz t9
+    1    cz t8
+    1    y90 s5
+    1    y90 s15 | x s5
+    1    measz s21
+    qwait 8
+    1    ym90 s4
+    1    cz t29
+    1    ym90 s3
+    1    cz t10
+    2    y90 s22
 
     br always, start
     nop 
