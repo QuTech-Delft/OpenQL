@@ -254,6 +254,10 @@ namespace ql
                 kernel.gate(translate_gate_type("measure_z"), qubit);
             }
         }
+        else if (gate_type == "skip")
+        {
+            ///@note: skip instruction called, i.e., inserts empty cycles, possibly restarting filling cycles without waiting for all previous cycle instructions to be finished. That is, skip is different than wait that behaves as barrier+skip <X> cycles.
+        }
         else if (gate_type == "wait")
         {
             size_t wait_time = operation.getWaitTime();
@@ -314,6 +318,7 @@ namespace ql
         assert(translate_gate_type("crk") == "crk");
         assert(translate_gate_type("cr") == "cr");
         assert(translate_gate_type("display") == "display");
+        assert(translate_gate_type("skip") == "skip");
         assert(translate_gate_type("wait") == "wait");
         assert(translate_gate_type("display_binary") == "display_binary");
         assert(translate_gate_type("measure_parity") == "measure_parity");

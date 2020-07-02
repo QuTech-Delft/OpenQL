@@ -30,21 +30,25 @@ before_install:
 
 install:
   - cd deps
-  - git clone https://github.com/imranashraf/travis-libqasm.git
-  - cd travis-libqasm
-  - python3 -m pip install .
-  - cd ..
-  - git clone https://github.com/imranashraf/travis-eQASM_Assembler.git
-  - cd travis-eQASM_Assembler/qisa-as
+  - git clone https://github.com/QE-Lab/eQASM_Assembler.git
+  - cd eQASM_Assembler/qisa-as
   - python3 -m pip install .
   - cd ../../../.
-#  - python3 -m pip install .
+  - git submodule update --init --recursive
+  - cd deps/libqasm
+  - python3 -m pip install .
+  - cd ../../.
+## org
+  - python3 -m pip install .
+## testing
   - python3 -m pip install -v .
   #- ls -lR .
   #- find / -name "*openql*"
-#  - ls -lR /home/travis/build # actually contains all source
+  #- ls -lR /home/travis/build # actually contains all source
   - ls -lR /home/travis/virtualenv/python3.7.1/lib/python3.7/site-packages/openql
-  - python3 -m pytest
+
+script: python3 -m pytest
+
 
 # FIXME: moved to install, in search of problem that CI fails
 #script: python3 -m pytest
@@ -56,6 +60,7 @@ addons:
       - swig
       - flex
       - bison
+      - libglpk-dev
   homebrew:
     packages:
       - python3

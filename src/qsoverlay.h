@@ -12,8 +12,8 @@
 
 
 //Only support for DiCarlo setup atm
-void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
-                              std::vector<ql::quantum_kernel>& kernels, const ql::quantum_platform & platform, std::string suffix, size_t ns_per_cycle, bool compiled)
+void write_qsoverlay_program( ql::quantum_program* programp, size_t num_qubits,
+                              const ql::quantum_platform & platform, std::string suffix, size_t ns_per_cycle, bool compiled)
 {
 
     //TODO remove the next line. Using this because qsoverlay has some bugs when time is explicited
@@ -23,7 +23,7 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
 
     IOUT("Writing scheduled QSoverlay program");
     ofstream fout;
-    string qfname( ql::options::get("output_dir") + "/" + "quantumsim_" + prog_name + "_" + suffix + ".py");
+    string qfname( ql::options::get("output_dir") + "/" + "quantumsim_" + programp->unique_name + "_" + suffix + ".py");
     DOUT("Writing scheduled QSoverlay program " << qfname);
     IOUT("Writing scheduled QSoverlay program " << qfname);
     fout.open( qfname, ios::binary);
@@ -107,11 +107,11 @@ void write_qsoverlay_program( std::string prog_name, size_t num_qubits,
          << "	if setup_name == 'DiCarlo_setup':\n"
          << "		setup = DiCarlo_setup.quick_setup(qubit_list, noise_flag = noise_flag)\n"
          << "	b = Builder(setup)\n"
-         << "	b.new_circuit(circuit_title = '" << kernels.front().name << "')\n";
+         << "	b.new_circuit(circuit_title = '" << programp->kernels.front().name << "')\n";
 
 
     //Circuit creation: Add gates
-    for (auto & gate: kernels.front().c)
+    for (auto & gate: programp->kernels.front().c)
     {
         std::string qs_name;
         try

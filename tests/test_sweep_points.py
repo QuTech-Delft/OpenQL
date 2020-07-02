@@ -4,7 +4,7 @@ import json
 from openql import openql as ql
 
 curdir = os.path.dirname(__file__)
-config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
+config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
 platf = ql.Platform("starmon", config_fn)
 output_dir = os.path.join(curdir, 'test_output')
 
@@ -18,6 +18,7 @@ class Test_sweep_points(unittest.TestCase):
         ql.set_option('log_level', 'LOG_WARNING')
             
     def test_sweep_points(self):
+        self.setUpClass()
         sweep_points = [0.25, 1, 1.5, 2, 2.25]
         nqubits = 1
 
@@ -49,6 +50,7 @@ class Test_sweep_points(unittest.TestCase):
         self.assertEqual(len(matched), len(sweep_points))
 
     def test_no_sweep_points(self):
+        self.setUpClass()
         nqubits = 1
 
         # create a kernel
