@@ -6,7 +6,6 @@ dependencies:
     - bison=3.0
     - flex=2.6
     - pip
-    - glpk-dev
     - pip:
         - -r file:requirements-docs.txt
 
