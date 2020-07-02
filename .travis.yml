@@ -38,10 +38,11 @@ install:
   - cd travis-eQASM_Assembler/qisa-as
   - python3 -m pip install .
   - cd ../../../.
-  - python3 -m pip install .
+#  - python3 -m pip install .
+  - python3 -m pip install -v .
   #- ls -lR .
   #- find / -name "*openql*"
-  - ls -lR /home/travis/build
+#  - ls -lR /home/travis/build # actually contains all source
   - ls -lR /home/travis/virtualenv/python3.7.1/lib/python3.7/site-packages/openql
   - python3 -m pytest
 
