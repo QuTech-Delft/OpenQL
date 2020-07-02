@@ -256,9 +256,7 @@ namespace ql
         }
         else if (gate_type == "skip")
         {
-            // maintain a current_cycle value:
-            //      size_t wait_time = operation.getWaitTime();
-            //      current_cycle += wait_time;
+            ///@note: skip instruction called, i.e., inserts empty cycles, possibly restarting filling cycles without waiting for all previous cycle instructions to be finished. That is, skip is different than wait that behaves as barrier+skip <X> cycles.
         }
         else if (gate_type == "wait")
         {

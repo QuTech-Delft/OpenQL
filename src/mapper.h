@@ -1,4 +1,4 @@
-//#define INITIALPLACE 1
+#define INITIALPLACE 1
 // commenting out the #define INITIALPLACE above, takes out all what's needed for initial placement
 /**
  * @file   mapper.h
@@ -900,14 +900,19 @@ void Add(gate_p gp)
 // is available for this:
 // in class Future, kernel.c is copied into the dependence graph or copied to a local circuit; and
 // in Mapper::MapCircuit, a temporary local output circuit is used, which is written to kernel.c only at the very end
-bool new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits)
+bool new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits, std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
+
 {
     bool    added;
     MapperAssert(circ.empty());
     MapperAssert(kernelp->c.empty());
-    added = kernelp->gate_nonfatal(gname, qubits);   // creates gates in kernelp->c
+    added = kernelp->gate_nonfatal(gname, qubits, cregs, duration, angle);   // creates gates in kernelp->c
     circ = kernelp->c;
     kernelp->c.clear();
+    for (auto gp: circ)
+    {
+        DOUT("new_gate added: " << gp->qasm());
+    }
     return added;
 }
 
@@ -1158,17 +1163,19 @@ size_t MapQubit(size_t v)
 
 void stripname(std::string& name)
 {
-    // DOUT("stripname(name=" << name << ")");
+    DOUT("stripname(name=" << name << ")");
     size_t p = name.find(" ");
     if (p != std::string::npos)
     {
         name = name.substr(0,p);
     }
-    // DOUT("... after stripname name=" << name);
+    DOUT("... after stripname name=" << name);
 }
 
 void MakeReal(ql::gate* gp, ql::circuit& circ)
 {
+    DOUT("MakeReal: " << gp->qasm());
+
     std::string gname = gp->name;
     stripname(gname);
 
@@ -1198,10 +1205,11 @@ void MakeReal(ql::gate* gp, ql::circuit& circ)
     {
         real_gname.append("_real");
     }
-    bool created = new_gate(circ, real_gname, real_qubits);
+
+    bool created = new_gate(circ, real_gname, real_qubits, gp->creg_operands, gp->duration, gp->angle);
     if (!created)
     {
-        created = new_gate(circ, gname, real_qubits);
+        created = new_gate(circ, gname, real_qubits, gp->creg_operands, gp->duration, gp->angle);
         if (!created)
         {
             FATAL("MakeReal: failed creating gate " << real_gname << " or " << gname);
@@ -1219,10 +1227,10 @@ void MakePrimitive(ql::gate* gp, ql::circuit& circ)
     stripname(gname);
     std::string prim_gname = gname;
     prim_gname.append("_prim");
-    bool created = new_gate(circ, prim_gname, gp->operands);
+    bool created = new_gate(circ, prim_gname, gp->operands, gp->creg_operands, gp->duration, gp->angle);
     if (!created)
     {
-        created = new_gate(circ, gname, gp->operands);
+        created = new_gate(circ, gname, gp->operands, gp->creg_operands, gp->duration, gp->angle);
         if (!created)
         {
             FATAL("MakePrimtive: failed creating gate " << prim_gname << " or " << gname);
@@ -1697,7 +1705,7 @@ void Init(const ql::quantum_platform* p)
     }
     else
     {
-        formstr = platformp->topology["form"];
+        formstr = platformp->topology["form"].get<std::string>();
     }
     if (formstr == "xy") { form = gf_xy; }
     if (formstr == "irregular") { form = gf_irregular; }

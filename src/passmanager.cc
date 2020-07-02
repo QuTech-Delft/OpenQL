@@ -6,6 +6,7 @@
  */
 
 #include "passmanager.h"
+#include "write_sweep_points.h"
 
 namespace ql
 {
@@ -43,11 +44,15 @@ void PassManager::compile(ql::quantum_program *program)
    
         if(!pass->getSkip())
         {
+            DOUT(" Calling pass: " << pass->getPassName());
             pass->initPass(program);
             pass->runOnProgram(program);
             pass->finalizePass(program);
         }
     }
+    
+        // generate sweep_points file ==> TOOD: delete?
+        ql::write_sweep_points(program, program->platform, "write_sweep_points");
 }
    
     /**
@@ -92,6 +97,16 @@ AbstractPass* PassManager::createPass(std::string passName, std::string aliasNam
     if (passName == "BackendCompiler") {pass = new BackendCompilerPass(aliasName); passfound = true;}
     if (passName == "ReportStatistics") {pass = new ReportStatisticsPass(aliasName); passfound = true;}
     if (passName == "Visualizer") {pass = new VisualizerPass(aliasName); passfound = true;}
+    if (passName == "CCLPrepCodeGeneration") {pass = new CCLPrepCodeGeneration(aliasName); passfound = true;}
+    if (passName == "CCLDecomposePreSchedule") {pass = new CCLDecomposePreSchedule(aliasName); passfound = true;}
+    if (passName == "WriteQuantumSim") {pass = new WriteQuantumSimPass(aliasName); passfound = true;}
+    if (passName == "CliffordOptimize") {pass = new CliffordOptimizePass(aliasName); passfound = true;}
+    if (passName == "Map") {pass = new MapPass(aliasName); passfound = true;}
+    if (passName == "RCSchedule") {pass = new RCSchedulePass(aliasName); passfound = true;}
+    if (passName == "LatencyCompensation") {pass = new LatencyCompensationPass(aliasName); passfound = true;}
+    if (passName == "InsertBufferDelays") {pass = new InsertBufferDelaysPass(aliasName); passfound = true;}
+    if (passName == "CCLDecomposePostSchedule") {pass = new CCLDecomposePostSchedulePass(aliasName); passfound = true;}
+    if (passName == "QisaCodeGeneration") {pass = new QisaCodeGenerationPass(aliasName); passfound = true;}
     
     if (!passfound) 
     {

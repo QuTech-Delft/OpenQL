@@ -254,10 +254,9 @@ namespace ql
                )
     {
         std::string       extension;
-
         // next is ugly; must be done by built-in pass class option with different value for each concrete pass
-        if (pass_name == "initialqasmwriter") extension = ".qasm";
-        else if (pass_name == "scheduledqasmwriter") extension = "_scheduled.qasm";
+        if (pass_name == "initialqasmwriter" || pass_name == "outputIR") extension = ".qasm";
+        else if (pass_name == "scheduledqasmwriter" || pass_name == "outputIRscheduled") extension = "_scheduled.qasm";
         else FATAL("write_qasm: pass_name " << pass_name << " unknown; don't know which extension to generate");
 
         write_qasm_extension(programp, platform, extension);
@@ -343,6 +342,42 @@ namespace ql
         // DOUT("report_close [done]");
     }
 
+
+    /*
+     * report statistics of the circuit of the given kernel
+     */
+    void get_kernel_statistics(std::string* ofs,
+                quantum_kernel&                 k,
+                const ql::quantum_platform&     platform,
+                const std::string               comment_prefix
+               )
+    {
+        if( ql::options::get("write_report_files") != "yes")
+        {
+            return;
+        }
+
+        // DOUT("... reporting report_kernel_statistics");
+        std::vector<size_t> usecount;
+        usecount.resize(platform.qubit_number, 0);
+        get_qubit_usecount(k.c, platform, usecount);
+        size_t qubits_used = 0; for (auto v: usecount) { if (v != 0) { qubits_used++; } } 
+
+        std::vector<size_t> usedcyclecount;
+        usedcyclecount.resize(platform.qubit_number, 0);
+        get_qubit_usedcyclecount(k.c, platform, usedcyclecount);
+
+        size_t  circuit_latency = get_circuit_latency(k.c, platform);
+        *ofs += comment_prefix; *ofs += "kernel: " ; *ofs += k.name ; *ofs += "\n";
+        *ofs ; *ofs += comment_prefix ; *ofs += "----- circuit_latency: " ; *ofs += circuit_latency ; *ofs += "\n";
+        *ofs ; *ofs += comment_prefix ; *ofs += "----- quantum gates: " ; *ofs += get_quantum_gates_count(k.c, platform) ; *ofs += "\n";
+        *ofs += comment_prefix; *ofs += "----- non single qubit gates: " ; *ofs += get_non_single_qubit_quantum_gates_count(k.c, platform) ; *ofs += "\n";
+        *ofs += comment_prefix; *ofs +=  "----- classical operations: "; *ofs += get_classical_operations_count(k.c, platform); *ofs +=  "\n";
+        *ofs += comment_prefix; *ofs += "----- qubits used: "; *ofs += qubits_used; *ofs += "\n";
+        *ofs += comment_prefix; *ofs += "----- qubit cycles use:"; *ofs += ql::utils::to_string(usedcyclecount); *ofs += "\n";
+        
+        // DOUT("... reporting report_kernel_statistics [done]");
+    }
 
     /*
      * report statistics of the circuit of the given kernel
@@ -442,6 +477,50 @@ namespace ql
     }
 
     /*
+     * reports only the total statistics of the circuits of the given kernels
+     */
+    void get_totals_statistics(std::string*           ofs,
+                std::vector<quantum_kernel>&    kernels,
+                const ql::quantum_platform&     platform,
+                const std::string               comment_prefix
+               )
+    {
+        if( ql::options::get("write_report_files") != "yes")
+        {
+            return;
+        }
+
+        // DOUT("... reporting report_totals_statistics");
+        // totals reporting, collect info from all kernels
+        std::vector<size_t> usecount;
+        usecount.resize(platform.qubit_number, 0);
+        size_t total_circuit_latency = 0;
+        size_t total_classical_operations = 0;
+        size_t total_quantum_gates = 0;
+        size_t total_non_single_qubit_gates= 0;
+        for (auto& k : kernels)
+        {
+            get_qubit_usecount(k.c, platform, usecount);
+
+            total_circuit_latency += get_circuit_latency(k.c, platform);
+            total_classical_operations += get_classical_operations_count(k.c, platform);
+            total_quantum_gates += get_quantum_gates_count(k.c, platform);
+            total_non_single_qubit_gates += get_non_single_qubit_quantum_gates_count(k.c, platform);
+        }
+        size_t qubits_used = 0; for (auto v: usecount) { if (v != 0) { qubits_used++; } } 
+
+        // report totals
+        *ofs += "\n";
+        *ofs += comment_prefix; *ofs += "Total circuit_latency: "; *ofs += total_circuit_latency; *ofs += "\n";
+        *ofs += comment_prefix; *ofs += "Total no. of quantum gates: "; *ofs += total_quantum_gates; *ofs += "\n";
+        *ofs += comment_prefix; *ofs += "Total no. of non single qubit gates: "; *ofs += total_non_single_qubit_gates; *ofs += "\n";
+        *ofs += comment_prefix; *ofs += "Total no. of classical operations: "; *ofs += total_classical_operations; *ofs += "\n";
+        *ofs += comment_prefix; *ofs += "Qubits used: "; *ofs += qubits_used; *ofs += "\n";
+        *ofs += comment_prefix; *ofs += "No. kernels: "; *ofs += kernels.size(); *ofs += "\n";
+        // DOUT("... reporting report_totals_statistics [done]");
+    }
+    
+    /*
      * reports the statistics of the circuits of the given kernels individually and in total
      * by appending them to the report file of the given program and place from where the report is done;
      * this report file is first created/truncated
@@ -476,6 +555,39 @@ namespace ql
         report_close(ofs);
         // DOUT("... reporting report_statistics [done]");
     }
+    
+    void report_statistics(ql::quantum_program* programp,
+                const ql::quantum_platform&     platform,
+                const std::string               in_or_out,
+                const std::string               pass_name,
+                const std::string               comment_prefix,
+                const std::string               additionalStatistics
+               )
+    {
+        if( ql::options::get("write_report_files") != "yes")
+        {
+            return;
+        }
+        
+        // DOUT("... reporting report_statistics");
+        std::ofstream   ofs;
+        ofs = report_open(programp, in_or_out, pass_name);
+
+        // per kernel reporting
+        for (auto& k : programp->kernels)
+        {
+            report_kernel_statistics(ofs, k, platform, comment_prefix);
+        }
+
+        // and total collecting and reporting
+        report_totals_statistics(ofs, programp->kernels, platform, comment_prefix);
+        
+        ofs << " \n\n" << additionalStatistics;
+        
+        report_close(ofs);
+        // DOUT("... reporting report_statistics [done]");
+    }
+    
 
     /*
      * support a unique file called 'get("output_dir")/name.unique'

@@ -129,7 +129,7 @@ public:
     // operand is in qubit_creg combined index space
     void add_dep(int srcID, int tgtID, enum DepTypes deptype, int operand)
     {
-        DOUT(".. adddep ...");
+        DOUT(".. adddep ... from srcID " << srcID << " to tgtID " << tgtID << "   opnd=" << operand << ", dep=" << DepTypesNames[deptype]);
         ListDigraph::Node srcNode = graph.nodeFromId(srcID);
         ListDigraph::Node tgtNode = graph.nodeFromId(tgtID);
         ListDigraph::Arc arc = graph.addArc(srcNode,tgtNode);
@@ -144,8 +144,8 @@ public:
     void init(ql::circuit& ckt, ql::quantum_platform platform, size_t qcount, size_t ccount)
     {
         DOUT("Dependence graph creation ... #qubits = " << platform.qubit_number);
-        qubit_count = platform.qubit_number;///qcount; @todo-rn: DDG creation should not depend on #qubits
-        creg_count = platform.qubit_number;///ccount; @todo-rn: DDG creation should not depend on #cregs
+        qubit_count = qcount; ///@todo-rn: DDG creation should not depend on #qubits
+        creg_count = ccount; ///@todo-rn: DDG creation should not depend on #cregs
         size_t qubit_creg_count = qubit_count + creg_count;
         DOUT("Scheduler.init: qubit_count=" << qubit_count << ", creg_count=" << creg_count << ", total=" << qubit_creg_count);
         cycle_time = platform.cycle_time;

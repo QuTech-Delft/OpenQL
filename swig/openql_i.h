@@ -19,10 +19,9 @@
 #include <version.h>
 #include <openql.h>
 #include <classical.h>
+#include <unitary.h>
 
-#ifndef REMOVE_UNITARY
-// #include <unitary.h>
-#endif //REMOVE_UNITARY
+#include "compiler.h"
 
 
 static std::string get_version()
@@ -111,8 +110,6 @@ typedef std::complex<double> Complex;
 /**
  * quantum unitary matrix interface
  */
-#ifndef REMOVE_UNITARY
-/*
 class Unitary
 {
 public:
@@ -135,8 +132,7 @@ public:
         delete(unitary);
     }
 };
-*/
-#endif //REMOVE_UNITARY
+
 
 /**
  * quantum kernel interface
@@ -290,12 +286,12 @@ public:
     {
         kernel->gate(name, qubits, {(destination.creg)->id} );
     }
-#ifndef REMOVE_UNITARY
-//    void gate(Unitary &u, std::vector<size_t> qubits)
-//    {
-//        kernel->gate(*(u.unitary), qubits);
-//    }
-#endif //REMOVE_UNITARY
+
+    void gate(Unitary &u, std::vector<size_t> qubits)
+    {
+        kernel->gate(*(u.unitary), qubits);
+    }
+
     void classical(CReg & destination, Operation& operation)
     {
         kernel->classical(*(destination.creg), *(operation.operation));
@@ -415,7 +411,9 @@ public:
 
     void compile()
     {
-        program->compile();
+        //program->compile();
+
+        program->compile_modular();
     }
 
     std::string microcode()
@@ -441,7 +439,7 @@ public:
     {
         // std::cout << "program::~program()" << std::endl;
         // leave deletion to SWIG, otherwise the python unit test framework fails
-        // delete(program);
+        //delete(program);
     }
 };
 

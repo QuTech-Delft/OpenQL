@@ -3,7 +3,7 @@ import unittest
 from openql import openql as ql
 
 curdir = os.path.dirname(__file__)
-config_fn = os.path.join(curdir, 'test_cfg_cbox.json')
+config_fn = os.path.join(curdir, 'test_config_default.json')
 platf = ql.Platform("starmon", config_fn)
 
 output_dir = os.path.join(curdir, 'test_output')
@@ -85,6 +85,7 @@ class Test_program(unittest.TestCase):
 
 
     def test_simple_program(self):
+        self.setUpClass()
         nqubits = 2
         k = ql.Kernel("kernel1", platf, nqubits)
         k.prepz(0)
@@ -104,7 +105,7 @@ class Test_program(unittest.TestCase):
 
 
     def test_5qubit_program(self):
-
+        self.setUpClass()
         nqubits=5
         p = ql.Program("a_program", platf, nqubits)
         k = ql.Kernel("a_kernel", platf, nqubits)
@@ -127,7 +128,7 @@ class Test_program(unittest.TestCase):
 
     # @unittest.skip('Gate by name not implemented')
     def test_allxy_program(self):
-
+        self.setUpClass()
         nqubits=7
         p = ql.Program('AllXY', platf, nqubits)
         k = ql.Kernel('AllXY_q0', platf, nqubits)

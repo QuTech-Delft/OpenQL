@@ -35,7 +35,7 @@ class Test_cqasm(unittest.TestCase):
 
 
     def test_cqasm_default_gates(self):
-
+        self.setUpClass() 
         ql.set_option('use_default_gates', 'yes')
 
         nqubits = 4
@@ -73,8 +73,8 @@ class Test_cqasm(unittest.TestCase):
         p.compile()
 
         qasm_files = []
-        qasm_files.append(os.path.join(output_dir, p.name+'.qasm'))
-        qasm_files.append(os.path.join(output_dir, p.name+'_scheduled.qasm'))
+        qasm_files.append(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qasm_files.append(os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm'))
 
         for qasm_file in qasm_files:
             # print('assembling: {}'.format(qasm_file))
@@ -82,7 +82,7 @@ class Test_cqasm(unittest.TestCase):
 
     # @unittest.skip
     def test_cqasm_custom_gates(self):
-
+        self.setUpClass() 
         ql.set_option('use_default_gates', 'no')
 
         nqubits = 4
@@ -120,8 +120,8 @@ class Test_cqasm(unittest.TestCase):
         p.compile()
 
         qasm_files = []
-        qasm_files.append(os.path.join(output_dir, p.name+'.qasm'))
-        qasm_files.append(os.path.join(output_dir, p.name+'_scheduled.qasm'))
+        qasm_files.append(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qasm_files.append(os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm'))
 
         for qasm_file in qasm_files:
             print('assembling: {}'.format(qasm_file))

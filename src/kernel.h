@@ -14,9 +14,8 @@
 #include <algorithm>
 #include <iterator>
 
-#define REMOVE_UNITARY 1
 
-#define PI M_PI
+#define K_PI 3.141592653589793238462643383279502884197169399375105820974944592307816406L
 #include "compile_options.h"
 #include "json.h"
 #include "utils.h"
@@ -24,11 +23,7 @@
 #include "gate.h"
 #include "classical.h"
 #include "ir.h"
-
-#ifndef REMOVE_UNITARY
 #include "unitary.h"
-#endif //REMOVE_UNITARY
-
 #include "platform.h"
 
 
@@ -55,9 +50,9 @@ public: // FIXME: should be private
     size_t        creg_count;
     kernel_type_t type;
     circuit       c;
-    bool          cycles_valid;
+    bool          cycles_valid; // used in bundler to check if kernel has been scheduled
     operation     br_condition;
-    size_t        cycle_time;                               // FIXME HvS just a copy of platform.cycle_time
+    size_t        cycle_time;   // FIXME HvS just a copy of platform.cycle_time
     instruction_map_t instruction_map;
 
 public:
@@ -1060,7 +1055,7 @@ public:
         }
         return added;
     }
-#ifndef REMOVE_UNITARY    
+    
     // to add unitary to kernel
     void gate(ql::unitary u, std::vector<size_t> qubits)
     {
@@ -1176,7 +1171,7 @@ public:
             return 3;
         }
     }
-#endif //REMOVE_UNITARY
+
     //controlled qubit is the first in the list.
     void multicontrolled_rz(std::vector<double> &instruction_list, int start_index, int end_index, std::vector<size_t> qubits)
     {
@@ -1704,38 +1699,38 @@ public:
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, M_PI/2);
+                controlled_rx(tq, cq, K_PI/2);
             }
             else if( __mrx90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, -1*M_PI/2);
+                controlled_rx(tq, cq, -1*K_PI/2);
             }
             else if( __rx180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_rx(tq, cq, M_PI);
+                controlled_rx(tq, cq, K_PI);
                 // controlled_x(tq, cq);
             }
             else if( __ry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, M_PI/4);
+                controlled_ry(tq, cq, K_PI/4);
             }
             else if( __mry90_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, -1*M_PI/4);
+                controlled_ry(tq, cq, -1*K_PI/4);
             }
             else if( __ry180_gate__ == gtype )
             {
                 size_t tq = goperands[0];
                 size_t cq = control_qubit;
-                controlled_ry(tq, cq, M_PI);
+                controlled_ry(tq, cq, K_PI);
                 // controlled_y(tq, cq);
             }
             else

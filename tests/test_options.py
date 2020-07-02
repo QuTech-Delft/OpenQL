@@ -88,6 +88,7 @@ class Test_options(unittest.TestCase):
 
 
     def test_default_scheduler(self):
+        self.tearDown()
         # tests if 'ALAP' is indeed the default scheduler policy
         self.assertEqual('ALAP', ql.get_option('scheduler'),
             'ALAP is not the default scheduler!')

@@ -12,6 +12,7 @@ ADD_LIBRARY(ql
   latency_compensation.cc
   write_sweep_points.cc
   optimizer.cc
+  clifford.cc
   passmanager.cc
   passes.cc
   report.cc
@@ -20,6 +21,7 @@ ADD_LIBRARY(ql
   arch/cc/codegen_cc.cc
   arch/cc/vcd.cc
   cqasm/cqasm_reader.cc
+  unitary.cc
   )
 
 # support 'include <ql/foo.h>'
