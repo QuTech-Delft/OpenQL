@@ -61,17 +61,14 @@ quantum_program::quantum_program(std::string n, quantum_platform platf, size_t n
     else if (eqasm_compiler_name == "qumis_compiler")
     {
         backend_compiler = new ql::arch::cbox_eqasm_compiler();
-        assert(backend_compiler);
     }
     else if (eqasm_compiler_name == "cc_light_compiler" )
     {
         backend_compiler = new ql::arch::cc_light_eqasm_compiler();
-        assert(backend_compiler);
     }
     else if (eqasm_compiler_name == "eqasm_backend_cc" )
     {
         backend_compiler = new ql::arch::eqasm_backend_cc();
-        assert(backend_compiler);
     }
     else
     {

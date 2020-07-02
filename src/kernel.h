@@ -50,9 +50,9 @@ public: // FIXME: should be private
     size_t        creg_count;
     kernel_type_t type;
     circuit       c;
-    bool          cycles_valid;
+    bool          cycles_valid; // used in bundler to check if kernel has been scheduled
     operation     br_condition;
-    size_t        cycle_time;                               // FIXME HvS just a copy of platform.cycle_time
+    size_t        cycle_time;   // FIXME HvS just a copy of platform.cycle_time
     instruction_map_t instruction_map;
 
 public:

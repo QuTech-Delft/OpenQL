@@ -20,12 +20,9 @@ namespace ql
   private:
       CLI::App * app;
       std::map<std::string, std::string> opt_name2opt_val;
-
-  public:
-      Options(std::string app_name="testApp")
+      
+      void set_defaults()
       {
-          app = new CLI::App(app_name);
-
           // default values
           opt_name2opt_val["log_level"] = "LOG_NOTHING";
           opt_name2opt_val["output_dir"] = "test_output";
@@ -113,6 +110,14 @@ namespace ql
           app->add_set_ignore_case("--write_report_files", opt_name2opt_val["write_report_files"], {"yes", "no"}, "write report files on circuit characteristics and pass results", true);
       }
 
+  public:
+      Options(std::string app_name="testApp")
+      {
+          app = new CLI::App(app_name);
+          
+          set_defaults();
+      }
+
       void print_current_values()
       {
           std::cout << "log_level: " << opt_name2opt_val["log_level"] << std::endl
@@ -151,49 +156,9 @@ namespace ql
 
       void reset_options()
       {
-                    // default values
-          opt_name2opt_val["log_level"] = "LOG_NOTHING";
-          opt_name2opt_val["output_dir"] = "test_output";
-          opt_name2opt_val["unique_output"] = "no";
-          opt_name2opt_val["write_qasm_files"] = "no";
-          opt_name2opt_val["write_report_files"] = "no";
-
-          opt_name2opt_val["optimize"] = "no";
-          opt_name2opt_val["use_default_gates"] = "yes";
-          opt_name2opt_val["decompose_toffoli"] = "no";
-          opt_name2opt_val["quantumsim"] = "no";
-          opt_name2opt_val["issue_skip_319"] = "no";
-
-          opt_name2opt_val["scheduler"] = "ALAP";
-          opt_name2opt_val["scheduler_uniform"] = "no";
-          opt_name2opt_val["scheduler_commute"] = "no";
-          opt_name2opt_val["prescheduler"] = "yes";
-          opt_name2opt_val["scheduler_post179"] = "yes";
-          opt_name2opt_val["backend_cc_map_input_file"] = "";
-
-          opt_name2opt_val["cz_mode"] = "manual";
-          opt_name2opt_val["print_dot_graphs"] = "no";
-
-          opt_name2opt_val["clifford_prescheduler"] = "no";
-          opt_name2opt_val["clifford_postscheduler"] = "no";
-          opt_name2opt_val["clifford_premapper"] = "no";
-          opt_name2opt_val["clifford_postmapper"] = "no";
-
-          opt_name2opt_val["mapper"] = "no";
-          opt_name2opt_val["mapassumezeroinitstate"] = "no";
-          opt_name2opt_val["mapinitone2one"] = "yes";
-          opt_name2opt_val["mapprepinitsstate"] = "no";
-          opt_name2opt_val["initialplace"] = "no";
-          opt_name2opt_val["initialplace2qhorizon"] = "0";
-          opt_name2opt_val["maplookahead"] = "noroutingfirst";
-          opt_name2opt_val["mappathselect"] = "all";
-          opt_name2opt_val["maprecNN2q"] = "no";
-          opt_name2opt_val["mapselectmaxlevel"] = "0";
-          opt_name2opt_val["mapselectmaxwidth"] = "min";
-          opt_name2opt_val["mapselectswaps"] = "all";
-          opt_name2opt_val["maptiebreak"] = "random";
-          opt_name2opt_val["mapusemoves"] = "yes";
-          opt_name2opt_val["mapreverseswap"] = "yes";
+          app = new CLI::App("testApp");
+          
+          set_defaults();
       }
       
       void help()

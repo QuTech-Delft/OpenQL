@@ -60,7 +60,7 @@ Currently, the following passes are available in the compiler class and can be e
 +--------------------------+------------------------------------------------------+
 | Pass Identifier          | Compiler Pass                                        |
 +==========================+======================================================+
-| Reader                   | Program Reading                                      |
+| Reader                   | Program Reading (currently cQASMReader)              |
 +--------------------------+------------------------------------------------------+
 | Writer                   | Qasm Printer                                         |
 +--------------------------+------------------------------------------------------+
