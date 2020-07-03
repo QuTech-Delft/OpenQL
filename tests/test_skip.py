@@ -57,7 +57,7 @@ class Test_skip(unittest.TestCase):
             .{kernel_name}
             cnot q[2],q[5]
             skip 2
-            { x q[0] | y q[1] }
+            {{ x q[0] | y q[1] }}
             """
 
         qasm_rdr.string2circuit(qasm_str)
