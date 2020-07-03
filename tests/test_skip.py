@@ -51,8 +51,7 @@ class Test_skip(unittest.TestCase):
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
 
         qasm_rdr = ql.cQasmReader(starmon, prog)
-        qasm_str =
-            f"""version 1.0
+        qasm_str = f"""version 1.0
             qubits 7
             .{kernel_name}
             cnot q[2],q[5]
