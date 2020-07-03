@@ -34,7 +34,7 @@ class Test_skip(unittest.TestCase):
         ql.set_option('cz_mode', 'manual')
         ql.set_option('print_dot_graphs', 'no')
         ql.set_option('mapper', 'no')
-        
+
     def test_skip_yes(self):
         self.setUp()
         # just check whether skip works for trivial case
@@ -51,12 +51,14 @@ class Test_skip(unittest.TestCase):
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
 
         qasm_rdr = ql.cQasmReader(starmon, prog)
-        qasm_str = "version 1.0\n"              \
-                   "qubits 7\n"                 \
-                   "." + kernel_name + "\n"     \
-                   "cnot q[2],q[5]\n"           \
-                   "skip 2"                     \
-                   "{ x q[0] | y q[1] }\n"
+        qasm_str = f"""
+            version 1.0
+            qubits 7
+            .{kernel_name}
+            cnot q[2],q[5]
+            skip 2
+            { x q[0] | y q[1] }
+            """
 
         qasm_rdr.string2circuit(qasm_str)
 
