@@ -47,9 +47,9 @@ install:
   #- ls -lR /home/travis/build # actually contains all source
   #- ls -lR /home/travis/virtualenv/python3.7.1/lib/python3.7/site-packages/openql
   #- ls -lR /tmp
-  cat CMakeLists.txt
-  cat swig/CMakeLists.txt
-  nm /home/travis/virtualenv/python3.7.1/lib/python3.7/site-packages/openql/_openql.so
+  - cat CMakeLists.txt
+  - cat swig/CMakeLists.txt
+  - nm /home/travis/virtualenv/python3.7.1/lib/python3.7/site-packages/openql/_openql.so
 
 script: python3 -m pytest
 
