@@ -40,13 +40,16 @@ install:
   - cd ../../.
 ## org:
 #  - python3 -m pip install .
-## testing:
+## debugging "ImportError: /home/travis/virtualenv/python3.7.1/lib/python3.7/site-packages/openql/_openql.so: undefined symbol: PyInstance_Type"
   - python3 -m pip install -v .
   #- ls -lR .
   #- find / -name "*openql*"
   #- ls -lR /home/travis/build # actually contains all source
-  - ls -lR /home/travis/virtualenv/python3.7.1/lib/python3.7/site-packages/openql
-  - ls -lR /tmp
+  #- ls -lR /home/travis/virtualenv/python3.7.1/lib/python3.7/site-packages/openql
+  #- ls -lR /tmp
+  cat CMakeLists.txt
+  cat swig/CMakeLists.txt
+  nm /home/travis/virtualenv/python3.7.1/lib/python3.7/site-packages/openql/_openql.so
 
 script: python3 -m pytest
 
