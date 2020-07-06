@@ -42,10 +42,6 @@ install:
 
 script: python3 -m pytest
 
-
-# FIXME: moved to install, in search of problem that CI fails
-#script: python3 -m pytest
-
 addons:
   apt:
     packages:
