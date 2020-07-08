@@ -1,0 +1,9 @@
+[x] rm -rf current build system
+[x] Remake main CMakeLists.txt
+[x] Compile tests
+[x] Make sure tests work on Linux
+[x] Make sure examples work on Linux
+[ ] Make sure tests & examples work on Windows
+[ ] Make setup.py
+[ ] Make sure Python tests work on Linux & Windows
+[ ] Remove this file

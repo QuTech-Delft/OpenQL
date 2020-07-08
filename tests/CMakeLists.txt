@@ -1,47 +1,22 @@
-INCLUDE_DIRECTORIES(
-  ${PROJECT_SOURCE_DIR}/src
-  ${PROJECT_SOURCE_DIR}/examples
-  ${PROJECT_SOURCE_DIR}/tests
-  ${PROJECT_SOURCE_DIR}/swig
-)
+cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 
-# here are the C++ tests which will be compiled from this directory
-# ADD_EXECUTABLE(program_test program_test.cc )
-# TARGET_LINK_LIBRARIES(program_test ${LEMON_LIBRARIES} )
+enable_testing()
 
-# we keep an executable because it is easier to track the origin of exceptions using GDB.
-# Must be built manually to limit default build time
-ADD_EXECUTABLE(test_cc EXCLUDE_FROM_ALL cc/test_cc.cc )
-TARGET_LINK_LIBRARIES(test_cc ${LEMON_LIBRARIES} ql )
+function(add_openql_test name source workdir)
+    add_executable(${name} ${CMAKE_CURRENT_SOURCE_DIR}/${source})
+    target_link_libraries(${name} ql)
+    add_test(
+        NAME ${name}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${workdir}
+        COMMAND ${name}
+    )
+endfunction()
 
-# create output directory for test outputs
-ADD_CUSTOM_TARGET(tests-output-directory ALL
-    COMMAND ${CMAKE_COMMAND} -E make_directory test_output)
-
-# copy configuration files
-#MARKED-FOR-REMOVE-CBOX-RN: CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_cfg_cbox.json
-#MARKED-FOR-REMOVE-CBOX-RN:	test_cfg_cbox.json COPYONLY)
-
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/hardware_config_cc_light.json
-	hardware_config_cc_light.json COPYONLY)
-
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/hardware_config_qx.json
-	hardware_config_qx.json COPYONLY)
-
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_mapper_s5.json
-	test_mapper_s5.json COPYONLY)
-
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_mapper_s7.json
-	test_mapper_s7.json COPYONLY)
-
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_mapper_s17.json
-	test_mapper_s17.json COPYONLY)
-
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/test_mapper_rig.json
-	test_mapper_rig.json COPYONLY)
-
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/tests/cc/test_cfg_cc.json
-	test_cfg_cc.json COPYONLY)
-
-ADD_EXECUTABLE(test_mapper test_mapper.cc )
-TARGET_LINK_LIBRARIES(test_mapper ql pthread ${LEMON_LIBRARIES})
+# FIXME: the commented-out tests either legitimately fail or seem to rely on
+# stuff that was changed or removed. If they indeed fail (to compile) only
+# because they were never updated to the latest API, they should be fixed or
+# removed.
+# add_openql_test(test_cc cc/test_cc.cc cc)
+add_openql_test(test_mapper test_mapper.cc .)
+# add_openql_test(program_test program_test.cc .)
+# add_openql_test(test_179 test_179.cc .)
