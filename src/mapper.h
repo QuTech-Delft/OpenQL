@@ -1,4 +1,4 @@
-//#define INITIALPLACE 1
+#define INITIALPLACE 1
 // commenting out the #define INITIALPLACE above, takes out all what's needed for initial placement
 /**
  * @file   mapper.h
@@ -900,14 +900,19 @@ void Add(gate_p gp)
 // is available for this:
 // in class Future, kernel.c is copied into the dependence graph or copied to a local circuit; and
 // in Mapper::MapCircuit, a temporary local output circuit is used, which is written to kernel.c only at the very end
-bool new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits)
+bool new_gate(ql::circuit& circ, std::string gname, std::vector<size_t> qubits, std::vector<size_t> cregs = {}, size_t duration=0, double angle = 0.0)
+
 {
     bool    added;
     MapperAssert(circ.empty());
     MapperAssert(kernelp->c.empty());
-    added = kernelp->gate_nonfatal(gname, qubits);   // creates gates in kernelp->c
+    added = kernelp->gate_nonfatal(gname, qubits, cregs, duration, angle);   // creates gates in kernelp->c
     circ = kernelp->c;
     kernelp->c.clear();
+    for (auto gp: circ)
+    {
+        DOUT("new_gate added: " << gp->qasm());
+    }
     return added;
 }
 
@@ -1158,17 +1163,19 @@ size_t MapQubit(size_t v)
 
 void stripname(std::string& name)
 {
-    // DOUT("stripname(name=" << name << ")");
+    DOUT("stripname(name=" << name << ")");
     size_t p = name.find(" ");
     if (p != std::string::npos)
     {
         name = name.substr(0,p);
     }
-    // DOUT("... after stripname name=" << name);
+    DOUT("... after stripname name=" << name);
 }
 
 void MakeReal(ql::gate* gp, ql::circuit& circ)
 {
+    DOUT("MakeReal: " << gp->qasm());
+
     std::string gname = gp->name;
     stripname(gname);
 
@@ -1198,10 +1205,11 @@ void MakeReal(ql::gate* gp, ql::circuit& circ)
     {
         real_gname.append("_real");
     }
-    bool created = new_gate(circ, real_gname, real_qubits);
+
+    bool created = new_gate(circ, real_gname, real_qubits, gp->creg_operands, gp->duration, gp->angle);
     if (!created)
     {
-        created = new_gate(circ, gname, real_qubits);
+        created = new_gate(circ, gname, real_qubits, gp->creg_operands, gp->duration, gp->angle);
         if (!created)
         {
             FATAL("MakeReal: failed creating gate " << real_gname << " or " << gname);
@@ -1219,10 +1227,10 @@ void MakePrimitive(ql::gate* gp, ql::circuit& circ)
     stripname(gname);
     std::string prim_gname = gname;
     prim_gname.append("_prim");
-    bool created = new_gate(circ, prim_gname, gp->operands);
+    bool created = new_gate(circ, prim_gname, gp->operands, gp->creg_operands, gp->duration, gp->angle);
     if (!created)
     {
-        created = new_gate(circ, gname, gp->operands);
+        created = new_gate(circ, gname, gp->operands, gp->creg_operands, gp->duration, gp->angle);
         if (!created)
         {
             FATAL("MakePrimtive: failed creating gate " << prim_gname << " or " << gname);
@@ -3542,14 +3550,15 @@ void MapCircuit(ql::quantum_kernel& kernel, Virt2Real& v2r)
     // mainPast.DPRINT("start mapping");
 
     MapGates(future, mainPast, mainPast);
-    mainPast.FlushAll();
+    mainPast.FlushAll();                // all output to mainPast.outlg, the output window of mainPast
 
     // mainPast.DPRINT("end mapping");
 
     DOUT("... retrieving outCirc from mainPast.outlg; swapping outCirc with kernel.c, kernel.c contains output circuit");
     ql::circuit outCirc;
-    mainPast.Out(outCirc);
-    kernel.c.swap(outCirc);
+    mainPast.Out(outCirc);                          // copy (final part of) mainPast's output window into this outCirc
+    kernel.c.swap(outCirc);                         // and then to kernel.c
+    kernel.cycles_valid = true;                     // decomposition was scheduled in; see Past.Add() and Past.Schedule()
     mainPast.ExportV2r(v2r);
     nswapsadded = mainPast.NumberOfSwapsAdded();
     nmovesadded = mainPast.NumberOfMovesAdded();
@@ -3571,10 +3580,10 @@ void MakePrimitives(ql::quantum_kernel& kernel)
     for( auto & gp : input_gatepv )
     {
         ql::circuit tmpCirc;
-        mainPast.MakePrimitive(gp, tmpCirc);
+        mainPast.MakePrimitive(gp, tmpCirc);    // decompose gp into tmpCirc; on failure, copy gp into tmpCirc
         for (auto newgp : tmpCirc)
         {
-            mainPast.AddAndSchedule(newgp);
+            mainPast.AddAndSchedule(newgp);     // decomposition is scheduled in gate by gate
         }
     }
     mainPast.FlushAll();
@@ -3582,6 +3591,7 @@ void MakePrimitives(ql::quantum_kernel& kernel)
     ql::circuit     outCirc;                    // ultimate output gate stream
     mainPast.Out(outCirc);
     kernel.c.swap(outCirc);
+    kernel.cycles_valid = true;                 // decomposition was scheduled in above
 
     DOUT("MakePrimitives circuit [DONE]");
 }   // end MakePrimitives

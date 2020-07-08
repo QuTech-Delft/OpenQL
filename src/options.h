@@ -20,20 +20,21 @@ namespace ql
   private:
       CLI::App * app;
       std::map<std::string, std::string> opt_name2opt_val;
-
-  public:
-      Options(std::string app_name="testApp")
+      
+      void set_defaults()
       {
-          app = new CLI::App(app_name);
-
           // default values
           opt_name2opt_val["log_level"] = "LOG_NOTHING";
           opt_name2opt_val["output_dir"] = "test_output";
           opt_name2opt_val["unique_output"] = "no";
+          opt_name2opt_val["write_qasm_files"] = "no";
+          opt_name2opt_val["write_report_files"] = "no";
+
           opt_name2opt_val["optimize"] = "no";
           opt_name2opt_val["use_default_gates"] = "yes";
           opt_name2opt_val["decompose_toffoli"] = "no";
           opt_name2opt_val["quantumsim"] = "no";
+          opt_name2opt_val["issue_skip_319"] = "no";
 
           opt_name2opt_val["scheduler"] = "ALAP";
           opt_name2opt_val["scheduler_uniform"] = "no";
@@ -45,6 +46,8 @@ namespace ql
           opt_name2opt_val["cz_mode"] = "manual";
           opt_name2opt_val["print_dot_graphs"] = "no";
 
+          opt_name2opt_val["clifford_prescheduler"] = "no";
+          opt_name2opt_val["clifford_postscheduler"] = "no";
           opt_name2opt_val["clifford_premapper"] = "no";
           opt_name2opt_val["clifford_postmapper"] = "no";
 
@@ -64,9 +67,6 @@ namespace ql
           opt_name2opt_val["mapusemoves"] = "yes";
           opt_name2opt_val["mapreverseswap"] = "yes";
 
-          opt_name2opt_val["write_qasm_files"] = "no";
-          opt_name2opt_val["write_report_files"] = "no";
-
           // add options with default values and list of possible values
           app->add_set_ignore_case("--log_level", opt_name2opt_val["log_level"],
             {"LOG_NOTHING", "LOG_CRITICAL", "LOG_ERROR", "LOG_WARNING", "LOG_INFO", "LOG_DEBUG"}, "Log levels", true);
@@ -80,10 +80,13 @@ namespace ql
           app->add_set_ignore_case("--scheduler_commute", opt_name2opt_val["scheduler_commute"], {"yes", "no"}, "Commute gates when possible, or not", true);
           app->add_set_ignore_case("--use_default_gates", opt_name2opt_val["use_default_gates"], {"yes", "no"}, "Use default gates or not", true);
           app->add_set_ignore_case("--optimize", opt_name2opt_val["optimize"], {"yes", "no"}, "optimize or not", true);
+          app->add_set_ignore_case("--clifford_prescheduler", opt_name2opt_val["clifford_prescheduler"], {"yes", "no"}, "clifford optimize before prescheduler yes or not", true);
+          app->add_set_ignore_case("--clifford_postscheduler", opt_name2opt_val["clifford_postscheduler"], {"yes", "no"}, "clifford optimize after prescheduler yes or not", true);
           app->add_set_ignore_case("--clifford_premapper", opt_name2opt_val["clifford_premapper"], {"yes", "no"}, "clifford optimize before mapping yes or not", true);
           app->add_set_ignore_case("--clifford_postmapper", opt_name2opt_val["clifford_postmapper"], {"yes", "no"}, "clifford optimize after mapping yes or not", true);
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "AM"}, "Type of decomposition used for toffoli", true);
           app->add_set_ignore_case("--quantumsim", opt_name2opt_val["quantumsim"], {"no", "yes", "qsoverlay"}, "Produce quantumsim output, and of which kind", true);
+          app->add_set_ignore_case("--issue_skip_319", opt_name2opt_val["issue_skip_319"], {"no", "yes"}, "Issue skip instead of wait in bundles", true);
           app->add_option("--backend_cc_map_input_file", opt_name2opt_val["backend_cc_map_input_file"], "Name of CC input map file", true);
           app->add_set_ignore_case("--cz_mode", opt_name2opt_val["cz_mode"], {"manual", "auto"}, "CZ mode", true);
 
@@ -107,6 +110,14 @@ namespace ql
           app->add_set_ignore_case("--write_report_files", opt_name2opt_val["write_report_files"], {"yes", "no"}, "write report files on circuit characteristics and pass results", true);
       }
 
+  public:
+      Options(std::string app_name="testApp")
+      {
+          app = new CLI::App(app_name);
+          
+          set_defaults();
+      }
+
       void print_current_values()
       {
           std::cout << "log_level: " << opt_name2opt_val["log_level"] << std::endl
@@ -116,9 +127,12 @@ namespace ql
                     << "use_default_gates: " << opt_name2opt_val["use_default_gates"] << std::endl
                     << "decompose_toffoli: " << opt_name2opt_val["decompose_toffoli"] << std::endl
                     << "quantumsim: " << opt_name2opt_val["quantumsim"] << std::endl
+                    << "issue_skip_319: " << opt_name2opt_val["issue_skip_319"] << std::endl
+                    << "clifford_prescheduler: " << opt_name2opt_val["clifford_prescheduler"] << std::endl
                     << "prescheduler: " << opt_name2opt_val["prescheduler"] << std::endl
                     << "scheduler: " << opt_name2opt_val["scheduler"] << std::endl
                     << "scheduler_uniform: " << opt_name2opt_val["scheduler_uniform"] << std::endl
+                    << "clifford_postscheduler: " << opt_name2opt_val["clifford_postscheduler"] << std::endl
                     << "clifford_premapper: " << opt_name2opt_val["clifford_premapper"] << std::endl
                     << "mapper: "           << opt_name2opt_val["mapper"] << std::endl
                     << "mapinitone2one: "   << opt_name2opt_val["mapinitone2one"] << std::endl
@@ -134,10 +148,19 @@ namespace ql
                     << "scheduler_post179: " << opt_name2opt_val["scheduler_post179"] << std::endl
                     << "scheduler_commute: " << opt_name2opt_val["scheduler_commute"] << std::endl
                     << "cz_mode: " << opt_name2opt_val["cz_mode"] << std::endl
+                    << "write_qasm_files: " << opt_name2opt_val["write_qasm_files"] << std::endl
+                    << "write_report_files: " << opt_name2opt_val["write_report_files"] << std::endl
                     << "print_dot_graphs: " << opt_name2opt_val["print_dot_graphs"] << std::endl;
           // FIXME: incomplete, function seems unused
       }
 
+      void reset_options()
+      {
+          app = new CLI::App("testApp");
+          
+          set_defaults();
+      }
+      
       void help()
       {
           std::cout << app->help() << std::endl;
@@ -198,6 +221,10 @@ namespace ql
       inline std::string get(std::string opt_name)
       {
           return ql_options.get(opt_name);
+      }
+      inline void reset_options()
+      {
+          ql_options.reset_options();
       }
   } // namespace option
 } // namespace ql

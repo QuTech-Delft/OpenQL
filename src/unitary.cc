@@ -11,6 +11,8 @@
 #include <Eigen/MatrixFunctions>
 #include <src/misc/lapacke.h>
 
+typedef unsigned int uint;
+
 #include <chrono>
 
 namespace ql

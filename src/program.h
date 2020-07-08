@@ -12,25 +12,26 @@
 #include <compile_options.h>
 #include <platform.h>
 #include <kernel.h>
-#include <eqasm_compiler.h>
 
 namespace ql
 {
+
+class eqasm_compiler;
 
 /**
  * quantum_program_
  */
 class quantum_program
 {
-protected:
+public:
     bool                        default_config;
     std::string                 config_file_name;
     std::vector<quantum_kernel> kernels;
-
-public:
     std::string           name;
+    std::string           unique_name;
     std::vector<float>    sweep_points;
     ql::quantum_platform  platform;
+    bool                  platformInitialized;
     size_t                qubit_count;
     size_t                creg_count;
     std::string           eqasm_compiler_name;
@@ -39,6 +40,7 @@ public:
 
 
 public:
+    quantum_program(std::string n);
     quantum_program(std::string n, quantum_platform platf, size_t nqubits, size_t ncregs = 0);
 
     void add(ql::quantum_kernel &k);
@@ -59,10 +61,13 @@ public:
     int bump_unique_file_version();
 
     int compile();
-    void schedule();        // schedule and write scheduled qasm. Note that the backend may use a different scheduler with different results
+    int compile_modular();
+
     void print_interaction_matrix();
     void write_interaction_matrix();
     void set_sweep_points(float * swpts, size_t size);
+    
+    std::vector<quantum_kernel> get_kernels() { return kernels; };
 
 };
 
