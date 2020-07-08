@@ -1,6 +1,7 @@
 # Build files
 build
 cbuild
+pybuild
 dist
 openql.egg-info
 lab

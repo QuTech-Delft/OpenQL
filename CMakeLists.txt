@@ -33,6 +33,14 @@ option(
     OFF
 )
 
+# Whether the Python wrapper should be built. This is here pretty much only for
+# setup.py.
+option(
+    OPENQL_PYTHON
+    "whether the Python wrapper should be built with SWIG"
+    OFF
+)
+
 # Look for thread support library (pthreads)
 find_package(Threads)
 
@@ -104,11 +112,31 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     target_compile_options(ql PRIVATE -O3 -Wall -Wfatal-errors -ggdb -Wno-unused-local-typedef )
 endif()
 
+# Install targets for the OpenQL library.
+include(GNUInstallDirs)
+install(
+    TARGETS ql
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+get_target_property(INCLUDE_DIRS ql INTERFACE_INCLUDE_DIRECTORIES)
+install(
+    DIRECTORY ${INCLUDE_DIRS}
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+)
+
 # Include the tests directory if requested.
 if(OPENQL_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
     add_subdirectory(examples)
+endif()
+
+# Include the SWIG directory if requested.
+if(OPENQL_PYTHON)
+    add_subdirectory(swig)
 endif()
 
 endif() # NOT TARGET ql
