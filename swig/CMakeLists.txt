@@ -20,6 +20,7 @@ endif()
 set_source_files_properties(openql.i PROPERTIES CPLUSPLUS ON)
 set_source_files_properties(openql.i PROPERTIES INCLUDE_DIRECTORIES ${PYTHON_INCLUDE_DIRS})
 set_property(SOURCE openql.i PROPERTY SWIG_FLAGS -castmode -modern -keyword -w511)
+set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})
 #WJV
 # -modern is deprecated
 # -keyword gives lots of warnings
@@ -45,10 +46,16 @@ endif()
 
 target_include_directories(_openql PRIVATE ${PYTHON_INCLUDE_DIRS})
 
-include(GNUInstallDirs)
 install(
     TARGETS _openql
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${OPENQL_PYTHON_DIR}
+)
+install(
+    FILES ${CMAKE_SWIG_OUTDIR}/openql.py
+    DESTINATION ${OPENQL_PYTHON_DIR}
+)
+install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/openql/
+    DESTINATION ${OPENQL_PYTHON_DIR}
+    FILES_MATCHING PATTERN *.py
 )

@@ -13,11 +13,12 @@ from setuptools import setup, Extension, find_packages
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 import re
 
-cbuild_dir = os.getcwd() + os.sep + 'cbuild'
-pybuild_dir = os.getcwd() + os.sep + 'pybuild'
-prefix_dir = pybuild_dir + os.sep + 'prefix'
-build_dir = pybuild_dir + os.sep + 'build'
-dist_dir = pybuild_dir + os.sep + 'dist'
+cbuild_dir = os.getcwd() + os.sep + 'cbuild'    # cmake build directory
+pybuild_dir = os.getcwd() + os.sep + 'pybuild'  # python-specific build directory (removed by setup.py clean)
+prefix_dir = pybuild_dir + os.sep + 'prefix'    # cmake install prefix for the normal targets
+module_dir = pybuild_dir + os.sep + 'openql'    # cmake install directory for the python module
+build_dir = pybuild_dir + os.sep + 'build'      # directory for setuptools to dump various files into
+dist_dir = pybuild_dir + os.sep + 'dist'        # wheel output directory
 
 def get_version(verbose=0):
     """ Extract version information from source code """
@@ -54,12 +55,12 @@ class clean(_clean):
 class build(_build):
     def initialize_options(self):
         _build.initialize_options(self)
-        self.build_base = build_dir
+        self.build_base = os.path.relpath(build_dir)
 
     def run(self):
         from plumbum import local, FG
         with local.cwd(cbuild_dir):
-            local['cmake']['..']['-DOPENQL_PYTHON=YES']['-DCMAKE_INSTALL_PREFIX=' + prefix_dir] & FG
+            local['cmake']['..']['-DOPENQL_PYTHON_DIR=' + module_dir]['-DCMAKE_INSTALL_PREFIX=' + prefix_dir] & FG
             local['cmake']['--build']['.'] & FG
             local['cmake']['--install']['.'] & FG
         _build.run(self)
@@ -67,7 +68,7 @@ class build(_build):
 class bdist(_bdist):
     def finalize_options(self):
         _bdist.finalize_options(self)
-        self.dist_dir = dist_dir
+        self.dist_dir = os.path.relpath(dist_dir)
 
 class bdist_wheel(_bdist_wheel):
     def run(self):
@@ -89,12 +90,12 @@ class bdist_wheel(_bdist_wheel):
 class sdist(_sdist):
     def finalize_options(self):
         _sdist.finalize_options(self)
-        self.dist_dir = dist_dir
+        self.dist_dir = os.path.relpath(dist_dir)
 
 class egg_info(_egg_info):
     def initialize_options(self):
         _egg_info.initialize_options(self)
-        self.egg_base = pybuild_dir
+        self.egg_base = os.path.relpath(pybuild_dir)
 
 setup(
     name='qutechopenql',
@@ -123,20 +124,9 @@ setup(
         'Topic :: Scientific/Engineering'
     ],
 
-    packages = find_packages('swig'),
-    package_dir = {'': 'swig'},
-
-    ext_modules = [
-        #Extension(
-            #'dqcsim._dqcsim',
-            #[py_target_dir + "/dqcsim.c"],
-            #libraries = ['dqcsim'],
-            #library_dirs = [output_dir],
-            #runtime_library_dirs = [output_dir],
-            #include_dirs = [include_dir],
-            #extra_compile_args = ['-std=c99']
-        #)
-    ],
+    packages = ['openql'],
+    package_dir = {'openql': os.path.relpath(module_dir)},
+    include_package_data = True,
 
     cmdclass = {
         'bdist': bdist,
@@ -146,8 +136,6 @@ setup(
         'egg_info': egg_info,
         'sdist': sdist,
     },
-
-    # TODO: data_files, ext_modules
 
     extras_require={'develop': ['pytest', 'numpy']},
     setup_requires = [

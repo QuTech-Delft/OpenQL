@@ -33,13 +33,12 @@ option(
     OFF
 )
 
-# Whether the Python wrapper should be built. This is here pretty much only for
-# setup.py.
-option(
-    OPENQL_PYTHON
-    "whether the Python wrapper should be built with SWIG"
-    OFF
-)
+# Whether the Python wrapper should be built, and into which directory it
+# should be installed for setup.py to find. Leave empty to disable building
+# the Python module. Only the build orchestrated by setup.py should use this
+# option.
+set(OPENQL_PYTHON_DIR "" CACHE STRING "Whether to build the Python library and where to install it")
+mark_as_advanced(OPENQL_PYTHON_DIR)
 
 # Look for thread support library (pthreads)
 find_package(Threads)
@@ -135,7 +134,7 @@ if(OPENQL_BUILD_TESTS)
 endif()
 
 # Include the SWIG directory if requested.
-if(OPENQL_PYTHON)
+if(NOT "${OPENQL_PYTHON_DIR}" STREQUAL "")
     add_subdirectory(swig)
 endif()
 
