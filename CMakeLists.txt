@@ -33,12 +33,8 @@ option(
     OFF
 )
 
-# Whether the Python wrapper should be built, and into which directory it
-# should be installed for setup.py to find. Leave empty to disable building
-# the Python module. Only the build orchestrated by setup.py should use this
-# option.
-set(OPENQL_PYTHON_DIR "" CACHE STRING "Whether to build the Python library and where to install it")
-mark_as_advanced(OPENQL_PYTHON_DIR)
+# Loads up the appropriate directories for installing stuff.
+include(GNUInstallDirs)
 
 # Look for thread support library (pthreads)
 find_package(Threads)
@@ -47,6 +43,11 @@ find_package(Threads)
 add_library(cli11 INTERFACE)
 target_include_directories(cli11 INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/deps/CLI11/include
+)
+install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/deps/CLI11/include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
 
 # Configure LEMON and wrap it in an interface library to link against.
@@ -89,9 +90,7 @@ add_library(ql
     ${CMAKE_CURRENT_SOURCE_DIR}/src/unitary.cc
 )
 target_include_directories(ql
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
-    # TODO: the "C++" API shouldn't depend on a swig header file, yet here we are...
-    INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/swig
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/
 )
 target_link_libraries(ql
     PUBLIC cli11 lemon cqasm
@@ -112,16 +111,16 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 endif()
 
 # Install targets for the OpenQL library.
-include(GNUInstallDirs)
 install(
     TARGETS ql
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
-get_target_property(INCLUDE_DIRS ql INTERFACE_INCLUDE_DIRECTORIES)
+# file(GENERATE OUTPUT fgsfds CONTENT $<TARGET_PROPERTY:ql,INTERFACE_INCLUDE_DIRECTORIES>)
+# get_target_property(INCLUDE_DIRS ql INTERFACE_INCLUDE_DIRECTORIES)
 install(
-    DIRECTORY ${INCLUDE_DIRS}
+    DIRECTORY $<TARGET_PROPERTY:ql,INTERFACE_INCLUDE_DIRECTORIES>
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
@@ -131,11 +130,6 @@ if(OPENQL_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
     add_subdirectory(examples)
-endif()
-
-# Include the SWIG directory if requested.
-if(NOT "${OPENQL_PYTHON_DIR}" STREQUAL "")
-    add_subdirectory(swig)
 endif()
 
 endif() # NOT TARGET ql

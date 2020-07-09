@@ -13,12 +13,14 @@ from setuptools import setup, Extension, find_packages
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 import re
 
-cbuild_dir = os.getcwd() + os.sep + 'cbuild'    # cmake build directory
-pybuild_dir = os.getcwd() + os.sep + 'pybuild'  # python-specific build directory (removed by setup.py clean)
-prefix_dir = pybuild_dir + os.sep + 'prefix'    # cmake install prefix for the normal targets
-module_dir = pybuild_dir + os.sep + 'openql'    # cmake install directory for the python module
+python_dir = os.getcwd() + os.sep + 'python'    # source directory for Python
+pybuild_dir = os.getcwd() + os.sep + 'pybuild'  # python-specific build directory
 build_dir = pybuild_dir + os.sep + 'build'      # directory for setuptools to dump various files into
 dist_dir = pybuild_dir + os.sep + 'dist'        # wheel output directory
+cbuild_dir = os.getcwd() + os.sep + 'cbuild'    # cmake build directory
+prefix_dir = pybuild_dir + os.sep + 'prefix'    # cmake install prefix
+swig_dir = pybuild_dir + os.sep + 'swig'        # swig output directory
+module_dir = pybuild_dir + os.sep + 'module'    # openql Python module directory, including generated file(s)
 
 def get_version(verbose=0):
     """ Extract version information from source code """
@@ -59,10 +61,41 @@ class build(_build):
 
     def run(self):
         from plumbum import local, FG
+
+        # Build the OpenQL C++ library using CMake and install it into
+        # prefix_dir.
+        nprocs = os.environ.get('NPROCS', '1')
+        if not os.path.exists(cbuild_dir):
+            os.makedirs(cbuild_dir)
         with local.cwd(cbuild_dir):
-            local['cmake']['..']['-DOPENQL_PYTHON_DIR=' + module_dir]['-DCMAKE_INSTALL_PREFIX=' + prefix_dir] & FG
-            local['cmake']['--build']['.'] & FG
+            local['cmake']['..']['-DCMAKE_INSTALL_PREFIX=' + prefix_dir]['-DBUILD_SHARED_LIBS=YES'] & FG
+            local['cmake']['--build']['.']['--parallel'][nprocs] & FG
             local['cmake']['--install']['.'] & FG
+
+        # Run SWIG on the installed library.
+        if not os.path.exists(swig_dir):
+            os.makedirs(swig_dir)
+        (local['swig']
+            ['-v']
+            ['-python']
+            ['-py3']
+            ['-castmode']
+            ['-modern']
+            ['-w511']
+            ['-c++']
+            ['-I' + prefix_dir + os.sep + 'include']
+            ['-outdir'][swig_dir]
+            ['-o'][swig_dir + os.sep + 'openql.cc']
+            [python_dir + os.sep + 'swig' + os.sep + 'openql.i']
+        ) & FG
+
+        # Copy the SWIG-generated file and the user-written Python API
+        # files into module_dir for setup to find.
+        if os.path.exists(module_dir):
+            shutil.rmtree(module_dir)
+        shutil.copytree(python_dir + os.sep + 'openql', module_dir)
+        shutil.copyfile(swig_dir + os.sep + 'openql.py', module_dir + os.sep + 'openql.py')
+
         _build.run(self)
 
 class bdist(_bdist):
@@ -125,8 +158,19 @@ setup(
     ],
 
     packages = ['openql'],
-    package_dir = {'openql': os.path.relpath(module_dir)},
-    include_package_data = True,
+    package_dir = {'openql': module_dir},
+
+    ext_modules = [
+        Extension(
+            'openql._openql',
+            [swig_dir + os.sep + '/openql.cc'],
+            libraries = ['ql'],
+            library_dirs = [prefix_dir + os.sep + 'lib', prefix_dir + os.sep + 'lib64'],
+            runtime_library_dirs = [prefix_dir + os.sep + 'lib', prefix_dir + os.sep + 'lib64'],
+            include_dirs = [prefix_dir + os.sep + 'include'],
+            extra_compile_args = ['-std=c++11']
+        )
+    ],
 
     cmdclass = {
         'bdist': bdist,
