@@ -158,16 +158,6 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     target_compile_options(ql PRIVATE -O3 -Wall -Wfatal-errors -ggdb -Wno-unused-local-typedef )
 endif()
 
-# setup.py needs to know which libraries to link when it compiles the
-# Python extension. We can more-or-less use CMake's generator expressions to
-# get that information, but it's a bit janky because CMake has built-in logic
-# to handle the linker line because it's so complicated...
-# See https://gitlab.kitware.com/cmake/cmake/-/issues/12435
-file(
-    GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/ql-libs"
-    CONTENT "ql;$<TARGET_PROPERTY:ql,LINK_LIBRARIES>;$<TARGET_PROPERTY:lemon,LINK_LIBRARIES>"
-)
-
 # Install targets for the OpenQL library.
 install(
     TARGETS ql
