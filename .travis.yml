@@ -2,7 +2,7 @@ language: shell
 cache: pip
 
 matrix:
-  include:      
+  include:
     # - name: "Python 3.7 on macOS 10.14"
     #   os: osx
     #   osx_image: xcode11.3
@@ -28,21 +28,19 @@ before_install:
   - pip3 --version
   - while sleep 5m; do echo "=====[ $SECONDS seconds, OpenQL still building... ]====="; done &
 
-
 install:
   - cd deps
   - git clone https://github.com/QE-Lab/eQASM_Assembler.git
-  - cd eQASM_Assembler/qisa-as  
-  - python3 -m pip install . 
+  - cd eQASM_Assembler/qisa-as
+  - python3 -m pip install .
   - cd ../../../.
   - git submodule update --init --recursive
   - cd deps/libqasm
-  - python3 -m pip install . 
+  - python3 -m pip install .
   - cd ../../.
-  - python3 -m pip install . 
+  - python3 -m pip install -v .
+
 script: python3 -m pytest
-
-
 
 addons:
   apt:

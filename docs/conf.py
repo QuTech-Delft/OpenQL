@@ -14,6 +14,22 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../swig'))
 
+# -- Doxygen build -----------------------------------------------------------
+import subprocess
+import os
+import sys
+original_workdir = os.getcwd()
+try:
+    docs_dir = os.path.dirname(__file__)
+    os.chdir(docs_dir)
+    if not os.path.exists('doxygen/doxy'):
+        subprocess.check_call(['doxygen'])
+        subprocess.check_call(['mv', '-f', 'doxygen/html', 'doxygen/doxy'])
+finally:
+    os.chdir(original_workdir)
+
+html_extra_path = ['doxygen']
+
 # -- Project information -----------------------------------------------------
 
 project = 'OpenQL'

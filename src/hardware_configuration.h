@@ -53,16 +53,13 @@ public:
         }
         catch (json::exception &e)
         {
-            throw ql::exception("[x] error : ql::hardware_configuration::load() :  failed to load the hardware config file : malformed json file ! : \n\t"+
-                                std::string(e.what()),false);
+            FATAL("failed to load the hardware config file : malformed json file: \n\t" << std::string(e.what()));
         }
 
         // load eqasm compiler backend
         if (config.count("eqasm_compiler") <= 0)
         {
-            EOUT("eqasm compiler backend is not specified in the hardware config file !");
-            // throw std::exception();
-            throw ql::exception("[x] error : ql::hardware_configuration::load() : eqasm compiler backend is not specified in the hardware config file !",false);
+            FATAL("'eqasm_compiler' is not specified in the hardware config file");
         }
         else
         {
@@ -72,8 +69,7 @@ public:
         // load hardware_settings
         if (config.count("hardware_settings") <= 0)
         {
-            EOUT("'hardware_settings' section is not specified in the hardware config file !");
-            throw ql::exception("[x] error : ql::hardware_configuration::load() : 'hardware_settings' section is not specified in the hardware config file !",false);
+            FATAL("'hardware_settings' section is not specified in the hardware config file");
         }
         else
         {
@@ -83,8 +79,7 @@ public:
         // load instruction_settings
         if (config.count("instructions") <= 0)
         {
-            EOUT("'instructions' section is not specified in the hardware config file !");
-            throw ql::exception("[x] error : ql::hardware_configuration::load() : 'instructions' section is not specified in the hardware config file !",false);
+            FATAL("'instructions' section is not specified in the hardware config file");
         }
         else
         {
@@ -94,8 +89,7 @@ public:
         // load platform resources
         if (config.count("resources") <= 0)
         {
-            EOUT("'resources' section is not specified in the hardware config file !");
-            throw ql::exception("[x] error : ql::hardware_configuration::load() : 'resources' section is not specified in the hardware config file !",false);
+            FATAL("'resources' section is not specified in the hardware config file");
         }
         else
         {
@@ -105,8 +99,7 @@ public:
         // load platform topology
         if (config.count("topology") <= 0)
         {
-            EOUT("'topology' section is not specified in the hardware config file !");
-            throw ql::exception("[x] error : ql::hardware_configuration::load() : 'topology' section is not specified in the hardware config file !",false);
+            FATAL("'topology' section is not specified in the hardware config file");
         }
         else
         {
@@ -115,12 +108,11 @@ public:
 
         // load instructions
         const json &instructions = config["instructions"];
-        // DOUT(instructions.dump(4));
         static const std::regex comma_space_pattern("\\s*,\\s*");
+
         for (auto it = instructions.begin(); it != instructions.end(); ++it)
         {
             std::string name = it.key();
-            str::lower_case(name);
             json attr = *it; //.value();
 
             name = sanitize_instruction_name(name);
@@ -141,7 +133,12 @@ public:
             DOUT("instruction " << name << " loaded.");
         }
 
-        // load gate decomposition
+        // load optional section gate_decomposition
+        // Examples:
+        // - Parametrized gate-decomposition: "cl_2 %0": ["rxm90 %0", "rym90 %0"]
+        // - Specialized gate-decomposition:  "rx180 q0" : ["x q0"]
+
+
         if (config.count("gate_decomposition") > 0)
         {
             const json &gate_decomposition = config["gate_decomposition"];
@@ -149,7 +146,6 @@ public:
             {
                 // standardize instruction name
                 std::string  comp_ins = it.key();
-                str::lower_case(comp_ins);
                 DOUT("");
                 DOUT("Adding composite instr : " << comp_ins);
                 comp_ins = sanitize_instruction_name(comp_ins);
@@ -171,40 +167,46 @@ public:
                 // check that we're looking at array
                 json sub_instructions = *it;
                 if (!sub_instructions.is_array())
-                    throw ql::exception("[x] error : ql::hardware_configuration::load() : 'gate_decomposition' section : gate '"+comp_ins+"' is malformed !",false);
+                    FATAL("ql::hardware_configuration::load() : 'gate_decomposition' section : gate '" << comp_ins << "' is malformed (not an array)");
 
                 std::vector<gate *> gs;
                 for (size_t i=0; i<sub_instructions.size(); i++)
                 {
                     // standardize name of sub instruction
                     std::string sub_ins = sub_instructions[i];
-                    str::lower_case(sub_ins);
                     DOUT("Adding sub instr: " << sub_ins);
                     sub_ins = sanitize_instruction_name(sub_ins);
                     sub_ins = std::regex_replace(sub_ins, comma_space_pattern, ",");
                     if ( instruction_map.find(sub_ins) != instruction_map.end() )
                     {
-                        // i.e. subinstruction as is is also defined as instruction (with all operands)
-
-                        // using existing sub ins
+                        // using existing sub ins, e.g. "x q0" or "x %0"
                         DOUT("using existing sub instr : " << sub_ins);
                         gs.push_back( instruction_map[sub_ins] );
                     }
-                    else if( sub_ins.find("%") != std::string::npos )
+                    else if( sub_ins.find("%") != std::string::npos )               // parameterized composite gate? FIXME: no syntax check
                     {
-                        // adding new sub ins if not already available
-                        // this can be done for parameterized custom instructions
+                        // adding new sub ins if not already available, e.g. "x %0"
                         DOUT("adding new sub instr : " << sub_ins);
-                        // sub-ins can only be custom instructions
                         instruction_map[sub_ins] = new custom_gate(sub_ins);
                         gs.push_back( instruction_map[sub_ins] );
                     }
+#if OPT_DECOMPOSE_WAIT_BARRIER   // allow wait/barrier, e.g. "barrier q2,q3,q4"
+                    else
+                    {
+                        // FIXME: just save whatever we find as a *custom* gate (there is no better alternative)
+                        // FIXME: also see additions (hacks) to kernel.h
+                        DOUT("adding new sub instr : " << sub_ins);
+                        instruction_map[sub_ins] = new custom_gate(sub_ins);
+                        gs.push_back( instruction_map[sub_ins] );
+                    }
+#else
                     else
                     {
                         // for specialized custom instructions, raise error if instruction
                         // is not already available
-                        FATAL("custom instruction not found for '" << sub_ins <<"'");
+                        FATAL("custom instruction not found for '" << sub_ins << "'");
                     }
+#endif
                 }
                 instruction_map[comp_ins] = new composite_gate(comp_ins, gs);
             }
@@ -282,10 +284,11 @@ private:
     static const std::regex multiple_space_pattern;
 
     /**
-    * Sanitizes the name of an instruction by removing the unnecessary spaces.
+    * Sanitizes the name of an instruction by converting to lower case and removing the unnecessary spaces.
     */
     static std::string sanitize_instruction_name(std::string name)
     {
+        str::lower_case(name);
         name = std::regex_replace(name, trim_pattern, "");
         name = std::regex_replace(name, multiple_space_pattern, " ");
         return name;

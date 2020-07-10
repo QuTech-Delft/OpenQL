@@ -262,7 +262,7 @@ namespace ql
 #define ELEM_CNT(x) (sizeof(x)/sizeof(x[0]))
 
 // check existence of JSON key within node, see PR #194
-#define JSON_EXISTS(node, key)  (node.count(key) > 0)
+#define JSON_EXISTS(node, key)  ((node).count(key) > 0)
 
 #define JSON_ASSERT(node, key, nodePath) \
         {   if(!JSON_EXISTS(node, key)) { \
@@ -274,6 +274,7 @@ namespace ql
 // based on: https://github.com/nlohmann/json/issues/932
 template<class T>
 T json_get(const json &j, std::string key, std::string nodePath="") {
+    // first check existence of key
     auto it = j.find(key);
     if(it == j.end()) {
         FATAL("Key '" << key
@@ -281,6 +282,7 @@ T json_get(const json &j, std::string key, std::string nodePath="") {
               << "', actual node contents '" << j << "'");
     }
 
+    // then try to get key
     try {
         return it->get<T>();
     } catch(const std::exception& e) {

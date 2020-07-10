@@ -1,6 +1,7 @@
 #ifndef _QL_COMPILE_OPTIONS_H
 #define _QL_COMPILE_OPTIONS_H
 
-// FIXME: now options remain after PR #297, but new ones will be introduced here
+// new features
+#define OPT_DECOMPOSE_WAIT_BARRIER      1   // allow wait/barrier in JSON section gate_decomposition
 
 #endif // ndef _QL_COMPILE_OPTIONS_H
