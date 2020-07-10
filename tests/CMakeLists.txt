@@ -3,12 +3,12 @@ cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 enable_testing()
 
 function(add_openql_test name source workdir)
-    add_executable(${name} ${CMAKE_CURRENT_SOURCE_DIR}/${source})
-    target_link_libraries(${name} ql)
+    add_executable("${name}" "${CMAKE_CURRENT_SOURCE_DIR}/${source}")
+    target_link_libraries("${name}" ql)
     add_test(
-        NAME ${name}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${workdir}
-        COMMAND ${name}
+        NAME "${name}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${workdir}"
+        COMMAND "${name}"
     )
 endfunction()
 

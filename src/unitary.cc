@@ -8,8 +8,10 @@
 
 #include <unitary.h>
 
+#ifndef WITHOUT_UNITARY_DECOMPOSITION
 #include <Eigen/MatrixFunctions>
 #include <src/misc/lapacke.h>
+#endif
 
 typedef unsigned int uint;
 
@@ -17,6 +19,29 @@ typedef unsigned int uint;
 
 namespace ql
 {
+
+unitary::unitary() : name(""), is_decomposed(false) {}
+
+unitary::unitary(std::string name, std::vector<std::complex<double>> array) :
+name(name), array(array), is_decomposed(false) {}
+
+double unitary::size() {
+    // JvS: Note that the original unitary::size() used
+    // Eigen::Matrix::size() if the array is empty. However, if the array
+    // is empty, _matrix is never initialized beyond its default ctor,
+    // which "allocates" a 0x0 matrix, and is thus size 0, exactly what
+    // array.size() would return.
+    // Don't get me started about why this returns a double.
+    return (double) array.size();
+}
+
+#ifdef WITHOUT_UNITARY_DECOMPOSITION
+
+void unitary::decompose() {
+    throw std::runtime_error("unitary decomposition was explicitly disabled in this build!");
+}
+
+#else
 
 // JvS: this was originally the class "unitary" itself, but compile times of
 // Eigen are so excessive that I moved it into its own compile unit and
@@ -521,21 +546,6 @@ public:
     }
 };
 
-unitary::unitary() : name(""), is_decomposed(false) {}
-
-unitary::unitary(std::string name, std::vector<std::complex<double>> array) :
-name(name), array(array), is_decomposed(false) {}
-
-double unitary::size() {
-    // JvS: Note that the original unitary::size() used
-    // Eigen::Matrix::size() if the array is empty. However, if the array
-    // is empty, _matrix is never initialized beyond its default ctor,
-    // which "allocates" a 0x0 matrix, and is thus size 0, exactly what
-    // array.size() would return.
-    // Don't get me started about why this returns a double.
-    return (double) array.size();
-}
-
 void unitary::decompose() {
     UnitaryDecomposer decomposer(name, array);
     decomposer.decompose();
@@ -546,6 +556,8 @@ void unitary::decompose() {
     is_decomposed = decomposer.is_decomposed;
     instructionlist = decomposer.instructionlist;
 }
+
+#endif
 
 }
 

@@ -68,7 +68,7 @@ class build(_build):
         if not os.path.exists(cbuild_dir):
             os.makedirs(cbuild_dir)
         with local.cwd(cbuild_dir):
-            local['cmake']['..']['-DCMAKE_INSTALL_PREFIX=' + prefix_dir]['-DBUILD_SHARED_LIBS=YES'] & FG
+            local['cmake']['..']['-DCMAKE_INSTALL_PREFIX=' + prefix_dir] & FG
             local['cmake']['--build']['.']['--parallel'][nprocs] & FG
             local['cmake']['--install']['.'] & FG
 
