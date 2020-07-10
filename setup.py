@@ -15,15 +15,14 @@ from setuptools import setup, Extension, find_packages
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 import re
 
-src_dir = os.getcwd() + os.sep + 'src'          # source directory for C++
-python_dir = os.getcwd() + os.sep + 'python'    # source directory for Python
-pybuild_dir = os.getcwd() + os.sep + 'pybuild'  # python-specific build directory
-build_dir = pybuild_dir + os.sep + 'build'      # directory for setuptools to dump various files into
-dist_dir = pybuild_dir + os.sep + 'dist'        # wheel output directory
-cbuild_dir = os.getcwd() + os.sep + 'cbuild'    # cmake build directory
-prefix_dir = pybuild_dir + os.sep + 'prefix'    # cmake install prefix
-swig_dir = pybuild_dir + os.sep + 'swig'        # swig output directory
-module_dir = pybuild_dir + os.sep + 'module'    # openql Python module directory, including generated file(s)
+root_dir   = os.getcwd()                        # root of the repository
+src_dir    = root_dir   + os.sep + 'src'        # C++ source directory
+target_dir = root_dir   + os.sep + 'pybuild'    # python-specific build directory
+build_dir  = target_dir + os.sep + 'build'      # directory for setuptools to dump various files into
+dist_dir   = target_dir + os.sep + 'dist'       # wheel output directory
+cbuild_dir = target_dir + os.sep + 'cbuild'     # cmake build directory
+prefix_dir = target_dir + os.sep + 'prefix'     # cmake install prefix
+module_dir = target_dir + os.sep + 'module'     # openql Python module directory, including generated file(s)
 
 def get_version(verbose=0):
     """ Extract version information from source code """
@@ -49,10 +48,8 @@ def read(fname):
 class clean(_clean):
     def run(self):
         _clean.run(self)
-        if os.path.exists(cbuild_dir):
-            shutil.rmtree(cbuild_dir)
-        if os.path.exists(pybuild_dir):
-            shutil.rmtree(pybuild_dir)
+        if os.path.exists(target_dir):
+            shutil.rmtree(target_dir)
 
 class build_ext(_build_ext):
     def run(self):
@@ -64,35 +61,25 @@ class build_ext(_build_ext):
         else:
             nprocs = os.environ.get('NPROCS', '1')
 
-        # Build the OpenQL C++ library using CMake and install it into
-        # prefix_dir.
+        # Figure out how setuptools wants to name the extension file and where
+        # it wants to place it.
+        target = os.path.abspath(self.get_ext_fullpath('openql._openql'))
+
+        # Build the Python module and install it into module_dir.
         if not os.path.exists(cbuild_dir):
             os.makedirs(cbuild_dir)
         with local.cwd(cbuild_dir):
-            (local['cmake']['..']
+            (local['cmake'][root_dir]
+                ['-DOPENQL_BUILD_PYTHON=YES']
                 ['-DCMAKE_INSTALL_PREFIX=' + prefix_dir]
-                ['-DBUILD_SHARED_LIBS=YES'] # Transitive dependencies don't work with static libs
-                ['-DCMAKE_SKIP_RPATH=YES'] # see below (trigger warning!)
+                ['-DOPENQL_PYTHON_DIR=' + os.path.dirname(target)]
+                ['-DOPENQL_PYTHON_EXT=' + os.path.basename(target)]
+
+                # (ab)use static libs for the intermediate libraries to avoid
+                # dealing with R(UN)PATH nonsense on Linux/OSX as much as
+                # possible.
+                ['-DBUILD_SHARED_LIBS=NO']
             ) & FG
-            # We need to handle finding the shared objects manually at runtime.
-            # Normally, CMake will set the RPATH/RUNPATH key of the libraries
-            # it installs to the install directory, so it should find them even
-            # if they're not installed into a system directory and
-            # LD_LIBRARY_PATH isn't appropriately set by the user. However,
-            # CMake needs to know the exact absolute path where the files will
-            # end up in order to do this correctly. Since this is dynamically
-            # handled by Python and the instal; prefix directory certainly
-            # isn't correct (it gets deleted by pip after the install), all we
-            # can do is to have __init__.py set LD_LIBRARY_PATH to the correct
-            # value at runtime. Depending on Linux version, an RPATH key would
-            # override even LD_LIBRARY_PATH, so we have to disable the RPATH
-            # mechanism entirely during build/install.
-            #
-            # Note that the above RPATH nonsense only applies to Linux and Mac,
-            # and thankfully the same method should work for both. Windows is
-            # much more lenient in where it finds DLLs, checking the current
-            # directory and such by default, so it shouldn't need any of this
-            # stupidity.
 
             # Do the build with the given number of parallel threads.
             cmd = local['cmake']['--build']['.']
@@ -102,28 +89,6 @@ class build_ext(_build_ext):
 
             # Do the install.
             local['cmake']['--install']['.'] & FG
-
-        # Copy the user-written Python API files into module_dir for the
-        # parent build_ext to clobber with SWIG output and build to find the
-        # user modules AND swig-generated module in.
-        if os.path.exists(module_dir):
-            shutil.rmtree(module_dir)
-        shutil.copytree(python_dir, module_dir)
-
-        # Also copy the files CMake placed in lib/lib64 into the build
-        # directory managed by setuptools, so the shared objects/DLLs are
-        # added to the generated Python module.
-        dest_dir = self.build_lib + os.sep + 'openql'
-        if not os.path.exists(dest_dir):
-            os.makedirs(dest_dir)
-        src_dir = 'lib64' if os.path.exists(prefix_dir + os.sep + 'lib64') else 'lib'
-        src_dir = prefix_dir + os.sep + src_dir
-        for fname in os.listdir(src_dir):
-            if os.path.isfile(src_dir + os.sep + fname) and not os.path.islink(src_dir + os.sep + fname):
-                shutil.copyfile(src_dir + os.sep + fname, dest_dir + os.sep + fname)
-
-        # Let setuptools handle the SWIG build and final link.
-        _build_ext.run(self)
 
 class build(_build):
     def initialize_options(self):
@@ -173,7 +138,7 @@ class sdist(_sdist):
 class egg_info(_egg_info):
     def initialize_options(self):
         _egg_info.initialize_options(self)
-        self.egg_base = os.path.relpath(pybuild_dir)
+        self.egg_base = os.path.relpath(target_dir)
 
 setup(
     name='qutechopenql',
@@ -202,19 +167,14 @@ setup(
     ],
 
     packages = ['openql'],
-    package_dir = {'openql': os.path.relpath(module_dir)},
+    package_dir = {'': 'python'},
 
+    # NOTE: the library build process is completely overridden to let CMake
+    # handle it; setuptools' implementation is horribly broken. This is here
+    # just to have the rest of setuptools understand that this is a Python
+    # module with an extension in it.
     ext_modules = [
-        Extension(
-            'openql._openql',
-            [module_dir + os.sep + 'openql.i'],
-            libraries = ['ql'],
-            library_dirs = [prefix_dir + os.sep + 'lib', prefix_dir + os.sep + 'lib64'],
-            #runtime_library_dirs = [prefix_dir + os.sep + 'lib', prefix_dir + os.sep + 'lib64'],
-            include_dirs = [prefix_dir + os.sep + 'include'],
-            extra_compile_args = ['-std=c++11'],
-            swig_opts = ['-v', '-py3', '-castmode', '-modern', '-w511', '-c++', '-I' + prefix_dir + os.sep + 'include']
-        )
+        Extension('openql._openql', [])
     ],
 
     cmdclass = {
