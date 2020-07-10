@@ -11,11 +11,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - CC backend:
     - renamed JSON field "signal_ref" to "ref_signal"
     - renamed JSON field "ref_signals_type" to "signal_type"
+    - added option for new seq_bar semantics (cc firmware from 20191219 onwards)
+    - improved reporting on JSON semantic errors
+    - implemented option to output scheduled QASM files
 
 ### Removed
--
+
 
 ### Fixed
+- changed register used for FOR loop, so it doesn't clash with delay setting
 - fixed documentation for python setup and running tests
 
 
