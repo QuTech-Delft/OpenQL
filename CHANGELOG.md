@@ -15,7 +15,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - improved reporting on JSON semantic errors
     - implemented option to output scheduled QASM files
     - allow 'wait' and 'barrier' in JSON section gate_decomposition)
-    - changed JSON field static_codeword_override to be a vector with one element per qubit parameter
+    - changed JSON field static_codeword_override to be a vector with one element per qubit parameter. To edit a JSON file using Sublime, use Replace with Regular Expressions: find=`"static_codeword_override": ([0-9])+`, replace=`"static_codeword_override": [\1]`
     - enabled new seq_bar semantics (requires compatible PycQED version)
 
 ### Removed
