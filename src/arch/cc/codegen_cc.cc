@@ -30,7 +30,7 @@ int findStaticCodewordOverride(const json &instruction, int operandIdx, const st
  #if OPT_STATIC_CODEWORDS_ARRAYS
         const json &override = instruction["cc"]["static_codeword_override"];
         if(override.is_array()) {
-            if(override.size > operandIdx) {
+            if(override.size() > operandIdx) {
                 staticCodewordOverride = override[operandIdx];
             } else {
                 FATAL("Array size of static_codeword_override for instruction '" << iname << "' insufficient");
@@ -816,7 +816,7 @@ const json &codegen_cc::findInstrumentDefinition(const std::string &name)
 
 
 // find JSON signal definition for instruction, either inline or via 'ref_signal'
-tJsonNodeInfo findSignalDefinition(const json &instruction, const std::string &iname)
+tJsonNodeInfo codegen_cc::findSignalDefinition(const json &instruction, const std::string &iname)
 {
     tJsonNodeInfo nodeInfo;
     std::string instructionPath = "instructions/"+iname;
