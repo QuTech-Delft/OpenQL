@@ -25,7 +25,17 @@ if("${CMAKE_VERSION}" VERSION_LESS "3.12.0")
 else()
     find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
     set(PYTHON_INCLUDE_DIRS "${Python3_INCLUDE_DIRS}")
-    set(PYTHON_LIBRARIES "${Python3_LIBRARIES}")
+endif()
+
+
+# The location of the Python include directory can be overridden with the
+# PYTHON_INCLUDE_OVERRIDE environment variable. The manylinux build logic does
+# this to compile the extension for the various different Python versions
+# without having to recompile the whole library. When this changes, the build
+# directory corresponding to this CMakeLists file should be deleted, so a
+# rebuild is forced for everything built here.
+if(DEFINED ENV{PYTHON_INCLUDE_OVERRIDE})
+    set(PYTHON_INCLUDE_DIRS "$ENV{PYTHON_INCLUDE_OVERRIDE}")
 endif()
 
 
@@ -41,13 +51,6 @@ set_source_files_properties("${SWIG_FILE}" PROPERTIES INCLUDE_DIRECTORIES
 )
 set_property(SOURCE "${SWIG_FILE}" PROPERTY SWIG_FLAGS -castmode)
 set(CMAKE_SWIG_OUTDIR "${CMAKE_CURRENT_BINARY_DIR}")
-#WJV
-# -modern is deprecated
-# -keyword gives lots of warnings
-#SET_PROPERTY(SOURCE "${SWIG_FILE}" PROPERTY SWIG_FLAGS -castmode)
-# JvS: I suppose this depends on the version of SWIG? No drama on the version
-# my distro comes with (3.0.12). Seems to work just fine without the flags too,
-# though.
 
 # Run SWIG to generated the C++ source file and Python wrapper module.
 if(${CMAKE_VERSION} VERSION_LESS "3.8.0")
@@ -62,11 +65,9 @@ else()
 endif()
 
 # Compile the C++ source file and link it against the OpenQL library.
+swig_link_libraries(openql ql)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    swig_link_libraries(openql ql)
     set_target_properties(_openql PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
-else()
-    swig_link_libraries(openql "${PYTHON_LIBRARIES}" ql)
 endif()
 target_include_directories(_openql PRIVATE "${PYTHON_INCLUDE_DIRS}")
 
