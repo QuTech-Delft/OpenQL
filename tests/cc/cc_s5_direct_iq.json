@@ -469,7 +469,7 @@
             "cc_light_instr": "cz",
             "cc": {
                 "ref_signal": "two-qubit-flux",     // NB: reference, instead of defining "signal" here
-                "static_codeword_override": [1]
+                "static_codeword_override": [1,1]     // FIXME
             }
         },
         "cz_park": {
@@ -492,7 +492,7 @@
                         "value": ["park_cz-{qubit}"]
                     }
                 ],
-                "static_codeword_override": [0]   // FIXME
+                "static_codeword_override": [0,0,0]   // FIXME
             }
         },
 
@@ -924,7 +924,7 @@
             "type": "flux",
             "cc_light_instr": "fl_cw_00",
             "cc": {
-                "ref_signal": "two-qubit-flux",
+                "ref_signal": "two-qubit-flux",     // FIXME
                 "static_codeword_override": [0]
             }
         },
