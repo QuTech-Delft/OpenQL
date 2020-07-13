@@ -21,29 +21,6 @@
 | Static functions processing JSON
 \************************************************************************/
 
-// find JSON signal definition for instruction, either inline or via 'ref_signal'
-static tJsonNodeInfo findSignalDefinition(const json &instruction, const std::string &iname)
-{
-    tJsonNodeInfo nodeInfo;
-    std::string instructionPath = "instructions/"+iname;
-    JSON_ASSERT(instruction, "cc", instructionPath);
-    if(JSON_EXISTS(instruction["cc"], "ref_signal")) {                          // optional syntax: "ref_signal"
-        std::string refSignal = instruction["cc"]["ref_signal"];
-        nodeInfo.node = (*jsonSignals)[refSignal];                              // poor man's JSON pointer
-        if(nodeInfo.node.size() == 0) {
-            FATAL("Error in JSON definition of instruction '" << iname <<
-                  "': ref_signal '" << refSignal << "' does not resolve");
-        }
-        nodeInfo.path = "signals/"+refSignal;
-    } else {                                                                    // alternative syntax: "signal"
-        nodeInfo.node = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");
-        DOUT("signal for '" << instruction << "': " << nodeInfo.node);
-        nodeInfo.path = instructionPath+"/cc/signal";
-    }
-    return nodeInfo;
-}
-
-
 #if OPT_SUPPORT_STATIC_CODEWORDS
 int findStaticCodewordOverride(const json &instruction, int operandIdx, const std::string &iname)
 {
@@ -836,6 +813,29 @@ const json &codegen_cc::findInstrumentDefinition(const std::string &name)
     }
 }
 #endif
+
+
+// find JSON signal definition for instruction, either inline or via 'ref_signal'
+tJsonNodeInfo findSignalDefinition(const json &instruction, const std::string &iname)
+{
+    tJsonNodeInfo nodeInfo;
+    std::string instructionPath = "instructions/"+iname;
+    JSON_ASSERT(instruction, "cc", instructionPath);
+    if(JSON_EXISTS(instruction["cc"], "ref_signal")) {                          // optional syntax: "ref_signal"
+        std::string refSignal = instruction["cc"]["ref_signal"];
+        nodeInfo.node = (*jsonSignals)[refSignal];                              // poor man's JSON pointer
+        if(nodeInfo.node.size() == 0) {
+            FATAL("Error in JSON definition of instruction '" << iname <<
+                  "': ref_signal '" << refSignal << "' does not resolve");
+        }
+        nodeInfo.path = "signals/"+refSignal;
+    } else {                                                                    // alternative syntax: "signal"
+        nodeInfo.node = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");
+        DOUT("signal for '" << instruction << "': " << nodeInfo.node);
+        nodeInfo.path = instructionPath+"/cc/signal";
+    }
+    return nodeInfo;
+}
 
 
 // find instrument/group providing instructionSignalType for qubit

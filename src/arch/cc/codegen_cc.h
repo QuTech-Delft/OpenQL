@@ -134,6 +134,7 @@ private:    // funcs
     // Functions processing JSON
     void load_backend_settings();
     const json &findInstrumentDefinition(const std::string &name);
+    tJsonNodeInfo findSignalDefinition(const json &instruction, const std::string &iname);
 
     // find instrument/group providing instructionSignalType for qubit
     tSignalInfo findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit);
