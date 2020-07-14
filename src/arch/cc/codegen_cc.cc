@@ -35,6 +35,8 @@ int findStaticCodewordOverride(const json &instruction, int operandIdx, const st
             } else {
                 FATAL("Array size of static_codeword_override for instruction '" << iname << "' insufficient");
             }
+        } else if (operandIdx==0) {     // NB: JSON '"static_codeword_override": [3]' gives **scalar** result
+            staticCodewordOverride = override;
         } else {
             FATAL("Key static_codeword_override for instruction '" << iname
                   << "' should be an array (found '" << override << "' in '" << instruction << "')");
