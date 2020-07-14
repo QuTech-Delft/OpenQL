@@ -449,7 +449,7 @@ void QisaCodeGenerationPass::runOnProgram(ql::quantum_program *program)
      * @brief  Construct an object to hold the pass options
      * @param  app_name String with the name of the pass options object
      */
-PassOptions::PassOptions(std::string app_name="passOpts")
+PassOptions::PassOptions(std::string app_name)
 {
     app = new CLI::App(app_name);
 
