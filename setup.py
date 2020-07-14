@@ -124,11 +124,6 @@ class bdist_wheel(_bdist_wheel):
         if platform.system() == "Darwin":
             from delocate.delocating import delocate_wheel
             delocate_wheel(wheel_path)
-        elif platform.system() == "Linux":
-            # This only works for manylinux
-            if 'AUDITWHEEL_PLAT' in os.environ:
-                from auditwheel.repair import repair_wheel
-                repair_wheel(wheel_path, abi=os.environ['AUDITWHEEL_PLAT'], lib_sdir=".libs", out_dir=self.dist_dir, update_tags=True)
 
 class sdist(_sdist):
     def finalize_options(self):

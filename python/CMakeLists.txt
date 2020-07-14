@@ -17,25 +17,30 @@ include(${SWIG_USE_FILE})
 # Python development package --------------------------------------------------
 
 # Look for the Python development package. Steps depend on CMake version.
-if("${CMAKE_VERSION}" VERSION_LESS "3.12.0")
-    find_package(PythonInterp 3 REQUIRED)
-    if(${PYTHONINTERP_FOUND})
-        find_package(PythonLibs "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" REQUIRED)
-    endif()
-else()
-    find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-    set(PYTHON_INCLUDE_DIRS "${Python3_INCLUDE_DIRS}")
-endif()
-
-
 # The location of the Python include directory can be overridden with the
-# PYTHON_INCLUDE_OVERRIDE environment variable. The manylinux build logic does
-# this to compile the extension for the various different Python versions
-# without having to recompile the whole library. When this changes, the build
-# directory corresponding to this CMakeLists file should be deleted, so a
-# rebuild is forced for everything built here.
+# PYTHON_INCLUDE_OVERRIDE environment variable. In this case, we don't need to
+# have CMake look for the Python development headers. This is necessary for
+# the manylinux container, where the system Python version doesn't come with
+# development headers (it's really only there for when you need Python in your
+# build process) and you should be linking against Python versions installed in
+# non-PATH locations, which CMake can't find.
 if(DEFINED ENV{PYTHON_INCLUDE_OVERRIDE})
+#     if("${CMAKE_VERSION}" VERSION_LESS "3.12.0")
+#         find_package(PythonInterp 3 REQUIRED)
+#     else()
+#         find_package(Python3 COMPONENTS Interpreter REQUIRED)
+#     endif()
     set(PYTHON_INCLUDE_DIRS "$ENV{PYTHON_INCLUDE_OVERRIDE}")
+else()
+    if("${CMAKE_VERSION}" VERSION_LESS "3.12.0")
+        find_package(PythonInterp 3 REQUIRED)
+        if(${PYTHONINTERP_FOUND})
+            find_package(PythonLibs "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" REQUIRED)
+        endif()
+    else()
+        find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+        set(PYTHON_INCLUDE_DIRS "${Python3_INCLUDE_DIRS}")
+    endif()
 endif()
 
 
