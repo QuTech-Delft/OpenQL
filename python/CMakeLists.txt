@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
+cmake_policy(VERSION 3.1)
+cmake_policy(SET CMP0078 OLD)
+cmake_policy(SET CMP0086 OLD)
 
 #=============================================================================#
 # Configure, build, and link dependencies                                     #
@@ -32,6 +35,10 @@ if(DEFINED ENV{PYTHON_INCLUDE_OVERRIDE})
 #     endif()
     set(PYTHON_INCLUDE_DIRS "$ENV{PYTHON_INCLUDE_OVERRIDE}")
 else()
+    if(NOT "$PYENV_ROOT" STREQUAL "")
+        set(Python_ROOT_DIR "$PYENV_ROOT")
+    endif()
+
     if("${CMAKE_VERSION}" VERSION_LESS "3.12.0")
         find_package(PythonInterp 3 REQUIRED)
         if(${PYTHONINTERP_FOUND})
