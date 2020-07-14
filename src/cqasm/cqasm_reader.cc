@@ -69,7 +69,6 @@ namespace ql
             }
         }
         number_of_qubits = cqasm_repr.numQubits();
-        size_t num_kernels = 0;
 
         if (cqasm_repr.getErrorModelType() != "None")
         {
@@ -101,7 +100,6 @@ namespace ql
             }
 
             // add the kernel to program
-            num_kernels++;
             if (numIterations > 1)
             {
                 program.add_for(kernel, numIterations);
@@ -151,7 +149,7 @@ namespace ql
         {
             //convert crk to cr
             double k = operation.getRotationAngle();
-            angle = PI/pow(2, k);
+            angle = 2 * PI/pow(2, k);
             kernel_type = "cr";
         }
         else
