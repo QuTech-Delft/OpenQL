@@ -80,7 +80,7 @@ option(
 
 
 #=============================================================================#
-# R(UN)PATH handling                                                          #
+# Global build configuration                                                  #
 #=============================================================================#
 
 # Since we have multiple libraries to link together, we unfortunately have to
@@ -90,6 +90,11 @@ set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+# Everything needs C++11 support.
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 #=============================================================================#
@@ -128,9 +133,6 @@ target_include_directories(ql
 )
 
 # Configure compilation.
-set_property(TARGET ql PROPERTY CXX_STANDARD 11)
-set_property(TARGET ql PROPERTY CXX_STANDARD_REQUIRED ON)
-set_property(TARGET ql PROPERTY CXX_EXTENSIONS OFF)
 set_property(TARGET ql PROPERTY POSITION_INDEPENDENT_CODE ON)
 if(CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(ql PRIVATE -Wall -Wfatal-errors -ggdb)
