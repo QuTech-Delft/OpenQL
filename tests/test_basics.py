@@ -1,7 +1,7 @@
 from openql import openql as ql
 import unittest
 import os
-from test_QASM_assembler_present import assemble
+from test_QASM_assembler_present import assemble, assembler_present
 
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
@@ -22,6 +22,7 @@ class Test_basic(unittest.TestCase):
 
 
 
+    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_compilation(self):
 
         print('output dir : {}'.format( ql.get_option('output_dir') ) )

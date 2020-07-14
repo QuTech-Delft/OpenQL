@@ -2,10 +2,14 @@ import os
 import unittest
 from openql import openql as ql
 from utils import file_compare
-from qxelarator import qxelarator
 import re
 import numpy as np
 
+try:
+    from qxelarator import qxelarator
+    qx = qxelarator.QX()
+except ImportError:
+    qx = None
 
 curdir = os.path.dirname(__file__)
 config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
@@ -13,11 +17,10 @@ platform = ql.Platform('platform_none', config_fn)
 rootDir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
-qx = qxelarator.QX()
 c0 = ""
 
 def helper_regex(measurementstring):
-    regex = re.findall('[0-9.e\-]+',measurementstring)
+    regex = re.findall('[-0-9.e]+',measurementstring)
     i = 0
     array = []
     while i < len(regex):
@@ -119,6 +122,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         self.assertEqual(str(cm.exception), 'Unitary \'u1\' has been applied to the wrong number of qubits. Cannot be added to kernel! 1 and not 2.000000')
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_I(self):
         self.setUpClass()
         num_qubits = 1
@@ -140,6 +144,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.5*(helper_prob(matrix[0])+helper_prob(matrix[1])), helper_regex(c0)[0], 5)
         self.assertAlmostEqual(0.5*(helper_prob(matrix[2])+helper_prob(matrix[3])), helper_regex(c0)[0], 5)
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_X(self):
         self.setUpClass()
         num_qubits = 1
@@ -161,6 +166,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
         self.assertAlmostEqual(helper_prob(matrix[2]), helper_regex(c0)[1], 5)
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_Y(self):
         self.setUpClass()
         num_qubits = 1
@@ -182,6 +188,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
         self.assertAlmostEqual(helper_prob(matrix[2]), helper_regex(c0)[1], 5)
  
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_Z(self):
         self.setUpClass()
         num_qubits = 1
@@ -207,6 +214,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(1, helper_regex(c0)[1], 5)
    
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_IYZ(self):
         self.setUpClass()
         num_qubits = 1
@@ -238,6 +246,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.5, helper_regex(c0)[0], 5)
         self.assertAlmostEqual(0.5, helper_regex(c0)[1], 5)  
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_IYZ_differentorder(self):
         self.setUpClass()
         num_qubits = 1
@@ -302,6 +311,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_2qubit_CNOT(self):
         self.setUpClass()
         num_qubits = 2
@@ -327,6 +337,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
         self.assertAlmostEqual(helper_prob(matrix[4]), helper_regex(c0)[1], 5)
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_unitary_decompose_2qubit_CNOT_2(self):
         self.setUpClass()
         num_qubits = 2
@@ -354,6 +365,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(1.0, helper_regex(c0)[1], 5)
 
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_non_90_degree_angle(self):
         self.setUpClass()
         num_qubits = 2
@@ -380,6 +392,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(helper_prob(matrix[8]), helper_regex(c0)[2], 5)
         self.assertAlmostEqual(helper_prob(matrix[12]), helper_regex(c0)[3], 5)   
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_00(self):
         self.setUpClass()
         num_qubits = 2
@@ -411,6 +424,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         
 
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_01(self):
         self.setUpClass()
         num_qubits = 2
@@ -447,6 +461,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_10(self):
         self.setUpClass()
         num_qubits = 2
@@ -483,6 +498,7 @@ class Test_conjugated_kernel(unittest.TestCase):
  
 
     
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_11(self):
         self.setUpClass()
         num_qubits = 2
@@ -517,6 +533,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(helper_prob(matrix[11]), helper_regex(c0)[2], 5)
         self.assertAlmostEqual(helper_prob(matrix[15]), helper_regex(c0)[3], 5)
     
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_bellstate(self):
         self.setUpClass()
         num_qubits = 2
@@ -553,6 +570,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.5*helper_prob((matrix[12]+ matrix[15])), helper_regex(c0)[3], 5)
 
     
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_fullyentangled(self):
         self.setUpClass()
         num_qubits = 2
@@ -589,6 +607,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.25*helper_prob((matrix[8] + matrix[9] + matrix[10]+ matrix[11])), helper_regex(c0)[2], 5)
         self.assertAlmostEqual(0.25*helper_prob((matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[3], 5)
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_fullyentangled_3qubit(self):
         self.setUpClass()
         num_qubits = 3
@@ -654,6 +673,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_regex(c0)[6], 5)
         self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_fullyentangled_4qubit(self):
         self.setUpClass()
         num_qubits = 4
@@ -733,6 +753,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_fullyentangled_5qubit(self):
         self.setUpClass()
         num_qubits = 5
@@ -816,6 +837,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(helper_prob(matrix[992]), helper_regex(c0)[31], 5)
 
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_fullyentangled_5qubit_10011(self):
         self.setUpClass()
         num_qubits = 5
@@ -1050,6 +1072,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
     
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_usingqx_sparseunitary(self):
         self.setUpClass()
         num_qubits = 5
@@ -1128,6 +1151,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.0625*helper_prob((matrix[240] + matrix[241]+ matrix[242]+ matrix[243]+ matrix[244]+ matrix[245]+ matrix[246]+ matrix[247]+ matrix[248] + matrix[249]+ matrix[250]+ matrix[251]+ matrix[252]+ matrix[253]+ matrix[254]+ matrix[255])), helper_regex(c0)[15], 5)
 
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_extremelysparseunitary(self):
         self.setUpClass()
         num_qubits = 4
@@ -1190,6 +1214,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.0625*helper_prob((matrix[224] + matrix[225]+ matrix[226]+ matrix[227]+ matrix[228]+ matrix[229]+ matrix[230]+ matrix[231]+ matrix[232] + matrix[233]+ matrix[234]+ matrix[235]+ matrix[236]+ matrix[237]+ matrix[238]+ matrix[239])), helper_regex(c0)[14], 5)
         self.assertAlmostEqual(0.0625*helper_prob((matrix[240] + matrix[241]+ matrix[242]+ matrix[243]+ matrix[244]+ matrix[245]+ matrix[246]+ matrix[247]+ matrix[248] + matrix[249]+ matrix[250]+ matrix[251]+ matrix[252]+ matrix[253]+ matrix[254]+ matrix[255])), helper_regex(c0)[15], 5)
   
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_sparse2qubitunitary(self):
         self.setUpClass()
         num_qubits = 2
@@ -1219,6 +1244,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
 
   
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_sparse2qubitunitaryotherqubit(self):
         self.setUpClass()
         num_qubits = 2
@@ -1247,6 +1273,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(helper_prob(matrix[12]), 0, 5)
 
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_sparse2qubitunitaryotherqubitcheck(self):
         self.setUpClass()
         num_qubits = 1
@@ -1270,6 +1297,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(helper_prob(matrix[1]), helper_regex(c0)[1], 5) # Zero probabilities do not show up in the output list
 
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_sparse2qubit_multiplexor(self):
         self.setUpClass()
         num_qubits = 2
@@ -1298,6 +1326,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.25*helper_prob((matrix[8] + matrix[9] + matrix[10]+ matrix[11])), helper_regex(c0)[2], 5)
         self.assertAlmostEqual(0.25*helper_prob((matrix[12]+ matrix[13]+ matrix[14]+ matrix[15])), helper_regex(c0)[3], 5)
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_decomposition_rotatedtoffoli(self):
         self.setUpClass()
         num_qubits = 3
@@ -1337,6 +1366,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_regex(c0)[6], 5)
         self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_decomposition_toffoli(self):
         self.setUpClass()
         num_qubits = 3
@@ -1375,6 +1405,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
 
 
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_decomposition_controlled_U(self):
         self.setUpClass()
         num_qubits = 3
@@ -1413,6 +1444,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         self.assertAlmostEqual(0.125*helper_prob((matrix[48] + matrix[49]+ matrix[50]+ matrix[51]+ matrix[52]+ matrix[53]+ matrix[54]+ matrix[55])), helper_regex(c0)[6], 5)
         self.assertAlmostEqual(0.125*helper_prob((matrix[56] + matrix[57]+ matrix[58]+ matrix[59]+ matrix[60]+ matrix[61]+ matrix[62]+ matrix[63])), helper_regex(c0)[7], 5)
    
+    @unittest.skipIf(qx is None, "qxelarator not installed")
     def test_decomposition_mscthesisaritra(self):
         self.setUpClass()
         num_qubits = 4

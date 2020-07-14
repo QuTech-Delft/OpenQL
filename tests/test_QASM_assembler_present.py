@@ -2,11 +2,6 @@ import os
 import sys
 import unittest
 
-class Test_QASM_asssembler(unittest.TestCase):
-
-    def test_QASM_assembler_present(self):
-        from libQasm import libQasm
-
 lq = None
 
 try:
