@@ -688,7 +688,8 @@ void codegen_cc::padToCycle(size_t lastEndCycle, size_t startCycle, int slot, co
     // compute prePadding: time to bridge to align timing
     int prePadding = startCycle - lastEndCycle;
     if(prePadding < 0) {
-        EOUT(getCode());        // show what we made
+        EOUT("Inconsistency detected in bundle contents: printing code generated so far");
+        EOUT(getCode());        // show what we made. FIXME: limit # lines
         FATAL("Inconsistency detected in bundle contents: time travel not yet possible in this version: prePadding=" << prePadding <<
               ", startCycle=" << startCycle <<
               ", lastEndCycle=" << lastEndCycle <<
