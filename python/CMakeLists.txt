@@ -72,7 +72,7 @@ find_package(SWIG REQUIRED)
 # So, for versions before 3.12, a patched module is provided in the compat
 # directory. This wraps the actual SWIG command in a Python script that does
 # the list expansion CMake 3.12- is so woefully incapable of.
-if("${CMAKE_VERSION}" VERSION_LESS "33.12.0")
+if("${CMAKE_VERSION}" VERSION_LESS "3.12.0")
     include("${CMAKE_CURRENT_SOURCE_DIR}/compat/UseSWIG.cmake")
 else()
     include(${SWIG_USE_FILE})
@@ -95,7 +95,7 @@ set_source_files_properties("${SWIG_FILE}" PROPERTIES
 set(CMAKE_SWIG_OUTDIR "${CMAKE_CURRENT_BINARY_DIR}")
 
 # Run SWIG to generated the C++ source file and Python wrapper module.
-if(${CMAKE_VERSION} VERSION_LESS "33.12.0")
+if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
     swig_add_module(openql python "${SWIG_FILE}")
 else()
     swig_add_library(
