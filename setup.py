@@ -53,7 +53,7 @@ class clean(_clean):
 
 class build_ext(_build_ext):
     def run(self):
-        from plumbum import local, FG
+        from plumbum import local, FG, ProcessExecutionError
 
         # Figure out how many parallel processes to build with.
         if self.parallel:
@@ -75,6 +75,10 @@ class build_ext(_build_ext):
                 ['-DOPENQL_PYTHON_DIR=' + os.path.dirname(target)]
                 ['-DOPENQL_PYTHON_EXT=' + os.path.basename(target)]
 
+                # Make sure CMake uses the Python installation corresponding
+                # with the the Python version we're building with now.
+                ['-DPYTHON_EXECUTABLE=' + sys.executable]
+
                 # (ab)use static libs for the intermediate libraries to avoid
                 # dealing with R(UN)PATH nonsense on Linux/OSX as much as
                 # possible.
@@ -84,11 +88,23 @@ class build_ext(_build_ext):
             # Do the build with the given number of parallel threads.
             cmd = local['cmake']['--build']['.']
             if nprocs != '1':
-                cmd = cmd['--parallel'][nprocs]
+                try:
+                    parallel_supported = tuple(local['cmake']('--version').split('\n')[0].split()[-1].split('.')) >= (3, 12)
+                except:
+                    parallel_supported = False
+                if parallel_supported:
+                    cmd = cmd['--parallel'][nprocs]
+                elif not sys.platform.startswith('win'):
+                    cmd = cmd['--']['-j'][nprocs]
             cmd & FG
 
             # Do the install.
-            local['cmake']['--install']['.'] & FG
+            try:
+                # install target for makefiles
+                local['cmake']['--build']['.']['--target']['install'] & FG
+            except ProcessExecutionError:
+                # install target for MSVC
+                local['cmake']['--build']['.']['--target']['INSTALL'] & FG
 
 class build(_build):
     def initialize_options(self):

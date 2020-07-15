@@ -1,4 +1,7 @@
 
+.PHONY: all
+all: test
+
 .PHONY: test
 test: dist
 	cd test && ./test.sh

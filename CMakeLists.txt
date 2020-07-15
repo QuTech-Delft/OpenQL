@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 cmake_policy(VERSION 3.1)
 
-project(OpenQL CXX)
+project(OpenQL C CXX)
 
 # If OpenQL was already included elsewhere in the project, don't include it
 # again. There should be only one place for it and one version per project.
@@ -201,13 +201,18 @@ endif()
 # Even more annoying stuff: LEMON doesn't install itself in the right place on
 # multilib systems (i.e. ones where the libdir is lib64 instead of just lib).
 # So to make sure it is found in the install tree, we have to install it in the
-# proper place ourselves.
-install(
-    TARGETS lemon
-    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-    COMPONENT library
-)
+# proper place ourselves. That would go something like this,
+#
+#     install(
+#         TARGETS lemon
+#         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+#         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+#         COMPONENT library
+#     )
+#
+# but until CMake 3.13 the install directive MUST be in the directory where the
+# target is created, so we have to insert that piece of code into LEMON's own
+# CMakeLists.txt.
 
 
 # Eigen -----------------------------------------------------------------------

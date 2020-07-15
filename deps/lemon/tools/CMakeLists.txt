@@ -16,16 +16,18 @@ TARGET_LINK_LIBRARIES(dimacs-to-lgf lemon)
 ADD_EXECUTABLE(dimacs-solver dimacs-solver.cc)
 TARGET_LINK_LIBRARIES(dimacs-solver lemon)
 
+INCLUDE(GNUInstallDirs)
+
 INSTALL(
   TARGETS lgf-gen dimacs-to-lgf dimacs-solver
-  RUNTIME DESTINATION bin
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
   COMPONENT bin
 )
 
 IF(NOT WIN32)
   INSTALL(
     PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/lemon-0.x-to-1.x.sh
-    DESTINATION bin
+    DESTINATION "${CMAKE_INSTALL_BINDIR}"
     COMPONENT bin
   )
 ENDIF()
