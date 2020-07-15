@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file   kernel.h
  * @date   04/2017
  * @author Nader Khammassi
@@ -1083,9 +1083,9 @@ public:
             throw ql::exception("Unitary '"+u.name+"' has been applied to the wrong number of qubits. Cannot be added to kernel! "  + std::to_string(qubits.size()) +" and not "+ std::to_string(u_size), false);
 
         }
-        for(uint i = 0; i< qubits.size()-1; i++)
+        for(uint64_t i = 0; i< qubits.size()-1; i++)
         {
-            for(uint j = i+1; j < qubits.size(); j++)
+            for(uint64_t j = i+1; j < qubits.size(); j++)
             {
                 if(qubits[i] == qubits[j])
                 {
