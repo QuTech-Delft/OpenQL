@@ -17,28 +17,44 @@ find_package(SWIG REQUIRED)
 include(${SWIG_USE_FILE})
 
 
-# Python development package --------------------------------------------------
+# Python development headers --------------------------------------------------
 
-# Look for the Python development package. Steps depend on CMake version.
-# The location of the Python include directory can be overridden with the
-# PYTHON_INCLUDE_OVERRIDE environment variable. In this case, we don't need to
-# have CMake look for the Python development headers. This is necessary for
-# the manylinux container, where the system Python version doesn't come with
-# development headers (it's really only there for when you need Python in your
-# build process) and you should be linking against Python versions installed in
-# non-PATH locations, which CMake can't find.
+# CMake's Python-finding logic is dodgy at best at dealing with venvs, and
+# venvs themselves are dodgy at best at dealing with the development headers
+# and so on. "If you want something done, do it yourself," I guess.
+
+# For the manylinux build, we provide an environment variable which can be used
+# to override the development header location.
+set(PYTHON_INCLUDE_DIRS "PYTHON_INCLUDE_DIRS-NOTFOUND")
 if(DEFINED ENV{PYTHON_INCLUDE_OVERRIDE})
-#     if("${CMAKE_VERSION}" VERSION_LESS "3.12.0")
-#         find_package(PythonInterp 3 REQUIRED)
-#     else()
-#         find_package(Python3 COMPONENTS Interpreter REQUIRED)
-#     endif()
+    message(STATUS "Found python3 include directory override environment variable")
     set(PYTHON_INCLUDE_DIRS "$ENV{PYTHON_INCLUDE_OVERRIDE}")
 else()
-    if(NOT "$PYENV_ROOT" STREQUAL "")
-        set(Python_ROOT_DIR "$PYENV_ROOT")
+
+    # If there is no override, look for the Python executable first. If there's
+    # a virtualenv, look in it first and foremost.
+    if(DEFINED ENV{VIRTUAL_ENV})
+        find_program(PYTHON_EXECUTABLE python3 HINTS "$ENV{VIRTUAL_ENV}/bin")
+    else()
+        find_program(PYTHON_EXECUTABLE python3)
     endif()
 
+    # If we found it, we can ask it where its include directory is, using the
+    # sysconfig module.
+    if(PYTHON_EXECUTABLE)
+        execute_process(
+            COMMAND "${PYTHON_EXECUTABLE}" -c "import sysconfig; print(sysconfig.get_paths()[\"include\"])"
+            OUTPUT_VARIABLE PYTHON_INCLUDE_DIRS
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+    endif()
+endif()
+
+# If we failed to find the headers ourselves, fall back to CMake's internal
+# logic.
+if(NOT PYTHON_INCLUDE_DIRS)
+    message(WARNING "Could NOT find python3 include directory with custom logic, falling back to CMake internal")
+    unset(PYTHON_INCLUDE_DIRS)
     if("${CMAKE_VERSION}" VERSION_LESS "3.12.0")
         find_package(PythonInterp 3 REQUIRED)
         if(${PYTHONINTERP_FOUND})
@@ -49,6 +65,9 @@ else()
         set(PYTHON_INCLUDE_DIRS "${Python3_INCLUDE_DIRS}")
     endif()
 endif()
+
+# Print the directory we found for reference.
+message(STATUS "Found python3 include directory at ${PYTHON_INCLUDE_DIRS}")
 
 
 #=============================================================================#
