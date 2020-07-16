@@ -83,9 +83,17 @@ class build_ext(_build_ext):
                 # dealing with R(UN)PATH nonsense on Linux/OSX as much as
                 # possible.
                 ['-DBUILD_SHARED_LIBS=NO']
+
+                # Build type can be set using an environment variable.
+                ['-DCMAKE_BUILD_TYPE=' + os.environ.get('OPENQL_BUILD_TYPE', 'Release')]
             )
+
+            # Unitary decomposition can be disabled using an environment
+            # variable.
             if 'OPENQL_DISABLE_UNITARY' in os.environ:
                 cmd = cmd['-DWITH_UNITARY_DECOMPOSITION=OFF']
+
+            # Run cmake configuration.
             cmd & FG
 
             # Do the build with the given number of parallel threads.
