@@ -146,7 +146,7 @@ public:
 
     // destructor destroying deep resource_t's
     // runs before shallow destruction which is done by synthesized platform_resource_manager_t destructor
-    ~platform_resource_manager_t()
+    virtual ~platform_resource_manager_t()
     {
         // DOUT("Destroying platform_resource_manager_t");
         for(auto rptr : resource_ptrs)

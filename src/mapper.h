@@ -46,7 +46,7 @@
 // the standard assert didn't stop the compiler on its failure (causing long debug sessions)
 // so added the next to get around this and enforce assert working
 // it can be replaced by the standard assert if it works
-void assert_fail(const char *f, int l, const char *s)
+static void assert_fail(const char *f, int l, const char *s)
 {
     FATAL("assert " << s << " failed in file " << f << " at line " << l);
 }
