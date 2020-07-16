@@ -28,6 +28,17 @@ if(PYTHON_EXECUTABLE)
         OUTPUT_VARIABLE PYTHON_INCLUDE_DIRS
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+
+    # On Windows, we need to explicitly link against the Python library as
+    # well. Unfortunately we can't ask Python directly where this is, but
+    # we can figure it out
+    if(WIN32)
+        execute_process(
+            COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/python_lib.py" "${CMAKE_BUILD_TYPE}"
+            OUTPUT_VARIABLE PYTHON_LIBRARIES
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+    endif()
 endif()
 
 # If we failed to find the headers ourselves, fall back to CMake's internal
@@ -107,7 +118,11 @@ else()
 endif()
 
 # Compile the C++ source file and link it against the OpenQL library.
-swig_link_libraries(openql ql)
+if(WIN32)
+    swig_link_libraries(openql "${PYTHON_LIBRARIES}" ql)
+else()
+    swig_link_libraries(openql ql)
+endif()
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set_target_properties(_openql PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
 endif()
