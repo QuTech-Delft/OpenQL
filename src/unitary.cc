@@ -10,6 +10,9 @@
 
 #ifndef WITHOUT_UNITARY_DECOMPOSITION
 #include <Eigen/MatrixFunctions>
+#include <complex.h>
+#define lapack_complex_float    std::complex<float>
+#define lapack_complex_double   std::complex<double>
 #include <src/misc/lapacke.h>
 #endif
 
