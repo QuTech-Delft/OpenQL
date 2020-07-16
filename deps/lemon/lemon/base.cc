@@ -28,9 +28,12 @@ namespace lemon {
   double Tolerance<double>::def_epsilon = 1e-10;
   long double Tolerance<long double>::def_epsilon = 1e-14;
 
-#ifndef LEMON_ONLY_TEMPLATES
-  const Invalid INVALID = Invalid();
-#endif
+//#ifndef LEMON_ONLY_TEMPLATES
+//#ifdef _MSC_VER
+//  __declspec(dllexport)
+//#endif
+//  const Invalid INVALID = Invalid();
+//#endif
 
   TimeStamp::Format TimeStamp::_format = TimeStamp::NORMAL;
 

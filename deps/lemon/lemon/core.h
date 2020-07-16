@@ -82,12 +82,7 @@ namespace lemon {
   ///
   /// \ref Invalid is a global type that converts to each iterator
   /// in such a way that the value of the target iterator will be invalid.
-#ifdef LEMON_ONLY_TEMPLATES
-  const Invalid INVALID = Invalid();
-#else
-  LEMON_DECLSPEC
-  extern const Invalid INVALID;
-#endif
+  static const Invalid INVALID = Invalid();
 
   /// \addtogroup gutils
   /// @{
