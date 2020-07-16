@@ -104,7 +104,8 @@ class build_ext(_build_ext):
             cmd & FG
 
             # Do the build with the given number of parallel threads.
-            cmd = local['cmake']['--build']['.']['--config'][build_type]
+            build_cmd = local['cmake']['--build']['.']['--config'][build_type]
+            cmd = build_cmd
             if nprocs != '1':
                 try:
                     parallel_supported = tuple(local['cmake']('--version').split('\n')[0].split()[-1].split('.')) >= (3, 12)
@@ -118,15 +119,15 @@ class build_ext(_build_ext):
 
             # Run the C++ tests if requested.
             if 'OPENQL_BUILD_TESTS' in os.environ:
-                cmd = local['cmake']['--build']['.']['--target']['test'] & FG
+                cmd = build_cmd['--target']['test'] & FG
 
             # Do the install.
             try:
                 # install target for makefiles
-                local['cmake']['--build']['.']['--target']['install'] & FG
+                build_cmd['--target']['install'] & FG
             except ProcessExecutionError:
                 # install target for MSVC
-                local['cmake']['--build']['.']['--target']['INSTALL'] & FG
+                build_cmd['--target']['INSTALL'] & FG
 
 class build(_build):
     def initialize_options(self):
