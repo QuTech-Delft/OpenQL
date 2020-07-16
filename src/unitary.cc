@@ -41,6 +41,10 @@ void unitary::decompose() {
     throw std::runtime_error("unitary decomposition was explicitly disabled in this build!");
 }
 
+bool unitary::is_decompose_support_enabled() {
+    return false;
+}
+
 #else
 
 // JvS: this was originally the class "unitary" itself, but compile times of
@@ -555,6 +559,10 @@ void unitary::decompose() {
     gamma = decomposer.gamma;
     is_decomposed = decomposer.is_decomposed;
     instructionlist = decomposer.instructionlist;
+}
+
+bool unitary::is_decompose_support_enabled() {
+    return true;
 }
 
 #endif

@@ -31,6 +31,7 @@ def helper_regex(measurementstring):
 def helper_prob(qubitstate):
     return qubitstate.real**2+qubitstate.imag**2
 
+@unittest.skipUnless(ql.Unitary.is_decompose_support_enabled(), "unitary decomposition support was disabled during OpenQL build")
 class Test_conjugated_kernel(unittest.TestCase):
 
     @classmethod

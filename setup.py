@@ -69,7 +69,7 @@ class build_ext(_build_ext):
         if not os.path.exists(cbuild_dir):
             os.makedirs(cbuild_dir)
         with local.cwd(cbuild_dir):
-            (local['cmake'][root_dir]
+            cmd = (local['cmake'][root_dir]
                 ['-DOPENQL_BUILD_PYTHON=YES']
                 ['-DCMAKE_INSTALL_PREFIX=' + prefix_dir]
                 ['-DOPENQL_PYTHON_DIR=' + os.path.dirname(target)]
@@ -83,7 +83,10 @@ class build_ext(_build_ext):
                 # dealing with R(UN)PATH nonsense on Linux/OSX as much as
                 # possible.
                 ['-DBUILD_SHARED_LIBS=NO']
-            ) & FG
+            )
+            if 'OPENQL_DISABLE_UNITARY' in os.environ:
+                cmd = cmd['-DWITH_UNITARY_DECOMPOSITION=OFF']
+            cmd & FG
 
             # Do the build with the given number of parallel threads.
             cmd = local['cmake']['--build']['.']
