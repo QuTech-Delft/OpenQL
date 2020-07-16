@@ -97,14 +97,16 @@ endif()
 
 
 #=============================================================================#
-# CMake weirdness                                                             #
+# CMake weirdness and compatibility                                           #
 #=============================================================================#
 
 # On Windows builds, CMake complains that the CMake internal variable
 # "CMAKE_MODULE_LINKER_FLAGS_MAINTAINER" is not defined *the first time you
 # configure*. Weirdly, all is good with the world if you then just try again.
-# There appears to be no documentation whatsoever on this, but setting the
-# value manually seems to fix it.
+# It seems to have to do with the "maintainer" build type in MSVC, but there
+# is no documentation whatsoever. In any case, this just mimics what CMake
+# does automatically the second time you invoke it, so it works around the
+# issue.
 if(NOT DEFINED CMAKE_MODULE_LINKER_FLAGS_MAINTAINER)
     set(
         CMAKE_MODULE_LINKER_FLAGS_MAINTAINER ""
