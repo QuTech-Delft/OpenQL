@@ -88,6 +88,7 @@ if(DEFINED ENV{WINGLPK_ROOT_DIR})
     file(GLOB GLPK_LIB "$ENV{WINGLPK_ROOT_DIR}/w64/glpk_4_??.lib")
     set(GLPK_LIBRARY "${GLPK_LIB}" CACHE STRING "glpk library")
     mark_as_advanced(GLPK_LIBRARY)
+    set(WITHOUT_GLPK_INSTALL YES)
 endif()
 
 
@@ -320,6 +321,15 @@ install(
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
+
+# On Windows + MSVC, install the GLPK library if a specific root dir was given.
+if(DEFINED ENV{WINGLPK_ROOT_DIR})
+    file(GLOB GLPK_LIB "$ENV{WINGLPK_ROOT_DIR}/w64/glpk_4_??.dll")
+    install(
+        FILES "${GLPK_LIB}"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    )
+endif()
 
 
 endif() # NOT TARGET ql
