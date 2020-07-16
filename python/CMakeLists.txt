@@ -147,6 +147,16 @@ else()
     )
 endif()
 
+# On Windows, ship GLPK along with the wheel. On Mac this is handled by
+# delocate, and on manylinux by auditwheel, and in a local Linux install it's
+# not necessary.
+if(WIN32 AND GLPK_RUNTIME_LIBRARY)
+    install(
+        FILES "${GLPK_RUNTIME_LIBRARY}"
+        DESTINATION "${OPENQL_PYTHON_DIR}"
+    )
+endif()
+
 # Install the generated wrapper module.
 install(
     FILES "${CMAKE_SWIG_OUTDIR}/openql.py"

@@ -83,11 +83,15 @@ option(
 # from https://sourceforge.net/projects/winglpk/files/winglpk/. Simply set
 # it to the root folder of the extracted zip file.
 if(DEFINED ENV{WINGLPK_ROOT_DIR})
-    set(GLPK_INCLUDE_DIR "$ENV{WINGLPK_ROOT_DIR}/src" CACHE STRING "glpk include")
+    string(REPLACE "\\" "/" WINGLPK_ROOT_DIR "$ENV{WINGLPK_ROOT_DIR}")
+    set(GLPK_INCLUDE_DIR "${WINGLPK_ROOT_DIR}/src" CACHE STRING "glpk include")
     mark_as_advanced(GLPK_INCLUDE_DIR)
-    file(GLOB GLPK_LIB "$ENV{WINGLPK_ROOT_DIR}/w64/glpk_4_??.lib")
+    file(GLOB GLPK_LIB "${WINGLPK_ROOT_DIR}/w64/glpk_4_??.lib")
     set(GLPK_LIBRARY "${GLPK_LIB}" CACHE STRING "glpk library")
     mark_as_advanced(GLPK_LIBRARY)
+    file(GLOB GLPK_DLL "${WINGLPK_ROOT_DIR}/w64/glpk_4_??.dll")
+    set(GLPK_RUNTIME_LIBRARY "${GLPK_DLL}" CACHE STRING "glpk runtime library")
+    mark_as_advanced(GLPK_RUNTIME_LIBRARY)
     set(WITHOUT_GLPK_INSTALL YES)
 endif()
 
@@ -322,11 +326,10 @@ install(
     FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
 
-# On Windows + MSVC, install the GLPK library if a specific root dir was given.
-if(DEFINED ENV{WINGLPK_ROOT_DIR})
-    file(GLOB GLPK_LIB "$ENV{WINGLPK_ROOT_DIR}/w64/glpk_4_??.dll")
+# On Windows + MSVC, install the GLPK runtime library if one was found.
+if(GLPK_RUNTIME_LIBRARY)
     install(
-        FILES "${GLPK_LIB}"
+        FILES "${GLPK_RUNTIME_LIBRARY}"
         DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     )
 endif()
