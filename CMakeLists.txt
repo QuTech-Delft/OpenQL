@@ -79,6 +79,17 @@ option(
     ON
 )
 
+# The following snippit helps finding GLPK from a Windows build package as
+# from https://sourceforge.net/projects/winglpk/files/winglpk/. Simply set
+# it to the root folder of the extracted zip file.
+if(DEFINED ENV{WINGLPK_ROOT_DIR})
+    set(GLPK_INCLUDE_DIR "$ENV{WINGLPK_ROOT_DIR}/src" CACHE STRING "glpk include")
+    mark_as_advanced(GLPK_INCLUDE_DIR)
+    file(GLOB GLPK_LIB "$ENV{WINGLPK_ROOT_DIR}/w64/glpk_4_??.lib")
+    set(GLPK_LIBRARY "${GLPK_LIB}" CACHE STRING "glpk library")
+    mark_as_advanced(GLPK_LIBRARY)
+endif()
+
 
 #=============================================================================#
 # Global build configuration                                                  #
@@ -96,6 +107,11 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Windows weirdness: need a .lib file to link against a DLL at compile-time
+# (I think), but only the .dll is generated when there are no exported symbols.
+# This sort of fixes that (https://stackoverflow.com/questions/1941443)
+SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 
 #=============================================================================#
