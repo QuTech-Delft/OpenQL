@@ -83,23 +83,30 @@ option(
 # from https://sourceforge.net/projects/winglpk/files/winglpk/. Simply set
 # it to the root folder of the extracted zip file.
 if(DEFINED ENV{WINGLPK_ROOT_DIR})
-    set(GLPK_INCLUDE_DIR "$ENV{WINGLPK_ROOT_DIR}/src" CACHE STRING "glpk include")
+    string(REPLACE "\\" "/" WINGLPK_ROOT_DIR "$ENV{WINGLPK_ROOT_DIR}")
+    set(GLPK_INCLUDE_DIR "${WINGLPK_ROOT_DIR}/src" CACHE STRING "glpk include")
     mark_as_advanced(GLPK_INCLUDE_DIR)
-    file(GLOB GLPK_LIB "$ENV{WINGLPK_ROOT_DIR}/w64/glpk_4_??.lib")
+    file(GLOB GLPK_LIB "${WINGLPK_ROOT_DIR}/w64/glpk_4_??.lib")
     set(GLPK_LIBRARY "${GLPK_LIB}" CACHE STRING "glpk library")
     mark_as_advanced(GLPK_LIBRARY)
+    file(GLOB GLPK_DLL "${WINGLPK_ROOT_DIR}/w64/glpk_4_??.dll")
+    set(GLPK_RUNTIME_LIBRARY "${GLPK_DLL}" CACHE STRING "glpk runtime library")
+    mark_as_advanced(GLPK_RUNTIME_LIBRARY)
+    set(WITHOUT_GLPK_INSTALL YES)
 endif()
 
 
 #=============================================================================#
-# CMake weirdness                                                             #
+# CMake weirdness and compatibility                                           #
 #=============================================================================#
 
 # On Windows builds, CMake complains that the CMake internal variable
 # "CMAKE_MODULE_LINKER_FLAGS_MAINTAINER" is not defined *the first time you
 # configure*. Weirdly, all is good with the world if you then just try again.
-# There appears to be no documentation whatsoever on this, but setting the
-# value manually seems to fix it.
+# It seems to have to do with the "maintainer" build type in MSVC, but there
+# is no documentation whatsoever. In any case, this just mimics what CMake
+# does automatically the second time you invoke it, so it works around the
+# issue.
 if(NOT DEFINED CMAKE_MODULE_LINKER_FLAGS_MAINTAINER)
     set(
         CMAKE_MODULE_LINKER_FLAGS_MAINTAINER ""
@@ -320,6 +327,14 @@ install(
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
+
+# On Windows + MSVC, install the GLPK runtime library if one was found.
+if(GLPK_RUNTIME_LIBRARY)
+    install(
+        FILES "${GLPK_RUNTIME_LIBRARY}"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    )
+endif()
 
 
 endif() # NOT TARGET ql
