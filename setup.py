@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
 
-# TODO: clean includes once done
-import os, platform, shutil, sys, subprocess
-from distutils.command.bdist import bdist as _bdist
-from distutils.command.sdist import sdist as _sdist
-from distutils.command.build import build as _build
-from distutils.command.clean import clean as _clean
-from setuptools.command.egg_info import egg_info as _egg_info
-from setuptools.command.install import install as _install
-from setuptools.command.build_ext import build_ext as _build_ext
-import distutils.cmd
-import distutils.log
-from setuptools import setup, Extension, find_packages
-from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
-import re
+import os, platform, shutil, sys, re
+from setuptools import setup, Extension
+
+from distutils.command.clean        import clean        as _clean
+from setuptools.command.build_ext   import build_ext    as _build_ext
+from distutils.command.build        import build        as _build
+from setuptools.command.install     import install      as _install
+from distutils.command.bdist        import bdist        as _bdist
+from wheel.bdist_wheel              import bdist_wheel  as _bdist_wheel
+from distutils.command.sdist        import sdist        as _sdist
+from setuptools.command.egg_info    import egg_info     as _egg_info
 
 root_dir   = os.getcwd()                        # root of the repository
 src_dir    = root_dir   + os.sep + 'src'        # C++ source directory
