@@ -26,8 +26,15 @@
 #include <string>
 #include <cstddef>  // for size_t etc.
 #ifdef _MSC_VER     // MS Visual C++ does not know about ssize_t
+// FIXME JvS: this #ifdef should not be necessary. libqasm shouldn't be
+// #define'ing ssize_t, but should just use its own type! (so should this,
+// though, for the same reason. Though this typedef is by far the nicer way
+// to do it, it might still conflict with another header working around the
+// same problem)
+#ifndef ssize_t
   #include <type_traits>
   typedef std::make_signed<size_t>::type ssize_t;
+#endif
 #endif
 
 
