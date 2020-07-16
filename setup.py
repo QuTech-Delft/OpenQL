@@ -52,6 +52,22 @@ class build_ext(_build_ext):
     def run(self):
         from plumbum import local, FG, ProcessExecutionError
 
+        # If we were previously built in a different directory, nuke the cbuild
+        # dir to prevent inane CMake errors. This happens when the user does
+        # pip install . after building locally.
+        if os.path.exists(cbuild_dir + os.sep + 'CMakeCache.txt'):
+            with open(cbuild_dir + os.sep + 'CMakeCache.txt', 'r') as f:
+                for line in f.read().split('\n'):
+                    line = line.split('#')[0].strip()
+                    if not line:
+                        continue
+                    if line.startswith('OpenQL_BINARY_DIR:STATIC'):
+                        config_dir = line.split('=', maxsplit=1)[1]
+                        if os.path.realpath(config_dir) != os.path.realpath(cbuild_dir):
+                            print('removing pybuild/cbuild to avoid CMakeCache error')
+                            shutil.rmtree(cbuild_dir)
+                        break
+
         # Figure out how many parallel processes to build with.
         if self.parallel:
             nprocs = str(self.parallel)
