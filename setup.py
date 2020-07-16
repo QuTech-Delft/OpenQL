@@ -240,10 +240,16 @@ setup(
         'sdist': sdist,
     },
 
-    extras_require={'develop': ['pytest', 'numpy']},
     setup_requires = [
         'plumbum',
         'delocate; platform_system == "Darwin"',
     ],
+    install_requires = [
+        'msvc-runtime; platform_system == "Windows"',
+    ],
+    tests_require = [
+       'pytest', 'numpy' 
+    ],
+    
     zip_safe=False
 )
