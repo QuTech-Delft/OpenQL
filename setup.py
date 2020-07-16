@@ -93,6 +93,11 @@ class build_ext(_build_ext):
             if 'OPENQL_DISABLE_UNITARY' in os.environ:
                 cmd = cmd['-DWITH_UNITARY_DECOMPOSITION=OFF']
 
+            # C++ tests can be enabled using an environment variable. They'll
+            # be run before the install.
+            if 'OPENQL_BUILD_TESTS' in os.environ:
+                cmd = cmd['-DOPENQL_BUILD_TESTS=ON']
+
             # Run cmake configuration.
             cmd & FG
 
@@ -108,6 +113,10 @@ class build_ext(_build_ext):
                 elif not sys.platform.startswith('win'):
                     cmd = cmd['--']['-j'][nprocs]
             cmd & FG
+
+            # Run the C++ tests if requested.
+            if 'OPENQL_BUILD_TESTS' in os.environ:
+                cmd = local['cmake']['--build']['.']['--target']['test'] & FG
 
             # Do the install.
             try:
