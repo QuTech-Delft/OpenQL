@@ -250,6 +250,6 @@ setup(
     tests_require = [
        'pytest', 'numpy' 
     ],
-    
+
     zip_safe=False
 )
