@@ -7,7 +7,6 @@ ld_lib_path = os.environ.get('LD_LIBRARY_PATH', '')
 if ld_lib_path:
     ld_lib_path += ':'
 os.environ['LD_LIBRARY_PATH'] = ld_lib_path + os.path.dirname(__file__)
-print(os.environ['LD_LIBRARY_PATH'])
 del ld_lib_path, os
 
 # The import syntax changes slightly between python 2 and 3, so we
