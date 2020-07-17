@@ -38,7 +38,7 @@ install:
   - cd deps/libqasm
   - python3 -m pip install .
   - cd ../../.
-  - python3 -m pip install -v .
+  - OPENQL_ENABLE_INITIAL_PLACEMENT=1 python3 -m pip install -v .
 
 script: python3 -m pytest
 
