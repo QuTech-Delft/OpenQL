@@ -179,6 +179,10 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/mapper.cc"
 )
 
+# This definition is used to define OPENQL_DECLSPEC for __declspec. More info:
+# https://docs.microsoft.com/en-us/cpp/cpp/declspec?view=vs-2019
+TARGET_COMPILE_DEFINITIONS(ql PRIVATE BUILDING_OPENQL)
+
 # There is no distinction between public and private header files right now,
 # and they'r all in the source directory. Note the / at the end of the path;
 # this is necessary for the header files to be installed in the right location.
