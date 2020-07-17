@@ -245,5 +245,6 @@ setup(
         'plumbum',
         'delocate; platform_system == "Darwin"',
     ],
+    install_requires = ['msvc-runtime'] if sys.platform == 'win32' else [],
     zip_safe=False
 )
