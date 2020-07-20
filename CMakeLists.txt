@@ -46,11 +46,11 @@ SET(CLI11_INCLUDE_DIRS
 )
 
 SET(EIGEN_INCLUDE_DIRS
-  "${CMAKE_SOURCE_DIR}/deps/eigen/Eigen"
+  "${PROJECT_SOURCE_DIR}/deps/eigen/Eigen"
 )
 
 SET(EIGEN_UNSUPPORTED_INCLUDE_DIRS
-  "${CMAKE_SOURCE_DIR}/deps/eigen/unsupported"
+  "${PROJECT_SOURCE_DIR}/deps/eigen/unsupported"
 )
 
 OPTION(LIBQASM_COMPAT "" ON)
