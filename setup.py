@@ -248,7 +248,7 @@ setup(
         'msvc-runtime; platform_system == "Windows"',
     ],
     tests_require = [
-       'pytest', 'numpy' 
+        'pytest', 'numpy'
     ],
 
     zip_safe=False

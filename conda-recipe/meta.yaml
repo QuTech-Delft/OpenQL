@@ -1,17 +1,17 @@
 package:
   name: openql
-  version: "0.8.0"
+  version: "{{ load_setup_py_data().version }}"
 
 source:
-  # use the following path for the source if this recipe is inside the repo
   path: ../.
-
-  # otherwise, use the following to get source
-  #git_url: https://github.com/QE-Lab/OpenQL
-  #git_rev: 3c961a1ad2adc43522f8765c8561c52fa932307a
 
 build:
   number: 0
+  script_env:
+    - NPROCS
+    - OPENQL_BUILD_TYPE
+    - OPENQL_DISABLE_UNITARY
+    - OPENQL_ENABLE_INITIAL_PLACEMENT
 
 requirements:
   build:
@@ -21,7 +21,7 @@ requirements:
     - cmake
     - flex # [not win]
     - bison # [not win]
-    - winflexbison # [win]
+    #- winflexbison # [win]
   host:
     - python
     - plumbum
