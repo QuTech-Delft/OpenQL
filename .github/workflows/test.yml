@@ -128,8 +128,14 @@ jobs:
         channels: conda-forge
         show-channel-urls: true
         use-only-tar-bz2: true
-    - name: Install dependencies
+    - name: Install Windows dependencies
       if: matrix.os == 'windows-2016'
       run: choco install winflexbison3
-    - run: conda install conda-build conda-verify -y
-    - run: conda build conda-recipe
+    - name: Install conda dependencies
+      run: conda install conda-build conda-verify -y
+    - name: Build & test
+      env:
+        NPROCS: 100
+      run: conda build conda-recipe
+    - name: Install
+      run: conda install openql --use-local

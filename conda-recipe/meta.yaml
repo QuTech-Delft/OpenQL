@@ -28,7 +28,6 @@ requirements:
     - delocate # [osx]
   run:
     - python
-    - numpy
 
 test:
   imports:
@@ -37,6 +36,7 @@ test:
     - tests
   requires:
     - pytest
+    - numpy
   commands:
     - pytest tests
 
