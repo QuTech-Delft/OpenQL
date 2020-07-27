@@ -19,8 +19,9 @@ requirements:
     - setuptools
     - swig
     - cmake
-    - flex
-    - bison
+    - flex # [not win]
+    - bison # [not win]
+    - winflexbison # [win]
   host:
     - python
     - plumbum
