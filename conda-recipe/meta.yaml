@@ -15,14 +15,29 @@ build:
 
 requirements:
   build:
-    - python
+    - {{ compiler('cxx') }}
     - setuptools
     - swig
     - cmake
+    - flex
+    - bison
+  host:
+    - python
+    - plumbum
+    - delocate # [osx]
+  run:
+    - python
+    - numpy
 
 test:
   imports:
-    - openql.openql
+    - openql
+  source_files:
+    - tests
+  requires:
+    - pytest
+  commands:
+    - pytest tests
 
 about:
   home: https://github.com/QE-Lab/OpenQL
