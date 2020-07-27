@@ -138,4 +138,10 @@ jobs:
         NPROCS: 100
       run: conda build conda-recipe
     - name: Install
+      # This doesn't seem to work on Windows in CI because everything appears
+      # to build in a non-default environment and conda is broken for that,
+      # see https://github.com/conda/conda/issues/7758
+      # Note that conda build already does a test install in a fresh
+      # environment, so this is a bit redundant anyway.
+      if: matrix.os != 'windows-2016'
       run: conda install openql --use-local
