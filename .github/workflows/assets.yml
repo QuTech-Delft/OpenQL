@@ -28,7 +28,7 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: Install dependencies
       run: |
-        brew install bison flex glpk swig
+        brew install bison flex swig
         echo "::add-path::/usr/local/opt/bison/bin"
         echo "::add-path::/usr/local/opt/flex/bin"
         python -m pip install --upgrade pip setuptools wheel
