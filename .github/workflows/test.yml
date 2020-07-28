@@ -112,8 +112,6 @@ jobs:
         - ubuntu-latest
         - macos-latest
         - windows-2016
-        python-version:
-        - 3.8
     steps:
     - uses: actions/checkout@v2
       with:
@@ -123,7 +121,6 @@ jobs:
       with:
         auto-update-conda: true
         miniconda-version: "latest"
-        python-version: ${{ matrix.python-version }}
         channel-priority: strict
         channels: conda-forge
         show-channel-urls: true
