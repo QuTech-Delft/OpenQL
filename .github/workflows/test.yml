@@ -8,7 +8,7 @@ on:
 
 jobs:
   cpp:
-    name: 'C++'
+    name: 'C++ tests'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -44,6 +44,22 @@ jobs:
       run: cmake --build . --parallel
     - name: Test
       run: ctest -C Debug --output-on-failure
+
+  cpp-standalone:
+    name: 'C++ standalone program'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Configure
+      run: |
+        mkdir cbuild
+        cd cbuild && cmake ../examples/cpp-standalone-example
+    - name: Build
+      run: make -C cbuild -j
+    - name: Test
+      run: cd tests && ../cbuild/example
 
   python:
     name: Python

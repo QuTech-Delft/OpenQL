@@ -4,8 +4,7 @@
 int main(int argc, char ** argv)
 {
   // create platform
-  ql::quantum_platform platf("seven_qubits_chip",
-    "/data/repos/quantum_repos/openql/tests/hardware_config_cc_light.json");
+  ql::quantum_platform platf("seven_qubits_chip", "hardware_config_cc_light.json");
 
   // create program
   ql::quantum_program prog("aProgram", platf, 2);
@@ -26,5 +25,6 @@ int main(int argc, char ** argv)
   // compile the program
   prog.compile();
 
+  std::cout << "Seems good to me!" << std::endl;
   return 0;
 }
