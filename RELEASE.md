@@ -25,9 +25,7 @@ secrets are configured correctly.
 
  - Once CI is green, merge the PR and delete the branch. Instead, push a
    tag with the appropriate version (customarily `x.y.z` without a `v` in
-   front). Note that the version number built into the packages is
-   automatically determined based on the git tag. You don't need to change it
-   anywhere.
+   front).
 
  - CI will automatically make a complete GitHub release for your tag. It will
    then run the assets workflow again, now with the new version string baked
