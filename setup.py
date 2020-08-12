@@ -2,6 +2,7 @@
 
 import os, platform, shutil, sys, re
 from setuptools import setup, Extension
+from distutils.dir_util import copy_tree
 
 from distutils.command.clean        import clean        as _clean
 from setuptools.command.build_ext   import build_ext    as _build_ext
@@ -14,12 +15,23 @@ from setuptools.command.egg_info    import egg_info     as _egg_info
 
 root_dir   = os.getcwd()                        # root of the repository
 src_dir    = root_dir   + os.sep + 'src'        # C++ source directory
+pysrc_dir  = root_dir   + os.sep + 'python'     # Python source files
 target_dir = root_dir   + os.sep + 'pybuild'    # python-specific build directory
 build_dir  = target_dir + os.sep + 'build'      # directory for setuptools to dump various files into
 dist_dir   = target_dir + os.sep + 'dist'       # wheel output directory
 cbuild_dir = target_dir + os.sep + 'cbuild'     # cmake build directory
 prefix_dir = target_dir + os.sep + 'prefix'     # cmake install prefix
-module_dir = target_dir + os.sep + 'module'     # openql Python module directory, including generated file(s)
+srcmod_dir = pysrc_dir  + os.sep + 'openql'     # openql Python module directory, source files only
+module_dir = target_dir + os.sep + 'openql'     # openql Python module directory for editable install
+
+# Copy the hand-written Python sources into the module directory that we're
+# telling setuptools is our source directory, because setuptools insists on
+# spamming output files into that directory. This is ugly, especially because
+# it has to run before setup() is invoked, but seems to be more-or-less
+# unavoidable to get editable installs to work.
+if not os.path.exists(target_dir):
+    os.makedirs(target_dir)
+copy_tree(srcmod_dir, module_dir)
 
 def get_version(verbose=0):
     """ Extract version information from source code """
@@ -78,7 +90,8 @@ class build_ext(_build_ext):
         # it wants to place it.
         target = os.path.abspath(self.get_ext_fullpath('openql._openql'))
 
-        # Build the Python module and install it into module_dir.
+        # Build the Python extension and "install" it where setuptools expects
+        # it.
         if not os.path.exists(cbuild_dir):
             os.makedirs(cbuild_dir)
         with local.cwd(cbuild_dir):
@@ -219,7 +232,7 @@ setup(
     ],
 
     packages = ['openql'],
-    package_dir = {'': 'python'},
+    package_dir = {'': 'pybuild'},
 
     # NOTE: the library build process is completely overridden to let CMake
     # handle it; setuptools' implementation is horribly broken. This is here
