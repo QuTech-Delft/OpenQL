@@ -9,7 +9,7 @@
 #define QL_VISUALIZER_H
 
 #include "program.h"
-//#include "CImg.h"
+#include "CImg.h"
 
 #include <cstdint>
 
