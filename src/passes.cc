@@ -8,6 +8,7 @@
  */
 
 #include "passes.h"
+
 #include "report.h"
 #include "optimizer.h"
 #include "clifford.h"
@@ -15,6 +16,7 @@
 #include "cqasm/cqasm_reader.h"
 #include "latency_compensation.h"
 #include "buffer_insertion.h"
+#include "visualizer.h"
          
 #include <iostream>
 #include <chrono>
@@ -348,6 +350,22 @@ void ReportStatisticsPass::runOnProgram(ql::quantum_program *program)
     ///@note-rn: below call should be manually inlined here and removed from its current location
     ///@note-rn: pass should be moved to separate file containing only this pass
     ql::report_statistics(program, program->platform, "todo-inout", getPassName(), "# ");
+}
+
+    /**
+     * @brief  Visualizes the input program
+     * @param  Program object to be read
+     */
+void VisualizerPass::runOnProgram(ql::quantum_program *program)
+{
+    DOUT("run VisualizerPass with name = " << getPassName() << " on program " << program->name);
+
+
+    IOUT("Visualizer start...");
+    //ql::Layout layout;
+    //ql::visualize(program, layout);
+    //ql::visualize(program);
+    IOUT("Visualizer stop.");
 }
 
      /**

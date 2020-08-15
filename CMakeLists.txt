@@ -168,6 +168,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/optimizer.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/clifford.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passmanager.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/visualizer.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passes.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/report.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/exception.cc"

@@ -6,6 +6,7 @@ dist
 openql.egg-info
 lab
 env
+.eggs/
 
 # Temp files
 *.dot
