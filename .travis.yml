@@ -63,6 +63,7 @@ addons:
       - flex
       - bison
       - libglpk-dev
+      - libx11-dev
   homebrew:
     packages:
       - python3
