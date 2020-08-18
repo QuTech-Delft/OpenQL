@@ -9,25 +9,26 @@
 
 #include <iostream>
 
-//using namespace cimg_library;
+using namespace cimg_library;
 
 namespace ql
 {
 // TODO: implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
 // TODO: implement actual measurement symbol
 // TODO: option to display the classical bit lines
-// TODO: display wait/barrier
 // TODO: gate duration outlines in gate color
+// TODO: display wait/barrier
 // TODO: different types of cycle/duration(ns) labels
 // TODO: 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
 // TODO: generate default gate visuals from the configuration file
+
 // TODO: representing the gates as waveforms
 
 void visualize(const ql::quantum_program* program, const Layout layout)
 {
     IOUT("starting visualization...");
 	
-	/*
+	
     IOUT("validating layout...");
 	validateLayout(layout);
 
@@ -150,12 +151,11 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 	// Display the image.
     IOUT("displaying image...");
 	image.display("Quantum Circuit");
-	*/
+	
 
     IOUT("visualization complete...");
 }
 
-/*
 void validateLayout(const Layout layout)
 {
 
@@ -566,6 +566,5 @@ void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout
 	image.draw_line(x0, y0, x1, y1, node.backgroundColor.data());
 	image.draw_line(x0, y1, x1, y0, node.backgroundColor.data());
 }
-*/
 
 } // ql

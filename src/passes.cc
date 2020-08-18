@@ -362,9 +362,8 @@ void VisualizerPass::runOnProgram(ql::quantum_program *program)
 
 
     IOUT("Visualizer start...");
-    //ql::Layout layout;
-    //ql::visualize(program, layout);
-    //ql::visualize(program);
+    ql::Layout layout;
+    ql::visualize(program, layout);
     IOUT("Visualizer stop.");
 }
 
