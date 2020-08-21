@@ -12,6 +12,7 @@ class Test_visualizer(unittest.TestCase):
       ql.set_option('output_dir', output_dir)
       ql.set_option('optimize', 'no')
       ql.set_option('scheduler', 'ASAP')
+      #ql.set_option('log_level', 'LOG_DEBUG')
       ql.set_option('log_level', 'LOG_INFO')
       ql.set_option('unique_output', 'yes')
       ql.set_option('write_qasm_files', 'no')
@@ -19,7 +20,7 @@ class Test_visualizer(unittest.TestCase):
 
 
   def test_modularity(self):
-      config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
+      config_fn = os.path.join(curdir, 'hardware_config_cc_light_visualizer.json')
 
       c = ql.Compiler("testCompiler")
 

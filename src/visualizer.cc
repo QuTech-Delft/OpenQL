@@ -13,6 +13,7 @@ using namespace cimg_library;
 
 namespace ql
 {
+// TODO: implement visuals for custom gates
 // TODO: implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
 // TODO: implement actual measurement symbol
 // TODO: option to display the classical bit lines
@@ -21,6 +22,7 @@ namespace ql
 // TODO: different types of cycle/duration(ns) labels
 // TODO: 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
 // TODO: generate default gate visuals from the configuration file
+// TODO: change IOUT to DOUT (IOUT is used to avoid debug information from other source files while developing the visualizer!)
 
 // TODO: representing the gates as waveforms
 
@@ -143,7 +145,7 @@ void visualize(const ql::quantum_program* program, const Layout layout)
     IOUT("drawing gates...");
 	for (gate* gate : gates)
 	{
-        //const GateConfig gateConfig = layout.gateConfigs.at(gate->type());
+        //const GateVisual gateConfig = layout.gateVisuals.at(gate->type());
         IOUT("drawing gate: [name: " + gate->name + "]");
 		drawGate(image, layout, circuitData, gate);
 	}
@@ -325,7 +327,18 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	const unsigned int amountOfOperands = (unsigned int)gate->operands.size() + (unsigned int)gate->creg_operands.size();
 	const unsigned int cycleNumbersRowHeight = layout.cycles.showCycleNumbers ? layout.cycles.rowHeight : 0;
 	const unsigned int labelColumnWidth = layout.bitLine.drawLabels ? layout.bitLine.labelColumnWidth : 0;
-	const GateConfig gateConfig = layout.gateConfigs.at(gate->type());
+	
+	if (gate->type() == __custom_gate__)
+	{
+		IOUT("Custom gate found... drawing aborted!");
+		return;
+	}
+	else
+	{
+		IOUT("Default gate found. Using default visualization!");
+	}
+	const GateVisual gateConfig = layout.defaultGateVisuals.at(gate->type());
+	//const GateVisual gateConfig = gate->visual;
 
 	if (amountOfOperands > 1)
 	{
