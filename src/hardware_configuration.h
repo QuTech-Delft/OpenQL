@@ -22,8 +22,6 @@
 #include <json.h>
 #include <exception.h>
 
-#include "gate_visual.h"
-
 namespace ql
 {
 
