@@ -22,6 +22,8 @@
 #include <json.h>
 #include <exception.h>
 
+#include "gate_visual.h"
+
 namespace ql
 {
 
@@ -130,7 +132,7 @@ public:
             //  "^(token|(token token(,token)*))$"
             //  so with a comma between any operands
             instruction_map[name] = load_instruction(name, attr);
-            DOUT("instruction " << name << " loaded.");
+            DOUT("instruction '" << name << "' loaded.");
         }
 
         // load optional section gate_decomposition

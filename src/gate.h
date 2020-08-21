@@ -203,6 +203,7 @@ public:
     virtual instruction_t qasm()       = 0;
     virtual gate_type_t   type()       = 0;
     virtual cmat_t        mat()        = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
+	GateVisual gateVisual = { { 255, 255, 255 }, std::vector<Node>() }; // contains the visualization parameters
 };
 
 
@@ -1159,7 +1160,6 @@ class custom_gate : public gate
 public:
     cmat_t              m;                // matrix representation
     std::string         arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
-	GateVisual gateVisual = { { 255, 255, 255 }, std::vector<Node>() }; // contains the visualization parameters
 
 public:
 
@@ -1181,6 +1181,7 @@ public:
         name = g.name;
         creg_operands = g.creg_operands;
         duration  = g.duration;
+		gateVisual = g.gateVisual;
         m.m[0] = g.m.m[0];
         m.m[1] = g.m.m[1];
         m.m[2] = g.m.m[2];
@@ -1262,18 +1263,18 @@ public:
 			
 			// Load the visual parameters of the instruction if provided.
             l_attr = "visual";
-			IOUT("Loading visuals of instruction: '" << name << "'...");
+			DOUT("Loading visuals of instruction: '" << name << "'...");
 			if (instr.count("visual") == 1)
 			{
 				json visual = instr["visual"];
-				IOUT("Found visual attribute.");
+				DOUT("Found visual attribute.");
 				
 				// Load the connection color.
 				json connectionColor = visual["connectionColor"];
 				gateVisual.connectionColor[0] = connectionColor[0];
 				gateVisual.connectionColor[1] = connectionColor[1];
 				gateVisual.connectionColor[2] = connectionColor[2];
-				IOUT("Connection color: [" 
+ 				DOUT("Connection color: [" 
 					<< (int)gateVisual.connectionColor[0] << ","
 					<< (int)gateVisual.connectionColor[1] << ","
 					<< (int)gateVisual.connectionColor[2] << "]");
@@ -1314,7 +1315,7 @@ public:
 					
 					gateVisual.nodes.push_back(loadedNode);
 					
-					IOUT("[type: " << node["type"] << "] "
+ 					DOUT("[type: " << node["type"] << "] "
 						<< "[radius: " << gateVisual.nodes.at(i).radius << "] "
 						<< "[displayName: " << gateVisual.nodes.at(i).displayName << "] "
 						<< "[fontHeight: " << gateVisual.nodes.at(i).fontHeight << "] "
@@ -1334,7 +1335,7 @@ public:
 			}
 			else
 			{
-				IOUT("Did not find 'visual' attribute! This instruction will not have a visual associated with it.");
+				WOUT("Did not find 'visual' attribute! Instruction '" << name << "' will not have a visual associated with it.");
 			}
         }
         catch (json::exception &e)

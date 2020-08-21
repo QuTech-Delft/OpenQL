@@ -145,7 +145,7 @@ void visualize(const ql::quantum_program* program, const Layout layout)
     IOUT("drawing gates...");
 	for (gate* gate : gates)
 	{
-        //const GateVisual gateConfig = layout.gateVisuals.at(gate->type());
+        //const GateVisual gateVisual = layout.gateVisuals.at(gate->type());
         IOUT("drawing gate: [name: " + gate->name + "]");
 		drawGate(image, layout, circuitData, gate);
 	}
@@ -328,17 +328,19 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	const unsigned int cycleNumbersRowHeight = layout.cycles.showCycleNumbers ? layout.cycles.rowHeight : 0;
 	const unsigned int labelColumnWidth = layout.bitLine.drawLabels ? layout.bitLine.labelColumnWidth : 0;
 	
+	IOUT("drawing gate with name: '" << gate->name << "'");
+	
+	GateVisual gateVisual;
 	if (gate->type() == __custom_gate__)
 	{
-		IOUT("Custom gate found... drawing aborted!");
-		return;
+		IOUT("Custom gate found. Using user specified visualization.");
+		gateVisual = gate->gateVisual;
 	}
 	else
 	{
 		IOUT("Default gate found. Using default visualization!");
+		gateVisual = layout.defaultGateVisuals.at(gate->type());
 	}
-	const GateVisual gateConfig = layout.defaultGateVisuals.at(gate->type());
-	//const GateVisual gateConfig = gate->visual;
 
 	if (amountOfOperands > 1)
 	{
@@ -394,11 +396,11 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 
 				image.draw_line(connectionPosition.x0 - layout.measurements.lineSpacing, connectionPosition.y0,
 					connectionPosition.x1 - layout.measurements.lineSpacing, connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset,
-					gateConfig.connectionColor.data());
+					gateVisual.connectionColor.data());
 
 				image.draw_line(connectionPosition.x0 + layout.measurements.lineSpacing, connectionPosition.y0,
 					connectionPosition.x1 + layout.measurements.lineSpacing, connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset,
-					gateConfig.connectionColor.data());
+					gateVisual.connectionColor.data());
 
 				const unsigned int x0 = connectionPosition.x1 - layout.measurements.arrowSize / 2;
 				const unsigned int y0 = connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset;
@@ -406,12 +408,12 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 				const unsigned int y1 = connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset;
 				const unsigned int x2 = connectionPosition.x1;
 				const unsigned int y2 = connectionPosition.y1 - groupedClassicalLineOffset;
-				image.draw_triangle(x0, y0, x1, y1, x2, y2, gateConfig.connectionColor.data(), 1);
+				image.draw_triangle(x0, y0, x1, y1, x2, y2, gateVisual.connectionColor.data(), 1);
 			}
 		}
 		else
 		{
-			image.draw_line(connectionPosition.x0, connectionPosition.y0, connectionPosition.x1, connectionPosition.y1, gateConfig.connectionColor.data());
+			image.draw_line(connectionPosition.x0, connectionPosition.y0, connectionPosition.x1, connectionPosition.y1, gateVisual.connectionColor.data());
 		}
         IOUT("finished setting up multi-operand gate");
 	}
@@ -449,7 +451,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
         //TODO: change the try-catch later on! the gate config will be read from somewhere else than the default layout
         try
         {
-		    const Node node = gateConfig.nodes.at(i);
+		    const Node node = gateVisual.nodes.at(i);
             const BitType operandType = (i >= gate->operands.size()) ? CLASSICAL : QUANTUM;
             const unsigned int index = (operandType == QUANTUM) ? i : (i - (unsigned int)gate->operands.size());
             const NodePositionData positionData =
