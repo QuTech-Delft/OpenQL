@@ -14,25 +14,30 @@ using namespace cimg_library;
 namespace ql
 {
 // --- QUESTIONS ---
-// TODO: display wait/barrier -> wait/barrier gates do not appear in a program's gate list! how to find them?
-// TODO: the measure instruction in hw config does not contain a classical line argument?
+// wait/barrier gates do not appear in a program's gate list! how to find them?
+// the measure instruction in hw config does not contain a classical line argument?
+// how to determine the duration of a cycle? hw dependent? is it configured somewhere?
 
 // --- DONE ---
 // visualization of custom gates
 // option to enable or disable classical bit lines
+// different types of cycle/duration(ns) labels
 
 // -- IN PROGRESS ---
-// TODO: different types of cycle/duration(ns) labels
-// TODO: 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
 // TODO: gate duration outlines in gate color
+// TODO: 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
 
 // --- FUTURE WORK ---
+// TODO: display wait/barrier gate
+// TODO: properly determine the duration of one cycle and store it in cycleDuration
 // TODO: implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
 // TODO: implement actual measurement symbol
 // TODO: generate default gate visuals from the configuration file
 // TODO: change IOUT to DOUT (IOUT is used to avoid debug information from other source files while developing the visualizer!)
 // TODO: representing the gates as waveforms
 // TODO: allow the user to set the layout object from Python
+
+unsigned int cycleDuration = 40;
 
 void visualize(const ql::quantum_program* program, const Layout layout)
 {
@@ -51,11 +56,6 @@ void visualize(const ql::quantum_program* program, const Layout layout)
         circuit c = kernel.get_circuit();
         gates.insert( gates.end(), c.begin(), c.end() );
     }
-	
-	for (auto gate : gates)
-	{
-		IOUT(gate->name);
-	}
     
 	// Calculate amount of cycles.
     IOUT("calculating amount of cycles...");
@@ -222,7 +222,7 @@ unsigned int calculateAmountOfCycles(const std::vector<ql::gate*> gates)
 	amountOfCycles++; // because the cycles start at zero, we add one to get the true amount of cycles
 	const gate* lastGate = gates.at(gates.size() - 1);
 	const unsigned int lastGateDuration = (unsigned int)lastGate->duration;
-	const unsigned int lastGateDurationInCycles = lastGateDuration / 40;
+	const unsigned int lastGateDurationInCycles = lastGateDuration / cycleDuration;
 	if (lastGateDurationInCycles > 1)
 	{
 		amountOfCycles += lastGateDurationInCycles - 1;
@@ -235,7 +235,16 @@ void drawCycleNumbers(cimg_library::CImg<unsigned char>& image, const Layout lay
 {
 	for (unsigned int i = 0; i < circuitData.amountOfCycles; i++)
 	{
-		const std::string cycleLabel = std::to_string(i);
+		std::string cycleLabel;
+		if (layout.cycles.showCyclesInNanoSeconds)
+		{
+			cycleLabel = std::to_string(i * cycleDuration);
+		}
+		else
+		{
+			cycleLabel = std::to_string(i);
+		}
+		
 		const char* text = cycleLabel.c_str();
 		CImg<unsigned char> imageTextDimensions;
 		const unsigned char color = 1;

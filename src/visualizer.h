@@ -63,6 +63,7 @@ struct Cycles
 {
 	// Cycle number row.
 	bool showCycleNumbers = true;
+	bool showCyclesInNanoSeconds = true;
 	unsigned int rowHeight = 24;
 	unsigned int fontHeight = 13;
 	std::array<unsigned char, 3> fontColor = black;
