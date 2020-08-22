@@ -13,18 +13,26 @@ using namespace cimg_library;
 
 namespace ql
 {
-// TODO: implement visuals for custom gates
-// TODO: implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
-// TODO: implement actual measurement symbol
-// TODO: option to display the classical bit lines
-// TODO: gate duration outlines in gate color
-// TODO: display wait/barrier
+// --- QUESTIONS ---
+// TODO: display wait/barrier -> wait/barrier gates do not appear in a program's gate list! how to find them?
+// TODO: the measure instruction in hw config does not contain a classical line argument?
+
+// --- DONE ---
+// visualization of custom gates
+// option to enable or disable classical bit lines
+
+// -- IN PROGRESS ---
 // TODO: different types of cycle/duration(ns) labels
 // TODO: 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
+// TODO: gate duration outlines in gate color
+
+// --- FUTURE WORK ---
+// TODO: implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
+// TODO: implement actual measurement symbol
 // TODO: generate default gate visuals from the configuration file
 // TODO: change IOUT to DOUT (IOUT is used to avoid debug information from other source files while developing the visualizer!)
-
 // TODO: representing the gates as waveforms
+// TODO: allow the user to set the layout object from Python
 
 void visualize(const ql::quantum_program* program, const Layout layout)
 {
@@ -43,6 +51,11 @@ void visualize(const ql::quantum_program* program, const Layout layout)
         circuit c = kernel.get_circuit();
         gates.insert( gates.end(), c.begin(), c.end() );
     }
+	
+	for (auto gate : gates)
+	{
+		IOUT(gate->name);
+	}
     
 	// Calculate amount of cycles.
     IOUT("calculating amount of cycles...");
@@ -124,19 +137,23 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 	{
 		drawBitLine(image, layout, QUANTUM, i, circuitData);
 	}
-	// Draw the grouped classical bit lines if the option is set.
-	if (amountOfCbits > 0 && layout.bitLine.groupClassicalLines)
+	// Draw the classical lines if enabled.
+	if (layout.bitLine.showClassicalLines)
 	{
-        IOUT("drawing grouped classical bit lines...");
-		drawGroupedClassicalBitLine(image, layout, circuitData);
-	}
-	// Otherwise draw each classical bit line seperate.
-	else
-	{
-        IOUT("drawing ungrouped classical bit lines...");
-		for (unsigned int i = amountOfQubits; i < amountOfQubits + amountOfCbits; i++)
+		// Draw the grouped classical bit lines if the option is set.
+		if (amountOfCbits > 0 && layout.bitLine.groupClassicalLines)
 		{
-			drawBitLine(image, layout, CLASSICAL, i, circuitData);
+			IOUT("drawing grouped classical bit lines...");
+			drawGroupedClassicalBitLine(image, layout, circuitData);
+		}
+		// Otherwise draw each classical bit line seperate.
+		else
+		{
+			IOUT("drawing ungrouped classical bit lines...");
+			for (unsigned int i = amountOfQubits; i < amountOfQubits + amountOfCbits; i++)
+			{
+				drawBitLine(image, layout, CLASSICAL, i, circuitData);
+			}
 		}
 	}
 
