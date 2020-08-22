@@ -22,9 +22,9 @@ namespace ql
 // visualization of custom gates
 // option to enable or disable classical bit lines
 // different types of cycle/duration(ns) labels
+// gate duration outlines in gate color
 
 // -- IN PROGRESS ---
-// TODO: gate duration outlines in gate color
 // TODO: 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
 
 // --- FUTURE WORK ---
@@ -448,23 +448,30 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	if (!layout.cycles.compressCycles && layout.cycles.showGateDurationOutline)
 	{
         IOUT("drawing gate duration outline...");
-		const unsigned int gateDurationInCycles = ((unsigned int)gate->duration) / 40;
+		const unsigned int gateDurationInCycles = ((unsigned int)gate->duration) / cycleDuration;
 		// Only draw the gate outline if the gate takes more than one cycle.
 		if (gateDurationInCycles > 1)
 		{
-			for (size_t operand : gate->operands)
+			//for (size_t operand : gate->operands)
+			for (unsigned int i = 0; i < amountOfOperands; i++)
 			{
 				const unsigned int columnStart = (unsigned int)gate->cycle;
 				const unsigned int columnEnd = columnStart + gateDurationInCycles - 1;
-				const unsigned int row = (unsigned int)operand;
+				//const unsigned int row = (unsigned int)operand;
+				const unsigned int row = i;
 
 				const unsigned int x0 = layout.grid.borderSize + labelColumnWidth + columnStart * layout.grid.cellSize + layout.cycles.gateDurationGap;
 				const unsigned int y0 = layout.grid.borderSize + cycleNumbersRowHeight + row * layout.grid.cellSize + layout.cycles.gateDurationGap;
 				const unsigned int x1 = layout.grid.borderSize + labelColumnWidth + (columnEnd + 1) * layout.grid.cellSize - +layout.cycles.gateDurationGap;
 				const unsigned int y1 = layout.grid.borderSize + cycleNumbersRowHeight + (row + 1) * layout.grid.cellSize - +layout.cycles.gateDurationGap;
-
-				image.draw_rectangle(x0, y0, x1, y1, layout.cycles.gateDurationOutlineColor.data(), layout.cycles.gateDurationAlpha);
-				image.draw_rectangle(x0, y0, x1, y1, layout.cycles.gateDurationOutlineColor.data(), layout.cycles.gateDurationOutLineAlpha, 0xF0F0F0F0);
+				
+				// Draw the outline in the colors of the node.
+				const Node node = gateVisual.nodes.at(i);
+				image.draw_rectangle(x0, y0, x1, y1, node.backgroundColor.data(), layout.cycles.gateDurationAlpha);
+				image.draw_rectangle(x0, y0, x1, y1, node.outlineColor.data(), layout.cycles.gateDurationOutLineAlpha, 0xF0F0F0F0);
+				
+				//image.draw_rectangle(x0, y0, x1, y1, layout.cycles.gateDurationOutlineColor.data(), layout.cycles.gateDurationAlpha);
+				//image.draw_rectangle(x0, y0, x1, y1, layout.cycles.gateDurationOutlineColor.data(), layout.cycles.gateDurationOutLineAlpha, 0xF0F0F0F0);
 			}
 		}
 	}
