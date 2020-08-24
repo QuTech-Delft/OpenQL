@@ -1,0 +1,8 @@
+build
+cbuild
+pybuild
+dist
+openql.egg-info
+lab
+env
+docs

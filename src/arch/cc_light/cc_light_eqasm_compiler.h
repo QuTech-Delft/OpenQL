@@ -27,7 +27,7 @@
 // eqasm code : set of cc_light_eqasm instructions
 typedef std::vector<ql::arch::cc_light_eqasm_instr_t> eqasm_t;
 
-void ccl_assert_fail(const char *f, int l, const char *s)
+static void ccl_assert_fail(const char *f, int l, const char *s)
 {
     FATAL("assert " << s << " failed in file " << f << " at line " << l);
 }
@@ -45,8 +45,8 @@ typedef std::vector<qubit_pair_t>  qubit_pair_set_t;
 const size_t MAX_S_REG =32;
 const size_t MAX_T_REG =64;
 
-size_t CurrSRegCount=0;
-size_t CurrTRegCount=0;
+extern size_t CurrSRegCount;
+extern size_t CurrTRegCount;
 
 class Mask
 {
@@ -359,7 +359,7 @@ public:
 
 };
 
-std::string classical_instruction2qisa(ql::arch::classical_cc* classical_ins)
+static std::string classical_instruction2qisa(ql::arch::classical_cc* classical_ins)
 {
     std::stringstream ssclassical;
     auto & iname =  classical_ins->name;
@@ -444,7 +444,7 @@ inline std::string get_cc_light_instruction_name(std::string & id, const ql::qua
     return cc_light_instr_name;
 }
 
-std::string ir2qisa(quantum_kernel & kernel,
+static std::string ir2qisa(quantum_kernel & kernel,
     const ql::quantum_platform & platform, MaskManager & gMaskManager)
 {
     IOUT("Generating CC-Light QISA");

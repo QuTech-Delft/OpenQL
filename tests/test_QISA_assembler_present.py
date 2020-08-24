@@ -15,12 +15,6 @@ sys.path.append(os.path.join(qmapFilename, 'qisa_opcodes.qmap'))
 sys.path.append(os.path.join(curdir, 'qisa-as', 'build'))
 
 
-class Test_QISA_asssembler(unittest.TestCase):
-
-    def test_QISA_assembler_present(self):
-        # from pyQisaAs import QISA_Driver
-        from qisa_as import QISA_Driver
-
 driver = None
 
 try:

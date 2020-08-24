@@ -997,7 +997,7 @@ namespace ql
       /**
        * qumis comparator
        */
-      bool qumis_comparator(qumis_instruction * i1, qumis_instruction * i2)
+      static bool qumis_comparator(qumis_instruction * i1, qumis_instruction * i2)
       {
          return (i1->start < i2->start);
       }
@@ -1005,7 +1005,7 @@ namespace ql
       /**
        * triggers comparator
        */
-      bool triggers_comparator(qumis_instruction * t1, qumis_instruction * t2)
+      static bool triggers_comparator(qumis_instruction * t1, qumis_instruction * t2)
       {
          return (t1->duration < t2->duration);
       }

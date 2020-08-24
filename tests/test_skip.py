@@ -51,13 +51,13 @@ class Test_skip(unittest.TestCase):
         prog = ql.Program(prog_name, starmon, num_qubits, 0)
 
         qasm_rdr = ql.cQasmReader(starmon, prog)
-        qasm_str = f"""version 1.0
+        qasm_str = """version 1.0
             qubits 7
             .{kernel_name}
             cnot q[2],q[5]
             skip 2
             {{ x q[0] | y q[1] }}
-            """
+            """.format(kernel_name=kernel_name)
 
         qasm_rdr.string2circuit(qasm_str)
 

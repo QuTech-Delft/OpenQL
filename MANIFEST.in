@@ -1,3 +1,0 @@
-include README.md
-include examples/*.py
-include tests/*.py

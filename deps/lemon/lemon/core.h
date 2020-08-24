@@ -35,6 +35,16 @@
 // C4996: 'function': was declared deprecated
 #ifdef _MSC_VER
 #pragma warning( disable : 4250 4355 4503 4800 4996 )
+
+#ifdef _MSC_VER
+#ifdef BUILDING_LEMON
+#define LEMON_DECLSPEC __declspec(dllexport)
+#else
+#define LEMON_DECLSPEC __declspec(dllimport)
+#endif
+#endif
+#else
+#define LEMON_DECLSPEC
 #endif
 
 #ifdef __GNUC__
@@ -72,11 +82,7 @@ namespace lemon {
   ///
   /// \ref Invalid is a global type that converts to each iterator
   /// in such a way that the value of the target iterator will be invalid.
-#ifdef LEMON_ONLY_TEMPLATES
-  const Invalid INVALID = Invalid();
-#else
-  extern const Invalid INVALID;
-#endif
+  static const Invalid INVALID = Invalid();
 
   /// \addtogroup gutils
   /// @{

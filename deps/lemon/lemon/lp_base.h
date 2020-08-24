@@ -87,8 +87,10 @@ namespace lemon {
     ///The floating point type used by the solver
     typedef double Value;
     ///The infinity constant
+    LEMON_DECLSPEC
     static const Value INF;
     ///The not a number constant
+    LEMON_DECLSPEC
     static const Value NaN;
 
     friend class Col;

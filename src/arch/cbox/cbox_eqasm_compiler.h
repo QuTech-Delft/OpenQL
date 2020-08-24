@@ -36,7 +36,7 @@ namespace ql
       /**
        * tqasm comparator
        */
-      bool tqasm_comparator(sch_qasm_t q1, sch_qasm_t q2)
+      static bool tqasm_comparator(sch_qasm_t q1, sch_qasm_t q2)
       {
          return (q1.second < q2.second);
       }
