@@ -47,7 +47,7 @@ OpenQL can be installed as a conda package (currently on Linux and Windows only)
 
 ::
 
-    conda install -c imran.ashraf openql
+    conda install -c qe-lab openql
 
 
 Conda packages can also be built locally by using the recipe available in the conda-recipe directory,
