@@ -50,7 +50,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: wheelhouse/${{ steps.wheel.outputs.wheel }}
+        asset_path: pybuild/dist/${{ steps.wheel.outputs.wheel }}
         asset_name: ${{ steps.wheel.outputs.wheel }}
         asset_content_type: application/zip
 

@@ -27,12 +27,15 @@ secrets are configured correctly.
  - Once CI is green, merge the PR into `develop` if there are any changes.
    If no changes were needed, just delete the branch to clean up.
 
- - Push a tag with the appropriate version (customarily `x.y.z` without a `v`
-   in front) for the latest version of `develop` (if the PR had changes and
-   was merged, be sure to pull the changes first).
+ - If needed, also merge to `master`.
 
- - CI will automatically make a complete GitHub release for your tag. It will
-   then run the assets workflow again, now with the new version string baked
+ - Draft a new release through the GitHub interface. Set the "tag version"
+   to the same version you put in `src/version.h`, the title to
+   "Release `version`: `name`", and write a short changelog in the body.
+   For releases that don't go to master, check the "prerelease" box, so it
+   won't show up as the latest release.
+
+ - CI will run the assets workflow again, now with the new version string baked
    into the wheels and packages. When done, these wheels and packages are
    automatically added to the GitHub release, and if the secrets/API keys for
-   PyPI and conda are correct, publish them there.
+   PyPI and conda are correct, CI will publish them there.
