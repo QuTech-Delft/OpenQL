@@ -2,7 +2,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/openql/badge/?version=latest)](https://openql.readthedocs.io/en/latest/?badge=latest)
 [![Travis Build Status](https://travis-ci.com/QE-Lab/OpenQL.svg?branch=develop)](https://travis-ci.com/QE-Lab/OpenQL)
-[![GitHub Actions Build Status](https://github.com/QE-Lab/libqasm/workflows/Test/badge.svg)](https://github.com/qe-lab/libqasm/actions)
+[![GitHub Actions Build Status](https://github.com/QE-Lab/OpenQL/workflows/Test/badge.svg)](https://github.com/qe-lab/OpenQL/actions)
 [![PyPI](https://badgen.net/pypi/v/qutechopenql)](https://pypi.org/project/qutechopenql/)
 [![Anaconda](https://anaconda.org/qe-lab/openql/badges/version.svg)](https://anaconda.org/qe-lab/openql/)
 
