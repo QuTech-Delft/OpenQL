@@ -37,7 +37,7 @@ jobs:
           ${{ runner.os }}-chocolatey-
     - name: Install dependencies
       if: matrix.os == 'windows-latest'
-      run: choco install winflexbison3
+      run: choco install winflexbison3 --version 2.5.18.20190508
     - name: Configure
       run: cmake . -DCMAKE_BUILD_TYPE=Debug -DOPENQL_BUILD_TESTS=ON -DBUILD_SHARED_LIBS=OFF
     - name: Build
@@ -108,7 +108,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: powershell
       run: |
-        choco install winflexbison3
+        choco install winflexbison3 --version 2.5.18.20190508
         choco install swig --version 4.0.1
         echo "::set-env name=OPENQL_BUILD_TYPE::Release"
     - name: Build
@@ -143,7 +143,7 @@ jobs:
         use-only-tar-bz2: true
     - name: Install Windows dependencies
       if: matrix.os == 'windows-2016'
-      run: choco install winflexbison3
+      run: choco install winflexbison3 --version 2.5.18.20190508
     - name: Install conda dependencies
       run: conda install conda-build conda-verify -y
     - name: Build & test
