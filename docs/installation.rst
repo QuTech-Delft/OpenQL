@@ -47,7 +47,7 @@ OpenQL can be installed as a conda package (currently on Linux and Windows only)
 
 ::
 
-    conda install -c imran.ashraf openql
+    conda install -c qe-lab openql
 
 
 Conda packages can also be built locally by using the recipe available in the conda-recipe directory,
@@ -200,43 +200,47 @@ or
 Compiling C++ OpenQL tests and programs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Existing tests and programs can be compiled by the following instructions. You can use an existing example as a starting point and write your own programs. Make sure to include them in the CMakeLists.txt file to inform cmake to compile it as well.
+Existing tests and programs can be compiled by the following instructions. You
+can use any existing example as a starting point for your own programs, but
+refer to ``examples/cpp-standalone-example`` for the build system.
+
+The tests are run with the ``tests`` directory as the working directory, so
+they can find their JSON files. The results end up in ``tests/test_output``.
 
 
 Linux/OSX
 .........
 
-Existing tests and programs can be compiled on Linux OS by the following commands:
+Existing tests and examples can be compiled and run using the following commands:
 
 ::
 
     mkdir cbuild
     cd cbuild
-    cmake ..   # generates the make file based on CMakeLists.txt in the OpenQL directory
-    make       # compiles the source code into the current directory.
-
-
-
-To execute the given examples or tests, go to e.g., ```OpenQL/cbuild/examples``` and execute one of the files e.g.,  ```./simple```. The output will be saved to the output directory next to the file.
-
-If one wants to compile and run a single file without adding it to CMakeLists.txt, e.g., ```example.cc```, he can use the standalone example provided in ```examples/cpp-standalone-example``` directory.
-
-Some targets must be built manually, like test_cc. To build test_cc, from the cbuild directory do:
-
-::
-
-    make test_cc
-    cd tests
-    ./test_cc
-
+    cmake .. -DOPENQL_BUILD_TESTS=ON    # configure the build
+    make                                # actually build OpenQL and the tests
+    make test                           # run the tests
 
 
 Windows
 .......
 
+Existing tests and examples can be compiled and run using the following commands:
+
 ::
 
     mkdir cbuild
     cd cbuild
-    cmake -G "NMake Makefiles" ..
-    nmake
+    cmake .. -DOPENQL_BUILD_TESTS=ON -DBUILD_SHARED_LIBS=OFF # configure the build
+    cmake --build .                     # actually build OpenQL and the tests
+    cmake --build . --target RUN_TESTS  # run the tests
+
+.. note::
+
+    ``-DBUILD_SHARED_LIBS=OFF`` is needed on Windows only because the
+    executables can't find the OpenQL DLL in the build tree that MSVC
+    generates, and static linking works around that. It works just fine when
+    you manually place the DLL in the same directory as the test executables
+    though, so this is just a limitation of the current build system for the
+    tests.
+

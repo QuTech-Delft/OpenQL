@@ -319,7 +319,7 @@ public:
 }; //class end
 
 
-	double quick_fidelity(std::list< ql::gate * > gate_list )
+	static double quick_fidelity(std::list< ql::gate * > gate_list )
 	{
 		ql::Metrics estimator(17);
 		std::vector<double> previous_fids;
@@ -330,7 +330,7 @@ public:
 		return fidelity;
 	}
 
-	double quick_fidelity_circuit(ql::circuit circuit )
+    static double quick_fidelity_circuit(ql::circuit circuit )
 	{
 		ql::Metrics estimator(17);
 		std::vector<double> previous_fids;
@@ -339,7 +339,7 @@ public:
 		return fidelity;
 	}
 
-	double quick_fidelity(ql::circuit circuit )
+    static double quick_fidelity(ql::circuit circuit )
 	{
 		ql::Metrics estimator(17);
 		std::vector<double> previous_fids;

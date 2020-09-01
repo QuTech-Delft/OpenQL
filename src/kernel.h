@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file   kernel.h
  * @date   04/2017
  * @author Nader Khammassi
@@ -619,8 +619,13 @@ private:
                                       std::vector<size_t> cregs = {}, size_t duration=0, double angle=0.0)
     {
         bool added = false;
-
-        // first check if a specialized custom gate is available
+#if OPT_DECOMPOSE_WAIT_BARRIER  // hack to skip wait/barrier
+        if(gname=="wait" || gname=="barrier")
+        {
+            return added;   // return, so a default gate will be attempted
+        }
+#endif
+        // construct canonical name
         std::string instr = gname + " ";
         if(qubits.size() > 0)
         {
@@ -630,6 +635,7 @@ private:
                 instr += "q" + std::to_string(qubits[qubits.size()-1]);
         }
 
+        // first check if a specialized custom gate is available
         instruction_map_t::iterator it = instruction_map.find(instr);
         if (it != instruction_map.end())
         {
@@ -651,6 +657,7 @@ private:
             instruction_map_t::iterator it = instruction_map.find(gname);
             if (it != instruction_map.end())
             {
+                // FIXME: body identical to above, just perform two finds with single body
                 custom_gate* g = new custom_gate(*(it->second));
                 for(auto & qubit : qubits)
                     g->operands.push_back(qubit);
@@ -708,7 +715,9 @@ private:
             std::vector<size_t> all_qubits, std::vector<size_t> cregs = {})
     {
         bool added = false;
-        DOUT("Checking if specialized composite gate is available for " << gate_name);
+        DOUT("Checking if specialized decomposition is available for " << gate_name);
+
+        // construct canonical name
         std::string instr_parameterized = gate_name + " ";
         size_t i;
         if(all_qubits.size() > 0)
@@ -724,10 +733,12 @@ private:
         }
         DOUT("specialized instruction name: " << instr_parameterized);
 
+        // find the name
         auto it = instruction_map.find(instr_parameterized);
         if( it != instruction_map.end() )
         {
-            DOUT("specialized gate found for " << instr_parameterized);
+            // check gate type
+            DOUT("specialized composite gate found for " << instr_parameterized);
             composite_gate * gptr = (composite_gate *)(it->second);
             if( __composite_gate__ == gptr->type() )
             {
@@ -739,13 +750,14 @@ private:
                 return false;
             }
 
-
+            // perform decomposition
             std::vector<std::string> sub_instructons;
             get_decomposed_ins( gptr, sub_instructons );
             for(auto & sub_ins : sub_instructons)
             {
+                // extract name and qubits
                 DOUT("Adding sub ins: " << sub_ins);
-                std::replace( sub_ins.begin(), sub_ins.end(), ',', ' ');
+                std::replace( sub_ins.begin(), sub_ins.end(), ',', ' ');    // FIXME: perform all conversions in sanitize_instruction_name()
                 DOUT(" after comma removal, sub ins: " << sub_ins);
                 std::istringstream iss(sub_ins);
 
@@ -877,6 +889,7 @@ private:
                 }
                 DOUT( ql::utils::to_string<size_t>(this_gate_qubits, "actual qubits of this gate:") );
 
+                // FIXME: following code block exists several times in this file
                 // custom gate check
                 // when found, custom_added is true, and the expanded subinstruction was added to the circuit
                 bool custom_added = add_custom_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
@@ -912,6 +925,10 @@ private:
         }
         return added;
     }
+
+/************************************************************************\
+| Public: gate
+\************************************************************************/
 
 public:
     /**
@@ -1055,7 +1072,7 @@ public:
         }
         return added;
     }
-    
+
     // to add unitary to kernel
     void gate(ql::unitary u, std::vector<size_t> qubits)
     {
@@ -1064,18 +1081,18 @@ public:
         {
             EOUT("Unitary " << u.name <<" has been applied to the wrong number of qubits! " << qubits.size() << " and not " << u_size);
             throw ql::exception("Unitary '"+u.name+"' has been applied to the wrong number of qubits. Cannot be added to kernel! "  + std::to_string(qubits.size()) +" and not "+ std::to_string(u_size), false);
-        
+
         }
-        for(uint i = 0; i< qubits.size()-1; i++)
+        for(uint64_t i = 0; i< qubits.size()-1; i++)
         {
-            for(uint j = i+1; j < qubits.size(); j++)
+            for(uint64_t j = i+1; j < qubits.size(); j++)
             {
                 if(qubits[i] == qubits[j])
                 {
                 EOUT("Qubit numbers used more than once in Unitary: " << u.name << ". Double qubit is number " << qubits[j]);
                 throw ql::exception("Qubit numbers used more than once in Unitary: " + u.name + ". Double qubit is number " + std::to_string(qubits[j]), false);
                 }
-                        
+
             }
         }
         // applying unitary to gates
@@ -1123,7 +1140,7 @@ public:
                 // This is a special case of only demultiplexing
                 if (u.instructionlist[i+1] == 300.0)
                 {
-                   
+
                     // Two numbers that aren't rotation gate angles
                     int start_counter = i + 2;
                     DOUT("[kernel.h] Optimization: first qubit not affected, skip one step in the recursion. New start_index: " << start_counter);
@@ -1183,7 +1200,7 @@ public:
         for(int i = 1; i < end_index - start_index; i++)
         {
             idx = uint64_log2(((i)^((i)>>1))^((i+1)^((i+1)>>1)));
-            c.push_back(new ql::rz(qubits.back(),-instruction_list[i+start_index]));                
+            c.push_back(new ql::rz(qubits.back(),-instruction_list[i+start_index]));
             c.push_back(new ql::cnot(qubits[idx], qubits.back()));
         }
         // The last one is always controlled from the next qubit to the first qubit
@@ -1197,20 +1214,20 @@ public:
     {
         // DOUT("Adding a multicontrolled ry-gate at start index "<< start_index << ", to " << ql::utils::to_string(qubits, "qubits: "));
         int idx;
-        
+
         //The first one is always controlled from the last to the first qubit.
         c.push_back(new ql::ry(qubits.back(),-instruction_list[start_index]));
         c.push_back(new ql::cnot(qubits[0], qubits.back()));
 
         for(int i = 1; i < end_index - start_index; i++)
-        { 
+        {
             idx = uint64_log2 (((i)^((i)>>1))^((i+1)^((i+1)>>1)));
             c.push_back(new ql::ry(qubits.back(),-instruction_list[i+start_index]));
             c.push_back(new ql::cnot(qubits[idx], qubits.back()));
         }
-        // Last one is controlled from the next qubit to the first one. 
+        // Last one is controlled from the next qubit to the first one.
         c.push_back(new ql::ry(qubits.back(),-instruction_list[end_index]));
-        c.push_back(new ql::cnot(qubits.end()[-2], qubits.back())); 
+        c.push_back(new ql::cnot(qubits.end()[-2], qubits.back()));
         cycles_valid = false;
     }
     // source: https://stackoverflow.com/questions/994593/how-to-do-an-integer-log2-in-c user Todd Lehman

@@ -12,10 +12,8 @@ class TestcQasmReader(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        ql.set_option('log_level', 'LOG_WARNING')
         ql.set_option('output_dir', output_dir)
         ql.set_option("write_qasm_files", "yes")
-        ql.set_option("quantumsim", "no")
 
     def test_invalid_qasm(self):
         config_fn = os.path.join(curdir, '../hardware_config_cc_light.json')
@@ -27,7 +25,7 @@ class TestcQasmReader(unittest.TestCase):
                    "prop_z q[0]\n"    \
                    "measure_z q[0]\n"
         qasm_rdr = ql.cQasmReader(platform, program)
-        with self.assertRaisesRegex(RuntimeError, r"syntax error, unexpected NAME, expecting $end | Line: 3"):
+        with self.assertRaisesRegex(RuntimeError, r"Error at <unknown>:3:1..12: failed to resolve prop_z"):
             qasm_rdr.string2circuit(qasm_str)
 
     def test_single_bit_kernel_operations(self):

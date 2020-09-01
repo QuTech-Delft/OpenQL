@@ -312,7 +312,7 @@ public:
 class PassOptions
 {
 public:
-      PassOptions(std::string app_name);
+      PassOptions(std::string app_name="passOpts");
       void print_current_values();
       void help();
       void setOption(std::string opt_name, std::string opt_value);

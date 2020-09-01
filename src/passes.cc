@@ -19,6 +19,15 @@
 #include <iostream>
 #include <chrono>
 
+/* JvS: guys, you can't define a class already defined in another header
+ * *differently* and then "resolve" the inevitable compile errors by not
+ * including the header. This fundamentally breaks how C++ works and resulted in
+ * code that I'm astonished linked at all and even half-worked.
+ *
+ * In your defense, including the appropriate headers broke the rest of OpenQL
+ * because the rest of OpenQL is also fundamentally broken, apparently relying
+ * on headers only being included by a single compile units, which is precisely
+ * NOT the function of a header file.
 namespace ql
 {
     class eqasm_compiler
@@ -52,6 +61,23 @@ namespace ql
         };
     }
 }
+*/
+#include "arch/cc_light/cc_light_eqasm_compiler.h"
+#include "arch/cbox/cbox_eqasm_compiler.h"
+#include "arch/cc/eqasm_backend_cc.h"
+
+// JvS: this does not belong here *at all*. All header files should have their
+// own CC file with their defs. But only putting the globals in a new
+// corresponding CC file for now breaks linkage on MSVC, because annoyingly CC
+// files are treated as unused and not linked when none of their *functions*
+// are used.
+namespace ql {
+namespace arch {
+size_t CurrSRegCount = 0;
+size_t CurrTRegCount = 0;
+} // namespace arch
+} // namespace ql
+
 
 namespace ql
 {
@@ -461,7 +487,7 @@ void VisualizerPass::runOnProgram(ql::quantum_program *program)
      * @brief  Construct an object to hold the pass options
      * @param  app_name String with the name of the pass options object
      */
-PassOptions::PassOptions(std::string app_name="passOpts")
+PassOptions::PassOptions(std::string app_name)
 {
     app = new CLI::App(app_name);
 

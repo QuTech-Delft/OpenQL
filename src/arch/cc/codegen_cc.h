@@ -15,6 +15,7 @@
 #define OPT_VCD_OUTPUT                  1   // output Value Change Dump file for GTKWave viewer
 #define OPT_RUN_ONCE                    0   // 0=loop indefinitely (CC-light emulation)
 #define OPT_CALCULATE_LATENCIES         0   // fixed compensation based on instrument latencies
+#define OPT_OLD_SEQBAR_SEMANTICS        1   // support old semantics of seqbar instruction
 
 #include "json.h"
 #include "platform.h"
@@ -25,8 +26,15 @@
 #include <string>
 #include <cstddef>  // for size_t etc.
 #ifdef _MSC_VER     // MS Visual C++ does not know about ssize_t
+// FIXME JvS: this #ifdef should not be necessary. libqasm shouldn't be
+// #define'ing ssize_t, but should just use its own type! (so should this,
+// though, for the same reason. Though this typedef is by far the nicer way
+// to do it, it might still conflict with another header working around the
+// same problem)
+#ifndef ssize_t
   #include <type_traits>
   typedef std::make_signed<size_t>::type ssize_t;
+#endif
 #endif
 
 
@@ -48,8 +56,8 @@ private: // types
     } tGroupInfo;
 
     typedef struct {
-        json node;
-        std::string path;
+        json node;              // a copy of the node found
+        std::string path;       // path of the node, for reporting purposes
     } tJsonNodeInfo;
 
 public:
@@ -102,7 +110,7 @@ private:    // vars
     std::vector<std::vector<tGroupInfo>> groupInfo;             // matrix[instrIdx][group]
     json codewordTable;                                         // codewords versus signals per instrument group
     json inputLutTable;                                         // input LUT usage per instrument group
-    size_t lastStartCycle[MAX_SLOTS];
+    size_t lastEndCycle[MAX_SLOTS];
 
     // some JSON nodes we need access to
     const json *jsonInstrumentDefinitions;
@@ -131,7 +139,7 @@ private:    // funcs
 
     // helpers
     void latencyCompensation();
-    void padToCycle(size_t lastStartCycle, size_t startCycle, int slot, const std::string &instrumentName);
+    void padToCycle(size_t lastEndCycle, size_t startCycle, int slot, const std::string &instrumentName);
     uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
 
     // Functions processing JSON

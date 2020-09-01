@@ -12,7 +12,7 @@
 
 
 //Only support for DiCarlo setup atm
-void write_qsoverlay_program( ql::quantum_program* programp, size_t num_qubits,
+static void write_qsoverlay_program( ql::quantum_program* programp, size_t num_qubits,
                               const ql::quantum_platform & platform, std::string suffix, size_t ns_per_cycle, bool compiled)
 {
 

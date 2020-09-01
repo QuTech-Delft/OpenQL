@@ -131,8 +131,11 @@ public:
         // destroy unitary
         delete(unitary);
     }
-};
 
+    static bool is_decompose_support_enabled() {
+        return ql::unitary::is_decompose_support_enabled();
+    }
+};
 
 /**
  * quantum kernel interface

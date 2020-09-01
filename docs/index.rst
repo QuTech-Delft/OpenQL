@@ -56,6 +56,12 @@ While the instruction-level code is platform-specific, the quantum assembly code
    qx_example
    dqcsim_example
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Developer Documentation
+
+   cppref
+
 
 Indices and tables
 

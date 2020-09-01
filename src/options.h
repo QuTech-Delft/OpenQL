@@ -200,7 +200,7 @@ namespace ql
   namespace options // FIXME: why wrap?
   {
 //      static ql::Options ql_options("OpenQL Options");
-      extern ql::Options ql_options;
+      OPENQL_DECLSPEC extern ql::Options ql_options;
       inline void print()
       {
           ql_options.help();
