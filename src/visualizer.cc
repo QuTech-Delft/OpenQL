@@ -14,9 +14,11 @@ using namespace cimg_library;
 namespace ql
 {
 // --- QUESTIONS ---
-// wait/barrier gates do not appear in a program's gate list! how to find them?
+// wait/barrier gates do not appear in a program's gate list! how to know they are there?
 // the measure instruction in hw config does not contain a classical line argument?
 // how to determine the duration of a cycle? hw dependent? is it configured somewhere?
+// what does an idle cycle look like?
+// >>> does the scheduler not compress all instructions in such a way that is never a time without gates happening?
 
 // --- DONE ---
 // visualization of custom gates
@@ -25,10 +27,12 @@ namespace ql
 // gate duration outlines in gate color
 
 // -- IN PROGRESS ---
-// TODO: 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
+// 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
+// display wait/barrier gate
+// measure custom gates go to their respective classical bit line
+// read paper of andreas
 
 // --- FUTURE WORK ---
-// TODO: display wait/barrier gate
 // TODO: properly determine the duration of one cycle and store it in cycleDuration
 // TODO: implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
 // TODO: implement actual measurement symbol

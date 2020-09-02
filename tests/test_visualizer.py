@@ -32,11 +32,8 @@ class Test_visualizer(unittest.TestCase):
       c.add_pass("RotationOptimizer");
       c.add_pass("DecomposeToffoli");
       c.add_pass("Scheduler");
-      #c.add_pass("ReportStatistics");
-      #c.add_pass("Writer");
       c.add_pass("BackendCompiler");
       c.add_pass("Visualizer");
-      #c.add_pass("Writer");
 
 #TODO: The backend compiler will eventually be split into smaller backend passes that should be instantiated here in the same way.
       c.set_pass_option("BackendCompiler", "eqasm_compiler_name", "cc_light_compiler"); 
