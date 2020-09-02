@@ -49,7 +49,10 @@ Next, create a platform by:
 	platform = ql.Platform("myPlatform", config_file_name)
 
 where, ``config_file_name`` is the name of the configuration file in JSON format
-which specifies the platform, e.g. ``hardware_configuration_cc_light.json``. For details, refer to :ref:`platform`.
+which specifies the platform, e.g. ``hardware_config_cc_light.json``. For details, refer to :ref:`platform`.
+Note that you can find these files in the `tests` directory of the OpenQL repository; you should copy the
+file over from there to wherever you're running Python from (same directory as the Jupyter/IPython notebook,
+same directory as where you ran Python from for its terminal, or wherever you placed your Python script).
 
 For this example we will be working on 3 qubits. So let us define a variable so that we can use it at multiple places in our code.
 
