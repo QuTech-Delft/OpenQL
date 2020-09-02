@@ -12,6 +12,7 @@ class Test_visualizer(unittest.TestCase):
       ql.set_option('output_dir', output_dir)
       ql.set_option('optimize', 'no')
       ql.set_option('scheduler', 'ASAP')
+      #ql.set_option('log_level', 'LOG_DEBUG')
       ql.set_option('log_level', 'LOG_INFO')
       ql.set_option('unique_output', 'yes')
       ql.set_option('write_qasm_files', 'no')
@@ -19,7 +20,7 @@ class Test_visualizer(unittest.TestCase):
 
 
   def test_modularity(self):
-      config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
+      config_fn = os.path.join(curdir, 'hardware_config_cc_light_visualizer.json')
 
       c = ql.Compiler("testCompiler")
 
@@ -31,11 +32,8 @@ class Test_visualizer(unittest.TestCase):
       c.add_pass("RotationOptimizer");
       c.add_pass("DecomposeToffoli");
       c.add_pass("Scheduler");
-      #c.add_pass("ReportStatistics");
-      #c.add_pass("Writer");
       c.add_pass("BackendCompiler");
       c.add_pass("Visualizer");
-      #c.add_pass("Writer");
 
 #TODO: The backend compiler will eventually be split into smaller backend passes that should be instantiated here in the same way.
       c.set_pass_option("BackendCompiler", "eqasm_compiler_name", "cc_light_compiler"); 
@@ -61,9 +59,11 @@ class Test_visualizer(unittest.TestCase):
 
       k.gate('x', [0])
       k.gate('x', [0])
+      k.gate('wait', [0], 80)
       k.gate('x', [0])
       k.gate('h', [1])
       k.gate('cz', [2, 0])
+      k.gate('wait', [1], 20)
       k.gate('measure', [0])
       k.gate('measure', [1])
 

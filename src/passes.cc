@@ -13,9 +13,10 @@
 #include "clifford.h"
 #include "decompose_toffoli.h"
 #include "cqasm/cqasm_reader.h"
-#include "visualizer.h"
 #include "latency_compensation.h"
 #include "buffer_insertion.h"
+#include "visualizer.h"
+         
 #include <iostream>
 #include <chrono>
 

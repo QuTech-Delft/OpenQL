@@ -1,26 +1,58 @@
+
+/**
+ * @file   visualizer.cc
+ * @date   08/2020
+ * @author Tim van der Meer
+ * @brief  definition of the visualizer
+ */
+ 
+#include "visualizer.h"
+
 #include <iostream>
-#include <visualizer.h>
 
 using namespace cimg_library;
 
 namespace ql
 {
+// --- QUESTIONS ---
+// wait/barrier gates do not appear in a program's gate list! how to know they are there?
+// the measure instruction in hw config does not contain a classical line argument?
+// how to determine the duration of a cycle? hw dependent? is it configured somewhere?
+// what does an idle cycle look like?
+// >>> does the scheduler not compress all instructions in such a way that is never a time without gates happening?
+
+// --- DONE ---
+// visualization of custom gates
+// option to enable or disable classical bit lines
+// different types of cycle/duration(ns) labels
+// gate duration outlines in gate color
+
+// -- IN PROGRESS ---
+// 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
+// display wait/barrier gate
+// measure custom gates go to their respective classical bit line
+// read paper of andreas
+
+// --- FUTURE WORK ---
+// TODO: properly determine the duration of one cycle and store it in cycleDuration
 // TODO: implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
 // TODO: implement actual measurement symbol
-// TODO: option to display the classical bit lines
-// TODO: display wait/barrier
-// TODO: gate duration outlines in gate color
-// TODO: different types of cycle/duration(ns) labels
-// TODO: 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
 // TODO: generate default gate visuals from the configuration file
+// TODO: change IOUT to DOUT (IOUT is used to avoid debug information from other source files while developing the visualizer!)
 // TODO: representing the gates as waveforms
+// TODO: allow the user to set the layout object from Python
+
+unsigned int cycleDuration = 40;
 
 void visualize(const ql::quantum_program* program, const Layout layout)
 {
     IOUT("starting visualization...");
+	
+    IOUT("validating layout...");
 	validateLayout(layout);
 
     // Get the gate list from the program.
+    IOUT("getting gate list...");
     std::vector<ql::gate*> gates;
     std::vector<ql::quantum_kernel> kernels = program->kernels;
     for (ql::quantum_kernel kernel : kernels)
@@ -30,17 +62,20 @@ void visualize(const ql::quantum_program* program, const Layout layout)
     }
     
 	// Calculate amount of cycles.
+    IOUT("calculating amount of cycles...");
     unsigned int amountOfCycles = calculateAmountOfCycles(gates);
 
 	// Compress the circuit in terms of cycles and gate duration if the option has been set.
 	if (layout.cycles.compressCycles)
 	{
+        IOUT("compressing circuit...");
 		std::vector<bool> filledCycles(amountOfCycles);
 		for (unsigned int i = 0; i < gates.size(); i++)
 		{
 			filledCycles.at(gates.at(i)->cycle) = true;
 		}
 
+        //replace with DOUT
 		//std::cout << "amount of cycles before compression: " << amountOfCycles << std::endl;
 		unsigned int amountOfCompressions = 0;
 		for (unsigned int i = 0; i < filledCycles.size(); i++)
@@ -74,18 +109,21 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 	}
 
 	// Calculate amount of qubits and classical bits.
+    IOUT("calculating amount of qubits and classical bits...");
 	const unsigned int amountOfQubits = calculateAmountOfBits(gates, &gate::operands);
 	const unsigned int amountOfCbits = calculateAmountOfBits(gates, &gate::creg_operands);
 	CircuitData circuitData = { amountOfQubits, amountOfCbits, amountOfCycles };
 
     
 	// Calculate image width and height based on the amount of cycles and amount of operands. The height depends on whether classical bit lines are grouped or not.
+    IOUT("calculating image width and height...");
 	const unsigned int width = (layout.bitLine.drawLabels ? layout.bitLine.labelColumnWidth : 0) + amountOfCycles * layout.grid.cellSize + 2 * layout.grid.borderSize;
 	const unsigned int amountOfRows = amountOfQubits + (layout.bitLine.groupClassicalLines ? (amountOfCbits > 0 ? 1 : 0) : amountOfCbits);
 	const unsigned int height = (layout.cycles.showCycleNumbers ? layout.cycles.rowHeight : 0) + amountOfRows * layout.grid.cellSize + 2 * layout.grid.borderSize;
 
     
 	// Initialize image.
+    IOUT("initializing image...");
 	const unsigned int numberOfChannels = 3;
 	CImg<unsigned char> image(width, height, 1, numberOfChannels);
 	image.fill(255);
@@ -93,35 +131,49 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 	// Draw the cycle numbers if the option has been set.
 	if (layout.cycles.showCycleNumbers)
 	{
+        IOUT("drawing cycle numbers...");
 		drawCycleNumbers(image, layout, circuitData);
 	}
 
 	// Draw the quantum and classical bit lines.
+    IOUT("drawing qubit lines...");
 	for (unsigned int i = 0; i < amountOfQubits; i++)
 	{
 		drawBitLine(image, layout, QUANTUM, i, circuitData);
 	}
-	// Draw the grouped classical bit lines if the option is set.
-	if (amountOfCbits > 0 && layout.bitLine.groupClassicalLines)
+	
+	// Draw the classical lines if enabled.
+	if (layout.bitLine.showClassicalLines)
 	{
-		drawGroupedClassicalBitLine(image, layout, circuitData);
-	}
-	// Otherwise draw each classical bit line seperate.
-	else
-	{
-		for (unsigned int i = amountOfQubits; i < amountOfQubits + amountOfCbits; i++)
+		// Draw the grouped classical bit lines if the option is set.
+		if (amountOfCbits > 0 && layout.bitLine.groupClassicalLines)
 		{
-			drawBitLine(image, layout, CLASSICAL, i, circuitData);
+			IOUT("drawing grouped classical bit lines...");
+			drawGroupedClassicalBitLine(image, layout, circuitData);
+		}
+		// Otherwise draw each classical bit line seperate.
+		else
+		{
+			IOUT("drawing ungrouped classical bit lines...");
+			for (unsigned int i = amountOfQubits; i < amountOfQubits + amountOfCbits; i++)
+			{
+				drawBitLine(image, layout, CLASSICAL, i, circuitData);
+			}
 		}
 	}
 
+
 	// Draw the gates.
+    IOUT("drawing gates...");
 	for (gate* gate : gates)
 	{
+        //const GateVisual gateVisual = layout.gateVisuals.at(gate->type());
+        IOUT("drawing gate: [name: " + gate->name + "]");
 		drawGate(image, layout, circuitData, gate);
 	}
 
 	// Display the image.
+    IOUT("displaying image...");
 	image.display("Quantum Circuit");
 
     IOUT("visualization complete...");
@@ -174,7 +226,7 @@ unsigned int calculateAmountOfCycles(const std::vector<ql::gate*> gates)
 	amountOfCycles++; // because the cycles start at zero, we add one to get the true amount of cycles
 	const gate* lastGate = gates.at(gates.size() - 1);
 	const unsigned int lastGateDuration = (unsigned int)lastGate->duration;
-	const unsigned int lastGateDurationInCycles = lastGateDuration / 40;
+	const unsigned int lastGateDurationInCycles = lastGateDuration / cycleDuration;
 	if (lastGateDurationInCycles > 1)
 	{
 		amountOfCycles += lastGateDurationInCycles - 1;
@@ -187,7 +239,16 @@ void drawCycleNumbers(cimg_library::CImg<unsigned char>& image, const Layout lay
 {
 	for (unsigned int i = 0; i < circuitData.amountOfCycles; i++)
 	{
-		const std::string cycleLabel = std::to_string(i);
+		std::string cycleLabel;
+		if (layout.cycles.showCyclesInNanoSeconds)
+		{
+			cycleLabel = std::to_string(i * cycleDuration);
+		}
+		else
+		{
+			cycleLabel = std::to_string(i);
+		}
+		
 		const char* text = cycleLabel.c_str();
 		CImg<unsigned char> imageTextDimensions;
 		const unsigned char color = 1;
@@ -296,10 +357,24 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	const unsigned int amountOfOperands = (unsigned int)gate->operands.size() + (unsigned int)gate->creg_operands.size();
 	const unsigned int cycleNumbersRowHeight = layout.cycles.showCycleNumbers ? layout.cycles.rowHeight : 0;
 	const unsigned int labelColumnWidth = layout.bitLine.drawLabels ? layout.bitLine.labelColumnWidth : 0;
-	const GateConfig gateConfig = layout.gateConfigs.at(gate->type());
+	
+	IOUT("drawing gate with name: '" << gate->name << "'");
+	
+	GateVisual gateVisual;
+	if (gate->type() == __custom_gate__)
+	{
+		IOUT("Custom gate found. Using user specified visualization.");
+		gateVisual = gate->gateVisual;
+	}
+	else
+	{
+		IOUT("Default gate found. Using default visualization!");
+		gateVisual = layout.defaultGateVisuals.at(gate->type());
+	}
 
 	if (amountOfOperands > 1)
 	{
+        IOUT("setting up multi-operand gate...");
 		// Draw the lines between each node. If this is done before drawing the nodes, there is no need to calculate line segments, we can just draw one
 		// big line between the nodes and the nodes will be drawn on top of those.
 		// Note: does not work with transparent nodes! If those are ever implemented, the connection line drawing will need to be changed!
@@ -351,11 +426,11 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 
 				image.draw_line(connectionPosition.x0 - layout.measurements.lineSpacing, connectionPosition.y0,
 					connectionPosition.x1 - layout.measurements.lineSpacing, connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset,
-					gateConfig.connectionColor.data());
+					gateVisual.connectionColor.data());
 
 				image.draw_line(connectionPosition.x0 + layout.measurements.lineSpacing, connectionPosition.y0,
 					connectionPosition.x1 + layout.measurements.lineSpacing, connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset,
-					gateConfig.connectionColor.data());
+					gateVisual.connectionColor.data());
 
 				const unsigned int x0 = connectionPosition.x1 - layout.measurements.arrowSize / 2;
 				const unsigned int y0 = connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset;
@@ -363,63 +438,84 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 				const unsigned int y1 = connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset;
 				const unsigned int x2 = connectionPosition.x1;
 				const unsigned int y2 = connectionPosition.y1 - groupedClassicalLineOffset;
-				image.draw_triangle(x0, y0, x1, y1, x2, y2, gateConfig.connectionColor.data(), 1);
+				image.draw_triangle(x0, y0, x1, y1, x2, y2, gateVisual.connectionColor.data(), 1);
 			}
 		}
 		else
 		{
-			image.draw_line(connectionPosition.x0, connectionPosition.y0, connectionPosition.x1, connectionPosition.y1, gateConfig.connectionColor.data());
+			image.draw_line(connectionPosition.x0, connectionPosition.y0, connectionPosition.x1, connectionPosition.y1, gateVisual.connectionColor.data());
 		}
+        IOUT("finished setting up multi-operand gate");
 	}
 
 	// Draw the gate duration outline if the option has been set.
 	if (!layout.cycles.compressCycles && layout.cycles.showGateDurationOutline)
 	{
-		const unsigned int gateDurationInCycles = ((unsigned int)gate->duration) / 40;
+        IOUT("drawing gate duration outline...");
+		const unsigned int gateDurationInCycles = ((unsigned int)gate->duration) / cycleDuration;
 		// Only draw the gate outline if the gate takes more than one cycle.
 		if (gateDurationInCycles > 1)
 		{
-			for (size_t operand : gate->operands)
+			//for (size_t operand : gate->operands)
+			for (unsigned int i = 0; i < amountOfOperands; i++)
 			{
 				const unsigned int columnStart = (unsigned int)gate->cycle;
 				const unsigned int columnEnd = columnStart + gateDurationInCycles - 1;
-				const unsigned int row = (unsigned int)operand;
+				//const unsigned int row = (unsigned int)operand;
+				const unsigned int row = i;
 
 				const unsigned int x0 = layout.grid.borderSize + labelColumnWidth + columnStart * layout.grid.cellSize + layout.cycles.gateDurationGap;
 				const unsigned int y0 = layout.grid.borderSize + cycleNumbersRowHeight + row * layout.grid.cellSize + layout.cycles.gateDurationGap;
 				const unsigned int x1 = layout.grid.borderSize + labelColumnWidth + (columnEnd + 1) * layout.grid.cellSize - +layout.cycles.gateDurationGap;
 				const unsigned int y1 = layout.grid.borderSize + cycleNumbersRowHeight + (row + 1) * layout.grid.cellSize - +layout.cycles.gateDurationGap;
-
-				image.draw_rectangle(x0, y0, x1, y1, layout.cycles.gateDurationOutlineColor.data(), layout.cycles.gateDurationAlpha);
-				image.draw_rectangle(x0, y0, x1, y1, layout.cycles.gateDurationOutlineColor.data(), layout.cycles.gateDurationOutLineAlpha, 0xF0F0F0F0);
+				
+				// Draw the outline in the colors of the node.
+				const Node node = gateVisual.nodes.at(i);
+				image.draw_rectangle(x0, y0, x1, y1, node.backgroundColor.data(), layout.cycles.gateDurationAlpha);
+				image.draw_rectangle(x0, y0, x1, y1, node.outlineColor.data(), layout.cycles.gateDurationOutLineAlpha, 0xF0F0F0F0);
+				
+				//image.draw_rectangle(x0, y0, x1, y1, layout.cycles.gateDurationOutlineColor.data(), layout.cycles.gateDurationAlpha);
+				//image.draw_rectangle(x0, y0, x1, y1, layout.cycles.gateDurationOutlineColor.data(), layout.cycles.gateDurationOutLineAlpha, 0xF0F0F0F0);
 			}
 		}
 	}
 
 	// Draw the nodes.
+    IOUT("drawing gate nodes...");
 	for (unsigned int i = 0; i < amountOfOperands; i++)
 	{
-		const Node node = gateConfig.nodes.at(i);
+        IOUT("drawing gate node with index: " + std::to_string(i) + "...");
+        //TODO: change the try-catch later on! the gate config will be read from somewhere else than the default layout
+        try
+        {
+		    const Node node = gateVisual.nodes.at(i);
+            const BitType operandType = (i >= gate->operands.size()) ? CLASSICAL : QUANTUM;
+            const unsigned int index = (operandType == QUANTUM) ? i : (i - (unsigned int)gate->operands.size());
+            const NodePositionData positionData =
+            {
+	            (layout.grid.cellSize - node.radius * 2) / 2,
+	            labelColumnWidth,
+	            cycleNumbersRowHeight,
+	            (unsigned int)gate->cycle,
+	            operandType == CLASSICAL ? (unsigned int)gate->creg_operands.at(index) + circuitData.amountOfQubits : (unsigned int)gate->operands.at(index)
+            };
 
-		const BitType operandType = (i >= gate->operands.size()) ? CLASSICAL : QUANTUM;
-		const unsigned int index = (operandType == QUANTUM) ? i : (i - (unsigned int)gate->operands.size());
-		const NodePositionData positionData =
-		{
-			(layout.grid.cellSize - node.radius * 2) / 2,
-			labelColumnWidth,
-			cycleNumbersRowHeight,
-			(unsigned int)gate->cycle,
-			operandType == CLASSICAL ? (unsigned int)gate->creg_operands.at(index) + circuitData.amountOfQubits : (unsigned int)gate->operands.at(index)
-		};
-
-		switch (node.type)
-		{
-			case NONE:		break; // Do nothing.
-			case GATE:		drawGateNode(image, layout, circuitData, node, positionData); break;
-			case CONTROL:	drawControlNode(image, layout, circuitData, node, positionData); break;
-			case NOT:		drawNotNode(image, layout, circuitData, node, positionData); break;
-			case CROSS:		drawCrossNode(image, layout, circuitData, node, positionData); break;
-		}
+            switch (node.type)
+            {
+	            case NONE:		DOUT("node.type = NONE"); break; // Do nothing.
+	            case GATE:		DOUT("node.type = GATE"); drawGateNode(image, layout, circuitData, node, positionData); break;
+	            case CONTROL:	DOUT("node.type = CONTROL"); drawControlNode(image, layout, circuitData, node, positionData); break;
+	            case NOT:		DOUT("node.type = NOT"); drawNotNode(image, layout, circuitData, node, positionData); break;
+	            case CROSS:		DOUT("node.type = CROSS"); drawCrossNode(image, layout, circuitData, node, positionData); break;
+                default:        EOUT("Unknown gate display node type!"); break;
+            }
+        }
+        catch (const std::out_of_range& e)
+        {
+            return;
+        }
+		
+        IOUT("finished drawing gate node with index: " + std::to_string(i) + "...");
 	}
 
 	// Draw the measurement symbol.

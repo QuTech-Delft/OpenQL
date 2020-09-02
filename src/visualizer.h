@@ -1,12 +1,30 @@
+/**
+ * @file   visualizer.h
+ * @date   08/2020
+ * @author Tim van der Meer
+ * @brief  declaration of the visualizer
+ */
+ 
+#ifndef QL_VISUALIZER_H
+#define QL_VISUALIZER_H
+
+#include "program.h"
+#include "gate_visual.h"
+#include "CImg.h"
+
 #include <cstdint>
-#include <program.h>
-#include <CImg.h>
+
+// These undefs are necessary to avoid name collisions between CImg and Lemon.
+#undef cimg_use_opencv
+#undef True
+#undef False
+#undef IN
+#undef OUT
 
 namespace ql
 {
 
 enum BitType {CLASSICAL, QUANTUM};
-enum NodeType {NONE, GATE, CONTROL, NOT, CROSS};
 
 const std::array<unsigned char, 3> white = { 255, 255, 255 };
 const std::array<unsigned char, 3> black = { 0, 0, 0 };
@@ -45,6 +63,7 @@ struct Cycles
 {
 	// Cycle number row.
 	bool showCycleNumbers = true;
+	bool showCyclesInNanoSeconds = true;
 	unsigned int rowHeight = 24;
 	unsigned int fontHeight = 13;
 	std::array<unsigned char, 3> fontColor = black;
@@ -89,26 +108,6 @@ struct Measurements
 	unsigned int arrowSize = 10;
 };
 
-struct Node
-{
-	NodeType type;
-
-	unsigned int radius;
-
-	std::string displayName;
-	unsigned int fontHeight;
-	std::array<unsigned char, 3> fontColor;
-
-	std::array<unsigned char, 3> backgroundColor;
-	std::array<unsigned char, 3> outlineColor;
-};
-
-struct GateConfig
-{
-	std::array<unsigned char, 3> connectionColor;
-	std::vector<Node> nodes;
-};
-
 struct Layout
 {
 	Cycles cycles;
@@ -116,7 +115,7 @@ struct Layout
 	Grid grid;
 	Measurements measurements;
 
-	std::map<ql::gate_type_t, GateConfig> gateConfigs
+	std::map<ql::gate_type_t, GateVisual> defaultGateVisuals
 	{
 		// TODO: use the proper symbol for dagger gates
 		// TODO: use the proper symbol for measurement gates
@@ -233,3 +232,5 @@ void drawNotNode(cimg_library::CImg<unsigned char>& image, const Layout layout, 
 void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData);
 
 } // ql
+
+#endif //QL_VISUALIZER_H
