@@ -192,7 +192,9 @@ Or in editable mode by the command:
     pip install -v -e .
 
 Editable mode has the advantage that you'll get incremental compilation if you ever change OpenQL's C++ files, but it's
-a bit more fragile in that things will break if you move the OpenQL repository around later.
+a bit more fragile in that things will break if you move the OpenQL repository around later. Specifically, editable mode
+just installs an absolute path link to your clone of the OpenQL repository, so if you move it, the link breaks. You'd have
+to remember to uninstall if you ever end up moving it.
 
 .. note::
 
