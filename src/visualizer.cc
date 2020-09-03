@@ -1,4 +1,3 @@
-
 /**
  * @file   visualizer.cc
  * @date   08/2020
@@ -16,10 +15,15 @@ namespace ql
 {
 // --- QUESTIONS ---
 // wait/barrier gates do not appear in a program's gate list! how to know they are there?
+//		>> should be fixed
+
 // the measure instruction in hw config does not contain a classical line argument?
+//		>> assume measure goes to the classical bit line corresponding to the number of the qubit being measured (if no args given)
+
 // how to determine the duration of a cycle? hw dependent? is it configured somewhere?
-// what does an idle cycle look like?
-// >>> does the scheduler not compress all instructions in such a way that is never a time without gates happening?
+//		>> configured in hardware config file
+
+
 
 // --- DONE ---
 // visualization of custom gates
@@ -28,13 +32,13 @@ namespace ql
 // gate duration outlines in gate color
 
 // -- IN PROGRESS ---
-// 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
+// read cycle duration from hardware config file, instead of having hardcoded value
 // display wait/barrier gate
 // measure custom gates go to their respective classical bit line
+// 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
 // read paper of andreas
 
 // --- FUTURE WORK ---
-// TODO: properly determine the duration of one cycle and store it in cycleDuration
 // TODO: implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
 // TODO: implement actual measurement symbol
 // TODO: generate default gate visuals from the configuration file
@@ -456,13 +460,11 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		// Only draw the gate outline if the gate takes more than one cycle.
 		if (gateDurationInCycles > 1)
 		{
-			//for (size_t operand : gate->operands)
 			for (unsigned int i = 0; i < amountOfOperands; i++)
 			{
 				const unsigned int columnStart = (unsigned int)gate->cycle;
 				const unsigned int columnEnd = columnStart + gateDurationInCycles - 1;
-				//const unsigned int row = (unsigned int)operand;
-				const unsigned int row = i;
+				const unsigned int row = gate->operands[i];
 
 				const unsigned int x0 = layout.grid.borderSize + labelColumnWidth + columnStart * layout.grid.cellSize + layout.cycles.gateDurationGap;
 				const unsigned int y0 = layout.grid.borderSize + cycleNumbersRowHeight + row * layout.grid.cellSize + layout.cycles.gateDurationGap;
