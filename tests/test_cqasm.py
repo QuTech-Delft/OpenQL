@@ -73,8 +73,8 @@ class Test_cqasm(unittest.TestCase):
         p.compile()
 
         qasm_files = []
-        qasm_files.append(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
-        qasm_files.append(os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm'))
+        qasm_files.append(os.path.join(output_dir, p.name+'.qasm'))
+        qasm_files.append(os.path.join(output_dir, p.name+'_scheduled.qasm'))
 
         for qasm_file in qasm_files:
             # print('assembling: {}'.format(qasm_file))
@@ -120,8 +120,8 @@ class Test_cqasm(unittest.TestCase):
         p.compile()
 
         qasm_files = []
-        qasm_files.append(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
-        qasm_files.append(os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm'))
+        qasm_files.append(os.path.join(output_dir, p.name+'.qasm'))
+        qasm_files.append(os.path.join(output_dir, p.name+'_scheduled.qasm'))
 
         for qasm_file in qasm_files:
             print('assembling: {}'.format(qasm_file))

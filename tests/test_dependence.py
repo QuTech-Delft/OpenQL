@@ -50,7 +50,7 @@ class Test_dependence(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/test_independence.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 
@@ -79,7 +79,7 @@ class Test_dependence(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/test_WAW_ASAP.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
 
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
@@ -110,7 +110,7 @@ class Test_dependence(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/test_RAR_Control_ASAP.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 
@@ -141,7 +141,7 @@ class Test_dependence(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/test_RAW_ASAP.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
 
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
@@ -173,7 +173,7 @@ class Test_dependence(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/test_WAR_ASAP.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
 
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
@@ -199,7 +199,7 @@ class Test_dependence(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/test_swap_single_ASAP.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 
@@ -227,7 +227,7 @@ class Test_dependence(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/test_swap_multi_ASAP.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 

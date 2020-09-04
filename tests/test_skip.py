@@ -64,7 +64,7 @@ class Test_skip(unittest.TestCase):
         prog.compile()
 
         GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '_scheduled.qasm')
-        QASM_fn = os.path.join(output_dir, prog.name+'_scheduledqasmwriter_out.qasm')
+        QASM_fn = os.path.join(output_dir, prog.name+'_scheduled.qasm')
 
         assemble(QASM_fn)
         self.assertTrue(file_compare(QASM_fn, GOLD_fn))

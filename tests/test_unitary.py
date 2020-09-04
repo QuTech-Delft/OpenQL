@@ -139,7 +139,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
         self.assertAlmostEqual(0.5*(helper_prob(matrix[0])+helper_prob(matrix[1])), helper_regex(c0)[0], 5)
@@ -161,7 +161,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
         
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
         self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
@@ -183,7 +183,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
         
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
         self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
@@ -207,7 +207,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
         
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
 		#HZH = X, so the result should be |0> + |1>
@@ -239,7 +239,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
         
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
 
@@ -274,7 +274,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
         
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
 
@@ -330,7 +330,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.compile()
 
 
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
 
@@ -357,7 +357,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.compile()
 
 
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
 
@@ -385,7 +385,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
         
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
         self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
@@ -415,7 +415,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
         self.assertAlmostEqual(helper_prob(matrix[0]), helper_regex(c0)[0], 5)
@@ -450,7 +450,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
         
@@ -488,7 +488,7 @@ class Test_conjugated_kernel(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
         
@@ -525,7 +525,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
         
@@ -561,7 +561,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
         
@@ -599,7 +599,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
         
@@ -661,7 +661,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
         
@@ -731,7 +731,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
         
@@ -799,7 +799,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
 
@@ -887,7 +887,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
 
@@ -1130,7 +1130,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
         
@@ -1194,7 +1194,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
         
@@ -1234,7 +1234,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
 
@@ -1264,7 +1264,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
 
@@ -1290,7 +1290,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
 
@@ -1317,7 +1317,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
 
@@ -1354,7 +1354,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
 
@@ -1392,7 +1392,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
 
@@ -1432,7 +1432,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
 
@@ -1480,7 +1480,7 @@ class Test_conjugated_kernel(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
-        qx.set(os.path.join(output_dir, p.name+'_initialqasmwriter_out.qasm'))
+        qx.set(os.path.join(output_dir, p.name+'.qasm'))
         qx.execute()
         c0 = qx.get_state()
 

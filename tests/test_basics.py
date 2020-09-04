@@ -54,8 +54,8 @@ class Test_basic(unittest.TestCase):
         
         # load qasm
         qasm_files = []
-        qasm_files.append(os.path.join(output_dir, 'basic_initialqasmwriter_out.qasm'))
-        qasm_files.append(os.path.join(output_dir, 'basic_scheduledqasmwriter_out.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'basic.qasm'))
+        qasm_files.append(os.path.join(output_dir, 'basic_scheduled.qasm'))
 
         for qasm_file in qasm_files:
             print('assembling: {}'.format(qasm_file))
