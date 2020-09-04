@@ -203,7 +203,7 @@ public:
     virtual instruction_t qasm()       = 0;
     virtual gate_type_t   type()       = 0;
     virtual cmat_t        mat()        = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
-	GateVisual gateVisual = { { 255, 255, 255 }, std::vector<Node>() }; // contains the visualization parameters
+	GateVisual gateVisual = { {{ 255, 255, 255 }}, std::vector<Node>() }; // contains the visualization parameters
 };
 
 
