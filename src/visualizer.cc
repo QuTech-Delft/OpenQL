@@ -23,8 +23,6 @@ namespace ql
 // how to determine the duration of a cycle? hw dependent? is it configured somewhere?
 //		>> configured in hardware config file
 
-
-
 // --- DONE ---
 // visualization of custom gates
 // option to enable or disable classical bit lines
