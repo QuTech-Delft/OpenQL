@@ -16,14 +16,14 @@
 namespace ql
 {
 
-const std::array<unsigned char, 3> white = { 255, 255, 255 };
-const std::array<unsigned char, 3> black = { 0, 0, 0 };
-const std::array<unsigned char, 3> gray = { 128, 128, 128 };
-const std::array<unsigned char, 3> lightblue = { 70, 210, 230 };
-const std::array<unsigned char, 3> purple = { 225, 118, 225 };
-const std::array<unsigned char, 3> green = { 112, 222, 90 };
-const std::array<unsigned char, 3> yellow = { 200, 200, 20 };
-const std::array<unsigned char, 3> red = { 255, 105, 97 };
+const std::array<unsigned char, 3> white = {{ 255, 255, 255 }};
+const std::array<unsigned char, 3> black = {{ 0, 0, 0 }};
+const std::array<unsigned char, 3> gray = {{ 128, 128, 128 }};
+const std::array<unsigned char, 3> lightblue = {{ 70, 210, 230 }};
+const std::array<unsigned char, 3> purple = {{ 225, 118, 225 }};
+const std::array<unsigned char, 3> green = {{ 112, 222, 90 }};
+const std::array<unsigned char, 3> yellow = {{ 200, 200, 20 }};
+const std::array<unsigned char, 3> red = {{ 255, 105, 97 }};
 
 struct Cycles
 {
@@ -50,15 +50,15 @@ struct BitLines
 	//TODO: set this to 0 automatically if drawLabels is false?
 	unsigned int labelColumnWidth = 32;
 	unsigned int fontHeight = 13;
-	std::array<unsigned char, 3> qBitLabelColor = { 0, 0, 0 };
-	std::array<unsigned char, 3> cBitLabelColor = { 128, 128, 128 };
+	std::array<unsigned char, 3> qBitLabelColor = {{ 0, 0, 0 }};
+	std::array<unsigned char, 3> cBitLabelColor = {{ 128, 128, 128 }};
 
 	// Lines.
 	bool showClassicalLines = true;
 	bool groupClassicalLines = false;
 	unsigned int groupedClassicalLineGap = 2;
-	std::array<unsigned char, 3> qBitLineColor = { 0, 0, 0 };
-	std::array<unsigned char, 3> cBitLineColor = { 128, 128, 128 };
+	std::array<unsigned char, 3> qBitLineColor = {{ 0, 0, 0 }};
+	std::array<unsigned char, 3> cBitLineColor = {{ 128, 128, 128 }};
 };
 
 struct Grid
