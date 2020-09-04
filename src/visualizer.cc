@@ -44,6 +44,7 @@ namespace ql
 // TODO: change IOUT to DOUT (IOUT is used to avoid debug information from other source files while developing the visualizer!)
 // TODO: representing the gates as waveforms
 // TODO: allow the user to set the layout object from Python
+// TODO: add option to save the image and/or open the window
 
 unsigned int cycleDuration = 40;
 
