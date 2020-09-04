@@ -213,7 +213,6 @@ setup(
     long_description_content_type = 'text/markdown',
     author='QuTech, TU Delft',
     url='https://github.com/QE-Lab/OpenQL',
-    license=read('LICENSE'),
 
     classifiers = [
         'License :: OSI Approved :: Apache Software License',
