@@ -2,7 +2,7 @@
  * @file   visualizer.h
  * @date   08/2020
  * @author Tim van der Meer
- * @brief  declaration of the visualizer
+ * @brief  declaration of the public visualizer interface
  */
  
 #ifndef QL_VISUALIZER_H
@@ -10,21 +10,11 @@
 
 #include "program.h"
 #include "gate_visual.h"
-#include "CImg.h"
 
 #include <cstdint>
 
-// These undefs are necessary to avoid name collisions between CImg and Lemon.
-#undef cimg_use_opencv
-#undef True
-#undef False
-#undef IN
-#undef OUT
-
 namespace ql
 {
-
-enum BitType {CLASSICAL, QUANTUM};
 
 const std::array<unsigned char, 3> white = { 255, 255, 255 };
 const std::array<unsigned char, 3> black = { 0, 0, 0 };
@@ -34,30 +24,6 @@ const std::array<unsigned char, 3> purple = { 225, 118, 225 };
 const std::array<unsigned char, 3> green = { 112, 222, 90 };
 const std::array<unsigned char, 3> yellow = { 200, 200, 20 };
 const std::array<unsigned char, 3> red = { 255, 105, 97 };
-
-struct Position4
-{
-	long x0;
-	long y0;
-	long x1;
-	long y1;
-};
-
-struct Position2
-{
-	long x;
-	long y;
-};
-
-struct NodePositionData
-{
-	const unsigned int gap;
-	const unsigned int labelColumnWidth;
-	const unsigned int cycleNumbersRowHeight;
-
-	const unsigned int column;
-	const unsigned int row;
-};
 
 struct Cycles
 {
@@ -207,29 +173,7 @@ struct Layout
 	};
 };
 
-struct CircuitData
-{
-	const unsigned int amountOfQubits;
-	const unsigned int amountOfClassicalBits;
-	const unsigned int amountOfCycles;
-};
-
 void visualize(const ql::quantum_program* program, const Layout layout);
-
-void validateLayout(const Layout layout);
-
-unsigned int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType);
-unsigned int calculateAmountOfCycles(const std::vector<ql::gate*> gates);
-
-void drawCycleNumbers(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData);
-void drawBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const BitType bitType, const unsigned int row, const CircuitData circuitData);
-void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData);
-void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, ql::gate* const gate);
-
-void drawGateNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData);
-void drawControlNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData);
-void drawNotNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData);
-void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData);
 
 } // ql
 

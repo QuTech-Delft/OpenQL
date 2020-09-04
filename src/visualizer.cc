@@ -6,6 +6,7 @@
  */
  
 #include "visualizer.h"
+#include "visualizer_internal.h"
 
 #include <iostream>
 
