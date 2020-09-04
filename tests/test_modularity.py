@@ -34,7 +34,20 @@ class Test_modularity(unittest.TestCase):
 #      c.add_pass("Reader") #TODO: reader cannot read scheduled IR!
       c.add_pass_alias("CliffordOptimize", "clifford_postscheduler")
       c.add_pass_alias("Writer","scheduledqasmwriter")
-      c.add_pass("Visualizer");
+
+## From here CC-light backed passes start; not called though to show how only front-end can be used
+      #c.add_pass("CCLPrepCodeGeneration") #CCLPrepCodeGeneration
+      #c.add_pass("CCLDecomposePreSchedule") #CCLDecomposePreSchedule
+      #c.add_pass_alias("WriteQuantumSim", "write_quantumsim_script_unmapped") #WriteQuantumSimPass
+      #c.add_pass_alias("CliffordOptimize", "clifford_premapper") #CliffordOptimizePass
+      #c.add_pass("Map") #MapPass
+      #c.add_pass_alias("CliffordOptimize", "clifford_postmapper") #CliffordOptimizePass
+      #c.add_pass("RCSchedule") #RCSchedulePass
+      #c.add_pass("LatencyCompensation") #LatencyCompensationPass
+      #c.add_pass("InsertBufferDelays") #InsertBufferDelaysPass
+      #c.add_pass("CCLDecomposePostSchedule") #CCLDecomposePostSchedulePass
+      #c.add_pass_alias("WriteQuantumSim", "write_quantumsim_script_mapped") #WriteQuantumSimPass
+      #c.add_pass("QisaCodeGeneration") # QisaCodeGenerationPass
 
       c.set_pass_option("ALL", "skip", "no");
       c.set_pass_option("Reader", "write_qasm_files", "no")
