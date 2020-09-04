@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - develop
+    - visualizer
   pull_request:
 
 jobs:
