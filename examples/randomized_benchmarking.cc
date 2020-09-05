@@ -66,7 +66,7 @@ int main(int argc, char ** argv)
     for (int r=0; r<num_randomizations; r++)
     {
         // create program
-        ql::str_t prog_name;
+        std::stringstream prog_name;
         prog_name << "rb_" << r;
         ql::quantum_program rb(prog_name.str(), qx_platform, 1);
         rb.set_sweep_points(sweep_points, num_circuits);
@@ -76,7 +76,7 @@ int main(int argc, char ** argv)
         {
             int c_size = sweep_points[j];
             // create subcircuit
-            ql::str_t name;
+            std::stringstream name;
             name << "rb" << c_size;
             ql::quantum_kernel kernel(name.str(),qx_platform, 1);
             build_rb(c_size, kernel);
