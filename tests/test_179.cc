@@ -12,65 +12,6 @@
 
 
 
-
-// test hilo bundles
-// tests uniform scheduling in the presence of pre179/post179
-void
-test_hilo(std::string v, std::string schedopt, std::string sched_post179opt)
-{
-    int n = 7;
-    std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
-    std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
-    float sweep_points[] = { 1 };
-
-    ql::quantum_platform starmon("starmon", "test_179.json");
-    ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
-
-    for (int j=0; j<7; j++) { k.gate("x", j); }
-    k.gate("cz", 0, 3);
-    k.gate("cz", 4, 6);
-    k.gate("cz", 3, 6);
-    k.gate("cz", 2, 5);
-
-    prog.add(k);
-
-    ql::options::set("scheduler", schedopt);
-    ql::options::set("scheduler_post179", sched_post179opt);
-    prog.compile( );
-}
-
-
-// test wait as gate
-void
-test_wait(std::string v, std::string schedopt, std::string sched_post179opt)
-{
-    int n = 7;
-    std::string prog_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
-    std::string kernel_name = "test_" + v + "_schedopt=" + schedopt + "_sched_post179opt=" + sched_post179opt;
-    float sweep_points[] = { 1 };
-
-    ql::quantum_platform starmon("starmon", "test_179.json");
-    ql::set_platform(starmon);
-    ql::quantum_program prog(prog_name, starmon, n, 0);
-    ql::quantum_kernel k(kernel_name, starmon, n, 0);
-    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
-
-    std::vector<size_t> operands = {0};
-
-    k.gate("x", 0);
-    k.wait(operands, 40);
-    k.gate("x", 0);
-
-    prog.add(k);
-
-    ql::options::set("scheduler", schedopt);
-    ql::options::set("scheduler_post179", sched_post179opt);
-    prog.compile( );
-}
-
 // all cnots with operands that are neighbors in s7
 // no or hardly any significant difference between pre179 and post179 scheduling
 void
@@ -82,7 +23,6 @@ test_cnot_mixedcommute(std::string v, std::string schedopt, std::string sched_po
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_179.json");
-    ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -127,7 +67,6 @@ test_cnot_controlcommute(std::string v, std::string schedopt, std::string sched_
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_179.json");
-    ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -167,7 +106,6 @@ test_cnot_targetcommute(std::string v, std::string schedopt, std::string sched_p
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_179.json");
-    ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -207,7 +145,6 @@ test_cz_anycommute(std::string v, std::string schedopt, std::string sched_post17
     float sweep_points[] = { 1 };
 
     ql::quantum_platform starmon("starmon", "test_179.json");
-    ql::set_platform(starmon);
     ql::quantum_program prog(prog_name, starmon, n, 0);
     ql::quantum_kernel k(kernel_name, starmon, n, 0);
     prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));
@@ -239,12 +176,7 @@ test_cz_anycommute(std::string v, std::string schedopt, std::string sched_post17
 int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_DEBUG");
-    ql::options::set("scheduler_uniform", "no");
-
-test_hilo("hilo", "ASAP", "no");
-test_hilo("hilo", "ASAP", "yes");
-test_hilo("hilo", "ALAP", "no");
-test_hilo("hilo", "ALAP", "yes");
+    
 test_cnot_controlcommute("cnot_controlcommute", "ASAP", "no");
 test_cnot_controlcommute("cnot_controlcommute", "ASAP", "yes");
 test_cnot_controlcommute("cnot_controlcommute", "ALAP", "no");
@@ -262,15 +194,6 @@ test_cnot_mixedcommute("cnot_mixedcommute", "ASAP", "yes");
 test_cnot_mixedcommute("cnot_mixedcommute", "ALAP", "no");
 test_cnot_mixedcommute("cnot_mixedcommute", "ALAP", "yes");
 
-test_wait("wait", "ASAP", "no");
-test_wait("wait", "ASAP", "yes");
-test_wait("wait", "ALAP", "no");
-test_wait("wait", "ALAP", "yes");
-
-ql::options::set("scheduler_uniform", "yes");
-test_hilo("hilo_uniform", "ALAP", "no");
-test_hilo("hilo_uniform", "ALAP", "yes");
-ql::options::set("scheduler_uniform", "yes");
 
     return 0;
 }
