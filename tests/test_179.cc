@@ -11,12 +11,6 @@
 #include <openql.h>
 
 
-// all tests below should be run with scheduler_post179 yes and no
-// when scheduler_post179 is yes, also scheduler_commute should be yes (but that is default)
-// the tests that start with #ifdef NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON need not be converted to golden tests
-#define NEED_NOT_BE_CONVERTED_TO_A_GOLDEN_TEST_IN_PYTHON
-
-
 
 
 // test hilo bundles
@@ -247,59 +241,36 @@ int main(int argc, char ** argv)
     ql::utils::logger::set_log_level("LOG_DEBUG");
     ql::options::set("scheduler_uniform", "no");
 
-//  test_singledim("singledim", "ASAP", "no");
-//  test_singledim("singledim", "ASAP", "yes");
-//  test_singledim("singledim", "ALAP", "no");
-//  test_singledim("singledim", "ALAP", "yes");
-//  test_qwg("qwg", "ASAP", "no");
-//  test_qwg("qwg", "ASAP", "yes");
-//  test_qwg("qwg", "ALAP", "no");
-//  test_qwg("qwg", "ALAP", "yes");
-//  test_edge("edge", "ASAP", "no");
-//  test_edge("edge", "ASAP", "yes");
-//  test_edge("edge", "ALAP", "no");
-//  test_edge("edge", "ALAP", "yes");
-//  test_detuned("detuned", "ASAP", "no");
-//  test_detuned("detuned", "ASAP", "yes");
-//  test_detuned("detuned", "ALAP", "no");
-//  test_detuned("detuned", "ALAP", "yes");
-//  test_oneNN("oneNN", "ASAP", "no");
-//  test_oneNN("oneNN", "ASAP", "yes");
-//  test_oneNN("oneNN", "ALAP", "no");
-//  test_oneNN("oneNN", "ALAP", "yes");
-//  test_hilo("hilo", "ASAP", "no");
-//  test_hilo("hilo", "ASAP", "yes");
-//  test_hilo("hilo", "ALAP", "no");
-//  test_hilo("hilo", "ALAP", "yes");
-//  test_cnot_controlcommute("cnot_controlcommute", "ASAP", "no");
-//  test_cnot_controlcommute("cnot_controlcommute", "ASAP", "yes");
-//  test_cnot_controlcommute("cnot_controlcommute", "ALAP", "no");
-//  test_cnot_controlcommute("cnot_controlcommute", "ALAP", "yes");
-//  test_cnot_targetcommute("cnot_targetcommute", "ASAP", "no");
-//  test_cnot_targetcommute("cnot_targetcommute", "ASAP", "yes");
-//  test_cnot_targetcommute("cnot_targetcommute", "ALAP", "no");
-//  test_cnot_targetcommute("cnot_targetcommute", "ALAP", "yes");
-//  test_cz_anycommute("cz_anycommute", "ASAP", "no");
-//  test_cz_anycommute("cz_anycommute", "ASAP", "yes");
-//  test_cz_anycommute("cz_anycommute", "ALAP", "no");
-//  test_cz_anycommute("cz_anycommute", "ALAP", "yes");
-//  test_steaneqec("steaneqec", "ASAP", "no");
-//  test_steaneqec("steaneqec", "ASAP", "yes");
-//  test_steaneqec("steaneqec", "ALAP", "no");
-//  test_steaneqec("steaneqec", "ALAP", "yes");
-//  test_cnot_mixedcommute("cnot_mixedcommute", "ASAP", "no");
-//  test_cnot_mixedcommute("cnot_mixedcommute", "ASAP", "yes");
-//  test_cnot_mixedcommute("cnot_mixedcommute", "ALAP", "no");
-//  test_cnot_mixedcommute("cnot_mixedcommute", "ALAP", "yes");
+test_hilo("hilo", "ASAP", "no");
+test_hilo("hilo", "ASAP", "yes");
+test_hilo("hilo", "ALAP", "no");
+test_hilo("hilo", "ALAP", "yes");
+test_cnot_controlcommute("cnot_controlcommute", "ASAP", "no");
+test_cnot_controlcommute("cnot_controlcommute", "ASAP", "yes");
+test_cnot_controlcommute("cnot_controlcommute", "ALAP", "no");
+test_cnot_controlcommute("cnot_controlcommute", "ALAP", "yes");
+test_cnot_targetcommute("cnot_targetcommute", "ASAP", "no");
+test_cnot_targetcommute("cnot_targetcommute", "ASAP", "yes");
+test_cnot_targetcommute("cnot_targetcommute", "ALAP", "no");
+test_cnot_targetcommute("cnot_targetcommute", "ALAP", "yes");
+test_cz_anycommute("cz_anycommute", "ASAP", "no");
+test_cz_anycommute("cz_anycommute", "ASAP", "yes");
+test_cz_anycommute("cz_anycommute", "ALAP", "no");
+test_cz_anycommute("cz_anycommute", "ALAP", "yes");
+test_cnot_mixedcommute("cnot_mixedcommute", "ASAP", "no");
+test_cnot_mixedcommute("cnot_mixedcommute", "ASAP", "yes");
+test_cnot_mixedcommute("cnot_mixedcommute", "ALAP", "no");
+test_cnot_mixedcommute("cnot_mixedcommute", "ALAP", "yes");
 
-    test_wait("wait", "ASAP", "no");
-    test_wait("wait", "ASAP", "yes");
-    test_wait("wait", "ALAP", "no");
-    test_wait("wait", "ALAP", "yes");
+test_wait("wait", "ASAP", "no");
+test_wait("wait", "ASAP", "yes");
+test_wait("wait", "ALAP", "no");
+test_wait("wait", "ALAP", "yes");
 
-//  ql::options::set("scheduler_uniform", "yes");
-//  test_hilo("hilo_uniform", "ALAP", "no");
-//  test_hilo("hilo_uniform", "ALAP", "yes");
+ql::options::set("scheduler_uniform", "yes");
+test_hilo("hilo_uniform", "ALAP", "no");
+test_hilo("hilo_uniform", "ALAP", "yes");
+ql::options::set("scheduler_uniform", "yes");
 
     return 0;
 }
