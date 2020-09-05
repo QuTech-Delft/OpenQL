@@ -98,12 +98,7 @@ int main(int argc, char ** argv)
    // print info
    starmon.print_info();
 
-   // set platform
-   ql::set_platform(starmon);
-
-
-
-   int   num_qubits = 1;
+      int   num_qubits = 1;
    int   num_cliffords = 4096;
    bool  different  = false;
 
