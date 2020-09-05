@@ -261,7 +261,7 @@ void WriterPass::runOnProgram(ql::quantum_program *program)
     //ql::report_init(program, program->platform);
     
     // writer pass of the initial qasm file (program.qasm)
-    ql::report_qasm(program, program->platform, "out", getPassName());
+    ql::write_qasm(program, program->platform, getPassName());
     
 //     if (getPassName() != "initialqasmwriter" && getPassName() != "scheduledqasmwriter")
 //     { ///@note-rn: temoporary hack to make the writer pass for those 2 configurations soft (i.e., do not delete the subcircuits) so that it does not require a reader pass after it!. This is needed until we fix the synchronization between hardware configuration files and openql tests. Until then a Reader pass would be needed after a hard Write pass. However, a Reader pass will make some unit tests to fail due to a mismatch between the instructions in the tests (i.e., prepz) and included/defined in the hardware config files CONFLICTING with the prepz instr not being available in libQASM.

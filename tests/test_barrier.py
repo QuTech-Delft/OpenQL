@@ -120,7 +120,7 @@ class Test_barrier(unittest.TestCase):
         p.compile()
 
 
-        QASM_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         gold_fn = rootDir + '/golden/test_barrier_all.qasm'
         self.assertTrue(file_compare(QASM_fn, gold_fn))
 
@@ -165,7 +165,7 @@ class Test_barrier(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QASM_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         gold_fn = rootDir + '/golden/test_barrier_all.qasm'
         self.assertTrue(file_compare(QASM_fn, gold_fn))
 
@@ -210,7 +210,7 @@ class Test_barrier(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        QASM_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        QASM_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         gold_fn = rootDir + '/golden/test_barrier_all.qasm'
         self.assertTrue(file_compare(QASM_fn, gold_fn))
 

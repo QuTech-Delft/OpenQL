@@ -52,7 +52,7 @@ class Test_commutation(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/'+ p.name + '_scheduled.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_targetcommute(self):
@@ -90,7 +90,7 @@ class Test_commutation(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/'+ p.name + '_scheduled.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cz_anycommute(self):
@@ -128,7 +128,7 @@ class Test_commutation(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/'+ p.name + '_scheduled.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_mixedcommute(self):
@@ -170,7 +170,7 @@ class Test_commutation(unittest.TestCase):
         p.compile()
 
         gold_fn = rootDir + '/golden/'+ p.name + '_scheduled.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 if __name__ == '__main__':
