@@ -8,6 +8,8 @@
 #ifndef QL_VISUALIZER_INTERNAL_H
 #define QL_VISUALIZER_INTERNAL_H
 
+#ifdef WITH_VISUALIZER
+
 #include "visualizer.h"
 #include "CImg.h"
 
@@ -70,5 +72,7 @@ void drawNotNode(cimg_library::CImg<unsigned char>& image, const Layout layout, 
 void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData);
 
 } // ql
+
+#endif //WITH_VISUALIZER
 
 #endif //QL_VISUALIZER_INTERNAL_H

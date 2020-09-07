@@ -10,8 +10,6 @@
 
 #include <iostream>
 
-using namespace cimg_library;
-
 namespace ql
 {
 // --- QUESTIONS ---
@@ -45,6 +43,17 @@ namespace ql
 // TODO: representing the gates as waveforms
 // TODO: allow the user to set the layout object from Python
 // TODO: add option to save the image and/or open the window
+
+#ifndef WITH_VISUALIZER
+
+void visualize(const ql::quantum_program* program, const Layout layout)
+{
+	WOUT("Visualizer is disabled. If this was not intended, the X11 library might be missing and the visualizer has disabled itself.");
+}
+
+#else
+
+using namespace cimg_library;
 
 unsigned int cycleDuration = 40;
 
@@ -620,5 +629,7 @@ void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout
 	image.draw_line(x0, y0, x1, y1, node.backgroundColor.data());
 	image.draw_line(x0, y1, x1, y0, node.backgroundColor.data());
 }
+
+#endif //WITH_VISUALIZER
 
 } // ql

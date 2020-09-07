@@ -303,9 +303,14 @@ target_link_libraries(ql PUBLIC cqasm)
 # X11 -------------------------------------------------------------------------
 
 # Look for the X11 display library on Linux and Mac
-if(NOT WIN32)
+if(WIN32)
+    #target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
+else()
     find_package(X11)
-    target_link_libraries(ql PUBLIC X11)
+    if($(X11_FOUND))
+        target_link_libraries(ql PUBLIC X11)
+        target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
+    endif()
 endif()
 
 
