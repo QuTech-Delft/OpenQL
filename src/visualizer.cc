@@ -28,6 +28,7 @@ namespace ql
 // TODO: display wait/barrier gate (need wait gate fix first)
 // TODO: fix overlapping connections for multiqubit gates/measurements
 // TODO: representing the gates as waveforms (see andreas paper for examples)
+// TODO: add classical bit number to measurement connection when classical lines are grouped
 // TODO: implement measurement symbol (to replace the M on measurement gates)
 // TODO: generate default gate visuals from the configuration file
 // TODO: change IOUT to DOUT (IOUT is used to avoid debug information from other source files while developing the visualizer!)

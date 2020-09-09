@@ -46,10 +46,11 @@ class Test_visualizer(unittest.TestCase):
       k.gate('h', [2])
       k.gate('cz', [3, 1])
       k.gate('cz', [2, 0])
+      k.gate('wait', [2], 20)
       k.gate('measure', [0])
       k.gate('measure', [1])
       k.gate('measure', [2])
-      k.gate('measure', [3])
+      #k.gate('measure', [3])
       p.add_kernel(k)
       c.compile(p)
 

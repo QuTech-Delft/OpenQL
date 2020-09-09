@@ -34,3 +34,4 @@ docs/_templates
 # tim
 .gitignore
 .vscode/
+tests/visualizer/test_visualizer_output/
