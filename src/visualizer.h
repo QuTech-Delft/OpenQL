@@ -55,7 +55,7 @@ struct BitLines
 
 	// Lines.
 	bool showClassicalLines = true;
-	bool groupClassicalLines = false;
+	bool groupClassicalLines = true;
 	unsigned int groupedClassicalLineGap = 2;
 	std::array<unsigned char, 3> qBitLineColor = {{ 0, 0, 0 }};
 	std::array<unsigned char, 3> cBitLineColor = {{ 128, 128, 128 }};

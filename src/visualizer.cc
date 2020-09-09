@@ -18,9 +18,9 @@ namespace ql
 // different types of cycle/duration(ns) labels
 // gate duration outlines in gate color
 // measurement without explicitly specified classical operand assumes default classical operand (same number as qubit number)
+// read cycle duration from hardware config file, instead of having hardcoded value
 
 // -- IN PROGRESS ---
-// read cycle duration from hardware config file, instead of having hardcoded value
 // implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
 // 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
 
@@ -49,13 +49,13 @@ unsigned int cycleDuration = 40;
 
 void visualize(const ql::quantum_program* program, const Layout layout)
 {
-    IOUT("starting visualization...");
+    IOUT("Starting visualization...");
 	
-    IOUT("validating layout...");
+    IOUT("Validating layout...");
 	validateLayout(layout);
-	
+
     // Get the gate list from the program.
-    IOUT("getting gate list...");
+    IOUT("Getting gate list...");
     std::vector<ql::gate*> gates;
     std::vector<ql::quantum_kernel> kernels = program->kernels;
     for (ql::quantum_kernel kernel : kernels)
@@ -67,13 +67,13 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 	// Load cycle time and calculate amount of cycles.
 	cycleDuration = program->platform.cycle_time;
 	IOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
-    IOUT("calculating amount of cycles...");
+    IOUT("Calculating amount of cycles...");
     unsigned int amountOfCycles = calculateAmountOfCycles(gates);
 
 	// Compress the circuit in terms of cycles and gate duration if the option has been set.
 	if (layout.cycles.compressCycles)
 	{
-        IOUT("compressing circuit...");
+        IOUT("Compressing circuit...");
 		std::vector<bool> filledCycles(amountOfCycles);
 		for (unsigned int i = 0; i < gates.size(); i++)
 		{
@@ -114,20 +114,20 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 	}
 
 	// Calculate amount of qubits and classical bits.
-    IOUT("calculating amount of qubits and classical bits...");
+    IOUT("Calculating amount of qubits and classical bits...");
 	fixMeasurementOperands(gates);
 	const unsigned int amountOfQubits = calculateAmountOfBits(gates, &gate::operands);
 	const unsigned int amountOfCbits = calculateAmountOfBits(gates, &gate::creg_operands);
 	CircuitData circuitData = { amountOfQubits, amountOfCbits, amountOfCycles };
     
 	// Calculate image width and height based on the amount of cycles and amount of operands. The height depends on whether classical bit lines are grouped or not.
-    IOUT("calculating image width and height...");
+    IOUT("Calculating image width and height...");
 	const unsigned int width = (layout.bitLine.drawLabels ? layout.bitLine.labelColumnWidth : 0) + amountOfCycles * layout.grid.cellSize + 2 * layout.grid.borderSize;
 	const unsigned int amountOfRows = amountOfQubits + (layout.bitLine.groupClassicalLines ? (amountOfCbits > 0 ? 1 : 0) : amountOfCbits);
 	const unsigned int height = (layout.cycles.showCycleNumbers ? layout.cycles.rowHeight : 0) + amountOfRows * layout.grid.cellSize + 2 * layout.grid.borderSize;
     
 	// Initialize image.
-    IOUT("initializing image...");
+    IOUT("Initializing image...");
 	const unsigned int numberOfChannels = 3;
 	CImg<unsigned char> image(width, height, 1, numberOfChannels);
 	image.fill(255);
@@ -135,12 +135,12 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 	// Draw the cycle numbers if the option has been set.
 	if (layout.cycles.showCycleNumbers)
 	{
-        IOUT("drawing cycle numbers...");
+        IOUT("Drawing cycle numbers...");
 		drawCycleNumbers(image, layout, circuitData);
 	}
 
 	// Draw the quantum and classical bit lines.
-    IOUT("drawing qubit lines...");
+    IOUT("Drawing qubit lines...");
 	for (unsigned int i = 0; i < amountOfQubits; i++)
 	{
 		drawBitLine(image, layout, QUANTUM, i, circuitData);
@@ -152,13 +152,13 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 		// Draw the grouped classical bit lines if the option is set.
 		if (amountOfCbits > 0 && layout.bitLine.groupClassicalLines)
 		{
-			IOUT("drawing grouped classical bit lines...");
+			IOUT("Drawing grouped classical bit lines...");
 			drawGroupedClassicalBitLine(image, layout, circuitData);
 		}
 		// Otherwise draw each classical bit line seperate.
 		else
 		{
-			IOUT("drawing ungrouped classical bit lines...");
+			IOUT("Drawing ungrouped classical bit lines...");
 			for (unsigned int i = amountOfQubits; i < amountOfQubits + amountOfCbits; i++)
 			{
 				drawBitLine(image, layout, CLASSICAL, i, circuitData);
@@ -167,19 +167,19 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 	}
 
 	// Draw the gates.
-    IOUT("drawing gates...");
+    IOUT("Drawing gates...");
 	for (gate* gate : gates)
 	{
         //const GateVisual gateVisual = layout.gateVisuals.at(gate->type());
-        IOUT("drawing gate: [name: " + gate->name + "]");
+        IOUT("Drawing gate: [name: " + gate->name + "]");
 		drawGate(image, layout, circuitData, gate);
 	}
 	
 	// Display the image.
-    IOUT("displaying image...");
+    IOUT("Displaying image...");
 	image.display("Quantum Circuit");
 
-    IOUT("visualization complete...");
+    IOUT("Visualization complete...");
 }
 
 void validateLayout(const Layout layout)
