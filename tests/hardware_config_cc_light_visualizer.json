@@ -392,7 +392,7 @@
       "cc_light_codeword": 40,
       "cc_light_opcode": 4,
 	  "visual": {
-		"connectionColor": [0, 0, 0],
+		"connectionColor": [50, 50, 50],
 		"nodes": [
 			{
 				"type": "GATE",
@@ -427,7 +427,7 @@
       "cc_light_codeword": 41,
       "cc_light_opcode": 4,
 	  "visual": {
-		"connectionColor": [0, 0, 0],
+		"connectionColor": [50, 50, 50],
 		"nodes": [
 			{
 				"type": "GATE",
@@ -462,7 +462,7 @@
       "cc_light_codeword": 41,
       "cc_light_opcode": 4,
 	  "visual": {
-		"connectionColor": [0, 0, 0],
+		"connectionColor": [50, 50, 50],
 		"nodes": [
 			{
 				"type": "GATE",
@@ -497,7 +497,7 @@
       "cc_light_codeword": 41,
       "cc_light_opcode": 4,
 	  "visual": {
-		"connectionColor": [0, 0, 0],
+		"connectionColor": [50, 50, 50],
 		"nodes": [
 			{
 				"type": "GATE",

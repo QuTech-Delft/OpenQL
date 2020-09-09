@@ -21,17 +21,16 @@ namespace ql
 
 // -- IN PROGRESS ---
 // read cycle duration from hardware config file, instead of having hardcoded value
-// display wait/barrier gate
-// measure custom gates go to their respective classical bit line
+// implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
 // 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
 
 // --- FUTURE WORK ---
-// TODO: implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
+// TODO: display wait/barrier gate (need wait gate fix first)
 // TODO: fix overlapping connections for multiqubit gates/measurements
+// TODO: representing the gates as waveforms (see andreas paper for examples)
 // TODO: implement actual measurement symbol
 // TODO: generate default gate visuals from the configuration file
 // TODO: change IOUT to DOUT (IOUT is used to avoid debug information from other source files while developing the visualizer!)
-// TODO: representing the gates as waveforms (see andreas paper for examples)
 // TODO: allow the user to set the layout object from Python
 // TODO: add option to save the image and/or open the window
 
@@ -54,7 +53,7 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 	
     IOUT("validating layout...");
 	validateLayout(layout);
-
+	
     // Get the gate list from the program.
     IOUT("getting gate list...");
     std::vector<ql::gate*> gates;
@@ -65,7 +64,9 @@ void visualize(const ql::quantum_program* program, const Layout layout)
         gates.insert( gates.end(), c.begin(), c.end() );
     }
     
-	// Calculate amount of cycles.
+	// Load cycle time and calculate amount of cycles.
+	cycleDuration = program->platform.cycle_time;
+	IOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
     IOUT("calculating amount of cycles...");
     unsigned int amountOfCycles = calculateAmountOfCycles(gates);
 
@@ -173,7 +174,7 @@ void visualize(const ql::quantum_program* program, const Layout layout)
         IOUT("drawing gate: [name: " + gate->name + "]");
 		drawGate(image, layout, circuitData, gate);
 	}
-
+	
 	// Display the image.
     IOUT("displaying image...");
 	image.display("Quantum Circuit");
@@ -246,8 +247,6 @@ void fixMeasurementOperands(const std::vector<ql::gate*> gates)
 {
 	for (gate* gate : gates)
 	{
-		IOUT(gate->name);
-
 		// Check for a measurement gate without explicitly specified classical operand.
 		if (isMeasurement(gate))
 		{
