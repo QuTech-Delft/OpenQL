@@ -1,0 +1,16 @@
+# kernel: aKernel1
+# ----- circuit_latency: 0
+# ----- quantum gates: 14
+# ----- non single qubit gates: 2
+# ----- classical operations: 0
+# ----- qubits used: 4
+# ----- qubit cycles use: [14, 8, 10, 8, 0, 0, 0]
+
+# Total circuit_latency: 0
+# Total no. of quantum gates: 14
+# Total no. of non single qubit gates: 2
+# Total no. of classical operations: 0
+# Qubits used: 4
+# No. kernels: 1
+ 
+
