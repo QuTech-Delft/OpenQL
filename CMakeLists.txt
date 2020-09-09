@@ -302,7 +302,7 @@ target_link_libraries(ql PUBLIC cqasm)
 
 # X11 -------------------------------------------------------------------------
 
-# Look for the X11 display library on Linux and Mac
+# Only enable the visualizer if building on Windows or the X11 library is found when building on Linux or Mac.
 if(WIN32)
     target_compile_definitions(ql PRIVATE WITH_VISUALIZER)
 else()

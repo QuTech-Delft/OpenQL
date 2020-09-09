@@ -60,6 +60,10 @@ void validateLayout(const Layout layout);
 
 unsigned int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType);
 unsigned int calculateAmountOfCycles(const std::vector<ql::gate*> gates);
+unsigned int calculateAmountOfGateOperands(const ql::gate* gate);
+
+void fixMeasurementOperands(const std::vector<ql::gate*> gates);
+bool isMeasurement(const ql::gate* gate);
 
 void drawCycleNumbers(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData);
 void drawBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const BitType bitType, const unsigned int row, const CircuitData circuitData);

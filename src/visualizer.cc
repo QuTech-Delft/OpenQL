@@ -12,35 +12,26 @@
 
 namespace ql
 {
-// --- QUESTIONS ---
-// wait/barrier gates do not appear in a program's gate list! how to know they are there?
-//		>> should be fixed
-
-// the measure instruction in hw config does not contain a classical line argument?
-//		>> assume measure goes to the classical bit line corresponding to the number of the qubit being measured (if no args given)
-
-// how to determine the duration of a cycle? hw dependent? is it configured somewhere?
-//		>> configured in hardware config file
-
 // --- DONE ---
 // visualization of custom gates
 // option to enable or disable classical bit lines
 // different types of cycle/duration(ns) labels
 // gate duration outlines in gate color
+// measurement without explicitly specified classical operand assumes default classical operand (same number as qubit number)
 
 // -- IN PROGRESS ---
 // read cycle duration from hardware config file, instead of having hardcoded value
 // display wait/barrier gate
 // measure custom gates go to their respective classical bit line
 // 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
-// read paper of andreas
 
 // --- FUTURE WORK ---
 // TODO: implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
+// TODO: fix overlapping connections for multiqubit gates/measurements
 // TODO: implement actual measurement symbol
 // TODO: generate default gate visuals from the configuration file
 // TODO: change IOUT to DOUT (IOUT is used to avoid debug information from other source files while developing the visualizer!)
-// TODO: representing the gates as waveforms
+// TODO: representing the gates as waveforms (see andreas paper for examples)
 // TODO: allow the user to set the layout object from Python
 // TODO: add option to save the image and/or open the window
 
@@ -123,17 +114,16 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 
 	// Calculate amount of qubits and classical bits.
     IOUT("calculating amount of qubits and classical bits...");
+	fixMeasurementOperands(gates);
 	const unsigned int amountOfQubits = calculateAmountOfBits(gates, &gate::operands);
 	const unsigned int amountOfCbits = calculateAmountOfBits(gates, &gate::creg_operands);
 	CircuitData circuitData = { amountOfQubits, amountOfCbits, amountOfCycles };
-
     
 	// Calculate image width and height based on the amount of cycles and amount of operands. The height depends on whether classical bit lines are grouped or not.
     IOUT("calculating image width and height...");
 	const unsigned int width = (layout.bitLine.drawLabels ? layout.bitLine.labelColumnWidth : 0) + amountOfCycles * layout.grid.cellSize + 2 * layout.grid.borderSize;
 	const unsigned int amountOfRows = amountOfQubits + (layout.bitLine.groupClassicalLines ? (amountOfCbits > 0 ? 1 : 0) : amountOfCbits);
 	const unsigned int height = (layout.cycles.showCycleNumbers ? layout.cycles.rowHeight : 0) + amountOfRows * layout.grid.cellSize + 2 * layout.grid.borderSize;
-
     
 	// Initialize image.
     IOUT("initializing image...");
@@ -175,7 +165,6 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 		}
 	}
 
-
 	// Draw the gates.
     IOUT("drawing gates...");
 	for (gate* gate : gates)
@@ -194,7 +183,7 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 
 void validateLayout(const Layout layout)
 {
-
+	//TODO
 }
 
 unsigned int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType)
@@ -246,6 +235,37 @@ unsigned int calculateAmountOfCycles(const std::vector<ql::gate*> gates)
 	}
 
     return amountOfCycles;
+}
+
+unsigned int calculateAmountOfGateOperands(const ql::gate* gate)
+{
+	return (unsigned int)gate->operands.size() + (unsigned int)gate->creg_operands.size();
+}
+
+void fixMeasurementOperands(const std::vector<ql::gate*> gates)
+{
+	for (gate* gate : gates)
+	{
+		IOUT(gate->name);
+
+		// Check for a measurement gate without explicitly specified classical operand.
+		if (isMeasurement(gate))
+		{
+			if (calculateAmountOfGateOperands(gate) == 1)
+			{
+				// Set classical measurement operand to the bit corresponding to the measuremens qubit number.
+				IOUT("Found measurement gate with no classical operand. Assuming default classical operand.");
+				const unsigned int cbit = gate->operands[0];
+				gate->creg_operands.push_back(cbit);
+			}
+		}
+	}
+}
+
+bool isMeasurement(const ql::gate* gate)
+{
+	//TODO: this method of checking for measurement gates is not very robust!
+	return (gate->name.find("measure") != std::string::npos);
 }
 
 void drawCycleNumbers(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData)
@@ -367,7 +387,8 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 
 void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, gate* const gate)
 {
-	const unsigned int amountOfOperands = (unsigned int)gate->operands.size() + (unsigned int)gate->creg_operands.size();
+	const unsigned int amountOfOperands = calculateAmountOfGateOperands(gate);
+	//const unsigned int amountOfOperands = (unsigned int)gate->operands.size() + (unsigned int)gate->creg_operands.size();
 	const unsigned int cycleNumbersRowHeight = layout.cycles.showCycleNumbers ? layout.cycles.rowHeight : 0;
 	const unsigned int labelColumnWidth = layout.bitLine.drawLabels ? layout.bitLine.labelColumnWidth : 0;
 	
@@ -431,7 +452,8 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		};
 
 		//TODO: probably have connection line type as part of a gate's visual definition
-		if (gate->type() == __measure_gate__)
+		//if (gate->type() == __measure_gate__)
+		if (isMeasurement(gate))
 		{
 			if (layout.measurements.drawConnection)
 			{

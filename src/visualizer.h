@@ -69,7 +69,7 @@ struct Grid
 
 struct Measurements
 {
-	bool drawConnection = false;
+	bool drawConnection = true;
 	unsigned int lineSpacing = 2;
 	unsigned int arrowSize = 10;
 };
