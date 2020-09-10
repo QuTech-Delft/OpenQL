@@ -1,0 +1,42 @@
+{
+    "cycles":
+    {
+        "showCycleNumbers": true,
+        "showCyclesInNanoSeconds": true,
+        "rowHeight": 24,
+        "fontHeight": 13,
+        "fontColor": [0, 0, 0],
+
+        "compressCycles": false,
+        "showGateDurationOutline": true,
+        "gateDurationGap": 2,
+        "gateDurationAlpha": 0.1,
+        "gateDurationOutLineAlpha": 0.3,
+        "gateDurationOutlineColor": [0, 0, 0]
+    },
+    "bitLines":
+    {
+        "drawLabels": true,
+        "labelColumnWidth": 32,
+        "fontHeight": 13,
+        "qBitLabelColor": [0, 0, 0],
+        "cBitLabelColor": [128, 128, 128],
+
+        "showClassicalLines": true,
+        "groupClassicalLines": true,
+        "groupedClassicalLineGap": 2,
+        "qBitLineColor": [0, 0, 0],
+        "cBitLineColor": [128, 128, 128]
+    },
+    "grid":
+    {
+        "cellSize": 32,
+        "borderSize": 32
+    },
+    "measurements":
+    {
+        "drawConnection": true,
+        "lineSpacing": 2,
+        "arrowSize": 10
+    }
+}

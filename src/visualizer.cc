@@ -6,9 +6,13 @@
  */
  
 #include "visualizer.h"
-#include "visualizer_internal.h"
+#include "visualizer_internal.h"`
+#include "json.h"
+#include "instruction_map.h"
 
 #include <iostream>
+
+using json = nlohmann::json;
 
 namespace ql
 {
@@ -38,7 +42,8 @@ namespace ql
 
 #ifndef WITH_VISUALIZER
 
-void visualize(const ql::quantum_program* program, const Layout layout)
+//void visualize(const ql::quantum_program* program, const Layout layout)
+void visualize(const ql::quantum_program* program, const std::string& configPath)
 {
 	WOUT("Visualizer is disabled. If this was not intended, the X11 library might be missing and the visualizer has disabled itself.");
 }
@@ -49,9 +54,13 @@ using namespace cimg_library;
 
 unsigned int cycleDuration = 40;
 
-void visualize(const ql::quantum_program* program, const Layout layout)
+//void visualize(const ql::quantum_program* program, const Layout layout)
+void visualize(const ql::quantum_program* program, const std::string& configPath)
 {
     IOUT("Starting visualization...");
+
+	IOUT("Parsing visualizer configuration file.");
+	const Layout layout = parseConfiguration(configPath);
 	
     IOUT("Validating layout...");
 	validateLayout(layout);
@@ -124,8 +133,8 @@ void visualize(const ql::quantum_program* program, const Layout layout)
     
 	// Calculate image width and height based on the amount of cycles and amount of operands. The height depends on whether classical bit lines are grouped or not.
     IOUT("Calculating image width and height...");
-	const unsigned int width = (layout.bitLine.drawLabels ? layout.bitLine.labelColumnWidth : 0) + amountOfCycles * layout.grid.cellSize + 2 * layout.grid.borderSize;
-	const unsigned int amountOfRows = amountOfQubits + (layout.bitLine.groupClassicalLines ? (amountOfCbits > 0 ? 1 : 0) : amountOfCbits);
+	const unsigned int width = (layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0) + amountOfCycles * layout.grid.cellSize + 2 * layout.grid.borderSize;
+	const unsigned int amountOfRows = amountOfQubits + (layout.bitLines.groupClassicalLines ? (amountOfCbits > 0 ? 1 : 0) : amountOfCbits);
 	const unsigned int height = (layout.cycles.showCycleNumbers ? layout.cycles.rowHeight : 0) + amountOfRows * layout.grid.cellSize + 2 * layout.grid.borderSize;
     
 	// Initialize image.
@@ -149,10 +158,10 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 	}
 	
 	// Draw the classical lines if enabled.
-	if (layout.bitLine.showClassicalLines)
+	if (layout.bitLines.showClassicalLines)
 	{
 		// Draw the grouped classical bit lines if the option is set.
-		if (amountOfCbits > 0 && layout.bitLine.groupClassicalLines)
+		if (amountOfCbits > 0 && layout.bitLines.groupClassicalLines)
 		{
 			IOUT("Drawing grouped classical bit lines...");
 			drawGroupedClassicalBitLine(image, layout, circuitData);
@@ -182,6 +191,69 @@ void visualize(const ql::quantum_program* program, const Layout layout)
 	image.display("Quantum Circuit");
 
     IOUT("Visualization complete...");
+}
+
+Layout parseConfiguration(const std::string& configPath)
+{
+	json config;
+	try
+	{
+		config = load_json(configPath);
+	}
+	catch (json::exception &e)
+	{
+		FATAL("Failed to load the visualization config file: malformed json file: \n\t" << std::string(e.what()));
+	}
+
+	Layout layout;
+
+	// Fill the layout object with the values from the config file, or if those values are missing, with the default hardcoded values.
+	//TODO: replace these hardcoded assignments by automatic json to layout object mapping (is possible with nlohmann json!)
+	if (config.count("cycles") == 1)
+	{
+		layout.cycles.showCycleNumbers = config["cycles"].value("showCycleNumbers", layout.cycles.showCycleNumbers);
+		layout.cycles.showCyclesInNanoSeconds = config["cycles"].value("showCyclesInNanoSeconds", layout.cycles.showCyclesInNanoSeconds);
+		layout.cycles.rowHeight = config["cycles"].value("rowHeight", layout.cycles.rowHeight);
+		layout.cycles.fontHeight = config["cycles"].value("fontHeight", layout.cycles.fontHeight);
+		layout.cycles.fontColor = config["cycles"].value("fontColor", layout.cycles.fontColor);
+
+		layout.cycles.compressCycles = config["cycles"].value("compressCycles", layout.cycles.compressCycles);
+		layout.cycles.showGateDurationOutline = config["cycles"].value("showGateDurationOutline", layout.cycles.showGateDurationOutline);
+		layout.cycles.gateDurationGap = config["cycles"].value("gateDurationGap", layout.cycles.gateDurationGap);
+		layout.cycles.gateDurationAlpha = config["cycles"].value("gateDurationAlpha", layout.cycles.gateDurationAlpha);
+		layout.cycles.gateDurationOutLineAlpha = config["cycles"].value("gateDurationOutLineAlpha", layout.cycles.gateDurationOutLineAlpha);
+		layout.cycles.gateDurationOutlineColor = config["cycles"].value("gateDurationOutlineColor", layout.cycles.gateDurationOutlineColor);
+	}
+
+	if (config.count("bitLines") == 1)
+	{
+		layout.bitLines.drawLabels = config["bitLines"].value("drawLabels", layout.bitLines.drawLabels);
+		layout.bitLines.labelColumnWidth = config["bitLines"].value("labelColumnWidth", layout.bitLines.labelColumnWidth);
+		layout.bitLines.fontHeight = config["bitLines"].value("fontHeight", layout.bitLines.fontHeight);
+		layout.bitLines.qBitLabelColor = config["bitLines"].value("qBitLabelColor", layout.bitLines.qBitLabelColor);
+		layout.bitLines.cBitLabelColor = config["bitLines"].value("cBitLabelColor", layout.bitLines.cBitLabelColor);
+
+		layout.bitLines.showClassicalLines = config["bitLines"].value("showClassicalLines", layout.bitLines.showClassicalLines);
+		layout.bitLines.groupClassicalLines = config["bitLines"].value("groupClassicalLines", layout.bitLines.groupClassicalLines);
+		layout.bitLines.groupedClassicalLineGap = config["bitLines"].value("groupedClassicalLineGap", layout.bitLines.groupedClassicalLineGap);
+		layout.bitLines.qBitLineColor = config["bitLines"].value("qBitLineColor", layout.bitLines.qBitLineColor);
+		layout.bitLines.cBitLineColor = config["bitLines"].value("cBitLineColor", layout.bitLines.cBitLineColor);
+	}
+
+	if (config.count("grid") == 1)
+	{
+		layout.grid.cellSize = config["grid"].value("cellSize", layout.grid.cellSize);
+		layout.grid.borderSize = config["grid"].value("borderSize", layout.grid.borderSize);
+	}
+	
+	if (config.count("measurements") == 1)
+	{
+		layout.measurements.drawConnection = config["measurements"].value("drawConnection", layout.measurements.drawConnection);
+		layout.measurements.lineSpacing = config["measurements"].value("lineSpacing", layout.measurements.lineSpacing);
+		layout.measurements.arrowSize = config["measurements"].value("arrowSize", layout.measurements.arrowSize);
+	}
+
+	return layout;
 }
 
 void validateLayout(const Layout layout)
@@ -286,11 +358,11 @@ void drawCycleNumbers(cimg_library::CImg<unsigned char>& image, const Layout lay
 		const char* text = cycleLabel.c_str();
 		CImg<unsigned char> imageTextDimensions;
 		const unsigned char color = 1;
-		imageTextDimensions.draw_text(0, 0, text, &color, 0, 1, layout.bitLine.fontHeight);
+		imageTextDimensions.draw_text(0, 0, text, &color, 0, 1, layout.bitLines.fontHeight);
 		const unsigned int textWidth = imageTextDimensions.width();
 		const unsigned int textHeight = imageTextDimensions.height();
 
-		const unsigned int labelColumnWidth = layout.bitLine.drawLabels ? layout.bitLine.labelColumnWidth : 0;
+		const unsigned int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
 		const unsigned int xGap = (layout.grid.cellSize - textWidth) / 2;
 		const unsigned int yGap = (layout.grid.cellSize - textHeight) / 2;
 		const unsigned int xCycle = layout.grid.borderSize + labelColumnWidth + i * layout.grid.cellSize + xGap;
@@ -303,7 +375,7 @@ void drawCycleNumbers(cimg_library::CImg<unsigned char>& image, const Layout lay
 void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, const BitType bitType, const unsigned int row, const CircuitData circuitData)
 {
 	const unsigned int cycleNumbersRowHeight = layout.cycles.showCycleNumbers ? layout.cycles.rowHeight : 0;
-	const unsigned int labelColumnWidth = layout.bitLine.drawLabels ? layout.bitLine.labelColumnWidth : 0;
+	const unsigned int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
 	const unsigned int x0 = labelColumnWidth + layout.grid.borderSize;
 	const unsigned int x1 = labelColumnWidth + layout.grid.borderSize + circuitData.amountOfCycles * layout.grid.cellSize;
 	const unsigned int y = cycleNumbersRowHeight + layout.grid.borderSize + row * layout.grid.cellSize + layout.grid.cellSize / 2;
@@ -313,19 +385,19 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 	switch (bitType)
 	{
 		case CLASSICAL:
-			bitLineColor = layout.bitLine.cBitLineColor;
-			bitLabelColor = layout.bitLine.cBitLabelColor;
+			bitLineColor = layout.bitLines.cBitLineColor;
+			bitLabelColor = layout.bitLines.cBitLabelColor;
 			break;
 		case QUANTUM:
-			bitLineColor = layout.bitLine.qBitLineColor;
-			bitLabelColor = layout.bitLine.qBitLabelColor;
+			bitLineColor = layout.bitLines.qBitLineColor;
+			bitLabelColor = layout.bitLines.qBitLabelColor;
 			break;
 	}
 
 	image.draw_line(x0, y, x1, y, bitLineColor.data());
 
 	// Draw the bit line label if enabled.
-	if (layout.bitLine.drawLabels)
+	if (layout.bitLines.drawLabels)
 	{
 		const unsigned int bitIndex = (bitType == CLASSICAL) ? (row - circuitData.amountOfQubits) : row;
 		const std::string bitTypeText = (bitType == CLASSICAL) ? "c" : "q";
@@ -333,56 +405,56 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 		const char* text = label.c_str();
 		CImg<unsigned char> imageTextDimensions;
 		const unsigned char color = 1;
-		imageTextDimensions.draw_text(0, 0, text, &color, 0, 1, layout.bitLine.fontHeight);
+		imageTextDimensions.draw_text(0, 0, text, &color, 0, 1, layout.bitLines.fontHeight);
 		const unsigned int textWidth = imageTextDimensions.width();
 		const unsigned int textHeight = imageTextDimensions.height();
 		const unsigned int xGap = (layout.grid.cellSize - textWidth) / 2;
 		const unsigned int yGap = (layout.grid.cellSize - textHeight) / 2;
 		const unsigned int xLabel = layout.grid.borderSize + xGap;
 		const unsigned int yLabel = layout.grid.borderSize + cycleNumbersRowHeight + row * layout.grid.cellSize + yGap;
-		image.draw_text(xLabel, yLabel, text, bitLabelColor.data(), 0, 1, layout.bitLine.fontHeight);
+		image.draw_text(xLabel, yLabel, text, bitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
 	}
 }
 
 void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData)
 {
 	const unsigned int cycleNumbersRowHeight = layout.cycles.showCycleNumbers ? layout.cycles.rowHeight : 0;
-	const unsigned int labelColumnWidth = layout.bitLine.drawLabels ? layout.bitLine.labelColumnWidth : 0;
+	const unsigned int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
 	const unsigned int x0 = labelColumnWidth + layout.grid.borderSize;
 	const unsigned int x1 = labelColumnWidth + layout.grid.borderSize + circuitData.amountOfCycles * layout.grid.cellSize;
 	const unsigned int y = cycleNumbersRowHeight + layout.grid.borderSize + circuitData.amountOfQubits * layout.grid.cellSize + layout.grid.cellSize / 2;
 
-	image.draw_line(x0, y - layout.bitLine.groupedClassicalLineGap, x1, y - layout.bitLine.groupedClassicalLineGap, layout.bitLine.cBitLineColor.data());
-	image.draw_line(x0, y + layout.bitLine.groupedClassicalLineGap, x1, y + layout.bitLine.groupedClassicalLineGap, layout.bitLine.cBitLineColor.data());
+	image.draw_line(x0, y - layout.bitLines.groupedClassicalLineGap, x1, y - layout.bitLines.groupedClassicalLineGap, layout.bitLines.cBitLineColor.data());
+	image.draw_line(x0, y + layout.bitLines.groupedClassicalLineGap, x1, y + layout.bitLines.groupedClassicalLineGap, layout.bitLines.cBitLineColor.data());
 	//TODO: store the dashed line parameters in the layout object
-	image.draw_line(x0 + 8, y + layout.bitLine.groupedClassicalLineGap + 2, x0 + 12, y - layout.bitLine.groupedClassicalLineGap - 3, layout.bitLine.cBitLineColor.data());
+	image.draw_line(x0 + 8, y + layout.bitLines.groupedClassicalLineGap + 2, x0 + 12, y - layout.bitLines.groupedClassicalLineGap - 3, layout.bitLines.cBitLineColor.data());
 	//TODO: draw a number indicating the amount of classical lines that are grouped
 	const std::string label = std::to_string(circuitData.amountOfClassicalBits);
 	const char* text = label.c_str();
 	CImg<unsigned char> imageTextDimensions;
 	const unsigned char color = 1;
-	imageTextDimensions.draw_text(0, 0, text, &color, 0, 1, layout.bitLine.fontHeight);
+	imageTextDimensions.draw_text(0, 0, text, &color, 0, 1, layout.bitLines.fontHeight);
 	//const unsigned int textWidth = imageTextDimensions.width();
 	//const unsigned int textHeight = imageTextDimensions.height();
 	const unsigned int xLabel = x0 + 8;
-	const unsigned int yLabel = y - layout.bitLine.groupedClassicalLineGap - 3 - 13;
-	image.draw_text(xLabel, yLabel, text, layout.bitLine.cBitLabelColor.data(), 0, 1, layout.bitLine.fontHeight);
+	const unsigned int yLabel = y - layout.bitLines.groupedClassicalLineGap - 3 - 13;
+	image.draw_text(xLabel, yLabel, text, layout.bitLines.cBitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
 
 	// Draw the bit line label if enabled.
-	if (layout.bitLine.drawLabels)
+	if (layout.bitLines.drawLabels)
 	{
 		const std::string label = "C";
 		const char* text = label.c_str();
 		CImg<unsigned char> imageTextDimensions;
 		const unsigned char color = 1;
-		imageTextDimensions.draw_text(0, 0, text, &color, 0, 1, layout.bitLine.fontHeight);
+		imageTextDimensions.draw_text(0, 0, text, &color, 0, 1, layout.bitLines.fontHeight);
 		const unsigned int textWidth = imageTextDimensions.width();
 		const unsigned int textHeight = imageTextDimensions.height();
 		const unsigned int xGap = (layout.grid.cellSize - textWidth) / 2;
 		const unsigned int yGap = (layout.grid.cellSize - textHeight) / 2;
 		const unsigned int xLabel = layout.grid.borderSize + xGap;
 		const unsigned int yLabel = layout.grid.borderSize + cycleNumbersRowHeight + circuitData.amountOfQubits * layout.grid.cellSize + yGap;
-		image.draw_text(xLabel, yLabel, text, layout.bitLine.cBitLabelColor.data(), 0, 1, layout.bitLine.fontHeight);
+		image.draw_text(xLabel, yLabel, text, layout.bitLines.cBitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
 	}
 }
 
@@ -391,7 +463,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	const unsigned int amountOfOperands = calculateAmountOfGateOperands(gate);
 	//const unsigned int amountOfOperands = (unsigned int)gate->operands.size() + (unsigned int)gate->creg_operands.size();
 	const unsigned int cycleNumbersRowHeight = layout.cycles.showCycleNumbers ? layout.cycles.rowHeight : 0;
-	const unsigned int labelColumnWidth = layout.bitLine.drawLabels ? layout.bitLine.labelColumnWidth : 0;
+	const unsigned int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
 	
 	IOUT("drawing gate with name: '" << gate->name << "'");
 	
@@ -431,7 +503,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 			if (operand > maxRow)
 				maxRow = operand;
 		}
-		if (layout.bitLine.groupClassicalLines)
+		if (layout.bitLines.groupClassicalLines)
 		{
 			if (gate->creg_operands.size() > 0)
 			{
@@ -463,9 +535,9 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		//if (gate->type() == __measure_gate__)
 		if (isMeasurement(gate))
 		{
-			if (layout.measurements.drawConnection)
+			if (layout.measurements.drawConnection && layout.bitLines.showClassicalLines)
 			{
-				const unsigned groupedClassicalLineOffset = layout.bitLine.groupClassicalLines ? layout.bitLine.groupedClassicalLineGap : 0;
+				const unsigned groupedClassicalLineOffset = layout.bitLines.groupClassicalLines ? layout.bitLines.groupedClassicalLineGap : 0;
 
 				image.draw_line(connectionPosition.x0 - layout.measurements.lineSpacing, connectionPosition.y0,
 					connectionPosition.x1 - layout.measurements.lineSpacing, connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset,

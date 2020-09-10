@@ -56,6 +56,7 @@ struct CircuitData
 	const unsigned int amountOfCycles;
 };
 
+Layout parseConfiguration(const std::string& configPath);
 void validateLayout(const Layout layout);
 
 unsigned int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType);

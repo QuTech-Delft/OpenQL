@@ -480,10 +480,7 @@ void VisualizerPass::runOnProgram(ql::quantum_program *program)
 {
     DOUT("run VisualizerPass with name = " << getPassName() << " on program " << program->name);
     
-    IOUT(getPassOptions()->getOption("visualizer_config_path"));
-
-    ql::Layout layout;
-    ql::visualize(program, layout);
+    ql::visualize(program, getPassOptions()->getOption("visualizer_config_path"));
 }
 
     /**

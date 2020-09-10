@@ -29,7 +29,7 @@ struct Cycles
 {
 	// Cycle number row.
 	bool showCycleNumbers = true;
-	bool showCyclesInNanoSeconds = true;
+	bool showCyclesInNanoSeconds = false;
 	unsigned int rowHeight = 24;
 	unsigned int fontHeight = 13;
 	std::array<unsigned char, 3> fontColor = black;
@@ -77,7 +77,7 @@ struct Measurements
 struct Layout
 {
 	Cycles cycles;
-	BitLines bitLine;
+	BitLines bitLines;
 	Grid grid;
 	Measurements measurements;
 
@@ -173,7 +173,8 @@ struct Layout
 	};
 };
 
-void visualize(const ql::quantum_program* program, const Layout layout);
+//void visualize(const ql::quantum_program* program, const Layout layout);
+void visualize(const ql::quantum_program* program, const std::string& configPath);
 
 } // ql
 
