@@ -107,7 +107,6 @@ AbstractPass* PassManager::createPass(std::string passName, std::string aliasNam
     if (passName == "InsertBufferDelays") {pass = new InsertBufferDelaysPass(aliasName); passfound = true;}
     if (passName == "CCLDecomposePostSchedule") {pass = new CCLDecomposePostSchedulePass(aliasName); passfound = true;}
     if (passName == "QisaCodeGeneration") {pass = new QisaCodeGenerationPass(aliasName); passfound = true;}
-	
     if (passName == "Visualizer") {pass = new VisualizerPass(aliasName); passfound = true;}
     
     if (!passfound) 

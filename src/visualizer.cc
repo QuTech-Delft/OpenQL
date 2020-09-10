@@ -19,13 +19,13 @@ namespace ql
 // gate duration outlines in gate color
 // measurement without explicitly specified classical operand assumes default classical operand (same number as qubit number)
 // read cycle duration from hardware config file, instead of having hardcoded value
+// handle case where user does not or incorrectly specifies visualization nodes for custom gate
 
 // -- IN PROGRESS ---
 // implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
 // 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
 
 // --- FUTURE WORK ---
-// TODO: handle case where user does not or incorrectly specifies visualization nodes for custom gate
 // TODO: display wait/barrier gate (need wait gate fix first)
 // TODO: fix overlapping connections for multiqubit gates/measurements
 // TODO: representing the gates as waveforms (see andreas paper for examples)
