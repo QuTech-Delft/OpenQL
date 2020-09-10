@@ -1262,81 +1262,88 @@ public:
             m.m[3] = complex_t(mat[3][0], mat[3][1]);
 			
 			// Load the visual parameters of the instruction if provided.
-            l_attr = "visual";
-			DOUT("Loading visuals of instruction: '" << name << "'...");
-			if (instr.count("visual") == 1)
-			{
-				json visual = instr["visual"];
-				DOUT("Found visual attribute.");
-				
-				// Load the connection color.
-				json connectionColor = visual["connectionColor"];
-				gateVisual.connectionColor[0] = connectionColor[0];
-				gateVisual.connectionColor[1] = connectionColor[1];
-				gateVisual.connectionColor[2] = connectionColor[2];
- 				DOUT("Connection color: [" 
-					<< (int)gateVisual.connectionColor[0] << ","
-					<< (int)gateVisual.connectionColor[1] << ","
-					<< (int)gateVisual.connectionColor[2] << "]");
-				
- 				// Load the individual nodes.
-				json nodes = visual["nodes"];
-				unsigned int amountOfNodes = nodes.size();
-				for (unsigned int i = 0; i < amountOfNodes; i++)
-				{
-					json node = nodes[i];
-					
-					std::array<unsigned char, 3> fontColor = {node["fontColor"][0], node["fontColor"][1], node["fontColor"][2]};
-					std::array<unsigned char, 3> backgroundColor = {node["backgroundColor"][0], node["backgroundColor"][1], node["backgroundColor"][2]};
-					std::array<unsigned char, 3> outlineColor = {node["outlineColor"][0], node["outlineColor"][1], node["outlineColor"][2]};
-					
-					NodeType nodeType;
-					if (node["type"] == "NONE") {nodeType = NONE;} else
-					if (node["type"] == "GATE") {nodeType = GATE;} else
-					if (node["type"] == "CONTROL") {nodeType = CONTROL;} else
-					if (node["type"] == "NOT") {nodeType = NOT;} else
-					if (node["type"] == "CROSS") {nodeType = CROSS;}
-					else
-					{
-						WOUT("Unknown gate display node type! Defaulting to type NONE...");
-						nodeType = NONE;
-					}
-					
-					Node loadedNode = 
-					{
-						nodeType,
-						node["radius"],
-						node["displayName"],
-						node["fontHeight"],
-						fontColor,
-						backgroundColor,
-						outlineColor
-					};
-					
-					gateVisual.nodes.push_back(loadedNode);
-					
- 					DOUT("[type: " << node["type"] << "] "
-						<< "[radius: " << gateVisual.nodes.at(i).radius << "] "
-						<< "[displayName: " << gateVisual.nodes.at(i).displayName << "] "
-						<< "[fontHeight: " << gateVisual.nodes.at(i).fontHeight << "] "
-						<< "[fontColor: "
-							<< (int)gateVisual.nodes.at(i).fontColor[0] << ","
-							<< (int)gateVisual.nodes.at(i).fontColor[1] << ","
-							<< (int)gateVisual.nodes.at(i).fontColor[2] << "] "
-						<< "[backgroundColor: "
-							<< (int)gateVisual.nodes.at(i).backgroundColor[0] << ","
-							<< (int)gateVisual.nodes.at(i).backgroundColor[1] << ","
-							<< (int)gateVisual.nodes.at(i).backgroundColor[2] << "] "
-						<< "[outlineColor: "
-							<< (int)gateVisual.nodes.at(i).outlineColor[0] << ","
-							<< (int)gateVisual.nodes.at(i).outlineColor[1] << ","
-							<< (int)gateVisual.nodes.at(i).outlineColor[2] << "]");
-				}
-			}
-			else
-			{
-				WOUT("Did not find 'visual' attribute! Instruction '" << name << "' will not have a visual associated with it.");
-			}
+            try
+            {
+                l_attr = "visual";
+                DOUT("Loading visuals of instruction: '" << name << "'...");
+                if (instr.count("visual") == 1)
+                {
+                    json visual = instr["visual"];
+                    DOUT("Found visual attribute.");
+                    
+                    // Load the connection color.
+                    json connectionColor = visual["connectionColor"];
+                    gateVisual.connectionColor[0] = connectionColor[0];
+                    gateVisual.connectionColor[1] = connectionColor[1];
+                    gateVisual.connectionColor[2] = connectionColor[2];
+                    DOUT("Connection color: [" 
+                        << (int)gateVisual.connectionColor[0] << ","
+                        << (int)gateVisual.connectionColor[1] << ","
+                        << (int)gateVisual.connectionColor[2] << "]");
+                    
+                    // Load the individual nodes.
+                    json nodes = visual["nodes"];
+                    unsigned int amountOfNodes = nodes.size();
+                    for (unsigned int i = 0; i < amountOfNodes; i++)
+                    {
+                        json node = nodes[i];
+                        
+                        std::array<unsigned char, 3> fontColor = {node["fontColor"][0], node["fontColor"][1], node["fontColor"][2]};
+                        std::array<unsigned char, 3> backgroundColor = {node["backgroundColor"][0], node["backgroundColor"][1], node["backgroundColor"][2]};
+                        std::array<unsigned char, 3> outlineColor = {node["outlineColor"][0], node["outlineColor"][1], node["outlineColor"][2]};
+                        
+                        NodeType nodeType;
+                        if (node["type"] == "NONE") {nodeType = NONE;} else
+                        if (node["type"] == "GATE") {nodeType = GATE;} else
+                        if (node["type"] == "CONTROL") {nodeType = CONTROL;} else
+                        if (node["type"] == "NOT") {nodeType = NOT;} else
+                        if (node["type"] == "CROSS") {nodeType = CROSS;}
+                        else
+                        {
+                            WOUT("Unknown gate display node type! Defaulting to type NONE...");
+                            nodeType = NONE;
+                        }
+                        
+                        Node loadedNode = 
+                        {
+                            nodeType,
+                            node["radius"],
+                            node["displayName"],
+                            node["fontHeight"],
+                            fontColor,
+                            backgroundColor,
+                            outlineColor
+                        };
+                        
+                        gateVisual.nodes.push_back(loadedNode);
+                        
+                        DOUT("[type: " << node["type"] << "] "
+                            << "[radius: " << gateVisual.nodes.at(i).radius << "] "
+                            << "[displayName: " << gateVisual.nodes.at(i).displayName << "] "
+                            << "[fontHeight: " << gateVisual.nodes.at(i).fontHeight << "] "
+                            << "[fontColor: "
+                                << (int)gateVisual.nodes.at(i).fontColor[0] << ","
+                                << (int)gateVisual.nodes.at(i).fontColor[1] << ","
+                                << (int)gateVisual.nodes.at(i).fontColor[2] << "] "
+                            << "[backgroundColor: "
+                                << (int)gateVisual.nodes.at(i).backgroundColor[0] << ","
+                                << (int)gateVisual.nodes.at(i).backgroundColor[1] << ","
+                                << (int)gateVisual.nodes.at(i).backgroundColor[2] << "] "
+                            << "[outlineColor: "
+                                << (int)gateVisual.nodes.at(i).outlineColor[0] << ","
+                                << (int)gateVisual.nodes.at(i).outlineColor[1] << ","
+                                << (int)gateVisual.nodes.at(i).outlineColor[2] << "]");
+                    }
+                }
+                else
+                {
+                    WOUT("Did not find 'visual' attribute! Instruction '" << name << "' will not have a visual associated with it.");
+                }
+            }
+            catch (json::exception &e)
+            {
+                WOUT("Something went wrong while parsing visualization parameters for instruction '" << name << "'. Please check the syntax! Gate will be skipped during visualization.");
+            }
         }
         catch (json::exception &e)
         {

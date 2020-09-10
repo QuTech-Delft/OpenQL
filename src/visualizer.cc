@@ -25,6 +25,7 @@ namespace ql
 // 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
 
 // --- FUTURE WORK ---
+// TODO: handle case where user does not or incorrectly specifies visualization nodes for custom gate
 // TODO: display wait/barrier gate (need wait gate fix first)
 // TODO: fix overlapping connections for multiqubit gates/measurements
 // TODO: representing the gates as waveforms (see andreas paper for examples)
@@ -404,6 +405,13 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	{
 		IOUT("Default gate found. Using default visualization!");
 		gateVisual = layout.defaultGateVisuals.at(gate->type());
+	}
+
+	// Check for correct amount of nodes.
+	if (amountOfOperands != gateVisual.nodes.size())
+	{
+		WOUT("Amount of gate operands and visualization nodes are not equal. Skipping gate...");
+		return;
 	}
 
 	if (amountOfOperands > 1)
