@@ -24,6 +24,7 @@ namespace ql
 // measurement without explicitly specified classical operand assumes default classical operand (same number as qubit number)
 // read cycle duration from hardware config file, instead of having hardcoded value
 // handle case where user does not or incorrectly specifies visualization nodes for custom gate
+// allow the user to set the layout parameters from a configuration file
 
 // -- IN PROGRESS ---
 // implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
@@ -37,7 +38,6 @@ namespace ql
 // TODO: implement measurement symbol (to replace the M on measurement gates)
 // TODO: generate default gate visuals from the configuration file
 // TODO: change IOUT to DOUT (IOUT is used to avoid debug information from other source files while developing the visualizer!)
-// TODO: allow the user to set the layout object from Python
 // TODO: add option to save the image and/or open the window
 
 #ifndef WITH_VISUALIZER
