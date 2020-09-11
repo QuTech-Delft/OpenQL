@@ -6,7 +6,7 @@
  */
  
 #include "visualizer.h"
-#include "visualizer_internal.h"`
+#include "visualizer_internal.h"
 #include "json.h"
 #include "instruction_map.h"
 
@@ -84,44 +84,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	// Compress the circuit in terms of cycles and gate duration if the option has been set.
 	if (layout.cycles.compressCycles)
 	{
-        IOUT("Compressing circuit...");
-		std::vector<bool> filledCycles(amountOfCycles);
-		for (unsigned int i = 0; i < gates.size(); i++)
-		{
-			filledCycles.at(gates.at(i)->cycle) = true;
-		}
-
-        //replace with DOUT
-		//std::cout << "amount of cycles before compression: " << amountOfCycles << std::endl;
-		unsigned int amountOfCompressions = 0;
-		for (unsigned int i = 0; i < filledCycles.size(); i++)
-		{
-			//std::cout << i;
-			if (filledCycles.at(i) == false)
-			{
-				//std::cout << " not filled" << std::endl;
-				//std::cout << "\tcompressing... min cycle to compress: " << i - amountOfCompressions << std::endl;
-				for (unsigned int j = 0; j < gates.size(); j++)
-				{
-					const unsigned int gateCycle = (unsigned int)gates.at(j)->cycle;
-					//std::cout << "\tgate cycle: " << gateCycle;
-					if (gateCycle >= i - amountOfCompressions)
-					{
-						gates.at(j)->cycle = gates.at(j)->cycle - 1;
-						//std::cout << " -> compressing cycle" << std::endl;
-					}
-					else
-					{
-						//std::cout << " -> no compression" << std::endl;
-					}
-				}
-				amountOfCycles--;
-				amountOfCompressions++;
-			}
-			//else
-				//std::cout << " filled" << std::endl;
-		}
-		//std::cout << "amount of cycles after compression: " << amountOfCycles << std::endl;
+		compressCircuit(gates, amountOfCycles);
 	}
 
 	// Calculate amount of qubits and classical bits.
@@ -315,6 +278,47 @@ unsigned int calculateAmountOfCycles(const std::vector<ql::gate*> gates)
 unsigned int calculateAmountOfGateOperands(const ql::gate* gate)
 {
 	return (unsigned int)gate->operands.size() + (unsigned int)gate->creg_operands.size();
+}
+
+void compressCircuit(const std::vector<ql::gate*> gates, unsigned int& amountOfCycles)
+{
+	IOUT("Compressing circuit...");
+	std::vector<bool> filledCycles(amountOfCycles);
+	for (unsigned int i = 0; i < gates.size(); i++)
+	{
+		filledCycles.at(gates.at(i)->cycle) = true;
+	}
+
+	DOUT("amount of cycles before compression: " << amountOfCycles);
+	unsigned int amountOfCompressions = 0;
+	for (unsigned int i = 0; i < filledCycles.size(); i++)
+	{
+		DOUT(i);
+		if (filledCycles.at(i) == false)
+		{
+			DOUT(" not filled");
+			DOUT("\tcompressing... min cycle to compress: " << i - amountOfCompressions);
+			for (unsigned int j = 0; j < gates.size(); j++)
+			{
+				const unsigned int gateCycle = (unsigned int)gates.at(j)->cycle;
+				DOUT("\tgate cycle: " << gateCycle);
+				if (gateCycle >= i - amountOfCompressions)
+				{
+					gates.at(j)->cycle = gates.at(j)->cycle - 1;
+					DOUT(" -> compressing cycle");
+				}
+				else
+				{
+					DOUT(" -> no compression");
+				}
+			}
+			amountOfCycles--;
+			amountOfCompressions++;
+		}
+		else
+			DOUT(" filled");
+	}
+	DOUT("amount of cycles after compression: " << amountOfCycles);
 }
 
 void fixMeasurementOperands(const std::vector<ql::gate*> gates)
