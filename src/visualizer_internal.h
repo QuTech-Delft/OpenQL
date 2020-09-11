@@ -63,7 +63,7 @@ unsigned int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std
 unsigned int calculateAmountOfCycles(const std::vector<ql::gate*> gates);
 unsigned int calculateAmountOfGateOperands(const ql::gate* gate);
 
-void compressCircuit(const std::vector<ql::gate*> gates, unsigned int& amountOfCycles);
+void compressCycles(const std::vector<ql::gate*> gates, unsigned int& amountOfCycles);
 
 void fixMeasurementOperands(const std::vector<ql::gate*> gates);
 bool isMeasurement(const ql::gate* gate);

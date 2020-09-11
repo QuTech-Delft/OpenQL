@@ -84,7 +84,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	// Compress the circuit in terms of cycles and gate duration if the option has been set.
 	if (layout.cycles.compressCycles)
 	{
-		compressCircuit(gates, amountOfCycles);
+		compressCycles(gates, amountOfCycles);
 	}
 
 	// Calculate amount of qubits and classical bits.
@@ -280,7 +280,7 @@ unsigned int calculateAmountOfGateOperands(const ql::gate* gate)
 	return (unsigned int)gate->operands.size() + (unsigned int)gate->creg_operands.size();
 }
 
-void compressCircuit(const std::vector<ql::gate*> gates, unsigned int& amountOfCycles)
+void compressCycles(const std::vector<ql::gate*> gates, unsigned int& amountOfCycles)
 {
 	IOUT("Compressing circuit...");
 	std::vector<bool> filledCycles(amountOfCycles);
