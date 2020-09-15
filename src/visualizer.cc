@@ -94,6 +94,8 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	const unsigned int amountOfCbits = calculateAmountOfBits(gates, &gate::creg_operands);
 	CircuitData circuitData = { amountOfQubits, amountOfCbits, amountOfCycles };
     
+	Structure structure{32, 32};
+
 	// Calculate image width and height based on the amount of cycles and amount of operands. The height depends on whether classical bit lines are grouped or not.
     IOUT("Calculating image width and height...");
 	const unsigned int width = (layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0) + amountOfCycles * layout.grid.cellSize + 2 * layout.grid.borderSize;

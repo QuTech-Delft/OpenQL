@@ -56,6 +56,15 @@ struct CircuitData
 	const unsigned int amountOfCycles;
 };
 
+class Structure
+{
+	unsigned int cellWidth;
+	unsigned int cellHeight;
+
+	public:
+		Structure(int w, int h) : cellWidth(w), cellHeight(h) {}
+};
+
 Layout parseConfiguration(const std::string& configPath);
 void validateLayout(const Layout layout);
 
