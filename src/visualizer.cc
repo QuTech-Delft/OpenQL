@@ -52,6 +52,27 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
 using namespace cimg_library;
 
+Structure::Structure(const Layout layout, const CircuitData circuitData)
+{
+	IOUT("Initializing visualization layout...");
+
+	// Calculate image width and height based on the amount of cycles and amount of operands. The height depends on whether classical bit lines are grouped or not.
+    IOUT("Calculating image width and height...");
+	imageWidth = (layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0) + circuitData.amountOfCycles * layout.grid.cellSize + 2 * layout.grid.borderSize;
+	const unsigned int amountOfRows = circuitData.amountOfQubits + (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits);
+	imageHeight = (layout.cycles.showCycleNumbers ? layout.cycles.rowHeight : 0) + amountOfRows * layout.grid.cellSize + 2 * layout.grid.borderSize;
+}
+
+unsigned int Structure::getImageWidth()
+{
+	return imageWidth;
+}
+
+unsigned int Structure::getImageHeight()
+{
+	return imageHeight;
+}
+
 //void visualize(const ql::quantum_program* program, const Layout layout)
 void visualize(const ql::quantum_program* program, const std::string& configPath)
 {
@@ -87,23 +108,17 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
 	// Calculate amount of qubits and classical bits.
     IOUT("Calculating amount of qubits and classical bits...");
-	fixMeasurementOperands(gates);
+	fixMeasurementOperands(gates); // fixes measurement gates without classical operands
 	const unsigned int amountOfQubits = calculateAmountOfBits(gates, &gate::operands);
-	const unsigned int amountOfCbits = calculateAmountOfBits(gates, &gate::creg_operands);
-	CircuitData circuitData = { amountOfQubits, amountOfCbits, amountOfCycles, cycleDuration };
+	const unsigned int amountOfClassicalBits = calculateAmountOfBits(gates, &gate::creg_operands);
+	CircuitData circuitData = { amountOfQubits, amountOfClassicalBits, amountOfCycles, cycleDuration };
     
-	Structure structure(layout);
-
-	// Calculate image width and height based on the amount of cycles and amount of operands. The height depends on whether classical bit lines are grouped or not.
-    IOUT("Calculating image width and height...");
-	const unsigned int width = (layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0) + amountOfCycles * layout.grid.cellSize + 2 * layout.grid.borderSize;
-	const unsigned int amountOfRows = amountOfQubits + (layout.bitLines.groupClassicalLines ? (amountOfCbits > 0 ? 1 : 0) : amountOfCbits);
-	const unsigned int height = (layout.cycles.showCycleNumbers ? layout.cycles.rowHeight : 0) + amountOfRows * layout.grid.cellSize + 2 * layout.grid.borderSize;
-    
+	Structure structure(layout, circuitData);
+	
 	// Initialize image.
     IOUT("Initializing image...");
 	const unsigned int numberOfChannels = 3;
-	CImg<unsigned char> image(width, height, 1, numberOfChannels);
+	CImg<unsigned char> image(structure.getImageWidth(), structure.getImageHeight(), 1, numberOfChannels);
 	image.fill(255);
 
 	// Draw the cycle numbers if the option has been set.
@@ -124,7 +139,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	if (layout.bitLines.showClassicalLines)
 	{
 		// Draw the grouped classical bit lines if the option is set.
-		if (amountOfCbits > 0 && layout.bitLines.groupClassicalLines)
+		if (amountOfClassicalBits > 0 && layout.bitLines.groupClassicalLines)
 		{
 			IOUT("Drawing grouped classical bit lines...");
 			drawGroupedClassicalBitLine(image, layout, circuitData);
@@ -133,7 +148,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		else
 		{
 			IOUT("Drawing ungrouped classical bit lines...");
-			for (unsigned int i = amountOfQubits; i < amountOfQubits + amountOfCbits; i++)
+			for (unsigned int i = amountOfQubits; i < amountOfQubits + amountOfClassicalBits; i++)
 			{
 				drawBitLine(image, layout, CLASSICAL, i, circuitData);
 			}

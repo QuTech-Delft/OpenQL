@@ -59,11 +59,18 @@ struct CircuitData
 
 class Structure
 {
-	unsigned int cellWidth;
-	unsigned int cellHeight;
+	private:
+		unsigned int cellWidth;
+		unsigned int cellHeight;
+
+		unsigned int imageWidth;
+		unsigned int imageHeight;
 
 	public:
-		Structure(const Layout& layout) {}
+		Structure(const Layout layout, const CircuitData circuitData);
+
+		unsigned int getImageWidth();
+		unsigned int getImageHeight();
 };
 
 Layout parseConfiguration(const std::string& configPath);
