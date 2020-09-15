@@ -52,8 +52,6 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
 using namespace cimg_library;
 
-unsigned int cycleDuration = 40;
-
 //void visualize(const ql::quantum_program* program, const Layout layout)
 void visualize(const ql::quantum_program* program, const std::string& configPath)
 {
@@ -75,11 +73,11 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
         gates.insert( gates.end(), c.begin(), c.end() );
     }
     
-	// Load cycle time and calculate amount of cycles.
-	cycleDuration = program->platform.cycle_time;
-	IOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
+	// Calculate amount of cycles and read cycle duration.
     IOUT("Calculating amount of cycles...");
-    unsigned int amountOfCycles = calculateAmountOfCycles(gates);
+	const unsigned int cycleDuration = program->platform.cycle_time;
+	IOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
+    unsigned int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
 
 	// Compress the circuit in terms of cycles and gate duration if the option has been set.
 	if (layout.cycles.compressCycles)
@@ -92,9 +90,9 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	fixMeasurementOperands(gates);
 	const unsigned int amountOfQubits = calculateAmountOfBits(gates, &gate::operands);
 	const unsigned int amountOfCbits = calculateAmountOfBits(gates, &gate::creg_operands);
-	CircuitData circuitData = { amountOfQubits, amountOfCbits, amountOfCycles };
+	CircuitData circuitData = { amountOfQubits, amountOfCbits, amountOfCycles, cycleDuration };
     
-	Structure structure{32, 32};
+	Structure structure(layout);
 
 	// Calculate image width and height based on the amount of cycles and amount of operands. The height depends on whether classical bit lines are grouped or not.
     IOUT("Calculating image width and height...");
@@ -256,7 +254,7 @@ unsigned int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std
 		return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
 }
 
-unsigned int calculateAmountOfCycles(const std::vector<ql::gate*> gates)
+unsigned int calculateAmountOfCycles(const std::vector<ql::gate*> gates, const unsigned int cycleDuration)
 {
     unsigned int amountOfCycles = 0;
 	for (const gate* gate : gates)
@@ -354,7 +352,7 @@ void drawCycleNumbers(cimg_library::CImg<unsigned char>& image, const Layout lay
 		std::string cycleLabel;
 		if (layout.cycles.showCyclesInNanoSeconds)
 		{
-			cycleLabel = std::to_string(i * cycleDuration);
+			cycleLabel = std::to_string(i * circuitData.cycleDuration);
 		}
 		else
 		{
@@ -573,7 +571,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	if (!layout.cycles.compressCycles && layout.cycles.showGateDurationOutline)
 	{
         IOUT("drawing gate duration outline...");
-		const unsigned int gateDurationInCycles = ((unsigned int)gate->duration) / cycleDuration;
+		const unsigned int gateDurationInCycles = ((unsigned int)gate->duration) / circuitData.cycleDuration;
 		// Only draw the gate outline if the gate takes more than one cycle.
 		if (gateDurationInCycles > 1)
 		{

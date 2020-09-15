@@ -54,6 +54,7 @@ struct CircuitData
 	const unsigned int amountOfQubits;
 	const unsigned int amountOfClassicalBits;
 	const unsigned int amountOfCycles;
+	const unsigned int cycleDuration;
 };
 
 class Structure
@@ -62,14 +63,14 @@ class Structure
 	unsigned int cellHeight;
 
 	public:
-		Structure(int w, int h) : cellWidth(w), cellHeight(h) {}
+		Structure(const Layout& layout) {}
 };
 
 Layout parseConfiguration(const std::string& configPath);
 void validateLayout(const Layout layout);
 
 unsigned int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType);
-unsigned int calculateAmountOfCycles(const std::vector<ql::gate*> gates);
+unsigned int calculateAmountOfCycles(const std::vector<ql::gate*> gates, const unsigned int cycleDuration);
 unsigned int calculateAmountOfGateOperands(const ql::gate* gate);
 
 void compressCycles(const std::vector<ql::gate*> gates, unsigned int& amountOfCycles);
