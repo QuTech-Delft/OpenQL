@@ -26,12 +26,8 @@ swig/qutechopenql.egg-info
 # Test files
 test_output
 .ipynb_checkpoints
+tests/visualizer/visualizer_example_output/
 
 docs/_build
 docs/_static
 docs/_templates
-
-# tim
-.gitignore
-.vscode/
-tests/visualizer/visualizer_example_output/
