@@ -25,7 +25,7 @@ c.set_pass_option("BackendCompiler", "eqasm_compiler_name", "cc_light_compiler")
 c.set_pass_option("ALL", "skip", "no");
 c.set_pass_option("ALL", "write_qasm_files", "yes");
 c.set_pass_option("ALL", "write_report_files", "yes");
-c.set_pass_option("Visualizer", "visualizer_config_path", os.path.join(curdir, "visualizer_config.json"));
+c.set_pass_option("Visualizer", "visualizer_config_path", os.path.join(curdir, "visualizer_config_example1.json"));
 
 platformCustomGates = ql.Platform('starmon', os.path.join(curdir, 'hardware_config_cc_light_visualizer.json'))
 nqubits = 4
