@@ -37,7 +37,7 @@ The json config file containing the general visualization parameters has several
 
 Example configuration:
 
-.. code:: json
+.. code:: javascript
 
     "cycles":
     {
@@ -49,35 +49,35 @@ Example configuration:
 
         "compressCycles": false, // if true, the visualized circuit will be compressed, with each gate only taking one cycle
         "showGateDurationOutline": true, // shows a transparent outline for the duration of a multi-cycle gate
-        "gateDurationGap": 2, // 
-        "gateDurationAlpha": 0.1,
-        "gateDurationOutLineAlpha": 0.3,
-        "gateDurationOutlineColor": [0, 0, 0]
+        "gateDurationGap": 2, // the gap in pixels between the gate's node and its duration outline
+        "gateDurationAlpha": 0.1, // the transparency alpha value of the gate duration outline area
+        "gateDurationOutLineAlpha": 0.3, // the alpha value of the gate duration outline itself
+        "gateDurationOutlineColor": [0, 0, 0] // the color of the outline
     },
     "bitLines":
     {
-        "drawLabels": true,
-        "labelColumnWidth": 32,
-        "fontHeight": 13,
-        "qBitLabelColor": [0, 0, 0],
-        "cBitLabelColor": [128, 128, 128],
+        "drawLabels": true, // whether the labels should be drawn for the bit lines
+        "labelColumnWidth": 32, // the width of the column reserved for the bit line labels
+        "fontHeight": 13, // the font height of the labels
+        "qBitLabelColor": [0, 0, 0], // the color of the qubit labels
+        "cBitLabelColor": [128, 128, 128], // the color of the classical bit labels
 
-        "showClassicalLines": true,
-        "groupClassicalLines": true,
-        "groupedClassicalLineGap": 2,
-        "qBitLineColor": [0, 0, 0],
-        "cBitLineColor": [128, 128, 128]
+        "showClassicalLines": true, // whether the classical bit lines should be shown
+        "groupClassicalLines": true, // whether all the classical bit lines should be grouped into one 'multi'-line for additional visualization clarity
+        "groupedClassicalLineGap": 2, // controls the space between the double line for the grouped classical bit line (if enabled)
+        "qBitLineColor": [0, 0, 0], // the color of the qubit lines
+        "cBitLineColor": [128, 128, 128] // the color of the classical bit lines
     },
     "grid":
     {
-        "cellSize": 32,
-        "borderSize": 32
+        "cellSize": 32, // the width and height of each cell in the visualization grid
+        "borderSize": 32 // the border size at the edges of the image (white space)
     },
     "measurements":
     {
-        "drawConnection": true,
-        "lineSpacing": 2,
-        "arrowSize": 10
+        "drawConnection": true, // whether the connection between a measurement and its classical operand should be shown
+        "lineSpacing": 2, // controls the space between the double line connecting a measurement to its classical operand
+        "arrowSize": 10 // the size of the arrow at the end of the connection line that point to its classical operand
     }
 
 
