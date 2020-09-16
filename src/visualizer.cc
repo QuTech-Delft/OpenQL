@@ -171,7 +171,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		if (amountOfClassicalBits > 0 && layout.bitLines.groupClassicalLines)
 		{
 			IOUT("Drawing grouped classical bit lines...");
-			drawGroupedClassicalBitLine(image, layout, circuitData);
+			drawGroupedClassicalBitLine(image, layout, circuitData, structure);
 		}
 		// Otherwise draw each classical bit line seperate.
 		else
@@ -419,7 +419,6 @@ void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layo
 
 		const unsigned int xGap = (layout.grid.cellSize - textDimensions.width) / 2;
 		const unsigned int yGap = (layout.grid.cellSize - textDimensions.height) / 2;
-
 		const unsigned int xCycle = structure.getCellX(i) + xGap;
 		const unsigned int yCycle = structure.getCycleLabelsY() + yGap;
 
@@ -462,17 +461,17 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 		const unsigned int yGap = (layout.grid.cellSize - textDimensions.height) / 2;
 		const unsigned int xLabel = structure.getBitLabelsX() + xGap;
 		const unsigned int yLabel = structure.getCellY(row) + yGap;
+
 		image.draw_text(xLabel, yLabel, label.c_str(), bitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
 	}
 }
 
-void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData)
+void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
 {
-	const unsigned int cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0;
-	const unsigned int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
-	const unsigned int x0 = labelColumnWidth + layout.grid.borderSize;
-	const unsigned int x1 = labelColumnWidth + layout.grid.borderSize + circuitData.amountOfCycles * layout.grid.cellSize;
-	const unsigned int y = cycleNumbersRowHeight + layout.grid.borderSize + circuitData.amountOfQubits * layout.grid.cellSize + layout.grid.cellSize / 2;
+	EndPoints bitLineEndPoints = structure.getBitLineEndPoints();
+	const unsigned int x0 = bitLineEndPoints.start;
+	const unsigned int x1 = bitLineEndPoints.end;
+	const unsigned int y = structure.getCellY(circuitData.amountOfQubits) + layout.grid.cellSize / 2;
 
 	image.draw_line(x0, y - layout.bitLines.groupedClassicalLineGap, x1, y - layout.bitLines.groupedClassicalLineGap, layout.bitLines.cBitLineColor.data());
 	image.draw_line(x0, y + layout.bitLines.groupedClassicalLineGap, x1, y + layout.bitLines.groupedClassicalLineGap, layout.bitLines.cBitLineColor.data());
@@ -498,10 +497,12 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 	{
 		const std::string label = "C";
 		TextDimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
+
 		const unsigned int xGap = (layout.grid.cellSize - textDimensions.width) / 2;
 		const unsigned int yGap = (layout.grid.cellSize - textDimensions.height) / 2;
-		const unsigned int xLabel = layout.grid.borderSize + xGap;
-		const unsigned int yLabel = layout.grid.borderSize + cycleNumbersRowHeight + circuitData.amountOfQubits * layout.grid.cellSize + yGap;
+		const unsigned int xLabel = structure.getBitLabelsX() + xGap;
+		const unsigned int yLabel = structure.getCellY(circuitData.amountOfQubits) + yGap;
+
 		image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.cBitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
 	}
 }
@@ -679,25 +680,25 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	}
 
 	// Draw the measurement symbol.
-		//const unsigned int xGap = 2;
-		//const unsigned int yGap = 13;
+	// const unsigned int xGap = 2;
+	// const unsigned int yGap = 13;
 
-		//const unsigned int x0 = position.x0 + xGap;
-		//const unsigned int y0 = position.y0 + yGap;
-		//const unsigned int x1 = position.x1 + xGap;
-		//const unsigned int y1 = y0;
+	// const unsigned int x0 = position.x0 + xGap;
+	// const unsigned int y0 = position.y0 + yGap;
+	// const unsigned int x1 = position.x1 + xGap;
+	// const unsigned int y1 = y0;
 
-		//const unsigned int xa = x0 + (x1 - x0) / 3;
-		//const unsigned int ya = y0 + yGap / 2;
-		//const unsigned int xb = x1 - (x1 - x0) / 3;
-		//const unsigned int yb = ya;
+	// const unsigned int xa = x0 + (x1 - x0) / 3;
+	// const unsigned int ya = y0 + yGap / 2;
+	// const unsigned int xb = x1 - (x1 - x0) / 3;
+	// const unsigned int yb = ya;
 
-		//const unsigned int u0 = xa - x0;
-		//const unsigned int v0 = ya - y0;
-		//const unsigned int u1 = x1 - xb;
-		//const unsigned int v1 = y1 - yb;
+	// const unsigned int u0 = xa - x0;
+	// const unsigned int v0 = ya - y0;
+	// const unsigned int u1 = x1 - xb;
+	// const unsigned int v1 = y1 - yb;
 
-		//image.draw_spline(x0, y0, u0, v0, x1, y1, u1, v1, layout.operation.gateNameColor.data());
+	// image.draw_spline(x0, y0, u0, v0, x1, y1, u1, v1, layout.operation.gateNameColor.data());
 }
 
 void drawGateNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData)
