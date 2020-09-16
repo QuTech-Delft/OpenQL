@@ -62,6 +62,7 @@ Take for example the following custom Hadamard gate defined on qubit 1:
 Note the new "visual" attribute, which defines the look of the custom gate. Each gate has a `connectionColor` which defines the color of the connection line for multi-operand gates, and an array of 'nodes'. A node is the visualization of the gate acting on a specific qubit or classical bit. If a Hadamard gate is acting on qubit 3, that is represented by one node. If a CNOT gate is acting on qubits 1 and 2, it will have two nodes, one describing the visualization of the CNOT gate at qubit 1 and one describing the visualization on qubit 2. A measurement gate measuring qubit 5 and storing the result in classical bit 0 will again have two nodes.
 
 Each node has several attributes describing its visualization:
+
 * ``type``: the visualization type of the node, see below for a list of the available types
 * ``radius``: the radius of the node in pixels
 * ``displayName``: text that will be displayed on the node (for example 'H' will be displayed on the Hadamard gate in the example above)
@@ -73,6 +74,7 @@ Each node has several attributes describing its visualization:
 The colors are defined as RGB arrays: `[R, G, B]`.
 
 The type of the nodes can be one of the following:
+
 * ``NONE``: the node will not be visible
 * ``GATE``: a square representing a gate
 * ``CONTROL``: a small filled circle
