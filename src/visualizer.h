@@ -27,8 +27,8 @@ const std::array<unsigned char, 3> red = {{ 255, 105, 97 }};
 
 struct Cycles
 {
-	// Cycle number row.
-	bool showCycleNumbers = true;
+	// Cycle label row.
+	bool showCycleLabels = true;
 	bool showCyclesInNanoSeconds = false;
 	unsigned int rowHeight = 24;
 	unsigned int fontHeight = 13;

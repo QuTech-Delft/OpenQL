@@ -49,6 +49,12 @@ struct NodePositionData
 	const unsigned int row;
 };
 
+struct TextDimensions
+{
+	const unsigned int width;
+	const unsigned int height;
+};
+
 struct CircuitData
 {
 	const unsigned int amountOfQubits;
@@ -66,11 +72,19 @@ class Structure
 		unsigned int imageWidth;
 		unsigned int imageHeight;
 
+		const Layout layout;
+
 	public:
 		Structure(const Layout layout, const CircuitData circuitData);
 
 		unsigned int getImageWidth();
 		unsigned int getImageHeight();
+
+		unsigned int getCellX(const unsigned int col) const;
+		unsigned int getCellY(const unsigned int row) const;
+
+		unsigned int getCycleLabelsY() const;
+		unsigned int getBitLabelsX() const;
 };
 
 Layout parseConfiguration(const std::string& configPath);
@@ -85,8 +99,10 @@ void compressCycles(const std::vector<ql::gate*> gates, unsigned int& amountOfCy
 void fixMeasurementOperands(const std::vector<ql::gate*> gates);
 bool isMeasurement(const ql::gate* gate);
 
-void drawCycleNumbers(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData);
-void drawBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const BitType bitType, const unsigned int row, const CircuitData circuitData);
+TextDimensions calculateTextDimensions();
+
+void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure);
+void drawBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const BitType bitType, const unsigned int row, const CircuitData circuitData, const Structure structure);
 void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData);
 void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, ql::gate* const gate);
 

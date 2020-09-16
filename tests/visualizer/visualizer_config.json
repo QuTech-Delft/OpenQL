@@ -1,7 +1,7 @@
 {
     "cycles":
     {
-        "showCycleNumbers": true,
+        "showCycleLabels": true,
         "showCyclesInNanoSeconds": true,
         "rowHeight": 24,
         "fontHeight": 13,
