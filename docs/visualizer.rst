@@ -88,6 +88,7 @@ Future work
 -----------
 
 Features and issues on the todo-list are:
+
 * display wait/barrier gates (not possible right now because the program passed to the visualizer does not contain these gates anymore)
 * gate connections overlap when in the same cycle
 * add the classical bit number to the measurement connection when classical bit lines are grouped
