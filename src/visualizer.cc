@@ -47,16 +47,19 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
 #else
 
-using json = nlohmann::json;
 using namespace cimg_library;
+using json = nlohmann::json;
 
-Structure::Structure(const Layout layout, const CircuitData circuitData) : layout(layout)
+Structure::Structure(const Layout layout, const CircuitData circuitData) : layout(layout), circuitData(circuitData)
 {
 	// Calculate image width and height based on the amount of cycles and amount of operands. The height depends on whether classical bit lines are grouped or not.
     IOUT("Calculating image width and height...");
 	imageWidth = (layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0) + circuitData.amountOfCycles * layout.grid.cellSize + 2 * layout.grid.borderSize;
 	const unsigned int amountOfRows = circuitData.amountOfQubits + (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits);
 	imageHeight = (layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0) + amountOfRows * layout.grid.cellSize + 2 * layout.grid.borderSize;
+
+	labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
+	cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0;
 }
 
 unsigned int Structure::getImageWidth()
@@ -71,13 +74,11 @@ unsigned int Structure::getImageHeight()
 
 unsigned int Structure::getCellX(const unsigned int col) const
 {
-	const unsigned int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
 	return layout.grid.borderSize + labelColumnWidth + col * layout.grid.cellSize;
 }
 
 unsigned int Structure::getCellY(const unsigned int row) const
 {
-	const unsigned int cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0;
 	return layout.grid.borderSize + cycleNumbersRowHeight + row * layout.grid.cellSize;
 }
 
@@ -91,7 +92,15 @@ unsigned int Structure::getBitLabelsX() const
 	return layout.grid.borderSize;
 }
 
-//void visualize(const ql::quantum_program* program, const Layout layout)
+EndPoints Structure::getBitLineEndPoints() const
+{
+	const unsigned int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
+	const unsigned int x0 = getBitLabelsX() + labelColumnWidth;
+	const unsigned int x1 = getBitLabelsX() + labelColumnWidth + circuitData.amountOfCycles * layout.grid.cellSize;
+
+	return EndPoints { x0, x1 };
+}
+
 void visualize(const ql::quantum_program* program, const std::string& configPath)
 {
     IOUT("Starting visualization...");
@@ -420,9 +429,9 @@ void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layo
 
 void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, const BitType bitType, const unsigned int row, const CircuitData circuitData, const Structure structure)
 {
-	const unsigned int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
-	const unsigned int x0 = labelColumnWidth + layout.grid.borderSize;
-	const unsigned int x1 = labelColumnWidth + layout.grid.borderSize + circuitData.amountOfCycles * layout.grid.cellSize;
+	EndPoints bitLineEndPoints = structure.getBitLineEndPoints();
+	const unsigned int x0 = bitLineEndPoints.start;
+	const unsigned int x1 = bitLineEndPoints.end;
 	const unsigned int y = structure.getCellY(row) + layout.grid.cellSize / 2;
 
 	std::array<unsigned char, 3> bitLineColor;
@@ -500,7 +509,6 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, gate* const gate)
 {
 	const unsigned int amountOfOperands = calculateAmountOfGateOperands(gate);
-	//const unsigned int amountOfOperands = (unsigned int)gate->operands.size() + (unsigned int)gate->creg_operands.size();
 	const unsigned int cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0;
 	const unsigned int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
 	
