@@ -25,13 +25,70 @@ The general visualization parameters are read from a configuration file. The pat
 for the visualizer as seen above. If a parameter is missing from that file, the default hardcoded value contained in `src\visualizer.h` will be used instead.
 
 
+General visualization parameters
+--------------------------------
+
+The json config file containing the general visualization parameters has several sections:
+
+* ``cycles``: contains parameters that govern cycle labels, and general gate visualization
+* ``bitLines``: defines the labels and lines, including grouping lines for both quantum and classical bitLines
+* ``grid``: defines the overal structure of the visualization
+* ``measurements``: several parameters controlling measurement visualization
+
+Example configuration:
+
+.. code:: json
+
+    "cycles":
+    {
+        "showCycleLabels": true, // whether the cycle labels should be shown
+        "showCyclesInNanoSeconds": true, // whether the cycle labels should be shown in nanoseconds or cycle numbers
+        "rowHeight": 24, // the height of the cycle label row
+        "fontHeight": 13, // the font height of the cycle labels
+        "fontColor": [0, 0, 0], // the color of the cycle labels
+
+        "compressCycles": false, // if true, the visualized circuit will be compressed, with each gate only taking one cycle
+        "showGateDurationOutline": true, // shows a transparent outline for the duration of a multi-cycle gate
+        "gateDurationGap": 2, // 
+        "gateDurationAlpha": 0.1,
+        "gateDurationOutLineAlpha": 0.3,
+        "gateDurationOutlineColor": [0, 0, 0]
+    },
+    "bitLines":
+    {
+        "drawLabels": true,
+        "labelColumnWidth": 32,
+        "fontHeight": 13,
+        "qBitLabelColor": [0, 0, 0],
+        "cBitLabelColor": [128, 128, 128],
+
+        "showClassicalLines": true,
+        "groupClassicalLines": true,
+        "groupedClassicalLineGap": 2,
+        "qBitLineColor": [0, 0, 0],
+        "cBitLineColor": [128, 128, 128]
+    },
+    "grid":
+    {
+        "cellSize": 32,
+        "borderSize": 32
+    },
+    "measurements":
+    {
+        "drawConnection": true,
+        "lineSpacing": 2,
+        "arrowSize": 10
+    }
+
+
 Custom gates
 ------------
 
 When using custom gates the default gate visualizations are not used and the visualization needs to be defined by the user.
 Take for example the following custom Hadamard gate defined on qubit 1:
 
-.. code:: json
+.. code-block:: json
+
     "h q1": {
     "duration": 40,
     "latency": 0,
@@ -89,7 +146,7 @@ Future work
 
 Features and issues on the todo-list are:
 
-* display wait/barrier gates (not possible right now because the program passed to the visualizer does not contain these gates anymore)
+* display wait/barrier gates (not possible right now because the program passed to the visualizer does not contain these gates)
 * gate connections overlap when in the same cycle
 * add the classical bit number to the measurement connection when classical bit lines are grouped
 * add a proper measurement symbol
