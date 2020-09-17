@@ -136,7 +136,7 @@ Custom gates
 When using custom gates the default gate visualizations are not used and the visualization needs to be defined by the user.
 Take for example the following custom Hadamard gate defined on qubit 1:
 
-.. code-block:: json
+.. code:: javascript
 
     "h q1": {
     "duration": 40,
