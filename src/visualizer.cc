@@ -23,9 +23,9 @@ namespace ql
 // read cycle duration from hardware config file, instead of having hardcoded value
 // handle case where user does not or incorrectly specifies visualization nodes for custom gate
 // allow the user to set the layout parameters from a configuration file
+// implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
 
 // -- IN PROGRESS ---
-// implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
 // visual_type attribute instead of full visual attribute in hw config file, links to seperate visualization config file where details of that
 //		visual type are detailed
 // add option to cut down the duration of a specific gate in visualization
@@ -395,14 +395,14 @@ bool isMeasurement(const ql::gate* gate)
 	return (gate->name.find("measure") != std::string::npos);
 }
 
-TextDimensions calculateTextDimensions(const std::string& text, const unsigned int fontHeight, const Layout layout)
+Dimensions calculateTextDimensions(const std::string& text, const unsigned int fontHeight, const Layout layout)
 {
 	const char* chars = text.c_str();
 	CImg<unsigned char> imageTextDimensions;
 	const unsigned char color = 1;
 	imageTextDimensions.draw_text(0, 0, chars, &color, 0, 1, fontHeight);
 
-	return TextDimensions { (unsigned int) imageTextDimensions.width(), (unsigned int) imageTextDimensions.height() };
+	return Dimensions { (unsigned int) imageTextDimensions.width(), (unsigned int) imageTextDimensions.height() };
 }
 
 void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
@@ -419,7 +419,7 @@ void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layo
 			cycleLabel = std::to_string(i);
 		}
 		
-		TextDimensions textDimensions = calculateTextDimensions(cycleLabel, layout.cycles.fontHeight, layout);
+		Dimensions textDimensions = calculateTextDimensions(cycleLabel, layout.cycles.fontHeight, layout);
 
 		const unsigned int xGap = (layout.grid.cellSize - textDimensions.width) / 2;
 		const unsigned int yGap = (layout.grid.cellSize - textDimensions.height) / 2;
@@ -459,7 +459,7 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 		const unsigned int bitIndex = (bitType == CLASSICAL) ? (row - circuitData.amountOfQubits) : row;
 		const std::string bitTypeText = (bitType == CLASSICAL) ? "c" : "q";
 		std::string label = bitTypeText + std::to_string(bitIndex);
-		TextDimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
+		Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
 
 		const unsigned int xGap = (layout.grid.cellSize - textDimensions.width) / 2;
 		const unsigned int yGap = (layout.grid.cellSize - textDimensions.height) / 2;
@@ -500,7 +500,7 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 	if (layout.bitLines.drawLabels)
 	{
 		const std::string label = "C";
-		TextDimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
+		Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
 
 		const unsigned int xGap = (layout.grid.cellSize - textDimensions.width) / 2;
 		const unsigned int yGap = (layout.grid.cellSize - textDimensions.height) / 2;
@@ -718,7 +718,7 @@ void drawGateNode(cimg_library::CImg<unsigned char>& image, const Layout layout,
 	image.draw_rectangle(position.x0, position.y0, position.x1, position.y1, node.outlineColor.data(), 1, 0xFFFFFFFF);
 
 	// Draw the gate symbol. The width and height of the symbol are calculated first to correctly position the symbol within the gate.
-	TextDimensions textDimensions = calculateTextDimensions(node.displayName, node.fontHeight, layout);
+	Dimensions textDimensions = calculateTextDimensions(node.displayName, node.fontHeight, layout);
 	image.draw_text(position.x0 + (node.radius * 2 - textDimensions.width) / 2, position.y0 + (node.radius * 2 - textDimensions.height) / 2, node.displayName.c_str(), node.fontColor.data(), 0, 1, node.fontHeight);
 }
 

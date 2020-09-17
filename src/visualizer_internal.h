@@ -51,7 +51,7 @@ struct EndPoints
 	const unsigned int end;
 };
 
-struct TextDimensions
+struct Dimensions
 {
 	const unsigned int width;
 	const unsigned int height;
@@ -102,7 +102,7 @@ void compressCycles(const std::vector<ql::gate*> gates, unsigned int& amountOfCy
 void fixMeasurementOperands(const std::vector<ql::gate*> gates);
 bool isMeasurement(const ql::gate* gate);
 
-TextDimensions calculateTextDimensions(const std::string& text, const unsigned int fontHeight, const Layout layout);
+Dimensions calculateTextDimensions(const std::string& text, const unsigned int fontHeight, const Layout layout);
 
 void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure);
 void drawBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const BitType bitType, const unsigned int row, const CircuitData circuitData, const Structure structure);
