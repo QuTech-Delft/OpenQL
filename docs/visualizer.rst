@@ -136,33 +136,35 @@ Custom gates
 When using custom gates the default gate visualizations are not used and the visualization needs to be defined by the user.
 Take for example the following custom Hadamard gate defined on qubit 1:
 
-.. code:: javascript
+.. code:: json
 
-    "h q1": {
-    "duration": 40,
-    "latency": 0,
-    "qubits": ["q1"],
-    "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-    "disable_optimization": false,
-    "type": "mw",
-    "cc_light_instr_type": "single_qubit_gate",
-    "cc_light_instr": "h",
-    "cc_light_codeword": 91,
-    "cc_light_opcode": 9,
-    "visual": {
-        "connectionColor": [0, 0, 0],
-        "nodes": [
-        {
-            "type": "GATE",
-            "radius": 13,
-            "displayName": "H",
-            "fontHeight": 13,
-            "fontColor": [255, 255, 255],
-            "backgroundColor": [70, 210, 230],
-            "outlineColor": [70, 210, 230]
+    {
+        "h q1": {
+        "duration": 40,
+        "latency": 0,
+        "qubits": ["q1"],
+        "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+        "disable_optimization": false,
+        "type": "mw",
+        "cc_light_instr_type": "single_qubit_gate",
+        "cc_light_instr": "h",
+        "cc_light_codeword": 91,
+        "cc_light_opcode": 9,
+        "visual": {
+            "connectionColor": [0, 0, 0],
+            "nodes": [
+            {
+                "type": "GATE",
+                "radius": 13,
+                "displayName": "H",
+                "fontHeight": 13,
+                "fontColor": [255, 255, 255],
+                "backgroundColor": [70, 210, 230],
+                "outlineColor": [70, 210, 230]
+            }
+            ]
         }
-        ]
-    }
+        }
     }
 
 Note the new "visual" attribute, which defines the look of the custom gate. Each gate has a `connectionColor` which defines the color of the connection line for multi-operand gates, and an array of 'nodes'. A node is the visualization of the gate acting on a specific qubit or classical bit. If a Hadamard gate is acting on qubit 3, that is represented by one node. If a CNOT gate is acting on qubits 1 and 2, it will have two nodes, one describing the visualization of the CNOT gate at qubit 1 and one describing the visualization on qubit 2. A measurement gate measuring qubit 5 and storing the result in classical bit 0 will again have two nodes.
