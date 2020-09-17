@@ -140,30 +140,30 @@ Take for example the following custom Hadamard gate defined on qubit 1:
 
     {
         "h q1": {
-        "duration": 40,
-        "latency": 0,
-        "qubits": ["q1"],
-        "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
-        "disable_optimization": false,
-        "type": "mw",
-        "cc_light_instr_type": "single_qubit_gate",
-        "cc_light_instr": "h",
-        "cc_light_codeword": 91,
-        "cc_light_opcode": 9,
-        "visual": {
-            "connectionColor": [0, 0, 0],
-            "nodes": [
-            {
-                "type": "GATE",
-                "radius": 13,
-                "displayName": "H",
-                "fontHeight": 13,
-                "fontColor": [255, 255, 255],
-                "backgroundColor": [70, 210, 230],
-                "outlineColor": [70, 210, 230]
+            "duration": 40,
+            "latency": 0,
+            "qubits": ["q1"],
+            "matrix": [ [0.0,1.0], [1.0,0.0], [1.0,0.0], [0.0,0.0] ],
+            "disable_optimization": false,
+            "type": "mw",
+            "cc_light_instr_type": "single_qubit_gate",
+            "cc_light_instr": "h",
+            "cc_light_codeword": 91,
+            "cc_light_opcode": 9,
+            "visual": {
+                "connectionColor": [0, 0, 0],
+                "nodes": [
+                {
+                    "type": "GATE",
+                    "radius": 13,
+                    "displayName": "H",
+                    "fontHeight": 13,
+                    "fontColor": [255, 255, 255],
+                    "backgroundColor": [70, 210, 230],
+                    "outlineColor": [70, 210, 230]
+                }
+                ]
             }
-            ]
-        }
         }
     }
 

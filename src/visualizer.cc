@@ -26,9 +26,13 @@ namespace ql
 
 // -- IN PROGRESS ---
 // implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
+// visual_type attribute instead of full visual attribute in hw config file, links to seperate visualization config file where details of that
+//		visual type are detailed
+// add option to cut down the duration of a specific gate in visualization
 
 // --- FUTURE WORK ---
-// 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
+// TODO: when gate is skipped due to whatever reason, maybe show a dummy gate outline indicating where the gate is?
+// TODO: 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
 // TODO: display wait/barrier gate (need wait gate fix first)
 // TODO: fix overlapping connections for multiqubit gates/measurements
 // TODO: representing the gates as waveforms (see andreas paper for examples)
@@ -62,12 +66,12 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) : layou
 	cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0;
 }
 
-unsigned int Structure::getImageWidth()
+unsigned int Structure::getImageWidth() const
 {
 	return imageWidth;
 }
 
-unsigned int Structure::getImageHeight()
+unsigned int Structure::getImageHeight() const
 {
 	return imageHeight;
 }
@@ -190,7 +194,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	{
         //const GateVisual gateVisual = layout.gateVisuals.at(gate->type());
         IOUT("Drawing gate: [name: " + gate->name + "]");
-		drawGate(image, layout, circuitData, gate);
+		drawGate(image, layout, circuitData, gate, structure);
 	}
 	
 	// Display the image.
@@ -507,13 +511,13 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 	}
 }
 
-void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, gate* const gate)
+void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, gate* const gate, const Structure structure)
 {
 	const unsigned int amountOfOperands = calculateAmountOfGateOperands(gate);
 	const unsigned int cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0;
 	const unsigned int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
 	
-	IOUT("drawing gate with name: '" << gate->name << "'");
+	IOUT("Drawing gate with name: '" << gate->name << "'");
 	
 	GateVisual gateVisual;
 	if (gate->type() == __custom_gate__)
@@ -536,7 +540,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 
 	if (amountOfOperands > 1)
 	{
-        IOUT("setting up multi-operand gate...");
+        IOUT("Setting up multi-operand gate...");
 		// Draw the lines between each node. If this is done before drawing the nodes, there is no need to calculate line segments, we can just draw one
 		// big line between the nodes and the nodes will be drawn on top of those.
 		// Note: does not work with transparent nodes! If those are ever implemented, the connection line drawing will need to be changed!
@@ -573,14 +577,13 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 
 		Position4 connectionPosition =
 		{
-			layout.grid.borderSize + labelColumnWidth + column * layout.grid.cellSize + layout.grid.cellSize / 2,
-			layout.grid.borderSize + cycleNumbersRowHeight + minRow * layout.grid.cellSize + layout.grid.cellSize / 2,
-			layout.grid.borderSize + labelColumnWidth + column * layout.grid.cellSize + layout.grid.cellSize / 2,
-			layout.grid.borderSize + cycleNumbersRowHeight + maxRow * layout.grid.cellSize + layout.grid.cellSize / 2
+			structure.getCellX(column) + layout.grid.cellSize / 2,
+			structure.getCellY(minRow) + layout.grid.cellSize / 2,
+			structure.getCellX(column) + layout.grid.cellSize / 2,
+			structure.getCellY(maxRow) + layout.grid.cellSize / 2,
 		};
 
 		//TODO: probably have connection line type as part of a gate's visual definition
-		//if (gate->type() == __measure_gate__)
 		if (isMeasurement(gate))
 		{
 			if (layout.measurements.drawConnection && layout.bitLines.showClassicalLines)
@@ -608,13 +611,13 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		{
 			image.draw_line(connectionPosition.x0, connectionPosition.y0, connectionPosition.x1, connectionPosition.y1, gateVisual.connectionColor.data());
 		}
-        IOUT("finished setting up multi-operand gate");
+        IOUT("Finished setting up multi-operand gate");
 	}
 
 	// Draw the gate duration outline if the option has been set.
 	if (!layout.cycles.compressCycles && layout.cycles.showGateDurationOutline)
 	{
-        IOUT("drawing gate duration outline...");
+        IOUT("Drawing gate duration outline...");
 		const unsigned int gateDurationInCycles = ((unsigned int)gate->duration) / circuitData.cycleDuration;
 		// Only draw the gate outline if the gate takes more than one cycle.
 		if (gateDurationInCycles > 1)
@@ -625,11 +628,11 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 				const unsigned int columnEnd = columnStart + gateDurationInCycles - 1;
 				const unsigned int row = gate->operands[i];
 
-				const unsigned int x0 = layout.grid.borderSize + labelColumnWidth + columnStart * layout.grid.cellSize + layout.cycles.gateDurationGap;
-				const unsigned int y0 = layout.grid.borderSize + cycleNumbersRowHeight + row * layout.grid.cellSize + layout.cycles.gateDurationGap;
-				const unsigned int x1 = layout.grid.borderSize + labelColumnWidth + (columnEnd + 1) * layout.grid.cellSize - +layout.cycles.gateDurationGap;
-				const unsigned int y1 = layout.grid.borderSize + cycleNumbersRowHeight + (row + 1) * layout.grid.cellSize - +layout.cycles.gateDurationGap;
-				
+				const unsigned int x0 = structure.getCellX(columnStart) + layout.cycles.gateDurationGap;
+				const unsigned int y0 = structure.getCellY(row) + layout.cycles.gateDurationGap;
+				const unsigned int x1 = structure.getCellX(columnEnd + 1) - layout.cycles.gateDurationGap;
+				const unsigned int y1 = structure.getCellY(row + 1) - layout.cycles.gateDurationGap;
+
 				// Draw the outline in the colors of the node.
 				const Node node = gateVisual.nodes.at(i);
 				image.draw_rectangle(x0, y0, x1, y1, node.backgroundColor.data(), layout.cycles.gateDurationAlpha);
@@ -642,32 +645,30 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	}
 
 	// Draw the nodes.
-    IOUT("drawing gate nodes...");
+    IOUT("Drawing gate nodes...");
 	for (unsigned int i = 0; i < amountOfOperands; i++)
 	{
-        IOUT("drawing gate node with index: " + std::to_string(i) + "...");
+        IOUT("Drawing gate node with index: " + std::to_string(i) + "...");
         //TODO: change the try-catch later on! the gate config will be read from somewhere else than the default layout
         try
         {
 		    const Node node = gateVisual.nodes.at(i);
             const BitType operandType = (i >= gate->operands.size()) ? CLASSICAL : QUANTUM;
             const unsigned int index = (operandType == QUANTUM) ? i : (i - (unsigned int)gate->operands.size());
-            const NodePositionData positionData =
-            {
-	            (layout.grid.cellSize - node.radius * 2) / 2,
-	            labelColumnWidth,
-	            cycleNumbersRowHeight,
-	            (unsigned int)gate->cycle,
+
+			const Cell cell =
+			{
+				(unsigned int)gate->cycle,
 	            operandType == CLASSICAL ? (unsigned int)gate->creg_operands.at(index) + circuitData.amountOfQubits : (unsigned int)gate->operands.at(index)
-            };
+			};
 
             switch (node.type)
             {
 	            case NONE:		DOUT("node.type = NONE"); break; // Do nothing.
-	            case GATE:		DOUT("node.type = GATE"); drawGateNode(image, layout, circuitData, node, positionData); break;
-	            case CONTROL:	DOUT("node.type = CONTROL"); drawControlNode(image, layout, circuitData, node, positionData); break;
-	            case NOT:		DOUT("node.type = NOT"); drawNotNode(image, layout, circuitData, node, positionData); break;
-	            case CROSS:		DOUT("node.type = CROSS"); drawCrossNode(image, layout, circuitData, node, positionData); break;
+	            case GATE:		DOUT("node.type = GATE"); drawGateNode(image, layout, structure, node, cell); break;
+	            case CONTROL:	DOUT("node.type = CONTROL"); drawControlNode(image, layout, structure, node, cell); break;
+	            case NOT:		DOUT("node.type = NOT"); drawNotNode(image, layout, structure, node, cell); break;
+	            case CROSS:		DOUT("node.type = CROSS"); drawCrossNode(image, layout, structure, node, cell); break;
                 default:        EOUT("Unknown gate display node type!"); break;
             }
         }
@@ -676,7 +677,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
             return;
         }
 		
-        IOUT("finished drawing gate node with index: " + std::to_string(i) + "...");
+        IOUT("Finished drawing gate node with index: " + std::to_string(i) + "...");
 	}
 
 	// Draw the measurement symbol.
@@ -701,14 +702,15 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	// image.draw_spline(x0, y0, u0, v0, x1, y1, u1, v1, layout.operation.gateNameColor.data());
 }
 
-void drawGateNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData)
+void drawGateNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell)
 {
+	const unsigned int gap = (layout.grid.cellSize - node.radius * 2) / 2;
 	const Position4 position =
 	{
-		layout.grid.borderSize + positionData.labelColumnWidth + positionData.column * layout.grid.cellSize + positionData.gap,
-		layout.grid.borderSize + positionData.cycleNumbersRowHeight + positionData.row * layout.grid.cellSize + positionData.gap,
-		layout.grid.borderSize + positionData.labelColumnWidth + (positionData.column + 1) * layout.grid.cellSize - positionData.gap,
-		layout.grid.borderSize + positionData.cycleNumbersRowHeight + (positionData.row + 1) * layout.grid.cellSize - positionData.gap
+		structure.getCellX(cell.col) + gap,
+		structure.getCellY(cell.row) + gap,
+		structure.getCellX(cell.col + 1) - gap,
+		structure.getCellY(cell.row + 1) - gap
 	};
 
 	// Draw the gate background.
@@ -720,56 +722,56 @@ void drawGateNode(cimg_library::CImg<unsigned char>& image, const Layout layout,
 	image.draw_text(position.x0 + (node.radius * 2 - textDimensions.width) / 2, position.y0 + (node.radius * 2 - textDimensions.height) / 2, node.displayName.c_str(), node.fontColor.data(), 0, 1, node.fontHeight);
 }
 
-void drawControlNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData)
+void drawControlNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell)
 {
-	const Position2 connectionPosition =
+	const Position2 position =
 	{
-		layout.grid.borderSize + positionData.labelColumnWidth + positionData.column * layout.grid.cellSize + layout.grid.cellSize / 2,
-		layout.grid.borderSize + positionData.cycleNumbersRowHeight + positionData.row * layout.grid.cellSize + layout.grid.cellSize / 2
+		structure.getCellX(cell.col) + layout.grid.cellSize / 2,
+		structure.getCellY(cell.row) + layout.grid.cellSize / 2
 	};
 
-	image.draw_circle(connectionPosition.x, connectionPosition.y, node.radius, node.backgroundColor.data());
+	image.draw_circle(position.x, position.y, node.radius, node.backgroundColor.data());
 }
 
-void drawNotNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData)
+void drawNotNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell)
 {
 	// TODO: allow for filled not node instead of only an outline not node
 
-	const Position2 notPosition =
+	const Position2 position =
 	{
-		layout.grid.borderSize + positionData.labelColumnWidth + positionData.column * layout.grid.cellSize + layout.grid.cellSize / 2,
-		layout.grid.borderSize + positionData.cycleNumbersRowHeight + positionData.row * layout.grid.cellSize + layout.grid.cellSize / 2
+		structure.getCellX(cell.col) + layout.grid.cellSize / 2,
+		structure.getCellY(cell.row) + layout.grid.cellSize / 2
 	};
 
 	// Draw the outlined circle.
-	image.draw_circle(notPosition.x, notPosition.y, node.radius, node.backgroundColor.data(), 1, 0xFFFFFFFF);
+	image.draw_circle(position.x, position.y, node.radius, node.backgroundColor.data(), 1, 0xFFFFFFFF);
 
 	// Draw two lines to represent the plus sign.
-	const unsigned int xHor0 = notPosition.x - node.radius;
-	const unsigned int xHor1 = notPosition.x + node.radius;
-	const unsigned int yHor = notPosition.y;
+	const unsigned int xHor0 = position.x - node.radius;
+	const unsigned int xHor1 = position.x + node.radius;
+	const unsigned int yHor = position.y;
 
-	const unsigned int xVer = notPosition.x;
-	const unsigned int yVer0 = notPosition.y - node.radius;
-	const unsigned int yVer1 = notPosition.y + node.radius;
+	const unsigned int xVer = position.x;
+	const unsigned int yVer0 = position.y - node.radius;
+	const unsigned int yVer1 = position.y + node.radius;
 
 	image.draw_line(xHor0, yHor, xHor1, yHor, node.backgroundColor.data());
 	image.draw_line(xVer, yVer0, xVer, yVer1, node.backgroundColor.data());
 }
 
-void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData)
+void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell)
 {
-	const Position2 crossPosition =
+	const Position2 position =
 	{
-		layout.grid.borderSize + positionData.labelColumnWidth + positionData.column * layout.grid.cellSize + layout.grid.cellSize / 2,
-		layout.grid.borderSize + positionData.cycleNumbersRowHeight + positionData.row * layout.grid.cellSize + layout.grid.cellSize / 2
+		structure.getCellX(cell.col) + layout.grid.cellSize / 2,
+		structure.getCellY(cell.row) + layout.grid.cellSize / 2
 	};
 
 	// Draw two diagonal lines to represent the cross.
-	const unsigned int x0 = crossPosition.x - node.radius;
-	const unsigned int y0 = crossPosition.y - node.radius;
-	const unsigned int x1 = crossPosition.x + node.radius;
-	const unsigned int y1 = crossPosition.y + node.radius;
+	const unsigned int x0 = position.x - node.radius;
+	const unsigned int y0 = position.y - node.radius;
+	const unsigned int x1 = position.x + node.radius;
+	const unsigned int y1 = position.y + node.radius;
 
 	image.draw_line(x0, y0, x1, y1, node.backgroundColor.data());
 	image.draw_line(x0, y1, x1, y0, node.backgroundColor.data());

@@ -39,20 +39,16 @@ struct Position2
 	long y;
 };
 
+struct Cell
+{
+	const unsigned int col;
+	const unsigned int row;
+};
+
 struct EndPoints
 {
 	const unsigned int start;
 	const unsigned int end;
-};
-
-struct NodePositionData
-{
-	const unsigned int gap;
-	const unsigned int labelColumnWidth;
-	const unsigned int cycleNumbersRowHeight;
-
-	const unsigned int column;
-	const unsigned int row;
 };
 
 struct TextDimensions
@@ -84,8 +80,8 @@ class Structure
 	public:
 		Structure(const Layout layout, const CircuitData circuitData);
 
-		unsigned int getImageWidth();
-		unsigned int getImageHeight();
+		unsigned int getImageWidth() const;
+		unsigned int getImageHeight() const;
 
 		unsigned int getCellX(const unsigned int col) const;
 		unsigned int getCellY(const unsigned int row) const;
@@ -111,12 +107,12 @@ TextDimensions calculateTextDimensions(const std::string& text, const unsigned i
 void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure);
 void drawBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const BitType bitType, const unsigned int row, const CircuitData circuitData, const Structure structure);
 void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure);
-void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, ql::gate* const gate);
+void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, ql::gate* const gate, const Structure structure);
 
-void drawGateNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData);
-void drawControlNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData);
-void drawNotNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData);
-void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Node node, const NodePositionData positionData);
+void drawGateNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell);
+void drawControlNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell);
+void drawNotNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell);
+void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell);
 
 } // ql
 
