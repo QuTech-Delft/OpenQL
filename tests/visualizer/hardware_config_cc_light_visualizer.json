@@ -137,20 +137,7 @@
       "cc_light_instr": "prepz",
       "cc_light_codeword": 20,
       "cc_light_opcode": 2,
-	  "visual": {
-		"connectionColor": [0, 0, 0],
-		"nodes": [
-			{
-				"type": "GATE",
-				"radius": 13,
-				"displayName": "+Z",
-				"fontHeight": 13,
-				"fontColor": [255, 255, 255],
-				"backgroundColor": [70, 210, 230],
-				"outlineColor": [70, 210, 230]
-			}
-		]
-	  }
+      "visual_type": "prepz"
    },
    "prepz q1": {
       "duration": 40,
@@ -163,20 +150,7 @@
       "cc_light_instr": "prepz",
       "cc_light_codeword": 21,
       "cc_light_opcode": 2,
-	  "visual": {
-		"connectionColor": [0, 0, 0],
-		"nodes": [
-			{
-				"type": "GATE",
-				"radius": 13,
-				"displayName": "+Z",
-				"fontHeight": 13,
-				"fontColor": [255, 255, 255],
-				"backgroundColor": [70, 210, 230],
-				"outlineColor": [70, 210, 230]
-			}
-		]
-	  }
+      "visual_type": "prepz"
    },
    "prepz q2": {
       "duration": 40,
@@ -189,20 +163,7 @@
       "cc_light_instr": "prepz",
       "cc_light_codeword": 22,
       "cc_light_opcode": 2,
-	  "visual": {
-		"connectionColor": [0, 0, 0],
-		"nodes": [
-			{
-				"type": "GATE",
-				"radius": 13,
-				"displayName": "+Z",
-				"fontHeight": 13,
-				"fontColor": [255, 255, 255],
-				"backgroundColor": [70, 210, 230],
-				"outlineColor": [70, 210, 230]
-			}
-		]
-	  }
+      "visual_type": "prepz"
    },
    "prepz q3": {
       "duration": 40,
@@ -215,20 +176,7 @@
       "cc_light_instr": "prepz",
       "cc_light_codeword": 22,
       "cc_light_opcode": 2,
-	  "visual": {
-		"connectionColor": [0, 0, 0],
-		"nodes": [
-			{
-				"type": "GATE",
-				"radius": 13,
-				"displayName": "+Z",
-				"fontHeight": 13,
-				"fontColor": [255, 255, 255],
-				"backgroundColor": [70, 210, 230],
-				"outlineColor": [70, 210, 230]
-			}
-		]
-	  }
+      "visual_type": "prepz"
    },
    "x q0": {
       "duration": 40,
@@ -241,20 +189,7 @@
       "cc_light_instr": "x",
       "cc_light_codeword": 60,
       "cc_light_opcode": 6,
-	  "visual": {
-		"connectionColor": [0, 0, 0],
-		"nodes": [
-			{
-				"type": "GATE",
-				"radius": 13,
-				"displayName": "X",
-				"fontHeight": 13,
-				"fontColor": [255, 255, 255],
-				"backgroundColor": [112, 222, 90],
-				"outlineColor": [112, 222, 90]
-			}
-		]
-	  }
+      "visual_type": "x"
    },
    "h q1": {
       "duration": 40,
@@ -267,20 +202,7 @@
       "cc_light_instr": "h",
       "cc_light_codeword": 91,
       "cc_light_opcode": 9,
-	  "visual": {
-		"connectionColor": [0, 0, 0],
-		"nodes": [
-			{
-				"type": "GATE",
-				"radius": 13,
-				"displayName": "H",
-				"fontHeight": 13,
-				"fontColor": [255, 255, 255],
-				"backgroundColor": [70, 210, 230],
-				"outlineColor": [70, 210, 230]
-			}
-		]
-	  }
+      "visual_type": "h"
    },
    "h q2": {
       "duration": 40,
@@ -293,20 +215,7 @@
       "cc_light_instr": "h",
       "cc_light_codeword": 91,
       "cc_light_opcode": 9,
-	  "visual": {
-		"connectionColor": [0, 0, 0],
-		"nodes": [
-			{
-				"type": "GATE",
-				"radius": 13,
-				"displayName": "H",
-				"fontHeight": 13,
-				"fontColor": [255, 255, 255],
-				"backgroundColor": [70, 210, 230],
-				"outlineColor": [70, 210, 230]
-			}
-		]
-	  }
+      "visual_type": "h"
    },
    "cz q2,q0": {
       "duration": 80,
@@ -320,29 +229,7 @@
       "cc_light_right_codeword": 143,
       "cc_light_left_codeword": 151,
       "cc_light_opcode": 129,
-	  "visual": {
-		"connectionColor": [0, 0, 0],
-		"nodes": [
-			{
-				"type": "CONTROL",
-				"radius": 3,
-				"displayName": "",
-				"fontHeight": 13,
-				"fontColor": [0, 0, 0],
-				"backgroundColor": [170, 50, 50],
-				"outlineColor": [170, 50, 50]
-			},
-			{
-				"type": "CONTROL",
-				"radius": 3,
-				"displayName": "",
-				"fontHeight": 13,
-				"fontColor": [0, 0, 0],
-				"backgroundColor": [170, 50, 50],
-				"outlineColor": [170, 50, 50]
-			}
-		]
-	  }
+      "visual_type": "cz"
    },
    "cz q3,q1": {
       "duration": 80,
@@ -356,29 +243,7 @@
       "cc_light_right_codeword": 144,
       "cc_light_left_codeword": 152,
       "cc_light_opcode": 129,
-	  "visual": {
-		"connectionColor": [0, 0, 0],
-		"nodes": [
-			{
-				"type": "CONTROL",
-				"radius": 3,
-				"displayName": "",
-				"fontHeight": 13,
-				"fontColor": [0, 0, 0],
-				"backgroundColor": [170, 50, 50],
-				"outlineColor": [170, 50, 50]
-			},
-			{
-				"type": "CONTROL",
-				"radius": 3,
-				"displayName": "",
-				"fontHeight": 13,
-				"fontColor": [0, 0, 0],
-				"backgroundColor": [170, 50, 50],
-				"outlineColor": [170, 50, 50]
-			}
-		]
-	  }
+      "visual_type": "cz"
    },
    "measure q0": {
       "duration": 40,
@@ -391,29 +256,7 @@
       "cc_light_instr": "measz",
       "cc_light_codeword": 40,
       "cc_light_opcode": 4,
-	  "visual": {
-		"connectionColor": [225, 118, 225],
-		"nodes": [
-			{
-				"type": "GATE",
-				"radius": 13,
-				"displayName": "M",
-				"fontHeight": 13,
-				"fontColor": [255, 255, 255],
-				"backgroundColor": [225, 118, 225],
-				"outlineColor": [225, 118, 225]
-			},
-			{
-				"type": "NONE",
-				"radius": 13,
-				"displayName": "",
-				"fontHeight": 13,
-				"fontColor": [0, 0, 0],
-				"backgroundColor": [0, 0, 0],
-				"outlineColor": [0, 0, 0]
-			}
-		]
-	  }
+      "visual_type": "measure"
    },
    "measure q1": {
       "duration": 40,
@@ -426,29 +269,7 @@
       "cc_light_instr": "measz",
       "cc_light_codeword": 41,
       "cc_light_opcode": 4,
-	  "visual": {
-		"connectionColor": [225, 118, 225],
-		"nodes": [
-			{
-				"type": "GATE",
-				"radius": 13,
-				"displayName": "M",
-				"fontHeight": 13,
-				"fontColor": [255, 255, 255],
-				"backgroundColor": [225, 118, 225],
-				"outlineColor": [225, 118, 225]
-			},
-			{
-				"type": "NONE",
-				"radius": 13,
-				"displayName": "",
-				"fontHeight": 13,
-				"fontColor": [0, 0, 0],
-				"backgroundColor": [0, 0, 0],
-				"outlineColor": [0, 0, 0]
-			}
-		]
-	  }
+      "visual_type": "measure"
    },
    "measure q2": {
       "duration": 40,
@@ -461,29 +282,7 @@
       "cc_light_instr": "measz",
       "cc_light_codeword": 41,
       "cc_light_opcode": 4,
-	  "visual": {
-		"connectionColor": [225, 118, 225],
-		"nodes": [
-			{
-				"type": "GATE",
-				"radius": 13,
-				"displayName": "M",
-				"fontHeight": 13,
-				"fontColor": [255, 255, 255],
-				"backgroundColor": [225, 118, 225],
-				"outlineColor": [225, 118, 225]
-			},
-			{
-				"type": "NONE",
-				"radius": 13,
-				"displayName": "",
-				"fontHeight": 13,
-				"fontColor": [0, 0, 0],
-				"backgroundColor": [0, 0, 0],
-				"outlineColor": [0, 0, 0]
-			}
-		]
-	  }
+      "visual_type": "measure"
    },
    "measure q3": {
       "duration": 40,
@@ -496,29 +295,7 @@
       "cc_light_instr": "measz",
       "cc_light_codeword": 41,
       "cc_light_opcode": 4,
-	  "visual": {
-		"connectionColor": [225, 118, 225],
-		"nodes": [
-			{
-				"type": "GATE",
-				"radius": 13,
-				"displayName": "M",
-				"fontHeight": 13,
-				"fontColor": [255, 255, 255],
-				"backgroundColor": [225, 118, 225],
-				"outlineColor": [225, 118, 225]
-			},
-			{
-				"type": "NONE",
-				"radius": 13,
-				"displayName": "",
-				"fontHeight": 13,
-				"fontColor": [0, 0, 0],
-				"backgroundColor": [0, 0, 0],
-				"outlineColor": [0, 0, 0]
-			}
-		]
-	  }
+      "visual_type": "measure"
    }
    },
 

@@ -81,7 +81,9 @@ struct Layout
 	Grid grid;
 	Measurements measurements;
 
-	std::map<ql::gate_type_t, GateVisual> defaultGateVisuals
+	std::map<std::string, GateVisual> customGateVisuals;
+
+	const std::map<ql::gate_type_t, GateVisual> defaultGateVisuals
 	{
 		// TODO: use the proper symbol for dagger gates
 		// TODO: use the proper symbol for measurement gates

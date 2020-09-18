@@ -220,7 +220,7 @@ Layout parseConfiguration(const std::string& configPath)
 	Layout layout;
 
 	// Fill the layout object with the values from the config file, or if those values are missing, with the default hardcoded values.
-	//TODO: replace these hardcoded assignments by automatic json to layout object mapping (is possible with nlohmann json!)
+	//TODO: replace these hardcoded assignments by automatic json to layout object mapping (should be possible with nlohmann json)
 	if (config.count("cycles") == 1)
 	{
 		layout.cycles.showCycleLabels = config["cycles"].value("showCycleLabels", layout.cycles.showCycleLabels);
@@ -263,6 +263,93 @@ Layout parseConfiguration(const std::string& configPath)
 		layout.measurements.drawConnection = config["measurements"].value("drawConnection", layout.measurements.drawConnection);
 		layout.measurements.lineSpacing = config["measurements"].value("lineSpacing", layout.measurements.lineSpacing);
 		layout.measurements.arrowSize = config["measurements"].value("arrowSize", layout.measurements.arrowSize);
+	}
+
+	// Load the custom instruction visualization parameters.
+	if (config.count("instructions") == 1)
+	{
+		for (const auto& instruction : config["instructions"].items())
+		{
+			try
+			{
+				GateVisual gateVisual;
+				json content = instruction.value();
+
+				// Load the connection color.
+				json connectionColor = content["connectionColor"];
+				gateVisual.connectionColor[0] = connectionColor[0];
+				gateVisual.connectionColor[1] = connectionColor[1];
+				gateVisual.connectionColor[2] = connectionColor[2];
+				DOUT("Connection color: [" 
+					<< (int)gateVisual.connectionColor[0] << ","
+					<< (int)gateVisual.connectionColor[1] << ","
+					<< (int)gateVisual.connectionColor[2] << "]");
+
+				// Load the individual nodes.
+				json nodes = content["nodes"];
+				unsigned int amountOfNodes = nodes.size();
+				for (unsigned int i = 0; i < amountOfNodes; i++)
+				{
+					json node = nodes[i];
+					
+					std::array<unsigned char, 3> fontColor = {node["fontColor"][0], node["fontColor"][1], node["fontColor"][2]};
+					std::array<unsigned char, 3> backgroundColor = {node["backgroundColor"][0], node["backgroundColor"][1], node["backgroundColor"][2]};
+					std::array<unsigned char, 3> outlineColor = {node["outlineColor"][0], node["outlineColor"][1], node["outlineColor"][2]};
+					
+					NodeType nodeType;
+					if (node["type"] == "NONE") {nodeType = NONE;} else
+					if (node["type"] == "GATE") {nodeType = GATE;} else
+					if (node["type"] == "CONTROL") {nodeType = CONTROL;} else
+					if (node["type"] == "NOT") {nodeType = NOT;} else
+					if (node["type"] == "CROSS") {nodeType = CROSS;}
+					else
+					{
+						WOUT("Unknown gate display node type! Defaulting to type NONE...");
+						nodeType = NONE;
+					}
+					
+					Node loadedNode = 
+					{
+						nodeType,
+						node["radius"],
+						node["displayName"],
+						node["fontHeight"],
+						fontColor,
+						backgroundColor,
+						outlineColor
+					};
+					
+					gateVisual.nodes.push_back(loadedNode);
+					
+					DOUT("[type: " << node["type"] << "] "
+						<< "[radius: " << gateVisual.nodes.at(i).radius << "] "
+						<< "[displayName: " << gateVisual.nodes.at(i).displayName << "] "
+						<< "[fontHeight: " << gateVisual.nodes.at(i).fontHeight << "] "
+						<< "[fontColor: "
+							<< (int)gateVisual.nodes.at(i).fontColor[0] << ","
+							<< (int)gateVisual.nodes.at(i).fontColor[1] << ","
+							<< (int)gateVisual.nodes.at(i).fontColor[2] << "] "
+						<< "[backgroundColor: "
+							<< (int)gateVisual.nodes.at(i).backgroundColor[0] << ","
+							<< (int)gateVisual.nodes.at(i).backgroundColor[1] << ","
+							<< (int)gateVisual.nodes.at(i).backgroundColor[2] << "] "
+						<< "[outlineColor: "
+							<< (int)gateVisual.nodes.at(i).outlineColor[0] << ","
+							<< (int)gateVisual.nodes.at(i).outlineColor[1] << ","
+							<< (int)gateVisual.nodes.at(i).outlineColor[2] << "]");
+				}
+
+				layout.customGateVisuals.insert({instruction.key(), gateVisual});
+			}
+			catch (json::exception &e)
+			{
+				WOUT("Failed to load visualization parameters for instruction: '" << instruction.key() << "' \n\t" << std::string(e.what()));
+			}
+		}
+	}
+	else
+	{
+		WOUT("Did not find 'instructions' attribute! The visualizer will try to fall back on default gate visualizations.");
 	}
 
 	return layout;
@@ -514,23 +601,31 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 
 void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, gate* const gate, const Structure structure)
 {
-	const unsigned int amountOfOperands = calculateAmountOfGateOperands(gate);
-	const unsigned int cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0;
-	const unsigned int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
-	
 	DOUT("Drawing gate with name: '" << gate->name << "'");
 	
 	GateVisual gateVisual;
 	if (gate->type() == __custom_gate__)
 	{
-		DOUT("Custom gate found. Using user specified visualization.");
-		gateVisual = gate->gateVisual;
+		if (layout.customGateVisuals.count(gate->visual_type) == 1)
+		{
+			DOUT("Found visual for custom gate: '" << gate->name << "'");
+			gateVisual = layout.customGateVisuals.at(gate->visual_type);
+		}
+		else
+		{
+			// TODO: try to recover by matching gate name with a default visual name
+			// TODO: if the above fails, display a dummy gate
+			WOUT("Did not find visual for custom gate: '" << gate->name << "', skipping gate!");
+			return;
+		}
 	}
 	else
 	{
 		DOUT("Default gate found. Using default visualization!");
 		gateVisual = layout.defaultGateVisuals.at(gate->type());
 	}
+
+	const unsigned int amountOfOperands = calculateAmountOfGateOperands(gate);
 
 	// Check for correct amount of nodes.
 	if (amountOfOperands != gateVisual.nodes.size())
