@@ -1263,9 +1263,15 @@ public:
 			
 			// Load the visual type of the instruction if provided.
             l_attr = "visual_type";
-            visual_type = instr["visual_type"].get<std::string>();
-            DOUT("visual_type: '" << visual_type);
-
+            if (instr.count("visual_type") == 1)
+            {
+                visual_type = instr["visual_type"].get<std::string>();
+                DOUT("visual_type: '" << visual_type);
+            }
+            else
+            {
+                WOUT("Did not find 'visual_type' attribute for instruction: '" << name << "'!");
+            }
         }
         catch (json::exception &e)
         {

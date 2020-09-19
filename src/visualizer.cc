@@ -25,10 +25,9 @@ namespace ql
 // allow the user to set the layout parameters from a configuration file
 // implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
 // change IOUT to DOUT (IOUT is used to avoid debug information from other source files while developing the visualizer!)
+// visual_type attribute instead of full visual attribute in hw config file, links to seperate visualization config file where details of that visual type are detailed
 
 // -- IN PROGRESS ---
-// visual_type attribute instead of full visual attribute in hw config file, links to seperate visualization config file where details of that
-//		visual type are detailed
 // add option to cut down the duration of a specific gate in visualization
 
 // --- FUTURE WORK ---
@@ -47,7 +46,7 @@ namespace ql
 
 void visualize(const ql::quantum_program* program, const std::string& configPath)
 {
-	WOUT("Visualizer is disabled. If this was not intended, the X11 library might be missing and the visualizer has disabled itself.");
+	WOUT("The visualizer is disabled. If this was not intended, the X11 library might be missing and the visualizer has disabled itself.");
 }
 
 #else
