@@ -11,6 +11,7 @@
 #include "instruction_map.h"
 
 #include <iostream>
+#include <limits>
 
 namespace ql
 {
@@ -59,48 +60,48 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) : layou
 	// Calculate image width and height based on the amount of cycles and amount of operands. The height depends on whether classical bit lines are grouped or not.
     DOUT("Calculating image width and height...");
 	imageWidth = (layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0) + circuitData.amountOfCycles * layout.grid.cellSize + 2 * layout.grid.borderSize;
-	const unsigned int amountOfRows = circuitData.amountOfQubits + (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits);
+	const int amountOfRows = circuitData.amountOfQubits + (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits);
 	imageHeight = (layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0) + amountOfRows * layout.grid.cellSize + 2 * layout.grid.borderSize;
 
 	labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
 	cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0;
 }
 
-unsigned int Structure::getImageWidth() const
+int Structure::getImageWidth() const
 {
 	return imageWidth;
 }
 
-unsigned int Structure::getImageHeight() const
+int Structure::getImageHeight() const
 {
 	return imageHeight;
 }
 
-unsigned int Structure::getCellX(const unsigned int col) const
+int Structure::getCellX(const int col) const
 {
 	return layout.grid.borderSize + labelColumnWidth + col * layout.grid.cellSize;
 }
 
-unsigned int Structure::getCellY(const unsigned int row) const
+int Structure::getCellY(const int row) const
 {
 	return layout.grid.borderSize + cycleNumbersRowHeight + row * layout.grid.cellSize;
 }
 
-unsigned int Structure::getCycleLabelsY() const
+int Structure::getCycleLabelsY() const
 {
 	return layout.grid.borderSize;
 }
 
-unsigned int Structure::getBitLabelsX() const
+int Structure::getBitLabelsX() const
 {
 	return layout.grid.borderSize;
 }
 
 EndPoints Structure::getBitLineEndPoints() const
 {
-	const unsigned int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
-	const unsigned int x0 = getBitLabelsX() + labelColumnWidth;
-	const unsigned int x1 = getBitLabelsX() + labelColumnWidth + circuitData.amountOfCycles * layout.grid.cellSize;
+	const int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
+	const int x0 = getBitLabelsX() + labelColumnWidth;
+	const int x1 = getBitLabelsX() + labelColumnWidth + circuitData.amountOfCycles * layout.grid.cellSize;
 
 	return EndPoints { x0, x1 };
 }
@@ -127,9 +128,9 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
     
 	// Calculate amount of cycles and read cycle duration.
     DOUT("Calculating amount of cycles...");
-	const unsigned int cycleDuration = program->platform.cycle_time;
+	const int cycleDuration = program->platform.cycle_time;
 	DOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
-    unsigned int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+    int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
 
 	// Compress the circuit in terms of cycles and gate duration if the option has been set.
 	if (layout.cycles.compressCycles)
@@ -140,8 +141,8 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	// Calculate amount of qubits and classical bits.
     DOUT("Calculating amount of qubits and classical bits...");
 	fixMeasurementOperands(gates); // fixes measurement gates without classical operands
-	const unsigned int amountOfQubits = calculateAmountOfBits(gates, &gate::operands);
-	const unsigned int amountOfClassicalBits = calculateAmountOfBits(gates, &gate::creg_operands);
+	const int amountOfQubits = calculateAmountOfBits(gates, &gate::operands);
+	const int amountOfClassicalBits = calculateAmountOfBits(gates, &gate::creg_operands);
 	CircuitData circuitData = { amountOfQubits, amountOfClassicalBits, amountOfCycles, cycleDuration };
     
 	// Initialize the structure of the visualization.
@@ -150,7 +151,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	
 	// Initialize image.
     DOUT("Initializing image...");
-	const unsigned int numberOfChannels = 3;
+	const int numberOfChannels = 3;
 	CImg<unsigned char> image(structure.getImageWidth(), structure.getImageHeight(), 1, numberOfChannels);
 	image.fill(255);
 
@@ -163,7 +164,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
 	// Draw the quantum bit lines.
     DOUT("Drawing qubit lines...");
-	for (unsigned int i = 0; i < amountOfQubits; i++)
+	for (int i = 0; i < amountOfQubits; i++)
 	{
 		drawBitLine(image, layout, QUANTUM, i, circuitData, structure);
 	}
@@ -181,7 +182,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		else
 		{
 			DOUT("Drawing ungrouped classical bit lines...");
-			for (unsigned int i = amountOfQubits; i < amountOfQubits + amountOfClassicalBits; i++)
+			for (int i = amountOfQubits; i < amountOfQubits + amountOfClassicalBits; i++)
 			{
 				drawBitLine(image, layout, CLASSICAL, i, circuitData, structure);
 			}
@@ -286,8 +287,8 @@ Layout parseConfiguration(const std::string& configPath)
 
 				// Load the individual nodes.
 				json nodes = content["nodes"];
-				unsigned int amountOfNodes = nodes.size();
-				for (unsigned int i = 0; i < amountOfNodes; i++)
+				int amountOfNodes = nodes.size();
+				for (int i = 0; i < amountOfNodes; i++)
 				{
 					json node = nodes[i];
 					
@@ -359,12 +360,11 @@ void validateLayout(const Layout layout)
 	//TODO
 }
 
-unsigned int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType)
+int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType)
 {
 	//TODO: handle circuits not starting at the c- or q-bit with index 0
-
-	unsigned int minAmount = -1; // unsigned, so -1 is equal to the maximum value of the type
-	unsigned int maxAmount = 0;
+	int minAmount = std::numeric_limits<int>::max();
+	int maxAmount = 0;
 
 	for (const gate* gate : gates)
 	{
@@ -375,33 +375,33 @@ unsigned int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std
 		{
 			const size_t number = *begin;
 			if (number < minAmount)
-				minAmount = (unsigned int) number;
+				minAmount = (int) number;
 			if (number > maxAmount)
-				maxAmount = (unsigned int) number;
+				maxAmount = (int) number;
 		}
 	}
 
 	// If both minAmount and maxAmount are at their original values, the list of operands for all the gates was empty.
 	// This means there are no operands of the given type for these gates and we return 0.
-	if (minAmount == (unsigned int) -1 && maxAmount == 0)
+	if (minAmount == std::numeric_limits<int>::max() && maxAmount == 0)
 		return 0;
 	else
 		return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
 }
 
-unsigned int calculateAmountOfCycles(const std::vector<ql::gate*> gates, const unsigned int cycleDuration)
+int calculateAmountOfCycles(const std::vector<ql::gate*> gates, const int cycleDuration)
 {
-    unsigned int amountOfCycles = 0;
+    int amountOfCycles = 0;
 	for (const gate* gate : gates)
 	{
-		const unsigned int gateCycle = (unsigned int)gate->cycle;
+		const int gateCycle = (int)gate->cycle;
 		if (gateCycle > amountOfCycles)
 			amountOfCycles = gateCycle;
 	}
 	amountOfCycles++; // because the cycles start at zero, we add one to get the true amount of cycles
 	const gate* lastGate = gates.at(gates.size() - 1);
-	const unsigned int lastGateDuration = (unsigned int)lastGate->duration;
-	const unsigned int lastGateDurationInCycles = lastGateDuration / cycleDuration;
+	const int lastGateDuration = (int)lastGate->duration;
+	const int lastGateDurationInCycles = lastGateDuration / cycleDuration;
 	if (lastGateDurationInCycles > 1)
 	{
 		amountOfCycles += lastGateDurationInCycles - 1;
@@ -410,32 +410,32 @@ unsigned int calculateAmountOfCycles(const std::vector<ql::gate*> gates, const u
     return amountOfCycles;
 }
 
-unsigned int calculateAmountOfGateOperands(const ql::gate* gate)
+int calculateAmountOfGateOperands(const ql::gate* gate)
 {
-	return (unsigned int)gate->operands.size() + (unsigned int)gate->creg_operands.size();
+	return (int)gate->operands.size() + (int)gate->creg_operands.size();
 }
 
-void compressCycles(const std::vector<ql::gate*> gates, unsigned int& amountOfCycles)
+void compressCycles(const std::vector<ql::gate*> gates, int& amountOfCycles)
 {
 	DOUT("Compressing circuit...");
 	std::vector<bool> filledCycles(amountOfCycles);
-	for (unsigned int i = 0; i < gates.size(); i++)
+	for (int i = 0; i < gates.size(); i++)
 	{
 		filledCycles.at(gates.at(i)->cycle) = true;
 	}
 
 	DOUT("amount of cycles before compression: " << amountOfCycles);
-	unsigned int amountOfCompressions = 0;
-	for (unsigned int i = 0; i < filledCycles.size(); i++)
+	int amountOfCompressions = 0;
+	for (int i = 0; i < filledCycles.size(); i++)
 	{
 		DOUT(i);
 		if (filledCycles.at(i) == false)
 		{
 			DOUT(" not filled");
 			DOUT("\tcompressing... min cycle to compress: " << i - amountOfCompressions);
-			for (unsigned int j = 0; j < gates.size(); j++)
+			for (int j = 0; j < gates.size(); j++)
 			{
-				const unsigned int gateCycle = (unsigned int)gates.at(j)->cycle;
+				const int gateCycle = (int)gates.at(j)->cycle;
 				DOUT("\tgate cycle: " << gateCycle);
 				if (gateCycle >= i - amountOfCompressions)
 				{
@@ -469,7 +469,7 @@ void fixMeasurementOperands(const std::vector<ql::gate*> gates)
 			{
 				// Set classical measurement operand to the bit corresponding to the measuremens qubit number.
 				DOUT("Found measurement gate with no classical operand. Assuming default classical operand.");
-				const unsigned int cbit = gate->operands[0];
+				const int cbit = gate->operands[0];
 				gate->creg_operands.push_back(cbit);
 			}
 		}
@@ -482,19 +482,19 @@ bool isMeasurement(const ql::gate* gate)
 	return (gate->name.find("measure") != std::string::npos);
 }
 
-Dimensions calculateTextDimensions(const std::string& text, const unsigned int fontHeight, const Layout layout)
+Dimensions calculateTextDimensions(const std::string& text, const int fontHeight, const Layout layout)
 {
 	const char* chars = text.c_str();
 	CImg<unsigned char> imageTextDimensions;
-	const unsigned char color = 1;
+	const char color = 1;
 	imageTextDimensions.draw_text(0, 0, chars, &color, 0, 1, fontHeight);
 
-	return Dimensions { (unsigned int) imageTextDimensions.width(), (unsigned int) imageTextDimensions.height() };
+	return Dimensions { (int) imageTextDimensions.width(), (int) imageTextDimensions.height() };
 }
 
 void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
 {
-	for (unsigned int i = 0; i < circuitData.amountOfCycles; i++)
+	for (int i = 0; i < circuitData.amountOfCycles; i++)
 	{
 		std::string cycleLabel;
 		if (layout.cycles.showCyclesInNanoSeconds)
@@ -508,21 +508,21 @@ void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layo
 		
 		Dimensions textDimensions = calculateTextDimensions(cycleLabel, layout.cycles.fontHeight, layout);
 
-		const unsigned int xGap = (layout.grid.cellSize - textDimensions.width) / 2;
-		const unsigned int yGap = (layout.grid.cellSize - textDimensions.height) / 2;
-		const unsigned int xCycle = structure.getCellX(i) + xGap;
-		const unsigned int yCycle = structure.getCycleLabelsY() + yGap;
+		const int xGap = (layout.grid.cellSize - textDimensions.width) / 2;
+		const int yGap = (layout.grid.cellSize - textDimensions.height) / 2;
+		const int xCycle = structure.getCellX(i) + xGap;
+		const int yCycle = structure.getCycleLabelsY() + yGap;
 
 		image.draw_text(xCycle, yCycle, cycleLabel.c_str(), layout.cycles.fontColor.data(), 0, 1, layout.cycles.fontHeight);
 	}
 }
 
-void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, const BitType bitType, const unsigned int row, const CircuitData circuitData, const Structure structure)
+void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, const BitType bitType, const int row, const CircuitData circuitData, const Structure structure)
 {
 	EndPoints bitLineEndPoints = structure.getBitLineEndPoints();
-	const unsigned int x0 = bitLineEndPoints.start;
-	const unsigned int x1 = bitLineEndPoints.end;
-	const unsigned int y = structure.getCellY(row) + layout.grid.cellSize / 2;
+	const int x0 = bitLineEndPoints.start;
+	const int x1 = bitLineEndPoints.end;
+	const int y = structure.getCellY(row) + layout.grid.cellSize / 2;
 
 	std::array<unsigned char, 3> bitLineColor;
 	std::array<unsigned char, 3> bitLabelColor;
@@ -543,15 +543,15 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 	// Draw the bit line label if enabled.
 	if (layout.bitLines.drawLabels)
 	{
-		const unsigned int bitIndex = (bitType == CLASSICAL) ? (row - circuitData.amountOfQubits) : row;
+		const int bitIndex = (bitType == CLASSICAL) ? (row - circuitData.amountOfQubits) : row;
 		const std::string bitTypeText = (bitType == CLASSICAL) ? "c" : "q";
 		std::string label = bitTypeText + std::to_string(bitIndex);
 		Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
 
-		const unsigned int xGap = (layout.grid.cellSize - textDimensions.width) / 2;
-		const unsigned int yGap = (layout.grid.cellSize - textDimensions.height) / 2;
-		const unsigned int xLabel = structure.getBitLabelsX() + xGap;
-		const unsigned int yLabel = structure.getCellY(row) + yGap;
+		const int xGap = (layout.grid.cellSize - textDimensions.width) / 2;
+		const int yGap = (layout.grid.cellSize - textDimensions.height) / 2;
+		const int xLabel = structure.getBitLabelsX() + xGap;
+		const int yLabel = structure.getCellY(row) + yGap;
 
 		image.draw_text(xLabel, yLabel, label.c_str(), bitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
 	}
@@ -560,9 +560,9 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
 {
 	EndPoints bitLineEndPoints = structure.getBitLineEndPoints();
-	const unsigned int x0 = bitLineEndPoints.start;
-	const unsigned int x1 = bitLineEndPoints.end;
-	const unsigned int y = structure.getCellY(circuitData.amountOfQubits) + layout.grid.cellSize / 2;
+	const int x0 = bitLineEndPoints.start;
+	const int x1 = bitLineEndPoints.end;
+	const int y = structure.getCellY(circuitData.amountOfQubits) + layout.grid.cellSize / 2;
 
 	image.draw_line(x0, y - layout.bitLines.groupedClassicalLineGap, x1, y - layout.bitLines.groupedClassicalLineGap, layout.bitLines.cBitLineColor.data());
 	image.draw_line(x0, y + layout.bitLines.groupedClassicalLineGap, x1, y + layout.bitLines.groupedClassicalLineGap, layout.bitLines.cBitLineColor.data());
@@ -573,14 +573,14 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 
 	// const char* text = label.c_str();
 	// CImg<unsigned char> imageTextDimensions;
-	// const unsigned char color = 1;
+	// const char color = 1;
 	// imageTextDimensions.draw_text(0, 0, text, &color, 0, 1, layout.bitLines.fontHeight);
-	// const unsigned int textWidth = imageTextDimensions.width();
-	// const unsigned int textHeight = imageTextDimensions.height();
+	// const int textWidth = imageTextDimensions.width();
+	// const int textHeight = imageTextDimensions.height();
 
 	//TODO: fix these hardcoded parameters
-	const unsigned int xLabel = x0 + 8;
-	const unsigned int yLabel = y - layout.bitLines.groupedClassicalLineGap - 3 - 13;
+	const int xLabel = x0 + 8;
+	const int yLabel = y - layout.bitLines.groupedClassicalLineGap - 3 - 13;
 	image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.cBitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
 
 	// Draw the bit line label if enabled.
@@ -589,10 +589,10 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 		const std::string label = "C";
 		Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
 
-		const unsigned int xGap = (layout.grid.cellSize - textDimensions.width) / 2;
-		const unsigned int yGap = (layout.grid.cellSize - textDimensions.height) / 2;
-		const unsigned int xLabel = structure.getBitLabelsX() + xGap;
-		const unsigned int yLabel = structure.getCellY(circuitData.amountOfQubits) + yGap;
+		const int xGap = (layout.grid.cellSize - textDimensions.width) / 2;
+		const int yGap = (layout.grid.cellSize - textDimensions.height) / 2;
+		const int xLabel = structure.getBitLabelsX() + xGap;
+		const int yLabel = structure.getCellY(circuitData.amountOfQubits) + yGap;
 
 		image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.cBitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
 	}
@@ -624,7 +624,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		gateVisual = layout.defaultGateVisuals.at(gate->type());
 	}
 
-	const unsigned int amountOfOperands = calculateAmountOfGateOperands(gate);
+	const int amountOfOperands = calculateAmountOfGateOperands(gate);
 
 	// Check for correct amount of nodes.
 	if (amountOfOperands != gateVisual.nodes.size())
@@ -640,11 +640,11 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		// big line between the nodes and the nodes will be drawn on top of those.
 		// Note: does not work with transparent nodes! If those are ever implemented, the connection line drawing will need to be changed!
 
-		unsigned int minRow = -1; // maximum value of an unsigned int is equal to -1
-		unsigned int maxRow = 0;
-		for (unsigned int i = 0; i < gate->operands.size(); i++)
+		int minRow = std::numeric_limits<int>::max();
+		int maxRow = 0;
+		for (int i = 0; i < gate->operands.size(); i++)
 		{
-			const unsigned int operand = gate->operands.at(i);
+			const int operand = gate->operands.at(i);
 			if (operand < minRow)
 				minRow = operand;
 			if (operand > maxRow)
@@ -659,16 +659,16 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		}
 		else
 		{
-			for (unsigned int i = 0; i < gate->creg_operands.size(); i++)
+			for (int i = 0; i < gate->creg_operands.size(); i++)
 			{
-				const unsigned int operand = gate->creg_operands.at(i) + circuitData.amountOfQubits;
+				const int operand = gate->creg_operands.at(i) + circuitData.amountOfQubits;
 				if (operand < minRow)
 					minRow = operand;
 				if (operand > maxRow)
 					maxRow = operand;
 			}
 		}
-		const unsigned int column = (unsigned int)gate->cycle;
+		const int column = (int)gate->cycle;
 
 		Position4 connectionPosition =
 		{
@@ -683,7 +683,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		{
 			if (layout.measurements.drawConnection && layout.bitLines.showClassicalLines)
 			{
-				const unsigned groupedClassicalLineOffset = layout.bitLines.groupClassicalLines ? layout.bitLines.groupedClassicalLineGap : 0;
+				const int groupedClassicalLineOffset = layout.bitLines.groupClassicalLines ? layout.bitLines.groupedClassicalLineGap : 0;
 
 				image.draw_line(connectionPosition.x0 - layout.measurements.lineSpacing, connectionPosition.y0,
 					connectionPosition.x1 - layout.measurements.lineSpacing, connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset,
@@ -693,12 +693,12 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 					connectionPosition.x1 + layout.measurements.lineSpacing, connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset,
 					gateVisual.connectionColor.data());
 
-				const unsigned int x0 = connectionPosition.x1 - layout.measurements.arrowSize / 2;
-				const unsigned int y0 = connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset;
-				const unsigned int x1 = connectionPosition.x1 + layout.measurements.arrowSize / 2;
-				const unsigned int y1 = connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset;
-				const unsigned int x2 = connectionPosition.x1;
-				const unsigned int y2 = connectionPosition.y1 - groupedClassicalLineOffset;
+				const int x0 = connectionPosition.x1 - layout.measurements.arrowSize / 2;
+				const int y0 = connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset;
+				const int x1 = connectionPosition.x1 + layout.measurements.arrowSize / 2;
+				const int y1 = connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset;
+				const int x2 = connectionPosition.x1;
+				const int y2 = connectionPosition.y1 - groupedClassicalLineOffset;
 				image.draw_triangle(x0, y0, x1, y1, x2, y2, gateVisual.connectionColor.data(), 1);
 			}
 		}
@@ -713,20 +713,20 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	if (!layout.cycles.compressCycles && layout.cycles.showGateDurationOutline)
 	{
         DOUT("Drawing gate duration outline...");
-		const unsigned int gateDurationInCycles = ((unsigned int)gate->duration) / circuitData.cycleDuration;
+		const int gateDurationInCycles = ((int)gate->duration) / circuitData.cycleDuration;
 		// Only draw the gate outline if the gate takes more than one cycle.
 		if (gateDurationInCycles > 1)
 		{
-			for (unsigned int i = 0; i < amountOfOperands; i++)
+			for (int i = 0; i < amountOfOperands; i++)
 			{
-				const unsigned int columnStart = (unsigned int)gate->cycle;
-				const unsigned int columnEnd = columnStart + gateDurationInCycles - 1;
-				const unsigned int row = gate->operands[i];
+				const int columnStart = (int)gate->cycle;
+				const int columnEnd = columnStart + gateDurationInCycles - 1;
+				const int row = gate->operands[i];
 
-				const unsigned int x0 = structure.getCellX(columnStart) + layout.cycles.gateDurationGap;
-				const unsigned int y0 = structure.getCellY(row) + layout.cycles.gateDurationGap;
-				const unsigned int x1 = structure.getCellX(columnEnd + 1) - layout.cycles.gateDurationGap;
-				const unsigned int y1 = structure.getCellY(row + 1) - layout.cycles.gateDurationGap;
+				const int x0 = structure.getCellX(columnStart) + layout.cycles.gateDurationGap;
+				const int y0 = structure.getCellY(row) + layout.cycles.gateDurationGap;
+				const int x1 = structure.getCellX(columnEnd + 1) - layout.cycles.gateDurationGap;
+				const int y1 = structure.getCellY(row + 1) - layout.cycles.gateDurationGap;
 
 				// Draw the outline in the colors of the node.
 				const Node node = gateVisual.nodes.at(i);
@@ -741,7 +741,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 
 	// Draw the nodes.
     DOUT("Drawing gate nodes...");
-	for (unsigned int i = 0; i < amountOfOperands; i++)
+	for (int i = 0; i < amountOfOperands; i++)
 	{
         DOUT("Drawing gate node with index: " + std::to_string(i) + "...");
         //TODO: change the try-catch later on! the gate config will be read from somewhere else than the default layout
@@ -749,12 +749,12 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
         {
 		    const Node node = gateVisual.nodes.at(i);
             const BitType operandType = (i >= gate->operands.size()) ? CLASSICAL : QUANTUM;
-            const unsigned int index = (operandType == QUANTUM) ? i : (i - (unsigned int)gate->operands.size());
+            const int index = (operandType == QUANTUM) ? i : (i - (int)gate->operands.size());
 
 			const Cell cell =
 			{
-				(unsigned int)gate->cycle,
-	            operandType == CLASSICAL ? (unsigned int)gate->creg_operands.at(index) + circuitData.amountOfQubits : (unsigned int)gate->operands.at(index)
+				(int)gate->cycle,
+	            operandType == CLASSICAL ? (int)gate->creg_operands.at(index) + circuitData.amountOfQubits : (int)gate->operands.at(index)
 			};
 
             switch (node.type)
@@ -799,7 +799,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 
 void drawGateNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell)
 {
-	const unsigned int gap = (layout.grid.cellSize - node.radius * 2) / 2;
+	const int gap = (layout.grid.cellSize - node.radius * 2) / 2;
 	const Position4 position =
 	{
 		structure.getCellX(cell.col) + gap,
@@ -842,13 +842,13 @@ void drawNotNode(cimg_library::CImg<unsigned char>& image, const Layout layout, 
 	image.draw_circle(position.x, position.y, node.radius, node.backgroundColor.data(), 1, 0xFFFFFFFF);
 
 	// Draw two lines to represent the plus sign.
-	const unsigned int xHor0 = position.x - node.radius;
-	const unsigned int xHor1 = position.x + node.radius;
-	const unsigned int yHor = position.y;
+	const int xHor0 = position.x - node.radius;
+	const int xHor1 = position.x + node.radius;
+	const int yHor = position.y;
 
-	const unsigned int xVer = position.x;
-	const unsigned int yVer0 = position.y - node.radius;
-	const unsigned int yVer1 = position.y + node.radius;
+	const int xVer = position.x;
+	const int yVer0 = position.y - node.radius;
+	const int yVer1 = position.y + node.radius;
 
 	image.draw_line(xHor0, yHor, xHor1, yHor, node.backgroundColor.data());
 	image.draw_line(xVer, yVer0, xVer, yVer1, node.backgroundColor.data());
@@ -863,10 +863,10 @@ void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout
 	};
 
 	// Draw two diagonal lines to represent the cross.
-	const unsigned int x0 = position.x - node.radius;
-	const unsigned int y0 = position.y - node.radius;
-	const unsigned int x1 = position.x + node.radius;
-	const unsigned int y1 = position.y + node.radius;
+	const int x0 = position.x - node.radius;
+	const int y0 = position.y - node.radius;
+	const int x1 = position.x + node.radius;
+	const int y1 = position.y + node.radius;
 
 	image.draw_line(x0, y0, x1, y1, node.backgroundColor.data());
 	image.draw_line(x0, y1, x1, y0, node.backgroundColor.data());

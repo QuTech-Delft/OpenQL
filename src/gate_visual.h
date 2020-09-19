@@ -17,10 +17,10 @@ struct Node
 {
 	NodeType type;
 
-	unsigned int radius;
+	int radius;
 
 	std::string displayName;
-	unsigned int fontHeight;
+	int fontHeight;
 	std::array<unsigned char, 3> fontColor;
 
 	std::array<unsigned char, 3> backgroundColor;
