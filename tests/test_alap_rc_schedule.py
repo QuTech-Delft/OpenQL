@@ -19,7 +19,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option('output_dir', output_dir)
         ql.set_option('log_level', "LOG_NOTHING")
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_qwg(self):
         self.setUp()
         # parameters
@@ -46,7 +45,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_qwg2(self):
         self.setUp()
         # parameters
@@ -83,7 +81,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_issue179(self):
         self.setUp()
         # parameters
@@ -122,7 +119,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_edge(self):
         self.setUp()
         # parameters
@@ -152,7 +148,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_detuned(self):
         self.setUp()
         # parameters
@@ -187,7 +182,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_detuned2(self):
         self.setUp()
         # parameters
@@ -222,7 +216,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_adriaan(self):
         self.setUp()
         # parameters
@@ -257,7 +250,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_1(self):
         self.setUp()
         # parameters
@@ -304,7 +296,6 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_7(self):
         self.setUp()
         # parameters
