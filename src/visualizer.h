@@ -36,6 +36,8 @@ struct Cycles
 
 	// Whether the cycles should be compressed or gate duration outlines should be shown on the qubits.
 	bool compressCycles = false;
+	bool cutEmptyCycles = true;
+	int emptyCycleThreshold = 3;
 	bool showGateDurationOutline = true;
 	int gateDurationGap = 2;
 	float gateDurationAlpha = 0.1f;
@@ -175,7 +177,6 @@ struct Layout
 	};
 };
 
-//void visualize(const ql::quantum_program* program, const Layout layout);
 void visualize(const ql::quantum_program* program, const std::string& configPath);
 
 } // ql

@@ -21,19 +21,20 @@ The visualizer can be ran by adding the visualizer pass to the compiler and comp
 
     c.compile(program)
 
-The general visualization parameters are read from a configuration file. The path to this file should be added through a pass option
+The visualization parameters are read from a configuration file. The path to this file should be added through a pass option
 for the visualizer as seen above. If a parameter is missing from that file, the default hardcoded value contained in `src\visualizer.h` will be used instead.
 
 
 General visualization parameters
 --------------------------------
 
-The json config file containing the general visualization parameters has several sections:
+The json config file containing the visualization parameters has several sections:
 
 * ``cycles``: contains parameters that govern cycle labels, and general gate visualization
 * ``bitLines``: defines the labels and lines, including grouping lines for both quantum and classical bitLines
 * ``grid``: defines the overal structure of the visualization
 * ``measurements``: several parameters controlling measurement visualization
+* ``instructions``: a map of instruction types (the keys) with that type's gate visualization as value, used for custom instructions
 
 Example configuration:
 
@@ -127,16 +128,20 @@ Example configuration:
 
         // the size of the arrow at the end of the connection line that point to its classical operand
         "arrowSize": 10 
-    }
+    },
+    "instructions":
+        // discussed in the next section
 
 
 Custom gates
 ------------
 
-When using custom gates the default gate visualizations are not used and the visualization needs to be defined by the user.
-Take for example the following custom Hadamard gate defined on qubit 1:
+When using custom gates the default gate visualizations are not used and the visualization needs to be defined by the user. In the ``instructions``
+section of the visualizater configuration file, each instruction 'type' has its own corresponding description of gate visualization parameters.
+These instruction types are mapped to actual custom instructions from the hardware configuration file by including an additional attribute to each
+custom instruction, describing its visualization type:
 
-.. code:: json
+.. code: json
 
     {
         "h q1": {
@@ -150,9 +155,23 @@ Take for example the following custom Hadamard gate defined on qubit 1:
             "cc_light_instr": "h",
             "cc_light_codeword": 91,
             "cc_light_opcode": 9,
-            "visual": {
-                "connectionColor": [0, 0, 0],
-                "nodes": [
+            "visual_type": "h"
+        }
+    }
+
+This custom Hadamard gate defined on qubit 1 has one additional attribute ``visual_type`` describing its visualization type. The value of this 
+attribute links to a key in the visualizer configuration file, which has the description of the gate visualization parameters that will be used
+to visualize this custom instruction. Note that this allows multiple custom instructions to share the same visualization parameters, without having
+to duplicate the parameters.
+
+In the ``instructions`` section of the visualizer configuration file the gate visualization parameters are described like so:
+
+.. code:: json
+
+    {
+        "h": {
+            "connectionColor": [0, 0, 0],
+            "nodes": [
                 {
                     "type": "GATE",
                     "radius": 13,
@@ -162,12 +181,15 @@ Take for example the following custom Hadamard gate defined on qubit 1:
                     "backgroundColor": [70, 210, 230],
                     "outlineColor": [70, 210, 230]
                 }
-                ]
-            }
+            ]
         }
     }
 
-Note the new "visual" attribute, which defines the look of the custom gate. Each gate has a `connectionColor` which defines the color of the connection line for multi-operand gates, and an array of 'nodes'. A node is the visualization of the gate acting on a specific qubit or classical bit. If a Hadamard gate is acting on qubit 3, that is represented by one node. If a CNOT gate is acting on qubits 1 and 2, it will have two nodes, one describing the visualization of the CNOT gate at qubit 1 and one describing the visualization on qubit 2. A measurement gate measuring qubit 5 and storing the result in classical bit 0 will again have two nodes.
+Each gate has a `connectionColor` which defines the color of the connection line for multi-operand gates, and an array of 'nodes'.
+A node is the visualization of the gate acting on a specific qubit or classical bit. If a Hadamard gate is acting on qubit 3, that is
+represented by one node. If a CNOT gate is acting on qubits 1 and 2, it will have two nodes, one describing the visualization of the
+CNOT gate at qubit 1 and one describing the visualization on qubit 2. A measurement gate measuring qubit 5 and storing the result in
+classical bit 0 will again have two nodes.
 
 Each node has several attributes describing its visualization:
 
@@ -189,7 +211,8 @@ The type of the nodes can be one of the following:
 * ``NOT``: a circle outline with cross inside (a CNOT cross)
 * ``CROSS``: a diagonal cross
 
-When a gate has multiple operands, each operand should have a node associated with it. Simply create as many nodes in the `nodes` array as there are operands and define a type and visual parameters for it. Don't forget the comma to seperate each node in the array.
+When a gate has multiple operands, each operand should have a node associated with it. Simply create as many nodes in the `nodes` array as
+there are operands and define a type and visual parameters for it. Don't forget the comma to seperate each node in the array.
 
 
 Future work

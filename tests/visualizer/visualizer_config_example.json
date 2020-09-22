@@ -8,6 +8,8 @@
         "fontColor": [0, 0, 0],
 
         "compressCycles": false,
+        "cutEmptyCycles": true,
+        "emptyCycleThreshold": 2,
         "showGateDurationOutline": true,
         "gateDurationGap": 2,
         "gateDurationAlpha": 0.1,

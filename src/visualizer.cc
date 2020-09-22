@@ -30,11 +30,12 @@ namespace ql
 
 // -- IN PROGRESS ---
 // add option to cut down the duration of a specific gate in visualization
+// 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
+// add cutEmptyCycles and emptyCycleThreshold to the documentation
 
 // --- FUTURE WORK ---
 // TODO: the visualizer should probably be a class
 // TODO: when gate is skipped due to whatever reason, maybe show a dummy gate outline indicating where the gate is?
-// TODO: 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
 // TODO: display wait/barrier gate (need wait gate fix first)
 // TODO: fix overlapping connections for multiqubit gates/measurements
 // TODO: representing the gates as waveforms (see andreas paper for examples)
@@ -52,7 +53,6 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
 #else
 
-using namespace cimg_library;
 using json = nlohmann::json;
 
 Structure::Structure(const Layout layout, const CircuitData circuitData) : layout(layout), circuitData(circuitData)
@@ -138,6 +138,12 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		compressCycles(gates, amountOfCycles);
 	}
 
+	// todo
+	if (layout.cycles.cutEmptyCycles)
+	{
+		cutEmptyCycles(gates, layout);
+	}
+
 	// Calculate amount of qubits and classical bits.
     DOUT("Calculating amount of qubits and classical bits...");
 	fixMeasurementOperands(gates); // fixes measurement gates without classical operands
@@ -152,7 +158,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	// Initialize image.
     DOUT("Initializing image...");
 	const int numberOfChannels = 3;
-	CImg<unsigned char> image(structure.getImageWidth(), structure.getImageHeight(), 1, numberOfChannels);
+	cimg_library::CImg<unsigned char> image(structure.getImageWidth(), structure.getImageHeight(), 1, numberOfChannels);
 	image.fill(255);
 
 	// Draw the cycle labels if the option has been set.
@@ -230,6 +236,8 @@ Layout parseConfiguration(const std::string& configPath)
 		layout.cycles.fontColor = config["cycles"].value("fontColor", layout.cycles.fontColor);
 
 		layout.cycles.compressCycles = config["cycles"].value("compressCycles", layout.cycles.compressCycles);
+		layout.cycles.cutEmptyCycles = config["cycles"].value("cutEmptyCycles", layout.cycles.cutEmptyCycles);
+		layout.cycles.emptyCycleThreshold = config["cycles"].value("emptyCycleThreshold", layout.cycles.emptyCycleThreshold);
 		layout.cycles.showGateDurationOutline = config["cycles"].value("showGateDurationOutline", layout.cycles.showGateDurationOutline);
 		layout.cycles.gateDurationGap = config["cycles"].value("gateDurationGap", layout.cycles.gateDurationGap);
 		layout.cycles.gateDurationAlpha = config["cycles"].value("gateDurationAlpha", layout.cycles.gateDurationAlpha);
@@ -458,6 +466,18 @@ void compressCycles(const std::vector<ql::gate*> gates, int& amountOfCycles)
 	DOUT("amount of cycles after compression: " << amountOfCycles);
 }
 
+void cutEmptyCycles(const std::vector<ql::gate*> gates, const Layout layout)
+{
+	std::vector<int> emptyCycles;
+
+	//layout.cycles.emptyCycleThreshold;
+
+	for (auto emptyCycle : emptyCycles)
+	{
+		IOUT(emptyCycle);
+	}
+}
+
 void fixMeasurementOperands(const std::vector<ql::gate*> gates)
 {
 	for (gate* gate : gates)
@@ -485,7 +505,7 @@ bool isMeasurement(const ql::gate* gate)
 Dimensions calculateTextDimensions(const std::string& text, const int fontHeight, const Layout layout)
 {
 	const char* chars = text.c_str();
-	CImg<unsigned char> imageTextDimensions;
+	cimg_library::CImg<unsigned char> imageTextDimensions;
 	const char color = 1;
 	imageTextDimensions.draw_text(0, 0, chars, &color, 0, 1, fontHeight);
 
@@ -769,6 +789,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
         }
         catch (const std::out_of_range& e)
         {
+			WOUT(std::string(e.what()));
             return;
         }
 		

@@ -98,6 +98,7 @@ int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<
 int calculateAmountOfCycles(const std::vector<ql::gate*> gates, const int cycleDuration);
 int calculateAmountOfGateOperands(const ql::gate* gate);
 void compressCycles(const std::vector<ql::gate*> gates, int& amountOfCycles);
+void cutEmptyCycles(const std::vector<ql::gate*> gates, const Layout layout);
 
 void fixMeasurementOperands(const std::vector<ql::gate*> gates);
 bool isMeasurement(const ql::gate* gate);
