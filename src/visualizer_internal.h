@@ -74,11 +74,14 @@ class Structure
 		int labelColumnWidth;
 		int cycleNumbersRowHeight;
 
+		std::vector<int> cutCycles;
+
 		const Layout layout;
 		const CircuitData circuitData;
+		const std::vector<EndPoints> cutCycleRanges;
 
 	public:
-		Structure(const Layout layout, const CircuitData circuitData);
+		Structure(const Layout layout, const CircuitData circuitData, const std::vector<EndPoints> cutCycleRanges);
 
 		int getImageWidth() const;
 		int getImageHeight() const;
@@ -92,13 +95,13 @@ class Structure
 };
 
 Layout parseConfiguration(const std::string& configPath);
-void validateLayout(const Layout layout);
+void validateLayout(Layout& layout);
 
 int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType);
 int calculateAmountOfCycles(const std::vector<ql::gate*> gates, const int cycleDuration);
 int calculateAmountOfGateOperands(const ql::gate* gate);
 void compressCycles(const std::vector<ql::gate*> gates, int& amountOfCycles);
-void cutEmptyCycles(const std::vector<ql::gate*> gates, const Layout layout);
+std::vector<EndPoints> findCuttableEmptyRanges(const std::vector<ql::gate*> gates, const Layout layout, const int amountOfCycles);
 
 void fixMeasurementOperands(const std::vector<ql::gate*> gates);
 bool isMeasurement(const ql::gate* gate);
