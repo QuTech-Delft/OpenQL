@@ -295,8 +295,8 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
 Where:
 
 * ``name`` a friendly name for the instrument
-* ``ref_instrument_definition`` selects record under 'instrument_definitions', which must exits or an error is raised
-* ``ref_control_mode`` selects record under 'control_modes', which must exits or an error is raised
+* ``ref_instrument_definition`` selects record under 'instrument_definitions', which must exist or an error is raised
+* ``ref_control_mode`` selects record under 'control_modes', which must exist or an error is raised
 * ``signal_type`` defines which signal type this instrument instance provides.
 .. FIXME: describe matching process against 'signals/*/type'
 * ``qubits`` G groups of 1 or more qubits. G must match one of the available group sizes of 'instrument_definitions/<ref_instrument_definition>/control_group_sizes'. If more than 1 qubits are stated per group - e.g. for an AWG used in conjunction with a VSM - they may not produce conflicting signals at any time slot, or an error is raised

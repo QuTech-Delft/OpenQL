@@ -410,4 +410,3 @@ void eqasm_backend_cc::load_hw_settings(const ql::quantum_platform &platform)
 
 } // arch
 } // ql
-

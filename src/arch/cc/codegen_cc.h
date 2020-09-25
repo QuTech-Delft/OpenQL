@@ -16,7 +16,8 @@
 #define OPT_VCD_OUTPUT                  1   // output Value Change Dump file for GTKWave viewer
 #define OPT_RUN_ONCE                    0   // 0=loop indefinitely (CC-light emulation)
 #define OPT_CALCULATE_LATENCIES         0   // fixed compensation based on instrument latencies
-#define OPT_OLD_SEQBAR_SEMANTICS        0   // support old semantics of seqbar instruction
+#define OPT_OLD_SEQBAR_SEMANTICS        0   // support old semantics of seqbar instruction. Will be deprecated
+#define OPT_FEEDBACK                    0   // feedback support. Coming feature
 
 #include "json.h"
 #include "platform.h"
@@ -43,7 +44,7 @@ private: // types
     typedef struct {
         std::string signalValue;
         unsigned int durationInNs;
-        int readoutCop;             // NB: we encode 'unused' as -1
+        int readoutCop;             // classic operand for readout. NB: we encode 'unused' as -1
 #if OPT_SUPPORT_STATIC_CODEWORDS
         int staticCodewordOverride;
 #endif
@@ -55,8 +56,8 @@ public:
 
     // Generic
     void init(const ql::quantum_platform &platform);
-    std::string getCode();
-    std::string getMap();
+    std::string getCode();                              // return the CC source code that was created
+    std::string getMap();                               // return a map of codeword assignments, useful for configuring AWGs
 
     void program_start(const std::string &progName);
     void program_finish(const std::string &progName);
@@ -82,13 +83,15 @@ public:
     void do_while_start(const std::string &label);
     void do_while_end(const std::string &label, size_t op0, const std::string &opName, size_t op1);
 
+#if 0   // FIXME: unused and incomplete
     // Classical arithmetic instructions
     void add();
     // FIXME: etc
+#endif
 
 private:    // vars
-    static const int MAX_SLOTS = 12;
-    static const int MAX_GROUPS = 32;                           // enough for VSM
+    static const int MAX_SLOTS = 12;                            // physical maximum of CC
+    static const int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
 
     bool verboseCode = true;                                    // output extra comments in generated code. FIXME: not yet configurable
     bool mapPreloaded = false;
@@ -98,7 +101,9 @@ private:    // vars
     // codegen state
     std::vector<std::vector<tGroupInfo>> groupInfo;             // matrix[instrIdx][group]
     json codewordTable;                                         // codewords versus signals per instrument group
+#if OPT_FEEDBACK
     json inputLutTable;                                         // input LUT usage per instrument group
+#endif
     unsigned int lastEndCycle[MAX_SLOTS];
 
     // some JSON nodes we need access to
@@ -127,7 +132,7 @@ private:    // funcs
     void emit(const char *label, const char *instr, const std::string &qops, const char *comment="");
 
     // helpers
-    void latencyCompensation();
+    void emitProgramStart();
     void padToCycle(size_t lastEndCycle, size_t startCycle, int slot, const std::string &instrumentName);
     uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
 
