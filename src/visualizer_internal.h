@@ -92,6 +92,8 @@ class Structure
 		int getCycleLabelsY() const;
 		int getBitLabelsX() const;
 		EndPoints Structure::getBitLineEndPoints() const;
+
+		void printProperties() const;
 };
 
 Layout parseConfiguration(const std::string& configPath);

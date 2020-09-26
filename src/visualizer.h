@@ -38,6 +38,7 @@ struct Cycles
 	bool compressCycles = false;
 	bool cutEmptyCycles = true;
 	int emptyCycleThreshold = 3;
+	int cutCycleWidth = 16;
 	bool showGateDurationOutline = true;
 	int gateDurationGap = 2;
 	float gateDurationAlpha = 0.1f;

@@ -60,51 +60,35 @@ Structure::Structure(const Layout layout, const CircuitData circuitData, const s
 {
     DOUT("Calculating image properties...");
 	
-	// Calculate the amount of displayed cycles.
-	// int amountOfCutCycles = 0;
-	// for (const auto& range : cutCycleRanges)
-	// {
-	// 	amountOfCutCycles += range.end - range.start + 1;
-	// 	// Add each cycle in the range to the vector with cut cycles for later use.
-	// 	for (int i = range.start; i <= range.end; i++)
-	// 	{
-	// 		cutCycles.push_back(i);
-	// 	}
-	// }
-	// const int amountOfDisplayedCycles = circuitData.amountOfCycles - amountOfCutCycles;
+	labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
+	cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0;
 
-	// Calculate image width based on amount of total and displayed cycles.
-	// imageWidth = (layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0) + 
-	// amountOfDisplayedCycles * layout.grid.cellSize + 
-	// (circuitData.amountOfCycles - amountOfDisplayedCycles) * layout.grid.cellSize / 2 + 
-	// 2 * layout.grid.borderSize;
+	// Calculate the amount of displayed cycles.
+	int amountOfCutCycles = 0;
+	for (const auto& range : cutCycleRanges)
+	{
+		amountOfCutCycles += range.end - range.start + 1;
+		// Add each cycle in the range to the vector with cut cycles for later use.
+		for (int i = range.start; i <= range.end; i++)
+		{
+			cutCycles.push_back(i);
+		}
+	}
 
 	int widthFromCycles = 0;
 	if (layout.cycles.cutEmptyCycles)
 	{
-		widthFromCycles = cutCycleRanges.size() * layout.grid.cellSize +
-			(circuitData.amountOfCycles - cutCycleRanges.size()) * layout.grid.cellSize / 2;
+		widthFromCycles = cutCycleRanges.size() * layout.cycles.cutCycleWidth + (circuitData.amountOfCycles - amountOfCutCycles) * layout.grid.cellSize;
 	}
 	else
 	{
 		widthFromCycles = circuitData.amountOfCycles * layout.grid.cellSize;
 	}
-
-	imageWidth = 2 * layout.grid.borderSize + 
-		(layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0) + 
-		widthFromCycles;
-
-	// imageWidth = (layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0) + 
-	// 	cutCycleRanges.size() * layout.grid.cellSize + 
-	// 	(circuitData.amountOfCycles - cutCycleRanges.size()) * layout.grid.cellSize / 2 + 
-	// 	2 * layout.grid.borderSize;
+	imageWidth = layout.grid.borderSize * 2 + labelColumnWidth + widthFromCycles;
 
 	// Calculate image height based on amount of quantum and classical bits.
 	const int amountOfRows = circuitData.amountOfQubits + (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits);
 	imageHeight = (layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0) + amountOfRows * layout.grid.cellSize + 2 * layout.grid.borderSize;
-
-	labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
-	cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0;
 }
 
 int Structure::getImageWidth() const
@@ -119,31 +103,27 @@ int Structure::getImageHeight() const
 
 int Structure::getCellX(const int col) const
 {
-	// int cutCyclesBeforeColumn = 0;
-	// for (const int cutCycle : cutCycles)
-	// {
-	// 	if (cutCycle < col)
-	// 	{
-	// 		cutCyclesBeforeColumn++;
-	// 	}
-	// }
-
-		// return layout.grid.borderSize + labelColumnWidth + 
-		// cutCyclesBeforeColumn * layout.grid.cellSize / 2 + 
-		// (col - cutCyclesBeforeColumn) * layout.grid.cellSize;
-
-	int cutCycleRangesBeforeColumn = 0;
-	for (const auto& range : cutCycleRanges)
+	int widthFromCycles = 0;
+	if (layout.cycles.cutEmptyCycles)
 	{
-		if (col >= range.start && col <= range.end)
+		int cutCycleRangesBeforeColumn = 0;
+		int cutCyclesBeforeColumn = 0;
+		for (const auto& range : cutCycleRanges)
 		{
-			cutCycleRangesBeforeColumn++;
+			if (col > range.end)
+			{
+				cutCycleRangesBeforeColumn++;
+				cutCyclesBeforeColumn += range.end - range.start + 1;
+			}
 		}
+		widthFromCycles = (col - cutCyclesBeforeColumn) * layout.grid.cellSize + cutCycleRangesBeforeColumn * layout.cycles.cutCycleWidth;
+	}
+	else
+	{
+		widthFromCycles = col * layout.grid.cellSize;
 	}
 
-	return layout.grid.borderSize + labelColumnWidth + 
-		cutCycleRangesBeforeColumn * layout.grid.cellSize / 2 + 
-		(col - cutCycleRangesBeforeColumn) * layout.grid.cellSize;
+	return layout.grid.borderSize + labelColumnWidth + widthFromCycles;
 }
 
 int Structure::getCellY(const int row) const
@@ -168,6 +148,37 @@ EndPoints Structure::getBitLineEndPoints() const
 	const int x1 = getBitLabelsX() + labelColumnWidth + circuitData.amountOfCycles * layout.grid.cellSize;
 
 	return EndPoints { x0, x1 };
+}
+
+void Structure::printProperties() const
+{
+	IOUT("-------------------------------------------------------------------------------");
+	IOUT("IMAGE PROPERTIES:");
+	IOUT("image width: " << imageWidth);
+	IOUT("image height: " << imageHeight);
+	IOUT("-------------------------------------------------------------------------------");
+	IOUT("CUT CYCLES:");
+	for (const int cycle : cutCycles)
+	{
+		IOUT(cycle);
+	}
+	IOUT("-------------------------------------------------------------------------------");
+	IOUT("CYCLE POSITIONS:");
+	for (int i = 0; i < circuitData.amountOfCycles; i++)
+	{
+		IOUT("cycle: " << i << ", x: " << getCellX(i));
+	}
+	IOUT("-------------------------------------------------------------------------------");
+	// IOUT("BIT LINE POSITIONS:");
+	// for (int i = 0; i < circuitData.amountOfQubits; i++)
+	// {
+	// 	IOUT("qbit line: " << i << ", y: " << getCellY(i));
+	// }
+	// for (int i = circuitData.amountOfQubits; i < circuitData.amountOfQubits + circuitData.amountOfClassicalBits; i++)
+	// {
+	// 	IOUT("cbit line: " << (i - circuitData.amountOfQubits) << ", y: " << getCellY(i));
+	// }
+	// IOUT("-------------------------------------------------------------------------------");
 }
 
 void visualize(const ql::quantum_program* program, const std::string& configPath)
@@ -219,6 +230,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	// Initialize the structure of the visualization.
 	DOUT("Initializing visualization structure...");
 	Structure structure(layout, circuitData, cutCycleRanges);
+	structure.printProperties();
 	
 	// Initialize image.
     DOUT("Initializing image...");
@@ -303,6 +315,7 @@ Layout parseConfiguration(const std::string& configPath)
 		layout.cycles.compressCycles = config["cycles"].value("compressCycles", layout.cycles.compressCycles);
 		layout.cycles.cutEmptyCycles = config["cycles"].value("cutEmptyCycles", layout.cycles.cutEmptyCycles);
 		layout.cycles.emptyCycleThreshold = config["cycles"].value("emptyCycleThreshold", layout.cycles.emptyCycleThreshold);
+		layout.cycles.cutCycleWidth = config["cycles"].value("cutCycleWidth", layout.cycles.cutCycleWidth);
 		layout.cycles.showGateDurationOutline = config["cycles"].value("showGateDurationOutline", layout.cycles.showGateDurationOutline);
 		layout.cycles.gateDurationGap = config["cycles"].value("gateDurationGap", layout.cycles.gateDurationGap);
 		layout.cycles.gateDurationAlpha = config["cycles"].value("gateDurationAlpha", layout.cycles.gateDurationAlpha);

@@ -10,6 +10,7 @@
         "compressCycles": false,
         "cutEmptyCycles": true,
         "emptyCycleThreshold": 1,
+        "cutCycleWidth": 16,
         "showGateDurationOutline": true,
         "gateDurationGap": 2,
         "gateDurationAlpha": 0.1,
