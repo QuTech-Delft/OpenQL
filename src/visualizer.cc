@@ -27,10 +27,10 @@ namespace ql
 // implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
 // change IOUT to DOUT (IOUT is used to avoid debug information from other source files while developing the visualizer!)
 // visual_type attribute instead of full visual attribute in hw config file, links to seperate visualization config file where details of that visual type are detailed
+// 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
 
 // -- IN PROGRESS ---
-// add option to cut down the duration of a specific gate in visualization
-// 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
+// add bit line zigzag indicating a cut cycle range
 // add cutEmptyCycles and emptyCycleThreshold to the documentation
 
 // --- FUTURE WORK ---
@@ -89,6 +89,40 @@ Structure::Structure(const Layout layout, const CircuitData circuitData, const s
 	// Calculate image height based on amount of quantum and classical bits.
 	const int amountOfRows = circuitData.amountOfQubits + (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits);
 	imageHeight = (layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0) + amountOfRows * layout.grid.cellSize + 2 * layout.grid.borderSize;
+
+	// Calculate the bit line segments.
+	DOUT("Calculating bit line segments...");
+	for (int i = 0; i < circuitData.amountOfCycles; i++)
+	{
+		bool cut = isCycleCut(i);
+		bool reachedEnd = false;
+
+		// Add more cycles to the segment until we reach a cycle that is cut if the current segment is not cut, or vice versa.
+		for (int j = i; j < circuitData.amountOfCycles; j++)
+		{
+			if (isCycleCut(j) != cut)
+			{
+				const int start = getCellX(i);
+				const int end = getCellX(j);
+				DOUT("segment > range: [" << i << "," << (j - 1) << "], " << "position: [" << start << "," << end << "], cut: " << cut);
+				bitLineSegments.push_back({{start, end}, cut});
+				i = j - 1;
+				break;
+			}
+
+			// Check if the last cycle has been reached, and exit the calculation if so.
+			if (j == circuitData.amountOfCycles - 1)
+			{
+				const int start = getCellX(i);
+				const int end = getCellX(j + 1);
+				DOUT("segment > range: [" << i << "," << j << "], " << "position: [" << start << "," << end << "], cut: " << cut);
+				bitLineSegments.push_back({{start, end}, cut});
+				reachedEnd = true;
+			}
+		}
+
+		if (reachedEnd) break;
+	}
 }
 
 int Structure::getImageWidth() const
@@ -167,34 +201,30 @@ int Structure::getBitLabelsX() const
 	return layout.grid.borderSize;
 }
 
-EndPoints Structure::getBitLineEndPoints() const
+std::vector<std::pair<EndPoints, bool>> Structure::getBitLineSegments() const
 {
-	const int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
-	const int x0 = getBitLabelsX() + labelColumnWidth;
-	const int x1 = getBitLabelsX() + labelColumnWidth + circuitData.amountOfCycles * layout.grid.cellSize;
-
-	return EndPoints { x0, x1 };
+	return bitLineSegments;
 }
 
 void Structure::printProperties() const
 {
-	IOUT("-------------------------------------------------------------------------------");
-	IOUT("IMAGE PROPERTIES:");
-	IOUT("image width: " << imageWidth);
-	IOUT("image height: " << imageHeight);
-	IOUT("-------------------------------------------------------------------------------");
-	IOUT("CUT CYCLES:");
+	DOUT("-------------------------------------------------------------------------------");
+	DOUT("IMAGE PROPERTIES:");
+	DOUT("image width: " << imageWidth);
+	DOUT("image height: " << imageHeight);
+	DOUT("-------------------------------------------------------------------------------");
+	DOUT("CUT CYCLES:");
 	for (const int cycle : cutCycles)
 	{
-		IOUT(cycle);
+		DOUT(cycle);
 	}
-	IOUT("-------------------------------------------------------------------------------");
-	IOUT("CYCLE POSITIONS:");
+	DOUT("-------------------------------------------------------------------------------");
+	DOUT("CYCLE POSITIONS:");
 	for (int i = 0; i < circuitData.amountOfCycles; i++)
 	{
-		IOUT("cycle: " << i << ", x: " << getCellX(i));
+		DOUT("cycle: " << i << ", x: " << getCellX(i));
 	}
-	IOUT("-------------------------------------------------------------------------------");
+	DOUT("-------------------------------------------------------------------------------");
 	// IOUT("BIT LINE POSITIONS:");
 	// for (int i = 0; i < circuitData.amountOfQubits; i++)
 	// {
@@ -707,11 +737,6 @@ void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layo
 
 void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, const BitType bitType, const int row, const CircuitData circuitData, const Structure structure)
 {
-	EndPoints bitLineEndPoints = structure.getBitLineEndPoints();
-	const int x0 = bitLineEndPoints.start;
-	const int x1 = bitLineEndPoints.end;
-	const int y = structure.getCellY(row) + layout.grid.cellSize / 2;
-
 	std::array<unsigned char, 3> bitLineColor;
 	std::array<unsigned char, 3> bitLabelColor;
 	switch (bitType)
@@ -726,7 +751,21 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 			break;
 	}
 
-	image.draw_line(x0, y, x1, y, bitLineColor.data());
+	for (const std::pair<EndPoints, bool>& segment : structure.getBitLineSegments())
+	{
+		// Check if the segment is a cut segment.
+		if (segment.second == true)
+		{
+			std::array<unsigned char, 3> color = {{ 255, 0, 0 }};
+			const int y = structure.getCellY(row) + layout.grid.cellSize / 2;
+			image.draw_line(segment.first.start, y, segment.first.end, y, color.data());
+		}
+		else
+		{
+			const int y = structure.getCellY(row) + layout.grid.cellSize / 2;
+			image.draw_line(segment.first.start, y, segment.first.end, y, bitLineColor.data());
+		}
+	}
 
 	// Draw the bit line label if enabled.
 	if (layout.bitLines.drawLabels)
@@ -747,27 +786,36 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 
 void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
 {
-	EndPoints bitLineEndPoints = structure.getBitLineEndPoints();
-	const int x0 = bitLineEndPoints.start;
-	const int x1 = bitLineEndPoints.end;
 	const int y = structure.getCellY(circuitData.amountOfQubits) + layout.grid.cellSize / 2;
+	
+	// Draw the segments of the double line.
+	for (const std::pair<EndPoints, bool>& segment : structure.getBitLineSegments())
+	{
+		// Check if the segment is a cut segment.
+		if (segment.second == true)
+		{
+			std::array<unsigned char, 3> color = {{ 255, 0, 0 }};
+			image.draw_line(segment.first.start, y - layout.bitLines.groupedClassicalLineGap, 
+				segment.first.end, y - layout.bitLines.groupedClassicalLineGap, color.data());
+			image.draw_line(segment.first.start, y + layout.bitLines.groupedClassicalLineGap, 
+				segment.first.end, y + layout.bitLines.groupedClassicalLineGap, color.data());	
+		}
+		else
+		{
+			image.draw_line(segment.first.start, y - layout.bitLines.groupedClassicalLineGap, 
+				segment.first.end, y - layout.bitLines.groupedClassicalLineGap, layout.bitLines.cBitLineColor.data());
+			image.draw_line(segment.first.start, y + layout.bitLines.groupedClassicalLineGap, 
+				segment.first.end, y + layout.bitLines.groupedClassicalLineGap, layout.bitLines.cBitLineColor.data());	
+		}
+	}
 
-	image.draw_line(x0, y - layout.bitLines.groupedClassicalLineGap, x1, y - layout.bitLines.groupedClassicalLineGap, layout.bitLines.cBitLineColor.data());
-	image.draw_line(x0, y + layout.bitLines.groupedClassicalLineGap, x1, y + layout.bitLines.groupedClassicalLineGap, layout.bitLines.cBitLineColor.data());
+	// Draw the dashed line plus classical bit amount number on the first segment.
+	std::pair<EndPoints, bool> firstSegment = structure.getBitLineSegments()[0];
 	//TODO: store the dashed line parameters in the layout object
-	image.draw_line(x0 + 8, y + layout.bitLines.groupedClassicalLineGap + 2, x0 + 12, y - layout.bitLines.groupedClassicalLineGap - 3, layout.bitLines.cBitLineColor.data());
-	//TODO: draw a number indicating the amount of classical lines that are grouped
+	image.draw_line(firstSegment.first.start + 8, y + layout.bitLines.groupedClassicalLineGap + 2, firstSegment.first.start + 12, y - layout.bitLines.groupedClassicalLineGap - 3, layout.bitLines.cBitLineColor.data());
 	const std::string label = std::to_string(circuitData.amountOfClassicalBits);
-
-	// const char* text = label.c_str();
-	// CImg<unsigned char> imageTextDimensions;
-	// const char color = 1;
-	// imageTextDimensions.draw_text(0, 0, text, &color, 0, 1, layout.bitLines.fontHeight);
-	// const int textWidth = imageTextDimensions.width();
-	// const int textHeight = imageTextDimensions.height();
-
 	//TODO: fix these hardcoded parameters
-	const int xLabel = x0 + 8;
+	const int xLabel = firstSegment.first.start + 8;
 	const int yLabel = y - layout.bitLines.groupedClassicalLineGap - 3 - 13;
 	image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.cBitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
 

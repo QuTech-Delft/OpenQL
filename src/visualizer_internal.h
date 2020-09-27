@@ -75,6 +75,7 @@ class Structure
 		int cycleNumbersRowHeight;
 
 		std::vector<int> cutCycles;
+		std::vector<std::pair<EndPoints, bool>> bitLineSegments;
 
 		const Layout layout;
 		const CircuitData circuitData;
@@ -93,7 +94,8 @@ class Structure
 
 		int getCycleLabelsY() const;
 		int getBitLabelsX() const;
-		EndPoints Structure::getBitLineEndPoints() const;
+		// EndPoints Structure::getBitLineEndPoints() const;
+		std::vector<std::pair<EndPoints, bool>> getBitLineSegments() const;
 
 		void printProperties() const;
 };
