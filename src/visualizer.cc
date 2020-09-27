@@ -756,9 +756,13 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 		// Check if the segment is a cut segment.
 		if (segment.second == true)
 		{
-			std::array<unsigned char, 3> color = {{ 255, 0, 0 }};
 			const int y = structure.getCellY(row) + layout.grid.cellSize / 2;
-			image.draw_line(segment.first.start, y, segment.first.end, y, color.data());
+			const int height = layout.grid.cellSize / 8;
+			const int width = segment.first.end - segment.first.start;
+			
+			image.draw_line(segment.first.start,					y,			segment.first.start + width / 3,		y - height,	bitLineColor.data());
+			image.draw_line(segment.first.start + width / 3,		y - height,	segment.first.start + width / 3 * 2,	y + height,	bitLineColor.data());
+			image.draw_line(segment.first.start + width / 3 * 2,	y + height,	segment.first.end,						y,			bitLineColor.data());
 		}
 		else
 		{
@@ -787,18 +791,35 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
 {
 	const int y = structure.getCellY(circuitData.amountOfQubits) + layout.grid.cellSize / 2;
-	
+
 	// Draw the segments of the double line.
 	for (const std::pair<EndPoints, bool>& segment : structure.getBitLineSegments())
 	{
 		// Check if the segment is a cut segment.
 		if (segment.second == true)
 		{
-			std::array<unsigned char, 3> color = {{ 255, 0, 0 }};
-			image.draw_line(segment.first.start, y - layout.bitLines.groupedClassicalLineGap, 
-				segment.first.end, y - layout.bitLines.groupedClassicalLineGap, color.data());
-			image.draw_line(segment.first.start, y + layout.bitLines.groupedClassicalLineGap, 
-				segment.first.end, y + layout.bitLines.groupedClassicalLineGap, color.data());	
+			const int height = layout.grid.cellSize / 8;
+			const int width = segment.first.end - segment.first.start;
+			
+			image.draw_line(segment.first.start, y - layout.bitLines.groupedClassicalLineGap,
+							segment.first.start + width / 3, y - height - layout.bitLines.groupedClassicalLineGap,
+							layout.bitLines.cBitLineColor.data());
+			image.draw_line(segment.first.start + width / 3, y - height - layout.bitLines.groupedClassicalLineGap,
+							segment.first.start + width / 3 * 2, y + height - layout.bitLines.groupedClassicalLineGap,
+							layout.bitLines.cBitLineColor.data());
+			image.draw_line(segment.first.start + width / 3 * 2, y + height - layout.bitLines.groupedClassicalLineGap,
+							segment.first.end, y - layout.bitLines.groupedClassicalLineGap,
+							layout.bitLines.cBitLineColor.data());
+
+			image.draw_line(segment.first.start, y + layout.bitLines.groupedClassicalLineGap,
+							segment.first.start + width / 3, y - height + layout.bitLines.groupedClassicalLineGap,
+							layout.bitLines.cBitLineColor.data());
+			image.draw_line(segment.first.start + width / 3, y - height + layout.bitLines.groupedClassicalLineGap,
+							segment.first.start + width / 3 * 2, y + height + layout.bitLines.groupedClassicalLineGap,
+							layout.bitLines.cBitLineColor.data());
+			image.draw_line(segment.first.start + width / 3 * 2, y + height + layout.bitLines.groupedClassicalLineGap,
+							segment.first.end, y + layout.bitLines.groupedClassicalLineGap,
+							layout.bitLines.cBitLineColor.data());
 		}
 		else
 		{
