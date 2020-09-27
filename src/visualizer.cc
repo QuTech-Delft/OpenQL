@@ -101,6 +101,32 @@ int Structure::getImageHeight() const
 	return imageHeight;
 }
 
+bool Structure::isCycleCut(const int cycle) const
+{
+	for (const int cutCycle : cutCycles)
+	{
+		if (cycle == cutCycle)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool Structure::isCycleFirstInCutRange(const int cycle) const
+{
+	for (const EndPoints& range : cutCycleRanges)
+	{
+		if (cycle == range.start)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 int Structure::getCellX(const int col) const
 {
 	int widthFromCycles = 0;
@@ -644,20 +670,34 @@ void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layo
 {
 	for (int i = 0; i < circuitData.amountOfCycles; i++)
 	{
-		std::string cycleLabel;
-		if (layout.cycles.showCyclesInNanoSeconds)
+		std::string cycleLabel = "";
+		int cellWidth = 0;
+		if (structure.isCycleCut(i))
 		{
-			cycleLabel = std::to_string(i * circuitData.cycleDuration);
+			if (!structure.isCycleFirstInCutRange(i))
+			{
+				continue;
+			}
+			cellWidth = layout.cycles.cutCycleWidth;
+			cycleLabel = "...";
 		}
 		else
 		{
-			cycleLabel = std::to_string(i);
+			cellWidth = layout.grid.cellSize;
+			if (layout.cycles.showCyclesInNanoSeconds)
+			{
+				cycleLabel = std::to_string(i * circuitData.cycleDuration);
+			}
+			else
+			{
+				cycleLabel = std::to_string(i);
+			}
 		}
-		
+
 		Dimensions textDimensions = calculateTextDimensions(cycleLabel, layout.cycles.fontHeight, layout);
 
-		const int xGap = (layout.grid.cellSize - textDimensions.width) / 2;
-		const int yGap = (layout.grid.cellSize - textDimensions.height) / 2;
+		const int xGap = (cellWidth - textDimensions.width) / 2;
+		const int yGap = (layout.cycles.rowHeight - textDimensions.height) / 2;
 		const int xCycle = structure.getCellX(i) + xGap;
 		const int yCycle = structure.getCycleLabelsY() + yGap;
 

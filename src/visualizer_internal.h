@@ -86,6 +86,8 @@ class Structure
 		int getImageWidth() const;
 		int getImageHeight() const;
 
+		bool isCycleCut(const int cycle) const;
+		bool isCycleFirstInCutRange(const int cycle) const;
 		int getCellX(const int col) const;
 		int getCellY(const int row) const;
 
