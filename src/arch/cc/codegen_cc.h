@@ -115,6 +115,7 @@ private:    // vars
     const ql::quantum_platform *platform;
 
 #if OPT_VCD_OUTPUT
+    // FIXME: move VCD stuff to separate class
     unsigned int kernelStartTime;
     Vcd vcd;
     int vcdVarKernel;
@@ -135,6 +136,10 @@ private:    // funcs
     void emitProgramStart();
     void padToCycle(size_t lastEndCycle, size_t startCycle, int slot, const std::string &instrumentName);
     uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
+#if OPT_VCD_OUTPUT
+    void vcdProgramStart();
+    void vcdProgramFinish(const std::string &progName);
+#endif
 
     // Functions processing JSON
     void load_backend_settings();
