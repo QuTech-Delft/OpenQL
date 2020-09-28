@@ -28,8 +28,8 @@
 #include <string>
 
 typedef struct {
-    json node;                  // a copy of the node found
-    std::string path;           // path of the node, for reporting purposes
+    json signal;                    // a copy of the signal node found
+    std::string path;               // path of the node, for reporting purposes
 } tJsonNodeInfo;
 
 
@@ -139,6 +139,7 @@ private:    // funcs
 #if OPT_VCD_OUTPUT
     void vcdProgramStart();
     void vcdProgramFinish(const std::string &progName);
+    void vcdKernelFinish(const std::string &kernelName, size_t durationInCycles);
 #endif
 
     // Functions processing JSON
