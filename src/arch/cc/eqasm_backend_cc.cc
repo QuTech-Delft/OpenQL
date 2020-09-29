@@ -152,6 +152,7 @@ void eqasm_backend_cc::compile(std::string prog_name, ql::circuit &ckt, ql::quan
     FATAL("Circuit compilation not implemented, because it does not support classical kernel operations");
 }
 
+
 // based on cc_light_eqasm_compiler.h::classical_instruction2qisa/decompose_instructions
 // NB: input instructions defined in classical.h::classical
 void eqasm_backend_cc::codegen_classical_instruction(ql::gate *classical_ins)
