@@ -160,8 +160,8 @@ void codegen_cc::kernel_finish(const std::string &kernelName, size_t durationInC
 
 /*
     Our strategy is to first process all custom_gate's in a bundle, storing the
-        relevant information in bundleInfo. Then, when all work for a bundle has
-        been collected, we generate code in bundle_finish
+    relevant information in bundleInfo. Then, when all work for a bundle has
+    been collected, we generate code in bundle_finish
 
     - bundle_start():
     clear bundleInfo, which maintains the work that needs to be performed for bundle
@@ -178,7 +178,7 @@ void codegen_cc::kernel_finish(const std::string &kernelName, size_t durationInC
 void codegen_cc::bundle_start(const std::string &cmnt)
 {
     unsigned int slotsUsed = jsonInstruments->size();   // FIXME: assuming all instruments use a slot
-    bundleInfo.assign(slotsUsed, std::vector<tbundleInfo>(MAX_GROUPS, {"", 0, -1}));
+    bundleInfo.assign(slotsUsed, std::vector<tBundleInfo>(MAX_GROUPS, {"", 0, -1}));
 
     comment(cmnt);
 }
@@ -193,6 +193,9 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
 
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<jsonInstruments->size(); instrIdx++) {
+#if 1
+        const tInstrumentInfo ii = getInstrumentInfo(instrIdx);
+#else
         // get instrument info
         const json &instrument = (*jsonInstruments)[instrIdx];          // NB: always exists
         std::string instrumentName = json_get<std::string>(instrument, "name", SS2S("instruments["<<instrIdx<<"]"));
@@ -203,7 +206,7 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
         std::string refControlMode = json_get<std::string>(instrument, "ref_control_mode", instrumentName);
         const json controlMode = json_get<const json>(*jsonControlModes, refControlMode, "control_modes");     // the control mode definition for our instrument
         size_t nrControlBitsGroups = controlMode["control_bits"].size();    // how many groups of control bits does the control mode specify
-
+#endif
 
         // collect code generation info from all groups within one instrument
         // FIXME: the term 'group' is used in a diffused way: 1) index of signal vectors, 2) controlModeGroup
@@ -211,36 +214,36 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
         uint32_t digOut = 0;                                                // the digital output value sent over the instrument interface
         uint32_t digIn = 0;
         uint32_t maxDurationInCycles = 0;                                   // maximum duration over groups that are used, one instrument
+
         size_t nrGroups = bundleInfo[instrIdx].size();       // FIXME: always MAX_GROUPS:
         // FIXME: 20200924 error shows 32 iso 4: "E       TypeError: Error : instrument 'mw_0' uses 32 groups, but control mode 'awg8-mw-direct-iq' defines 2 trigger bits in 'trigger_bits' (must be 1 or #groups)"
-
         for(size_t group=0; group<nrGroups; group++) {                      // iterate over groups used within instrument
-            tbundleInfo *gi = &bundleInfo[instrIdx][group];                   // shorthand
+            tBundleInfo *gi = &bundleInfo[instrIdx][group];                 // shorthand
             if(gi->signalValue != "") {                                     // signal defined, i.e.: we need to output something
                 isInstrUsed = true;
 
                 // determine control mode group FIXME: more explanation
                 int controlModeGroup = -1;
-                if(nrControlBitsGroups == 0) {
-                    FATAL("'control_bits' not defined in 'control_modes/" << refControlMode <<"'");
+                if(ii.nrControlBitsGroups == 0) {
+                    FATAL("'control_bits' not defined in 'control_modes/" << ii.refControlMode <<"'");
 #if OPT_VECTOR_MODE
-                } else if(nrControlBitsGroups == 1) {                       // vector mode: group addresses channel within vector
+                } else if(ii.nrControlBitsGroups == 1) {                    // vector mode: group addresses channel within vector
                     controlModeGroup = 0;
 #endif
-                } else if(group < nrControlBitsGroups) {                    // normal mode: group selects control group
+                } else if(group < ii.nrControlBitsGroups) {                 // normal mode: group selects control group
                     controlModeGroup = group;
                 } else {
-                    FATAL("instrument '" << instrumentName
+                    FATAL("instrument '" << ii.instrumentName
                           << "' uses " << nrGroups
-                          << " groups, but control mode '" << refControlMode
-                          << "' only defines " << nrControlBitsGroups
+                          << " groups, but control mode '" << ii.refControlMode
+                          << "' only defines " << ii.nrControlBitsGroups
                           << " groups in 'control_bits'");
                 }
 
                 // get control bits
-                const json groupControlBits = controlMode["control_bits"][controlModeGroup];    // NB: tests above guarantee existence
-                DOUT("instrumentName=" << instrumentName
-                     << ", slot=" << slot
+                const json groupControlBits = ii.controlMode["control_bits"][controlModeGroup];    // NB: tests above guarantee existence
+                DOUT("instrumentName=" << ii.instrumentName
+                     << ", slot=" << ii.slot
                      << ", control mode group=" << controlModeGroup
                      << ", group control bits: " << groupControlBits);
                 size_t nrGroupControlBits = groupControlBits.size();
@@ -267,7 +270,7 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                     codeword = staticCodewordOverride;
                     codewordOverriden = true;
 #else
-                    codeword = assignCodeword(instrumentName, instrIdx, group);
+                    codeword = assignCodeword(ii.instrumentName, instrIdx, group);
 #endif
 
                     // convert codeword to digOut
@@ -276,8 +279,8 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                         if(codeword & (1<<codeWordBit)) groupDigOut |= 1<<(int)groupControlBits[idx];
                     }
 
-                    comment(SS2S("  # slot=" << slot
-                            << ", instrument='" << instrumentName << "'"
+                    comment(SS2S("  # slot=" << ii.slot
+                            << ", instrument='" << ii.instrumentName << "'"
                             << ", group=" << group
                             << ": codeword=" << codeword
                             << std::string(codewordOverriden ? " (static override)" : "")
@@ -289,17 +292,17 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
 
 
                 // add trigger to digOut
-                size_t nrTriggerBits = controlMode["trigger_bits"].size();
+                size_t nrTriggerBits = ii.controlMode["trigger_bits"].size();
                 if(nrTriggerBits == 0) {                                    // no trigger
                     // do nothing
                 } else if(nrTriggerBits == 1) {                             // single trigger for all groups
-                    digOut |= 1 << (int)controlMode["trigger_bits"][0];
+                    digOut |= 1 << (int)ii.controlMode["trigger_bits"][0];
                 } else if(nrTriggerBits == nrGroups) {                      // trigger per group
-                    digOut |= 1 << (int)controlMode["trigger_bits"][group];
+                    digOut |= 1 << (int)ii.controlMode["trigger_bits"][group];
                 } else {
-                    FATAL("instrument '" << instrumentName
+                    FATAL("instrument '" << ii.instrumentName
                           << "' uses " << nrGroups
-                          << " groups, but control mode '" << refControlMode
+                          << " groups, but control mode '" << ii.refControlMode
                           << "' defines " << nrTriggerBits
                           << " trigger bits in 'trigger_bits' (must be 1 or #groups)");
                 } // FIXME: e.g. HDAWG does not support > 1 trigger bit. dual-QWG required 2 trigger bits
@@ -309,14 +312,14 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                 if(durationInCycles > maxDurationInCycles) maxDurationInCycles = durationInCycles;
 
 #if OPT_VCD_OUTPUT
-                // generate signal output for group
-                unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
-                unsigned int durationInNs = gi->durationInNs;
-                std::string signalValue = gi->signalValue;
-                int var = vcdVarSignal[instrIdx][group];
-                std::string val = SS2S(groupDigOut) + "=" + signalValue;
-                vcd.change(var, startTime, val);                // start of signal
-                vcd.change(var, startTime+durationInNs, "");    // end of signal
+                if(1) {
+                    // generate signal output for group
+                    unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
+                    int var = vcdVarSignal[instrIdx][group];
+                    std::string val = SS2S(groupDigOut) + "=" + gi->signalValue;
+                    vcd.change(var, startTime, val);                    // start of signal
+                    vcd.change(var, startTime+gi->durationInNs, "");    // end of signal
+                }
 #endif
             } // if(signal defined)
 
@@ -325,8 +328,8 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
             // FIXME: test for gi->readoutCop >= 0
             // FIXME: check consistency between measure instruction and result_bits
             // FIXME: also generate VCD
-            if(JSON_EXISTS(controlMode, "result_bits")) {  // this instrument mode produces results (i.e. it is a measurement device)
-                const json &resultBits = controlMode["result_bits"][group];
+            if(JSON_EXISTS(ii.controlMode, "result_bits")) {  // this instrument mode produces results (i.e. it is a measurement device)
+                const json &resultBits = ii.controlMode["result_bits"][group];
                 size_t nrResultBits = resultBits.size();
                 if(nrResultBits == 1) {                     // single bit
                     digIn |= 1<<(int)resultBits[0];         // NB: we assume the result is active high, which is correct for UHF-QC
@@ -334,16 +337,16 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
 #if OPT_FEEDBACK   // FIXME: WIP on measurement
                     // we need: input bit, cop?, qubit, SM bit
                     // FIXME: save gi->readoutCop in inputLutTable
-                    if(JSON_EXISTS(inputLutTable, instrumentName) &&                    // instrument exists
-                                    inputLutTable[instrumentName].size() > group) {     // group exists
+                    if(JSON_EXISTS(inputLutTable, ii.instrumentName) &&                    // instrument exists
+                                    inputLutTable[ii.instrumentName].size() > group) {     // group exists
                     } else {    // new instrument or group
                         codeword = 1;
-                        inputLutTable[instrumentName][group][0] = "";                   // code word 0 is empty
-                        inputLutTable[instrumentName][group][codeword] = signalValue;   // NB: structure created on demand
+                        inputLutTable[ii.instrumentName][group][0] = "";                   // code word 0 is empty
+                        inputLutTable[ii.instrumentName][group][codeword] = signalValue;   // NB: structure created on demand
                     }
 #endif
                 } else {    // NB: nrResultBits==0 will not arrive at this point
-                    std::string controlModeName = controlMode;                      // convert to string
+                    std::string controlModeName = ii.controlMode;                      // convert to string
                     FATAL("JSON key '" << controlModeName << "/result_bits' must have 1 bit per group");
                 }
             }
@@ -352,21 +355,21 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
 
         // generate code for instrument
         if(isInstrUsed) {
-            comment(SS2S("  # slot=" << slot
-                    << ", instrument='" << instrumentName << "'"
+            comment(SS2S("  # slot=" << ii.slot
+                    << ", instrument='" << ii.instrumentName << "'"
                     << ": lastEndCycle=" << lastEndCycle[instrIdx]
                     << ", startCycle=" << startCycle
                     << ", maxDurationInCycles=" << maxDurationInCycles
                     ));
 
-            padToCycle(lastEndCycle[instrIdx], startCycle, slot, instrumentName);
+            padToCycle(lastEndCycle[instrIdx], startCycle, ii.slot, ii.instrumentName);
 
             // emit code for slot
-            emit(SS2S("[" << slot << "]").c_str(),      // CCIO selector
+            emit(SS2S("[" << ii.slot << "]").c_str(),      // CCIO selector
                  "seq_out",
                  SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec <<
                       "," << maxDurationInCycles),
-                 SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": code word/mask on '" << instrumentName+"'").c_str());
+                 SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": code word/mask on '" << ii.instrumentName+"'").c_str());
 
             // update lastEndCycle
             lastEndCycle[instrIdx] = startCycle + maxDurationInCycles;
@@ -386,17 +389,19 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
 
         // for last bundle, pad end of bundle to align durations
         if(isLastBundle) {
-            padToCycle(lastEndCycle[instrIdx], startCycle+durationInCycles, slot, instrumentName);
+            padToCycle(lastEndCycle[instrIdx], startCycle+durationInCycles, ii.slot, ii.instrumentName);
         }
 
 #if OPT_VCD_OUTPUT
-        // generate codeword output for instrument
-        unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
-        unsigned int durationInNs = maxDurationInCycles*platform->cycle_time;
-        int var = vcdVarCodeword[instrIdx];
-        std::string val = SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut);
-        vcd.change(var, startTime, val);                // start of signal
-        vcd.change(var, startTime+durationInNs, "");     // end of signal
+        if(1) {
+            // generate codeword output for instrument
+            unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
+            unsigned int durationInNs = maxDurationInCycles*platform->cycle_time;
+            int var = vcdVarCodeword[instrIdx];
+            std::string val = SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut);
+            vcd.change(var, startTime, val);                // start of signal
+            vcd.change(var, startTime+durationInNs, "");    // end of signal
+        }
 #endif
     } // for(instrIdx)
 
@@ -458,13 +463,15 @@ void codegen_cc::custom_gate(
     }
 
 #if OPT_VCD_OUTPUT
-    // generate qubit VCD output
-    unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
-    for(size_t i=0; i<qops.size(); i++) {
-        int var = vcdVarQubit[qops[i]];
-        std::string name = iname;                       // FIXME: improve name for 2q gates
-        vcd.change(var, startTime, name);               // start of instruction
-        vcd.change(var, startTime+durationInNs, "");    // end of instruction
+    if(1) {
+        // generate qubit VCD output
+        unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
+        for(size_t i=0; i<qops.size(); i++) {
+            int var = vcdVarQubit[qops[i]];
+            std::string name = iname;                       // FIXME: improve name for 2q gates
+            vcd.change(var, startTime, name);               // start of instruction
+            vcd.change(var, startTime+durationInNs, "");    // end of instruction
+        }
     }
 #endif
 
@@ -519,7 +526,7 @@ void codegen_cc::custom_gate(
 
 
         // store signal value, checking for conflicts
-        tbundleInfo *gi = &bundleInfo[si.instrIdx][si.group];                 // shorthand
+        tBundleInfo *gi = &bundleInfo[si.instrIdx][si.group];                 // shorthand
         if(gi->signalValue == "") {                                         // signal not yet used
             gi->signalValue = signalValueString;
 #if OPT_SUPPORT_STATIC_CODEWORDS
@@ -558,15 +565,15 @@ void codegen_cc::custom_gate(
     }   // for(signal)
 }
 
-void codegen_cc::comment(const std::string &c)
-{
-    if(verboseCode) emit(c.c_str());
-}
-
 void codegen_cc::nop_gate()
 {
     comment("# NOP gate");
     FATAL("FIXME: NOP gate not implemented");
+}
+
+void codegen_cc::comment(const std::string &c)
+{
+    if(verboseCode) emit(c.c_str());
 }
 
 /************************************************************************\
@@ -932,7 +939,7 @@ const json &codegen_cc::findInstrumentDefinition(const std::string &name)
 
 
 // find JSON signal definition for instruction, either inline or via 'ref_signal'
-tJsonNodeInfo codegen_cc::findSignalDefinition(const json &instruction, const std::string &iname)
+codegen_cc::tJsonNodeInfo codegen_cc::findSignalDefinition(const json &instruction, const std::string &iname)
 {
     tJsonNodeInfo nodeInfo;
     std::string instructionPath = "instructions/"+iname;
@@ -951,6 +958,25 @@ tJsonNodeInfo codegen_cc::findSignalDefinition(const json &instruction, const st
         nodeInfo.path = instructionPath+"/cc/signal";
     }
     return nodeInfo;
+}
+
+
+// collect some configuration info for an instrument
+codegen_cc::tInstrumentInfo codegen_cc::getInstrumentInfo(size_t instrIdx) {
+    tInstrumentInfo ii;
+
+    const json &instrument = (*jsonInstruments)[instrIdx];              // NB: always exists (if we iterate jsonInstruments)
+
+    ii.instrumentName = json_get<std::string>(instrument, "name", SS2S("instruments["<<instrIdx<<"]"));
+    JSON_ASSERT(instrument, "controller", ii.instrumentName);           // first check intermediate node
+    ii.slot = json_get<int>(instrument["controller"], "slot", ii.instrumentName+"/controller");    // FIXME: assuming controller being cc
+
+    // get control mode for instrument
+    ii.refControlMode = json_get<std::string>(instrument, "ref_control_mode", ii.instrumentName);
+    ii.controlMode = json_get<const json>(*jsonControlModes, ii.refControlMode, "control_modes");   // the control mode definition for our instrument
+    ii.nrControlBitsGroups = ii.controlMode["control_bits"].size();        // how many groups of control bits does the control mode specify
+
+    return ii;
 }
 
 

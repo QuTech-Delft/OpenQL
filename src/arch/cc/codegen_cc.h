@@ -28,15 +28,23 @@
 
 #include <string>
 
-typedef struct {
-    json signal;                    // a copy of the signal node found
-    std::string path;               // path of the node, for reporting purposes
-} tJsonNodeInfo;
-
 
 class codegen_cc
 {
 private: // types
+    typedef struct {
+        json signal;                // a copy of the signal node found
+        std::string path;           // path of the node, for reporting purposes
+    } tJsonNodeInfo;
+
+    typedef struct {
+        std::string instrumentName;
+        int slot;
+        std::string refControlMode;
+        json controlMode;
+        size_t nrControlBitsGroups;
+    } tInstrumentInfo;
+
     typedef struct {
         int instrIdx;               // the index into JSON "eqasm_backend_cc/instruments" that provides the signal
         int group;                  // the group of channels within the instrument that provides the signal
@@ -152,6 +160,7 @@ private:    // funcs
     void load_backend_settings();
     const json &findInstrumentDefinition(const std::string &name);
     tJsonNodeInfo findSignalDefinition(const json &instruction, const std::string &iname);
+    tInstrumentInfo getInstrumentInfo(size_t instrIdx);
 
     // find instrument/group providing instructionSignalType for qubit
     tSignalInfo findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit);
