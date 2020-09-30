@@ -49,7 +49,7 @@ private: // types
 #if OPT_SUPPORT_STATIC_CODEWORDS
         int staticCodewordOverride;
 #endif
-    } tGroupInfo;                   // information for an instrument group (of channels), for a single instruction
+    } tBundleInfo;                   // information for an instrument group (of channels), for a single instruction
 
 public:
     codegen_cc() = default;
@@ -57,16 +57,16 @@ public:
 
     // Generic
     void init(const ql::quantum_platform &platform);
-    std::string getCode();                              // return the CC source code that was created
+    std::string getProgram();                           // return the CC source code that was created
     std::string getMap();                               // return a map of codeword assignments, useful for configuring AWGs
 
+    // Compile support
     void program_start(const std::string &progName);
     void program_finish(const std::string &progName);
     void kernel_start();
     void kernel_finish(const std::string &kernelName, size_t durationInCycles);
     void bundle_start(const std::string &cmnt);
     void bundle_finish(size_t startCycle, size_t durationInCycles, bool isLastBundle);
-    void comment(const std::string &c);
 
     // Quantum instructions
     void custom_gate(
@@ -75,6 +75,8 @@ public:
             const std::vector<size_t> &cops,
             double angle, size_t startCycle, size_t durationInNs);
     void nop_gate();
+
+    void comment(const std::string &c);
 
     // Classical operations on kernels
     void if_start(size_t op0, const std::string &opName, size_t op1);
@@ -94,13 +96,16 @@ private:    // vars
     static const int MAX_SLOTS = 12;                            // physical maximum of CC
     static const int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
 
-    bool verboseCode = true;                                    // output extra comments in generated code. FIXME: not yet configurable
+    bool verboseCode = true;                                    // option to output extra comments in generated code. FIXME: not yet configurable
     bool mapPreloaded = false;
 
-    std::stringstream cccode;                                   // the code generated for the CC
+    std::stringstream codeSection;                              // the code generated
+#if OPT_FEEDBACK
+    std::stringstream datapathSection;                          // the data path configuration generated
+#endif
 
     // codegen state
-    std::vector<std::vector<tGroupInfo>> groupInfo;             // matrix[instrIdx][group]
+    std::vector<std::vector<tBundleInfo>> bundleInfo;           // matrix[instrIdx][group]
     json codewordTable;                                         // codewords versus signals per instrument group
 #if OPT_FEEDBACK
     json inputLutTable;                                         // input LUT usage per instrument group
