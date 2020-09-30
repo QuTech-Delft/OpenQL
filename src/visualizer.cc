@@ -28,17 +28,18 @@ namespace ql
 // change IOUT to DOUT (IOUT is used to avoid debug information from other source files while developing the visualizer!)
 // visual_type attribute instead of full visual attribute in hw config file, links to seperate visualization config file where details of that visual type are detailed
 // 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
-
-// -- IN PROGRESS ---
 // add bit line zigzag indicating a cut cycle range
 // add cutEmptyCycles and emptyCycleThreshold to the documentation
+
+// -- IN PROGRESS ---
+// representing the gates as waveforms (see andreas paper for examples)
+// does compressing the circuit update the gate cycles in the original gate vector? if so, that is bad!
 
 // --- FUTURE WORK ---
 // TODO: the visualizer should probably be a class
 // TODO: when gate is skipped due to whatever reason, maybe show a dummy gate outline indicating where the gate is?
 // TODO: display wait/barrier gate (need wait gate fix first)
 // TODO: fix overlapping connections for multiqubit gates/measurements
-// TODO: representing the gates as waveforms (see andreas paper for examples)
 // TODO: add classical bit number to measurement connection when classical lines are grouped
 // TODO: implement measurement symbol (to replace the M on measurement gates)
 // TODO: generate default gate visuals from the configuration file
@@ -55,55 +56,99 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
 using json = nlohmann::json;
 
+// ======================================================= //
+// =                      Structure                      = //
+// ======================================================= //
+
 Structure::Structure(const Layout layout, const CircuitData circuitData, const std::vector<EndPoints> cutCycleRanges)
-	: layout(layout), circuitData(circuitData), cutCycleRanges(cutCycleRanges)
 {
-    DOUT("Calculating image properties...");
-	
-	labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
-	cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0;
+	const int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
+	const int cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0;
 
 	// Calculate the amount of displayed cycles.
 	int amountOfCutCycles = 0;
 	for (const auto& range : cutCycleRanges)
 	{
 		amountOfCutCycles += range.end - range.start + 1;
-		// Add each cycle in the range to the vector with cut cycles for later use.
-		for (int i = range.start; i <= range.end; i++)
-		{
-			cutCycles.push_back(i);
-		}
 	}
 
-	int widthFromCycles = 0;
+	const int amountOfDisplayedCycles = circuitData.getAmountOfCycles() - amountOfCutCycles;
+	int imageWidthFromCycles = 0;
 	if (layout.cycles.cutEmptyCycles)
 	{
-		widthFromCycles = cutCycleRanges.size() * layout.cycles.cutCycleWidth + (circuitData.amountOfCycles - amountOfCutCycles) * layout.grid.cellSize;
+		imageWidthFromCycles = cutCycleRanges.size() * layout.cycles.cutCycleWidth + amountOfDisplayedCycles * layout.grid.cellSize;
 	}
 	else
 	{
-		widthFromCycles = circuitData.amountOfCycles * layout.grid.cellSize;
+		imageWidthFromCycles = circuitData.getAmountOfCycles() * layout.grid.cellSize;
 	}
-	imageWidth = layout.grid.borderSize * 2 + labelColumnWidth + widthFromCycles;
+	imageWidth = layout.grid.borderSize * 2 + labelColumnWidth + imageWidthFromCycles;
 
 	// Calculate image height based on amount of quantum and classical bits.
 	const int amountOfRows = circuitData.amountOfQubits + (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits);
 	imageHeight = (layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0) + amountOfRows * layout.grid.cellSize + 2 * layout.grid.borderSize;
 
+	// Calculate relevant label positions.
+	cycleLabelsY = layout.grid.borderSize;
+	bitLabelsX = layout.grid.borderSize;
+
+	// Calculate cell positions.
+	for (int col = 0; col < amountOfDisplayedCycles; col++)
+	{
+		int widthFromCycles = 0;
+		if (layout.cycles.cutEmptyCycles)
+		{
+			int cutCycleRangesBeforeColumn = 0;
+			int cutCyclesBeforeColumn = 0;
+			for (const auto& range : cutCycleRanges)
+			{
+				if (col > range.end)
+				{
+					cutCycleRangesBeforeColumn++;
+					cutCyclesBeforeColumn += range.end - range.start + 1;
+				}
+			}
+			widthFromCycles = (col - cutCyclesBeforeColumn) * layout.grid.cellSize + cutCycleRangesBeforeColumn * layout.cycles.cutCycleWidth;
+		}
+		const int x0 = layout.grid.borderSize + labelColumnWidth + widthFromCycles;
+		const int x1 = x0 + layout.grid.cellSize;
+
+		// Quantum cell positions.
+		std::vector<Position4> qColumnCells;
+		qbitCellPositions.push_back(qColumnCells);
+		for (int row = 0; row < circuitData.amountOfQubits; row++)
+		{
+			const int y0 = layout.grid.borderSize + cycleNumbersRowHeight + row * layout.grid.cellSize;
+			const int y1 = y0 + layout.grid.cellSize;
+			qColumnCells.push_back({x0, y0, x1, y1});
+		}
+		// Classical cell positions.
+		std::vector<Position4> cColumnCells;
+		cbitCellPositions.push_back(cColumnCells);
+		for (int row = 0; row < circuitData.amountOfClassicalBits; row++)
+		{
+			const int y0 = layout.grid.borderSize + cycleNumbersRowHeight + (row + circuitData.amountOfQubits) * layout.grid.cellSize;
+			const int y1 = y0 + layout.grid.cellSize;
+			cColumnCells.push_back({x0, y0, x1, y1});
+		}
+	}
+
 	// Calculate the bit line segments.
 	DOUT("Calculating bit line segments...");
-	for (int i = 0; i < circuitData.amountOfCycles; i++)
+	for (int i = 0; i < circuitData.getAmountOfCycles(); i++)
 	{
-		bool cut = isCycleCut(i);
+		const bool cut = circuitData.isCycleCut(i);
 		bool reachedEnd = false;
 
 		// Add more cycles to the segment until we reach a cycle that is cut if the current segment is not cut, or vice versa.
-		for (int j = i; j < circuitData.amountOfCycles; j++)
+		for (int j = i; j < circuitData.getAmountOfCycles(); j++)
 		{
-			if (isCycleCut(j) != cut)
+			if (circuitData.isCycleCut(j) != cut)
 			{
-				const int start = getCellX(i);
-				const int end = getCellX(j);
+				// const int start = getCellX(i);
+				// const int end = getCellX(j);
+				const int start = getQbitCellPosition(i, 0).x0;
+				const int end = getQbitCellPosition(j - 1, 0).x1;
 				DOUT("segment > range: [" << i << "," << (j - 1) << "], " << "position: [" << start << "," << end << "], cut: " << cut);
 				bitLineSegments.push_back({{start, end}, cut});
 				i = j - 1;
@@ -111,10 +156,12 @@ Structure::Structure(const Layout layout, const CircuitData circuitData, const s
 			}
 
 			// Check if the last cycle has been reached, and exit the calculation if so.
-			if (j == circuitData.amountOfCycles - 1)
+			if (j == circuitData.getAmountOfCycles() - 1)
 			{
-				const int start = getCellX(i);
-				const int end = getCellX(j + 1);
+				// const int start = getCellX(i);
+				// const int end = getCellX(j + 1);
+				const int start = getQbitCellPosition(i, 0).x0;
+				const int end = getQbitCellPosition(j, 0).x1;
 				DOUT("segment > range: [" << i << "," << j << "], " << "position: [" << start << "," << end << "], cut: " << cut);
 				bitLineSegments.push_back({{start, end}, cut});
 				reachedEnd = true;
@@ -135,20 +182,223 @@ int Structure::getImageHeight() const
 	return imageHeight;
 }
 
-bool Structure::isCycleCut(const int cycle) const
+int Structure::getCycleLabelsY() const
 {
-	for (const int cutCycle : cutCycles)
+	return cycleLabelsY;
+}
+
+int Structure::getBitLabelsX() const
+{
+	return bitLabelsX;
+}
+
+Position4 Structure::getQbitCellPosition(int column, int row) const
+{
+	return qbitCellPositions[column][row];
+}
+
+Position4 Structure::getCbitCellPosition(int column, int row) const
+{
+	return cbitCellPositions[column][row];
+}
+
+std::vector<std::pair<EndPoints, bool>> Structure::getBitLineSegments() const
+{
+	return bitLineSegments;
+}
+
+// ======================================================= //
+// =                     CircuitData                     = //
+// ======================================================= //
+
+CircuitData::CircuitData(const std::vector<ql::gate*> gates, const Layout layout, const int cycleDuration) :
+	cycleDuration(cycleDuration),
+	amountOfQubits(calculateAmountOfBits(gates, &gate::operands)),
+	amountOfClassicalBits(calculateAmountOfBits(gates, &gate::creg_operands)),
+	cycles(generateCycles(gates, layout, calculateAmountOfCycles(gates, cycleDuration))),
+	cutCycleRanges(findCuttableEmptyRanges(gates, layout, calculateAmountOfCycles(gates, cycleDuration)))
+{
+	// Default constructor with initializer list.
+}
+
+int CircuitData::calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType) const
+{
+	//TODO: handle circuits not starting at the c- or qbit with index 0
+	int minAmount = std::numeric_limits<int>::max();
+	int maxAmount = 0;
+
+	for (const gate* gate : gates)
 	{
-		if (cycle == cutCycle)
+		std::vector<size_t>::const_iterator begin = (gate->*operandType).begin();
+		const std::vector<size_t>::const_iterator end = (gate->*operandType).end();
+		
+		for (; begin != end; ++begin)
 		{
-			return true;
+			const size_t number = *begin;
+			if (number < minAmount)
+				minAmount = (int) number;
+			if (number > maxAmount)
+				maxAmount = (int) number;
 		}
 	}
 
-	return false;
+	// If both minAmount and maxAmount are at their original values, the list of operands for all the gates was empty.
+	// This means there are no operands of the given type for these gates and we return 0.
+	if (minAmount == std::numeric_limits<int>::max() && maxAmount == 0)
+		return 0;
+	else
+		return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
 }
 
-bool Structure::isCycleFirstInCutRange(const int cycle) const
+int CircuitData::calculateAmountOfCycles(const std::vector<ql::gate*> gates, const int cycleDuration) const
+{
+    int amountOfCycles = 0;
+	for (const gate* gate : gates)
+	{
+		const int gateCycle = (int)gate->cycle;
+		if (gateCycle > amountOfCycles)
+			amountOfCycles = gateCycle;
+	}
+	amountOfCycles++; // because the cycles start at zero, we add one to get the true amount of cycles
+	const gate* lastGate = gates.at(gates.size() - 1);
+	const int lastGateDuration = (int)lastGate->duration;
+	const int lastGateDurationInCycles = lastGateDuration / cycleDuration;
+	if (lastGateDurationInCycles > 1)
+	{
+		amountOfCycles += lastGateDurationInCycles - 1;
+	}
+
+    return amountOfCycles;
+}
+
+std::vector<Cycle> CircuitData::generateCycles(const std::vector<ql::gate*> gates, const Layout layout, const int amountOfCycles) const
+{
+	int amountOfCycles = amountOfCycles;
+	// Compress the circuit in terms of cycles and gate duration if the option has been set.
+	if (layout.cycles.compressCycles)
+	{
+		compressCycles(gates, amountOfCycles);
+	}
+
+	// Cut empty cycles if wanted.
+	std::vector<EndPoints> cutCycleRanges;
+	if (layout.cycles.cutEmptyCycles)
+	{
+		cutCycleRanges = findCuttableEmptyRanges(gates, layout, amountOfCycles);
+	}
+}
+
+void CircuitData::compressCycles(const std::vector<ql::gate*> gates, int& amountOfCycles)
+{
+	DOUT("Compressing circuit...");
+	std::vector<bool> filledCycles(amountOfCycles);
+	for (int i = 0; i < gates.size(); i++)
+	{
+		filledCycles.at(gates.at(i)->cycle) = true;
+	}
+
+	DOUT("amount of cycles before compression: " << amountOfCycles);
+	int amountOfCompressions = 0;
+	for (int i = 0; i < filledCycles.size(); i++)
+	{
+		DOUT(i);
+		if (filledCycles.at(i) == false)
+		{
+			DOUT(" not filled");
+			DOUT("\tcompressing... min cycle to compress: " << i - amountOfCompressions);
+			for (int j = 0; j < gates.size(); j++)
+			{
+				const int gateCycle = (int)gates.at(j)->cycle;
+				DOUT("\tgate cycle: " << gateCycle);
+				if (gateCycle >= i - amountOfCompressions)
+				{
+					gates.at(j)->cycle = gates.at(j)->cycle - 1;
+					DOUT(" -> compressing cycle");
+				}
+				else
+				{
+					DOUT(" -> no compression");
+				}
+			}
+			amountOfCycles--;
+			amountOfCompressions++;
+		}
+		else
+		{
+			DOUT(" filled");
+		}
+	}
+	DOUT("amount of cycles after compression: " << amountOfCycles);
+}
+
+std::vector<EndPoints> CircuitData::findCuttableEmptyRanges(const std::vector<ql::gate*> gates, const Layout layout, const int amountOfCycles)
+{
+	DOUT("Checking for empty cycle ranges...");
+
+	std::vector<bool> cycles(amountOfCycles, true);
+
+	for (const gate* gate : gates)
+	{
+		cycles[gate->cycle] = false;
+	}
+
+	// Calculate the empty cycle ranges.
+	std::vector<EndPoints> ranges;
+	for (int i = 0; i < cycles.size(); i++)
+	{
+		// If an empty cycle has been found...
+		if (cycles[i] == true)
+		{
+			const int start = i;
+			int end = cycles.size() - 1;
+
+			int j = i;
+			// ... add cycles to the range until a non-empty cycle is found.
+			while (j < cycles.size())
+			{
+				if (cycles[j] == false)
+				{
+					end = j - 1;
+					break;
+				}
+				j++;
+			}
+			ranges.push_back({start, end});
+
+			// Skip over the found range.
+			i = j;
+		}
+	}
+
+	// Check for empty cycle ranges above the threshold.
+	std::vector<EndPoints> rangesAboveThreshold;
+	for (const auto& range : ranges)
+	{
+		const int length = range.end - range.start + 1;
+		DOUT("Range from " << range.start << " to " << range.end << " with length " << length << ".");
+
+		if (length >= layout.cycles.emptyCycleThreshold)
+		{
+			DOUT("Found empty cycle range above threshold.");
+			rangesAboveThreshold.push_back(range);
+		}
+	}
+
+	return rangesAboveThreshold;
+}
+
+int CircuitData::getAmountOfCycles() const
+{
+	return cycles.size();
+}
+
+bool CircuitData::isCycleCut(const int cycleIndex) const
+{
+	return cycles[cycleIndex].cut;
+}
+
+//TODO: is this function useful? replace by something else? needs cutCycleRanges to be stored to be useful
+bool CircuitData::isCycleFirstInCutRange(const int cycleIndex) const
 {
 	for (const EndPoints& range : cutCycleRanges)
 	{
@@ -161,81 +411,9 @@ bool Structure::isCycleFirstInCutRange(const int cycle) const
 	return false;
 }
 
-int Structure::getCellX(const int col) const
-{
-	int widthFromCycles = 0;
-	if (layout.cycles.cutEmptyCycles)
-	{
-		int cutCycleRangesBeforeColumn = 0;
-		int cutCyclesBeforeColumn = 0;
-		for (const auto& range : cutCycleRanges)
-		{
-			if (col > range.end)
-			{
-				cutCycleRangesBeforeColumn++;
-				cutCyclesBeforeColumn += range.end - range.start + 1;
-			}
-		}
-		widthFromCycles = (col - cutCyclesBeforeColumn) * layout.grid.cellSize + cutCycleRangesBeforeColumn * layout.cycles.cutCycleWidth;
-	}
-	else
-	{
-		widthFromCycles = col * layout.grid.cellSize;
-	}
-
-	return layout.grid.borderSize + labelColumnWidth + widthFromCycles;
-}
-
-int Structure::getCellY(const int row) const
-{
-	return layout.grid.borderSize + cycleNumbersRowHeight + row * layout.grid.cellSize;
-}
-
-int Structure::getCycleLabelsY() const
-{
-	return layout.grid.borderSize;
-}
-
-int Structure::getBitLabelsX() const
-{
-	return layout.grid.borderSize;
-}
-
-std::vector<std::pair<EndPoints, bool>> Structure::getBitLineSegments() const
-{
-	return bitLineSegments;
-}
-
-void Structure::printProperties() const
-{
-	DOUT("-------------------------------------------------------------------------------");
-	DOUT("IMAGE PROPERTIES:");
-	DOUT("image width: " << imageWidth);
-	DOUT("image height: " << imageHeight);
-	DOUT("-------------------------------------------------------------------------------");
-	DOUT("CUT CYCLES:");
-	for (const int cycle : cutCycles)
-	{
-		DOUT(cycle);
-	}
-	DOUT("-------------------------------------------------------------------------------");
-	DOUT("CYCLE POSITIONS:");
-	for (int i = 0; i < circuitData.amountOfCycles; i++)
-	{
-		DOUT("cycle: " << i << ", x: " << getCellX(i));
-	}
-	DOUT("-------------------------------------------------------------------------------");
-	// IOUT("BIT LINE POSITIONS:");
-	// for (int i = 0; i < circuitData.amountOfQubits; i++)
-	// {
-	// 	IOUT("qbit line: " << i << ", y: " << getCellY(i));
-	// }
-	// for (int i = circuitData.amountOfQubits; i < circuitData.amountOfQubits + circuitData.amountOfClassicalBits; i++)
-	// {
-	// 	IOUT("cbit line: " << (i - circuitData.amountOfQubits) << ", y: " << getCellY(i));
-	// }
-	// IOUT("-------------------------------------------------------------------------------");
-}
+// ======================================================= //
+// =                      Visualize                      = //
+// ======================================================= //
 
 void visualize(const ql::quantum_program* program, const std::string& configPath)
 {
@@ -256,37 +434,17 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
         circuit c = kernel.get_circuit();
         gates.insert( gates.end(), c.begin(), c.end() );
     }
-    
-	// Calculate amount of cycles and read cycle duration.
-    DOUT("Calculating amount of cycles...");
+
+	// Calculate circuit properties.
+    DOUT("Calculating circuit properties...");
 	const int cycleDuration = program->platform.cycle_time;
 	DOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
-    int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
-
-	// Compress the circuit in terms of cycles and gate duration if the option has been set.
-	if (layout.cycles.compressCycles)
-	{
-		compressCycles(gates, amountOfCycles);
-	}
-
-	// Cut empty cycles if wanted.
-	std::vector<EndPoints> cutCycleRanges;
-	if (layout.cycles.cutEmptyCycles)
-	{
-		cutCycleRanges = findCuttableEmptyRanges(gates, layout, amountOfCycles);
-	}
-
-	// Calculate amount of qubits and classical bits.
-    DOUT("Calculating amount of qubits and classical bits...");
 	fixMeasurementOperands(gates); // fixes measurement gates without classical operands
-	const int amountOfQubits = calculateAmountOfBits(gates, &gate::operands);
-	const int amountOfClassicalBits = calculateAmountOfBits(gates, &gate::creg_operands);
-	CircuitData circuitData = { amountOfQubits, amountOfClassicalBits, amountOfCycles, cycleDuration };
+	CircuitData circuitData(gates, layout, cycleDuration);
     
 	// Initialize the structure of the visualization.
 	DOUT("Initializing visualization structure...");
 	Structure structure(layout, circuitData, cutCycleRanges);
-	structure.printProperties();
 	
 	// Initialize image.
     DOUT("Initializing image...");
@@ -508,158 +666,9 @@ void validateLayout(Layout& layout)
 	}
 }
 
-int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType)
-{
-	//TODO: handle circuits not starting at the c- or q-bit with index 0
-	int minAmount = std::numeric_limits<int>::max();
-	int maxAmount = 0;
-
-	for (const gate* gate : gates)
-	{
-		std::vector<size_t>::const_iterator begin = (gate->*operandType).begin();
-		const std::vector<size_t>::const_iterator end = (gate->*operandType).end();
-		
-		for (; begin != end; ++begin)
-		{
-			const size_t number = *begin;
-			if (number < minAmount)
-				minAmount = (int) number;
-			if (number > maxAmount)
-				maxAmount = (int) number;
-		}
-	}
-
-	// If both minAmount and maxAmount are at their original values, the list of operands for all the gates was empty.
-	// This means there are no operands of the given type for these gates and we return 0.
-	if (minAmount == std::numeric_limits<int>::max() && maxAmount == 0)
-		return 0;
-	else
-		return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
-}
-
-int calculateAmountOfCycles(const std::vector<ql::gate*> gates, const int cycleDuration)
-{
-    int amountOfCycles = 0;
-	for (const gate* gate : gates)
-	{
-		const int gateCycle = (int)gate->cycle;
-		if (gateCycle > amountOfCycles)
-			amountOfCycles = gateCycle;
-	}
-	amountOfCycles++; // because the cycles start at zero, we add one to get the true amount of cycles
-	const gate* lastGate = gates.at(gates.size() - 1);
-	const int lastGateDuration = (int)lastGate->duration;
-	const int lastGateDurationInCycles = lastGateDuration / cycleDuration;
-	if (lastGateDurationInCycles > 1)
-	{
-		amountOfCycles += lastGateDurationInCycles - 1;
-	}
-
-    return amountOfCycles;
-}
-
 int calculateAmountOfGateOperands(const ql::gate* gate)
 {
 	return (int)gate->operands.size() + (int)gate->creg_operands.size();
-}
-
-void compressCycles(const std::vector<ql::gate*> gates, int& amountOfCycles)
-{
-	DOUT("Compressing circuit...");
-	std::vector<bool> filledCycles(amountOfCycles);
-	for (int i = 0; i < gates.size(); i++)
-	{
-		filledCycles.at(gates.at(i)->cycle) = true;
-	}
-
-	DOUT("amount of cycles before compression: " << amountOfCycles);
-	int amountOfCompressions = 0;
-	for (int i = 0; i < filledCycles.size(); i++)
-	{
-		DOUT(i);
-		if (filledCycles.at(i) == false)
-		{
-			DOUT(" not filled");
-			DOUT("\tcompressing... min cycle to compress: " << i - amountOfCompressions);
-			for (int j = 0; j < gates.size(); j++)
-			{
-				const int gateCycle = (int)gates.at(j)->cycle;
-				DOUT("\tgate cycle: " << gateCycle);
-				if (gateCycle >= i - amountOfCompressions)
-				{
-					gates.at(j)->cycle = gates.at(j)->cycle - 1;
-					DOUT(" -> compressing cycle");
-				}
-				else
-				{
-					DOUT(" -> no compression");
-				}
-			}
-			amountOfCycles--;
-			amountOfCompressions++;
-		}
-		else
-		{
-			DOUT(" filled");
-		}
-	}
-	DOUT("amount of cycles after compression: " << amountOfCycles);
-}
-
-std::vector<EndPoints> findCuttableEmptyRanges(const std::vector<ql::gate*> gates, const Layout layout, const int amountOfCycles)
-{
-	DOUT("Checking for empty cycle ranges...");
-
-	std::vector<bool> cycles(amountOfCycles, true);
-
-	for (const gate* gate : gates)
-	{
-		cycles[gate->cycle] = false;
-	}
-
-	// Calculate the empty cycle ranges.
-	std::vector<EndPoints> ranges;
-	for (int i = 0; i < cycles.size(); i++)
-	{
-		// If an empty cycle has been found...
-		if (cycles[i] == true)
-		{
-			const int start = i;
-			int end = cycles.size() - 1;
-
-			int j = i;
-			// ... add cycles to the range until a non-empty cycle is found.
-			while (j < cycles.size())
-			{
-				if (cycles[j] == false)
-				{
-					end = j - 1;
-					break;
-				}
-				j++;
-			}
-			ranges.push_back({start, end});
-
-			// Skip over the found range.
-			i = j;
-		}
-	}
-
-	// Check for empty cycle ranges above the threshold.
-	std::vector<EndPoints> rangesAboveThreshold;
-	for (const auto& range : ranges)
-	{
-		const int length = range.end - range.start + 1;
-		DOUT("Range from " << range.start << " to " << range.end << " with length " << length << ".");
-
-		if (length >= layout.cycles.emptyCycleThreshold)
-		{
-			DOUT("Found empty cycle range above threshold.");
-			rangesAboveThreshold.push_back(range);
-		}
-	}
-
-	return rangesAboveThreshold;
 }
 
 void fixMeasurementOperands(const std::vector<ql::gate*> gates)

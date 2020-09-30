@@ -57,12 +57,33 @@ struct Dimensions
 	const int height;
 };
 
-struct CircuitData
+struct Cycle
 {
-	const int amountOfQubits;
-	const int amountOfClassicalBits;
-	const int amountOfCycles;
-	const int cycleDuration;
+	const bool cut;
+};
+
+class CircuitData
+{
+	private:
+		const std::vector<Cycle> cycles;
+		const std::vector<EndPoints> cutCycleRanges;
+
+		int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType) const;
+		int calculateAmountOfCycles(const std::vector<ql::gate*> gates, const int cycleDuration) const;
+		std::vector<Cycle> generateCycles(const std::vector<ql::gate*> gates, const Layout layout, const int amountOfCycles) const;
+		void compressCycles(const std::vector<ql::gate*> gates, int& amountOfCycles) const;
+		std::vector<EndPoints> findCuttableEmptyRanges(const std::vector<ql::gate*> gates, const Layout layout, const int amountOfCycles) const;
+
+	public:
+		const int amountOfQubits;
+		const int amountOfClassicalBits;
+		const int cycleDuration;
+
+		CircuitData(const std::vector<ql::gate*> gates, const Layout layout, const int cycleDuration);
+
+		int getAmountOfCycles() const;
+		bool isCycleCut(const int cycleIndex) const;
+		bool isCycleFirstInCutRange(const int cycleIndex) const;
 };
 
 class Structure
@@ -71,15 +92,13 @@ class Structure
 		int imageWidth;
 		int imageHeight;
 
-		int labelColumnWidth;
-		int cycleNumbersRowHeight;
+		int cycleLabelsY;
+		int bitLabelsX;
 
-		std::vector<int> cutCycles;
+		std::vector<std::vector<Position4>> qbitCellPositions;
+		std::vector<std::vector<Position4>> cbitCellPositions;
+		
 		std::vector<std::pair<EndPoints, bool>> bitLineSegments;
-
-		const Layout layout;
-		const CircuitData circuitData;
-		const std::vector<EndPoints> cutCycleRanges;
 
 	public:
 		Structure(const Layout layout, const CircuitData circuitData, const std::vector<EndPoints> cutCycleRanges);
@@ -87,27 +106,19 @@ class Structure
 		int getImageWidth() const;
 		int getImageHeight() const;
 
-		bool isCycleCut(const int cycle) const;
-		bool isCycleFirstInCutRange(const int cycle) const;
-		int getCellX(const int col) const;
-		int getCellY(const int row) const;
-
 		int getCycleLabelsY() const;
 		int getBitLabelsX() const;
-		// EndPoints Structure::getBitLineEndPoints() const;
-		std::vector<std::pair<EndPoints, bool>> getBitLineSegments() const;
 
-		void printProperties() const;
+		Position4 getQbitCellPosition(int column, int row) const;
+		Position4 getCbitCellPosition(int column, int row) const;
+
+		std::vector<std::pair<EndPoints, bool>> getBitLineSegments() const;
 };
 
 Layout parseConfiguration(const std::string& configPath);
 void validateLayout(Layout& layout);
 
-int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType);
-int calculateAmountOfCycles(const std::vector<ql::gate*> gates, const int cycleDuration);
 int calculateAmountOfGateOperands(const ql::gate* gate);
-void compressCycles(const std::vector<ql::gate*> gates, int& amountOfCycles);
-std::vector<EndPoints> findCuttableEmptyRanges(const std::vector<ql::gate*> gates, const Layout layout, const int amountOfCycles);
 
 void fixMeasurementOperands(const std::vector<ql::gate*> gates);
 bool isMeasurement(const ql::gate* gate);
