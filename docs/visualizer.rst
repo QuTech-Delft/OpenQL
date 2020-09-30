@@ -60,6 +60,12 @@ Example configuration:
       
         // if true, the visualized circuit will be compressed, with each gate only taking one cycle
         "compressCycles": false, 
+
+        // Whether empty cycle ranges above the threshold should be cut
+        "cutEmptyCycles": true, 
+
+        // The threshold amount for empty cycles to be cut
+        "emptyCycleThreshold": 2,
        
         // shows a transparent outline for the duration of a multi-cycle gate
         "showGateDurationOutline": true, 
