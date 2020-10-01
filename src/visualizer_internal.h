@@ -65,12 +65,12 @@ struct Cycle
 class CircuitData
 {
 	private:
-		const std::vector<Cycle> cycles;
-		const std::vector<EndPoints> cutCycleRanges;
+		std::vector<Cycle> cycles;
+		std::vector<EndPoints> cutCycleRanges;
 
 		int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType) const;
 		int calculateAmountOfCycles(const std::vector<ql::gate*> gates, const int cycleDuration) const;
-		std::vector<Cycle> generateCycles(const std::vector<ql::gate*> gates, const Layout layout, const int amountOfCycles) const;
+		// std::vector<Cycle> generateCycles(const std::vector<ql::gate*> gates, const Layout layout, const int amountOfCycles) const;
 		void compressCycles(const std::vector<ql::gate*> gates, int& amountOfCycles) const;
 		std::vector<EndPoints> findCuttableEmptyRanges(const std::vector<ql::gate*> gates, const Layout layout, const int amountOfCycles) const;
 

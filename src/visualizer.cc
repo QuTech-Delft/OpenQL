@@ -215,10 +215,26 @@ CircuitData::CircuitData(const std::vector<ql::gate*> gates, const Layout layout
 	cycleDuration(cycleDuration),
 	amountOfQubits(calculateAmountOfBits(gates, &gate::operands)),
 	amountOfClassicalBits(calculateAmountOfBits(gates, &gate::creg_operands)),
-	cycles(generateCycles(gates, layout, calculateAmountOfCycles(gates, cycleDuration))),
-	cutCycleRanges(findCuttableEmptyRanges(gates, layout, calculateAmountOfCycles(gates, cycleDuration)))
 {
-	// Default constructor with initializer list.
+	int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+	// Compress the circuit in terms of cycles and gate duration if the option has been set.
+	if (layout.cycles.compressCycles)
+	{
+		compressCycles(gates, amountOfCycles);
+	}
+	
+	// cutCycleRanges = findCuttableEmptyRanges(gates, layout, amountOfCycles);
+	// cycles = generateCycles(gates, layout, amountOfCycles);
+
+
+
+	// Cut empty cycles if wanted.
+	std::vector<EndPoints> cutCycleRanges;
+	if (layout.cycles.cutEmptyCycles)
+	{
+		cutCycleRanges = findCuttableEmptyRanges(gates, layout, amountOfCycles);
+	}
+
 }
 
 int CircuitData::calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType) const
@@ -271,22 +287,22 @@ int CircuitData::calculateAmountOfCycles(const std::vector<ql::gate*> gates, con
     return amountOfCycles;
 }
 
-std::vector<Cycle> CircuitData::generateCycles(const std::vector<ql::gate*> gates, const Layout layout, const int amountOfCycles) const
-{
-	int amountOfCycles = amountOfCycles;
-	// Compress the circuit in terms of cycles and gate duration if the option has been set.
-	if (layout.cycles.compressCycles)
-	{
-		compressCycles(gates, amountOfCycles);
-	}
+// std::vector<Cycle> CircuitData::generateCycles(const std::vector<ql::gate*> gates, const Layout layout, const int amountOfCycles) const
+// {
+// 	int amountOfCycles = amountOfCycles;
+// 	// Compress the circuit in terms of cycles and gate duration if the option has been set.
+// 	if (layout.cycles.compressCycles)
+// 	{
+// 		compressCycles(gates, amountOfCycles);
+// 	}
 
-	// Cut empty cycles if wanted.
-	std::vector<EndPoints> cutCycleRanges;
-	if (layout.cycles.cutEmptyCycles)
-	{
-		cutCycleRanges = findCuttableEmptyRanges(gates, layout, amountOfCycles);
-	}
-}
+// 	// Cut empty cycles if wanted.
+// 	std::vector<EndPoints> cutCycleRanges;
+// 	if (layout.cycles.cutEmptyCycles)
+// 	{
+// 		cutCycleRanges = findCuttableEmptyRanges(gates, layout, amountOfCycles);
+// 	}
+// }
 
 void CircuitData::compressCycles(const std::vector<ql::gate*> gates, int& amountOfCycles)
 {
