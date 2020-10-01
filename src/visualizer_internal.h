@@ -59,20 +59,20 @@ struct Dimensions
 
 struct Cycle
 {
-	const bool cut;
+	bool empty;
+	bool cut;
 };
 
 class CircuitData
 {
 	private:
 		std::vector<Cycle> cycles;
-		std::vector<EndPoints> cutCycleRanges;
+		std::vector<EndPoints> cutCycleRangeIndices;
 
 		int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType) const;
 		int calculateAmountOfCycles(const std::vector<ql::gate*> gates, const int cycleDuration) const;
-		// std::vector<Cycle> generateCycles(const std::vector<ql::gate*> gates, const Layout layout, const int amountOfCycles) const;
 		void compressCycles(const std::vector<ql::gate*> gates, int& amountOfCycles) const;
-		std::vector<EndPoints> findCuttableEmptyRanges(const std::vector<ql::gate*> gates, const Layout layout, const int amountOfCycles) const;
+		std::vector<EndPoints> findCuttableEmptyRanges(const std::vector<ql::gate*> gates, const Layout layout) const;
 
 	public:
 		const int amountOfQubits;
@@ -82,6 +82,7 @@ class CircuitData
 		CircuitData(const std::vector<ql::gate*> gates, const Layout layout, const int cycleDuration);
 
 		int getAmountOfCycles() const;
+		std::vector<EndPoints> getCutCycleRangeIndices() const;
 		bool isCycleCut(const int cycleIndex) const;
 		bool isCycleFirstInCutRange(const int cycleIndex) const;
 };
@@ -101,7 +102,7 @@ class Structure
 		std::vector<std::pair<EndPoints, bool>> bitLineSegments;
 
 	public:
-		Structure(const Layout layout, const CircuitData circuitData, const std::vector<EndPoints> cutCycleRanges);
+		Structure(const Layout layout, const CircuitData circuitData);
 
 		int getImageWidth() const;
 		int getImageHeight() const;

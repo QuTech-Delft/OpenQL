@@ -33,7 +33,7 @@ namespace ql
 
 // -- IN PROGRESS ---
 // representing the gates as waveforms (see andreas paper for examples)
-// does compressing the circuit update the gate cycles in the original gate vector? if so, that is bad!
+// make a copy of the gate vector, so any changes inside the visualizer to the program do not reflect back to any future compiler passes!
 
 // --- FUTURE WORK ---
 // TODO: the visualizer should probably be a class
@@ -60,14 +60,14 @@ using json = nlohmann::json;
 // =                      Structure                      = //
 // ======================================================= //
 
-Structure::Structure(const Layout layout, const CircuitData circuitData, const std::vector<EndPoints> cutCycleRanges)
+Structure::Structure(const Layout layout, const CircuitData circuitData)
 {
 	const int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
 	const int cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0;
 
 	// Calculate the amount of displayed cycles.
 	int amountOfCutCycles = 0;
-	for (const auto& range : cutCycleRanges)
+	for (const auto& range : circuitData.getCutCycleRangeIndices())
 	{
 		amountOfCutCycles += range.end - range.start + 1;
 	}
@@ -76,7 +76,7 @@ Structure::Structure(const Layout layout, const CircuitData circuitData, const s
 	int imageWidthFromCycles = 0;
 	if (layout.cycles.cutEmptyCycles)
 	{
-		imageWidthFromCycles = cutCycleRanges.size() * layout.cycles.cutCycleWidth + amountOfDisplayedCycles * layout.grid.cellSize;
+		imageWidthFromCycles = circuitData.getCutCycleRangeIndices().size() * layout.cycles.cutCycleWidth + amountOfDisplayedCycles * layout.grid.cellSize;
 	}
 	else
 	{
@@ -100,7 +100,7 @@ Structure::Structure(const Layout layout, const CircuitData circuitData, const s
 		{
 			int cutCycleRangesBeforeColumn = 0;
 			int cutCyclesBeforeColumn = 0;
-			for (const auto& range : cutCycleRanges)
+			for (const auto& range : circuitData.getCutCycleRangeIndices())
 			{
 				if (col > range.end)
 				{
@@ -214,27 +214,31 @@ std::vector<std::pair<EndPoints, bool>> Structure::getBitLineSegments() const
 CircuitData::CircuitData(const std::vector<ql::gate*> gates, const Layout layout, const int cycleDuration) :
 	cycleDuration(cycleDuration),
 	amountOfQubits(calculateAmountOfBits(gates, &gate::operands)),
-	amountOfClassicalBits(calculateAmountOfBits(gates, &gate::creg_operands)),
+	amountOfClassicalBits(calculateAmountOfBits(gates, &gate::creg_operands))
 {
 	int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+
 	// Compress the circuit in terms of cycles and gate duration if the option has been set.
 	if (layout.cycles.compressCycles)
 	{
 		compressCycles(gates, amountOfCycles);
 	}
-	
-	// cutCycleRanges = findCuttableEmptyRanges(gates, layout, amountOfCycles);
-	// cycles = generateCycles(gates, layout, amountOfCycles);
 
-
-
-	// Cut empty cycles if wanted.
-	std::vector<EndPoints> cutCycleRanges;
-	if (layout.cycles.cutEmptyCycles)
+	// Generate cycles.
+	for (int i = 0; i < amountOfCycles; i++)
 	{
-		cutCycleRanges = findCuttableEmptyRanges(gates, layout, amountOfCycles);
+		cycles.push_back({true, false});
+	}
+	for (const gate* gate : gates)
+	{
+		cycles[gate->cycle].empty = false;
 	}
 
+	// Cut empty cycles if wanted.
+	if (layout.cycles.cutEmptyCycles)
+	{
+		cutCycleRangeIndices = findCuttableEmptyRanges(gates, layout);
+	}
 }
 
 int CircuitData::calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType) const
@@ -287,24 +291,7 @@ int CircuitData::calculateAmountOfCycles(const std::vector<ql::gate*> gates, con
     return amountOfCycles;
 }
 
-// std::vector<Cycle> CircuitData::generateCycles(const std::vector<ql::gate*> gates, const Layout layout, const int amountOfCycles) const
-// {
-// 	int amountOfCycles = amountOfCycles;
-// 	// Compress the circuit in terms of cycles and gate duration if the option has been set.
-// 	if (layout.cycles.compressCycles)
-// 	{
-// 		compressCycles(gates, amountOfCycles);
-// 	}
-
-// 	// Cut empty cycles if wanted.
-// 	std::vector<EndPoints> cutCycleRanges;
-// 	if (layout.cycles.cutEmptyCycles)
-// 	{
-// 		cutCycleRanges = findCuttableEmptyRanges(gates, layout, amountOfCycles);
-// 	}
-// }
-
-void CircuitData::compressCycles(const std::vector<ql::gate*> gates, int& amountOfCycles)
+void CircuitData::compressCycles(const std::vector<ql::gate*> gates, int& amountOfCycles) const
 {
 	DOUT("Compressing circuit...");
 	std::vector<bool> filledCycles(amountOfCycles);
@@ -347,23 +334,16 @@ void CircuitData::compressCycles(const std::vector<ql::gate*> gates, int& amount
 	DOUT("amount of cycles after compression: " << amountOfCycles);
 }
 
-std::vector<EndPoints> CircuitData::findCuttableEmptyRanges(const std::vector<ql::gate*> gates, const Layout layout, const int amountOfCycles)
+std::vector<EndPoints> CircuitData::findCuttableEmptyRanges(const std::vector<ql::gate*> gates, const Layout layout) const
 {
 	DOUT("Checking for empty cycle ranges...");
-
-	std::vector<bool> cycles(amountOfCycles, true);
-
-	for (const gate* gate : gates)
-	{
-		cycles[gate->cycle] = false;
-	}
 
 	// Calculate the empty cycle ranges.
 	std::vector<EndPoints> ranges;
 	for (int i = 0; i < cycles.size(); i++)
 	{
 		// If an empty cycle has been found...
-		if (cycles[i] == true)
+		if (cycles[i].empty == true)
 		{
 			const int start = i;
 			int end = cycles.size() - 1;
@@ -372,7 +352,7 @@ std::vector<EndPoints> CircuitData::findCuttableEmptyRanges(const std::vector<ql
 			// ... add cycles to the range until a non-empty cycle is found.
 			while (j < cycles.size())
 			{
-				if (cycles[j] == false)
+				if (cycles[j].empty == false)
 				{
 					end = j - 1;
 					break;
@@ -408,6 +388,11 @@ int CircuitData::getAmountOfCycles() const
 	return cycles.size();
 }
 
+std::vector<EndPoints> CircuitData::getCutCycleRangeIndices()
+{
+	return cutCycleRangeIndices;
+}
+
 bool CircuitData::isCycleCut(const int cycleIndex) const
 {
 	return cycles[cycleIndex].cut;
@@ -416,9 +401,9 @@ bool CircuitData::isCycleCut(const int cycleIndex) const
 //TODO: is this function useful? replace by something else? needs cutCycleRanges to be stored to be useful
 bool CircuitData::isCycleFirstInCutRange(const int cycleIndex) const
 {
-	for (const EndPoints& range : cutCycleRanges)
+	for (const EndPoints& range : cutCycleRangeIndices)
 	{
-		if (cycle == range.start)
+		if (cycleIndex == range.start)
 		{
 			return true;
 		}
@@ -460,7 +445,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
     
 	// Initialize the structure of the visualization.
 	DOUT("Initializing visualization structure...");
-	Structure structure(layout, circuitData, cutCycleRanges);
+	Structure structure(layout, circuitData);
 	
 	// Initialize image.
     DOUT("Initializing image...");
