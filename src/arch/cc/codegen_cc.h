@@ -20,7 +20,7 @@
 #define OPT_OLD_SEQBAR_SEMANTICS        0   // support old semantics of seqbar instruction. Will be deprecated
 #define OPT_FEEDBACK                    0   // feedback support. Coming feature
 
-#include "json.h"
+#include "settings_cc.h"
 #include "platform.h"
 #if OPT_VCD_OUTPUT
  #include "vcd.h"
@@ -32,24 +32,6 @@
 class codegen_cc
 {
 private: // types
-    typedef struct {
-        json signal;                // a copy of the signal node found
-        std::string path;           // path of the node, for reporting purposes
-    } tJsonSignalDef;
-
-    typedef struct {
-        std::string instrumentName;
-        int slot;
-        std::string refControlMode;
-        json controlMode;
-        size_t nrControlBitsGroups;
-    } tInstrumentInfo;
-
-    typedef struct {
-        int instrIdx;               // the index into JSON "eqasm_backend_cc/instruments" that provides the signal
-        int group;                  // the group of channels within the instrument that provides the signal
-    } tSignalInfo;
-
     typedef struct {
         std::string signalValue;
         unsigned int durationInNs;
@@ -104,6 +86,9 @@ private:    // vars
     static const int MAX_SLOTS = 12;                            // physical maximum of CC
     static const int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
 
+    const ql::quantum_platform *platform;                       // remind platform
+    settings_cc settings;
+
     bool verboseCode = true;                                    // option to output extra comments in generated code. FIXME: not yet configurable
     bool mapPreloaded = false;
 
@@ -119,14 +104,6 @@ private:    // vars
     json inputLutTable;                                         // input LUT usage per instrument group
 #endif
     unsigned int lastEndCycle[MAX_SLOTS];
-
-    // some JSON nodes we need access to
-    const json *jsonInstrumentDefinitions;
-    const json *jsonControlModes;
-    const json *jsonInstruments;
-    const json *jsonSignals;
-
-    const ql::quantum_platform *platform;
 
 #if OPT_VCD_OUTPUT
     // FIXME: move VCD stuff to separate class
@@ -155,15 +132,6 @@ private:    // funcs
     void vcdProgramFinish(const std::string &progName);
     void vcdKernelFinish(const std::string &kernelName, size_t durationInCycles);
 #endif
-
-    // Functions processing JSON
-    void load_backend_settings();
-    const json &findInstrumentDefinition(const std::string &name);
-    tJsonSignalDef findSignalDefinition(const json &instruction, const std::string &iname);
-    tInstrumentInfo getInstrumentInfo(size_t instrIdx);
-
-    // find instrument/group providing instructionSignalType for qubit
-    tSignalInfo findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit);
 }; // class
 
 #endif  // ndef ARCH_CC_CODEGEN_CC_H
