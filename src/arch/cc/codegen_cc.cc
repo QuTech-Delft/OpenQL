@@ -193,20 +193,7 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
 
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<jsonInstruments->size(); instrIdx++) {
-#if 1
         const tInstrumentInfo ii = getInstrumentInfo(instrIdx);
-#else
-        // get instrument info
-        const json &instrument = (*jsonInstruments)[instrIdx];          // NB: always exists
-        std::string instrumentName = json_get<std::string>(instrument, "name", SS2S("instruments["<<instrIdx<<"]"));
-        JSON_ASSERT(instrument, "controller", instrumentName);          // first check intermediate node
-        int slot = json_get<int>(instrument["controller"], "slot", instrumentName+"/controller");    // FIXME: assuming controller being cc
-
-        // get control mode for instrument
-        std::string refControlMode = json_get<std::string>(instrument, "ref_control_mode", instrumentName);
-        const json controlMode = json_get<const json>(*jsonControlModes, refControlMode, "control_modes");     // the control mode definition for our instrument
-        size_t nrControlBitsGroups = controlMode["control_bits"].size();    // how many groups of control bits does the control mode specify
-#endif
 
         // collect code generation info from all groups within one instrument
         // FIXME: the term 'group' is used in a diffused way: 1) index of signal vectors, 2) controlModeGroup
@@ -478,55 +465,60 @@ void codegen_cc::custom_gate(
     // find instruction (gate definition)
     const json &instruction = platform->find_instruction(iname);
     // find signal vector definition for instruction
-    tJsonNodeInfo nodeInfo = findSignalDefinition(instruction, iname);
-    const json signals = nodeInfo.signal;
-    std::string signalPath = nodeInfo.path;
+    tJsonSignalDef jsd = findSignalDefinition(instruction, iname);
+    // FIXME: remove these:
+    const json signals = jsd.signal;
+    std::string signalPath = jsd.path;
 
     // iterate over signal vector defined for instruction
     for(size_t s=0; s<signals.size(); s++) {
-        std::string signalSPath = SS2S(signalPath<<"["<<s<<"]");        // for JSON error reporting
+        // compute signalValueString, and some meta information
+        std::string signalValueString;
+        unsigned int operandIdx;
+        tSignalInfo si;
+        tInstrumentInfo ii;
+        {   // limit scope
+            std::string signalSPath = SS2S(signalPath<<"["<<s<<"]");        // for JSON error reporting
 
-        // get the operand index & qubit to work on
-        unsigned int operandIdx = json_get<unsigned int>(signals[s], "operand_idx", signalSPath);
-        if(operandIdx >= qops.size()) {
-            FATAL("Error in JSON definition of instruction '" << iname <<
-                  "': illegal operand number " << operandIdx <<
-                  "' exceeds expected maximum of " << qops.size()-1)
+            // get the operand index & qubit to work on
+            operandIdx = json_get<unsigned int>(signals[s], "operand_idx", signalSPath);
+            if(operandIdx >= qops.size()) {
+                FATAL("Error in JSON definition of instruction '" << iname <<
+                      "': illegal operand number " << operandIdx <<
+                      "' exceeds expected maximum of " << qops.size()-1)
+            }
+            unsigned int qubit = qops[operandIdx];
+
+            // get the signal type (e.g. "mw", "flux", etc), and signalInfo
+            std::string instructionSignalType = json_get<std::string>(signals[s], "type", signalSPath);
+            si = findSignalInfoForQubit(instructionSignalType, qubit);
+
+            // get instrument and CC slot
+            ii = getInstrumentInfo(si.instrIdx);
+            // FIXME: computes more then we need here
+
+            // get signal value and expand macros
+            // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and
+            // provide codewordTable to downstream software to assign waveforms to the codewords
+            const json instructionSignalValue = json_get<const json>(signals[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
+            signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
+            ql::utils::replace(signalValueString, std::string("\""), std::string(""));   // get rid of quotes
+            ql::utils::replace(signalValueString, std::string("{gateName}"), iname);
+            ql::utils::replace(signalValueString, std::string("{instrumentName}"), ii.instrumentName);
+            ql::utils::replace(signalValueString, std::string("{instrumentGroup}"), std::to_string(si.group));
+            // FIXME: allow using all qubits involved (in same signalType?, or refer to signal: qubitOfSignal[n]), e.g. qubit[0], qubit[1], qubit[2]
+            ql::utils::replace(signalValueString, std::string("{qubit}"), std::to_string(qubit));
+
+            comment(SS2S("  # slot=" << ii.slot
+                    << ", instrument='" << ii.instrumentName << "'"
+                    << ", group=" << si.group
+                    << "': signalValue='" << signalValueString << "'"
+                    ));
         }
-        unsigned int qubit = qops[operandIdx];
-
-        // get the signal type (e.g. "mw", "flux", etc), and signalInfo
-        std::string instructionSignalType = json_get<std::string>(signals[s], "type", signalSPath);
-        tSignalInfo si = findSignalInfoForQubit(instructionSignalType, qubit);
-
-        // get instrument and CC slot
-        const json &instrument = (*jsonInstruments)[si.instrIdx];       // should exist
-        std::string instrumentName = json_get<std::string>(instrument, "name", SS2S("instruments["<<si.instrIdx<<"]"));
-        JSON_ASSERT(instrument, "controller", instrumentName);          // first check intermediate node
-        int slot = json_get<int>(instrument["controller"], "slot", instrumentName+"/controller");    // FIXME: assuming controller being cc
-
-        // get signal value and expand macros
-        // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and
-        // provide codewordTable to downstream software to assign waveforms to the codewords
-        const json instructionSignalValue = json_get<const json>(signals[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
-        std::string signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
-        ql::utils::replace(signalValueString, std::string("\""), std::string(""));   // get rid of quotes
-        ql::utils::replace(signalValueString, std::string("{gateName}"), iname);
-        ql::utils::replace(signalValueString, std::string("{instrumentName}"), instrumentName);
-        ql::utils::replace(signalValueString, std::string("{instrumentGroup}"), std::to_string(si.group));
-        // FIXME: allow using all qubits involved (in same signalType?, or refer to signal: qubitOfSignal[n]), e.g. qubit[0], qubit[1], qubit[2]
-        ql::utils::replace(signalValueString, std::string("{qubit}"), std::to_string(qubit));
-
-        comment(SS2S("  # slot=" << slot
-                << ", instrument='" << instrumentName << "'"
-                << ", group=" << si.group
-                << "': signalValue='" << signalValueString << "'"
-                ));
-
 
 
         // store signal value, checking for conflicts
-        tBundleInfo *gi = &bundleInfo[si.instrIdx][si.group];                 // shorthand
+        tBundleInfo *gi = &bundleInfo[si.instrIdx][si.group];               // shorthand
         if(gi->signalValue == "") {                                         // signal not yet used
             gi->signalValue = signalValueString;
 #if OPT_SUPPORT_STATIC_CODEWORDS
@@ -535,8 +527,8 @@ void codegen_cc::custom_gate(
         } else if(gi->signalValue == signalValueString) {                   // signal unchanged
             // do nothing
         } else {
-            EOUT("Code so far:\n" << codeSection.str());                         // provide context to help finding reason. FIXME: not great
-            FATAL("Signal conflict on instrument='" << instrumentName <<
+            EOUT("Code so far:\n" << codeSection.str());                    // provide context to help finding reason. FIXME: not great
+            FATAL("Signal conflict on instrument='" << ii.instrumentName <<
                   "', group=" << si.group <<
                   ", between '" << gi->signalValue <<
                   "' and '" << signalValueString << "'");
@@ -939,44 +931,46 @@ const json &codegen_cc::findInstrumentDefinition(const std::string &name)
 
 
 // find JSON signal definition for instruction, either inline or via 'ref_signal'
-codegen_cc::tJsonNodeInfo codegen_cc::findSignalDefinition(const json &instruction, const std::string &iname)
+codegen_cc::tJsonSignalDef codegen_cc::findSignalDefinition(const json &instruction, const std::string &iname)
 {
-    tJsonNodeInfo nodeInfo;
+    tJsonSignalDef ret;
+
     std::string instructionPath = "instructions/"+iname;
     JSON_ASSERT(instruction, "cc", instructionPath);
     if(JSON_EXISTS(instruction["cc"], "ref_signal")) {                          // optional syntax: "ref_signal"
         std::string refSignal = instruction["cc"]["ref_signal"];
-        nodeInfo.signal = (*jsonSignals)[refSignal];                            // poor man's JSON pointer
-        if(nodeInfo.signal.size() == 0) {
+        ret.signal = (*jsonSignals)[refSignal];                            // poor man's JSON pointer
+        if(ret.signal.size() == 0) {
             FATAL("Error in JSON definition of instruction '" << iname <<
                   "': ref_signal '" << refSignal << "' does not resolve");
         }
-        nodeInfo.path = "signals/"+refSignal;
+        ret.path = "signals/"+refSignal;
     } else {                                                                    // alternative syntax: "signal"
-        nodeInfo.signal = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");
-        DOUT("signal for '" << instruction << "': " << nodeInfo.signal);
-        nodeInfo.path = instructionPath+"/cc/signal";
+        ret.signal = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");
+        DOUT("signal for '" << instruction << "': " << ret.signal);
+        ret.path = instructionPath+"/cc/signal";
     }
-    return nodeInfo;
+    return ret;
 }
 
 
 // collect some configuration info for an instrument
 codegen_cc::tInstrumentInfo codegen_cc::getInstrumentInfo(size_t instrIdx) {
-    tInstrumentInfo ii;
+    tInstrumentInfo ret;
 
     const json &instrument = (*jsonInstruments)[instrIdx];              // NB: always exists (if we iterate jsonInstruments)
 
-    ii.instrumentName = json_get<std::string>(instrument, "name", SS2S("instruments["<<instrIdx<<"]"));
-    JSON_ASSERT(instrument, "controller", ii.instrumentName);           // first check intermediate node
-    ii.slot = json_get<int>(instrument["controller"], "slot", ii.instrumentName+"/controller");    // FIXME: assuming controller being cc
+    ret.instrumentName = json_get<std::string>(instrument, "name", SS2S("instruments["<<instrIdx<<"]"));
+    JSON_ASSERT(instrument, "controller", ret.instrumentName);           // first check intermediate node
+    ret.slot = json_get<int>(instrument["controller"], "slot", ret.instrumentName+"/controller");    // FIXME: assuming controller being cc
 
+// FIXME: split off to getInstrumentControl
     // get control mode for instrument
-    ii.refControlMode = json_get<std::string>(instrument, "ref_control_mode", ii.instrumentName);
-    ii.controlMode = json_get<const json>(*jsonControlModes, ii.refControlMode, "control_modes");   // the control mode definition for our instrument
-    ii.nrControlBitsGroups = ii.controlMode["control_bits"].size();        // how many groups of control bits does the control mode specify
+    ret.refControlMode = json_get<std::string>(instrument, "ref_control_mode", ret.instrumentName);
+    ret.controlMode = json_get<const json>(*jsonControlModes, ret.refControlMode, "control_modes");   // the control mode definition for our instrument
+    ret.nrControlBitsGroups = ret.controlMode["control_bits"].size();        // how many groups of control bits does the control mode specify
 
-    return ii;
+    return ret;
 }
 
 

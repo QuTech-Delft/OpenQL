@@ -35,7 +35,7 @@ private: // types
     typedef struct {
         json signal;                // a copy of the signal node found
         std::string path;           // path of the node, for reporting purposes
-    } tJsonNodeInfo;
+    } tJsonSignalDef;
 
     typedef struct {
         std::string instrumentName;
@@ -159,7 +159,7 @@ private:    // funcs
     // Functions processing JSON
     void load_backend_settings();
     const json &findInstrumentDefinition(const std::string &name);
-    tJsonNodeInfo findSignalDefinition(const json &instruction, const std::string &iname);
+    tJsonSignalDef findSignalDefinition(const json &instruction, const std::string &iname);
     tInstrumentInfo getInstrumentInfo(size_t instrIdx);
 
     // find instrument/group providing instructionSignalType for qubit
