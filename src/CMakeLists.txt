@@ -9,6 +9,7 @@ add_library(ql
   arch/cc/eqasm_backend_cc.cc
   arch/cc/codegen_cc.cc
   arch/cc/settings_cc.cc
+  arch/cc/vcd_cc.cc
   arch/cc/vcd.cc
   cqasm/cqasm_reader.cc
   )

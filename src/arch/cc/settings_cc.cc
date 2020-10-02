@@ -59,7 +59,7 @@ void settings_cc::load_backend_settings(const ql::quantum_platform &platform)
 
 
 #if 1  // FIXME: only used by OPT_CALCULATE_LATENCIES
-const json &settings_cc::findInstrumentDefinition(const std::string &name)
+const json &settings_cc::findInstrumentDefinition(const std::string &name) const
 {
     // FIXME: use json_get
     if JSON_EXISTS(*jsonInstrumentDefinitions, name) {
@@ -72,7 +72,7 @@ const json &settings_cc::findInstrumentDefinition(const std::string &name)
 
 
 // find JSON signal definition for instruction, either inline or via 'ref_signal'
-settings_cc::tSignalDef settings_cc::findSignalDefinition(const json &instruction, const std::string &iname)
+settings_cc::tSignalDef settings_cc::findSignalDefinition(const json &instruction, const std::string &iname) const
 {
     tSignalDef ret;
 
@@ -96,7 +96,8 @@ settings_cc::tSignalDef settings_cc::findSignalDefinition(const json &instructio
 
 
 // collect some configuration info for an instrument
-settings_cc::tInstrumentInfo settings_cc::getInstrumentInfo(size_t instrIdx) {
+settings_cc::tInstrumentInfo settings_cc::getInstrumentInfo(size_t instrIdx) const
+{
     tInstrumentInfo ret;
 
     const json &instrument = (*jsonInstruments)[instrIdx];              // NB: always exists (if we iterate jsonInstruments)
@@ -116,7 +117,7 @@ settings_cc::tInstrumentInfo settings_cc::getInstrumentInfo(size_t instrIdx) {
 
 
 // find instrument&group providing instructionSignalType for qubit
-settings_cc::tSignalInfo settings_cc::findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit)
+settings_cc::tSignalInfo settings_cc::findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit) const
 {
     tSignalInfo ret = {-1, -1};
     bool signalTypeFound = false;

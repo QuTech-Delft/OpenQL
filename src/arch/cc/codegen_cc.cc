@@ -115,7 +115,7 @@ void codegen_cc::program_start(const std::string &progName)
 
     emitProgramStart();
 #if OPT_VCD_OUTPUT
-    vcdProgramStart();
+    vcd.programStart(platform->qubit_number, platform->cycle_time, MAX_GROUPS, settings);
 #endif
 }
 
@@ -135,7 +135,7 @@ void codegen_cc::program_finish(const std::string &progName)
 #endif
 
 #if OPT_VCD_OUTPUT
-    vcdProgramFinish(progName);
+    vcd.programFinish(progName);
 #endif
 }
 
@@ -147,7 +147,7 @@ void codegen_cc::kernel_start()
 void codegen_cc::kernel_finish(const std::string &kernelName, size_t durationInCycles)
 {
 #if OPT_VCD_OUTPUT
-    vcdKernelFinish(kernelName, durationInCycles);
+    vcd.kernelFinish(kernelName, durationInCycles);
 #endif
 }
 
@@ -292,7 +292,7 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                 if(durationInCycles > maxDurationInCycles) maxDurationInCycles = durationInCycles;
 
 #if OPT_VCD_OUTPUT
-                vcdBundleFinishGroup(startCycle, groupDigOut, gi, instrIdx, group);
+                vcd.bundleFinishGroup(startCycle, gi->durationInNs, groupDigOut, gi->signalValue, instrIdx, group);
 #endif
             } // if(signal defined)
 
@@ -366,7 +366,7 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
         }
 
 #if OPT_VCD_OUTPUT
-        vcdBundleFinish(startCycle, digOut, maxDurationInCycles, instrIdx);
+        vcd.bundleFinish(startCycle, digOut, maxDurationInCycles, instrIdx);
 #endif
     } // for(instrIdx)
 
@@ -428,7 +428,7 @@ void codegen_cc::custom_gate(
     }
 
 #if OPT_VCD_OUTPUT
-    vcdCustomgate(iname, qops, startCycle, durationInNs);
+    vcd.customgate(iname, qops, startCycle, durationInNs);
 #endif
 
     // find instruction (gate definition)
@@ -754,117 +754,3 @@ uint32_t codegen_cc::assignCodeword(const std::string &instrumentName, int instr
     return codeword;
 }
 #endif
-
-/************************************************************************\
-| VCD support
-\************************************************************************/
-
-#if OPT_VCD_OUTPUT
-void codegen_cc::vcdProgramStart()
-{
-    kernelStartTime = 0;
-
-    // define header
-    vcd.start();
-
-    // define kernel variable
-    vcd.scope(vcd.ST_MODULE, "kernel");
-    vcdVarKernel = vcd.registerVar("kernel", Vcd::VT_STRING);
-    vcd.upscope();
-
-    // define qubit variables
-    vcd.scope(vcd.ST_MODULE, "qubits");
-    vcdVarQubit.resize(platform->qubit_number);
-    for(size_t q=0; q<platform->qubit_number; q++) {
-        std::string name = "q"+std::to_string(q);
-        vcdVarQubit[q] = vcd.registerVar(name, Vcd::VT_STRING);
-    }
-    vcd.upscope();
-
-    // define signal variables
-    size_t instrsUsed = settings.getInstrumentsSize();
-    vcd.scope(vcd.ST_MODULE, "sd.signal");
-    vcdVarSignal.assign(instrsUsed, std::vector<int>(MAX_GROUPS, {0}));
-    for(size_t instrIdx=0; instrIdx<instrsUsed; instrIdx++) {
-        const json &instrument = settings.getInstrumentAtIdx(instrIdx);                  // NB: always exists
-        std::string instrumentPath = SS2S("instruments["<<instrIdx<<"]");       // for JSON error reporting
-        std::string instrumentName = json_get<std::string>(instrument, "name", instrumentPath);
-        const json qubits = json_get<const json>(instrument, "qubits", instrumentPath);
-        for(size_t group=0; group<qubits.size(); group++) {
-            std::string name = instrumentName+"-"+std::to_string(group);
-            vcdVarSignal[instrIdx][group] = vcd.registerVar(name, Vcd::VT_STRING);
-        }
-    }
-    vcd.upscope();
-
-    // define codeword variables
-    vcd.scope(vcd.ST_MODULE, "codewords");
-    vcdVarCodeword.resize(platform->qubit_number);
-    for(size_t instrIdx=0; instrIdx<instrsUsed; instrIdx++) {
-        const json &instrument = settings.getInstrumentAtIdx(instrIdx);                  // NB: always exists
-        std::string instrumentPath = SS2S("instruments["<<instrIdx<<"]");       // for JSON error reporting
-        std::string instrumentName = json_get<std::string>(instrument, "name", instrumentPath);
-        vcdVarCodeword[instrIdx] = vcd.registerVar(instrumentName, Vcd::VT_STRING);
-    }
-    vcd.upscope();
-}
-
-
-void codegen_cc::vcdProgramFinish(const std::string &progName)
-{
-    // generate VCD
-    vcd.finish();
-
-    // write VCD to file
-    std::string file_name(ql::options::get("output_dir") + "/" + progName + ".vcd");
-    IOUT("Writing Value Change Dump to " << file_name);
-    ql::utils::write_file(file_name, vcd.getVcd());
-}
-
-
-void codegen_cc::vcdKernelFinish(const std::string &kernelName, size_t durationInCycles)
-{
-    // NB: timing starts anew for every kernel
-    unsigned int durationInNs = durationInCycles*platform->cycle_time;
-    vcd.change(vcdVarKernel, kernelStartTime, kernelName);          // start of kernel
-    vcd.change(vcdVarKernel, kernelStartTime + durationInNs, "");   // end of kernel
-    kernelStartTime += durationInNs;
-}
-
-
-void codegen_cc::vcdBundleFinishGroup(size_t startCycle, uint32_t groupDigOut, const codegen_cc::tBundleInfo *gi, int instrIdx, int group)
-{
-    // generate signal output for group
-    unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
-    int var = vcdVarSignal[instrIdx][group];
-    std::string val = SS2S(groupDigOut) + "=" + gi->signalValue;
-    vcd.change(var, startTime, val);                    // start of signal
-    vcd.change(var, startTime+gi->durationInNs, "");    // end of signal
-}
-
-
-void codegen_cc::vcdBundleFinish(size_t startCycle, uint32_t digOut, size_t maxDurationInCycles, int instrIdx)
-{
-    // generate codeword output for instrument
-    unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
-    unsigned int durationInNs = maxDurationInCycles*platform->cycle_time;
-    int var = vcdVarCodeword[instrIdx];
-    std::string val = SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut);
-    vcd.change(var, startTime, val);                // start of signal
-    vcd.change(var, startTime+durationInNs, "");    // end of signal
-}
-
-
-void codegen_cc::vcdCustomgate(const std::string &iname, const std::vector<size_t> &qops, size_t startCycle, size_t durationInNs)
-{
-    // generate qubit VCD output
-    unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
-    for(size_t i=0; i<qops.size(); i++) {
-        int var = vcdVarQubit[qops[i]];
-        std::string name = iname;                       // FIXME: improve name for 2q gates
-        vcd.change(var, startTime, name);               // start of instruction
-        vcd.change(var, startTime+durationInNs, "");    // end of instruction
-    }
-}
-
-#endif  // OPT_VCD_OUTPUT

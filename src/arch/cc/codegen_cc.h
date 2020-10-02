@@ -21,10 +21,8 @@
 #define OPT_FEEDBACK                    0   // feedback support. Coming feature
 
 #include "settings_cc.h"
+#include "vcd_cc.h"
 #include "platform.h"
-#if OPT_VCD_OUTPUT
- #include "vcd.h"
-#endif
 
 #include <string>
 
@@ -63,7 +61,7 @@ public:
             const std::string &iname,
             const std::vector<size_t> &qops,
             const std::vector<size_t> &cops,
-            double angle, size_t startCycle, size_t durationInNs);
+            double angle, size_t startCycle, size_t durationInNs);  // FIXME: here we have duration in ns, else in cycles
     void nop_gate();
 
     void comment(const std::string &c);
@@ -88,6 +86,7 @@ private:    // vars
 
     const ql::quantum_platform *platform;                       // remind platform
     settings_cc settings;                                       // handling of JSON settings
+    vcd_cc vcd;                                                 // handling of .VCD output
 
     bool verboseCode = true;                                    // option to output extra comments in generated code. FIXME: not yet configurable
     bool mapPreloaded = false;
@@ -105,15 +104,6 @@ private:    // vars
 #endif
     unsigned int lastEndCycle[MAX_SLOTS];
 
-#if OPT_VCD_OUTPUT
-    // FIXME: move VCD stuff to separate class
-    unsigned int kernelStartTime;
-    Vcd vcd;
-    int vcdVarKernel;
-    std::vector<int> vcdVarQubit;
-    std::vector<std::vector<int>> vcdVarSignal;
-    std::vector<int> vcdVarCodeword;
-#endif
 
 private:    // funcs
     // Some helpers to ease nice assembly formatting
@@ -127,14 +117,6 @@ private:    // funcs
     void emitProgramStart();
     void padToCycle(size_t lastEndCycle, size_t startCycle, int slot, const std::string &instrumentName);
     uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
-#if OPT_VCD_OUTPUT
-    void vcdProgramStart();
-    void vcdProgramFinish(const std::string &progName);
-    void vcdKernelFinish(const std::string &kernelName, size_t durationInCycles);
-    void vcdBundleFinishGroup(size_t startCycle, uint32_t groupDigOut, const codegen_cc::tBundleInfo *gi, int instrIdx, int group);
-    void vcdBundleFinish(size_t startCycle, uint32_t digOut, size_t maxDurationInCycles, int instrIdx);
-    void vcdCustomgate(const std::string &iname, const std::vector<size_t> &qops, size_t startCycle, size_t durationInNs);
-#endif
 }; // class
 
 #endif  // ndef ARCH_CC_CODEGEN_CC_H
