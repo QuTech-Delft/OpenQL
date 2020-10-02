@@ -114,9 +114,7 @@ void codegen_cc::program_start(const std::string &progName)
     codeSection << "#" << std::endl;
 
     emitProgramStart();
-#if OPT_VCD_OUTPUT
     vcd.programStart(platform->qubit_number, platform->cycle_time, MAX_GROUPS, settings);
-#endif
 }
 
 
@@ -134,9 +132,7 @@ void codegen_cc::program_finish(const std::string &progName)
     emit(".END");   // end .CODE section
 #endif
 
-#if OPT_VCD_OUTPUT
     vcd.programFinish(progName);
-#endif
 }
 
 void codegen_cc::kernel_start()
@@ -146,9 +142,7 @@ void codegen_cc::kernel_start()
 
 void codegen_cc::kernel_finish(const std::string &kernelName, size_t durationInCycles)
 {
-#if OPT_VCD_OUTPUT
     vcd.kernelFinish(kernelName, durationInCycles);
-#endif
 }
 
 /*
@@ -291,9 +285,7 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                 unsigned int durationInCycles = platform->time_to_cycles(gi->durationInNs);
                 if(durationInCycles > maxDurationInCycles) maxDurationInCycles = durationInCycles;
 
-#if OPT_VCD_OUTPUT
                 vcd.bundleFinishGroup(startCycle, gi->durationInNs, groupDigOut, gi->signalValue, instrIdx, group);
-#endif
             } // if(signal defined)
 
             // handle readout
@@ -365,9 +357,7 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
             padToCycle(lastEndCycle[instrIdx], startCycle+durationInCycles, ii.slot, ii.instrumentName);
         }
 
-#if OPT_VCD_OUTPUT
         vcd.bundleFinish(startCycle, digOut, maxDurationInCycles, instrIdx);
-#endif
     } // for(instrIdx)
 
     comment("");    // blank line to separate bundles
@@ -427,9 +417,7 @@ void codegen_cc::custom_gate(
         comment(cmnt.str());
     }
 
-#if OPT_VCD_OUTPUT
     vcd.customgate(iname, qops, startCycle, durationInNs);
-#endif
 
     // find instruction (gate definition)
     const json &instruction = platform->find_instruction(iname);

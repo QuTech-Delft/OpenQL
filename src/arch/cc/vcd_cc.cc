@@ -2,7 +2,7 @@
  * @file    vcd_cc.cc
  * @date    20201001
  * @author  Wouter Vlothuizen (wouter.vlothuizen@tno.nl)
- * @brief   handle VCD file generation for the CC backend
+ * @brief   handle generation of Value Change Dump file for GTKWave viewer
  * @note
  */
 
