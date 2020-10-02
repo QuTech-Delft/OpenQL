@@ -24,7 +24,7 @@
 \************************************************************************/
 
 #if OPT_SUPPORT_STATIC_CODEWORDS
-static int findStaticCodewordOverride(const json &instruction, int operandIdx, const std::string &iname)
+static int findStaticCodewordOverride(const json &instruction, size_t operandIdx, const std::string &iname)
 {
     // look for optional codeword override
     int staticCodewordOverride = -1;    // -1 means unused
@@ -136,13 +136,6 @@ void codegen_cc::program_finish(const std::string &progName)
 
 #if OPT_VCD_OUTPUT
     vcdProgramFinish(progName);
-    // generate VCD
-    vcd.finish();
-
-    // write VCD to file
-    std::string file_name(ql::options::get("output_dir") + "/" + progName + ".vcd");
-    IOUT("Writing Value Change Dump to " << file_name);
-    ql::utils::write_file(file_name, vcd.getVcd());
 #endif
 }
 
@@ -243,7 +236,7 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                     // FIXME: check controlModeGroup vs group
                 } else {                // > 1 bit, implying code word
 #if OPT_VECTOR_MODE
-                    //  allow single code word for vector of groups. FIXME: requires looking at all signals before assigning code word
+                    //  allow single code word for vector of groups. FIXME: requires looking at all sd.signal before assigning code word
                     if(group != controlModeGroup) {
                         // FIXME: unfinished work on vector mode
                     }
@@ -299,14 +292,7 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
                 if(durationInCycles > maxDurationInCycles) maxDurationInCycles = durationInCycles;
 
 #if OPT_VCD_OUTPUT
-                if(1) {
-                    // generate signal output for group
-                    unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
-                    int var = vcdVarSignal[instrIdx][group];
-                    std::string val = SS2S(groupDigOut) + "=" + gi->signalValue;
-                    vcd.change(var, startTime, val);                    // start of signal
-                    vcd.change(var, startTime+gi->durationInNs, "");    // end of signal
-                }
+                vcdBundleFinishGroup(startCycle, groupDigOut, gi, instrIdx, group);
 #endif
             } // if(signal defined)
 
@@ -380,15 +366,7 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
         }
 
 #if OPT_VCD_OUTPUT
-        if(1) {
-            // generate codeword output for instrument
-            unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
-            unsigned int durationInNs = maxDurationInCycles*platform->cycle_time;
-            int var = vcdVarCodeword[instrIdx];
-            std::string val = SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut);
-            vcd.change(var, startTime, val);                // start of signal
-            vcd.change(var, startTime+durationInNs, "");    // end of signal
-        }
+        vcdBundleFinish(startCycle, digOut, maxDurationInCycles, instrIdx);
 #endif
     } // for(instrIdx)
 
@@ -450,38 +428,26 @@ void codegen_cc::custom_gate(
     }
 
 #if OPT_VCD_OUTPUT
-    if(1) {
-        // generate qubit VCD output
-        unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
-        for(size_t i=0; i<qops.size(); i++) {
-            int var = vcdVarQubit[qops[i]];
-            std::string name = iname;                       // FIXME: improve name for 2q gates
-            vcd.change(var, startTime, name);               // start of instruction
-            vcd.change(var, startTime+durationInNs, "");    // end of instruction
-        }
-    }
+    vcdCustomgate(iname, qops, startCycle, durationInNs);
 #endif
 
     // find instruction (gate definition)
     const json &instruction = platform->find_instruction(iname);
     // find signal vector definition for instruction
-    settings_cc::tSignalDef jsd = settings.findSignalDefinition(instruction, iname);
-    // FIXME: remove these:
-    const json signals = jsd.signal;
-    std::string signalPath = jsd.path;
+    settings_cc::tSignalDef sd = settings.findSignalDefinition(instruction, iname);
 
     // iterate over signal vector defined for instruction
-    for(size_t s=0; s<signals.size(); s++) {
+    for(size_t s=0; s<sd.signal.size(); s++) {
         // compute signalValueString, and some meta information
         std::string signalValueString;
         unsigned int operandIdx;
         settings_cc::tSignalInfo si;
         settings_cc::tInstrumentInfo ii;
         {   // limit scope
-            std::string signalSPath = SS2S(signalPath<<"["<<s<<"]");        // for JSON error reporting
+            std::string signalSPath = SS2S(sd.path<<"["<<s<<"]");        // for JSON error reporting
 
             // get the operand index & qubit to work on
-            operandIdx = json_get<unsigned int>(signals[s], "operand_idx", signalSPath);
+            operandIdx = json_get<unsigned int>(sd.signal[s], "operand_idx", signalSPath);
             if(operandIdx >= qops.size()) {
                 FATAL("Error in JSON definition of instruction '" << iname <<
                       "': illegal operand number " << operandIdx <<
@@ -489,8 +455,9 @@ void codegen_cc::custom_gate(
             }
             unsigned int qubit = qops[operandIdx];
 
-            // get the signal type (e.g. "mw", "flux", etc), and signalInfo
-            std::string instructionSignalType = json_get<std::string>(signals[s], "type", signalSPath);
+            // get signalInfo via signal type (e.g. "mw", "flux", etc. NB: this is different from
+            // that provided by find_instruction_type, although some identical strings are used)
+            std::string instructionSignalType = json_get<std::string>(sd.signal[s], "type", signalSPath);
             si = settings.findSignalInfoForQubit(instructionSignalType, qubit);
 
             // get instrument and CC slot
@@ -500,7 +467,7 @@ void codegen_cc::custom_gate(
             // get signal value and expand macros
             // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and
             // provide codewordTable to downstream software to assign waveforms to the codewords
-            const json instructionSignalValue = json_get<const json>(signals[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
+            const json instructionSignalValue = json_get<const json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
             signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
             ql::utils::replace(signalValueString, std::string("\""), std::string(""));   // get rid of quotes
             ql::utils::replace(signalValueString, std::string("{gateName}"), iname);
@@ -795,6 +762,8 @@ uint32_t codegen_cc::assignCodeword(const std::string &instrumentName, int instr
 #if OPT_VCD_OUTPUT
 void codegen_cc::vcdProgramStart()
 {
+    kernelStartTime = 0;
+
     // define header
     vcd.start();
 
@@ -814,7 +783,7 @@ void codegen_cc::vcdProgramStart()
 
     // define signal variables
     size_t instrsUsed = settings.getInstrumentsSize();
-    vcd.scope(vcd.ST_MODULE, "signals");
+    vcd.scope(vcd.ST_MODULE, "sd.signal");
     vcdVarSignal.assign(instrsUsed, std::vector<int>(MAX_GROUPS, {0}));
     for(size_t instrIdx=0; instrIdx<instrsUsed; instrIdx++) {
         const json &instrument = settings.getInstrumentAtIdx(instrIdx);                  // NB: always exists
@@ -862,4 +831,40 @@ void codegen_cc::vcdKernelFinish(const std::string &kernelName, size_t durationI
     kernelStartTime += durationInNs;
 }
 
-#endif
+
+void codegen_cc::vcdBundleFinishGroup(size_t startCycle, uint32_t groupDigOut, const codegen_cc::tBundleInfo *gi, int instrIdx, int group)
+{
+    // generate signal output for group
+    unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
+    int var = vcdVarSignal[instrIdx][group];
+    std::string val = SS2S(groupDigOut) + "=" + gi->signalValue;
+    vcd.change(var, startTime, val);                    // start of signal
+    vcd.change(var, startTime+gi->durationInNs, "");    // end of signal
+}
+
+
+void codegen_cc::vcdBundleFinish(size_t startCycle, uint32_t digOut, size_t maxDurationInCycles, int instrIdx)
+{
+    // generate codeword output for instrument
+    unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
+    unsigned int durationInNs = maxDurationInCycles*platform->cycle_time;
+    int var = vcdVarCodeword[instrIdx];
+    std::string val = SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut);
+    vcd.change(var, startTime, val);                // start of signal
+    vcd.change(var, startTime+durationInNs, "");    // end of signal
+}
+
+
+void codegen_cc::vcdCustomgate(const std::string &iname, const std::vector<size_t> &qops, size_t startCycle, size_t durationInNs)
+{
+    // generate qubit VCD output
+    unsigned int startTime = kernelStartTime + startCycle*platform->cycle_time;
+    for(size_t i=0; i<qops.size(); i++) {
+        int var = vcdVarQubit[qops[i]];
+        std::string name = iname;                       // FIXME: improve name for 2q gates
+        vcd.change(var, startTime, name);               // start of instruction
+        vcd.change(var, startTime+durationInNs, "");    // end of instruction
+    }
+}
+
+#endif  // OPT_VCD_OUTPUT

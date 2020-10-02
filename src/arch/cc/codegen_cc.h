@@ -87,7 +87,7 @@ private:    // vars
     static const int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
 
     const ql::quantum_platform *platform;                       // remind platform
-    settings_cc settings;
+    settings_cc settings;                                       // handling of JSON settings
 
     bool verboseCode = true;                                    // option to output extra comments in generated code. FIXME: not yet configurable
     bool mapPreloaded = false;
@@ -131,6 +131,9 @@ private:    // funcs
     void vcdProgramStart();
     void vcdProgramFinish(const std::string &progName);
     void vcdKernelFinish(const std::string &kernelName, size_t durationInCycles);
+    void vcdBundleFinishGroup(size_t startCycle, uint32_t groupDigOut, const codegen_cc::tBundleInfo *gi, int instrIdx, int group);
+    void vcdBundleFinish(size_t startCycle, uint32_t digOut, size_t maxDurationInCycles, int instrIdx);
+    void vcdCustomgate(const std::string &iname, const std::vector<size_t> &qops, size_t startCycle, size_t durationInNs);
 #endif
 }; // class
 

@@ -37,10 +37,6 @@ public: // types
 
 
 public: // functions
-    const json &getInstrumentAtIdx(size_t instrIdx) { return (*jsonInstruments)[instrIdx]; }
-    size_t getInstrumentsSize() { return jsonInstruments->size(); }
-
-    // Functions processing JSON
     void load_backend_settings(const ql::quantum_platform &platform);
     const json &findInstrumentDefinition(const std::string &name);
     tSignalDef findSignalDefinition(const json &instruction, const std::string &iname);
@@ -49,9 +45,11 @@ public: // functions
     // find instrument/group providing instructionSignalType for qubit
     tSignalInfo findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit);
 
+    // 'getters'
+    const json &getInstrumentAtIdx(size_t instrIdx) { return (*jsonInstruments)[instrIdx]; }
+    size_t getInstrumentsSize() { return jsonInstruments->size(); }
 
 private:    // vars
-    // some JSON nodes we need access to
     const json *jsonInstrumentDefinitions;
     const json *jsonControlModes;
     const json *jsonInstruments;
