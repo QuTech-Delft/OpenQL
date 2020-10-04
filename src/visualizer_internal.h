@@ -43,6 +43,7 @@ struct Cell
 {
 	const int col;
 	const int row;
+	const BitType bitType;
 };
 
 struct EndPoints
@@ -110,8 +111,7 @@ class Structure
 		int getCycleLabelsY() const;
 		int getBitLabelsX() const;
 
-		Position4 getQbitCellPosition(int column, int row) const;
-		Position4 getCbitCellPosition(int column, int row) const;
+		Position4 getCellPosition(int column, int row, BitType bitType) const;
 
 		std::vector<std::pair<EndPoints, bool>> getBitLineSegments() const;
 };
