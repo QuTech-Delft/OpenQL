@@ -5,7 +5,6 @@
 
 from openql import openql as ql
 import os
-from test_QISA_assembler_present import assemble
 import unittest
 from utils import file_compare
 
@@ -66,7 +65,6 @@ class Test_skip(unittest.TestCase):
         GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '_scheduled.qasm')
         QASM_fn = os.path.join(output_dir, prog.name+'_scheduled.qasm')
 
-        assemble(QASM_fn)
         self.assertTrue(file_compare(QASM_fn, GOLD_fn))
 
         ql.set_option('write_qasm_files', 'no')

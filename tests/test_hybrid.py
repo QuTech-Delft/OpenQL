@@ -1,7 +1,7 @@
 import os
 import unittest
 from openql import openql as ql
-from test_QISA_assembler_present import assemble
+from utils import file_compare
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
 
@@ -36,9 +36,9 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
         k1.gate('cz', [0, 2])
 
         # # create classical registers
-        rd = ql.CReg()
-        rs1 = ql.CReg()
-        rs2 = ql.CReg()
+        rd = ql.CReg(1)
+        rs1 = ql.CReg(2)
+        rs2 = ql.CReg(3)
 
         # add/sub/and/or/xor
         k1.classical(rd, ql.Operation(rs1, '+', rs2))
@@ -62,8 +62,10 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
         p.add_kernel(k1)
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_if(self):
@@ -81,9 +83,9 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
         k2 = ql.Kernel('aKernel2', platform, num_qubits, num_cregs)
 
         # create classical registers
-        rd = ql.CReg()
-        rs1 = ql.CReg()
-        rs2 = ql.CReg()
+        rd = ql.CReg(1)
+        rs1 = ql.CReg(2)
+        rs2 = ql.CReg(3)
 
         # quanutm operations
         k1.gate('x', [0])
@@ -95,8 +97,10 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_if_else(self):
         self.setUpClass()
@@ -113,9 +117,9 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
         k2 = ql.Kernel('aKernel2', platform, num_qubits, num_cregs)
 
         # create classical registers
-        rd = ql.CReg()
-        rs1 = ql.CReg()
-        rs2 = ql.CReg()
+        rd = ql.CReg(1)
+        rs1 = ql.CReg(2)
+        rs2 = ql.CReg(3)
 
         # quanutm operations
         k1.gate('x', [0])
@@ -126,8 +130,10 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_for(self):
@@ -145,9 +151,9 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
         k2 = ql.Kernel('aKernel2', platform, num_qubits, num_cregs)
 
         # create classical registers
-        rd = ql.CReg()
-        rs1 = ql.CReg()
-        rs2 = ql.CReg()
+        rd = ql.CReg(1)
+        rs1 = ql.CReg(2)
+        rs2 = ql.CReg(3)
 
         # quanutm operations
         k1.gate('x', [0])
@@ -158,8 +164,10 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_do_while(self):
@@ -177,9 +185,9 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
         k2 = ql.Kernel('aKernel2', platform, num_qubits, num_cregs)
 
         # create classical registers
-        rd = ql.CReg()
-        rs1 = ql.CReg()
-        rs2 = ql.CReg()
+        rd = ql.CReg(1)
+        rs1 = ql.CReg(2)
+        rs2 = ql.CReg(3)
 
         # quanutm operations
         k1.gate('x', [0])
@@ -190,8 +198,10 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_do_while_nested_for(self):
@@ -213,9 +223,9 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
         k2 = ql.Kernel('aKernel2', platform, num_qubits, num_cregs)
 
         # create classical registers
-        rd = ql.CReg()
-        rs1 = ql.CReg()
-        rs2 = ql.CReg()
+        rd = ql.CReg(1)
+        rs1 = ql.CReg(2)
+        rs2 = ql.CReg(3)
 
         # quanutm operations
         k1.gate('x', [0])
@@ -227,8 +237,10 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
 if __name__ == '__main__':

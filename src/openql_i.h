@@ -69,9 +69,9 @@ class CReg
 {
 public:
     ql::creg* creg;
-    CReg()
+    CReg(size_t id)
     {
-        creg = new ql::creg();
+        creg = new ql::creg(id);
     }
     ~CReg()
     {

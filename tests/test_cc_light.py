@@ -1,14 +1,11 @@
 import os
 import unittest
 from openql import openql as ql
-from test_QISA_assembler_present import assemble
 from utils import file_compare
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
-
 curdir = os.path.dirname(__file__)
 output_dir = os.path.join(curdir, 'test_output')
-
 
 class Test_basic(unittest.TestCase):
 
@@ -29,8 +26,6 @@ class Test_basic(unittest.TestCase):
 
 
     # single qubit mask generation test
-    # @unittest.expectedFailure
-    # @unittest.skip
     def test_smis(self):
         self.setUpClass()
         # You can specify a config location, here we use a default config
@@ -38,7 +33,7 @@ class Test_basic(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_smis', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
@@ -62,11 +57,12 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     # single qubit mask generation test with custom gates
-    # @unittest.skip
     def test_smis_with_custom_gates(self):
         self.setUpClass()
 
@@ -75,7 +71,7 @@ class Test_basic(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = 7
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_smis_with_custom_gates', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         # populate the second kernel using both custom and default gates
@@ -94,13 +90,14 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     # single qubit mask generation multi-kernel test (custom with non-custom
     # gates)
-    # @unittest.skip
     def test_smis_multi_kernel(self):
         self.setUpClass()
 
@@ -109,7 +106,7 @@ class Test_basic(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = 7
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_smis_multi_kernel', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         # populate the first kernel using default gates
@@ -144,8 +141,10 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_smis_all_bundled(self):
@@ -176,13 +175,10 @@ class Test_basic(unittest.TestCase):
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         GOLD_fn = rootDir + '/golden/test_smis_all_bundled.qisa'
 
-        assemble(QISA_fn)
-
         self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
 
 
     # two qubit mask generation test
-    # @unittest.skip
     def test_smit(self):
         self.setUpClass()
 
@@ -191,7 +187,7 @@ class Test_basic(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = 7
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_smit', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
@@ -218,8 +214,10 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_smit_all_bundled(self):
@@ -251,22 +249,20 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        GOLD_fn = rootDir + '/golden/test_smit_all_bundled.qisa'
 
-        assemble(QISA_fn)
-
-        self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 class Test_advance(unittest.TestCase):
-	# @unittest.skip
+
     def test_qubit_busy(self):
 
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
         num_qubits = 7
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_qubit_busy', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
@@ -281,18 +277,19 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
-	# @unittest.skip
     def test_qwg_available_01(self):
 
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
         num_qubits = 7
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_qwg_available_01', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
@@ -307,18 +304,19 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
-	# @unittest.skip
     def test_qwg_available_02(self):
 
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
         num_qubits = 7
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_qwg_available_02', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
@@ -333,18 +331,19 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
-	# @unittest.skip
     def test_qwg_busy(self):
 
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
         num_qubits = 7
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_qwg_busy', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
@@ -359,18 +358,19 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
-	# @unittest.skip
     def test_measure_available01(self):
 
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
         num_qubits = 7
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_measure_available01', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         k = ql.Kernel('aKernel', platform, num_qubits)
@@ -386,18 +386,19 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
-	# @unittest.skip
     def test_measure_available02(self):
 
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
         num_qubits = 7
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_measure_available02', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
@@ -414,18 +415,19 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
-	# @unittest.skip
     def test_measure_busy(self):
 
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
         num_qubits = 7
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_measure_busy', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
@@ -443,18 +445,19 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
-	# @unittest.skip
     def test_edge_available(self):
 
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
         num_qubits = 7
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_edge_available', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
@@ -469,15 +472,19 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
-	# @unittest.skip
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+
+
     def test_edge_busy(self):
- 
+
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
         num_qubits = 7
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_edge_busy', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
@@ -492,18 +499,19 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
-	# @unittest.skip
     def test_edge_illegal(self):
 
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
         num_qubits = 7
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_edge_illegal', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
@@ -524,8 +532,6 @@ class Test_advance(unittest.TestCase):
 
 
     # fast feedback test
-    # @unittest.expectedFailure
-    # @unittest.skip
     def test_fast_feedback(self):
 
         # You can specify a config location, here we use a default config
@@ -533,7 +539,7 @@ class Test_advance(unittest.TestCase):
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
         num_qubits = platform.get_qubit_number()
-        p = ql.Program('aProgram', platform, num_qubits)
+        p = ql.Program('test_fast_feedback', platform, num_qubits)
         p.set_sweep_points(sweep_points)
 
         # populate kernel using default gates
@@ -549,8 +555,10 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     @unittest.skip
     def test_ccl_buffers(self):
@@ -597,12 +605,10 @@ class Test_advance(unittest.TestCase):
             p.add_kernel(k)
             p.compile()
 
+            GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
             QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-            gold_fn = rootDir + '/golden/test_ccl_buffers_'+str(testNo)+'.qisa'
 
-            assemble(QISA_fn)
-
-            self.assertTrue( file_compare(QISA_fn, gold_fn) )
+            self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_ccl_latencies(self):
@@ -639,12 +645,10 @@ class Test_advance(unittest.TestCase):
             p.add_kernel(k)
             p.compile()
 
+            GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
             QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-            gold_fn = rootDir + '/golden/test_ccl_latencies_'+str(testNo)+'.qisa'
 
-            assemble(QISA_fn)
-
-            self.assertTrue( file_compare(QISA_fn, gold_fn) )
+            self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_single_qubit_flux_manual01(self):
         ql.set_option('cz_mode', 'manual')
@@ -660,6 +664,11 @@ class Test_advance(unittest.TestCase):
         k.gate('sqf', [2])
         p.add_kernel(k)
         p.compile()
+
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_single_qubit_flux_manual02(self):
         ql.set_option('cz_mode', 'manual')
@@ -681,6 +690,11 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
+
     def test_single_qubit_flux_auto(self):
         ql.set_option('cz_mode', 'auto')
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
@@ -698,6 +712,11 @@ class Test_advance(unittest.TestCase):
 
         p.add_kernel(k)
         p.compile()
+
+        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        QISA_fn = os.path.join(output_dir, p.name+'.qisa')
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 if __name__ == '__main__':
     unittest.main()

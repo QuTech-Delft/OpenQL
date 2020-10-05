@@ -83,6 +83,9 @@ class Test_bugs(unittest.TestCase):
     # various runs of compiles were generating different results or in the best
     # case strange errors. So multiple (NCOMPILES) runs of compile are executed
     # to make sure there is no error and output generated in all these runs is same
+    # JvS: more likely, it also had to do with the classical register allocator
+    # depending on stuff like Python's garbage collection to free a register.
+    # The register numbers have to be hardcoded now for that reason.
     def test_stateful_behavior(self):
         self.setUpClass()
         ql.set_option('optimize', 'no')
@@ -103,9 +106,9 @@ class Test_bugs(unittest.TestCase):
         k.gate('rx180', [0])
         k.measure(0)
 
-        rd = ql.CReg()
-        rs1 = ql.CReg()
-        rs2 = ql.CReg()
+        rd = ql.CReg(0)
+        rs1 = ql.CReg(1)
+        rs2 = ql.CReg(2)
 
         k.classical(rs1, ql.Operation(3))
         k.classical(rs1, ql.Operation(4))
