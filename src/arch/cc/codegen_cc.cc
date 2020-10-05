@@ -68,7 +68,7 @@ void codegen_cc::init(const ql::quantum_platform &platform)
     // NB: a new eqasm_backend_cc is instantiated per call to compile, and
     // as a result also a codegen_cc, so we don't need to cleanup
     this->platform = &platform;
-    settings.load_backend_settings(platform);
+    settings.loadBackendSettings(platform);
 
     // optionally preload codewordTable
     std::string map_input_file = ql::options::get("backend_cc_map_input_file");
@@ -103,7 +103,7 @@ std::string codegen_cc::getMap()
 | Compile support
 \************************************************************************/
 
-void codegen_cc::program_start(const std::string &progName)
+void codegen_cc::programStart(const std::string &progName)
 {
     // emit program header
     codeSection << std::left;    // assumed by emit()
@@ -118,7 +118,7 @@ void codegen_cc::program_start(const std::string &progName)
 }
 
 
-void codegen_cc::program_finish(const std::string &progName)
+void codegen_cc::programFinish(const std::string &progName)
 {
 #if OPT_RUN_ONCE   // program runs once only
     emit("", "stop");
@@ -135,34 +135,34 @@ void codegen_cc::program_finish(const std::string &progName)
     vcd.programFinish(progName);
 }
 
-void codegen_cc::kernel_start()
+void codegen_cc::kernelStart()
 {
     ql::utils::zero(lastEndCycle);       // FIXME: actually, bundle.startCycle starts counting at 1
 }
 
-void codegen_cc::kernel_finish(const std::string &kernelName, size_t durationInCycles)
+void codegen_cc::kernelFinish(const std::string &kernelName, size_t durationInCycles)
 {
     vcd.kernelFinish(kernelName, durationInCycles);
 }
 
 /*
-    Our strategy is to first process all custom_gate's in a bundle, storing the
+    Our strategy is to first process all customGate's in a bundle, storing the
     relevant information in bundleInfo. Then, when all work for a bundle has
-    been collected, we generate code in bundle_finish
+    been collected, we generate code in bundleFinish
 
-    - bundle_start():
+    - bundleStart():
     clear bundleInfo, which maintains the work that needs to be performed for bundle
 
-    - custom_gate():
+    - customGate():
     collect gate information in bundleInfo
 
-    - bundle_finish():
+    - bundleFinish():
     generate code for bundle from information collected in bundleInfo (which
     may be empty if no custom gates are present in bundle)
 */
 
-// bundle_start: see 'strategy' above
-void codegen_cc::bundle_start(const std::string &cmnt)
+// bundleStart: see 'strategy' above
+void codegen_cc::bundleStart(const std::string &cmnt)
 {
     unsigned int slotsUsed = settings.getInstrumentsSize();   // FIXME: assuming all instruments use a slot
     bundleInfo.assign(slotsUsed, std::vector<tBundleInfo>(MAX_GROUPS, {"", 0, -1}));
@@ -170,9 +170,9 @@ void codegen_cc::bundle_start(const std::string &cmnt)
     comment(cmnt);
 }
 
-// bundle_finish: see 'strategy' above
+// bundleFinish: see 'strategy' above
 // FIXME: split into smaller parts
-void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool isLastBundle)
+void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool isLastBundle)
 {
     if(isLastBundle) {
         comment(SS2S(" # last bundle of kernel, will pad outputs to match durations"));
@@ -367,8 +367,8 @@ void codegen_cc::bundle_finish(size_t startCycle, size_t durationInCycles, bool 
 | Quantum instructions
 \************************************************************************/
 
-// custom_gate: single/two/N qubit gate, including readout, see 'strategy' above
-void codegen_cc::custom_gate(
+// customGate: single/two/N qubit gate, including readout, see 'strategy' above
+void codegen_cc::customGate(
         const std::string &iname,
         const std::vector<size_t> &qops,
         const std::vector<size_t> &cops,
@@ -417,7 +417,7 @@ void codegen_cc::custom_gate(
         comment(cmnt.str());
     }
 
-    vcd.customgate(iname, qops, startCycle, durationInNs);
+    vcd.customGate(iname, qops, startCycle, durationInNs);
 
     // find instruction (gate definition)
     const json &instruction = platform->find_instruction(iname);
@@ -503,16 +503,16 @@ void codegen_cc::custom_gate(
         // FIXME: implement
 #endif
 
-        DOUT("custom_gate(): iname='" << iname <<
+        DOUT("customGate(): iname='" << iname <<
              "', duration=" << durationInNs <<
              "[ns], si.instrIdx=" << si.instrIdx <<
              ", si.group=" << si.group);
 
-        // NB: code is generated in bundle_finish()
+        // NB: code is generated in bundleFinish()
     }   // for(signal)
 }
 
-void codegen_cc::nop_gate()
+void codegen_cc::nopGate()
 {
     comment("# NOP gate");
     FATAL("FIXME: NOP gate not implemented");
@@ -527,19 +527,19 @@ void codegen_cc::comment(const std::string &c)
 | Classical operations on kernels
 \************************************************************************/
 
-void codegen_cc::if_start(size_t op0, const std::string &opName, size_t op1)
+void codegen_cc::ifStart(size_t op0, const std::string &opName, size_t op1)
 {
     comment(SS2S("# IF_START(R" << op0 << " " << opName << " R" << op1 << ")"));
     FATAL("FIXME: not implemented");
 }
 
-void codegen_cc::else_start(size_t op0, const std::string &opName, size_t op1)
+void codegen_cc::elseStart(size_t op0, const std::string &opName, size_t op1)
 {
     comment(SS2S("# ELSE_START(R" << op0 << " " << opName << " R" << op1 << ")"));
     FATAL("FIXME: not implemented");
 }
 
-void codegen_cc::for_start(const std::string &label, int iterations)
+void codegen_cc::forStart(const std::string &label, int iterations)
 {
     comment(SS2S("# FOR_START(" << iterations << ")"));
     // FIXME: reserve register
@@ -547,20 +547,20 @@ void codegen_cc::for_start(const std::string &label, int iterations)
     emit((label+":").c_str(), "", SS2S(""), "# ");        // just a label
 }
 
-void codegen_cc::for_end(const std::string &label)
+void codegen_cc::forEnd(const std::string &label)
 {
     comment("# FOR_END");
     // FIXME: free register
     emit("", "loop", SS2S("R62,@" << label), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
 }
 
-void codegen_cc::do_while_start(const std::string &label)
+void codegen_cc::doWhileStart(const std::string &label)
 {
     comment("# DO_WHILE_START");
     emit((label+":").c_str(), "", SS2S(""), "# ");                              // NB: just a label
 }
 
-void codegen_cc::do_while_end(const std::string &label, size_t op0, const std::string &opName, size_t op1)
+void codegen_cc::doWhileEnd(const std::string &label, size_t op0, const std::string &opName, size_t op1)
 {
     comment(SS2S("# DO_WHILE_END(R" << op0 << " " << opName << " R" << op1 << ")"));
     emit("", "jmp", SS2S("@" << label), "# FIXME: we don't support conditions, just an endless loop'");        // FIXME: just endless loop

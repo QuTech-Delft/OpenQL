@@ -9,7 +9,7 @@
 #include "settings_cc.h"
 
 
-void settings_cc::load_backend_settings(const ql::quantum_platform &platform)
+void settings_cc::loadBackendSettings(const ql::quantum_platform &platform)
 {
     // remind some main JSON areas
     JSON_ASSERT(platform.hardware_settings, "eqasm_backend_cc", "hardware_settings");  // NB: json_get<const json &> unavailable

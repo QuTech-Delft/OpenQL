@@ -35,11 +35,11 @@ public:
 
 private:
     std::string kernelLabel(ql::quantum_kernel &k);
-    void codegen_classical_instruction(ql::gate *classical_ins);
-    void codegen_kernel_prologue(ql::quantum_kernel &k);
-    void codegen_kernel_epilogue(ql::quantum_kernel &k);
-    void codegen_bundles(ql::ir::bundles_t &bundles, const ql::quantum_platform &platform);
-    void load_hw_settings(const ql::quantum_platform &platform);
+    void codegenClassicalInstruction(ql::gate *classical_ins);
+    void codegenKernelPrologue(ql::quantum_kernel &k);
+    void codegenKernelEpilogue(ql::quantum_kernel &k);
+    void codegenBundles(ql::ir::bundles_t &bundles, const ql::quantum_platform &platform);
+    void loadHwSettings(const ql::quantum_platform &platform);
 
 private: // vars
     codegen_cc codegen;

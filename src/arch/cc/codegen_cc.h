@@ -48,30 +48,30 @@ public:
     std::string getMap();                               // return a map of codeword assignments, useful for configuring AWGs
 
     // Compile support
-    void program_start(const std::string &progName);
-    void program_finish(const std::string &progName);
-    void kernel_start();
-    void kernel_finish(const std::string &kernelName, size_t durationInCycles);
-    void bundle_start(const std::string &cmnt);
-    void bundle_finish(size_t startCycle, size_t durationInCycles, bool isLastBundle);
+    void programStart(const std::string &progName);
+    void programFinish(const std::string &progName);
+    void kernelStart();
+    void kernelFinish(const std::string &kernelName, size_t durationInCycles);
+    void bundleStart(const std::string &cmnt);
+    void bundleFinish(size_t startCycle, size_t durationInCycles, bool isLastBundle);
 
     // Quantum instructions
-    void custom_gate(
+    void customGate(
             const std::string &iname,
             const std::vector<size_t> &qops,
             const std::vector<size_t> &cops,
-            double angle, size_t startCycle, size_t durationInNs);  // FIXME: here we have duration in ns, else in cycles
-    void nop_gate();
+            double angle, size_t startCycle, size_t durationInNs);  // FIXME: here we have duration in ns, elsewhere in cycles
+    void nopGate();
 
     void comment(const std::string &c);
 
     // Classical operations on kernels
-    void if_start(size_t op0, const std::string &opName, size_t op1);
-    void else_start(size_t op0, const std::string &opName, size_t op1);
-    void for_start(const std::string &label, int iterations);
-    void for_end(const std::string &label);
-    void do_while_start(const std::string &label);
-    void do_while_end(const std::string &label, size_t op0, const std::string &opName, size_t op1);
+    void ifStart(size_t op0, const std::string &opName, size_t op1);
+    void elseStart(size_t op0, const std::string &opName, size_t op1);
+    void forStart(const std::string &label, int iterations);
+    void forEnd(const std::string &label);
+    void doWhileStart(const std::string &label);
+    void doWhileEnd(const std::string &label, size_t op0, const std::string &opName, size_t op1);
 
 #if 0   // FIXME: unused and incomplete
     // Classical arithmetic instructions
@@ -85,7 +85,7 @@ private:    // vars
 
     const ql::quantum_platform *platform;                       // remind platform
     settings_cc settings;                                       // handling of JSON settings
-    vcd_cc vcd;                                                 // handling of .VCD output
+    vcd_cc vcd;                                                 // handling of VCD file output
 
     bool verboseCode = true;                                    // option to output extra comments in generated code. FIXME: not yet configurable
     bool mapPreloaded = false;
@@ -96,12 +96,12 @@ private:    // vars
 #endif
 
     // codegen state
+    unsigned int lastEndCycle[MAX_SLOTS];
     std::vector<std::vector<tBundleInfo>> bundleInfo;           // matrix[instrIdx][group]
     json codewordTable;                                         // codewords versus signals per instrument group
 #if OPT_FEEDBACK
     json inputLutTable;                                         // input LUT usage per instrument group
 #endif
-    unsigned int lastEndCycle[MAX_SLOTS];
 
 
 private:    // funcs
