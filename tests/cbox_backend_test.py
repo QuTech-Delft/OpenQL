@@ -2,7 +2,7 @@
 from openql import openql as ql
 import os
 
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 
 
 def first_example():

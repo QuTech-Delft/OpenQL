@@ -11,10 +11,9 @@ try:
 except ImportError:
     qx = None
 
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 config_fn = os.path.join(curdir, 'test_cfg_none_simple.json')
 platform = ql.Platform('platform_none', config_fn)
-rootDir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 c0 = ""

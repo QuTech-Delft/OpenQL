@@ -3,9 +3,7 @@ from utils import file_compare
 import unittest
 from openql import openql as ql
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
-
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 config_fn = os.path.join(curdir, 'test_config_default.json')
 platf = ql.Platform("starmon", config_fn)
 
@@ -42,7 +40,7 @@ class Test_qubits(unittest.TestCase):
         p.add_kernel(k)  # add kernel to program
         p.compile()
 
-        gold_fn = rootDir + '/golden/test_1_qubit.qasm'
+        gold_fn = curdir + '/golden/test_1_qubit.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
@@ -66,7 +64,7 @@ class Test_qubits(unittest.TestCase):
         p.add_kernel(k)  # add kernel to program
         p.compile()
 
-        gold_fn = rootDir + '/golden/test_2_qubit.qasm'
+        gold_fn = curdir + '/golden/test_2_qubit.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
@@ -92,7 +90,7 @@ class Test_qubits(unittest.TestCase):
         ql.set_option('decompose_toffoli', 'no')
         p.compile()
 
-        gold_fn = rootDir + '/golden/test_3_qubit.qasm'
+        gold_fn = curdir + '/golden/test_3_qubit.qasm'
         qasm_fn = os.path.join(output_dir, p.name+'.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 

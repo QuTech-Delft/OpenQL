@@ -4,14 +4,13 @@ import unittest
 from utils import file_compare
 
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 
 class Test_Alap_Rc_Schedule(unittest.TestCase):
     _SCHEDULER = 'ALAP'
-    config = os.path.join(rootDir, "hardware_config_cc_light.json")
+    config = os.path.join(curdir, "hardware_config_cc_light.json")
 
     def setUp(self):
         ql.set_option('scheduler', self._SCHEDULER)
@@ -38,7 +37,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -73,7 +72,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -110,7 +109,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -138,7 +137,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -171,7 +170,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -204,7 +203,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -237,7 +236,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -282,7 +281,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -335,7 +334,7 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))

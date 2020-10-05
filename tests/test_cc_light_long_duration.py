@@ -4,8 +4,7 @@ import unittest
 from openql import openql as ql
 from utils import file_compare
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 ql.set_option('output_dir', output_dir)
 
@@ -52,7 +51,7 @@ class Test_CCL_long_duration(unittest.TestCase):
 
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))

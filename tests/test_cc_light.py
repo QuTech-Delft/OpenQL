@@ -3,8 +3,7 @@ import unittest
 from openql import openql as ql
 from utils import file_compare
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 class Test_basic(unittest.TestCase):
@@ -57,7 +56,7 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -90,7 +89,7 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -141,7 +140,7 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -173,7 +172,7 @@ class Test_basic(unittest.TestCase):
         p.compile()
 
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        GOLD_fn = rootDir + '/golden/test_smis_all_bundled.qisa'
+        GOLD_fn = curdir + '/golden/test_smis_all_bundled.qisa'
 
         self.assertTrue( file_compare(QISA_fn, GOLD_fn) )
 
@@ -214,7 +213,7 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -249,7 +248,7 @@ class Test_basic(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -257,7 +256,7 @@ class Test_basic(unittest.TestCase):
 class Test_advance(unittest.TestCase):
 
     def test_qubit_busy(self):
-
+        ql.set_option('output_dir', output_dir)
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -277,14 +276,14 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_qwg_available_01(self):
-
+        ql.set_option('output_dir', output_dir)
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -304,14 +303,14 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_qwg_available_02(self):
-
+        ql.set_option('output_dir', output_dir)
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -331,14 +330,14 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_qwg_busy(self):
-
+        ql.set_option('output_dir', output_dir)
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -358,14 +357,14 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_measure_available01(self):
-
+        ql.set_option('output_dir', output_dir)
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -386,14 +385,14 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_measure_available02(self):
-
+        ql.set_option('output_dir', output_dir)
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -415,14 +414,14 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_measure_busy(self):
-
+        ql.set_option('output_dir', output_dir)
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -445,14 +444,14 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_edge_available(self):
-
+        ql.set_option('output_dir', output_dir)
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -472,14 +471,14 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_edge_busy(self):
-
+        ql.set_option('output_dir', output_dir)
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -499,14 +498,14 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
     def test_edge_illegal(self):
-
+        ql.set_option('output_dir', output_dir)
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1,2]
@@ -535,6 +534,7 @@ class Test_advance(unittest.TestCase):
     def test_fast_feedback(self):
 
         # You can specify a config location, here we use a default config
+        ql.set_option('output_dir', output_dir)
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform = ql.Platform('seven_qubits_chip', config_fn)
         sweep_points = [1, 2]
@@ -555,7 +555,7 @@ class Test_advance(unittest.TestCase):
         # compile the program
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -605,7 +605,7 @@ class Test_advance(unittest.TestCase):
             p.add_kernel(k)
             p.compile()
 
-            GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+            GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
             QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
             self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -629,8 +629,8 @@ class Test_advance(unittest.TestCase):
                 ]
 
         for testNo, testKernel in tests:
-            ql.set_option('output_dir', output_dir)
             print('Running test_ccl_latencies No: {}'.format(testNo))
+            ql.set_option('output_dir', output_dir)
             config_fn = os.path.join(curdir, 'test_cfg_cc_light_buffers_latencies.json')
             platform  = ql.Platform('seven_qubits_chip', config_fn)
             sweep_points = [1,2]
@@ -645,12 +645,13 @@ class Test_advance(unittest.TestCase):
             p.add_kernel(k)
             p.compile()
 
-            GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+            GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
             QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
             self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_single_qubit_flux_manual01(self):
+        ql.set_option('output_dir', output_dir)
         ql.set_option('cz_mode', 'manual')
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
@@ -665,12 +666,13 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_single_qubit_flux_manual02(self):
+        ql.set_option('output_dir', output_dir)
         ql.set_option('cz_mode', 'manual')
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
@@ -690,12 +692,13 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     def test_single_qubit_flux_auto(self):
+        ql.set_option('output_dir', output_dir)
         ql.set_option('cz_mode', 'auto')
         config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
@@ -713,7 +716,7 @@ class Test_advance(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))

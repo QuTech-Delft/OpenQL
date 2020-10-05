@@ -4,9 +4,7 @@ import unittest
 from openql import Kernel, Program
 from openql import openql as ql
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
-
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 config_fn = os.path.join(curdir, 'hardware_config_cc_light.json') 
 platf = ql.Platform('seven_qubits_chip', config_fn)
 
@@ -60,7 +58,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
@@ -93,7 +91,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
@@ -120,7 +118,7 @@ class Test_single_qubit_seqs_CCL(unittest.TestCase):
         p.compile()
 
         # Test that the generated code is valid
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 

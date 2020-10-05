@@ -3,9 +3,7 @@ import filecmp
 import unittest
 from openql import openql as ql
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
-
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 config_fn = os.path.join(curdir, 'hardware_config_qx.json')
 platf = ql.Platform("starmon", config_fn)
 
@@ -72,7 +70,7 @@ class Test_cqasm(unittest.TestCase):
         p.compile()
 
         for ext in ('.qasm', '_scheduled.qasm'):
-            GOLD_fn = os.path.join(rootDir, 'golden', p.name + ext)
+            GOLD_fn = os.path.join(curdir, 'golden', p.name + ext)
             QISA_fn = os.path.join(output_dir, p.name + ext)
 
             self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -117,7 +115,7 @@ class Test_cqasm(unittest.TestCase):
         p.compile()
 
         for ext in ('.qasm', '_scheduled.qasm'):
-            GOLD_fn = os.path.join(rootDir, 'golden', p.name + ext)
+            GOLD_fn = os.path.join(curdir, 'golden', p.name + ext)
             QISA_fn = os.path.join(output_dir, p.name + ext)
 
             self.assertTrue(file_compare(QISA_fn, GOLD_fn))

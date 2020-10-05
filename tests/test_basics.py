@@ -3,8 +3,7 @@ import unittest
 import os
 from utils import file_compare
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 class Test_basic(unittest.TestCase):
@@ -51,7 +50,7 @@ class Test_basic(unittest.TestCase):
         p.compile()
 
         for name in ('basic.qasm', 'basic_scheduled.qasm'):
-            self.assertTrue(file_compare(os.path.join(output_dir, name), os.path.join(rootDir, 'golden', name)))
+            self.assertTrue(file_compare(os.path.join(output_dir, name), os.path.join(curdir, 'golden', name)))
 
 if __name__ == '__main__':
     unittest.main()

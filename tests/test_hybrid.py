@@ -3,9 +3,7 @@ import unittest
 from openql import openql as ql
 from utils import file_compare
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
-
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 
@@ -62,7 +60,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
         p.add_kernel(k1)
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -97,7 +95,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -130,7 +128,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -164,7 +162,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -198,7 +196,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
@@ -237,7 +235,7 @@ class Test_hybrid_classical_quantum(unittest.TestCase):
 
         p.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', p.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
 
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))

@@ -9,8 +9,7 @@ import unittest
 from utils import file_compare
 
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 class Test_skip(unittest.TestCase):
@@ -40,7 +39,7 @@ class Test_skip(unittest.TestCase):
         # parameters
         ql.set_option('issue_skip_319', 'yes')
         v = 'yes'
-        config = os.path.join(rootDir, "test_mapper_s7.json")
+        config = os.path.join(curdir, "test_mapper_s7.json")
         num_qubits = 7
 
         # create and set platform
@@ -62,7 +61,7 @@ class Test_skip(unittest.TestCase):
 
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '_scheduled.qasm')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '_scheduled.qasm')
         QASM_fn = os.path.join(output_dir, prog.name+'_scheduled.qasm')
 
         self.assertTrue(file_compare(QASM_fn, GOLD_fn))
