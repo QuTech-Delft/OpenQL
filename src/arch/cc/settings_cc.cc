@@ -58,19 +58,6 @@ void settings_cc::loadBackendSettings(const ql::quantum_platform &platform)
 }
 
 
-#if 1  // FIXME: only used by OPT_CALCULATE_LATENCIES
-const json &settings_cc::findInstrumentDefinition(const std::string &name) const
-{
-    // FIXME: use json_get
-    if JSON_EXISTS(*jsonInstrumentDefinitions, name) {
-        return (*jsonInstrumentDefinitions)[name];
-    } else {
-        JSON_FATAL("Could not find key 'name'=" << name << "in section 'instrument_definitions'");
-    }
-}
-#endif
-
-
 // find JSON signal definition for instruction, either inline or via 'ref_signal'
 settings_cc::tSignalDef settings_cc::findSignalDefinition(const json &instruction, const std::string &iname) const
 {

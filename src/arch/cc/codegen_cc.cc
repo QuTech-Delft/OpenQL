@@ -599,58 +599,21 @@ void codegen_cc::emitProgramStart()
 #endif
 
     comment("# synchronous start and latency compensation");
-#if OPT_CALCULATE_LATENCIES    // fixed compensation based on instrument latencies
-    std::map<int, int> slotLatencies;   // maps slot to latency
-
-    // get latencies per slot, iterating over instruments
-    for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
-        const json &instrument = settings.getInstrumentAtIdx(instrIdx);                  // NB: always exists
-        std::string instrumentRef = instrument["ref_instrument_definition"];    // FIXME: use json_get
-        int slot = instrument["controller"]["slot"];    // FIXME: assuming controller being cc, use json_get
-
-        // find latency
-        const json &id = findInstrumentDefinition(instrumentRef);
-        int latency = id["latency"];    // FIXME: json_get
-        DOUT("latency of '" << instrumentRef << "' in slot " << slot << " is " << latency);
-        slotLatencies.insert(std::make_pair(slot, latency));
-    }
-
-    // find max latency
-    int maxLatency = 0;
-    for(auto it=slotLatencies.begin(); it!=slotLatencies.end(); it++) {
-        int latency = it->second;
-        if(latency > maxLatency) maxLatency = latency;
-    }
-    DOUT("maxLatency = " << maxLatency);
-
-    // align latencies
-    for(auto it=slotLatencies.begin(); it!=slotLatencies.end(); it++) {
-        int slot = it->first;
-        int latency = it->second;
-        const int minDelay = 1;     // min value for seq_bar
-        int delayInCycles = minDelay + platform->time_to_cycles(maxLatency-latency);
-
-        emit(SS2S("[" << slot << "]").c_str(),      // CCIO selector
-            "seq_bar",
-            SS2S(delayInCycles),    // FIXME: old semantics
-            SS2S("# latency compensation").c_str());    // FIXME: add instrumentName/instrumentRef/latency
-    }
-#else   // user settable delay via register
- #if OPT_OLD_SEQBAR_SEMANTICS  // original seq_bar semantics
+   // user settable delay via register
+#if OPT_OLD_SEQBAR_SEMANTICS  // original seq_bar semantics
         // FIXME: is 'seq_bar 1' safe in the sense that we will never get an empty queue?
         emit("",                "add",      "R63,1,R0",         "# R63 externally set by user, prevent 0 value which would wrap counter");
         emit("",                "seq_bar",  "20",               "# synchronization");
         emit("syncLoop:",       "seq_out",  "0x00000000,1",     "# 20 ns delay");
         emit("",                "loop",     "R0,@syncLoop",     "# ");
- #else  // new seq_bar semantics (firmware from 20191219 onwards)
+#else  // new seq_bar semantics (firmware from 20191219 onwards)
         emit("",                "seq_bar",  "",                 "# synchronization, delay set externally through SET_SEQ_BAR_CNT");
- #endif
+#endif
 
         emit("mainLoop:",       "",         "",                 "# ");
 
- #if OPT_FEEDBACK
+#if OPT_FEEDBACK
         emit("",                "seq_state","0",                "# clear Programmable Logic state");
- #endif
 #endif
 }
 

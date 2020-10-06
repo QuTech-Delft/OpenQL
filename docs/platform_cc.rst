@@ -76,7 +76,7 @@ Where:
 * ``channels`` defines the number of logical channels of the instrument. For most instruments there is one logical channel per physical channel, but the 'zi-uhfqa' provides 9 logical channels on one physical channel pair.
 * ``control_group_sizes`` states possible arrangements of channels operating as a vector
 .. FIXME: add example
-..    // * ``latency`` latency from trigger to output in [ns]. FIXME: currently not implemented
+..    // * ``latency`` latency from trigger to output in [ns]. FIXME: deprecated
 .. FIXME: describe concept of 'group'
 
 

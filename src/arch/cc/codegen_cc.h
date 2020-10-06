@@ -15,7 +15,6 @@
 #define OPT_STATIC_CODEWORDS_ARRAYS     1   // JSON field static_codeword_override is an array with one element per qubit parameter
 #define OPT_VECTOR_MODE                 0   // 1=generate single code word for all output groups together (requires codewords allocated by backend)
 #define OPT_RUN_ONCE                    0   // 0=loop indefinitely (CC-light emulation), 1=run once (preferred, but breaks compatibility)
-#define OPT_CALCULATE_LATENCIES         0   // fixed compensation based on instrument latencies. Not actively maintained
 #define OPT_OLD_SEQBAR_SEMANTICS        0   // support old semantics of seqbar instruction. Will be deprecated
 #define OPT_FEEDBACK                    0   // feedback support. Coming feature
 
