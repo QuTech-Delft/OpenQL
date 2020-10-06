@@ -6,7 +6,6 @@ from utils import file_compare
 
 curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_option('output_dir', output_dir)
 
 class Test_CCL_long_duration(unittest.TestCase):
     def test_AllXY(self):
@@ -24,6 +23,7 @@ class Test_CCL_long_duration(unittest.TestCase):
 
 
         """
+        ql.set_option('output_dir', output_dir)
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platf  = ql.Platform('seven_qubits_chip', config_fn)
         p = ql.Program("AllXYLongDuration", platf, platf.get_qubit_number())
