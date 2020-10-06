@@ -78,6 +78,7 @@ public:
 
 private:    // vars
     static const int MAX_SLOTS = 12;                            // physical maximum of CC
+    static const int MAX_INSTRS = MAX_SLOTS;                    // maximum number of instruments in config file
     static const int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
 
     const ql::quantum_platform *platform;                       // remind platform
@@ -93,8 +94,8 @@ private:    // vars
 #endif
 
     // codegen state
-    unsigned int lastEndCycle[MAX_SLOTS];
-    std::vector<std::vector<tBundleInfo>> bundleInfo;           // matrix[instrIdx][group]
+    unsigned int lastEndCycle[MAX_INSTRS];                      // vector[instrIdx], maintain where we got per slot, kernel scope
+    std::vector<std::vector<tBundleInfo>> bundleInfo;           // matrix[instrIdx][group], bundle scope
     json codewordTable;                                         // codewords versus signals per instrument group
 #if OPT_FEEDBACK
     json inputLutTable;                                         // input LUT usage per instrument group

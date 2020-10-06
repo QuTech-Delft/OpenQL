@@ -10,6 +10,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - CC backend:
     - improved reporting on JSON semantic errors
     - implemented option to output scheduled QASM files
+    - added check for dimension of "instruments/qubits" against "instruments/ref_control_mode/control_bits"
+    - added check for dimension of "instructions/<key>/cc/[signals,ref_signal]/value" against "instruments/ref_control_mode/control_bits"
 
 ### Changed
 - CC backend:

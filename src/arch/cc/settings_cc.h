@@ -14,6 +14,7 @@
 
 using json = nlohmann::json;        // FIXME: should not be part of interface
 
+
 class settings_cc
 {
 public: // types
@@ -23,14 +24,20 @@ public: // types
     } tSignalDef;
 
     typedef struct {
+        const json *instrument;
         std::string instrumentName;
         int slot;
-        std::string refControlMode;
-        json controlMode;
-        size_t nrControlBitsGroups;
     } tInstrumentInfo;
 
     typedef struct {
+        tInstrumentInfo ii;
+        std::string refControlMode;
+        json controlMode;           // FIXME: pointer
+        size_t controlModeGroupCnt;
+    } tInstrumentControl;
+
+    typedef struct {
+        tInstrumentControl ic;
         int instrIdx;               // the index into JSON "eqasm_backend_cc/instruments" that provides the signal
         int group;                  // the group of channels within the instrument that provides the signal
     } tSignalInfo;
@@ -44,6 +51,7 @@ public: // functions
     const json &findInstrumentDefinition(const std::string &name) const;
     tSignalDef findSignalDefinition(const json &instruction, const std::string &iname) const;
     tInstrumentInfo getInstrumentInfo(size_t instrIdx) const;
+    tInstrumentControl getInstrumentControl(size_t instrIdx) const;
 
     // find instrument/group providing instructionSignalType for qubit
     tSignalInfo findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit) const;

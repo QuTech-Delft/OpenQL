@@ -180,8 +180,8 @@ void codegen_cc::kernelFinish(const std::string &kernelName, size_t durationInCy
 // bundleStart: see 'strategy' above
 void codegen_cc::bundleStart(const std::string &cmnt)
 {
-    unsigned int slotsUsed = settings.getInstrumentsSize();   // FIXME: assuming all instruments use a slot
-    bundleInfo.assign(slotsUsed, std::vector<tBundleInfo>(MAX_GROUPS, {"", 0, -1}));
+    unsigned int instrsUsed = settings.getInstrumentsSize();
+    bundleInfo.assign(instrsUsed, std::vector<tBundleInfo>(MAX_GROUPS, {"", 0, -1}));   // FIXME: assign actual nr of groups
 
     comment(cmnt);
 }
@@ -196,7 +196,8 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
-        const settings_cc::tInstrumentInfo ii = settings.getInstrumentInfo(instrIdx);
+        const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
+        // FIXME: check ic.ii.slot against MAX_SLOTS
 
         // collect code generation info from all groups within one instrument
         // FIXME: the term 'group' is used in a diffused way: 1) index of signal vectors, 2) controlModeGroup
@@ -206,33 +207,34 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
         uint32_t maxDurationInCycles = 0;                                   // maximum duration over groups that are used, one instrument
 
         size_t nrGroups = bundleInfo[instrIdx].size();       // FIXME: always MAX_GROUPS:
-        for(size_t group=0; group<nrGroups; group++) {                      // iterate over groups used within instrument
+        for(size_t group=0; group<nrGroups; group++) {                      // iterate over groups of instrument
             tBundleInfo *gi = &bundleInfo[instrIdx][group];                 // shorthand
             if(gi->signalValue != "") {                                     // signal defined, i.e.: we need to output something
                 isInstrUsed = true;
 
                 // determine control mode group FIXME: more explanation
                 int controlModeGroup = -1;
-                if(ii.nrControlBitsGroups == 0) {
-                    FATAL("'control_bits' not defined in 'control_modes/" << ii.refControlMode <<"'");
+                if(ic.controlModeGroupCnt == 0) {
+                    FATAL("'control_bits' not defined or empty in 'control_modes/" << ic.refControlMode <<"'");
 #if OPT_VECTOR_MODE
-                } else if(ii.nrControlBitsGroups == 1) {                    // vector mode: group addresses channel within vector
+                } else if(ic.controlModeGroupCnt == 1) {                    // vector mode: group addresses channel within vector
                     controlModeGroup = 0;
 #endif
-                } else if(group < ii.nrControlBitsGroups) {                 // normal mode: group selects control group
+                } else if(group < ic.controlModeGroupCnt) {                 // normal mode: group selects control group
                     controlModeGroup = group;
                 } else {
-                    FATAL("instrument '" << ii.instrumentName
+                    // FIXME: will become logic error once we get nrGroups right
+                    FATAL("instrument '" << ic.ii.instrumentName
                           << "' uses " << nrGroups
-                          << " groups, but control mode '" << ii.refControlMode
-                          << "' only defines " << ii.nrControlBitsGroups
+                          << " groups, but control mode '" << ic.refControlMode
+                          << "' only defines " << ic.controlModeGroupCnt
                           << " groups in 'control_bits'");
                 }
 
                 // get control bits
-                const json groupControlBits = ii.controlMode["control_bits"][controlModeGroup];    // NB: tests above guarantee existence
-                DOUT("instrumentName=" << ii.instrumentName
-                     << ", slot=" << ii.slot
+                const json groupControlBits = ic.controlMode["control_bits"][controlModeGroup];    // NB: tests above guarantee existence
+                DOUT("instrumentName=" << ic.ii.instrumentName
+                     << ", slot=" << ic.ii.slot
                      << ", control mode group=" << controlModeGroup
                      << ", group control bits: " << groupControlBits);
                 size_t nrGroupControlBits = groupControlBits.size();
@@ -259,7 +261,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                     codeword = staticCodewordOverride;
                     codewordOverriden = true;
 #else
-                    codeword = assignCodeword(ii.instrumentName, instrIdx, group);
+                    codeword = assignCodeword(ic.ii.instrumentName, instrIdx, group);
 #endif
 
                     // convert codeword to digOut
@@ -268,8 +270,8 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                         if(codeword & (1<<codeWordBit)) groupDigOut |= 1<<(int)groupControlBits[idx];
                     }
 
-                    comment(SS2S("  # slot=" << ii.slot
-                            << ", instrument='" << ii.instrumentName << "'"
+                    comment(SS2S("  # slot=" << ic.ii.slot
+                            << ", instrument='" << ic.ii.instrumentName << "'"
                             << ", group=" << group
                             << ": codeword=" << codeword
                             << std::string(codewordOverriden ? " (static override)" : "")
@@ -281,25 +283,25 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 
                 // add trigger to digOut
-                size_t nrTriggerBits = ii.controlMode["trigger_bits"].size();
+                size_t nrTriggerBits = ic.controlMode["trigger_bits"].size();
                 if(nrTriggerBits == 0) {                                    // no trigger
                     // do nothing
                 } else if(nrTriggerBits == 1) {                             // single trigger for all groups
-                    digOut |= 1 << (int)ii.controlMode["trigger_bits"][0];
+                    digOut |= 1 << (int)ic.controlMode["trigger_bits"][0];
 #if 1   // FIXME: trigger per group, nrGroups always 32
                 } else if(nrTriggerBits == nrGroups) {                      // trigger per group
-                    digOut |= 1 << (int)ii.controlMode["trigger_bits"][group];
+                    digOut |= 1 << (int)ic.controlMode["trigger_bits"][group];
 #endif
                 } else {
-                    FATAL("instrument '" << ii.instrumentName
+                    FATAL("instrument '" << ic.ii.instrumentName
                           << "' uses " << nrGroups
-                          << " groups, but control mode '" << ii.refControlMode
+                          << " groups, but control mode '" << ic.refControlMode
                           << "' defines " << nrTriggerBits
                           << " trigger bits in 'trigger_bits' (must be 1 or #groups)");
 // FIXME: 20200924 error shows 32: "E       TypeError: Error : instrument 'mw_0' uses 32 groups, but control mode 'awg8-mw-direct-iq' defines 2 trigger bits in 'trigger_bits' (must be 1 or #groups)"
                 } // FIXME: e.g. HDAWG does not support > 1 trigger bit. dual-QWG required 2 trigger bits
 
-                // compute slot duration
+                // compute maximum duration over all groups
                 if(gi->durationInCycles > maxDurationInCycles) maxDurationInCycles = gi->durationInCycles;
 
                 vcd.bundleFinishGroup(startCycle, gi->durationInCycles, groupDigOut, gi->signalValue, instrIdx, group);
@@ -310,8 +312,8 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             // FIXME: test for gi->readoutCop >= 0
             // FIXME: check consistency between measure instruction and result_bits
             // FIXME: also generate VCD
-            if(JSON_EXISTS(ii.controlMode, "result_bits")) {  // this instrument mode produces results (i.e. it is a measurement device)
-                const json &resultBits = ii.controlMode["result_bits"][group];
+            if(JSON_EXISTS(ic.controlMode, "result_bits")) {  // this instrument mode produces results (i.e. it is a measurement device)
+                const json &resultBits = ic.controlMode["result_bits"][group];
                 size_t nrResultBits = resultBits.size();
                 if(nrResultBits == 1) {                     // single bit
                     digIn |= 1<<(int)resultBits[0];         // NB: we assume the result is active high, which is correct for UHF-QC
@@ -319,16 +321,16 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 #if OPT_FEEDBACK   // FIXME: WIP on measurement
                     // we need: input bit, cop?, qubit, SM bit
                     // FIXME: save gi->readoutCop in inputLutTable
-                    if(JSON_EXISTS(inputLutTable, ii.instrumentName) &&                    // instrument exists
-                                    inputLutTable[ii.instrumentName].size() > group) {     // group exists
+                    if(JSON_EXISTS(inputLutTable, ic.ii.instrumentName) &&                  // instrument exists
+                                    inputLutTable[ic.ii.instrumentName].size() > group) {   // group exists
                     } else {    // new instrument or group
                         codeword = 1;
-                        inputLutTable[ii.instrumentName][group][0] = "";                   // code word 0 is empty
-                        inputLutTable[ii.instrumentName][group][codeword] = signalValue;   // NB: structure created on demand
+                        inputLutTable[ic.ii.instrumentName][group][0] = "";                 // code word 0 is empty
+                        inputLutTable[uc.ii.instrumentName][group][codeword] = signalValue; // NB: structure created on demand
                     }
 #endif
                 } else {    // NB: nrResultBits==0 will not arrive at this point
-                    std::string controlModeName = ii.controlMode;                      // convert to string
+                    std::string controlModeName = ic.controlMode;                           // convert to string
                     FATAL("JSON key '" << controlModeName << "/result_bits' must have 1 bit per group");
                 }
             }
@@ -337,21 +339,21 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
         // generate code for instrument
         if(isInstrUsed) {
-            comment(SS2S("  # slot=" << ii.slot
-                    << ", instrument='" << ii.instrumentName << "'"
+            comment(SS2S("  # slot=" << ic.ii.slot
+                    << ", instrument='" << ic.ii.instrumentName << "'"
                     << ": lastEndCycle=" << lastEndCycle[instrIdx]
                     << ", startCycle=" << startCycle
                     << ", maxDurationInCycles=" << maxDurationInCycles
                     ));
 
-            padToCycle(lastEndCycle[instrIdx], startCycle, ii.slot, ii.instrumentName);
+            padToCycle(lastEndCycle[instrIdx], startCycle, ic.ii.slot, ic.ii.instrumentName);
 
             // emit code for slot
-            emit(SS2S("[" << ii.slot << "]").c_str(),      // CCIO selector
+            emit(SS2S("[" << ic.ii.slot << "]").c_str(),      // CCIO selector
                  "seq_out",
                  SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec <<
                       "," << maxDurationInCycles),
-                 SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": code word/mask on '" << ii.instrumentName+"'").c_str());
+                 SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": code word/mask on '" << ic.ii.instrumentName+"'").c_str());
 
             // update lastEndCycle
             lastEndCycle[instrIdx] = startCycle + maxDurationInCycles;
@@ -371,7 +373,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
         // for last bundle, pad end of bundle to align durations
         if(isLastBundle) {
-            padToCycle(lastEndCycle[instrIdx], startCycle+durationInCycles, ii.slot, ii.instrumentName);
+            padToCycle(lastEndCycle[instrIdx], startCycle+durationInCycles, ic.ii.slot, ic.ii.instrumentName);
         }
 
         vcd.bundleFinish(startCycle, digOut, maxDurationInCycles, instrIdx);
@@ -423,7 +425,7 @@ void codegen_cc::customGate(
         } else if(cops.size() == 1) {
             comment(SS2S(" # READOUT: " << iname << "(c" << cops[0] << ",q" << qops[0] << ")"));
         } else {
-            FATAL("Readout instruction requires 0 or 1 classical operands, not " << cops.size());
+            FATAL("Readout instruction requires 0 or 1 classical operands, not " << cops.size());   // FIXME: provide context
         }
     } else { // handle all other instruction types than "readout"
         // generate comment. NB: we don't have a particular limit for the number of operands
@@ -442,7 +444,7 @@ void codegen_cc::customGate(
     // find signal vector definition for instruction
     settings_cc::tSignalDef sd = settings.findSignalDefinition(instruction, iname);
 
-    // iterate over signal vector defined for instruction
+    // iterate over signals defined for instruction (e.g. several operands or types, and thus instruments)
     for(size_t s=0; s<sd.signal.size(); s++) {
         // compute signalValueString, and some meta information
         std::string signalValueString;
@@ -450,44 +452,53 @@ void codegen_cc::customGate(
         settings_cc::tSignalInfo si;
         settings_cc::tInstrumentInfo ii;
         {   // limit scope
-            std::string signalSPath = SS2S(sd.path<<"["<<s<<"]");        // for JSON error reporting
+            std::string signalSPath = SS2S(sd.path<<"["<<s<<"]");           // for JSON error reporting
 
             // get the operand index & qubit to work on
             operandIdx = json_get<unsigned int>(sd.signal[s], "operand_idx", signalSPath);
             if(operandIdx >= qops.size()) {
-                FATAL("Error in JSON definition of instruction '" << iname <<
+                JSON_FATAL("instruction '" << iname <<
                       "': illegal operand number " << operandIdx <<
-                      "' exceeds expected maximum of " << qops.size()-1)
+                      "' exceeds expected maximum of " << qops.size()-1 <<
+                      "(edit JSON, or provide enough parameters)");         // FIXME: add offending statement
             }
             unsigned int qubit = qops[operandIdx];
 
             // get signalInfo via signal type (e.g. "mw", "flux", etc. NB: this is different from
-            // that provided by find_instruction_type, although some identical strings are used)
+            // the type provided by find_instruction_type, although some identical strings are used)
             std::string instructionSignalType = json_get<std::string>(sd.signal[s], "type", signalSPath);
             si = settings.findSignalInfoForQubit(instructionSignalType, qubit);
 
-            // get instrument and CC slot
-            ii = settings.getInstrumentInfo(si.instrIdx);
-            // FIXME: computes more then we need here
-
-            // get signal value and expand macros
-            // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and
-            // provide codewordTable to downstream software to assign waveforms to the codewords
+            // get signal value
             const json instructionSignalValue = json_get<const json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
+
+            // verify dimensions
+            if(instructionSignalValue.size() != si.ic.controlModeGroupCnt) {
+                JSON_FATAL("signal dimension mismatch on instruction '" << iname <<
+                           "' : control mode '" << si.ic.refControlMode <<
+                           "' requires " <<  si.ic.controlModeGroupCnt <<
+                           " groups, but signal '" << signalSPath+"/value" <<
+                           "' provides " << instructionSignalValue.size());
+            }
+
+            // expand macros
             signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
             ql::utils::replace(signalValueString, std::string("\""), std::string(""));   // get rid of quotes
             ql::utils::replace(signalValueString, std::string("{gateName}"), iname);
-            ql::utils::replace(signalValueString, std::string("{instrumentName}"), ii.instrumentName);
+            ql::utils::replace(signalValueString, std::string("{instrumentName}"), si.ic.ii.instrumentName);
             ql::utils::replace(signalValueString, std::string("{instrumentGroup}"), std::to_string(si.group));
             // FIXME: allow using all qubits involved (in same signalType?, or refer to signal: qubitOfSignal[n]), e.g. qubit[0], qubit[1], qubit[2]
             ql::utils::replace(signalValueString, std::string("{qubit}"), std::to_string(qubit));
+
+            // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and
+            // provide codewordTable to downstream software to assign waveforms to the codewords
 
             comment(SS2S("  # slot=" << ii.slot
                     << ", instrument='" << ii.instrumentName << "'"
                     << ", group=" << si.group
                     << "': signalValue='" << signalValueString << "'"
                     ));
-        }
+        } // scope
 
 
         // store signal value, checking for conflicts
@@ -501,10 +512,10 @@ void codegen_cc::customGate(
             // do nothing
         } else {
             EOUT("Code so far:\n" << codeSection.str());                    // provide context to help finding reason. FIXME: not great
-            FATAL("Signal conflict on instrument='" << ii.instrumentName <<
+            FATAL("Signal conflict on instrument='" << si.ic.ii.instrumentName <<
                   "', group=" << si.group <<
                   ", between '" << gi->signalValue <<
-                  "' and '" << signalValueString << "'");
+                  "' and '" << signalValueString << "'");       // FIXME: add offending instruction
         }
 
         // store signal duration

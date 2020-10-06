@@ -65,7 +65,7 @@ const json &settings_cc::findInstrumentDefinition(const std::string &name) const
     if JSON_EXISTS(*jsonInstrumentDefinitions, name) {
         return (*jsonInstrumentDefinitions)[name];
     } else {
-        FATAL("Could not find key 'name'=" << name << "in JSON section 'instrument_definitions'");
+        JSON_FATAL("Could not find key 'name'=" << name << "in section 'instrument_definitions'");
     }
 }
 #endif
@@ -80,9 +80,9 @@ settings_cc::tSignalDef settings_cc::findSignalDefinition(const json &instructio
     JSON_ASSERT(instruction, "cc", instructionPath);
     if(JSON_EXISTS(instruction["cc"], "ref_signal")) {                          // optional syntax: "ref_signal"
         std::string refSignal = instruction["cc"]["ref_signal"];
-        ret.signal = (*jsonSignals)[refSignal];                            // poor man's JSON pointer
+        ret.signal = (*jsonSignals)[refSignal];                                 // poor man's JSON pointer
         if(ret.signal.size() == 0) {
-            FATAL("Error in JSON definition of instruction '" << iname <<
+            JSON_FATAL("instruction '" << iname <<
                   "': ref_signal '" << refSignal << "' does not resolve");
         }
         ret.path = "signals/"+refSignal;
@@ -100,55 +100,76 @@ settings_cc::tInstrumentInfo settings_cc::getInstrumentInfo(size_t instrIdx) con
 {
     tInstrumentInfo ret;
 
-    const json &instrument = (*jsonInstruments)[instrIdx];              // NB: always exists (if we iterate jsonInstruments)
+    std::string instrumentPath = SS2S("instruments["<<instrIdx<<"]");           // for JSON error reporting
+    if(instrIdx >= jsonInstruments->size()) {
+        JSON_FATAL("node not defined: " + instrumentPath);                      // probably an internal backend error
+    }
+    ret.instrument = &(*jsonInstruments)[instrIdx];
 
-    ret.instrumentName = json_get<std::string>(instrument, "name", SS2S("instruments["<<instrIdx<<"]"));
-    JSON_ASSERT(instrument, "controller", ret.instrumentName);           // first check intermediate node
-    ret.slot = json_get<int>(instrument["controller"], "slot", ret.instrumentName+"/controller");    // FIXME: assuming controller being cc
+    ret.instrumentName = json_get<std::string>(*ret.instrument, "name", instrumentPath);
 
-// FIXME: split off to getInstrumentControl
+    JSON_ASSERT(*ret.instrument, "controller", ret.instrumentName);              // first check intermediate node
+    // FIXME: check controller/"name" being "cc"?
+    int slot = json_get<int>((*ret.instrument)["controller"], "slot", ret.instrumentName+"/controller");
+    // FIXME: also return controller/"io_module"?
+
+    return ret;
+}
+
+
+settings_cc::tInstrumentControl settings_cc::getInstrumentControl(size_t instrIdx) const
+{
+    tInstrumentControl ret;
+
+    ret.ii = getInstrumentInfo(instrIdx);
+
     // get control mode for instrument
-    ret.refControlMode = json_get<std::string>(instrument, "ref_control_mode", ret.instrumentName);
+    ret.refControlMode = json_get<std::string>(*ret.ii.instrument, "ref_control_mode", ret.ii.instrumentName);
     ret.controlMode = json_get<const json>(*jsonControlModes, ret.refControlMode, "control_modes");   // the control mode definition for our instrument
-    ret.nrControlBitsGroups = ret.controlMode["control_bits"].size();        // how many groups of control bits does the control mode specify
+    ret.controlModeGroupCnt = ret.controlMode["control_bits"].size();   // how many groups of control bits does the control mode specify
 
     return ret;
 }
 
 
 // find instrument&group given instructionSignalType for qubit
-// NB: this implies that we map signal vectors to groups, i.e. it is not possible to map individual channels
+// NB: this implies that we map signal *vectors* to groups, i.e. it is not possible to map individual channels
 settings_cc::tSignalInfo settings_cc::findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit) const
 {
-    tSignalInfo ret = {-1, -1};
+    tSignalInfo ret;
     bool signalTypeFound = false;
     bool qubitFound = false;
 
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<jsonInstruments->size() && !qubitFound; instrIdx++) {
-        const json &instrument = (*jsonInstruments)[instrIdx];                  // NB: always exists
-        std::string instrumentPath = SS2S("instruments["<<instrIdx<<"]");       // for JSON error reporting
-        std::string instrumentSignalType = json_get<std::string>(instrument, "signal_type", instrumentPath);
+        tInstrumentControl ic = getInstrumentControl(instrIdx);
+        std::string instrumentSignalType = json_get<std::string>(*ic.ii.instrument, "signal_type", ic.ii.instrumentName);
         if(instrumentSignalType == instructionSignalType) {
             signalTypeFound = true;
-            std::string instrumentName = json_get<std::string>(instrument, "name", instrumentPath);
-            const json qubits = json_get<const json>(instrument, "qubits", instrumentPath);   // NB: json_get<const json&> unavailable
+            const json qubits = json_get<const json>(*ic.ii.instrument, "qubits", ic.ii.instrumentName);   // NB: json_get<const json&> unavailable
 
-            // FIXME: verify group size: qubits vs. control mode
-            // FIXME: verify signal dimensions
+            // verify group size: qubits vs. control mode
+            int qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
+            if(qubitGroupCnt != ic.controlModeGroupCnt) {
+                JSON_FATAL("instrument " << ic.ii.instrumentName <<
+                           ": number of qubit groups " << qubitGroupCnt <<
+                           " does not match number of control_bits groups " << ic.controlModeGroupCnt <<
+                           " of selected control mode '" << ic.refControlMode << "'");
+            }
 
             // anyone connected to qubit?
-            for(size_t group=0; group<qubits.size() && !qubitFound; group++) {
+            for(size_t group=0; group<qubitGroupCnt && !qubitFound; group++) {
                 for(size_t idx=0; idx<qubits[group].size() && !qubitFound; idx++) {
                     if(qubits[group][idx] == qubit) {
                         qubitFound = true;                                      // also: stop searching
 
                         DOUT("qubit " << qubit
                              << " signal type '" << instructionSignalType
-                             << "' driven by instrument '" << instrumentName
+                             << "' driven by instrument '" << ic.ii.instrumentName
                              << "' group " << group
                              );
 
+                        ret.ic = ic;
                         ret.instrIdx = instrIdx;
                         ret.group = group;
                     }
@@ -157,10 +178,10 @@ settings_cc::tSignalInfo settings_cc::findSignalInfoForQubit(const std::string &
         }
     }
     if(!signalTypeFound) {
-        FATAL("No instruments found providing signal type '" << instructionSignalType << "'");
+        JSON_FATAL("No instruments found providing signal type '" << instructionSignalType << "'");
     }
     if(!qubitFound) {
-        FATAL("No instruments found driving qubit " << qubit << " for signal type '" << instructionSignalType << "'");
+        JSON_FATAL("No instruments found driving qubit " << qubit << " for signal type '" << instructionSignalType << "'");
     }
 
     return ret;
