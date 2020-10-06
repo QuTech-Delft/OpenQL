@@ -340,8 +340,9 @@ void eqasm_backend_cc::codegenBundles(ql::ir::bundles_t &bundles, const ql::quan
                             break;
 
                         case __custom_gate__:
-                            DOUT(SS2S("Custom gate: instr='" << iname << "'" << ", duration=" << instr->duration));
-                            codegen.customGate(iname, instr->operands, instr->creg_operands, instr->angle, bundle.start_cycle, instr->duration);
+                            DOUT(SS2S("Custom gate: instr='" << iname << "'" << ", duration=" << instr->duration) << " ns");
+                            codegen.customGate(iname, instr->operands, instr->creg_operands,
+                                               instr->angle, bundle.start_cycle, platform.time_to_cycles(instr->duration));
                             break;
 
                         case __display__:

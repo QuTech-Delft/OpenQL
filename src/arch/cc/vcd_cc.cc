@@ -83,10 +83,11 @@ void vcd_cc::kernelFinish(const std::string &kernelName, size_t durationInCycles
 }
 
 
-void vcd_cc::bundleFinishGroup(size_t startCycle, unsigned int durationInNs, uint32_t groupDigOut, const std::string &signalValue, int instrIdx, int group)
+void vcd_cc::bundleFinishGroup(size_t startCycle, unsigned int durationInCycles, uint32_t groupDigOut, const std::string &signalValue, int instrIdx, int group)
 {
     // generate signal output for group
     unsigned int startTime = kernelStartTime + startCycle*cycleTime;
+    unsigned int durationInNs = durationInCycles*cycleTime;
     int var = vcdVarSignal[instrIdx][group];
     std::string val = SS2S(groupDigOut) + "=" + signalValue;
     vcd.change(var, startTime, val);                                // start of signal
@@ -106,10 +107,11 @@ void vcd_cc::bundleFinish(size_t startCycle, uint32_t digOut, size_t maxDuration
 }
 
 
-void vcd_cc::customGate(const std::string &iname, const std::vector<size_t> &qops, size_t startCycle, size_t durationInNs)
+void vcd_cc::customGate(const std::string &iname, const std::vector<size_t> &qops, size_t startCycle, size_t durationInCycles)
 {
     // generate qubit VCD output
     unsigned int startTime = kernelStartTime + startCycle*cycleTime;
+    unsigned int durationInNs = durationInCycles*cycleTime;
     for(size_t i=0; i<qops.size(); i++) {
         int var = vcdVarQubit[qops[i]];
         std::string name = iname;                                   // FIXME: improve name for 2q gates

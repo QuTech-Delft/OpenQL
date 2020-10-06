@@ -23,9 +23,9 @@ public:     // funcs
     void programStart(int qubitNumber, int cycleTime, int maxGroups, const settings_cc &settings);
     void programFinish(const std::string &progName);
     void kernelFinish(const std::string &kernelName, size_t durationInCycles);
-    void bundleFinishGroup(size_t startCycle, unsigned int durationInNs, uint32_t groupDigOut, const std::string &signalValue, int instrIdx, int group);
+    void bundleFinishGroup(size_t startCycle, unsigned int durationInCycles, uint32_t groupDigOut, const std::string &signalValue, int instrIdx, int group);
     void bundleFinish(size_t startCycle, uint32_t digOut, size_t maxDurationInCycles, int instrIdx);
-    void customGate(const std::string &iname, const std::vector<size_t> &qops, size_t startCycle, size_t durationInNs);
+    void customGate(const std::string &iname, const std::vector<size_t> &qops, size_t startCycle, size_t durationInCycles);
 
 private:    // vars
     Vcd vcd;

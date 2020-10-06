@@ -300,10 +300,9 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                 } // FIXME: e.g. HDAWG does not support > 1 trigger bit. dual-QWG required 2 trigger bits
 
                 // compute slot duration
-                unsigned int durationInCycles = platform->time_to_cycles(gi->durationInNs);
-                if(durationInCycles > maxDurationInCycles) maxDurationInCycles = durationInCycles;
+                if(gi->durationInCycles > maxDurationInCycles) maxDurationInCycles = gi->durationInCycles;
 
-                vcd.bundleFinishGroup(startCycle, gi->durationInNs, groupDigOut, gi->signalValue, instrIdx, group);
+                vcd.bundleFinishGroup(startCycle, gi->durationInCycles, groupDigOut, gi->signalValue, instrIdx, group);
             } // if(signal defined)
 
             // handle readout
@@ -390,13 +389,16 @@ void codegen_cc::customGate(
         const std::string &iname,
         const std::vector<size_t> &qops,
         const std::vector<size_t> &cops,
-        double angle, size_t startCycle, size_t durationInNs)
+        double angle, size_t startCycle, size_t durationInCycles)
 {
 #if 0   // FIXME: test for angle parameter
     if(angle != 0.0) {
         DOUT("iname=" << iname << ", angle=" << angle);
     }
 #endif
+
+    vcd.customGate(iname, qops, startCycle, durationInCycles);
+
 
     /*  determine whether this is a readout instruction
         NB: we only use the instruction_type "readout" and don't care about the rest
@@ -434,8 +436,6 @@ void codegen_cc::customGate(
         cmnt << "'";
         comment(cmnt.str());
     }
-
-    vcd.customGate(iname, qops, startCycle, durationInNs);
 
     // find instruction (gate definition)
     const json &instruction = platform->find_instruction(iname);
@@ -508,7 +508,7 @@ void codegen_cc::customGate(
         }
 
         // store signal duration
-        gi->durationInNs = durationInNs;
+        gi->durationInCycles = durationInCycles;
 
 #if OPT_FEEDBACK
         // store the classical operand used for readout
@@ -522,8 +522,8 @@ void codegen_cc::customGate(
 #endif
 
         DOUT("customGate(): iname='" << iname <<
-             "', duration=" << durationInNs <<
-             "[ns], si.instrIdx=" << si.instrIdx <<
+             "', duration=" << durationInCycles <<
+             "[cycles], si.instrIdx=" << si.instrIdx <<
              ", si.group=" << si.group);
 
         // NB: code is generated in bundleFinish()

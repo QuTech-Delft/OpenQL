@@ -31,7 +31,7 @@ class codegen_cc
 private: // types
     typedef struct {
         std::string signalValue;
-        unsigned int durationInNs;
+        unsigned int durationInCycles;
 #if OPT_FEEDBACK
         int readoutCop;                 // classic operand for readout. NB: we encode 'unused' as -1
 #endif
@@ -63,7 +63,7 @@ public:
             const std::string &iname,
             const std::vector<size_t> &qops,
             const std::vector<size_t> &cops,
-            double angle, size_t startCycle, size_t durationInNs);  // FIXME: here we have duration in ns, elsewhere in cycles
+            double angle, size_t startCycle, size_t durationInCycles);
     void nopGate();
 
     void comment(const std::string &c);
