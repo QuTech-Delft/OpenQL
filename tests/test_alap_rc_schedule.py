@@ -1,25 +1,22 @@
 from openql import openql as ql
 import os
-from test_QISA_assembler_present import assemble, assembler_present
 import unittest
 from utils import file_compare
 
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 
 class Test_Alap_Rc_Schedule(unittest.TestCase):
     _SCHEDULER = 'ALAP'
-    config = os.path.join(rootDir, "hardware_config_cc_light.json")
+    config = os.path.join(curdir, "hardware_config_cc_light.json")
 
     def setUp(self):
         ql.set_option('scheduler', self._SCHEDULER)
         ql.set_option('output_dir', output_dir)
         ql.set_option('log_level', "LOG_NOTHING")
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_qwg(self):
         self.setUp()
         # parameters
@@ -40,13 +37,11 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_qwg2(self):
         self.setUp()
         # parameters
@@ -77,13 +72,11 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_issue179(self):
         self.setUp()
         # parameters
@@ -116,13 +109,11 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_edge(self):
         self.setUp()
         # parameters
@@ -146,13 +137,11 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_detuned(self):
         self.setUp()
         # parameters
@@ -181,13 +170,11 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_detuned2(self):
         self.setUp()
         # parameters
@@ -216,13 +203,11 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_adriaan(self):
         self.setUp()
         # parameters
@@ -251,13 +236,11 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_1(self):
         self.setUp()
         # parameters
@@ -298,13 +281,11 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
-    @unittest.skipUnless(assembler_present, "libqasm not found")
     def test_7(self):
         self.setUp()
         # parameters
@@ -353,10 +334,9 @@ class Test_Alap_Rc_Schedule(unittest.TestCase):
         ql.set_option("scheduler", scheduler)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 

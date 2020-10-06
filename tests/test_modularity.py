@@ -2,7 +2,7 @@ from openql import openql as ql
 import unittest
 import os
 
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 class Test_modularity(unittest.TestCase):

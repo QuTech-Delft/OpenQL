@@ -2,11 +2,8 @@ import os
 import filecmp
 import unittest
 from openql import openql as ql
-from test_QASM_assembler_present import assemble
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
-
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 config_fn = os.path.join(curdir, 'hardware_config_qx.json')
 platf = ql.Platform("starmon", config_fn)
 
@@ -72,13 +69,11 @@ class Test_cqasm(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        qasm_files = []
-        qasm_files.append(os.path.join(output_dir, p.name+'.qasm'))
-        qasm_files.append(os.path.join(output_dir, p.name+'_scheduled.qasm'))
+        for ext in ('.qasm', '_scheduled.qasm'):
+            GOLD_fn = os.path.join(curdir, 'golden', p.name + ext)
+            QISA_fn = os.path.join(output_dir, p.name + ext)
 
-        for qasm_file in qasm_files:
-            # print('assembling: {}'.format(qasm_file))
-            assemble(qasm_file)
+            self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
     # @unittest.skip
     def test_cqasm_custom_gates(self):
@@ -119,13 +114,11 @@ class Test_cqasm(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        qasm_files = []
-        qasm_files.append(os.path.join(output_dir, p.name+'.qasm'))
-        qasm_files.append(os.path.join(output_dir, p.name+'_scheduled.qasm'))
+        for ext in ('.qasm', '_scheduled.qasm'):
+            GOLD_fn = os.path.join(curdir, 'golden', p.name + ext)
+            QISA_fn = os.path.join(output_dir, p.name + ext)
 
-        for qasm_file in qasm_files:
-            print('assembling: {}'.format(qasm_file))
-            assemble(qasm_file)
+            self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 if __name__ == '__main__':
     unittest.main()
