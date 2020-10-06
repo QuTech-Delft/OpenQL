@@ -14,7 +14,7 @@
 #define OPT_SUPPORT_STATIC_CODEWORDS    1   // support (currently: require) static codewords, instead of allocating them on demand
 #define OPT_STATIC_CODEWORDS_ARRAYS     1   // JSON field static_codeword_override is an array with one element per qubit parameter
 #define OPT_VECTOR_MODE                 0   // 1=generate single code word for all output groups together (requires codewords allocated by backend)
-#define OPT_RUN_ONCE                    0   // 0=loop indefinitely (CC-light emulation)
+#define OPT_RUN_ONCE                    0   // 0=loop indefinitely (CC-light emulation), 1=run once (preferred, but breaks compatibility)
 #define OPT_CALCULATE_LATENCIES         0   // fixed compensation based on instrument latencies. Not actively maintained
 #define OPT_OLD_SEQBAR_SEMANTICS        0   // support old semantics of seqbar instruction. Will be deprecated
 #define OPT_FEEDBACK                    0   // feedback support. Coming feature
@@ -32,11 +32,14 @@ private: // types
     typedef struct {
         std::string signalValue;
         unsigned int durationInNs;
-        int readoutCop;             // classic operand for readout. NB: we encode 'unused' as -1
+#if OPT_FEEDBACK
+        int readoutCop;                 // classic operand for readout. NB: we encode 'unused' as -1
+#endif
 #if OPT_SUPPORT_STATIC_CODEWORDS
         int staticCodewordOverride;
 #endif
-    } tBundleInfo;                   // information for an instrument group (of channels), for a single instruction
+    } tBundleInfo;                      // information for an instrument group (of channels), for a single instruction
+// FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR?
 
 public:
     codegen_cc() = default;
@@ -73,12 +76,6 @@ public:
     void doWhileStart(const std::string &label);
     void doWhileEnd(const std::string &label, size_t op0, const std::string &opName, size_t op1);
 
-#if 0   // FIXME: unused and incomplete
-    // Classical arithmetic instructions
-    void add();
-    // FIXME: etc
-#endif
-
 private:    // vars
     static const int MAX_SLOTS = 12;                            // physical maximum of CC
     static const int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
@@ -107,9 +104,6 @@ private:    // vars
 private:    // funcs
     // Some helpers to ease nice assembly formatting
     void emit(const char *labelOrComment, const char *instr="");
-
-    // @param   label       must include trailing ":"
-    // @param   comment     must include leading "#"
     void emit(const char *label, const char *instr, const std::string &qops, const char *comment="");
 
     // helpers

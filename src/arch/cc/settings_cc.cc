@@ -116,7 +116,8 @@ settings_cc::tInstrumentInfo settings_cc::getInstrumentInfo(size_t instrIdx) con
 }
 
 
-// find instrument&group providing instructionSignalType for qubit
+// find instrument&group given instructionSignalType for qubit
+// NB: this implies that we map signal vectors to groups, i.e. it is not possible to map individual channels
 settings_cc::tSignalInfo settings_cc::findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit) const
 {
     tSignalInfo ret = {-1, -1};

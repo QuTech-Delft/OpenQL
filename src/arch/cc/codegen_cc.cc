@@ -12,6 +12,22 @@
 
 #define UNUSED_COP  -1  // unused classic operand
 
+#if OPT_FEEDBACK
+// FIXME: preliminary support based on '20200929_openql_feedback_design.docx'
+
+// temporary definitions for condition type that will be added to class gate
+typedef enum {
+    // 0 operands:
+    cond_always,
+    // 1 operand:
+    cond, cond_not,
+    // 2 operands
+    cond_and, cond_nand, cond_or, cond_nor, cond_xor, cond_xnor;
+};
+
+typedef std::vector<int> tBitVars;
+
+#endif
 
 #include "codegen_cc.h"
 #include "eqasm_backend_cc.h"
@@ -190,7 +206,6 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
         uint32_t maxDurationInCycles = 0;                                   // maximum duration over groups that are used, one instrument
 
         size_t nrGroups = bundleInfo[instrIdx].size();       // FIXME: always MAX_GROUPS:
-        // FIXME: 20200924 error shows 32 iso 4: "E       TypeError: Error : instrument 'mw_0' uses 32 groups, but control mode 'awg8-mw-direct-iq' defines 2 trigger bits in 'trigger_bits' (must be 1 or #groups)"
         for(size_t group=0; group<nrGroups; group++) {                      // iterate over groups used within instrument
             tBundleInfo *gi = &bundleInfo[instrIdx][group];                 // shorthand
             if(gi->signalValue != "") {                                     // signal defined, i.e.: we need to output something
@@ -271,14 +286,17 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                     // do nothing
                 } else if(nrTriggerBits == 1) {                             // single trigger for all groups
                     digOut |= 1 << (int)ii.controlMode["trigger_bits"][0];
+#if 1   // FIXME: trigger per group, nrGroups always 32
                 } else if(nrTriggerBits == nrGroups) {                      // trigger per group
                     digOut |= 1 << (int)ii.controlMode["trigger_bits"][group];
+#endif
                 } else {
                     FATAL("instrument '" << ii.instrumentName
                           << "' uses " << nrGroups
                           << " groups, but control mode '" << ii.refControlMode
                           << "' defines " << nrTriggerBits
                           << " trigger bits in 'trigger_bits' (must be 1 or #groups)");
+// FIXME: 20200924 error shows 32: "E       TypeError: Error : instrument 'mw_0' uses 32 groups, but control mode 'awg8-mw-direct-iq' defines 2 trigger bits in 'trigger_bits' (must be 1 or #groups)"
                 } // FIXME: e.g. HDAWG does not support > 1 trigger bit. dual-QWG required 2 trigger bits
 
                 // compute slot duration
@@ -567,18 +585,6 @@ void codegen_cc::doWhileEnd(const std::string &label, size_t op0, const std::str
 }
 
 /************************************************************************\
-| Classical arithmetic instructions
-\************************************************************************/
-
-#if 0   // FIXME: unused and incomplete
-void codegen_cc::add() {
-    FATAL("FIXME: not implemented");
-}
-#endif
-
-
-
-/************************************************************************\
 |
 | private functions
 |
@@ -601,6 +607,9 @@ void codegen_cc::emit(const char *labelOrComment, const char *instr)
     }
 }
 
+
+// @param   label       must include trailing ":"
+// @param   comment     must include leading "#"
 void codegen_cc::emit(const char *label, const char *instr, const std::string &qops, const char *comment)
 {
     codeSection << std::setw(16) << label << std::setw(16) << instr << std::setw(24) << qops << comment << std::endl;
