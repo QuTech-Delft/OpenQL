@@ -36,46 +36,6 @@ typedef std::vector<int> tBitVars;
 #include <options.h>
 
 /************************************************************************\
-| Static functions processing JSON
-\************************************************************************/
-
-#if OPT_SUPPORT_STATIC_CODEWORDS
-static int findStaticCodewordOverride(const json &instruction, size_t operandIdx, const std::string &iname)
-{
-    // look for optional codeword override
-    int staticCodewordOverride = -1;    // -1 means unused
-    if(JSON_EXISTS(instruction["cc"], "static_codeword_override")) {    // optional keyword
- #if OPT_STATIC_CODEWORDS_ARRAYS
-        const json &override = instruction["cc"]["static_codeword_override"];
-        if(override.is_array()) {
-            if(override.size() > operandIdx) {
-                staticCodewordOverride = override[operandIdx];
-            } else {
-                FATAL("Array size of static_codeword_override for instruction '" << iname << "' insufficient");
-            }
-        } else if (operandIdx==0) {     // NB: JSON '"static_codeword_override": [3]' gives **scalar** result
-            staticCodewordOverride = override;
-        } else {
-            FATAL("Key static_codeword_override for instruction '" << iname
-                  << "' should be an array (found '" << override << "' in '" << instruction << "')");
-        }
- #else
-        staticCodewordOverride = instruction["cc"]["static_codeword_override"];
- #endif
-        DOUT("Found static_codeword_override=" << staticCodewordOverride <<
-             " for instruction '" << iname << "'");
-    }
- #if 1 // FIXME: require override
-    if(staticCodewordOverride < 0) {
-        FATAL("No static codeword defined for instruction '" << iname <<
-            "' (we currently require it because automatic assignment is disabled)");
-    }
- #endif
-    return staticCodewordOverride;
-}
-#endif
-
-/************************************************************************\
 | Generic
 \************************************************************************/
 
@@ -215,7 +175,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                 // determine control mode group FIXME: more explanation
                 int controlModeGroup = -1;
                 if(ic.controlModeGroupCnt == 0) {
-                    FATAL("'control_bits' not defined or empty in 'control_modes/" << ic.refControlMode <<"'");
+                    JSON_FATAL("'control_bits' not defined or empty in 'control_modes/" << ic.refControlMode <<"'");
 #if OPT_VECTOR_MODE
                 } else if(ic.controlModeGroupCnt == 1) {                    // vector mode: group addresses channel within vector
                     controlModeGroup = 0;
@@ -224,7 +184,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                     controlModeGroup = group;
                 } else {
                     // FIXME: will become logic error once we get nrGroups right
-                    FATAL("instrument '" << ic.ii.instrumentName
+                    JSON_FATAL("instrument '" << ic.ii.instrumentName
                           << "' uses " << nrGroups
                           << " groups, but control mode '" << ic.refControlMode
                           << "' only defines " << ic.controlModeGroupCnt
@@ -293,11 +253,11 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                     digOut |= 1 << (int)ic.controlMode["trigger_bits"][group];
 #endif
                 } else {
-                    FATAL("instrument '" << ic.ii.instrumentName
-                          << "' uses " << nrGroups
-                          << " groups, but control mode '" << ic.refControlMode
-                          << "' defines " << nrTriggerBits
-                          << " trigger bits in 'trigger_bits' (must be 1 or #groups)");
+                    JSON_FATAL("instrument '" << ic.ii.instrumentName
+                                << "' uses " << nrGroups
+                                << " groups, but control mode '" << ic.refControlMode
+                                << "' defines " << nrTriggerBits
+                                << " trigger bits in 'trigger_bits' (must be 1 or #groups)");
 // FIXME: 20200924 error shows 32: "E       TypeError: Error : instrument 'mw_0' uses 32 groups, but control mode 'awg8-mw-direct-iq' defines 2 trigger bits in 'trigger_bits' (must be 1 or #groups)"
                 } // FIXME: e.g. HDAWG does not support > 1 trigger bit. dual-QWG required 2 trigger bits
 
@@ -331,7 +291,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 #endif
                 } else {    // NB: nrResultBits==0 will not arrive at this point
                     std::string controlModeName = ic.controlMode;                           // convert to string
-                    FATAL("JSON key '" << controlModeName << "/result_bits' must have 1 bit per group");
+                    JSON_FATAL("key '" << controlModeName << "/result_bits' must have 1 bit per group");
                 }
             }
         } // for(group)
@@ -506,7 +466,7 @@ void codegen_cc::customGate(
         if(gi->signalValue == "") {                                         // signal not yet used
             gi->signalValue = signalValueString;
 #if OPT_SUPPORT_STATIC_CODEWORDS
-            gi->staticCodewordOverride = findStaticCodewordOverride(instruction, operandIdx, iname); // NB: -1 means unused
+            gi->staticCodewordOverride = settings.findStaticCodewordOverride(instruction, operandIdx, iname); // NB: -1 means unused
 #endif
         } else if(gi->signalValue == signalValueString) {                   // signal unchanged
             // do nothing

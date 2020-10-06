@@ -56,6 +56,8 @@ public: // functions
     // find instrument/group providing instructionSignalType for qubit
     tSignalInfo findSignalInfoForQubit(const std::string &instructionSignalType, size_t qubit) const;
 
+    static int findStaticCodewordOverride(const json &instruction, size_t operandIdx, const std::string &iname);
+
     // 'getters'
     const json &getInstrumentAtIdx(size_t instrIdx) const { return (*jsonInstruments)[instrIdx]; }
     size_t getInstrumentsSize() const { return jsonInstruments->size(); }

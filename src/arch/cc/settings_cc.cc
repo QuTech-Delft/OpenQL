@@ -186,3 +186,45 @@ settings_cc::tSignalInfo settings_cc::findSignalInfoForQubit(const std::string &
 
     return ret;
 }
+
+/************************************************************************\
+| Static functions processing JSON
+\************************************************************************/
+
+//#if OPT_SUPPORT_STATIC_CODEWORDS
+int settings_cc::findStaticCodewordOverride(const json &instruction, size_t operandIdx, const std::string &iname)
+{
+    // look for optional codeword override
+    int staticCodewordOverride = -1;    // -1 means unused
+    if(JSON_EXISTS(instruction["cc"], "static_codeword_override")) {    // optional keyword
+ #if OPT_STATIC_CODEWORDS_ARRAYS
+        const json &override = instruction["cc"]["static_codeword_override"];
+        if(override.is_array()) {
+            if(override.size() > operandIdx) {
+                staticCodewordOverride = override[operandIdx];
+            } else {
+                JSON_FATAL("Array size of static_codeword_override for instruction '" << iname << "' insufficient");
+            }
+        } else if (operandIdx==0) {     // NB: JSON '"static_codeword_override": [3]' gives **scalar** result
+            staticCodewordOverride = override;
+        } else {
+            JSON_FATAL("Key static_codeword_override for instruction '" << iname
+                  << "' should be an array (found '" << override << "' in '" << instruction << "')");
+        }
+ #else
+        staticCodewordOverride = instruction["cc"]["static_codeword_override"];
+ #endif
+        DOUT("Found static_codeword_override=" << staticCodewordOverride <<
+             " for instruction '" << iname << "'");
+    }
+ #if 1 // FIXME: require override
+    if(staticCodewordOverride < 0) {
+        JSON_FATAL("No static codeword defined for instruction '" << iname <<
+            "' (we currently require it because automatic assignment is disabled)");
+    }
+ #endif
+    return staticCodewordOverride;
+}
+//#endif
+
+
