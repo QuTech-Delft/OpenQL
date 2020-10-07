@@ -300,6 +300,7 @@ Where:
 * ``signal_type`` defines which signal type this instrument instance provides.
 .. FIXME: describe matching process against 'signals/*/type'
 * ``qubits`` G groups of 1 or more qubits. G must match one of the available group sizes of ``instrument_definitions/<ref_instrument_definition>/control_group_sizes``. If more than 1 qubits are stated per group - e.g. for an AWG used in conjunction with a VSM - they may not produce conflicting signals at any time slot, or an error is raised
+* ``force_cond_gates_on`` optional, reserved for future use
 * ``controller/slot`` the slot number of the CC this instrument is connected to
 * ``controller/name`` reserved for future use
 * ``controller/io_module`` reserved for future use

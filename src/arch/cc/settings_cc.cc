@@ -100,6 +100,13 @@ settings_cc::tInstrumentInfo settings_cc::getInstrumentInfo(size_t instrIdx) con
     int slot = json_get<int>((*ret.instrument)["controller"], "slot", ret.instrumentName+"/controller");
     // FIXME: also return controller/"io_module"?
 
+#if OPT_FEEDBACK
+    // optional key 'instruments[]/force_cond_gates_on'
+    if(JSON_EXISTS(*ret.instrument, "force_cond_gates_on")) {
+        ret.forceCondGatesOn = json_get<bool>((*ret.instrument), "force_cond_gates_on", ret.instrumentName+"/force_cond_gates_on"); // key will exist, but type may be wrong
+    }
+#endif
+
     return ret;
 }
 

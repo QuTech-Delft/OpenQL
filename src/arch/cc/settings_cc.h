@@ -9,6 +9,7 @@
 #ifndef ARCH_CC_SETTINGS_CC_H
 #define ARCH_CC_SETTINGS_CC_H
 
+#include "options_cc.h"
 #include "platform.h"
 #include "json.h"
 
@@ -25,16 +26,19 @@ public: // types
 
     typedef struct {
         const json *instrument;
-        std::string instrumentName;
-        int slot;
-    } tInstrumentInfo;
+        std::string instrumentName; // key 'instruments[]/name'
+        int slot;                   // key 'instruments[]/controller/slot'
+#if OPT_FEEDBACK
+        bool forceCondGatesOn;      // optional key 'instruments[]/force_cond_gates_on'
+#endif
+    } tInstrumentInfo;              // information from key 'instruments'
 
     typedef struct {
         tInstrumentInfo ii;
         std::string refControlMode;
         json controlMode;           // FIXME: pointer
         size_t controlModeGroupCnt;
-    } tInstrumentControl;
+    } tInstrumentControl;           // information from key 'instruments/ref_control_mode'
 
     typedef struct {
         tInstrumentControl ic;
