@@ -88,12 +88,12 @@ Structure::Structure(const Layout layout, const CircuitData circuitData)
 	const int amountOfRows = circuitData.amountOfQubits + (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits);
 	imageHeight = (layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0) + amountOfRows * layout.grid.cellSize + 2 * layout.grid.borderSize;
 
-	// Calculate relevant label positions.
+	// Calculate label positions.
 	cycleLabelsY = layout.grid.borderSize;
 	bitLabelsX = layout.grid.borderSize;
 
 	// Calculate cell positions.
-	for (int col = 0; col < amountOfDisplayedCycles; col++)
+	for (int col = 0; col < circuitData.getAmountOfCycles(); col++)
 	{
 		int widthFromCycles = 0;
 		if (layout.cycles.cutEmptyCycles)
@@ -115,22 +115,23 @@ Structure::Structure(const Layout layout, const CircuitData circuitData)
 
 		// Quantum cell positions.
 		std::vector<Position4> qColumnCells;
-		qbitCellPositions.push_back(qColumnCells);
 		for (int row = 0; row < circuitData.amountOfQubits; row++)
 		{
 			const int y0 = layout.grid.borderSize + cycleNumbersRowHeight + row * layout.grid.cellSize;
 			const int y1 = y0 + layout.grid.cellSize;
 			qColumnCells.push_back({x0, y0, x1, y1});
 		}
+		qbitCellPositions.push_back(qColumnCells);
 		// Classical cell positions.
 		std::vector<Position4> cColumnCells;
-		cbitCellPositions.push_back(cColumnCells);
 		for (int row = 0; row < circuitData.amountOfClassicalBits; row++)
 		{
-			const int y0 = layout.grid.borderSize + cycleNumbersRowHeight + (row + circuitData.amountOfQubits) * layout.grid.cellSize;
+			const int y0 = layout.grid.borderSize + cycleNumbersRowHeight + 
+				((layout.bitLines.groupClassicalLines ? 0 : row) + circuitData.amountOfQubits) * layout.grid.cellSize;
 			const int y1 = y0 + layout.grid.cellSize;
 			cColumnCells.push_back({x0, y0, x1, y1});
 		}
+		cbitCellPositions.push_back(cColumnCells);
 	}
 
 	// Calculate the bit line segments.
@@ -141,15 +142,10 @@ Structure::Structure(const Layout layout, const CircuitData circuitData)
 		bool reachedEnd = false;
 
 		// Add more cycles to the segment until we reach a cycle that is cut if the current segment is not cut, or vice versa.
-		DOUT("#cycles: " << circuitData.getAmountOfCycles());
 		for (int j = i; j < circuitData.getAmountOfCycles(); j++)
 		{
-			DOUT("j " << j);
 			if (circuitData.isCycleCut(j) != cut)
 			{
-				DOUT("found different segment!");
-				// const int start = getCellX(i);
-				// const int end = getCellX(j);
 				const int start = getCellPosition(i, 0, QUANTUM).x0;
 				const int end = getCellPosition(j - 1, 0, QUANTUM).x1;
 				DOUT("segment > range: [" << i << "," << (j - 1) << "], " << "position: [" << start << "," << end << "], cut: " << cut);
@@ -161,9 +157,6 @@ Structure::Structure(const Layout layout, const CircuitData circuitData)
 			// Check if the last cycle has been reached, and exit the calculation if so.
 			if (j == circuitData.getAmountOfCycles() - 1)
 			{
-				DOUT("reached end of cycles!");
-				// const int start = getCellX(i);
-				// const int end = getCellX(j + 1);
 				const int start = getCellPosition(i, 0, QUANTUM).x0;
 				const int end = getCellPosition(j, 0, QUANTUM).x1;
 				DOUT("segment > range: [" << i << "," << j << "], " << "position: [" << start << "," << end << "], cut: " << cut);
@@ -172,10 +165,8 @@ Structure::Structure(const Layout layout, const CircuitData circuitData)
 			}
 		}
 		
-		DOUT("i " << i);
 		if (reachedEnd) break;
 	}
-	DOUT("qeiwfwienfwiefueiwfniwuenfiwef");
 }
 
 int Structure::getImageWidth() const
@@ -200,18 +191,73 @@ int Structure::getBitLabelsX() const
 
 Position4 Structure::getCellPosition(int column, int row, BitType bitType) const
 {
-	DOUT("getting cell position with column: " << column << " and row: " << row << " for bitType: " << bitType);
 	switch (bitType)
 	{
-		case CLASSICAL:	return cbitCellPositions[column][row];
-		case QUANTUM:	return qbitCellPositions[column][row];
-		default: DOUT("BEEPEBPPBOOP"); return {0, 0, 0, 0};
+		case CLASSICAL:
+			if (column >= cbitCellPositions.size())
+				FATAL("cycle " << column << " is larger than max cycle " << cbitCellPositions.size() - 1 << " of structure!");
+			if (row >= cbitCellPositions[column].size())
+				FATAL("classical operand " << row << " is larger than max operand " << cbitCellPositions[column].size() - 1 << " of structure!");
+			return cbitCellPositions[column][row];	
+
+		case QUANTUM:
+			if (column >= qbitCellPositions.size())
+				FATAL("cycle " << column << " is larger than max cycle " << qbitCellPositions.size() - 1 << " of structure!");
+			if (row >= qbitCellPositions[column].size())
+				FATAL("quantum operand " << row << " is larger than max operand " << qbitCellPositions[column].size() - 1 << " of structure!");
+			return qbitCellPositions[column][row];
+
+		default:
+			FATAL("Unknown bit type!");
 	}
 }
 
 std::vector<std::pair<EndPoints, bool>> Structure::getBitLineSegments() const
 {
 	return bitLineSegments;
+}
+
+void Structure::printProperties() const
+{
+	DOUT("[STRUCTURE PROPERTIES]");
+
+	DOUT("imageWidth: " << imageWidth);
+	DOUT("imageHeight: " << imageHeight);
+
+	DOUT("cycleLabelsY: " << cycleLabelsY);
+	DOUT("bitLabelsX: " << bitLabelsX);
+
+	DOUT("qbitCellPositions:");
+	for (size_t cycle = 0; cycle < qbitCellPositions.size(); cycle++)
+	{
+		for (size_t operand = 0; operand < qbitCellPositions[cycle].size(); operand++)
+		{
+			DOUT("\tcell: [" << cycle << "," << operand << "]"
+				<< " x0: " << qbitCellPositions[cycle][operand].x0
+				<< " x1: " << qbitCellPositions[cycle][operand].x1
+				<< " y0: " << qbitCellPositions[cycle][operand].y0
+				<< " y1: " << qbitCellPositions[cycle][operand].y1);
+		}
+	}
+
+	DOUT("cbitCellPositions:");
+	for (size_t cycle = 0; cycle < cbitCellPositions.size(); cycle++)
+	{
+		for (size_t operand = 0; operand < cbitCellPositions[cycle].size(); operand++)
+		{
+			DOUT("\tcell: [" << cycle << "," << operand << "]"
+				<< " x0: " << cbitCellPositions[cycle][operand].x0
+				<< " x1: " << cbitCellPositions[cycle][operand].x1
+				<< " y0: " << cbitCellPositions[cycle][operand].y0
+				<< " y1: " << cbitCellPositions[cycle][operand].y1);
+		}
+	}
+
+	DOUT("bitLineSegments:");
+	for (const auto& segment : bitLineSegments)
+	{
+		DOUT("\tcut: " << segment.second << " start: " << segment.first.start << " end: " << segment.first.end);
+	}
 }
 
 // ======================================================= //
@@ -429,6 +475,27 @@ bool CircuitData::isCycleFirstInCutRange(const int cycleIndex) const
 	return false;
 }
 
+void CircuitData::printProperties() const
+{
+	DOUT("[CIRCUIT DATA PROPERTIES]");
+
+	DOUT("amountOfQubits: " << amountOfQubits);
+	DOUT("amountOfClassicalBits: " << amountOfClassicalBits);
+	DOUT("cycleDuration: " << cycleDuration);
+
+	DOUT("cycles:");
+	for (size_t cycle = 0; cycle < cycles.size(); cycle++)
+	{
+		DOUT("\tcycle: " << cycle << " empty: " << cycles[cycle].empty << " cut: " << cycles[cycle].cut);
+	}
+
+	DOUT("cutCycleRangeIndices");
+	for (const auto& range : cutCycleRangeIndices)
+	{
+		DOUT("\tstart: " << range.start << " end: " << range.end);
+	}
+}
+
 // ======================================================= //
 // =                      Visualize                      = //
 // ======================================================= //
@@ -459,10 +526,12 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	DOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
 	fixMeasurementOperands(gates); // fixes measurement gates without classical operands
 	CircuitData circuitData(gates, layout, cycleDuration);
+	circuitData.printProperties();
     
 	// Initialize the structure of the visualization.
 	DOUT("Initializing visualization structure...");
 	Structure structure(layout, circuitData);
+	structure.printProperties();
 	
 	// Initialize image.
     DOUT("Initializing image...");
@@ -508,7 +577,6 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
     DOUT("Drawing gates...");
 	for (gate* gate : gates)
 	{
-        //const GateVisual gateVisual = layout.gateVisuals.at(gate->type());
         DOUT("Drawing gate: [name: " + gate->name + "]");
 		drawGate(image, layout, circuitData, gate, structure);
 	}
@@ -906,16 +974,31 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		gateVisual = layout.defaultGateVisuals.at(gate->type());
 	}
 
-	const int amountOfOperands = calculateAmountOfGateOperands(gate);
+	DOUT(gate->name);
+	std::vector<std::pair<BitType, size_t>> operands;
+	for (const size_t operand : gate->operands)
+	{
+		operands.push_back({QUANTUM, operand});
+	}
+	for (const size_t operand : gate->creg_operands)
+	{
+		operands.push_back({CLASSICAL, operand});
+	}
+	for (const auto& operand : operands)
+	{
+		DOUT("bitType: " << operand.first << " value: " << operand.second);
+	}
+
+	// const int amountOfOperands = calculateAmountOfGateOperands(gate);
 
 	// Check for correct amount of nodes.
-	if (amountOfOperands != gateVisual.nodes.size())
+	if (operands.size() != gateVisual.nodes.size())
 	{
 		WOUT("Amount of gate operands and visualization nodes are not equal. Skipping gate with name: '" << gate->name << "' ...");
 		return;
 	}
 
-	if (amountOfOperands > 1)
+	if (operands.size() > 1)
 	{
 		// Draw the lines between each node. If this is done before drawing the nodes, there is no need to calculate line segments, we can just draw one
 		// big line between the nodes and the nodes will be drawn on top of those.
@@ -923,45 +1006,23 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 
 		//TODO: this stuff needs to be fixed, its just a giant mess that does not properly work for all situations
         DOUT("Setting up multi-operand gate...");
-		int minRow = std::numeric_limits<int>::max();
-		int maxRow = 0;
-		BitType maxRowBitType = QUANTUM;
-		for (int i = 0; i < gate->operands.size(); i++)
+		std::pair<BitType, size_t> minOperand = operands[0];
+		std::pair<BitType, size_t> maxOperand = operands[operands.size() - 1];
+		for (const auto& operand : operands)
 		{
-			const int operand = gate->operands.at(i);
-			if (operand < minRow)
-				minRow = operand;
-			if (operand > maxRow)
-				maxRow = operand;
-		}
-		if (layout.bitLines.groupClassicalLines)
-		{
-			if (gate->creg_operands.size() > 0)
-			{
-				// maxRow = circuitData.amountOfQubits;
-				maxRow = 0;
-				maxRowBitType = CLASSICAL;
-			}
-		}
-		else
-		{
-			for (int i = 0; i < gate->creg_operands.size(); i++)
-			{
-				// const int operand = gate->creg_operands.at(i) + circuitData.amountOfQubits;
-				const int operand = gate->creg_operands.at(i);
-				if (operand < minRow)
-					minRow = operand;
-				if (operand > maxRow)
-				{
-					maxRow = operand;
-					maxRowBitType = CLASSICAL;
-				}
-			}
+			const int row = (operand.first == QUANTUM) ? operand.second : operand.second + circuitData.amountOfQubits;
+			if (row < minOperand.second)
+				minOperand = operand;
+			if (row > maxOperand.second)
+				maxOperand = operand;
 		}
 		const int column = (int)gate->cycle;
+		DOUT("minOperand.bitType: " << minOperand.first << " minOperand.operand " << minOperand.second);
+		DOUT("maxOperand.bitType: " << maxOperand.first << " maxOperand.operand " << maxOperand.second);
+		DOUT("cycle: " << column);
 
-		Position4 topCellPosition = structure.getCellPosition(column, minRow, QUANTUM);
-		Position4 bottomCellPosition = structure.getCellPosition(column, maxRow, maxRowBitType);
+		Position4 topCellPosition = structure.getCellPosition(column, minOperand.second, minOperand.first);
+		Position4 bottomCellPosition = structure.getCellPosition(column, maxOperand.second, maxOperand.first);
 		Position4 connectionPosition =
 		{
 			topCellPosition.x0 + layout.grid.cellSize / 2,
@@ -969,13 +1030,6 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 			bottomCellPosition.x0 + layout.grid.cellSize / 2,
 			bottomCellPosition.y0 + layout.grid.cellSize / 2,
 		};
-		// Position4 connectionPosition =
-		// {
-		// 	structure.getCellX(column) + layout.grid.cellSize / 2,
-		// 	structure.getCellY(minRow) + layout.grid.cellSize / 2,
-		// 	structure.getCellX(column) + layout.grid.cellSize / 2,
-		// 	structure.getCellY(maxRow) + layout.grid.cellSize / 2,
-		// };
 
 		//TODO: probably have connection line type as part of a gate's visual definition
 		if (isMeasurement(gate))
@@ -1016,21 +1070,17 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		// Only draw the gate outline if the gate takes more than one cycle.
 		if (gateDurationInCycles > 1)
 		{
-			for (int i = 0; i < amountOfOperands; i++)
+			for (int i = 0; i < operands.size(); i++)
 			{
 				const int columnStart = (int)gate->cycle;
 				const int columnEnd = columnStart + gateDurationInCycles - 1;
-				const int row = gate->operands[i];
+				const int row = (i >= gate->operands.size()) ? gate->creg_operands[i - gate->operands.size()] : gate->operands[i];
+				DOUT("i: " << i << " size: " << gate->operands.size() << " value: " << gate->operands[i]);
 
 				const int x0 = structure.getCellPosition(columnStart, row, QUANTUM).x0 + layout.cycles.gateDurationGap;
 				const int y0 = structure.getCellPosition(columnStart, row, QUANTUM).y0 + layout.cycles.gateDurationGap;
-				const int x1 = structure.getCellPosition(columnEnd + 1, row, QUANTUM).x0 - layout.cycles.gateDurationGap;
-				const int y1 = structure.getCellPosition(columnEnd, row + 1, QUANTUM).y0 - layout.cycles.gateDurationGap;
-
-				// const int x0 = structure.getCellX(columnStart) + layout.cycles.gateDurationGap;
-				// const int y0 = structure.getCellY(row) + layout.cycles.gateDurationGap;
-				// const int x1 = structure.getCellX(columnEnd + 1) - layout.cycles.gateDurationGap;
-				// const int y1 = structure.getCellY(row + 1) - layout.cycles.gateDurationGap;
+				const int x1 = structure.getCellPosition(columnEnd, row, QUANTUM).x1 - layout.cycles.gateDurationGap;
+				const int y1 = structure.getCellPosition(columnEnd, row, QUANTUM).y1 - layout.cycles.gateDurationGap;
 
 				// Draw the outline in the colors of the node.
 				const Node node = gateVisual.nodes.at(i);
@@ -1045,7 +1095,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 
 	// Draw the nodes.
     DOUT("Drawing gate nodes...");
-	for (int i = 0; i < amountOfOperands; i++)
+	for (int i = 0; i < operands.size(); i++)
 	{
         DOUT("Drawing gate node with index: " + std::to_string(i) + "...");
         //TODO: change the try-catch later on! the gate config will be read from somewhere else than the default layout

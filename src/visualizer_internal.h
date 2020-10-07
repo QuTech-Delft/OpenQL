@@ -86,6 +86,8 @@ class CircuitData
 		std::vector<EndPoints> getCutCycleRangeIndices() const;
 		bool isCycleCut(const int cycleIndex) const;
 		bool isCycleFirstInCutRange(const int cycleIndex) const;
+
+		void printProperties() const;
 };
 
 class Structure
@@ -114,6 +116,8 @@ class Structure
 		Position4 getCellPosition(int column, int row, BitType bitType) const;
 
 		std::vector<std::pair<EndPoints, bool>> getBitLineSegments() const;
+
+		void printProperties() const;
 };
 
 Layout parseConfiguration(const std::string& configPath);
