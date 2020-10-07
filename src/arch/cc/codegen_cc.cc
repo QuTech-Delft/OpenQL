@@ -201,7 +201,7 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, int group, int nrGroups
         uint32_t codeword = 0;
         bool codewordOverriden = false;
 #if OPT_SUPPORT_STATIC_CODEWORDS    // FIXME: this does not only provide support, but actually requires static codewords
-//        int staticCodewordOverride = gi->staticCodewordOverride;
+//        int staticCodewordOverride = bi->staticCodewordOverride;
         codeword = staticCodewordOverride;
         codewordOverriden = true;
 #else
@@ -251,7 +251,6 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, int group, int nrGroups
 
 
 // bundleFinish: see 'strategy' above
-// FIXME: split into smaller parts
 void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool isLastBundle)
 {
     if(isLastBundle) {
@@ -261,7 +260,10 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
         const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
-        // FIXME: check ic.ii.slot against MAX_SLOTS
+        if(ic.ii.slot >= MAX_SLOTS) {
+            JSON_FATAL("illegal slot " << ic.ii.slot <<
+                       "on instrument '" << ic.ii.instrumentName);
+        }
 
         // collect code generation info from all groups within one instrument
         // FIXME: the term 'group' is used in a diffused way: 1) index of signal vectors, 2) controlModeGroup
@@ -272,23 +274,23 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
         size_t nrGroups = bundleInfo[instrIdx].size();       // FIXME: always MAX_GROUPS:
         for(size_t group=0; group<nrGroups; group++) {                      // iterate over groups of instrument
-            tBundleInfo *gi = &bundleInfo[instrIdx][group];                 // shorthand
-            if(gi->signalValue != "") {                                     // signal defined, i.e.: we need to output something
-                isInstrUsed = true;
-
+            tBundleInfo *bi = &bundleInfo[instrIdx][group];                 // shorthand
+            if(bi->signalValue != "") {                                     // signal defined, i.e.: we need to output something
                 // compute maximum duration over all groups
-                if(gi->durationInCycles > maxDurationInCycles) maxDurationInCycles = gi->durationInCycles;
+                if(bi->durationInCycles > maxDurationInCycles) maxDurationInCycles = bi->durationInCycles;
 
-                tCalcGroupDigOut gdo = calcGroupDigOut(instrIdx, group, nrGroups, ic, gi->staticCodewordOverride);
+                tCalcGroupDigOut gdo = calcGroupDigOut(instrIdx, group, nrGroups, ic, bi->staticCodewordOverride);
                 digOut |= gdo.groupDigOut;
                 comment(gdo.comment);
 
-                vcd.bundleFinishGroup(startCycle, gi->durationInCycles, gdo.groupDigOut, gi->signalValue, instrIdx, group);
+                vcd.bundleFinishGroup(startCycle, bi->durationInCycles, gdo.groupDigOut, bi->signalValue, instrIdx, group);
+
+                isInstrUsed = true;
             } // if(signal defined)
 
             // handle readout
             // NB: we allow for readout without signal generation by the same instrument, which might be needed in the future
-            // FIXME: test for gi->readoutCop >= 0
+            // FIXME: test for bi->readoutCop >= 0
             // FIXME: check consistency between measure instruction and result_bits
             // FIXME: also generate VCD
             if(JSON_EXISTS(ic.controlMode, "result_bits")) {  // this instrument mode produces results (i.e. it is a measurement device)
@@ -299,7 +301,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
 #if OPT_FEEDBACK   // FIXME: WIP on measurement
                     // we need: input bit, cop?, qubit, SM bit
-                    // FIXME: save gi->readoutCop in inputLutTable
+                    // FIXME: save bi->readoutCop in inputLutTable
                     if(JSON_EXISTS(inputLutTable, ic.ii.instrumentName) &&                  // instrument exists
                                     inputLutTable[ic.ii.instrumentName].size() > group) {   // group exists
                     } else {    // new instrument or group
@@ -482,30 +484,30 @@ void codegen_cc::customGate(
 
 
         // store signal value, checking for conflicts
-        tBundleInfo *gi = &bundleInfo[si.instrIdx][si.group];               // shorthand
-        if(gi->signalValue == "") {                                         // signal not yet used
-            gi->signalValue = signalValueString;
+        tBundleInfo *bi = &bundleInfo[si.instrIdx][si.group];               // shorthand
+        if(bi->signalValue == "") {                                         // signal not yet used
+            bi->signalValue = signalValueString;
 #if OPT_SUPPORT_STATIC_CODEWORDS
-            gi->staticCodewordOverride = settings.findStaticCodewordOverride(instruction, operandIdx, iname); // NB: -1 means unused
+            bi->staticCodewordOverride = settings.findStaticCodewordOverride(instruction, operandIdx, iname); // NB: -1 means unused
 #endif
-        } else if(gi->signalValue == signalValueString) {                   // signal unchanged
+        } else if(bi->signalValue == signalValueString) {                   // signal unchanged
             // do nothing
         } else {
             EOUT("Code so far:\n" << codeSection.str());                    // provide context to help finding reason. FIXME: not great
             FATAL("Signal conflict on instrument='" << si.ic.ii.instrumentName <<
                   "', group=" << si.group <<
-                  ", between '" << gi->signalValue <<
+                  ", between '" << bi->signalValue <<
                   "' and '" << signalValueString << "'");       // FIXME: add offending instruction
         }
 
         // store signal duration
-        gi->durationInCycles = durationInCycles;
+        bi->durationInCycles = durationInCycles;
 
 #if OPT_FEEDBACK
         // store the classical operand used for readout
         if(isReadout) {
             int cop = cops.size()>0 ? cops[0] : UNUSED_COP;
-            gi->readoutCop = cop;
+            bi->readoutCop = cop;
         }
 
         // store expression for conditional gates
@@ -666,7 +668,7 @@ void codegen_cc::padToCycle(size_t lastEndCycle, size_t startCycle, int slot, co
 uint32_t codegen_cc::assignCodeword(const std::string &instrumentName, int instrIdx, int group)
 {
     uint32_t codeword;
-    std::string signalValue = gi->signalValue;
+    std::string signalValue = bi->signalValue;
 
     if(JSON_EXISTS(codewordTable, instrumentName) &&                    // instrument exists
                     codewordTable[instrumentName].size() > group) {     // group exists
