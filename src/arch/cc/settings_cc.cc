@@ -117,10 +117,14 @@ settings_cc::tInstrumentControl settings_cc::getInstrumentControl(size_t instrId
 
     ret.ii = getInstrumentInfo(instrIdx);
 
-    // get control mode for instrument
+    // get control mode reference for for instrument
     ret.refControlMode = json_get<std::string>(*ret.ii.instrument, "ref_control_mode", ret.ii.instrumentName);
-    ret.controlMode = json_get<const json>(*jsonControlModes, ret.refControlMode, "control_modes");   // the control mode definition for our instrument
-    ret.controlModeGroupCnt = ret.controlMode["control_bits"].size();   // how many groups of control bits does the control mode specify
+
+    // get control mode definition for our instrument
+    ret.controlMode = json_get<const json>(*jsonControlModes, ret.refControlMode, "control_modes");
+
+    // how many groups of control bits does the control mode specify (NB: 0 on missing key)
+    ret.controlModeGroupCnt = ret.controlMode["control_bits"].size();
 
     return ret;
 }
