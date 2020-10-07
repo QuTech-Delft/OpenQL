@@ -1627,39 +1627,40 @@ void Split(std::list<Alter> & resla)
 //
 // Config file definitions:
 //  nq:                 hardware_settings.qubit_number
-//  topology.form;      cross/plus/irregular: relation between neighbors in terms of x/y coordinates x[i]/y[i] qubits
-//  topology.x_size/y_size: x/y space, defines underlying grid
-//  topology.qubits:    mapping of qubit to x/y coordinates (defines x[i]/y[i] for each qubit i)
+//  topology.form;      gf_xy/gf_irregular: how relation between neighbors is specified
+//  topology.x_size/y_size: x/y space, defines underlying grid (only gf_xy)
+//  topology.qubits:    mapping of qubit to x/y coordinates (defines x[i]/y[i] for each qubit i) (only gf_xy)
 //  topology.edges:     mapping of edge (physical connection between 2 qubits) to its src and dst qubits (defines nbs)
 //
 // Grid public members (apart from nq):
-//  form:               how presence of neighbors relates to x/y coordinates of qubits
+//  form:               how relation between neighbors is specified
 //  Distance(qi,qj):    distance in physical connection hops from real qubit qi to real qubit qj;
-//                      - computing it relies on nbs (and Floyd-Warshall)
-//                      - in a fully assigned regular topology it could be defined by a formula (not supported)
+//                      - computing it relies on nbs (and Floyd-Warshall) (gf_xy and gf_irregular)
 //  nbs[qi]:            list of neighbor real qubits of real qubit qi
-//                      - nbs can be derived from topology.edges or
-//                      - nbs can be computed for a fully assigned regular topology (not supported)
+//                      - nbs can be derived from topology.edges (gf_xy and gf_irregular)
 //  Normalize(qi, neighborlist):    rotate neighborlist such that largest angle diff around qi is behind last element
-//                      relies on nbs, and x[i]/y[i]
+//                      relies on nbs, and x[i]/y[i] (gf_xy only)
 //
 // For an irregular grid form, only nq and edges (so nbs) need to be specified; distance is computed from nbs:
 // - there is no underlying rectangular grid, so there are no defined x and y coordinates of qubits;
 //   this means that Normalize as needed by mappathselect==borders cannot work
-// For a fully assigned and regular grid, we can have two forms: cross and plus, named after where neighbors are:
-// - these forms use formulae for x- and y-coordinates and for distance; this is not supported (yet)
 // Below, we support regular (xy) grids which need not be fully assigned; this requires edges (so nbs) to be defined,
 //   from which distance is computed; also we have x/y coordinates per qubit specified in the configuration file
 //   An underlying grid with x/y coordinates comes in use for:
 //   - crossbars
 //   - cclight qwg assignment (done in another manner now)
 //   - when mappathselectopt==borders
+//
+// Not implemented:
+// forms gf_cross and gf_plus: given x_size and y_size, the relations are implicitly defined by the internal
+//      diagonal (gf_cross) or horizontal/vertical (gf_plus) connections between grid points (qubits);
+//      with gf_cross only half the grid is occupied by a qubit; the grid point (0,0) doesn't have a qubit, (1,0) and (0,1) do;
+//      topology.qubits and topology.edges need not be present in the configuration file;
+//      Distance in both forms would be defined by a formula, not a function
 typedef
 enum GridForms
 {
     gf_xy,          // nodes have explicit neighbor definitions, qubits have explicit x/y coordinates
-//  gf_cross,       // nodes have implicit neighbor definitions along two diagonals, qubits have implicit x/y coordinates
-//  gf_plus,        // nodes have implicit neighbor definitions horizontally and vertically, qubits have implicit x/y coords
     gf_irregular    // nodes have explicit neighbor definitions, qubits don't have x/y coordinates
 } gridform_t;
 
@@ -1709,7 +1710,7 @@ void Init(const ql::quantum_platform* p)
     }
     else
     {
-        // xy/cross/plus have an x/y space; coordinates are explicit for xy but implicit for cross/plus
+        // gf_xy have an x/y space; coordinates are explicitly specified
         nx = platformp->topology["x_size"];
         ny = platformp->topology["y_size"];
     }
