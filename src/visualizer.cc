@@ -57,210 +57,6 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 using json = nlohmann::json;
 
 // ======================================================= //
-// =                      Structure                      = //
-// ======================================================= //
-
-Structure::Structure(const Layout layout, const CircuitData circuitData)
-{
-	const int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
-	const int cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0;
-
-	// Calculate the amount of displayed cycles.
-	int amountOfCutCycles = 0;
-	for (const auto& range : circuitData.getCutCycleRangeIndices())
-	{
-		amountOfCutCycles += range.end - range.start + 1;
-	}
-
-	const int amountOfDisplayedCycles = circuitData.getAmountOfCycles() - amountOfCutCycles;
-	int imageWidthFromCycles = 0;
-	if (layout.cycles.cutEmptyCycles)
-	{
-		imageWidthFromCycles = circuitData.getCutCycleRangeIndices().size() * layout.cycles.cutCycleWidth + amountOfDisplayedCycles * layout.grid.cellSize;
-	}
-	else
-	{
-		imageWidthFromCycles = circuitData.getAmountOfCycles() * layout.grid.cellSize;
-	}
-	imageWidth = layout.grid.borderSize * 2 + labelColumnWidth + imageWidthFromCycles;
-
-	// Calculate image height based on amount of quantum and classical bits.
-	const int amountOfRows = circuitData.amountOfQubits + (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits);
-	imageHeight = (layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0) + amountOfRows * layout.grid.cellSize + 2 * layout.grid.borderSize;
-
-	// Calculate label positions.
-	cycleLabelsY = layout.grid.borderSize;
-	bitLabelsX = layout.grid.borderSize;
-
-	// Calculate cell positions.
-	for (int col = 0; col < circuitData.getAmountOfCycles(); col++)
-	{
-		int widthFromCycles = 0;
-		if (layout.cycles.cutEmptyCycles)
-		{
-			int cutCycleRangesBeforeColumn = 0;
-			int cutCyclesBeforeColumn = 0;
-			for (const auto& range : circuitData.getCutCycleRangeIndices())
-			{
-				if (col > range.end)
-				{
-					cutCycleRangesBeforeColumn++;
-					cutCyclesBeforeColumn += range.end - range.start + 1;
-				}
-			}
-			widthFromCycles = (col - cutCyclesBeforeColumn) * layout.grid.cellSize + cutCycleRangesBeforeColumn * layout.cycles.cutCycleWidth;
-		}
-		const int x0 = layout.grid.borderSize + labelColumnWidth + widthFromCycles;
-		const int x1 = x0 + layout.grid.cellSize;
-
-		// Quantum cell positions.
-		std::vector<Position4> qColumnCells;
-		for (int row = 0; row < circuitData.amountOfQubits; row++)
-		{
-			const int y0 = layout.grid.borderSize + cycleNumbersRowHeight + row * layout.grid.cellSize;
-			const int y1 = y0 + layout.grid.cellSize;
-			qColumnCells.push_back({x0, y0, x1, y1});
-		}
-		qbitCellPositions.push_back(qColumnCells);
-		// Classical cell positions.
-		std::vector<Position4> cColumnCells;
-		for (int row = 0; row < circuitData.amountOfClassicalBits; row++)
-		{
-			const int y0 = layout.grid.borderSize + cycleNumbersRowHeight + 
-				((layout.bitLines.groupClassicalLines ? 0 : row) + circuitData.amountOfQubits) * layout.grid.cellSize;
-			const int y1 = y0 + layout.grid.cellSize;
-			cColumnCells.push_back({x0, y0, x1, y1});
-		}
-		cbitCellPositions.push_back(cColumnCells);
-	}
-
-	// Calculate the bit line segments.
-	DOUT("Calculating bit line segments...");
-	for (int i = 0; i < circuitData.getAmountOfCycles(); i++)
-	{
-		const bool cut = circuitData.isCycleCut(i);
-		bool reachedEnd = false;
-
-		// Add more cycles to the segment until we reach a cycle that is cut if the current segment is not cut, or vice versa.
-		for (int j = i; j < circuitData.getAmountOfCycles(); j++)
-		{
-			if (circuitData.isCycleCut(j) != cut)
-			{
-				const int start = getCellPosition(i, 0, QUANTUM).x0;
-				const int end = getCellPosition(j - 1, 0, QUANTUM).x1;
-				DOUT("segment > range: [" << i << "," << (j - 1) << "], " << "position: [" << start << "," << end << "], cut: " << cut);
-				bitLineSegments.push_back({{start, end}, cut});
-				i = j - 1;
-				break;
-			}
-
-			// Check if the last cycle has been reached, and exit the calculation if so.
-			if (j == circuitData.getAmountOfCycles() - 1)
-			{
-				const int start = getCellPosition(i, 0, QUANTUM).x0;
-				const int end = getCellPosition(j, 0, QUANTUM).x1;
-				DOUT("segment > range: [" << i << "," << j << "], " << "position: [" << start << "," << end << "], cut: " << cut);
-				bitLineSegments.push_back({{start, end}, cut});
-				reachedEnd = true;
-			}
-		}
-		
-		if (reachedEnd) break;
-	}
-}
-
-int Structure::getImageWidth() const
-{
-	return imageWidth;
-}
-
-int Structure::getImageHeight() const
-{
-	return imageHeight;
-}
-
-int Structure::getCycleLabelsY() const
-{
-	return cycleLabelsY;
-}
-
-int Structure::getBitLabelsX() const
-{
-	return bitLabelsX;
-}
-
-Position4 Structure::getCellPosition(int column, int row, BitType bitType) const
-{
-	switch (bitType)
-	{
-		case CLASSICAL:
-			if (column >= cbitCellPositions.size())
-				FATAL("cycle " << column << " is larger than max cycle " << cbitCellPositions.size() - 1 << " of structure!");
-			if (row >= cbitCellPositions[column].size())
-				FATAL("classical operand " << row << " is larger than max operand " << cbitCellPositions[column].size() - 1 << " of structure!");
-			return cbitCellPositions[column][row];	
-
-		case QUANTUM:
-			if (column >= qbitCellPositions.size())
-				FATAL("cycle " << column << " is larger than max cycle " << qbitCellPositions.size() - 1 << " of structure!");
-			if (row >= qbitCellPositions[column].size())
-				FATAL("quantum operand " << row << " is larger than max operand " << qbitCellPositions[column].size() - 1 << " of structure!");
-			return qbitCellPositions[column][row];
-
-		default:
-			FATAL("Unknown bit type!");
-	}
-}
-
-std::vector<std::pair<EndPoints, bool>> Structure::getBitLineSegments() const
-{
-	return bitLineSegments;
-}
-
-void Structure::printProperties() const
-{
-	DOUT("[STRUCTURE PROPERTIES]");
-
-	DOUT("imageWidth: " << imageWidth);
-	DOUT("imageHeight: " << imageHeight);
-
-	DOUT("cycleLabelsY: " << cycleLabelsY);
-	DOUT("bitLabelsX: " << bitLabelsX);
-
-	DOUT("qbitCellPositions:");
-	for (size_t cycle = 0; cycle < qbitCellPositions.size(); cycle++)
-	{
-		for (size_t operand = 0; operand < qbitCellPositions[cycle].size(); operand++)
-		{
-			DOUT("\tcell: [" << cycle << "," << operand << "]"
-				<< " x0: " << qbitCellPositions[cycle][operand].x0
-				<< " x1: " << qbitCellPositions[cycle][operand].x1
-				<< " y0: " << qbitCellPositions[cycle][operand].y0
-				<< " y1: " << qbitCellPositions[cycle][operand].y1);
-		}
-	}
-
-	DOUT("cbitCellPositions:");
-	for (size_t cycle = 0; cycle < cbitCellPositions.size(); cycle++)
-	{
-		for (size_t operand = 0; operand < cbitCellPositions[cycle].size(); operand++)
-		{
-			DOUT("\tcell: [" << cycle << "," << operand << "]"
-				<< " x0: " << cbitCellPositions[cycle][operand].x0
-				<< " x1: " << cbitCellPositions[cycle][operand].x1
-				<< " y0: " << cbitCellPositions[cycle][operand].y0
-				<< " y1: " << cbitCellPositions[cycle][operand].y1);
-		}
-	}
-
-	DOUT("bitLineSegments:");
-	for (const auto& segment : bitLineSegments)
-	{
-		DOUT("\tcut: " << segment.second << " start: " << segment.first.start << " end: " << segment.first.end);
-	}
-}
-
-// ======================================================= //
 // =                     CircuitData                     = //
 // ======================================================= //
 
@@ -461,7 +257,6 @@ bool CircuitData::isCycleCut(const int cycleIndex) const
 	return cycles[cycleIndex].cut;
 }
 
-//TODO: is this function useful? replace by something else? needs cutCycleRanges to be stored to be useful
 bool CircuitData::isCycleFirstInCutRange(const int cycleIndex) const
 {
 	for (const EndPoints& range : cutCycleRangeIndices)
@@ -493,6 +288,225 @@ void CircuitData::printProperties() const
 	for (const auto& range : cutCycleRangeIndices)
 	{
 		DOUT("\tstart: " << range.start << " end: " << range.end);
+	}
+}
+
+// ======================================================= //
+// =                      Structure                      = //
+// ======================================================= //
+
+Structure::Structure(const Layout layout, const CircuitData circuitData)
+{
+	const int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
+	const int cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0;
+
+	// Calculate the amount of displayed cycles.
+	int amountOfCutCycles = 0;
+	for (const auto& range : circuitData.getCutCycleRangeIndices())
+	{
+		amountOfCutCycles += range.end - range.start + 1;
+	}
+
+	const int amountOfDisplayedCycles = circuitData.getAmountOfCycles() - amountOfCutCycles;
+	int imageWidthFromCycles = 0;
+	if (layout.cycles.cutEmptyCycles)
+	{
+		imageWidthFromCycles = circuitData.getCutCycleRangeIndices().size() * layout.cycles.cutCycleWidth + amountOfDisplayedCycles * layout.grid.cellSize;
+	}
+	else
+	{
+		imageWidthFromCycles = circuitData.getAmountOfCycles() * layout.grid.cellSize;
+	}
+	imageWidth = layout.grid.borderSize * 2 + labelColumnWidth + imageWidthFromCycles;
+
+	// Calculate image height based on amount of quantum and classical bits.
+	const int rowsFromQuantum = circuitData.amountOfQubits;
+	const int rowsFromClassical = layout.bitLines.showClassicalLines
+		? (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits)
+		: 0;
+	const int heightFromOperands = (rowsFromQuantum + rowsFromClassical) * layout.grid.cellSize;	
+	imageHeight = (layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0) + heightFromOperands + 2 * layout.grid.borderSize;
+
+	// Calculate label positions.
+	cycleLabelsY = layout.grid.borderSize;
+	bitLabelsX = layout.grid.borderSize;
+
+	// Calculate cell positions.
+	for (int column = 0; column < circuitData.getAmountOfCycles(); column++)
+	{
+		int widthFromCycles = 0;
+		int displayedColumn = column;
+		if (layout.cycles.cutEmptyCycles)
+		{
+			int cutCycleRangesBeforeColumn = 0;
+			int cutCyclesBeforeColumn = 0;
+			for (const auto& range : circuitData.getCutCycleRangeIndices())
+			{
+				if (column > range.end)
+				{
+					cutCycleRangesBeforeColumn++;
+					cutCyclesBeforeColumn += range.end - range.start + 1;
+				}
+
+				if (column >= range.start && column <= range.end)
+				{
+					displayedColumn = range.start;
+				}
+			}
+			widthFromCycles = (displayedColumn - cutCyclesBeforeColumn) * layout.grid.cellSize + cutCycleRangesBeforeColumn * layout.cycles.cutCycleWidth;
+		}
+		else
+		{
+			widthFromCycles = displayedColumn * layout.grid.cellSize;
+		}
+
+		const int x0 = layout.grid.borderSize + labelColumnWidth + widthFromCycles;
+		const int x1 = x0 + (circuitData.isCycleCut(column) ? layout.cycles.cutCycleWidth : layout.grid.cellSize);
+
+		// Quantum cell positions.
+		std::vector<Position4> qColumnCells;
+		for (int row = 0; row < circuitData.amountOfQubits; row++)
+		{
+			const int y0 = layout.grid.borderSize + cycleNumbersRowHeight + row * layout.grid.cellSize;
+			const int y1 = y0 + layout.grid.cellSize;
+			qColumnCells.push_back({x0, y0, x1, y1});
+		}
+		qbitCellPositions.push_back(qColumnCells);
+		// Classical cell positions.
+		std::vector<Position4> cColumnCells;
+		for (int row = 0; row < circuitData.amountOfClassicalBits; row++)
+		{
+			const int y0 = layout.grid.borderSize + cycleNumbersRowHeight + 
+				((layout.bitLines.groupClassicalLines ? 0 : row) + circuitData.amountOfQubits) * layout.grid.cellSize;
+			const int y1 = y0 + layout.grid.cellSize;
+			cColumnCells.push_back({x0, y0, x1, y1});
+		}
+		cbitCellPositions.push_back(cColumnCells);
+	}
+
+	// Calculate the bit line segments.
+	DOUT("Calculating bit line segments...");
+	for (int i = 0; i < circuitData.getAmountOfCycles(); i++)
+	{
+		const bool cut = circuitData.isCycleCut(i);
+		bool reachedEnd = false;
+
+		// Add more cycles to the segment until we reach a cycle that is cut if the current segment is not cut, or vice versa.
+		for (int j = i; j < circuitData.getAmountOfCycles(); j++)
+		{
+			if (circuitData.isCycleCut(j) != cut)
+			{
+				const int start = getCellPosition(i, 0, QUANTUM).x0;
+				const int end = getCellPosition(j - 1, 0, QUANTUM).x1;
+				DOUT("segment > range: [" << i << "," << (j - 1) << "], " << "position: [" << start << "," << end << "], cut: " << cut);
+				bitLineSegments.push_back({{start, end}, cut});
+				i = j - 1;
+				break;
+			}
+
+			// Check if the last cycle has been reached, and exit the calculation if so.
+			if (j == circuitData.getAmountOfCycles() - 1)
+			{
+				const int start = getCellPosition(i, 0, QUANTUM).x0;
+				const int end = getCellPosition(j, 0, QUANTUM).x1;
+				DOUT("segment > range: [" << i << "," << j << "], " << "position: [" << start << "," << end << "], cut: " << cut);
+				bitLineSegments.push_back({{start, end}, cut});
+				reachedEnd = true;
+			}
+		}
+		
+		if (reachedEnd) break;
+	}
+}
+
+int Structure::getImageWidth() const
+{
+	return imageWidth;
+}
+
+int Structure::getImageHeight() const
+{
+	return imageHeight;
+}
+
+int Structure::getCycleLabelsY() const
+{
+	return cycleLabelsY;
+}
+
+int Structure::getBitLabelsX() const
+{
+	return bitLabelsX;
+}
+
+Position4 Structure::getCellPosition(int column, int row, BitType bitType) const
+{
+	switch (bitType)
+	{
+		case CLASSICAL:
+			if (column >= cbitCellPositions.size())
+				FATAL("cycle " << column << " is larger than max cycle " << cbitCellPositions.size() - 1 << " of structure!");
+			if (row >= cbitCellPositions[column].size())
+				FATAL("classical operand " << row << " is larger than max operand " << cbitCellPositions[column].size() - 1 << " of structure!");
+			return cbitCellPositions[column][row];	
+
+		case QUANTUM:
+			if (column >= qbitCellPositions.size())
+				FATAL("cycle " << column << " is larger than max cycle " << qbitCellPositions.size() - 1 << " of structure!");
+			if (row >= qbitCellPositions[column].size())
+				FATAL("quantum operand " << row << " is larger than max operand " << qbitCellPositions[column].size() - 1 << " of structure!");
+			return qbitCellPositions[column][row];
+
+		default:
+			FATAL("Unknown bit type!");
+	}
+}
+
+std::vector<std::pair<EndPoints, bool>> Structure::getBitLineSegments() const
+{
+	return bitLineSegments;
+}
+
+void Structure::printProperties() const
+{
+	DOUT("[STRUCTURE PROPERTIES]");
+
+	DOUT("imageWidth: " << imageWidth);
+	DOUT("imageHeight: " << imageHeight);
+
+	DOUT("cycleLabelsY: " << cycleLabelsY);
+	DOUT("bitLabelsX: " << bitLabelsX);
+
+	DOUT("qbitCellPositions:");
+	for (size_t cycle = 0; cycle < qbitCellPositions.size(); cycle++)
+	{
+		for (size_t operand = 0; operand < qbitCellPositions[cycle].size(); operand++)
+		{
+			DOUT("\tcell: [" << cycle << "," << operand << "]"
+				<< " x0: " << qbitCellPositions[cycle][operand].x0
+				<< " x1: " << qbitCellPositions[cycle][operand].x1
+				<< " y0: " << qbitCellPositions[cycle][operand].y0
+				<< " y1: " << qbitCellPositions[cycle][operand].y1);
+		}
+	}
+
+	DOUT("cbitCellPositions:");
+	for (size_t cycle = 0; cycle < cbitCellPositions.size(); cycle++)
+	{
+		for (size_t operand = 0; operand < cbitCellPositions[cycle].size(); operand++)
+		{
+			DOUT("\tcell: [" << cycle << "," << operand << "]"
+				<< " x0: " << cbitCellPositions[cycle][operand].x0
+				<< " x1: " << cbitCellPositions[cycle][operand].x1
+				<< " y0: " << cbitCellPositions[cycle][operand].y0
+				<< " y1: " << cbitCellPositions[cycle][operand].y1);
+		}
+	}
+
+	DOUT("bitLineSegments:");
+	for (const auto& segment : bitLineSegments)
+	{
+		DOUT("\tcut: " << segment.second << " start: " << segment.first.start << " end: " << segment.first.end);
 	}
 }
 
@@ -974,6 +988,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		gateVisual = layout.defaultGateVisuals.at(gate->type());
 	}
 
+	// Fetch the operands used by this gate.
 	DOUT(gate->name);
 	std::vector<std::pair<BitType, size_t>> operands;
 	for (const size_t operand : gate->operands)
@@ -989,8 +1004,6 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		DOUT("bitType: " << operand.first << " value: " << operand.second);
 	}
 
-	// const int amountOfOperands = calculateAmountOfGateOperands(gate);
-
 	// Check for correct amount of nodes.
 	if (operands.size() != gateVisual.nodes.size())
 	{
@@ -1004,7 +1017,6 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		// big line between the nodes and the nodes will be drawn on top of those.
 		// Note: does not work with transparent nodes! If those are ever implemented, the connection line drawing will need to be changed!
 
-		//TODO: this stuff needs to be fixed, its just a giant mess that does not properly work for all situations
         DOUT("Setting up multi-operand gate...");
 		std::pair<BitType, size_t> minOperand = operands[0];
 		std::pair<BitType, size_t> maxOperand = operands[operands.size() - 1];
