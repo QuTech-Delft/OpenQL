@@ -599,21 +599,23 @@ void codegen_cc::emitProgramStart()
 #endif
 
     comment("# synchronous start and latency compensation");
-   // user settable delay via register
+
+    // user settable delay via register
 #if OPT_OLD_SEQBAR_SEMANTICS  // original seq_bar semantics
-        // FIXME: is 'seq_bar 1' safe in the sense that we will never get an empty queue?
-        emit("",                "add",      "R63,1,R0",         "# R63 externally set by user, prevent 0 value which would wrap counter");
-        emit("",                "seq_bar",  "20",               "# synchronization");
-        emit("syncLoop:",       "seq_out",  "0x00000000,1",     "# 20 ns delay");
-        emit("",                "loop",     "R0,@syncLoop",     "# ");
+    // FIXME: is 'seq_bar 1' safe in the sense that we will never get an empty queue?
+    emit("",                "add",      "R63,1,R0",         "# R63 externally set by user, prevent 0 value which would wrap counter");
+    emit("",                "seq_bar",  "20",               "# synchronization");
+    emit("syncLoop:",       "seq_out",  "0x00000000,1",     "# 20 ns delay");
+    emit("",                "loop",     "R0,@syncLoop",     "# ");
 #else  // new seq_bar semantics (firmware from 20191219 onwards)
-        emit("",                "seq_bar",  "",                 "# synchronization, delay set externally through SET_SEQ_BAR_CNT");
+    emit("",                "seq_bar",  "",                 "# synchronization, delay set externally through SET_SEQ_BAR_CNT");
 #endif
 
-        emit("mainLoop:",       "",         "",                 "# ");
+    emit("mainLoop:",       "",         "",                 "# ");
 
 #if OPT_FEEDBACK
-        emit("",                "seq_state","0",                "# clear Programmable Logic state");
+    // initialize state
+    emit("",                "seq_state","0",                "# clear Programmable Logic state");
 #endif
 }
 
