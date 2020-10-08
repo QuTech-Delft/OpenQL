@@ -31,8 +31,12 @@ platformCustomGates = ql.Platform('starmon', os.path.join(curdir, 'hardware_conf
 nqubits = 4
 p = ql.Program("testProgram1", platformCustomGates, nqubits, 0)
 k = ql.Kernel("aKernel1", platformCustomGates, nqubits, 0)
+k.gate('x', [0])
 for i in range(nqubits):
     k.gate('prepz', [i])
+k.gate('wait', [1], 40)
+k.gate('wait', [2], 40)
+k.gate('wait', [3], 40)
 k.gate('x', [0])
 k.gate('x', [0])
 k.gate('x', [0])

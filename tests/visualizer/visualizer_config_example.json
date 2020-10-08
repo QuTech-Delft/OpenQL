@@ -42,6 +42,11 @@
         "lineSpacing": 2,
         "arrowSize": 10
     },
+    "pulses":
+    {
+        "displayGatesAsPulses": true,
+        "pulseRowHeight": 99
+    },
     "instructions":
     {
         "prepz": {

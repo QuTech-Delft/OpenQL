@@ -77,12 +77,19 @@ struct Measurements
 	int arrowSize = 10;
 };
 
+struct Pulses
+{
+	bool displayGatesAsPulses = false;
+	int pulseRowHeight = 99;
+};
+
 struct Layout
 {
 	Cycles cycles;
 	BitLines bitLines;
 	Grid grid;
 	Measurements measurements;
+	Pulses pulses;
 
 	std::map<std::string, GateVisual> customGateVisuals;
 

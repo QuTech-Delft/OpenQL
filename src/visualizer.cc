@@ -32,7 +32,9 @@ namespace ql
 // add cutEmptyCycles and emptyCycleThreshold to the documentation
 
 // -- IN PROGRESS ---
-// representing the gates as waveforms (see andreas paper for examples)
+// re-organize the attributes in the config file
+// what happens when a cycle range is cut, but one or more gates within that range finish earlier than the longest running gate comprising the entire range?
+// representing the gates as waveforms
 // make a copy of the gate vector, so any changes inside the visualizer to the program do not reflect back to any future compiler passes!
 
 // --- FUTURE WORK ---
@@ -324,7 +326,8 @@ Structure::Structure(const Layout layout, const CircuitData circuitData)
 	const int rowsFromClassical = layout.bitLines.showClassicalLines
 		? (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits)
 		: 0;
-	const int heightFromOperands = (rowsFromQuantum + rowsFromClassical) * layout.grid.cellSize;	
+	const int heightFromOperands = (rowsFromQuantum + rowsFromClassical) * 
+		(layout.pulses.displayGatesAsPulses ? layout.pulses.pulseRowHeight : layout.grid.cellSize);	
 	imageHeight = (layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0) + heightFromOperands + 2 * layout.grid.borderSize;
 
 	// Calculate label positions.
@@ -560,41 +563,48 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		drawCycleLabels(image, layout, circuitData, structure);
 	}
 
-	// Draw the quantum bit lines.
-    DOUT("Drawing qubit lines...");
-	for (int i = 0; i < circuitData.amountOfQubits; i++)
+	if (layout.pulses.displayGatesAsPulses == true)
 	{
-		drawBitLine(image, layout, QUANTUM, i, circuitData, structure);
+		IOUT("Starting pulse visualization...");
 	}
-	
-	// Draw the classical lines if enabled.
-	if (layout.bitLines.showClassicalLines)
+	else
 	{
-		// Draw the grouped classical bit lines if the option is set.
-		if (circuitData.amountOfClassicalBits > 0 && layout.bitLines.groupClassicalLines)
+		// Draw the quantum bit lines.
+		DOUT("Drawing qubit lines...");
+		for (int i = 0; i < circuitData.amountOfQubits; i++)
 		{
-			DOUT("Drawing grouped classical bit lines...");
-			drawGroupedClassicalBitLine(image, layout, circuitData, structure);
+			drawBitLine(image, layout, QUANTUM, i, circuitData, structure);
 		}
-		// Otherwise draw each classical bit line seperate.
-		else
+			
+		// Draw the classical lines if enabled.
+		if (layout.bitLines.showClassicalLines)
 		{
-			DOUT("Drawing ungrouped classical bit lines...");
-			for (int i = 0; i < circuitData.amountOfClassicalBits; i++)
+			// Draw the grouped classical bit lines if the option is set.
+			if (circuitData.amountOfClassicalBits > 0 && layout.bitLines.groupClassicalLines)
 			{
-				drawBitLine(image, layout, CLASSICAL, i, circuitData, structure);
+				DOUT("Drawing grouped classical bit lines...");
+				drawGroupedClassicalBitLine(image, layout, circuitData, structure);
 			}
+			// Otherwise draw each classical bit line seperate.
+			else
+			{
+				DOUT("Drawing ungrouped classical bit lines...");
+				for (int i = 0; i < circuitData.amountOfClassicalBits; i++)
+				{
+					drawBitLine(image, layout, CLASSICAL, i, circuitData, structure);
+				}
+			}
+		}
+
+		// Draw the gates.
+		DOUT("Drawing gates...");
+		for (gate* gate : gates)
+		{
+			DOUT("Drawing gate: [name: " + gate->name + "]");
+			drawGate(image, layout, circuitData, gate, structure);
 		}
 	}
 
-	// Draw the gates.
-    DOUT("Drawing gates...");
-	for (gate* gate : gates)
-	{
-        DOUT("Drawing gate: [name: " + gate->name + "]");
-		drawGate(image, layout, circuitData, gate, structure);
-	}
-	
 	// Display the image.
     DOUT("Displaying image...");
 	image.display("Quantum Circuit");
@@ -663,6 +673,12 @@ Layout parseConfiguration(const std::string& configPath)
 		layout.measurements.drawConnection = config["measurements"].value("drawConnection", layout.measurements.drawConnection);
 		layout.measurements.lineSpacing = config["measurements"].value("lineSpacing", layout.measurements.lineSpacing);
 		layout.measurements.arrowSize = config["measurements"].value("arrowSize", layout.measurements.arrowSize);
+	}
+
+	if (config.count("pulses") == 1)
+	{
+		layout.pulses.displayGatesAsPulses = config["pulses"].value("displayGatesAsPulses", layout.pulses.displayGatesAsPulses);
+		layout.pulses.pulseRowHeight = config["pulses"].value("pulseRowHeight", layout.pulses.pulseRowHeight);
 	}
 
 	// Load the custom instruction visualization parameters.
@@ -897,6 +913,12 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 
 void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
 {
+	if (layout.pulses.displayGatesAsPulses)
+	{
+		IOUT("Skip drawing grouped classical bit lines... Not yet implemented for pulses!");
+		return;
+	}
+
 	const int y = structure.getCellPosition(0, 0, CLASSICAL).y0 + layout.grid.cellSize / 2;
 
 	// Draw the segments of the double line.
@@ -966,6 +988,12 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 {
 	DOUT("Drawing gate with name: '" << gate->name << "'");
 	
+	if (layout.pulses.displayGatesAsPulses)
+	{
+		IOUT("Skip drawing gate as pulse... Not yet implemented for pulses!");
+		return;
+	}
+
 	GateVisual gateVisual;
 	if (gate->type() == __custom_gate__)
 	{
