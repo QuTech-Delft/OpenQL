@@ -417,7 +417,7 @@ int quantum_program::compile()
     // from here on front-end passes
 
     // writer pass of the initial qasm file (program.qasm)
-    ql::report_qasm(this, platform, "out", "initialqasmwriter");
+    ql::write_qasm(this, platform, "initialqasmwriter");
 
     // rotation_optimize pass
     rotation_optimize(this, platform, "rotation_optimize");
@@ -435,7 +435,7 @@ int quantum_program::compile()
     ql::clifford_optimize(this, platform, "clifford_postscheduler");
 
     // writer pass of the scheduled qasm file (program_scheduled.qasm)
-    ql::report_qasm(this, platform, "out", "scheduledqasmwriter");
+    ql::write_qasm(this, platform, "scheduledqasmwriter");
 
     // backend passes
     DOUT("eqasm_compiler_name: " << eqasm_compiler_name);
