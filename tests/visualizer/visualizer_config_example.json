@@ -26,7 +26,7 @@
         "cBitLabelColor": [128, 128, 128],
 
         "showClassicalLines": true,
-        "groupClassicalLines": true,
+        "groupClassicalLines": false,
         "groupedClassicalLineGap": 2,
         "qBitLineColor": [0, 0, 0],
         "cBitLineColor": [128, 128, 128]

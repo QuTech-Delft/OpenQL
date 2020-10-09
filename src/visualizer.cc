@@ -62,10 +62,10 @@ using json = nlohmann::json;
 // =                     CircuitData                     = //
 // ======================================================= //
 
-CircuitData::CircuitData(const std::vector<ql::gate*> gates, const Layout layout, const int cycleDuration) :
+CircuitData::CircuitData(std::vector<GateProperties> gates, const Layout layout, const int cycleDuration) :
 	cycleDuration(cycleDuration),
-	amountOfQubits(calculateAmountOfBits(gates, &gate::operands)),
-	amountOfClassicalBits(calculateAmountOfBits(gates, &gate::creg_operands))
+	amountOfQubits(calculateAmountOfBits(gates, &GateProperties::operands)),
+	amountOfClassicalBits(calculateAmountOfBits(gates, &GateProperties::creg_operands))
 {
 	int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
 
@@ -81,10 +81,10 @@ CircuitData::CircuitData(const std::vector<ql::gate*> gates, const Layout layout
 		cycles.push_back({true, false});
 	}
 	// Mark non-empty cycles and add gates to their respective cycles.
-	for (ql::gate* const gate : gates)
+	for (GateProperties gate : gates)
 	{
-		cycles[gate->cycle].empty = false;
-		cycles[gate->cycle].gates.push_back(gate);
+		cycles[gate.cycle].empty = false;
+		cycles[gate.cycle].gates.push_back(gate);
 	}
 
 	// Find cycles with overlapping connections.
@@ -107,7 +107,7 @@ CircuitData::CircuitData(const std::vector<ql::gate*> gates, const Layout layout
 	if (layout.cycles.cutEmptyCycles)
 	{
 		// Find cuttable ranges.
-		cutCycleRangeIndices = findCuttableEmptyRanges(gates, layout);
+		cutCycleRangeIndices = findCuttableEmptyRanges(layout);
 		// And cut them.
 		for (const EndPoints& range : cutCycleRangeIndices)
 		{
@@ -119,16 +119,16 @@ CircuitData::CircuitData(const std::vector<ql::gate*> gates, const Layout layout
 	}
 }
 
-int CircuitData::calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType) const
+int CircuitData::calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<size_t> GateProperties::* operandType) const
 {
 	//TODO: handle circuits not starting at the c- or qbit with index 0
 	int minAmount = std::numeric_limits<int>::max();
 	int maxAmount = 0;
 
-	for (const ql::gate* gate : gates)
+	for (const auto& gate : gates)
 	{
-		std::vector<size_t>::const_iterator begin = (gate->*operandType).begin();
-		const std::vector<size_t>::const_iterator end = (gate->*operandType).end();
+		std::vector<size_t>::const_iterator begin = (gate.*operandType).begin();
+		const std::vector<size_t>::const_iterator end = (gate.*operandType).end();
 		
 		for (; begin != end; ++begin)
 		{
@@ -148,17 +148,17 @@ int CircuitData::calculateAmountOfBits(const std::vector<ql::gate*> gates, const
 		return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
 }
 
-int CircuitData::calculateAmountOfCycles(const std::vector<ql::gate*> gates, const int cycleDuration) const
+int CircuitData::calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const
 {
     int amountOfCycles = 0;
-	for (const ql::gate* gate : gates)
+	for (const auto& gate : gates)
 	{
-		const int gateCycle = (int)gate->cycle;
+		const int gateCycle = (int)gate.cycle;
 		if (gateCycle > amountOfCycles)
 			amountOfCycles = gateCycle;
 	}
 	amountOfCycles++; // because the cycles start at zero, we add one to get the true amount of cycles
-	const int lastGateDuration = (int) (gates.at(gates.size() - 1)->duration);
+	const int lastGateDuration = (int) (gates.at(gates.size() - 1).duration);
 	const int lastGateDurationInCycles = lastGateDuration / cycleDuration;
 	if (lastGateDurationInCycles > 1)
 	{
@@ -168,13 +168,13 @@ int CircuitData::calculateAmountOfCycles(const std::vector<ql::gate*> gates, con
     return amountOfCycles;
 }
 
-void CircuitData::compressCycles(const std::vector<ql::gate*> gates, int& amountOfCycles) const
+void CircuitData::compressCycles(std::vector<GateProperties>& gates, int& amountOfCycles) const
 {
 	DOUT("Compressing circuit...");
 	std::vector<bool> filledCycles(amountOfCycles);
 	for (int i = 0; i < gates.size(); i++)
 	{
-		filledCycles.at(gates.at(i)->cycle) = true;
+		filledCycles.at(gates.at(i).cycle) = true;
 	}
 
 	DOUT("amount of cycles before compression: " << amountOfCycles);
@@ -188,11 +188,11 @@ void CircuitData::compressCycles(const std::vector<ql::gate*> gates, int& amount
 			DOUT("\tcompressing... min cycle to compress: " << i - amountOfCompressions);
 			for (int j = 0; j < gates.size(); j++)
 			{
-				const int gateCycle = (int)gates.at(j)->cycle;
+				const int gateCycle = (int)gates.at(j).cycle;
 				DOUT("\tgate cycle: " << gateCycle);
 				if (gateCycle >= i - amountOfCompressions)
 				{
-					gates.at(j)->cycle = gates.at(j)->cycle - 1;
+					gates.at(j).cycle = gates.at(j).cycle - 1;
 					DOUT(" -> compressing cycle");
 				}
 				else
@@ -211,7 +211,7 @@ void CircuitData::compressCycles(const std::vector<ql::gate*> gates, int& amount
 	DOUT("amount of cycles after compression: " << amountOfCycles);
 }
 
-std::vector<EndPoints> CircuitData::findCuttableEmptyRanges(const std::vector<ql::gate*> gates, const Layout layout) const
+std::vector<EndPoints> CircuitData::findCuttableEmptyRanges(const Layout layout) const
 {
 	DOUT("Checking for empty cycle ranges...");
 
@@ -545,32 +545,17 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
     // Get the gate list from the program.
     DOUT("Getting gate list...");
-    std::vector<ql::gate*> gates;
+    std::vector<GateProperties> gates;
     std::vector<ql::quantum_kernel> kernels = program->kernels;
     for (ql::quantum_kernel kernel : kernels)
     {
         circuit c = kernel.get_circuit();
-		for (ql::gate* gate : c)
+		for (ql::gate* const gate : c)
 		{
-			gates.push_back(gate);
+			GateProperties gateProperties {gate->name, gate->operands, gate->creg_operands, gate->duration, gate->cycle, gate->type(), gate->visual_type};
+			gates.push_back(gateProperties);
 		}
     }
-
-	IOUT("addresses of original gates");
-    for (ql::quantum_kernel kernel : kernels)
-    {
-        circuit c = kernel.get_circuit();
-		for (ql::gate* gate : c)
-		{
-			IOUT(gate << " name: " << gate->name);
-		}
-    }
-
-	IOUT("addresses of copied gates");
-	for (ql::gate* gate : gates)
-	{
-		IOUT(gate << " name: " << gate->name);
-	}
 
 	// std::vector<ql::gate*> gates;
     // std::vector<ql::quantum_kernel> kernels = program->kernels;
@@ -641,9 +626,9 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
 		// Draw the gates.
 		DOUT("Drawing gates...");
-		for (ql::gate* gate : gates)
+		for (GateProperties gate : gates)
 		{
-			DOUT("Drawing gate: [name: " + gate->name + "]");
+			DOUT("Drawing gate: [name: " + gate.name + "]");
 			drawGate(image, layout, circuitData, gate, structure);
 		}
 	}
@@ -825,14 +810,14 @@ void validateLayout(Layout& layout)
 	}
 }
 
-int calculateAmountOfGateOperands(const ql::gate* gate)
+int calculateAmountOfGateOperands(const GateProperties gate)
 {
-	return (int)gate->operands.size() + (int)gate->creg_operands.size();
+	return (int)gate.operands.size() + (int)gate.creg_operands.size();
 }
 
-void fixMeasurementOperands(const std::vector<ql::gate*> gates)
+void fixMeasurementOperands(std::vector<GateProperties>& gates)
 {
-	for (gate* gate : gates)
+	for (GateProperties& gate : gates)
 	{
 		// Check for a measurement gate without explicitly specified classical operand.
 		if (isMeasurement(gate))
@@ -841,17 +826,17 @@ void fixMeasurementOperands(const std::vector<ql::gate*> gates)
 			{
 				// Set classical measurement operand to the bit corresponding to the measuremens qubit number.
 				DOUT("Found measurement gate with no classical operand. Assuming default classical operand.");
-				const int cbit = gate->operands[0];
-				gate->creg_operands.push_back(cbit);
+				const int cbit = gate.operands[0];
+				gate.creg_operands.push_back(cbit);
 			}
 		}
 	}
 }
 
-bool isMeasurement(const ql::gate* gate)
+bool isMeasurement(const GateProperties gate)
 {
 	//TODO: this method of checking for measurement gates is not very robust and relies entirely on the user naming their instructions in a certain way!
-	return (gate->name.find("measure") != std::string::npos);
+	return (gate.name.find("measure") != std::string::npos);
 }
 
 Dimensions calculateTextDimensions(const std::string& text, const int fontHeight, const Layout layout)
@@ -1027,9 +1012,9 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 	}
 }
 
-void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const ql::gate* gate, const Structure structure)
+void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const GateProperties gate, const Structure structure)
 {
-	DOUT("Drawing gate with name: '" << gate->name << "'");
+	DOUT("Drawing gate with name: '" << gate.name << "'");
 	
 	if (layout.pulses.displayGatesAsPulses)
 	{
@@ -1038,37 +1023,35 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	}
 
 	GateVisual gateVisual;
-	// Const cast to remove constness because type() is not a const method (even though it should be)!
-	if (const_cast<ql::gate*>(gate)->type() == __custom_gate__)
+	if (gate.type == __custom_gate__)
 	{
-		if (layout.customGateVisuals.count(gate->visual_type) == 1)
+		if (layout.customGateVisuals.count(gate.visual_type) == 1)
 		{
-			DOUT("Found visual for custom gate: '" << gate->name << "'");
-			gateVisual = layout.customGateVisuals.at(gate->visual_type);
+			DOUT("Found visual for custom gate: '" << gate.name << "'");
+			gateVisual = layout.customGateVisuals.at(gate.visual_type);
 		}
 		else
 		{
 			// TODO: try to recover by matching gate name with a default visual name
 			// TODO: if the above fails, display a dummy gate
-			WOUT("Did not find visual for custom gate: '" << gate->name << "', skipping gate!");
+			WOUT("Did not find visual for custom gate: '" << gate.name << "', skipping gate!");
 			return;
 		}
 	}
 	else
 	{
 		DOUT("Default gate found. Using default visualization!");
-		// Const cast to remove constness because type() is not a const method (even though it should be)!
-		gateVisual = layout.defaultGateVisuals.at(const_cast<ql::gate*>(gate)->type());
+		gateVisual = layout.defaultGateVisuals.at(gate.type);
 	}
 
 	// Fetch the operands used by this gate.
-	DOUT(gate->name);
+	DOUT(gate.name);
 	std::vector<std::pair<BitType, size_t>> operands;
-	for (const size_t operand : gate->operands)
+	for (const size_t operand : gate.operands)
 	{
 		operands.push_back({QUANTUM, operand});
 	}
-	for (const size_t operand : gate->creg_operands)
+	for (const size_t operand : gate.creg_operands)
 	{
 		operands.push_back({CLASSICAL, operand});
 	}
@@ -1080,7 +1063,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	// Check for correct amount of nodes.
 	if (operands.size() != gateVisual.nodes.size())
 	{
-		WOUT("Amount of gate operands and visualization nodes are not equal. Skipping gate with name: '" << gate->name << "' ...");
+		WOUT("Amount of gate operands: " << operands.size() << " and visualization nodes: " << gateVisual.nodes.size() << " are not equal. Skipping gate with name: '" << gate.name << "' ...");
 		return;
 	}
 
@@ -1101,7 +1084,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 			if (row > maxOperand.second)
 				maxOperand = operand;
 		}
-		const int column = (int)gate->cycle;
+		const int column = (int)gate.cycle;
 		DOUT("minOperand.bitType: " << minOperand.first << " minOperand.operand " << minOperand.second);
 		DOUT("maxOperand.bitType: " << maxOperand.first << " maxOperand.operand " << maxOperand.second);
 		DOUT("cycle: " << column);
@@ -1151,16 +1134,16 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	if (!layout.cycles.compressCycles && layout.cycles.showGateDurationOutline)
 	{
         DOUT("Drawing gate duration outline...");
-		const int gateDurationInCycles = ((int)gate->duration) / circuitData.cycleDuration;
+		const int gateDurationInCycles = ((int)gate.duration) / circuitData.cycleDuration;
 		// Only draw the gate outline if the gate takes more than one cycle.
 		if (gateDurationInCycles > 1)
 		{
 			for (int i = 0; i < operands.size(); i++)
 			{
-				const int columnStart = (int)gate->cycle;
+				const int columnStart = (int)gate.cycle;
 				const int columnEnd = columnStart + gateDurationInCycles - 1;
-				const int row = (i >= gate->operands.size()) ? gate->creg_operands[i - gate->operands.size()] : gate->operands[i];
-				DOUT("i: " << i << " size: " << gate->operands.size() << " value: " << gate->operands[i]);
+				const int row = (i >= gate.operands.size()) ? gate.creg_operands[i - gate.operands.size()] : gate.operands[i];
+				DOUT("i: " << i << " size: " << gate.operands.size() << " value: " << gate.operands[i]);
 
 				const int x0 = structure.getCellPosition(columnStart, row, QUANTUM).x0 + layout.cycles.gateDurationGap;
 				const int y0 = structure.getCellPosition(columnStart, row, QUANTUM).y0 + layout.cycles.gateDurationGap;
@@ -1187,13 +1170,13 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
         try
         {
 		    const Node node = gateVisual.nodes.at(i);
-            const BitType operandType = (i >= gate->operands.size()) ? CLASSICAL : QUANTUM;
-            const int index = (operandType == QUANTUM) ? i : (i - (int)gate->operands.size());
+            const BitType operandType = (i >= gate.operands.size()) ? CLASSICAL : QUANTUM;
+            const int index = (operandType == QUANTUM) ? i : (i - (int)gate.operands.size());
 
 			const Cell cell =
 			{
-				(int)gate->cycle,
-	            operandType == CLASSICAL ? (int)gate->creg_operands.at(index) + circuitData.amountOfQubits : (int)gate->operands.at(index),
+				(int)gate.cycle,
+	            operandType == CLASSICAL ? (int)gate.creg_operands.at(index) + circuitData.amountOfQubits : (int)gate.operands.at(index),
 				operandType
 			};
 

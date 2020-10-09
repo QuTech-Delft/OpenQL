@@ -58,22 +58,22 @@ struct Dimensions
 	const int height;
 };
 
-struct Cycle
-{
-	bool empty;
-	bool cut;
-	std::vector<ql::gate*> gates;
-};
-
-struct GateCopy
+struct GateProperties
 {
 	std::string name;
     std::vector<size_t> operands;
     std::vector<size_t> creg_operands;
     size_t duration;
-    size_t  cycle;
+    size_t cycle;
     gate_type_t type;
     std::string visual_type;
+};
+
+struct Cycle
+{
+	bool empty;
+	bool cut;
+	std::vector<GateProperties> gates;
 };
 
 class CircuitData
@@ -82,17 +82,17 @@ class CircuitData
 		std::vector<Cycle> cycles;
 		std::vector<EndPoints> cutCycleRangeIndices;
 
-		int calculateAmountOfBits(const std::vector<ql::gate*> gates, const std::vector<size_t> ql::gate::* operandType) const;
-		int calculateAmountOfCycles(const std::vector<ql::gate*> gates, const int cycleDuration) const;
-		void compressCycles(const std::vector<ql::gate*> gates, int& amountOfCycles) const;
-		std::vector<EndPoints> findCuttableEmptyRanges(const std::vector<ql::gate*> gates, const Layout layout) const;
+		int calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<size_t> GateProperties::* operandType) const;
+		int calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const;
+		void compressCycles(std::vector<GateProperties>& gates, int& amountOfCycles) const;
+		std::vector<EndPoints> findCuttableEmptyRanges(const Layout layout) const;
 
 	public:
 		const int amountOfQubits;
 		const int amountOfClassicalBits;
 		const int cycleDuration;
 
-		CircuitData(const std::vector<ql::gate*> gates, const Layout layout, const int cycleDuration);
+		CircuitData(std::vector<GateProperties> gates, const Layout layout, const int cycleDuration);
 
 		int getAmountOfCycles() const;
 		std::vector<EndPoints> getCutCycleRangeIndices() const;
@@ -135,17 +135,17 @@ class Structure
 Layout parseConfiguration(const std::string& configPath);
 void validateLayout(Layout& layout);
 
-int calculateAmountOfGateOperands(const ql::gate* gate);
+int calculateAmountOfGateOperands(const GateProperties gate);
 
-void fixMeasurementOperands(const std::vector<ql::gate*> gates);
-bool isMeasurement(const ql::gate* gate);
+void fixMeasurementOperands(std::vector<GateProperties>& gates);
+bool isMeasurement(const GateProperties gate);
 
 Dimensions calculateTextDimensions(const std::string& text, const int fontHeight, const Layout layout);
 
 void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure);
 void drawBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const BitType bitType, const int row, const CircuitData circuitData, const Structure structure);
 void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure);
-void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const ql::gate* gate, const Structure structure);
+void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const GateProperties gate, const Structure structure);
 
 void drawGateNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell);
 void drawControlNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell);
