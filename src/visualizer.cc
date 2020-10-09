@@ -80,11 +80,28 @@ CircuitData::CircuitData(const std::vector<ql::gate*> gates, const Layout layout
 	{
 		cycles.push_back({true, false});
 	}
-	// Mark non-empty cycles.
-	for (const gate* gate : gates)
+	// Mark non-empty cycles and add gates to their respective cycles.
+	for (ql::gate* const gate : gates)
 	{
 		cycles[gate->cycle].empty = false;
+		cycles[gate->cycle].gates.push_back(gate);
 	}
+
+	// Find cycles with overlapping connections.
+	// std::vector<int> cyclesWithOverlappingConnections;
+	// for (size_t i = 0; i < cycles.size(); i++)
+	// {
+	// 	if (cycles[i].gates.size() > 1)
+	// 	{
+	// 		for (const auto& gate : cycles[i].gates)
+	// 		{
+	// 			if (gate.operands.size() + gate.creg_operands.size() > 1)
+	// 			{
+	// 				IOUT("Found multi-operand gate: " << gate.name << " in cycle: " << i << " with multiple gates!");
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	// Cut empty cycles if wanted.
 	if (layout.cycles.cutEmptyCycles)
@@ -108,7 +125,7 @@ int CircuitData::calculateAmountOfBits(const std::vector<ql::gate*> gates, const
 	int minAmount = std::numeric_limits<int>::max();
 	int maxAmount = 0;
 
-	for (const gate* gate : gates)
+	for (const ql::gate* gate : gates)
 	{
 		std::vector<size_t>::const_iterator begin = (gate->*operandType).begin();
 		const std::vector<size_t>::const_iterator end = (gate->*operandType).end();
@@ -134,15 +151,14 @@ int CircuitData::calculateAmountOfBits(const std::vector<ql::gate*> gates, const
 int CircuitData::calculateAmountOfCycles(const std::vector<ql::gate*> gates, const int cycleDuration) const
 {
     int amountOfCycles = 0;
-	for (const gate* gate : gates)
+	for (const ql::gate* gate : gates)
 	{
 		const int gateCycle = (int)gate->cycle;
 		if (gateCycle > amountOfCycles)
 			amountOfCycles = gateCycle;
 	}
 	amountOfCycles++; // because the cycles start at zero, we add one to get the true amount of cycles
-	const gate* lastGate = gates.at(gates.size() - 1);
-	const int lastGateDuration = (int)lastGate->duration;
+	const int lastGateDuration = (int) (gates.at(gates.size() - 1)->duration);
 	const int lastGateDurationInCycles = lastGateDuration / cycleDuration;
 	if (lastGateDurationInCycles > 1)
 	{
@@ -534,8 +550,35 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
     for (ql::quantum_kernel kernel : kernels)
     {
         circuit c = kernel.get_circuit();
-        gates.insert( gates.end(), c.begin(), c.end() );
+		for (ql::gate* gate : c)
+		{
+			gates.push_back(gate);
+		}
     }
+
+	IOUT("addresses of original gates");
+    for (ql::quantum_kernel kernel : kernels)
+    {
+        circuit c = kernel.get_circuit();
+		for (ql::gate* gate : c)
+		{
+			IOUT(gate << " name: " << gate->name);
+		}
+    }
+
+	IOUT("addresses of copied gates");
+	for (ql::gate* gate : gates)
+	{
+		IOUT(gate << " name: " << gate->name);
+	}
+
+	// std::vector<ql::gate*> gates;
+    // std::vector<ql::quantum_kernel> kernels = program->kernels;
+    // for (ql::quantum_kernel kernel : kernels)
+    // {
+    //     circuit c = kernel.get_circuit();
+    //     gates.insert( gates.end(), c.begin(), c.end() );
+    // }
 
 	// Calculate circuit properties.
     DOUT("Calculating circuit properties...");
@@ -598,7 +641,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
 		// Draw the gates.
 		DOUT("Drawing gates...");
-		for (gate* gate : gates)
+		for (ql::gate* gate : gates)
 		{
 			DOUT("Drawing gate: [name: " + gate->name + "]");
 			drawGate(image, layout, circuitData, gate, structure);
@@ -984,7 +1027,7 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 	}
 }
 
-void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, gate* const gate, const Structure structure)
+void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const ql::gate* gate, const Structure structure)
 {
 	DOUT("Drawing gate with name: '" << gate->name << "'");
 	
@@ -995,7 +1038,8 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	}
 
 	GateVisual gateVisual;
-	if (gate->type() == __custom_gate__)
+	// Const cast to remove constness because type() is not a const method (even though it should be)!
+	if (const_cast<ql::gate*>(gate)->type() == __custom_gate__)
 	{
 		if (layout.customGateVisuals.count(gate->visual_type) == 1)
 		{
@@ -1013,7 +1057,8 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	else
 	{
 		DOUT("Default gate found. Using default visualization!");
-		gateVisual = layout.defaultGateVisuals.at(gate->type());
+		// Const cast to remove constness because type() is not a const method (even though it should be)!
+		gateVisual = layout.defaultGateVisuals.at(const_cast<ql::gate*>(gate)->type());
 	}
 
 	// Fetch the operands used by this gate.

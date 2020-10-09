@@ -62,6 +62,18 @@ struct Cycle
 {
 	bool empty;
 	bool cut;
+	std::vector<ql::gate*> gates;
+};
+
+struct GateCopy
+{
+	std::string name;
+    std::vector<size_t> operands;
+    std::vector<size_t> creg_operands;
+    size_t duration;
+    size_t  cycle;
+    gate_type_t type;
+    std::string visual_type;
 };
 
 class CircuitData
@@ -133,7 +145,7 @@ Dimensions calculateTextDimensions(const std::string& text, const int fontHeight
 void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure);
 void drawBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const BitType bitType, const int row, const CircuitData circuitData, const Structure structure);
 void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure);
-void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, ql::gate* const gate, const Structure structure);
+void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const ql::gate* gate, const Structure structure);
 
 void drawGateNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell);
 void drawControlNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell);
