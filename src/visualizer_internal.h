@@ -92,7 +92,7 @@ class CircuitData
 		const int amountOfClassicalBits;
 		const int cycleDuration;
 
-		CircuitData(std::vector<GateProperties> gates, const Layout layout, const int cycleDuration);
+		CircuitData(std::vector<GateProperties>& gates, const Layout layout, const int cycleDuration);
 
 		int getAmountOfCycles() const;
 		std::vector<EndPoints> getCutCycleRangeIndices() const;

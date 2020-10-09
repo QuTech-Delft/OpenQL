@@ -30,18 +30,18 @@ namespace ql
 // 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
 // add bit line zigzag indicating a cut cycle range
 // add cutEmptyCycles and emptyCycleThreshold to the documentation
+// make a copy of the gate vector, so any changes inside the visualizer to the program do not reflect back to any future compiler passes
 
 // -- IN PROGRESS ---
 // re-organize the attributes in the config file
 // what happens when a cycle range is cut, but one or more gates within that range finish earlier than the longest running gate comprising the entire range?
 // representing the gates as waveforms
-// make a copy of the gate vector, so any changes inside the visualizer to the program do not reflect back to any future compiler passes!
+// fix overlapping connections for multiqubit gates/measurements
 
 // --- FUTURE WORK ---
 // TODO: the visualizer should probably be a class
 // TODO: when gate is skipped due to whatever reason, maybe show a dummy gate outline indicating where the gate is?
 // TODO: display wait/barrier gate (need wait gate fix first)
-// TODO: fix overlapping connections for multiqubit gates/measurements
 // TODO: add classical bit number to measurement connection when classical lines are grouped
 // TODO: implement measurement symbol (to replace the M on measurement gates)
 // TODO: generate default gate visuals from the configuration file
@@ -62,7 +62,7 @@ using json = nlohmann::json;
 // =                     CircuitData                     = //
 // ======================================================= //
 
-CircuitData::CircuitData(std::vector<GateProperties> gates, const Layout layout, const int cycleDuration) :
+CircuitData::CircuitData(std::vector<GateProperties>& gates, const Layout layout, const int cycleDuration) :
 	cycleDuration(cycleDuration),
 	amountOfQubits(calculateAmountOfBits(gates, &GateProperties::operands)),
 	amountOfClassicalBits(calculateAmountOfBits(gates, &GateProperties::creg_operands))
@@ -566,7 +566,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
     // }
 
 	// Calculate circuit properties.
-    DOUT("Calculating circuit properties...");
+    IOUT("Calculating circuit properties...");
 	const int cycleDuration = program->platform.cycle_time;
 	DOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
 	fixMeasurementOperands(gates); // fixes measurement gates without classical operands
@@ -574,12 +574,12 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	circuitData.printProperties();
     
 	// Initialize the structure of the visualization.
-	DOUT("Initializing visualization structure...");
+	IOUT("Initializing visualization structure...");
 	Structure structure(layout, circuitData);
 	structure.printProperties();
 	
 	// Initialize image.
-    DOUT("Initializing image...");
+    IOUT("Initializing image...");
 	const int numberOfChannels = 3;
 	cimg_library::CImg<unsigned char> image(structure.getImageWidth(), structure.getImageHeight(), 1, numberOfChannels);
 	image.fill(255);
@@ -587,7 +587,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	// Draw the cycle labels if the option has been set.
 	if (layout.cycles.showCycleLabels)
 	{
-        DOUT("Drawing cycle numbers...");
+        IOUT("Drawing cycle numbers...");
 		drawCycleLabels(image, layout, circuitData, structure);
 	}
 
@@ -598,7 +598,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	else
 	{
 		// Draw the quantum bit lines.
-		DOUT("Drawing qubit lines...");
+		IOUT("Drawing qubit lines...");
 		for (int i = 0; i < circuitData.amountOfQubits; i++)
 		{
 			drawBitLine(image, layout, QUANTUM, i, circuitData, structure);
@@ -610,13 +610,13 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 			// Draw the grouped classical bit lines if the option is set.
 			if (circuitData.amountOfClassicalBits > 0 && layout.bitLines.groupClassicalLines)
 			{
-				DOUT("Drawing grouped classical bit lines...");
+				IOUT("Drawing grouped classical bit lines...");
 				drawGroupedClassicalBitLine(image, layout, circuitData, structure);
 			}
 			// Otherwise draw each classical bit line seperate.
 			else
 			{
-				DOUT("Drawing ungrouped classical bit lines...");
+				IOUT("Drawing ungrouped classical bit lines...");
 				for (int i = 0; i < circuitData.amountOfClassicalBits; i++)
 				{
 					drawBitLine(image, layout, CLASSICAL, i, circuitData, structure);
@@ -625,16 +625,16 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		}
 
 		// Draw the gates.
-		DOUT("Drawing gates...");
+		IOUT("Drawing gates...");
 		for (GateProperties gate : gates)
 		{
-			DOUT("Drawing gate: [name: " + gate.name + "]");
+			IOUT("Drawing gate: [name: " + gate.name + "]" << " in cycle: " << gate.cycle);
 			drawGate(image, layout, circuitData, gate, structure);
 		}
 	}
 
 	// Display the image.
-    DOUT("Displaying image...");
+    IOUT("Displaying image...");
 	image.display("Quantum Circuit");
 
     IOUT("Visualization complete...");
