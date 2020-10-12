@@ -1171,6 +1171,7 @@ private:
     size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
     const ql::quantum_platform    *platformp; // platform describing resources for scheduling
     ql::quantum_kernel      *kernelp;   // current kernel for creating gates
+    Grid                    *gridp;     // pointer to grid to know which hops are inter-core
 
     Virt2Real               v2r;        // state: current Virt2Real map, imported/exported to kernel
     FreeCycle               fc;         // state: FreeCycle map (including resource_manager) of this Past
@@ -1201,11 +1202,12 @@ Past()
 }
 
 // past initializer
-void Init(const ql::quantum_platform *p, ql::quantum_kernel *k)
+void Init(const ql::quantum_platform *p, ql::quantum_kernel *k, Grid *g)
 {
     DOUT("Past::Init");
     platformp = p;
     kernelp = k;
+    gridp = g;
 
     nq = platformp->qubit_number;
     ct = platformp->cycle_time;
@@ -1442,18 +1444,37 @@ void GenMove(ql::circuit& circ, size_t& r0, size_t& r1)
     // first (optimistically) create the move circuit and add it to circ
     bool created;
     auto mapperopt = ql::options::get("mapper");
-    if ("maxfidelity" == mapperopt)
+    if (gridp->IsInterCoreHop(r0, r1))
     {
-        created = new_gate(circ, "move_prim", {r0,r1});    // gates implementing move returned in circ
+	    if ("maxfidelity" == mapperopt)
+	    {
+	        created = new_gate(circ, "tmove_prim", {r0,r1});    // gates implementing tmove returned in circ
+	    }
+	    else
+	    {
+	        created = new_gate(circ, "tmove_real", {r0,r1});    // gates implementing tmove returned in circ
+	    }
+	    if (!created)
+	    {
+	        created = new_gate(circ, "tmove", {r0,r1});
+	        if (!created) new_gate_exception("tmove or tmove_real");
+	    }
     }
     else
     {
-        created = new_gate(circ, "move_real", {r0,r1});    // gates implementing move returned in circ
-    }
-    if (!created)
-    {
-        created = new_gate(circ, "move", {r0,r1});
-        if (!created) new_gate_exception("move or move_real");
+	    if ("maxfidelity" == mapperopt)
+	    {
+	        created = new_gate(circ, "move_prim", {r0,r1});    // gates implementing move returned in circ
+	    }
+	    else
+	    {
+	        created = new_gate(circ, "move_real", {r0,r1});    // gates implementing move returned in circ
+	    }
+	    if (!created)
+	    {
+	        created = new_gate(circ, "move", {r0,r1});
+	        if (!created) new_gate_exception("move or move_real");
+	    }
     }
 
     if (v2r.GetRs(r1) == rs_nostate)
@@ -1574,20 +1595,40 @@ void AddSwap(size_t r0, size_t r1)
             }
         }
         auto mapperopt = ql::options::get("mapper");
-        if ("maxfidelity" == mapperopt)
+        if (gridp->IsInterCoreHop(r0, r1))
         {
-            created = new_gate(circ, "swap_prim", {r0,r1});    // gates implementing swap returned in circ
+	        if ("maxfidelity" == mapperopt)
+	        {
+	            created = new_gate(circ, "tswap_prim", {r0,r1});    // gates implementing tswap returned in circ
+	        }
+	        else
+	        {
+	            created = new_gate(circ, "tswap_real", {r0,r1});    // gates implementing tswap returned in circ
+	        }
+	        if (!created)
+	        {
+	            created = new_gate(circ, "tswap", {r0,r1});
+	            if (!created) new_gate_exception("tswap or tswap_real");
+	        }
+	        DOUT("... tswap(q" << r0 << ",q" << r1 << ") ...");
         }
         else
         {
-            created = new_gate(circ, "swap_real", {r0,r1});    // gates implementing swap returned in circ
+	        if ("maxfidelity" == mapperopt)
+	        {
+	            created = new_gate(circ, "swap_prim", {r0,r1});    // gates implementing swap returned in circ
+	        }
+	        else
+	        {
+	            created = new_gate(circ, "swap_real", {r0,r1});    // gates implementing swap returned in circ
+	        }
+	        if (!created)
+	        {
+	            created = new_gate(circ, "swap", {r0,r1});
+	            if (!created) new_gate_exception("swap or swap_real");
+	        }
+	        DOUT("... swap(q" << r0 << ",q" << r1 << ") ...");
         }
-        if (!created)
-        {
-            created = new_gate(circ, "swap", {r0,r1});
-            if (!created) new_gate_exception("swap or swap_real");
-        }
-        DOUT("... swap(q" << r0 << ",q" << r1 << ") ...");
     }
     nswapsadded++;                       // for reporting at the end
     for (auto &gp : circ)
@@ -1807,7 +1848,8 @@ class Alter
 {
 public:
     const ql::quantum_platform   *platformp;  // descriptions of resources for scheduling
-    ql::quantum_kernel     *kernelp;    // kernel class pointer to allow calling kernel private methods
+    ql::quantum_kernel     *kernelp;    // kernel pointer to allow calling kernel private methods
+    Grid                   *gridp;      // grid pointer to know which hops are inter-core
     size_t                  nq;         // width of Past and Virt2Real map is number of real qubits
     size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
 
@@ -1829,16 +1871,17 @@ Alter()
 
 // Alter initializer
 // This should only be called after a virgin construction and not after cloning a path.
-void Init(const ql::quantum_platform* p, ql::quantum_kernel* k)
+void Init(const ql::quantum_platform* p, ql::quantum_kernel* k, Grid *g)
 {
     DOUT("Alter::Init(number of qubits=" << nq);
     platformp = p;
     kernelp = k;
+    gridp = g;
 
     nq = platformp->qubit_number;
     ct = platformp->cycle_time;
     // total, fromSource and fromTarget start as empty vectors
-    past.Init(platformp, kernelp);      // initializes past to empty
+    past.Init(platformp, kernelp, gridp);      // initializes past to empty
     didscore = false;                   // will not print score for now
 }
 
@@ -2447,7 +2490,7 @@ void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, size_t budget, std::
         // add src to this path (so that it becomes a distance 0 path with one qubit, src)
         // and add the Alter to the result list 
         Alter  a;
-        a.Init(platformp, kernelp);
+        a.Init(platformp, kernelp, &grid);
         a.targetgp = gp;
         a.Add2Front(src);
         resla.push_back(a);
@@ -2564,8 +2607,8 @@ void GenAltersGate(ql::gate* gp, std::list<Alter>& la, Past& past)
     MapperAssert (q.size() == 2);
     size_t  src = past.MapQubit(q[0]);  // interpret virtual operands in past's current map
     size_t  tgt = past.MapQubit(q[1]);
-    size_t d = grid.Distance(src, tgt);     // and find distance between real counterparts
-    DOUT("GenAltersGate: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
+    size_t d = grid.MinHops(src, tgt);     // and find MinHops between real counterparts
+    DOUT("GenAltersGate: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at MinHops=" << d );
     past.DFcPrint();
 
     GenShortestPaths(gp, src, tgt, la);// find shortest paths from src to tgt, and split these
@@ -2701,7 +2744,7 @@ void CommitAlter(Alter& resa, Future& future, Past& past)
 
     // when only some swaps were added, the resgp might not yet be NN, so recheck
     auto&   q = resgp->operands;
-    if (grid.Distance(past.MapQubit(q[0]), past.MapQubit(q[1])) == 1)
+    if (grid.MinHops(past.MapQubit(q[0]), past.MapQubit(q[1])) == 1)
     {
         // resgp is NN: so done with this 2q gate
         // DOUT("... CommitAlter, target 2q is NN, map it and done: " << resgp->qasm());
@@ -2798,7 +2841,7 @@ bool MapMappableGates(Future& future, Past& past, std::list<ql::gate*>& lg, bool
                 auto&   q = gp->operands;
                 size_t  src = past.MapQubit(q[0]);      // interpret virtual operands in current map
                 size_t  tgt = past.MapQubit(q[1]);
-                size_t  d = grid.Distance(src, tgt);    // and find distance between real counterparts
+                size_t  d = grid.MinHops(src, tgt);    // and find minimum number of hops between real counterparts
                 if (d == 1)
                 {
                     DOUT("MapMappableGates, NN no routing: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ")");
@@ -3071,7 +3114,7 @@ void MapCircuit(ql::quantum_kernel& kernel, Virt2Real& v2r)
     kernel.c.clear();       // future has copied kernel.c to private data; kernel.c ready for use by new_gate
     kernelp = &kernel;      // keep kernel to call kernelp->gate() inside Past.new_gate(), to create new gates
 
-    mainPast.Init(platformp, kernelp);  // mainPast and Past clones inside Alters ready for generating output schedules into
+    mainPast.Init(platformp, kernelp, &grid);  // mainPast and Past clones inside Alters ready for generating output schedules into
     mainPast.ImportV2r(v2r);    // give it the current mapping/state
     // mainPast.DPRINT("start mapping");
 
@@ -3101,7 +3144,7 @@ void MakePrimitives(ql::quantum_kernel& kernel)
     kernel.c.clear();                           // kernel.c ready for use by new_gate
 
     Past            mainPast;                   // output window in which gates are scheduled
-    mainPast.Init(platformp, kernelp);
+    mainPast.Init(platformp, kernelp, &grid);
 
     for( auto & gp : input_gatepv )
     {

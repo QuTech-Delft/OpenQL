@@ -333,7 +333,7 @@
             "cc_light_instr_type": "two_qubit_gate",
             "cc_light_instr": "move",
             "cc_light_opcode": 128
-        }
+        },
         "tswap": {
             "duration": 1000,
             "latency": 0,

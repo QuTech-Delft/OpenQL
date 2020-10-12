@@ -53,7 +53,7 @@ int main(int argc, char ** argv)
     // ql::utils::logger::set_log_level("LOG_NOTHING");
     ql::options::set("unique_output", "no");
 
-    ql::options::set("write_qasm_files", "no");
+    ql::options::set("write_qasm_files", "yes");
     ql::options::set("write_report_files", "yes");
     // ql::options::set("print_dot_graphs", "yes");
     ql::options::set("use_default_gates", "no");
