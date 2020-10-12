@@ -36,37 +36,6 @@ enum class operand_type_t
     CREG, CVAL
 };
 
-
-class ids   // IDs for classical registers
-{
-public:
-    int max_id;
-    std::stack<int> available_ids;
-    ids(int max = 28)   // FIXME: random constant, should be based on platform
-    {
-        max_id = max;
-        for(int i=max_id-1; i>=0; i--)
-            available_ids.push(i);
-    }
-
-    int get()
-    {
-        if(available_ids.empty())
-        {
-            FATAL("No classical register available, built-in max is " << max_id);
-        }
-        int id = available_ids.top();
-        available_ids.pop();
-        return id;
-    }
-    void free(int id)
-    {
-        available_ids.push(id);
-    }
-};
-
-static ids creg_ids;
-
 class coperand
 {
 public:
@@ -100,10 +69,10 @@ public:
 class creg: public coperand
 {
 public:
-    creg()
+    creg(size_t id)
     {
-        id = creg_ids.get();
-        DOUT("creg default constructor, created id: " << id);
+        this->id = id;
+        DOUT("creg constructor, used id: " << id);
     }
 
     creg(const creg &c)
@@ -121,8 +90,6 @@ public:
 
     ~creg()
     {
-        creg_ids.free(id);
-        // DOUT("freed creg : " << id);
     }
 };
 

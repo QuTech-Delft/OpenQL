@@ -2,8 +2,7 @@ import os
 import unittest
 from openql import openql as ql
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 class Test_quantumsim(unittest.TestCase):
