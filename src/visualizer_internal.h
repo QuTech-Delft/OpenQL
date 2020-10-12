@@ -58,6 +58,25 @@ struct Dimensions
 	const int height;
 };
 
+struct GateOperand
+{
+	BitType bitType;
+	size_t index;
+
+	friend bool operator<(const GateOperand& lhs, const GateOperand& rhs)
+	{
+		if (lhs.bitType == QUANTUM && rhs.bitType == CLASSICAL) return true;
+		if (lhs.bitType == CLASSICAL && rhs.bitType == QUANTUM) return false;
+		if (lhs.bitType == rhs.bitType) return lhs.index < rhs.index;
+
+		return false;
+	}
+
+	friend bool operator>(const GateOperand& lhs, const GateOperand& rhs) {return operator<(rhs, lhs);}
+	friend bool operator<=(const GateOperand& lhs, const GateOperand& rhs) {return !operator>(lhs, rhs);}
+	friend bool operator>=(const GateOperand& lhs, const GateOperand& rhs) {return !operator<(lhs, rhs);}
+};
+
 struct GateProperties
 {
 	std::string name;
@@ -71,6 +90,7 @@ struct GateProperties
 
 struct Cycle
 {
+	int index;
 	bool empty;
 	bool cut;
 	std::vector<GateProperties> gates;
@@ -136,6 +156,8 @@ Layout parseConfiguration(const std::string& configPath);
 void validateLayout(Layout& layout);
 
 int calculateAmountOfGateOperands(const GateProperties gate);
+std::vector<GateOperand> getGateOperands(const GateProperties gate);
+std::pair<GateOperand, GateOperand> calculateEdgeOperands(const std::vector<GateOperand> operands, const int amountOfQubits);
 
 void fixMeasurementOperands(std::vector<GateProperties>& gates);
 bool isMeasurement(const GateProperties gate);

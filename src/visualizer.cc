@@ -78,30 +78,63 @@ CircuitData::CircuitData(std::vector<GateProperties>& gates, const Layout layout
 	// Generate cycles.
 	for (int i = 0; i < amountOfCycles; i++)
 	{
-		cycles.push_back({true, false});
+		cycles.push_back({i, true, false});
 	}
 	// Mark non-empty cycles and add gates to their respective cycles.
-	for (GateProperties gate : gates)
+	for (const GateProperties& gate : gates)
 	{
 		cycles[gate.cycle].empty = false;
 		cycles[gate.cycle].gates.push_back(gate);
 	}
 
 	// Find cycles with overlapping connections.
-	// std::vector<int> cyclesWithOverlappingConnections;
-	// for (size_t i = 0; i < cycles.size(); i++)
-	// {
-	// 	if (cycles[i].gates.size() > 1)
-	// 	{
-	// 		for (const auto& gate : cycles[i].gates)
-	// 		{
-	// 			if (gate.operands.size() + gate.creg_operands.size() > 1)
-	// 			{
-	// 				IOUT("Found multi-operand gate: " << gate.name << " in cycle: " << i << " with multiple gates!");
-	// 			}
-	// 		}
-	// 	}
-	// }
+	for (const Cycle& cycle : cycles)
+	{
+		if (cycle.gates.size() > 1)
+		{
+			// Find the multi-operand gates in this cycle.
+			std::vector<GateProperties> candidates;
+			for (const GateProperties& gate : cycle.gates)
+			{
+				if (gate.operands.size() + gate.creg_operands.size() > 1)
+				{
+					candidates.push_back(gate);
+				}
+			}
+
+			// If more than one multi-operand gate has been found in this cycle, check if any of those gates overlap.
+			if (candidates.size() > 1)
+			{
+				std::vector<std::pair<GateProperties, GateProperties>> overlappingGates;
+				for (size_t i = 0; i < candidates.size(); i++)
+				{
+					const GateProperties gate1 = candidates[i];
+					const std::pair<GateOperand, GateOperand> edgeOperands1 = calculateEdgeOperands(getGateOperands(gate1), amountOfQubits);
+
+					for (size_t j = i + 1; j < candidates.size(); j++)
+					{
+						const GateProperties gate2 = candidates[j];
+						const std::pair<GateOperand, GateOperand> edgeOperands2 = calculateEdgeOperands(getGateOperands(gate2), amountOfQubits);
+						
+						if (edgeOperands1.first >= edgeOperands2.first && edgeOperands1.first <= edgeOperands2.second || 
+							edgeOperands1.second >= edgeOperands2.first && edgeOperands1.second <= edgeOperands2.second)
+						{
+							overlappingGates.push_back({gate1, gate2});
+						}
+					}
+				}
+
+				if (overlappingGates.size() > 0)
+				{
+					IOUT("The following gate pairs overlap in cycle " << cycle.index << ":");
+					for (const auto& overlap : overlappingGates)
+					{
+						IOUT("\tgate1: " << overlap.first.name << " gate2:  " << overlap.second.name);
+					}
+				}
+			}
+		}
+	}
 
 	// Cut empty cycles if wanted.
 	if (layout.cycles.cutEmptyCycles)
@@ -557,16 +590,8 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		}
     }
 
-	// std::vector<ql::gate*> gates;
-    // std::vector<ql::quantum_kernel> kernels = program->kernels;
-    // for (ql::quantum_kernel kernel : kernels)
-    // {
-    //     circuit c = kernel.get_circuit();
-    //     gates.insert( gates.end(), c.begin(), c.end() );
-    // }
-
 	// Calculate circuit properties.
-    IOUT("Calculating circuit properties...");
+    DOUT("Calculating circuit properties...");
 	const int cycleDuration = program->platform.cycle_time;
 	DOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
 	fixMeasurementOperands(gates); // fixes measurement gates without classical operands
@@ -574,12 +599,12 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	circuitData.printProperties();
     
 	// Initialize the structure of the visualization.
-	IOUT("Initializing visualization structure...");
+	DOUT("Initializing visualization structure...");
 	Structure structure(layout, circuitData);
 	structure.printProperties();
 	
 	// Initialize image.
-    IOUT("Initializing image...");
+    DOUT("Initializing image...");
 	const int numberOfChannels = 3;
 	cimg_library::CImg<unsigned char> image(structure.getImageWidth(), structure.getImageHeight(), 1, numberOfChannels);
 	image.fill(255);
@@ -587,18 +612,18 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	// Draw the cycle labels if the option has been set.
 	if (layout.cycles.showCycleLabels)
 	{
-        IOUT("Drawing cycle numbers...");
+        DOUT("Drawing cycle numbers...");
 		drawCycleLabels(image, layout, circuitData, structure);
 	}
 
 	if (layout.pulses.displayGatesAsPulses == true)
 	{
-		IOUT("Starting pulse visualization...");
+		DOUT("Starting pulse visualization...");
 	}
 	else
 	{
 		// Draw the quantum bit lines.
-		IOUT("Drawing qubit lines...");
+		DOUT("Drawing qubit lines...");
 		for (int i = 0; i < circuitData.amountOfQubits; i++)
 		{
 			drawBitLine(image, layout, QUANTUM, i, circuitData, structure);
@@ -610,13 +635,13 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 			// Draw the grouped classical bit lines if the option is set.
 			if (circuitData.amountOfClassicalBits > 0 && layout.bitLines.groupClassicalLines)
 			{
-				IOUT("Drawing grouped classical bit lines...");
+				DOUT("Drawing grouped classical bit lines...");
 				drawGroupedClassicalBitLine(image, layout, circuitData, structure);
 			}
 			// Otherwise draw each classical bit line seperate.
 			else
 			{
-				IOUT("Drawing ungrouped classical bit lines...");
+				DOUT("Drawing ungrouped classical bit lines...");
 				for (int i = 0; i < circuitData.amountOfClassicalBits; i++)
 				{
 					drawBitLine(image, layout, CLASSICAL, i, circuitData, structure);
@@ -625,16 +650,16 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		}
 
 		// Draw the gates.
-		IOUT("Drawing gates...");
+		DOUT("Drawing gates...");
 		for (GateProperties gate : gates)
 		{
-			IOUT("Drawing gate: [name: " + gate.name + "]" << " in cycle: " << gate.cycle);
+			DOUT("Drawing gate: [name: " + gate.name + "]" << " in cycle: " << gate.cycle);
 			drawGate(image, layout, circuitData, gate, structure);
 		}
 	}
 
 	// Display the image.
-    IOUT("Displaying image...");
+    DOUT("Displaying image...");
 	image.display("Quantum Circuit");
 
     IOUT("Visualization complete...");
@@ -813,6 +838,43 @@ void validateLayout(Layout& layout)
 int calculateAmountOfGateOperands(const GateProperties gate)
 {
 	return (int)gate.operands.size() + (int)gate.creg_operands.size();
+}
+
+std::vector<GateOperand> getGateOperands(const GateProperties gate)
+{
+	std::vector<GateOperand> operands;
+
+	for (const size_t operand : gate.operands)
+	{
+		operands.push_back({QUANTUM, operand});
+	}
+	for (const size_t operand : gate.creg_operands)
+	{
+		operands.push_back({CLASSICAL, operand});
+	}
+
+	return operands;
+}
+
+std::pair<GateOperand, GateOperand> calculateEdgeOperands(const std::vector<GateOperand> operands, const int amountOfQubits)
+{
+	if (operands.size() < 2)
+	{
+		FATAL("Gate operands vector does not have multiple operands!");
+	}
+
+	GateOperand minOperand = operands[0];
+	GateOperand maxOperand = operands[operands.size() - 1];
+	for (const GateOperand& operand : operands)
+	{
+		const int row = (operand.bitType == QUANTUM) ? operand.index : operand.index + amountOfQubits;
+		if (row < minOperand.index)
+			minOperand = operand;
+		if (row > maxOperand.index)
+			maxOperand = operand;
+	}
+
+	return {minOperand, maxOperand};
 }
 
 void fixMeasurementOperands(std::vector<GateProperties>& gates)
@@ -1046,18 +1108,10 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 
 	// Fetch the operands used by this gate.
 	DOUT(gate.name);
-	std::vector<std::pair<BitType, size_t>> operands;
-	for (const size_t operand : gate.operands)
+	std::vector<GateOperand> operands = getGateOperands(gate);
+	for (const GateOperand& operand : operands)
 	{
-		operands.push_back({QUANTUM, operand});
-	}
-	for (const size_t operand : gate.creg_operands)
-	{
-		operands.push_back({CLASSICAL, operand});
-	}
-	for (const auto& operand : operands)
-	{
-		DOUT("bitType: " << operand.first << " value: " << operand.second);
+		DOUT("bitType: " << operand.bitType << " value: " << operand.index);
 	}
 
 	// Check for correct amount of nodes.
@@ -1074,23 +1128,17 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		// Note: does not work with transparent nodes! If those are ever implemented, the connection line drawing will need to be changed!
 
         DOUT("Setting up multi-operand gate...");
-		std::pair<BitType, size_t> minOperand = operands[0];
-		std::pair<BitType, size_t> maxOperand = operands[operands.size() - 1];
-		for (const auto& operand : operands)
-		{
-			const int row = (operand.first == QUANTUM) ? operand.second : operand.second + circuitData.amountOfQubits;
-			if (row < minOperand.second)
-				minOperand = operand;
-			if (row > maxOperand.second)
-				maxOperand = operand;
-		}
+		std::pair<GateOperand, GateOperand> edgeOperands = calculateEdgeOperands(operands, circuitData.amountOfQubits);
+		GateOperand minOperand = edgeOperands.first;
+		GateOperand maxOperand = edgeOperands.second;
+
 		const int column = (int)gate.cycle;
-		DOUT("minOperand.bitType: " << minOperand.first << " minOperand.operand " << minOperand.second);
-		DOUT("maxOperand.bitType: " << maxOperand.first << " maxOperand.operand " << maxOperand.second);
+		DOUT("minOperand.bitType: " << minOperand.bitType << " minOperand.operand " << minOperand.index);
+		DOUT("maxOperand.bitType: " << maxOperand.bitType << " maxOperand.operand " << maxOperand.index);
 		DOUT("cycle: " << column);
 
-		Position4 topCellPosition = structure.getCellPosition(column, minOperand.second, minOperand.first);
-		Position4 bottomCellPosition = structure.getCellPosition(column, maxOperand.second, maxOperand.first);
+		Position4 topCellPosition = structure.getCellPosition(column, minOperand.index, minOperand.bitType);
+		Position4 bottomCellPosition = structure.getCellPosition(column, maxOperand.index, maxOperand.bitType);
 		Position4 connectionPosition =
 		{
 			topCellPosition.x0 + layout.grid.cellSize / 2,
