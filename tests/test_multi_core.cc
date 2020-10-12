@@ -64,6 +64,7 @@ int main(int argc, char ** argv)
     // ql::options::set("clifford_premapper", "yes");
     ql::options::set("mapper", "minextend");
     ql::options::set("mapinitone2one", "yes");
+    ql::options::set("mapassumezeroinitstate", "yes");
 //parameter1  ql::options::set("maplookahead", "noroutingfirst");
     ql::options::set("mapselectswaps", "all");
     ql::options::set("initialplace", "no");

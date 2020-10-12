@@ -642,6 +642,9 @@ void Mapper::Map(ql::quantum_kernel& kernel)
 
     Virt2Real   v2r;            // current mapping while mapping this kernel
 
+    auto mapassumezeroinitstateopt = ql::options::get("mapassumezeroinitstate");
+    DOUT("Mapper::Map before v2r.Init: mapassumezeroinitstateopt=" << mapassumezeroinitstateopt);
+
     // unify all incoming v2rs into v2r to compute kernel input mapping;
     // but until inter-kernel mapping is implemented, take program initial mapping for it
     v2r.Init(nq);               // v2r now contains program initial mapping
@@ -672,6 +675,9 @@ void Mapper::Map(ql::quantum_kernel& kernel)
 
     v2r.Export(v2r_ip);  // from v2r to caller for reporting
     v2r.Export(rs_ip);   // from v2r to caller for reporting
+
+    mapassumezeroinitstateopt = ql::options::get("mapassumezeroinitstate");
+    DOUT("Mapper::Map before MapCircuit: mapassumezeroinitstateopt=" << mapassumezeroinitstateopt);
 
     MapCircuit(kernel, v2r);        // updates kernel.c with swaps, maps all gates, updates v2r map
     v2r.DPRINT("After heuristics");

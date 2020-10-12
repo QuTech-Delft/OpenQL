@@ -638,7 +638,10 @@ void SetRs(size_t q, realstate_t rsvalue)
 void Init(size_t n)
 {
     auto mapinitone2oneopt = ql::options::get("mapinitone2one");
-    auto mapassumezeroinitstate = ql::options::get("mapassumezeroinitstate");
+    auto mapassumezeroinitstateopt = ql::options::get("mapassumezeroinitstate");
+
+    DOUT("Virt2Real::Init: mapinitone2oneopt=" << mapinitone2oneopt);
+    DOUT("Virt2Real::Init: mapassumezeroinitstateopt=" << mapassumezeroinitstateopt);
 
     nq = n;
     if ("yes" == mapinitone2oneopt)
@@ -649,7 +652,7 @@ void Init(size_t n)
     {
         DOUT("Virt2Real::Init(n=" << nq << "), initializing on demand mapping");
     }
-    if ("yes" == mapassumezeroinitstate)
+    if ("yes" == mapassumezeroinitstateopt)
     {
         DOUT("Virt2Real::Init(n=" << nq << "), assume all qubits in initialized state");
     }
@@ -669,7 +672,7 @@ void Init(size_t n)
         {
             v2rMap[i] = UNDEFINED_QUBIT;
         }
-        if ("yes" == mapassumezeroinitstate)
+        if ("yes" == mapassumezeroinitstateopt)
         {
             rs[i] = rs_wasinited;
         }
@@ -850,14 +853,12 @@ void Print(std::string s)
     }
     std::cout << std::endl;
 
-#ifdef needed
     std::cout << "... real2virt(r->v) " << s << ":";
     for (size_t r=0; r<nq; r++)
     {
         PrintReal(r);
     }
     std::cout << std::endl;
-#endif
 }
 
 void Export(std::vector<size_t>& kv2rMap)

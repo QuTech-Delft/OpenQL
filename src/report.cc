@@ -257,6 +257,7 @@ namespace ql
         // next is ugly; must be done by built-in pass class option with different value for each concrete pass
         if (pass_name == "initialqasmwriter" || pass_name == "outputIR") extension = ".qasm";
         else if (pass_name == "scheduledqasmwriter" || pass_name == "outputIRscheduled") extension = "_scheduled.qasm";
+        else if (pass_name == "lastqasmwriter") extension = "_last.qasm";
         else FATAL("write_qasm: pass_name " << pass_name << " unknown; don't know which extension to generate");
 
         write_qasm_extension(programp, platform, extension);

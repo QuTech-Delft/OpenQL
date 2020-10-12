@@ -377,6 +377,7 @@ int quantum_program::compile_modular()
         compiler->addPass("InsertBufferDelays", "ccl_insert_buffer_delays"); 
         compiler->addPass("CCLDecomposePostSchedule", "ccl_decompose_post_schedule"); 
         compiler->addPass("WriteQuantumSim", "write_quantumsim_script_mapped"); 
+        compiler->addPass("Writer", "lastqasmwriter");
         compiler->addPass("QisaCodeGeneration", "qisa_code_generation");
         ///@note-rn: Calling the backend like this is equivalend to calling passes individually as above. 
         //compiler->addPass("BackendCompiler");
