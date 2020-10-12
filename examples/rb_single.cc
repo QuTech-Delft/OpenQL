@@ -62,9 +62,6 @@ int main(int argc, char ** argv)
    // print info
    qx_platform.print_info();
 
-   // set platform
-   ql::set_platform(qx_platform);
-
    ql::quantum_program rb("rb", qx_platform, 1);
 
    rb.set_sweep_points(sweep_points, num_circuits);

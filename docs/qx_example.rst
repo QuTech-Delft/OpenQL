@@ -1,7 +1,7 @@
 QX Simulation
 =============
 
-This tutorial explains how to compile an OpenQL program and execute it on QX. We will use the example of rolling an 8-faced dice. Rolling this dice results in 1 out of 8 outcomes. The complete code for this example is available in examples/dice.py
+This tutorial explains how to compile an OpenQL program and execute it on QX. We will use the example of rolling an 8-faced dice. Rolling this dice results in 1 out of 8 outcomes. The complete code for this example is available in ``examples/dice.py``. You can also copy the snippits over to your own script as we walk through it.
 
 .. figure:: figures/dice.png
     :width: 400px
@@ -112,6 +112,18 @@ where, the Dice face can be any number between 1 and 8.
 Next we can also roll the dice 100000 times and plot the frequency of occurance of each face by the following code snippet:
 
 .. code:: python
+
+	def plot_histogram(dice_faces):
+	    plt.hist(dice_faces, bins=8, color='#0504aa',alpha=0.7, rwidth=0.85)
+	    plt.grid(axis='y', alpha=0.75)
+	    plt.xlabel('Dice Face',fontsize=15)
+	    plt.ylabel('Frequency',fontsize=15)
+	    plt.xticks(fontsize=15)
+	    plt.yticks(fontsize=15)
+	    plt.ylabel('Frequency',fontsize=15)
+	    plt.title('Histogram',fontsize=15)
+	    plt.show()
+	    plt.savefig('hist.png')
 
 	def dice_execute_multishot():
 	    print('executing 8-face dice program on qxelarator')

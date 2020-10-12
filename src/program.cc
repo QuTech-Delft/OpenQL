@@ -17,7 +17,6 @@
 #include <decompose_toffoli.h>
 #include <clifford.h>
 #include <write_sweep_points.h>
-#include <arch/cbox/cbox_eqasm_compiler.h>
 #include <arch/cc_light/cc_light_eqasm_compiler.h>
 #include <arch/cc/eqasm_backend_cc.h>
 
@@ -57,10 +56,6 @@ quantum_program::quantum_program(std::string n, quantum_platform platf, size_t n
     {
         // at the moment no qx specific thing is done
         needs_backend_compiler = false;;
-    }
-    else if (eqasm_compiler_name == "qumis_compiler")
-    {
-        backend_compiler = new ql::arch::cbox_eqasm_compiler();
     }
     else if (eqasm_compiler_name == "cc_light_compiler" )
     {

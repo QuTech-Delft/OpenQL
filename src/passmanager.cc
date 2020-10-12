@@ -40,7 +40,7 @@ void PassManager::compile(ql::quantum_program *program)
             std::string hwconfig = pass->getPassOptions()->getOption("hwconfig");   
             program->platform = *(new ql::quantum_platform("testPlatform",hwconfig));
         }
-        assert(program->platform);
+        //assert(program->platform); JvS: program->platform is not a pointer and cannot be cast to a bool, so this line broke when I turned optimizations off
    
         if(!pass->getSkip())
         {

@@ -28,10 +28,13 @@
 #include <lemon/cplex.h>
 #elif LEMON_HAVE_SOPLEX
 #include <lemon/soplex.h>
-#elif LEMON_HAVE_CLP
+#else
+#if LEMON_HAVE_CLP
 #include <lemon/clp.h>
-#elif LEMON_HAVE_CBC
+#endif
+#if LEMON_HAVE_CBC
 #include <lemon/cbc.h>
+#endif
 #endif
 
 ///\file

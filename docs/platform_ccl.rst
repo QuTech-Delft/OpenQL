@@ -3,7 +3,7 @@
 CC-Light Platform
 -----------------
 
-The file `hardware_configuration_cc_light.json
+The file `hardware_config_cc_light.json
 <https://github.com/QE-Lab/OpenQL/blob/develop/tests/hardware_config_cc_light.json>`_
 available inside the ``tests`` directory is an example configuration file for
 the CC-Light platform with 7 qubits.
@@ -106,7 +106,7 @@ These mappings are used in:
 ``resources`` is the section that is used to specify/configure various resource types available
 in the platform as discussed below. Specification of these resource types affects
 scheduling and mapping of gates. The configuration of the various resource types
-in `hardware_configuration_cc_light.json
+in `hardware_config_cc_light.json
 <https://github.com/QE-Lab/OpenQL/blob/develop/tests/hardware_config_cc_light.json>`_
 assumes that the CC-Light architecture has the following relations between devices, connections, qubits and operations:
 

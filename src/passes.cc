@@ -19,6 +19,15 @@
 #include <iostream>
 #include <chrono>
 
+/* JvS: guys, you can't define a class already defined in another header
+ * *differently* and then "resolve" the inevitable compile errors by not
+ * including the header. This fundamentally breaks how C++ works and resulted in
+ * code that I'm astonished linked at all and even half-worked.
+ *
+ * In your defense, including the appropriate headers broke the rest of OpenQL
+ * because the rest of OpenQL is also fundamentally broken, apparently relying
+ * on headers only being included by a single compile units, which is precisely
+ * NOT the function of a header file.
 namespace ql
 {
     class eqasm_compiler
@@ -29,12 +38,6 @@ namespace ql
     
     namespace arch
     {
-        class cbox_eqasm_compiler: public eqasm_compiler
-        {
-            public:
-                cbox_eqasm_compiler(){}
-        };
-
         class cc_light_eqasm_compiler: public eqasm_compiler
         {
             public:
@@ -52,6 +55,22 @@ namespace ql
         };
     }
 }
+*/
+#include "arch/cc_light/cc_light_eqasm_compiler.h"
+#include "arch/cc/eqasm_backend_cc.h"
+
+// JvS: this does not belong here *at all*. All header files should have their
+// own CC file with their defs. But only putting the globals in a new
+// corresponding CC file for now breaks linkage on MSVC, because annoyingly CC
+// files are treated as unused and not linked when none of their *functions*
+// are used.
+namespace ql {
+namespace arch {
+size_t CurrSRegCount = 0;
+size_t CurrTRegCount = 0;
+} // namespace arch
+} // namespace ql
+
 
 namespace ql
 {
@@ -235,7 +254,7 @@ void WriterPass::runOnProgram(ql::quantum_program *program)
     //ql::report_init(program, program->platform);
     
     // writer pass of the initial qasm file (program.qasm)
-    ql::report_qasm(program, program->platform, "out", getPassName());
+    ql::write_qasm(program, program->platform, getPassName());
     
 //     if (getPassName() != "initialqasmwriter" && getPassName() != "scheduledqasmwriter")
 //     { ///@note-rn: temoporary hack to make the writer pass for those 2 configurations soft (i.e., do not delete the subcircuits) so that it does not require a reader pass after it!. This is needed until we fix the synchronization between hardware configuration files and openql tests. Until then a Reader pass would be needed after a hard Write pass. However, a Reader pass will make some unit tests to fail due to a mismatch between the instructions in the tests (i.e., prepz) and included/defined in the hardware config files CONFLICTING with the prepz instr not being available in libQASM.
@@ -289,10 +308,7 @@ void BackendCompilerPass::runOnProgram(ql::quantum_program *program)
     std::string eqasm_compiler_name = program->platform.eqasm_compiler_name;
     //getPassOptions()->getOption("eqasm_compiler_name");
     
-    if (eqasm_compiler_name == "qumis_compiler")
-        ///@todo-rn: REMOVE THIS DURING CLEANUP together with the whole cbox backend!
-        backend_compiler = std::unique_ptr<ql::eqasm_compiler>(new ql::arch::cbox_eqasm_compiler());
-    else if (eqasm_compiler_name == "cc_light_compiler" )
+    if (eqasm_compiler_name == "cc_light_compiler" )
     {
         backend_compiler = std::unique_ptr<ql::eqasm_compiler>(new ql::arch::cc_light_eqasm_compiler());
     }
@@ -449,7 +465,7 @@ void QisaCodeGenerationPass::runOnProgram(ql::quantum_program *program)
      * @brief  Construct an object to hold the pass options
      * @param  app_name String with the name of the pass options object
      */
-PassOptions::PassOptions(std::string app_name="passOpts")
+PassOptions::PassOptions(std::string app_name)
 {
     app = new CLI::App(app_name);
 
@@ -470,7 +486,7 @@ PassOptions::PassOptions(std::string app_name="passOpts")
     app->add_set_ignore_case("--read_qasm_files", opt_name2opt_val["read_qasm_files"], {"yes", "no"}, "read (un-)scheduled (with and without resource-constraint) qasm files", true);
     app->add_option("--hwconfig", opt_name2opt_val["hwconfig"], "path to the platform configuration file", true);
     app->add_option("--nqubits", opt_name2opt_val["nqubits"], "number of qubits used by the program", true);
-    app->add_set_ignore_case("--eqasm_compiler_name", opt_name2opt_val["eqasm_compiler_name"], {"qumis_compiler", "cc_light_compiler", "eqasm_backend_cc"}, "Set the compiler backend", true);
+    app->add_set_ignore_case("--eqasm_compiler_name", opt_name2opt_val["eqasm_compiler_name"], {"cc_light_compiler", "eqasm_backend_cc"}, "Set the compiler backend", true);
 }
 
     /**

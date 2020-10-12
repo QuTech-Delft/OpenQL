@@ -3,8 +3,7 @@ from utils import file_compare
 import unittest
 from openql import openql as ql
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 class Test_commutation(unittest.TestCase):
@@ -51,8 +50,8 @@ class Test_commutation(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        gold_fn = rootDir + '/golden/'+ p.name + '_scheduled.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        gold_fn = curdir + '/golden/'+ p.name + '_scheduled.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_targetcommute(self):
@@ -89,8 +88,8 @@ class Test_commutation(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        gold_fn = rootDir + '/golden/'+ p.name + '_scheduled.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        gold_fn = curdir + '/golden/'+ p.name + '_scheduled.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cz_anycommute(self):
@@ -127,8 +126,8 @@ class Test_commutation(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        gold_fn = rootDir + '/golden/'+ p.name + '_scheduled.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        gold_fn = curdir + '/golden/'+ p.name + '_scheduled.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
     def test_cnot_mixedcommute(self):
@@ -169,8 +168,8 @@ class Test_commutation(unittest.TestCase):
         p.add_kernel(k)
         p.compile()
 
-        gold_fn = rootDir + '/golden/'+ p.name + '_scheduled.qasm'
-        qasm_fn = os.path.join(output_dir, p.name+'_scheduledqasmwriter_out.qasm')
+        gold_fn = curdir + '/golden/'+ p.name + '_scheduled.qasm'
+        qasm_fn = os.path.join(output_dir, p.name+'_scheduled.qasm')
         self.assertTrue( file_compare(qasm_fn, gold_fn) )
 
 if __name__ == '__main__':

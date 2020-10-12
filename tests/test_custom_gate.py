@@ -2,7 +2,7 @@ import os
 import unittest
 from openql import openql as ql
 
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 config_fn = os.path.join(curdir, 'hardware_config_cc_light.json')
 platf = ql.Platform("starmon", config_fn)
 

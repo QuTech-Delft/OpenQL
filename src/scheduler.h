@@ -1739,7 +1739,7 @@ namespace ql
 {
 
 // schedule support for program.h::schedule()
-void schedule_kernel(quantum_kernel& kernel, quantum_platform platform,
+static void schedule_kernel(quantum_kernel& kernel, quantum_platform platform,
     std::string & dot, std::string& sched_dot)
 {
     std::string scheduler = ql::options::get("scheduler");
@@ -1778,7 +1778,7 @@ void schedule_kernel(quantum_kernel& kernel, quantum_platform platform,
 /*
  * main entry to the non resource-constrained scheduler
  */
-void schedule(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
+static void schedule(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
 {
     if( ql::options::get("prescheduler") == "yes" )
     {
@@ -1811,7 +1811,7 @@ void schedule(ql::quantum_program* programp, const ql::quantum_platform& platfor
     }
 }
 
-void rcschedule_kernel(ql::quantum_kernel& kernel,
+static void rcschedule_kernel(ql::quantum_kernel& kernel,
     const ql::quantum_platform & platform, std::string & dot, size_t nqubits, size_t ncreg = 0)
 {
     IOUT("Resource constraint scheduling ...");
@@ -1844,7 +1844,7 @@ void rcschedule_kernel(ql::quantum_kernel& kernel,
 /*
  * main entry point of the rcscheduler
  */
-void rcschedule(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
+static void rcschedule(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
 {
     ql::report_statistics(programp, platform, "in", passname, "# ");
     ql::report_qasm(programp, platform, "in", passname);
