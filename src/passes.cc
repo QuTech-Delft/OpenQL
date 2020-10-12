@@ -38,12 +38,6 @@ namespace ql
     
     namespace arch
     {
-        class cbox_eqasm_compiler: public eqasm_compiler
-        {
-            public:
-                cbox_eqasm_compiler(){}
-        };
-
         class cc_light_eqasm_compiler: public eqasm_compiler
         {
             public:
@@ -63,7 +57,6 @@ namespace ql
 }
 */
 #include "arch/cc_light/cc_light_eqasm_compiler.h"
-#include "arch/cbox/cbox_eqasm_compiler.h"
 #include "arch/cc/eqasm_backend_cc.h"
 
 // JvS: this does not belong here *at all*. All header files should have their
@@ -315,10 +308,7 @@ void BackendCompilerPass::runOnProgram(ql::quantum_program *program)
     std::string eqasm_compiler_name = program->platform.eqasm_compiler_name;
     //getPassOptions()->getOption("eqasm_compiler_name");
     
-    if (eqasm_compiler_name == "qumis_compiler")
-        ///@todo-rn: REMOVE THIS DURING CLEANUP together with the whole cbox backend!
-        backend_compiler = std::unique_ptr<ql::eqasm_compiler>(new ql::arch::cbox_eqasm_compiler());
-    else if (eqasm_compiler_name == "cc_light_compiler" )
+    if (eqasm_compiler_name == "cc_light_compiler" )
     {
         backend_compiler = std::unique_ptr<ql::eqasm_compiler>(new ql::arch::cc_light_eqasm_compiler());
     }
@@ -496,7 +486,7 @@ PassOptions::PassOptions(std::string app_name)
     app->add_set_ignore_case("--read_qasm_files", opt_name2opt_val["read_qasm_files"], {"yes", "no"}, "read (un-)scheduled (with and without resource-constraint) qasm files", true);
     app->add_option("--hwconfig", opt_name2opt_val["hwconfig"], "path to the platform configuration file", true);
     app->add_option("--nqubits", opt_name2opt_val["nqubits"], "number of qubits used by the program", true);
-    app->add_set_ignore_case("--eqasm_compiler_name", opt_name2opt_val["eqasm_compiler_name"], {"qumis_compiler", "cc_light_compiler", "eqasm_backend_cc"}, "Set the compiler backend", true);
+    app->add_set_ignore_case("--eqasm_compiler_name", opt_name2opt_val["eqasm_compiler_name"], {"cc_light_compiler", "eqasm_backend_cc"}, "Set the compiler backend", true);
 }
 
     /**
