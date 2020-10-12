@@ -258,6 +258,8 @@ namespace ql
             throw ql::exception(SS2S("Error : " << content), false); \
         }
 
+#define JSON_FATAL(s) FATAL("Error in JSON definition: " << s)   // NB: FATAL prepends "Error : "
+
 // get the number of elements in an array
 #define ELEM_CNT(x) (sizeof(x)/sizeof(x[0]))
 
@@ -266,7 +268,7 @@ namespace ql
 
 #define JSON_ASSERT(node, key, nodePath) \
         {   if(!JSON_EXISTS(node, key)) { \
-                FATAL("key '" << key << "' not found on path '" << nodePath << "', actual node contents '" << node << "'"); \
+                JSON_FATAL("key '" << key << "' not found on path '" << nodePath << "', actual node contents '" << node << "'"); \
             } \
         }
 
@@ -277,7 +279,7 @@ T json_get(const json &j, std::string key, std::string nodePath="") {
     // first check existence of key
     auto it = j.find(key);
     if(it == j.end()) {
-        FATAL("Key '" << key
+        JSON_FATAL("Key '" << key
               << "' not found on path '" << nodePath
               << "', actual node contents '" << j << "'");
     }
@@ -286,7 +288,7 @@ T json_get(const json &j, std::string key, std::string nodePath="") {
     try {
         return it->get<T>();
     } catch(const std::exception& e) {
-        FATAL("Could not get value of key '" << key
+        JSON_FATAL("Could not get value of key '" << key
               << "' on path '" << nodePath
               << "', exception message '" << e.what()
               << "', actual node contents '" << j << "'");

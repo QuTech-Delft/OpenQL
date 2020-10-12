@@ -613,8 +613,8 @@ public:
         // this test here is a kind of debugging aid whether dependence creation was done well
         if( !dag(graph) )
         {
-            DOUT("The dependence graph is not a DAG.");
-            EOUT("The dependence graph is not a DAG.");
+            FATAL("The dependence graph is not a DAG.");
+            // FIXME: actually observed in PycQED commit 470df5b2369060a2e1f17d87c1c527e6b54d7e26 for test Test_multi_qubit_oql_CC.test_two_qubit_parity_check
         }
         DOUT("Dependence graph creation Done.");
     }

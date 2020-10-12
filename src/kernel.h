@@ -789,7 +789,7 @@ private:
                         bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
                         if( default_available )
                         {
-                            WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                            DOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );  // NB: changed WOUT to DOUT, since this is common for 'barrier', spamming log
                         }
                         else
                         {
