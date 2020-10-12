@@ -1,0 +1,31 @@
+smis s0, {0} 
+smis s1, {1} 
+smis s2, {2} 
+smis s3, {3} 
+smis s4, {4} 
+smis s5, {5} 
+smis s6, {6} 
+smis s7, {0, 1, 2, 3, 4, 5, 6} 
+smis s8, {0, 1, 5, 6} 
+smis s9, {2, 3, 4} 
+start:
+
+aKernel1_if:
+    cmp r2, r3
+    nop
+    br ne, aKernel1_if_end
+
+aKernel1:
+    1    x s0
+    qwait 2
+
+aKernel1_if_end:
+
+aKernel2:
+    1    y s0
+    qwait 2
+
+    br always, start
+    nop 
+    nop
+
