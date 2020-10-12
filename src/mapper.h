@@ -1741,7 +1741,7 @@ void Init(const ql::quantum_platform* p)
 size_t CoreOf(size_t qi)
 {
     if (ncores == 1) return 0;
-    MapAssert(conn == gc_full);
+    MapperAssert(conn == gc_full);
     size_t nqpc = nq/ncores;
     return qi/nqpc;
 }
@@ -1775,13 +1775,12 @@ size_t CoreDistance(size_t from_realqi, size_t to_realqi)
 // we assume below that a valid path exists with distance+1 hops;
 // this fails when not all qubits in a core support connections to all other cores;
 // see the check in InitNbs
-// HERE: IS NOT RIGHT; WANT TO HAVE BUDGET, WITH MULTI-CORE WITH AN ITERATION 
-size_t MinHops(size_t from_realqi, size_t to_realqi, bool with2qgate)
+size_t MinHops(size_t from_realqi, size_t to_realqi)
 {
     size_t d = Distance(from_realqi, to_realqi);
     size_t cd = CoreDistance(from_realqi, to_realqi);
     MapperAssert (cd <= d);
-    if (cd == d && with2qgate)
+    if (cd == d)
     {
         return d+1;
     }
@@ -1806,7 +1805,7 @@ double Angle(int cx, int cy, int x, int y)
 // and this can only be computed when there is an underlying x/y grid (so not for form==gf_irregular)
 void Normalize( size_t src, neighbors_t& nbl )
 {
-    if (form == gf_irregular)
+    if (form != gf_xy)
     {
         // there are no implicit/explicit x/y coordinates defined per qubit, so no sense of nearness
         std::string mappathselectopt = ql::options::get("mappathselect");
@@ -1951,10 +1950,10 @@ void PrintGrid()
     }
     for (size_t i=0; i<nq; i++)
     {
-        std::cout << "qubit[" << i << "] minhops2qgate(" << i << ",j)=";
+        std::cout << "qubit[" << i << "] minhops(" << i << ",j)=";
         for (size_t j=0; j<nq; j++)
         {
-            std::cout << MinHops2qGate(i,j) << " ";
+            std::cout << MinHops(i,j) << " ";
         }
         std::cout << std::endl;
     }
@@ -2419,9 +2418,10 @@ enum {
     wp_leftright_shortest       // both the left and right shortest
 } whichpaths_t;
 
-// Find shortest paths between src and tgt in the grid, bounded by a particular strategy (which)
-// - budget is the maximum number of hops allowed in the path from now and is at least distance to tgt
-void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, int budget, std::list<Alter> & resla, whichpaths_t which)
+// Find shortest paths between src and tgt in the grid, bounded by a particular strategy (which);
+// budget is the maximum number of hops allowed in the path from src and is at least distance to tgt;
+// it can be higher when not all hops qualify for doing a two-qubit gate or to find more than just the shortest paths.
+void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, size_t budget, std::list<Alter> & resla, whichpaths_t which)
 {
     std::list<Alter> genla;    // list that will get the result of a recursive Gen call
 
@@ -2449,13 +2449,14 @@ void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, int budget, std::lis
     MapperAssert (d >= 1);
 
     // reduce neighbors nbs to those n continuing a path within budget
-    // src=>tgt is distance d, budget>= is allowed, attempt src->n=>tgt
-    // src->n is one hop, budget from n is one less so distance(n,tgt) <= budget-1
+    // src=>tgt is distance d, budget>=d is allowed, attempt src->n=>tgt
+    // src->n is one hop, budget from n is one less so distance(n,tgt) <= budget-1 (i.e. distance < budget)
     // when budget==d, this defaults to distance(n,tgt) <= d-1
     auto nbl = grid.nbs[src];
-    nbl.remove_if( [this,d,tgt](const size_t& n) { return grid.Distance(n,tgt) >= budget; } );
+    nbl.remove_if( [this,budget,tgt](const size_t& n) { return grid.Distance(n,tgt) >= budget; } );
 
     // rotate neighbor list nbl such that largest difference between angles of adjacent elements is beyond back()
+    // this makes only sense when there is an underlying xy grid; when not, which can only be wp_all_shortest
     grid.Normalize(src, nbl);
     // subset to those neighbors that continue in direction(s) we want
     if (which == wp_left_shortest)
@@ -2491,7 +2492,7 @@ void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, int budget, std::lis
                 newwhich = wp_right_shortest;
             }
         }
-        GenShortestPaths(gp, n, tgt, budget-1, genla, newwhich);  // get list of possible paths from n to tgt in genla
+        GenShortestPaths(gp, n, tgt, budget-1, genla, newwhich);  // get list of possible paths in budget-1 from n to tgt in genla
         resla.splice(resla.end(), genla);           // moves all of genla to resla; makes genla empty
     }
     // resla contains all paths starting from a neighbor of src, to tgt
@@ -2505,38 +2506,40 @@ void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, int budget, std::lis
     // DOUT("... GenShortestPaths: returning from call of:" << "src=" << src << " tgt=" << tgt << " budget=" << budget << " which=" << which);
 }
 
-// split each path in the argument old Alter list
-// this gives all variations to put the two-qubit gate in the path
-// all possible Alters are returned in the result list resla
-void GenSplitPaths(std::list<Alter> & oldla, std::list<Alter> & resla)
-{
-    // DOUT("GenSplitPaths");
-    for (auto & a : oldla)
-    {
-        a.Split(resla);
-    }
-    // Alter::DPRINT("... after GenSplitPaths", resla);
-}
-
-// Generate shortest paths in the grid
-// lookup strategy in options can call GenShortestPaths with strategy as parameter
+// Generate shortest paths in the grid for making gate gp NN, from qubit src to qubit tgt, with an alternative for each one
+// - compute budget; usually it is distance but it can be higher such as for multi-core
+// - reduce the number of paths depending on the mappathselect option
+// - when not all shortest paths found are valid, take these out
+// - paths are further split because each split may give rise to a separate alternative
+//      a split is a hop where the two-qubit gate is assumed to be done;
+//      and after splitting each alternative contains two lists,
+//      one before and one after (reversed) the envisioned two-qubit gate
+// End result is a list of alternatives (in resla) suitable for being evaluated for any routing metric.
 void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, std::list<Alter> & resla)
 {
     std::list<Alter> directla;  // list that will hold all not-yet-split Alters directly from src to tgt
+
+    size_t budget = grid.MinHops(src, tgt);
     std::string mappathselectopt = ql::options::get("mappathselect");
     if ("all" == mappathselectopt)
     {
-        GenShortestPaths(gp, src, tgt, directla, wp_all_shortest);
+        GenShortestPaths(gp, src, tgt, budget, directla, wp_all_shortest);
     }
     else if ("borders" == mappathselectopt)
     {
-        GenShortestPaths(gp, src, tgt, directla, wp_leftright_shortest);
+        GenShortestPaths(gp, src, tgt, budget, directla, wp_leftright_shortest);
     }
     else
     {
         FATAL("Unknown value of mapppathselect option " << mappathselectopt);
     }
-    GenSplitPaths(directla, la);  // split each: 2q gate can be put at each hop in each direct path
+
+    // DOUT("about to split the paths");
+    for (auto & a : directla)
+    {
+        a.Split(resla);
+    }
+    // Alter::DPRINT("... after generating and splitting the paths", resla);
     // HERE A TEST THAT WE HAVE A VALID RESULT, OTHERWISE INCREASE THE BUDGET BY ONE AND TRY AGAIN
     // ALSO TAKE CARE IN SPLIT THAT A SPLIT IS NOT DONE ON AN INTER-CORE HOP
 }
