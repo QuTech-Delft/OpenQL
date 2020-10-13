@@ -18,7 +18,7 @@
 #include "resource_manager.h"
 #include "gate.h"
 #include "scheduler.h"
-#include "metrics.h"
+//#include "metrics.h"
 
 // Note on the use of constructors and Init functions for classes of the mapper
 // -----------------------------------------------------------------------------
@@ -43,6 +43,499 @@ static void assert_fail(const char *f, int l, const char *s)
 }
 #define MapperAssert(condition)   { if (!(condition)) { assert_fail(__FILE__, __LINE__, #condition); } }
 
+
+// =========================================================================================
+// Grid: definition and access functions to the grid of qubits that supports the real qubits.
+// Maintain several maps to ease navigating in the grid; these are constant after initialization.
+
+// Grid
+//
+// Config file definitions:
+//  nq:                 hardware_settings.qubit_number
+//  ncores:             hardware_settings.number_of_cores
+//  topology.conn;      gc_specified/gc_full: topology.connectivity: how connectivity between qubits is specified
+//  topology.form;      gf_xy/gf_irregular: topology.form: how relation between neighbors is specified
+//  topology.x_size/y_size: x/y space, defines underlying grid (only gf_xy)
+//  topology.qubits:    mapping of qubit to x/y coordinates (defines x[i]/y[i] for each qubit i) (only gf_xy)
+//  topology.edges:     mapping of edge (physical connection between 2 qubits) to its src and dst qubits (defines nbs)
+//
+// Grid public members (apart from nq):
+//  form:               how relation between neighbors is specified
+//  Distance(qi,qj):    distance in physical connection hops from real qubit qi to real qubit qj;
+//                      - computing it relies on nbs (and Floyd-Warshall) (gf_xy and gf_irregular)
+//  nbs[qi]:            list of neighbor real qubits of real qubit qi
+//                      - nbs can be derived from topology.edges (gf_xy and gf_irregular)
+//  Normalize(qi, neighborlist):    rotate neighborlist such that largest angle diff around qi is behind last element
+//                      relies on nbs, and x[i]/y[i] (gf_xy only)
+//
+// For an irregular grid form, only nq and edges (so nbs) need to be specified; distance is computed from nbs:
+// - there is no underlying rectangular grid, so there are no defined x and y coordinates of qubits;
+//   this means that Normalize as needed by mappathselect==borders cannot work
+// Below, we support regular (xy) grids which need not be fully assigned; this requires edges (so nbs) to be defined,
+//   from which distance is computed; also we have x/y coordinates per qubit specified in the configuration file
+//   An underlying grid with x/y coordinates comes in use for:
+//   - crossbars
+//   - cclight qwg assignment (done in another manner now)
+//   - when mappathselectopt==borders
+//
+// Not implemented:
+// forms gf_cross and gf_plus: given x_size and y_size, the relations are implicitly defined by the internal
+//      diagonal (gf_cross) or horizontal/vertical (gf_plus) connections between grid points (qubits);
+//      with gf_cross only half the grid is occupied by a qubit; the grid point (0,0) doesn't have a qubit, (1,0) and (0,1) do;
+//      topology.qubits and topology.edges need not be present in the configuration file;
+//      Distance in both forms would be defined by a formula, not a function
+typedef
+enum GridConnectivity
+{
+    gc_specified,   // "specified": edges are specified in "edges" section
+    gc_full         // "full": qubits are fully connected by edges
+} gridconn_t;
+
+typedef
+enum GridForms
+{
+    gf_xy,          // nodes have explicit neighbor definitions, qubits have explicit x/y coordinates
+    gf_irregular    // nodes have explicit neighbor definitions, qubits don't have x/y coordinates
+} gridform_t;
+
+class Grid
+{
+public:
+    const ql::quantum_platform* platformp;    // current platform: topology
+    size_t nq;                          // number of qubits in the platform
+    size_t ncores;                      // number of cores in the platform
+                                        // Grid configuration, all constant after initialization
+    gridform_t form;                    // form of grid
+    gridconn_t conn;                    // connectivity of grid
+    int nx;                             // length of x dimension (x coordinates count 0..nx-1)
+    int ny;                             // length of y dimension (y coordinates count 0..ny-1)
+
+    typedef std::list<size_t> neighbors_t;  // neighbors is a list of qubits
+    std::map<size_t,neighbors_t> nbs;   // nbs[i] is list of neighbor qubits of qubit i
+    std::map<size_t,int> x;             // x[i] is x coordinate of qubit i
+    std::map<size_t,int> y;             // y[i] is y coordinate of qubit i
+    std::vector<std::vector<size_t>>  dist; // dist[i][j] is computed distance between qubits i and j;
+
+// Grid initializer
+// initialize mapper internal grid maps from configuration
+// this remains constant over multiple kernels on the same platform
+void Init(const ql::quantum_platform* p)
+{
+    DOUT("Grid::Init");
+    platformp = p;
+    nq = platformp->qubit_number;
+    DOUT("... number of real qbits=" << nq);
+
+    std::string formstr;
+    if (platformp->topology.count("form") <= 0)
+    {
+        formstr = "xy";
+    }
+    else
+    {
+        formstr = platformp->topology["form"].get<std::string>();
+    }
+    if (formstr == "xy") { form = gf_xy; }
+    if (formstr == "irregular") { form = gf_irregular; }
+
+    if (form == gf_irregular)
+    {
+        // irregular can do without topology.x_size, topology.y_size, and topology.qubits
+        nx = 0;
+        ny = 0;
+    }
+    else
+    {
+        // gf_xy have an x/y space; coordinates are explicitly specified
+        nx = platformp->topology["x_size"];
+        ny = platformp->topology["y_size"];
+    }
+    DOUT("... formstr=" << formstr << "; form=" << form << "; nx=" << nx << "; ny=" << ny);
+
+    InitCores();
+    InitXY();
+    InitNbs();
+    SortNbs();
+    ComputeDist();
+    DPRINTGrid();
+}
+
+// core index from qubit index
+// when multi-core assumes full and uniform core connectivity
+size_t CoreOf(size_t qi)
+{
+    if (ncores == 1) return 0;
+    MapperAssert(conn == gc_full);
+    size_t nqpc = nq/ncores;
+    return qi/nqpc;
+}
+
+// inter-core hop from qs to qt?
+bool IsInterCoreHop(size_t qs, size_t qt)
+{
+    return CoreOf(qs) != CoreOf(qt);
+}
+
+// distance between two qubits
+// formulae for convex (hole free) topologies with underlying grid and with bidirectional edges:
+//      gf_cross:   std::max( std::abs( x[to_realqi] - x[from_realqi] ), std::abs( y[to_realqi] - y[from_realqi] ))
+//      gf_plus:    std::abs( x[to_realqi] - x[from_realqi] ) + std::abs( y[to_realqi] - y[from_realqi] )
+// when the neighbor relation is defined (topology.edges in config file), Floyd-Warshall is used, which currently is always
+size_t Distance(size_t from_realqi, size_t to_realqi)
+{
+    return dist[from_realqi][to_realqi];
+}
+
+// coredistance between two qubits
+// when multi-core assumes full and uniform core connectivity
+size_t CoreDistance(size_t from_realqi, size_t to_realqi)
+{
+    if (CoreOf(from_realqi) == CoreOf(to_realqi)) return 0;
+    return 1;
+}
+
+// minimum number of hops between two qubits is always >= distance(from, to)
+// and inside one core (or without multi-core) the minimum number of hops == distance
+//
+// however, in multi-core with inter-core hops, an inter-core hop cannot execute a 2qgate
+// so when the minimum number of hops are all inter-core hops (so distance(from,to) == coredistance(from,to))
+// and no 2qgate has been placed yet, then at least one additional inter-core hop is needed for the 2qgate,
+// the number of hops required being at least distance+1;
+//
+// we assume below that a valid path exists with distance+1 hops;
+// this fails when not all qubits in a core support connections to all other cores;
+// see the check in InitNbs
+size_t MinHops(size_t from_realqi, size_t to_realqi)
+{
+    size_t d = Distance(from_realqi, to_realqi);
+    size_t cd = CoreDistance(from_realqi, to_realqi);
+    MapperAssert (cd <= d);
+    if (cd == d)
+    {
+        return d+1;
+    }
+    else
+    {
+        return d;
+    }
+}
+
+
+// return clockwise angle around (cx,cy) of (x,y) wrt vertical y axis with angle 0 at 12:00, 0<=angle<2*pi
+double Angle(int cx, int cy, int x, int y)
+{
+    const double pi = 4*std::atan(1);
+    double a = std::atan2((x-cx),(y-cy));
+    if (a < 0) a += 2*pi;
+    return a;
+}
+
+// rotate neighbors list such that largest angle difference between adjacent elements is behind back;
+// this is needed when a given subset of variations from a node is wanted (mappathselect==borders);
+// and this can only be computed when there is an underlying x/y grid (so not for form==gf_irregular)
+void Normalize( size_t src, neighbors_t& nbl )
+{
+    if (form != gf_xy)
+    {
+        // there are no implicit/explicit x/y coordinates defined per qubit, so no sense of nearness
+        std::string mappathselectopt = ql::options::get("mappathselect");
+        MapperAssert ("borders" != mappathselectopt);
+        return;
+    }
+
+    // std::cout << "Normalizing list from src=" << src << ": ";
+    // for (auto dn : nbl) { std::cout << dn << " "; } std::cout << std::endl;
+
+    const double pi = 4*std::atan(1);
+    if (nbl.size() == 1)
+    {
+        // DOUT("... size was 1; unchanged");
+        return;
+    }
+
+    // find maxinx index in neighbor list before which largest angle difference occurs
+    int maxdiff = 0;                            // current maximum angle difference in loop search below
+    neighbors_t::iterator maxinx = nbl.begin(); // before which max diff occurs
+
+    // for all indices in and its next one inx compute angle difference and find largest of these
+    for (neighbors_t::iterator in = nbl.begin(); in != nbl.end(); in++)
+    {
+        double a_in = Angle(x[src], y[src], x[*in], y[*in]);
+
+        neighbors_t::iterator inx = std::next(in); if (inx == nbl.end()) inx = nbl.begin();
+        double a_inx = Angle(x[src], y[src], x[*inx], y[*inx]);
+
+        int diff = a_inx - a_in; if (diff < 0) diff += 2*pi;
+        if (diff > maxdiff)
+        {
+            maxdiff = diff;
+            maxinx = inx;
+        }
+    }
+
+    // and now rotate neighbor list so that largest angle difference is behind last one
+    neighbors_t   newnbl;
+    for (neighbors_t::iterator in = maxinx; in != nbl.end(); in++)
+    {
+        newnbl.push_back(*in);
+    }
+    for (neighbors_t::iterator in = nbl.begin(); in != maxinx; in++)
+    {
+        newnbl.push_back(*in);
+    }
+    nbl = newnbl;
+
+    // std::cout << "... rotated; result: ";
+    // for (auto dn : nbl) { std::cout << dn << " "; } std::cout << std::endl;
+}
+
+// Floyd-Warshall dist[i][j] = shortest distances between all nq qubits i and j
+void ComputeDist()
+{
+    // initialize all distances to maximum value, to neighbors to 1, to itself to 0
+    dist.resize(nq); for (size_t i=0; i<nq; i++) dist[i].resize(nq, MAX_CYCLE);
+    for (size_t i=0; i<nq; i++)
+    {
+        dist[i][i] = 0;
+        for (size_t j: nbs[i])
+        {
+            dist[i][j] = 1;
+        }
+    }
+
+    // find shorter distances by gradually including more qubits (k) in path
+    for (size_t k=0; k<nq; k++)
+    {
+        for (size_t i=0; i<nq; i++)
+        {
+            for (size_t j=0; j<nq; j++)
+            {
+               if (dist[i][j] > dist[i][k] + dist[k][j])
+               {
+                   dist[i][j] = dist[i][k] + dist[k][j];
+               }
+            }
+        }
+    }
+#ifdef debug
+    for (size_t i=0; i<nq; i++)
+    {
+        for (size_t j=0; j<nq; j++)
+        {
+            if (form == gf_cross)
+            {
+                MapperAssert (dist[i][j] == (std::max( std::abs( x[i] - x[j] ), std::abs( y[i] - y[j] ))) );
+            }
+            else if (form == gf_plus)
+            {
+                MapperAssert (dist[i][j] == (std::abs( x[i] - x[j] ) + std::abs( y[i] - y[j] )) );
+            }
+
+        }
+    }
+#endif
+}
+
+void DPRINTGrid()
+{
+    if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
+        PrintGrid();
+}
+void PrintGrid()
+{
+    if (form != gf_irregular)
+    {
+	    for (size_t i=0; i<nq; i++)
+	    {
+	        std::cout << "qubit[" << i << "]=(" << x[i] << "," << y[i] << ")";
+	        std::cout << " has neighbors ";
+	        for (auto & n : nbs[i])
+	        {
+	            std::cout << "qubit[" << n << "]=(" << x[n] << "," << y[n] << ") ";
+	        }
+	        std::cout << std::endl;
+	    }
+    }
+    else
+    {
+	    for (size_t i=0; i<nq; i++)
+	    {
+	        std::cout << "qubit[" << i << "]";
+	        std::cout << " has neighbors ";
+	        for (auto & n : nbs[i])
+	        {
+	            std::cout << "qubit[" << n << "] ";
+	        }
+	        std::cout << std::endl;
+	    }
+    }
+    for (size_t i=0; i<nq; i++)
+    {
+        std::cout << "qubit[" << i << "] distance(" << i << ",j)=";
+        for (size_t j=0; j<nq; j++)
+        {
+            std::cout << Distance(i,j) << " ";
+        }
+        std::cout << std::endl;
+    }
+    for (size_t i=0; i<nq; i++)
+    {
+        std::cout << "qubit[" << i << "] minhops(" << i << ",j)=";
+        for (size_t j=0; j<nq; j++)
+        {
+            std::cout << MinHops(i,j) << " ";
+        }
+        std::cout << std::endl;
+    }
+}
+
+// init multi-core attributes
+void InitCores()
+{
+    if (platformp->topology.count("number_of_cores") <= 0)
+    {
+        ncores = 1;
+        DOUT("Number of cores (topology.number_of_cores) not defined");
+    }
+    else
+    {
+        ncores = platformp->topology["number_of_cores"];
+    }
+    DOUT("Numer of cores= " << ncores);
+}
+
+// init x, and y maps
+void InitXY()
+{
+    if (form != gf_irregular)
+    {
+	    if (platformp->topology.count("qubits") == 0)
+	    {
+	        FATAL("Regular configuration doesn't specify qubits and their coordinates");
+	    }
+	    else
+	    {
+	        for (auto & aqbit : platformp->topology["qubits"] )
+	        {
+	            size_t qi = aqbit["id"];
+	            int qx = aqbit["x"];
+	            int qy = aqbit["y"];
+	    
+	            // sanity checks
+	            if ( !(0<=qi && qi<nq) )
+	            {
+	                FATAL(" qbit in platform topology with id=" << qi << " is configured with id that is not in the range 0..nq-1 with nq=" << nq);
+	            }
+	            if (x.count(qi) > 0)
+	            {
+	                FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of x coordinate");
+	            }
+	            if (y.count(qi) > 0)
+	            {
+	                FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of y coordinate");
+	            }
+	            if ( !(0<=qx && qx<nx) )
+	            {
+	                FATAL(" qbit in platform topology with id=" << qi << " is configured with x that is not in the range 0..x_size-1 with x_size=" << nx);
+	            }
+	            if ( !(0<=qy && qy<ny) )
+	            {
+	                FATAL(" qbit in platform topology with id=" << qi << " is configured with y that is not in the range 0..y_size-1 with y_size=" << ny);
+	            }
+	
+	            x[qi] = qx;
+	            y[qi] = qy;
+	        }
+	    }
+    }
+}
+
+// init nbs map
+void InitNbs()
+{
+    if (platformp->topology.count("connectivity") <= 0)
+    {
+        DOUT("Configuration doesn't specify topology.connectivity: assuming connectivity is specified by edges section");
+        conn = gc_specified;
+    }
+    else
+    {
+	    std::string connstr;
+	    connstr = platformp->topology["connectivity"].get<std::string>();
+	    if (connstr == "specified") { conn = gc_specified; }
+        else if (connstr == "full") { conn = gc_full; }
+        else FATAL("connectivity " << connstr << " not supported");
+        DOUT("topology.connectivity=" << connstr );
+    }
+    if (conn == gc_specified)
+    {
+	    if (platformp->topology.count("edges") == 0)
+	    {
+            FATAL(" There aren't edges configured in the platform's topology");
+	    }
+	    for (auto & anedge : platformp->topology["edges"] )
+	    {
+            DOUT("connectivity is specified by edges section, reading ...");
+	        size_t qs = anedge["src"];
+	        size_t qd = anedge["dst"];
+	
+	        // sanity checks
+	        if ( !(0<=qs && qs<nq) )
+	        {
+	            FATAL(" edge in platform topology has src=" << qs << " that is not in the range 0..nq-1 with nq=" << nq);
+	        }
+	        if ( !(0<=qd && qd<nq) )
+	        {
+	            FATAL(" edge in platform topology has dst=" << qd << " that is not in the range 0..nq-1 with nq=" << nq);
+	        }
+	        for (auto & n : nbs[qs])
+	        {
+	            if (n == qd)
+	            {
+	                FATAL(" redefinition of edge with src=" << qs << " and dst=" << qd);
+	            }
+	        }
+	
+	        nbs[qs].push_back(qd);
+            DOUT("connectivity has been stored in nbs map");
+	    }
+    }
+    if (conn == gc_full)
+    {
+        DOUT("connectivity is full");
+        for (size_t qs=0; qs<nq; qs++)
+        {
+            for (size_t qd=0; qd<nq; qd++)
+	        {
+                if (qs != qd)
+                {
+                    DOUT("connecting qubit[" << qs << "] to qubit[" << qd << "]");
+                    nbs[qs].push_back(qd);
+                }
+            }
+	    }
+    }
+}
+
+void SortNbs()
+{
+    if (form != gf_irregular)
+    {
+	    // sort neighbor list by angles
+	    for (size_t qi=0; qi<nq; qi++)
+	    {
+	        // sort nbs[qi] to have increasing clockwise angles around qi, starting with angle 0 at 12:00
+	        nbs[qi].sort(
+	            [this,qi](const size_t& i, const size_t& j)
+	            {
+	                return Angle(x[qi], y[qi], x[i], y[i]) < Angle(x[qi], y[qi], x[j], y[j]);
+	            }
+	        );
+	    }
+    }
+}
+
+};  // end class Grid
 
 
 // =========================================================================================
@@ -145,7 +638,10 @@ void SetRs(size_t q, realstate_t rsvalue)
 void Init(size_t n)
 {
     auto mapinitone2oneopt = ql::options::get("mapinitone2one");
-    auto mapassumezeroinitstate = ql::options::get("mapassumezeroinitstate");
+    auto mapassumezeroinitstateopt = ql::options::get("mapassumezeroinitstate");
+
+    DOUT("Virt2Real::Init: mapinitone2oneopt=" << mapinitone2oneopt);
+    DOUT("Virt2Real::Init: mapassumezeroinitstateopt=" << mapassumezeroinitstateopt);
 
     nq = n;
     if ("yes" == mapinitone2oneopt)
@@ -156,7 +652,7 @@ void Init(size_t n)
     {
         DOUT("Virt2Real::Init(n=" << nq << "), initializing on demand mapping");
     }
-    if ("yes" == mapassumezeroinitstate)
+    if ("yes" == mapassumezeroinitstateopt)
     {
         DOUT("Virt2Real::Init(n=" << nq << "), assume all qubits in initialized state");
     }
@@ -176,7 +672,7 @@ void Init(size_t n)
         {
             v2rMap[i] = UNDEFINED_QUBIT;
         }
-        if ("yes" == mapassumezeroinitstate)
+        if ("yes" == mapassumezeroinitstateopt)
         {
             rs[i] = rs_wasinited;
         }
@@ -357,14 +853,12 @@ void Print(std::string s)
     }
     std::cout << std::endl;
 
-#ifdef needed
     std::cout << "... real2virt(r->v) " << s << ":";
     for (size_t r=0; r<nq; r++)
     {
         PrintReal(r);
     }
     std::cout << std::endl;
-#endif
 }
 
 void Export(std::vector<size_t>& kv2rMap)
@@ -678,6 +1172,7 @@ private:
     size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
     const ql::quantum_platform    *platformp; // platform describing resources for scheduling
     ql::quantum_kernel      *kernelp;   // current kernel for creating gates
+    Grid                    *gridp;     // pointer to grid to know which hops are inter-core
 
     Virt2Real               v2r;        // state: current Virt2Real map, imported/exported to kernel
     FreeCycle               fc;         // state: FreeCycle map (including resource_manager) of this Past
@@ -708,11 +1203,12 @@ Past()
 }
 
 // past initializer
-void Init(const ql::quantum_platform *p, ql::quantum_kernel *k)
+void Init(const ql::quantum_platform *p, ql::quantum_kernel *k, Grid *g)
 {
     DOUT("Past::Init");
     platformp = p;
     kernelp = k;
+    gridp = g;
 
     nq = platformp->qubit_number;
     ct = platformp->cycle_time;
@@ -949,18 +1445,37 @@ void GenMove(ql::circuit& circ, size_t& r0, size_t& r1)
     // first (optimistically) create the move circuit and add it to circ
     bool created;
     auto mapperopt = ql::options::get("mapper");
-    if ("maxfidelity" == mapperopt)
+    if (gridp->IsInterCoreHop(r0, r1))
     {
-        created = new_gate(circ, "move_prim", {r0,r1});    // gates implementing move returned in circ
+	    if ("maxfidelity" == mapperopt)
+	    {
+	        created = new_gate(circ, "tmove_prim", {r0,r1});    // gates implementing tmove returned in circ
+	    }
+	    else
+	    {
+	        created = new_gate(circ, "tmove_real", {r0,r1});    // gates implementing tmove returned in circ
+	    }
+	    if (!created)
+	    {
+	        created = new_gate(circ, "tmove", {r0,r1});
+	        if (!created) new_gate_exception("tmove or tmove_real");
+	    }
     }
     else
     {
-        created = new_gate(circ, "move_real", {r0,r1});    // gates implementing move returned in circ
-    }
-    if (!created)
-    {
-        created = new_gate(circ, "move", {r0,r1});
-        if (!created) new_gate_exception("move or move_real");
+	    if ("maxfidelity" == mapperopt)
+	    {
+	        created = new_gate(circ, "move_prim", {r0,r1});    // gates implementing move returned in circ
+	    }
+	    else
+	    {
+	        created = new_gate(circ, "move_real", {r0,r1});    // gates implementing move returned in circ
+	    }
+	    if (!created)
+	    {
+	        created = new_gate(circ, "move", {r0,r1});
+	        if (!created) new_gate_exception("move or move_real");
+	    }
     }
 
     if (v2r.GetRs(r1) == rs_nostate)
@@ -1081,20 +1596,40 @@ void AddSwap(size_t r0, size_t r1)
             }
         }
         auto mapperopt = ql::options::get("mapper");
-        if ("maxfidelity" == mapperopt)
+        if (gridp->IsInterCoreHop(r0, r1))
         {
-            created = new_gate(circ, "swap_prim", {r0,r1});    // gates implementing swap returned in circ
+	        if ("maxfidelity" == mapperopt)
+	        {
+	            created = new_gate(circ, "tswap_prim", {r0,r1});    // gates implementing tswap returned in circ
+	        }
+	        else
+	        {
+	            created = new_gate(circ, "tswap_real", {r0,r1});    // gates implementing tswap returned in circ
+	        }
+	        if (!created)
+	        {
+	            created = new_gate(circ, "tswap", {r0,r1});
+	            if (!created) new_gate_exception("tswap or tswap_real");
+	        }
+	        DOUT("... tswap(q" << r0 << ",q" << r1 << ") ...");
         }
         else
         {
-            created = new_gate(circ, "swap_real", {r0,r1});    // gates implementing swap returned in circ
+	        if ("maxfidelity" == mapperopt)
+	        {
+	            created = new_gate(circ, "swap_prim", {r0,r1});    // gates implementing swap returned in circ
+	        }
+	        else
+	        {
+	            created = new_gate(circ, "swap_real", {r0,r1});    // gates implementing swap returned in circ
+	        }
+	        if (!created)
+	        {
+	            created = new_gate(circ, "swap", {r0,r1});
+	            if (!created) new_gate_exception("swap or swap_real");
+	        }
+	        DOUT("... swap(q" << r0 << ",q" << r1 << ") ...");
         }
-        if (!created)
-        {
-            created = new_gate(circ, "swap", {r0,r1});
-            if (!created) new_gate_exception("swap or swap_real");
-        }
-        DOUT("... swap(q" << r0 << ",q" << r1 << ") ...");
     }
     nswapsadded++;                       // for reporting at the end
     for (auto &gp : circ)
@@ -1314,7 +1849,8 @@ class Alter
 {
 public:
     const ql::quantum_platform   *platformp;  // descriptions of resources for scheduling
-    ql::quantum_kernel     *kernelp;    // kernel class pointer to allow calling kernel private methods
+    ql::quantum_kernel     *kernelp;    // kernel pointer to allow calling kernel private methods
+    Grid                   *gridp;      // grid pointer to know which hops are inter-core
     size_t                  nq;         // width of Past and Virt2Real map is number of real qubits
     size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
 
@@ -1336,16 +1872,17 @@ Alter()
 
 // Alter initializer
 // This should only be called after a virgin construction and not after cloning a path.
-void Init(const ql::quantum_platform* p, ql::quantum_kernel* k)
+void Init(const ql::quantum_platform* p, ql::quantum_kernel* k, Grid *g)
 {
     DOUT("Alter::Init(number of qubits=" << nq);
     platformp = p;
     kernelp = k;
+    gridp = g;
 
     nq = platformp->qubit_number;
     ct = platformp->cycle_time;
     // total, fromSource and fromTarget start as empty vectors
-    past.Init(platformp, kernelp);      // initializes past to empty
+    past.Init(platformp, kernelp, gridp);      // initializes past to empty
     didscore = false;                   // will not print score for now
 }
 
@@ -1550,7 +2087,8 @@ void Extend(Past currPast, Past basePast)
     auto mapperopt = ql::options::get("mapper");
     if ("maxfidelity" == mapperopt)
     {
-        score = ql::quick_fidelity(past.lg);
+        FATAL("Mapper option maxfidelity has been disabled");
+        // score = ql::quick_fidelity(past.lg);
     }
     else
     {
@@ -1565,10 +2103,13 @@ void Extend(Past currPast, Past basePast)
 // the intention is that the mapped two-qubit gate can be placed at the position of that hop
 // all result paths are added/appended to the given result list
 //
+// when at the hop of a split a two-qubit gate cannot be placed, the split is not done there
+// this means at the end that, when all hops are inter-core, no split is added to the result
+//
 // distance=5   means length=6  means 4 swaps + 1 CZ gate, e.g.
 // index in total:      0           1           2           length-3        length-2        length-1
 // qubit:               2   ->      5   ->      7   ->      3       ->      1       CZ      4
-void Split(std::list<Alter> & resla)
+void Split(Grid &grid, std::list<Alter> & resla)
 {
     // DOUT("Split ...");
 
@@ -1582,14 +2123,20 @@ void Split(std::list<Alter> & resla)
         // leftopi is the index in total that holds the qubit that becomes the left operand of the gate
         // rightopi is the index in total that holds the qubit that becomes the right operand of the gate
         // rightopi == leftopi + 1
-        // fromSource will contain the path with qubits at indices 0 to leftopi
-        // fromTarget will contain the path with qubits at indices rightopi to length-1, reversed
-        //      reversal of fromTarget is done since swaps need to be generated starting at the target
+        if (grid.IsInterCoreHop(total[leftopi], total[rightopi]))
+        {
+            // an inter-core hop cannot execute a two-qubit gate, so is not a valid alternative
+            // DOUT("... skip inter-core hop from qubit=" << total[leftopi] << " to qubit=" << total[rightopi]);
+            continue;
+        }
 
         Alter    na = *this;      // na is local copy of the current path, including total
         // na = *this;            // na is local copy of the current path, including total
         // na.DPRINT("... copy of current alter");
 
+        // fromSource will contain the path with qubits at indices 0 to leftopi
+        // fromTarget will contain the path with qubits at indices rightopi to length-1, reversed
+        //      reversal of fromTarget is done since swaps need to be generated starting at the target
         size_t fromi, toi;
 
         na.fromSource.resize(leftopi+1);
@@ -1616,357 +2163,6 @@ void Split(std::list<Alter> & resla)
 }
 
 };  // end class Alter
-
-
-
-// =========================================================================================
-// Grid: definition and access functions to the grid of qubits that supports the real qubits.
-// Maintain several maps to ease navigating in the grid; these are constant after initialization.
-
-// Grid
-//
-// Config file definitions:
-//  nq:                 hardware_settings.qubit_number
-//  topology.form;      cross/plus/irregular: relation between neighbors in terms of x/y coordinates x[i]/y[i] qubits
-//  topology.x_size/y_size: x/y space, defines underlying grid
-//  topology.qubits:    mapping of qubit to x/y coordinates (defines x[i]/y[i] for each qubit i)
-//  topology.edges:     mapping of edge (physical connection between 2 qubits) to its src and dst qubits (defines nbs)
-//
-// Grid public members (apart from nq):
-//  form:               how presence of neighbors relates to x/y coordinates of qubits
-//  Distance(qi,qj):    distance in physical connection hops from real qubit qi to real qubit qj;
-//                      - computing it relies on nbs (and Floyd-Warshall)
-//                      - in a fully assigned regular topology it could be defined by a formula (not supported)
-//  nbs[qi]:            list of neighbor real qubits of real qubit qi
-//                      - nbs can be derived from topology.edges or
-//                      - nbs can be computed for a fully assigned regular topology (not supported)
-//  Normalize(qi, neighborlist):    rotate neighborlist such that largest angle diff around qi is behind last element
-//                      relies on nbs, and x[i]/y[i]
-//
-// For an irregular grid form, only nq and edges (so nbs) need to be specified; distance is computed from nbs:
-// - there is no underlying rectangular grid, so there are no defined x and y coordinates of qubits;
-//   this means that Normalize as needed by mappathselect==borders cannot work
-// For a fully assigned and regular grid, we can have two forms: cross and plus, named after where neighbors are:
-// - these forms use formulae for x- and y-coordinates and for distance; this is not supported (yet)
-// Below, we support regular (xy) grids which need not be fully assigned; this requires edges (so nbs) to be defined,
-//   from which distance is computed; also we have x/y coordinates per qubit specified in the configuration file
-//   An underlying grid with x/y coordinates comes in use for:
-//   - crossbars
-//   - cclight qwg assignment (done in another manner now)
-//   - when mappathselectopt==borders
-typedef
-enum GridForms
-{
-    gf_xy,          // nodes have explicit neighbor definitions, qubits have explicit x/y coordinates
-//  gf_cross,       // nodes have implicit neighbor definitions along two diagonals, qubits have implicit x/y coordinates
-//  gf_plus,        // nodes have implicit neighbor definitions horizontally and vertically, qubits have implicit x/y coords
-    gf_irregular    // nodes have explicit neighbor definitions, qubits don't have x/y coordinates
-} gridform_t;
-
-class Grid
-{
-public:
-    const ql::quantum_platform* platformp;    // current platform: topology
-    size_t nq;                          // number of qubits in the platform
-                                        // Grid configuration, all constant after initialization
-    gridform_t form;                    // form of grid
-    int nx;                             // length of x dimension (x coordinates count 0..nx-1)
-    int ny;                             // length of y dimension (y coordinates count 0..ny-1)
-
-    typedef std::list<size_t> neighbors_t;  // neighbors is a list of qubits
-    std::map<size_t,neighbors_t> nbs;   // nbs[i] is list of neighbor qubits of qubit i
-    std::map<size_t,int> x;             // x[i] is x coordinate of qubit i
-    std::map<size_t,int> y;             // y[i] is y coordinate of qubit i
-    std::vector<std::vector<size_t>>  dist; // dist[i][j] is computed distance between qubits i and j;
-
-// Grid initializer
-// initialize mapper internal grid maps from configuration
-// this remains constant over multiple kernels on the same platform
-void Init(const ql::quantum_platform* p)
-{
-    DOUT("Grid::Init");
-    platformp = p;
-    nq = platformp->qubit_number;
-    DOUT("... number of real qbits=" << nq);
-
-    std::string formstr;
-    if (platformp->topology.count("form") <= 0)
-    {
-        formstr = "xy";
-    }
-    else
-    {
-        formstr = platformp->topology["form"].get<std::string>();
-    }
-    if (formstr == "xy") { form = gf_xy; }
-    if (formstr == "irregular") { form = gf_irregular; }
-
-    if (form == gf_irregular)
-    {
-        // irregular can do without topology.x_size, topology.y_size, and topology.qubits
-        nx = 0;
-        ny = 0;
-    }
-    else
-    {
-        // xy/cross/plus have an x/y space; coordinates are explicit for xy but implicit for cross/plus
-        nx = platformp->topology["x_size"];
-        ny = platformp->topology["y_size"];
-    }
-    DOUT("... formstr=" << formstr << "; form=" << form << "; nx=" << nx << "; ny=" << ny);
-
-    InitXY();
-    InitNbs();
-    AngleSortNbs();
-    ComputeDist();
-    DPRINTGrid();
-}
-
-// distance between two qubits
-// formulae for convex (hole free) topologies with underlying grid and with bidirectional edges:
-//      gf_cross:   std::max( std::abs( x[to_realqi] - x[from_realqi] ), std::abs( y[to_realqi] - y[from_realqi] ))
-//      gf_plus:    std::abs( x[to_realqi] - x[from_realqi] ) + std::abs( y[to_realqi] - y[from_realqi] )
-// when the neighbor relation is defined (topology.edges in config file), Floyd-Warshall is used, which currently is always
-size_t Distance(size_t from_realqi, size_t to_realqi)
-{
-    return dist[from_realqi][to_realqi];
-}
-
-// return clockwise angle around (cx,cy) of (x,y) wrt vertical y axis with angle 0 at 12:00, 0<=angle<2*pi
-double Angle(int cx, int cy, int x, int y)
-{
-    const double pi = 4*std::atan(1);
-    double a = std::atan2((x-cx),(y-cy));
-    if (a < 0) a += 2*pi;
-    return a;
-}
-
-// rotate neighbors list such that largest angle difference between adjacent elements is behind back;
-// this is needed when a given subset of variations from a node is wanted (mappathselect==borders);
-// and this can only be computed when there is an underlying x/y grid (so not for form==gf_irregular)
-void Normalize( size_t src, neighbors_t& nbl )
-{
-    if (form == gf_irregular)
-    {
-        // there no implicit/explicit x/y coordinates defined per qubit, so no sense of nearness
-        std::string mappathselectopt = ql::options::get("mappathselect");
-        MapperAssert ("borders" != mappathselectopt);
-        return;
-    }
-
-    // std::cout << "Normalizing list from src=" << src << ": ";
-    // for (auto dn : nbl) { std::cout << dn << " "; } std::cout << std::endl;
-
-    const double pi = 4*std::atan(1);
-    if (nbl.size() == 1)
-    {
-        // DOUT("... size was 1; unchanged");
-        return;
-    }
-
-    // find maxinx index in neighbor list before which largest angle difference occurs
-    int maxdiff = 0;                            // current maximum angle difference in loop search below
-    neighbors_t::iterator maxinx = nbl.begin(); // before which max diff occurs
-
-    // for all indices in and its next one inx compute angle difference and find largest of these
-    for (neighbors_t::iterator in = nbl.begin(); in != nbl.end(); in++)
-    {
-        double a_in = Angle(x[src], y[src], x[*in], y[*in]);
-
-        neighbors_t::iterator inx = std::next(in); if (inx == nbl.end()) inx = nbl.begin();
-        double a_inx = Angle(x[src], y[src], x[*inx], y[*inx]);
-
-        int diff = a_inx - a_in; if (diff < 0) diff += 2*pi;
-        if (diff > maxdiff)
-        {
-            maxdiff = diff;
-            maxinx = inx;
-        }
-    }
-
-    // and now rotate neighbor list so that largest angle difference is behind last one
-    neighbors_t   newnbl;
-    for (neighbors_t::iterator in = maxinx; in != nbl.end(); in++)
-    {
-        newnbl.push_back(*in);
-    }
-    for (neighbors_t::iterator in = nbl.begin(); in != maxinx; in++)
-    {
-        newnbl.push_back(*in);
-    }
-    nbl = newnbl;
-
-    // std::cout << "... rotated; result: ";
-    // for (auto dn : nbl) { std::cout << dn << " "; } std::cout << std::endl;
-}
-
-// Floyd-Warshall dist[i][j] = shortest distances between all nq qubits i and j
-void ComputeDist()
-{
-    // initialize all distances to maximum value, to neighbors to 1, to itself to 0
-    dist.resize(nq); for (size_t i=0; i<nq; i++) dist[i].resize(nq, MAX_CYCLE);
-    for (size_t i=0; i<nq; i++)
-    {
-        dist[i][i] = 0;
-        for (size_t j: nbs[i])
-        {
-            dist[i][j] = 1;
-        }
-    }
-
-    // find shorter distances by gradually including more qubits (k) in path
-    for (size_t k=0; k<nq; k++)
-    {
-        for (size_t i=0; i<nq; i++)
-        {
-            for (size_t j=0; j<nq; j++)
-            {
-               if (dist[i][j] > dist[i][k] + dist[k][j])
-               {
-                   dist[i][j] = dist[i][k] + dist[k][j];
-               }
-            }
-        }
-    }
-#ifdef debug
-    for (size_t i=0; i<nq; i++)
-    {
-        for (size_t j=0; j<nq; j++)
-        {
-            if (form == gf_cross)
-            {
-                MapperAssert (dist[i][j] == (std::max( std::abs( x[i] - x[j] ), std::abs( y[i] - y[j] ))) );
-            }
-            else if (form == gf_plus)
-            {
-                MapperAssert (dist[i][j] == (std::abs( x[i] - x[j] ) + std::abs( y[i] - y[j] )) );
-            }
-
-        }
-    }
-#endif
-}
-
-void DPRINTGrid()
-{
-    if ( ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG )
-        PrintGrid();
-}
-void PrintGrid()
-{
-    for (size_t i=0; i<nq; i++)
-    {
-        std::cout << "qubit[" << i << "]=(" << x[i] << "," << y[i] << ")";
-        std::cout << " has neighbors ";
-        for (auto & n : nbs[i])
-        {
-            std::cout << "qubit[" << n << "]=(" << x[n] << "," << y[n] << ") ";
-        }
-        std::cout << std::endl;
-    }
-    for (size_t i=0; i<nq; i++)
-    {
-        std::cout << "qubit[" << i << "] distance(" << i << ",j)=";
-        for (size_t j=0; j<nq; j++)
-        {
-            std::cout << Distance(i,j) << " ";
-        }
-        std::cout << std::endl;
-    }
-}
-
-// init x, and y maps
-void InitXY()
-{
-    if (platformp->topology.count("qubits") == 0)
-    {
-        MapperAssert (form == gf_irregular);
-    }
-    else
-    {
-        for (auto & aqbit : platformp->topology["qubits"] )
-        {
-            size_t qi = aqbit["id"];
-            int qx = aqbit["x"];
-            int qy = aqbit["y"];
-    
-            // sanity checks
-            if ( !(0<=qi && qi<nq) )
-            {
-                FATAL(" qbit in platform topology with id=" << qi << " is configured with id that is not in the range 0..nq-1 with nq=" << nq);
-            }
-            if (x.count(qi) > 0)
-            {
-                FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of x coordinate");
-            }
-            if (y.count(qi) > 0)
-            {
-                FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of y coordinate");
-            }
-            if ( !(0<=qx && qx<nx) )
-            {
-                FATAL(" qbit in platform topology with id=" << qi << " is configured with x that is not in the range 0..x_size-1 with x_size=" << nx);
-            }
-            if ( !(0<=qy && qy<ny) )
-            {
-                FATAL(" qbit in platform topology with id=" << qi << " is configured with y that is not in the range 0..y_size-1 with y_size=" << ny);
-            }
-
-            x[qi] = qx;
-            y[qi] = qy;
-        }
-    }
-}
-
-// init nbs map
-void InitNbs()
-{
-    if (platformp->topology.count("edges") == 0)
-    {
-        FATAL(" There aren't edges configured in the platform's topology");
-    }
-    for (auto & anedge : platformp->topology["edges"] )
-    {
-        size_t qs = anedge["src"];
-        size_t qd = anedge["dst"];
-
-        // sanity checks
-        if ( !(0<=qs && qs<nq) )
-        {
-            FATAL(" edge in platform topology has src=" << qs << " that is not in the range 0..nq-1 with nq=" << nq);
-        }
-        if ( !(0<=qd && qd<nq) )
-        {
-            FATAL(" edge in platform topology has dst=" << qd << " that is not in the range 0..nq-1 with nq=" << nq);
-        }
-        for (auto & n : nbs[qs])
-        {
-            if (n == qd)
-            {
-                FATAL(" redefinition of edge with src=" << qs << " and dst=" << qd);
-            }
-        }
-
-        nbs[qs].push_back(qd);
-    }
-}
-
-// sort neighbor list by angles
-void AngleSortNbs()
-{
-    for (size_t qi=0; qi<nq; qi++)
-    {
-        // sort nbs[qi] to have increasing clockwise angles around qi, starting with angle 0 at 12:00
-        nbs[qi].sort(
-            [this,qi](const size_t& i, const size_t& j)
-            {
-                return Angle(x[qi], y[qi], x[i], y[i]) < Angle(x[qi], y[qi], x[j], y[j]);
-            }
-        );
-    }
-}
-
-};  // end class Grid
 
 
 // =========================================================================================
@@ -2205,7 +2401,7 @@ ql::gate* MostCriticalIn(std::list<ql::gate*>& lag)
 // - optionally decompose swap and/or cnot gates in the real circuit to primitives (MakePrimitive)
 
 // Inter-kernel control flow and consequent mapping dependence between kernels is not implemented. TO BE DONE
-// The design of mapping multiple kernels is as follows (HERE, TO BE ADAPTED TO NEW REALSTATE):
+// The design of mapping multiple kernels is as follows (TO BE ADAPTED TO NEW REALSTATE):
 // The mapping is done kernel by kernel, in the order that they appear in the list of kernels:
 // - initially the program wide initial mapping is a 1 to 1 mapping of virtual to real qubits
 // - when start to map a kernel, there is a set of already mapped kernels, and a set of not yet mapped kernels;
@@ -2279,12 +2475,14 @@ enum {
     wp_leftright_shortest       // both the left and right shortest
 } whichpaths_t;
 
-// Find shortest paths between src and tgt in the grid, bounded by a particular strategy (which)
-void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, std::list<Alter> & resla, whichpaths_t which)
+// Find shortest paths between src and tgt in the grid, bounded by a particular strategy (which);
+// budget is the maximum number of hops allowed in the path from src and is at least distance to tgt;
+// it can be higher when not all hops qualify for doing a two-qubit gate or to find more than just the shortest paths.
+void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, size_t budget, std::list<Alter> & resla, whichpaths_t which)
 {
     std::list<Alter> genla;    // list that will get the result of a recursive Gen call
 
-    // DOUT("GenShortestPaths: " << "src=" << src << " tgt=" << tgt << " which=" << which);
+    // DOUT("GenShortestPaths: " << "src=" << src << " tgt=" << tgt << " budget=" << budget << " which=" << which);
     MapperAssert (resla.empty());
 
     if (src == tgt) {
@@ -2293,7 +2491,7 @@ void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, std::list<Alter> & r
         // add src to this path (so that it becomes a distance 0 path with one qubit, src)
         // and add the Alter to the result list 
         Alter  a;
-        a.Init(platformp, kernelp);
+        a.Init(platformp, kernelp, &grid);
         a.targetgp = gp;
         a.Add2Front(src);
         resla.push_back(a);
@@ -2304,15 +2502,18 @@ void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, std::list<Alter> & r
     }
 
     // start looking around at neighbors for serious paths
-    // assume that distance is not approximate but exact and can be met
     size_t d = grid.Distance(src, tgt);
     MapperAssert (d >= 1);
 
-    // reduce neighbors nbs to those continuing a shortest path
+    // reduce neighbors nbs to those n continuing a path within budget
+    // src=>tgt is distance d, budget>=d is allowed, attempt src->n=>tgt
+    // src->n is one hop, budget from n is one less so distance(n,tgt) <= budget-1 (i.e. distance < budget)
+    // when budget==d, this defaults to distance(n,tgt) <= d-1
     auto nbl = grid.nbs[src];
-    nbl.remove_if( [this,d,tgt](const size_t& n) { return grid.Distance(n,tgt) >= d; } );
+    nbl.remove_if( [this,budget,tgt](const size_t& n) { return grid.Distance(n,tgt) >= budget; } );
 
     // rotate neighbor list nbl such that largest difference between angles of adjacent elements is beyond back()
+    // this makes only sense when there is an underlying xy grid; when not, which can only be wp_all_shortest
     grid.Normalize(src, nbl);
     // subset to those neighbors that continue in direction(s) we want
     if (which == wp_left_shortest)
@@ -2348,7 +2549,7 @@ void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, std::list<Alter> & r
                 newwhich = wp_right_shortest;
             }
         }
-        GenShortestPaths(gp, n, tgt, genla, newwhich);  // get list of possible paths from n to tgt in genla
+        GenShortestPaths(gp, n, tgt, budget-1, genla, newwhich);  // get list of possible paths in budget-1 from n to tgt in genla
         resla.splice(resla.end(), genla);           // moves all of genla to resla; makes genla empty
     }
     // resla contains all paths starting from a neighbor of src, to tgt
@@ -2359,38 +2560,44 @@ void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, std::list<Alter> & r
         // DOUT("... GenShortestPaths, about to add src=" << src << "in front of path");
         a.Add2Front(src);
     }
-    // DOUT("... GenShortestPaths, returning from call of: " << "src=" << src << " tgt=" << tgt << " which=" << which);
+    // DOUT("... GenShortestPaths: returning from call of:" << "src=" << src << " tgt=" << tgt << " budget=" << budget << " which=" << which);
 }
 
-// Generate shortest paths in the grid
+// Generate shortest paths in the grid for making gate gp NN, from qubit src to qubit tgt, with an alternative for each one
+// - compute budget; usually it is distance but it can be higher such as for multi-core
+// - reduce the number of paths depending on the mappathselect option
+// - when not all shortest paths found are valid, take these out
+// - paths are further split because each split may give rise to a separate alternative
+//      a split is a hop where the two-qubit gate is assumed to be done;
+//      and after splitting each alternative contains two lists,
+//      one before and one after (reversed) the envisioned two-qubit gate;
+//      all result alternatives are such that a two-qubit gate can be placed at the split
+// End result is a list of alternatives (in resla) suitable for being evaluated for any routing metric.
 void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, std::list<Alter> & resla)
 {
+    std::list<Alter> directla;  // list that will hold all not-yet-split Alters directly from src to tgt
+
+    size_t budget = grid.MinHops(src, tgt);
     std::string mappathselectopt = ql::options::get("mappathselect");
     if ("all" == mappathselectopt)
     {
-        GenShortestPaths(gp, src, tgt, resla, wp_all_shortest);
+        GenShortestPaths(gp, src, tgt, budget, directla, wp_all_shortest);
     }
     else if ("borders" == mappathselectopt)
     {
-        GenShortestPaths(gp, src, tgt, resla, wp_leftright_shortest);
+        GenShortestPaths(gp, src, tgt, budget, directla, wp_leftright_shortest);
     }
     else
     {
         FATAL("Unknown value of mapppathselect option " << mappathselectopt);
     }
-}
 
-// split each path in the argument old Alter list
-// this gives all variations to put the two-qubit gate in the path
-// all possible Alters are returned in the result list resla
-void GenSplitPaths(std::list<Alter> & oldla, std::list<Alter> & resla)
-{
-    // DOUT("GenSplitPaths");
-    for (auto & a : oldla)
+    // DOUT("about to split the paths");
+    for (auto & a : directla)
     {
-        a.Split(resla);
+        a.Split(grid, resla);
     }
-    // Alter::DPRINT("... after GenSplitPaths", resla);
+    // Alter::DPRINT("... after generating and splitting the paths", resla);
 }
 
 // Generate all possible variations of making gp NN, starting from given past (with its mappings),
@@ -2401,15 +2608,13 @@ void GenAltersGate(ql::gate* gp, std::list<Alter>& la, Past& past)
     MapperAssert (q.size() == 2);
     size_t  src = past.MapQubit(q[0]);  // interpret virtual operands in past's current map
     size_t  tgt = past.MapQubit(q[1]);
-    size_t d = grid.Distance(src, tgt);     // and find distance between real counterparts
-    DOUT("GenAltersGate: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at distance=" << d );
+    size_t d = grid.MinHops(src, tgt);     // and find MinHops between real counterparts
+    DOUT("GenAltersGate: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at MinHops=" << d );
     past.DFcPrint();
 
-    std::list<Alter> directla;  // list that will hold all Alters directly from src to tgt
-    GenShortestPaths(gp, src, tgt, directla);// find shortest paths directly from src to tgt, without split
-    // Alter::DPRINT("... after GenShortestPaths", directla);
-    GenSplitPaths(directla, la);  // split each: 2q gate can be put at each hop in each direct path
-    // Alter::DPRINT("... after GenSplitPaths", la);
+    GenShortestPaths(gp, src, tgt, la);// find shortest paths from src to tgt, and split these
+    MapperAssert(la.size() != 0);
+    // Alter::DPRINT("... after GenShortestPaths", la);
 }
 
 // Generate all possible variations of making gates in lg NN, starting from given past (with its mappings),
@@ -2540,7 +2745,7 @@ void CommitAlter(Alter& resa, Future& future, Past& past)
 
     // when only some swaps were added, the resgp might not yet be NN, so recheck
     auto&   q = resgp->operands;
-    if (grid.Distance(past.MapQubit(q[0]), past.MapQubit(q[1])) == 1)
+    if (grid.MinHops(past.MapQubit(q[0]), past.MapQubit(q[1])) == 1)
     {
         // resgp is NN: so done with this 2q gate
         // DOUT("... CommitAlter, target 2q is NN, map it and done: " << resgp->qasm());
@@ -2637,7 +2842,7 @@ bool MapMappableGates(Future& future, Past& past, std::list<ql::gate*>& lg, bool
                 auto&   q = gp->operands;
                 size_t  src = past.MapQubit(q[0]);      // interpret virtual operands in current map
                 size_t  tgt = past.MapQubit(q[1]);
-                size_t  d = grid.Distance(src, tgt);    // and find distance between real counterparts
+                size_t  d = grid.MinHops(src, tgt);    // and find minimum number of hops between real counterparts
                 if (d == 1)
                 {
                     DOUT("MapMappableGates, NN no routing: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ")");
@@ -2841,7 +3046,8 @@ void SelectAlter(std::list<Alter>& la, Alter & resa, Future& future, Past& past,
             auto mapperopt = ql::options::get("mapper");
             if ("maxfidelity" == mapperopt)
             {
-                a.score = ql::quick_fidelity(past_copy.lg);
+                FATAL("Mapper option maxfidelity has been disabled");
+                // a.score = ql::quick_fidelity(past_copy.lg);
             }
             else
             {
@@ -2909,7 +3115,7 @@ void MapCircuit(ql::quantum_kernel& kernel, Virt2Real& v2r)
     kernel.c.clear();       // future has copied kernel.c to private data; kernel.c ready for use by new_gate
     kernelp = &kernel;      // keep kernel to call kernelp->gate() inside Past.new_gate(), to create new gates
 
-    mainPast.Init(platformp, kernelp);  // mainPast and Past clones inside Alters ready for generating output schedules into
+    mainPast.Init(platformp, kernelp, &grid);  // mainPast and Past clones inside Alters ready for generating output schedules into
     mainPast.ImportV2r(v2r);    // give it the current mapping/state
     // mainPast.DPRINT("start mapping");
 
@@ -2939,7 +3145,7 @@ void MakePrimitives(ql::quantum_kernel& kernel)
     kernel.c.clear();                           // kernel.c ready for use by new_gate
 
     Past            mainPast;                   // output window in which gates are scheduled
-    mainPast.Init(platformp, kernelp);
+    mainPast.Init(platformp, kernelp, &grid);
 
     for( auto & gp : input_gatepv )
     {
