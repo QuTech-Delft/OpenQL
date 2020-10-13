@@ -3,7 +3,7 @@
     {
         "showCycleLabels": true,
         "showCyclesInNanoSeconds": false,
-        "rowHeight": 24,
+        "cycleLabelsRowHeight": 24,
         "fontHeight": 13,
         "fontColor": [0, 0, 0],
 
@@ -44,8 +44,8 @@
     },
     "pulses":
     {
-        "displayGatesAsPulses": false,
-        "pulseRowHeight": 99
+        "displayGatesAsPulses": true,
+        "pulseRowHeight": 66
     },
     "instructions":
     {

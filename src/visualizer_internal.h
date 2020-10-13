@@ -67,9 +67,7 @@ struct GateOperand
 	{
 		if (lhs.bitType == QUANTUM && rhs.bitType == CLASSICAL) return true;
 		if (lhs.bitType == CLASSICAL && rhs.bitType == QUANTUM) return false;
-		if (lhs.bitType == rhs.bitType) return lhs.index < rhs.index;
-
-		return false;
+		return lhs.index < rhs.index;
 	}
 
 	friend bool operator>(const GateOperand& lhs, const GateOperand& rhs) {return operator<(rhs, lhs);}
@@ -125,11 +123,15 @@ class CircuitData
 class Structure
 {
 	private:
+		const Layout layout;
+
+		const Dimensions cellDimensions;
+
+		const int cycleLabelsY;
+		const int bitLabelsX;
+
 		int imageWidth;
 		int imageHeight;
-
-		int cycleLabelsY;
-		int bitLabelsX;
 
 		std::vector<std::vector<Position4>> qbitCellPositions;
 		std::vector<std::vector<Position4>> cbitCellPositions;
@@ -145,6 +147,7 @@ class Structure
 		int getCycleLabelsY() const;
 		int getBitLabelsX() const;
 
+		Dimensions getCellDimensions() const;
 		Position4 getCellPosition(int column, int row, BitType bitType) const;
 
 		std::vector<std::pair<EndPoints, bool>> getBitLineSegments() const;

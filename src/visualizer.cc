@@ -105,31 +105,49 @@ CircuitData::CircuitData(std::vector<GateProperties>& gates, const Layout layout
 			// If more than one multi-operand gate has been found in this cycle, check if any of those gates overlap.
 			if (candidates.size() > 1)
 			{
-				std::vector<std::pair<GateProperties, GateProperties>> overlappingGates;
-				for (size_t i = 0; i < candidates.size(); i++)
+				std::vector<std::vector<GateProperties>> partition;
+				for (const GateProperties& candidate : candidates)
 				{
-					const GateProperties gate1 = candidates[i];
-					const std::pair<GateOperand, GateOperand> edgeOperands1 = calculateEdgeOperands(getGateOperands(gate1), amountOfQubits);
-
-					for (size_t j = i + 1; j < candidates.size(); j++)
+					// Check if the gate can be placed in an existing chunk.
+					bool placed = false;
+					for (std::vector<GateProperties>& chunk : partition)
 					{
-						const GateProperties gate2 = candidates[j];
-						const std::pair<GateOperand, GateOperand> edgeOperands2 = calculateEdgeOperands(getGateOperands(gate2), amountOfQubits);
-						
-						if (edgeOperands1.first >= edgeOperands2.first && edgeOperands1.first <= edgeOperands2.second || 
-							edgeOperands1.second >= edgeOperands2.first && edgeOperands1.second <= edgeOperands2.second)
+						// Check if the gate overlaps with any other gate in the chunk.
+						bool gateOverlaps = false;
+						const std::pair<GateOperand, GateOperand> edgeOperands1 = calculateEdgeOperands(getGateOperands(candidate), amountOfQubits);
+						for (const GateProperties& gateInChunk : chunk)
 						{
-							overlappingGates.push_back({gate1, gate2});
+							const std::pair<GateOperand, GateOperand> edgeOperands2 = calculateEdgeOperands(getGateOperands(gateInChunk), amountOfQubits);
+							if (edgeOperands1.first >= edgeOperands2.first && edgeOperands1.first <= edgeOperands2.second || 
+								edgeOperands1.second >= edgeOperands2.first && edgeOperands1.second <= edgeOperands2.second)
+							{
+								gateOverlaps = true;
+							}
 						}
+
+						// If the gate does not overlap with any gate in the chunk, add the gate to the chunk.
+						if (!gateOverlaps)
+						{
+							chunk.push_back(candidate);
+							placed = true;
+							break;
+						}
+					}
+
+					// If the gate has not been added to the chunk, add it to the partition in a new chunk.
+					if (!placed)
+					{
+						partition.push_back({candidate});
 					}
 				}
 
-				if (overlappingGates.size() > 0)
+				IOUT("Divided cycle " << cycle.index << " into " << partition.size() << " chunks:");
+				for (size_t i = 0; i < partition.size(); i++)
 				{
-					IOUT("The following gate pairs overlap in cycle " << cycle.index << ":");
-					for (const auto& overlap : overlappingGates)
+					IOUT("Gates in chunk " << i << ":");
+					for (const GateProperties& gate : partition[i])
 					{
-						IOUT("\tgate1: " << overlap.first.name << " gate2:  " << overlap.second.name);
+						IOUT("\t" << gate.name);
 					}
 				}
 			}
@@ -346,10 +364,14 @@ void CircuitData::printProperties() const
 // =                      Structure                      = //
 // ======================================================= //
 
-Structure::Structure(const Layout layout, const CircuitData circuitData)
+Structure::Structure(const Layout layout, const CircuitData circuitData) :
+	layout(layout),
+	cellDimensions({layout.grid.cellSize, layout.pulses.displayGatesAsPulses ? layout.pulses.pulseRowHeight : layout.grid.cellSize}),
+	cycleLabelsY(layout.grid.borderSize),
+	bitLabelsX(layout.grid.borderSize)
 {
 	const int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
-	const int cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0;
+	const int cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.cycleLabelsRowHeight : 0;
 
 	// Calculate the amount of displayed cycles.
 	int amountOfCutCycles = 0;
@@ -362,11 +384,11 @@ Structure::Structure(const Layout layout, const CircuitData circuitData)
 	int imageWidthFromCycles = 0;
 	if (layout.cycles.cutEmptyCycles)
 	{
-		imageWidthFromCycles = circuitData.getCutCycleRangeIndices().size() * layout.cycles.cutCycleWidth + amountOfDisplayedCycles * layout.grid.cellSize;
+		imageWidthFromCycles = circuitData.getCutCycleRangeIndices().size() * layout.cycles.cutCycleWidth + amountOfDisplayedCycles * cellDimensions.width;
 	}
 	else
 	{
-		imageWidthFromCycles = circuitData.getAmountOfCycles() * layout.grid.cellSize;
+		imageWidthFromCycles = circuitData.getAmountOfCycles() * cellDimensions.width;
 	}
 	imageWidth = layout.grid.borderSize * 2 + labelColumnWidth + imageWidthFromCycles;
 
@@ -375,13 +397,8 @@ Structure::Structure(const Layout layout, const CircuitData circuitData)
 	const int rowsFromClassical = layout.bitLines.showClassicalLines
 		? (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits)
 		: 0;
-	const int heightFromOperands = (rowsFromQuantum + rowsFromClassical) * 
-		(layout.pulses.displayGatesAsPulses ? layout.pulses.pulseRowHeight : layout.grid.cellSize);	
-	imageHeight = (layout.cycles.showCycleLabels ? layout.cycles.rowHeight : 0) + heightFromOperands + 2 * layout.grid.borderSize;
-
-	// Calculate label positions.
-	cycleLabelsY = layout.grid.borderSize;
-	bitLabelsX = layout.grid.borderSize;
+	const int heightFromOperands = (rowsFromQuantum + rowsFromClassical) * cellDimensions.height;
+	imageHeight = (layout.cycles.showCycleLabels ? layout.cycles.cycleLabelsRowHeight : 0) + heightFromOperands + 2 * layout.grid.borderSize;
 
 	// Calculate cell positions.
 	for (int column = 0; column < circuitData.getAmountOfCycles(); column++)
@@ -405,22 +422,22 @@ Structure::Structure(const Layout layout, const CircuitData circuitData)
 					displayedColumn = range.start;
 				}
 			}
-			widthFromCycles = (displayedColumn - cutCyclesBeforeColumn) * layout.grid.cellSize + cutCycleRangesBeforeColumn * layout.cycles.cutCycleWidth;
+			widthFromCycles = (displayedColumn - cutCyclesBeforeColumn) * cellDimensions.width + cutCycleRangesBeforeColumn * layout.cycles.cutCycleWidth;
 		}
 		else
 		{
-			widthFromCycles = displayedColumn * layout.grid.cellSize;
+			widthFromCycles = displayedColumn * cellDimensions.width;
 		}
 
 		const int x0 = layout.grid.borderSize + labelColumnWidth + widthFromCycles;
-		const int x1 = x0 + (circuitData.isCycleCut(column) ? layout.cycles.cutCycleWidth : layout.grid.cellSize);
+		const int x1 = x0 + (circuitData.isCycleCut(column) ? layout.cycles.cutCycleWidth : cellDimensions.width);
 
 		// Quantum cell positions.
 		std::vector<Position4> qColumnCells;
 		for (int row = 0; row < circuitData.amountOfQubits; row++)
 		{
-			const int y0 = layout.grid.borderSize + cycleNumbersRowHeight + row * layout.grid.cellSize;
-			const int y1 = y0 + layout.grid.cellSize;
+			const int y0 = layout.grid.borderSize + cycleNumbersRowHeight + row * cellDimensions.height;
+			const int y1 = y0 + cellDimensions.height;
 			qColumnCells.push_back({x0, y0, x1, y1});
 		}
 		qbitCellPositions.push_back(qColumnCells);
@@ -429,8 +446,8 @@ Structure::Structure(const Layout layout, const CircuitData circuitData)
 		for (int row = 0; row < circuitData.amountOfClassicalBits; row++)
 		{
 			const int y0 = layout.grid.borderSize + cycleNumbersRowHeight + 
-				((layout.bitLines.groupClassicalLines ? 0 : row) + circuitData.amountOfQubits) * layout.grid.cellSize;
-			const int y1 = y0 + layout.grid.cellSize;
+				((layout.bitLines.groupClassicalLines ? 0 : row) + circuitData.amountOfQubits) * cellDimensions.height;
+			const int y1 = y0 + cellDimensions.height;
 			cColumnCells.push_back({x0, y0, x1, y1});
 		}
 		cbitCellPositions.push_back(cColumnCells);
@@ -491,11 +508,18 @@ int Structure::getBitLabelsX() const
 	return bitLabelsX;
 }
 
+Dimensions Structure::getCellDimensions() const
+{
+	return cellDimensions;
+}
+
 Position4 Structure::getCellPosition(int column, int row, BitType bitType) const
 {
 	switch (bitType)
 	{
 		case CLASSICAL:
+			if (layout.pulses.displayGatesAsPulses)
+				FATAL("Cannot get classical cell position when pulse visualization is enabled!");
 			if (column >= cbitCellPositions.size())
 				FATAL("cycle " << column << " is larger than max cycle " << cbitCellPositions.size() - 1 << " of structure!");
 			if (row >= cbitCellPositions[column].size())
@@ -619,6 +643,11 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	if (layout.pulses.displayGatesAsPulses == true)
 	{
 		DOUT("Starting pulse visualization...");
+		DOUT("Drawing qubit lines...");
+		for (int i = 0; i < circuitData.amountOfQubits; i++)
+		{
+			drawBitLine(image, layout, QUANTUM, i, circuitData, structure);
+		}
 	}
 	else
 	{
@@ -685,7 +714,7 @@ Layout parseConfiguration(const std::string& configPath)
 	{
 		layout.cycles.showCycleLabels = config["cycles"].value("showCycleLabels", layout.cycles.showCycleLabels);
 		layout.cycles.showCyclesInNanoSeconds = config["cycles"].value("showCyclesInNanoSeconds", layout.cycles.showCyclesInNanoSeconds);
-		layout.cycles.rowHeight = config["cycles"].value("rowHeight", layout.cycles.rowHeight);
+		layout.cycles.cycleLabelsRowHeight = config["cycles"].value("cycleLabelsRowHeight", layout.cycles.cycleLabelsRowHeight);
 		layout.cycles.fontHeight = config["cycles"].value("fontHeight", layout.cycles.fontHeight);
 		layout.cycles.fontColor = config["cycles"].value("fontColor", layout.cycles.fontColor);
 
@@ -833,6 +862,12 @@ void validateLayout(Layout& layout)
 		WOUT("Adjusting 'emptyCycleThreshold' to minimum value of 1. Value in configuration file is set to " << layout.cycles.emptyCycleThreshold << ".");
 		layout.cycles.emptyCycleThreshold = 1;
 	}
+
+	if (layout.pulses.displayGatesAsPulses && layout.bitLines.showClassicalLines)
+	{
+		WOUT("Adjusting 'showClassicalLines' to false. Unable to be true when 'displayGatesAsPulses' is true!");
+		layout.bitLines.showClassicalLines = false;
+	}
 }
 
 int calculateAmountOfGateOperands(const GateProperties gate)
@@ -928,7 +963,7 @@ void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layo
 		}
 		else
 		{
-			cellWidth = layout.grid.cellSize;
+			cellWidth = structure.getCellDimensions().width;
 			if (layout.cycles.showCyclesInNanoSeconds)
 			{
 				cycleLabel = std::to_string(i * circuitData.cycleDuration);
@@ -942,7 +977,7 @@ void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layo
 		Dimensions textDimensions = calculateTextDimensions(cycleLabel, layout.cycles.fontHeight, layout);
 
 		const int xGap = (cellWidth - textDimensions.width) / 2;
-		const int yGap = (layout.cycles.rowHeight - textDimensions.height) / 2;
+		const int yGap = (layout.cycles.cycleLabelsRowHeight - textDimensions.height) / 2;
 		const int xCycle = structure.getCellPosition(i, 0, QUANTUM).x0 + xGap;
 		const int yCycle = structure.getCycleLabelsY() + yGap;
 
@@ -968,11 +1003,11 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 
 	for (const std::pair<EndPoints, bool>& segment : structure.getBitLineSegments())
 	{
-		const int y = structure.getCellPosition(0, row, bitType).y0 + layout.grid.cellSize / 2;
+		const int y = structure.getCellPosition(0, row, bitType).y0 + structure.getCellDimensions().height / 2;
 		// Check if the segment is a cut segment.
 		if (segment.second == true)
 		{
-			const int height = layout.grid.cellSize / 8;
+			const int height = structure.getCellDimensions().height / 8;
 			const int width = segment.first.end - segment.first.start;
 			
 			image.draw_line(segment.first.start,					y,			segment.first.start + width / 3,		y - height,	bitLineColor.data());
@@ -992,8 +1027,8 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 		std::string label = bitTypeText + std::to_string(row);
 		Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
 
-		const int xGap = (layout.grid.cellSize - textDimensions.width) / 2;
-		const int yGap = (layout.grid.cellSize - textDimensions.height) / 2;
+		const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
+		const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
 		const int xLabel = structure.getBitLabelsX() + xGap;
 		const int yLabel = structure.getCellPosition(0, row, bitType).y0 + yGap;
 
@@ -1009,7 +1044,7 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 		return;
 	}
 
-	const int y = structure.getCellPosition(0, 0, CLASSICAL).y0 + layout.grid.cellSize / 2;
+	const int y = structure.getCellPosition(0, 0, CLASSICAL).y0 + structure.getCellDimensions().height / 2;
 
 	// Draw the segments of the double line.
 	for (const std::pair<EndPoints, bool>& segment : structure.getBitLineSegments())
@@ -1017,7 +1052,7 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 		// Check if the segment is a cut segment.
 		if (segment.second == true)
 		{
-			const int height = layout.grid.cellSize / 8;
+			const int height = structure.getCellDimensions().height / 8;
 			const int width = segment.first.end - segment.first.start;
 			
 			image.draw_line(segment.first.start, y - layout.bitLines.groupedClassicalLineGap,
@@ -1065,8 +1100,8 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 		const std::string label = "C";
 		Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
 
-		const int xGap = (layout.grid.cellSize - textDimensions.width) / 2;
-		const int yGap = (layout.grid.cellSize - textDimensions.height) / 2;
+		const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
+		const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
 		const int xLabel = structure.getBitLabelsX() + xGap;
 		const int yLabel = structure.getCellPosition(0, 0, CLASSICAL).y0 + yGap;
 
@@ -1141,10 +1176,10 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		Position4 bottomCellPosition = structure.getCellPosition(column, maxOperand.index, maxOperand.bitType);
 		Position4 connectionPosition =
 		{
-			topCellPosition.x0 + layout.grid.cellSize / 2,
-			topCellPosition.y0 + layout.grid.cellSize / 2,
-			bottomCellPosition.x0 + layout.grid.cellSize / 2,
-			bottomCellPosition.y0 + layout.grid.cellSize / 2,
+			topCellPosition.x0 + structure.getCellDimensions().width / 2,
+			topCellPosition.y0 + structure.getCellDimensions().height / 2,
+			bottomCellPosition.x0 + structure.getCellDimensions().width / 2,
+			bottomCellPosition.y0 + structure.getCellDimensions().height / 2,
 		};
 
 		//TODO: probably have connection line type as part of a gate's visual definition
@@ -1271,24 +1306,17 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 
 void drawGateNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell)
 {
-	const int gap = (layout.grid.cellSize - node.radius * 2) / 2;
+	const int xGap = (structure.getCellDimensions().width - node.radius * 2) / 2;
+	const int yGap = (structure.getCellDimensions().height - node.radius * 2) / 2;
 
 	const Position4 cellPosition = structure.getCellPosition(cell.col, cell.row, cell.bitType);
 	const Position4 position =
 	{
-		cellPosition.x0 + gap,
-		cellPosition.y0 + gap,
-		cellPosition.x1 - gap,
-		cellPosition.y1 - gap
+		cellPosition.x0 + xGap,
+		cellPosition.y0 + yGap,
+		cellPosition.x1 - xGap,
+		cellPosition.y1 - yGap
 	};
-
-	// const Position4 position =
-	// {
-	// 	structure.getCellX(cell.col) + gap,
-	// 	structure.getCellY(cell.row) + gap,
-	// 	structure.getCellX(cell.col + 1) - gap,
-	// 	structure.getCellY(cell.row + 1) - gap
-	// };
 
 	// Draw the gate background.
 	image.draw_rectangle(position.x0, position.y0, position.x1, position.y1, node.backgroundColor.data());
@@ -1304,15 +1332,9 @@ void drawControlNode(cimg_library::CImg<unsigned char>& image, const Layout layo
 	const Position4 cellPosition = structure.getCellPosition(cell.col, cell.row, cell.bitType);
 	const Position2 position =
 	{
-		cellPosition.x0 + layout.grid.cellSize / 2,
-		cellPosition.y0 + layout.grid.cellSize / 2
+		cellPosition.x0 + structure.getCellDimensions().width / 2,
+		cellPosition.y0 + structure.getCellDimensions().height / 2
 	};
-
-	// const Position2 position =
-	// {
-	// 	structure.getCellX(cell.col) + layout.grid.cellSize / 2,
-	// 	structure.getCellY(cell.row) + layout.grid.cellSize / 2
-	// };
 
 	image.draw_circle(position.x, position.y, node.radius, node.backgroundColor.data());
 }
@@ -1324,15 +1346,9 @@ void drawNotNode(cimg_library::CImg<unsigned char>& image, const Layout layout, 
 	const Position4 cellPosition = structure.getCellPosition(cell.col, cell.row, cell.bitType);
 	const Position2 position =
 	{
-		cellPosition.x0 + layout.grid.cellSize / 2,
-		cellPosition.y0 + layout.grid.cellSize / 2
+		cellPosition.x0 + structure.getCellDimensions().width / 2,
+		cellPosition.y0 + structure.getCellDimensions().height / 2
 	};
-
-	// const Position2 position =
-	// {
-	// 	structure.getCellX(cell.col) + layout.grid.cellSize / 2,
-	// 	structure.getCellY(cell.row) + layout.grid.cellSize / 2
-	// };
 
 	// Draw the outlined circle.
 	image.draw_circle(position.x, position.y, node.radius, node.backgroundColor.data(), 1, 0xFFFFFFFF);
@@ -1355,15 +1371,9 @@ void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout
 	const Position4 cellPosition = structure.getCellPosition(cell.col, cell.row, cell.bitType);
 	const Position2 position =
 	{
-		cellPosition.x0 + layout.grid.cellSize / 2,
-		cellPosition.y0 + layout.grid.cellSize / 2
+		cellPosition.x0 + structure.getCellDimensions().width / 2,
+		cellPosition.y0 + structure.getCellDimensions().height / 2
 	};
-
-	// const Position2 position =
-	// {
-	// 	structure.getCellX(cell.col) + layout.grid.cellSize / 2,
-	// 	structure.getCellY(cell.row) + layout.grid.cellSize / 2
-	// };
 
 	// Draw two diagonal lines to represent the cross.
 	const int x0 = position.x - node.radius;

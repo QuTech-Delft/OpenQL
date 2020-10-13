@@ -30,7 +30,7 @@ struct Cycles
 	// Cycle label row.
 	bool showCycleLabels = true;
 	bool showCyclesInNanoSeconds = false;
-	int rowHeight = 24;
+	int cycleLabelsRowHeight = 24;
 	int fontHeight = 13;
 	std::array<unsigned char, 3> fontColor = black;
 
