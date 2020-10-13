@@ -91,7 +91,7 @@ struct Cycle
 	int index;
 	bool empty;
 	bool cut;
-	std::vector<GateProperties> gates;
+	std::vector<std::vector<GateProperties>> gates;
 };
 
 class CircuitData
@@ -147,6 +147,9 @@ class Structure
 		int getCycleLabelsY() const;
 		int getBitLabelsX() const;
 
+		int getCircuitTopY() const;
+		int getCircuitBotY() const;
+
 		Dimensions getCellDimensions() const;
 		Position4 getCellPosition(int column, int row, BitType bitType) const;
 
@@ -168,6 +171,7 @@ bool isMeasurement(const GateProperties gate);
 Dimensions calculateTextDimensions(const std::string& text, const int fontHeight, const Layout layout);
 
 void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure);
+void drawCycleEdges(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure);
 void drawBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const BitType bitType, const int row, const CircuitData circuitData, const Structure structure);
 void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure);
 void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const GateProperties gate, const Structure structure);

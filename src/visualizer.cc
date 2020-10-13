@@ -31,12 +31,14 @@ namespace ql
 // add bit line zigzag indicating a cut cycle range
 // add cutEmptyCycles and emptyCycleThreshold to the documentation
 // make a copy of the gate vector, so any changes inside the visualizer to the program do not reflect back to any future compiler passes
+// add option to display cycle edges
 
 // -- IN PROGRESS ---
 // re-organize the attributes in the config file
 // what happens when a cycle range is cut, but one or more gates within that range finish earlier than the longest running gate comprising the entire range?
 // representing the gates as waveforms
 // fix overlapping connections for multiqubit gates/measurements
+// change size_t cycle to Cycle cycle in GateProperties
 
 // --- FUTURE WORK ---
 // TODO: the visualizer should probably be a class
@@ -78,23 +80,29 @@ CircuitData::CircuitData(std::vector<GateProperties>& gates, const Layout layout
 	// Generate cycles.
 	for (int i = 0; i < amountOfCycles; i++)
 	{
-		cycles.push_back({i, true, false});
+		// Generate the first chunk of the gate partition for this cycle.
+		// All gates in this cycle will be added to this chunk first, later on they will be divided based on connectivity.
+		std::vector<std::vector<GateProperties>> gates;
+		std::vector<GateProperties> firstChunk;
+		gates.push_back(firstChunk);
+		
+		cycles.push_back({i, true, false, gates});
 	}
 	// Mark non-empty cycles and add gates to their respective cycles.
 	for (const GateProperties& gate : gates)
 	{
 		cycles[gate.cycle].empty = false;
-		cycles[gate.cycle].gates.push_back(gate);
+		cycles[gate.cycle].gates[0].push_back(gate);
 	}
 
 	// Find cycles with overlapping connections.
-	for (const Cycle& cycle : cycles)
+	for (Cycle& cycle : cycles)
 	{
-		if (cycle.gates.size() > 1)
+		if (cycle.gates[0].size() > 1)
 		{
 			// Find the multi-operand gates in this cycle.
 			std::vector<GateProperties> candidates;
-			for (const GateProperties& gate : cycle.gates)
+			for (const GateProperties& gate : cycle.gates[0])
 			{
 				if (gate.operands.size() + gate.creg_operands.size() > 1)
 				{
@@ -141,14 +149,20 @@ CircuitData::CircuitData(std::vector<GateProperties>& gates, const Layout layout
 					}
 				}
 
-				IOUT("Divided cycle " << cycle.index << " into " << partition.size() << " chunks:");
-				for (size_t i = 0; i < partition.size(); i++)
+				// If the partition has more than one chunk, we replace the original partition in the current cycle.
+				if (partition.size() > 1)
 				{
-					IOUT("Gates in chunk " << i << ":");
-					for (const GateProperties& gate : partition[i])
+					IOUT("Divided cycle " << cycle.index << " into " << partition.size() << " chunks:");
+					for (size_t i = 0; i < partition.size(); i++)
 					{
-						IOUT("\t" << gate.name);
+						IOUT("Gates in chunk " << i << ":");
+						for (const GateProperties& gate : partition[i])
+						{
+							IOUT("\t" << gate.name);
+						}
 					}
+
+					cycle.gates = partition;
 				}
 			}
 		}
@@ -508,6 +522,18 @@ int Structure::getBitLabelsX() const
 	return bitLabelsX;
 }
 
+int Structure::getCircuitTopY() const
+{
+	return cycleLabelsY;
+}
+
+int Structure::getCircuitBotY() const
+{
+	std::vector<Position4> firstColumnPositions = cbitCellPositions[0];
+	Position4 botPosition = firstColumnPositions[firstColumnPositions.size() - 1];
+	return botPosition.y1;
+}
+
 Dimensions Structure::getCellDimensions() const
 {
 	return cellDimensions;
@@ -640,6 +666,13 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		drawCycleLabels(image, layout, circuitData, structure);
 	}
 
+		// Draw the cycle edges if the option has been set.
+	if (layout.cycles.showCycleLabels)
+	{
+        DOUT("Drawing cycle edges...");
+		drawCycleEdges(image, layout, circuitData, structure);
+	}
+
 	if (layout.pulses.displayGatesAsPulses == true)
 	{
 		DOUT("Starting pulse visualization...");
@@ -719,6 +752,10 @@ Layout parseConfiguration(const std::string& configPath)
 		layout.cycles.fontColor = config["cycles"].value("fontColor", layout.cycles.fontColor);
 
 		layout.cycles.compressCycles = config["cycles"].value("compressCycles", layout.cycles.compressCycles);
+		layout.cycles.showCycleEdges = config["cycles"].value("showCycleEdges", layout.cycles.showCycleEdges);
+		layout.cycles.cycleEdgeColor = config["cycles"].value("cycleEdgeColor", layout.cycles.cycleEdgeColor);
+		layout.cycles.cycleEdgeAlpha = config["cycles"].value("cycleEdgeAlpha", layout.cycles.cycleEdgeAlpha);
+
 		layout.cycles.cutEmptyCycles = config["cycles"].value("cutEmptyCycles", layout.cycles.cutEmptyCycles);
 		layout.cycles.emptyCycleThreshold = config["cycles"].value("emptyCycleThreshold", layout.cycles.emptyCycleThreshold);
 		layout.cycles.cutCycleWidth = config["cycles"].value("cutCycleWidth", layout.cycles.cutCycleWidth);
@@ -982,6 +1019,23 @@ void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layo
 		const int yCycle = structure.getCycleLabelsY() + yGap;
 
 		image.draw_text(xCycle, yCycle, cycleLabel.c_str(), layout.cycles.fontColor.data(), 0, 1, layout.cycles.fontHeight);
+	}
+}
+
+void drawCycleEdges(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
+{
+	//TODO: skip cut cycles
+
+	for (size_t i = 0; i < circuitData.getAmountOfCycles(); i++)
+	{
+		if (i == 0) continue;
+		if (circuitData.isCycleCut(i) && circuitData.isCycleCut(i - 1)) continue;
+
+		const int xCycle = structure.getCellPosition(i, 0, QUANTUM).x0;
+		const int y0 = structure.getCircuitTopY();
+		const int y1 = structure.getCircuitBotY();
+
+		image.draw_line(xCycle, y0, xCycle, y1, layout.cycles.cycleEdgeColor.data(), layout.cycles.cycleEdgeAlpha, 0xF0F0F0F0);
 	}
 }
 

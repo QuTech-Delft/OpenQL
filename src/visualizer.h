@@ -36,6 +36,10 @@ struct Cycles
 
 	// Whether the cycles should be compressed or gate duration outlines should be shown on the qubits.
 	bool compressCycles = false;
+	bool showCycleEdges = true;
+	std::array<unsigned char, 3> cycleEdgeColor = {{ 128, 128, 128 }};
+	float cycleEdgeAlpha = 0.2f;
+	
 	bool cutEmptyCycles = true;
 	int emptyCycleThreshold = 3;
 	int cutCycleWidth = 16;
