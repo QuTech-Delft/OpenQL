@@ -262,7 +262,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
         const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
         if(ic.ii.slot >= MAX_SLOTS) {
             JSON_FATAL("illegal slot " << ic.ii.slot <<
-                       "on instrument '" << ic.ii.instrumentName);
+                       " on instrument '" << ic.ii.instrumentName);
         }
 
         // collect code generation info from all groups within one instrument

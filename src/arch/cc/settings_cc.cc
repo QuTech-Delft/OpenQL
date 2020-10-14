@@ -97,7 +97,7 @@ settings_cc::tInstrumentInfo settings_cc::getInstrumentInfo(size_t instrIdx) con
 
     JSON_ASSERT(*ret.instrument, "controller", ret.instrumentName);              // first check intermediate node
     // FIXME: check controller/"name" being "cc"?
-    int slot = json_get<int>((*ret.instrument)["controller"], "slot", ret.instrumentName+"/controller");
+    ret.slot = json_get<int>((*ret.instrument)["controller"], "slot", ret.instrumentName+"/controller");
     // FIXME: also return controller/"io_module"?
 
 #if OPT_FEEDBACK
