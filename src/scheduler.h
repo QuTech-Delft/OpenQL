@@ -614,7 +614,6 @@ public:
         if( !dag(graph) )
         {
             FATAL("The dependence graph is not a DAG.");
-            // FIXME: actually observed in PycQED commit 470df5b2369060a2e1f17d87c1c527e6b54d7e26 for test Test_multi_qubit_oql_CC.test_two_qubit_parity_check
         }
         DOUT("Dependence graph creation Done.");
     }
@@ -1784,28 +1783,28 @@ static void schedule(ql::quantum_program* programp, const ql::quantum_platform& 
     {
         ql::report_statistics(programp, platform, "in", passname, "# ");
         ql::report_qasm(programp, platform, "in", passname);
-    
+
         IOUT("scheduling the quantum program");
         for (auto& k : programp->kernels)
         {
             std::string dot;
             std::string kernel_sched_dot;
             schedule_kernel(k, platform, dot, kernel_sched_dot);
-    
+
             if(ql::options::get("print_dot_graphs") == "yes")
             {
                 string fname;
                 fname = ql::options::get("output_dir") + "/" + k.get_name() + "_dependence_graph.dot";
                 IOUT("writing scheduled dot to '" << fname << "' ...");
                 ql::utils::write_file(fname, dot);
-    
+
                 std::string scheduler_opt = ql::options::get("scheduler");
                 fname = ql::options::get("output_dir") + "/" + k.get_name() + scheduler_opt + "_scheduled.dot";
                 IOUT("writing scheduled dot to '" << fname << "' ...");
                 ql::utils::write_file(fname, kernel_sched_dot);
             }
         }
-    
+
         ql::report_statistics(programp, platform, "out", passname, "# ");
         ql::report_qasm(programp, platform, "out", passname);
     }
