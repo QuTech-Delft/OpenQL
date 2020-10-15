@@ -1777,7 +1777,7 @@ static void schedule_kernel(quantum_kernel& kernel, quantum_platform platform,
 /*
  * main entry to the non resource-constrained scheduler
  */
-static void schedule(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
+void schedule(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
 {
     if( ql::options::get("prescheduler") == "yes" )
     {
@@ -1843,7 +1843,7 @@ static void rcschedule_kernel(ql::quantum_kernel& kernel,
 /*
  * main entry point of the rcscheduler
  */
-static void rcschedule(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
+void rcschedule(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname)
 {
     ql::report_statistics(programp, platform, "in", passname, "# ");
     ql::report_qasm(programp, platform, "in", passname);
