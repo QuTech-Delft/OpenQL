@@ -23,6 +23,8 @@ class Test_multi_core(unittest.TestCase):
         ql.set_option('log_level', 'LOG_DEBUG')
         ql.set_option('optimize', 'no')
         ql.set_option('use_default_gates', 'no')
+        ql.set_option('generate_code', 'no')
+
         ql.set_option('decompose_toffoli', 'no')
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('scheduler_uniform', 'no')

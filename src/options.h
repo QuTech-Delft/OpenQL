@@ -35,6 +35,7 @@ namespace ql
           opt_name2opt_val["decompose_toffoli"] = "no";
           opt_name2opt_val["quantumsim"] = "no";
           opt_name2opt_val["issue_skip_319"] = "no";
+          opt_name2opt_val["generate_code"] = "yes";
 
           opt_name2opt_val["scheduler"] = "ALAP";
           opt_name2opt_val["scheduler_uniform"] = "no";
@@ -87,6 +88,7 @@ namespace ql
           app->add_set_ignore_case("--decompose_toffoli", opt_name2opt_val["decompose_toffoli"], {"no", "NC", "AM"}, "Type of decomposition used for toffoli", true);
           app->add_set_ignore_case("--quantumsim", opt_name2opt_val["quantumsim"], {"no", "yes", "qsoverlay"}, "Produce quantumsim output, and of which kind", true);
           app->add_set_ignore_case("--issue_skip_319", opt_name2opt_val["issue_skip_319"], {"no", "yes"}, "Issue skip instead of wait in bundles", true);
+          app->add_set_ignore_case("--generate_code", opt_name2opt_val["generate_code"], {"no", "yes"}, "Generate code", true);
           app->add_option("--backend_cc_map_input_file", opt_name2opt_val["backend_cc_map_input_file"], "Name of CC input map file", true);
           app->add_set_ignore_case("--cz_mode", opt_name2opt_val["cz_mode"], {"manual", "auto"}, "CZ mode", true);
 

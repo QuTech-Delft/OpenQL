@@ -1116,7 +1116,12 @@ public:
         write_quantumsim_script(programp, platform, "write_quantumsim_script_mapped");
 
 	// and now for real
-        qisa_code_generation(programp, platform, "qisa_code_generation");
+        // hack to simulate taking code generation pass out of the compiler
+        auto        gencodeopt = ql::options::get("generate_code");
+        if (gencodeopt != "no")
+        {
+            qisa_code_generation(programp, platform, "qisa_code_generation");
+        }
 
         // timing to be moved to pass manager
         // computing timetaken, stop interval timer
