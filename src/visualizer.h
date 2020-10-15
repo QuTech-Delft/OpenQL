@@ -39,6 +39,8 @@ struct Cycles
 	bool showCycleEdges = true;
 	std::array<unsigned char, 3> cycleEdgeColor = {{ 128, 128, 128 }};
 	float cycleEdgeAlpha = 0.2f;
+
+	bool partitionCyclesWithOverlap = true;
 	
 	bool cutEmptyCycles = true;
 	int emptyCycleThreshold = 3;

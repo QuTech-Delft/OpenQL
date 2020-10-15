@@ -35,12 +35,13 @@ namespace ql
 
 // -- IN PROGRESS ---
 // fix overlapping connections for multiqubit gates/measurements
+// change size_t cycle to Cycle cycle in GateProperties (maybe)
 // re-organize the attributes in the config file
 // what happens when a cycle range is cut, but one or more gates within that range finish earlier than the longest running gate comprising the entire range?
 // representing the gates as waveforms
-// change size_t cycle to Cycle cycle in GateProperties (maybe)
 
 // --- FUTURE WORK ---
+// TODO: GateProperties validation on construction
 // TODO: the visualizer should probably be a class
 // TODO: when gate is skipped due to whatever reason, maybe show a dummy gate outline indicating where the gate is?
 // TODO: display wait/barrier gate (need wait gate fix first)
@@ -67,42 +68,136 @@ using json = nlohmann::json;
 CircuitData::CircuitData(std::vector<GateProperties>& gates, const Layout layout, const int cycleDuration) :
 	cycleDuration(cycleDuration),
 	amountOfQubits(calculateAmountOfBits(gates, &GateProperties::operands)),
-	amountOfClassicalBits(calculateAmountOfBits(gates, &GateProperties::creg_operands))
+	amountOfClassicalBits(calculateAmountOfBits(gates, &GateProperties::creg_operands)),
+	cycles(generateCycles(gates, cycleDuration))
 {
-	int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+	if (layout.cycles.compressCycles)				compressCycles();
+	if (layout.cycles.partitionCyclesWithOverlap)	partitionCyclesWithOverlap();
+	if (layout.cycles.cutEmptyCycles)				cutEmptyCycles(layout);
+}
 
-	// Compress the circuit in terms of cycles and gate duration if the option has been set.
-	if (layout.cycles.compressCycles)
+int CircuitData::calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<size_t> GateProperties::* operandType) const
+{
+	//TODO: handle circuits not starting at a c- or qbit with index 0
+	int minAmount = std::numeric_limits<int>::max();
+	int maxAmount = 0;
+
+	// Find the minimum and maximum index of the operands.
+	for (const GateProperties& gate : gates)
 	{
-		compressCycles(gates, amountOfCycles);
+		std::vector<size_t>::const_iterator begin = (gate.*operandType).begin();
+		const std::vector<size_t>::const_iterator end = (gate.*operandType).end();
+		
+		for (; begin != end; ++begin)
+		{
+			const size_t number = *begin;
+			if (number < minAmount)
+				minAmount = (int) number;
+			if (number > maxAmount)
+				maxAmount = (int) number;
+		}
 	}
 
-	// Generate cycles.
+	// If both minAmount and maxAmount are at their original values, the list of operands for all the gates was empty.
+	// This means there are no operands of the given type for these gates and we return 0.
+	if (minAmount == std::numeric_limits<int>::max() && maxAmount == 0)
+		return 0;
+	else
+		return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
+}
+
+int CircuitData::calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const
+{
+    int amountOfCycles = 0;
+	for (const GateProperties& gate : gates)
+	{
+		const int gateCycle = (int) gate.cycle;
+		if (gateCycle > amountOfCycles)
+			amountOfCycles = gateCycle;
+	}
+
+	// The last gate requires a different approach, because it might have a duration of multiple cycles.
+	// None of those cycles will show up as cycle index on any other gate, so we need to calculate them seperately.
+	const int lastGateDuration = (int) gates.at(gates.size() - 1).duration;
+	const int lastGateDurationInCycles = lastGateDuration / cycleDuration;
+	if (lastGateDurationInCycles > 1)
+	{
+		amountOfCycles += lastGateDurationInCycles - 1;
+	}
+
+    return amountOfCycles + 1; // because the cycles start at zero, we add one to get the true amount of cycles
+}
+
+std::vector<Cycle> CircuitData::generateCycles(std::vector<GateProperties>& gates, const int cycleDuration) const
+{
+	std::vector<Cycle> cycles;
+
+	// Generate the cycles.
+	const int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
 	for (int i = 0; i < amountOfCycles; i++)
 	{
 		// Generate the first chunk of the gate partition for this cycle.
-		// All gates in this cycle will be added to this chunk first, later on they will be divided based on connectivity.
-		std::vector<std::vector<GateProperties>> gates;
-		std::vector<GateProperties> firstChunk;
-		gates.push_back(firstChunk);
+		// All gates in this cycle will be added to this chunk first, later on they will be divided based on connectivity (if enabled).
+		std::vector<std::vector<std::reference_wrapper<GateProperties>>> partition;
+		const std::vector<std::reference_wrapper<GateProperties>> firstChunk;
+		partition.push_back(firstChunk);
 		
-		cycles.push_back({i, true, false, gates});
+		cycles.push_back({i, true, false, partition});
 	}
-	// Mark non-empty cycles and add gates to their respective cycles.
-	for (const GateProperties& gate : gates)
+	// Mark non-empty cycles and add gates to their corresponding cycles.
+	for (GateProperties& gate : gates)
 	{
 		cycles[gate.cycle].empty = false;
 		cycles[gate.cycle].gates[0].push_back(gate);
 	}
 
+	return cycles;
+}
+
+void CircuitData::compressCycles()
+{
+	DOUT("Compressing circuit...");
+
+	// Each non-empty cycle will be added to a new vector. Those cycles will have their index (and the cycle indices of its gates)
+	// updated to reflect the position in the compressed cycles vector.
+	std::vector<Cycle> compressedCycles;
+	int amountOfCompressions = 0;
+	for (size_t i = 0; i < cycles.size(); i++)
+	{
+		// Add each non-empty cycle to the vector and update its relevant attributes.
+		if (cycles[i].empty == false)
+		{
+			Cycle& cycle = cycles[i];
+			cycle.index = i - amountOfCompressions;
+			// Update the gates in the cycle with the new cycle index.
+			for (size_t j = 0; j < cycle.gates.size(); j++)
+			{
+				for (GateProperties& gate : cycle.gates[j])
+				{
+					gate.cycle -= amountOfCompressions;
+				}
+			}
+			compressedCycles.push_back(cycle);
+		}
+		else
+		{
+			amountOfCompressions++;
+		}
+	}
+
+	cycles = compressedCycles;
+}
+
+void CircuitData::partitionCyclesWithOverlap()
+{
 	// Find cycles with overlapping connections.
 	for (Cycle& cycle : cycles)
 	{
 		if (cycle.gates[0].size() > 1)
 		{
 			// Find the multi-operand gates in this cycle.
-			std::vector<GateProperties> candidates;
-			for (const GateProperties& gate : cycle.gates[0])
+			std::vector<std::reference_wrapper<GateProperties>> candidates;
+			for (GateProperties& gate : cycle.gates[0])
 			{
 				if (gate.operands.size() + gate.creg_operands.size() > 1)
 				{
@@ -113,12 +208,12 @@ CircuitData::CircuitData(std::vector<GateProperties>& gates, const Layout layout
 			// If more than one multi-operand gate has been found in this cycle, check if any of those gates overlap.
 			if (candidates.size() > 1)
 			{
-				std::vector<std::vector<GateProperties>> partition;
-				for (const GateProperties& candidate : candidates)
+				std::vector<std::vector<std::reference_wrapper<GateProperties>>> partition;
+				for (GateProperties& candidate : candidates)
 				{
 					// Check if the gate can be placed in an existing chunk.
 					bool placed = false;
-					for (std::vector<GateProperties>& chunk : partition)
+					for (std::vector<std::reference_wrapper<GateProperties>>& chunk : partition)
 					{
 						// Check if the gate overlaps with any other gate in the chunk.
 						bool gateOverlaps = false;
@@ -167,113 +262,20 @@ CircuitData::CircuitData(std::vector<GateProperties>& gates, const Layout layout
 			}
 		}
 	}
-
-	// Cut empty cycles if wanted.
-	if (layout.cycles.cutEmptyCycles)
-	{
-		// Find cuttable ranges.
-		cutCycleRangeIndices = findCuttableEmptyRanges(layout);
-		// And cut them.
-		for (const EndPoints& range : cutCycleRangeIndices)
-		{
-			for (int i = range.start; i <= range.end; i++)
-			{
-				cycles[i].cut = true;
-			}
-		}
-	}
 }
 
-int CircuitData::calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<size_t> GateProperties::* operandType) const
+void CircuitData::cutEmptyCycles(const Layout layout)
 {
-	//TODO: handle circuits not starting at the c- or qbit with index 0
-	int minAmount = std::numeric_limits<int>::max();
-	int maxAmount = 0;
-
-	for (const auto& gate : gates)
+	// Find cuttable ranges...
+	cutCycleRangeIndices = findCuttableEmptyRanges(layout);
+	// ... and cut them.
+	for (const EndPoints& range : cutCycleRangeIndices)
 	{
-		std::vector<size_t>::const_iterator begin = (gate.*operandType).begin();
-		const std::vector<size_t>::const_iterator end = (gate.*operandType).end();
-		
-		for (; begin != end; ++begin)
+		for (int i = range.start; i <= range.end; i++)
 		{
-			const size_t number = *begin;
-			if (number < minAmount)
-				minAmount = (int) number;
-			if (number > maxAmount)
-				maxAmount = (int) number;
+			cycles[i].cut = true;
 		}
 	}
-
-	// If both minAmount and maxAmount are at their original values, the list of operands for all the gates was empty.
-	// This means there are no operands of the given type for these gates and we return 0.
-	if (minAmount == std::numeric_limits<int>::max() && maxAmount == 0)
-		return 0;
-	else
-		return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
-}
-
-int CircuitData::calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const
-{
-    int amountOfCycles = 0;
-	for (const auto& gate : gates)
-	{
-		const int gateCycle = (int)gate.cycle;
-		if (gateCycle > amountOfCycles)
-			amountOfCycles = gateCycle;
-	}
-	amountOfCycles++; // because the cycles start at zero, we add one to get the true amount of cycles
-	const int lastGateDuration = (int) (gates.at(gates.size() - 1).duration);
-	const int lastGateDurationInCycles = lastGateDuration / cycleDuration;
-	if (lastGateDurationInCycles > 1)
-	{
-		amountOfCycles += lastGateDurationInCycles - 1;
-	}
-
-    return amountOfCycles;
-}
-
-void CircuitData::compressCycles(std::vector<GateProperties>& gates, int& amountOfCycles) const
-{
-	DOUT("Compressing circuit...");
-	std::vector<bool> filledCycles(amountOfCycles);
-	for (int i = 0; i < gates.size(); i++)
-	{
-		filledCycles.at(gates.at(i).cycle) = true;
-	}
-
-	DOUT("amount of cycles before compression: " << amountOfCycles);
-	int amountOfCompressions = 0;
-	for (int i = 0; i < filledCycles.size(); i++)
-	{
-		DOUT(i);
-		if (filledCycles.at(i) == false)
-		{
-			DOUT(" not filled");
-			DOUT("\tcompressing... min cycle to compress: " << i - amountOfCompressions);
-			for (int j = 0; j < gates.size(); j++)
-			{
-				const int gateCycle = (int)gates.at(j).cycle;
-				DOUT("\tgate cycle: " << gateCycle);
-				if (gateCycle >= i - amountOfCompressions)
-				{
-					gates.at(j).cycle = gates.at(j).cycle - 1;
-					DOUT(" -> compressing cycle");
-				}
-				else
-				{
-					DOUT(" -> no compression");
-				}
-			}
-			amountOfCycles--;
-			amountOfCompressions++;
-		}
-		else
-		{
-			DOUT(" filled");
-		}
-	}
-	DOUT("amount of cycles after compression: " << amountOfCycles);
 }
 
 std::vector<EndPoints> CircuitData::findCuttableEmptyRanges(const Layout layout) const
@@ -476,7 +478,7 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
 			{
 				const int start = getCellPosition(i, 0, QUANTUM).x0;
 				const int end = getCellPosition(j, 0, QUANTUM).x0;
-				IOUT("segment > range: [" << i << "," << (j - 1) << "], " << "position: [" << start << "," << end << "], cut: " << cut);
+				DOUT("segment > range: [" << i << "," << (j - 1) << "], " << "position: [" << start << "," << end << "], cut: " << cut);
 				bitLineSegments.push_back({{start, end}, cut});
 				i = j - 1;
 				break;
@@ -487,7 +489,7 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
 			{
 				const int start = getCellPosition(i, 0, QUANTUM).x0;
 				const int end = getCellPosition(j, 0, QUANTUM).x1;
-				IOUT("segment > range: [" << i << "," << j << "], " << "position: [" << start << "," << end << "], cut: " << cut);
+				DOUT("segment > range: [" << i << "," << j << "], " << "position: [" << start << "," << end << "], cut: " << cut);
 				bitLineSegments.push_back({{start, end}, cut});
 				reachedEnd = true;
 			}
@@ -708,7 +710,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
 		// Draw the gates.
 		DOUT("Drawing gates...");
-		for (GateProperties gate : gates)
+		for (const GateProperties& gate : gates)
 		{
 			DOUT("Drawing gate: [name: " + gate.name + "]" << " in cycle: " << gate.cycle);
 			drawGate(image, layout, circuitData, gate, structure);
@@ -750,6 +752,8 @@ Layout parseConfiguration(const std::string& configPath)
 		layout.cycles.showCycleEdges = config["cycles"].value("showCycleEdges", layout.cycles.showCycleEdges);
 		layout.cycles.cycleEdgeColor = config["cycles"].value("cycleEdgeColor", layout.cycles.cycleEdgeColor);
 		layout.cycles.cycleEdgeAlpha = config["cycles"].value("cycleEdgeAlpha", layout.cycles.cycleEdgeAlpha);
+
+		layout.cycles.partitionCyclesWithOverlap = config["cycles"].value("partitionCyclesWithOverlap", layout.cycles.partitionCyclesWithOverlap);
 
 		layout.cycles.cutEmptyCycles = config["cycles"].value("cutEmptyCycles", layout.cycles.cutEmptyCycles);
 		layout.cycles.emptyCycleThreshold = config["cycles"].value("emptyCycleThreshold", layout.cycles.emptyCycleThreshold);

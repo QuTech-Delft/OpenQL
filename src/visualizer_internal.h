@@ -91,7 +91,7 @@ struct Cycle
 	int index;
 	bool empty;
 	bool cut;
-	std::vector<std::vector<GateProperties>> gates;
+	std::vector<std::vector<std::reference_wrapper<GateProperties>>> gates;
 };
 
 class CircuitData
@@ -102,8 +102,12 @@ class CircuitData
 
 		int calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<size_t> GateProperties::* operandType) const;
 		int calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const;
-		void compressCycles(std::vector<GateProperties>& gates, int& amountOfCycles) const;
+		std::vector<Cycle> generateCycles(std::vector<GateProperties>& gates, const int cycleDuration) const;
 		std::vector<EndPoints> findCuttableEmptyRanges(const Layout layout) const;
+		
+		void compressCycles();
+		void partitionCyclesWithOverlap();
+		void cutEmptyCycles(const Layout layout);
 
 	public:
 		const int amountOfQubits;

@@ -13,6 +13,8 @@
         "cycleEdgeColor": [0, 0, 0],
         "cycleEdgeAlpha": 0.1,
 
+        "partitionCyclesWithOverlap": true,
+
         "cutEmptyCycles": true,
         "emptyCycleThreshold": 2,
         "cutCycleWidth": 16,
