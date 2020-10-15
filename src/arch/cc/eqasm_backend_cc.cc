@@ -35,13 +35,16 @@
 // Including scheduler.h causes duplicate function definitions during make/linking;
 // instead of including it with its function bodies, declare those functions here and now ...
 // FIXME HvS create schedule.cc (but this waits until scheduler and mapper have been disentangled)
+namespace ql
+{
 #if OPT_CC_SCHEDULE_RC
     // FIXME To make rcschedule work on CC, make a src/arch/cc/cc_resource_manager.h
     // and update src/resource_manager.h to include it and create a cc_resource_manager.
-    void ql::rcschedule(quantum_program* programp, const ql::quantum_platform & platform, std::string passname);
+    void rcschedule(quantum_program* programp, const ql::quantum_platform & platform, std::string passname);
 #else
-    void ql::schedule(quantum_program* programp, const ql::quantum_platform & platform, std::string passname);
+    void schedule(quantum_program* programp, const ql::quantum_platform & platform, std::string passname);
 #endif
+} // end of namespace ql
 #endif
 
 
