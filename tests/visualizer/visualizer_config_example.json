@@ -16,6 +16,7 @@
         "cutEmptyCycles": true,
         "emptyCycleThreshold": 2,
         "cutCycleWidth": 16,
+        "cutCycleWidthModifier": 0.5,
 
         "showGateDurationOutline": true,
         "gateDurationGap": 2,

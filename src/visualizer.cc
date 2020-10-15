@@ -34,11 +34,11 @@ namespace ql
 // add option to display cycle edges
 
 // -- IN PROGRESS ---
+// fix overlapping connections for multiqubit gates/measurements
 // re-organize the attributes in the config file
 // what happens when a cycle range is cut, but one or more gates within that range finish earlier than the longest running gate comprising the entire range?
 // representing the gates as waveforms
-// fix overlapping connections for multiqubit gates/measurements
-// change size_t cycle to Cycle cycle in GateProperties
+// change size_t cycle to Cycle cycle in GateProperties (maybe)
 
 // --- FUTURE WORK ---
 // TODO: the visualizer should probably be a class
@@ -415,34 +415,9 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
 	imageHeight = (layout.cycles.showCycleLabels ? layout.cycles.cycleLabelsRowHeight : 0) + heightFromOperands + 2 * layout.grid.borderSize;
 
 	// Calculate cell positions.
+	int widthFromCycles = 0;
 	for (int column = 0; column < circuitData.getAmountOfCycles(); column++)
 	{
-		int widthFromCycles = 0;
-		int displayedColumn = column;
-		if (layout.cycles.cutEmptyCycles)
-		{
-			int cutCycleRangesBeforeColumn = 0;
-			int cutCyclesBeforeColumn = 0;
-			for (const auto& range : circuitData.getCutCycleRangeIndices())
-			{
-				if (column > range.end)
-				{
-					cutCycleRangesBeforeColumn++;
-					cutCyclesBeforeColumn += range.end - range.start + 1;
-				}
-
-				if (column >= range.start && column <= range.end)
-				{
-					displayedColumn = range.start;
-				}
-			}
-			widthFromCycles = (displayedColumn - cutCyclesBeforeColumn) * cellDimensions.width + cutCycleRangesBeforeColumn * layout.cycles.cutCycleWidth;
-		}
-		else
-		{
-			widthFromCycles = displayedColumn * cellDimensions.width;
-		}
-
 		const int x0 = layout.grid.borderSize + labelColumnWidth + widthFromCycles;
 		const int x1 = x0 + (circuitData.isCycleCut(column) ? layout.cycles.cutCycleWidth : cellDimensions.width);
 
@@ -465,6 +440,26 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
 			cColumnCells.push_back({x0, y0, x1, y1});
 		}
 		cbitCellPositions.push_back(cColumnCells);
+
+		// Add the appropriate amount of width to the total width.
+		if (layout.cycles.cutEmptyCycles)
+		{
+			if (circuitData.isCycleCut(column))
+			{
+				if (column != 0 && !circuitData.isCycleCut(column - 1))
+				{
+					widthFromCycles += cellDimensions.width * layout.cycles.cutCycleWidthModifier;
+				}
+			}
+			else
+			{
+				widthFromCycles += cellDimensions.width;
+			}
+		}
+		else
+		{
+			widthFromCycles += cellDimensions.width;
+		}
 	}
 
 	// Calculate the bit line segments.
@@ -480,8 +475,8 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
 			if (circuitData.isCycleCut(j) != cut)
 			{
 				const int start = getCellPosition(i, 0, QUANTUM).x0;
-				const int end = getCellPosition(j - 1, 0, QUANTUM).x1;
-				DOUT("segment > range: [" << i << "," << (j - 1) << "], " << "position: [" << start << "," << end << "], cut: " << cut);
+				const int end = getCellPosition(j, 0, QUANTUM).x0;
+				IOUT("segment > range: [" << i << "," << (j - 1) << "], " << "position: [" << start << "," << end << "], cut: " << cut);
 				bitLineSegments.push_back({{start, end}, cut});
 				i = j - 1;
 				break;
@@ -492,7 +487,7 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
 			{
 				const int start = getCellPosition(i, 0, QUANTUM).x0;
 				const int end = getCellPosition(j, 0, QUANTUM).x1;
-				DOUT("segment > range: [" << i << "," << j << "], " << "position: [" << start << "," << end << "], cut: " << cut);
+				IOUT("segment > range: [" << i << "," << j << "], " << "position: [" << start << "," << end << "], cut: " << cut);
 				bitLineSegments.push_back({{start, end}, cut});
 				reachedEnd = true;
 			}
@@ -759,6 +754,7 @@ Layout parseConfiguration(const std::string& configPath)
 		layout.cycles.cutEmptyCycles = config["cycles"].value("cutEmptyCycles", layout.cycles.cutEmptyCycles);
 		layout.cycles.emptyCycleThreshold = config["cycles"].value("emptyCycleThreshold", layout.cycles.emptyCycleThreshold);
 		layout.cycles.cutCycleWidth = config["cycles"].value("cutCycleWidth", layout.cycles.cutCycleWidth);
+		layout.cycles.cutCycleWidthModifier = config["cycles"].value("cutCycleWidthModifier", layout.cycles.cutCycleWidthModifier);
 		layout.cycles.showGateDurationOutline = config["cycles"].value("showGateDurationOutline", layout.cycles.showGateDurationOutline);
 		layout.cycles.gateDurationGap = config["cycles"].value("gateDurationGap", layout.cycles.gateDurationGap);
 		layout.cycles.gateDurationAlpha = config["cycles"].value("gateDurationAlpha", layout.cycles.gateDurationAlpha);

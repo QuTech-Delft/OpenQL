@@ -43,6 +43,7 @@ struct Cycles
 	bool cutEmptyCycles = true;
 	int emptyCycleThreshold = 3;
 	int cutCycleWidth = 16;
+	float cutCycleWidthModifier = 0.5f;
 	bool showGateDurationOutline = true;
 	int gateDurationGap = 2;
 	float gateDurationAlpha = 0.1f;
