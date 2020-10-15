@@ -522,8 +522,8 @@ ___________________ Test_central_controller.test_qi_example ____________________
 
         DOUT("customGate(): iname='" << iname <<
              "', duration=" << durationInCycles <<
-             "[cycles], si.instrIdx=" << si.instrIdx <<
-             ", si.group=" << si.group);
+             " [cycles], instrIdx=" << si.instrIdx <<
+             ", group=" << si.group);
 
         // NB: code is generated in bundleFinish()
     }   // for(signal)

@@ -213,7 +213,8 @@ int settings_cc::findStaticCodewordOverride(const json &instruction, size_t oper
         staticCodewordOverride = instruction["cc"]["static_codeword_override"];
  #endif
         DOUT("Found static_codeword_override=" << staticCodewordOverride <<
-             " for instruction '" << iname << "'");
+             " for instruction '" << iname <<
+             "', operand index " << operandIdx);
     }
  #if 1 // FIXME: require override
     if(staticCodewordOverride < 0) {
