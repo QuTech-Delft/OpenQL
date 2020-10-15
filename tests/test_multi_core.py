@@ -20,7 +20,7 @@ class Test_multi_core(unittest.TestCase):
         ql.set_option('maptiebreak', 'first')       # this makes behavior deterministic to cmp with golden
                                                     # and deviates from default
 
-        ql.set_option('log_level', 'LOG_DEBUG')
+        ql.set_option('log_level', 'LOG_NOTHING')
         ql.set_option('optimize', 'no')
         ql.set_option('use_default_gates', 'no')
         ql.set_option('generate_code', 'no')
