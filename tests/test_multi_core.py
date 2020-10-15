@@ -50,7 +50,7 @@ class Test_multi_core(unittest.TestCase):
         ql.set_option('mapselectmaxwidth', 'min')
         
         ql.set_option('write_qasm_files', 'yes')
-        ql.set_option('write_report_files', 'no')
+        ql.set_option('write_report_files', 'yes')
 
     def test_mc_all(self):
         v = 'allNN'
