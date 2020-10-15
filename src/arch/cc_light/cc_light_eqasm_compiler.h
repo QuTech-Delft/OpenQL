@@ -1066,6 +1066,9 @@ public:
     // kernel level compilation
     void compile(quantum_program* programp, const ql::quantum_platform& platform)
     {
+        // hack to simulate taking code generation passes out of the compiler
+        auto        gencodeopt = ql::options::get("generate_code");
+
 //std::cout << " ============= DEBUG PRINT FOR DEBUG(1): In cc_light BACKEND COMPILER \n";
         DOUT("Compiling " << programp->kernels.size() << " kernels to generate CCLight eQASM ... ");
 
@@ -1082,11 +1085,17 @@ public:
 
 	// see comment with definition
         // could also be in back-end constructor, or even be deleted
-        ccl_prep_code_generation(programp, platform, "ccl_prep_code_generation");
+        if (gencodeopt != "no")
+        {
+            ccl_prep_code_generation(programp, platform, "ccl_prep_code_generation");
+        }
 
         // decompose_pre_schedule pass
 	// is very much concerned with generation of classical code
-        ccl_decompose_pre_schedule(programp, platform, "ccl_decompose_pre_schedule");
+        if (gencodeopt != "no")
+        {
+            ccl_decompose_pre_schedule(programp, platform, "ccl_decompose_pre_schedule");
+        }
 
 	// this call could also have been at end of back-end-independent passes
         write_quantumsim_script(programp, platform, "write_quantumsim_script_unmapped");
@@ -1105,19 +1114,26 @@ public:
 
         ql::rcschedule(programp, platform, "rcscheduler");
 
-        ql::latency_compensation(programp, platform, "ccl_latency_compensation");
+        if (gencodeopt != "no")
+        {
+            ql::latency_compensation(programp, platform, "ccl_latency_compensation");
+        }
 
-        ql::insert_buffer_delays(programp, platform, "ccl_insert_buffer_delays");
+        if (gencodeopt != "no")
+        {
+            ql::insert_buffer_delays(programp, platform, "ccl_insert_buffer_delays");
+        }
 
+        if (gencodeopt != "no")
+        {
         // decompose meta-instructions after scheduling
-        ccl_decompose_post_schedule(programp, platform, "ccl_decompose_post_schedule");
+            ccl_decompose_post_schedule(programp, platform, "ccl_decompose_post_schedule");
+        }
 
 	// just before code generation, emit quantumsim script to best match target architecture
         write_quantumsim_script(programp, platform, "write_quantumsim_script_mapped");
 
 	// and now for real
-        // hack to simulate taking code generation pass out of the compiler
-        auto        gencodeopt = ql::options::get("generate_code");
         if (gencodeopt != "no")
         {
             qisa_code_generation(programp, platform, "qisa_code_generation");
