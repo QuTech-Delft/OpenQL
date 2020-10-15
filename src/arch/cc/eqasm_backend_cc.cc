@@ -44,7 +44,7 @@ namespace ql
     // and update src/resource_manager.h to include it and create a cc_resource_manager.
     void ql::rcschedule(quantum_program* programp, const ql::quantum_platform & platform, std::string passname);
 #else
-    void ql:schedule(quantum_program* programp, const ql::quantum_platform & platform, std::string passname);
+    void ql::schedule(quantum_program* programp, const ql::quantum_platform & platform, std::string passname);
 #endif
 
     } // end of namespace arch
