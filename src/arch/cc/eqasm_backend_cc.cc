@@ -105,7 +105,7 @@ void eqasm_backend_cc::compile(quantum_program* programp, const ql::quantum_plat
         IOUT("Compiling kernel: " << kernel.name);
         codegenKernelPrologue(kernel);
 
-        const ql::circuit &circuit = kernel.c;
+        ql::circuit &circuit = kernel.c;
         if (!circuit.empty()) {
             ql::ir::bundles_t bundles = ql::ir::bundler(circuit, platform.cycle_time);
 
