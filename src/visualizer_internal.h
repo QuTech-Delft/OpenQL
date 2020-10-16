@@ -134,13 +134,18 @@ class Structure
 		const int cycleLabelsY;
 		const int bitLabelsX;
 
-		int imageWidth;
-		int imageHeight;
+		const int imageWidth;
+		const int imageHeight;
 
 		std::vector<std::vector<Position4>> qbitCellPositions;
 		std::vector<std::vector<Position4>> cbitCellPositions;
-		
 		std::vector<std::pair<EndPoints, bool>> bitLineSegments;
+
+		int calculateImageWidth(const CircuitData circuitData) const;
+		int calculateImageHeight(const CircuitData circuitData) const;
+
+		void generateBitLineSegments(const CircuitData circuitData);
+		void generateCellPositions(const CircuitData circuitData);
 
 	public:
 		Structure(const Layout layout, const CircuitData circuitData);
@@ -155,8 +160,7 @@ class Structure
 		int getCircuitBotY() const;
 
 		Dimensions getCellDimensions() const;
-		Position4 getCellPosition(int column, int row, BitType bitType) const;
-
+		Position4 getCellPosition(const int column, const int row, const BitType bitType) const;
 		std::vector<std::pair<EndPoints, bool>> getBitLineSegments() const;
 
 		void printProperties() const;

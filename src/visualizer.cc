@@ -78,6 +78,8 @@ CircuitData::CircuitData(std::vector<GateProperties>& gates, const Layout layout
 
 int CircuitData::calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<size_t> GateProperties::* operandType) const
 {
+	DOUT("Calculating amount of bits...");
+
 	//TODO: handle circuits not starting at a c- or qbit with index 0
 	int minAmount = std::numeric_limits<int>::max();
 	int maxAmount = 0;
@@ -108,6 +110,9 @@ int CircuitData::calculateAmountOfBits(const std::vector<GateProperties> gates, 
 
 int CircuitData::calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const
 {
+	DOUT("Calculating amount of cycles...");
+
+	// Find the highest cycle in the gate vector.
     int amountOfCycles = 0;
 	for (const GateProperties& gate : gates)
 	{
@@ -130,9 +135,10 @@ int CircuitData::calculateAmountOfCycles(const std::vector<GateProperties> gates
 
 std::vector<Cycle> CircuitData::generateCycles(std::vector<GateProperties>& gates, const int cycleDuration) const
 {
-	std::vector<Cycle> cycles;
+	DOUT("Generating cycles...");
 
 	// Generate the cycles.
+	std::vector<Cycle> cycles;
 	const int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
 	for (int i = 0; i < amountOfCycles; i++)
 	{
@@ -190,6 +196,8 @@ void CircuitData::compressCycles()
 
 void CircuitData::partitionCyclesWithOverlap()
 {
+	DOUT("Partitioning cycles with connection overlap...");
+
 	// Find cycles with overlapping connections.
 	for (Cycle& cycle : cycles)
 	{
@@ -266,6 +274,8 @@ void CircuitData::partitionCyclesWithOverlap()
 
 void CircuitData::cutEmptyCycles(const Layout layout)
 {
+	DOUT("Cutting empty cycles...");
+	
 	// Find cuttable ranges...
 	cutCycleRangeIndices = findCuttableEmptyRanges(layout);
 	// ... and cut them.
@@ -384,11 +394,18 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
 	layout(layout),
 	cellDimensions({layout.grid.cellSize, layout.pulses.displayGatesAsPulses ? layout.pulses.pulseRowHeight : layout.grid.cellSize}),
 	cycleLabelsY(layout.grid.borderSize),
-	bitLabelsX(layout.grid.borderSize)
+	bitLabelsX(layout.grid.borderSize),
+	imageWidth(calculateImageWidth(circuitData)),
+	imageHeight(calculateImageHeight(circuitData))
 {
-	const int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
-	const int cycleNumbersRowHeight = layout.cycles.showCycleLabels ? layout.cycles.cycleLabelsRowHeight : 0;
+	generateCellPositions(circuitData);
+	generateBitLineSegments(circuitData);
+}
 
+int Structure::calculateImageWidth(const CircuitData circuitData) const
+{
+	DOUT("Calculating image width...");
+	
 	// Calculate the amount of displayed cycles.
 	int amountOfCutCycles = 0;
 	for (const auto& range : circuitData.getCutCycleRangeIndices())
@@ -406,7 +423,14 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
 	{
 		imageWidthFromCycles = circuitData.getAmountOfCycles() * cellDimensions.width;
 	}
-	imageWidth = layout.grid.borderSize * 2 + labelColumnWidth + imageWidthFromCycles;
+	const int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
+
+	return layout.grid.borderSize * 2 + labelColumnWidth + imageWidthFromCycles;
+}
+
+int Structure::calculateImageHeight(const CircuitData circuitData) const
+{
+	DOUT("Calculating image height...");
 
 	// Calculate image height based on amount of quantum and classical bits.
 	const int rowsFromQuantum = circuitData.amountOfQubits;
@@ -414,7 +438,15 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
 		? (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits)
 		: 0;
 	const int heightFromOperands = (rowsFromQuantum + rowsFromClassical) * cellDimensions.height;
-	imageHeight = (layout.cycles.showCycleLabels ? layout.cycles.cycleLabelsRowHeight : 0) + heightFromOperands + 2 * layout.grid.borderSize;
+	const int cycleLabelsRowHeight = layout.cycles.showCycleLabels ? layout.cycles.cycleLabelsRowHeight : 0;
+
+	return cycleLabelsRowHeight + heightFromOperands + 2 * layout.grid.borderSize;
+}
+
+void Structure::generateCellPositions(const CircuitData circuitData)
+{
+	const int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
+	const int cycleLabelsRowHeight = layout.cycles.showCycleLabels ? layout.cycles.cycleLabelsRowHeight : 0;
 
 	// Calculate cell positions.
 	int widthFromCycles = 0;
@@ -427,7 +459,7 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
 		std::vector<Position4> qColumnCells;
 		for (int row = 0; row < circuitData.amountOfQubits; row++)
 		{
-			const int y0 = layout.grid.borderSize + cycleNumbersRowHeight + row * cellDimensions.height;
+			const int y0 = layout.grid.borderSize + cycleLabelsRowHeight + row * cellDimensions.height;
 			const int y1 = y0 + cellDimensions.height;
 			qColumnCells.push_back({x0, y0, x1, y1});
 		}
@@ -436,7 +468,7 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
 		std::vector<Position4> cColumnCells;
 		for (int row = 0; row < circuitData.amountOfClassicalBits; row++)
 		{
-			const int y0 = layout.grid.borderSize + cycleNumbersRowHeight + 
+			const int y0 = layout.grid.borderSize + cycleLabelsRowHeight + 
 				((layout.bitLines.groupClassicalLines ? 0 : row) + circuitData.amountOfQubits) * cellDimensions.height;
 			const int y1 = y0 + cellDimensions.height;
 			cColumnCells.push_back({x0, y0, x1, y1});
@@ -463,9 +495,13 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
 			widthFromCycles += cellDimensions.width;
 		}
 	}
+}
 
-	// Calculate the bit line segments.
+void Structure::generateBitLineSegments(const CircuitData circuitData)
+{
 	DOUT("Calculating bit line segments...");
+	
+	// Calculate the bit line segments.
 	for (int i = 0; i < circuitData.getAmountOfCycles(); i++)
 	{
 		const bool cut = circuitData.isCycleCut(i);
@@ -536,7 +572,7 @@ Dimensions Structure::getCellDimensions() const
 	return cellDimensions;
 }
 
-Position4 Structure::getCellPosition(int column, int row, BitType bitType) const
+Position4 Structure::getCellPosition(const int column, const int row, const BitType bitType) const
 {
 	switch (bitType)
 	{
