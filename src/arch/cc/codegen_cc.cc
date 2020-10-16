@@ -262,7 +262,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
         const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
         if(ic.ii.slot >= MAX_SLOTS) {
             JSON_FATAL("illegal slot " << ic.ii.slot <<
-                       "on instrument '" << ic.ii.instrumentName);
+                       " on instrument '" << ic.ii.instrumentName);
         }
 
         // collect code generation info from all groups within one instrument
@@ -454,14 +454,20 @@ void codegen_cc::customGate(
             // get signal value
             const json instructionSignalValue = json_get<const json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
 
+#if 0   /* FIXME: invalid test: should be channels in group, not group size
+[OPENQL] /tmp/pip-req-build-z_6r37p9/src/arch/cc/codegen_cc.cc:463 Error: Error in JSON definition: signal dimension mismatch on instruction 'cz' : control mode 'awg8-flux' requires 8 groups, but signal 'signals/two-qubit-flux[0]/value' provides 1
+___________________ Test_central_controller.test_qi_example ____________________
+*/
             // verify dimensions
-            if(instructionSignalValue.size() != si.ic.controlModeGroupCnt) {
+            int channelsPergroup = TBD / si.ic.controlModeGroupCnt;
+            if(instructionSignalValue.size() != channelsPergroup) {
                 JSON_FATAL("signal dimension mismatch on instruction '" << iname <<
                            "' : control mode '" << si.ic.refControlMode <<
-                           "' requires " <<  si.ic.controlModeGroupCnt <<
-                           " groups, but signal '" << signalSPath+"/value" <<
+                           "' requires " <<  channelsPergroup <<
+                           " signals, but signal '" << signalSPath+"/value" <<
                            "' provides " << instructionSignalValue.size());
             }
+#endif
 
             // expand macros
             signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
@@ -516,8 +522,8 @@ void codegen_cc::customGate(
 
         DOUT("customGate(): iname='" << iname <<
              "', duration=" << durationInCycles <<
-             "[cycles], si.instrIdx=" << si.instrIdx <<
-             ", si.group=" << si.group);
+             " [cycles], instrIdx=" << si.instrIdx <<
+             ", group=" << si.group);
 
         // NB: code is generated in bundleFinish()
     }   // for(signal)
