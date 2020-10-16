@@ -27,16 +27,16 @@ enum BitType {CLASSICAL, QUANTUM};
 
 struct Position4
 {
-	long x0;
-	long y0;
-	long x1;
-	long y1;
+	long x0 = 0;
+	long y0 = 0;
+	long x1 = 0;
+	long y1 = 0;
 };
 
 struct Position2
 {
-	long x;
-	long y;
+	long x = 0;
+	long y = 0;
 };
 
 struct Cell
@@ -60,8 +60,8 @@ struct Dimensions
 
 struct GateOperand
 {
-	BitType bitType;
-	size_t index;
+	BitType bitType = QUANTUM;
+	size_t index = 0;
 
 	friend bool operator<(const GateOperand& lhs, const GateOperand& rhs)
 	{
@@ -80,17 +80,17 @@ struct GateProperties
 	std::string name;
     std::vector<size_t> operands;
     std::vector<size_t> creg_operands;
-    size_t duration;
-    size_t cycle;
-    gate_type_t type;
+    size_t duration = 0;
+    size_t cycle = 0;
+    gate_type_t type = __custom_gate__;
     std::string visual_type;
 };
 
 struct Cycle
 {
-	int index;
-	bool empty;
-	bool cut;
+	int index = 0;
+	bool empty = false;
+	bool cut = false;
 	std::vector<std::vector<std::reference_wrapper<GateProperties>>> gates;
 };
 
@@ -116,8 +116,8 @@ class CircuitData
 
 		CircuitData(std::vector<GateProperties>& gates, const Layout layout, const int cycleDuration);
 
+		Cycle getCycle(const int index) const;
 		int getAmountOfCycles() const;
-		std::vector<EndPoints> getCutCycleRangeIndices() const;
 		bool isCycleCut(const int cycleIndex) const;
 		bool isCycleFirstInCutRange(const int cycleIndex) const;
 
@@ -134,8 +134,8 @@ class Structure
 		const int cycleLabelsY;
 		const int bitLabelsX;
 
-		const int imageWidth;
-		const int imageHeight;
+		int imageWidth = 0;
+		int imageHeight = 0;
 
 		std::vector<std::vector<Position4>> qbitCellPositions;
 		std::vector<std::vector<Position4>> cbitCellPositions;

@@ -337,14 +337,17 @@ std::vector<EndPoints> CircuitData::findCuttableEmptyRanges(const Layout layout)
 	return rangesAboveThreshold;
 }
 
+Cycle CircuitData::getCycle(const int index) const
+{
+	if (index > cycles.size())
+		FATAL("Requested cycle index " << index << " is higher than max cycle " << (cycles.size() - 1) << "!");
+
+	return cycles[index];
+}
+
 int CircuitData::getAmountOfCycles() const
 {
 	return cycles.size();
-}
-
-std::vector<EndPoints> CircuitData::getCutCycleRangeIndices() const
-{
-	return cutCycleRangeIndices;
 }
 
 bool CircuitData::isCycleCut(const int cycleIndex) const
@@ -400,32 +403,21 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
 {
 	generateCellPositions(circuitData);
 	generateBitLineSegments(circuitData);
+
+	imageWidth = calculateImageWidth(circuitData);
+	imageHeight = calculateImageHeight(circuitData);
 }
 
 int Structure::calculateImageWidth(const CircuitData circuitData) const
 {
 	DOUT("Calculating image width...");
 	
-	// Calculate the amount of displayed cycles.
-	int amountOfCutCycles = 0;
-	for (const auto& range : circuitData.getCutCycleRangeIndices())
-	{
-		amountOfCutCycles += range.end - range.start + 1;
-	}
+	const int amountOfCells = qbitCellPositions.size();
+	const int left = amountOfCells > 0 ? getCellPosition(0, 0, QUANTUM).x0 : 0;
+	const int right = amountOfCells > 0 ? getCellPosition(amountOfCells - 1, 0, QUANTUM).x1 : 0;
+	const int imageWidthFromCells = right - left;
 
-	const int amountOfDisplayedCycles = circuitData.getAmountOfCycles() - amountOfCutCycles;
-	int imageWidthFromCycles = 0;
-	if (layout.cycles.cutEmptyCycles)
-	{
-		imageWidthFromCycles = circuitData.getCutCycleRangeIndices().size() * layout.cycles.cutCycleWidth + amountOfDisplayedCycles * cellDimensions.width;
-	}
-	else
-	{
-		imageWidthFromCycles = circuitData.getAmountOfCycles() * cellDimensions.width;
-	}
-	const int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
-
-	return layout.grid.borderSize * 2 + labelColumnWidth + imageWidthFromCycles;
+	return layout.grid.borderSize * 2 + layout.bitLines.labelColumnWidth + imageWidthFromCells;
 }
 
 int Structure::calculateImageHeight(const CircuitData circuitData) const
@@ -438,28 +430,27 @@ int Structure::calculateImageHeight(const CircuitData circuitData) const
 		? (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits)
 		: 0;
 	const int heightFromOperands = (rowsFromQuantum + rowsFromClassical) * cellDimensions.height;
-	const int cycleLabelsRowHeight = layout.cycles.showCycleLabels ? layout.cycles.cycleLabelsRowHeight : 0;
 
-	return cycleLabelsRowHeight + heightFromOperands + 2 * layout.grid.borderSize;
+	return layout.cycles.cycleLabelsRowHeight + heightFromOperands + 2 * layout.grid.borderSize;
 }
 
 void Structure::generateCellPositions(const CircuitData circuitData)
 {
-	const int labelColumnWidth = layout.bitLines.drawLabels ? layout.bitLines.labelColumnWidth : 0;
-	const int cycleLabelsRowHeight = layout.cycles.showCycleLabels ? layout.cycles.cycleLabelsRowHeight : 0;
-
 	// Calculate cell positions.
 	int widthFromCycles = 0;
 	for (int column = 0; column < circuitData.getAmountOfCycles(); column++)
 	{
-		const int x0 = layout.grid.borderSize + labelColumnWidth + widthFromCycles;
-		const int x1 = x0 + (circuitData.isCycleCut(column) ? layout.cycles.cutCycleWidth : cellDimensions.width);
+		const int amountOfChunks = circuitData.getCycle(column).gates.size();
+		const int cycleWidth = (circuitData.isCycleCut(column) ? layout.cycles.cutCycleWidth : (cellDimensions.width * amountOfChunks));
+
+		const int x0 = layout.grid.borderSize + layout.bitLines.labelColumnWidth + widthFromCycles;
+		const int x1 = x0 + cycleWidth;
 
 		// Quantum cell positions.
 		std::vector<Position4> qColumnCells;
 		for (int row = 0; row < circuitData.amountOfQubits; row++)
 		{
-			const int y0 = layout.grid.borderSize + cycleLabelsRowHeight + row * cellDimensions.height;
+			const int y0 = layout.grid.borderSize + layout.cycles.cycleLabelsRowHeight + row * cellDimensions.height;
 			const int y1 = y0 + cellDimensions.height;
 			qColumnCells.push_back({x0, y0, x1, y1});
 		}
@@ -468,7 +459,7 @@ void Structure::generateCellPositions(const CircuitData circuitData)
 		std::vector<Position4> cColumnCells;
 		for (int row = 0; row < circuitData.amountOfClassicalBits; row++)
 		{
-			const int y0 = layout.grid.borderSize + cycleLabelsRowHeight + 
+			const int y0 = layout.grid.borderSize + layout.cycles.cycleLabelsRowHeight + 
 				((layout.bitLines.groupClassicalLines ? 0 : row) + circuitData.amountOfQubits) * cellDimensions.height;
 			const int y1 = y0 + cellDimensions.height;
 			cColumnCells.push_back({x0, y0, x1, y1});
@@ -480,19 +471,20 @@ void Structure::generateCellPositions(const CircuitData circuitData)
 		{
 			if (circuitData.isCycleCut(column))
 			{
-				if (column != 0 && !circuitData.isCycleCut(column - 1))
+				// if (column != 0 && !circuitData.isCycleCut(column - 1))
+				if (column != circuitData.getAmountOfCycles() - 1 && !circuitData.isCycleCut(column + 1))
 				{
 					widthFromCycles += cellDimensions.width * layout.cycles.cutCycleWidthModifier;
 				}
 			}
 			else
 			{
-				widthFromCycles += cellDimensions.width;
+				widthFromCycles += cycleWidth;
 			}
 		}
 		else
 		{
-			widthFromCycles += cellDimensions.width;
+			widthFromCycles += cycleWidth;
 		}
 	}
 }
@@ -941,6 +933,9 @@ void validateLayout(Layout& layout)
 		WOUT("Adjusting 'showClassicalLines' to false. Unable to be true when 'displayGatesAsPulses' is true!");
 		layout.bitLines.showClassicalLines = false;
 	}
+
+	if (!layout.bitLines.drawLabels)	layout.bitLines.labelColumnWidth = 0;
+	if (!layout.cycles.showCycleLabels)	layout.cycles.cycleLabelsRowHeight = 0;
 }
 
 int calculateAmountOfGateOperands(const GateProperties gate)
