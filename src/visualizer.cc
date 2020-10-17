@@ -397,9 +397,7 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
 	layout(layout),
 	cellDimensions({layout.grid.cellSize, layout.pulses.displayGatesAsPulses ? layout.pulses.pulseRowHeight : layout.grid.cellSize}),
 	cycleLabelsY(layout.grid.borderSize),
-	bitLabelsX(layout.grid.borderSize),
-	imageWidth(calculateImageWidth(circuitData)),
-	imageHeight(calculateImageHeight(circuitData))
+	bitLabelsX(layout.grid.borderSize)
 {
 	generateCellPositions(circuitData);
 	generateBitLineSegments(circuitData);
@@ -424,7 +422,6 @@ int Structure::calculateImageHeight(const CircuitData circuitData) const
 {
 	DOUT("Calculating image height...");
 
-	// Calculate image height based on amount of quantum and classical bits.
 	const int rowsFromQuantum = circuitData.amountOfQubits;
 	const int rowsFromClassical = layout.bitLines.showClassicalLines
 		? (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits)
@@ -1333,7 +1330,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
     DOUT("Drawing gate nodes...");
 	for (int i = 0; i < operands.size(); i++)
 	{
-        DOUT("Drawing gate node with index: " + std::to_string(i) + "...");
+        DOUT("Drawing gate node with index: " << i << "...");
         //TODO: change the try-catch later on! the gate config will be read from somewhere else than the default layout
         try
         {
@@ -1355,7 +1352,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	            case CONTROL:	DOUT("node.type = CONTROL"); drawControlNode(image, layout, structure, node, cell); break;
 	            case NOT:		DOUT("node.type = NOT"); drawNotNode(image, layout, structure, node, cell); break;
 	            case CROSS:		DOUT("node.type = CROSS"); drawCrossNode(image, layout, structure, node, cell); break;
-                default:        EOUT("Unknown gate display node type!"); break;
+                default:        WOUT("Unknown gate display node type!"); break;
             }
         }
         catch (const std::out_of_range& e)
@@ -1364,7 +1361,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
             return;
         }
 		
-        DOUT("Finished drawing gate node with index: " + std::to_string(i) + "...");
+        DOUT("Finished drawing gate node with index: " << i << "...");
 	}
 
 	// Draw the measurement symbol.
