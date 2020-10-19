@@ -34,13 +34,14 @@ namespace ql
 // add option to display cycle edges
 
 // -- IN PROGRESS ---
-// fix overlapping connections for multiqubit gates/measurements
 // change size_t cycle to Cycle cycle in GateProperties (maybe)
 // re-organize the attributes in the config file
-// what happens when a cycle range is cut, but one or more gates within that range finish earlier than the longest running gate comprising the entire range?
+// what happens when a cycle range is cut, but one or more gates still running within that range finish earlier than the longest running gate 
+// 		comprising the entire range?
 // representing the gates as waveforms
 
 // --- FUTURE WORK ---
+// TODO: when measurement connections are not shown, allow overlap of measurement gates
 // TODO: GateProperties validation on construction
 // TODO: the visualizer should probably be a class
 // TODO: when gate is skipped due to whatever reason, maybe show a dummy gate outline indicating where the gate is?
@@ -255,13 +256,13 @@ void CircuitData::partitionCyclesWithOverlap()
 				// If the partition has more than one chunk, we replace the original partition in the current cycle.
 				if (partition.size() > 1)
 				{
-					IOUT("Divided cycle " << cycle.index << " into " << partition.size() << " chunks:");
+					DOUT("Divided cycle " << cycle.index << " into " << partition.size() << " chunks:");
 					for (size_t i = 0; i < partition.size(); i++)
 					{
-						IOUT("Gates in chunk " << i << ":");
+						DOUT("Gates in chunk " << i << ":");
 						for (const GateProperties& gate : partition[i])
 						{
-							IOUT("\t" << gate.name);
+							DOUT("\t" << gate.name);
 						}
 					}
 
@@ -689,7 +690,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	}
 
 		// Draw the cycle edges if the option has been set.
-	if (layout.cycles.showCycleLabels)
+	if (layout.cycles.showCycleEdges)
 	{
         DOUT("Drawing cycle edges...");
 		drawCycleEdges(image, layout, circuitData, structure);
@@ -733,12 +734,10 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 			}
 		}
 
-		// Draw the gates.
-		DOUT("Drawing gates...");
-		for (const GateProperties& gate : gates)
+		// Draw the cycles.
+		for (size_t i = 0; i < circuitData.getAmountOfCycles(); i++)
 		{
-			DOUT("Drawing gate: [name: " + gate.name + "]" << " in cycle: " << gate.cycle);
-			drawGate(image, layout, circuitData, gate, structure);
+			drawCycle(image, layout, circuitData, structure, circuitData.getCycle(i));
 		}
 	}
 
@@ -1028,7 +1027,9 @@ void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layo
 		}
 		else
 		{
-			cellWidth = structure.getCellDimensions().width;
+			// cellWidth = structure.getCellDimensions().width;
+			const Position4 cellPosition = structure.getCellPosition(i, 0, QUANTUM);
+			cellWidth = cellPosition.x1 - cellPosition.x0;
 			if (layout.cycles.showCyclesInNanoSeconds)
 			{
 				cycleLabel = std::to_string(i * circuitData.cycleDuration);
@@ -1052,8 +1053,6 @@ void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layo
 
 void drawCycleEdges(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
 {
-	//TODO: skip cut cycles
-
 	for (size_t i = 0; i < circuitData.getAmountOfCycles(); i++)
 	{
 		if (i == 0) continue;
@@ -1191,16 +1190,37 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 	}
 }
 
-void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, const CircuitData circuitData, const GateProperties gate, const Structure structure)
+void drawCycle(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure, const Cycle cycle)
 {
-	DOUT("Drawing gate with name: '" << gate.name << "'");
-	
-	if (layout.pulses.displayGatesAsPulses)
+	int amountOfGates = 0;
+	for (const auto& chunk : cycle.gates)
 	{
-		IOUT("Skip drawing gate as pulse... Not yet implemented for pulses!");
-		return;
+		amountOfGates += chunk.size();
 	}
 
+	DOUT("Drawing cycle " << cycle.index << " with " << amountOfGates << " gates:");
+	// Draw each of the cycles.
+	for (size_t i = 0; i < cycle.gates.size(); i++)
+	{
+		if (cycle.gates[i].size() > 0)
+		{
+			DOUT("\tchunk: " << i);
+		}
+		
+		// Draw each of the gates in the current chunk.
+		for (const GateProperties& gate : cycle.gates[i])
+		{
+			DOUT("\t\tgate: " << gate.name);
+			const int chunkOffset = i * structure.getCellDimensions().width;
+			drawGate(image, layout, circuitData, gate, structure, chunkOffset);
+		}
+	}
+}
+
+void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const GateProperties gate, 
+	const Structure structure, const int chunkOffset)
+{
+	// Get the gate visualization parameters.
 	GateVisual gateVisual;
 	if (gate.type == __custom_gate__)
 	{
@@ -1244,7 +1264,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		// big line between the nodes and the nodes will be drawn on top of those.
 		// Note: does not work with transparent nodes! If those are ever implemented, the connection line drawing will need to be changed!
 
-        DOUT("Setting up multi-operand gate...");
+		DOUT("Setting up multi-operand gate...");
 		std::pair<GateOperand, GateOperand> edgeOperands = calculateEdgeOperands(operands, circuitData.amountOfQubits);
 		GateOperand minOperand = edgeOperands.first;
 		GateOperand maxOperand = edgeOperands.second;
@@ -1254,13 +1274,13 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		DOUT("maxOperand.bitType: " << maxOperand.bitType << " maxOperand.operand " << maxOperand.index);
 		DOUT("cycle: " << column);
 
-		Position4 topCellPosition = structure.getCellPosition(column, minOperand.index, minOperand.bitType);
-		Position4 bottomCellPosition = structure.getCellPosition(column, maxOperand.index, maxOperand.bitType);
-		Position4 connectionPosition =
+		const Position4 topCellPosition = structure.getCellPosition(column, minOperand.index, minOperand.bitType);
+		const Position4 bottomCellPosition = structure.getCellPosition(column, maxOperand.index, maxOperand.bitType);
+		const Position4 connectionPosition =
 		{
-			topCellPosition.x0 + structure.getCellDimensions().width / 2,
+			topCellPosition.x0 + chunkOffset + structure.getCellDimensions().width / 2,
 			topCellPosition.y0 + structure.getCellDimensions().height / 2,
-			bottomCellPosition.x0 + structure.getCellDimensions().width / 2,
+			bottomCellPosition.x0 + chunkOffset + structure.getCellDimensions().width / 2,
 			bottomCellPosition.y0 + structure.getCellDimensions().height / 2,
 		};
 
@@ -1292,13 +1312,13 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 		{
 			image.draw_line(connectionPosition.x0, connectionPosition.y0, connectionPosition.x1, connectionPosition.y1, gateVisual.connectionColor.data());
 		}
-        DOUT("Finished setting up multi-operand gate");
+		DOUT("Finished setting up multi-operand gate");
 	}
 
 	// Draw the gate duration outline if the option has been set.
 	if (!layout.cycles.compressCycles && layout.cycles.showGateDurationOutline)
 	{
-        DOUT("Drawing gate duration outline...");
+		DOUT("Drawing gate duration outline...");
 		const int gateDurationInCycles = ((int)gate.duration) / circuitData.cycleDuration;
 		// Only draw the gate outline if the gate takes more than one cycle.
 		if (gateDurationInCycles > 1)
@@ -1310,7 +1330,7 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 				const int row = (i >= gate.operands.size()) ? gate.creg_operands[i - gate.operands.size()] : gate.operands[i];
 				DOUT("i: " << i << " size: " << gate.operands.size() << " value: " << gate.operands[i]);
 
-				const int x0 = structure.getCellPosition(columnStart, row, QUANTUM).x0 + layout.cycles.gateDurationGap;
+				const int x0 = structure.getCellPosition(columnStart, row, QUANTUM).x0 + chunkOffset + layout.cycles.gateDurationGap;
 				const int y0 = structure.getCellPosition(columnStart, row, QUANTUM).y0 + layout.cycles.gateDurationGap;
 				const int x1 = structure.getCellPosition(columnEnd, row, QUANTUM).x1 - layout.cycles.gateDurationGap;
 				const int y1 = structure.getCellPosition(columnEnd, row, QUANTUM).y1 - layout.cycles.gateDurationGap;
@@ -1327,63 +1347,43 @@ void drawGate(cimg_library::CImg<unsigned char> &image, const Layout layout, con
 	}
 
 	// Draw the nodes.
-    DOUT("Drawing gate nodes...");
+	DOUT("Drawing gate nodes...");
 	for (int i = 0; i < operands.size(); i++)
 	{
-        DOUT("Drawing gate node with index: " << i << "...");
-        //TODO: change the try-catch later on! the gate config will be read from somewhere else than the default layout
-        try
-        {
-		    const Node node = gateVisual.nodes.at(i);
-            const BitType operandType = (i >= gate.operands.size()) ? CLASSICAL : QUANTUM;
-            const int index = (operandType == QUANTUM) ? i : (i - (int)gate.operands.size());
+		DOUT("Drawing gate node with index: " << i << "...");
+		//TODO: change the try-catch later on! the gate config will be read from somewhere else than the default layout
+		try
+		{
+			const Node node = gateVisual.nodes.at(i);
+			const BitType operandType = (i >= gate.operands.size()) ? CLASSICAL : QUANTUM;
+			const int index = (operandType == QUANTUM) ? i : (i - (int)gate.operands.size());
 
 			const Cell cell =
 			{
 				(int)gate.cycle,
-	            operandType == CLASSICAL ? (int)gate.creg_operands.at(index) + circuitData.amountOfQubits : (int)gate.operands.at(index),
+				operandType == CLASSICAL ? (int)gate.creg_operands.at(index) + circuitData.amountOfQubits : (int)gate.operands.at(index),
+				chunkOffset,
 				operandType
 			};
 
-            switch (node.type)
-            {
-	            case NONE:		DOUT("node.type = NONE"); break; // Do nothing.
-	            case GATE:		DOUT("node.type = GATE"); drawGateNode(image, layout, structure, node, cell); break;
-	            case CONTROL:	DOUT("node.type = CONTROL"); drawControlNode(image, layout, structure, node, cell); break;
-	            case NOT:		DOUT("node.type = NOT"); drawNotNode(image, layout, structure, node, cell); break;
-	            case CROSS:		DOUT("node.type = CROSS"); drawCrossNode(image, layout, structure, node, cell); break;
-                default:        WOUT("Unknown gate display node type!"); break;
-            }
-        }
-        catch (const std::out_of_range& e)
-        {
+			switch (node.type)
+			{
+				case NONE:		DOUT("node.type = NONE"); break; // Do nothing.
+				case GATE:		DOUT("node.type = GATE"); drawGateNode(image, layout, structure, node, cell); break;
+				case CONTROL:	DOUT("node.type = CONTROL"); drawControlNode(image, layout, structure, node, cell); break;
+				case NOT:		DOUT("node.type = NOT"); drawNotNode(image, layout, structure, node, cell); break;
+				case CROSS:		DOUT("node.type = CROSS"); drawCrossNode(image, layout, structure, node, cell); break;
+				default:        WOUT("Unknown gate display node type!"); break;
+			}
+		}
+		catch (const std::out_of_range& e)
+		{
 			WOUT(std::string(e.what()));
-            return;
-        }
+			return;
+		}
 		
-        DOUT("Finished drawing gate node with index: " << i << "...");
+		DOUT("Finished drawing gate node with index: " << i << "...");
 	}
-
-	// Draw the measurement symbol.
-	// const unsigned int xGap = 2;
-	// const unsigned int yGap = 13;
-
-	// const unsigned int x0 = position.x0 + xGap;
-	// const unsigned int y0 = position.y0 + yGap;
-	// const unsigned int x1 = position.x1 + xGap;
-	// const unsigned int y1 = y0;
-
-	// const unsigned int xa = x0 + (x1 - x0) / 3;
-	// const unsigned int ya = y0 + yGap / 2;
-	// const unsigned int xb = x1 - (x1 - x0) / 3;
-	// const unsigned int yb = ya;
-
-	// const unsigned int u0 = xa - x0;
-	// const unsigned int v0 = ya - y0;
-	// const unsigned int u1 = x1 - xb;
-	// const unsigned int v1 = y1 - yb;
-
-	// image.draw_spline(x0, y0, u0, v0, x1, y1, u1, v1, layout.operation.gateNameColor.data());
 }
 
 void drawGateNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell)
@@ -1394,9 +1394,9 @@ void drawGateNode(cimg_library::CImg<unsigned char>& image, const Layout layout,
 	const Position4 cellPosition = structure.getCellPosition(cell.col, cell.row, cell.bitType);
 	const Position4 position =
 	{
-		cellPosition.x0 + xGap,
+		cellPosition.x0 + cell.chunkOffset + xGap,
 		cellPosition.y0 + yGap,
-		cellPosition.x1 - xGap,
+		cellPosition.x0 + cell.chunkOffset + structure.getCellDimensions().width - xGap,
 		cellPosition.y1 - yGap
 	};
 
@@ -1414,8 +1414,8 @@ void drawControlNode(cimg_library::CImg<unsigned char>& image, const Layout layo
 	const Position4 cellPosition = structure.getCellPosition(cell.col, cell.row, cell.bitType);
 	const Position2 position =
 	{
-		cellPosition.x0 + structure.getCellDimensions().width / 2,
-		cellPosition.y0 + structure.getCellDimensions().height / 2
+		cellPosition.x0 + cell.chunkOffset + structure.getCellDimensions().width / 2,
+		cellPosition.y0 + cell.chunkOffset + structure.getCellDimensions().height / 2
 	};
 
 	image.draw_circle(position.x, position.y, node.radius, node.backgroundColor.data());
@@ -1428,8 +1428,8 @@ void drawNotNode(cimg_library::CImg<unsigned char>& image, const Layout layout, 
 	const Position4 cellPosition = structure.getCellPosition(cell.col, cell.row, cell.bitType);
 	const Position2 position =
 	{
-		cellPosition.x0 + structure.getCellDimensions().width / 2,
-		cellPosition.y0 + structure.getCellDimensions().height / 2
+		cellPosition.x0 + cell.chunkOffset + structure.getCellDimensions().width / 2,
+		cellPosition.y0 + cell.chunkOffset + structure.getCellDimensions().height / 2
 	};
 
 	// Draw the outlined circle.
@@ -1453,8 +1453,8 @@ void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout
 	const Position4 cellPosition = structure.getCellPosition(cell.col, cell.row, cell.bitType);
 	const Position2 position =
 	{
-		cellPosition.x0 + structure.getCellDimensions().width / 2,
-		cellPosition.y0 + structure.getCellDimensions().height / 2
+		cellPosition.x0 + cell.chunkOffset + structure.getCellDimensions().width / 2,
+		cellPosition.y0 + cell.chunkOffset + structure.getCellDimensions().height / 2
 	};
 
 	// Draw two diagonal lines to represent the cross.
