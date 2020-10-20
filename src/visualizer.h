@@ -88,6 +88,12 @@ struct Pulses
 {
 	bool displayGatesAsPulses = false;
 	int pulseRowHeight = 99;
+	int pulseRowHeightMicrowave = 32;
+    int pulseRowHeightFlux = 32;
+    int pulseRowHeightReadout = 32;
+    std::array<unsigned char, 3> pulseColorMicrowave = {{ 0, 0, 255 }};
+    std::array<unsigned char, 3> pulseColorFlux = {{ 255, 0, 0 }};
+    std::array<unsigned char, 3> pulseColorReadout = {{ 0, 255, 0 }};
 };
 
 struct Layout

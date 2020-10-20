@@ -34,13 +34,16 @@ namespace ql
 // add option to display cycle edges
 
 // -- IN PROGRESS ---
+// add option to draw horizontal lines between qubits
+// representing the gates as waveforms
+// allow collapsing the three qubit lines into one with an option
 // change size_t cycle to Cycle cycle in GateProperties (maybe)
 // re-organize the attributes in the config file
 // what happens when a cycle range is cut, but one or more gates still running within that range finish earlier than the longest running gate 
 // 		comprising the entire range?
-// representing the gates as waveforms
 
 // --- FUTURE WORK ---
+// TODO: remove drawBitLine and replace it with drawCycle drawing the lines in the cycle itself (maybe)
 // TODO: when measurement connections are not shown, allow overlap of measurement gates
 // TODO: GateProperties validation on construction
 // TODO: the visualizer should probably be a class
@@ -396,7 +399,7 @@ void CircuitData::printProperties() const
 
 Structure::Structure(const Layout layout, const CircuitData circuitData) :
 	layout(layout),
-	cellDimensions({layout.grid.cellSize, layout.pulses.displayGatesAsPulses ? layout.pulses.pulseRowHeight : layout.grid.cellSize}),
+	cellDimensions({layout.grid.cellSize, calculateCellHeight(layout)}),
 	cycleLabelsY(layout.grid.borderSize),
 	bitLabelsX(layout.grid.borderSize)
 {
@@ -407,29 +410,37 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
 	imageHeight = calculateImageHeight(circuitData);
 }
 
+int Structure::calculateCellHeight(const Layout layout) const
+{
+	if (layout.pulses.displayGatesAsPulses)
+	{
+		return layout.pulses.pulseRowHeightMicrowave + layout.pulses.pulseRowHeightFlux + layout.pulses.pulseRowHeightReadout;
+	}
+	else
+	{
+		return layout.grid.cellSize;
+	}
+}
+
 int Structure::calculateImageWidth(const CircuitData circuitData) const
 {
-	DOUT("Calculating image width...");
-	
 	const int amountOfCells = qbitCellPositions.size();
 	const int left = amountOfCells > 0 ? getCellPosition(0, 0, QUANTUM).x0 : 0;
 	const int right = amountOfCells > 0 ? getCellPosition(amountOfCells - 1, 0, QUANTUM).x1 : 0;
 	const int imageWidthFromCells = right - left;
 
-	return layout.grid.borderSize * 2 + layout.bitLines.labelColumnWidth + imageWidthFromCells;
+	return layout.bitLines.labelColumnWidth + imageWidthFromCells + layout.grid.borderSize * 2;
 }
 
 int Structure::calculateImageHeight(const CircuitData circuitData) const
 {
-	DOUT("Calculating image height...");
-
 	const int rowsFromQuantum = circuitData.amountOfQubits;
 	const int rowsFromClassical = layout.bitLines.showClassicalLines
 		? (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits)
 		: 0;
 	const int heightFromOperands = (rowsFromQuantum + rowsFromClassical) * cellDimensions.height;
 
-	return layout.cycles.cycleLabelsRowHeight + heightFromOperands + 2 * layout.grid.borderSize;
+	return layout.cycles.cycleLabelsRowHeight + heightFromOperands + layout.grid.borderSize * 2;
 }
 
 void Structure::generateCellPositions(const CircuitData circuitData)
@@ -489,8 +500,6 @@ void Structure::generateCellPositions(const CircuitData circuitData)
 
 void Structure::generateBitLineSegments(const CircuitData circuitData)
 {
-	DOUT("Calculating bit line segments...");
-	
 	// Calculate the bit line segments.
 	for (int i = 0; i < circuitData.getAmountOfCycles(); i++)
 	{
@@ -552,7 +561,7 @@ int Structure::getCircuitTopY() const
 
 int Structure::getCircuitBotY() const
 {
-	std::vector<Position4> firstColumnPositions = cbitCellPositions[0];
+	std::vector<Position4> firstColumnPositions = layout.pulses.displayGatesAsPulses ? qbitCellPositions[0] : cbitCellPositions[0];
 	Position4 botPosition = firstColumnPositions[firstColumnPositions.size() - 1];
 	return botPosition.y1;
 }
@@ -696,16 +705,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		drawCycleEdges(image, layout, circuitData, structure);
 	}
 
-	if (layout.pulses.displayGatesAsPulses == true)
-	{
-		DOUT("Starting pulse visualization...");
-		DOUT("Drawing qubit lines...");
-		for (int i = 0; i < circuitData.amountOfQubits; i++)
-		{
-			drawBitLine(image, layout, QUANTUM, i, circuitData, structure);
-		}
-	}
-	else
+	if (layout.pulses.displayGatesAsPulses == false)
 	{
 		// Draw the quantum bit lines.
 		DOUT("Drawing qubit lines...");
@@ -733,9 +733,21 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 				}
 			}
 		}
+	}
 
-		// Draw the cycles.
-		for (size_t i = 0; i < circuitData.getAmountOfCycles(); i++)
+	// Draw the cycles.
+	for (size_t i = 0; i < circuitData.getAmountOfCycles(); i++)
+	{
+		// Only draw a cut cycle if its the first in its cut range.
+		if (circuitData.isCycleCut(i))
+		{
+			if (i > 0 && !circuitData.isCycleCut(i - 1))
+			{
+				drawCycle(image, layout, circuitData, structure, circuitData.getCycle(i));
+			}
+		}
+		// If the cycle is not cut, just draw it.
+		else
 		{
 			drawCycle(image, layout, circuitData, structure, circuitData.getCycle(i));
 		}
@@ -821,7 +833,14 @@ Layout parseConfiguration(const std::string& configPath)
 	if (config.count("pulses") == 1)
 	{
 		layout.pulses.displayGatesAsPulses = config["pulses"].value("displayGatesAsPulses", layout.pulses.displayGatesAsPulses);
-		layout.pulses.pulseRowHeight = config["pulses"].value("pulseRowHeight", layout.pulses.pulseRowHeight);
+
+		layout.pulses.pulseRowHeightMicrowave = config["pulses"].value("pulseRowHeightMicrowave", layout.pulses.pulseRowHeightMicrowave);
+		layout.pulses.pulseRowHeightFlux = config["pulses"].value("pulseRowHeightFlux", layout.pulses.pulseRowHeightFlux);
+		layout.pulses.pulseRowHeightReadout = config["pulses"].value("pulseRowHeightReadout", layout.pulses.pulseRowHeightReadout);
+		
+		layout.pulses.pulseColorMicrowave = config["pulses"].value("pulseColorMicrowave", layout.pulses.pulseColorMicrowave);
+		layout.pulses.pulseColorFlux = config["pulses"].value("pulseColorFlux", layout.pulses.pulseColorFlux);
+		layout.pulses.pulseColorReadout = config["pulses"].value("pulseColorReadout", layout.pulses.pulseColorReadout);
 	}
 
 	// Load the custom instruction visualization parameters.
@@ -928,6 +947,12 @@ void validateLayout(Layout& layout)
 	{
 		WOUT("Adjusting 'showClassicalLines' to false. Unable to be true when 'displayGatesAsPulses' is true!");
 		layout.bitLines.showClassicalLines = false;
+	}
+
+	if (layout.pulses.displayGatesAsPulses && layout.cycles.partitionCyclesWithOverlap)
+	{
+		WOUT("Adjusting 'partitionCyclesWithOverlap' to false. It is unnecessary to partition cycles when 'displayGatesAsPulses' is true!");
+		layout.cycles.partitionCyclesWithOverlap = false;
 	}
 
 	if (!layout.bitLines.drawLabels)	layout.bitLines.labelColumnWidth = 0;
@@ -1119,12 +1144,6 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 
 void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
 {
-	if (layout.pulses.displayGatesAsPulses)
-	{
-		IOUT("Skip drawing grouped classical bit lines... Not yet implemented for pulses!");
-		return;
-	}
-
 	const int y = structure.getCellPosition(0, 0, CLASSICAL).y0 + structure.getCellDimensions().height / 2;
 
 	// Draw the segments of the double line.
@@ -1190,6 +1209,13 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 	}
 }
 
+void drawWiggle(cimg_library::CImg<unsigned char>& image, const int x0, const int x1, const int y, const int width, const int height, const std::array<unsigned char, 3> color)
+{
+	image.draw_line(x0,					y,			x0 + width / 3,		y - height,	color.data());
+	image.draw_line(x0 + width / 3,		y - height,	x0 + width / 3 * 2,	y + height,	color.data());
+	image.draw_line(x0 + width / 3 * 2,	y + height,	x1,					y,			color.data());
+}
+
 void drawCycle(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure, const Cycle cycle)
 {
 	int amountOfGates = 0;
@@ -1197,22 +1223,144 @@ void drawCycle(cimg_library::CImg<unsigned char>& image, const Layout layout, co
 	{
 		amountOfGates += chunk.size();
 	}
-
 	DOUT("Drawing cycle " << cycle.index << " with " << amountOfGates << " gates:");
-	// Draw each of the cycles.
-	for (size_t i = 0; i < cycle.gates.size(); i++)
+
+	// Draw each of the chunks in the cycle's gate partition.
+	for (size_t chunkIndex = 0; chunkIndex < cycle.gates.size(); chunkIndex++)
 	{
-		if (cycle.gates[i].size() > 0)
+		const int chunkOffset = chunkIndex * structure.getCellDimensions().width;
+
+		// Visualize the gates as pulses on a microwave, flux and readout line.
+		if (layout.pulses.displayGatesAsPulses)
 		{
-			DOUT("\tchunk: " << i);
+			// Only draw wiggles if the cycle is cut.
+			if (circuitData.isCycleCut(cycle.index))
+			{
+				for (size_t qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++)
+				{
+					const Position4 cellPosition = structure.getCellPosition(cycle.index, qubitIndex, QUANTUM);
+					
+					// Draw wiggle on microwave line.
+					drawWiggle(image,
+							   cellPosition.x0,
+							   cellPosition.x1,
+							   cellPosition.y0 + layout.pulses.pulseRowHeightMicrowave / 2,
+							   cellPosition.x1 - cellPosition.x0,
+							   layout.pulses.pulseRowHeightMicrowave / 8,
+							   layout.pulses.pulseColorMicrowave);
+					
+					// Draw wiggle on flux line.
+					drawWiggle(image,
+							   cellPosition.x0,
+							   cellPosition.x1,
+							   cellPosition.y0 + layout.pulses.pulseRowHeightMicrowave + layout.pulses.pulseRowHeightFlux / 2,
+							   cellPosition.x1 - cellPosition.x0,
+							   layout.pulses.pulseRowHeightFlux / 8,
+							   layout.pulses.pulseColorFlux);
+					
+					// Draw wiggle on readout line.
+					drawWiggle(image,
+							   cellPosition.x0,
+							   cellPosition.x1,
+							   cellPosition.y0 + layout.pulses.pulseRowHeightMicrowave + layout.pulses.pulseRowHeightFlux + layout.pulses.pulseRowHeightReadout / 2,
+							   cellPosition.x1 - cellPosition.x0,
+							   layout.pulses.pulseRowHeightReadout / 8,
+							   layout.pulses.pulseColorReadout);
+				}
+				
+				return;
+			}
+
+			// These vectors will be used to draw flat lines on microwave, flux or readout lines where no pulse was specified.
+			std::vector<bool> flatMicrowaveLines(circuitData.amountOfQubits, true);
+			std::vector<bool> flatFluxLines(circuitData.amountOfQubits, true);
+			std::vector<bool> flatReadoutLines(circuitData.amountOfQubits, true);
+
+			// Draw a pulse for each of the gates.
+			for (const GateProperties& gate : cycle.gates[chunkIndex])
+			{
+				const std::vector<GateOperand> operands = getGateOperands(gate);
+
+				if (isMeasurement(gate))
+				{
+					flatReadoutLines[operands[0].index] = false;
+
+					// TODO: draw readout pulse
+
+					continue;
+				}
+				if (operands.size() == 1)
+				{
+					flatMicrowaveLines[operands[0].index] = false;
+
+					// TODO: draw microwave pulse
+
+					continue;
+				}
+				if (operands.size() > 1)
+				{
+					for (const GateOperand& operand : operands)
+					{
+						if (operand.bitType == QUANTUM)
+						{
+							flatFluxLines[operand.index] = false;
+						}
+					}
+
+					// TODO: draw flux pulse
+
+					continue;
+				}
+			}
+
+			// Draw each line segment that did not have a pulse.
+			for (size_t qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++)
+			{
+				const Position4 cellPosition = structure.getCellPosition(cycle.index, qubitIndex, QUANTUM);
+				const int cellWidth = circuitData.isCycleCut(cycle.index) ? layout.cycles.cutCycleWidth : structure.getCellDimensions().width;
+
+				// Draw flat microwave line.
+				if (flatMicrowaveLines[qubitIndex] == true)
+				{
+					const int y = cellPosition.y0 + layout.pulses.pulseRowHeightMicrowave / 2;
+					image.draw_line(cellPosition.x0 + chunkOffset,
+									y,
+									cellPosition.x0 + chunkOffset + cellWidth,
+									y,
+									layout.pulses.pulseColorMicrowave.data());
+				}
+
+				// Draw flat flux line.
+				if (flatFluxLines[qubitIndex] == true)
+				{
+					const int y = cellPosition.y0 + layout.pulses.pulseRowHeightMicrowave + layout.pulses.pulseRowHeightFlux / 2;
+					image.draw_line(cellPosition.x0 + chunkOffset,
+									y,
+									cellPosition.x0 + chunkOffset + cellWidth,
+									y,
+									layout.pulses.pulseColorFlux.data());
+				}
+
+				// Draw flat readout line.
+				if (flatReadoutLines[qubitIndex] == true)
+				{
+					const int y = cellPosition.y0 + layout.pulses.pulseRowHeightMicrowave + layout.pulses.pulseRowHeightFlux + layout.pulses.pulseRowHeightReadout / 2;
+					image.draw_line(cellPosition.x0 + chunkOffset,
+									y,
+									cellPosition.x0 + chunkOffset + cellWidth,
+									y,
+									layout.pulses.pulseColorReadout.data());
+				}
+			}
 		}
-		
-		// Draw each of the gates in the current chunk.
-		for (const GateProperties& gate : cycle.gates[i])
+		// Visualize the gates as abstract representations.
+		else
 		{
-			DOUT("\t\tgate: " << gate.name);
-			const int chunkOffset = i * structure.getCellDimensions().width;
-			drawGate(image, layout, circuitData, gate, structure, chunkOffset);
+			// Draw each of the gates in the current chunk.
+			for (const GateProperties& gate : cycle.gates[chunkIndex])
+			{
+				drawGate(image, layout, circuitData, gate, structure, chunkOffset);
+			}
 		}
 	}
 }

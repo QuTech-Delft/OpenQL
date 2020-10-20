@@ -53,8 +53,13 @@
     },
     "pulses":
     {
-        "displayGatesAsPulses": false,
-        "pulseRowHeight": 66
+        "displayGatesAsPulses": true,
+        "pulseRowHeightMicrowave": 32,
+        "pulseRowHeightFlux": 32,
+        "pulseRowHeightReadout": 32,
+        "pulseColorMicrowave": [0, 0, 255],
+        "pulseColorFlux": [255, 0, 0],
+        "pulseColorReadout": [0, 255, 0]
     },
     "instructions":
     {
