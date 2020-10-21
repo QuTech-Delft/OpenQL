@@ -15,7 +15,7 @@
 
         "partitionCyclesWithOverlap": true,
 
-        "cutEmptyCycles": true,
+        "cutEmptyCycles": false,
         "emptyCycleThreshold": 2,
         "cutCycleWidth": 16,
         "cutCycleWidthModifier": 0.5,
