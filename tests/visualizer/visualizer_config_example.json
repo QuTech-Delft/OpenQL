@@ -38,7 +38,12 @@
         "groupClassicalLines": false,
         "groupedClassicalLineGap": 2,
         "qBitLineColor": [0, 0, 0],
-        "cBitLineColor": [128, 128, 128]
+        "cBitLineColor": [128, 128, 128],
+
+        "showBitLineEdges": true,
+        "bitLineEdgeThickness": 3,
+        "bitLineEdgeColor": [0, 0, 0],
+        "bitLineEdgeAlpha": 0.4
     },
     "grid":
     {

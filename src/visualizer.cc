@@ -713,11 +713,18 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		drawCycleLabels(image, layout, circuitData, structure);
 	}
 
-		// Draw the cycle edges if the option has been set.
+	// Draw the cycle edges if the option has been set.
 	if (layout.cycles.showCycleEdges)
 	{
         DOUT("Drawing cycle edges...");
 		drawCycleEdges(image, layout, circuitData, structure);
+	}
+
+	// Draw the bit line edges if enabled.
+	if (layout.bitLines.showBitLineEdges)
+	{
+		DOUT("Drawing bit line edges...");
+		drawBitLineEdges(image, layout, circuitData, structure);
 	}
 
 	// Draw the bit line labels if enabled.
@@ -1079,6 +1086,11 @@ Layout parseConfiguration(const std::string& configPath)
 		layout.bitLines.groupedClassicalLineGap = config["bitLines"].value("groupedClassicalLineGap", layout.bitLines.groupedClassicalLineGap);
 		layout.bitLines.qBitLineColor = config["bitLines"].value("qBitLineColor", layout.bitLines.qBitLineColor);
 		layout.bitLines.cBitLineColor = config["bitLines"].value("cBitLineColor", layout.bitLines.cBitLineColor);
+		
+		layout.bitLines.showBitLineEdges = config["bitLines"].value("showBitLineEdges", layout.bitLines.showBitLineEdges);
+		layout.bitLines.bitLineEdgeThickness = config["bitLines"].value("bitLineEdgeThickness", layout.bitLines.bitLineEdgeThickness);
+		layout.bitLines.bitLineEdgeColor = config["bitLines"].value("bitLineEdgeColor", layout.bitLines.bitLineEdgeColor);
+		layout.bitLines.bitLineEdgeAlpha = config["bitLines"].value("bitLineEdgeAlpha", layout.bitLines.bitLineEdgeAlpha);
 	}
 
 	if (config.count("grid") == 1)
@@ -1445,6 +1457,51 @@ void drawBitLineLabels(cimg_library::CImg<unsigned char>& image, const Layout la
 	}
 }
 
+void drawBitLineEdges(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
+{
+	const int x0 = structure.getCellPosition(0, 0, QUANTUM).x0 - layout.grid.borderSize / 2;
+	const int x1 = structure.getCellPosition(circuitData.getAmountOfCycles() - 1, 0, QUANTUM).x1 + layout.grid.borderSize / 2;
+
+	for (int bitIndex = 0; bitIndex < circuitData.amountOfQubits; bitIndex++)
+	{
+		if (bitIndex == 0) continue;
+
+		const int y = structure.getCellPosition(0, bitIndex, QUANTUM).y0;
+		const int yOffsetStart = -1 * (layout.bitLines.bitLineEdgeThickness / 2);
+		for (int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.bitLineEdgeThickness; yOffset++)
+		{
+			image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.bitLineEdgeColor.data(), layout.bitLines.bitLineEdgeAlpha);
+		}
+	}
+
+	if (layout.bitLines.showClassicalLines)
+	{
+		if (layout.bitLines.groupClassicalLines)
+		{
+			const int y = structure.getCellPosition(0, 0, CLASSICAL).y0;
+			const int yOffsetStart = -1 * (layout.bitLines.bitLineEdgeThickness / 2);
+			for (int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.bitLineEdgeThickness; yOffset++)
+			{
+				image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.bitLineEdgeColor.data(), layout.bitLines.bitLineEdgeAlpha);
+			}
+		}
+		else
+		{
+			for (int bitIndex = 0; bitIndex < circuitData.amountOfClassicalBits; bitIndex++)
+			{
+				if (bitIndex == 0) continue;
+
+				const int y = structure.getCellPosition(0, bitIndex, CLASSICAL).y0;
+				const int yOffsetStart = -1 * (layout.bitLines.bitLineEdgeThickness / 2);
+				for (int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.bitLineEdgeThickness; yOffset++)
+				{
+					image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.bitLineEdgeColor.data(), layout.bitLines.bitLineEdgeAlpha);
+				}
+			}
+		}
+	}
+}
+
 void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, const BitType bitType, const int row, const CircuitData circuitData, const Structure structure)
 {
 	std::array<unsigned char, 3> bitLineColor;
@@ -1479,21 +1536,6 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 			image.draw_line(segment.first.start, y, segment.first.end, y, bitLineColor.data());
 		}
 	}
-
-	// // Draw the bit line label if enabled.
-	// if (layout.bitLines.drawLabels)
-	// {
-	// 	const std::string bitTypeText = (bitType == CLASSICAL) ? "c" : "q";
-	// 	std::string label = bitTypeText + std::to_string(row);
-	// 	Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
-
-	// 	const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
-	// 	const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
-	// 	const int xLabel = structure.getBitLabelsX() + xGap;
-	// 	const int yLabel = structure.getCellPosition(0, row, bitType).y0 + yGap;
-
-	// 	image.draw_text(xLabel, yLabel, label.c_str(), bitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
-	// }
 }
 
 void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
@@ -1547,20 +1589,6 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 	const int xLabel = firstSegment.first.start + 8;
 	const int yLabel = y - layout.bitLines.groupedClassicalLineGap - 3 - 13;
 	image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.cBitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
-
-	// // Draw the bit line label if enabled.
-	// if (layout.bitLines.drawLabels)
-	// {
-	// 	const std::string label = "C";
-	// 	Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
-
-	// 	const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
-	// 	const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
-	// 	const int xLabel = structure.getBitLabelsX() + xGap;
-	// 	const int yLabel = structure.getCellPosition(0, 0, CLASSICAL).y0 + yGap;
-
-	// 	image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.cBitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
-	// }
 }
 
 void drawWiggle(cimg_library::CImg<unsigned char>& image, const int x0, const int x1, const int y, const int width, const int height, const std::array<unsigned char, 3> color)

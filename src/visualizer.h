@@ -37,7 +37,7 @@ struct Cycles
 	// Whether the cycles should be compressed or gate duration outlines should be shown on the qubits.
 	bool compressCycles = false;
 	bool showCycleEdges = true;
-	std::array<unsigned char, 3> cycleEdgeColor = {{ 128, 128, 128 }};
+	std::array<unsigned char, 3> cycleEdgeColor = {{ 0, 0, 0 }};
 	float cycleEdgeAlpha = 0.2f;
 
 	bool partitionCyclesWithOverlap = true;
@@ -69,6 +69,11 @@ struct BitLines
 	int groupedClassicalLineGap = 2;
 	std::array<unsigned char, 3> qBitLineColor = {{ 0, 0, 0 }};
 	std::array<unsigned char, 3> cBitLineColor = {{ 128, 128, 128 }};
+
+	bool showBitLineEdges = true;
+	int bitLineEdgeThickness = 3;
+	std::array<unsigned char, 3> bitLineEdgeColor = {{ 0, 0, 0 }};
+    float bitLineEdgeAlpha = 0.2f;
 };
 
 struct Grid
