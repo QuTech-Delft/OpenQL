@@ -37,6 +37,7 @@ namespace ql
 // add option to draw horizontal lines between qubits
 // representing the gates as waveforms
 // allow collapsing the three qubit lines into one with an option
+// implement cycle cutting for pulse visualization
 // change size_t cycle to Cycle cycle in GateProperties (maybe)
 // re-organize the attributes in the config file
 // what happens when a cycle range is cut, but one or more gates still running within that range finish earlier than the longest running gate 
@@ -200,7 +201,7 @@ void CircuitData::compressCycles()
 
 void CircuitData::partitionCyclesWithOverlap()
 {
-	DOUT("Partitioning cycles with connection overlap...");
+	DOUT("Partioning cycles with connections overlap...");
 
 	// Find cycles with overlapping connections.
 	for (Cycle& cycle : cycles)
@@ -279,7 +280,16 @@ void CircuitData::partitionCyclesWithOverlap()
 void CircuitData::cutEmptyCycles(const Layout layout)
 {
 	DOUT("Cutting empty cycles...");
-	
+
+	if (layout.pulses.displayGatesAsPulses)
+	{
+		//TODO: an empty cycle as defined in pulse visualization is a cycle in which no lines for each qubit have a pulse going
+		//TODO: implement checking for the above and mark those cycles as cut
+
+		WOUT("Cycle cutting is not yet implemented for pulse visualization.");
+		return;
+	}
+
 	// Find cuttable ranges...
 	cutCycleRangeIndices = findCuttableEmptyRanges(layout);
 	// ... and cut them.
@@ -294,7 +304,7 @@ void CircuitData::cutEmptyCycles(const Layout layout)
 
 std::vector<EndPoints> CircuitData::findCuttableEmptyRanges(const Layout layout) const
 {
-	DOUT("Checking for empty cycle ranges...");
+	DOUT("Finding cuttable empty cycle ranges...");
 
 	// Calculate the empty cycle ranges.
 	std::vector<EndPoints> ranges;
@@ -329,11 +339,8 @@ std::vector<EndPoints> CircuitData::findCuttableEmptyRanges(const Layout layout)
 	for (const auto& range : ranges)
 	{
 		const int length = range.end - range.start + 1;
-		DOUT("Range from " << range.start << " to " << range.end << " with length " << length << ".");
-
 		if (length >= layout.cycles.emptyCycleThreshold)
 		{
-			DOUT("Found empty cycle range above threshold.");
 			rangesAboveThreshold.push_back(range);
 		}
 	}
@@ -412,6 +419,8 @@ Structure::Structure(const Layout layout, const CircuitData circuitData) :
 
 int Structure::calculateCellHeight(const Layout layout) const
 {
+	DOUT("Calculating cell height...");
+
 	if (layout.pulses.displayGatesAsPulses)
 	{
 		return layout.pulses.pulseRowHeightMicrowave + layout.pulses.pulseRowHeightFlux + layout.pulses.pulseRowHeightReadout;
@@ -424,6 +433,8 @@ int Structure::calculateCellHeight(const Layout layout) const
 
 int Structure::calculateImageWidth(const CircuitData circuitData) const
 {
+	DOUT("Calculating image width...");
+
 	const int amountOfCells = qbitCellPositions.size();
 	const int left = amountOfCells > 0 ? getCellPosition(0, 0, QUANTUM).x0 : 0;
 	const int right = amountOfCells > 0 ? getCellPosition(amountOfCells - 1, 0, QUANTUM).x1 : 0;
@@ -434,6 +445,8 @@ int Structure::calculateImageWidth(const CircuitData circuitData) const
 
 int Structure::calculateImageHeight(const CircuitData circuitData) const
 {
+	DOUT("Calculating image height...");
+	
 	const int rowsFromQuantum = circuitData.amountOfQubits;
 	const int rowsFromClassical = layout.bitLines.showClassicalLines
 		? (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits)
@@ -445,6 +458,8 @@ int Structure::calculateImageHeight(const CircuitData circuitData) const
 
 void Structure::generateCellPositions(const CircuitData circuitData)
 {
+	DOUT("Generating cell positions...");
+
 	// Calculate cell positions.
 	int widthFromCycles = 0;
 	for (int column = 0; column < circuitData.getAmountOfCycles(); column++)
@@ -500,6 +515,8 @@ void Structure::generateCellPositions(const CircuitData circuitData)
 
 void Structure::generateBitLineSegments(const CircuitData circuitData)
 {
+	DOUT("Generating bit line segments...");
+
 	// Calculate the bit line segments.
 	for (int i = 0; i < circuitData.getAmountOfCycles(); i++)
 	{
@@ -513,7 +530,6 @@ void Structure::generateBitLineSegments(const CircuitData circuitData)
 			{
 				const int start = getCellPosition(i, 0, QUANTUM).x0;
 				const int end = getCellPosition(j, 0, QUANTUM).x0;
-				DOUT("segment > range: [" << i << "," << (j - 1) << "], " << "position: [" << start << "," << end << "], cut: " << cut);
 				bitLineSegments.push_back({{start, end}, cut});
 				i = j - 1;
 				break;
@@ -524,7 +540,6 @@ void Structure::generateBitLineSegments(const CircuitData circuitData)
 			{
 				const int start = getCellPosition(i, 0, QUANTUM).x0;
 				const int end = getCellPosition(j, 0, QUANTUM).x1;
-				DOUT("segment > range: [" << i << "," << j << "], " << "position: [" << start << "," << end << "], cut: " << cut);
 				bitLineSegments.push_back({{start, end}, cut});
 				reachedEnd = true;
 			}
@@ -703,6 +718,13 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	{
         DOUT("Drawing cycle edges...");
 		drawCycleEdges(image, layout, circuitData, structure);
+	}
+
+	// Draw the bit line labels if enabled.
+	if (layout.bitLines.drawLabels)
+	{
+		DOUT("Drawing bit line labels...");
+		drawBitLineLabels(image, layout, circuitData, structure);
 	}
 
 	if (layout.pulses.displayGatesAsPulses)
@@ -1376,6 +1398,53 @@ void drawCycleEdges(cimg_library::CImg<unsigned char>& image, const Layout layou
 	}
 }
 
+void drawBitLineLabels(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
+{
+	for (int bitIndex = 0; bitIndex < circuitData.amountOfQubits; bitIndex++)
+	{
+		const std::string label = "q" + std::to_string(bitIndex);
+		const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
+
+		const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
+		const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
+		const int xLabel = structure.getBitLabelsX() + xGap;
+		const int yLabel = structure.getCellPosition(0, bitIndex, QUANTUM).y0 + yGap;
+
+		image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.qBitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
+	}
+
+	if (layout.bitLines.showClassicalLines)
+	{
+		if (layout.bitLines.groupClassicalLines)
+		{
+			const std::string label = "C";
+			const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
+
+			const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
+			const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
+			const int xLabel = structure.getBitLabelsX() + xGap;
+			const int yLabel = structure.getCellPosition(0, 0, CLASSICAL).y0 + yGap;
+
+			image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.cBitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
+		}
+		else
+		{
+			for (int bitIndex = 0; bitIndex < circuitData.amountOfClassicalBits; bitIndex++)
+			{
+				const std::string label = "c" + std::to_string(bitIndex);
+				const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
+
+				const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
+				const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
+				const int xLabel = structure.getBitLabelsX() + xGap;
+				const int yLabel = structure.getCellPosition(0, bitIndex, CLASSICAL).y0 + yGap;
+
+				image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.cBitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
+			}
+		}
+	}
+}
+
 void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, const BitType bitType, const int row, const CircuitData circuitData, const Structure structure)
 {
 	std::array<unsigned char, 3> bitLineColor;
@@ -1411,20 +1480,20 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 		}
 	}
 
-	// Draw the bit line label if enabled.
-	if (layout.bitLines.drawLabels)
-	{
-		const std::string bitTypeText = (bitType == CLASSICAL) ? "c" : "q";
-		std::string label = bitTypeText + std::to_string(row);
-		Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
+	// // Draw the bit line label if enabled.
+	// if (layout.bitLines.drawLabels)
+	// {
+	// 	const std::string bitTypeText = (bitType == CLASSICAL) ? "c" : "q";
+	// 	std::string label = bitTypeText + std::to_string(row);
+	// 	Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
 
-		const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
-		const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
-		const int xLabel = structure.getBitLabelsX() + xGap;
-		const int yLabel = structure.getCellPosition(0, row, bitType).y0 + yGap;
+	// 	const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
+	// 	const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
+	// 	const int xLabel = structure.getBitLabelsX() + xGap;
+	// 	const int yLabel = structure.getCellPosition(0, row, bitType).y0 + yGap;
 
-		image.draw_text(xLabel, yLabel, label.c_str(), bitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
-	}
+	// 	image.draw_text(xLabel, yLabel, label.c_str(), bitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
+	// }
 }
 
 void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
@@ -1479,19 +1548,19 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 	const int yLabel = y - layout.bitLines.groupedClassicalLineGap - 3 - 13;
 	image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.cBitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
 
-	// Draw the bit line label if enabled.
-	if (layout.bitLines.drawLabels)
-	{
-		const std::string label = "C";
-		Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
+	// // Draw the bit line label if enabled.
+	// if (layout.bitLines.drawLabels)
+	// {
+	// 	const std::string label = "C";
+	// 	Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.fontHeight, layout);
 
-		const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
-		const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
-		const int xLabel = structure.getBitLabelsX() + xGap;
-		const int yLabel = structure.getCellPosition(0, 0, CLASSICAL).y0 + yGap;
+	// 	const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
+	// 	const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
+	// 	const int xLabel = structure.getBitLabelsX() + xGap;
+	// 	const int yLabel = structure.getCellPosition(0, 0, CLASSICAL).y0 + yGap;
 
-		image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.cBitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
-	}
+	// 	image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.cBitLabelColor.data(), 0, 1, layout.bitLines.fontHeight);
+	// }
 }
 
 void drawWiggle(cimg_library::CImg<unsigned char>& image, const int x0, const int x1, const int y, const int width, const int height, const std::array<unsigned char, 3> color)
@@ -1505,17 +1574,15 @@ void drawLineSegments(cimg_library::CImg<unsigned char>& image, const Structure 
 {
 	for (const LineSegment& segment : segments)
 	{
+		const int x0 = structure.getCellPosition(segment.range.start, qubitIndex, QUANTUM).x0;
+		const int x1 = structure.getCellPosition(segment.range.end, qubitIndex, QUANTUM).x1;
+		const int y = structure.getCellPosition(0, qubitIndex, QUANTUM).y0 + yOffset;
+
 		switch (segment.type)
 		{
 			case FLAT:
-			{
-				const int x0 = structure.getCellPosition(segment.range.start, qubitIndex, QUANTUM).x0;
-				const int x1 = structure.getCellPosition(segment.range.end, qubitIndex, QUANTUM).x1;
-				const int y = structure.getCellPosition(0, qubitIndex, QUANTUM).y0 + yOffset;
-
 				image.draw_line(x0, y, x1, y, color.data());
-			}
-			break;
+				break;
 
 			case PULSE:
 			{
@@ -1525,7 +1592,13 @@ void drawLineSegments(cimg_library::CImg<unsigned char>& image, const Structure 
 
 			case CUT:
 			{
-				// draw wiggle
+				// drawWiggle(image,
+				// 	cellPosition.x0,
+				// 	cellPosition.x1,
+				// 	cellPosition.y0 + layout.pulses.pulseRowHeightMicrowave / 2,
+				// 	cellPosition.x1 - cellPosition.x0,
+				// 	layout.pulses.pulseRowHeightMicrowave / 8,
+				// 	layout.pulses.pulseColorMicrowave);
 			}
 			break;
 		}
