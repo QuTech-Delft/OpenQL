@@ -9,7 +9,6 @@
 #ifndef QL_PROGRAM_H
 #define QL_PROGRAM_H
 
-#include <compile_options.h>
 #include <platform.h>
 #include <kernel.h>
 

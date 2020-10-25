@@ -26,50 +26,42 @@
  *
  */
 
-
-#ifndef QL_EXCEPTION_H
-#define QL_EXCEPTION_H
+#pragma once
 
 #include <string>            // for string
 #include <cstring>           // for strerror
 #include <exception>         // for exception
 #include <cerrno>            // for errno
 
-namespace ql
-{
-   class exception : public std::exception
-   {
+namespace ql {
 
-	 public:
+class exception : public std::exception {
+public:
 
-	   /**
-	    *   construct a exception with a explanatory message.
-	    *
-	    *   @param message         explanatory message
-	    *   @param system_message  true if system message (from strerror(errno))
-	    *                          should be postfixed to the user provided message
-	    */
-	   exception(const std::string &message, bool system_message = false) throw();
+    /**
+     *   construct a exception with a explanatory message.
+     *
+     *   @param message         explanatory message
+     *   @param system_message  true if system message (from strerror(errno))
+     *                          should be postfixed to the user provided message
+     */
+    exception(const std::string &message, bool system_message = false) noexcept;
 
-	   /**
-	    *   provided just to guarantee that no exceptions are thrown.
-	    */
-	   ~exception() throw();
+    /**
+     *   provided just to guarantee that no exceptions are thrown.
+     */
+    ~exception() noexcept override = default;
 
-	   /**
-	    *   get the exception message
-	    *   @return exception message
-	    */
-	   const char *what() const throw();
+    /**
+     *   get the exception message
+     *   @return exception message
+     */
+    const char *what() const noexcept override;
 
-	 private:
+private:
 
-	   std::string user_message;  // exception message
+    std::string user_message;  // exception message
 
-   }; // class exception
+};
 
 } // namespace ql
-
-#endif // QL_EXCEPTION_H
-
-

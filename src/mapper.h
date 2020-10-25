@@ -20,6 +20,8 @@
 #include "scheduler.h"
 //#include "metrics.h"
 
+namespace ql {
+
 // Note on the use of constructors and Init functions for classes of the mapper
 // -----------------------------------------------------------------------------
 // Almost all classes of the mapper have one or more members that require initialization
@@ -420,7 +422,7 @@ void InitXY()
 	            size_t qi = aqbit["id"];
 	            int qx = aqbit["x"];
 	            int qy = aqbit["y"];
-	    
+
 	            // sanity checks
 	            if ( !(0<=qi && qi<nq) )
 	            {
@@ -442,7 +444,7 @@ void InitXY()
 	            {
 	                FATAL(" qbit in platform topology with id=" << qi << " is configured with y that is not in the range 0..y_size-1 with y_size=" << ny);
 	            }
-	
+
 	            x[qi] = qx;
 	            y[qi] = qy;
 	        }
@@ -478,7 +480,7 @@ void InitNbs()
             DOUT("connectivity is specified by edges section, reading ...");
 	        size_t qs = anedge["src"];
 	        size_t qd = anedge["dst"];
-	
+
 	        // sanity checks
 	        if ( !(0<=qs && qs<nq) )
 	        {
@@ -495,7 +497,7 @@ void InitNbs()
 	                FATAL(" redefinition of edge with src=" << qs << " and dst=" << qd);
 	            }
 	        }
-	
+
 	        nbs[qs].push_back(qd);
             DOUT("connectivity has been stored in nbs map");
 	    }
@@ -1065,7 +1067,7 @@ size_t StartCycleNoRc(ql::gate *g)
 size_t StartCycle(ql::gate *g)
 {
     size_t      startCycle = StartCycleNoRc(g);
-    
+
     auto        mapopt = ql::options::get("mapper");
     if (mapopt == "baserc" || mapopt == "minextendrc")
     {
@@ -1078,7 +1080,7 @@ size_t StartCycle(ql::gate *g)
             {
                 // DOUT(" ... [" << startCycle << "] resources available for " << g->qasm());
                 break;
-            }   
+            }
             else
             {
                 // DOUT(" ... [" << startCycle << "] Busy resource for " << g->qasm());
@@ -1142,7 +1144,7 @@ void Add(ql::gate *g, size_t startCycle)
 // while mapping, several alternatives are evaluated, each of which also has a Past attached,
 // and each of which for most of the parts starts off as a copy of the 'main' Past;
 // but it is in fact a temporary extension of this main Past
-// 
+//
 // Past contains gates of which the schedule might influence a future path selected for mapping binary gates
 // It maintains for each qubit from which cycle on it is free, so that swap insertion
 // can exploit this to hide its overall circuit latency overhead by increasing ILP.
@@ -1305,7 +1307,7 @@ void Schedule()
         cycle[gp] = startCycle; // cycle[gp] is private to this past but gp->cycle is private to gp
         gp->cycle = startCycle; // so gp->cycle gets assigned for each alter' Past and finally definitively for mainPast
         // DOUT("... set " << gp->qasm() << " at cycle " << startCycle);
-    
+
         // insert gate gp in lg, the list of gates, in cycle[gp] order, and inside this order, as late as possible
         //
         // reverse iterate because the insertion is near the end of the list
@@ -1328,7 +1330,7 @@ void Schedule()
         {
             lg.push_front(gp);
         }
-    
+
         // having added it to the main list, remove it from the waiting list
         waitinglg.remove(gp);
     }
@@ -2025,7 +2027,7 @@ void AddSwaps(Past & past, std::string mapselectswapsopt)
             fromSourceQ = toSourceQ;
             numberadded++;
         }
-    
+
         size_t  fromTargetQ;
         size_t  toTargetQ;
         fromTargetQ = fromTarget[0];
@@ -2436,7 +2438,7 @@ private:
     const ql::quantum_platform *platformp;// current platform: topology and gate definitions
     ql::quantum_kernel   *kernelp;  // (copy of) current kernel (class) with free private circuit and methods
                                     // primarily to create gates in Past; Past is part of Mapper and of each Alter
-                                    
+
     size_t          nq;             // number of qubits in the platform, number of real qubits
     size_t          nc;             // number of cregs in the platform, number of classical registers
     size_t          cycle_time;     // length in ns of a single cycle of the platform
@@ -2489,7 +2491,7 @@ void GenShortestPaths(ql::gate* gp, size_t src, size_t tgt, size_t budget, std::
         // found target
         // create a virgin Alter and initialize it to become an empty path
         // add src to this path (so that it becomes a distance 0 path with one qubit, src)
-        // and add the Alter to the result list 
+        // and add the Alter to the result list
         Alter  a;
         a.Init(platformp, kernelp, &grid);
         a.targetgp = gp;
@@ -2724,7 +2726,7 @@ void MapRoutedGate(ql::gate* gp, Past& past)
     // when that new gate is a composite gate, it is immediately decomposed (by gate creation)
     // the resulting gate/expansion (anyhow a sequence of gates) is collected in circ
     ql::circuit circ;   // result of MakeReal
-    past.MakeReal(gp, circ);        
+    past.MakeReal(gp, circ);
     for (auto newgp : circ)
     {
         DOUT(" ... new mapped real gate, about to be added to past: " << newgp->qasm() );
@@ -3091,12 +3093,12 @@ void MapGates(Future& future, Past& past, Past& basePast)
         // generate all variations
         std::list<Alter> la;                // list that will hold all variations, as returned by GenAlters
         GenAlters(lg, la, past);            // gen all possible variations to make gates in lg NN, in current past.v2r mapping
-    
+
         // select best one
         Alter resa;
         SelectAlter(la, resa, future, past, basePast, 0);
                                             // select one according to strategy specified by options; result in resa
-    
+
         // commit to best one
         // add all or just one swap, as described by resa, to THIS past, and schedule them/it in
         CommitAlter(resa, future, past);
@@ -3192,5 +3194,7 @@ void Init(const ql::quantum_platform *p)
 
 
 };  // end class Mapper
+
+} // namespace ql
 
 #endif // ifndef QL_MAPPER_H

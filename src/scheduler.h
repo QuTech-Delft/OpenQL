@@ -74,6 +74,8 @@
 #include "resource_manager.h"
 #include "report.h"
 
+namespace ql {
+
 using namespace std;
 using namespace lemon;
 
@@ -1734,9 +1736,6 @@ public:
         dot = ssdot.str();
     }
 };
-
-namespace ql
-{
 
 // schedule support for program.h::schedule()
 static void schedule_kernel(quantum_kernel& kernel, quantum_platform platform,

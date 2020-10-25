@@ -17,6 +17,8 @@
 #include <version.h>
 #include <options.h>
 
+namespace ql {
+
 /************************************************************************\
 | Generic
 \************************************************************************/
@@ -867,3 +869,5 @@ codegen_cc::tJsonNodeInfo codegen_cc::findSignalDefinition(const json &instructi
     }
     return nodeInfo;
 }
+
+} // namespace ql

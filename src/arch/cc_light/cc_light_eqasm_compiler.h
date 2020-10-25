@@ -9,7 +9,6 @@
 #ifndef QL_CC_LIGHT_EQASM_COMPILER_H
 #define QL_CC_LIGHT_EQASM_COMPILER_H
 
-#include <compile_options.h>
 #include <utils.h>
 #include <platform.h>
 #include <kernel.h>
@@ -321,7 +320,7 @@ public:
         DOUT("adding classical_cc [DONE]");
     }
 
-    instruction_t qasm()
+    instruction_t qasm() const override
     {
         std::string iopers;
         int sz = creg_operands.size();
@@ -347,12 +346,12 @@ public:
             return name + iopers;
     }
 
-    gate_type_t type()
+    gate_type_t type() const override
     {
         return __classical_gate__;
     }
 
-    cmat_t mat()
+    cmat_t mat() const override
     {
         return m;
     }

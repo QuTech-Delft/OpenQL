@@ -5,40 +5,25 @@
  * @date    15/03/2010
  */
 
-#include <exception.h>
+#include "exception.h"
 
-
-/**
- * exception implementation
- */
 namespace ql {
 
-exception::exception(const std::string &message,
-                     bool system_message)
-                     throw() : user_message(message)
-{
-  if (system_message)
-  {
-    user_message.append(": ");
-    user_message.append(strerror(errno));
-  }
+exception::exception(
+    const std::string &message,
+    bool system_message
+) noexcept : user_message(message) {
+    if (system_message) {
+        user_message.append(": ");
+        user_message.append(strerror(errno));
+    }
 }
 
 /**
- * dtor
+ * explanatory message
  */
-
-exception::~exception() throw()
-{
-}
-
-/**
- * explainatory message
- */
-
-const char *exception::what() const throw()
-{
-  return user_message.c_str();
+const char *exception::what() const noexcept {
+    return user_message.c_str();
 }
 
 } // namespace ql

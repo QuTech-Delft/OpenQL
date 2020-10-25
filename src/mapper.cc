@@ -1,5 +1,7 @@
 #include "mapper.h"
 
+namespace ql {
+
 #ifdef INITIALPLACE
 #include <thread>
 #include <mutex>
@@ -690,3 +692,5 @@ void Mapper::Map(ql::quantum_kernel& kernel)
 
     COUT("Mapping kernel " << kernel.name << " [DONE]");
 }   // end Map
+
+} // namespace ql

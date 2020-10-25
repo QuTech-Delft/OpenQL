@@ -5,29 +5,27 @@
  * @brief  OpenQL Compiler
  */
 
-#ifndef QL_COMPILER_H
-#define QL_COMPILER_H
+#pragma once
 
-#include "options.h"
+#include <string>
+
 #include "program.h"
 #include "passmanager.h"
 
-namespace ql
-{
+namespace ql {
 
 /**
  * Quantum compiler class
  */
-class quantum_compiler
-{
+class quantum_compiler {
 public:
 
-    quantum_compiler(std::string name);
+    quantum_compiler(const std::string &name);
 
     void compile(ql::quantum_program*);
-    void addPass(std::string realPassName, std::string symbolicPassName);
-    void addPass(std::string realPassName);
-    void setPassOption(std::string passName, std::string optionName, std::string optionValue);
+    void addPass(const std::string &realPassName, const std::string &symbolicPassName);
+    void addPass(const std::string &realPassName);
+    void setPassOption(const std::string &passName, const std::string &optionName, const std::string &optionValue);
     
 private:
   
@@ -37,6 +35,4 @@ private:
     ql::PassManager       *passManager;
 };
 
-} // ql
-
-#endif //QL_COMPILER_H
+} // namespace ql

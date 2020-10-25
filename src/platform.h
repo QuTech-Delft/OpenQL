@@ -10,9 +10,8 @@
 #include <string>
 #include <tuple>
 
-#include <compile_options.h>
 #include <json.h>
-#include <instruction_map.h>
+#include <hardware_configuration.h>
 
 namespace ql
 {

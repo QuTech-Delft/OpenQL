@@ -4,16 +4,19 @@
  * @author Nader Khammassi
  * @author Hans van Someren
  */
-#ifndef BUFFER_INSERTION_H
-#define BUFFER_INSERTION_H
+
+#pragma once
 
 #include "program.h"
 #include "platform.h"
 
-namespace ql
-{
-    // buffer_delay_insertion pass
-    void insert_buffer_delays(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname);
-}
+namespace ql {
 
-#endif // BUFFER_INSERTION_H
+// buffer_delay_insertion pass
+void insert_buffer_delays(
+    ql::quantum_program* programp,
+    const ql::quantum_platform& platform,
+    const std::string &passname
+);
+
+} // namespace ql

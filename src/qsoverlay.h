@@ -10,6 +10,7 @@
 #include <kernel.h>
 #include <gate.h>
 
+namespace ql {
 
 //Only support for DiCarlo setup atm
 static void write_qsoverlay_program( ql::quantum_program* programp, size_t num_qubits,
@@ -179,3 +180,5 @@ static void write_qsoverlay_program( ql::quantum_program* programp, size_t num_q
     fout.close();
     IOUT("Writing scheduled QSoverlay program [Done]");
 }
+
+} // namespace ql
