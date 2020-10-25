@@ -11,6 +11,7 @@
 #define __attribute__(A) /* do nothing on windows */
 #endif
 
+#include "options.h"
 #include "optimizer.h"
 #include "circuit.h"
 #include "program.h"

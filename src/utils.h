@@ -270,6 +270,9 @@ static size_t MAX_CYCLE = std::numeric_limits<int>::max();
             throw ql::exception(SS2S("Error : " << content), false); \
         }
 
+#define ASSERT(condition)   { if (!(condition)) { FATAL("assert " #condition " failed in file " __FILE__ " at line " << __LINE__); } }
+
+
 // get the number of elements in an array
 #define ELEM_CNT(x) (sizeof(x)/sizeof(x[0]))
 

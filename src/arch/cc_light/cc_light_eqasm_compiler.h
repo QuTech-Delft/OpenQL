@@ -1431,7 +1431,7 @@ private:
         size_t count =  platform.hardware_settings["qubit_number"];
 
         // want to ignore unused qubits below
-        MapperAssert (programp->kernels.size() <= 1);
+        ASSERT (programp->kernels.size() <= 1);
         std::vector<size_t> check_usecount;
         check_usecount.resize(count, 0);
 
