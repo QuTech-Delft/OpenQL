@@ -40,7 +40,7 @@ void creg::print() const {
     COUT("creg with id: " << id);
 }
 
-operation::operation(creg& l, std::string op, creg& r) {
+operation::operation(const creg &l, const std::string &op, const creg &r) {
     operands.push_back(new ql::creg(l));
     operands.push_back(new ql::creg(r));
     if (op == "+") {
@@ -89,14 +89,14 @@ operation::operation(creg& l, std::string op, creg& r) {
 }
 
 // used for assign
-operation::operation(creg &l) {
+operation::operation(const creg &l) {
     operation_name = "mov";
     operation_type = ql::operation_type_t::ARITHMATIC;
     operands.push_back(new ql::creg(l));
 }
 
 // used for initializing with an imm
-operation::operation(cval &v) {
+operation::operation(const cval &v) {
     operation_name = "ldi";
     operation_type = ql::operation_type_t::ARITHMATIC;
     operands.push_back(new ql::cval(v));
@@ -109,7 +109,7 @@ operation::operation(int val) {
     operands.push_back(new ql::cval(val));
 }
 
-operation::operation(std::string op, creg &r) {
+operation::operation(const std::string &op, const creg &r) {
     if (op == "~") {
         operation_name = "not";
         operation_type = ql::operation_type_t::BITWISE;
@@ -120,7 +120,7 @@ operation::operation(std::string op, creg &r) {
     }
 }
 
-classical::classical(creg &dest, operation &oper) {
+classical::classical(const creg &dest, const operation &oper) {
     DOUT("Classical gate constructor with destination for "
              << oper.operation_name);
     name = oper.operation_name;

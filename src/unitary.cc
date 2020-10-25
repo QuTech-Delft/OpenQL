@@ -28,7 +28,7 @@ unitary::unitary() : name(""), is_decomposed(false) {}
 unitary::unitary(std::string name, std::vector<std::complex<double>> array) :
 name(name), array(array), is_decomposed(false) {}
 
-double unitary::size() {
+double unitary::size() const {
     // JvS: Note that the original unitary::size() used
     // Eigen::Matrix::size() if the array is empty. However, if the array
     // is empty, _matrix is never initialized beyond its default ctor,

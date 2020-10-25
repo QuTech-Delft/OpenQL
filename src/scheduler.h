@@ -66,6 +66,7 @@
 #include <lemon/dijkstra.h>
 #include <lemon/connectivity.h>
 
+#include "options.h"
 #include "utils.h"
 #include "gate.h"
 #include "kernel.h"

@@ -15,6 +15,7 @@
 #include <kernel.h>
 #include <platform.h>
 #include <circuit.h>
+#include <ir.h>
 
 #include <string>
 #include <vector>

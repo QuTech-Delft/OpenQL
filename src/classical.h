@@ -55,18 +55,18 @@ public:
     std::vector<coperand*> operands;
 
     operation() = default;
-    operation(creg& l, std::string op, creg& r);
+    operation(const creg &l, const std::string &op, const creg &r);
 
     // used for assign
-    operation(creg& l);
+    operation(const creg &l);
 
     // used for initializing with an imm
-    operation(cval & v);
+    operation(const cval &v);
 
     // used for initializing with an imm
     operation(int val);
 
-    operation(std::string op, creg& r);
+    operation(const std::string &op, const creg &r);
 };
 
 class classical : public gate {
@@ -74,7 +74,7 @@ public:
     // int imm_value;
     cmat_t m;
 
-    classical(creg& dest, operation &oper);
+    classical(const creg &dest, const operation &oper);
     classical(const std::string &operation);
     instruction_t qasm() const override;
     gate_type_t type() const override;

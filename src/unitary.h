@@ -35,7 +35,7 @@ public:
 
     unitary();
     unitary(std::string name, std::vector<std::complex<double>> array);
-    double size();
+    double size() const;
     void decompose();
     static bool is_decompose_support_enabled();
 };

@@ -10,6 +10,8 @@
 
 #include "passes.h"
 #include "program.h"
+#include <string>
+#include <list>
 
 namespace ql
 {

@@ -11,6 +11,7 @@
 #include "circuit.h"
 #include "report.h"
 #include "kernel.h"
+#include "options.h"
 
 namespace ql {
 

@@ -8,6 +8,7 @@
 #include "circuit.h"
 #include "kernel.h"
 #include "decompose_toffoli.h"
+#include "options.h"
 
 namespace ql {
 

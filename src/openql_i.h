@@ -22,6 +22,7 @@
 #include <unitary.h>
 
 #include "compiler.h"
+#include "options.h"
 
 
 static std::string get_version()

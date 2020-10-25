@@ -9,6 +9,7 @@
 #include "circuit.h"
 #include "kernel.h"
 #include "optimizer.h"
+#include "options.h"
 
 
 namespace ql
