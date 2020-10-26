@@ -5,39 +5,33 @@
  * @brief  OpenQL Pass Manager
  */
 
-#ifndef QL_PASSMANAGER_H
-#define QL_PASSMANAGER_H
+#pragma once
 
 #include "passes.h"
 #include "program.h"
 #include <string>
 #include <list>
 
-namespace ql
-{
+namespace ql {
 
 /**
  * Pass manager class that contains all compiler passes to be executed
  */
-class PassManager
-{
+class PassManager {
 public:
-    PassManager(std::string n);
+    PassManager(const std::string &n);
 
-    void compile(ql::quantum_program*);
-    void addPassNamed(std::string realPassName, std::string symbolicPassName);
-    AbstractPass* createPass(std::string passName, std::string aliasName);
-    AbstractPass* findPass(std::string passName);
-    void setPassOptionAll(std::string optionName, std::string optionValue);
+    void compile(ql::quantum_program *program) const;
+    void addPassNamed(const std::string &realPassName, const std::string &symbolicPassName);
+    static AbstractPass *createPass(const std::string &passName, const std::string &aliasName);
+    AbstractPass *findPass(const std::string &passName);
+    void setPassOptionAll(const std::string &optionName, const std::string &optionValue);
 
 private: 
-    void addPass (AbstractPass *pass);
+    void addPass(AbstractPass *pass);
     
-    std::string           name;
-    std::list <class AbstractPass*> passes;
-
+    std::string name;
+    std::list<AbstractPass*> passes;
 };
 
-} // ql
-
-#endif //QL_PASSMANAGER_H
+} // namespace ql
