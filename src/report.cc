@@ -390,8 +390,8 @@ void get_kernel_statistics(
 
     size_t  circuit_latency = get_circuit_latency(k.c, platform);
     *ofs += comment_prefix; *ofs += "kernel: " ; *ofs += k.name ; *ofs += "\n";
-    *ofs ; *ofs += comment_prefix ; *ofs += "----- circuit_latency: " ; *ofs += std::to_string(circuit_latency) ; *ofs += "\n";
-    *ofs ; *ofs += comment_prefix ; *ofs += "----- quantum gates: " ; *ofs += std::to_string(get_quantum_gates_count(k.c, platform)) ; *ofs += "\n";
+    *ofs += comment_prefix ; *ofs += "----- circuit_latency: " ; *ofs += std::to_string(circuit_latency) ; *ofs += "\n";
+    *ofs += comment_prefix ; *ofs += "----- quantum gates: " ; *ofs += std::to_string(get_quantum_gates_count(k.c, platform)) ; *ofs += "\n";
     *ofs += comment_prefix; *ofs += "----- non single qubit gates: " ; *ofs += std::to_string(get_non_single_qubit_quantum_gates_count(k.c, platform)) ; *ofs += "\n";
     *ofs += comment_prefix; *ofs +=  "----- classical operations: "; *ofs += std::to_string(get_classical_operations_count(k.c, platform)); *ofs +=  "\n";
     *ofs += comment_prefix; *ofs += "----- qubits used: "; *ofs += std::to_string(qubits_used); *ofs += "\n";

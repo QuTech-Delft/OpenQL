@@ -132,8 +132,6 @@ AbstractPass *PassManager::createPass(const std::string &passName, const std::st
  */
 AbstractPass* PassManager::findPass(const std::string &passName) {
     DOUT("In PassManager::findPass");
-    AbstractPass *pass;
-    bool passFound = false;
 
     for (auto pass : passes) {
         if (pass->getPassName() == passName) {

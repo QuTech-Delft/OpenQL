@@ -846,7 +846,7 @@ void Past::Schedule() {
 
     while (!waitinglg.empty()) {
         size_t      startCycle = MAX_CYCLE;
-        gate_p      gp;
+        gate_p      gp = nullptr;
 
         // find the gate with the minimum startCycle
         //

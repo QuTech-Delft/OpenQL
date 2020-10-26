@@ -34,7 +34,7 @@ void codegen_cc::init(const ql::quantum_platform &platform)
     std::string map_input_file = ql::options::get("backend_cc_map_input_file");
     if(map_input_file != "") {
         DOUT("loading map_input_file='" << map_input_file << "'");
-        json map = ql::load_json(map_input_file);
+        json map = load_json(map_input_file);
         codewordTable = map["codeword_table"];      // FIXME: use json_get
         mapPreloaded = true;
     }
@@ -459,7 +459,7 @@ void codegen_cc::custom_gate(
         if(operandIdx >= qops.size()) {
             FATAL("Error in JSON definition of instruction '" << iname <<
                   "': illegal operand number " << operandIdx <<
-                  "' exceeds expected maximum of " << qops.size()-1)
+                  "' exceeds expected maximum of " << qops.size()-1);
         }
         size_t qubit = qops[operandIdx];
 

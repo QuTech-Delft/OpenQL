@@ -6,21 +6,18 @@
  * @brief  unitary matrix (decomposition) implementation
  */
 
-#ifndef _UNITARY_H
-#define _UNITARY_H
+#pragma once
 
 #include <complex>
 #include <string>
 
-#include <utils.h>
-#include <gate.h>
-#include <exception.h>
+#include "utils.h"
+#include "gate.h"
+#include "exception.h"
 
-namespace ql
-{
+namespace ql {
 
-class unitary
-{
+class unitary {
 public:
     std::string name;
     std::vector<std::complex<double>> array;
@@ -33,12 +30,10 @@ public:
     std::vector<double> instructionlist;
 
     unitary();
-    unitary(std::string name, std::vector<std::complex<double>> array);
+    unitary(const std::string &name, const std::vector<std::complex<double>> &array);
     double size() const;
     void decompose();
     static bool is_decompose_support_enabled();
 };
 
-}
-
-#endif // _UNITARY_H
+} // namespace ql
