@@ -1298,14 +1298,14 @@ public:
         std::string unique_name = programp->unique_name;
         std::string qisafname( ql::options::get("output_dir") + "/" + unique_name + ".qisa");
         IOUT("Writing CC-Light QISA to " << qisafname);
-        fout.open( qisafname, ios::binary);
+        fout.open( qisafname, std::ios::binary);
         if ( fout.fail() )
         {
             EOUT("opening file " << qisafname << std::endl
                      << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
             return;
         }
-        fout << ssqisa.str() << endl;
+        fout << ssqisa.str() << std::endl;
         fout.close();
         // end qisa_generation pass
     }
@@ -1316,11 +1316,11 @@ private:
     void write_quantumsim_program( quantum_program* programp, size_t num_qubits, const ql::quantum_platform & platform, std::string suffix)
     {
         IOUT("Writing scheduled Quantumsim program");
-        ofstream fout;
-        string qfname( ql::options::get("output_dir") + "/" + "quantumsim_" + programp->unique_name + "_" + suffix + ".py");
+        std::ofstream fout;
+        std::string qfname( ql::options::get("output_dir") + "/" + "quantumsim_" + programp->unique_name + "_" + suffix + ".py");
         DOUT("Writing scheduled Quantumsim program to " << qfname);
         IOUT("Writing scheduled Quantumsim program to " << qfname);
-        fout.open( qfname, ios::binary);
+        fout.open( qfname, std::ios::binary);
         if ( fout.fail() )
         {
             EOUT("opening file " << qfname << std::endl
@@ -1335,7 +1335,7 @@ private:
              << "from quantumsim.circuit import Circuit\n"
              << "from quantumsim.circuit import uniform_noisy_sampler\n"
              << "from quantumsim.circuit import ButterflyGate\n"
-             << endl;
+             << std::endl;
 
         fout << "from quantumsim.circuit import IdlingGate as i\n"
              << "from quantumsim.circuit import RotateY as ry\n"
@@ -1396,7 +1396,7 @@ private:
              << "\n"
              << "def prepz(q, time):\n"
              << "    return ResetGate(q, time, state=0)\n\n"
-             << endl;
+             << std::endl;
 
         fout << "\n# create a circuit\n";
         fout << "def circuit_generated(t1=np.inf, t2=np.inf, dephasing_axis=None, dephasing_angle=None, dephase_var=0, readout_error=0.0) :\n";
@@ -1548,7 +1548,7 @@ private:
                                         ssqs << "\"q" << *opit <<"\", ";
                                     ssqs << "\"q" << operands.back()<<"\"";
                                 }
-                                ssqs << ", time=" << ((bcycle - 1)*platform.cycle_time) + (duration/2) << ", dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle))" << endl;
+                                ssqs << ", time=" << ((bcycle - 1)*platform.cycle_time) + (duration/2) << ", dephasing_axis=dephasing_axis, dephasing_angle=dephasing_angle))" << std::endl;
                             }
                             else if( iname == "cz")
                             {
@@ -1561,7 +1561,7 @@ private:
                                         ssqs << "\"q" << *opit <<"\", ";
                                     ssqs << "\"q" << operands.back()<<"\"";
                                 }
-                                ssqs << ", time=" << ((bcycle - 1)*platform.cycle_time) + (duration/2) << ", dephase_var=dephase_var))" << endl;
+                                ssqs << ", time=" << ((bcycle - 1)*platform.cycle_time) + (duration/2) << ", dephase_var=dephase_var))" << std::endl;
                             }
                             else
                             {
@@ -1574,7 +1574,7 @@ private:
                                         ssqs << "\"q" << *opit <<"\", ";
                                     ssqs << "\"q" << operands.back()<<"\"";
                                 }
-                                ssqs << ", time=" << ((bcycle - 1)*platform.cycle_time) + (duration/2) << "))" << endl;
+                                ssqs << ", time=" << ((bcycle - 1)*platform.cycle_time) + (duration/2) << "))" << std::endl;
                             }
                         }
                     }

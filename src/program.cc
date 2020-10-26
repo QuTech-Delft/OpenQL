@@ -433,7 +433,7 @@ void quantum_program::print_interaction_matrix() const {
 
     for (auto k : kernels) {
         InteractionMatrix imat( k.get_circuit(), qubit_count);
-        string mstr = imat.getString();
+        std::string mstr = imat.getString();
         std::cout << mstr << std::endl;
     }
 }
@@ -441,9 +441,9 @@ void quantum_program::print_interaction_matrix() const {
 void quantum_program::write_interaction_matrix() const {
     for (auto k : kernels) {
         InteractionMatrix imat( k.get_circuit(), qubit_count);
-        string mstr = imat.getString();
+        std::string mstr = imat.getString();
 
-        string fname = ql::options::get("output_dir") + "/" + k.get_name() + "InteractionMatrix.dat";
+        std::string fname = ql::options::get("output_dir") + "/" + k.get_name() + "InteractionMatrix.dat";
         IOUT("writing interaction matrix to '" << fname << "' ...");
         ql::utils::write_file(fname, mstr);
     }
