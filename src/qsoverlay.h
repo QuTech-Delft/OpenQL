@@ -81,7 +81,7 @@ static void write_qsoverlay_program( ql::quantum_program* programp, size_t num_q
         {"ym90", "-np.pi/2"},
     };
 
-    if (not compiled)
+    if (!compiled)
     {
         gate_map["cnot"] = "CNOT";
         // gate_map["t"] = "RZ";
@@ -148,7 +148,7 @@ static void write_qsoverlay_program( ql::quantum_program* programp, size_t num_q
 
 
         //Add angles for the gates that require it
-        if (qs_name == "RX" or qs_name == "RY" or qs_name == "t" or qs_name == "tdag")
+        if (qs_name == "RX" || qs_name == "RY" || qs_name == "t" || qs_name == "tdag")
             fout << ", angle = " << angles[gate->name];
 
 

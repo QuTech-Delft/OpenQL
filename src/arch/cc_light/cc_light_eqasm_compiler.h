@@ -1536,8 +1536,8 @@ private:
                                     << ")\n";
 
                             }
-                            else if( iname == "y90" or iname == "ym90" or iname == "y" or iname == "x" or
-                                iname == "x90" or iname == "xm90")
+                            else if( iname == "y90" || iname == "ym90" || iname == "y" || iname == "x" ||
+                                iname == "x90" || iname == "xm90")
                             {
                                 DOUT("... adding gates, another gate");
                                 ssqs <<  "    c.add_gate("<< iname << "(" ;
