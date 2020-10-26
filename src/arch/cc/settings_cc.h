@@ -37,7 +37,10 @@ public: // types
         tInstrumentInfo ii;
         std::string refControlMode;
         json controlMode;           // FIXME: pointer
-        size_t controlModeGroupCnt;
+        size_t controlModeGroupCnt; // number of groups in key 'control_bits' of effective control mode
+#if OPT_CROSSCHECK_INSTRUMENT_DEF
+        size_t controlModeGroupSize;// the size (#channels) of the effective control mode group
+#endif
     } tInstrumentControl;           // information from key 'instruments/ref_control_mode'
 
     typedef struct {
