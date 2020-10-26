@@ -17,9 +17,6 @@
 namespace ql { namespace utils { namespace logger {
     log_level_t LOG_LEVEL;
 }}}
-namespace ql { namespace options {
-    ql::Options ql_options("OpenQL Options");
-}}
 
 namespace ql
 {
