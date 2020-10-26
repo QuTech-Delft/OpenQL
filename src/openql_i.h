@@ -6,20 +6,9 @@
 
 #pragma once
 
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <algorithm>
-#include <sstream>
-#include <cassert>
-#include <time.h>
-#include <complex>
-
-#include "version.h"
 #include "openql.h"
 #include "classical.h"
 #include "unitary.h"
-
 #include "compiler.h"
 #include "options.h"
 

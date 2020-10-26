@@ -1,5 +1,7 @@
 #include "openql_i.h"
 
+#include "version.h"
+
 std::string get_version() {
     return OPENQL_VERSION_STRING;
 }
