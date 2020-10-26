@@ -275,7 +275,7 @@ public:
         DOUT("...... ivalue= " << ivalue);
 
         // DOUT("adding classical_cc " << operation);
-        str::lower_case(operation);
+        operation = utils::to_lower(operation);
         name=operation;
         duration = 20;
         creg_operands=opers;
@@ -1154,8 +1154,7 @@ public:
         DOUT("decomposing instructions...");
         for( auto ins : kernel.c )
         {
-            auto & iname =  ins->name;
-            str::lower_case(iname);
+            auto iname = utils::to_lower(ins->name);
             DOUT("decomposing instruction " << iname << "...");
             auto & icopers = ins->creg_operands;
             auto & iqopers = ins->operands;

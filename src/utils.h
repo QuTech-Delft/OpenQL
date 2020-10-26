@@ -19,7 +19,6 @@
 #define OPENQL_DECLSPEC
 #endif
 
-#include "str.h"
 #include <json.h>
 #include <exception.h>
 
@@ -63,19 +62,32 @@ static size_t MAX_CYCLE = std::numeric_limits<int>::max();
             #endif
         }
 
+        inline std::string to_lower(std::string str) {
+            std::transform(
+                str.begin(), str.end(), str.begin(),
+                [](unsigned char c){ return std::tolower(c); }
+            );
+            return str;
+        }
+
         /**
          * @param str
          *    string to be processed
-         * @param seq
+         * @param from
          *    string to be replaced
-         * @param rep
-         *    string used to replace seq
+         * @param to
+         *    string used to replace from
          * @brief
-         *    replace recursively seq by rep in str
+         *    replace recursively from by to in str
          */
-        inline void replace_all(std::string &str, std::string seq, std::string rep)
-        {
-            str::replace_all(str,seq,rep);
+        inline std::string replace_all(std::string str, const std::string &from, const std::string &to) {
+            // https://stackoverflow.com/questions/2896600/how-to-replace-all-occurrences-of-a-character-in-string
+            size_t start_pos = 0;
+            while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+                str.replace(start_pos, from.length(), to);
+                start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+            }
+            return str;
         }
 
         // from: https://stackoverflow.com/questions/5878775/how-to-find-and-replace-string
@@ -102,25 +114,6 @@ static size_t MAX_CYCLE = std::numeric_limits<int>::max();
         // from https://stackoverflow.com/questions/9146395/reset-c-int-array-to-zero-the-fastest-way
         template<typename T, size_t SIZE> inline void zero(T(&arr)[SIZE]){
             memset(arr, 0, SIZE*sizeof(T));
-        }
-
-        /**
-         * string starts with " and end with "
-         * return the content of the string between the commas
-         */
-        inline bool format_string(std::string& s)
-        {
-            replace_all(s,"\\n","\n");
-            size_t pf = s.find("\"");
-            if (pf == std::string::npos)
-                return false;
-            size_t ps = s.find_last_of("\"");
-            if (ps == std::string::npos)
-                return false;
-            if (ps == pf)
-                return false;
-            s = s.substr(pf+1,ps-pf-1);
-            return true;
         }
 
         /**
@@ -318,7 +311,7 @@ static json load_json(std::string file_name) {
                     if (n != std::string::npos) line.erase(n);
                     if (e.byte >= absPos && e.byte < absPos + line.size()) {
                         unsigned int relPos = e.byte - absPos;
-                        str::replace_all(line, "\t", " "); // make a TAB take one position
+                        line = utils::replace_all(line, "\t", " "); // make a TAB take one position
                         FATAL(
                             "in line " << lineNr
                                        << " at position " << relPos << ":" << std::endl

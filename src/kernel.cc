@@ -791,8 +791,7 @@ bool quantum_kernel::gate_nonfatal(
     // if not, check if a default gate is available
     // if not, then error
 
-    std::string gname_lower = gname;
-    str::lower_case(gname_lower);
+    auto gname_lower = utils::to_lower(gname);
     DOUT("Adding gate : " << gname_lower << " with " << ql::utils::to_string(qubits, "qubits"));
 
     // specialized composite gate check

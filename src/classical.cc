@@ -1,7 +1,6 @@
 #include "classical.h"
 
 #include "utils.h"
-#include "str.h"
 #include "exception.h"
 
 namespace ql {
@@ -139,8 +138,7 @@ classical::classical(const creg &dest, const operation &oper) {
 
 classical::classical(const std::string &operation) {
     DOUT("Classical gate constructor for " << operation);
-    auto operation_lower = operation;
-    str::lower_case(operation_lower);
+    auto operation_lower = utils::to_lower(operation);
     if ((operation_lower == "nop")) {
         name = operation_lower;
         duration = 20;

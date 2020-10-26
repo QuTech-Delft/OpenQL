@@ -1,5 +1,7 @@
 #include "gate.h"
 
+#include <cctype>
+
 namespace ql {
 
 identity::identity(size_t q) : m(identity_c) {
@@ -600,7 +602,7 @@ bool custom_gate::is_qubit_id(const std::string &str) {
     }
     size_t l = str.length();
     for (size_t i = 1; i < l; ++i) {
-        if (!str::is_digit(str[i])) {
+        if (!std::isdigit(str[i])) {
             return false;
         }
     }

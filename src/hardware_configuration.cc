@@ -12,7 +12,7 @@ static const std::regex multiple_space_pattern("(\\s)+");
  * the unnecessary spaces.
  */
 static std::string sanitize_instruction_name(std::string name) {
-    str::lower_case(name);
+    name = utils::to_lower(name);
     name = std::regex_replace(name, trim_pattern, "");
     name = std::regex_replace(name, multiple_space_pattern, " ");
     return name;

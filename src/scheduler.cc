@@ -1397,6 +1397,134 @@ void Scheduler::get_dot(std::string &dot) {
     dot = ssdot.str();
 }
 
+// schedule support for program.h::schedule()
+void schedule_kernel(
+    quantum_kernel &kernel,
+    const quantum_platform &platform,
+    std::string &dot,
+    std::string &sched_dot
+) {
+    std::string scheduler = options::get("scheduler");
+    std::string scheduler_uniform = options::get("scheduler_uniform");
 
+    IOUT(scheduler << " scheduling the quantum kernel '" << kernel.name << "'...");
+
+    Scheduler sched;
+    sched.init(kernel.c, platform, kernel.qubit_count, kernel.creg_count);
+
+    if (options::get("print_dot_graphs") == "yes") {
+        sched.get_dot(dot);
+    }
+
+    if (scheduler_uniform == "yes") {
+        sched.schedule_alap_uniform(); // result in current kernel's circuit (k.c)
+    } else if (scheduler == "ASAP") {
+        sched.schedule_asap(sched_dot); // result in current kernel's circuit (k.c)
+    } else if (scheduler == "ALAP") {
+        sched.schedule_alap(sched_dot); // result in current kernel's circuit (k.c)
+    } else {
+        FATAL("Not supported scheduler option: scheduler=" << scheduler);
+    }
+    DOUT(scheduler << " scheduling the quantum kernel '" << kernel.name << "' DONE");
+    kernel.cycles_valid = true;
+}
+
+/*
+ * main entry to the non resource-constrained scheduler
+ */
+void schedule(
+    quantum_program *programp,
+    const quantum_platform &platform,
+    const std::string &passname
+) {
+    if (options::get("prescheduler") == "yes") {
+        report_statistics(programp, platform, "in", passname, "# ");
+        report_qasm(programp, platform, "in", passname);
+
+        IOUT("scheduling the quantum program");
+        for (auto &k : programp->kernels) {
+            std::string dot;
+            std::string kernel_sched_dot;
+            schedule_kernel(k, platform, dot, kernel_sched_dot);
+
+            if (options::get("print_dot_graphs") == "yes") {
+                std::string fname;
+                fname = options::get("output_dir") + "/" + k.get_name() + "_dependence_graph.dot";
+                IOUT("writing scheduled dot to '" << fname << "' ...");
+                utils::write_file(fname, dot);
+
+                std::string scheduler_opt = options::get("scheduler");
+                fname = options::get("output_dir") + "/" + k.get_name() + scheduler_opt + "_scheduled.dot";
+                IOUT("writing scheduled dot to '" << fname << "' ...");
+                utils::write_file(fname, kernel_sched_dot);
+            }
+        }
+
+        report_statistics(programp, platform, "out", passname, "# ");
+        report_qasm(programp, platform, "out", passname);
+    }
+}
+
+void rcschedule_kernel(
+    quantum_kernel &kernel,
+    const quantum_platform &platform,
+    std::string &dot,
+    size_t nqubits,
+    size_t ncreg
+) {
+    IOUT("Resource constraint scheduling ...");
+
+    std::string schedopt = options::get("scheduler");
+    if (schedopt == "ASAP") {
+        Scheduler sched;
+        sched.init(kernel.c, platform, nqubits, ncreg);
+
+        arch::resource_manager_t rm(platform, forward_scheduling);
+        sched.schedule_asap(rm, platform, dot);
+    } else if (schedopt == "ALAP") {
+        Scheduler sched;
+        sched.init(kernel.c, platform, nqubits, ncreg);
+
+        arch::resource_manager_t rm(platform, backward_scheduling);
+        sched.schedule_alap(rm, platform, dot);
+    } else {
+        FATAL("Not supported scheduler option: scheduler=" << schedopt);
+    }
+
+    IOUT("Resource constraint scheduling [Done].");
+}
+
+/*
+ * main entry point of the rcscheduler
+ */
+void rcschedule(
+    quantum_program *programp,
+    const quantum_platform &platform,
+    const std::string &passname
+) {
+    report_statistics(programp, platform, "in", passname, "# ");
+    report_qasm(programp, platform, "in", passname);
+
+    for (auto &kernel : programp->kernels) {
+        IOUT("Scheduling kernel: " << kernel.name);
+        if (!kernel.c.empty()) {
+            auto num_creg = kernel.creg_count;
+            std::string sched_dot;
+
+            rcschedule_kernel(kernel, platform, sched_dot, platform.qubit_number, num_creg);
+            kernel.cycles_valid = true; // FIXME HvS move this back into call to right after sort_cycle
+
+            if (options::get("print_dot_graphs") == "yes") {
+                std::stringstream fname;
+                fname << options::get("output_dir") << "/" << kernel.name << "_" << passname << ".dot";
+                IOUT("writing " << passname << " dependence graph dot file to '" << fname.str() << "' ...");
+                utils::write_file(fname.str(), sched_dot);
+            }
+        }
+    }
+
+    report_statistics(programp, platform, "out", passname, "# ");
+    report_qasm(programp, platform, "out", passname);
+}
 
 } // namespace ql

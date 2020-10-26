@@ -13,7 +13,6 @@
 #include <string>
 
 #include <utils.h>
-#include <str.h>
 #include <gate.h>
 #include <exception.h>
 
