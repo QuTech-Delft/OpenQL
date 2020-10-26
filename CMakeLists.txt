@@ -190,6 +190,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/options.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_eqasm_compiler.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utils.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/qsoverlay.cc"
 )
 
 # This definition is used to define OPENQL_DECLSPEC for __declspec. More info:
