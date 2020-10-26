@@ -185,6 +185,8 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/interactionMatrix.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ir.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/kernel.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/metrics.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/openql_i.cc"
 )
 
 # This definition is used to define OPENQL_DECLSPEC for __declspec. More info:
