@@ -254,6 +254,9 @@ void Grid::InitXY() {
         if (platformp->topology.count("qubits") == 0) {
             FATAL("Regular configuration doesn't specify qubits and their coordinates");
         } else {
+            if (nq != platformp->topology["qubits"].size()) {
+                FATAL("Mismatch between platform qubit number and qubit coordinate list");
+            }
             for (auto &aqbit : platformp->topology["qubits"]) {
                 size_t qi = aqbit["id"];
                 int qx = aqbit["x"];
