@@ -109,21 +109,21 @@ public:
 
     // core index from qubit index
     // when multi-core assumes full and uniform core connectivity
-    size_t CoreOf(size_t qi);
+    size_t CoreOf(size_t qi) const;
 
     // inter-core hop from qs to qt?
-    bool IsInterCoreHop(size_t qs, size_t qt);
+    bool IsInterCoreHop(size_t qs, size_t qt) const;
 
     // distance between two qubits
     // formulae for convex (hole free) topologies with underlying grid and with bidirectional edges:
     //      gf_cross:   std::max( std::abs( x[to_realqi] - x[from_realqi] ), std::abs( y[to_realqi] - y[from_realqi] ))
     //      gf_plus:    std::abs( x[to_realqi] - x[from_realqi] ) + std::abs( y[to_realqi] - y[from_realqi] )
     // when the neighbor relation is defined (topology.edges in config file), Floyd-Warshall is used, which currently is always
-    size_t Distance(size_t from_realqi, size_t to_realqi);
+    size_t Distance(size_t from_realqi, size_t to_realqi) const;
 
     // coredistance between two qubits
     // when multi-core assumes full and uniform core connectivity
-    size_t CoreDistance(size_t from_realqi, size_t to_realqi);
+    size_t CoreDistance(size_t from_realqi, size_t to_realqi) const;
 
     // minimum number of hops between two qubits is always >= distance(from, to)
     // and inside one core (or without multi-core) the minimum number of hops == distance
@@ -136,21 +136,21 @@ public:
     // we assume below that a valid path exists with distance+1 hops;
     // this fails when not all qubits in a core support connections to all other cores;
     // see the check in InitNbs
-    size_t MinHops(size_t from_realqi, size_t to_realqi);
+    size_t MinHops(size_t from_realqi, size_t to_realqi) const;
 
     // return clockwise angle around (cx,cy) of (x,y) wrt vertical y axis with angle 0 at 12:00, 0<=angle<2*pi
-    double Angle(int cx, int cy, int x, int y);
+    double Angle(int cx, int cy, int x, int y) const;
 
     // rotate neighbors list such that largest angle difference between adjacent elements is behind back;
     // this is needed when a given subset of variations from a node is wanted (mappathselect==borders);
     // and this can only be computed when there is an underlying x/y grid (so not for form==gf_irregular)
-    void Normalize(size_t src, neighbors_t &nbl);
+    void Normalize(size_t src, neighbors_t &nbl) const;
 
     // Floyd-Warshall dist[i][j] = shortest distances between all nq qubits i and j
     void ComputeDist();
 
-    void DPRINTGrid();
-    void PrintGrid();
+    void DPRINTGrid() const;
+    void PrintGrid() const;
 
     // init multi-core attributes
     void InitCores();
@@ -229,8 +229,8 @@ public:
     // map real qubit to the virtual qubit index that is mapped to it (i.e. backward map);
     // when none, return UNDEFINED_QUBIT;
     // a second vector next to v2rMap (i.e. an r2vMap) would speed this up;
-    size_t GetVirt(size_t r);
-    realstate_t GetRs(size_t q);
+    size_t GetVirt(size_t r) const;
+    realstate_t GetRs(size_t q) const;
     void SetRs(size_t q, realstate_t rsvalue);
 
     // expand to desired size
@@ -246,7 +246,8 @@ public:
     void Init(size_t n);
 
     // map virtual qubit index to real qubit index
-    size_t& operator[] (size_t v);
+    size_t &operator[](size_t v);
+    const size_t &operator[](size_t v) const;
 
     // allocate a new real qubit for an unmapped virtual qubit v (i.e. v2rMap[v] == UNDEFINED_QUBIT);
     // note that this may consult the grid or future gates to find a best real
@@ -259,15 +260,15 @@ public:
     // update v2r accordingly
     void Swap(size_t r0, size_t r1);
 
-    void DPRINTReal(size_t r);
-    void PrintReal(size_t r);
-    void PrintVirt(size_t v);
-    void DPRINTReal(std::string s, size_t r0, size_t r1);
-    void PrintReal(std::string s, size_t r0, size_t r1);
-    void DPRINT(std::string s);
-    void Print(std::string s);
-    void Export(std::vector<size_t>& kv2rMap);
-    void Export(std::vector<int>& krs);
+    void DPRINTReal(size_t r) const;
+    void PrintReal(size_t r) const;
+    void PrintVirt(size_t v) const;
+    void DPRINTReal(const std::string &s, size_t r0, size_t r1) const;
+    void PrintReal(const std::string &s, size_t r0, size_t r1) const;
+    void DPRINT(const std::string &s) const;
+    void Print(const std::string &s) const;
+    void Export(std::vector<size_t> &kv2rMap) const;
+    void Export(std::vector<int> &krs) const;
 
 };
 
@@ -302,6 +303,7 @@ private:
 
     // access free cycle value of qubit i
     size_t &operator[](size_t i);
+    const size_t &operator[](size_t i) const;
 
 public:
 
@@ -315,32 +317,35 @@ public:
     // depth of the FreeCycle map
     // equals the max of all entries minus the min of all entries
     // not used yet; would be used to compute the max size of a top window on the past
-    size_t Depth();
+    size_t Depth() const;
 
     // min of the FreeCycle map equals the min of all entries;
-    size_t Min();
+    size_t Min() const;
 
     // max of the FreeCycle map equals the max of all entries;
-    size_t Max();
+    size_t Max() const;
 
-    void DPRINT(std::string s);
-    void Print(std::string s);
+    void DPRINT(const std::string &s) const;
+    void Print(const std::string &s) const;
 
     // return whether gate with first operand qubit r0 can be scheduled earlier than with operand qubit r1
-    bool IsFirstOperandEarlier(size_t r0, size_t r1);
+    bool IsFirstOperandEarlier(size_t r0, size_t r1) const;
 
     // will a swap(fr0,fr1) start earlier than a swap(sr0,sr1)?
     // is really a short-cut ignoring config file and perhaps several other details
-    bool IsFirstSwapEarliest(size_t fr0, size_t fr1, size_t sr0, size_t sr1);
+    bool IsFirstSwapEarliest(size_t fr0, size_t fr1, size_t sr0, size_t sr1) const;
 
     // when we would schedule gate g, what would be its start cycle? return it
     // gate operands are real qubit indices
     // is purely functional, doesn't affect state
-    size_t StartCycleNoRc(ql::gate *g);
+    size_t StartCycleNoRc(ql::gate *g) const;
 
     // when we would schedule gate g, what would be its start cycle? return it
     // gate operands are real qubit indices
     // is purely functional, doesn't affect state
+    // FIXME JvS: except it does. can't make it (or the gate) const, because
+    //   resource managers are relying on random map[] operators in debug prints
+    //   to create new default-initialized keys. Fun!
     size_t StartCycle(ql::gate *g);
 
     // schedule gate g in the FreeCycle map
@@ -425,16 +430,14 @@ public:
     void Init(const ql::quantum_platform *p, ql::quantum_kernel *k, Grid *g);
 
     // import Past's v2r from v2r_value
-    void ImportV2r(Virt2Real &v2r_value);
+    void ImportV2r(const Virt2Real &v2r_value);
 
     // export Past's v2r into v2r_destination
-    void ExportV2r(Virt2Real &v2r_destination);
+    void ExportV2r(Virt2Real &v2r_destination) const;
 
-    void DFcPrint();
-
-    void FcPrint();
-
-    void Print(std::string s);
+    void DFcPrint() const;
+    void FcPrint() const;
+    void Print(const std::string &s) const;
 
     // all gates in past.waitinglg are scheduled here into past.lg
     // note that these gates all are mapped and so have real operand qubit indices
@@ -443,7 +446,7 @@ public:
     void Schedule();
 
     // compute costs in cycle extension of optionally scheduling initcirc before the inevitable circ
-    int InsertionCost(ql::circuit &initcirc, ql::circuit &circ);
+    int InsertionCost(const ql::circuit &initcirc, const ql::circuit &circ) const;
 
     // add the mapped gate to the current past
     // means adding it to the current past's waiting list, waiting for it to be scheduled later
@@ -461,24 +464,24 @@ public:
     // in Mapper::MapCircuit, a temporary local output circuit is used, which is written to kernel.c only at the very end
     bool new_gate(
         ql::circuit &circ,
-        std::string gname,
-        std::vector<size_t> qubits,
-        std::vector<size_t> cregs = {},
+        const std::string &gname,
+        const std::vector<size_t> &qubits,
+        const std::vector<size_t> &cregs = {},
         size_t duration = 0,
         double angle = 0.0
-    );
+    ) const;
 
     // return number of swaps added to this past
-    size_t NumberOfSwapsAdded();
+    size_t NumberOfSwapsAdded() const;
 
     // return number of moves added to this past
-    size_t NumberOfMovesAdded();
+    size_t NumberOfMovesAdded() const;
 
-    void new_gate_exception(std::string s);
+    static void new_gate_exception(const std::string &s);
 
     // will a swap(fr0,fr1) start earlier than a swap(sr0,sr1)?
     // is really a short-cut ignoring config file and perhaps several other details
-    bool IsFirstSwapEarliest(size_t fr0, size_t fr1, size_t sr0, size_t sr1);
+    bool IsFirstSwapEarliest(size_t fr0, size_t fr1, size_t sr0, size_t sr1) const;
 
     // generate a move into circ with parameters r0 and r1 (which GenMove may reverse)
     // whether this was successfully done can be seen from whether circ was extended
@@ -504,7 +507,7 @@ public:
     // if not yet mapped, allocate a new real qubit index and map to it
     size_t MapQubit(size_t v);
 
-    void stripname(std::string &name);
+    static void stripname(std::string &name);
 
     // MakeReal gp
     // assume gp points to a virtual gate with virtual qubit indices as operands;
@@ -538,9 +541,9 @@ public:
     // as mapper after-burner
     // make primitives of all gates that also have an entry with _prim appended to its name
     // and decomposing it according to the .json file gate decomposition
-    void MakePrimitive(ql::gate *gp, ql::circuit &circ);
+    void MakePrimitive(ql::gate *gp, ql::circuit &circ) const;
 
-    size_t MaxFreeCycle();
+    size_t MaxFreeCycle() const;
 
     // nonq and q gates follow separate flows through Past:
     // - q gates are put in waitinglg when added and then scheduled; and then ordered by cycle into lg
@@ -618,16 +621,16 @@ public:
     // printing facilities of Paths
     // print path as hd followed by [0->1->2]
     // and then followed by "implying" swap(q0,q1) swap(q1,q2)
-    void partialPrint(std::string hd, std::vector<size_t> &pp);
+    static void partialPrint(const std::string &hd, const std::vector<size_t> &pp);
 
-    void DPRINT(std::string s);
-    void Print(std::string s);
+    void DPRINT(const std::string &s) const;
+    void Print(const std::string &s) const;
 
-    static void DPRINT(std::string s, std::vector<Alter> &va);
-    static void Print(std::string s, std::vector<Alter> &va);
+    static void DPRINT(const std::string &s, const std::vector<Alter> &va);
+    static void Print(const std::string &s, const std::vector<Alter> &va);
 
-    static void DPRINT(std::string s, std::list<Alter> &la);
-    static void Print(std::string s, std::list<Alter> &la);
+    static void DPRINT(const std::string &s, const std::list<Alter> &la);
+    static void Print(const std::string &s, const std::list<Alter> &la);
 
     // add a node to the path in front, extending its length with one
     void Add2Front(size_t q);
@@ -635,7 +638,7 @@ public:
     // add to a max of maxnumbertoadd swap gates for the current path to the given past
     // this past can be a path-local one or the main past
     // after having added them, schedule the result into that past
-    void AddSwaps(Past &past, std::string mapselectswapsopt);
+    void AddSwaps(Past &past, const std::string &mapselectswapsopt) const;
 
     // compute cycle extension of the current alternative in prevPast relative to the given base past
     //
@@ -649,7 +652,7 @@ public:
     // keep this resulting past in the current alternative (for later use);
     // compute the total extension of all pasts relative to the base past
     // and store this extension in the alternative's score for later use
-    void Extend(Past currPast, Past basePast);
+    void Extend(const Past &currPast, const Past &basePast);
 
     // split the path
     // starting from the representation in the total attribute,
@@ -663,7 +666,7 @@ public:
     // distance=5   means length=6  means 4 swaps + 1 CZ gate, e.g.
     // index in total:      0           1           2           length-3        length-2        length-1
     // qubit:               2   ->      5   ->      7   ->      3       ->      1       CZ      4
-    void Split(Grid &grid, std::list<Alter> &resla);
+    void Split(const Grid &grid, std::list<Alter> &resla) const;
 
 };
 
@@ -711,7 +714,7 @@ public:
     ql::circuit::iterator           input_gatepp;   // state: alternative iterator in input_gatepv
 
     // just program wide initialization
-    void Init( const ql::quantum_platform *p);
+    void Init(const ql::quantum_platform *p);
 
     // Set/switch input to the provided circuit
     // nq and nc are parameters because nc may not be provided by platform but by kernel
@@ -721,11 +724,11 @@ public:
     // Get from avlist all gates that are non-quantum into nonqlg
     // Non-quantum gates include: classical, and dummy (SOURCE/SINK)
     // Return whether some non-quantum gate was found
-    bool GetNonQuantumGates(std::list<ql::gate*>& nonqlg);
+    bool GetNonQuantumGates(std::list<ql::gate*> &nonqlg) const;
 
     // Get all gates from avlist into qlg
     // Return whether some gate was found
-    bool GetGates(std::list<ql::gate*>& qlg);
+    bool GetGates(std::list<ql::gate*> &qlg) const;
 
     // Indicate that a gate currently in avlist has been mapped, can be taken out of the avlist
     // and its successors can be made available
@@ -733,7 +736,7 @@ public:
 
     // Return gp in lag that is most critical (provided lookahead is enabled)
     // This is used in tiebreak, when every other option has failed to make a distinction.
-    ql::gate *MostCriticalIn(std::list<ql::gate*> &lag);
+    ql::gate *MostCriticalIn(std::list<ql::gate*> &lag) const;
 
 };
 

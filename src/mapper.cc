@@ -48,7 +48,7 @@ void Grid::Init(const ql::quantum_platform *p) {
 
 // core index from qubit index
 // when multi-core assumes full and uniform core connectivity
-size_t Grid::CoreOf(size_t qi) {
+size_t Grid::CoreOf(size_t qi) const {
     if (ncores == 1) return 0;
     ASSERT(conn == gc_full);
     size_t nqpc = nq/ncores;
@@ -56,7 +56,7 @@ size_t Grid::CoreOf(size_t qi) {
 }
 
 // inter-core hop from qs to qt?
-bool Grid::IsInterCoreHop(size_t qs, size_t qt) {
+bool Grid::IsInterCoreHop(size_t qs, size_t qt) const {
     return CoreOf(qs) != CoreOf(qt);
 }
 
@@ -65,13 +65,13 @@ bool Grid::IsInterCoreHop(size_t qs, size_t qt) {
 //      gf_cross:   std::max( std::abs( x[to_realqi] - x[from_realqi] ), std::abs( y[to_realqi] - y[from_realqi] ))
 //      gf_plus:    std::abs( x[to_realqi] - x[from_realqi] ) + std::abs( y[to_realqi] - y[from_realqi] )
 // when the neighbor relation is defined (topology.edges in config file), Floyd-Warshall is used, which currently is always
-size_t Grid::Distance(size_t from_realqi, size_t to_realqi) {
+size_t Grid::Distance(size_t from_realqi, size_t to_realqi) const {
     return dist[from_realqi][to_realqi];
 }
 
 // coredistance between two qubits
 // when multi-core assumes full and uniform core connectivity
-size_t Grid::CoreDistance(size_t from_realqi, size_t to_realqi) {
+size_t Grid::CoreDistance(size_t from_realqi, size_t to_realqi) const {
     if (CoreOf(from_realqi) == CoreOf(to_realqi)) return 0;
     return 1;
 }
@@ -87,10 +87,10 @@ size_t Grid::CoreDistance(size_t from_realqi, size_t to_realqi) {
 // we assume below that a valid path exists with distance+1 hops;
 // this fails when not all qubits in a core support connections to all other cores;
 // see the check in InitNbs
-size_t Grid::MinHops(size_t from_realqi, size_t to_realqi) {
+size_t Grid::MinHops(size_t from_realqi, size_t to_realqi) const {
     size_t d = Distance(from_realqi, to_realqi);
     size_t cd = CoreDistance(from_realqi, to_realqi);
-    ASSERT (cd <= d);
+    ASSERT(cd <= d);
     if (cd == d) {
         return d+1;
     } else {
@@ -99,7 +99,7 @@ size_t Grid::MinHops(size_t from_realqi, size_t to_realqi) {
 }
 
 // return clockwise angle around (cx,cy) of (x,y) wrt vertical y axis with angle 0 at 12:00, 0<=angle<2*pi
-double Grid::Angle(int cx, int cy, int x, int y) {
+double Grid::Angle(int cx, int cy, int x, int y) const {
     const double pi = 4*std::atan(1);
     double a = std::atan2((x-cx),(y-cy));
     if (a < 0) a += 2*pi;
@@ -109,11 +109,11 @@ double Grid::Angle(int cx, int cy, int x, int y) {
 // rotate neighbors list such that largest angle difference between adjacent elements is behind back;
 // this is needed when a given subset of variations from a node is wanted (mappathselect==borders);
 // and this can only be computed when there is an underlying x/y grid (so not for form==gf_irregular)
-void Grid::Normalize(size_t src, neighbors_t &nbl) {
+void Grid::Normalize(size_t src, neighbors_t &nbl) const {
     if (form != gf_xy) {
         // there are no implicit/explicit x/y coordinates defined per qubit, so no sense of nearness
         std::string mappathselectopt = ql::options::get("mappathselect");
-        ASSERT("borders" != mappathselectopt);
+        ASSERT(mappathselectopt != "borders");
         return;
     }
 
@@ -128,29 +128,28 @@ void Grid::Normalize(size_t src, neighbors_t &nbl) {
 
     // find maxinx index in neighbor list before which largest angle difference occurs
     int maxdiff = 0;                            // current maximum angle difference in loop search below
-    neighbors_t::iterator maxinx = nbl.begin(); // before which max diff occurs
+    auto maxinx = nbl.begin(); // before which max diff occurs
 
     // for all indices in and its next one inx compute angle difference and find largest of these
-    for (neighbors_t::iterator in = nbl.begin(); in != nbl.end(); in++) {
-        double a_in = Angle(x[src], y[src], x[*in], y[*in]);
+    for (auto in = nbl.begin(); in != nbl.end(); in++) {
+        double a_in = Angle(x.at(src), y.at(src), x.at(*in), y.at(*in));
 
-        neighbors_t::iterator inx = std::next(in); if (inx == nbl.end()) inx = nbl.begin();
-        double a_inx = Angle(x[src], y[src], x[*inx], y[*inx]);
+        auto inx = std::next(in); if (inx == nbl.end()) inx = nbl.begin();
+        double a_inx = Angle(x.at(src), y.at(src), x.at(*inx), y.at(*inx));
 
         int diff = a_inx - a_in; if (diff < 0) diff += 2*pi;
-        if (diff > maxdiff)
-        {
+        if (diff > maxdiff) {
             maxdiff = diff;
             maxinx = inx;
         }
     }
 
     // and now rotate neighbor list so that largest angle difference is behind last one
-    neighbors_t   newnbl;
-    for (neighbors_t::iterator in = maxinx; in != nbl.end(); in++) {
+    neighbors_t newnbl;
+    for (auto in = maxinx; in != nbl.end(); in++) {
         newnbl.push_back(*in);
     }
-    for (neighbors_t::iterator in = nbl.begin(); in != maxinx; in++) {
+    for (auto in = nbl.begin(); in != maxinx; in++) {
         newnbl.push_back(*in);
     }
     nbl = newnbl;
@@ -196,19 +195,19 @@ void Grid::ComputeDist() {
 #endif
 }
 
-void Grid::DPRINTGrid() {
+void Grid::DPRINTGrid() const {
     if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
         PrintGrid();
     }
 }
 
-void Grid::PrintGrid() {
+void Grid::PrintGrid() const {
     if (form != gf_irregular) {
         for (size_t i = 0; i < nq; i++) {
-            std::cout << "qubit[" << i << "]=(" << x[i] << "," << y[i] << ")";
+            std::cout << "qubit[" << i << "]=(" << x.at(i) << "," << y.at(i) << ")";
             std::cout << " has neighbors ";
-            for (auto &n : nbs[i]) {
-                std::cout << "qubit[" << n << "]=(" << x[n] << "," << y[n] << ") ";
+            for (auto &n : nbs.at(i)) {
+                std::cout << "qubit[" << n << "]=(" << x.at(n) << "," << y.at(n) << ") ";
             }
             std::cout << std::endl;
         }
@@ -216,7 +215,7 @@ void Grid::PrintGrid() {
         for (size_t i = 0; i < nq; i++) {
             std::cout << "qubit[" << i << "]";
             std::cout << " has neighbors ";
-            for (auto &n : nbs[i]) {
+            for (auto &n : nbs.at(i)) {
                 std::cout << "qubit[" << n << "] ";
             }
             std::cout << std::endl;
@@ -225,14 +224,14 @@ void Grid::PrintGrid() {
     for (size_t i = 0; i < nq; i++) {
         std::cout << "qubit[" << i << "] distance(" << i << ",j)=";
         for (size_t j = 0; j < nq; j++) {
-            std::cout << Distance(i,j) << " ";
+            std::cout << Distance(i, j) << " ";
         }
         std::cout << std::endl;
     }
     for (size_t i = 0; i < nq; i++) {
         std::cout << "qubit[" << i << "] minhops(" << i << ",j)=";
         for (size_t j = 0; j < nq; j++) {
-            std::cout << MinHops(i,j) << " ";
+            std::cout << MinHops(i, j) << " ";
         }
         std::cout << std::endl;
     }
@@ -358,7 +357,7 @@ void Grid::SortNbs() {
 // map real qubit to the virtual qubit index that is mapped to it (i.e. backward map);
 // when none, return UNDEFINED_QUBIT;
 // a second vector next to v2rMap (i.e. an r2vMap) would speed this up;
-size_t Virt2Real::GetVirt(size_t r) {
+size_t Virt2Real::GetVirt(size_t r) const {
     ASSERT(r != UNDEFINED_QUBIT);
     for (size_t v = 0; v < nq; v++) {
         if (v2rMap[v] == r) {
@@ -368,7 +367,7 @@ size_t Virt2Real::GetVirt(size_t r) {
     return UNDEFINED_QUBIT;
 }
 
-realstate_t Virt2Real::GetRs(size_t q) {
+realstate_t Virt2Real::GetRs(size_t q) const {
     return rs[q];
 }
 
@@ -422,6 +421,11 @@ void Virt2Real::Init(size_t n) {
 
 // map virtual qubit index to real qubit index
 size_t &Virt2Real::operator[](size_t v) {
+    ASSERT(v < nq);   // implies v != UNDEFINED_QUBIT
+    return v2rMap[v];
+}
+
+const size_t &Virt2Real::operator[](size_t v) const {
     ASSERT(v < nq);   // implies v != UNDEFINED_QUBIT
     return v2rMap[v];
 }
@@ -484,13 +488,13 @@ void Virt2Real::Swap(size_t r0, size_t r1) {
     // DPRINT("... after swap");
 }
 
-void Virt2Real::DPRINTReal(size_t r) {
+void Virt2Real::DPRINTReal(size_t r) const {
     if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
         PrintReal(r);
     }
 }
 
-void Virt2Real::PrintReal(size_t r) {
+void Virt2Real::PrintReal(size_t r) const {
     std::cout << " (r" << r;
     switch (rs[r]) {
         case rs_nostate:
@@ -513,7 +517,7 @@ void Virt2Real::PrintReal(size_t r) {
     }
 }
 
-void Virt2Real::PrintVirt(size_t v) {
+void Virt2Real::PrintVirt(size_t v) const {
     std::cout << " (v" << v;
     size_t r = v2rMap[v];
     if (r == UNDEFINED_QUBIT) {
@@ -536,13 +540,13 @@ void Virt2Real::PrintVirt(size_t v) {
     }
 }
 
-void Virt2Real::DPRINTReal(std::string s, size_t r0, size_t r1) {
+void Virt2Real::DPRINTReal(const std::string &s, size_t r0, size_t r1) const {
     if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
         PrintReal(s, r0, r1);
     }
 }
 
-void Virt2Real::PrintReal(std::string s, size_t r0, size_t r1) {
+void Virt2Real::PrintReal(const std::string &s, size_t r0, size_t r1) const {
     // DOUT("v2r.PrintReal ...");
     std::cout << s << ":";
 //  std::cout << "... real2Virt(r<-v) " << s << ":";
@@ -552,43 +556,45 @@ void Virt2Real::PrintReal(std::string s, size_t r0, size_t r1) {
     std::cout << std::endl;
 }
 
-void Virt2Real::DPRINT(std::string s) {
+void Virt2Real::DPRINT(const std::string &s) const {
     if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
         Print(s);
     }
 }
 
-void Virt2Real::Print(std::string s) {
+void Virt2Real::Print(const std::string &s) const {
     // DOUT("v2r.Print ...");
     std::cout << s << ":";
 //  std::cout << "... virt2Real(r<-v) " << s << ":";
-    for (size_t v=0; v<nq; v++)
-    {
+    for (size_t v = 0; v < nq; v++) {
         PrintVirt(v);
     }
     std::cout << std::endl;
 
     std::cout << "... real2virt(r->v) " << s << ":";
-    for (size_t r=0; r<nq; r++)
-    {
+    for (size_t r = 0; r < nq; r++) {
         PrintReal(r);
     }
     std::cout << std::endl;
 }
 
-void Virt2Real::Export(std::vector<size_t> &kv2rMap) {
+void Virt2Real::Export(std::vector<size_t> &kv2rMap) const {
     kv2rMap = v2rMap;
 }
 
-void Virt2Real::Export(std::vector<int> &krs) {
+void Virt2Real::Export(std::vector<int> &krs) const {
     krs.resize(rs.size());
-    for (unsigned int i=0; i < rs.size(); i++) {
+    for (unsigned int i = 0; i < rs.size(); i++) {
         krs[i] = (int)rs[i];
     }
 }
 
 // access free cycle value of qubit i
 size_t &FreeCycle::operator[](size_t i) {
+    return fcv[i];
+}
+
+const size_t &FreeCycle::operator[](size_t i) const {
     return fcv[i];
 }
 
@@ -617,14 +623,14 @@ void FreeCycle::Init(const ql::quantum_platform *p) {
 // depth of the FreeCycle map
 // equals the max of all entries minus the min of all entries
 // not used yet; would be used to compute the max size of a top window on the past
-size_t FreeCycle::Depth() {
+size_t FreeCycle::Depth() const {
     return Max() - Min();
 }
 
 // min of the FreeCycle map equals the min of all entries;
-size_t FreeCycle::Min() {
+size_t FreeCycle::Min() const {
     size_t  minFreeCycle = MAX_CYCLE;
-    for (auto &v : fcv) {
+    for (const auto &v : fcv) {
         if (v < minFreeCycle) {
             minFreeCycle = v;
         }
@@ -633,9 +639,9 @@ size_t FreeCycle::Min() {
 }
 
 // max of the FreeCycle map equals the max of all entries;
-size_t FreeCycle::Max() {
+size_t FreeCycle::Max() const {
     size_t maxFreeCycle = 0;
-    for (auto &v : fcv) {
+    for (const auto &v : fcv) {
         if (maxFreeCycle < v) {
             maxFreeCycle = v;
         }
@@ -643,13 +649,13 @@ size_t FreeCycle::Max() {
     return maxFreeCycle;
 }
 
-void FreeCycle::DPRINT(std::string s) {
+void FreeCycle::DPRINT(const std::string &s) const {
     if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
         Print(s);
     }
 }
 
-void FreeCycle::Print(std::string s) {
+void FreeCycle::Print(const std::string &s) const {
     size_t  minFreeCycle = Min();
     size_t  maxFreeCycle = Max();
     std::cout << "... FreeCycle" << s << ":";
@@ -669,14 +675,14 @@ void FreeCycle::Print(std::string s) {
 }
 
 // return whether gate with first operand qubit r0 can be scheduled earlier than with operand qubit r1
-bool FreeCycle::IsFirstOperandEarlier(size_t r0, size_t r1) {
+bool FreeCycle::IsFirstOperandEarlier(size_t r0, size_t r1) const {
     DOUT("... fcv[" << r0 << "]=" << fcv[r0]<< " fcv[" << r1 << "]=" << fcv[r1] << " IsFirstOperandEarlier=" << (fcv[r0] < fcv[r1]));
     return fcv[r0] < fcv[r1];
 }
 
 // will a swap(fr0,fr1) start earlier than a swap(sr0,sr1)?
 // is really a short-cut ignoring config file and perhaps several other details
-bool FreeCycle::IsFirstSwapEarliest(size_t fr0, size_t fr1, size_t sr0, size_t sr1) {
+bool FreeCycle::IsFirstSwapEarliest(size_t fr0, size_t fr1, size_t sr0, size_t sr1) const {
     std::string mapreverseswapopt = ql::options::get("mapreverseswap");
     if (mapreverseswapopt == "yes") {
         if (fcv[fr0] < fcv[fr1]) {
@@ -696,7 +702,7 @@ bool FreeCycle::IsFirstSwapEarliest(size_t fr0, size_t fr1, size_t sr0, size_t s
 // when we would schedule gate g, what would be its start cycle? return it
 // gate operands are real qubit indices
 // is purely functional, doesn't affect state
-size_t FreeCycle::StartCycleNoRc(ql::gate *g) {
+size_t FreeCycle::StartCycleNoRc(ql::gate *g) const {
     auto &q = g->operands;
     size_t operandCount = q.size();
 
@@ -798,32 +804,32 @@ void Past::Init(const ql::quantum_platform *p, ql::quantum_kernel *k, Grid *g) {
 }
 
 // import Past's v2r from v2r_value
-void Past::ImportV2r(Virt2Real &v2r_value) {
+void Past::ImportV2r(const Virt2Real &v2r_value) {
     v2r = v2r_value;
 }
 
 // export Past's v2r into v2r_destination
-void Past::ExportV2r(Virt2Real &v2r_destination) {
+void Past::ExportV2r(Virt2Real &v2r_destination) const {
     v2r_destination = v2r;
 }
 
-void Past::DFcPrint() {
+void Past::DFcPrint() const {
     if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
         fc.Print("");
     }
 }
 
-void Past::FcPrint() {
+void Past::FcPrint() const{
     fc.Print("");
 }
 
-void Past::Print(std::string s) {
+void Past::Print(const std::string &s) const {
     std::cout << "... Past " << s << ":";
     v2r.Print("");
     fc.Print("");
     // DOUT("... list of gates in past");
     for (auto &gp : lg) {
-        DOUT("[" << cycle[gp] << "] " << gp->qasm());
+        DOUT("[" << cycle.at(gp) << "] " << gp->qasm());
     }
 }
 
@@ -875,7 +881,7 @@ void Past::Schedule() {
         //
         // reverse iterate because the insertion is near the end of the list
         // insert so that cycle values are in order afterwards and the new one is nearest to the end
-        std::list<gate_p>::reverse_iterator rigp = lg.rbegin();
+        auto rigp = lg.rbegin();
         for (; rigp != lg.rend(); rigp++) {
             if (cycle[*rigp] <= startCycle) {
                 // rigp.base() because insert doesn't work with reverse iteration
@@ -899,7 +905,7 @@ void Past::Schedule() {
 }
 
 // compute costs in cycle extension of optionally scheduling initcirc before the inevitable circ
-int Past::InsertionCost(ql::circuit &initcirc, ql::circuit &circ) {
+int Past::InsertionCost(const ql::circuit &initcirc, const ql::circuit &circ) const {
     // first fake-schedule initcirc followed by circ in a private freecyclemap
     size_t initmax;
     FreeCycle   tryfcinit = fc;
@@ -946,12 +952,12 @@ void Past::Add(gate_p gp) {
 // in Mapper::MapCircuit, a temporary local output circuit is used, which is written to kernel.c only at the very end
 bool Past::new_gate(
     ql::circuit &circ,
-    std::string gname,
-    std::vector<size_t> qubits,
-    std::vector<size_t> cregs,
+    const std::string &gname,
+    const std::vector<size_t> &qubits,
+    const std::vector<size_t> &cregs,
     size_t duration,
     double angle
-) {
+) const {
     bool added;
     ASSERT(circ.empty());
     ASSERT(kernelp->c.empty());
@@ -965,22 +971,22 @@ bool Past::new_gate(
 }
 
 // return number of swaps added to this past
-size_t Past::NumberOfSwapsAdded() {
+size_t Past::NumberOfSwapsAdded() const {
     return nswapsadded;
 }
 
 // return number of moves added to this past
-size_t Past::NumberOfMovesAdded() {
+size_t Past::NumberOfMovesAdded() const {
     return nmovesadded;
 }
 
-void Past::new_gate_exception(std::string s) {
+void Past::new_gate_exception(const std::string &s) {
     FATAL("gate is not supported by the target platform: '" << s << "'");
 }
 
 // will a swap(fr0,fr1) start earlier than a swap(sr0,sr1)?
 // is really a short-cut ignoring config file and perhaps several other details
-bool Past::IsFirstSwapEarliest(size_t fr0, size_t fr1, size_t sr0, size_t sr1) {
+bool Past::IsFirstSwapEarliest(size_t fr0, size_t fr1, size_t sr0, size_t sr1) const {
     return fc.IsFirstSwapEarliest(fr0, fr1, sr0, sr1);
 }
 
@@ -1255,7 +1261,7 @@ void Past::MakeReal(ql::gate *gp, ql::circuit &circ) {
 // as mapper after-burner
 // make primitives of all gates that also have an entry with _prim appended to its name
 // and decomposing it according to the .json file gate decomposition
-void Past::MakePrimitive(ql::gate *gp, ql::circuit &circ) {
+void Past::MakePrimitive(ql::gate *gp, ql::circuit &circ) const {
     std::string gname = gp->name;
     stripname(gname);
     std::string prim_gname = gname;
@@ -1270,7 +1276,7 @@ void Past::MakePrimitive(ql::gate *gp, ql::circuit &circ) {
     DOUT("... MakePrimtive: new gate created for: " << prim_gname << " or " << gname);
 }
 
-size_t Past::MaxFreeCycle() {
+size_t Past::MaxFreeCycle() const {
     return fc.Max();
 }
 
@@ -1331,7 +1337,7 @@ void Alter::Init(const ql::quantum_platform *p, ql::quantum_kernel *k, Grid *g) 
 // printing facilities of Paths
 // print path as hd followed by [0->1->2]
 // and then followed by "implying" swap(q0,q1) swap(q1,q2)
-void Alter::partialPrint(std::string hd, std::vector<size_t> &pp) {
+void Alter::partialPrint(const std::string &hd, const std::vector<size_t> &pp) {
     if (!pp.empty()) {
         int started = 0;
         for (auto &ppe : pp) {
@@ -1355,13 +1361,13 @@ void Alter::partialPrint(std::string hd, std::vector<size_t> &pp) {
     }
 }
 
-void Alter::DPRINT(std::string s) {
+void Alter::DPRINT(const std::string &s) const {
     if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
         Print(s);
     }
 }
 
-void Alter::Print(std::string s) {
+void Alter::Print(const std::string &s) const {
     // std::cout << s << "- " << targetgp->qasm();
     std::cout << s << "- " << targetgp->qasm();
     if (fromSource.empty() && fromTarget.empty()) {
@@ -1377,13 +1383,13 @@ void Alter::Print(std::string s) {
     std::cout << std::endl;
 }
 
-void Alter::DPRINT(std::string s, std::vector<Alter> &va) {
+void Alter::DPRINT(const std::string &s, const std::vector<Alter> &va) {
     if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
         Print(s, va);
     }
 }
 
-void Alter::Print(std::string s, std::vector<Alter> &va) {
+void Alter::Print(const std::string &s, const std::vector<Alter> &va) {
     int started = 0;
     for (auto &a : va) {
         if (started == 0) {
@@ -1397,13 +1403,13 @@ void Alter::Print(std::string s, std::vector<Alter> &va) {
     }
 }
 
-void Alter::DPRINT(std::string s, std::list<Alter> &la) {
+void Alter::DPRINT(const std::string &s, const std::list<Alter> &la) {
     if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
         Print(s, la);
     }
 }
 
-void Alter::Print(std::string s, std::list<Alter> &la) {
+void Alter::Print(const std::string &s, const std::list<Alter> &la) {
     int started = 0;
     for (auto &a : la) {
         if (started == 0) {
@@ -1425,7 +1431,7 @@ void Alter::Add2Front(size_t q) {
 // add to a max of maxnumbertoadd swap gates for the current path to the given past
 // this past can be a path-local one or the main past
 // after having added them, schedule the result into that past
-void Alter::AddSwaps(Past &past, std::string mapselectswapsopt) {
+void Alter::AddSwaps(Past &past, const std::string &mapselectswapsopt) const {
     // DOUT("Addswaps " << mapselectswapsopt);
     if (mapselectswapsopt == "one" || mapselectswapsopt == "all") {
         size_t  numberadded = 0;
@@ -1480,7 +1486,7 @@ void Alter::AddSwaps(Past &past, std::string mapselectswapsopt) {
 // keep this resulting past in the current alternative (for later use);
 // compute the total extension of all pasts relative to the base past
 // and store this extension in the alternative's score for later use
-void Alter::Extend(Past currPast, Past basePast) {
+void Alter::Extend(const Past &currPast, const Past &basePast) {
     // DOUT("... clone past, add swaps, compute overall score and keep it all in current alternative");
     past = currPast;   // explicitly clone currPast to an alternative-local copy of it, Alter.past
     // DOUT("... adding swaps to alternative-local past ...");
@@ -1509,7 +1515,7 @@ void Alter::Extend(Past currPast, Past basePast) {
 // distance=5   means length=6  means 4 swaps + 1 CZ gate, e.g.
 // index in total:      0           1           2           length-3        length-2        length-1
 // qubit:               2   ->      5   ->      7   ->      3       ->      1       CZ      4
-void Alter::Split(Grid &grid, std::list<Alter> &resla) {
+void Alter::Split(const Grid &grid, std::list<Alter> &resla) const {
     // DOUT("Split ...");
 
     size_t length = total.size();
@@ -1603,7 +1609,7 @@ void Future::SetCircuit(ql::quantum_kernel &kernel, Scheduler &sched, size_t nq,
 // Get from avlist all gates that are non-quantum into nonqlg
 // Non-quantum gates include: classical, and dummy (SOURCE/SINK)
 // Return whether some non-quantum gate was found
-bool Future::GetNonQuantumGates(std::list<ql::gate*> &nonqlg) {
+bool Future::GetNonQuantumGates(std::list<ql::gate*> &nonqlg) const {
     nonqlg.clear();
     std::string maplookaheadopt = ql::options::get("maplookahead");
     if (maplookaheadopt == "no") {
@@ -1627,18 +1633,17 @@ bool Future::GetNonQuantumGates(std::list<ql::gate*> &nonqlg) {
             }
         }
     }
-    return nonqlg.size() != 0;
+    return !nonqlg.empty();
 }
 
 // Get all gates from avlist into qlg
 // Return whether some gate was found
-bool Future::GetGates(std::list<ql::gate*>& qlg)
-{
+bool Future::GetGates(std::list<ql::gate*> &qlg) const {
     qlg.clear();
     std::string maplookaheadopt = ql::options::get("maplookahead");
     if (maplookaheadopt == "no") {
         if (input_gatepp != input_gatepv.end()) {
-            ql::gate*  gp = *input_gatepp;
+            ql::gate *gp = *input_gatepp;
             if (gp->operands.size() > 2) {
                 FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
             }
@@ -1646,14 +1651,14 @@ bool Future::GetGates(std::list<ql::gate*>& qlg)
         }
     } else {
         for (auto n : avlist) {
-            ql::gate*  gp = schedp->instruction[n];
+            ql::gate *gp = schedp->instruction[n];
             if (gp->operands.size() > 2) {
                 FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
             }
             qlg.push_back(gp);
         }
     }
-    return qlg.size() != 0;
+    return !qlg.empty();
 }
 
 // Indicate that a gate currently in avlist has been mapped, can be taken out of the avlist
@@ -1669,7 +1674,7 @@ void Future::DoneGate(ql::gate *gp) {
 
 // Return gp in lag that is most critical (provided lookahead is enabled)
 // This is used in tiebreak, when every other option has failed to make a distinction.
-ql::gate *Future::MostCriticalIn(std::list<ql::gate*> &lag) {
+ql::gate *Future::MostCriticalIn(std::list<ql::gate*> &lag) const {
     std::string maplookaheadopt = ql::options::get("maplookahead");
     if (maplookaheadopt == "no") {
         return lag.front();
@@ -1741,9 +1746,7 @@ using namespace lemon;
 //  1sx     run ip max for 1 second; when timed out, stop the compiler
 //  1s      run ip max for 1 second; when timed out, just use heuristics
 
-typedef
-enum InitialPlaceResults
-{
+typedef enum InitialPlaceResults {
     ipr_any,            // any mapping will do because there are no two-qubit gates in the circuit
     ipr_current,        // current mapping will do because all two-qubit gates are NN
     ipr_newmap,         // initial placement solution found a mapping
@@ -1751,8 +1754,7 @@ enum InitialPlaceResults
     ipr_timedout        // initial placement solution timed out and thus failed
 } ipr_t;
 
-class InitialPlace
-{
+class InitialPlace {
 private:
                                         // parameters, constant for a kernel
     const ql::quantum_platform   *platformp;  // platform
@@ -1766,542 +1768,502 @@ private:
 
 public:
 
-std::string ipr2string(ipr_t ipr)
-{
-    switch(ipr)
-    {
-    case ipr_any:       return "any";
-    case ipr_current:   return "current";
-    case ipr_newmap:    return "newmap";
-    case ipr_failed:    return "failed";
-    case ipr_timedout:  return "timedout";
-    }
-    return "unknown";
-}
-
-// kernel-once initialization
-void Init(Grid* g, const ql::quantum_platform *p)
-{
-    // DOUT("InitialPlace Init ...");
-    platformp = p;
-    nlocs = p->qubit_number;
-    nvq = p->qubit_number;  // same range; when not, take set from config and create v2i earlier
-    // DOUT("... number of real qubits (locations): " << nlocs);
-    gridp = g;
-    DOUT("Init: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp);
-}
-
-// find an initial placement of the virtual qubits for the given circuit
-// the resulting placement is put in the provided virt2real map
-// result indicates one of the result indicators (ipr_t, see above)
-void PlaceBody( ql::circuit& circ, Virt2Real& v2r, ipr_t &result, double& iptimetaken)
-{
-    DOUT("InitialPlace.PlaceBody ...");
-
-    // check validity of circuit
-    for ( auto& gp : circ )
-    {
-        auto&   q = gp->operands;
-        if (q.size() > 2)
-        {
-            FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
+    std::string ipr2string(ipr_t ipr) {
+        switch (ipr) {
+            case ipr_any:       return "any";
+            case ipr_current:   return "current";
+            case ipr_newmap:    return "newmap";
+            case ipr_failed:    return "failed";
+            case ipr_timedout:  return "timedout";
         }
+        return "unknown";
     }
 
-    // only consider first number of two-qubit gates as specified by option initialplace2qhorizon
-    // this influences refcount (so constraints) and nfac (number of facilities, so size of MIP problem)
-    std::string initialplace2qhorizonopt = ql::options::get("initialplace2qhorizon");
-    int  prefix = stoi(initialplace2qhorizonopt);
+    // kernel-once initialization
+    void Init(Grid *g, const ql::quantum_platform *p) {
+        // DOUT("InitialPlace Init ...");
+        platformp = p;
+        nlocs = p->qubit_number;
+        nvq = p->qubit_number;  // same range; when not, take set from config and create v2i earlier
+        // DOUT("... number of real qubits (locations): " << nlocs);
+        gridp = g;
+        DOUT("Init: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp);
+    }
 
-    // compute ipusecount[] to know which virtual qubits are actually used
-    // use it to compute v2i, mapping (non-contiguous) virtual qubit indices to contiguous facility indices
-    // (the MIP model is shorter when the indices are contiguous)
-    // finally, nfac is set to the number of these facilities;
-    // only consider virtual qubit uses until the specified max number of two qubit gates has been seen
-    DOUT("... compute ipusecount by scanning circuit");
-    std::vector<size_t>  ipusecount;// ipusecount[v] = count of use of virtual qubit v in current circuit
-    ipusecount.resize(nvq,0);       // initially all 0
-    std::vector<size_t> v2i;        // v2i[virtual qubit index v] -> index of facility i
-    v2i.resize(nvq,UNDEFINED_QUBIT);// virtual qubit v not used by circuit as gate operand
+    // find an initial placement of the virtual qubits for the given circuit
+    // the resulting placement is put in the provided virt2real map
+    // result indicates one of the result indicators (ipr_t, see above)
+    void PlaceBody(ql::circuit &circ, Virt2Real &v2r, ipr_t &result, double &iptimetaken) {
+        DOUT("InitialPlace.PlaceBody ...");
 
-    int  twoqubitcount = 0;
-    for ( auto& gp : circ )
-    {
-        if (prefix == 0 || twoqubitcount < prefix)
-        {
-            for ( auto v : gp->operands)
-            {
-                ipusecount[v] += 1;
+        // check validity of circuit
+        for (auto &gp : circ) {
+            auto &q = gp->operands;
+            if (q.size() > 2) {
+                FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
             }
         }
-        if (gp->operands.size() == 2)
-        {
-            twoqubitcount++;
-        }
-    }
-    nfac = 0;
-    for (size_t v=0; v < nvq; v++)
-    {
-        if (ipusecount[v] != 0)
-        {
-            v2i[v] = nfac;
-            nfac += 1;
-        }
-    }
-    DOUT("... number of facilities: " << nfac << " while number of used virtual qubits is: " << nvq);
 
-    // precompute refcount (used by the model as constants) by scanning circuit;
-    // refcount[i][j] = count of two-qubit gates between facilities i and j in current circuit
-    // at the same time, set anymap and currmap
-    // anymap = there are no two-qubit gates so any map will do
-    // currmap = in the current map, all two-qubit gates are NN so current map will do
-    DOUT("... compute refcount by scanning circuit");
-    std::vector<std::vector<size_t>>  refcount;
-    refcount.resize(nfac); for (size_t i=0; i<nfac; i++) refcount[i].resize(nfac,0);
-    bool anymap = true;    // true when all refcounts are 0
-    bool currmap = true;   // true when in current map all two-qubit gates are NN
-    
-    twoqubitcount = 0;
-    for ( auto& gp : circ )
-    {
-        auto&   q = gp->operands;
-        if (q.size() == 2)
-        {
-            if (prefix == 0 || twoqubitcount < prefix)
-            {
-                anymap = false;
-                refcount[v2i[q[0]]][v2i[q[1]]] += 1;
-                
-                if (v2r[q[0]] == UNDEFINED_QUBIT
-                    || v2r[q[1]] == UNDEFINED_QUBIT
-                    || gridp->Distance(v2r[q[0]], v2r[q[1]]) > 1
-                    )
-                {
-                    currmap = false;
+        // only consider first number of two-qubit gates as specified by option initialplace2qhorizon
+        // this influences refcount (so constraints) and nfac (number of facilities, so size of MIP problem)
+        std::string initialplace2qhorizonopt = ql::options::get("initialplace2qhorizon");
+        int prefix = std::stoi(initialplace2qhorizonopt);
+
+        // compute ipusecount[] to know which virtual qubits are actually used
+        // use it to compute v2i, mapping (non-contiguous) virtual qubit indices to contiguous facility indices
+        // (the MIP model is shorter when the indices are contiguous)
+        // finally, nfac is set to the number of these facilities;
+        // only consider virtual qubit uses until the specified max number of two qubit gates has been seen
+        DOUT("... compute ipusecount by scanning circuit");
+        std::vector<size_t>  ipusecount;// ipusecount[v] = count of use of virtual qubit v in current circuit
+        ipusecount.resize(nvq,0);       // initially all 0
+        std::vector<size_t> v2i;        // v2i[virtual qubit index v] -> index of facility i
+        v2i.resize(nvq,UNDEFINED_QUBIT);// virtual qubit v not used by circuit as gate operand
+
+        int twoqubitcount = 0;
+        for (auto &gp : circ) {
+            if (prefix == 0 || twoqubitcount < prefix) {
+                for (auto v : gp->operands) {
+                    ipusecount[v] += 1;
                 }
             }
-            twoqubitcount++;
-        }
-    }
-    if (prefix != 0 && twoqubitcount >= prefix)
-    {
-        DOUT("InitialPlace: only considered " << prefix << " of " << twoqubitcount << " two-qubit gates, so resulting mapping is not exact");
-    }
-    if (anymap)
-    {
-        DOUT("InitialPlace: no two-qubit gates found, so no constraints, and any mapping is ok");
-        DOUT("InitialPlace.PlaceBody [ANY MAPPING IS OK]");
-        result = ipr_any;
-        iptimetaken = 0.0;
-        return;
-    }
-    if (currmap)
-    {
-        DOUT("InitialPlace: in current map, all two-qubit gates are nearest neighbor, so current map is ok");
-        DOUT("InitialPlace.PlaceBody [CURRENT MAPPING IS OK]");
-        result = ipr_current;
-        iptimetaken = 0.0;
-        return;
-    }
-
-    // compute iptimetaken, start interval timer here
-    using namespace std::chrono;
-    high_resolution_clock::time_point t1 = high_resolution_clock::now();
-
-    // precompute costmax by applying formula
-    // costmax[i][k] = sum j: sum l: refcount[i][j] * distance(k,l) for facility i in location k
-    DOUT("... precompute costmax by combining refcount and distances");
-    std::vector<std::vector<size_t>>  costmax;   
-    costmax.resize(nfac); for (size_t i=0; i<nfac; i++) costmax[i].resize(nlocs,0);
-    for ( size_t i=0; i<nfac; i++ )
-    {
-        for ( size_t k=0; k<nlocs; k++ )
-        {
-            for ( size_t j=0; j<nfac; j++ )
-            {
-                for ( size_t l=0; l<nlocs; l++ )
-                {
-                    costmax[i][k] += refcount[i][j] * (gridp->Distance(k,l) - 1);
-                }
+            if (gp->operands.size() == 2) {
+                twoqubitcount++;
             }
         }
-    }
-    
-    // the problem
-    // mixed integer programming
-    Mip  mip;
-    
-    // variables (columns)
-    //  x[i][k] are integral, values 0 or 1
-    //      x[i][k] represents whether facility i is in location k
-    //  w[i][k] are real, values >= 0
-    //      w[i][k] represents x[i][k] * sum j: sum l: refcount[i][j] * distance(k,l) * x[j][l]
-    //       i.e. if facility i not in location k then 0
-    //       else for all facilities j in its location l sum refcount[i][j] * distance(k,l)
-    // DOUT("... allocate x column variable");
-    std::vector<std::vector<Mip::Col>> x;
-        x.resize(nfac); for (size_t i=0; i<nfac; i++) x[i].resize(nlocs);
-    // DOUT("... allocate w column variable");
-    std::vector<std::vector<Mip::Col>> w;
-        w.resize(nfac); for (size_t i=0; i<nfac; i++) w[i].resize(nlocs);
-    // DOUT("... add/initialize x and w column variables with trivial constraints and type");
-    for ( size_t i=0; i<nfac; i++ )
-    {
-        for ( size_t k=0; k<nlocs; k++ )
-        {
-            x[i][k] = mip.addCol();
-            mip.colLowerBound(x[i][k], 0);          // 0 <= x[i][k]
-            mip.colUpperBound(x[i][k], 1);          //      x[i][k] <= 1
-            mip.colType(x[i][k], Mip::INTEGER);     // int
-            // DOUT("x[" << i << "][" << k << "] INTEGER >= 0 and <= 1");
-    
-            w[i][k] = mip.addCol();
-            mip.colLowerBound(w[i][k], 0);          // 0 <= w[i][k]
-            mip.colType(w[i][k], Mip::REAL);        // real
-            // DOUT("w[" << i << "][" << k << "] REAL >= 0");
+        nfac = 0;
+        for (size_t v=0; v < nvq; v++) {
+            if (ipusecount[v] != 0) {
+                v2i[v] = nfac;
+                nfac += 1;
+            }
         }
-    }
-    
-    // constraints (rows)
-    //  forall i: ( sum k: x[i][k] == 1 )
-    // DOUT("... add/initialize sum to 1 constraint rows");
-    for ( size_t i=0; i<nfac; i++ )
-    {
-        Mip::Expr   sum;
-        std::string s = "";
-        bool started = false;
-        for ( size_t k=0; k<nlocs; k++ )
-        {
-            sum += x[i][k];
-            if (started) s += "+ "; else started = true;
-            s += "x[";
-            s += std::to_string(i);
-            s += "][";
-            s += std::to_string(k);
-            s += "]";
+        DOUT("... number of facilities: " << nfac << " while number of used virtual qubits is: " << nvq);
+
+        // precompute refcount (used by the model as constants) by scanning circuit;
+        // refcount[i][j] = count of two-qubit gates between facilities i and j in current circuit
+        // at the same time, set anymap and currmap
+        // anymap = there are no two-qubit gates so any map will do
+        // currmap = in the current map, all two-qubit gates are NN so current map will do
+        DOUT("... compute refcount by scanning circuit");
+        std::vector<std::vector<size_t>>  refcount;
+        refcount.resize(nfac); for (size_t i=0; i<nfac; i++) refcount[i].resize(nfac,0);
+        bool anymap = true;    // true when all refcounts are 0
+        bool currmap = true;   // true when in current map all two-qubit gates are NN
+
+        twoqubitcount = 0;
+        for (auto &gp : circ) {
+            auto &q = gp->operands;
+            if (q.size() == 2) {
+                if (prefix == 0 || twoqubitcount < prefix) {
+                    anymap = false;
+                    refcount[v2i[q[0]]][v2i[q[1]]] += 1;
+
+                    if (
+                        v2r[q[0]] == UNDEFINED_QUBIT
+                        || v2r[q[1]] == UNDEFINED_QUBIT
+                        || gridp->Distance(v2r[q[0]], v2r[q[1]]) > 1
+                    ) {
+                        currmap = false;
+                    }
+                }
+                twoqubitcount++;
+            }
         }
-        mip.addRow(sum == 1);
-        s += " == 1";
-        // DOUT(s);
-    }
-    
-    // constraints (rows)
-    //  forall k: ( sum i: x[i][k] <= 1 )
-    //  < 1 (i.e. == 0) may apply for a k when location k doesn't contain a qubit in this solution
-    for ( size_t k=0; k<nlocs; k++ )
-    {
-        Mip::Expr   sum;
-        std::string s = "";
-        bool started = false;
-        for ( size_t i=0; i<nfac; i++ )
-        {
-            sum += x[i][k];
-            if (started) s += "+ "; else started = true;
-            s += "x[";
-            s += std::to_string(i);
-            s += "]["; 
-            s += std::to_string(k); 
-            s += "]";
+        if (prefix != 0 && twoqubitcount >= prefix) {
+            DOUT("InitialPlace: only considered " << prefix << " of " << twoqubitcount << " two-qubit gates, so resulting mapping is not exact");
         }
-        mip.addRow(sum <= 1);
-        s += " <= 1";
-        // DOUT(s);
-    }
-    
-    // constraints (rows)
-    //  forall i, k: costmax[i][k] * x[i][k]
-    //          + sum j sum l refcount[i][j]*distance[k][l]*x[j][l] - w[i][k] <= costmax[i][k]
-    // DOUT("... add/initialize nfac x nlocs constraint rows based on nfac x nlocs column combinations");
-    for ( size_t i=0; i<nfac; i++ )
-    {
-        for ( size_t k=0; k<nlocs; k++ )
-        {
-            Mip::Expr   left = costmax[i][k] * x[i][k];
-            std::string lefts = "";
-            bool started = false;
-            for ( size_t j=0; j<nfac; j++ )
-            {
-                for ( size_t l=0; l<nlocs; l++ )
-                {
-                    left += refcount[i][j] * gridp->Distance(k,l) * x[j][l];
-                    if (refcount[i][j] * gridp->Distance(k,l) != 0)
-                    {
-                        if (started) lefts += " + "; else started = true;
-                        lefts += std::to_string(refcount[i][j] * gridp->Distance(k,l));
-                        lefts += " * x[";
-                        lefts += std::to_string(j);
-                        lefts += "][";
-                        lefts += std::to_string(l);
-                        lefts += "]";
+        if (anymap) {
+            DOUT("InitialPlace: no two-qubit gates found, so no constraints, and any mapping is ok");
+            DOUT("InitialPlace.PlaceBody [ANY MAPPING IS OK]");
+            result = ipr_any;
+            iptimetaken = 0.0;
+            return;
+        }
+        if (currmap) {
+            DOUT("InitialPlace: in current map, all two-qubit gates are nearest neighbor, so current map is ok");
+            DOUT("InitialPlace.PlaceBody [CURRENT MAPPING IS OK]");
+            result = ipr_current;
+            iptimetaken = 0.0;
+            return;
+        }
+
+        // compute iptimetaken, start interval timer here
+        using namespace std::chrono;
+        high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
+        // precompute costmax by applying formula
+        // costmax[i][k] = sum j: sum l: refcount[i][j] * distance(k,l) for facility i in location k
+        DOUT("... precompute costmax by combining refcount and distances");
+        std::vector<std::vector<size_t>>  costmax;
+        costmax.resize(nfac); for (size_t i=0; i<nfac; i++) costmax[i].resize(nlocs,0);
+        for (size_t i = 0; i < nfac; i++) {
+            for (size_t k = 0; k < nlocs; k++) {
+                for (size_t j = 0; j < nfac; j++) {
+                    for (size_t l = 0; l < nlocs; l++) {
+                        costmax[i][k] += refcount[i][j] * (gridp->Distance(k,l) - 1);
                     }
                 }
             }
-            left -= w[i][k];
-            lefts += "- w[";
-            lefts += std::to_string(i);
-            lefts += "][";
-            lefts += std::to_string(k);
-            lefts += "]";
-            Mip::Expr   right = costmax[i][k];
-            mip.addRow(left <= right);
-            // DOUT(lefts << " <= " << costmax[i][k]);
         }
-    }
-    
-    // objective
-    Mip::Expr   objective;
-    // DOUT("... add/initialize objective");
-    std::string objs = "";
-    bool started = false;
-    mip.min();
-    for ( size_t i=0; i<nfac; i++ )
-    {
-        for ( size_t k=0; k<nlocs; k++ )
-        {
-            objective += w[i][k];
-            if (started) objs += "+ "; else started = true;
-            objs += "w[";
-            objs += std::to_string(i);
-            objs += "][";
-            objs += std::to_string(k);
-            objs += "]";
-        }
-    }
-    mip.obj(objective);
-    // DOUT("MINIMIZE " << objs);
 
-    DOUT("... v2r before solving, nvq=" << nvq);
-    for (size_t v=0; v<nvq; v++)
-    {
-        DOUT("... about to print v2r[" << v << "]= ...");
-        DOUT("....." << v2r[v]);
-    }
-    DOUT("..1 nvq=" << nvq);
-    
-    // solve the problem
-    WOUT("... computing initial placement using MIP, this may take a while ...");
-    DOUT("InitialPlace: solving the problem, this may take a while ...");
-    DOUT("..2 nvq=" << nvq);
-    Mip::SolveExitStatus s;
-    DOUT("Just before solve: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp);
-    DOUT("Just before solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
-    DOUT("..2b nvq=" << nvq);
-    {
-        s = mip.solve();
-    }
-    DOUT("..3 nvq=" << nvq);
-    DOUT("Just after solve: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp);
-    DOUT("Just after solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
-    ASSERT(nvq == nlocs);         // consistency check, mainly to let it crash
+        // the problem
+        // mixed integer programming
+        Mip  mip;
 
-    // computing iptimetaken, stop interval timer
-    DOUT("..4 nvq=" << nvq);
-    high_resolution_clock::time_point t2 = high_resolution_clock::now();
-    duration<double> time_span = t2 - t1;
-    iptimetaken = time_span.count();
-    DOUT("..5 nvq=" << nvq);
+        // variables (columns)
+        //  x[i][k] are integral, values 0 or 1
+        //      x[i][k] represents whether facility i is in location k
+        //  w[i][k] are real, values >= 0
+        //      w[i][k] represents x[i][k] * sum j: sum l: refcount[i][j] * distance(k,l) * x[j][l]
+        //       i.e. if facility i not in location k then 0
+        //       else for all facilities j in its location l sum refcount[i][j] * distance(k,l)
+        // DOUT("... allocate x column variable");
+        std::vector<std::vector<Mip::Col>> x;
+        x.resize(nfac); for (size_t i=0; i<nfac; i++) x[i].resize(nlocs);
+        // DOUT("... allocate w column variable");
+        std::vector<std::vector<Mip::Col>> w;
+        w.resize(nfac); for (size_t i=0; i<nfac; i++) w[i].resize(nlocs);
+        // DOUT("... add/initialize x and w column variables with trivial constraints and type");
+        for (size_t i = 0; i < nfac; i++) {
+            for (size_t k = 0; k < nlocs; k++) {
+                x[i][k] = mip.addCol();
+                mip.colLowerBound(x[i][k], 0);          // 0 <= x[i][k]
+                mip.colUpperBound(x[i][k], 1);          //      x[i][k] <= 1
+                mip.colType(x[i][k], Mip::INTEGER);     // int
+                // DOUT("x[" << i << "][" << k << "] INTEGER >= 0 and <= 1");
 
-    // DOUT("... determine result of solving");
-    Mip::ProblemType pt = mip.type();
-    DOUT("..6 nvq=" << nvq);
-    if (s != Mip::SOLVED || pt != Mip::OPTIMAL)
-    {
-        DOUT("... InitialPlace: no (optimal) solution found; solve returned:"<< s << " type returned:" << pt);
-        result = ipr_failed;
-        DOUT("InitialPlace.PlaceBody [FAILED, DID NOT FIND MAPPING]");
-        return;
-    }
-    DOUT("..7 nvq=" << nvq);
-
-    // return new mapping as result in v2r
-
-    // get the results: x[i][k] == 1 iff facility i is in location k (i.e. real qubit index k)
-    // use v2i to translate facilities back to original virtual qubit indices
-    // and fill v2r with the found locations for the used virtual qubits;
-    // the unused mapped virtual qubits are mapped to an arbitrary permutation of the remaining locations;
-    // the latter must be updated to generate swaps when mapping multiple kernels
-    DOUT("..8 nvq=" << nvq);
-    DOUT("... interpret result and copy to Virt2Real, nvq=" << nvq);
-    for (size_t v=0; v<nvq; v++)
-    {
-        DOUT("... about to set v2r to undefined for v " << v);
-        v2r[v] = UNDEFINED_QUBIT;      // i.e. undefined, i.e. v is not an index of a used virtual qubit
-    }
-    for ( size_t i=0; i<nfac; i++ )
-    {
-        size_t v;   // found virtual qubit index v represented by facility i
-        // use v2i backward to find virtual qubit v represented by facility i
-        DOUT("... about to inspect v2i to get solution and set it in v2r for facility " << i);
-        for (v=0; v<nvq; v++)
-        {
-            if (v2i[v] == i)
-            {
-                break;
+                w[i][k] = mip.addCol();
+                mip.colLowerBound(w[i][k], 0);          // 0 <= w[i][k]
+                mip.colType(w[i][k], Mip::REAL);        // real
+                // DOUT("w[" << i << "][" << k << "] REAL >= 0");
             }
         }
-        ASSERT(v < nvq);  // for each facility there must be a virtual qubit
-        size_t k;   // location to which facility i being virtual qubit index v was allocated
-        for (k=0; k<nlocs; k++ )
-        {
-            if (mip.sol(x[i][k]) == 1)
-            {
-                v2r[v] = k;
-                // v2r.rs[] is not updated because no gates were really mapped yet
-                break;
-            }
-        }
-        ASSERT(k < nlocs);  // each facility i by definition represents a used qubit so must have got a location
-        DOUT("... end loop body over nfac");
-    }
 
-    auto mapinitone2oneopt = ql::options::get("mapinitone2one");
-    if ("yes" == mapinitone2oneopt)
-    {
-        DOUT("... correct location of unused mapped virtual qubits to be an unused location");
-        v2r.DPRINT("... result Virt2Real map of InitialPlace before mapping unused mapped virtual qubits ");
-        // virtual qubits used by this kernel v have got their location k filled in in v2r[v] == k
-        // unused mapped virtual qubits still have location UNDEFINED_QUBIT, fill with the remaining locs
-        // this should be replaced by actually swapping them to there, when mapping multiple kernels
-        for (size_t v=0; v<nvq; v++)
-        {
-            if (v2r[v] == UNDEFINED_QUBIT)
-            {
-                // v is unused by this kernel; find an unused location k
-                size_t k;   // location k that is checked for having been allocated to some virtual qubit w
-                for (k=0; k<nlocs; k++ )
-                {
-                    size_t w;
-                    for (w=0; w<nvq; w++)
-                    {
-                        if (v2r[w] == k)
-                        {
-                            break;
+        // constraints (rows)
+        //  forall i: ( sum k: x[i][k] == 1 )
+        // DOUT("... add/initialize sum to 1 constraint rows");
+        for (size_t i = 0; i < nfac; i++) {
+            Mip::Expr   sum;
+            std::string s{};
+            bool started = false;
+            for (size_t k = 0; k < nlocs; k++) {
+                sum += x[i][k];
+                if (started) {
+                    s += "+ ";
+                } else {
+                    started = true;
+                }
+                s += "x[";
+                s += std::to_string(i);
+                s += "][";
+                s += std::to_string(k);
+                s += "]";
+            }
+            mip.addRow(sum == 1);
+            s += " == 1";
+            // DOUT(s);
+        }
+
+        // constraints (rows)
+        //  forall k: ( sum i: x[i][k] <= 1 )
+        //  < 1 (i.e. == 0) may apply for a k when location k doesn't contain a qubit in this solution
+        for (size_t k = 0; k < nlocs; k++) {
+            Mip::Expr   sum;
+            std::string s{};
+            bool started = false;
+            for (size_t i = 0; i < nfac; i++) {
+                sum += x[i][k];
+                if (started) s += "+ "; else started = true;
+                s += "x[";
+                s += std::to_string(i);
+                s += "][";
+                s += std::to_string(k);
+                s += "]";
+            }
+            mip.addRow(sum <= 1);
+            s += " <= 1";
+            // DOUT(s);
+        }
+
+        // constraints (rows)
+        //  forall i, k: costmax[i][k] * x[i][k]
+        //          + sum j sum l refcount[i][j]*distance[k][l]*x[j][l] - w[i][k] <= costmax[i][k]
+        // DOUT("... add/initialize nfac x nlocs constraint rows based on nfac x nlocs column combinations");
+        for (size_t i = 0; i < nfac; i++) {
+            for (size_t k = 0; k < nlocs; k++) {
+                Mip::Expr   left = costmax[i][k] * x[i][k];
+                std::string lefts{};
+                bool started = false;
+                for (size_t j = 0; j < nfac; j++) {
+                    for (size_t l = 0; l < nlocs; l++) {
+                        left += refcount[i][j] * gridp->Distance(k,l) * x[j][l];
+                        if (refcount[i][j] * gridp->Distance(k,l) != 0) {
+                            if (started) {
+                                lefts += " + ";
+                            } else {
+                                started = true;
+                            }
+                            lefts += std::to_string(refcount[i][j] * gridp->Distance(k,l));
+                            lefts += " * x[";
+                            lefts += std::to_string(j);
+                            lefts += "][";
+                            lefts += std::to_string(l);
+                            lefts += "]";
                         }
                     }
-                    if (w >= nvq)
-                    {
-                        // no w found for which v2r[w] == k
-                        break;     // k is an unused location
-                    }
-                    // k is a used location, so continue with next k to check whether it is hopefully unused
                 }
-                ASSERT(k < nlocs);  // when a virtual qubit is not used, there must be a location that is not used
-                v2r[v] = k;
+                left -= w[i][k];
+                lefts += "- w[";
+                lefts += std::to_string(i);
+                lefts += "][";
+                lefts += std::to_string(k);
+                lefts += "]";
+                Mip::Expr   right = costmax[i][k];
+                mip.addRow(left <= right);
+                // DOUT(lefts << " <= " << costmax[i][k]);
             }
-            DOUT("... end loop body over nvq when mapinitone2oneopt");
         }
-    }
-    v2r.DPRINT("... final result Virt2Real map of InitialPlace");
-    result = ipr_newmap;
-    DOUT("InitialPlace.PlaceBody [SUCCESS, FOUND MAPPING]");
-}
 
-// the above PlaceBody is a regular function using circ, and updating v2r and result before it returns;
-// it implements Initial Placement as if the call to Place in the mapper called PlaceBody directly;
-// because it may take a while to return, a new Place and a PlaceWrapper are put in between;
-// the idea is to run PlaceBody in a detached thread, that, when ready, signals the main thread;
-// the main thread waits for this signal with a timeout value;
-// all this is done in a try block where the catch is called on this timeout;
-// why exceptions are used, is not clear, so it was replaced by PlaceWrapper returning "timedout" or not
-// and this works as well ...
-bool PlaceWrapper( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& iptimetaken, std::string& initialplaceopt)
-{
-    DOUT("InitialPlace.PlaceWrapper called");
-    std::mutex  m;
-    std::condition_variable cv;
-
-    // prepare timeout
-    int      waitseconds;
-    bool     andthrowexception = false;
-    if ("1s" == initialplaceopt)        { waitseconds = 1; }
-    else if ("1sx" == initialplaceopt)  { waitseconds = 1; andthrowexception = true; }
-    else if ("10s" == initialplaceopt)  { waitseconds = 10; }
-    else if ("10sx" == initialplaceopt) { waitseconds = 10; andthrowexception = true; }
-    else if ("1m" == initialplaceopt)   { waitseconds = 60; }
-    else if ("1mx" == initialplaceopt)  { waitseconds = 60; andthrowexception = true; }
-    else if ("10m" == initialplaceopt)  { waitseconds = 600; }
-    else if ("10mx" == initialplaceopt) { waitseconds = 600; andthrowexception = true; }
-    else if ("1h" == initialplaceopt)   { waitseconds = 3600; }
-    else if ("1hx" == initialplaceopt)  { waitseconds = 3600; andthrowexception = true; }
-    else
-    {
-        FATAL("Unknown value of option 'initialplace'='" << initialplaceopt << "'.");
-    }
-    iptimetaken = waitseconds;    // pessimistic, in case of timeout, otherwise it is corrected
-
-    // v2r and result are allocated on stack of main thread by some ancestor so be careful with threading
-    std::thread t([&cv, this, &circ, &v2r, &result, &iptimetaken]()
-        {
-            DOUT("InitialPlace.PlaceWrapper subthread about to call PlaceBody");
-            PlaceBody(circ, v2r, result, iptimetaken);
-            DOUT("InitialPlace.PlaceBody returned in subthread; about to signal the main thread");
-            cv.notify_one();        // by this, the main thread awakes from cv.wait_for without timeout
-            DOUT("InitialPlace.PlaceWrapper subthread after signaling the main thread, and is about to die");
+        // objective
+        Mip::Expr   objective;
+        // DOUT("... add/initialize objective");
+        std::string objs{};
+        bool started = false;
+        mip.min();
+        for (size_t i = 0; i < nfac; i++) {
+            for (size_t k = 0; k < nlocs; k++) {
+                objective += w[i][k];
+                if (started) {
+                    objs += "+ ";
+                } else {
+                    started = true;
+                }
+                objs += "w[";
+                objs += std::to_string(i);
+                objs += "][";
+                objs += std::to_string(k);
+                objs += "]";
+            }
         }
-    );
-    DOUT("InitialPlace.PlaceWrapper main code created thread; about to call detach on it");
-    t.detach();
-    DOUT("InitialPlace.PlaceWrapper main code detached thread");
-    {
-        std::chrono::seconds maxwaittime(waitseconds);
-        std::unique_lock<std::mutex> l(m);
-        DOUT("InitialPlace.PlaceWrapper main code starts waiting with timeout of " << waitseconds << " seconds");
-        if (cv.wait_for(l, maxwaittime) == std::cv_status::timeout)
+        mip.obj(objective);
+        // DOUT("MINIMIZE " << objs);
+
+        DOUT("... v2r before solving, nvq=" << nvq);
+        for (size_t v = 0; v < nvq; v++) {
+            DOUT("... about to print v2r[" << v << "]= ...");
+            DOUT("....." << v2r[v]);
+        }
+        DOUT("..1 nvq=" << nvq);
+
+        // solve the problem
+        WOUT("... computing initial placement using MIP, this may take a while ...");
+        DOUT("InitialPlace: solving the problem, this may take a while ...");
+        DOUT("..2 nvq=" << nvq);
+        Mip::SolveExitStatus s;
+        DOUT("Just before solve: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp);
+        DOUT("Just before solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
+        DOUT("..2b nvq=" << nvq);
         {
-            DOUT("InitialPlace.PlaceWrapper main code awoke from waiting with timeout");
-            if (andthrowexception)
+            s = mip.solve();
+        }
+        DOUT("..3 nvq=" << nvq);
+        DOUT("Just after solve: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp);
+        DOUT("Just after solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
+        ASSERT(nvq == nlocs);         // consistency check, mainly to let it crash
+
+        // computing iptimetaken, stop interval timer
+        DOUT("..4 nvq=" << nvq);
+        high_resolution_clock::time_point t2 = high_resolution_clock::now();
+        duration<double> time_span = t2 - t1;
+        iptimetaken = time_span.count();
+        DOUT("..5 nvq=" << nvq);
+
+        // DOUT("... determine result of solving");
+        Mip::ProblemType pt = mip.type();
+        DOUT("..6 nvq=" << nvq);
+        if (s != Mip::SOLVED || pt != Mip::OPTIMAL) {
+            DOUT("... InitialPlace: no (optimal) solution found; solve returned:"<< s << " type returned:" << pt);
+            result = ipr_failed;
+            DOUT("InitialPlace.PlaceBody [FAILED, DID NOT FIND MAPPING]");
+            return;
+        }
+        DOUT("..7 nvq=" << nvq);
+
+        // return new mapping as result in v2r
+
+        // get the results: x[i][k] == 1 iff facility i is in location k (i.e. real qubit index k)
+        // use v2i to translate facilities back to original virtual qubit indices
+        // and fill v2r with the found locations for the used virtual qubits;
+        // the unused mapped virtual qubits are mapped to an arbitrary permutation of the remaining locations;
+        // the latter must be updated to generate swaps when mapping multiple kernels
+        DOUT("..8 nvq=" << nvq);
+        DOUT("... interpret result and copy to Virt2Real, nvq=" << nvq);
+        for (size_t v = 0; v < nvq; v++) {
+            DOUT("... about to set v2r to undefined for v " << v);
+            v2r[v] = UNDEFINED_QUBIT;      // i.e. undefined, i.e. v is not an index of a used virtual qubit
+        }
+        for (size_t i = 0; i < nfac; i++) {
+            size_t v;   // found virtual qubit index v represented by facility i
+            // use v2i backward to find virtual qubit v represented by facility i
+            DOUT("... about to inspect v2i to get solution and set it in v2r for facility " << i);
+            for (v = 0; v < nvq; v++) {
+                if (v2i[v] == i) {
+                    break;
+                }
+            }
+            ASSERT(v < nvq);  // for each facility there must be a virtual qubit
+            size_t k;   // location to which facility i being virtual qubit index v was allocated
+            for (k = 0; k < nlocs; k++) {
+                if (mip.sol(x[i][k]) == 1) {
+                    v2r[v] = k;
+                    // v2r.rs[] is not updated because no gates were really mapped yet
+                    break;
+                }
+            }
+            ASSERT(k < nlocs);  // each facility i by definition represents a used qubit so must have got a location
+            DOUT("... end loop body over nfac");
+        }
+
+        auto mapinitone2oneopt = ql::options::get("mapinitone2one");
+        if (mapinitone2oneopt == "yes") {
+            DOUT("... correct location of unused mapped virtual qubits to be an unused location");
+            v2r.DPRINT("... result Virt2Real map of InitialPlace before mapping unused mapped virtual qubits ");
+            // virtual qubits used by this kernel v have got their location k filled in in v2r[v] == k
+            // unused mapped virtual qubits still have location UNDEFINED_QUBIT, fill with the remaining locs
+            // this should be replaced by actually swapping them to there, when mapping multiple kernels
+            for (size_t v = 0; v < nvq; v++) {
+                if (v2r[v] == UNDEFINED_QUBIT) {
+                    // v is unused by this kernel; find an unused location k
+                    size_t k;   // location k that is checked for having been allocated to some virtual qubit w
+                    for (k = 0; k < nlocs; k++) {
+                        size_t w;
+                        for (w = 0; w < nvq; w++) {
+                            if (v2r[w] == k) {
+                                break;
+                            }
+                        }
+                        if (w >= nvq) {
+                            // no w found for which v2r[w] == k
+                            break;     // k is an unused location
+                        }
+                        // k is a used location, so continue with next k to check whether it is hopefully unused
+                    }
+                    ASSERT(k < nlocs);  // when a virtual qubit is not used, there must be a location that is not used
+                    v2r[v] = k;
+                }
+                DOUT("... end loop body over nvq when mapinitone2oneopt");
+            }
+        }
+        v2r.DPRINT("... final result Virt2Real map of InitialPlace");
+        result = ipr_newmap;
+        DOUT("InitialPlace.PlaceBody [SUCCESS, FOUND MAPPING]");
+    }
+
+    // the above PlaceBody is a regular function using circ, and updating v2r and result before it returns;
+    // it implements Initial Placement as if the call to Place in the mapper called PlaceBody directly;
+    // because it may take a while to return, a new Place and a PlaceWrapper are put in between;
+    // the idea is to run PlaceBody in a detached thread, that, when ready, signals the main thread;
+    // the main thread waits for this signal with a timeout value;
+    // all this is done in a try block where the catch is called on this timeout;
+    // why exceptions are used, is not clear, so it was replaced by PlaceWrapper returning "timedout" or not
+    // and this works as well ...
+    bool PlaceWrapper(
+        ql::circuit &circ,
+        Virt2Real &v2r,
+        ipr_t &result,
+        double &iptimetaken,
+        const std::string &initialplaceopt
+    ) {
+        DOUT("InitialPlace.PlaceWrapper called");
+        std::mutex  m;
+        std::condition_variable cv;
+
+        // prepare timeout
+        bool throwexception = initialplaceopt.at(initialplaceopt.size() - 1) == 'x';
+        std::string waittime = throwexception
+                             ? initialplaceopt.substr(0, initialplaceopt.size() - 1)
+                             : initialplaceopt;
+        int waitseconds = std::stoi(waittime.substr(0, waittime.size() - 1));
+        switch (initialplaceopt.at(initialplaceopt.size() - 1)) {
+            case 's': break;
+            case 'm': waitseconds *= 60; break;
+            case 'h': waitseconds *= 3600; break;
+            default:
+                FATAL("Unknown value of option 'initialplace'='" << initialplaceopt << "'.");
+        }
+        iptimetaken = waitseconds;    // pessimistic, in case of timeout, otherwise it is corrected
+
+        // v2r and result are allocated on stack of main thread by some ancestor so be careful with threading
+        std::thread t([&cv, this, &circ, &v2r, &result, &iptimetaken]()
             {
-                DOUT("InitialPlace: timed out and stops compilation [TIMED OUT, STOP COMPILATION]");
-                FATAL("Initial placement timed out and stops compilation [TIMED OUT, STOP COMPILATION]");
+                DOUT("InitialPlace.PlaceWrapper subthread about to call PlaceBody");
+                PlaceBody(circ, v2r, result, iptimetaken);
+                DOUT("InitialPlace.PlaceBody returned in subthread; about to signal the main thread");
+                cv.notify_one();        // by this, the main thread awakes from cv.wait_for without timeout
+                DOUT("InitialPlace.PlaceWrapper subthread after signaling the main thread, and is about to die");
             }
-            DOUT("InitialPlace.PlaceWrapper about to return timedout==true");
-            return true;
+        );
+        DOUT("InitialPlace.PlaceWrapper main code created thread; about to call detach on it");
+        t.detach();
+        DOUT("InitialPlace.PlaceWrapper main code detached thread");
+        {
+            std::chrono::seconds maxwaittime(waitseconds);
+            std::unique_lock<std::mutex> l(m);
+            DOUT("InitialPlace.PlaceWrapper main code starts waiting with timeout of " << waitseconds << " seconds");
+            if (cv.wait_for(l, maxwaittime) == std::cv_status::timeout) {
+                DOUT("InitialPlace.PlaceWrapper main code awoke from waiting with timeout");
+                if (throwexception) {
+                    DOUT("InitialPlace: timed out and stops compilation [TIMED OUT, STOP COMPILATION]");
+                    FATAL("Initial placement timed out and stops compilation [TIMED OUT, STOP COMPILATION]");
+                }
+                DOUT("InitialPlace.PlaceWrapper about to return timedout==true");
+                return true;
+            }
+            DOUT("InitialPlace.PlaceWrapper main code awoke from waiting without timeout, from signal sent by InitialPlace.PlaceWrapper subthread just before its death");
         }
-        DOUT("InitialPlace.PlaceWrapper main code awoke from waiting without timeout, from signal sent by InitialPlace.PlaceWrapper subthread just before its death");
+
+        DOUT("InitialPlace.PlaceWrapper about to return timedout==false");
+        return false;
     }
 
-    DOUT("InitialPlace.PlaceWrapper about to return timedout==false");
-    return false;
-}
+    // find an initial placement of the virtual qubits for the given circuit as in Place
+    // put a timelimit on its execution specified by the initialplace option
+    // when it expires, result is set to ipr_timedout;
+    // details of how this is accomplished, can be found above;
+    // v2r is updated by PlaceBody/PlaceWrapper when it has found a mapping
+    void Place(
+        ql::circuit &circ,
+        Virt2Real &v2r,
+        ipr_t &result,
+        double &iptimetaken,
+        const std::string &initialplaceopt
+    ) {
+        Virt2Real   v2r_orig = v2r;
 
-// find an initial placement of the virtual qubits for the given circuit as in Place
-// put a timelimit on its execution specified by the initialplace option
-// when it expires, result is set to ipr_timedout;
-// details of how this is accomplished, can be found above;
-// v2r is updated by PlaceBody/PlaceWrapper when it has found a mapping
-void Place( ql::circuit& circ, Virt2Real& v2r, ipr_t& result, double& iptimetaken, std::string& initialplaceopt)
-{
-    Virt2Real   v2r_orig = v2r;
-
-    DOUT("InitialPlace.Place ...");
-    if ("yes" == initialplaceopt)
-    {
-        // do initial placement without time limit
-        DOUT("InitialPlace.Place calling PlaceBody without time limit");
-        PlaceBody(circ, v2r, result, iptimetaken);
-        // v2r reflects new mapping, if any found, otherwise unchanged
-        DOUT("InitialPlace.Place [done, no time limit], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
-    }
-    else
-    {
-        bool timedout;
-        timedout = PlaceWrapper(circ, v2r, result, iptimetaken, initialplaceopt);
-    
-        if (timedout)
-        {
-            result = ipr_timedout;
-            DOUT("InitialPlace.Place [done, TIMED OUT, NO MAPPING FOUND], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
-
-            v2r = v2r_orig; // v2r may have got corrupted when timed out during v2r updating
-        }
-        else
-        {
+        DOUT("InitialPlace.Place ...");
+        if (initialplaceopt == "yes") {
+            // do initial placement without time limit
+            DOUT("InitialPlace.Place calling PlaceBody without time limit");
+            PlaceBody(circ, v2r, result, iptimetaken);
             // v2r reflects new mapping, if any found, otherwise unchanged
-            DOUT("InitialPlace.Place [done, not timed out], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
+            DOUT("InitialPlace.Place [done, no time limit], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
+        } else {
+            bool timedout;
+            timedout = PlaceWrapper(circ, v2r, result, iptimetaken, initialplaceopt);
+
+            if (timedout) {
+                result = ipr_timedout;
+                DOUT("InitialPlace.Place [done, TIMED OUT, NO MAPPING FOUND], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
+
+                v2r = v2r_orig; // v2r may have got corrupted when timed out during v2r updating
+            } else {
+                // v2r reflects new mapping, if any found, otherwise unchanged
+                DOUT("InitialPlace.Place [done, not timed out], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
+            }
         }
     }
-}
-    
+
 };  // end class InitialPlace
 #endif // INITIALPLACE
 
