@@ -15,68 +15,16 @@
 #include "cqasm/cqasm_reader.h"
 #include "latency_compensation.h"
 #include "buffer_insertion.h"
-         
+#include "scheduler.h"
+
 #include <iostream>
 #include <chrono>
 
-/* JvS: guys, you can't define a class already defined in another header
- * *differently* and then "resolve" the inevitable compile errors by not
- * including the header. This fundamentally breaks how C++ works and resulted in
- * code that I'm astonished linked at all and even half-worked.
- *
- * In your defense, including the appropriate headers broke the rest of OpenQL
- * because the rest of OpenQL is also fundamentally broken, apparently relying
- * on headers only being included by a single compile units, which is precisely
- * NOT the function of a header file.
-namespace ql
-{
-    class eqasm_compiler
-    {
-        public:
-            virtual void compile(ql::quantum_program* programp, const ql::quantum_platform& plat);
-    };
-    
-    namespace arch
-    {
-        class cc_light_eqasm_compiler: public eqasm_compiler
-        {
-            public:
-                void ccl_decompose_pre_schedule(quantum_program* programp, const ql::quantum_platform& platform, std::string passname);
-                void ccl_decompose_post_schedule(quantum_program* programp, const ql::quantum_platform& platform, std::string passname);
-                void map(quantum_program* programp, const ql::quantum_platform& platform, std::string passname, std::string* stats);
-                void write_quantumsim_script(quantum_program* programp, const ql::quantum_platform& platform, std::string passname);
-                void qisa_code_generation(quantum_program* programp, const ql::quantum_platform& platform, std::string passname);
-        };
-
-        class eqasm_backend_cc: public eqasm_compiler
-        {
-            public:
-                eqasm_backend_cc(){}
-        };
-    }
-}
-*/
 #include "arch/cc_light/cc_light_eqasm_compiler.h"
 #include "arch/cc/eqasm_backend_cc.h"
 
-// JvS: this does not belong here *at all*. All header files should have their
-// own CC file with their defs. But only putting the globals in a new
-// corresponding CC file for now breaks linkage on MSVC, because annoyingly CC
-// files are treated as unused and not linked when none of their *functions*
-// are used.
-namespace ql {
-namespace arch {
-size_t CurrSRegCount = 0;
-size_t CurrTRegCount = 0;
-} // namespace arch
-} // namespace ql
-
-
 namespace ql
 {
-
-extern void rcschedule(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname);
-extern void schedule(ql::quantum_program*, const ql::quantum_platform&, std::string);
 
     /**
      * @brief  Scheduler pass constructor

@@ -5,21 +5,18 @@
  * @brief  OpenQL Passes
  */
 
-#ifndef QL_PASSES_H
-#define QL_PASSES_H
+#pragma once
 
 #include "program.h"
 
 #include <CLI/CLI.hpp>
 
-namespace ql
-{
+namespace ql {
 
 /**
  * Compiler Pass Interface 
  */
-class AbstractPass
-{
+class AbstractPass {
 public:
     virtual void runOnProgram(ql::quantum_program *program){};
     
@@ -316,6 +313,4 @@ private:
   };
 
     
-} // ql
-
-#endif //QL_PASSES_H
+} // namespace ql

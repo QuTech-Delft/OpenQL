@@ -188,6 +188,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/metrics.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/openql_i.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/options.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_eqasm_compiler.cc"
 )
 
 # This definition is used to define OPENQL_DECLSPEC for __declspec. More info:
