@@ -13,304 +13,270 @@
 
 namespace ql {
 
+class PassOptions;
+
 /**
  * Compiler Pass Interface 
  */
 class AbstractPass {
 public:
-    virtual void runOnProgram(ql::quantum_program *program){};
-    
-    AbstractPass(std::string name);
-    std::string  getPassName();
-    void setPassName(std::string name);
-    void setPassOption(std::string optionName, std::string optionValue);
-    class PassOptions* getPassOptions() {return passOptions;};
+    virtual void runOnProgram(ql::quantum_program *program) = 0;
+
+    explicit AbstractPass(const std::string &name);
+    std::string getPassName() const;
+    void setPassName(const std::string &name);
+    void setPassOption(const std::string &optionName, const std::string &optionValue);
+    PassOptions *getPassOptions();
+    const PassOptions *getPassOptions() const;
     void createPassOptions();
-    bool getSkip();
+    bool getSkip() const;
     void initPass(ql::quantum_program *program);
     void finalizePass(ql::quantum_program *program);
-    void appendStatistics(std::string statistic);
-    std::string getPassStatistics() {return statistics;};
-    void resetStatistics() { statistics = "";};
+    void appendStatistics(const std::string &statistic);
+    std::string getPassStatistics() const;
+    void resetStatistics();
     
 private:
-    std::string        passName;
-    std::string        statistics;
-    class PassOptions *passOptions;
+    std::string passName;
+    std::string statistics;
+    PassOptions *passOptions;
 };
 
 /**
  * Program Reader Pass 
  */
-class ReaderPass: public AbstractPass 
-{
+class ReaderPass : public AbstractPass {
 public:
     /**
      * @brief  Reader pass constructor
      * @param  Name of the read pass
      */
-    ReaderPass(std::string name):AbstractPass(name){};
-    
-    void runOnProgram(ql::quantum_program *program);
-    
+    explicit ReaderPass(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * Program Writer Pass 
  */
-class WriterPass: public AbstractPass 
-{
+class WriterPass : public AbstractPass {
 public:
     /**
      * @brief  Writer pass constructor
      * @param  Name of the read pass
      */
-    WriterPass(std::string name):AbstractPass(name){};
-    
-    void runOnProgram(ql::quantum_program *program);
+    explicit WriterPass(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * Optimizer Pass 
  */
-class RotationOptimizerPass: public AbstractPass 
-{
+class RotationOptimizerPass : public AbstractPass {
 public:
     /**
      * @brief  Rotation optimizer pass constructor
      * @param  Name of the optimized pass
      */
-    RotationOptimizerPass(std::string name):AbstractPass(name){};
-    
-    void runOnProgram(ql::quantum_program *program);
+    explicit RotationOptimizerPass(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * Decompose Toffoli Pass 
  */
-class DecomposeToffoliPass: public AbstractPass 
-{
+class DecomposeToffoliPass : public AbstractPass {
 public:
     /**
      * @brief  Rotation optimizer pass constructor
      * @param  Name of the optimized pass
      */
-    DecomposeToffoliPass(std::string name):AbstractPass(name){};
-    
-    void runOnProgram(ql::quantum_program *program);
+    explicit DecomposeToffoliPass(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * Scheduler Pass 
  */
-class SchedulerPass: public AbstractPass 
-{
+class SchedulerPass : public AbstractPass {
 public:
     /**
      * @brief  Scheduler pass constructor
      * @param  Name of the scheduler pass
      */
-    SchedulerPass(std::string name):AbstractPass(name){};
-
-    void runOnProgram(ql::quantum_program *program);
+    explicit SchedulerPass(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * Backend Compiler Pass 
  */
-class BackendCompilerPass: public AbstractPass 
-{
+class BackendCompilerPass : public AbstractPass {
 public:
     /**
      * @brief  Scheduler pass constructor
      * @param  Name of the scheduler pass
      */
-    BackendCompilerPass(std::string name):AbstractPass(name){};
-
-    void runOnProgram(ql::quantum_program *program);
+    explicit BackendCompilerPass(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * Report Statistics Pass 
  */
-class ReportStatisticsPass: public AbstractPass 
-{
+class ReportStatisticsPass: public AbstractPass {
 public:
     /**
      * @brief  Statistics pass constructor
      * @param  Name of the scheduler pass
      */
-    ReportStatisticsPass(std::string name):AbstractPass(name){};
-
-    void runOnProgram(ql::quantum_program *program);
+    explicit ReportStatisticsPass(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * CC-Light Prepare Backend Code Generation Pass 
  */
-class CCLPrepCodeGeneration: public AbstractPass 
-{
+class CCLPrepCodeGeneration : public AbstractPass {
 public:
     /**
      * @brief  CCL Preparation for Code Generation pass constructor
      * @param  Name of the preparation pass
      */
-    CCLPrepCodeGeneration(std::string name):AbstractPass(name){};
-
-    void runOnProgram(ql::quantum_program *program);
+    explicit CCLPrepCodeGeneration(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * CC-Light Prescheduler Decompose Pass 
  */
-class CCLDecomposePreSchedule: public AbstractPass 
-{
+class CCLDecomposePreSchedule : public AbstractPass {
 public:
     /**
      * @brief  CCL Decompose PreSchedule pass constructor
      * @param  Name of the decomposer pass
      */
-    CCLDecomposePreSchedule(std::string name):AbstractPass(name){};
-
-    void runOnProgram(ql::quantum_program *program);
+    explicit CCLDecomposePreSchedule(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * Mapper Pass 
  */
-class MapPass: public AbstractPass 
-{
+class MapPass : public AbstractPass {
 public:
     /**
      * @brief  Mapper pass constructor
      * @param  Name of the mapper pass
      */
-    MapPass(std::string name):AbstractPass(name){};
-
-    void runOnProgram(ql::quantum_program *program);
+    explicit MapPass(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * Clifford Optimizer Pass 
  */
-class CliffordOptimizePass: public AbstractPass 
-{
+class CliffordOptimizePass : public AbstractPass {
 public:
     /**
      * @brief  Clifford Optimize pass constructor
      * @param  Name of the optimizer pass (premapper or postmapper)
      */
-    CliffordOptimizePass(std::string name):AbstractPass(name){};
-
-    void runOnProgram(ql::quantum_program *program);
+    explicit CliffordOptimizePass(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * Resource Constraint Scheduler Pass 
  */
-class RCSchedulePass: public AbstractPass 
-{
+class RCSchedulePass : public AbstractPass {
 public:
     /**
      * @brief  Resource Constraint Scheduler pass constructor
      * @param  Name of the scheduler pass
      */
-    RCSchedulePass(std::string name):AbstractPass(name){};
-
-    void runOnProgram(ql::quantum_program *program);
+    explicit RCSchedulePass(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * Latency Compensation Pass
  */
-class LatencyCompensationPass: public AbstractPass 
-{
+class LatencyCompensationPass : public AbstractPass {
 public:
     /**
      * @brief  Latency compensation pass constructor
      * @param  Name of the latency compensation pass
      */
-    LatencyCompensationPass(std::string name):AbstractPass(name){};
-
-    void runOnProgram(ql::quantum_program *program);
+    explicit LatencyCompensationPass(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * Insert Buffer Delays Pass 
  */
-class InsertBufferDelaysPass: public AbstractPass 
-{
+class InsertBufferDelaysPass : public AbstractPass {
 public:
     /**
      * @brief  Insert Buffer Delays pass  constructor
      * @param  Name of the buffer delay insertion pass
      */
-    InsertBufferDelaysPass(std::string name):AbstractPass(name){};
-
-    void runOnProgram(ql::quantum_program *program);
+    explicit InsertBufferDelaysPass(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * CC-Light Decompose PostSchedule Pass
  */
-class CCLDecomposePostSchedulePass: public AbstractPass 
-{
+class CCLDecomposePostSchedulePass : public AbstractPass {
 public:
     /**
      * @brief  Decomposer Post Schedule  Pass
      * @param  Name of the decomposer pass
      */
-    CCLDecomposePostSchedulePass(std::string name):AbstractPass(name){};
-
-    void runOnProgram(ql::quantum_program *program);
+    explicit CCLDecomposePostSchedulePass(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * Write QuantumSim Program Pass
  */
-class WriteQuantumSimPass: public AbstractPass 
-{
+class WriteQuantumSimPass : public AbstractPass {
 public:
     /**
      * @brief  QuantumSim Writer Pass constructor
      * @param  Name of the writer pass
      */
-    WriteQuantumSimPass(std::string name):AbstractPass(name){};
-
-    void runOnProgram(ql::quantum_program *program);
+    explicit WriteQuantumSimPass(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * QISA Generation Pass 
  */
-class QisaCodeGenerationPass: public AbstractPass 
-{
+class QisaCodeGenerationPass : public AbstractPass {
 public:
     /**
      * @brief  QISA generation pass constructor
      * @param  Name of the QISA generator pass
      */
-    QisaCodeGenerationPass(std::string name):AbstractPass(name){};
-
-    void runOnProgram(ql::quantum_program *program);
+    explicit QisaCodeGenerationPass(const std::string &name);
+    void runOnProgram(ql::quantum_program *program) override;
 };
 
 /**
  * Pass Options Class
  */
-class PassOptions
-{
+class PassOptions {
 public:
-      PassOptions(std::string app_name="passOpts");
-      void print_current_values();
-      void help();
-      void setOption(std::string opt_name, std::string opt_value);
-      std::string getOption(std::string opt_name);
+      explicit PassOptions(std::string app_name="passOpts");
+      void print_current_values() const;
+      void help() const;
+      void setOption(const std::string &opt_name, const std::string &opt_value);
+      std::string getOption(const std::string &opt_name) const;
       
 private:
       CLI::App * app;
       std::map<std::string, std::string> opt_name2opt_val;
-  };
+};
 
-    
 } // namespace ql
