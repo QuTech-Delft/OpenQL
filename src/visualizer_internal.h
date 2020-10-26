@@ -117,6 +117,24 @@ struct QubitLines
 	std::vector<LineSegment> readout;
 };
 
+enum PulseType {MICROWAVE, FLUX, READOUT};
+
+struct GatePulses
+{
+	std::vector<int> microwave;
+	std::vector<int> flux;
+	std::vector<int> readout;
+};
+
+struct PulseVisualization
+{
+	int samplerateMicrowave = 0;
+	int samplerateFlux = 0;
+	int samplerateReadout = 0;
+
+	std::map<int, std::map<int, GatePulses>> mapping;
+};
+
 class CircuitData
 {
 	private:
@@ -191,6 +209,7 @@ class Structure
 };
 
 Layout parseConfiguration(const std::string& configPath);
+PulseVisualization parseWaveformMapping(const std::string& waveformMappingPath);
 void validateLayout(Layout& layout);
 
 int calculateAmountOfGateOperands(const GateProperties gate);

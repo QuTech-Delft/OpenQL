@@ -32,9 +32,9 @@ namespace ql
 // add cutEmptyCycles and emptyCycleThreshold to the documentation
 // make a copy of the gate vector, so any changes inside the visualizer to the program do not reflect back to any future compiler passes
 // add option to display cycle edges
+// add option to draw horizontal lines between qubits
 
 // -- IN PROGRESS ---
-// add option to draw horizontal lines between qubits
 // representing the gates as waveforms
 // allow collapsing the three qubit lines into one with an option
 // implement cycle cutting for pulse visualization
@@ -663,12 +663,16 @@ void Structure::printProperties() const
 // =                      Visualize                      = //
 // ======================================================= //
 
-void visualize(const ql::quantum_program* program, const std::string& configPath)
+void visualize(const ql::quantum_program* program, const std::string& configPath, const std::string& waveformMappingPath)
 {
     IOUT("Starting visualization...");
 
 	DOUT("Parsing visualizer configuration file.");
 	Layout layout = parseConfiguration(configPath);
+	if (layout.pulses.displayGatesAsPulses)
+	{
+		PulseVisualization pulseVisualization = parseWaveformMapping(waveformMappingPath);
+	}
 	
     DOUT("Validating layout...");
 	validateLayout(layout);
@@ -792,7 +796,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
 			linesPerQubit[qubitIndex] = {microwaveLineSegments, fluxLineSegments, readoutLineSegments};
 
-			IOUT("qubit: " << qubitIndex);
+			DOUT("qubit: " << qubitIndex);
 			std::string microwaveOutput = "\tmicrowave segments: ";
 			for (const LineSegment& segment : microwaveLineSegments)
 			{
@@ -805,7 +809,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 				}
 				microwaveOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
 			}
-			IOUT(microwaveOutput);
+			DOUT(microwaveOutput);
 
 			std::string fluxOutput = "\tflux segments: ";
 			for (const LineSegment& segment : fluxLineSegments)
@@ -819,7 +823,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 				}
 				fluxOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
 			}
-			IOUT(fluxOutput);
+			DOUT(fluxOutput);
 
 			std::string readoutOutput = "\treadout segments: ";
 			for (const LineSegment& segment : readoutLineSegments)
@@ -833,7 +837,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 				}
 				readoutOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
 			}
-			IOUT(readoutOutput);
+			DOUT(readoutOutput);
 		}
 
 		// Draw the lines of each qubit.
@@ -1040,7 +1044,7 @@ Layout parseConfiguration(const std::string& configPath)
 	}
 	catch (json::exception &e)
 	{
-		FATAL("Failed to load the visualization config file: malformed json file: \n\t" << std::string(e.what()));
+		FATAL("Failed to load the visualization config file: \n\t" << std::string(e.what()));
 	}
 
 	Layout layout;
@@ -1207,6 +1211,152 @@ Layout parseConfiguration(const std::string& configPath)
 	}
 
 	return layout;
+}
+
+PulseVisualization parseWaveformMapping(const std::string& waveformMappingPath)
+{
+	// Read the waveform mapping json file.
+	json waveformMapping;
+	try
+	{
+		waveformMapping = load_json(waveformMappingPath);
+	}
+	catch (json::exception &e)
+	{
+		FATAL("Failed to load the visualization waveform mapping file:\n\t" << std::string(e.what()));
+	}
+
+	PulseVisualization pulseVisualization;
+
+	// Parse the sample rates.
+	if (waveformMapping.count("samplerates") == 1)
+	{
+		try
+		{
+			if (waveformMapping["samplerates"].count("samplerateMicrowave") == 1)
+				pulseVisualization.samplerateMicrowave = waveformMapping["samplerates"]["samplerateMicrowave"];
+			else
+				FATAL("Missing 'samplerateMicrowave' attribute in waveform mapping file!");
+
+			if (waveformMapping["samplerates"].count("samplerateFlux") == 1)
+				pulseVisualization.samplerateFlux = waveformMapping["samplerates"]["samplerateFlux"];
+			else
+				FATAL("Missing 'samplerateFlux' attribute in waveform mapping file!");
+
+			if (waveformMapping["samplerates"].count("samplerateReadout") == 1)
+				pulseVisualization.samplerateReadout = waveformMapping["samplerates"]["samplerateReadout"];
+			else
+				FATAL("Missing 'samplerateReadout' attribute in waveform mapping file!");
+		}
+		catch (std::exception& e)
+		{
+			FATAL("Exception while parsing sample rates from waveform mapping file:\n\t" << e.what() << "\n\tMake sure the sample rates are integers!" );
+		}
+	}
+	else
+	{
+		FATAL("Missing 'samplerates' attribute in waveform mapping file!");
+	}
+
+	// Parse the codeword mapping.
+	if (waveformMapping.count("codewords") == 1)
+	{
+		// For each codeword...
+		for (const auto& codewordMapping : waveformMapping["codewords"].items())
+		{
+			// ... get the index and the qubit pulse mappings it contains.
+			int codewordIndex = 0;
+			try
+			{
+				codewordIndex = std::stoi(codewordMapping.key());
+			}
+			catch (std::exception& e)
+			{
+				FATAL("Exception while parsing key to codeword mapping " << codewordMapping.key() << " in waveform mapping file:\n\t" << e.what() << "\n\tKey should be an integer!");
+			}
+			std::map<int, GatePulses> qubitMapping;
+
+			// For each qubit in the codeword...
+			for (const auto& qubitMap : codewordMapping.value().items())
+			{
+				// ... get the index and the pulse mapping.
+				int qubitIndex = 0;
+				try
+				{
+					qubitIndex = std::stoi(qubitMap.key());
+				}
+				catch (std::exception& e)
+				{
+					FATAL("Exception while parsing key to qubit mapping " << qubitMap.key() << " in waveform mapping file:\n\t" << e.what() << "\n\tKey should be an integer!");
+				}
+				auto gatePulsesMapping = qubitMap.value();
+
+				// Read the pulses from the pulse mapping.
+				std::vector<int> microwave;
+				std::vector<int> flux;
+				std::vector<int> readout;
+				try
+				{
+				if (gatePulsesMapping.contains("microwave")) microwave = gatePulsesMapping["microwave"].get<std::vector<int>>();
+				if (gatePulsesMapping.contains("flux")) flux = gatePulsesMapping["flux"].get<std::vector<int>>();
+				if (gatePulsesMapping.contains("readout")) readout = gatePulsesMapping["readout"].get<std::vector<int>>();
+				}
+				catch (std::exception& e)
+				{
+					FATAL("Exception while parsing waveforms from waveform mapping file:\n\t" << e.what() << "\n\tMake sure the waveforms are arrays of integers!" );
+				}
+				GatePulses gatePulses {microwave, flux, readout};
+
+				// Insert the pulse mapping into the qubit.
+				qubitMapping.insert({qubitIndex, gatePulses});
+			}
+
+			// Insert the mapping for the qubits into the codeword.
+			pulseVisualization.mapping.insert({codewordIndex, qubitMapping});
+		}
+	}
+	else
+	{
+		FATAL("Missing 'codewords' attribute in waveform mapping file!");
+	}
+
+	// Print the waveform mapping.
+	for (const std::pair<int, std::map<int, GatePulses>>& codeword : pulseVisualization.mapping)
+	{
+		IOUT("codeword: " << codeword.first);
+		for (const std::pair<int, GatePulses>& gatePulsesMapping : codeword.second)
+		{
+			const int qubitIndex = gatePulsesMapping.first;
+			IOUT("\tqubit: " << qubitIndex);
+			const GatePulses gatePulses = gatePulsesMapping.second;
+
+			std::string microwaveString = "[ ";
+			for (const int amplitude : gatePulses.microwave)
+			{
+				microwaveString += std::to_string(amplitude) + " ";
+			}
+			microwaveString += "]";
+			IOUT("\t\tmicrowave: " << microwaveString);
+
+			std::string fluxString = "[ ";
+			for (const int amplitude : gatePulses.flux)
+			{
+				fluxString += std::to_string(amplitude) + " ";
+			}
+			fluxString += "]";
+			IOUT("\t\tflux: " << fluxString);
+
+			std::string readoutString = "[ ";
+			for (const int amplitude : gatePulses.readout)
+			{
+				readoutString += std::to_string(amplitude) + " ";
+			}
+			readoutString += "]";
+			IOUT("\t\treadout: " << readoutString);
+		}
+	}
+
+	return pulseVisualization;
 }
 
 void validateLayout(Layout& layout)

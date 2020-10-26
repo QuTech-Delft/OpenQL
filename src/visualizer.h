@@ -203,7 +203,7 @@ struct Layout
 	};
 };
 
-void visualize(const ql::quantum_program* program, const std::string& configPath);
+void visualize(const ql::quantum_program* program, const std::string& configPath, const std::string& waveformMappingPath);
 
 } // ql
 
