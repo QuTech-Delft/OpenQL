@@ -995,13 +995,13 @@ std::string quantum_kernel::get_prologue() const  {
     // ss << name << ":\n";
 
     if (type == kernel_type_t::IF_START) {
-        ss << "    b" << br_condition.inv_operation_name <<" r" << (br_condition.operands[0])->id
-           <<", r" << (br_condition.operands[1])->id << ", " << name << "_end\n";
+        ss << "    b" << br_condition->inv_operation_name <<" r" << (br_condition->operands[0])->id
+           <<", r" << (br_condition->operands[1])->id << ", " << name << "_end\n";
     }
 
     if (type == kernel_type_t::ELSE_START) {
-        ss << "    b" << br_condition.operation_name <<" r" << (br_condition.operands[0])->id
-           <<", r" << (br_condition.operands[1])->id << ", " << name << "_end\n";
+        ss << "    b" << br_condition->operation_name <<" r" << (br_condition->operands[0])->id
+           <<", r" << (br_condition->operands[1])->id << ", " << name << "_end\n";
     }
 
     if (type == kernel_type_t::FOR_START) {
@@ -1018,8 +1018,8 @@ std::string quantum_kernel::get_epilogue() const {
     std::stringstream ss;
 
     if (type == kernel_type_t::DO_WHILE_END) {
-        ss << "    b" << br_condition.operation_name <<" r" << (br_condition.operands[0])->id
-           <<", r" << (br_condition.operands[1])->id << ", " << name << "_start\n";
+        ss << "    b" << br_condition->operation_name <<" r" << (br_condition->operands[0])->id
+           <<", r" << (br_condition->operands[1])->id << ", " << name << "_start\n";
     }
 
     if (type == kernel_type_t::FOR_END) {

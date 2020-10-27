@@ -27,15 +27,15 @@ enum class kernel_type_t {
 
 class quantum_kernel {
 public: // FIXME: should be private
-    std::string   name;
-    size_t        iterations;
-    size_t        qubit_count;
-    size_t        creg_count;
-    kernel_type_t type;
-    circuit       c;
-    bool          cycles_valid; // used in bundler to check if kernel has been scheduled
-    operation     br_condition;
-    size_t        cycle_time;   // FIXME HvS just a copy of platform.cycle_time
+    std::string    name;
+    size_t         iterations;
+    size_t         qubit_count;
+    size_t         creg_count;
+    kernel_type_t  type;
+    circuit        c;
+    bool           cycles_valid; // used in bundler to check if kernel has been scheduled
+    Opt<operation> br_condition;
+    size_t         cycle_time;   // FIXME HvS just a copy of platform.cycle_time
     instruction_map_t instruction_map;
 
 public:

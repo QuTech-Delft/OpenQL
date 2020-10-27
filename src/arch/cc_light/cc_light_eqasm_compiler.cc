@@ -516,14 +516,14 @@ std::string cc_light_eqasm_compiler::get_qisa_prologue(const quantum_kernel &k) 
 #if 0
         // Branching macros are not yet supported by assembler,
             // so for now the following can not be used
-            ss << "    b" << k.br_condition.inv_operation_name
-               <<" r" << (k.br_condition.operands[0])->id <<", r" << (k.br_condition.operands[1])->id
+            ss << "    b" << k.br_condition->inv_operation_name
+               <<" r" << (k.br_condition->operands[0])->id <<", r" << (k.br_condition->operands[1])->id
                << ", " << k.name << "_end" << std::endl;
 #else
-        ss  <<"    cmp r" << (k.br_condition.operands[0])->id
-            <<", r" << (k.br_condition.operands[1])->id << std::endl;
+        ss  <<"    cmp r" << (k.br_condition->operands[0])->id
+            <<", r" << (k.br_condition->operands[1])->id << std::endl;
         ss  <<"    nop" << std::endl;
-        ss  <<"    br " << k.br_condition.inv_operation_name << ", "
+        ss  <<"    br " << k.br_condition->inv_operation_name << ", "
             << k.name << "_end" << std::endl;
 #endif
 
@@ -533,13 +533,13 @@ std::string cc_light_eqasm_compiler::get_qisa_prologue(const quantum_kernel &k) 
 #if 0
         // Branching macros are not yet supported by assembler,
             // so for now the following can not be used
-            ss << "    b" << k.br_condition.operation_name <<" r" << (k.br_condition.operands[0])->id
-               <<", r" << (k.br_condition.operands[1])->id << ", " << k.name << "_end" << std::endl;
+            ss << "    b" << k.br_condition->operation_name <<" r" << (k.br_condition->operands[0])->id
+               <<", r" << (k.br_condition->operands[1])->id << ", " << k.name << "_end" << std::endl;
 #else
-        ss  <<"    cmp r" << (k.br_condition.operands[0])->id
-            <<", r" << (k.br_condition.operands[1])->id << std::endl;
+        ss  <<"    cmp r" << (k.br_condition->operands[0])->id
+            <<", r" << (k.br_condition->operands[1])->id << std::endl;
         ss  <<"    nop" << std::endl;
-        ss  <<"    br " << k.br_condition.operation_name << ", "
+        ss  <<"    br " << k.br_condition->operation_name << ", "
             << k.name << "_end" << std::endl;
 #endif
     }
@@ -561,13 +561,13 @@ std::string cc_light_eqasm_compiler::get_qisa_epilogue(const quantum_kernel &k) 
 #if 0
         // Branching macros are not yet supported by assembler,
             // so for now the following can not be used
-            ss << "    b" << k.br_condition.operation_name <<" r" << (k.br_condition.operands[0])->id
-               <<", r" << (k.br_condition.operands[1])->id << ", " << k.name << "_start" << std::endl;
+            ss << "    b" << k.br_condition->operation_name <<" r" << (k.br_condition->operands[0])->id
+               <<", r" << (k.br_condition->operands[1])->id << ", " << k.name << "_start" << std::endl;
 #else
-        ss  <<"    cmp r" << (k.br_condition.operands[0])->id
-            <<", r" << (k.br_condition.operands[1])->id << std::endl;
+        ss  <<"    cmp r" << (k.br_condition->operands[0])->id
+            <<", r" << (k.br_condition->operands[1])->id << std::endl;
         ss  <<"    nop" << std::endl;
-        ss  <<"    br " << k.br_condition.operation_name << ", "
+        ss  <<"    br " << k.br_condition->operation_name << ", "
             << k.name << "_start" << std::endl;
 #endif
     }

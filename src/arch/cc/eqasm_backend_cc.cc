@@ -193,18 +193,18 @@ void eqasm_backend_cc::codegen_kernel_prologue(ql::quantum_kernel &k)
     switch(k.type) {
         case kernel_type_t::IF_START:
         {
-            auto op0 = k.br_condition.operands[0]->id;
-            auto op1 = k.br_condition.operands[1]->id;
-            auto opName = k.br_condition.operation_name;
+            auto op0 = k.br_condition->operands[0]->id;
+            auto op1 = k.br_condition->operands[1]->id;
+            auto opName = k.br_condition->operation_name;
             codegen.if_start(op0, opName, op1);
             break;
         }
 
         case kernel_type_t::ELSE_START:
         {
-            auto op0 = k.br_condition.operands[0]->id;
-            auto op1 = k.br_condition.operands[1]->id;
-            auto opName = k.br_condition.operation_name;
+            auto op0 = k.br_condition->operands[0]->id;
+            auto op1 = k.br_condition->operands[1]->id;
+            auto opName = k.br_condition->operation_name;
             codegen.else_start(op0, opName, op1);
             break;
         }
@@ -252,9 +252,9 @@ void eqasm_backend_cc::codegen_kernel_epilogue(ql::quantum_kernel &k)
 
         case kernel_type_t::DO_WHILE_END:
         {
-            auto op0 = k.br_condition.operands[0]->id;
-            auto op1 = k.br_condition.operands[1]->id;
-            auto opName = k.br_condition.operation_name;
+            auto op0 = k.br_condition->operands[0]->id;
+            auto op1 = k.br_condition->operands[1]->id;
+            auto opName = k.br_condition->operation_name;
             std::string label = kernelLabel(k);
             codegen.do_while_end(label, op0, opName, op1);
             break;

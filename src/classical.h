@@ -54,7 +54,6 @@ public:
     operation_type_t operation_type;
     std::vector<coperand*> operands;
 
-    operation() = default;
     operation(const creg &l, const std::string &op, const creg &r);
 
     // used for assign
