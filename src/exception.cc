@@ -1,6 +1,7 @@
 #include "exception.h"
 
 #include <cstring>
+#include <cerrno>
 
 namespace ql {
 
