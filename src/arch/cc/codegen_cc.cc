@@ -288,6 +288,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                 isInstrUsed = true;
             } // if(signal defined)
 
+#if OPT_FEEDBACK   // FIXME: WIP
             // handle readout
             // NB: we allow for readout without signal generation by the same instrument, which might be needed in the future
             // FIXME: test for bi->readoutCop >= 0
@@ -299,7 +300,6 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                 if(nrResultBits == 1) {                     // single bit
                     digIn |= 1<<(int)resultBits[0];         // NB: we assume the result is active high, which is correct for UHF-QC
 
-#if OPT_FEEDBACK   // FIXME: WIP on measurement
                     // we need: input bit, cop?, qubit, SM bit
                     // FIXME: save bi->readoutCop in inputLutTable
                     if(JSON_EXISTS(inputLutTable, ic.ii.instrumentName) &&                  // instrument exists
@@ -310,12 +310,11 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                         //inputLutTable[ic.ii.instrumentName][group][0] = "";                 // code word 0 is empty
                         //inputLutTable[uc.ii.instrumentName][group][codeword] = signalValue; // NB: structure created on demand
                     }
-#endif
-                } else {    // NB: nrResultBits==0 will not arrive at this point
-                    std::string controlModeName = ic.controlMode;                           // convert to string
-                    JSON_FATAL("key '" << controlModeName << "/result_bits' must have 1 bit per group");
+                } else {    // NB: nrResultBits==0 will not arrive at this point. FIXME: no longer true
+                    JSON_FATAL("key '" << ic.refControlMode << "/result_bits[" << group << "] must have 1 bit instead of " << nrResultBits);
                 }
             }
+#endif
         } // for(group)
 
 
@@ -454,12 +453,12 @@ void codegen_cc::customGate(
             // get signal value
             const json instructionSignalValue = json_get<const json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
 
-#if 0   /* FIXME: invalid test: should be channels in group, not group size
+#if OPT_CROSSCHECK_INSTRUMENT_DEF   /* FIXME: invalid test: should be channels in group, not group size
 [OPENQL] /tmp/pip-req-build-z_6r37p9/src/arch/cc/codegen_cc.cc:463 Error: Error in JSON definition: signal dimension mismatch on instruction 'cz' : control mode 'awg8-flux' requires 8 groups, but signal 'signals/two-qubit-flux[0]/value' provides 1
 ___________________ Test_central_controller.test_qi_example ____________________
 */
             // verify dimensions
-            int channelsPergroup = TBD / si.ic.controlModeGroupCnt;
+            int channelsPergroup = si.ic.controlModeGroupSize;
             if(instructionSignalValue.size() != channelsPergroup) {
                 JSON_FATAL("signal dimension mismatch on instruction '" << iname <<
                            "' : control mode '" << si.ic.refControlMode <<
