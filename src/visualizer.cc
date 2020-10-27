@@ -36,6 +36,7 @@ namespace ql
 
 // -- IN PROGRESS ---
 // representing the gates as waveforms
+// check for missing codewords and qubits during waveform parsing instead of while trying to retrieve a mapping from PulseVisualization.mapping
 // allow collapsing the three qubit lines into one with an option
 // implement cycle cutting for pulse visualization
 // change size_t cycle to Cycle cycle in GateProperties (maybe)
@@ -57,7 +58,7 @@ namespace ql
 
 #ifndef WITH_VISUALIZER
 
-void visualize(const ql::quantum_program* program, const std::string& configPath)
+void visualize(const ql::quantum_program* program, const std::string& configPath, const std::string& waveformMappingPath)
 {
 	WOUT("The visualizer is disabled. If this was not intended, the X11 library might be missing and the visualizer has disabled itself.");
 }
@@ -669,10 +670,6 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
 	DOUT("Parsing visualizer configuration file.");
 	Layout layout = parseConfiguration(configPath);
-	if (layout.pulses.displayGatesAsPulses)
-	{
-		PulseVisualization pulseVisualization = parseWaveformMapping(waveformMappingPath);
-	}
 	
     DOUT("Validating layout...");
 	validateLayout(layout);
@@ -686,7 +683,13 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
         circuit c = kernel.get_circuit();
 		for (ql::gate* const gate : c)
 		{
-			GateProperties gateProperties {gate->name, gate->operands, gate->creg_operands, gate->duration, gate->cycle, gate->type(), gate->visual_type};
+			std::vector<int> codewords {0};
+			if (gate->type() == __custom_gate__)
+			{
+				codewords = dynamic_cast<ql::custom_gate*>(gate)->codewords;
+			}
+			// std::vector<int> codewords = gate->type() == __custom_gate__ ? dynamic_cast<ql::custom_gate*>(gate)->codewords : {0};
+			GateProperties gateProperties {gate->name, gate->operands, gate->creg_operands, gate->duration, gate->cycle, gate->type(), codewords, gate->visual_type};
 			gates.push_back(gateProperties);
 		}
     }
@@ -740,108 +743,12 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
 	if (layout.pulses.displayGatesAsPulses)
 	{
-		// Find the gates per qubit.
-		std::vector<std::vector<GateProperties>> gatesPerQubit(circuitData.amountOfQubits);
-		for (const GateProperties& gate : gates)
-		{
-			for (const GateOperand& operand : getGateOperands(gate))
-			{
-				if (operand.bitType == QUANTUM)
-				{
-					gatesPerQubit[operand.index].push_back(gate);
-				}
-			}
-		}
-
-		// Calculate the line segments for each qubit.
-		std::vector<QubitLines> linesPerQubit(circuitData.amountOfQubits);
-		for (size_t qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++)
-		{
-			// Find the cycles with pulses for each line.
-			const std::vector<GateProperties> gatesOnQubit = gatesPerQubit[qubitIndex];
-			std::vector<LineSegment> microwaveLineSegments;
-			std::vector<LineSegment> fluxLineSegments;
-			std::vector<LineSegment> readoutLineSegments;
-			for (const GateProperties& gate : gatesOnQubit)
-			{
-				const std::vector<GateOperand> operands = getGateOperands(gate);
-				int amountOfQuantumOperands = 0;
-				for (const GateOperand& operand : operands)
-				{
-					if (operand.bitType == QUANTUM) amountOfQuantumOperands++;
-				}
-				const EndPoints gateCycles {gate.cycle, (int) gate.cycle + (((int) gate.duration) / cycleDuration) - 1};
-
-				if (isMeasurement(gate))
-				{
-					readoutLineSegments.push_back({PULSE, gateCycles, {-1}});
-					continue;
-				}
-				if (amountOfQuantumOperands == 1)
-				{
-					microwaveLineSegments.push_back({PULSE, gateCycles, {-1}});
-					continue;
-				}
-				if (amountOfQuantumOperands > 1)
-				{
-					fluxLineSegments.push_back({PULSE, gateCycles, {-1}});
-					continue;
-				}
-			}
-
-			// Find the empty ranges between the existing segments and insert flat segments there.
-			insertFlatLineSegments(microwaveLineSegments, circuitData.getAmountOfCycles());
-			insertFlatLineSegments(fluxLineSegments, circuitData.getAmountOfCycles());
-			insertFlatLineSegments(readoutLineSegments, circuitData.getAmountOfCycles());
-
-			linesPerQubit[qubitIndex] = {microwaveLineSegments, fluxLineSegments, readoutLineSegments};
-
-			DOUT("qubit: " << qubitIndex);
-			std::string microwaveOutput = "\tmicrowave segments: ";
-			for (const LineSegment& segment : microwaveLineSegments)
-			{
-				std::string type;
-				switch (segment.type)
-				{
-					case FLAT: type = "FLAT"; break;
-					case PULSE: type = "PULSE"; break;
-					case CUT: type = "CUT"; break;
-				}
-				microwaveOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
-			}
-			DOUT(microwaveOutput);
-
-			std::string fluxOutput = "\tflux segments: ";
-			for (const LineSegment& segment : fluxLineSegments)
-			{
-				std::string type;
-				switch (segment.type)
-				{
-					case FLAT: type = "FLAT"; break;
-					case PULSE: type = "PULSE"; break;
-					case CUT: type = "CUT"; break;
-				}
-				fluxOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
-			}
-			DOUT(fluxOutput);
-
-			std::string readoutOutput = "\treadout segments: ";
-			for (const LineSegment& segment : readoutLineSegments)
-			{
-				std::string type;
-				switch (segment.type)
-				{
-					case FLAT: type = "FLAT"; break;
-					case PULSE: type = "PULSE"; break;
-					case CUT: type = "CUT"; break;
-				}
-				readoutOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
-			}
-			DOUT(readoutOutput);
-		}
+		PulseVisualization pulseVisualization = parseWaveformMapping(waveformMappingPath);
+		const std::vector<QubitLines> linesPerQubit = generateQubitLines(gates, pulseVisualization, circuitData);
 
 		// Draw the lines of each qubit.
-		for (size_t qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++)
+		DOUT("Drawing qubit lines for pulse visualization...");
+		for (int qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++)
 		{
 			drawLineSegments(image, structure, linesPerQubit[qubitIndex].microwave, qubitIndex,
 				layout.pulses.pulseRowHeightMicrowave / 2,
@@ -1010,6 +917,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		}
 
 		// Draw the cycles.
+		DOUT("Drawing cycles...");
 		for (size_t i = 0; i < circuitData.getAmountOfCycles(); i++)
 		{
 			// Only draw a cut cycle if its the first in its cut range.
@@ -1320,41 +1228,41 @@ PulseVisualization parseWaveformMapping(const std::string& waveformMappingPath)
 		FATAL("Missing 'codewords' attribute in waveform mapping file!");
 	}
 
-	// Print the waveform mapping.
-	for (const std::pair<int, std::map<int, GatePulses>>& codeword : pulseVisualization.mapping)
-	{
-		IOUT("codeword: " << codeword.first);
-		for (const std::pair<int, GatePulses>& gatePulsesMapping : codeword.second)
-		{
-			const int qubitIndex = gatePulsesMapping.first;
-			IOUT("\tqubit: " << qubitIndex);
-			const GatePulses gatePulses = gatePulsesMapping.second;
+	// // Print the waveform mapping.
+	// for (const std::pair<int, std::map<int, GatePulses>>& codeword : pulseVisualization.mapping)
+	// {
+	// 	IOUT("codeword: " << codeword.first);
+	// 	for (const std::pair<int, GatePulses>& gatePulsesMapping : codeword.second)
+	// 	{
+	// 		const int qubitIndex = gatePulsesMapping.first;
+	// 		IOUT("\tqubit: " << qubitIndex);
+	// 		const GatePulses gatePulses = gatePulsesMapping.second;
 
-			std::string microwaveString = "[ ";
-			for (const int amplitude : gatePulses.microwave)
-			{
-				microwaveString += std::to_string(amplitude) + " ";
-			}
-			microwaveString += "]";
-			IOUT("\t\tmicrowave: " << microwaveString);
+	// 		std::string microwaveString = "[ ";
+	// 		for (const int amplitude : gatePulses.microwave)
+	// 		{
+	// 			microwaveString += std::to_string(amplitude) + " ";
+	// 		}
+	// 		microwaveString += "]";
+	// 		IOUT("\t\tmicrowave: " << microwaveString);
 
-			std::string fluxString = "[ ";
-			for (const int amplitude : gatePulses.flux)
-			{
-				fluxString += std::to_string(amplitude) + " ";
-			}
-			fluxString += "]";
-			IOUT("\t\tflux: " << fluxString);
+	// 		std::string fluxString = "[ ";
+	// 		for (const int amplitude : gatePulses.flux)
+	// 		{
+	// 			fluxString += std::to_string(amplitude) + " ";
+	// 		}
+	// 		fluxString += "]";
+	// 		IOUT("\t\tflux: " << fluxString);
 
-			std::string readoutString = "[ ";
-			for (const int amplitude : gatePulses.readout)
-			{
-				readoutString += std::to_string(amplitude) + " ";
-			}
-			readoutString += "]";
-			IOUT("\t\treadout: " << readoutString);
-		}
-	}
+	// 		std::string readoutString = "[ ";
+	// 		for (const int amplitude : gatePulses.readout)
+	// 		{
+	// 			readoutString += std::to_string(amplitude) + " ";
+	// 		}
+	// 		readoutString += "]";
+	// 		IOUT("\t\treadout: " << readoutString);
+	// 	}
+	// }
 
 	return pulseVisualization;
 }
@@ -1456,6 +1364,125 @@ bool isMeasurement(const GateProperties gate)
 {
 	//TODO: this method of checking for measurement gates is not very robust and relies entirely on the user naming their instructions in a certain way!
 	return (gate.name.find("measure") != std::string::npos);
+}
+
+std::vector<QubitLines> generateQubitLines(const std::vector<GateProperties> gates, const PulseVisualization pulseVisualization, const CircuitData circuitData)
+{
+	DOUT("Generating qubit lines for pulse visualization...");
+
+	// Find the gates per qubit.
+	std::vector<std::vector<GateProperties>> gatesPerQubit(circuitData.amountOfQubits);
+	for (const GateProperties& gate : gates)
+	{
+		for (const GateOperand& operand : getGateOperands(gate))
+		{
+			if (operand.bitType == QUANTUM)
+			{
+				gatesPerQubit[operand.index].push_back(gate);
+			}
+		}
+	}
+
+	// Calculate the line segments for each qubit.
+	std::vector<QubitLines> linesPerQubit(circuitData.amountOfQubits);
+	for (size_t qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++)
+	{
+		// Find the cycles with pulses for each line.
+		const std::vector<GateProperties> gatesOnQubit = gatesPerQubit[qubitIndex];
+		std::vector<LineSegment> microwaveLineSegments;
+		std::vector<LineSegment> fluxLineSegments;
+		std::vector<LineSegment> readoutLineSegments;
+		for (const GateProperties& gate : gatesOnQubit)
+		{
+			const std::vector<GateOperand> operands = getGateOperands(gate);
+			int amountOfQuantumOperands = 0;
+			for (const GateOperand& operand : operands)
+			{
+				if (operand.bitType == QUANTUM) amountOfQuantumOperands++;
+			}
+			const EndPoints gateCycles {gate.cycle, (int) gate.cycle + (((int) gate.duration) / circuitData.cycleDuration) - 1};
+
+			const int codeword = gate.codewords[0];
+			try
+			{
+				const GatePulses gatePulses = pulseVisualization.mapping.at(codeword).at(qubitIndex);
+
+				if (isMeasurement(gate))
+				{
+					readoutLineSegments.push_back({PULSE, gateCycles, {-1}});
+					continue;
+				}
+				if (amountOfQuantumOperands == 1)
+				{
+					microwaveLineSegments.push_back({PULSE, gateCycles, {-1}});
+					continue;
+				}
+				if (amountOfQuantumOperands > 1)
+				{
+					fluxLineSegments.push_back({PULSE, gateCycles, {-1}});
+					continue;
+				}
+			}
+			catch (std::exception& e)
+			{
+				WOUT("Missing codeword and/or qubit in waveform mapping file for gate: " << gate.name << "! Replacing pulse with flat line...\n\t" <<
+					 "Indices are: codeword = " << codeword << " and qubit = " << qubitIndex);
+				readoutLineSegments.push_back({FLAT, gateCycles, {-1}});
+			}
+		}
+
+		// Find the empty ranges between the existing segments and insert flat segments there.
+		insertFlatLineSegments(microwaveLineSegments, circuitData.getAmountOfCycles());
+		insertFlatLineSegments(fluxLineSegments, circuitData.getAmountOfCycles());
+		insertFlatLineSegments(readoutLineSegments, circuitData.getAmountOfCycles());
+
+		linesPerQubit[qubitIndex] = {microwaveLineSegments, fluxLineSegments, readoutLineSegments};
+
+		DOUT("qubit: " << qubitIndex);
+		std::string microwaveOutput = "\tmicrowave segments: ";
+		for (const LineSegment& segment : microwaveLineSegments)
+		{
+			std::string type;
+			switch (segment.type)
+			{
+				case FLAT: type = "FLAT"; break;
+				case PULSE: type = "PULSE"; break;
+				case CUT: type = "CUT"; break;
+			}
+			microwaveOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
+		}
+		DOUT(microwaveOutput);
+
+		std::string fluxOutput = "\tflux segments: ";
+		for (const LineSegment& segment : fluxLineSegments)
+		{
+			std::string type;
+			switch (segment.type)
+			{
+				case FLAT: type = "FLAT"; break;
+				case PULSE: type = "PULSE"; break;
+				case CUT: type = "CUT"; break;
+			}
+			fluxOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
+		}
+		DOUT(fluxOutput);
+
+		std::string readoutOutput = "\treadout segments: ";
+		for (const LineSegment& segment : readoutLineSegments)
+		{
+			std::string type;
+			switch (segment.type)
+			{
+				case FLAT: type = "FLAT"; break;
+				case PULSE: type = "PULSE"; break;
+				case CUT: type = "CUT"; break;
+			}
+			readoutOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
+		}
+		DOUT(readoutOutput);
+	}
+
+	return linesPerQubit;
 }
 
 void insertFlatLineSegments(std::vector<LineSegment>& existingLineSegments, const int amountOfCycles)

@@ -1160,6 +1160,7 @@ class custom_gate : public gate
 public:
     cmat_t              m;                // matrix representation
     std::string         arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
+    std::vector<int>    codewords; // index 0 is right and index 1 is left, in case of multi-qubit gate
 
 public:
 
@@ -1181,6 +1182,7 @@ public:
         name = g.name;
         creg_operands = g.creg_operands;
         duration  = g.duration;
+        codewords = g.codewords;
 		visual_type = g.visual_type;
         m.m[0] = g.m.m[0];
         m.m[1] = g.m.m[1];
@@ -1260,6 +1262,27 @@ public:
             m.m[1] = complex_t(mat[1][0], mat[1][1]);
             m.m[2] = complex_t(mat[2][0], mat[2][1]);
             m.m[3] = complex_t(mat[3][0], mat[3][1]);
+
+            // Load the cc-light codeword(s).
+            l_attr = "cc_light_codeword";
+            if (instr.count("cc_light_codeword") == 1)
+            {
+                codewords.push_back(instr["cc_light_codeword"]);
+                DOUT("codewords: " << codewords[0]);
+            }
+            else
+            {
+                if (instr.count("cc_light_right_codeword") == 1 && instr.count("cc_light_left_codeword") == 1)
+                {
+                    codewords.push_back(instr["cc_light_right_codeword"]);
+                    codewords.push_back(instr["cc_light_left_codeword"]);
+                    DOUT("codewords: " << codewords[0] << "," << codewords[1]);
+                }
+                else
+                {
+                    WOUT("Did not find any codeword attributes for instruction: '" << name << "'!");
+                }
+            }
 			
 			// Load the visual type of the instruction if provided.
             l_attr = "visual_type";

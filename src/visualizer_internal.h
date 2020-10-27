@@ -84,6 +84,7 @@ struct GateProperties
     size_t duration = 0;
     size_t cycle = 0;
     gate_type_t type = __custom_gate__;
+	std::vector<int> codewords;
     std::string visual_type;
 };
 
@@ -219,6 +220,7 @@ std::pair<GateOperand, GateOperand> calculateEdgeOperands(const std::vector<Gate
 void fixMeasurementOperands(std::vector<GateProperties>& gates);
 bool isMeasurement(const GateProperties gate);
 
+std::vector<QubitLines> generateQubitLines(const std::vector<GateProperties> gates, const PulseVisualization pulseVisualization, const CircuitData circuitData);
 void insertFlatLineSegments(std::vector<LineSegment>& existingLineSegments, const int amountOfCycles);
 
 Dimensions calculateTextDimensions(const std::string& text, const int fontHeight, const Layout layout);
