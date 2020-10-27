@@ -55,7 +55,7 @@ public:
           so clifford(sequence1; sequence2) == clifftrans[clifford(sequence1)][clifford(sequence2)].
         - size_t cs2cycles(int cs): the minimum number of cycles needed to implement a clifford of state cs
         - void k.clifford(int csq, size_t q): generates minimal clifford sequence for state csq and qubit q
-        
+
         Therefore, maintain for each qubit q while scanning:
         - cliffstate[q]:    clifford state of sequence until now per qubit; initially identity
         - cliffcycles[q]:   number of cycles of the sequence until now per qubit; initially 0

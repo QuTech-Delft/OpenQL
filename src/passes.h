@@ -16,7 +16,7 @@ namespace ql {
 class PassOptions;
 
 /**
- * Compiler Pass Interface 
+ * Compiler Pass Interface
  */
 class AbstractPass {
 public:
@@ -35,7 +35,7 @@ public:
     void appendStatistics(const std::string &statistic);
     std::string getPassStatistics() const;
     void resetStatistics();
-    
+
 private:
     std::string passName;
     std::string statistics;
@@ -43,7 +43,7 @@ private:
 };
 
 /**
- * Program Reader Pass 
+ * Program Reader Pass
  */
 class ReaderPass : public AbstractPass {
 public:
@@ -56,7 +56,7 @@ public:
 };
 
 /**
- * Program Writer Pass 
+ * Program Writer Pass
  */
 class WriterPass : public AbstractPass {
 public:
@@ -69,7 +69,7 @@ public:
 };
 
 /**
- * Optimizer Pass 
+ * Optimizer Pass
  */
 class RotationOptimizerPass : public AbstractPass {
 public:
@@ -82,7 +82,7 @@ public:
 };
 
 /**
- * Decompose Toffoli Pass 
+ * Decompose Toffoli Pass
  */
 class DecomposeToffoliPass : public AbstractPass {
 public:
@@ -95,7 +95,7 @@ public:
 };
 
 /**
- * Scheduler Pass 
+ * Scheduler Pass
  */
 class SchedulerPass : public AbstractPass {
 public:
@@ -108,7 +108,7 @@ public:
 };
 
 /**
- * Backend Compiler Pass 
+ * Backend Compiler Pass
  */
 class BackendCompilerPass : public AbstractPass {
 public:
@@ -121,7 +121,7 @@ public:
 };
 
 /**
- * Report Statistics Pass 
+ * Report Statistics Pass
  */
 class ReportStatisticsPass: public AbstractPass {
 public:
@@ -134,7 +134,7 @@ public:
 };
 
 /**
- * CC-Light Prepare Backend Code Generation Pass 
+ * CC-Light Prepare Backend Code Generation Pass
  */
 class CCLPrepCodeGeneration : public AbstractPass {
 public:
@@ -147,7 +147,7 @@ public:
 };
 
 /**
- * CC-Light Prescheduler Decompose Pass 
+ * CC-Light Prescheduler Decompose Pass
  */
 class CCLDecomposePreSchedule : public AbstractPass {
 public:
@@ -160,7 +160,7 @@ public:
 };
 
 /**
- * Mapper Pass 
+ * Mapper Pass
  */
 class MapPass : public AbstractPass {
 public:
@@ -173,7 +173,7 @@ public:
 };
 
 /**
- * Clifford Optimizer Pass 
+ * Clifford Optimizer Pass
  */
 class CliffordOptimizePass : public AbstractPass {
 public:
@@ -186,7 +186,7 @@ public:
 };
 
 /**
- * Resource Constraint Scheduler Pass 
+ * Resource Constraint Scheduler Pass
  */
 class RCSchedulePass : public AbstractPass {
 public:
@@ -212,7 +212,7 @@ public:
 };
 
 /**
- * Insert Buffer Delays Pass 
+ * Insert Buffer Delays Pass
  */
 class InsertBufferDelaysPass : public AbstractPass {
 public:
@@ -251,7 +251,7 @@ public:
 };
 
 /**
- * QISA Generation Pass 
+ * QISA Generation Pass
  */
 class QisaCodeGenerationPass : public AbstractPass {
 public:
@@ -273,7 +273,7 @@ public:
       void help() const;
       void setOption(const std::string &opt_name, const std::string &opt_value);
       std::string getOption(const std::string &opt_name) const;
-      
+
 private:
       CLI::App * app;
       std::map<std::string, std::string> opt_name2opt_val;

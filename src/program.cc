@@ -370,10 +370,10 @@ int quantum_program::compile_modular() {
     if (kernels.empty()) {
         FATAL("compiling a program with no kernels !");
     }
-    
+
     //constuct compiler
     std::unique_ptr<ql::quantum_compiler> compiler(new ql::quantum_compiler("Hard Coded Compiler"));
-        
+
     //add passes
     ///@note-rn: WriterPass needs Reader pass to recreate the subciruits! ==> However, then Reader needs to be used to recreate the subcircuits. However, if I do that tests will fail because the harddware configuration file is in synq with qasm reader and tests (error: unrecognized instr prepz)
     compiler->addPass("Writer", "initialqasmwriter");
@@ -382,30 +382,30 @@ int quantum_program::compile_modular() {
     compiler->addPass("CliffordOptimize", "clifford_prescheduler");
     compiler->addPass("Scheduler", "prescheduler");
     compiler->addPass("CliffordOptimize", "clifford_postscheduler");
-    compiler->addPass("Writer", "scheduledqasmwriter"); 
-    
+    compiler->addPass("Writer", "scheduledqasmwriter");
+
     // backend passes
     DOUT("Calling backend compiler passes for eqasm_compiler_name: " << eqasm_compiler_name);
     if (eqasm_compiler_name.empty()) {
         FATAL("eqasm compiler name must be specified in the hardware configuration file !");
     } else if (eqasm_compiler_name == "none" || eqasm_compiler_name == "qx") {
-        WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");        
+        WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
     } else if (eqasm_compiler_name == "cc_light_compiler") {
         // from here CCL backend starts
-        compiler->addPass("CCLPrepCodeGeneration", "ccl_prep_code_generation"); 
+        compiler->addPass("CCLPrepCodeGeneration", "ccl_prep_code_generation");
         compiler->addPass("CCLDecomposePreSchedule", "ccl_decompose_pre_schedule");
-        compiler->addPass("WriteQuantumSim", "write_quantumsim_script_unmapped"); 
+        compiler->addPass("WriteQuantumSim", "write_quantumsim_script_unmapped");
         compiler->addPass("CliffordOptimize", "clifford_premapper");
         compiler->addPass("Map", "mapper");
         compiler->addPass("CliffordOptimize", "clifford_postmapper");
         compiler->addPass("RCSchedule", "rcscheduler");
-        compiler->addPass("LatencyCompensation", "ccl_latency_compensation"); 
-        compiler->addPass("InsertBufferDelays", "ccl_insert_buffer_delays"); 
-        compiler->addPass("CCLDecomposePostSchedule", "ccl_decompose_post_schedule"); 
-        compiler->addPass("WriteQuantumSim", "write_quantumsim_script_mapped"); 
+        compiler->addPass("LatencyCompensation", "ccl_latency_compensation");
+        compiler->addPass("InsertBufferDelays", "ccl_insert_buffer_delays");
+        compiler->addPass("CCLDecomposePostSchedule", "ccl_decompose_post_schedule");
+        compiler->addPass("WriteQuantumSim", "write_quantumsim_script_mapped");
         compiler->addPass("Writer", "lastqasmwriter");
         compiler->addPass("QisaCodeGeneration", "qisa_code_generation");
-        ///@note-rn: Calling the backend like this is equivalend to calling passes individually as above. 
+        ///@note-rn: Calling the backend like this is equivalend to calling passes individually as above.
         //compiler->addPass("BackendCompiler");
         //compiler->setPassOption("BackendCompiler", "eqasm_compiler_name", eqasm_compiler_name);
         DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
@@ -418,13 +418,13 @@ int quantum_program::compile_modular() {
 
     //compile with program
     compiler->compile(this);
-    
+
     IOUT("compilation of program '" << name << "' done.");
-    
+
     ql::options::reset_options();
 
     compiler.reset();
-    
+
     return 0;
 }
 

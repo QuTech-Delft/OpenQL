@@ -26,11 +26,11 @@ public:
     void addPass(const std::string &realPassName, const std::string &symbolicPassName);
     void addPass(const std::string &realPassName);
     void setPassOption(const std::string &passName, const std::string &optionName, const std::string &optionValue);
-    
+
 private:
-  
+
     void constructPassManager();//TODO: potentially read the IR->Options!
-    
+
     std::string           name;
     ql::PassManager       *passManager;
 };

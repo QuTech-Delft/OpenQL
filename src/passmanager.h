@@ -27,9 +27,9 @@ public:
     AbstractPass *findPass(const std::string &passName);
     void setPassOptionAll(const std::string &optionName, const std::string &optionValue);
 
-private: 
+private:
     void addPass(AbstractPass *pass);
-    
+
     std::string name;
     std::list<AbstractPass*> passes;
 };

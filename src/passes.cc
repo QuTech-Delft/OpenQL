@@ -31,8 +31,8 @@ namespace ql {
  */
 AbstractPass::AbstractPass(const std::string &name) {
     DOUT("In AbstractPass::AbstractPass set name " << name << std::endl);
-    setPassName(name); 
-    createPassOptions(); 
+    setPassName(name);
+    createPassOptions();
 }
 
 /**
@@ -48,7 +48,7 @@ std::string AbstractPass::getPassName() const {
  * @param  Name of the compiler pass
  */
 void AbstractPass::setPassName(const std::string &name) {
-    passName = name; 
+    passName = name;
 }
 
 /**
@@ -58,8 +58,8 @@ void AbstractPass::setPassName(const std::string &name) {
  */
 void AbstractPass::setPassOption(const std::string &optionName, const std::string &optionValue) {
     DOUT("In AbstractPass::setPassOption");
-    
-    passOptions->setOption(optionName, optionValue);  
+
+    passOptions->setOption(optionName, optionValue);
 }
 
 /**
@@ -90,24 +90,24 @@ bool AbstractPass::getSkip() const {
  */
 void AbstractPass::initPass(ql::quantum_program *program) {
     if (getPassOptions()->getOption("write_qasm_files") == "yes") {
-        //temporary store old value 
+        //temporary store old value
         ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
         std::string writeQasmLocal = ql::options::get("write_qasm_files");
         ql::options::set("write_qasm_files", "yes");
-        
+
         ql::report_qasm(program, program->platform, "in", getPassName());
-        
+
         ql::options::set("write_qasm_files", writeQasmLocal);
     }
-    
+
     if (getPassOptions()->getOption("write_report_files") == "yes") {
-        //temporary store old value 
+        //temporary store old value
         ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
         std::string writeReportLocal = ql::options::get("write_report_files");
         ql::options::set("write_report_files", "yes");
-        
+
         ql::report_statistics(program, program->platform, "in", getPassName(), "# ");
-        
+
         ql::options::set("write_report_files", writeReportLocal);
     }
 }
@@ -117,27 +117,27 @@ void AbstractPass::initPass(ql::quantum_program *program) {
  */
 void AbstractPass::finalizePass(ql::quantum_program *program) {
     if (getPassOptions()->getOption("write_qasm_files") == "yes") {
-        //temporary store old value 
+        //temporary store old value
         ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
         std::string writeQasmLocal = ql::options::get("write_qasm_files");
         ql::options::set("write_qasm_files", "yes");
-        
+
         ql::report_qasm(program, program->platform, "out", getPassName());
-        
+
         ql::options::set("write_qasm_files", writeQasmLocal);
     }
-    
+
     if (getPassOptions()->getOption("write_report_files") == "yes") {
-        //temporary store old value 
+        //temporary store old value
         ///@note-rn: this is only needed to overwrite global option set for old program flow for compatibility reasons ==> This should be deprecated when we remove old code
         std::string writeReportLocal = ql::options::get("write_report_files");
         ql::options::set("write_report_files", "yes");
-        
+
         ql::report_statistics(program, program->platform, "out", getPassName(), "# ", getPassStatistics());
-        
+
         ql::options::set("write_report_files", writeReportLocal);
     }
-    
+
     resetStatistics();
 }
 
@@ -169,13 +169,13 @@ ReaderPass::ReaderPass(const std::string &name) : AbstractPass(name) {
  */
 void ReaderPass::runOnProgram(ql::quantum_program *program) {
     DOUT("run ReaderPass with name = " << getPassName() << " on program " << program->name);
-    
-    ql::cqasm_reader* reader = new ql::cqasm_reader(program->platform, *program);
-    
-    DOUT("!!!!!!!!!!! start reader !!!!!!!!");    
 
-    // reset kernels if they are not empty, needed for the case when the reader pass 
-    // is used after a Writer pass within the sequence os passes and not at the start 
+    ql::cqasm_reader* reader = new ql::cqasm_reader(program->platform, *program);
+
+    DOUT("!!!!!!!!!!! start reader !!!!!!!!");
+
+    // reset kernels if they are not empty, needed for the case when the reader pass
+    // is used after a Writer pass within the sequence os passes and not at the start
     // of the compiler when there is no IR
     auto it = program->kernels.begin();
 
@@ -184,9 +184,9 @@ void ReaderPass::runOnProgram(ql::quantum_program *program) {
         std::cout << ktmp.name << std::endl;
         ktmp.c.clear();
     }
-        
+
     program->kernels.clear();
-    
+
     ///@todo-rn: come up with a parametrized naming scheme to do this printing. This should reflect
     // if the pass is outputing non- or scheduled qasm depending if it is used before or after sched
     // currently this works only when Writer pass creating the qasm file is called outputIR
@@ -209,10 +209,10 @@ void WriterPass::runOnProgram(ql::quantum_program *program) {
 
     // report/write_qasm initialization
     //ql::report_init(program, program->platform);
-    
+
     // writer pass of the initial qasm file (program.qasm)
     ql::write_qasm(program, program->platform, getPassName());
-    
+
 //     if (getPassName() != "initialqasmwriter" && getPassName() != "scheduledqasmwriter")
 //     { ///@note-rn: temoporary hack to make the writer pass for those 2 configurations soft (i.e., do not delete the subcircuits) so that it does not require a reader pass after it!. This is needed until we fix the synchronization between hardware configuration files and openql tests. Until then a Reader pass would be needed after a hard Write pass. However, a Reader pass will make some unit tests to fail due to a mismatch between the instructions in the tests (i.e., prepz) and included/defined in the hardware config files CONFLICTING with the prepz instr not being available in libQASM.
 }
@@ -230,7 +230,7 @@ RotationOptimizerPass::RotationOptimizerPass(const std::string &name) : Abstract
  */
 void RotationOptimizerPass::runOnProgram(ql::quantum_program *program) {
     DOUT("run RotationOptimizerPass with name = " << getPassName() << " on program " << program->name);
-    
+
     rotation_optimize(program, program->platform, "rotation_optimize");
 }
 
@@ -247,7 +247,7 @@ DecomposeToffoliPass::DecomposeToffoliPass(const std::string &name) : AbstractPa
  */
 void DecomposeToffoliPass::runOnProgram(ql::quantum_program *program) {
     DOUT("run DecomposeToffoliPass with name = " << getPassName() << " on program " << program->name);
-    
+
     // decompose_toffoli pass
     ql::decompose_toffoli(program, program->platform, "decompose_toffoli");
 }
@@ -265,7 +265,7 @@ SchedulerPass::SchedulerPass(const std::string &name) : AbstractPass(name) {
  */
 void SchedulerPass::runOnProgram(ql::quantum_program *program) {
     DOUT("run SchedulerPass with name = " << getPassName() << " on program " << program->name);
-    
+
     // prescheduler pass
     ql::schedule(program, program->platform, "prescheduler");
 }
@@ -283,12 +283,12 @@ BackendCompilerPass::BackendCompilerPass(const std::string &name) : AbstractPass
  */
 void BackendCompilerPass::runOnProgram(ql::quantum_program *program) {
     DOUT("run BackendCompilerPass with name = " << getPassName() << " on program " << program->name);
-    
+
     std::unique_ptr<ql::eqasm_compiler> backend_compiler;
-    
+
     std::string eqasm_compiler_name = program->platform.eqasm_compiler_name;
     //getPassOptions()->getOption("eqasm_compiler_name");
-    
+
     if (eqasm_compiler_name == "cc_light_compiler") {
         backend_compiler = std::unique_ptr<ql::eqasm_compiler>(new ql::arch::cc_light_eqasm_compiler());
     } else if (eqasm_compiler_name == "eqasm_backend_cc") {
@@ -298,13 +298,13 @@ void BackendCompilerPass::runOnProgram(ql::quantum_program *program) {
     }
 
     ///@todo-rn: Decide how to construct backend:
-    // 1) we can run backend as one big composite engine, e.g., 
+    // 1) we can run backend as one big composite engine, e.g.,
     //assert(backend_compiler);
     backend_compiler->compile(program, program->platform); //called here
-    // OR 
+    // OR
     // 2) in the user program add one for one individual backed passes.
-    
-    backend_compiler.reset();    
+
+    backend_compiler.reset();
 }
 
 /**
@@ -357,9 +357,9 @@ CCLDecomposePreSchedule::CCLDecomposePreSchedule(const std::string &name) : Abst
  */
 void CCLDecomposePreSchedule::runOnProgram(ql::quantum_program *program) {
     std::unique_ptr<ql::arch::cc_light_eqasm_compiler> ccl_backend_compiler(new ql::arch::cc_light_eqasm_compiler());
-    
+
     ccl_backend_compiler->ccl_decompose_pre_schedule(program, program->platform, getPassName());
-    
+
     ccl_backend_compiler.reset();
 }
 
@@ -376,13 +376,13 @@ MapPass::MapPass(const std::string &name) : AbstractPass(name) {
  */
 void MapPass::runOnProgram(ql::quantum_program *program) {
     std::unique_ptr<ql::arch::cc_light_eqasm_compiler> ccl_backend_compiler(new ql::arch::cc_light_eqasm_compiler());
-    
+
     std::string stats;
-    
+
     ccl_backend_compiler->map(program, program->platform, getPassName(), &stats);
-    
+
     appendStatistics(stats);
-    
+
     ccl_backend_compiler.reset();
 }
 
@@ -459,9 +459,9 @@ CCLDecomposePostSchedulePass::CCLDecomposePostSchedulePass(const std::string &na
  */
 void CCLDecomposePostSchedulePass::runOnProgram(ql::quantum_program *program) {
     std::unique_ptr<ql::arch::cc_light_eqasm_compiler> ccl_backend_compiler(new ql::arch::cc_light_eqasm_compiler());
-    
+
     ccl_backend_compiler->ccl_decompose_post_schedule(program, program->platform, getPassName());
-    
+
     ccl_backend_compiler.reset();
 }
 
@@ -499,7 +499,7 @@ void QisaCodeGenerationPass::runOnProgram(ql::quantum_program *program) {
     std::unique_ptr<ql::arch::cc_light_eqasm_compiler> ccl_backend_compiler(new ql::arch::cc_light_eqasm_compiler());
 
     ccl_backend_compiler->qisa_code_generation(program, program->platform, getPassName());
-    
+
     ccl_backend_compiler.reset();
 }
 

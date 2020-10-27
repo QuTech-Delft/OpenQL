@@ -1692,7 +1692,7 @@ using namespace lemon;
 // InitialPlace: initial placement solved as an MIP, mixed integer linear program
 // the initial placement is modelled as a Quadratic Assignment Problem
 // by Lingling Lao in her mapping paper:
-//  
+//
 // variables:
 //     forall i: forall k: x[i][k], x[i][k] is integral and 0 or 1, meaning qubit i is in location k
 // objective:
@@ -1700,14 +1700,14 @@ using namespace lemon;
 // subject to:
 //     forall k: ( sum i: x[i][k] <= 1 )        allow more locations than qubits
 //     forall i: ( sum k: x[i][k] == 1 )        but each qubit must have one locations
-//  
+//
 // the article "An algorithm for the quadratic assignment problem using Benders' decomposition"
 // by L. Kaufman and F. Broeckx, transforms this problem by introducing w[i][k] as follows:
-//  
+//
 // forall i: forall k: w[i][k] =  x[i][k] * ( sum j: sum l: refcount[i][j] * distance(k,l) * x[j][l] )
-//  
+//
 // to the following mixed integer linear problem:
-//  
+//
 //  precompute:
 //      forall i: forall k: costmax[i][k] = sum j: sum l: refcount[i][j] * distance(k,l)
 //      (note: each of these costmax[][] is >= 0, so the "max(this,0)" around this is not needed)
@@ -2903,7 +2903,7 @@ void Mapper::Map(ql::quantum_kernel& kernel) {
         InitialPlace    ip;             // initial placer facility
         ipr_t           ipok;           // one of several ip result possibilities
         double          iptimetaken;      // time solving the initial placement took, in seconds
-        
+
         ip.Init(&grid, platformp);
         ip.Place(kernel.c, v2r, ipok, iptimetaken, initialplaceopt); // compute mapping (in v2r) using ip model, may fail
         DOUT("InitialPlace: kernel=" << kernel.name << " initialplace=" << initialplaceopt << " initialplace2qhorizon=" << initialplace2qhorizonopt << " result=" << ip.ipr2string(ipok) << " iptimetaken=" << iptimetaken << " seconds [DONE]");

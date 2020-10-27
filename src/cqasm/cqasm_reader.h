@@ -29,7 +29,7 @@ private:
     static std::string translate_gate_type(const std::string &gate_type);
 
     bool test_translate_gate_type();
-    
+
     const quantum_platform &platform;
     quantum_program &program;
     int number_of_qubits;

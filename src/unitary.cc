@@ -93,7 +93,7 @@ public:
         array(array),
         is_decomposed(false)
     {
-        DOUT("constructing unitary: " << name 
+        DOUT("constructing unitary: " << name
                   << ", containing: " << array.size() << " elements");
     }
 
@@ -120,13 +120,13 @@ public:
 
         getMatrix();
         int matrix_size = _matrix.rows();
-        
+
         // compute the number of qubits: length of array is collumns*rows, so log2(sqrt(array.size))
         int numberofbits = uint64_log2(matrix_size);
 
         Eigen::MatrixXcd identity = Eigen::MatrixXcd::Identity(matrix_size, matrix_size);
         Eigen::MatrixXcd matmatadjoint = (_matrix.adjoint()*_matrix);
-        // very little accuracy because of tests using printed-from-matlab code that does not have many digits after the comma    
+        // very little accuracy because of tests using printed-from-matlab code that does not have many digits after the comma
         if (!matmatadjoint.isApprox(identity, 0.001)) {
             //Throw an error
             EOUT("Unitary " << name <<" is not a unitary matrix!");
@@ -137,7 +137,7 @@ public:
         genMk();
 
         decomp_function(_matrix, numberofbits); //needed because the matrix is read in columnmajor
- 
+
         DOUT("Done decomposing");
         is_decomposed = true;
     }
@@ -229,7 +229,7 @@ public:
         Eigen::Ref<complex_matrix> v2,
         Eigen::Ref<complex_matrix> s
     ) {
-        // auto start = std::chrono::steady_clock::now();        
+        // auto start = std::chrono::steady_clock::now();
         //Cosine sine decomposition
         // U = [q1, U01] = [u1    ][c  s][v1  ]
         //     [q2, U11] = [    u2][-s c][   v2]
@@ -239,7 +239,7 @@ public:
 
         Eigen::BDCSVD<complex_matrix> svd(n/2,n/2);
         svd.compute(U.topLeftCorner(n/2,n/2), Eigen::ComputeThinU | Eigen::ComputeThinV); // possible because it's square anyway
-        
+
 
         // thinCSD: q1 = u1*c*v1.adjoint()
         //          q2 = u2*s*v1.adjoint()
@@ -249,7 +249,7 @@ public:
         u1.noalias() = svd.matrixU().rowwise().reverse();
         v1.noalias() = svd.matrixV().rowwise().reverse(); // Same v as in matlab: u*s*v.adjoint() = q1
 
-        complex_matrix q2 = U.bottomLeftCorner(p,p)*v1;      
+        complex_matrix q2 = U.bottomLeftCorner(p,p)*v1;
 
         int k = 0;
         for (int j = 1; j < p; j++) {
@@ -272,12 +272,12 @@ public:
             c.block(0,k, p,p-k) = c.block(0,k, p,p-k)*svd2.matrixV();
             u2.block(0,k, p,p-k) = u2.block(0,k, p,p-k)*svd2.matrixU();
             v1.block(0,k, p,p-k) = v1.block(0,k, p,p-k)*svd2.matrixV();
-            
+
             Eigen::HouseholderQR<complex_matrix> qr2(p-k, p-k);
 
             qr2.compute(c.block(k,k, p-k,p-k));
             c.block(k,k,p-k,p-k) = qr2.matrixQR().triangularView<Eigen::Upper>();
-            u1.block(0,k, p,p-k) = u1.block(0,k, p,p-k)*qr2.householderQ(); 
+            u1.block(0,k, p,p-k) = u1.block(0,k, p,p-k)*qr2.householderQ();
         }
         // CSD_time2 += (std::chrono::steady_clock::now() - start);
 
@@ -293,7 +293,7 @@ public:
             }
             if (s(j,j).real() < 0) {
                 s_ind.push_back(j);
-            } 
+            }
         }
 
         c(c_ind,c_ind) = -c(c_ind,c_ind);
@@ -330,19 +330,19 @@ public:
         for (int i = 0; i < p; i++) {
             if (std::abs(s(i,i)) > std::abs(c(i,i))) {
                 // std::vector<int> s_ind_row;
-                v2.row(i).noalias() = tmp_s.row(i)/s(i,i);                
+                v2.row(i).noalias() = tmp_s.row(i)/s(i,i);
             } else {
                 // c_ind_row.push_back(i);
                 v2.row(i).noalias() = tmp_c.row(i)/c(i,i);
             }
         }
-        
+
 
         // v2(s_ind_row, Eigen::all) = tmp_s(s_ind_row, Eigen::all).rowwise() / s(s_ind_row, s_ind_row).array();
         // v2(c_ind_row, Eigen::all) = tmp_c(c_ind_row, Eigen::all).rowwise() / c(c_ind_row, c_ind_row).array();
         // U = [q1, U01] = [u1    ][c  s][v1  ]
         //     [q2, U11] = [    u2][-s c][   v2]
-    
+
         complex_matrix tmp(n,n);
         tmp.topLeftCorner(p,p) = u1*c*v1;
         tmp.bottomLeftCorner(p,p) = -u2*s*v1;
@@ -364,7 +364,7 @@ public:
         double delta = atan2(det.imag(), det.real())/matrix.rows();
         std::complex<double> A = exp(std::complex<double>(0,-1)*delta)*matrix(0,0);
         std::complex<double> B = exp(std::complex<double>(0,-1)*delta)*matrix(0,1); //to comply with the other y-gate definition
-        
+
         double sw = sqrt(pow((double) B.imag(),2) + pow((double) B.real(),2) + pow((double) A.imag(),2));
         double wx = 0;
         double wy = 0;
@@ -397,7 +397,7 @@ public:
     ) {
         // [U1 0 ]  = [V 0][D 0 ][W 0]
         // [0  U2]    [0 V][0 D*][0 W]
-        // auto start = std::chrono::steady_clock::now(); 
+        // auto start = std::chrono::steady_clock::now();
         complex_matrix check = U1*U2.adjoint();
         // complex_matrix D;
         // complex_matrix V;
@@ -421,7 +421,7 @@ public:
                 W.noalias() = D.asDiagonal() * V.adjoint() * U2;
             }
         }
-    
+
         // demultiplexing_time += (std::chrono::steady_clock::now() - start);
         if (!(V*V.adjoint()).isApprox(Eigen::MatrixXd::Identity(V.rows(), V.rows()), 10e-3)) {
             DOUT("Eigenvalue decomposition incorrect: V is not unitary, adjustments will be made");
@@ -454,7 +454,7 @@ public:
             }
             genMk_lookuptable.push_back(Mk);
         }
-        
+
         // return genMk_lookuptable[numberqubits-1];
     }
 
@@ -495,7 +495,7 @@ public:
 
     void multicontrolledZ(const Eigen::Ref<const Eigen::VectorXcd> &D, int halfthesizeofthematrix) {
         // auto start = std::chrono::steady_clock::now();
-        
+
         Eigen::VectorXd temp =  (std::complex<double>(0,-2)*Eigen::log(D.array())).real();
         Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]);
         Eigen::VectorXd tr = dec.solve(temp);
