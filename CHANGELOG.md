@@ -12,6 +12,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - implemented option to output scheduled QASM files
     - added check for dimension of "instruments/qubits" against "instruments/ref_control_mode/control_bits"
     - added check for dimension of "instructions/<key>/cc/[signals,ref_signal]/value" against "instruments/ref_control_mode/control_bits"
+    - added cross check of "instruments/ref_control_mode" against "instrument_definitions"
 
 ### Changed
 - CC backend:
