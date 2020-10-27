@@ -20,6 +20,7 @@
 
 #include "json.h"
 #include "exception.h"
+#include "opt.h"
 
 #define println(x) std::cout << "[OPENQL] "<< x << std::endl
 
@@ -125,7 +126,6 @@ void set_log_level(const std::string &level);
 
 } // namespace logger
 
-
 void make_output_dir(const std::string &dir);
 std::string to_lower(std::string str);
 std::string replace_all(std::string str, const std::string &from, const std::string &to);
@@ -133,7 +133,7 @@ std::string replace_all(std::string str, const std::string &from, const std::str
 // from: https://stackoverflow.com/questions/5878775/how-to-find-and-replace-string
 // NB: also see replace_all
 template <typename T, typename U>
-T &replace (T &str, const U &from, const U &to) {
+T &replace(T &str, const U &from, const U &to) {
     size_t pos;
     size_t offset = 0;
     const size_t increment = to.size();
