@@ -21,9 +21,6 @@ int main(int argc, char ** argv)
    // print platform info
    qplatform.print_info();
 
-   // set platform
-   ql::set_platform(qplatform);
-
    // create program
    ql::quantum_program prog("prog", qplatform, nqubits);
    prog.set_sweep_points(sweep_points, sizeof(sweep_points)/sizeof(float));

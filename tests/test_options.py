@@ -2,7 +2,7 @@ import os
 import unittest
 from openql import openql as ql
 
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 class Test_options(unittest.TestCase):
@@ -88,6 +88,7 @@ class Test_options(unittest.TestCase):
 
 
     def test_default_scheduler(self):
+        self.tearDown()
         # tests if 'ALAP' is indeed the default scheduler policy
         self.assertEqual('ALAP', ql.get_option('scheduler'),
             'ALAP is not the default scheduler!')

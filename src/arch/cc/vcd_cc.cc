@@ -39,8 +39,8 @@ void vcd_cc::programStart(int qubitNumber, int cycleTime, int maxGroups, const s
     for(size_t instrIdx=0; instrIdx<instrsUsed; instrIdx++) {
         const json &instrument = settings.getInstrumentAtIdx(instrIdx);         // NB: always exists
         std::string instrumentPath = SS2S("instruments["<<instrIdx<<"]");       // for JSON error reporting
-        std::string instrumentName = json_get<std::string>(instrument, "name", instrumentPath);
-        const json qubits = json_get<const json>(instrument, "qubits", instrumentPath);
+        std::string instrumentName = ql::json_get<std::string>(instrument, "name", instrumentPath);
+        const json qubits = ql::json_get<const json>(instrument, "qubits", instrumentPath);
         for(size_t group=0; group<qubits.size(); group++) {
             std::string name = instrumentName+"-"+std::to_string(group);
             vcdVarSignal[instrIdx][group] = vcd.registerVar(name, Vcd::VT_STRING);
@@ -54,7 +54,7 @@ void vcd_cc::programStart(int qubitNumber, int cycleTime, int maxGroups, const s
     for(size_t instrIdx=0; instrIdx<instrsUsed; instrIdx++) {
         const json &instrument = settings.getInstrumentAtIdx(instrIdx);         // NB: always exists
         std::string instrumentPath = SS2S("instruments["<<instrIdx<<"]");       // for JSON error reporting
-        std::string instrumentName = json_get<std::string>(instrument, "name", instrumentPath);
+        std::string instrumentName = ql::json_get<std::string>(instrument, "name", instrumentPath);
         vcdVarCodeword[instrIdx] = vcd.registerVar(instrumentName, Vcd::VT_STRING);
     }
     vcd.upscope();

@@ -1,9 +1,9 @@
 from openql import openql as ql
 import unittest
 import os
-from test_QASM_assembler_present import assemble
+from utils import file_compare
 
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 class Test_basic(unittest.TestCase):
@@ -19,8 +19,6 @@ class Test_basic(unittest.TestCase):
         # TODO cleanup
         ql.set_option('scheduler', 'ALAP')
         ql.set_option('scheduler_post179', 'yes')
-
-
 
     def test_compilation(self):
 
@@ -50,15 +48,9 @@ class Test_basic(unittest.TestCase):
         p.add_kernel(k)
 
         p.compile()
-        
-        # load qasm
-        qasm_files = []
-        qasm_files.append(os.path.join(output_dir, 'basic.qasm'))
-        qasm_files.append(os.path.join(output_dir, 'basic_scheduled.qasm'))
 
-        for qasm_file in qasm_files:
-            print('assembling: {}'.format(qasm_file))
-            assemble(qasm_file)
+        for name in ('basic.qasm', 'basic_scheduled.qasm'):
+            self.assertTrue(file_compare(os.path.join(output_dir, name), os.path.join(curdir, 'golden', name)))
 
 if __name__ == '__main__':
     unittest.main()

@@ -19,6 +19,12 @@ Installing the pre-built package
 
 Pre-built packages are available for OpenQL.
 
+.. note::
+
+    Initial placement is currently not included with the binary distribution
+    due to a license incompatibility with one of the dependencies (GLPK, to
+    be specific). Until this is resolved somehow, you'll have to build from
+    source if you need it.
 
 
 Pre-built Wheels
@@ -47,7 +53,7 @@ OpenQL can be installed as a conda package (currently on Linux and Windows only)
 
 ::
 
-    conda install -c imran.ashraf openql
+    conda install -c qe-lab openql
 
 
 Conda packages can also be built locally by using the recipe available in the conda-recipe directory,
@@ -88,6 +94,7 @@ The following packages are required to compile OpenQL from sources:
 - [Optional] pytest used for running tests
 - [Optional] Graphviz Dot utility to convert graphs from dot to pdf, png etc
 - [Optional] XDot to visualize generated graphs in dot format
+- [Optional] GLPK if you want initial placement support
 
 
 Notes for Windows Users
@@ -99,6 +106,13 @@ Dependencies can be installed with:
 - `swigwin 4.0.0 <https://sourceforge.net/projects/swig/files/swigwin/swigwin-4.0.0/swigwin-4.0.0.zip/download>`_
 
 Make sure the above mentioned binaries are added to the system path.
+
+For initial placement support, you'll also need
+`winglpk 4.6.5 <https://sourceforge.net/projects/winglpk/files/winglpk/GLPK-4.65/winglpk-4.65.zip/download>`_.
+But just adding this directory to the system path is not enough for CMake to find it. Instead, the toplevel
+CMake script listens to the ``WINGLPK_ROOT_DIR`` environment variable. Set that to the root directory of what's
+in that zip file instead.
+
 
 - Use Power Shell for installation
 - Set execution policy by:
@@ -157,7 +171,7 @@ OpenQL sources for each release can be downloaded from github `releases <https:/
 
 ::
 
-    git clone https://github.com/QE-Lab/OpenQL.git
+    git clone https://github.com/QE-Lab/OpenQL.git --recursive
 
 
 Compiling OpenQL as Python Package
@@ -169,16 +183,36 @@ Running the following command in the python (virtual) environment in Terminal/Po
 
     cd OpenQL
     git submodule update --init --recursive
-    python setup.py install
+    pip install -v
 
 Or in editable mode by the command:
 
 ::
 
-    pip install  -e .[develop]
+    pip install -v -e .
+
+Editable mode has the advantage that you'll get incremental compilation if you ever change OpenQL's C++ files, but it's
+a bit more fragile in that things will break if you move the OpenQL repository around later. Specifically, editable mode
+just installs an absolute path link to your clone of the OpenQL repository, so if you move it, the link breaks. You'd have
+to remember to uninstall if you ever end up moving it.
+
+.. note::
+
+    The ``setup.py`` script (as invoked by pip in the above commands) listens to a number of environment variables to
+    configure the installation and the compilation process. The most important ones are:
+
+    - ``OPENQL_ENABLE_INITIAL_PLACEMENT``: if defined (value doesn't metter), initial placement support will be enabled.
+    - ``OPENQL_DISABLE_UNITARY``: if defined (value doesn't matter), unitary decomposition is disabled. This speeds up
+      compile time if you don't need it.
+    - ``NPROCS``: sets the number of parallel processes to use when compiling (must be a number if defined). Without
+      this, it won't multithread, so it'll be much slower.
+
+    In bash-like terminals, you can just put them in front of the pip command like so: ``NPROCS=10 pip ...``. In
+    Powershell, you can use ``$env:NPROCS = '10'`` in a command preceding the ``pip`` command.
 
 
 Running the tests
+.................
 
 In order to pass all the python tests, the openql package should be installed in editable mode.
 Also, *qisa-as* and *libqasm* should be installed first. Follow `qisa-as <https://github.com/QE-Lab/eQASM_Assembler>`_
@@ -200,51 +234,61 @@ or
 Compiling C++ OpenQL tests and programs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Existing tests and programs can be compiled by the following instructions. You can use an existing example as a starting point and write your own programs. Make sure to include them in the CMakeLists.txt file to inform cmake to compile it as well.
+Existing tests and programs can be compiled by the following instructions. You
+can use any existing example as a starting point for your own programs, but
+refer to ``examples/cpp-standalone-example`` for the build system.
+
+The tests are run with the ``tests`` directory as the working directory, so
+they can find their JSON files. The results end up in ``tests/test_output``.
 
 
 Linux/OSX
 .........
 
-Existing tests and programs can be compiled on Linux OS by the following commands:
+Existing tests and examples can be compiled and run using the following commands:
 
 ::
 
     mkdir cbuild
     cd cbuild
-    cmake ..   # generates the make file based on CMakeLists.txt in the OpenQL directory
-    make       # compiles the source code into the current directory.
-
-
-
-To execute the given examples or tests, go to e.g., ```OpenQL/cbuild/examples``` and execute one of the files e.g.,  ```./simple```. The output will be saved to the output directory next to the file.
-
-If one wants to compile and run a single file without adding it to CMakeLists.txt, e.g., ```example.cc```, he can use the standalone example provided in ```examples/cpp-standalone-example``` directory.
-
-Some targets must be built manually, like test_cc or test_cqasm_reader. To build test_cqasm_reader, from the cbuild directory do:
-
-::
-
-    make test_cqasm_reader
-    cd tests
-    ./test_cqasm_reader
-
+    cmake .. -DOPENQL_BUILD_TESTS=ON    # configure the build
+    make                                # actually build OpenQL and the tests
+    make test                           # run the tests
 
 
 Windows
 .......
 
+Existing tests and examples can be compiled and run using the following commands:
+
 ::
 
     mkdir cbuild
     cd cbuild
-    cmake -G "NMake Makefiles" ..
-    nmake
+    cmake .. -DOPENQL_BUILD_TESTS=ON -DBUILD_SHARED_LIBS=OFF # configure the build
+    cmake --build .                     # actually build OpenQL and the tests
+    cmake --build . --target RUN_TESTS  # run the tests
 
-Some targets must be built manually, like test_cc or test_cqasm_reader. To build test_cqasm_reader, from the cbuild directory do:
+.. note::
 
-::
+    ``-DBUILD_SHARED_LIBS=OFF`` is needed on Windows only because the
+    executables can't find the OpenQL DLL in the build tree that MSVC
+    generates, and static linking works around that. It works just fine when
+    you manually place the DLL in the same directory as the test executables
+    though, so this is just a limitation of the current build system for the
+    tests.
 
-    nmake test_cqasm_reader
-    cd tests
-    .\test_cqasm_reader.exe
+Other CMake flags
+.................
+
+CMake accepts a number of flags in addition to the ``-DOPENQL_BUILD_TESTS=ON``
+flag used above:
+
+ - ``-DWITH_INITIAL_PLACEMENT=ON``: enables initial placement.
+ - ``-DWITH_UNITARY_DECOMPOSITION=OFF``: disables unitary composition (vastly
+   speeds up compile time if you don't need it).
+ - ``-DCMAKE_BUILD_TYPE=Debug``: builds in debug rather than release mode
+   (less optimizations, more debug symbols).
+ - ``-DBUILD_SHARED_LIBS=OFF``: build static libraries rather than dynamic
+   ones. Note that static libraries are not nearly as well tested, but they
+   should work if you need them.

@@ -2,8 +2,7 @@ import os
 import unittest
 from openql import openql as ql
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 class Test_quantumsim(unittest.TestCase):
@@ -14,13 +13,14 @@ class Test_quantumsim(unittest.TestCase):
         ql.set_option('optimize', 'no')
         ql.set_option('scheduler', 'ASAP')
         ql.set_option('log_level', 'LOG_WARNING')
+        ql.set_option('quantumsim', 'yes')
 
 
     def test(self):
         # You can specify a config location, here we use a default config
-        config_fn = os.path.join(curdir, 'test_cfg_quantumsim.json')
+        config_fn = os.path.join(curdir, 'test_mapper_s7.json')
         platform = ql.Platform('platform_quantumsim', config_fn)
-        num_qubits = 2
+        num_qubits = 3
         p = ql.Program('aProgram', platform, num_qubits)
         sweep_points = [1, 2]
         p.set_sweep_points(sweep_points)
@@ -29,11 +29,11 @@ class Test_quantumsim(unittest.TestCase):
         k = ql.Kernel('aKernel', platform, num_qubits)
 
         # populate kernel using default gates
-        k.gate("hadamard",[0])
-        k.gate("hadamard",[1])
-        k.gate("cphase", [0, 1])
+        k.gate("h",[0])
+        k.gate("h",[2])
+        k.gate("cz", [0, 2])
         k.gate("measure", [0])
-        k.gate("measure", [1])
+        k.gate("measure", [2])
 
         # add the kernel to the program
         p.add_kernel(k)

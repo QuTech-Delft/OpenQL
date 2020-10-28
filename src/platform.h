@@ -4,21 +4,18 @@
  * @author Nader Khammassi
  * @brief  platform header for target-specific compilation
  */
-#ifndef QL_PLATFORM_H
-#define QL_PLATFORM_H
+
+#pragma once
 
 #include <string>
 #include <tuple>
 
-#include <compile_options.h>
-#include <json.h>
-#include <instruction_map.h>
+#include "json.h"
+#include "hardware_configuration.h"
 
-namespace ql
-{
-class quantum_platform
-{
+namespace ql {
 
+class quantum_platform {
 public:
     std::string             name;                     // platform name
     std::string             eqasm_compiler_name;      // eqasm backend
@@ -28,23 +25,16 @@ public:
     ql::instruction_map_t   instruction_map;          // supported operations
     json                    instruction_settings;     // instruction settings (to use by the eqasm backend)
     json                    hardware_settings;        // additional hardware settings (to use by the eqasm backend)
+
     json                    resources;
     json                    topology;
     json                    aliases;                  // workaround the generic instruction composition
 
-#if OPT_TARGET_PLATFORM   // FIXME: constructed object is not usable
-    quantum_platform() : name("default")
-    {
-    }
-#endif
-
-    quantum_platform(std::string name, std::string configuration_file_name);
+    // FIXME: constructed object is not usable
+    quantum_platform();
+    quantum_platform(const std::string &name, const std::string &configuration_file_name);
     void print_info() const;
-    size_t get_qubit_number() const  // FIXME: qubit_number is public anyway
-    {
-        return qubit_number;
-    }
-
+    size_t get_qubit_number() const;  // FIXME: qubit_number is public anyway
 
     /**
      * @brief   Find architecture instruction name for a custom gate
@@ -56,17 +46,14 @@ public:
      * @note    Only works for custom instructions defined in JSON
        FIXME:   it may be more useful to get the information directly from JSON, because arch_operation_name is not really generic
      */
-    std::string get_instruction_name(std::string &iname) const;
 
     // find settings for custom gate, preventing JSON exceptions
-    const json& find_instruction(std::string iname) const;
+    const json& find_instruction(const std::string &iname) const;
 
     // find instruction type for custom gate
-    std::string find_instruction_type(std::string iname) const;
+    std::string find_instruction_type(const std::string &iname) const;
 
     size_t time_to_cycles(float time_ns) const;     // FIXME: prefer unsigned int, or double parameter
 };
 
-}
-
-#endif // QL_PLATFORM_H
+} // namespace ql

@@ -1,6 +1,7 @@
 # Build files
 build
 cbuild
+pybuild
 dist
 openql.egg-info
 lab
@@ -28,3 +29,6 @@ test_output
 docs/_build
 docs/_static
 docs/_templates
+
+/.idea
+/cmake-build-*
