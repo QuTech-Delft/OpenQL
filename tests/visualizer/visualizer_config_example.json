@@ -2,7 +2,7 @@
     "cycles":
     {
         "showCycleLabels": true,
-        "showCyclesInNanoSeconds": false,
+        "showCyclesInNanoSeconds": true,
         "cycleLabelsRowHeight": 24,
         "fontHeight": 13,
         "fontColor": [0, 0, 0],

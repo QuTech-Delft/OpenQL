@@ -98,24 +98,30 @@ struct Cycle
 
 enum LineSegmentType {FLAT, PULSE, CUT};
 
-struct Waveform
+struct Pulse
 {
-	const int test = 0;
+	const std::vector<int> waveform;
+	const int sampleRate;
 };
 
 struct LineSegment
 {
 	const LineSegmentType type;
 	const EndPoints range;
-	const Waveform waveform;
+	const Pulse pulse;
+};
+
+struct Line
+{
+	std::vector<LineSegment> segments;
+	int maxAmplitude = 0;
 };
 
 struct QubitLines
 {
-	// making these const deletes the assignment operator?
-	std::vector<LineSegment> microwave;
-	std::vector<LineSegment> flux;
-	std::vector<LineSegment> readout;
+	Line microwave;
+	Line flux;
+	Line readout;
 };
 
 enum PulseType {MICROWAVE, FLUX, READOUT};
@@ -129,9 +135,9 @@ struct GatePulses
 
 struct PulseVisualization
 {
-	int samplerateMicrowave = 0;
-	int samplerateFlux = 0;
-	int samplerateReadout = 0;
+	int sampleRateMicrowave = 0;
+	int sampleRateFlux = 0;
+	int sampleRateReadout = 0;
 
 	std::map<int, std::map<int, GatePulses>> mapping;
 };
@@ -221,6 +227,7 @@ void fixMeasurementOperands(std::vector<GateProperties>& gates);
 bool isMeasurement(const GateProperties gate);
 
 std::vector<QubitLines> generateQubitLines(const std::vector<GateProperties> gates, const PulseVisualization pulseVisualization, const CircuitData circuitData);
+int calculateMaxAmplitude(const std::vector<LineSegment> lineSegments);
 void insertFlatLineSegments(std::vector<LineSegment>& existingLineSegments, const int amountOfCycles);
 
 Dimensions calculateTextDimensions(const std::string& text, const int fontHeight, const Layout layout);
@@ -235,7 +242,7 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 
 void drawWiggle(cimg_library::CImg<unsigned char>& image, const int x0, const int x1, const int y, const int width, const int height, const std::array<unsigned char, 3> color);
 
-void drawLineSegments(cimg_library::CImg<unsigned char>& image, const Structure structure, std::vector<LineSegment> segments, const int qubitIndex, const int yOffset, const std::array<unsigned char, 3> color);
+void drawLine(cimg_library::CImg<unsigned char>& image, const Structure structure, const int cycleDuration, const Line line, const int qubitIndex, const int yOffset, const std::array<unsigned char, 3> color);
 
 void drawCycle(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure, const Cycle cycle);
 void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const GateProperties gate, const Structure structure, const int chunkOffset);

@@ -750,15 +750,15 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		DOUT("Drawing qubit lines for pulse visualization...");
 		for (int qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++)
 		{
-			drawLineSegments(image, structure, linesPerQubit[qubitIndex].microwave, qubitIndex,
+			drawLine(image, structure, cycleDuration, linesPerQubit[qubitIndex].microwave, qubitIndex,
 				layout.pulses.pulseRowHeightMicrowave / 2,
 				layout.pulses.pulseColorMicrowave);
 
-			drawLineSegments(image, structure, linesPerQubit[qubitIndex].flux, qubitIndex,
+			drawLine(image, structure, cycleDuration, linesPerQubit[qubitIndex].flux, qubitIndex,
 				layout.pulses.pulseRowHeightMicrowave + layout.pulses.pulseRowHeightFlux / 2,
 				layout.pulses.pulseColorFlux);
 
-			drawLineSegments(image, structure, linesPerQubit[qubitIndex].readout, qubitIndex,
+			drawLine(image, structure, cycleDuration, linesPerQubit[qubitIndex].readout, qubitIndex,
 				layout.pulses.pulseRowHeightMicrowave + layout.pulses.pulseRowHeightFlux + layout.pulses.pulseRowHeightReadout / 2,
 				layout.pulses.pulseColorReadout);
 		}
@@ -1141,18 +1141,18 @@ PulseVisualization parseWaveformMapping(const std::string& waveformMappingPath)
 	{
 		try
 		{
-			if (waveformMapping["samplerates"].count("samplerateMicrowave") == 1)
-				pulseVisualization.samplerateMicrowave = waveformMapping["samplerates"]["samplerateMicrowave"];
+			if (waveformMapping["samplerates"].count("microwave") == 1)
+				pulseVisualization.sampleRateMicrowave = waveformMapping["samplerates"]["microwave"];
 			else
 				FATAL("Missing 'samplerateMicrowave' attribute in waveform mapping file!");
 
-			if (waveformMapping["samplerates"].count("samplerateFlux") == 1)
-				pulseVisualization.samplerateFlux = waveformMapping["samplerates"]["samplerateFlux"];
+			if (waveformMapping["samplerates"].count("flux") == 1)
+				pulseVisualization.sampleRateFlux = waveformMapping["samplerates"]["flux"];
 			else
 				FATAL("Missing 'samplerateFlux' attribute in waveform mapping file!");
 
-			if (waveformMapping["samplerates"].count("samplerateReadout") == 1)
-				pulseVisualization.samplerateReadout = waveformMapping["samplerates"]["samplerateReadout"];
+			if (waveformMapping["samplerates"].count("readout") == 1)
+				pulseVisualization.sampleRateReadout = waveformMapping["samplerates"]["readout"];
 			else
 				FATAL("Missing 'samplerateReadout' attribute in waveform mapping file!");
 		}
@@ -1205,9 +1205,9 @@ PulseVisualization parseWaveformMapping(const std::string& waveformMappingPath)
 				std::vector<int> readout;
 				try
 				{
-				if (gatePulsesMapping.contains("microwave")) microwave = gatePulsesMapping["microwave"].get<std::vector<int>>();
-				if (gatePulsesMapping.contains("flux")) flux = gatePulsesMapping["flux"].get<std::vector<int>>();
-				if (gatePulsesMapping.contains("readout")) readout = gatePulsesMapping["readout"].get<std::vector<int>>();
+					if (gatePulsesMapping.contains("microwave")) microwave = gatePulsesMapping["microwave"].get<std::vector<int>>();
+					if (gatePulsesMapping.contains("flux")) flux = gatePulsesMapping["flux"].get<std::vector<int>>();
+					if (gatePulsesMapping.contains("readout")) readout = gatePulsesMapping["readout"].get<std::vector<int>>();
 				}
 				catch (std::exception& e)
 				{
@@ -1388,101 +1388,112 @@ std::vector<QubitLines> generateQubitLines(const std::vector<GateProperties> gat
 	for (size_t qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++)
 	{
 		// Find the cycles with pulses for each line.
-		const std::vector<GateProperties> gatesOnQubit = gatesPerQubit[qubitIndex];
-		std::vector<LineSegment> microwaveLineSegments;
-		std::vector<LineSegment> fluxLineSegments;
-		std::vector<LineSegment> readoutLineSegments;
-		for (const GateProperties& gate : gatesOnQubit)
-		{
-			const std::vector<GateOperand> operands = getGateOperands(gate);
-			int amountOfQuantumOperands = 0;
-			for (const GateOperand& operand : operands)
-			{
-				if (operand.bitType == QUANTUM) amountOfQuantumOperands++;
-			}
-			const EndPoints gateCycles {gate.cycle, (int) gate.cycle + (((int) gate.duration) / circuitData.cycleDuration) - 1};
+		Line microwaveLine;
+		Line fluxLine;
+		Line readoutLine;
 
+		for (const GateProperties& gate : gatesPerQubit[qubitIndex])
+		{
+			const EndPoints gateCycles {gate.cycle, (int) gate.cycle + (((int) gate.duration) / circuitData.cycleDuration) - 1};
 			const int codeword = gate.codewords[0];
 			try
 			{
 				const GatePulses gatePulses = pulseVisualization.mapping.at(codeword).at(qubitIndex);
 
-				if (isMeasurement(gate))
-				{
-					readoutLineSegments.push_back({PULSE, gateCycles, {-1}});
-					continue;
-				}
-				if (amountOfQuantumOperands == 1)
-				{
-					microwaveLineSegments.push_back({PULSE, gateCycles, {-1}});
-					continue;
-				}
-				if (amountOfQuantumOperands > 1)
-				{
-					fluxLineSegments.push_back({PULSE, gateCycles, {-1}});
-					continue;
-				}
+				if (gatePulses.microwave.size() > 0)
+					microwaveLine.segments.push_back({PULSE, gateCycles, {gatePulses.microwave, pulseVisualization.sampleRateMicrowave}});
+
+				if (gatePulses.flux.size() > 0)
+					fluxLine.segments.push_back({PULSE, gateCycles, {gatePulses.flux, pulseVisualization.sampleRateFlux}});
+
+				if (gatePulses.readout.size() > 0)
+					readoutLine.segments.push_back({PULSE, gateCycles, {gatePulses.readout, pulseVisualization.sampleRateReadout}});
 			}
 			catch (std::exception& e)
 			{
 				WOUT("Missing codeword and/or qubit in waveform mapping file for gate: " << gate.name << "! Replacing pulse with flat line...\n\t" <<
 					 "Indices are: codeword = " << codeword << " and qubit = " << qubitIndex);
-				readoutLineSegments.push_back({FLAT, gateCycles, {-1}});
 			}
 		}
+
+		microwaveLine.maxAmplitude = calculateMaxAmplitude(microwaveLine.segments);
+		fluxLine.maxAmplitude = calculateMaxAmplitude(fluxLine.segments);
+		readoutLine.maxAmplitude = calculateMaxAmplitude(readoutLine.segments);
 
 		// Find the empty ranges between the existing segments and insert flat segments there.
-		insertFlatLineSegments(microwaveLineSegments, circuitData.getAmountOfCycles());
-		insertFlatLineSegments(fluxLineSegments, circuitData.getAmountOfCycles());
-		insertFlatLineSegments(readoutLineSegments, circuitData.getAmountOfCycles());
+		insertFlatLineSegments(microwaveLine.segments, circuitData.getAmountOfCycles());
+		insertFlatLineSegments(fluxLine.segments, circuitData.getAmountOfCycles());
+		insertFlatLineSegments(readoutLine.segments, circuitData.getAmountOfCycles());
 
-		linesPerQubit[qubitIndex] = {microwaveLineSegments, fluxLineSegments, readoutLineSegments};
+		// Construct the QubitLines object at the specified qubit index.
+		linesPerQubit[qubitIndex] = { microwaveLine, fluxLine, readoutLine };
 
-		DOUT("qubit: " << qubitIndex);
-		std::string microwaveOutput = "\tmicrowave segments: ";
-		for (const LineSegment& segment : microwaveLineSegments)
-		{
-			std::string type;
-			switch (segment.type)
-			{
-				case FLAT: type = "FLAT"; break;
-				case PULSE: type = "PULSE"; break;
-				case CUT: type = "CUT"; break;
-			}
-			microwaveOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
-		}
-		DOUT(microwaveOutput);
+		// DOUT("qubit: " << qubitIndex);
+		// std::string microwaveOutput = "\tmicrowave segments: ";
+		// for (const LineSegment& segment : microwaveLineSegments)
+		// {
+		// 	std::string type;
+		// 	switch (segment.type)
+		// 	{
+		// 		case FLAT: type = "FLAT"; break;
+		// 		case PULSE: type = "PULSE"; break;
+		// 		case CUT: type = "CUT"; break;
+		// 	}
+		// 	microwaveOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
+		// }
+		// DOUT(microwaveOutput);
 
-		std::string fluxOutput = "\tflux segments: ";
-		for (const LineSegment& segment : fluxLineSegments)
-		{
-			std::string type;
-			switch (segment.type)
-			{
-				case FLAT: type = "FLAT"; break;
-				case PULSE: type = "PULSE"; break;
-				case CUT: type = "CUT"; break;
-			}
-			fluxOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
-		}
-		DOUT(fluxOutput);
+		// std::string fluxOutput = "\tflux segments: ";
+		// for (const LineSegment& segment : fluxLineSegments)
+		// {
+		// 	std::string type;
+		// 	switch (segment.type)
+		// 	{
+		// 		case FLAT: type = "FLAT"; break;
+		// 		case PULSE: type = "PULSE"; break;
+		// 		case CUT: type = "CUT"; break;
+		// 	}
+		// 	fluxOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
+		// }
+		// DOUT(fluxOutput);
 
-		std::string readoutOutput = "\treadout segments: ";
-		for (const LineSegment& segment : readoutLineSegments)
-		{
-			std::string type;
-			switch (segment.type)
-			{
-				case FLAT: type = "FLAT"; break;
-				case PULSE: type = "PULSE"; break;
-				case CUT: type = "CUT"; break;
-			}
-			readoutOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
-		}
-		DOUT(readoutOutput);
+		// std::string readoutOutput = "\treadout segments: ";
+		// for (const LineSegment& segment : readoutLineSegments)
+		// {
+		// 	std::string type;
+		// 	switch (segment.type)
+		// 	{
+		// 		case FLAT: type = "FLAT"; break;
+		// 		case PULSE: type = "PULSE"; break;
+		// 		case CUT: type = "CUT"; break;
+		// 	}
+		// 	readoutOutput += " [" + type + " (" + std::to_string(segment.range.start) + "," + std::to_string(segment.range.end) + ")]";
+		// }
+		// DOUT(readoutOutput);
 	}
 
 	return linesPerQubit;
+}
+
+int calculateMaxAmplitude(const std::vector<LineSegment> lineSegments)
+{
+	int maxAmplitude = 0;
+
+	for (const LineSegment& segment : lineSegments)
+	{
+		const std::vector<int> waveform = segment.pulse.waveform;
+		int maxAmplitudeInSegment = 0;
+		for (const int amplitude : waveform)
+		{
+			const int absAmplitude = std::abs(amplitude);
+			if (absAmplitude > maxAmplitudeInSegment)
+				maxAmplitudeInSegment = absAmplitude;
+		}
+		if (maxAmplitudeInSegment > maxAmplitude)
+			maxAmplitude = maxAmplitudeInSegment;
+	}
+
+	return maxAmplitude;
 }
 
 void insertFlatLineSegments(std::vector<LineSegment>& existingLineSegments, const int amountOfCycles)
@@ -1495,7 +1506,7 @@ void insertFlatLineSegments(std::vector<LineSegment>& existingLineSegments, cons
 		{	
 			if (j == maxCycle)
 			{
-				existingLineSegments.push_back({FLAT, {i, j}, {-1}});
+				existingLineSegments.push_back( { FLAT, {i, j}, {{}, 0} } );
 				i = maxCycle + 1;
 				break;
 			}
@@ -1509,7 +1520,7 @@ void insertFlatLineSegments(std::vector<LineSegment>& existingLineSegments, cons
 					// If the start of the new search for an empty range is also the start of a new non-empty range, skip adding a segment.
 					if (j != i)
 					{
-						existingLineSegments.push_back({FLAT, {i, j - 1}, {-1}});
+						existingLineSegments.push_back( { FLAT, {i, j - 1}, {{}, 0} } );
 					}
 					i = segment.range.end;
 					break;
@@ -1775,9 +1786,9 @@ void drawWiggle(cimg_library::CImg<unsigned char>& image, const int x0, const in
 	image.draw_line(x0 + width / 3 * 2,	y + height,	x1,					y,			color.data());
 }
 
-void drawLineSegments(cimg_library::CImg<unsigned char>& image, const Structure structure, std::vector<LineSegment> segments, const int qubitIndex, const int yOffset, const std::array<unsigned char, 3> color)
+void drawLine(cimg_library::CImg<unsigned char>& image, const Structure structure, const int cycleDuration, const Line line, const int qubitIndex, const int yOffset, const std::array<unsigned char, 3> color)
 {
-	for (const LineSegment& segment : segments)
+	for (const LineSegment& segment : line.segments)
 	{
 		const int x0 = structure.getCellPosition(segment.range.start, qubitIndex, QUANTUM).x0;
 		const int x1 = structure.getCellPosition(segment.range.end, qubitIndex, QUANTUM).x1;
@@ -1791,7 +1802,33 @@ void drawLineSegments(cimg_library::CImg<unsigned char>& image, const Structure 
 
 			case PULSE:
 			{
-				// draw waveform
+				// Calculate pulse properties.
+				IOUT(" --- PULSE SEGMENT --- ");
+
+				const int maxAmplitude = line.maxAmplitude;
+
+				const int segmentWidth = x1 - x0; // pixels
+				const int segmentLengthInCycles = segment.range.end - segment.range.start + 1; // cycles
+				const int segmentLengthInNanoSeconds = cycleDuration * segmentLengthInCycles; // nanoseconds
+				IOUT("\tsegment width: " << segmentWidth);
+				IOUT("\tsegment length in cycles: " << segmentLengthInCycles);
+				IOUT("\tsegment length in nanoseconds: " << segmentLengthInNanoSeconds);
+
+				const int amountOfSamples = segment.pulse.waveform.size();
+				const int sampleRate = segment.pulse.sampleRate; // MHz
+				const float samplePeriod = 1000.0f * (1.0f / (float) sampleRate); // nanoseconds
+				const int samplePeriodWidth = std::floor(samplePeriod / (float) segmentLengthInNanoSeconds * (float) segmentWidth); // pixels
+				IOUT("\tsample period in nanoseconds: " << samplePeriod);
+				IOUT("\tsample period width in segment: " << samplePeriodWidth);
+
+				// Draw samples.
+				int start = x0;
+				for (const int sample : segment.pulse.waveform)
+				{
+					const int end = start + samplePeriodWidth;
+					image.draw_line(start, y - 5, end, y - 5, color.data());
+					start += samplePeriodWidth;
+				}
 			}
 			break;
 
