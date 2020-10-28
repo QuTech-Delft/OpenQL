@@ -37,6 +37,7 @@
 #endif
 #endif
 
+namespace ql {
 
 class codegen_cc
 {
@@ -151,5 +152,7 @@ private:    // funcs
 
     tJsonNodeInfo findSignalDefinition(const json &instruction, const std::string &iname) const;
 }; // class
+
+} // namespace ql
 
 #endif  // ndef ARCH_CC_CODEGEN_CC_H

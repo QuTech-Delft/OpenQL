@@ -4,20 +4,21 @@
  * @author Hans van Someren
  * @brief  clifford sequence optimizer
  */
-#ifndef CLIFFORD_H
-#define CLIFFORD_H
+
+#pragma once
 
 #include "program.h"
 #include "platform.h"
 
+namespace ql {
 
-namespace ql
-{
-
-/*
- * clifford sequence optimizer
+/**
+ * Clifford sequence optimizer.
  */
-    void clifford_optimize(quantum_program* programp, const ql::quantum_platform& platform, std::string passname);
-}
+void clifford_optimize(
+    quantum_program *programp,
+    const ql::quantum_platform &platform,
+    const std::string &passname
+);
 
-#endif // CLIFFORD_H
+} // namespace ql

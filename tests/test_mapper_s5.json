@@ -2,7 +2,7 @@
     "eqasm_compiler" : "cc_light_compiler",
 
     "hardware_settings": {
-        "qubit_number": 7,
+        "qubit_number": 5,
         "cycle_time" : 20,  
         "mw_mw_buffer": 0,
         "mw_flux_buffer": 0,

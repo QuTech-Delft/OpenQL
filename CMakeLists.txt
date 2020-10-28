@@ -177,11 +177,33 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/cqasm/cqasm_reader.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/unitary.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/mapper.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/circuit.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/classical.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/eqasm_compiler.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/gate.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/hardware_configuration.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/interactionMatrix.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ir.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/kernel.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/metrics.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/openql_i.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/options.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_eqasm_compiler.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/qsoverlay.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/resource_manager.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/scheduler.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_eqasm.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc_light/cc_light_resource_manager.cc"
 )
 
 # This definition is used to define OPENQL_DECLSPEC for __declspec. More info:
 # https://docs.microsoft.com/en-us/cpp/cpp/declspec?view=vs-2019
 TARGET_COMPILE_DEFINITIONS(ql PRIVATE BUILDING_OPENQL)
+
+# TODO: this was taken from compile_options.h, but I'm not sure what its purpose
+# is.
+TARGET_COMPILE_DEFINITIONS(ql PUBLIC OPT_DECOMPOSE_WAIT_BARRIER)
 
 # There is no distinction between public and private header files right now,
 # and they'r all in the source directory. Note the / at the end of the path;
