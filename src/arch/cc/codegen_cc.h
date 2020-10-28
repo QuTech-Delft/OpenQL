@@ -15,7 +15,7 @@
 #include "platform.h"
 
 #include <string>
-
+#include <cstddef>  // for size_t etc.
 
 class codegen_cc
 {

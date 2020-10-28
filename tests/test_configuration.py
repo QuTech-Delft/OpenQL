@@ -3,7 +3,7 @@ import os
 import unittest
 from openql import openql as ql
 
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 class Test_Configuration(unittest.TestCase):
@@ -83,6 +83,7 @@ class Test_Configuration(unittest.TestCase):
 
 
     def test_missing_cc_light_instr(self):
+        self.setUpClass()
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platform  = ql.Platform('seven_qubits_chip', config_fn)
         p = ql.Program("aProgram", platform, platform.get_qubit_number())

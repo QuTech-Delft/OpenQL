@@ -6,66 +6,62 @@
  * @brief  openql program
  */
 
-#ifndef QL_PROGRAM_H
-#define QL_PROGRAM_H
+#pragma once
 
-#include <compile_options.h>
-#include <platform.h>
-#include <kernel.h>
-#include <eqasm_compiler.h>
+#include "platform.h"
+#include "kernel.h"
 
-namespace ql
-{
+namespace ql {
+
+class eqasm_compiler;
 
 /**
  * quantum_program_
  */
-class quantum_program
-{
-    protected:
-        bool                        default_config;
-        std::string                 config_file_name;
-        std::vector<quantum_kernel> kernels;
+class quantum_program {
+public:
+    bool                        default_config;
+    std::string                 config_file_name;
+    std::vector<quantum_kernel> kernels;
+    std::string           name;
+    std::string           unique_name;
+    std::vector<float>    sweep_points;
+    ql::quantum_platform  platform;
+    bool                  platformInitialized;
+    size_t                qubit_count;
+    size_t                creg_count;
+    std::string           eqasm_compiler_name;
+    bool                  needs_backend_compiler;
+    ql::eqasm_compiler    *backend_compiler;
 
-    public:
-        std::string           name;
-        std::vector<float>    sweep_points;
-        ql::quantum_platform  platform;
-        size_t                qubit_count;
-        size_t                creg_count;
-        std::string           eqasm_compiler_name;
-        ql::eqasm_compiler *  backend_compiler;
+public:
+    quantum_program(const std::string &n);
+    quantum_program(const std::string &n, const quantum_platform &platf, size_t nqubits, size_t ncregs = 0);
 
-    public:
-        quantum_program(std::string n, quantum_platform platf, size_t nqubits, size_t ncregs = 0);
+    void add(const ql::quantum_kernel &k);
+    void add_program(const ql::quantum_program &p);
+    void add_if(const ql::quantum_kernel &k, const ql::operation &cond);
+    void add_if(const ql::quantum_program &p, const ql::operation &cond);
+    void add_if_else(const ql::quantum_kernel &k_if, const ql::quantum_kernel &k_else, const ql::operation &cond);
+    void add_if_else(const ql::quantum_program &p_if, const ql::quantum_program &p_else, const ql::operation &cond);
+    void add_do_while(const ql::quantum_kernel &k, const ql::operation &cond);
+    void add_do_while(const ql::quantum_program &p, const ql::operation &cond);
+    void add_for(const ql::quantum_kernel &k, size_t iterations);
+    void add_for(const ql::quantum_program &p, size_t iterations);
 
-        void add(ql::quantum_kernel &k);
-        void add_program(ql::quantum_program p);
-        void add_if(ql::quantum_kernel &k, ql::operation & cond);
-        void add_if(ql::quantum_program p, ql::operation & cond);
-        void add_if_else(ql::quantum_kernel &k_if, ql::quantum_kernel &k_else, ql::operation & cond);
-        void add_if_else(ql::quantum_program &p_if, ql::quantum_program &p_else, ql::operation & cond);
-        void add_do_while(ql::quantum_kernel &k, ql::operation & cond);
-        void add_do_while(ql::quantum_program p, ql::operation & cond);
-        void add_for(ql::quantum_kernel &k, size_t iterations);
-        void add_for(ql::quantum_program p, size_t iterations);
+    void set_config_file(const std::string &file_name);
+    void set_platform(const quantum_platform &platform);
 
-        void set_config_file(std::string file_name);
-        void set_platform(quantum_platform & platform);
-        std::string qasm();
+    int compile();
+    int compile_modular();
 
-#if OPT_MICRO_CODE
-        std::string microcode();
-        std::string uc_header();
-#endif
+    void print_interaction_matrix() const;
+    void write_interaction_matrix() const;
+    void set_sweep_points(const float *swpts, size_t size);
 
-        int compile();
-        void schedule();        // schedule and write scheduled qasm. Note that the backend may use a different scheduler with different results
-        void print_interaction_matrix();
-        void write_interaction_matrix();
-        void set_sweep_points(float * swpts, size_t size);
+    std::vector<quantum_kernel> &get_kernels();
+    const std::vector<quantum_kernel> &get_kernels() const;
+
 };
 
-} // ql
-
-#endif //QL_PROGRAM_H
+} // namespace ql

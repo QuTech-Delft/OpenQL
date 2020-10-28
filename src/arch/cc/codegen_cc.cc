@@ -51,7 +51,7 @@ void codegen_cc::init(const ql::quantum_platform &platform)
     if(map_input_file != "") {
         DOUT("loading map_input_file='" << map_input_file << "'");
         json map = ql::load_json(map_input_file);
-        codewordTable = map["codeword_table"];      // FIXME: use json_get
+        codewordTable = map["codeword_table"];      // FIXME: use ql::json_get
         mapPreloaded = true;
     }
 }
@@ -146,10 +146,16 @@ void codegen_cc::bundleStart(const std::string &cmnt)
     comment(cmnt);
 }
 
-#if 1
-uint32_t getGroupDigOut(size_t instrIdx, int group, int nrGroups, const settings_cc::tInstrumentControl &ic, int staticCodewordOverride)
+
+// helper function for bundleFinish()
+typedef struct {
+    uint32_t groupDigOut;   // codeword/mask fragment for this group
+    std::string comment;    // comment for instruction stream
+} tCalcGroupDigOut;
+
+static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, int group, int nrGroups, const settings_cc::tInstrumentControl &ic, int staticCodewordOverride)
 {
-    uint32_t groupDigOut = 0;           // codeword/mask fragment for this group
+    tCalcGroupDigOut ret{0, ""};
 
     // determine control mode group FIXME: more explanation
     int controlModeGroup = -1;
@@ -170,8 +176,8 @@ uint32_t getGroupDigOut(size_t instrIdx, int group, int nrGroups, const settings
               << " groups in 'control_bits'");
     }
 
-    // get control bits
-    const json groupControlBits = ic.controlMode["control_bits"][controlModeGroup];    // NB: tests above guarantee existence
+    // get number of control bits for group
+    const json &groupControlBits = ic.controlMode["control_bits"][controlModeGroup];    // NB: tests above guarantee existence
     DOUT("instrumentName=" << ic.ii.instrumentName
          << ", slot=" << ic.ii.slot
          << ", control mode group=" << controlModeGroup
@@ -181,9 +187,9 @@ uint32_t getGroupDigOut(size_t instrIdx, int group, int nrGroups, const settings
 
     // calculate digital output for group
     if(nrGroupControlBits == 1) {       // single bit, implying this is a mask (not code word)
-        groupDigOut |= 1<<(int)groupControlBits[0];     // NB: we assume the mask is active high, which is correct for VSM and UHF-QC
+        ret.groupDigOut |= 1<<(int)groupControlBits[0];     // NB: we assume the mask is active high, which is correct for VSM and UHF-QC
         // FIXME: check controlModeGroup vs group
-    } else {                // > 1 bit, implying code word
+    } else if(nrGroupControlBits > 1) {                 // > 1 bit, implying code word
 #if OPT_VECTOR_MODE
         //  allow single code word for vector of groups. FIXME: requires looking at all sd.signal before assigning code word
         if(group != controlModeGroup) {
@@ -195,7 +201,7 @@ uint32_t getGroupDigOut(size_t instrIdx, int group, int nrGroups, const settings
         uint32_t codeword = 0;
         bool codewordOverriden = false;
 #if OPT_SUPPORT_STATIC_CODEWORDS    // FIXME: this does not only provide support, but actually requires static codewords
-//        int staticCodewordOverride = gi->staticCodewordOverride;
+//        int staticCodewordOverride = bi->staticCodewordOverride;
         codeword = staticCodewordOverride;
         codewordOverriden = true;
 #else
@@ -205,18 +211,20 @@ uint32_t getGroupDigOut(size_t instrIdx, int group, int nrGroups, const settings
         // convert codeword to digOut
         for(size_t idx=0; idx<nrGroupControlBits; idx++) {
             int codeWordBit = nrGroupControlBits-1-idx;    // NB: groupControlBits defines MSB..LSB
-            if(codeword & (1<<codeWordBit)) groupDigOut |= 1<<(int)groupControlBits[idx];
+            if(codeword & (1<<codeWordBit)) ret.groupDigOut |= 1<<(int)groupControlBits[idx];
         }
 
-#if 0   // FIXME: needs class
-        comment(SS2S("  # slot=" << ic.ii.slot
+        ret.comment = SS2S("  # slot=" << ic.ii.slot
                 << ", instrument='" << ic.ii.instrumentName << "'"
                 << ", group=" << group
                 << ": codeword=" << codeword
                 << std::string(codewordOverriden ? " (static override)" : "")
-                << ": groupDigOut=0x" << std::hex << std::setfill('0') << std::setw(8) << groupDigOut
-                ));
-#endif
+                << ": groupDigOut=0x" << std::hex << std::setfill('0') << std::setw(8) << ret.groupDigOut
+                );
+    } else {    // nrGroupControlBits < 1
+        JSON_FATAL("key 'control_bits' empty for group " <<
+                   controlModeGroup << " on instrument '" <<
+                   ic.ii.instrumentName << "'");
     }
 
     // add trigger to digOut
@@ -224,10 +232,10 @@ uint32_t getGroupDigOut(size_t instrIdx, int group, int nrGroups, const settings
     if(nrTriggerBits == 0) {                                    // no trigger
         // do nothing
     } else if(nrTriggerBits == 1) {                             // single trigger for all groups (NB: will possibly assigned multiple times)
-        groupDigOut |= 1 << (int)ic.controlMode["trigger_bits"][0];
+        ret.groupDigOut |= 1 << (int)ic.controlMode["trigger_bits"][0];
 #if 1   // FIXME: trigger per group, nrGroups always 32
     } else if(nrTriggerBits == nrGroups) {                      // trigger per group
-        groupDigOut |= 1 << (int)ic.controlMode["trigger_bits"][group];
+        ret.groupDigOut |= 1 << (int)ic.controlMode["trigger_bits"][group];
 #endif
     } else {
         JSON_FATAL("instrument '" << ic.ii.instrumentName
@@ -238,13 +246,11 @@ uint32_t getGroupDigOut(size_t instrIdx, int group, int nrGroups, const settings
 // FIXME: 20200924 error shows 32: "E       TypeError: Error : instrument 'mw_0' uses 32 groups, but control mode 'awg8-mw-direct-iq' defines 2 trigger bits in 'trigger_bits' (must be 1 or #groups)"
     } // FIXME: e.g. HDAWG does not support > 1 trigger bit. dual-QWG required 2 trigger bits
 
-    return groupDigOut;
+    return ret;
 }
-#endif
 
 
 // bundleFinish: see 'strategy' above
-// FIXME: split into smaller parts
 void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool isLastBundle)
 {
     if(isLastBundle) {
@@ -254,7 +260,10 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
         const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
-        // FIXME: check ic.ii.slot against MAX_SLOTS
+        if(ic.ii.slot >= MAX_SLOTS) {
+            JSON_FATAL("illegal slot " << ic.ii.slot <<
+                       " on instrument '" << ic.ii.instrumentName);
+        }
 
         // collect code generation info from all groups within one instrument
         // FIXME: the term 'group' is used in a diffused way: 1) index of signal vectors, 2) controlModeGroup
@@ -265,115 +274,26 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
         size_t nrGroups = bundleInfo[instrIdx].size();       // FIXME: always MAX_GROUPS:
         for(size_t group=0; group<nrGroups; group++) {                      // iterate over groups of instrument
-            tBundleInfo *gi = &bundleInfo[instrIdx][group];                 // shorthand
-            if(gi->signalValue != "") {                                     // signal defined, i.e.: we need to output something
-                isInstrUsed = true;
-
-#if 1   // --------------------------
-                uint32_t groupDigOut = getGroupDigOut(instrIdx, group, nrGroups, ic, gi->staticCodewordOverride);
-                digOut |= groupDigOut;
-#else   // --------------------------
-                // determine control mode group FIXME: more explanation
-                int controlModeGroup = -1;
-                if(ic.controlModeGroupCnt == 0) {
-                    JSON_FATAL("'control_bits' not defined or empty in 'control_modes/" << ic.refControlMode <<"'");
-#if OPT_VECTOR_MODE
-                } else if(ic.controlModeGroupCnt == 1) {                    // vector mode: group addresses channel within vector
-                    controlModeGroup = 0;
-#endif
-                } else if(group < ic.controlModeGroupCnt) {                 // normal mode: group selects control group
-                    controlModeGroup = group;
-                } else {
-                    // FIXME: will become logic error once we get nrGroups right
-                    JSON_FATAL("instrument '" << ic.ii.instrumentName
-                          << "' uses " << nrGroups
-                          << " groups, but control mode '" << ic.refControlMode
-                          << "' only defines " << ic.controlModeGroupCnt
-                          << " groups in 'control_bits'");
-                }
-
-                // get control bits
-                const json groupControlBits = ic.controlMode["control_bits"][controlModeGroup];    // NB: tests above guarantee existence
-                DOUT("instrumentName=" << ic.ii.instrumentName
-                     << ", slot=" << ic.ii.slot
-                     << ", control mode group=" << controlModeGroup
-                     << ", group control bits: " << groupControlBits);
-                size_t nrGroupControlBits = groupControlBits.size();
-
-
-                // calculate digital output for group
-                uint32_t groupDigOut = 0;           // codeword/mask fragment for this group
-                if(nrGroupControlBits == 1) {       // single bit, implying this is a mask (not code word)
-                    groupDigOut |= 1<<(int)groupControlBits[0];     // NB: we assume the mask is active high, which is correct for VSM and UHF-QC
-                    // FIXME: check controlModeGroup vs group
-                } else {                // > 1 bit, implying code word
-#if OPT_VECTOR_MODE
-                    //  allow single code word for vector of groups. FIXME: requires looking at all sd.signal before assigning code word
-                    if(group != controlModeGroup) {
-                        // FIXME: unfinished work on vector mode
-                    }
-#endif
-
-                    // find or assign code word
-                    uint32_t codeword = 0;
-                    bool codewordOverriden = false;
-#if OPT_SUPPORT_STATIC_CODEWORDS    // FIXME: this does not only provide support, but actually requires static codewords
-                    int staticCodewordOverride = gi->staticCodewordOverride;
-                    codeword = staticCodewordOverride;
-                    codewordOverriden = true;
-#else
-                    codeword = assignCodeword(ic.ii.instrumentName, instrIdx, group);
-#endif
-
-                    // convert codeword to digOut
-                    for(size_t idx=0; idx<nrGroupControlBits; idx++) {
-                        int codeWordBit = nrGroupControlBits-1-idx;    // NB: groupControlBits defines MSB..LSB
-                        if(codeword & (1<<codeWordBit)) groupDigOut |= 1<<(int)groupControlBits[idx];
-                    }
-
-                    comment(SS2S("  # slot=" << ic.ii.slot
-                            << ", instrument='" << ic.ii.instrumentName << "'"
-                            << ", group=" << group
-                            << ": codeword=" << codeword
-                            << std::string(codewordOverriden ? " (static override)" : "")
-                            << ": groupDigOut=0x" << std::hex << std::setfill('0') << std::setw(8) << groupDigOut
-                            ));
-                }
-
-                digOut |= groupDigOut;
-
-                // add trigger to digOut
-                size_t nrTriggerBits = ic.controlMode["trigger_bits"].size();
-                if(nrTriggerBits == 0) {                                    // no trigger
-                    // do nothing
-                } else if(nrTriggerBits == 1) {                             // single trigger for all groups
-                    digOut |= 1 << (int)ic.controlMode["trigger_bits"][0];
-#if 1   // FIXME: trigger per group, nrGroups always 32
-                } else if(nrTriggerBits == nrGroups) {                      // trigger per group
-                    digOut |= 1 << (int)ic.controlMode["trigger_bits"][group];
-#endif
-                } else {
-                    JSON_FATAL("instrument '" << ic.ii.instrumentName
-                                << "' uses " << nrGroups
-                                << " groups, but control mode '" << ic.refControlMode
-                                << "' defines " << nrTriggerBits
-                                << " trigger bits in 'trigger_bits' (must be 1 or #groups)");
-// FIXME: 20200924 error shows 32: "E       TypeError: Error : instrument 'mw_0' uses 32 groups, but control mode 'awg8-mw-direct-iq' defines 2 trigger bits in 'trigger_bits' (must be 1 or #groups)"
-                } // FIXME: e.g. HDAWG does not support > 1 trigger bit. dual-QWG required 2 trigger bits
-#endif  // --------------------------
-
+            tBundleInfo *bi = &bundleInfo[instrIdx][group];                 // shorthand
+            if(bi->signalValue != "") {                                     // signal defined, i.e.: we need to output something
                 // compute maximum duration over all groups
-                if(gi->durationInCycles > maxDurationInCycles) maxDurationInCycles = gi->durationInCycles;
+                if(bi->durationInCycles > maxDurationInCycles) maxDurationInCycles = bi->durationInCycles;
 
-                vcd.bundleFinishGroup(startCycle, gi->durationInCycles, groupDigOut, gi->signalValue, instrIdx, group);
+                tCalcGroupDigOut gdo = calcGroupDigOut(instrIdx, group, nrGroups, ic, bi->staticCodewordOverride);
+                digOut |= gdo.groupDigOut;
+                comment(gdo.comment);
+
+                vcd.bundleFinishGroup(startCycle, bi->durationInCycles, gdo.groupDigOut, bi->signalValue, instrIdx, group);
+
+                isInstrUsed = true;
             } // if(signal defined)
 
+#if OPT_FEEDBACK   // FIXME: WIP
             // handle readout
             // NB: we allow for readout without signal generation by the same instrument, which might be needed in the future
-            // FIXME: test for gi->readoutCop >= 0
+            // FIXME: test for bi->readoutCop >= 0
             // FIXME: check consistency between measure instruction and result_bits
             // FIXME: also generate VCD
-#if OPT_FEEDBACK   // FIXME: WIP on measurement
             if(JSON_EXISTS(ic.controlMode, "result_bits")) {  // this instrument mode produces results (i.e. it is a measurement device)
                 const json &resultBits = ic.controlMode["result_bits"][group];
                 size_t nrResultBits = resultBits.size();
@@ -381,7 +301,7 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                     digIn |= 1<<(int)resultBits[0];         // NB: we assume the result is active high, which is correct for UHF-QC
 
                     // we need: input bit, cop?, qubit, SM bit
-                    // FIXME: save gi->readoutCop in inputLutTable
+                    // FIXME: save bi->readoutCop in inputLutTable
                     if(JSON_EXISTS(inputLutTable, ic.ii.instrumentName) &&                  // instrument exists
                                     inputLutTable[ic.ii.instrumentName].size() > group) {   // group exists
                     } else {    // new instrument or group
@@ -390,11 +310,11 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                         //inputLutTable[ic.ii.instrumentName][group][0] = "";                 // code word 0 is empty
                         //inputLutTable[uc.ii.instrumentName][group][codeword] = signalValue; // NB: structure created on demand
                     }
-                } else {    // NB: nrResultBits==0 will not arrive at this point
-                    JSON_FATAL("key '" << ic.refControlMode << "/result_bits' must have 1 bit per group");
+                } else {    // NB: nrResultBits==0 will not arrive at this point. FIXME: no longer true
+                    JSON_FATAL("key '" << ic.refControlMode << "/result_bits[" << group << "] must have 1 bit instead of " << nrResultBits);
                 }
-#endif
             }
+#endif
         } // for(group)
 
 
@@ -516,7 +436,7 @@ void codegen_cc::customGate(
             std::string signalSPath = SS2S(sd.path<<"["<<s<<"]");           // for JSON error reporting
 
             // get the operand index & qubit to work on
-            operandIdx = json_get<unsigned int>(sd.signal[s], "operand_idx", signalSPath);
+            operandIdx = ql::json_get<unsigned int>(sd.signal[s], "operand_idx", signalSPath);
             if(operandIdx >= qops.size()) {
                 JSON_FATAL("instruction '" << iname <<
                       "': illegal operand number " << operandIdx <<
@@ -527,20 +447,26 @@ void codegen_cc::customGate(
 
             // get signalInfo via signal type (e.g. "mw", "flux", etc. NB: this is different from
             // the type provided by find_instruction_type, although some identical strings are used)
-            std::string instructionSignalType = json_get<std::string>(sd.signal[s], "type", signalSPath);
+            std::string instructionSignalType = ql::json_get<std::string>(sd.signal[s], "type", signalSPath);
             si = settings.findSignalInfoForQubit(instructionSignalType, qubit);
 
             // get signal value
-            const json instructionSignalValue = json_get<const json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
+            const json instructionSignalValue = ql::json_get<const json>(sd.signal[s], "value", signalSPath);   // NB: ql::json_get<const json&> unavailable
 
+#if OPT_CROSSCHECK_INSTRUMENT_DEF   /* FIXME: invalid test: should be channels in group, not group size
+[OPENQL] /tmp/pip-req-build-z_6r37p9/src/arch/cc/codegen_cc.cc:463 Error: Error in JSON definition: signal dimension mismatch on instruction 'cz' : control mode 'awg8-flux' requires 8 groups, but signal 'signals/two-qubit-flux[0]/value' provides 1
+___________________ Test_central_controller.test_qi_example ____________________
+*/
             // verify dimensions
-            if(instructionSignalValue.size() != si.ic.controlModeGroupCnt) {
+            int channelsPergroup = si.ic.controlModeGroupSize;
+            if(instructionSignalValue.size() != channelsPergroup) {
                 JSON_FATAL("signal dimension mismatch on instruction '" << iname <<
                            "' : control mode '" << si.ic.refControlMode <<
-                           "' requires " <<  si.ic.controlModeGroupCnt <<
-                           " groups, but signal '" << signalSPath+"/value" <<
+                           "' requires " <<  channelsPergroup <<
+                           " signals, but signal '" << signalSPath+"/value" <<
                            "' provides " << instructionSignalValue.size());
             }
+#endif
 
             // expand macros
             signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
@@ -563,30 +489,30 @@ void codegen_cc::customGate(
 
 
         // store signal value, checking for conflicts
-        tBundleInfo *gi = &bundleInfo[si.instrIdx][si.group];               // shorthand
-        if(gi->signalValue == "") {                                         // signal not yet used
-            gi->signalValue = signalValueString;
+        tBundleInfo *bi = &bundleInfo[si.instrIdx][si.group];               // shorthand
+        if(bi->signalValue == "") {                                         // signal not yet used
+            bi->signalValue = signalValueString;
 #if OPT_SUPPORT_STATIC_CODEWORDS
-            gi->staticCodewordOverride = settings.findStaticCodewordOverride(instruction, operandIdx, iname); // NB: -1 means unused
+            bi->staticCodewordOverride = settings.findStaticCodewordOverride(instruction, operandIdx, iname); // NB: -1 means unused
 #endif
-        } else if(gi->signalValue == signalValueString) {                   // signal unchanged
+        } else if(bi->signalValue == signalValueString) {                   // signal unchanged
             // do nothing
         } else {
             EOUT("Code so far:\n" << codeSection.str());                    // provide context to help finding reason. FIXME: not great
             FATAL("Signal conflict on instrument='" << si.ic.ii.instrumentName <<
                   "', group=" << si.group <<
-                  ", between '" << gi->signalValue <<
+                  ", between '" << bi->signalValue <<
                   "' and '" << signalValueString << "'");       // FIXME: add offending instruction
         }
 
         // store signal duration
-        gi->durationInCycles = durationInCycles;
+        bi->durationInCycles = durationInCycles;
 
 #if OPT_FEEDBACK
         // store the classical operand used for readout
         if(isReadout) {
             int cop = cops.size()>0 ? cops[0] : UNUSED_COP;
-            gi->readoutCop = cop;
+            bi->readoutCop = cop;
         }
 
         // store expression for conditional gates
@@ -595,8 +521,8 @@ void codegen_cc::customGate(
 
         DOUT("customGate(): iname='" << iname <<
              "', duration=" << durationInCycles <<
-             "[cycles], si.instrIdx=" << si.instrIdx <<
-             ", si.group=" << si.group);
+             " [cycles], instrIdx=" << si.instrIdx <<
+             ", group=" << si.group);
 
         // NB: code is generated in bundleFinish()
     }   // for(signal)
@@ -747,7 +673,7 @@ void codegen_cc::padToCycle(size_t lastEndCycle, size_t startCycle, int slot, co
 uint32_t codegen_cc::assignCodeword(const std::string &instrumentName, int instrIdx, int group)
 {
     uint32_t codeword;
-    std::string signalValue = gi->signalValue;
+    std::string signalValue = bi->signalValue;
 
     if(JSON_EXISTS(codewordTable, instrumentName) &&                    // instrument exists
                     codewordTable[instrumentName].size() > group) {     // group exists

@@ -1,0 +1,12 @@
+dependencies:
+    - python=3.7
+    - setuptools
+    - swig
+    - cmake
+    - bison=3.0
+    - flex=2.6
+    - glpk
+    - pip
+    - pip:
+        - -r file:requirements-docs.txt
+

@@ -1,0 +1,60 @@
+language: shell
+cache: pip
+
+matrix:
+  include:
+    # - name: "Python 3.7 on macOS 10.14"
+    #   os: osx
+    #   osx_image: xcode11.3
+    #   language: generic
+    #   env:
+    #     - export PATH="/usr/local/opt/flex/bin:$PATH"
+    #     - export LDFLAGS="-L/usr/local/opt/flex/lib:$LDFLAGS"
+    #     - export CPPFLAGS="-I/usr/local/opt/flex/include:$CPPFLAGS"
+    #     - export PATH="/usr/local/opt/bison/bin:$PATH"
+    #     - export LDFLAGS="-L/usr/local/opt/bison/lib:$LDFLAGS"
+
+    - name: "Python 3.7 on xenial"
+      os: linux
+      dist: xenial
+      language: python
+      python: 3.7
+
+before_install:
+  - python3 -m pip install -U pip
+  - python3 -m pip install -U pytest
+  - python3 -m pip install -U qxelarator
+  - python3 --version
+  - pip3 --version
+  - while sleep 5m; do echo "=====[ $SECONDS seconds, OpenQL still building... ]====="; done &
+
+install:
+  - cd deps
+  - git clone https://github.com/QE-Lab/eQASM_Assembler.git
+  - cd eQASM_Assembler/qisa-as
+  - python3 -m pip install .
+  - cd ../../../.
+  - git submodule update --init --recursive
+  - cd deps/libqasm
+  - python3 -m pip install .
+  - cd ../../.
+  - OPENQL_ENABLE_INITIAL_PLACEMENT=1 python3 -m pip install -v .
+
+script: python3 -m pytest
+
+addons:
+  apt:
+    packages:
+      - cmake
+      - swig
+      - flex
+      - bison
+      - libglpk-dev
+  homebrew:
+    packages:
+      - python3
+      - cmake
+      - swig
+      - flex
+      - bison
+    update: true

@@ -93,17 +93,13 @@ int main(int argc, char ** argv)
    // ql::init(ql::transmon_platform, "instructions.map");
 
    // create platform
-   ql::quantum_platform starmon("starmon","test_cfg_cbox.json");
+//   ql::quantum_platform starmon("starmon","test_cfg_cbox.json");
+   ql::quantum_platform starmon("starmon","hardware_config_qx.json");
 
    // print info
    starmon.print_info();
 
-   // set platform
-   ql::set_platform(starmon);
-
-
-
-   int   num_qubits = 1;
+      int   num_qubits = 1;
    int   num_cliffords = 4096;
    bool  different  = false;
 
@@ -121,22 +117,21 @@ int main(int argc, char ** argv)
    std::cout << "[+] different     : " << (different ? "yes" : "no") << std::endl;
 
    // create program
-   ql::str_t prog_name;
+   std::stringstream prog_name;
    prog_name << "rb_" << num_qubits << "_" << (different ? "diff" : "same");
-   ql::quantum_program rb(prog_name.str(),num_qubits,starmon);
+   ql::quantum_program rb(prog_name.str(), starmon, num_qubits);
    rb.set_sweep_points(sweep_points, num_circuits);
    rb.set_config_file("rb_config.json");
 
    // create subcircuit
-   ql::str_t name;
+   std::stringstream name;
    name << "rb_" << num_qubits;
-   ql::quantum_kernel kernel(name.str(),starmon);
+   ql::quantum_kernel kernel(name.str(),starmon,num_qubits);
    build_rb(num_cliffords, kernel, num_qubits, different);
    rb.add(kernel);
 
    // compile the program
    rb.compile();
-   rb.schedule();
 
    return 0;
 }

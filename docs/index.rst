@@ -25,6 +25,7 @@ While the instruction-level code is platform-specific, the quantum assembly code
    quantum_gate
    classical_instructions
    platform
+   compiler
    compiler_passes
 
 
@@ -43,6 +44,7 @@ While the instruction-level code is platform-specific, the quantum assembly code
    api/openql
    api/Kernel
    api/Program
+   api/Compiler
    api/Platform
    api/Operation
    api/CReg
@@ -52,6 +54,13 @@ While the instruction-level code is platform-specific, the quantum assembly code
    :caption: Tutorials:
 
    qx_example
+   dqcsim_example
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Developer Documentation
+
+   cppref
 
 
 Indices and tables

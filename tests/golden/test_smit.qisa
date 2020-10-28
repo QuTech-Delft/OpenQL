@@ -1,0 +1,34 @@
+smis s0, {0} 
+smis s1, {1} 
+smis s2, {2} 
+smis s3, {3} 
+smis s4, {4} 
+smis s5, {5} 
+smis s6, {6} 
+smis s7, {0, 1, 2, 3, 4, 5, 6} 
+smis s8, {0, 1, 5, 6} 
+smis s9, {2, 3, 4} 
+smis s10, {0, 1, 2, 3} 
+smis s11, {2, 3} 
+smis s12, {0, 1} 
+smis s13, {1, 2} 
+smis s14, {0, 2, 4} 
+smit t0, {(1, 4), (2, 0)} 
+smit t1, {(2, 0)} 
+start:
+
+aKernel:
+    1    prepz s10
+    2    x s11 | h s12
+    2    y90 s13 | measz s3
+    2    cz t0
+    4    y90 s14 | measz s1
+    2    cz t1
+    4    y90 s0 | measz s2
+    2    measz s0
+    qwait 2
+
+    br always, start
+    nop 
+    nop
+

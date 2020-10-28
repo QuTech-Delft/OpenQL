@@ -59,17 +59,14 @@ int main(int argc, char ** argv)
     // print info
     qx_platform.print_info();
 
-    // set platform
-    ql::set_platform(qx_platform);
-
-    int   num_randomizations = 3;
+       int   num_randomizations = 3;
     int   num_circuits       = 13;
     float sweep_points[]     = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 512.25, 512.75, 513.25, 513.75 };  // sizes of the clifford circuits per randomization
 
     for (int r=0; r<num_randomizations; r++)
     {
         // create program
-        ql::str_t prog_name;
+        std::stringstream prog_name;
         prog_name << "rb_" << r;
         ql::quantum_program rb(prog_name.str(), qx_platform, 1);
         rb.set_sweep_points(sweep_points, num_circuits);
@@ -79,7 +76,7 @@ int main(int argc, char ** argv)
         {
             int c_size = sweep_points[j];
             // create subcircuit
-            ql::str_t name;
+            std::stringstream name;
             name << "rb" << c_size;
             ql::quantum_kernel kernel(name.str(),qx_platform, 1);
             build_rb(c_size, kernel);

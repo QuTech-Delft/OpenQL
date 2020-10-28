@@ -1,0 +1,40 @@
+smis s0, {0} 
+smis s1, {1} 
+smis s2, {2} 
+smis s3, {3} 
+smis s4, {4} 
+smis s5, {5} 
+smis s6, {6} 
+smis s7, {0, 1, 2, 3, 4, 5, 6} 
+smis s8, {0, 1, 5, 6} 
+smis s9, {2, 3, 4} 
+start:
+
+AllXY_0:
+    1    prepz s0
+    qwait 39999
+    1    CW_00 s0
+    4    CW_00 s0
+    4    measz s0
+    qwait 700
+
+AllXY_1:
+    1    prepz s0
+    qwait 39999
+    1    CW_01 s0
+    4    CW_02 s0
+    4    measz s0
+    qwait 700
+
+AllXY_2:
+    1    prepz s0
+    qwait 39999
+    1    CW_02 s0
+    4    CW_01 s0
+    4    measz s0
+    qwait 700
+
+    br always, start
+    nop 
+    nop
+

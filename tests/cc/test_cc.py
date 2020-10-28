@@ -36,9 +36,9 @@ class Test_central_controller(unittest.TestCase):
         k1.gate('cz', [6, 7])
 
         # create classical registers
-        rd = ql.CReg()
-        rs1 = ql.CReg()
-        rs2 = ql.CReg()
+        rd = ql.CReg(1)
+        rs1 = ql.CReg(2)
+        rs2 = ql.CReg(3)
 
         if 0:
             # add/sub/and/or/xor
@@ -65,6 +65,7 @@ class Test_central_controller(unittest.TestCase):
         p.compile()
 
     # Quantum Error Correction cycle
+    @unittest.skip
     def test_qec(self):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
@@ -99,8 +100,8 @@ class Test_central_controller(unittest.TestCase):
         zW = z-1
 
         # create classical registers
-        rdX = ql.CReg()
-        rdZ = ql.CReg()
+        rdX = ql.CReg(1)
+        rdZ = ql.CReg(2)
 
         # X stabilizers
         k.gate("rym90", [x])
