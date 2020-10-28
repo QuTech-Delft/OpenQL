@@ -56,16 +56,13 @@ QASM_CLASSICAL_INSTRUCTION_LIST
 #undef X
 
 
-namespace ql
-{
-namespace arch
-{
+namespace ql {
 
 // compile for Central Controller
 // NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
-void eqasm_backend_cc::compile(quantum_program* programp, const ql::quantum_platform &platform)
+void eqasm_backend_cc::compile(quantum_program *program, const ql::quantum_platform &platform)
 {
-    DOUT("Compiling " << programp->kernels.size() << " kernels to generate Central Controller program ... ");
+    DOUT("Compiling " << program->kernels.size() << " kernels to generate Central Controller program ... ");
 
     // init
     loadHwSettings(platform);
@@ -73,18 +70,18 @@ void eqasm_backend_cc::compile(quantum_program* programp, const ql::quantum_plat
     bundleIdx = 0;
 
     // generate program header
-    codegen.programStart(programp->unique_name);
+    codegen.programStart(program->unique_name);
 
 #if OPT_CC_SCHEDULE_RC
     // schedule with platform resource constraints
-    ql::rcschedule(programp, platform, "rcscheduler");
+    ql::rcschedule(program, platform, "rcscheduler");
 #else
     // schedule without resource constraints
-    ql::schedule(programp, platform, "scheduler");
+    ql::schedule(program, platform, "scheduler");
 #endif
 
     // generate code for all kernels
-    for(auto &kernel : programp->kernels) {
+    for(auto &kernel : program->kernels) {
         IOUT("Compiling kernel: " << kernel.name);
         codegenKernelPrologue(kernel);
 
@@ -101,17 +98,17 @@ void eqasm_backend_cc::compile(quantum_program* programp, const ql::quantum_plat
         codegenKernelEpilogue(kernel);
     }
 
-    codegen.programFinish(programp->unique_name);
+    codegen.programFinish(program->unique_name);
 
     // write program to file
-    std::string file_name(ql::options::get("output_dir") + "/" + programp->unique_name + ".vq1asm");
+    std::string file_name(ql::options::get("output_dir") + "/" + program->unique_name + ".vq1asm");
     IOUT("Writing Central Controller program to " << file_name);
     ql::utils::write_file(file_name, codegen.getProgram());
 
     // write instrument map to file (unless we were using input file)
     std::string map_input_file = ql::options::get("backend_cc_map_input_file");
     if(map_input_file != "") {
-        std::string file_name_map(ql::options::get("output_dir") + "/" + programp->unique_name + ".map");
+        std::string file_name_map(ql::options::get("output_dir") + "/" + program->unique_name + ".map");
         IOUT("Writing instrument map to " << file_name_map);
         ql::utils::write_file(file_name_map, codegen.getMap());
     }
@@ -377,5 +374,4 @@ void eqasm_backend_cc::loadHwSettings(const ql::quantum_platform &platform)
 #endif
 }
 
-} // arch
-} // ql
+} // namespace ql

@@ -7,10 +7,20 @@
  *          functions is correct
  */
 
+#include "codegen_cc.h"
+#include "eqasm_backend_cc.h"
+
+#include <version.h>
+#include <options.h>
+
 // constants:
 #define CC_BACKEND_VERSION_STRING       "0.2.6"
 
 #define UNUSED_COP  -1  // unused classic operand
+
+
+namespace ql {
+
 
 #if OPT_FEEDBACK
 // FIXME: preliminary support based on '20200929_openql_feedback_design.docx'
@@ -28,12 +38,6 @@ typedef enum {
 typedef std::vector<int> tBitVars;
 
 #endif
-
-#include "codegen_cc.h"
-#include "eqasm_backend_cc.h"
-
-#include <version.h>
-#include <options.h>
 
 /************************************************************************\
 | Generic
@@ -714,3 +718,5 @@ uint32_t codegen_cc::assignCodeword(const std::string &instrumentName, int instr
     return codeword;
 }
 #endif
+
+} // namespace ql

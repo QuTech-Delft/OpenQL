@@ -292,7 +292,7 @@ void BackendCompilerPass::runOnProgram(ql::quantum_program *program) {
     if (eqasm_compiler_name == "cc_light_compiler") {
         backend_compiler = std::unique_ptr<ql::eqasm_compiler>(new ql::arch::cc_light_eqasm_compiler());
     } else if (eqasm_compiler_name == "eqasm_backend_cc") {
-        backend_compiler = std::unique_ptr<ql::eqasm_compiler>(new ql::arch::eqasm_backend_cc());
+        backend_compiler = std::unique_ptr<ql::eqasm_compiler>(new eqasm_backend_cc());
     } else {
         FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }

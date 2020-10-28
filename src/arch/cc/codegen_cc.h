@@ -17,6 +17,8 @@
 #include <string>
 #include <cstddef>  // for size_t etc.
 
+namespace ql {
+
 class codegen_cc
 {
 private: // types
@@ -103,3 +105,5 @@ private:    // funcs
     void padToCycle(size_t lastEndCycle, size_t startCycle, int slot, const std::string &instrumentName);
     uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
 }; // class
+
+} // namespace ql

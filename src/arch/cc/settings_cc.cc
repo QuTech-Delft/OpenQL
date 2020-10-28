@@ -8,6 +8,7 @@
 
 #include "settings_cc.h"
 
+namespace ql {
 
 void settings_cc::loadBackendSettings(const ql::quantum_platform &platform)
 {
@@ -244,5 +245,8 @@ int settings_cc::findStaticCodewordOverride(const json &instruction, size_t oper
     return staticCodewordOverride;
 }
 //#endif
+
+
+} // namespace ql
 
 

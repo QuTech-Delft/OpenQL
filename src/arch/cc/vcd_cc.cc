@@ -9,6 +9,8 @@
 #include "vcd_cc.h"
 #include "options.h"
 
+namespace ql {
+
 // NB: parameters qubitNumber and cycleTime originate from OpenQL variable 'platform'
 void vcd_cc::programStart(int qubitNumber, int cycleTime, int maxGroups, const settings_cc &settings)
 {
@@ -119,3 +121,5 @@ void vcd_cc::customGate(const std::string &iname, const std::vector<size_t> &qop
         vcd.change(var, startTime+durationInNs, "");                // end of instruction
     }
 }
+
+} // namespace ql

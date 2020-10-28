@@ -6,13 +6,14 @@
  * @note
  */
 
-#ifndef ARCH_CC_VCD_CC_H
-#define ARCH_CC_VCD_CC_H
+#pragma once
 
 #include "vcd.h"
 #include "settings_cc.h"
 
 #include <vector>
+
+namespace ql {
 
 class vcd_cc
 {
@@ -37,4 +38,4 @@ private:    // vars
     std::vector<int> vcdVarCodeword;
 };
 
-#endif // ndef ARCH_CC_VCD_CC_H
+} // namespace ql
