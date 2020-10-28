@@ -6,8 +6,7 @@
  * @note
  */
 
-#ifndef ARCH_CC_OPTIONS_CC_H
-#define ARCH_CC_OPTIONS_CC_H
+#pragma once
 
 // options
 #define OPT_SUPPORT_STATIC_CODEWORDS    1   // support (currently: require) static codewords, instead of allocating them on demand
@@ -16,5 +15,3 @@
 #define OPT_RUN_ONCE                    0   // 0=loop indefinitely (CC-light emulation), 1=run once (preferred, but breaks compatibility)
 #define OPT_OLD_SEQBAR_SEMANTICS        0   // support old semantics of seqbar instruction. Will be deprecated
 #define OPT_FEEDBACK                    1   // feedback support. Coming feature
-
-#endif // ndef ARCH_CC_OPTIONS_CC_H

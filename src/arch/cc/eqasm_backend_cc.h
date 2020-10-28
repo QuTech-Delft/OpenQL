@@ -6,8 +6,7 @@
  * @remark based on cc_light_eqasm_compiler.h, commit f34c0d9
  */
 
-#ifndef ARCH_CC_EQASM_BACKEND_CC_H
-#define ARCH_CC_EQASM_BACKEND_CC_H
+#pragma once
 
 #include "codegen_cc.h"
 
@@ -48,6 +47,3 @@ private: // vars
 
 } // arch
 } // ql
-
-#endif // ARCH_CC_EQASM_BACKEND_CC_H
-

@@ -6,8 +6,7 @@
  * @note
  */
 
-#ifndef ARCH_CC_SETTINGS_CC_H
-#define ARCH_CC_SETTINGS_CC_H
+#pragma once
 
 #include "options_cc.h"
 #include "platform.h"
@@ -71,5 +70,3 @@ private:    // vars
     const json *jsonInstruments;
     const json *jsonSignals;
 }; // class
-
-#endif // ndef ARCH_CC_SETTINGS_CC_H

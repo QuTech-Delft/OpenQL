@@ -7,8 +7,7 @@
  *          functions is correct
  */
 
-#ifndef ARCH_CC_CODEGEN_CC_H
-#define ARCH_CC_CODEGEN_CC_H
+#pragma once
 
 #include "options_cc.h"
 #include "settings_cc.h"
@@ -104,5 +103,3 @@ private:    // funcs
     void padToCycle(size_t lastEndCycle, size_t startCycle, int slot, const std::string &instrumentName);
     uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
 }; // class
-
-#endif  // ndef ARCH_CC_CODEGEN_CC_H
