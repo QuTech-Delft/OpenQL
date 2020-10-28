@@ -235,8 +235,7 @@ if(NOT WITH_UNITARY_DECOMPOSITION)
     target_compile_definitions(ql PRIVATE WITHOUT_UNITARY_DECOMPOSITION)
 endif()
 
-# Use a mock version of unitary.cc if WITH_UNITARY_DECOMPOSITION is false.
-# This speeds up the build, but of course breaks unitary decomposition.
+# Enable GPL-based initial placement code if requested.
 if(WITH_INITIAL_PLACEMENT)
     target_compile_definitions(ql PRIVATE INITIALPLACE)
 endif()
