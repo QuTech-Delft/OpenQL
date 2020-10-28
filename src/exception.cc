@@ -1,44 +1,25 @@
-/**
- * @file    exception.cc
- * @author  Nader KHAMMASSI
- * @contact nader.khammassi@gmail.com
- * @date    15/03/2010
- */
+#include "exception.h"
 
-#include <exception.h>
+#include <cstring>
+#include <cerrno>
 
-
-/**
- * exception implementation
- */
 namespace ql {
 
-exception::exception(const std::string &message,
-                     bool system_message)
-                     throw() : user_message(message)
-{
-  if (system_message)
-  {
-    user_message.append(": ");
-    user_message.append(strerror(errno));
-  }
+static std::string make_message(
+    const std::string &msg,
+    bool system = false
+) noexcept {
+    if (system) {
+        return msg + ": " + std::strerror(errno);
+    } else {
+        return msg;
+    }
 }
 
-/**
- * dtor
- */
-
-exception::~exception() throw()
-{
-}
-
-/**
- * explainatory message
- */
-
-const char *exception::what() const throw()
-{
-  return user_message.c_str();
+exception::exception(
+    const std::string &msg,
+    bool system
+) noexcept : std::runtime_error(make_message(msg, system)) {
 }
 
 } // namespace ql

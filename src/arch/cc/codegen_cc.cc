@@ -51,7 +51,7 @@ void codegen_cc::init(const ql::quantum_platform &platform)
     if(map_input_file != "") {
         DOUT("loading map_input_file='" << map_input_file << "'");
         json map = ql::load_json(map_input_file);
-        codewordTable = map["codeword_table"];      // FIXME: use json_get
+        codewordTable = map["codeword_table"];      // FIXME: use ql::json_get
         mapPreloaded = true;
     }
 }
@@ -436,7 +436,7 @@ void codegen_cc::customGate(
             std::string signalSPath = SS2S(sd.path<<"["<<s<<"]");           // for JSON error reporting
 
             // get the operand index & qubit to work on
-            operandIdx = json_get<unsigned int>(sd.signal[s], "operand_idx", signalSPath);
+            operandIdx = ql::json_get<unsigned int>(sd.signal[s], "operand_idx", signalSPath);
             if(operandIdx >= qops.size()) {
                 JSON_FATAL("instruction '" << iname <<
                       "': illegal operand number " << operandIdx <<
@@ -447,11 +447,11 @@ void codegen_cc::customGate(
 
             // get signalInfo via signal type (e.g. "mw", "flux", etc. NB: this is different from
             // the type provided by find_instruction_type, although some identical strings are used)
-            std::string instructionSignalType = json_get<std::string>(sd.signal[s], "type", signalSPath);
+            std::string instructionSignalType = ql::json_get<std::string>(sd.signal[s], "type", signalSPath);
             si = settings.findSignalInfoForQubit(instructionSignalType, qubit);
 
             // get signal value
-            const json instructionSignalValue = json_get<const json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
+            const json instructionSignalValue = ql::json_get<const json>(sd.signal[s], "value", signalSPath);   // NB: ql::json_get<const json&> unavailable
 
 #if OPT_CROSSCHECK_INSTRUMENT_DEF   /* FIXME: invalid test: should be channels in group, not group size
 [OPENQL] /tmp/pip-req-build-z_6r37p9/src/arch/cc/codegen_cc.cc:463 Error: Error in JSON definition: signal dimension mismatch on instruction 'cz' : control mode 'awg8-flux' requires 8 groups, but signal 'signals/two-qubit-flux[0]/value' provides 1
