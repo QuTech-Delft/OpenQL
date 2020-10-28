@@ -52,13 +52,13 @@ class Test_options(unittest.TestCase):
         with self.assertRaises(Exception) as cm:
             ql.set_option('optimize', 'nope')
 
-        self.assertEqual(str(cm.exception), 'Error parsing options. The value nope is not an allowed value for --optimize !')
+        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Error parsing options. The value nope is not an allowed value for --optimize !')
 
 
         with self.assertRaises(Exception) as cm:
             ql.set_option('scheduler', 'best')
 
-        self.assertEqual(str(cm.exception), 'Error parsing options. The value best is not an allowed value for --scheduler !')
+        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Error parsing options. The value best is not an allowed value for --scheduler !')
 
 
     def test_get_values(self):
