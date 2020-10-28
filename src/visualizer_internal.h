@@ -111,8 +111,11 @@ struct LineSegment
 	const Pulse pulse;
 };
 
+// enum PulseType {MICROWAVE, FLUX, READOUT};
+
 struct Line
 {
+	// LineType type = MICROWAVE;
 	std::vector<LineSegment> segments;
 	int maxAmplitude = 0;
 };
@@ -123,8 +126,6 @@ struct QubitLines
 	Line flux;
 	Line readout;
 };
-
-enum PulseType {MICROWAVE, FLUX, READOUT};
 
 struct GatePulses
 {
@@ -242,7 +243,7 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 
 void drawWiggle(cimg_library::CImg<unsigned char>& image, const int x0, const int x1, const int y, const int width, const int height, const std::array<unsigned char, 3> color);
 
-void drawLine(cimg_library::CImg<unsigned char>& image, const Structure structure, const int cycleDuration, const Line line, const int qubitIndex, const int yOffset, const std::array<unsigned char, 3> color);
+void drawLine(cimg_library::CImg<unsigned char>& image, const Structure structure, const int cycleDuration, const Line line, const int qubitIndex, const int y, const int maxLineHeight, const std::array<unsigned char, 3> color);
 
 void drawCycle(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure, const Cycle cycle);
 void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const GateProperties gate, const Structure structure, const int chunkOffset);

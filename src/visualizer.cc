@@ -36,6 +36,7 @@ namespace ql
 
 // -- IN PROGRESS ---
 // representing the gates as waveforms
+// allow for floats in the waveform sample vector
 // check for missing codewords and qubits during waveform parsing instead of while trying to retrieve a mapping from PulseVisualization.mapping
 // allow collapsing the three qubit lines into one with an option
 // implement cycle cutting for pulse visualization
@@ -452,7 +453,8 @@ int Structure::calculateImageHeight(const CircuitData circuitData) const
 	const int rowsFromClassical = layout.bitLines.showClassicalLines
 		? (layout.bitLines.groupClassicalLines ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits)
 		: 0;
-	const int heightFromOperands = (rowsFromQuantum + rowsFromClassical) * cellDimensions.height;
+	const int heightFromOperands = (rowsFromQuantum + rowsFromClassical) *
+		(cellDimensions.height + (layout.bitLines.showBitLineEdges ? layout.bitLines.bitLineEdgeThickness : 0));
 
 	return layout.cycles.cycleLabelsRowHeight + heightFromOperands + layout.grid.borderSize * 2;
 }
@@ -475,7 +477,8 @@ void Structure::generateCellPositions(const CircuitData circuitData)
 		std::vector<Position4> qColumnCells;
 		for (int row = 0; row < circuitData.amountOfQubits; row++)
 		{
-			const int y0 = layout.grid.borderSize + layout.cycles.cycleLabelsRowHeight + row * cellDimensions.height;
+			const int y0 = layout.grid.borderSize + layout.cycles.cycleLabelsRowHeight +
+				row * (cellDimensions.height + (layout.bitLines.showBitLineEdges ? layout.bitLines.bitLineEdgeThickness : 0));
 			const int y1 = y0 + cellDimensions.height;
 			qColumnCells.push_back({x0, y0, x1, y1});
 		}
@@ -485,7 +488,8 @@ void Structure::generateCellPositions(const CircuitData circuitData)
 		for (int row = 0; row < circuitData.amountOfClassicalBits; row++)
 		{
 			const int y0 = layout.grid.borderSize + layout.cycles.cycleLabelsRowHeight + 
-				((layout.bitLines.groupClassicalLines ? 0 : row) + circuitData.amountOfQubits) * cellDimensions.height;
+				((layout.bitLines.groupClassicalLines ? 0 : row) + circuitData.amountOfQubits) *
+				(cellDimensions.height + (layout.bitLines.showBitLineEdges ? layout.bitLines.bitLineEdgeThickness : 0));
 			const int y1 = y0 + cellDimensions.height;
 			cColumnCells.push_back({x0, y0, x1, y1});
 		}
@@ -750,16 +754,21 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		DOUT("Drawing qubit lines for pulse visualization...");
 		for (int qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++)
 		{
+			const int yBase = structure.getCellPosition(0, qubitIndex, QUANTUM).y0;
+
 			drawLine(image, structure, cycleDuration, linesPerQubit[qubitIndex].microwave, qubitIndex,
-				layout.pulses.pulseRowHeightMicrowave / 2,
+				yBase,// + layout.pulses.pulseRowHeightMicrowave / 2,
+				layout.pulses.pulseRowHeightMicrowave,
 				layout.pulses.pulseColorMicrowave);
 
 			drawLine(image, structure, cycleDuration, linesPerQubit[qubitIndex].flux, qubitIndex,
-				layout.pulses.pulseRowHeightMicrowave + layout.pulses.pulseRowHeightFlux / 2,
+				yBase + layout.pulses.pulseRowHeightMicrowave,// + layout.pulses.pulseRowHeightFlux / 2,
+				layout.pulses.pulseRowHeightFlux,
 				layout.pulses.pulseColorFlux);
 
 			drawLine(image, structure, cycleDuration, linesPerQubit[qubitIndex].readout, qubitIndex,
-				layout.pulses.pulseRowHeightMicrowave + layout.pulses.pulseRowHeightFlux + layout.pulses.pulseRowHeightReadout / 2,
+				yBase + layout.pulses.pulseRowHeightMicrowave + layout.pulses.pulseRowHeightFlux,// + layout.pulses.pulseRowHeightReadout / 2,
+				layout.pulses.pulseRowHeightReadout,
 				layout.pulses.pulseColorReadout);
 		}
 
@@ -1649,13 +1658,14 @@ void drawBitLineEdges(cimg_library::CImg<unsigned char>& image, const Layout lay
 {
 	const int x0 = structure.getCellPosition(0, 0, QUANTUM).x0 - layout.grid.borderSize / 2;
 	const int x1 = structure.getCellPosition(circuitData.getAmountOfCycles() - 1, 0, QUANTUM).x1 + layout.grid.borderSize / 2;
+	const int yOffsetStart = -1 * layout.bitLines.bitLineEdgeThickness;
 
 	for (int bitIndex = 0; bitIndex < circuitData.amountOfQubits; bitIndex++)
 	{
 		if (bitIndex == 0) continue;
 
 		const int y = structure.getCellPosition(0, bitIndex, QUANTUM).y0;
-		const int yOffsetStart = -1 * (layout.bitLines.bitLineEdgeThickness / 2);
+		// const int yOffsetStart = -1 * (layout.bitLines.bitLineEdgeThickness / 2);
 		for (int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.bitLineEdgeThickness; yOffset++)
 		{
 			image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.bitLineEdgeColor.data(), layout.bitLines.bitLineEdgeAlpha);
@@ -1667,7 +1677,7 @@ void drawBitLineEdges(cimg_library::CImg<unsigned char>& image, const Layout lay
 		if (layout.bitLines.groupClassicalLines)
 		{
 			const int y = structure.getCellPosition(0, 0, CLASSICAL).y0;
-			const int yOffsetStart = -1 * (layout.bitLines.bitLineEdgeThickness / 2);
+			// const int yOffsetStart = -1 * (layout.bitLines.bitLineEdgeThickness / 2);
 			for (int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.bitLineEdgeThickness; yOffset++)
 			{
 				image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.bitLineEdgeColor.data(), layout.bitLines.bitLineEdgeAlpha);
@@ -1680,7 +1690,7 @@ void drawBitLineEdges(cimg_library::CImg<unsigned char>& image, const Layout lay
 				if (bitIndex == 0) continue;
 
 				const int y = structure.getCellPosition(0, bitIndex, CLASSICAL).y0;
-				const int yOffsetStart = -1 * (layout.bitLines.bitLineEdgeThickness / 2);
+				// const int yOffsetStart = -1 * (layout.bitLines.bitLineEdgeThickness / 2);
 				for (int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.bitLineEdgeThickness; yOffset++)
 				{
 					image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.bitLineEdgeColor.data(), layout.bitLines.bitLineEdgeAlpha);
@@ -1786,19 +1796,21 @@ void drawWiggle(cimg_library::CImg<unsigned char>& image, const int x0, const in
 	image.draw_line(x0 + width / 3 * 2,	y + height,	x1,					y,			color.data());
 }
 
-void drawLine(cimg_library::CImg<unsigned char>& image, const Structure structure, const int cycleDuration, const Line line, const int qubitIndex, const int yOffset, const std::array<unsigned char, 3> color)
+void drawLine(cimg_library::CImg<unsigned char>& image, const Structure structure, const int cycleDuration, const Line line, const int qubitIndex, const int y, const int maxLineHeight, const std::array<unsigned char, 3> color)
 {
 	for (const LineSegment& segment : line.segments)
 	{
 		const int x0 = structure.getCellPosition(segment.range.start, qubitIndex, QUANTUM).x0;
 		const int x1 = structure.getCellPosition(segment.range.end, qubitIndex, QUANTUM).x1;
-		const int y = structure.getCellPosition(0, qubitIndex, QUANTUM).y0 + yOffset;
+		const int yMiddle = y + maxLineHeight / 2;
 
 		switch (segment.type)
 		{
 			case FLAT:
-				image.draw_line(x0, y, x1, y, color.data());
-				break;
+			{
+				image.draw_line(x0, yMiddle, x1, yMiddle, color.data());
+			}
+			break;
 
 			case PULSE:
 			{
@@ -1816,19 +1828,46 @@ void drawLine(cimg_library::CImg<unsigned char>& image, const Structure structur
 
 				const int amountOfSamples = segment.pulse.waveform.size();
 				const int sampleRate = segment.pulse.sampleRate; // MHz
-				const float samplePeriod = 1000.0f * (1.0f / (float) sampleRate); // nanoseconds
-				const int samplePeriodWidth = std::floor(samplePeriod / (float) segmentLengthInNanoSeconds * (float) segmentWidth); // pixels
+				const double samplePeriod = 1000.0f * (1.0f / (double) sampleRate); // nanoseconds
+				const int samplePeriodWidth = std::floor(samplePeriod / (double) segmentLengthInNanoSeconds * (double) segmentWidth); // pixels
+				const int waveformWidthInPixels = samplePeriodWidth * amountOfSamples;
+				IOUT("\tamount of samples: " << amountOfSamples);
 				IOUT("\tsample period in nanoseconds: " << samplePeriod);
 				IOUT("\tsample period width in segment: " << samplePeriodWidth);
+				IOUT("\ttotal waveform width in pixels: " << waveformWidthInPixels);
 
-				// Draw samples.
-				int start = x0;
-				for (const int sample : segment.pulse.waveform)
+				if (waveformWidthInPixels > segmentWidth)
 				{
-					const int end = start + samplePeriodWidth;
-					image.draw_line(start, y - 5, end, y - 5, color.data());
-					start += samplePeriodWidth;
+					WOUT("The waveform duration in cycles " << segment.range.start << " to " << segment.range.end << " on qubit " << qubitIndex <<
+						 " seems to be larger than the duration of those cycles. Please check the sample rate and amount of samples.");
 				}
+
+				// Calculate sample positions.
+				std::vector<Position2> samplePositions;
+				const int amplitudeUnitHeight = maxLineHeight / (maxAmplitude * 2);
+
+				for (int i = 0; i < segment.pulse.waveform.size(); i++)
+				{
+					const int xSample = x0 + i * samplePeriodWidth;
+
+					const int amplitude = segment.pulse.waveform[i];
+					const int adjustedAmplitude = amplitude + maxAmplitude;
+					const int ySample = y + maxLineHeight - adjustedAmplitude * amplitudeUnitHeight;
+
+					samplePositions.push_back( {xSample, ySample} );
+				}
+
+				// Draw the lines connecting the samples.
+				for (int i = 0; i < samplePositions.size() - 1; i++)
+				{
+					const Position2 currentSample = samplePositions[i];
+					const Position2 nextSample = samplePositions[i + 1];
+
+					image.draw_line(currentSample.x, currentSample.y, nextSample.x, nextSample.y, color.data());
+				}
+				// Draw line from last sample to next segment.
+				const Position2 lastSample = samplePositions[samplePositions.size() - 1];
+				image.draw_line(lastSample.x, lastSample.y, x1, yMiddle, color.data());
 			}
 			break;
 

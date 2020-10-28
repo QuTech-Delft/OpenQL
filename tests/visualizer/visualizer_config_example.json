@@ -2,7 +2,7 @@
     "cycles":
     {
         "showCycleLabels": true,
-        "showCyclesInNanoSeconds": true,
+        "showCyclesInNanoSeconds": false,
         "cycleLabelsRowHeight": 24,
         "fontHeight": 13,
         "fontColor": [0, 0, 0],
@@ -41,7 +41,7 @@
         "cBitLineColor": [128, 128, 128],
 
         "showBitLineEdges": true,
-        "bitLineEdgeThickness": 3,
+        "bitLineEdgeThickness": 5,
         "bitLineEdgeColor": [0, 0, 0],
         "bitLineEdgeAlpha": 0.4
     },
