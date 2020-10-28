@@ -100,7 +100,7 @@ enum LineSegmentType {FLAT, PULSE, CUT};
 
 struct Pulse
 {
-	const std::vector<int> waveform;
+	const std::vector<double> waveform;
 	const int sampleRate;
 };
 
@@ -117,7 +117,7 @@ struct Line
 {
 	// LineType type = MICROWAVE;
 	std::vector<LineSegment> segments;
-	int maxAmplitude = 0;
+	double maxAmplitude = 0;
 };
 
 struct QubitLines
@@ -129,9 +129,9 @@ struct QubitLines
 
 struct GatePulses
 {
-	std::vector<int> microwave;
-	std::vector<int> flux;
-	std::vector<int> readout;
+	std::vector<double> microwave;
+	std::vector<double> flux;
+	std::vector<double> readout;
 };
 
 struct PulseVisualization
@@ -228,7 +228,7 @@ void fixMeasurementOperands(std::vector<GateProperties>& gates);
 bool isMeasurement(const GateProperties gate);
 
 std::vector<QubitLines> generateQubitLines(const std::vector<GateProperties> gates, const PulseVisualization pulseVisualization, const CircuitData circuitData);
-int calculateMaxAmplitude(const std::vector<LineSegment> lineSegments);
+double calculateMaxAmplitude(const std::vector<LineSegment> lineSegments);
 void insertFlatLineSegments(std::vector<LineSegment>& existingLineSegments, const int amountOfCycles);
 
 Dimensions calculateTextDimensions(const std::string& text, const int fontHeight, const Layout layout);

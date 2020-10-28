@@ -33,9 +33,9 @@ namespace ql
 // make a copy of the gate vector, so any changes inside the visualizer to the program do not reflect back to any future compiler passes
 // add option to display cycle edges
 // add option to draw horizontal lines between qubits
+// representing the gates as waveforms
 
 // -- IN PROGRESS ---
-// representing the gates as waveforms
 // allow for floats in the waveform sample vector
 // check for missing codewords and qubits during waveform parsing instead of while trying to retrieve a mapping from PulseVisualization.mapping
 // allow collapsing the three qubit lines into one with an option
@@ -1209,14 +1209,14 @@ PulseVisualization parseWaveformMapping(const std::string& waveformMappingPath)
 				auto gatePulsesMapping = qubitMap.value();
 
 				// Read the pulses from the pulse mapping.
-				std::vector<int> microwave;
-				std::vector<int> flux;
-				std::vector<int> readout;
+				std::vector<double> microwave;
+				std::vector<double> flux;
+				std::vector<double> readout;
 				try
 				{
-					if (gatePulsesMapping.contains("microwave")) microwave = gatePulsesMapping["microwave"].get<std::vector<int>>();
-					if (gatePulsesMapping.contains("flux")) flux = gatePulsesMapping["flux"].get<std::vector<int>>();
-					if (gatePulsesMapping.contains("readout")) readout = gatePulsesMapping["readout"].get<std::vector<int>>();
+					if (gatePulsesMapping.contains("microwave")) microwave = gatePulsesMapping["microwave"].get<std::vector<double>>();
+					if (gatePulsesMapping.contains("flux")) flux = gatePulsesMapping["flux"].get<std::vector<double>>();
+					if (gatePulsesMapping.contains("readout")) readout = gatePulsesMapping["readout"].get<std::vector<double>>();
 				}
 				catch (std::exception& e)
 				{
@@ -1484,17 +1484,17 @@ std::vector<QubitLines> generateQubitLines(const std::vector<GateProperties> gat
 	return linesPerQubit;
 }
 
-int calculateMaxAmplitude(const std::vector<LineSegment> lineSegments)
+double calculateMaxAmplitude(const std::vector<LineSegment> lineSegments)
 {
-	int maxAmplitude = 0;
+	double maxAmplitude = 0;
 
 	for (const LineSegment& segment : lineSegments)
 	{
-		const std::vector<int> waveform = segment.pulse.waveform;
-		int maxAmplitudeInSegment = 0;
-		for (const int amplitude : waveform)
+		const std::vector<double> waveform = segment.pulse.waveform;
+		double maxAmplitudeInSegment = 0;
+		for (const double amplitude : waveform)
 		{
-			const int absAmplitude = std::abs(amplitude);
+			const double absAmplitude = std::abs(amplitude);
 			if (absAmplitude > maxAmplitudeInSegment)
 				maxAmplitudeInSegment = absAmplitude;
 		}
@@ -1815,26 +1815,26 @@ void drawLine(cimg_library::CImg<unsigned char>& image, const Structure structur
 			case PULSE:
 			{
 				// Calculate pulse properties.
-				IOUT(" --- PULSE SEGMENT --- ");
+				DOUT(" --- PULSE SEGMENT --- ");
 
-				const int maxAmplitude = line.maxAmplitude;
+				const double maxAmplitude = line.maxAmplitude;
 
 				const int segmentWidth = x1 - x0; // pixels
 				const int segmentLengthInCycles = segment.range.end - segment.range.start + 1; // cycles
 				const int segmentLengthInNanoSeconds = cycleDuration * segmentLengthInCycles; // nanoseconds
-				IOUT("\tsegment width: " << segmentWidth);
-				IOUT("\tsegment length in cycles: " << segmentLengthInCycles);
-				IOUT("\tsegment length in nanoseconds: " << segmentLengthInNanoSeconds);
+				DOUT("\tsegment width: " << segmentWidth);
+				DOUT("\tsegment length in cycles: " << segmentLengthInCycles);
+				DOUT("\tsegment length in nanoseconds: " << segmentLengthInNanoSeconds);
 
 				const int amountOfSamples = segment.pulse.waveform.size();
 				const int sampleRate = segment.pulse.sampleRate; // MHz
 				const double samplePeriod = 1000.0f * (1.0f / (double) sampleRate); // nanoseconds
 				const int samplePeriodWidth = std::floor(samplePeriod / (double) segmentLengthInNanoSeconds * (double) segmentWidth); // pixels
 				const int waveformWidthInPixels = samplePeriodWidth * amountOfSamples;
-				IOUT("\tamount of samples: " << amountOfSamples);
-				IOUT("\tsample period in nanoseconds: " << samplePeriod);
-				IOUT("\tsample period width in segment: " << samplePeriodWidth);
-				IOUT("\ttotal waveform width in pixels: " << waveformWidthInPixels);
+				DOUT("\tamount of samples: " << amountOfSamples);
+				DOUT("\tsample period in nanoseconds: " << samplePeriod);
+				DOUT("\tsample period width in segment: " << samplePeriodWidth);
+				DOUT("\ttotal waveform width in pixels: " << waveformWidthInPixels);
 
 				if (waveformWidthInPixels > segmentWidth)
 				{
@@ -1843,16 +1843,15 @@ void drawLine(cimg_library::CImg<unsigned char>& image, const Structure structur
 				}
 
 				// Calculate sample positions.
+				const double amplitudeUnitHeight = (double) maxLineHeight / (maxAmplitude * 2.0f);
 				std::vector<Position2> samplePositions;
-				const int amplitudeUnitHeight = maxLineHeight / (maxAmplitude * 2);
-
 				for (int i = 0; i < segment.pulse.waveform.size(); i++)
 				{
 					const int xSample = x0 + i * samplePeriodWidth;
 
-					const int amplitude = segment.pulse.waveform[i];
-					const int adjustedAmplitude = amplitude + maxAmplitude;
-					const int ySample = y + maxLineHeight - adjustedAmplitude * amplitudeUnitHeight;
+					const double amplitude = segment.pulse.waveform[i];
+					const double adjustedAmplitude = amplitude + maxAmplitude;
+					const int ySample = std::max(y, y + maxLineHeight - 1 - (int) std::floor(adjustedAmplitude * amplitudeUnitHeight));
 
 					samplePositions.push_back( {xSample, ySample} );
 				}
