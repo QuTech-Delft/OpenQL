@@ -39,7 +39,7 @@ public:
     ~codegen_cc() = default;
 
     // Generic
-    void init(const ql::quantum_platform &platform);
+    void init(const quantum_platform &platform);
     std::string getProgram();                           // return the CC source code that was created
     std::string getMap();                               // return a map of codeword assignments, useful for configuring AWGs
 
@@ -74,7 +74,7 @@ private:    // vars
     static const int MAX_INSTRS = MAX_SLOTS;                    // maximum number of instruments in config file
     static const int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
 
-    const ql::quantum_platform *platform;                       // remind platform
+    const quantum_platform *platform;                       // remind platform
     settings_cc settings;                                       // handling of JSON settings
     vcd_cc vcd;                                                 // handling of VCD file output
 

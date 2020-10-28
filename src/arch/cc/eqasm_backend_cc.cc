@@ -60,7 +60,7 @@ namespace ql {
 
 // compile for Central Controller
 // NB: a new eqasm_backend_cc is instantiated per call to compile, so we don't need to cleanup
-void eqasm_backend_cc::compile(quantum_program *program, const ql::quantum_platform &platform)
+void eqasm_backend_cc::compile(quantum_program *program, const quantum_platform &platform)
 {
     DOUT("Compiling " << program->kernels.size() << " kernels to generate Central Controller program ... ");
 
@@ -74,10 +74,10 @@ void eqasm_backend_cc::compile(quantum_program *program, const ql::quantum_platf
 
 #if OPT_CC_SCHEDULE_RC
     // schedule with platform resource constraints
-    ql::rcschedule(program, platform, "rcscheduler");
+    rcschedule(program, platform, "rcscheduler");
 #else
     // schedule without resource constraints
-    ql::schedule(program, platform, "scheduler");
+    schedule(program, platform, "scheduler");
 #endif
 
     // generate code for all kernels
@@ -85,9 +85,9 @@ void eqasm_backend_cc::compile(quantum_program *program, const ql::quantum_platf
         IOUT("Compiling kernel: " << kernel.name);
         codegenKernelPrologue(kernel);
 
-        ql::circuit &circuit = kernel.c;
+        circuit &circuit = kernel.c;
         if (!circuit.empty()) {
-            ql::ir::bundles_t bundles = ql::ir::bundler(circuit, platform.cycle_time);
+            ir::bundles_t bundles = ir::bundler(circuit, platform.cycle_time);
             codegen.kernelStart();
             codegenBundles(bundles, platform);
             codegen.kernelFinish(kernel.name, bundles.back().start_cycle+bundles.back().duration_in_cycles);
@@ -101,16 +101,16 @@ void eqasm_backend_cc::compile(quantum_program *program, const ql::quantum_platf
     codegen.programFinish(program->unique_name);
 
     // write program to file
-    std::string file_name(ql::options::get("output_dir") + "/" + program->unique_name + ".vq1asm");
+    std::string file_name(options::get("output_dir") + "/" + program->unique_name + ".vq1asm");
     IOUT("Writing Central Controller program to " << file_name);
-    ql::utils::write_file(file_name, codegen.getProgram());
+    utils::write_file(file_name, codegen.getProgram());
 
     // write instrument map to file (unless we were using input file)
-    std::string map_input_file = ql::options::get("backend_cc_map_input_file");
+    std::string map_input_file = options::get("backend_cc_map_input_file");
     if(map_input_file != "") {
-        std::string file_name_map(ql::options::get("output_dir") + "/" + program->unique_name + ".map");
+        std::string file_name_map(options::get("output_dir") + "/" + program->unique_name + ".map");
         IOUT("Writing instrument map to " << file_name_map);
-        ql::utils::write_file(file_name_map, codegen.getMap());
+        utils::write_file(file_name_map, codegen.getMap());
     }
 
     DOUT("Compiling Central Controller program [Done]");
@@ -119,7 +119,7 @@ void eqasm_backend_cc::compile(quantum_program *program, const ql::quantum_platf
 
 // based on cc_light_eqasm_compiler.h::classical_instruction2qisa/decompose_instructions
 // NB: input instructions defined in classical.h::classical
-void eqasm_backend_cc::codegenClassicalInstruction(ql::gate *classical_ins)
+void eqasm_backend_cc::codegenClassicalInstruction(gate *classical_ins)
 {
     auto &iname =  classical_ins->name;
     auto &iopers = classical_ins->creg_operands;
@@ -151,7 +151,7 @@ void eqasm_backend_cc::codegenClassicalInstruction(ql::gate *classical_ins)
 // FIXME: looks very inefficient
 // extracted from get_epilogue
 // FIXME: does not use class
-std::string eqasm_backend_cc::kernelLabel(ql::quantum_kernel &k)
+std::string eqasm_backend_cc::kernelLabel(quantum_kernel &k)
 {
     std::string kname(k.name);
     std::replace(kname.begin(), kname.end(), '_', ' ');
@@ -163,7 +163,7 @@ std::string eqasm_backend_cc::kernelLabel(ql::quantum_kernel &k)
 
 // handle kernel conditionality at beginning of kernel
 // based on cc_light_eqasm_compiler.h::get_prologue
-void eqasm_backend_cc::codegenKernelPrologue(ql::quantum_kernel &k)
+void eqasm_backend_cc::codegenKernelPrologue(quantum_kernel &k)
 {
     codegen.comment(SS2S("### Kernel: '" << k.name << "'"));
 
@@ -217,7 +217,7 @@ void eqasm_backend_cc::codegenKernelPrologue(ql::quantum_kernel &k)
 
 // handle kernel conditionality at end of kernel
 // based on cc_light_eqasm_compiler.h::get_epilogue
-void eqasm_backend_cc::codegenKernelEpilogue(ql::quantum_kernel &k)
+void eqasm_backend_cc::codegenKernelEpilogue(quantum_kernel &k)
 {
     switch(k.type) {
         case kernel_type_t::FOR_END:
@@ -258,11 +258,11 @@ void eqasm_backend_cc::codegenKernelEpilogue(ql::quantum_kernel &k)
 
 
 // based on cc_light_eqasm_compiler.h::bundles2qisa()
-void eqasm_backend_cc::codegenBundles(ql::ir::bundles_t &bundles, const ql::quantum_platform &platform)
+void eqasm_backend_cc::codegenBundles(ir::bundles_t &bundles, const quantum_platform &platform)
 {
     IOUT("Generating .vq1asm for bundles");
 
-    for(ql::ir::bundle_t &bundle : bundles) {
+    for(ir::bundle_t &bundle : bundles) {
         // generate bundle header
         DOUT(SS2S("Bundle " << bundleIdx << ": start_cycle=" << bundle.start_cycle << ", duration_in_cycles=" << bundle.duration_in_cycles));
         codegen.bundleStart(SS2S("## Bundle " << bundleIdx++
@@ -275,7 +275,7 @@ void eqasm_backend_cc::codegenBundles(ql::ir::bundles_t &bundles, const ql::quan
         // generate code for this bundle
         for(auto section = bundle.parallel_sections.begin(); section != bundle.parallel_sections.end(); ++section ) {
             // check whether section defines classical gate
-            ql::gate *firstInstr = *section->begin();
+            gate *firstInstr = *section->begin();
             auto firstInstrType = firstInstr->type();
             if(firstInstrType == __classical_gate__) {
                 DOUT(SS2S("Classical bundle: instr='" << firstInstr->name << "'"));
@@ -289,8 +289,8 @@ void eqasm_backend_cc::codegenBundles(ql::ir::bundles_t &bundles, const ql::quan
                  * and don't require all instructions to be identical
                  */
                 for(auto insIt = section->begin(); insIt != section->end(); ++insIt) {
-                    ql::gate *instr = *insIt;
-                    ql::gate_type_t itype = instr->type();
+                    gate *instr = *insIt;
+                    gate_type_t itype = instr->type();
                     std::string iname = instr->name;
                     DOUT(SS2S("Bundle section: instr='" << iname << "'"));
 
@@ -334,7 +334,7 @@ void eqasm_backend_cc::codegenBundles(ql::ir::bundles_t &bundles, const ql::quan
 
 
 // based on: cc_light_eqasm_compiler.h::loadHwSettings
-void eqasm_backend_cc::loadHwSettings(const ql::quantum_platform &platform)
+void eqasm_backend_cc::loadHwSettings(const quantum_platform &platform)
 {
 #if 0   // FIXME: currently unused, may be of future use
     const struct {
@@ -365,8 +365,8 @@ void eqasm_backend_cc::loadHwSettings(const ql::quantum_platform &platform)
     }
     catch (json::exception &e)
     {
-        throw ql::exception(
-            "[x] error : ql::eqasm_compiler::compile() : error while reading hardware settings : parameter '"
+        throw exception(
+            "[x] error : eqasm_compiler::compile() : error while reading hardware settings : parameter '"
             + hw_settings[i].name
             + "'\n\t"
             + std::string(e.what()), false);

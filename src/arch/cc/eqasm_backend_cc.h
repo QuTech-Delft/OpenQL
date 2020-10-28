@@ -27,15 +27,15 @@ public:
     eqasm_backend_cc() = default;
     ~eqasm_backend_cc() = default;
 
-    void compile(quantum_program *program, const ql::quantum_platform &platform) override;
+    void compile(quantum_program *program, const quantum_platform &platform) override;
 
 private:
-    std::string kernelLabel(ql::quantum_kernel &k);
-    void codegenClassicalInstruction(ql::gate *classical_ins);
-    void codegenKernelPrologue(ql::quantum_kernel &k);
-    void codegenKernelEpilogue(ql::quantum_kernel &k);
-    void codegenBundles(ql::ir::bundles_t &bundles, const ql::quantum_platform &platform);
-    void loadHwSettings(const ql::quantum_platform &platform);
+    std::string kernelLabel(quantum_kernel &k);
+    void codegenClassicalInstruction(gate *classical_ins);
+    void codegenKernelPrologue(quantum_kernel &k);
+    void codegenKernelEpilogue(quantum_kernel &k);
+    void codegenBundles(ir::bundles_t &bundles, const quantum_platform &platform);
+    void loadHwSettings(const quantum_platform &platform);
 
 private: // vars
     codegen_cc codegen;

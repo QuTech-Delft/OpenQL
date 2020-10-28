@@ -54,7 +54,7 @@ public: // functions
     settings_cc() = default;
     ~settings_cc() = default;
 
-    void loadBackendSettings(const ql::quantum_platform &platform);
+    void loadBackendSettings(const quantum_platform &platform);
     tSignalDef findSignalDefinition(const json &instruction, const std::string &iname) const;
     tInstrumentInfo getInstrumentInfo(size_t instrIdx) const;
     tInstrumentControl getInstrumentControl(size_t instrIdx) const;

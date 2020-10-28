@@ -10,10 +10,10 @@
 
 namespace ql {
 
-void settings_cc::loadBackendSettings(const ql::quantum_platform &platform)
+void settings_cc::loadBackendSettings(const quantum_platform &platform)
 {
     // remind some main JSON areas
-    JSON_ASSERT(platform.hardware_settings, "eqasm_backend_cc", "hardware_settings");  // NB: ql::json_get<const json &> unavailable
+    JSON_ASSERT(platform.hardware_settings, "eqasm_backend_cc", "hardware_settings");  // NB: json_get<const json &> unavailable
     const json &jsonBackendSettings = platform.hardware_settings["eqasm_backend_cc"];
 
     JSON_ASSERT(jsonBackendSettings, "instrument_definitions", "eqasm_backend_cc");
@@ -75,7 +75,7 @@ settings_cc::tSignalDef settings_cc::findSignalDefinition(const json &instructio
         }
         ret.path = "signals/"+refSignal;
     } else {                                                                    // alternative syntax: "signal"
-        ret.signal = ql::json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");
+        ret.signal = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");
         DOUT("signal for '" << instruction << "': " << ret.signal);
         ret.path = instructionPath+"/cc/signal";
     }
@@ -94,17 +94,17 @@ settings_cc::tInstrumentInfo settings_cc::getInstrumentInfo(size_t instrIdx) con
     }
     ret.instrument = &(*jsonInstruments)[instrIdx];
 
-    ret.instrumentName = ql::json_get<std::string>(*ret.instrument, "name", instrumentPath);
+    ret.instrumentName = json_get<std::string>(*ret.instrument, "name", instrumentPath);
 
     JSON_ASSERT(*ret.instrument, "controller", ret.instrumentName);              // first check intermediate node
     // FIXME: check controller/"name" being "cc"?
-    ret.slot = ql::json_get<int>((*ret.instrument)["controller"], "slot", ret.instrumentName+"/controller");
+    ret.slot = json_get<int>((*ret.instrument)["controller"], "slot", ret.instrumentName+"/controller");
     // FIXME: also return controller/"io_module"?
 
 #if OPT_FEEDBACK
     // optional key 'instruments[]/force_cond_gates_on'
     if(JSON_EXISTS(*ret.instrument, "force_cond_gates_on")) {
-        ret.forceCondGatesOn = ql::json_get<bool>((*ret.instrument), "force_cond_gates_on", ret.instrumentName+"/force_cond_gates_on"); // key will exist, but type may be wrong
+        ret.forceCondGatesOn = json_get<bool>((*ret.instrument), "force_cond_gates_on", ret.instrumentName+"/force_cond_gates_on"); // key will exist, but type may be wrong
     }
 #endif
 
@@ -119,29 +119,29 @@ settings_cc::tInstrumentControl settings_cc::getInstrumentControl(size_t instrId
     ret.ii = getInstrumentInfo(instrIdx);
 
     // get control mode reference for for instrument
-    ret.refControlMode = ql::json_get<std::string>(*ret.ii.instrument, "ref_control_mode", ret.ii.instrumentName);
+    ret.refControlMode = json_get<std::string>(*ret.ii.instrument, "ref_control_mode", ret.ii.instrumentName);
 
     // get control mode definition for our instrument
-    ret.controlMode = ql::json_get<const json>(*jsonControlModes, ret.refControlMode, "control_modes");
+    ret.controlMode = json_get<const json>(*jsonControlModes, ret.refControlMode, "control_modes");
 
     // how many groups of control bits does the control mode specify (NB: 0 on missing key)
     ret.controlModeGroupCnt = ret.controlMode["control_bits"].size();
 
 #if OPT_CROSSCHECK_INSTRUMENT_DEF   // FIXME: WIP
     // get instrument definition reference for for instrument
-    std::string refInstrumentDefinition = ql::json_get<std::string>(*ret.ii.instrument, "ref_instrument_definition", ret.ii.instrumentName);
+    std::string refInstrumentDefinition = json_get<std::string>(*ret.ii.instrument, "ref_instrument_definition", ret.ii.instrumentName);
 
     // get instrument definition for our instrument
-    const json instrumentDefinition = ql::json_get<const json>(*jsonInstrumentDefinitions, refInstrumentDefinition, "instrument_definitions");
+    const json instrumentDefinition = json_get<const json>(*jsonInstrumentDefinitions, refInstrumentDefinition, "instrument_definitions");
 
     // get number of channels of instrument
-    int channels = ql::json_get<int>(instrumentDefinition, "channels", refInstrumentDefinition);
+    int channels = json_get<int>(instrumentDefinition, "channels", refInstrumentDefinition);
 
     // calculate groups size (#channels) of control mode
     ret.controlModeGroupSize = channels / ret.controlModeGroupCnt;  // FIXME: handle 0 div, and rounding
 
     // verify that group size is allowed
-    const json controlGroupSizes = ql::json_get<const json>(instrumentDefinition, "control_group_sizes", refInstrumentDefinition);
+    const json controlGroupSizes = json_get<const json>(instrumentDefinition, "control_group_sizes", refInstrumentDefinition);
     // FIXME: find channels
 
 #endif
@@ -161,10 +161,10 @@ settings_cc::tSignalInfo settings_cc::findSignalInfoForQubit(const std::string &
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<jsonInstruments->size() && !qubitFound; instrIdx++) {
         tInstrumentControl ic = getInstrumentControl(instrIdx);
-        std::string instrumentSignalType = ql::json_get<std::string>(*ic.ii.instrument, "signal_type", ic.ii.instrumentName);
+        std::string instrumentSignalType = json_get<std::string>(*ic.ii.instrument, "signal_type", ic.ii.instrumentName);
         if(instrumentSignalType == instructionSignalType) {
             signalTypeFound = true;
-            const json qubits = ql::json_get<const json>(*ic.ii.instrument, "qubits", ic.ii.instrumentName);   // NB: ql::json_get<const json&> unavailable
+            const json qubits = json_get<const json>(*ic.ii.instrument, "qubits", ic.ii.instrumentName);   // NB: json_get<const json&> unavailable
 
             // verify group size: qubits vs. control mode
             int qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]

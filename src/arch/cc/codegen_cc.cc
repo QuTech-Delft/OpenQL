@@ -43,7 +43,7 @@ typedef std::vector<int> tBitVars;
 | Generic
 \************************************************************************/
 
-void codegen_cc::init(const ql::quantum_platform &platform)
+void codegen_cc::init(const quantum_platform &platform)
 {
     // NB: a new eqasm_backend_cc is instantiated per call to compile, and
     // as a result also a codegen_cc, so we don't need to cleanup
@@ -51,11 +51,11 @@ void codegen_cc::init(const ql::quantum_platform &platform)
     settings.loadBackendSettings(platform);
 
     // optionally preload codewordTable
-    std::string map_input_file = ql::options::get("backend_cc_map_input_file");
+    std::string map_input_file = options::get("backend_cc_map_input_file");
     if(map_input_file != "") {
         DOUT("loading map_input_file='" << map_input_file << "'");
-        json map = ql::load_json(map_input_file);
-        codewordTable = map["codeword_table"];      // FIXME: use ql::json_get
+        json map = load_json(map_input_file);
+        codewordTable = map["codeword_table"];      // FIXME: use json_get
         mapPreloaded = true;
     }
 }
@@ -117,7 +117,7 @@ void codegen_cc::programFinish(const std::string &progName)
 
 void codegen_cc::kernelStart()
 {
-    ql::utils::zero(lastEndCycle);       // FIXME: actually, bundle.startCycle starts counting at 1
+    utils::zero(lastEndCycle);       // FIXME: actually, bundle.startCycle starts counting at 1
 }
 
 void codegen_cc::kernelFinish(const std::string &kernelName, size_t durationInCycles)
@@ -390,7 +390,7 @@ void codegen_cc::customGate(
     /*  determine whether this is a readout instruction
         NB: we only use the instruction_type "readout" and don't care about the rest
         because the terms "mw" and "flux" don't fully cover gate functionality. It
-        would be nice if custom gates could mimic ql::gate_type_t
+        would be nice if custom gates could mimic gate_type_t
     */
     bool isReadout = "readout" == platform->find_instruction_type(iname);
 
@@ -440,7 +440,7 @@ void codegen_cc::customGate(
             std::string signalSPath = SS2S(sd.path<<"["<<s<<"]");           // for JSON error reporting
 
             // get the operand index & qubit to work on
-            operandIdx = ql::json_get<unsigned int>(sd.signal[s], "operand_idx", signalSPath);
+            operandIdx = json_get<unsigned int>(sd.signal[s], "operand_idx", signalSPath);
             if(operandIdx >= qops.size()) {
                 JSON_FATAL("instruction '" << iname <<
                       "': illegal operand number " << operandIdx <<
@@ -451,11 +451,11 @@ void codegen_cc::customGate(
 
             // get signalInfo via signal type (e.g. "mw", "flux", etc. NB: this is different from
             // the type provided by find_instruction_type, although some identical strings are used)
-            std::string instructionSignalType = ql::json_get<std::string>(sd.signal[s], "type", signalSPath);
+            std::string instructionSignalType = json_get<std::string>(sd.signal[s], "type", signalSPath);
             si = settings.findSignalInfoForQubit(instructionSignalType, qubit);
 
             // get signal value
-            const json instructionSignalValue = ql::json_get<const json>(sd.signal[s], "value", signalSPath);   // NB: ql::json_get<const json&> unavailable
+            const json instructionSignalValue = json_get<const json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
 
 #if OPT_CROSSCHECK_INSTRUMENT_DEF   /* FIXME: invalid test: should be channels in group, not group size
 [OPENQL] /tmp/pip-req-build-z_6r37p9/src/arch/cc/codegen_cc.cc:463 Error: Error in JSON definition: signal dimension mismatch on instruction 'cz' : control mode 'awg8-flux' requires 8 groups, but signal 'signals/two-qubit-flux[0]/value' provides 1
@@ -474,12 +474,12 @@ ___________________ Test_central_controller.test_qi_example ____________________
 
             // expand macros
             signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
-            ql::utils::replace(signalValueString, std::string("\""), std::string(""));   // get rid of quotes
-            ql::utils::replace(signalValueString, std::string("{gateName}"), iname);
-            ql::utils::replace(signalValueString, std::string("{instrumentName}"), si.ic.ii.instrumentName);
-            ql::utils::replace(signalValueString, std::string("{instrumentGroup}"), std::to_string(si.group));
+            utils::replace(signalValueString, std::string("\""), std::string(""));   // get rid of quotes
+            utils::replace(signalValueString, std::string("{gateName}"), iname);
+            utils::replace(signalValueString, std::string("{instrumentName}"), si.ic.ii.instrumentName);
+            utils::replace(signalValueString, std::string("{instrumentGroup}"), std::to_string(si.group));
             // FIXME: allow using all qubits involved (in same signalType?, or refer to signal: qubitOfSignal[n]), e.g. qubit[0], qubit[1], qubit[2]
-            ql::utils::replace(signalValueString, std::string("{qubit}"), std::to_string(qubit));
+            utils::replace(signalValueString, std::string("{qubit}"), std::to_string(qubit));
 
             // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and
             // provide codewordTable to downstream software to assign waveforms to the codewords
