@@ -373,13 +373,13 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
             // FIXME: test for gi->readoutCop >= 0
             // FIXME: check consistency between measure instruction and result_bits
             // FIXME: also generate VCD
+#if OPT_FEEDBACK   // FIXME: WIP on measurement
             if(JSON_EXISTS(ic.controlMode, "result_bits")) {  // this instrument mode produces results (i.e. it is a measurement device)
                 const json &resultBits = ic.controlMode["result_bits"][group];
                 size_t nrResultBits = resultBits.size();
                 if(nrResultBits == 1) {                     // single bit
                     digIn |= 1<<(int)resultBits[0];         // NB: we assume the result is active high, which is correct for UHF-QC
 
-#if OPT_FEEDBACK   // FIXME: WIP on measurement
                     // we need: input bit, cop?, qubit, SM bit
                     // FIXME: save gi->readoutCop in inputLutTable
                     if(JSON_EXISTS(inputLutTable, ic.ii.instrumentName) &&                  // instrument exists
@@ -390,11 +390,10 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
                         //inputLutTable[ic.ii.instrumentName][group][0] = "";                 // code word 0 is empty
                         //inputLutTable[uc.ii.instrumentName][group][codeword] = signalValue; // NB: structure created on demand
                     }
-#endif
                 } else {    // NB: nrResultBits==0 will not arrive at this point
-                    std::string controlModeName = ic.controlMode;                           // convert to string
-                    JSON_FATAL("key '" << controlModeName << "/result_bits' must have 1 bit per group");
+                    JSON_FATAL("key '" << ic.refControlMode << "/result_bits' must have 1 bit per group");
                 }
+#endif
             }
         } // for(group)
 
