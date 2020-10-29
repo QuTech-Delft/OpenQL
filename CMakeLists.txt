@@ -323,6 +323,13 @@ add_subdirectory(deps/libqasm)
 target_link_libraries(ql PUBLIC cqasm)
 
 
+# backward-cpp ----------------------------------------------------------------
+
+# Stack trace helper library, nothing functional here.
+add_subdirectory(deps/backward-cpp)
+add_backward(ql)
+
+
 #=============================================================================#
 # Testing                                                                     #
 #=============================================================================#
