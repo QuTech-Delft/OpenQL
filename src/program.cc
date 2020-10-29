@@ -59,7 +59,7 @@ quantum_program::quantum_program(
     } else if (eqasm_compiler_name == "cc_light_compiler") {
         backend_compiler = new ql::arch::cc_light_eqasm_compiler();
     } else if (eqasm_compiler_name == "eqasm_backend_cc") {
-        backend_compiler = new ql::arch::eqasm_backend_cc();
+        backend_compiler = new eqasm_backend_cc();
     } else {
         FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }

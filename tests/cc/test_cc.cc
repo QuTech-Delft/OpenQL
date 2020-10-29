@@ -379,7 +379,9 @@ int main(int argc, char ** argv)
     test_wait("ALAP", "no");
 #endif
 
+#if 1
     test_qi_example("ALAP", "no");
+#endif
 
     return 0;
 }

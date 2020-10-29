@@ -69,6 +69,8 @@
         throw ql::exception("Error : " + fatal_s, false);                                                   \
     } while (false)
 
+#define JSON_FATAL(s) FATAL("Error in JSON definition: " << s)   // NB: FATAL prepends "Error : "
+
 #define ASSERT(condition)                                                                                   \
     do {                                                                                                    \
         if (!(condition)) {                                                                                 \
@@ -85,7 +87,7 @@
 #define JSON_ASSERT(node, key, nodePath)    \
     do {                                    \
         if (!JSON_EXISTS(node, key)) {      \
-            FATAL("key '" << key << "' not found on path '" << nodePath << "', actual node contents '" << node << "'"); \
+            JSON_FATAL("key '" << key << "' not found on path '" << nodePath << "', actual node contents '" << node << "'"); \
         }                                   \
     } while (false)
 
@@ -220,7 +222,7 @@ T json_get(const json &j, std::string key, std::string nodePath = "") {
     // first check existence of key
     auto it = j.find(key);
     if (it == j.end()) {
-        FATAL("Key '" << key
+        JSON_FATAL("Key '" << key
                       << "' not found on path '" << nodePath
                       << "', actual node contents '" << j << "'");
     }
@@ -229,12 +231,12 @@ T json_get(const json &j, std::string key, std::string nodePath = "") {
     try {
         return it->get<T>();
     } catch (const std::exception &e) {
-        FATAL("Could not get value of key '" << key
-                                             << "' on path '" << nodePath
-                                             << "', exception message '"
-                                             << e.what()
-                                             << "', actual node contents '" << j
-                                             << "'");
+        JSON_FATAL("Could not get value of key '" << key
+                                                  << "' on path '" << nodePath
+                                                  << "', exception message '"
+                                                  << e.what()
+                                                  << "', actual node contents '" << j
+                                                  << "'");
     }
 }
 

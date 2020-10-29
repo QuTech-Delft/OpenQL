@@ -470,7 +470,7 @@
             "cc": {
 //                "ref_signal": "single-qubit-mw",
                 "signal": [],   // no signal, to prevent conflicts with other gates (NB: will output nothing because VSM stays off)
-                "static_codeword_override": 0
+                "static_codeword_override": [0]
             }
         },
         "rx180": {
@@ -480,7 +480,7 @@
             "cc_light_instr": "x",
             "cc": {
                 "ref_signal": "single-qubit-mw",    // NB: reference, instead of defining "signal" here
-                "static_codeword_override": 1
+                "static_codeword_override": [1]
             }
         },
         "ry180": {
@@ -490,7 +490,7 @@
             "cc_light_instr": "y",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 2
+                "static_codeword_override": [2]
             }
         },
         "rx90": {
@@ -500,7 +500,7 @@
             "cc_light_instr": "x90",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 3
+                "static_codeword_override": [3]
             }
         },
         "ry90": {
@@ -510,7 +510,7 @@
             "cc_light_instr": "y90",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 4
+                "static_codeword_override": [4]
             }
         },
         "rxm90": {
@@ -520,7 +520,7 @@
             "cc_light_instr": "xm90",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 5
+                "static_codeword_override": [5]
             }
         },
         "rym90": {
@@ -530,7 +530,7 @@
             "cc_light_instr": "ym90",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 6
+                "static_codeword_override": [6]
             }
         },
 
@@ -544,7 +544,7 @@
             "cc_light_instr": "cz",
             "cc": {
                 "ref_signal": "two-qubit-flux",     // NB: reference, instead of defining "signal" here
-                "static_codeword_override": 1
+                "static_codeword_override": [1,1]   // FIXME
             }
         },
         "cz_park": {
@@ -567,7 +567,7 @@
                         "value": ["park_cz-{qubit}"]
                     }
                 ],
-                "static_codeword_override": 0   // FIXME
+                "static_codeword_override": [0,0,0]   // FIXME
             }
         },
 
@@ -585,7 +585,7 @@
 						"value": ["park_cz-{qubit}"]
 					}
 				],
-                "static_codeword_override": 0   // FIXME
+                "static_codeword_override": [0]   // FIXME
 			}
 		},
 
@@ -599,7 +599,7 @@
 						"value": ["park_measure-{qubit}"]
 					}
 				],
-                "static_codeword_override": 0   // FIXME
+                "static_codeword_override": [0]   // FIXME
 			}
 		},
 
@@ -613,7 +613,7 @@
             "cc": {
 //                "ref_signal": "single-qubit-mw"
                 "signal": [],    // FIXME: no signal, pycQED::test_multi_qubit_oql_CC.py fails otherwise on scheduling issues
-                "static_codeword_override": 0   // FIXME
+                "static_codeword_override": [0]   // FIXME
             }
 		},
 
@@ -629,7 +629,7 @@
 						"value": ["dummy"]			// Future extension: specify output and weight, and generate code word
 					}
 				],
-                "static_codeword_override": 0   // FIXME
+                "static_codeword_override": [0]   // FIXME
 			}
 		},
 
@@ -642,7 +642,7 @@
             "cc_light_instr": "square",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 0
+                "static_codeword_override": [0]
             }
         },
         "spec": {
@@ -652,7 +652,7 @@
             "cc_light_instr": "spec",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 0
+                "static_codeword_override": [0]
             }
         },
         "rx12": {
@@ -662,7 +662,7 @@
             "cc_light_instr": "rx12",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 0
+                "static_codeword_override": [0]
             }
         },
         // cw_00 .. cw_31
@@ -673,7 +673,7 @@
             "cc_light_instr": "cw_00",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 0
+                "static_codeword_override": [0]
             }
         },
         "cw_01": {
@@ -683,7 +683,7 @@
             "cc_light_instr": "cw_01",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 1
+                "static_codeword_override": [1]
             }
         },
         "cw_02": {
@@ -693,7 +693,7 @@
             "cc_light_instr": "cw_02",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 2
+                "static_codeword_override": [2]
             }
         },
         "cw_03": {
@@ -703,7 +703,7 @@
             "cc_light_instr": "cw_03",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 3
+                "static_codeword_override": [3]
             }
         },
         "cw_04": {
@@ -713,7 +713,7 @@
             "cc_light_instr": "cw_04",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 4
+                "static_codeword_override": [4]
             }
         },
         "cw_05": {
@@ -723,7 +723,7 @@
             "cc_light_instr": "cw_05",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 5
+                "static_codeword_override": [5]
             }
         },
         "cw_06": {
@@ -733,7 +733,7 @@
             "cc_light_instr": "cw_06",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 6
+                "static_codeword_override": [6]
             }
         },
         "cw_07": {
@@ -743,7 +743,7 @@
             "cc_light_instr": "cw_07",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 7
+                "static_codeword_override": [7]
             }
         },
         "cw_08": {
@@ -753,7 +753,7 @@
             "cc_light_instr": "cw_08",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 8
+                "static_codeword_override": [8]
             }
         },
         "cw_09": {
@@ -763,7 +763,7 @@
             "cc_light_instr": "cw_09",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 9
+                "static_codeword_override": [9]
             }
         },
         "cw_10": {
@@ -773,7 +773,7 @@
             "cc_light_instr": "cw_10",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 10
+                "static_codeword_override": [10]
             }
         },
         "cw_11": {
@@ -783,7 +783,7 @@
             "cc_light_instr": "cw_11",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 11
+                "static_codeword_override": [11]
             }
         },
         "cw_12": {
@@ -793,7 +793,7 @@
             "cc_light_instr": "cw_12",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 12
+                "static_codeword_override": [12]
             }
         },
         "cw_13": {
@@ -803,7 +803,7 @@
             "cc_light_instr": "cw_13",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 13
+                "static_codeword_override": [13]
             }
         },
         "cw_14": {
@@ -813,7 +813,7 @@
             "cc_light_instr": "cw_14",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 14
+                "static_codeword_override": [14]
             }
         },
         "cw_15": {
@@ -823,7 +823,7 @@
             "cc_light_instr": "cw_15",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 15
+                "static_codeword_override": [15]
             }
         },
         "cw_16": {
@@ -833,7 +833,7 @@
             "cc_light_instr": "cw_16",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 16
+                "static_codeword_override": [16]
             }
         },
         "cw_17": {
@@ -843,7 +843,7 @@
             "cc_light_instr": "cw_17",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 17
+                "static_codeword_override": [17]
             }
         },
         "cw_18": {
@@ -853,7 +853,7 @@
             "cc_light_instr": "cw_18",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 18
+                "static_codeword_override": [18]
             }
         },
         "cw_19": {
@@ -863,7 +863,7 @@
             "cc_light_instr": "cw_109",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 19
+                "static_codeword_override": [19]
             }
         },
         "cw_20": {
@@ -873,7 +873,7 @@
             "cc_light_instr": "cw_20",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 20
+                "static_codeword_override": [20]
             }
         },
         "cw_21": {
@@ -883,7 +883,7 @@
             "cc_light_instr": "cw_21",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 21
+                "static_codeword_override": [21]
             }
         },
         "cw_22": {
@@ -893,7 +893,7 @@
             "cc_light_instr": "cw_22",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 22
+                "static_codeword_override": [22]
             }
         },
         "cw_23": {
@@ -903,7 +903,7 @@
             "cc_light_instr": "cw_23",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 23
+                "static_codeword_override": [23]
             }
         },
         "cw_24": {
@@ -913,7 +913,7 @@
             "cc_light_instr": "cw_24",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 24
+                "static_codeword_override": [24]
             }
         },
         "cw_25": {
@@ -923,7 +923,7 @@
             "cc_light_instr": "cw_25",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 25
+                "static_codeword_override": [25]
             }
         },
         "cw_26": {
@@ -933,7 +933,7 @@
             "cc_light_instr": "cw_26",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 26
+                "static_codeword_override": [26]
             }
         },
         "cw_27": {
@@ -943,7 +943,7 @@
             "cc_light_instr": "cw_27",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 27
+                "static_codeword_override": [27]
             }
         },
         "cw_28": {
@@ -953,7 +953,7 @@
             "cc_light_instr": "cw_28",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 28
+                "static_codeword_override": [28]
             }
         },
         "cw_29": {
@@ -963,7 +963,7 @@
             "cc_light_instr": "cw_29",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 29
+                "static_codeword_override": [29]
             }
         },
         "cw_30": {
@@ -973,7 +973,7 @@
             "cc_light_instr": "cw_30",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 30
+                "static_codeword_override": [30]
             }
         },
         "cw_31": {
@@ -983,7 +983,7 @@
             "cc_light_instr": "cw_31",
             "cc": {
                 "ref_signal": "single-qubit-mw",
-                "static_codeword_override": 31
+                "static_codeword_override": [31]
             }
         },
 
@@ -994,8 +994,8 @@
             "type": "flux",
             "cc_light_instr": "fl_cw_00",
             "cc": {
-                "ref_signal": "two-qubit-flux",
-                "static_codeword_override": 0
+                "ref_signal": "two-qubit-flux", // FIXME
+                "static_codeword_override": [0]
             }
         },
         "fl_cw_01": {
@@ -1005,7 +1005,7 @@
             "cc_light_instr": "fl_cw_01",
             "cc": {
                 "ref_signal": "two-qubit-flux",
-                "static_codeword_override": 1
+                "static_codeword_override": [1]
             }
         },
         "fl_cw_02": {
@@ -1015,7 +1015,7 @@
             "cc_light_instr": "fl_cw_02",
             "cc": {
                 "ref_signal": "two-qubit-flux",
-                "static_codeword_override": 2
+                "static_codeword_override": [2]
             }
         },
         "fl_cw_03": {
@@ -1025,7 +1025,7 @@
             "cc_light_instr": "fl_cw_03",
             "cc": {
                 "ref_signal": "two-qubit-flux",
-                "static_codeword_override": 3
+                "static_codeword_override": [3]
             }
         },
         "fl_cw_04": {
@@ -1035,7 +1035,7 @@
             "cc_light_instr": "fl_cw_04",
             "cc": {
                 "ref_signal": "two-qubit-flux",
-                "static_codeword_override": 4
+                "static_codeword_override": [4]
             }
         },
         "fl_cw_05": {
@@ -1045,7 +1045,7 @@
             "cc_light_instr": "fl_cw_05",
             "cc": {
                 "ref_signal": "two-qubit-flux",
-                "static_codeword_override": 5
+                "static_codeword_override": [5]
             }
         },
         "fl_cw_06": {
@@ -1055,7 +1055,7 @@
             "cc_light_instr": "fl_cw_06",
             "cc": {
                 "ref_signal": "two-qubit-flux",
-                "static_codeword_override": 6
+                "static_codeword_override": [6]
             }
         },
         "fl_cw_07": {
@@ -1065,7 +1065,7 @@
             "cc_light_instr": "fl_cw_07",
             "cc": {
                 "ref_signal": "two-qubit-flux",
-                "static_codeword_override": 7
+                "static_codeword_override": [7]
             }
         }
 

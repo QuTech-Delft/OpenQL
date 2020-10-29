@@ -173,6 +173,8 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/exception.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/eqasm_backend_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/codegen_cc.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/settings_cc.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/vcd_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/vcd.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/cqasm/cqasm_reader.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/unitary.cc"

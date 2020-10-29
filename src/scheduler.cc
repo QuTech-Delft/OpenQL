@@ -443,8 +443,7 @@ void Scheduler::init(
     // a cyclic dependence graph cannot be scheduled;
     // this test here is a kind of debugging aid whether dependence creation was done well
     if (!dag(graph)) {
-        DOUT("The dependence graph is not a DAG.");
-        EOUT("The dependence graph is not a DAG.");
+        FATAL("The dependence graph is not a DAG.");
     }
     DOUT("Dependence graph creation Done.");
 }
