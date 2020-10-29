@@ -619,7 +619,7 @@ bool quantum_kernel::add_spec_decomposed_gate_if_available(
                     DOUT("adding default gate for " << sub_ins_name);
                     bool default_available = add_default_gate_if_available(sub_ins_name, this_gate_qubits, cregs);
                     if (default_available) {
-                        WOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
+                        DOUT("added default gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") ); // // NB: changed WOUT to DOUT, since this is common for 'barrier', spamming log
                     } else {
                         EOUT("unknown gate '" << sub_ins_name << "' with " << ql::utils::to_string(this_gate_qubits,"qubits") );
                         throw ql::exception("[x] error : ql::kernel::gate() : the gate '"+sub_ins_name+"' with " +ql::utils::to_string(this_gate_qubits,"qubits")+" is not supported by the target platform !",false);

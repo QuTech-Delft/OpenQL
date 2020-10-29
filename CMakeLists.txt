@@ -173,6 +173,8 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/exception.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/eqasm_backend_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/codegen_cc.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/settings_cc.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/vcd_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/vcd.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/cqasm/cqasm_reader.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/unitary.cc"
@@ -318,6 +320,13 @@ target_link_libraries(ql PRIVATE eigen)
 option(LIBQASM_COMPAT "" ON)
 add_subdirectory(deps/libqasm)
 target_link_libraries(ql PUBLIC cqasm)
+
+
+# backward-cpp ----------------------------------------------------------------
+
+# Stack trace helper library, nothing functional here.
+add_subdirectory(deps/backward-cpp)
+add_backward(ql)
 
 
 #=============================================================================#

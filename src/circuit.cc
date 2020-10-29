@@ -4,10 +4,10 @@
 
 namespace ql {
 
-void print(const circuit& c) {
+void print(const circuit &c) {
     std::cout << "-------------------" << std::endl;
-    for (size_t i = 0; i < c.size(); i++) {
-        std::cout << "   " << c[i]->qasm() << std::endl;
+    for (auto gate : c) {
+        std::cout << "   " << gate->qasm() << std::endl;
     }
     std::cout << "\n-------------------" << std::endl;
 }
@@ -17,8 +17,8 @@ void print(const circuit& c) {
  */
 std::string qasm(const circuit& c) {
     std::stringstream ss;
-    for (size_t i = 0; i < c.size(); ++i) {
-        ss << c[i]->qasm() << "\n";
+    for (auto gate : c) {
+        ss << gate->qasm() << "\n";
     }
     return ss.str();
 }
@@ -27,14 +27,14 @@ std::vector<circuit*> split_circuit(circuit &x) {
     IOUT("circuit decomposition in basic blocks ... ");
     std::vector<circuit *> cs;
     cs.push_back(new circuit());
-    for (size_t i = 0; i < x.size(); i++) {
-        if ((x[i]->type() == __prepz_gate__) ||
-            (x[i]->type() == __measure_gate__)) {
+    for (auto gate : x) {
+        if ((gate->type() == __prepz_gate__) ||
+            (gate->type() == __measure_gate__)) {
             cs.push_back(new circuit());
-            cs.back()->push_back(x[i]);
+            cs.back()->push_back(gate);
             cs.push_back(new circuit());
         } else {
-            cs.back()->push_back(x[i]);
+            cs.back()->push_back(gate);
         }
     }
     IOUT("circuit decomposition done (" << cs.size() << ").");
@@ -52,11 +52,13 @@ std::vector<circuit*> split_circuit(circuit &x) {
  * detect measurements and qubit preparations
  */
 bool contains_measurements(const circuit &x) {
-    for (size_t i = 0; i < x.size(); i++) {
-        if (x[i]->type() == __measure_gate__)
+    for (auto gate : x) {
+        if (gate->type() == __measure_gate__) {
             return true;
-        if (x[i]->type() == __prepz_gate__)
+        }
+        if (gate->type() == __prepz_gate__) {
             return true;
+        }
     }
     return false;
 }

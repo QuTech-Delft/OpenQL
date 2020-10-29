@@ -132,7 +132,7 @@ void cqasm_reader::add_parameterized_dual_bit_kernel_operation(
     if (kernel_type == "crk") {
         //convert crk to cr
         double k = operation.getRotationAngle();
-        angle = M_PI/pow(2, k);
+        angle = 2 * M_PI/pow(2, k);
         kernel_type = "cr";
     } else {
         angle = operation.getRotationAngle();

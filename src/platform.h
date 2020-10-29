@@ -53,7 +53,7 @@ public:
     // find instruction type for custom gate
     std::string find_instruction_type(const std::string &iname) const;
 
-    size_t time_to_cycles(float time_ns) const;
+    size_t time_to_cycles(float time_ns) const;     // FIXME: prefer unsigned int, or double parameter
 };
 
 } // namespace ql

@@ -13,6 +13,7 @@
 
 #include <iostream>
 
+namespace ql {
 
 void Vcd::start()
 {
@@ -106,3 +107,5 @@ void Vcd::change(int var, int timestamp, int value)
 {
     // FIXME
 }
+
+} // namespace ql
