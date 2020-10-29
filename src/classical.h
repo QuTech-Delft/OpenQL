@@ -22,25 +22,32 @@ enum class operand_type_t {
     CREG, CVAL
 };
 
+class cval;
+class creg;
+
 class coperand {
 public:
-    size_t id;
-    int value;
     virtual ql::operand_type_t type() const = 0;
     virtual void print() const = 0;
     virtual ~coperand() = default;
+    cval &as_cval();
+    const cval &as_cval() const;
+    creg &as_creg();
+    const creg &as_creg() const;
 };
 
-class cval: public coperand {
+class cval : public coperand {
 public:
+    int value;
     cval(int val);
     cval(const cval &cv);
     ql::operand_type_t type() const override;
     void print() const override;
 };
 
-class creg: public coperand {
+class creg : public coperand {
 public:
+    size_t id;
     creg(size_t id);
     creg(const creg &c);
     ql::operand_type_t type() const override;

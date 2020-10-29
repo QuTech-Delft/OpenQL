@@ -5,12 +5,42 @@
 
 namespace ql {
 
-cval::cval(int val) {
-    value = val;
+cval &coperand::as_cval() {
+    try {
+        return dynamic_cast<cval &>(*this);
+    } catch (std::bad_cast &e) {
+        throw exception("coperand is not a cval");
+    }
 }
 
-cval::cval(const cval &cv) {
-    value = cv.value;
+const cval &coperand::as_cval() const {
+    try {
+        return dynamic_cast<const cval &>(*this);
+    } catch (std::bad_cast &e) {
+        throw exception("coperand is not a cval");
+    }
+}
+
+creg &coperand::as_creg() {
+    try {
+        return dynamic_cast<creg &>(*this);
+    } catch (std::bad_cast &e) {
+        throw exception("coperand is not a creg");
+    }
+}
+
+const creg &coperand::as_creg() const {
+    try {
+        return dynamic_cast<const creg &>(*this);
+    } catch (std::bad_cast &e) {
+        throw exception("coperand is not a creg");
+    }
+}
+
+cval::cval(int val) : value(val) {
+}
+
+cval::cval(const cval &cv) : value(cv.value) {
 }
 
 ql::operand_type_t cval::type() const {
@@ -21,13 +51,11 @@ void cval::print() const {
     COUT("cval with value: " << value);
 }
 
-creg::creg(size_t id) {
-    this->id = id;
+creg::creg(size_t id) : id(id) {
     DOUT("creg constructor, used id: " << id);
 }
 
-creg::creg(const creg &c) {
-    id = c.id;
+creg::creg(const creg &c) : id(c.id) {
     DOUT("creg copy constructor, used id: " << id);
 }
 
@@ -126,12 +154,12 @@ classical::classical(const creg &dest, const operation &oper) {
     duration = 20;
     creg_operands.push_back(dest.id);
     if (name == "ldi") {
-        int_operand = (oper.operands[0])->value;
+        int_operand = oper.operands[0]->as_cval().value;
         DOUT("... setting int_operand of " << oper.operation_name << " to "
                                            << int_operand);
     } else {
         for (auto &op : oper.operands) {
-            creg_operands.push_back(op->id);
+            creg_operands.push_back(op->as_creg().id);
         }
     }
 }

@@ -520,8 +520,8 @@ std::string cc_light_eqasm_compiler::get_qisa_prologue(const quantum_kernel &k) 
                <<" r" << (k.br_condition->operands[0])->id <<", r" << (k.br_condition->operands[1])->id
                << ", " << k.name << "_end" << std::endl;
 #else
-        ss  <<"    cmp r" << (k.br_condition->operands[0])->id
-            <<", r" << (k.br_condition->operands[1])->id << std::endl;
+        ss  <<"    cmp r" << (k.br_condition->operands[0])->as_creg().id
+            <<", r" << (k.br_condition->operands[1])->as_creg().id << std::endl;
         ss  <<"    nop" << std::endl;
         ss  <<"    br " << k.br_condition->inv_operation_name << ", "
             << k.name << "_end" << std::endl;
@@ -536,8 +536,8 @@ std::string cc_light_eqasm_compiler::get_qisa_prologue(const quantum_kernel &k) 
             ss << "    b" << k.br_condition->operation_name <<" r" << (k.br_condition->operands[0])->id
                <<", r" << (k.br_condition->operands[1])->id << ", " << k.name << "_end" << std::endl;
 #else
-        ss  <<"    cmp r" << (k.br_condition->operands[0])->id
-            <<", r" << (k.br_condition->operands[1])->id << std::endl;
+        ss  <<"    cmp r" << (k.br_condition->operands[0])->as_creg().id
+            <<", r" << (k.br_condition->operands[1])->as_creg().id << std::endl;
         ss  <<"    nop" << std::endl;
         ss  <<"    br " << k.br_condition->operation_name << ", "
             << k.name << "_end" << std::endl;
@@ -564,8 +564,8 @@ std::string cc_light_eqasm_compiler::get_qisa_epilogue(const quantum_kernel &k) 
             ss << "    b" << k.br_condition->operation_name <<" r" << (k.br_condition->operands[0])->id
                <<", r" << (k.br_condition->operands[1])->id << ", " << k.name << "_start" << std::endl;
 #else
-        ss  <<"    cmp r" << (k.br_condition->operands[0])->id
-            <<", r" << (k.br_condition->operands[1])->id << std::endl;
+        ss  <<"    cmp r" << (k.br_condition->operands[0])->as_creg().id
+            <<", r" << (k.br_condition->operands[1])->as_creg().id << std::endl;
         ss  <<"    nop" << std::endl;
         ss  <<"    br " << k.br_condition->operation_name << ", "
             << k.name << "_start" << std::endl;

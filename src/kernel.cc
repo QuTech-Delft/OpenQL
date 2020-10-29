@@ -50,7 +50,7 @@ quantum_kernel::quantum_kernel(
 }
 
 void quantum_kernel::set_condition(const operation &oper) {
-    if ((oper.operands[0])->id >= creg_count || (oper.operands[1]->id >= creg_count)) {
+    if ((oper.operands[0])->as_creg().id >= creg_count || (oper.operands[1]->as_creg().id >= creg_count)) {
         EOUT("Out of range operand(s) for '" << oper.operation_name);
         throw ql::exception("Out of range operand(s) for '"+oper.operation_name+"' !",false);
     }
@@ -995,13 +995,13 @@ std::string quantum_kernel::get_prologue() const  {
     // ss << name << ":\n";
 
     if (type == kernel_type_t::IF_START) {
-        ss << "    b" << br_condition->inv_operation_name <<" r" << (br_condition->operands[0])->id
-           <<", r" << (br_condition->operands[1])->id << ", " << name << "_end\n";
+        ss << "    b" << br_condition->inv_operation_name <<" r" << (br_condition->operands[0])->as_creg().id
+           <<", r" << (br_condition->operands[1])->as_creg().id << ", " << name << "_end\n";
     }
 
     if (type == kernel_type_t::ELSE_START) {
-        ss << "    b" << br_condition->operation_name <<" r" << (br_condition->operands[0])->id
-           <<", r" << (br_condition->operands[1])->id << ", " << name << "_end\n";
+        ss << "    b" << br_condition->operation_name <<" r" << (br_condition->operands[0])->as_creg().id
+           <<", r" << (br_condition->operands[1])->as_creg().id << ", " << name << "_end\n";
     }
 
     if (type == kernel_type_t::FOR_START) {
@@ -1018,8 +1018,8 @@ std::string quantum_kernel::get_epilogue() const {
     std::stringstream ss;
 
     if (type == kernel_type_t::DO_WHILE_END) {
-        ss << "    b" << br_condition->operation_name <<" r" << (br_condition->operands[0])->id
-           <<", r" << (br_condition->operands[1])->id << ", " << name << "_start\n";
+        ss << "    b" << br_condition->operation_name <<" r" << (br_condition->operands[0])->as_creg().id
+           <<", r" << (br_condition->operands[1])->as_creg().id << ", " << name << "_start\n";
     }
 
     if (type == kernel_type_t::FOR_END) {
@@ -1064,7 +1064,7 @@ void quantum_kernel::classical(const creg &destination, const operation &oper) {
     // check sanity of other operands
     for (auto &op : oper.operands) {
         if (op->type() == operand_type_t::CREG) {
-            if (op->id >= creg_count) {
+            if (op->as_creg().id >= creg_count) {
                 EOUT("Out of range operand(s) for '" << oper.operation_name);
                 throw ql::exception("Out of range operand(s) for '"+oper.operation_name+"' !",false);
             }

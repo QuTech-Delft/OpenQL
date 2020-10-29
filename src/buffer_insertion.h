@@ -14,8 +14,8 @@ namespace ql {
 
 // buffer_delay_insertion pass
 void insert_buffer_delays(
-    ql::quantum_program* programp,
-    const ql::quantum_platform& platform,
+    ql::quantum_program *programp,
+    const ql::quantum_platform &platform,
     const std::string &passname
 );
 
