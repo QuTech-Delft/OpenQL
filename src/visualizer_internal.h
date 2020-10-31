@@ -254,7 +254,6 @@ void drawControlNode(cimg_library::CImg<unsigned char>& image, const Layout layo
 void drawNotNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell);
 void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell);
 
-size_t safe_size_t_cast(const int argument);
 int safe_int_cast(const size_t argument);
 
 } // ql

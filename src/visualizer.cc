@@ -37,22 +37,19 @@ namespace ql
 // allow for floats in the waveform sample vector
 
 // -- IN PROGRESS ---
-// check for missing codewords and qubits during waveform parsing instead of while trying to retrieve a mapping from PulseVisualization.mapping
-// allow collapsing the three qubit lines into one with an option
-// change int cycle to Cycle cycle in GateProperties (maybe)
-// remove drawBitLine and replace it with drawCycle drawing the lines in the cycle itself (maybe)
 // re-organize the attributes in the config file
 // update documentation
+// check for negative values during layout validation
+// allow collapsing the three qubit lines into one with an option
 // implement cycle cutting for pulse visualization
-// what happens when a cycle range is cut, but one or more gates still running within that range finish earlier than the longest running gate 
-// 		comprising the entire range?
 
 // --- FUTURE WORK ---
-// TODO: check for negative values during layout validation
+// TODO: what happens when a cycle range is cut, but one or more gates still running within that range finish earlier than the longest running gate 
+// 		comprising the entire range?
 // TODO: add generating random circuits for visualization testing
 // TODO: GateProperties validation on construction (test with visualizer pass called at different points during compilation)
 // TODO: when measurement connections are not shown, allow overlap of measurement gates
-// TODO: the visualizer should probably be a class
+// TODO: split visualizer.cc into multiple files, one for Structure, one for CircuitData and one for free code and new Visualizer class
 // TODO: when gate is skipped due to whatever reason, maybe show a dummy gate outline indicating where the gate is?
 // TODO: display wait/barrier gate (need wait gate fix first)
 // TODO: add classical bit number to measurement connection when classical lines are grouped
@@ -705,14 +702,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	// Initialize image.
     DOUT("Initializing image...");
 	const int numberOfChannels = 3;
-    const int imageWidth = structure.getImageWidth();
-    const int imageHeight = structure.getImageHeight();
-    const int intMax = std::numeric_limits<unsigned int>::max();
-    if (imageWidth > intMax || imageHeight > intMax)
-    {
-        FATAL("Image too large to be displayed!");
-    }
-	cimg_library::CImg<unsigned char> image((unsigned int) imageWidth, (unsigned int) imageHeight, 1, numberOfChannels);
+	cimg_library::CImg<unsigned char> image(structure.getImageWidth(), structure.getImageHeight(), 1, numberOfChannels);
 	image.fill(255);
 
 	// Draw the cycle labels if the option has been set.
@@ -810,89 +800,6 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 				
 		// 		return;
 		// 	}
-
-		// 	// These vectors will be used to draw flat lines on microwave, flux or readout lines where no pulse was specified.
-		// 	std::vector<bool> flatMicrowaveLines(circuitData.amountOfQubits, true);
-		// 	std::vector<bool> flatFluxLines(circuitData.amountOfQubits, true);
-		// 	std::vector<bool> flatReadoutLines(circuitData.amountOfQubits, true);
-
-		// 	// Draw a pulse for each of the gates.
-		// 	for (const GateProperties& gate : cycle.gates[chunkIndex])
-		// 	{
-		// 		const std::vector<GateOperand> operands = getGateOperands(gate);
-
-		// 		if (isMeasurement(gate))
-		// 		{
-		// 			flatReadoutLines[operands[0].index] = false;
-
-		// 			// TODO: draw readout pulse
-
-		// 			continue;
-		// 		}
-		// 		if (operands.size() == 1)
-		// 		{
-		// 			flatMicrowaveLines[operands[0].index] = false;
-
-		// 			// TODO: draw microwave pulse
-
-		// 			continue;
-		// 		}
-		// 		if (operands.size() > 1)
-		// 		{
-		// 			for (const GateOperand& operand : operands)
-		// 			{
-		// 				if (operand.bitType == QUANTUM)
-		// 				{
-		// 					flatFluxLines[operand.index] = false;
-		// 				}
-		// 			}
-
-		// 			// TODO: draw flux pulse
-
-		// 			continue;
-		// 		}
-		// 	}
-
-		// 	// Draw each line segment that did not have a pulse.
-		// 	for (int qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++)
-		// 	{
-		// 		const Position4 cellPosition = structure.getCellPosition(cycle.index, qubitIndex, QUANTUM);
-		// 		const int cellWidth = circuitData.isCycleCut(cycle.index) ? layout.cycles.cutCycleWidth : structure.getCellDimensions().width;
-
-		// 		// Draw flat microwave line.
-		// 		if (flatMicrowaveLines[qubitIndex] == true)
-		// 		{
-		// 			const int y = cellPosition.y0 + layout.pulses.pulseRowHeightMicrowave / 2;
-		// 			image.draw_line(cellPosition.x0 + chunkOffset,
-		// 							y,
-		// 							cellPosition.x0 + chunkOffset + cellWidth,
-		// 							y,
-		// 							layout.pulses.pulseColorMicrowave.data());
-		// 		}
-
-		// 		// Draw flat flux line.
-		// 		if (flatFluxLines[qubitIndex] == true)
-		// 		{
-		// 			const int y = cellPosition.y0 + layout.pulses.pulseRowHeightMicrowave + layout.pulses.pulseRowHeightFlux / 2;
-		// 			image.draw_line(cellPosition.x0 + chunkOffset,
-		// 							y,
-		// 							cellPosition.x0 + chunkOffset + cellWidth,
-		// 							y,
-		// 							layout.pulses.pulseColorFlux.data());
-		// 		}
-
-		// 		// Draw flat readout line.
-		// 		if (flatReadoutLines[qubitIndex] == true)
-		// 		{
-		// 			const int y = cellPosition.y0 + layout.pulses.pulseRowHeightMicrowave + layout.pulses.pulseRowHeightFlux + layout.pulses.pulseRowHeightReadout / 2;
-		// 			image.draw_line(cellPosition.x0 + chunkOffset,
-		// 							y,
-		// 							cellPosition.x0 + chunkOffset + cellWidth,
-		// 							y,
-		// 							layout.pulses.pulseColorReadout.data());
-		// 		}
-		// 	}
-		// }
 	}
 	else
 	{
@@ -1321,9 +1228,7 @@ std::vector<GateProperties> parseGates(const ql::quantum_program* program)
                 {
                     codewords.push_back(safe_int_cast(codeword));
                 }
-				// codewords = dynamic_cast<ql::custom_gate*>(gate)->codewords;
 			}
-			// std::vector<int> codewords = gate->type() == __custom_gate__ ? dynamic_cast<ql::custom_gate*>(gate)->codewords : {0};
 
             std::vector<int> operands;
             std::vector<int> creg_operands;
@@ -1340,17 +1245,6 @@ std::vector<GateProperties> parseGates(const ql::quantum_program* program)
 				codewords,
 				gate->visual_type
 			};
-			// GateProperties gateProperties
-			// {
-			// 	gate->name,
-			// 	gate->operands,
-			// 	gate->creg_operands,
-			// 	gate->duration,
-			// 	gate->cycle,
-			// 	gate->type(),
-			// 	codewords,
-			// 	gate->visual_type
-			// };
 			gates.push_back(gateProperties);
 		}
     }
@@ -1770,11 +1664,9 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 		{
 			const int height = structure.getCellDimensions().height / 8;
 			const int width = segment.first.end - segment.first.start;
-			
-			image.draw_line(segment.first.start,					y,			segment.first.start + width / 3,		y - height,	bitLineColor.data());
-			image.draw_line(segment.first.start + width / 3,		y - height,	segment.first.start + width / 3 * 2,	y + height,	bitLineColor.data());
-			image.draw_line(segment.first.start + width / 3 * 2,	y + height,	segment.first.end,						y,			bitLineColor.data());
-		}
+
+            drawWiggle(image, segment.first.start, segment.first.end, y, width, height, bitLineColor);
+        }
 		else
 		{
 			image.draw_line(segment.first.start, y, segment.first.end, y, bitLineColor.data());
@@ -1794,26 +1686,9 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 		{
 			const int height = structure.getCellDimensions().height / 8;
 			const int width = segment.first.end - segment.first.start;
-			
-			image.draw_line(segment.first.start, y - layout.bitLines.groupedClassicalLineGap,
-							segment.first.start + width / 3, y - height - layout.bitLines.groupedClassicalLineGap,
-							layout.bitLines.cBitLineColor.data());
-			image.draw_line(segment.first.start + width / 3, y - height - layout.bitLines.groupedClassicalLineGap,
-							segment.first.start + width / 3 * 2, y + height - layout.bitLines.groupedClassicalLineGap,
-							layout.bitLines.cBitLineColor.data());
-			image.draw_line(segment.first.start + width / 3 * 2, y + height - layout.bitLines.groupedClassicalLineGap,
-							segment.first.end, y - layout.bitLines.groupedClassicalLineGap,
-							layout.bitLines.cBitLineColor.data());
-
-			image.draw_line(segment.first.start, y + layout.bitLines.groupedClassicalLineGap,
-							segment.first.start + width / 3, y - height + layout.bitLines.groupedClassicalLineGap,
-							layout.bitLines.cBitLineColor.data());
-			image.draw_line(segment.first.start + width / 3, y - height + layout.bitLines.groupedClassicalLineGap,
-							segment.first.start + width / 3 * 2, y + height + layout.bitLines.groupedClassicalLineGap,
-							layout.bitLines.cBitLineColor.data());
-			image.draw_line(segment.first.start + width / 3 * 2, y + height + layout.bitLines.groupedClassicalLineGap,
-							segment.first.end, y + layout.bitLines.groupedClassicalLineGap,
-							layout.bitLines.cBitLineColor.data());
+            
+            drawWiggle(image, segment.first.start, segment.first.end, y - layout.bitLines.groupedClassicalLineGap, width, height, layout.bitLines.cBitLineColor);           
+            drawWiggle(image, segment.first.start, segment.first.end, y + layout.bitLines.groupedClassicalLineGap, width, height, layout.bitLines.cBitLineColor);
 		}
 		else
 		{
@@ -1937,6 +1812,7 @@ void drawCycle(cimg_library::CImg<unsigned char>& image, const Layout layout, co
 	for (size_t chunkIndex = 0; chunkIndex < cycle.gates.size(); chunkIndex++)
 	{
 		const int chunkOffset = safe_int_cast(chunkIndex) * structure.getCellDimensions().width;
+
 		// Draw each of the gates in the current chunk.
 		for (const GateProperties& gate : cycle.gates[chunkIndex])
 		{
@@ -2195,15 +2071,9 @@ void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout
 	image.draw_line(x0, y1, x1, y0, node.backgroundColor.data());
 }
 
-size_t safe_size_t_cast(const int argument)
-{
-    if (argument < 0) FATAL("Failed cast to int: int argument is negative!");
-    return static_cast<size_t>(argument);
-}
-
 int safe_int_cast(const size_t argument)
 {
-    if (argument > std::numeric_limits<int>::max()) FATAL("Failed cast to int: int argument is too large!");
+    if (argument > std::numeric_limits<int>::max()) FATAL("Failed cast to int: size_t argument is too large!");
     return static_cast<int>(argument);
 }
 
