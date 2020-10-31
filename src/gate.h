@@ -1160,7 +1160,7 @@ class custom_gate : public gate
 public:
     cmat_t              m;                // matrix representation
     std::string         arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
-    std::vector<int>    codewords; // index 0 is right and index 1 is left, in case of multi-qubit gate
+    std::vector<size_t>    codewords; // index 0 is right and index 1 is left, in case of multi-qubit gate
 
 public:
 

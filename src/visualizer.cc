@@ -34,21 +34,24 @@ namespace ql
 // add option to display cycle edges
 // add option to draw horizontal lines between qubits
 // representing the gates as waveforms
+// allow for floats in the waveform sample vector
 
 // -- IN PROGRESS ---
-// allow for floats in the waveform sample vector
 // check for missing codewords and qubits during waveform parsing instead of while trying to retrieve a mapping from PulseVisualization.mapping
 // allow collapsing the three qubit lines into one with an option
-// implement cycle cutting for pulse visualization
-// change size_t cycle to Cycle cycle in GateProperties (maybe)
+// change int cycle to Cycle cycle in GateProperties (maybe)
+// remove drawBitLine and replace it with drawCycle drawing the lines in the cycle itself (maybe)
 // re-organize the attributes in the config file
+// update documentation
+// implement cycle cutting for pulse visualization
 // what happens when a cycle range is cut, but one or more gates still running within that range finish earlier than the longest running gate 
 // 		comprising the entire range?
 
 // --- FUTURE WORK ---
-// TODO: remove drawBitLine and replace it with drawCycle drawing the lines in the cycle itself (maybe)
+// TODO: check for negative values during layout validation
+// TODO: add generating random circuits for visualization testing
+// TODO: GateProperties validation on construction (test with visualizer pass called at different points during compilation)
 // TODO: when measurement connections are not shown, allow overlap of measurement gates
-// TODO: GateProperties validation on construction
 // TODO: the visualizer should probably be a class
 // TODO: when gate is skipped due to whatever reason, maybe show a dummy gate outline indicating where the gate is?
 // TODO: display wait/barrier gate (need wait gate fix first)
@@ -83,7 +86,7 @@ CircuitData::CircuitData(std::vector<GateProperties>& gates, const Layout layout
 	if (layout.cycles.cutEmptyCycles)				cutEmptyCycles(layout);
 }
 
-int CircuitData::calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<size_t> GateProperties::* operandType) const
+int CircuitData::calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<int> GateProperties::* operandType) const
 {
 	DOUT("Calculating amount of bits...");
 
@@ -94,16 +97,16 @@ int CircuitData::calculateAmountOfBits(const std::vector<GateProperties> gates, 
 	// Find the minimum and maximum index of the operands.
 	for (const GateProperties& gate : gates)
 	{
-		std::vector<size_t>::const_iterator begin = (gate.*operandType).begin();
-		const std::vector<size_t>::const_iterator end = (gate.*operandType).end();
+		std::vector<int>::const_iterator begin = (gate.*operandType).begin();
+		const std::vector<int>::const_iterator end = (gate.*operandType).end();
 		
 		for (; begin != end; ++begin)
 		{
-			const size_t number = *begin;
+			const int number = *begin;
 			if (number < minAmount)
-				minAmount = (int) number;
+				minAmount = number;
 			if (number > maxAmount)
-				maxAmount = (int) number;
+				maxAmount = number;
 		}
 	}
 
@@ -123,14 +126,14 @@ int CircuitData::calculateAmountOfCycles(const std::vector<GateProperties> gates
     int amountOfCycles = 0;
 	for (const GateProperties& gate : gates)
 	{
-		const int gateCycle = (int) gate.cycle;
+		const int gateCycle = gate.cycle;
 		if (gateCycle > amountOfCycles)
 			amountOfCycles = gateCycle;
 	}
 
 	// The last gate requires a different approach, because it might have a duration of multiple cycles.
 	// None of those cycles will show up as cycle index on any other gate, so we need to calculate them seperately.
-	const int lastGateDuration = (int) gates.at(gates.size() - 1).duration;
+	const int lastGateDuration = gates.at(gates.size() - 1).duration;
 	const int lastGateDurationInCycles = lastGateDuration / cycleDuration;
 	if (lastGateDurationInCycles > 1)
 	{
@@ -181,7 +184,7 @@ void CircuitData::compressCycles()
 		if (cycles[i].empty == false)
 		{
 			Cycle& cycle = cycles[i];
-			cycle.index = i - amountOfCompressions;
+			cycle.index = safe_int_cast(i) - amountOfCompressions;
 			// Update the gates in the cycle with the new cycle index.
 			for (size_t j = 0; j < cycle.gates.size(); j++)
 			{
@@ -310,26 +313,26 @@ std::vector<EndPoints> CircuitData::findCuttableEmptyRanges(const Layout layout)
 
 	// Calculate the empty cycle ranges.
 	std::vector<EndPoints> ranges;
-	for (int i = 0; i < cycles.size(); i++)
+	for (size_t i = 0; i < cycles.size(); i++)
 	{
 		// If an empty cycle has been found...
 		if (cycles[i].empty == true)
 		{
-			const int start = i;
-			int end = cycles.size() - 1;
+			const int start = safe_int_cast(i);
+			int end = safe_int_cast(cycles.size()) - 1;
 
-			int j = i;
+			size_t j = i;
 			// ... add cycles to the range until a non-empty cycle is found.
 			while (j < cycles.size())
 			{
 				if (cycles[j].empty == false)
 				{
-					end = j - 1;
+					end = safe_int_cast(j) - 1;
 					break;
 				}
 				j++;
 			}
-			ranges.push_back({start, end});
+			ranges.push_back( {start, end} );
 
 			// Skip over the found range.
 			i = j;
@@ -360,7 +363,7 @@ Cycle CircuitData::getCycle(const int index) const
 
 int CircuitData::getAmountOfCycles() const
 {
-	return cycles.size();
+	return safe_int_cast(cycles.size());
 }
 
 bool CircuitData::isCycleCut(const int cycleIndex) const
@@ -437,7 +440,7 @@ int Structure::calculateImageWidth(const CircuitData circuitData) const
 {
 	DOUT("Calculating image width...");
 
-	const int amountOfCells = qbitCellPositions.size();
+	const int amountOfCells = safe_int_cast(qbitCellPositions.size());
 	const int left = amountOfCells > 0 ? getCellPosition(0, 0, QUANTUM).x0 : 0;
 	const int right = amountOfCells > 0 ? getCellPosition(amountOfCells - 1, 0, QUANTUM).x1 : 0;
 	const int imageWidthFromCells = right - left;
@@ -467,7 +470,7 @@ void Structure::generateCellPositions(const CircuitData circuitData)
 	int widthFromCycles = 0;
 	for (int column = 0; column < circuitData.getAmountOfCycles(); column++)
 	{
-		const int amountOfChunks = circuitData.getCycle(column).gates.size();
+		const int amountOfChunks = safe_int_cast(circuitData.getCycle(column).gates.size());
 		const int cycleWidth = (circuitData.isCycleCut(column) ? layout.cycles.cutCycleWidth : (cellDimensions.width * amountOfChunks));
 
 		const int x0 = layout.grid.borderSize + layout.bitLines.labelColumnWidth + widthFromCycles;
@@ -503,7 +506,7 @@ void Structure::generateCellPositions(const CircuitData circuitData)
 				// if (column != 0 && !circuitData.isCycleCut(column - 1))
 				if (column != circuitData.getAmountOfCycles() - 1 && !circuitData.isCycleCut(column + 1))
 				{
-					widthFromCycles += cellDimensions.width * layout.cycles.cutCycleWidthModifier;
+					widthFromCycles += (int) (cellDimensions.width * layout.cycles.cutCycleWidthModifier);
 				}
 			}
 			else
@@ -680,27 +683,15 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
     // Get the gate list from the program.
     DOUT("Getting gate list...");
-    std::vector<GateProperties> gates;
-    std::vector<ql::quantum_kernel> kernels = program->kernels;
-    for (ql::quantum_kernel kernel : kernels)
+    std::vector<GateProperties> gates = parseGates(program);
+    if (gates.size() == 0)
     {
-        circuit c = kernel.get_circuit();
-		for (ql::gate* const gate : c)
-		{
-			std::vector<int> codewords {0};
-			if (gate->type() == __custom_gate__)
-			{
-				codewords = dynamic_cast<ql::custom_gate*>(gate)->codewords;
-			}
-			// std::vector<int> codewords = gate->type() == __custom_gate__ ? dynamic_cast<ql::custom_gate*>(gate)->codewords : {0};
-			GateProperties gateProperties {gate->name, gate->operands, gate->creg_operands, gate->duration, gate->cycle, gate->type(), codewords, gate->visual_type};
-			gates.push_back(gateProperties);
-		}
+        FATAL("Quantum program contains no gates!");
     }
 
 	// Calculate circuit properties.
     DOUT("Calculating circuit properties...");
-	const int cycleDuration = program->platform.cycle_time;
+	const int cycleDuration = safe_int_cast(program->platform.cycle_time);
 	DOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
 	fixMeasurementOperands(gates); // fixes measurement gates without classical operands
 	CircuitData circuitData(gates, layout, cycleDuration);
@@ -714,7 +705,14 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	// Initialize image.
     DOUT("Initializing image...");
 	const int numberOfChannels = 3;
-	cimg_library::CImg<unsigned char> image(structure.getImageWidth(), structure.getImageHeight(), 1, numberOfChannels);
+    const int imageWidth = structure.getImageWidth();
+    const int imageHeight = structure.getImageHeight();
+    const int intMax = std::numeric_limits<unsigned int>::max();
+    if (imageWidth > intMax || imageHeight > intMax)
+    {
+        FATAL("Image too large to be displayed!");
+    }
+	cimg_library::CImg<unsigned char> image((unsigned int) imageWidth, (unsigned int) imageHeight, 1, numberOfChannels);
 	image.fill(255);
 
 	// Draw the cycle labels if the option has been set.
@@ -778,7 +776,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		// 	// Only draw wiggles if the cycle is cut.
 		// 	if (circuitData.isCycleCut(cycle.index))
 		// 	{
-		// 		for (size_t qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++)
+		// 		for (int qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++)
 		// 		{
 		// 			const Position4 cellPosition = structure.getCellPosition(cycle.index, qubitIndex, QUANTUM);
 					
@@ -856,7 +854,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		// 	}
 
 		// 	// Draw each line segment that did not have a pulse.
-		// 	for (size_t qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++)
+		// 	for (int qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++)
 		// 	{
 		// 		const Position4 cellPosition = structure.getCellPosition(cycle.index, qubitIndex, QUANTUM);
 		// 		const int cellWidth = circuitData.isCycleCut(cycle.index) ? layout.cycles.cutCycleWidth : structure.getCellDimensions().width;
@@ -927,7 +925,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
 		// Draw the cycles.
 		DOUT("Drawing cycles...");
-		for (size_t i = 0; i < circuitData.getAmountOfCycles(); i++)
+		for (int i = 0; i < circuitData.getAmountOfCycles(); i++)
 		{
 			// Only draw a cut cycle if its the first in its cut range.
 			if (circuitData.isCycleCut(i))
@@ -1062,8 +1060,7 @@ Layout parseConfiguration(const std::string& configPath)
 
 				// Load the individual nodes.
 				json nodes = content["nodes"];
-				int amountOfNodes = nodes.size();
-				for (int i = 0; i < amountOfNodes; i++)
+				for (size_t i = 0; i < nodes.size(); i++)
 				{
 					json node = nodes[i];
 					
@@ -1309,20 +1306,72 @@ void validateLayout(Layout& layout)
 	if (!layout.cycles.showCycleLabels)	layout.cycles.cycleLabelsRowHeight = 0;
 }
 
+std::vector<GateProperties> parseGates(const ql::quantum_program* program)
+{
+	std::vector<GateProperties> gates;
+
+    for (ql::quantum_kernel kernel : program->kernels)
+    {
+		for (ql::gate* const gate : kernel.get_circuit())
+		{
+			std::vector<int> codewords;
+			if (gate->type() == __custom_gate__)
+			{
+                for (const size_t codeword : dynamic_cast<ql::custom_gate*>(gate)->codewords)
+                {
+                    codewords.push_back(safe_int_cast(codeword));
+                }
+				// codewords = dynamic_cast<ql::custom_gate*>(gate)->codewords;
+			}
+			// std::vector<int> codewords = gate->type() == __custom_gate__ ? dynamic_cast<ql::custom_gate*>(gate)->codewords : {0};
+
+            std::vector<int> operands;
+            std::vector<int> creg_operands;
+            for (const size_t operand : gate->operands) { operands.push_back(safe_int_cast(operand)); }
+            for (const size_t operand : gate->creg_operands) { creg_operands.push_back(safe_int_cast(operand)); }
+            GateProperties gateProperties
+			{
+				gate->name,
+				operands,
+				creg_operands,
+				safe_int_cast(gate->duration),
+				safe_int_cast(gate->cycle),
+				gate->type(),
+				codewords,
+				gate->visual_type
+			};
+			// GateProperties gateProperties
+			// {
+			// 	gate->name,
+			// 	gate->operands,
+			// 	gate->creg_operands,
+			// 	gate->duration,
+			// 	gate->cycle,
+			// 	gate->type(),
+			// 	codewords,
+			// 	gate->visual_type
+			// };
+			gates.push_back(gateProperties);
+		}
+    }
+
+	return gates;
+}
+
 int calculateAmountOfGateOperands(const GateProperties gate)
 {
-	return (int)gate.operands.size() + (int)gate.creg_operands.size();
+	return safe_int_cast(gate.operands.size() + gate.creg_operands.size());
 }
 
 std::vector<GateOperand> getGateOperands(const GateProperties gate)
 {
 	std::vector<GateOperand> operands;
 
-	for (const size_t operand : gate.operands)
+	for (const int operand : gate.operands)
 	{
 		operands.push_back({QUANTUM, operand});
 	}
-	for (const size_t operand : gate.creg_operands)
+	for (const int operand : gate.creg_operands)
 	{
 		operands.push_back({CLASSICAL, operand});
 	}
@@ -1394,7 +1443,7 @@ std::vector<QubitLines> generateQubitLines(const std::vector<GateProperties> gat
 
 	// Calculate the line segments for each qubit.
 	std::vector<QubitLines> linesPerQubit(circuitData.amountOfQubits);
-	for (size_t qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++)
+	for (int qubitIndex = 0; qubitIndex < circuitData.amountOfQubits; qubitIndex++)
 	{
 		// Find the cycles with pulses for each line.
 		Line microwaveLine;
@@ -1403,7 +1452,7 @@ std::vector<QubitLines> generateQubitLines(const std::vector<GateProperties> gat
 
 		for (const GateProperties& gate : gatesPerQubit[qubitIndex])
 		{
-			const EndPoints gateCycles {gate.cycle, (int) gate.cycle + (((int) gate.duration) / circuitData.cycleDuration) - 1};
+			const EndPoints gateCycles {gate.cycle, gate.cycle + (gate.duration / circuitData.cycleDuration) - 1};
 			const int codeword = gate.codewords[0];
 			try
 			{
@@ -1421,7 +1470,7 @@ std::vector<QubitLines> generateQubitLines(const std::vector<GateProperties> gat
 			catch (std::exception& e)
 			{
 				WOUT("Missing codeword and/or qubit in waveform mapping file for gate: " << gate.name << "! Replacing pulse with flat line...\n\t" <<
-					 "Indices are: codeword = " << codeword << " and qubit = " << qubitIndex);
+					 "Indices are: codeword = " << codeword << " and qubit = " << qubitIndex << "\n\texception: " << e.what());
 			}
 		}
 
@@ -1548,7 +1597,7 @@ Dimensions calculateTextDimensions(const std::string& text, const int fontHeight
 	const char color = 1;
 	imageTextDimensions.draw_text(0, 0, chars, &color, 0, 1, fontHeight);
 
-	return Dimensions { (int) imageTextDimensions.width(), (int) imageTextDimensions.height() };
+	return Dimensions { imageTextDimensions.width(), imageTextDimensions.height() };
 }
 
 void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
@@ -1594,7 +1643,7 @@ void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layo
 
 void drawCycleEdges(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
 {
-	for (size_t i = 0; i < circuitData.getAmountOfCycles(); i++)
+	for (int i = 0; i < circuitData.getAmountOfCycles(); i++)
 	{
 		if (i == 0) continue;
 		if (circuitData.isCycleCut(i) && circuitData.isCycleCut(i - 1)) continue;
@@ -1665,7 +1714,6 @@ void drawBitLineEdges(cimg_library::CImg<unsigned char>& image, const Layout lay
 		if (bitIndex == 0) continue;
 
 		const int y = structure.getCellPosition(0, bitIndex, QUANTUM).y0;
-		// const int yOffsetStart = -1 * (layout.bitLines.bitLineEdgeThickness / 2);
 		for (int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.bitLineEdgeThickness; yOffset++)
 		{
 			image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.bitLineEdgeColor.data(), layout.bitLines.bitLineEdgeAlpha);
@@ -1677,7 +1725,6 @@ void drawBitLineEdges(cimg_library::CImg<unsigned char>& image, const Layout lay
 		if (layout.bitLines.groupClassicalLines)
 		{
 			const int y = structure.getCellPosition(0, 0, CLASSICAL).y0;
-			// const int yOffsetStart = -1 * (layout.bitLines.bitLineEdgeThickness / 2);
 			for (int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.bitLineEdgeThickness; yOffset++)
 			{
 				image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.bitLineEdgeColor.data(), layout.bitLines.bitLineEdgeAlpha);
@@ -1690,7 +1737,6 @@ void drawBitLineEdges(cimg_library::CImg<unsigned char>& image, const Layout lay
 				if (bitIndex == 0) continue;
 
 				const int y = structure.getCellPosition(0, bitIndex, CLASSICAL).y0;
-				// const int yOffsetStart = -1 * (layout.bitLines.bitLineEdgeThickness / 2);
 				for (int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.bitLineEdgeThickness; yOffset++)
 				{
 					image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.bitLineEdgeColor.data(), layout.bitLines.bitLineEdgeAlpha);
@@ -1826,10 +1872,10 @@ void drawLine(cimg_library::CImg<unsigned char>& image, const Structure structur
 				DOUT("\tsegment length in cycles: " << segmentLengthInCycles);
 				DOUT("\tsegment length in nanoseconds: " << segmentLengthInNanoSeconds);
 
-				const int amountOfSamples = segment.pulse.waveform.size();
+				const int amountOfSamples = safe_int_cast(segment.pulse.waveform.size());
 				const int sampleRate = segment.pulse.sampleRate; // MHz
 				const double samplePeriod = 1000.0f * (1.0f / (double) sampleRate); // nanoseconds
-				const int samplePeriodWidth = std::floor(samplePeriod / (double) segmentLengthInNanoSeconds * (double) segmentWidth); // pixels
+				const int samplePeriodWidth = (int) std::floor(samplePeriod / (double) segmentLengthInNanoSeconds * (double) segmentWidth); // pixels
 				const int waveformWidthInPixels = samplePeriodWidth * amountOfSamples;
 				DOUT("\tamount of samples: " << amountOfSamples);
 				DOUT("\tsample period in nanoseconds: " << samplePeriod);
@@ -1845,9 +1891,9 @@ void drawLine(cimg_library::CImg<unsigned char>& image, const Structure structur
 				// Calculate sample positions.
 				const double amplitudeUnitHeight = (double) maxLineHeight / (maxAmplitude * 2.0f);
 				std::vector<Position2> samplePositions;
-				for (int i = 0; i < segment.pulse.waveform.size(); i++)
+				for (size_t i = 0; i < segment.pulse.waveform.size(); i++)
 				{
-					const int xSample = x0 + i * samplePeriodWidth;
+					const int xSample = x0 + safe_int_cast(i) * samplePeriodWidth;
 
 					const double amplitude = segment.pulse.waveform[i];
 					const double adjustedAmplitude = amplitude + maxAmplitude;
@@ -1857,7 +1903,7 @@ void drawLine(cimg_library::CImg<unsigned char>& image, const Structure structur
 				}
 
 				// Draw the lines connecting the samples.
-				for (int i = 0; i < samplePositions.size() - 1; i++)
+				for (size_t i = 0; i < samplePositions.size() - 1; i++)
 				{
 					const Position2 currentSample = samplePositions[i];
 					const Position2 nextSample = samplePositions[i + 1];
@@ -1890,7 +1936,7 @@ void drawCycle(cimg_library::CImg<unsigned char>& image, const Layout layout, co
 	// Draw each of the chunks in the cycle's gate partition.
 	for (size_t chunkIndex = 0; chunkIndex < cycle.gates.size(); chunkIndex++)
 	{
-		const int chunkOffset = chunkIndex * structure.getCellDimensions().width;
+		const int chunkOffset = safe_int_cast(chunkIndex) * structure.getCellDimensions().width;
 		// Draw each of the gates in the current chunk.
 		for (const GateProperties& gate : cycle.gates[chunkIndex])
 		{
@@ -1951,7 +1997,7 @@ void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, con
 		GateOperand minOperand = edgeOperands.first;
 		GateOperand maxOperand = edgeOperands.second;
 
-		const int column = (int)gate.cycle;
+		const int column = gate.cycle;
 		DOUT("minOperand.bitType: " << minOperand.bitType << " minOperand.operand " << minOperand.index);
 		DOUT("maxOperand.bitType: " << maxOperand.bitType << " maxOperand.operand " << maxOperand.index);
 		DOUT("cycle: " << column);
@@ -2001,13 +2047,13 @@ void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, con
 	if (!layout.cycles.compressCycles && layout.cycles.showGateDurationOutline)
 	{
 		DOUT("Drawing gate duration outline...");
-		const int gateDurationInCycles = ((int)gate.duration) / circuitData.cycleDuration;
+		const int gateDurationInCycles = gate.duration / circuitData.cycleDuration;
 		// Only draw the gate outline if the gate takes more than one cycle.
 		if (gateDurationInCycles > 1)
 		{
-			for (int i = 0; i < operands.size(); i++)
+			for (size_t i = 0; i < operands.size(); i++)
 			{
-				const int columnStart = (int)gate.cycle;
+				const int columnStart = gate.cycle;
 				const int columnEnd = columnStart + gateDurationInCycles - 1;
 				const int row = (i >= gate.operands.size()) ? gate.creg_operands[i - gate.operands.size()] : gate.operands[i];
 				DOUT("i: " << i << " size: " << gate.operands.size() << " value: " << gate.operands[i]);
@@ -2030,7 +2076,7 @@ void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, con
 
 	// Draw the nodes.
 	DOUT("Drawing gate nodes...");
-	for (int i = 0; i < operands.size(); i++)
+	for (size_t i = 0; i < operands.size(); i++)
 	{
 		DOUT("Drawing gate node with index: " << i << "...");
 		//TODO: change the try-catch later on! the gate config will be read from somewhere else than the default layout
@@ -2038,12 +2084,12 @@ void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, con
 		{
 			const Node node = gateVisual.nodes.at(i);
 			const BitType operandType = (i >= gate.operands.size()) ? CLASSICAL : QUANTUM;
-			const int index = (operandType == QUANTUM) ? i : (i - (int)gate.operands.size());
+			const int index = safe_int_cast((operandType == QUANTUM) ? i : (i - gate.operands.size()));
 
 			const Cell cell =
 			{
-				(int)gate.cycle,
-				operandType == CLASSICAL ? (int)gate.creg_operands.at(index) + circuitData.amountOfQubits : (int)gate.operands.at(index),
+				gate.cycle,
+				operandType == CLASSICAL ? gate.creg_operands.at(index) + circuitData.amountOfQubits : gate.operands.at(index),
 				chunkOffset,
 				operandType
 			};
@@ -2147,6 +2193,18 @@ void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout
 
 	image.draw_line(x0, y0, x1, y1, node.backgroundColor.data());
 	image.draw_line(x0, y1, x1, y0, node.backgroundColor.data());
+}
+
+size_t safe_size_t_cast(const int argument)
+{
+    if (argument < 0) FATAL("Failed cast to int: int argument is negative!");
+    return static_cast<size_t>(argument);
+}
+
+int safe_int_cast(const size_t argument)
+{
+    if (argument > std::numeric_limits<int>::max()) FATAL("Failed cast to int: int argument is too large!");
+    return static_cast<int>(argument);
 }
 
 #endif //WITH_VISUALIZER

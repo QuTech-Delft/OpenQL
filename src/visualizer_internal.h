@@ -62,7 +62,7 @@ struct Dimensions
 struct GateOperand
 {
 	BitType bitType = QUANTUM;
-	size_t index = 0;
+	int index = 0;
 
 	friend bool operator<(const GateOperand& lhs, const GateOperand& rhs)
 	{
@@ -79,10 +79,10 @@ struct GateOperand
 struct GateProperties
 {
 	std::string name;
-    std::vector<size_t> operands;
-    std::vector<size_t> creg_operands;
-    size_t duration = 0;
-    size_t cycle = 0;
+    std::vector<int> operands;
+    std::vector<int> creg_operands;
+    int duration = 0;
+    int cycle = 0;
     gate_type_t type = __custom_gate__;
 	std::vector<int> codewords;
     std::string visual_type;
@@ -149,7 +149,7 @@ class CircuitData
 		std::vector<Cycle> cycles;
 		std::vector<EndPoints> cutCycleRangeIndices;
 
-		int calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<size_t> GateProperties::* operandType) const;
+		int calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<int> GateProperties::* operandType) const;
 		int calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const;
 		std::vector<Cycle> generateCycles(std::vector<GateProperties>& gates, const int cycleDuration) const;
 		std::vector<EndPoints> findCuttableEmptyRanges(const Layout layout) const;
@@ -220,6 +220,8 @@ Layout parseConfiguration(const std::string& configPath);
 PulseVisualization parseWaveformMapping(const std::string& waveformMappingPath);
 void validateLayout(Layout& layout);
 
+std::vector<GateProperties> parseGates(const ql::quantum_program* program);
+
 int calculateAmountOfGateOperands(const GateProperties gate);
 std::vector<GateOperand> getGateOperands(const GateProperties gate);
 std::pair<GateOperand, GateOperand> calculateEdgeOperands(const std::vector<GateOperand> operands, const int amountOfQubits);
@@ -251,6 +253,9 @@ void drawGateNode(cimg_library::CImg<unsigned char>& image, const Layout layout,
 void drawControlNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell);
 void drawNotNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell);
 void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell);
+
+size_t safe_size_t_cast(const int argument);
+int safe_int_cast(const size_t argument);
 
 } // ql
 
