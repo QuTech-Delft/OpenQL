@@ -58,7 +58,7 @@
     },
     "pulses":
     {
-        "displayGatesAsPulses": false,
+        "displayGatesAsPulses": true,
         "pulseRowHeightMicrowave": 32,
         "pulseRowHeightFlux": 32,
         "pulseRowHeightReadout": 32,
