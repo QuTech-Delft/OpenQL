@@ -2,11 +2,10 @@ import numpy as np
 import os
 import unittest
 from openql import openql as ql
-from test_QISA_assembler_present import assemble
+from utils import file_compare
 
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
-ql.set_option('output_dir', output_dir)
 
 class Test_CCL_long_duration(unittest.TestCase):
     def test_AllXY(self):
@@ -24,6 +23,7 @@ class Test_CCL_long_duration(unittest.TestCase):
 
 
         """
+        ql.set_option('output_dir', output_dir)
         config_fn = os.path.join(curdir, 'test_cfg_CCL_long_duration.json')
         platf  = ql.Platform('seven_qubits_chip', config_fn)
         p = ql.Program("AllXYLongDuration", platf, platf.get_qubit_number())
@@ -51,8 +51,10 @@ class Test_CCL_long_duration(unittest.TestCase):
 
         p.compile()
 
+        GOLD_fn = os.path.join(curdir, 'golden', p.name + '.qisa')
         QISA_fn = os.path.join(output_dir, p.name+'.qisa')
-        assemble(QISA_fn)
+
+        self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
 if __name__ == '__main__':

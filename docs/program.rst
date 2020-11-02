@@ -15,7 +15,7 @@ Here it is again but then with everything glued together:
 
     from openql import openql as ql
 
-    platform = ql.Platform("myPlatform", "hardware_configuration_cc_light.json")
+    platform = ql.Platform("myPlatform", "hardware_config_cc_light.json")
 
     nqubits = 3
 

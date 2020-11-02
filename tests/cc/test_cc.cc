@@ -112,9 +112,9 @@ $2 = 0
 
 
     // create classical registers
-    ql::creg rd;    // destination register
-    ql::creg rs1;
-    ql::creg rs2;
+    ql::creg rd(1);    // destination register
+    ql::creg rs1(2);
+    ql::creg rs2(3);
 
 #if 0   // FIXME: not implemented in CC backend
     // add/sub/and/or/xor//    k.classical(rd, ql::operation(rs1, std::string("+"), rs2));
@@ -257,9 +257,9 @@ void test_do_while_nested_for(std::string scheduler, std::string scheduler_unifo
     ql::quantum_kernel k2("aKernel2", s17, num_qubits, num_cregs);
 
     // create classical registers
-    ql::creg rd;    // destination register
-    ql::creg rs1;
-    ql::creg rs2;
+    ql::creg rd(1);    // destination register
+    ql::creg rs1(2);
+    ql::creg rs2(3);
 
     // quantum operations
     k1.gate("x", 6);
@@ -295,8 +295,8 @@ void test_rabi( std::string scheduler, std::string scheduler_uniform)
     ql::quantum_program sp1(("sp1"), s17, num_qubits, num_cregs);
     ql::quantum_kernel k1("aKernel1", s17, num_qubits, num_cregs);
 
-    ql::creg rs1;
-    ql::creg rs2;
+    ql::creg rs1(1);
+    ql::creg rs2(2);
     size_t qubit = 10;     // connects to uhfqa-0 and awg8-mw-0
 
     k1.gate("x", qubit);
@@ -379,7 +379,9 @@ int main(int argc, char ** argv)
     test_wait("ALAP", "no");
 #endif
 
+#if 1
     test_qi_example("ALAP", "no");
+#endif
 
     return 0;
 }

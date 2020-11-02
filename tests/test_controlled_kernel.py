@@ -3,9 +3,7 @@ import unittest
 from openql import openql as ql
 import numpy as np
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
-
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 ql.set_option('output_dir', output_dir)

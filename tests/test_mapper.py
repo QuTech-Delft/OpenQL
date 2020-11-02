@@ -12,13 +12,11 @@
 
 from openql import openql as ql
 import os
-from test_QISA_assembler_present import assemble
 import unittest
 from utils import file_compare
 
 
-rootDir = os.path.dirname(os.path.realpath(__file__))
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 output_dir = os.path.join(curdir, 'test_output')
 
 class Test_mapper(unittest.TestCase):
@@ -62,7 +60,7 @@ class Test_mapper(unittest.TestCase):
     def test_mapper_maxcut(self):
         # rigetti test copied from Venturelli's paper
         v = 'maxcut'
-        config = os.path.join(rootDir, "test_mapper_rig.json")
+        config = os.path.join(curdir, "test_mapper_rig.json")
         num_qubits = 8
 
         # create and set platform
@@ -91,10 +89,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
@@ -102,7 +99,7 @@ class Test_mapper(unittest.TestCase):
         # just check whether mapper works for trivial case
         # parameters
         v = 'oneNN'
-        config = os.path.join(rootDir, "test_mapper_s7.json")
+        config = os.path.join(curdir, "test_mapper_s7.json")
         num_qubits = 7
 
         # create and set platform
@@ -119,10 +116,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
@@ -133,7 +129,7 @@ class Test_mapper(unittest.TestCase):
         # also tests commutation of cnots in mapper and postscheduler
         # parameters
         v = 'allNN'
-        config = os.path.join(rootDir, "test_mapper_s7.json")
+        config = os.path.join(curdir, "test_mapper_s7.json")
         num_qubits = 7
 
         # create and set platform
@@ -167,10 +163,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
@@ -183,7 +178,7 @@ class Test_mapper(unittest.TestCase):
         # this introduces 1 swap/move and so uses an ancilla
         # parameters
         v = 'oneD2'
-        config = os.path.join(rootDir, "test_mapper_s7.json")
+        config = os.path.join(curdir, "test_mapper_s7.json")
         num_qubits = 7
 
         # create and set platform
@@ -202,10 +197,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
@@ -218,7 +212,7 @@ class Test_mapper(unittest.TestCase):
         # this introduces 3 swaps/moves
         # parameters
         v = 'oneD4'
-        config = os.path.join(rootDir, "test_mapper_s7.json")
+        config = os.path.join(curdir, "test_mapper_s7.json")
         num_qubits = 7
 
         # create and set platform
@@ -237,10 +231,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
@@ -250,7 +243,7 @@ class Test_mapper(unittest.TestCase):
         # so the heuristics must act and insert swaps/moves
         # parameters
         v = 'allD'
-        config = os.path.join(rootDir, "test_mapper_s7.json")
+        config = os.path.join(curdir, "test_mapper_s7.json")
         num_qubits = 7
 
         # create and set platform
@@ -274,10 +267,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
@@ -291,7 +283,7 @@ class Test_mapper(unittest.TestCase):
         # so the heuristics must act and insert swaps/moves
         # parameters
         v = 'allDopt'
-        config = os.path.join(rootDir, "test_mapper_s7.json")
+        config = os.path.join(curdir, "test_mapper_s7.json")
         num_qubits = 7
 
         # create and set platform
@@ -351,10 +343,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
@@ -367,7 +358,7 @@ class Test_mapper(unittest.TestCase):
         # the heuristics must act and insert swaps/moves
         # parameters
         v = 'allIP'
-        config = os.path.join(rootDir, "test_mapper_s7.json")
+        config = os.path.join(curdir, "test_mapper_s7.json")
         num_qubits = 7
 
         # create and set platform
@@ -391,10 +382,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
@@ -403,7 +393,7 @@ class Test_mapper(unittest.TestCase):
         # parameters
         # 'realistic' circuit
         v = 'lingling5'
-        config = os.path.join(rootDir, "test_mapper_s17.json")
+        config = os.path.join(curdir, "test_mapper_s17.json")
         num_qubits = 7
 
         # create and set platform
@@ -545,10 +535,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 
@@ -556,7 +545,7 @@ class Test_mapper(unittest.TestCase):
     def test_mapper_lingling7(self):
         # parameters
         v = 'lingling7'
-        config = os.path.join(rootDir, "test_mapper_s17.json")
+        config = os.path.join(curdir, "test_mapper_s17.json")
         num_qubits = 9
 
         # create and set platform
@@ -684,10 +673,9 @@ class Test_mapper(unittest.TestCase):
         prog.add_kernel(k)
         prog.compile()
 
-        GOLD_fn = os.path.join(rootDir, 'golden', prog.name + '.qisa')
+        GOLD_fn = os.path.join(curdir, 'golden', prog.name + '.qisa')
         QISA_fn = os.path.join(output_dir, prog.name+'.qisa')
 
-        assemble(QISA_fn)
         self.assertTrue(file_compare(QISA_fn, GOLD_fn))
 
 

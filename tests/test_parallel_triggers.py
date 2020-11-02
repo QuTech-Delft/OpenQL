@@ -3,8 +3,8 @@ import os
 import unittest
 
 
-_curdir_ = os.path.dirname(__file__)
-output_dir = os.path.join(_curdir_, 'test_output')
+curdir = os.path.dirname(os.path.realpath(__file__))
+output_dir = os.path.join(curdir, 'test_output')
 
 class Test_parallel_trigger(unittest.TestCase):
 
@@ -19,7 +19,7 @@ class Test_parallel_trigger(unittest.TestCase):
     def parallel_trigger(self):
 
         # You can specify a config location, here we use a default config
-        config_fn = os.path.join(_curdir_, 'spin_demo_2811.json')
+        config_fn = os.path.join(curdir, 'spin_demo_2811.json')
         platform = ql.Platform("spin_qubit_demo", config_fn)
         sweep_points = [1, 2]
         num_qubits = 2

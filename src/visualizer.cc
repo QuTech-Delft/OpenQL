@@ -8,7 +8,7 @@
 #include "visualizer.h"
 #include "visualizer_internal.h"
 #include "json.h"
-#include "instruction_map.h"
+//#include "instruction_map.h"
 
 #include <iostream>
 #include <limits>

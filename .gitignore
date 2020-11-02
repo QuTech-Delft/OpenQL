@@ -31,3 +31,7 @@ tests/visualizer/visualizer_example_output/
 docs/_build
 docs/_static
 docs/_templates
+docs/_templates
+
+/.idea
+/cmake-build-*
