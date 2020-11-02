@@ -13,9 +13,7 @@
 #include <version.h>
 #include <options.h>
 
-// constants:
-#define CC_BACKEND_VERSION_STRING       "0.2.6"
-
+// constants
 #define UNUSED_COP  -1  // unused classic operand
 
 
@@ -32,7 +30,7 @@ typedef enum {
     // 1 operand:
     cond, cond_not,
     // 2 operands
-    cond_and, cond_nand, cond_or, cond_nor, cond_xor, cond_xnor;
+    cond_and, cond_nand, cond_or, cond_nor, cond_xor, cond_xnor
 };
 
 typedef std::vector<int> tBitVars;
@@ -58,6 +56,18 @@ void codegen_cc::init(const quantum_platform &platform)
         codewordTable = map["codeword_table"];      // FIXME: use json_get
         mapPreloaded = true;
     }
+
+
+#if 1   // FIXME: WIP on feedback: allocate SM bits
+    // iterate over instruments
+    for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
+        const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
+        if(JSON_EXISTS(ic.controlMode, "result_bits")) {  // this instrument mode produces results (i.e. it is a measurement device)
+            // maintain mapping instrument -> SM
+        }
+    }
+
+#endif
 }
 
 std::string codegen_cc::getProgram()
