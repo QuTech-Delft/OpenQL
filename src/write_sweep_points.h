@@ -3,15 +3,18 @@
  * @date   11/2016
  * @author Nader Khammassi
  */
-#ifndef WRITE_SWEEP_POINTS_H
-#define WRITE_SWEEP_POINTS_H
+
+#pragma once
 
 #include "program.h"
 #include "platform.h"
 
-namespace ql
-{
-    void write_sweep_points(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname);
-}
+namespace ql {
 
-#endif // WRITE_SWEEP_POINTS_H
+void write_sweep_points(
+    ql::quantum_program *programp,
+    const ql::quantum_platform &platform,
+    const std::string &passname
+);
+
+} // namespace ql

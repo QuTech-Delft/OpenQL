@@ -2,7 +2,7 @@ import os
 import unittest
 from openql import openql as ql
 
-curdir = os.path.dirname(__file__)
+curdir = os.path.dirname(os.path.realpath(__file__))
 config_fn = os.path.join(curdir, 'test_config_default.json')
 platf = ql.Platform("starmon", config_fn)
 
@@ -81,7 +81,7 @@ class Test_program(unittest.TestCase):
         with self.assertRaises(Exception) as cm:
             p.compile()
 
-        self.assertEqual(str(cm.exception), 'Error : compiling a program with no kernels !')
+        self.assertEqual(str(cm.exception).split('\n', maxsplit=1)[0], 'Error : compiling a program with no kernels !')
 
 
     def test_simple_program(self):

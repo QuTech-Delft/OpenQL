@@ -5,16 +5,18 @@
  * @brief  optimizer interface and its implementation
  * @todo   implementations should be in separate files for better readability
  */
-#ifndef OPTIMIZER_H
-#define OPTIMIZER_H
+
+#pragma once
 
 #include "program.h"
 #include "platform.h"
 
-namespace ql
-{
-    // rotation_optimize pass
-    void rotation_optimize(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname);
-}
+namespace ql {
 
-#endif // OPTIMIZER_H
+void rotation_optimize(
+    ql::quantum_program *programp,
+    const ql::quantum_platform &platform,
+    const std::string &passname
+);
+
+} // namespace ql

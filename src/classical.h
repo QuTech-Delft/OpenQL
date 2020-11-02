@@ -5,325 +5,80 @@
  * @brief  classical operation implementation
  */
 
-#ifndef _CLASSICAL_H
-#define _CLASSICAL_H
-
-#include <fstream>
-#include <iomanip>
-#include <complex>
+#pragma once
 
 #include <string>
-#include <sstream>
-#include <map>
-#include <stack>
+#include <vector>
 
-#include <compile_options.h>
-#include <utils.h>
-#include <str.h>
-#include <gate.h>
-#include <exception.h>
+#include "gate.h"
 
+namespace ql {
 
-namespace ql
-{
-
-enum class operation_type_t
-{
+enum class operation_type_t {
     ARITHMATIC, RELATIONAL, BITWISE
 };
-enum class operand_type_t
-{
+
+enum class operand_type_t {
     CREG, CVAL
 };
 
-
-class ids   // IDs for classical registers
-{
-public:
-    int max_id;
-    std::stack<int> available_ids;
-    ids(int max = 28)   // FIXME: random constant, should be based on platform
-    {
-        max_id = max;
-        for(int i=max_id-1; i>=0; i--)
-            available_ids.push(i);
-    }
-
-    int get()
-    {
-        if(available_ids.empty())
-        {
-            FATAL("No classical register available, built-in max is " << max_id);
-        }
-        int id = available_ids.top();
-        available_ids.pop();
-        return id;
-    }
-    void free(int id)
-    {
-        available_ids.push(id);
-    }
-};
-
-static ids creg_ids;
-
-class coperand
-{
+class coperand {
 public:
     size_t id;
     int value;
-    virtual ql::operand_type_t type() = 0;
-    virtual void print() = 0;
-    virtual ~coperand(){}
+    virtual ql::operand_type_t type() const = 0;
+    virtual void print() const = 0;
+    virtual ~coperand() = default;
 };
 
-
-class cval: public coperand
-{
+class cval: public coperand {
 public:
-    cval(int val)
-    {
-        value=val;
-    }
-    cval(const cval &cv)
-    {
-        value = cv.value;
-    }
-    ql::operand_type_t type() { return operand_type_t::CVAL;}
-    void print()
-    {
-        COUT("cval with value: " << value);
-    }
-    ~cval() {}
+    cval(int val);
+    cval(const cval &cv);
+    ql::operand_type_t type() const override;
+    void print() const override;
 };
 
-class creg: public coperand
-{
+class creg: public coperand {
 public:
-    creg()
-    {
-        id = creg_ids.get();
-        DOUT("creg default constructor, created id: " << id);
-    }
-
-    creg(const creg &c)
-    {
-        id = c.id;
-        DOUT("creg copy constructor, used id: " << id);
-    }
-
-    ql::operand_type_t type() { return operand_type_t::CREG;}
-
-    void print()
-    {
-        COUT("creg with id: " << id);
-    }
-
-    ~creg()
-    {
-        creg_ids.free(id);
-        // DOUT("freed creg : " << id);
-    }
+    creg(size_t id);
+    creg(const creg &c);
+    ql::operand_type_t type() const override;
+    void print() const override;
 };
 
-class operation
-{
+class operation {
 public:
     std::string operation_name;
     std::string inv_operation_name;
     operation_type_t operation_type;
     std::vector<coperand*> operands;
 
-    operation() {}
-    operation(creg& l, std::string op, creg& r)
-    {
-        operands.push_back(new ql::creg(l));
-        operands.push_back(new ql::creg(r));
-        if(op == "+")
-        {
-            operation_name = "add";
-            operation_type = ql::operation_type_t::ARITHMATIC;
-        }
-        else if(op == "-")
-        {
-            operation_name = "sub";
-            operation_type = ql::operation_type_t::ARITHMATIC;
-        }
-        else if(op == "&")
-        {
-            operation_name = "and";
-            operation_type = ql::operation_type_t::BITWISE;
-        }
-        else if(op == "|")
-        {
-            operation_name = "or";
-            operation_type = ql::operation_type_t::BITWISE;
-        }
-        else if(op == "^")
-        {
-            operation_name = "xor";
-            operation_type = ql::operation_type_t::BITWISE;
-        }
-        else if(op == "==")
-        {
-            operation_name = "eq";
-            inv_operation_name = "ne";
-            operation_type = ql::operation_type_t::RELATIONAL;
-        }
-        else if(op == "!=")
-        {
-            operation_name = "ne";
-            inv_operation_name = "eq";
-            operation_type = ql::operation_type_t::RELATIONAL;
-        }
-        else if(op == "<")
-        {
-            operation_name = "lt";
-            inv_operation_name = "ge";
-            operation_type = ql::operation_type_t::RELATIONAL;
-        }
-        else if(op == ">")
-        {
-            operation_name = "gt";
-            inv_operation_name = "le";
-            operation_type = ql::operation_type_t::RELATIONAL;
-        }
-        else if(op == "<=")
-        {
-            operation_name = "le";
-            inv_operation_name = "gt";
-            operation_type = ql::operation_type_t::RELATIONAL;
-        }
-        else if(op == ">=")
-        {
-            operation_name = "ge";
-            inv_operation_name = "lt";
-            operation_type = ql::operation_type_t::RELATIONAL;
-        }
-        else
-        {
-            EOUT("Unknown binary operation '" << op );
-            throw ql::exception("Unknown binary operation '"+op+"' !", false);
-        }
-    }
+    operation() = default;
+    operation(const creg &l, const std::string &op, const creg &r);
 
     // used for assign
-    operation(creg& l)
-    {
-        operation_name = "mov";
-        operation_type = ql::operation_type_t::ARITHMATIC;
-        operands.push_back(new ql::creg(l));
-    }
+    operation(const creg &l);
 
     // used for initializing with an imm
-    operation(cval & v)
-    {
-        operation_name = "ldi";
-        operation_type = ql::operation_type_t::ARITHMATIC;
-        operands.push_back(new ql::cval(v));
-    }
+    operation(const cval &v);
 
     // used for initializing with an imm
-    operation(int val)
-    {
-        operation_name = "ldi";
-        operation_type = ql::operation_type_t::ARITHMATIC;
-        operands.push_back(new ql::cval(val));
-    }
+    operation(int val);
 
-    operation(std::string op, creg& r)
-    {
-        if(op == "~")
-        {
-            operation_name = "not";
-            operation_type = ql::operation_type_t::BITWISE;
-            operands.push_back(new ql::creg(r));
-        }
-        else
-        {
-            EOUT("Unknown unary operation '" << op );
-            throw ql::exception("Unknown unary operation '"+op+"' !", false);
-        }
-    }
+    operation(const std::string &op, const creg &r);
 };
 
-
-class classical : public gate
-{
+class classical : public gate {
 public:
     // int imm_value;
     cmat_t m;
 
-    classical(creg& dest, operation & oper)
-    {
-        DOUT("Classical gate constructor with destination for " << oper.operation_name);
-        name = oper.operation_name;
-        duration = 20;
-        creg_operands.push_back(dest.id);
-        if(name == "ldi")
-        {
-            int_operand = (oper.operands[0])->value;
-            DOUT("... setting int_operand of " << oper.operation_name << " to " << int_operand);
-        }
-        else
-        {
-            for(auto & op : oper.operands)
-            {
-                creg_operands.push_back(op->id);
-            }
-        }
-    }
-
-    classical(std::string operation)
-    {
-        DOUT("Classical gate constructor for " << operation);
-        str::lower_case(operation);
-        if((operation == "nop"))
-        {
-            name=operation;
-            duration = 20;
-            DOUT("Adding 0 operand operation: " << name);
-        }
-        else
-        {
-            EOUT("Unknown classical operation '" << name << "' with '0' operands!");
-            throw ql::exception("Unknown classical operation'"+name+"' with'0' operands!", false);
-        }
-    }
-
-    instruction_t qasm()
-    {
-        std::string iopers;
-        int sz = creg_operands.size();
-        for(int i=0; i<sz; ++i)
-        {
-            if(i==sz-1)
-                iopers += " r" + std::to_string(creg_operands[i]);
-            else
-                iopers += " r" + std::to_string(creg_operands[i]) + ",";
-        }
-
-        if(name == "ldi")
-        {
-            return "ldi" + iopers + ", " + std::to_string(int_operand);
-        }
-        else
-            return name + iopers;
-    }
-
-    gate_type_t type()
-    {
-        return __classical_gate__;
-    }
-
-    cmat_t mat()
-    {
-        return m;
-    }
-
+    classical(const creg &dest, const operation &oper);
+    classical(const std::string &operation);
+    instruction_t qasm() const override;
+    gate_type_t type() const override;
+    cmat_t mat() const override;
 };
 
-
-}
-
-#endif // _CLASSICAL_H
+} // namespace ql

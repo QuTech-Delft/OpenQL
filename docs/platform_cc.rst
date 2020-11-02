@@ -76,7 +76,7 @@ Where:
 * ``channels`` defines the number of logical channels of the instrument. For most instruments there is one logical channel per physical channel, but the 'zi-uhfqa' provides 9 logical channels on one physical channel pair.
 * ``control_group_sizes`` states possible arrangements of channels operating as a vector
 .. FIXME: add example
-..    // * ``latency`` latency from trigger to output in [ns]. FIXME: currently not implemented
+..    // * ``latency`` latency from trigger to output in [ns]. FIXME: deprecated
 .. FIXME: describe concept of 'group'
 
 
@@ -151,10 +151,10 @@ Subsection ``control_modes`` defines modes to control instruments. These define 
 
 Where:
 
-* ``<key>`` is a name which can be referred to from key 'instruments/[]/ref_control_mode'
+* ``<key>`` is a name which can be referred to from key ``instruments/[]/ref_control_mode``
 * ``control_bits`` defines G groups of B bits, with:
 
-    - G determines which the 'instrument_definitions/<key>/control_group_sizes' used
+    - G determines which the ``instrument_definitions/<key>/control_group_sizes`` used
     - B is an ordered list of bits (MSB to LSB) used for the code word
 * ``trigger_bits`` vector of bits used to trigger the instrument. Must either be size 1 (common trigger) or size G (separate trigger per group)
 FIXME: examples
@@ -200,9 +200,9 @@ Subsection ``signals`` provides a signal library that gate definitions can refer
 
 Where:
 
-* ``<key>`` is a name which can be referred to from key 'instructions/<>/cc/ref_signal'. It defines an array of records with the fields below:
+* ``<key>`` is a name which can be referred to from key ``instructions/<>/cc/ref_signal``. It defines an array of records with the fields below:
 
-    * ``type`` defines a signal type. This is used to select an instrument that provides that signal type through key 'instruments/*/signal_type'. The types are entirely user defined, there is no builtin notion of their meaning.
+    * ``type`` defines a signal type. This is used to select an instrument that provides that signal type through key ``instruments/*/signal_type``. The types are entirely user defined, there is no builtin notion of their meaning.
     * ``operand_idx`` states the operand index of the instruction/gate this signal refers to. Signals must be defined for all operand_idx the gate refers to, so a 3-qubit gate needs to define 0 through 2. Several signals with the same operand_idx can be defined to select several signal types, as shown in "single-qubit-mw" which has both "mw" (provided by an AWG) and "switch" (provided by a VSM)
     .. FIXME: rewrite
     * ``value`` defines a vector of signal names. Supports the following macro expansions:
@@ -295,11 +295,12 @@ Subsection ``instruments`` defines instruments used in this setup, their configu
 Where:
 
 * ``name`` a friendly name for the instrument
-* ``ref_instrument_definition`` selects record under 'instrument_definitions', which must exits or an error is raised
-* ``ref_control_mode`` selects record under 'control_modes', which must exits or an error is raised
+* ``ref_instrument_definition`` selects record under ``instrument_definitions``, which must exist or an error is raised
+* ``ref_control_mode`` selects record under ``control_modes``, which must exist or an error is raised
 * ``signal_type`` defines which signal type this instrument instance provides.
 .. FIXME: describe matching process against 'signals/*/type'
-* ``qubits`` G groups of 1 or more qubits. G must match one of the available group sizes of 'instrument_definitions/<ref_instrument_definition>/control_group_sizes'. If more than 1 qubits are stated per group - e.g. for an AWG used in conjunction with a VSM - they may not produce conflicting signals at any time slot, or an error is raised
+* ``qubits`` G groups of 1 or more qubits. G must match one of the available group sizes of ``instrument_definitions/<ref_instrument_definition>/control_group_sizes``. If more than 1 qubits are stated per group - e.g. for an AWG used in conjunction with a VSM - they may not produce conflicting signals at any time slot, or an error is raised
+* ``force_cond_gates_on`` optional, reserved for future use
 * ``controller/slot`` the slot number of the CC this instrument is connected to
 * ``controller/name`` reserved for future use
 * ``controller/io_module`` reserved for future use
@@ -307,7 +308,7 @@ Where:
 Additions to section 'instructions'
 ***********************************
 
-The CC backend extends section "instructions/<key>" with a subsection "cc" as shown in the example below:
+The CC backend extends section ``instructions/<key>`` with a subsection ``cc`` as shown in the example below:
 
 .. code-block:: JSON
     :linenos:
@@ -395,7 +396,11 @@ FIXME: TBW
 CC backend output files
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-FIXME: TBW: .vq1asm, .vcd
+FIXME: TBW:
+
+.vq1asm: 'Vectored Q1 assembly' file for the Central Controller
+
+.vcd: timing file, can be viewed using GTKWave (http://gtkwave.sourceforge.net)
 
 Standard OpenQL features
 ^^^^^^^^^^^^^^^^^^^^^^^^

@@ -4,16 +4,18 @@
  * @author Nader Khammassi
  * @author Hans van Someren
  */
-#ifndef LATENCY_COMPENSATION_H
-#define LATENCY_COMPENSATION_H
+#pragma once
 
 #include "program.h"
 #include "platform.h"
 
-namespace ql
-{
-    // buffer_delay_insertion pass
-    void latency_compensation(ql::quantum_program* programp, const ql::quantum_platform& platform, std::string passname);
-}
+namespace ql {
 
-#endif // LATENCY_COMPENSATION_H
+// buffer_delay_insertion pass
+void latency_compensation(
+    ql::quantum_program *programp,
+    const ql::quantum_platform &platform,
+    const std::string &passname
+);
+
+}

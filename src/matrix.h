@@ -4,77 +4,55 @@
  * @author Nader Khammassi
  * @brief  unitary matrix implementation (taken from qx simulator)
  */
+#pragma once
 
-#ifndef MATRIX_H
-#define MATRIX_H
-
-#include <iomanip>
 #include <iostream>
+#include <iomanip>
 #include <complex>
 
-namespace ql
-{
-/**
- * \brief matrix
- */
-template <typename __T, size_t __N>
-class matrix
-{
+namespace ql {
 
+template <typename T, size_t N>
+class matrix {
 public:
 
-    __T m[__N * __N] /* TODO: properly handle it __attribute__((aligned(16))) */ ;
+    T m[N * N];
 
-    /**
-     * default ctor
-     */
-    matrix()
-    {
-        for (size_t i=0; i<(__N*__N); ++i)
+    matrix() {
+        for (size_t i = 0; i < N * N; ++i) {
             m[i] = 0;
+        }
     }
 
-    /**
-     * ctor
-     */
-    matrix(const __T * pm)
-    {
-        for (size_t i=0; i<(__N*__N); ++i)
+    matrix(const T *pm) {
+        for (size_t i = 0; i < N * N; ++i) {
             m[i] = pm[i];
+        }
     }
 
-    __T& operator()(uint32_t r, uint32_t c)
-    {
-        return m[r*__N+c];
+    T &operator()(uint32_t r, uint32_t c) {
+        return m[r*N + c];
     }
 
-    uint32_t size() const
-    {
-        return __N;
+    uint32_t size() const {
+        return N;
     }
 
-    /**
-     * debug
-     */
-    void dump() const
-    {
+    void dump() const {
         std::cout << "[i] ---[matrix]-----------------------------------------------------" << std::endl;
         std::cout << std::fixed;
-        for (int32_t r=0; r<__N; ++r)
-        {
-            for (int32_t c=0; c<__N; ++c)
-                std::cout << std::showpos << std::setw(5) << m[r*__N+c] << "\t";
+        for (int32_t r = 0; r < N; ++r) {
+            for (int32_t c = 0; c < N; ++c) {
+                std::cout << std::showpos << std::setw(5) << m[r * N + c] << "\t";
+            }
             std::cout << std::endl;
         }
         std::cout << "[i] ----------------------------------------------------------------" << std::endl;
     }
 
-
 };
 
 typedef std::complex<double> complex_t;
-typedef matrix<complex_t,2>  cmat_t;
+typedef matrix<complex_t, 2> cmat_t;
 
-}
-
-#endif // MATRIX_H
+} // namespace ql
