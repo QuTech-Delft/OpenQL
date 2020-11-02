@@ -15,4 +15,4 @@
 #define OPT_RUN_ONCE                    0   // 0=loop indefinitely (CC-light emulation), 1=run once (preferred, but breaks compatibility)
 #define OPT_OLD_SEQBAR_SEMANTICS        0   // support old semantics of seqbar instruction. Will be deprecated
 #define OPT_FEEDBACK                    0   // feedback support. Coming feature
-#define OPT_CROSSCHECK_INSTRUMENT_DEF   0  // WIP
+#define OPT_CROSSCHECK_INSTRUMENT_DEF   1   // check signal dimensions against instrument definition

@@ -30,7 +30,7 @@ void settings_cc::loadBackendSettings(const quantum_platform &platform)
 
 #if 0   // FIXME: print some info, which also helps detecting errors early on
     // read instrument definitions
-    // FIXME: the following requires json>v3.1.0:  for(auto& id : jsonInstrumentDefinitions->items()) {
+    // FIXME: the following requires json>v3.1.0: (NB: we now moved to 3.9!) for(auto& id : jsonInstrumentDefinitions->items()) {
     for(size_t i=0; i<jsonInstrumentDefinitions->size(); i++) {
         std::string idName = jsonInstrumentDefinitions[i];        // NB: uses type conversion to get node value
         DOUT("found instrument definition: '" << idName <<"'");

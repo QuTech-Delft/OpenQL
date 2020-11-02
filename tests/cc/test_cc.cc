@@ -5,6 +5,10 @@
                 - ../test_uniform.cc, modified and extended for the cc (Central Controller)
                 - ../test_hybrid.py
 */
+
+#include "openql.h"
+#include "utils.h"
+
 #include <string>
 #include <vector>
 #include <iostream>
@@ -14,9 +18,6 @@
 #include <cassert>
 
 #include <time.h>
-
-#include <openql.h>
-#include <utils.h>
 
 #define CFG_FILE_JSON   "test_cfg_cc.json"
 

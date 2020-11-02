@@ -457,10 +457,7 @@ void codegen_cc::customGate(
             // get signal value
             const json instructionSignalValue = json_get<const json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
 
-#if OPT_CROSSCHECK_INSTRUMENT_DEF   /* FIXME: invalid test: should be channels in group, not group size
-[OPENQL] /tmp/pip-req-build-z_6r37p9/src/arch/cc/codegen_cc.cc:463 Error: Error in JSON definition: signal dimension mismatch on instruction 'cz' : control mode 'awg8-flux' requires 8 groups, but signal 'signals/two-qubit-flux[0]/value' provides 1
-___________________ Test_central_controller.test_qi_example ____________________
-*/
+#if OPT_CROSSCHECK_INSTRUMENT_DEF
             // verify dimensions
             int channelsPergroup = si.ic.controlModeGroupSize;
             if(instructionSignalValue.size() != channelsPergroup) {

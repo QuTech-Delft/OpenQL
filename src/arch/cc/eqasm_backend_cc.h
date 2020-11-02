@@ -8,13 +8,10 @@
 
 #pragma once
 
+#include "program.h"
+#include "eqasm_compiler.h"
+#include "ir.h"
 #include "codegen_cc.h"
-
-#include <eqasm_compiler.h>
-#include <kernel.h>
-#include <platform.h>
-#include <circuit.h>
-#include <ir.h>
 
 #include <string>
 #include <vector>

@@ -12,7 +12,6 @@
 #include "platform.h"
 #include "json.h"
 
-//using json = nlohmann::json;        // FIXME: should not be part of interface
 
 namespace ql {
 
