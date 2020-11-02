@@ -446,7 +446,7 @@ void codegen_cc::customGate(
 
     // iterate over signals defined for instruction (e.g. several operands or types, and thus instruments)
     for(size_t s=0; s<sd.signal.size(); s++) {
-        tCalcSignalValue csv = calcSignalValue(sd, s, iname, qops);
+        tCalcSignalValue csv = calcSignalValue(sd, s, qops, iname);
 
         // store signal value, checking for conflicts
         tBundleInfo *bi = &bundleInfo[csv.si.instrIdx][csv.si.group];       // shorthand
@@ -684,7 +684,7 @@ uint32_t codegen_cc::assignCodeword(const std::string &instrumentName, int instr
 
 
 // compute signalValueString, and some meta information
-codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSignalDef &sd, size_t s, const std::string &iname, const std::vector<size_t> &qops)
+codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSignalDef &sd, size_t s, const std::vector<size_t> &qops, const std::string &iname)
 {   tCalcSignalValue ret;
     std::string signalSPath = SS2S(sd.path<<"["<<s<<"]");                   // for JSON error reporting
 
@@ -735,6 +735,8 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
             << ", group=" << ret.si.group
             << "': signalValue='" << ret.signalValueString << "'"
             ));
+
+    return ret;
 }
 
 
