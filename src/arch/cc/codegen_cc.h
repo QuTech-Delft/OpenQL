@@ -25,14 +25,15 @@ private: // types
     typedef struct {
         std::string signalValue;
         unsigned int durationInCycles;
-#if OPT_FEEDBACK
-        int readoutCop;                 // classic operand for readout. NB: we encode 'unused' as -1
-#endif
 #if OPT_SUPPORT_STATIC_CODEWORDS
         int staticCodewordOverride;
 #endif
+#if OPT_FEEDBACK
+        int readoutCop;                 // classic operand for readout. NB: we encode 'unused' as -1
+        int readoutQubit;
+#endif
     } tBundleInfo;                      // information for an instrument group (of channels), for a single instruction
-// FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR?
+    // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR?
 
 public:
     codegen_cc() = default;
