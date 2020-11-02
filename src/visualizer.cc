@@ -38,18 +38,20 @@ namespace ql
 
 // -- IN PROGRESS ---
 // re-organize the attributes in the config file
-// update documentation
 // check for negative values during layout validation
-// allow collapsing the three qubit lines into one with an option
-// implement cycle cutting for pulse visualization
+// fix merge conflicts with develop branch (already done)
+// update documentation
+// GateProperties validation on construction (test with visualizer pass called at different points (during different passes) during compilation)
+// merge with develop
 
 // --- FUTURE WORK ---
+// TODO: split visualizer.cc into multiple files, one for Structure, one for CircuitData and one for free code and new Visualizer class
+// TODO: add generating random circuits for visualization testing
+// TODO: allow collapsing the three qubit lines into one with an option
+// TODO: implement cycle cutting for pulse visualization
 // TODO: what happens when a cycle range is cut, but one or more gates still running within that range finish earlier than the longest running gate 
 // 		comprising the entire range?
-// TODO: add generating random circuits for visualization testing
-// TODO: GateProperties validation on construction (test with visualizer pass called at different points during compilation)
 // TODO: when measurement connections are not shown, allow overlap of measurement gates
-// TODO: split visualizer.cc into multiple files, one for Structure, one for CircuitData and one for free code and new Visualizer class
 // TODO: when gate is skipped due to whatever reason, maybe show a dummy gate outline indicating where the gate is?
 // TODO: display wait/barrier gate (need wait gate fix first)
 // TODO: add classical bit number to measurement connection when classical lines are grouped
