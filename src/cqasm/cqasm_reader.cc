@@ -79,7 +79,7 @@ void cqasm_reader::add_cqasm(compiler::QasmRepresentation cqasm_repr) {
 
         // add the kernel to program
         if (numIterations > 1) {
-                program.add_for(kernel, numIterations);
+            program.add_for(kernel, numIterations);
         } else {
             program.add(kernel);
         }
