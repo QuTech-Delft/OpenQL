@@ -446,66 +446,7 @@ void codegen_cc::customGate(
 
     // iterate over signals defined for instruction (e.g. several operands or types, and thus instruments)
     for(size_t s=0; s<sd.signal.size(); s++) {
-#if 1   // FIXME: moving
         tCalcSignalValue csv = calcSignalValue(sd, s, iname, qops);
-#else
-        // compute signalValueString, and some meta information
-        std::string signalValueString;
-        unsigned int operandIdx;
-        settings_cc::tSignalInfo si;
-        settings_cc::tInstrumentInfo ii;
-        {   // limit scope. FIXME: split off
-            std::string signalSPath = SS2S(sd.path<<"["<<s<<"]");           // for JSON error reporting
-
-            // get the operand index & qubit to work on
-            operandIdx = json_get<unsigned int>(sd.signal[s], "operand_idx", signalSPath);
-            if(operandIdx >= qops.size()) {
-                JSON_FATAL("instruction '" << iname <<
-                      "': illegal operand number " << operandIdx <<
-                      "' exceeds expected maximum of " << qops.size()-1 <<
-                      "(edit JSON, or provide enough parameters)");         // FIXME: add offending statement
-            }
-            unsigned int qubit = qops[operandIdx];
-
-            // get signalInfo via signal type (e.g. "mw", "flux", etc. NB: this is different from
-            // the type provided by find_instruction_type, although some identical strings are used)
-            std::string instructionSignalType = json_get<std::string>(sd.signal[s], "type", signalSPath);
-            si = settings.findSignalInfoForQubit(instructionSignalType, qubit);
-
-            // get signal value
-            const json instructionSignalValue = json_get<const json>(sd.signal[s], "value", signalSPath);   // NB: json_get<const json&> unavailable
-
-#if OPT_CROSSCHECK_INSTRUMENT_DEF
-            // verify dimensions
-            int channelsPergroup = si.ic.controlModeGroupSize;
-            if(instructionSignalValue.size() != channelsPergroup) {
-                JSON_FATAL("signal dimension mismatch on instruction '" << iname <<
-                           "' : control mode '" << si.ic.refControlMode <<
-                           "' requires " <<  channelsPergroup <<
-                           " signals, but signal '" << signalSPath+"/value" <<
-                           "' provides " << instructionSignalValue.size());
-            }
-#endif
-
-            // expand macros
-            signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
-            utils::replace(signalValueString, std::string("\""), std::string(""));   // get rid of quotes
-            utils::replace(signalValueString, std::string("{gateName}"), iname);
-            utils::replace(signalValueString, std::string("{instrumentName}"), si.ic.ii.instrumentName);
-            utils::replace(signalValueString, std::string("{instrumentGroup}"), std::to_string(si.group));
-            // FIXME: allow using all qubits involved (in same signalType?, or refer to signal: qubitOfSignal[n]), e.g. qubit[0], qubit[1], qubit[2]
-            utils::replace(signalValueString, std::string("{qubit}"), std::to_string(qubit));
-
-            // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and
-            // provide codewordTable to downstream software to assign waveforms to the codewords
-
-            comment(SS2S("  # slot=" << ii.slot
-                    << ", instrument='" << ii.instrumentName << "'"
-                    << ", group=" << si.group
-                    << "': signalValue='" << signalValueString << "'"
-                    ));
-        } // scope
-#endif
 
         // store signal value, checking for conflicts
         tBundleInfo *bi = &bundleInfo[csv.si.instrIdx][csv.si.group];       // shorthand
@@ -742,7 +683,6 @@ uint32_t codegen_cc::assignCodeword(const std::string &instrumentName, int instr
 #endif
 
 
-#if 1
 // compute signalValueString, and some meta information
 codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSignalDef &sd, size_t s, const std::string &iname, const std::vector<size_t> &qops)
 {   tCalcSignalValue ret;
@@ -796,7 +736,6 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
             << "': signalValue='" << ret.signalValueString << "'"
             ));
 }
-#endif
 
 
 } // namespace ql
