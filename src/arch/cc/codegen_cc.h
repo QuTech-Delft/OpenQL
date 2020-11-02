@@ -21,21 +21,7 @@ namespace ql {
 
 class codegen_cc
 {
-private: // types
-    typedef struct {
-        std::string signalValue;
-        unsigned int durationInCycles;
-#if OPT_SUPPORT_STATIC_CODEWORDS
-        int staticCodewordOverride;
-#endif
-#if OPT_FEEDBACK
-        int readoutCop;                 // classic operand for readout. NB: we encode 'unused' as -1
-        int readoutQubit;
-#endif
-    } tBundleInfo;                      // information for an instrument group (of channels), for a single instruction
-    // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR?
-
-public:
+public: //  functions
     codegen_cc() = default;
     ~codegen_cc() = default;
 
@@ -70,12 +56,34 @@ public:
     void doWhileStart(const std::string &label);
     void doWhileEnd(const std::string &label, size_t op0, const std::string &opName, size_t op1);
 
+
+private:    // types
+    typedef struct {
+        std::string signalValue;
+        unsigned int durationInCycles;
+#if OPT_SUPPORT_STATIC_CODEWORDS
+        int staticCodewordOverride;
+#endif
+#if OPT_FEEDBACK
+        int readoutCop;                 // classic operand for readout. NB: we encode 'unused' as -1
+        int readoutQubit;
+#endif
+    } tBundleInfo;                      // information for an instrument group (of channels), for a single instruction
+    // FIXME: rename tInstrInfo, store gate as annotation, move to class cc:IR?
+
+    typedef struct {
+        std::string signalValueString;
+        unsigned int operandIdx;
+        settings_cc::tSignalInfo si;
+    } tCalcSignalValue;
+
+
 private:    // vars
     static const int MAX_SLOTS = 12;                            // physical maximum of CC
     static const int MAX_INSTRS = MAX_SLOTS;                    // maximum number of instruments in config file
     static const int MAX_GROUPS = 32;                           // based on VSM, which currently has the largest number of groups
 
-    const quantum_platform *platform;                       // remind platform
+    const quantum_platform *platform;                           // remind platform
     settings_cc settings;                                       // handling of JSON settings
     vcd_cc vcd;                                                 // handling of VCD file output
 
@@ -105,6 +113,7 @@ private:    // funcs
     void emitProgramStart();
     void padToCycle(size_t lastEndCycle, size_t startCycle, int slot, const std::string &instrumentName);
     uint32_t assignCodeword(const std::string &instrumentName, int instrIdx, int group);
+    tCalcSignalValue calcSignalValue(const settings_cc::tSignalDef &sd, size_t s, const std::string &iname, const std::vector<size_t> &qops);
 }; // class
 
 } // namespace ql
