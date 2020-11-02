@@ -13,9 +13,6 @@
 
 #include <cstdint>
 
-namespace ql
-{
-
 const std::array<unsigned char, 3> white = {{ 255, 255, 255 }};
 const std::array<unsigned char, 3> black = {{ 0, 0, 0 }};
 const std::array<unsigned char, 3> gray = {{ 128, 128, 128 }};
@@ -25,75 +22,124 @@ const std::array<unsigned char, 3> green = {{ 112, 222, 90 }};
 const std::array<unsigned char, 3> yellow = {{ 200, 200, 20 }};
 const std::array<unsigned char, 3> red = {{ 255, 105, 97 }};
 
+namespace ql
+{
+
+void visualize(const ql::quantum_program* program, const std::string& configPath, const std::string& waveformMappingPath);
+
+// ----------------------------------------------- //
+// -                    CYCLES                   - //
+// ----------------------------------------------- //
+
+struct CycleLabels
+{
+    bool show = true;
+    bool inNanoSeconds = false;
+    int rowHeight = 24;
+    int fontHeight = 13;
+    std::array<unsigned char, 3> fontColor = black;
+};
+
+struct CycleEdges
+{
+    bool show = true;
+    std::array<unsigned char, 3> color = {{ 0, 0, 0 }};
+    double alpha = 0.2;
+};
+
+struct CycleCutting
+{
+    bool cut = true;
+    int emptyCycleThreshold = 2;
+    int cutCycleWidth = 16;
+    double cutCycleWidthModifier = 0.5;
+};
+
 struct Cycles
 {
-	// Cycle label row.
-	bool showCycleLabels = true;
-	bool showCyclesInNanoSeconds = false;
-	int cycleLabelsRowHeight = 24;
-	int fontHeight = 13;
-	std::array<unsigned char, 3> fontColor = black;
+    CycleLabels labels;
+    CycleEdges edges;
+    CycleCutting cutting;
+    bool compress = false;
+    bool partitionCyclesWithOverlap = true;
+};
 
-	// Whether the cycles should be compressed or gate duration outlines should be shown on the qubits.
-	bool compressCycles = false;
-	bool showCycleEdges = true;
-	std::array<unsigned char, 3> cycleEdgeColor = {{ 0, 0, 0 }};
-	float cycleEdgeAlpha = 0.2f;
+// ----------------------------------------------- //
+// -                  BIT LINES                  - //
+// ----------------------------------------------- //
 
-	bool partitionCyclesWithOverlap = true;
-	
-	bool cutEmptyCycles = true;
-	int emptyCycleThreshold = 3;
-	int cutCycleWidth = 16;
-	float cutCycleWidthModifier = 0.5f;
-	bool showGateDurationOutline = true;
-	int gateDurationGap = 2;
-	float gateDurationAlpha = 0.1f;
-	float gateDurationOutLineAlpha = 0.3f;
-	std::array<unsigned char, 3> gateDurationOutlineColor = black;
+struct BitLineLabels
+{
+    bool show = true;
+    int columnWidth = 32;
+    int fontHeight = 13;
+    std::array<unsigned char, 3> qbitColor = {{ 0, 0, 0 }};
+    std::array<unsigned char, 3> cbitColor = {{ 128, 128, 128 }};
+};
+
+struct QuantumLines
+{
+    std::array<unsigned char, 3> color = {{ 0, 0, 0 }};
+};
+
+struct ClassicalLines
+{
+    bool show = true;
+    bool group = true;
+    int groupedLineGap = 2;
+    std::array<unsigned char, 3> color = {{ 128, 128, 128 }};
+};
+
+struct BitLineEdges
+{
+    bool show = true;
+    int thickness = 3;
+    std::array<unsigned char, 3> color = {{ 0, 0, 0 }};
+    double alpha = 0.4;
 };
 
 struct BitLines
 {
-	// Labels.
-	bool drawLabels = true;
-	//TODO: set this to 0 automatically if drawLabels is false?
-	int labelColumnWidth = 32;
-	int fontHeight = 13;
-	std::array<unsigned char, 3> qBitLabelColor = {{ 0, 0, 0 }};
-	std::array<unsigned char, 3> cBitLabelColor = {{ 128, 128, 128 }};
-
-	// Lines.
-	bool showClassicalLines = true;
-	bool groupClassicalLines = true;
-	int groupedClassicalLineGap = 2;
-	std::array<unsigned char, 3> qBitLineColor = {{ 0, 0, 0 }};
-	std::array<unsigned char, 3> cBitLineColor = {{ 128, 128, 128 }};
-
-	bool showBitLineEdges = true;
-	int bitLineEdgeThickness = 3;
-	std::array<unsigned char, 3> bitLineEdgeColor = {{ 0, 0, 0 }};
-    float bitLineEdgeAlpha = 0.2f;
+    BitLineLabels labels;
+    QuantumLines quantum;
+    ClassicalLines classical;
+    BitLineEdges edges;
 };
+
+// ----------------------------------------------- //
+// -               GENERAL PARAMETERS            - //
+// ----------------------------------------------- //
 
 struct Grid
 {
-	int cellSize = 32;
-	int borderSize = 32;
+    int cellSize = 32;
+    int borderSize = 32;
+};
+
+struct GateDurationOutlines
+{
+    bool show = true;
+    int gap = 2;
+    double fillAlpha = 0.1;
+    double outlineAlpha = 0.3;
+    std::array<unsigned char, 3> outlineColor = black;
 };
 
 struct Measurements
 {
-	bool drawConnection = true;
-	int lineSpacing = 2;
-	int arrowSize = 10;
+    bool drawConnection = true;
+    int lineSpacing = 2;
+    int arrowSize = 10;
 };
+
+// ----------------------------------------------- //
+// -                    PULSES                   - //
+// ----------------------------------------------- //
 
 struct Pulses
 {
-	bool displayGatesAsPulses = false;
-	int pulseRowHeight = 99;
-	int pulseRowHeightMicrowave = 32;
+    bool displayGatesAsPulses = false;
+    int pulseRowHeightMicrowave = 32;
     int pulseRowHeightFlux = 32;
     int pulseRowHeightReadout = 32;
     std::array<unsigned char, 3> pulseColorMicrowave = {{ 0, 0, 255 }};
@@ -101,15 +147,20 @@ struct Pulses
     std::array<unsigned char, 3> pulseColorReadout = {{ 0, 255, 0 }};
 };
 
+// ----------------------------------------------- //
+// -                    LAYOUT                   - //
+// ----------------------------------------------- //
+
 struct Layout
 {
-	Cycles cycles;
-	BitLines bitLines;
-	Grid grid;
-	Measurements measurements;
-	Pulses pulses;
+    Cycles cycles;
+    BitLines bitLines;
+    Grid grid;
+    GateDurationOutlines gateDurationOutlines;
+    Measurements measurements;
+    Pulses pulses;
 
-	std::map<std::string, GateVisual> customGateVisuals;
+    std::map<std::string, GateVisual> customGateVisuals;
 
 	const std::map<ql::gate_type_t, GateVisual> defaultGateVisuals
 	{
@@ -200,10 +251,8 @@ struct Layout
 			{}}}},
 		{ql::__classical_gate__, { black, {
 			{}}}}
-	};
+    };
 };
-
-void visualize(const ql::quantum_program* program, const std::string& configPath, const std::string& waveformMappingPath);
 
 } // ql
 

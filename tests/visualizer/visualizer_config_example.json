@@ -1,54 +1,71 @@
 {
     "cycles":
     {
-        "showCycleLabels": true,
-        "showCyclesInNanoSeconds": false,
-        "cycleLabelsRowHeight": 24,
-        "fontHeight": 13,
-        "fontColor": [0, 0, 0],
-
+        "labels":
+        {
+            "show": true,
+            "inNanoSeconds": false,
+            "rowHeight": 24,
+            "fontHeight": 13,
+            "fontColor": [0, 0, 0]
+        },
+        "edges":
+        {
+            "show": true,
+            "color": [0, 0, 0],
+            "alpha": 0.2
+        },
+        "cutting":
+        {
+            "cut": true,
+            "emptyCycleThreshold": 2,
+            "cutCycleWidth": 16,
+            "cutCycleWidthModifier": 0.5
+        },
         "compressCycles": false,
-
-        "showCycleEdges": true,
-        "cycleEdgeColor": [0, 0, 0],
-        "cycleEdgeAlpha": 0.1,
-
-        "partitionCyclesWithOverlap": true,
-
-        "cutEmptyCycles": true,
-        "emptyCycleThreshold": 2,
-        "cutCycleWidth": 16,
-        "cutCycleWidthModifier": 0.5,
-
-        "showGateDurationOutline": true,
-        "gateDurationGap": 2,
-        "gateDurationAlpha": 0.1,
-        "gateDurationOutLineAlpha": 0.3,
-        "gateDurationOutlineColor": [0, 0, 0]
+        "partitionCyclesWithOverlap": true
     },
     "bitLines":
     {
-        "drawLabels": true,
-        "labelColumnWidth": 32,
-        "fontHeight": 13,
-        "qBitLabelColor": [0, 0, 0],
-        "cBitLabelColor": [128, 128, 128],
-
-        "showClassicalLines": true,
-        "groupClassicalLines": false,
-        "groupedClassicalLineGap": 2,
-        "qBitLineColor": [0, 0, 0],
-        "cBitLineColor": [128, 128, 128],
-
-        "showBitLineEdges": true,
-        "bitLineEdgeThickness": 5,
-        "bitLineEdgeColor": [0, 0, 0],
-        "bitLineEdgeAlpha": 0.4
+        "labels":
+        {
+            "show": true,
+            "columnWidth": 32,
+            "fontHeight": 13,
+            "qbitColor": [0, 0, 0],
+            "cbitColor": [128, 128, 128]
+        },
+        "quantum":
+        {
+            "color": [0, 0, 0]
+        },
+        "classical":
+        {
+            "show": true,
+            "group": false,
+            "groupedLineGap": 2,
+            "color": [128, 128, 128]
+        },
+        "edges":
+        {
+            "show": true,
+            "thickness": 5,
+            "color": [0, 0, 0],
+            "alpha": 0.4
+        }
     },
     "grid":
     {
         "cellSize": 32,
         "borderSize": 32
+    },
+    "gateDurationOutlines":
+    {
+        "show": true,
+        "gap": 2,
+        "fillAlpha": 0.2,
+        "outlineAlpha": 0.3,
+        "outlineColor": [0, 0, 0]
     },
     "measurements":
     {
@@ -58,7 +75,7 @@
     },
     "pulses":
     {
-        "displayGatesAsPulses": true,
+        "displayGatesAsPulses": false,
         "pulseRowHeightMicrowave": 32,
         "pulseRowHeightFlux": 32,
         "pulseRowHeightReadout": 32,
