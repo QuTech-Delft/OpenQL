@@ -40,8 +40,9 @@ namespace ql
 // re-organize the attributes in the config file
 // check for negative values during layout validation
 // fix merge conflicts with develop branch (already done)
-// update documentation
 // GateProperties validation on construction (test with visualizer pass called at different points (during different passes) during compilation)
+// update code style
+// update documentation
 // merge with develop
 
 // --- FUTURE WORK ---
