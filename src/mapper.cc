@@ -1587,10 +1587,10 @@ void Future::SetCircuit(ql::quantum_kernel &kernel, Scheduler &sched, size_t nq,
         schedp->init(kernel.c, *platformp, nq, nc);             // fills schedp->graph (dependence graph) from all of circuit
         // and so also the original circuit can be output to after this
         for (auto &gp : kernel.c) {
-            scheduled[gp] = false;   // none were scheduled
+            scheduled.set(gp) = false;   // none were scheduled
         }
-        scheduled[schedp->instruction[schedp->s]] = false;      // also the dummy nodes not
-        scheduled[schedp->instruction[schedp->t]] = false;
+        scheduled.set(schedp->instruction[schedp->s]) = false;      // also the dummy nodes not
+        scheduled.set(schedp->instruction[schedp->t]) = false;
         avlist.clear();
         avlist.push_back(schedp->s);
         schedp->set_remaining(ql::forward_scheduling);          // to know criticality
@@ -1671,7 +1671,7 @@ void Future::DoneGate(ql::gate *gp) {
     if (maplookaheadopt == "no") {
         input_gatepp = std::next(input_gatepp);
     } else {
-        schedp->TakeAvailable(schedp->node[gp], avlist, scheduled, ql::forward_scheduling);
+        schedp->TakeAvailable(schedp->node.at(gp), avlist, scheduled, ql::forward_scheduling);
     }
 }
 

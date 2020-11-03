@@ -17,6 +17,7 @@
 #include "resource_manager.h"
 #include "gate.h"
 #include "scheduler.h"
+#include "utils/map.h"
 //#include "metrics.h"
 
 namespace ql {
@@ -709,7 +710,7 @@ public:
     Scheduler                       *schedp;        // a pointer, since dependence graph doesn't change
     ql::circuit                     input_gatepv;   // input circuit when not using scheduler based avlist
 
-    std::map<ql::gate*,bool>        scheduled;      // state: has gate been scheduled, here: done from future?
+    utils::Map<ql::gate*,bool>        scheduled;      // state: has gate been scheduled, here: done from future?
     std::list<lemon::ListDigraph::Node> avlist;         // state: which nodes/gates are available for mapping now?
     ql::circuit::iterator           input_gatepp;   // state: alternative iterator in input_gatepv
 

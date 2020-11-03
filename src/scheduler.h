@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "utils/map.h"
+
 /*
     Summary
 
@@ -88,7 +90,7 @@ public:
 
     // conversion between gate* (pointer to the gate in the circuit) and node (of the dependence graph)
     lemon::ListDigraph::NodeMap<gate*> instruction;// instruction[n] == gate*
-    std::map<gate*, lemon::ListDigraph::Node>  node;// node[gate*] == n
+    utils::Map<gate*, lemon::ListDigraph::Node>  node;// node[gate*] == n
 
     // attributes
     lemon::ListDigraph::NodeMap<std::string> name;     // name[n] == qasm string
@@ -106,7 +108,7 @@ public:
     circuit*    circp;                             // current and result circuit, passed from Init to each scheduler
 
     // scheduler support
-    std::map<lemon::ListDigraph::Node,size_t>  remaining;  // remaining[node] == cycles until end; critical path representation
+    utils::Map<lemon::ListDigraph::Node, size_t>  remaining;  // remaining[node] == cycles until end; critical path representation
 
 public:
     Scheduler();
@@ -292,7 +294,7 @@ public:
     void TakeAvailable(
         lemon::ListDigraph::Node n,
         std::list<lemon::ListDigraph::Node> &avlist,
-        std::map<gate*,bool> &scheduled,
+        utils::Map<gate*,bool> &scheduled,
         scheduling_direction_t dir
     );
 

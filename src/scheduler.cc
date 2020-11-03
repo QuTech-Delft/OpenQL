@@ -67,7 +67,7 @@ void Scheduler::init(
         // add dummy source node
         auto srcNode = graph.addNode();
         instruction[srcNode] = new SOURCE();    // so SOURCE is defined as instruction[s], not unique in itself
-        node[instruction[srcNode]] = srcNode;
+        node.set(instruction[srcNode]) = srcNode;
         name[srcNode] = instruction[srcNode]->qasm();
         s = srcNode;
     }
@@ -92,7 +92,7 @@ void Scheduler::init(
         lemon::ListDigraph::Node consNode = graph.addNode();
         int consID = graph.id(consNode);
         instruction[consNode] = ins;
-        node[ins] = consNode;
+        node.set(ins) = consNode;
         name[consNode] = ins->qasm();
 
         // Add edges (arcs)
@@ -400,7 +400,7 @@ void Scheduler::init(
         lemon::ListDigraph::Node consNode = graph.addNode();
         int consID = graph.id(consNode);
         instruction[consNode] = new SINK();    // so SINK is defined as instruction[t], not unique in itself
-        node[instruction[consNode]] = consNode;
+        node.set(instruction[consNode]) = consNode;
         name[consNode] = instruction[consNode]->qasm();
         t = consNode;
 
@@ -498,7 +498,7 @@ void Scheduler::write_dependence_matrix() const {
 // set_cycle iterates over the circuit's gates and set_cycle_gate over the dependences of each gate
 // please note that set_cycle_gate expects a caller like set_cycle which iterates gp forward through the circuit
 void Scheduler::set_cycle_gate(gate *gp, scheduling_direction_t dir) {
-    lemon::ListDigraph::Node currNode = node[gp];
+    lemon::ListDigraph::Node currNode = node.at(gp);
     size_t  currCycle;
     if (forward_scheduling == dir) {
         currCycle = 0;
@@ -604,18 +604,18 @@ void Scheduler::schedule_alap(std::string &sched_dot) {
 
 // Note that set_remaining_gate expects a caller like set_remaining that iterates gp backward over the circuit
 void Scheduler::set_remaining_gate(gate* gp, scheduling_direction_t dir) {
-    auto currNode = node[gp];
+    auto currNode = node.at(gp);
     size_t currRemain = 0;
     if (forward_scheduling == dir) {
         for (lemon::ListDigraph::OutArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
-            currRemain = std::max(currRemain, remaining[graph.target(arc)] + weight[arc]);
+            currRemain = std::max(currRemain, remaining.at(graph.target(arc)) + weight[arc]);
         }
     } else {
         for (lemon::ListDigraph::InArcIt arc(graph,currNode); arc != lemon::INVALID; ++arc) {
-            currRemain = std::max(currRemain, remaining[graph.source(arc)] + weight[arc]);
+            currRemain = std::max(currRemain, remaining.at(graph.source(arc)) + weight[arc]);
         }
     }
-    remaining[currNode] = currRemain;
+    remaining.set(currNode) = currRemain;
 }
 
 void Scheduler::set_remaining(scheduling_direction_t dir) {
@@ -623,28 +623,28 @@ void Scheduler::set_remaining(scheduling_direction_t dir) {
     remaining.clear();
     if (forward_scheduling == dir) {
         // remaining until SINK (i.e. the SINK.cycle-ALAP value)
-        remaining[t] = 0;
+        remaining.set(t) = 0;
         // *circp is by definition in a topological order of the dependence graph
         for (auto gpit = circp->rbegin(); gpit != circp->rend(); gpit++) {
             gate *gp2 = *gpit;
             set_remaining_gate(gp2, dir);
-            DOUT("... remaining at " << gp2->qasm() << " cycles " << remaining[node[gp2]]);
+            DOUT("... remaining at " << gp2->qasm() << " cycles " << remaining.dbg(node.at(gp2)));
         }
         gp = instruction[s];
         set_remaining_gate(gp, dir);
-        DOUT("... remaining at " << gp->qasm() << " cycles " << remaining[s]);
+        DOUT("... remaining at " << gp->qasm() << " cycles " << remaining.dbg(s));
     } else {
         // remaining until SOURCE (i.e. the ASAP value)
-        remaining[s] = 0;
+        remaining.set(s) = 0;
         // *circp is by definition in a topological order of the dependence graph
         for (auto gpit = circp->begin(); gpit != circp->end(); gpit++) {
             gate*   gp2 = *gpit;
             set_remaining_gate(gp2, dir);
-            DOUT("... remaining at " << gp2->qasm() << " cycles " << remaining[node[gp2]]);
+            DOUT("... remaining at " << gp2->qasm() << " cycles " << remaining.dbg(node.at(gp2)));
         }
         gp = instruction[t];
         set_remaining_gate(gp, dir);
-        DOUT("... remaining at " << gp->qasm() << " cycles " << remaining[t]);
+        DOUT("... remaining at " << gp->qasm() << " cycles " << remaining.dbg(t));
     }
 }
 
@@ -652,7 +652,7 @@ gate *Scheduler::find_mostcritical(std::list<gate*> &lg) {
     size_t maxRemain = 0;
     gate *mostCriticalGate = nullptr;
     for (auto gp : lg) {
-        size_t gr = remaining[node[gp]];
+        size_t gr = remaining.at(node.at(gp));
         if (gr > maxRemain) {
             mostCriticalGate = gp;
             maxRemain = gr;
@@ -737,8 +737,8 @@ bool Scheduler::criticality_lessthan(
 ) {
     if (n1 == n2) return false;             // because not <
 
-    if (remaining[n1] < remaining[n2]) return true;
-    if (remaining[n1] > remaining[n2]) return false;
+    if (remaining.at(n1) < remaining.at(n2)) return true;
+    if (remaining.at(n1) > remaining.at(n2)) return false;
     // so: remaining[n1] == remaining[n2]
 
     std::list<lemon::ListDigraph::Node> ln1;
@@ -750,18 +750,18 @@ bool Scheduler::criticality_lessthan(
     if (ln1.empty()) return true;           // so when both empty, it is equal, so not strictly <, so false
     // so: ln1.non_empty && ln2.non_empty
 
-    ln1.sort([this](const lemon::ListDigraph::Node &d1, const lemon::ListDigraph::Node &d2) { return remaining[d1] < remaining[d2]; });
-    ln2.sort([this](const lemon::ListDigraph::Node &d1, const lemon::ListDigraph::Node &d2) { return remaining[d1] < remaining[d2]; });
+    ln1.sort([this](const lemon::ListDigraph::Node &d1, const lemon::ListDigraph::Node &d2) { return remaining.at(d1) < remaining.at(d2); });
+    ln2.sort([this](const lemon::ListDigraph::Node &d1, const lemon::ListDigraph::Node &d2) { return remaining.at(d1) < remaining.at(d2); });
 
-    size_t crit_dep_n1 = remaining[ln1.back()];    // the last of the list is the one with the largest remaining value
-    size_t crit_dep_n2 = remaining[ln2.back()];
+    size_t crit_dep_n1 = remaining.at(ln1.back());    // the last of the list is the one with the largest remaining value
+    size_t crit_dep_n2 = remaining.at(ln2.back());
 
     if (crit_dep_n1 < crit_dep_n2) return true;
     if (crit_dep_n1 > crit_dep_n2) return false;
     // so: crit_dep_n1 == crit_dep_n2, call this crit_dep
 
-    ln1.remove_if([this,crit_dep_n1](lemon::ListDigraph::Node n) { return remaining[n] < crit_dep_n1; });
-    ln2.remove_if([this,crit_dep_n2](lemon::ListDigraph::Node n) { return remaining[n] < crit_dep_n2; });
+    ln1.remove_if([this,crit_dep_n1](lemon::ListDigraph::Node n) { return remaining.at(n) < crit_dep_n1; });
+    ln2.remove_if([this,crit_dep_n2](lemon::ListDigraph::Node n) { return remaining.at(n) < crit_dep_n2; });
     // because both contain element with remaining == crit_dep: ln1.non_empty && ln2.non_empty
 
     if (ln1.size() < ln2.size()) return true;
@@ -790,7 +790,7 @@ void Scheduler::MakeAvailable(
     std::list<lemon::ListDigraph::Node>::iterator first_lower_criticality_inp; // for keeping avlist ordered
     bool first_lower_criticality_found = false;                          // for keeping avlist ordered
 
-    DOUT(".... making available node " << name[n] << " remaining: " << remaining[n]);
+    DOUT(".... making available node " << name[n] << " remaining: " << remaining.dbg(n));
     for (auto inp = avlist.begin(); inp != avlist.end(); inp++) {
         if (*inp == n) {
             already_in_avlist = true;
@@ -820,7 +820,7 @@ void Scheduler::MakeAvailable(
             // add n to end of avlist, if none found with less criticality
             avlist.push_back(n);
         }
-        DOUT("...... made available node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining[n]);
+        DOUT("...... made available node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining.dbg(n));
     }
 }
 
@@ -844,10 +844,10 @@ void Scheduler::MakeAvailable(
 void Scheduler::TakeAvailable(
     lemon::ListDigraph::Node n,
     std::list<lemon::ListDigraph::Node> &avlist,
-    std::map<gate*,bool> &scheduled,
+    utils::Map<gate*,bool> &scheduled,
     scheduling_direction_t dir
 ) {
-    scheduled[instruction[n]] = true;
+    scheduled.set(instruction[n]) = true;
     avlist.remove(n);
 
     if (forward_scheduling == dir) {
@@ -856,7 +856,7 @@ void Scheduler::TakeAvailable(
             bool schedulable = true;
             for (lemon::ListDigraph::InArcIt predArc(graph,succNode); predArc != lemon::INVALID; ++predArc) {
                 lemon::ListDigraph::Node predNode = graph.source(predArc);
-                if (!scheduled[instruction[predNode]]) {
+                if (!scheduled.at(instruction[predNode])) {
                     schedulable = false;
                     break;
                 }
@@ -871,7 +871,7 @@ void Scheduler::TakeAvailable(
             bool schedulable = true;
             for (lemon::ListDigraph::OutArcIt succArc(graph,predNode); succArc != lemon::INVALID; ++succArc) {
                 auto succNode = graph.target(succArc);
-                if (!scheduled[instruction[succNode]]) {
+                if (!scheduled.at(instruction[succNode])) {
                     schedulable = false;
                     break;
                 }
@@ -949,7 +949,7 @@ lemon::ListDigraph::Node Scheduler::SelectAvailable(
 
     DOUT("avlist(@" << curr_cycle << "):");
     for (auto n : avlist) {
-        DOUT("...... node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining[n]);
+        DOUT("...... node(@" << instruction[n]->cycle << "): " << name[n] << " remaining: " << remaining.dbg(n));
     }
 
     // select the first immediately schedulable, if any
@@ -957,11 +957,11 @@ lemon::ListDigraph::Node Scheduler::SelectAvailable(
     for (auto n : avlist) {
         bool isres;
         if (immediately_schedulable(n, dir, curr_cycle, platform, rm, isres)) {
-            DOUT("... node (@" << instruction[n]->cycle << "): " << name[n] << " immediately schedulable, remaining=" << remaining[n] << ", selected");
+            DOUT("... node (@" << instruction[n]->cycle << "): " << name[n] << " immediately schedulable, remaining=" << remaining.dbg(n) << ", selected");
             success = true;
             return n;
         } else {
-            DOUT("... node (@" << instruction[n]->cycle << "): " << name[n] << " remaining=" << remaining[n] << ", waiting for " << (isres? "resource" : "dependent completion"));
+            DOUT("... node (@" << instruction[n]->cycle << "): " << name[n] << " remaining=" << remaining.dbg(n) << ", waiting for " << (isres? "resource" : "dependent completion"));
         }
     }
 
@@ -987,7 +987,7 @@ void Scheduler::schedule(
     DOUT("Scheduling " << (forward_scheduling == dir?"ASAP":"ALAP") << " with RC ...");
 
     // scheduled[gp] :=: whether gate *gp has been scheduled, init all false
-    std::map<gate*, bool> scheduled;
+    utils::Map<gate*, bool> scheduled;
     // avlist :=: list of schedulable nodes, initially (see below) just s or t
     std::list<lemon::ListDigraph::Node> avlist;
 
@@ -995,7 +995,7 @@ void Scheduler::schedule(
     // note that dependence graph is not modified by a scheduler, so it can be reused
     DOUT("... initialization");
     for (lemon::ListDigraph::NodeIt n(graph); n != lemon::INVALID; ++n) {
-        scheduled[instruction[n]] = false;   // none were scheduled, including SOURCE/SINK
+        scheduled.set(instruction[n]) = false;   // none were scheduled, including SOURCE/SINK
     }
     size_t  curr_cycle;         // current cycle for which instructions are sought
     init_available(avlist, dir, curr_cycle);     // first node (SOURCE/SINK) is made available and curr_cycle set
@@ -1120,9 +1120,9 @@ void Scheduler::schedule_alap_uniform() {
     // DOUT("Creating gates_per_cycle");
     // create gates_per_cycle[cycle] = for each cycle the list of gates at cycle cycle
     // this is the basic map to be operated upon by the uniforming scheduler below;
-    std::map<size_t,std::list<gate*>> gates_per_cycle;
+    utils::Map<size_t, std::list<gate*>> gates_per_cycle;
     for (auto gp : *circp) {
-        gates_per_cycle[gp->cycle].push_back(gp);
+        gates_per_cycle.set(gp->cycle).push_back(gp);
     }
 
     // DOUT("Displaying circuit and bundle statistics");
@@ -1134,11 +1134,11 @@ void Scheduler::schedule_alap_uniform() {
     size_t non_empty_bundle_count = 0;
     size_t gate_count = 0;
     for (size_t curr_cycle = 1; curr_cycle <= cycle_count; curr_cycle++) {
-        max_gates_per_cycle = std::max(max_gates_per_cycle, gates_per_cycle[curr_cycle].size());
-        if (int(gates_per_cycle[curr_cycle].size()) != 0) {
+        max_gates_per_cycle = std::max(max_gates_per_cycle, gates_per_cycle.get(curr_cycle).size());
+        if (!gates_per_cycle.get(curr_cycle).empty()) {
             non_empty_bundle_count++;
         }
-        gate_count += gates_per_cycle[curr_cycle].size();
+        gate_count += gates_per_cycle.get(curr_cycle).size();
     }
     double avg_gates_per_cycle = double(gate_count)/cycle_count;
     double avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
@@ -1178,23 +1178,23 @@ void Scheduler::schedule_alap_uniform() {
         if (non_empty_bundle_count == 0) break;     // nothing to do
         avg_gates_per_cycle = double(gate_count)/curr_cycle;
         avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
-        DOUT("Cycle=" << curr_cycle << " number of gates=" << gates_per_cycle[curr_cycle].size()
+        DOUT("Cycle=" << curr_cycle << " number of gates=" << gates_per_cycle.get(curr_cycle).size()
                       << "; avg_gates_per_cycle=" << avg_gates_per_cycle
                       << "; avg_gates_per_non_empty_cycle=" << avg_gates_per_non_empty_cycle);
 
-        while (double(gates_per_cycle[curr_cycle].size()) < avg_gates_per_non_empty_cycle && pred_cycle >= 1) {
+        while (double(gates_per_cycle.get(curr_cycle).size()) < avg_gates_per_non_empty_cycle && pred_cycle >= 1) {
             DOUT("pred_cycle=" << pred_cycle);
-            DOUT("gates_per_cycle[curr_cycle].size()=" << gates_per_cycle[curr_cycle].size());
+            DOUT("gates_per_cycle[curr_cycle].size()=" << gates_per_cycle.get(curr_cycle).size());
             size_t min_remaining_cycle = MAX_CYCLE;
             gate *best_predgp;
             bool best_predgp_found = false;
 
             // scan bundle at pred_cycle to find suitable candidate to move forward to curr_cycle
-            for (auto predgp : gates_per_cycle[pred_cycle]) {
+            for (auto predgp : gates_per_cycle.get(pred_cycle)) {
                 bool forward_predgp = true;
                 size_t predgp_completion_cycle;
-                lemon::ListDigraph::Node pred_node = node[predgp];
-                DOUT("... considering: " << predgp->qasm() << " @cycle=" << predgp->cycle << " remaining=" << remaining[pred_node]);
+                lemon::ListDigraph::Node pred_node = node.at(predgp);
+                DOUT("... considering: " << predgp->qasm() << " @cycle=" << predgp->cycle << " remaining=" << remaining.dbg(pred_node));
 
                 // candidate's result, when moved, must be ready before end-of-circuit and before used
                 predgp_completion_cycle = curr_cycle + size_t(std::ceil(static_cast<float>(predgp->duration)/cycle_time));
@@ -1215,8 +1215,8 @@ void Scheduler::schedule_alap_uniform() {
 
                 // when multiple nodes in bundle qualify, take the one with lowest remaining
                 // because that is the most critical one and thus deserves a cycle as high as possible (ALAP)
-                if (forward_predgp && remaining[pred_node] < min_remaining_cycle) {
-                    min_remaining_cycle = remaining[pred_node];
+                if (forward_predgp && remaining.at(pred_node) < min_remaining_cycle) {
+                    min_remaining_cycle = remaining.at(pred_node);
                     best_predgp_found = true;
                     best_predgp = predgp;
                 }
@@ -1227,23 +1227,23 @@ void Scheduler::schedule_alap_uniform() {
             if (best_predgp_found) {
                 // move predgp from pred_cycle to curr_cycle;
                 // adjust all bookkeeping that is affected by this
-                gates_per_cycle[pred_cycle].remove(best_predgp);
-                if (gates_per_cycle[pred_cycle].empty()) {
+                gates_per_cycle.at(pred_cycle).remove(best_predgp);
+                if (gates_per_cycle.at(pred_cycle).empty()) {
                     // source bundle was non-empty, now it is empty
                     non_empty_bundle_count--;
                 }
-                if (gates_per_cycle[curr_cycle].empty()) {
+                if (gates_per_cycle.get(curr_cycle).empty()) {
                     // target bundle was empty, now it will be non_empty
                     non_empty_bundle_count++;
                 }
                 best_predgp->cycle = curr_cycle;        // what it is all about
-                gates_per_cycle[curr_cycle].push_back(best_predgp);
+                gates_per_cycle.set(curr_cycle).push_back(best_predgp);
 
                 // recompute targets
                 if (non_empty_bundle_count == 0) break;     // nothing to do
                 avg_gates_per_cycle = double(gate_count)/curr_cycle;
                 avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
-                DOUT("... moved " << best_predgp->qasm() << " with remaining=" << remaining[node[best_predgp]]
+                DOUT("... moved " << best_predgp->qasm() << " with remaining=" << remaining.dbg(node.at(best_predgp))
                                   << " from cycle=" << pred_cycle << " to cycle=" << curr_cycle
                                   << "; new avg_gates_per_cycle=" << avg_gates_per_cycle
                                   << "; avg_gates_per_non_empty_cycle=" << avg_gates_per_non_empty_cycle
@@ -1256,8 +1256,8 @@ void Scheduler::schedule_alap_uniform() {
         // curr_cycle ready, recompute counts for remaining cycles
         // mask current cycle and its gates from the target counts:
         // - gate_count, non_empty_bundle_count, curr_cycle (as cycles still to go)
-        gate_count -= gates_per_cycle[curr_cycle].size();
-        if (gates_per_cycle[curr_cycle].size() != 0) {
+        gate_count -= gates_per_cycle.get(curr_cycle).size();
+        if (!gates_per_cycle.get(curr_cycle).empty()) {
             // bundle is non-empty
             non_empty_bundle_count--;
         }
@@ -1273,11 +1273,11 @@ void Scheduler::schedule_alap_uniform() {
     gate_count = 0;
     // cycle_count was not changed
     for (size_t curr_cycle = 1; curr_cycle <= cycle_count; curr_cycle++) {
-        max_gates_per_cycle = std::max(max_gates_per_cycle, gates_per_cycle[curr_cycle].size());
-        if (int(gates_per_cycle[curr_cycle].size()) != 0) {
+        max_gates_per_cycle = std::max(max_gates_per_cycle, gates_per_cycle.get(curr_cycle).size());
+        if (!gates_per_cycle.get(curr_cycle).empty()) {
             non_empty_bundle_count++;
         }
-        gate_count += gates_per_cycle[curr_cycle].size();
+        gate_count += gates_per_cycle.get(curr_cycle).size();
     }
     avg_gates_per_cycle = double(gate_count)/cycle_count;
     avg_gates_per_non_empty_cycle = double(gate_count)/non_empty_bundle_count;
@@ -1353,7 +1353,7 @@ void Scheduler::get_dot(
         // Now print ranks, as shown below
         dotout << "{ rank=same; Cycle" << instruction[s]->cycle <<"; " << graph.id(s) << "; }\n";
         for (auto gp : *circp) {
-            dotout << "{ rank=same; Cycle" << gp->cycle <<"; " << graph.id(node[gp]) << "; }\n";
+            dotout << "{ rank=same; Cycle" << gp->cycle <<"; " << graph.id(node.at(gp)) << "; }\n";
         }
         dotout << "{ rank=same; Cycle" << instruction[t]->cycle <<"; " << graph.id(t) << "; }\n";
     }
