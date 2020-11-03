@@ -164,7 +164,7 @@ void codegen_cc::init(const quantum_platform &platform)
     }
 
 
-#if 1   // FIXME: WIP on feedback: allocate SM bits
+#if OPT_FEEDBACK   // FIXME: WIP on feedback: allocate SM bits
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
         const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
@@ -172,7 +172,6 @@ void codegen_cc::init(const quantum_platform &platform)
             // maintain mapping instrument -> SM
         }
     }
-
 #endif
 }
 
@@ -260,8 +259,20 @@ void codegen_cc::kernelFinish(const std::string &kernelName, size_t durationInCy
 // bundleStart: see 'strategy' above
 void codegen_cc::bundleStart(const std::string &cmnt)
 {
+#if 0   // FIXME
     unsigned int instrsUsed = settings.getInstrumentsSize();
     bundleInfo.assign(instrsUsed, std::vector<tBundleInfo>(MAX_GROUPS, {"", 0, -1}));   // FIXME: assign actual nr of groups
+#else
+    bundleInfo.clear();
+
+    // iterate over instruments
+    for(size_t instrIdx=0; instrIdx<settings.getInstrumentsSize(); instrIdx++) {
+        const settings_cc::tInstrumentControl ic = settings.getInstrumentControl(instrIdx);
+        bundleInfo.push_back(std::vector<tBundleInfo>(ic.controlModeGroupCnt,                               // one tBundleInfo per group in the control mode selected for instrument
+                                                      {"", 0, settings_cc::NO_STATIC_CODEWORD_OVERRIDE}));  // empty tBundleInfo
+    }
+
+#endif
 
     comment(cmnt);
 }
@@ -410,6 +421,8 @@ void codegen_cc::customGate(
 
     // generate comment (also performs some checks)
     if(isReadout) {
+        // FIXME: check qops.size()
+
         if(cops.size() == 0) {
             /*  NB: existing code uses empty cops, i.e. no explicit classical register.
                 On the one hand this historically seems to imply assignment to an
@@ -474,14 +487,15 @@ void codegen_cc::customGate(
             int cop = cops.size()>0 ? cops[0] : IMPLICIT_COP;
             bi->readoutCop = cop;   // FIXME: naming, we do use cop, but rename qop to qubit below
 
+#if 0   // FIXME: invalid, measure can be called with vector of qubits, see test_cc.cc. Ditto for "prepz", or is this erroneous syntax
             // store qubit
             if(qops.size() == 1) {
                 bi->readoutQubit = qops[0];
             } else {
                 FATAL("Readout instruction requires exactly 1 quantum operand, not " << qops.size());   // FIXME: provide context
             }
+#endif
         }
-
         // store expression for conditional gates
         // FIXME: implement
 #endif
