@@ -3,6 +3,7 @@
 #include <map>
 #include <unordered_map>
 #include <sstream>
+#include <typeinfo>
 #include "exception.h"
 
 namespace ql {
