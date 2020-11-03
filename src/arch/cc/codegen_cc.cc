@@ -14,7 +14,7 @@
 #include <options.h>
 
 // constants
-#define UNUSED_COP  -1  // unused classic operand
+#define IMPLICIT_COP  -1          // implicit classic operand
 
 
 namespace ql {
@@ -24,7 +24,7 @@ namespace ql {
 // FIXME: preliminary support based on '20200929_openql_feedback_design.docx'
 
 // temporary definitions for condition type that will be added to class gate
-typedef enum {
+enum {
     // 0 operands:
     cond_always,
     // 1 operand:
@@ -47,7 +47,7 @@ typedef struct {
     std::string comment;    // comment for instruction stream
 } tCalcGroupDigOut;
 
-static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, int group, int nrGroups, const settings_cc::tInstrumentControl &ic, int staticCodewordOverride)
+static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, size_t group, size_t nrGroups, const settings_cc::tInstrumentControl &ic, int staticCodewordOverride)
 {
     tCalcGroupDigOut ret{0, ""};
 
@@ -94,8 +94,7 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, int group, int nrGroups
         // find or assign code word
         uint32_t codeword = 0;
         bool codewordOverriden = false;
-#if OPT_SUPPORT_STATIC_CODEWORDS    // FIXME: this does not only provide support, but actually requires static codewords
-//        int staticCodewordOverride = bi->staticCodewordOverride;
+#if OPT_SUPPORT_STATIC_CODEWORDS
         codeword = staticCodewordOverride;
         codewordOverriden = true;
 #else
@@ -453,6 +452,7 @@ void codegen_cc::customGate(
         if(bi->signalValue == "") {                                         // signal not yet used
             bi->signalValue = csv.signalValueString;
 #if OPT_SUPPORT_STATIC_CODEWORDS
+            // FIXME: this does not only provide support, but findStaticCodewordOverride() currently actually requires static codewords
             bi->staticCodewordOverride = settings.findStaticCodewordOverride(instruction, csv.operandIdx, iname); // NB: function return -1 means 'no override'
 #endif
         } else if(bi->signalValue == csv.signalValueString) {               // signal unchanged
@@ -471,8 +471,8 @@ void codegen_cc::customGate(
 #if OPT_FEEDBACK
         if(isReadout) {
             // store the classical operand used for readout
-            int cop = cops.size()>0 ? cops[0] : UNUSED_COP;
-            bi->readoutCop = cop;
+            int cop = cops.size()>0 ? cops[0] : IMPLICIT_COP;
+            bi->readoutCop = cop;   // FIXME: naming, we do use cop, but rename qop to qubit below
 
             // store qubit
             if(qops.size() == 1) {
@@ -708,7 +708,7 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
 
 #if OPT_CROSSCHECK_INSTRUMENT_DEF
     // verify dimensions
-    int channelsPergroup = ret.si.ic.controlModeGroupSize;
+    size_t channelsPergroup = ret.si.ic.controlModeGroupSize;
     if(instructionSignalValue.size() != channelsPergroup) {
         JSON_FATAL("signal dimension mismatch on instruction '" << iname <<
                    "' : control mode '" << ret.si.ic.refControlMode <<

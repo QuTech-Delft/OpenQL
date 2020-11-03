@@ -65,7 +65,7 @@ private:    // types
         int staticCodewordOverride;
 #endif
 #if OPT_FEEDBACK
-        int readoutCop;                 // classic operand for readout. NB: we encode 'unused' as -1
+        int readoutCop;                 // classic operand for readout. NB: we encode an implicit cop as -1
         int readoutQubit;
 #endif
     } tBundleInfo;                      // information for an instrument group (of channels), for a single instruction

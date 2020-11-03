@@ -167,7 +167,7 @@ settings_cc::tSignalInfo settings_cc::findSignalInfoForQubit(const std::string &
             const json qubits = json_get<const json>(*ic.ii.instrument, "qubits", ic.ii.instrumentName);   // NB: json_get<const json&> unavailable
 
             // verify group size: qubits vs. control mode
-            int qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
+            size_t qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
             if(qubitGroupCnt != ic.controlModeGroupCnt) {
                 JSON_FATAL("instrument " << ic.ii.instrumentName <<
                            ": number of qubit groups " << qubitGroupCnt <<
@@ -213,8 +213,8 @@ settings_cc::tSignalInfo settings_cc::findSignalInfoForQubit(const std::string &
 int settings_cc::findStaticCodewordOverride(const json &instruction, size_t operandIdx, const std::string &iname)
 {
     // look for optional codeword override
-    int staticCodewordOverride = -1;    // -1 means unused
-    if(JSON_EXISTS(instruction["cc"], "static_codeword_override")) {    // optional keyword
+    int staticCodewordOverride = NO_STATIC_CODEWORD_OVERRIDE;               // -1 means unused
+    if(JSON_EXISTS(instruction["cc"], "static_codeword_override")) {        // optional keyword
  #if OPT_STATIC_CODEWORDS_ARRAYS
         const json &override = instruction["cc"]["static_codeword_override"];
         if(override.is_array()) {

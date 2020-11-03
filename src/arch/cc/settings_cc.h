@@ -48,6 +48,7 @@ public: // types
         int group;                  // the group of channels within the instrument that provides the signal
     } tSignalInfo;
 
+    static const int NO_STATIC_CODEWORD_OVERRIDE = -1;
 
 public: // functions
     settings_cc() = default;

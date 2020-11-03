@@ -12,7 +12,7 @@
 namespace ql {
 
 // NB: parameters qubitNumber and cycleTime originate from OpenQL variable 'platform'
-void vcd_cc::programStart(int qubitNumber, int cycleTime, int maxGroups, const settings_cc &settings)
+void vcd_cc::programStart(size_t qubitNumber, int cycleTime, int maxGroups, const settings_cc &settings)
 {
     this->cycleTime = cycleTime;
     kernelStartTime = 0;
