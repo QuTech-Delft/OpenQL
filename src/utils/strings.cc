@@ -6,6 +6,7 @@
 #include "utils/strings.h"
 
 #include <algorithm>
+#include <cctype>
 
 namespace ql {
 namespace utils {

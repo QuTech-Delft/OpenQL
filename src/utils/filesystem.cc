@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <cerrno>
+#include <algorithm>
 #include "utils/exception.h"
 
 #ifdef _WIN32
