@@ -1,3 +1,8 @@
+/** \file
+ * Provides a class similar to std::optional (which doesn't exist in the C++
+ * standard targeted by OpenQL).
+ */
+
 #pragma once
 
 #include <memory>

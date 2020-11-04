@@ -1,3 +1,7 @@
+/** \file
+ * Provides miscellaneous utilities.
+ */
+
 #pragma once
 
 // get the number of elements in an array

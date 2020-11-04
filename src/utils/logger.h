@@ -1,3 +1,7 @@
+/** \file
+ * Provides macros for logging and the global loglevel variable.
+ */
+
 #pragma once
 
 #include <iostream>

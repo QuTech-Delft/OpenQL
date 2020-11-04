@@ -1,3 +1,8 @@
+/** \file
+ * Provides utilities for working with strings that the STL fails to
+ * satisfactorily provide.
+ */
+
 #pragma once
 
 #include <string>

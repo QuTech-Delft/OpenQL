@@ -1,3 +1,8 @@
+/** \file
+ * Provides a wrapper for std::unordered_map that's safer to use and provides
+ * more context when something goes wrong at runtime.
+ */
+
 #pragma once
 
 #include <unordered_map>
