@@ -63,13 +63,17 @@ std::string dir_name(const std::string &path) {
 #ifdef _WIN32
     auto last_slash = path.find_last_of('/');
     if (last_slash == std::string::npos) {
-        last_slash = path.size();
+        last_slash = 0;
     }
     auto last_backslash = path.find_last_of('\\');
     if (last_backslash == std::string::npos) {
-        last_backslash = path.size();
+        last_backslash = 0;
     }
-    return path.substr(0, std::max(last_slash, last_backslash));
+    auto new_length = std::max(last_slash, last_backslash);
+    if (!new_length) {
+        return path;
+    }
+    return path.substr(0, new_length);
 #else
     std::string path_copy{path};
     return std::string(dirname(&path_copy[0]));
