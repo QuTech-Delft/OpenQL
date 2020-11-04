@@ -13,7 +13,7 @@
 
 #include <cstdint>
 
-// Define the colors outside the namespace
+// Define these outside the namespace
 typedef std::array<unsigned char, 3> Color;
 
 const Color white = {{ 255, 255, 255 }};
@@ -29,6 +29,8 @@ namespace ql
 {
 
 void visualize(const ql::quantum_program* program, const std::string& configPath, const std::string& waveformMappingPath);
+void assertPositive(const int argument, const std::string& parameter);
+void assertPositive(const double argument, const std::string& parameter);
 
 // ----------------------------------------------- //
 // -                    CYCLES                   - //
@@ -52,8 +54,8 @@ class CycleLabels
         
         void setEnabled(const bool argument) { enabled = argument; }
         void setInNanoSeconds(const bool argument) { inNanoSeconds = argument; }
-        void setRowHeight(const int argument) { rowHeight = argument; }
-        void setFontHeight(const int argument) { fontHeight = argument; }
+        void setRowHeight(const int argument) { assertPositive(argument, "cycles.labels.rowHeight"); rowHeight = argument; }
+        void setFontHeight(const int argument) { assertPositive(argument, "cycles.labels.fontHeight"); fontHeight = argument; }
         void setFontColor(const Color argument) { fontColor = argument; }
 };
 
@@ -71,7 +73,7 @@ class CycleEdges
         
         void setEnabled(const bool argument) { enabled = argument; }
         void setColor(const Color argument) { color = argument; }
-        void setAlpha(const double argument) { alpha = argument; }
+        void setAlpha(const double argument) { assertPositive(argument, "cycles.edges.alpha"); alpha = argument; }
 };
 
 class CycleCutting
@@ -89,9 +91,9 @@ class CycleCutting
         double getCutCycleWidthModifier() const { return cutCycleWidthModifier; }
 
         void setEnabled(const bool argument) { enabled = argument; }
-        void setEmptyCycleThreshold(const int argument) { emptyCycleThreshold = argument; }
-        void setCutCycleWidth(const int argument) { cutCycleWidth = argument; }
-        void setCutCycleWidthModifier(const double argument) { cutCycleWidthModifier = argument; }
+        void setEmptyCycleThreshold(const int argument) { assertPositive(argument, "cycles.cutting.emptyCycleThreshold"); emptyCycleThreshold = argument; }
+        void setCutCycleWidth(const int argument) { assertPositive(argument, "cycles.cutting.cutCycleWidth"); cutCycleWidth = argument; }
+        void setCutCycleWidthModifier(const double argument) { assertPositive(argument, "cycles.cutting.cutCycleWidthModifier"); cutCycleWidthModifier = argument; }
 };
 
 class Cycles
@@ -133,8 +135,8 @@ class BitLineLabels
         Color getCbitColor() const { return cbitColor; }
         
         void setEnabled(const bool argument) { enabled = argument; }
-        void setColumnWidth(const int argument) { columnWidth = argument; }
-        void setFontHeight(const int argument) { fontHeight = argument; }
+        void setColumnWidth(const int argument) { assertPositive(argument, "bitLines.labels.columnWidth"); columnWidth = argument; }
+        void setFontHeight(const int argument) { assertPositive(argument, "bitLines.labels.fontHeight"); fontHeight = argument; }
         void setQbitColor(const Color argument) { qbitColor = argument; }
         void setCbitColor(const Color argument) { cbitColor = argument; }
 
@@ -167,7 +169,7 @@ class ClassicalLines
         
         void setEnabled(const bool argument) { enabled = argument; }
         void setGrouped(const bool argument) { group = argument; }
-        void setGroupedLineGap(const int argument) { groupedLineGap = argument; }
+        void setGroupedLineGap(const int argument) { assertPositive(argument, "bitLines.classical.groupedLineGap"); groupedLineGap = argument; }
         void setColor(const Color argument) { color = argument; }
 };
 
@@ -186,9 +188,9 @@ class BitLineEdges
         double getAlpha() const { return alpha; }
         
         void setEnabled(const bool argument) { enabled = argument; }
-        void setThickness(const int argument) { thickness = argument; }
+        void setThickness(const int argument) { assertPositive(argument, "bitLines.edges.thickness"); thickness = argument; }
         void setColor(const Color argument) { color = argument; }
-        void setAlpha(const double argument) { alpha = argument; }
+        void setAlpha(const double argument) { assertPositive(argument, "bitLines.edges.alpha"); alpha = argument; }
 
 };
 
@@ -215,8 +217,8 @@ struct Grid
         int getCellSize() const { return cellSize; }
         int getBorderSize() const { return borderSize; }
 
-        void setCellSize(const int argument) { cellSize = argument; }
-        void setBorderSize(const int argument) { borderSize = argument; }
+        void setCellSize(const int argument) { assertPositive(argument, "grid.cellSize"); cellSize = argument; }
+        void setBorderSize(const int argument) { assertPositive(argument, "grid.borderSize"); borderSize = argument; }
 };
 
 struct GateDurationOutlines
@@ -236,9 +238,9 @@ struct GateDurationOutlines
         Color getOutlineColor() const { return outlineColor; }
 
         void setEnabled(const bool argument) { enabled = argument; }
-        void setGap(const int argument) { gap = argument; }
-        void setFillAlpha(const double argument) { fillAlpha = argument; }
-        void setOutlineAlpha(const double argument) { outlineAlpha = argument; }
+        void setGap(const int argument) { assertPositive(argument, "gateDurationOutlines.gap"); gap = argument; }
+        void setFillAlpha(const double argument) { assertPositive(argument, "gateDurationOutlines.fillAlpha"); fillAlpha = argument; }
+        void setOutlineAlpha(const double argument) { assertPositive(argument, "gateDurationOutlines.outlineAlpha"); outlineAlpha = argument; }
         void setOutlineColor(const Color argument) { outlineColor = argument; }
 };
 
@@ -255,8 +257,8 @@ struct Measurements
         int getArrowSize() const { return arrowSize; }
 
         void enableDrawConnection(const bool argument) { enableConnection = argument; }
-        void setLineSpacing(const int argument) { lineSpacing = argument; }
-        void setArrowSize(const int argument) { arrowSize = argument; }
+        void setLineSpacing(const int argument) { assertPositive(argument, "measurements.lineSpacing"); lineSpacing = argument; }
+        void setArrowSize(const int argument) { assertPositive(argument, "measurements.arrowSize"); arrowSize = argument; }
 };
 
 // ----------------------------------------------- //
@@ -284,9 +286,9 @@ struct Pulses
         Color getPulseColorReadout() const { return pulseColorReadout; }
 
         void setEnabled(const bool argument) { enabled = argument; }
-        void setPulseRowHeightMicrowave(const int argument) { pulseRowHeightMicrowave = argument; }
-        void setPulseRowHeightFlux(const int argument) { pulseRowHeightFlux = argument; }
-        void setPulseRowHeightReadout(const int argument) { pulseRowHeightReadout = argument; }
+        void setPulseRowHeightMicrowave(const int argument) { assertPositive(argument, "pulses.pulseRowHeightMicrowave"); pulseRowHeightMicrowave = argument; }
+        void setPulseRowHeightFlux(const int argument) { assertPositive(argument, "pulses.pulseRowHeightFlux"); pulseRowHeightFlux = argument; }
+        void setPulseRowHeightReadout(const int argument) { assertPositive(argument, "pulses.pulseRowHeightReadout"); pulseRowHeightReadout = argument; }
         void setPulseColorMicrowave(const Color argument) { pulseColorMicrowave = argument; }
         void setPulseColorFlux(const Color argument) { pulseColorFlux = argument; }
         void setPulseColorReadout(const Color argument) { pulseColorReadout = argument; }
@@ -296,108 +298,107 @@ struct Pulses
 // -                    LAYOUT                   - //
 // ----------------------------------------------- //
 
-class Layout
+struct Layout
 {
-    public:
-        Cycles cycles;
-        BitLines bitLines;
-        Grid grid;
-        GateDurationOutlines gateDurationOutlines;
-        Measurements measurements;
-        Pulses pulses;
+    Cycles cycles;
+    BitLines bitLines;
+    Grid grid;
+    GateDurationOutlines gateDurationOutlines;
+    Measurements measurements;
+    Pulses pulses;
 
-        std::map<std::string, GateVisual> customGateVisuals;
+    std::map<std::string, GateVisual> customGateVisuals;
 
-        const std::map<ql::gate_type_t, GateVisual> defaultGateVisuals
-        {
-            // TODO: use the proper symbol for dagger gates
-            // TODO: use the proper symbol for measurement gates
+    const std::map<ql::gate_type_t, GateVisual> defaultGateVisuals
+    {
+        // TODO: use the proper symbol for dagger gates
+        // TODO: use the proper symbol for measurement gates
 
-            {ql::__identity_gate__, { black, {
-                { GATE, 13, "I", 13, white, lightblue, lightblue }}}},
+        {ql::__identity_gate__, { black, {
+            { GATE, 13, "I", 13, white, lightblue, lightblue }}}},
 
-            {ql::__hadamard_gate__,	{ black, {
-                { GATE, 13, "H", 13, white, lightblue, lightblue }}}},
+        {ql::__hadamard_gate__,	{ black, {
+            { GATE, 13, "H", 13, white, lightblue, lightblue }}}},
 
-            {ql::__pauli_x_gate__, { black, {
-                { GATE, 13, "X", 13, white, green, green }}}},
+        {ql::__pauli_x_gate__, { black, {
+            { GATE, 13, "X", 13, white, green, green }}}},
 
-            {ql::__pauli_y_gate__, { black, {
-                { GATE, 13, "Y", 13, white, green, green }}}},
+        {ql::__pauli_y_gate__, { black, {
+            { GATE, 13, "Y", 13, white, green, green }}}},
 
-            {ql::__pauli_z_gate__, { black, {
-                { GATE, 13, "Z", 13, white, green, green }}}},
+        {ql::__pauli_z_gate__, { black, {
+            { GATE, 13, "Z", 13, white, green, green }}}},
 
-            {ql::__phase_gate__, { black, {
-                { GATE, 13, "S", 13, white, yellow, yellow }}}},
+        {ql::__phase_gate__, { black, {
+            { GATE, 13, "S", 13, white, yellow, yellow }}}},
 
-            {ql::__phasedag_gate__, { black, {
-                { GATE, 13, "S\u2020", 13, white, yellow, yellow }}}},
+        {ql::__phasedag_gate__, { black, {
+            { GATE, 13, "S\u2020", 13, white, yellow, yellow }}}},
 
-            {ql::__t_gate__, { black, {
-                { GATE, 13, "T", 13, white, red, red }}}},
+        {ql::__t_gate__, { black, {
+            { GATE, 13, "T", 13, white, red, red }}}},
 
-            {ql::__tdag_gate__, { black, {
-                { GATE, 13, "T\u2020", 13, white, red, red }}}},
+        {ql::__tdag_gate__, { black, {
+            { GATE, 13, "T\u2020", 13, white, red, red }}}},
 
-            {ql::__rx90_gate__, { black, {
-                {}}}},
-            {ql::__mrx90_gate__, { black, {
-                {}}}},
-            {ql::__rx180_gate__, { black, {
-                {}}}},
-            {ql::__ry90_gate__, { black, {
-                {}}}},
-            {ql::__mry90_gate__, { black, {
-                {}}}},
-            {ql::__ry180_gate__, { black, {
-                {}}}},
-            {ql::__rx_gate__, { black, {
-                {}}}},
-            {ql::__ry_gate__, { black, {
-                {}}}},
-            {ql::__rz_gate__, { black, {
-                {}}}},
-            {ql::__prepz_gate__, { black, {
-                {}}}},
+        {ql::__rx90_gate__, { black, {
+            {}}}},
+        {ql::__mrx90_gate__, { black, {
+            {}}}},
+        {ql::__rx180_gate__, { black, {
+            {}}}},
+        {ql::__ry90_gate__, { black, {
+            {}}}},
+        {ql::__mry90_gate__, { black, {
+            {}}}},
+        {ql::__ry180_gate__, { black, {
+            {}}}},
+        {ql::__rx_gate__, { black, {
+            {}}}},
+        {ql::__ry_gate__, { black, {
+            {}}}},
+        {ql::__rz_gate__, { black, {
+            {}}}},
+        {ql::__prepz_gate__, { black, {
+            {}}}},
 
-            {ql::__cnot_gate__,	{ black, {
-                { CONTROL, 3, "", 0, black, black, black },
-                { NOT, 8, "", 0, black, black, black }}}},
+        {ql::__cnot_gate__,	{ black, {
+            { CONTROL, 3, "", 0, black, black, black },
+            { NOT, 8, "", 0, black, black, black }}}},
 
-            {ql::__cphase_gate__, { lightblue, {
-                { CONTROL, 3, "", 0, black, lightblue, lightblue },
-                { CONTROL, 3, "", 0, black, lightblue, lightblue }}}},
+        {ql::__cphase_gate__, { lightblue, {
+            { CONTROL, 3, "", 0, black, lightblue, lightblue },
+            { CONTROL, 3, "", 0, black, lightblue, lightblue }}}},
 
-            {ql::__toffoli_gate__, { black, {
-                {}}}},
-            {ql::__custom_gate__, { black, {
-                {}}}},
-            {ql::__composite_gate__, { black, {
-                {}}}},
+        {ql::__toffoli_gate__, { black, {
+            {}}}},
+        {ql::__custom_gate__, { black, {
+            {}}}},
+        {ql::__composite_gate__, { black, {
+            {}}}},
 
-            {ql::__measure_gate__, { gray, {
-                { GATE, 13, "M", 13, white, purple, purple },
-                { NONE, 3, "", 0, black, black, black }}}},
+        {ql::__measure_gate__, { gray, {
+            { GATE, 13, "M", 13, white, purple, purple },
+            { NONE, 3, "", 0, black, black, black }}}},
 
-            {ql::__display__, { black, {
-                {}}}},
-            {ql::__display_binary__, { black, {
-                {}}}},
-            {ql::__nop_gate__, { black, {
-                {}}}},
-            {ql::__dummy_gate__, { black, {
-                {}}}},
+        {ql::__display__, { black, {
+            {}}}},
+        {ql::__display_binary__, { black, {
+            {}}}},
+        {ql::__nop_gate__, { black, {
+            {}}}},
+        {ql::__dummy_gate__, { black, {
+            {}}}},
 
-            {ql::__swap_gate__, { black, {
-                { CROSS, 6, "", 0, black, black, black },
-                { CROSS, 6, "", 0, black, black, black }}}},
+        {ql::__swap_gate__, { black, {
+            { CROSS, 6, "", 0, black, black, black },
+            { CROSS, 6, "", 0, black, black, black }}}},
 
-            {ql::__wait_gate__, { black, {
-                {}}}},
-            {ql::__classical_gate__, { black, {
-                {}}}}
-        };
+        {ql::__wait_gate__, { black, {
+            {}}}},
+        {ql::__classical_gate__, { black, {
+            {}}}}
+    };
 };
 
 } // ql

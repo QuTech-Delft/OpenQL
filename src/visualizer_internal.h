@@ -16,6 +16,7 @@
 // These undefs are necessary to avoid name collisions between CImg and Lemon.
 #undef cimg_use_opencv
 #undef True
+
 #undef False
 #undef IN
 #undef OUT
@@ -243,9 +244,9 @@ void drawBitLineEdges(cimg_library::CImg<unsigned char>& image, const Layout lay
 void drawBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const BitType bitType, const int row, const CircuitData circuitData, const Structure structure);
 void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure);
 
-void drawWiggle(cimg_library::CImg<unsigned char>& image, const int x0, const int x1, const int y, const int width, const int height, const std::array<unsigned char, 3> color);
+void drawWiggle(cimg_library::CImg<unsigned char>& image, const int x0, const int x1, const int y, const int width, const int height, const Color color);
 
-void drawLine(cimg_library::CImg<unsigned char>& image, const Structure structure, const int cycleDuration, const Line line, const int qubitIndex, const int y, const int maxLineHeight, const std::array<unsigned char, 3> color);
+void drawLine(cimg_library::CImg<unsigned char>& image, const Structure structure, const int cycleDuration, const Line line, const int qubitIndex, const int y, const int maxLineHeight, const Color color);
 
 void drawCycle(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure, const Cycle cycle);
 void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const GateProperties gate, const Structure structure, const int chunkOffset);

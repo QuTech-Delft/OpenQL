@@ -36,10 +36,10 @@ namespace ql
 // allow for floats in the waveform sample vector
 // fix merge conflicts with develop branch (already done)
 // re-organize the attributes in the config file
+// change char arrays to Color
+// check for negative/invalid values during layout validation
 
 // -- IN PROGRESS ---
-// check for negative/invalid values during layout validation
-// change char arrays to Color
 // GateProperties validation on construction (test with visualizer pass called at different points (during different passes) during compilation)
 // update code style
 // update documentation
@@ -2156,10 +2156,15 @@ int safe_int_cast(const size_t argument)
     return static_cast<int>(argument);
 }
 
-// void assertPositive(const int argument, const std::string& message)
-// {
-//     if(argument < 0) FATAL("Argument is negative: " << message);
-// }
+void assertPositive(const int argument, const std::string& parameter)
+{
+    if (argument < 0) FATAL(parameter << " is negative. Only positive values are allowed!");
+}
+
+void assertPositive(const double argument, const std::string& parameter)
+{
+    if (argument < 0) FATAL(parameter << " is negative. Only positive values are allowed!");
+}
 
 #endif //WITH_VISUALIZER
 
