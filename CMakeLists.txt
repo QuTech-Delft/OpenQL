@@ -338,6 +338,11 @@ target_link_libraries(ql PUBLIC cqasm)
 add_subdirectory(deps/backward-cpp)
 add_backward(ql)
 
+# add_backward doesn't set INTERFACE_LINK_LIBRARIES, only LINK_LIBRARIES. That
+# goes wrong when we're compiling statically, because said libraries are shared
+# and need to be included in the final link.
+set_property(TARGET ql APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${BACKWARD_LIBRARIES})
+
 
 #=============================================================================#
 # Testing                                                                     #
