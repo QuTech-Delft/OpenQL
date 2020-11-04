@@ -8,7 +8,6 @@
 
 #include "latency_compensation.h"
 
-#include "utils.h"
 #include "gate.h"
 #include "kernel.h"
 #include "circuit.h"

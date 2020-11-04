@@ -7,7 +7,7 @@
 
 #define K_PI 3.141592653589793238462643383279502884197169399375105820974944592307816406L
 #include "utils/json.h"
-#include "utils.h"
+#include "utils/strings.h"
 #include "options.h"
 #include "gate.h"
 #include "classical.h"

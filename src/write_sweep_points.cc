@@ -6,7 +6,7 @@
 
 #include "write_sweep_points.h"
 
-#include "utils.h"
+#include "utils/filesystem.h"
 #include "options.h"
 
 namespace ql {

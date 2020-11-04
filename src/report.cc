@@ -5,10 +5,13 @@
  * @brief  report utils
  */
 
-#include <utils.h>
-#include <options.h>
-#include <ir.h>
-#include <report.h>
+#include "report.h"
+
+#include <fstream>
+#include "utils/filesystem.h"
+#include "utils/strings.h"
+#include "options.h"
+#include "ir.h"
 
 namespace ql {
 

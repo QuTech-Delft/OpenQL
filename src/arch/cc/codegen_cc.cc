@@ -10,6 +10,7 @@
 #include "codegen_cc.h"
 #include "eqasm_backend_cc.h"
 
+#include <utils/strings.h>
 #include <version.h>
 #include <options.h>
 

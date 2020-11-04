@@ -68,7 +68,6 @@
 #include <lemon/connectivity.h>
 
 #include "options.h"
-#include "utils.h"
 #include "gate.h"
 #include "kernel.h"
 #include "circuit.h"

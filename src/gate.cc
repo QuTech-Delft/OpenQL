@@ -1,6 +1,7 @@
 #include "gate.h"
 
 #include <cctype>
+#include "utils/strings.h"
 
 namespace ql {
 
@@ -666,7 +667,7 @@ void custom_gate::load(nlohmann::json &instr) {
 void custom_gate::print_info() const {
     PRINTLN("[-] custom gate : ");
     PRINTLN("    |- name     : " << name);
-    utils::print_vector(operands,"[openql]     |- qubits   :"," , ");
+    PRINTLN("    |- qubits   : " << utils::to_string(operands));
     PRINTLN("    |- duration : " << duration);
     PRINTLN("    |- matrix   : [" << m.m[0] << ", " << m.m[1] << ", " << m.m[2] << ", " << m.m[3] << "]");
 }

@@ -11,7 +11,6 @@
 #include <chrono>
 #include <ctime>
 #include <ratio>
-#include "utils.h"
 #include "platform.h"
 #include "kernel.h"
 #include "resource_manager.h"

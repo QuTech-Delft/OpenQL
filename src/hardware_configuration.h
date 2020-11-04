@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "utils.h"
 #include "gate.h"
 
 namespace ql {

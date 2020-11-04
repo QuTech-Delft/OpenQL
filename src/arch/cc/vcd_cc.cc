@@ -8,6 +8,7 @@
 
 #include "vcd_cc.h"
 #include "options.h"
+#include "utils/filesystem.h"
 
 namespace ql {
 

@@ -10,13 +10,11 @@
 #include <string>
 #include <vector>
 
-#include "utils.h"
 #include "circuit.h"
 
 namespace ql {
 
-class InteractionMatrix
-{
+class InteractionMatrix {
 private:
     std::vector<std::vector<size_t>> Matrix;
     size_t Size;

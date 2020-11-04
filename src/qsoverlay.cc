@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include "options.h"
 #include "kernel.h"
 

@@ -11,8 +11,8 @@
 #include <string>
 #include <vector>
 #include "utils/json.h"
+#include "utils/misc.h"
 #include "matrix.h"
-#include "utils.h"
 
 namespace ql {
 

@@ -1,5 +1,7 @@
 #include "scheduler.h"
 
+#include "utils/filesystem.h"
+
 namespace ql {
 
 Scheduler::Scheduler() :

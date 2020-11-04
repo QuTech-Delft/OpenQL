@@ -8,8 +8,8 @@
 
 #include "program.h"
 
+#include "utils/filesystem.h"
 #include "compiler.h"
-#include "utils.h"
 #include "options.h"
 #include "interactionMatrix.h"
 #include "scheduler.h"

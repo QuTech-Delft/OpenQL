@@ -12,7 +12,6 @@
 
 #include <string>
 #include <list>
-#include "utils.h"
 #include "platform.h"
 #include "circuit.h"
 

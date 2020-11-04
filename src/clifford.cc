@@ -7,7 +7,6 @@
 
 #include "clifford.h"
 
-#include "utils.h"
 #include "circuit.h"
 #include "report.h"
 #include "kernel.h"

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "utils.h"
+#include <string>
 
 namespace ql {
 namespace options {

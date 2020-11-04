@@ -10,7 +10,6 @@
 
 #include <vector>
 #include <string>
-#include "utils.h"
 #include "program.h"
 #include "platform.h"
 #include "ir.h"

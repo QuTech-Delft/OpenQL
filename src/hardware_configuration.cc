@@ -1,6 +1,7 @@
 #include "hardware_configuration.h"
 
 #include <regex>
+#include "utils/strings.h"
 
 namespace ql {
 

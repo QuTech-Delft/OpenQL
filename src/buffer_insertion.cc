@@ -6,7 +6,6 @@
  * @brief  buffer insertion
  */
 
-#include "utils.h"
 #include "kernel.h"
 #include "circuit.h"
 #include "ir.h"

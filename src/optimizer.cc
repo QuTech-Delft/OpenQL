@@ -6,7 +6,6 @@
  * @todo   implementations should be in separate files for better readability
  */
 
-#include "utils.h"
 #include "circuit.h"
 #include "kernel.h"
 #include "optimizer.h"

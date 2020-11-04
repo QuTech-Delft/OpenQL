@@ -11,7 +11,6 @@
 #include <complex>
 #include <string>
 
-#include "utils.h"
 #include "gate.h"
 #include "utils/exception.h"
 

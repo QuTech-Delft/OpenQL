@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "utils/opt.h"
 #include "circuit.h"
 #include "classical.h"
 #include "hardware_configuration.h"
@@ -34,7 +35,7 @@ public: // FIXME: should be private
     kernel_type_t  type;
     circuit        c;
     bool           cycles_valid; // used in bundler to check if kernel has been scheduled
-    Opt<operation> br_condition;
+    utils::Opt<operation> br_condition;
     size_t         cycle_time;   // FIXME HvS just a copy of platform.cycle_time
     instruction_map_t instruction_map;
 

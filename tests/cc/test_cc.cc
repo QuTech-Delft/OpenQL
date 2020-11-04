@@ -16,7 +16,6 @@
 #include <time.h>
 
 #include <openql.h>
-#include <utils.h>
 
 #define CFG_FILE_JSON   "test_cfg_cc.json"
 

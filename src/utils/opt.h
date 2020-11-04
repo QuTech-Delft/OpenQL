@@ -4,6 +4,7 @@
 #include "utils/exception.h"
 
 namespace ql {
+namespace utils {
 
 /**
  * Represents an optional value. You can use this when you need to own some
@@ -160,4 +161,5 @@ public:
 
 };
 
+} // namespace utils
 } // namespace ql

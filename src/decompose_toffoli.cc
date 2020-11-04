@@ -4,7 +4,6 @@
  * @author Nader Khammassi
  */
 
-#include "utils.h"
 #include "circuit.h"
 #include "kernel.h"
 #include "decompose_toffoli.h"

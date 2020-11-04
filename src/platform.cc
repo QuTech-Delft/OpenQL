@@ -7,8 +7,6 @@
 
 #include "platform.h"
 
-#include "utils.h"
-
 namespace ql {
 
 // FIXME: constructed object is not usable

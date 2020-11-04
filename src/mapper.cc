@@ -1,5 +1,7 @@
 #include "mapper.h"
 
+#include "utils/filesystem.h"
+
 #ifdef INITIALPLACE
 #include <thread>
 #include <mutex>
