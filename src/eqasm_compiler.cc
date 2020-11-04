@@ -12,7 +12,7 @@ void eqasm_compiler::write_eqasm(const std::string &file_name) {
         return;
     }
     if (file_name.empty()) {
-        println("[c] eqasm code (" << eqasm_code.size() << " lines) :");
+        PRINTLN("[c] eqasm code (" << eqasm_code.size() << " lines) :");
         for (std::string l : eqasm_code) {
             std::cout << l << std::endl;
         }

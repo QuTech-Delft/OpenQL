@@ -1,7 +1,7 @@
 #pragma once
 
 #include <unordered_map>
-#include "utils/logging.h"
+#include "utils/strings.h"
 #include "exception.h"
 
 namespace ql {

@@ -48,13 +48,13 @@ quantum_platform::quantum_platform(
  * display information about the platform
  */
 void quantum_platform::print_info() const {
-    println("[+] platform name      : " << name);
-    println("[+] qubit number       : " << qubit_number);
-    println("[+] eqasm compiler     : " << eqasm_compiler_name);
-    println("[+] configuration file : " << configuration_file_name);
-    println("[+] supported instructions:");
+    PRINTLN("[+] platform name      : " << name);
+    PRINTLN("[+] qubit number       : " << qubit_number);
+    PRINTLN("[+] eqasm compiler     : " << eqasm_compiler_name);
+    PRINTLN("[+] configuration file : " << configuration_file_name);
+    PRINTLN("[+] supported instructions:");
     for (const auto &i : instruction_map) {
-        println("  |-- " << i.first);
+        PRINTLN("  |-- " << i.first);
     }
 }
 

@@ -664,11 +664,11 @@ void custom_gate::load(nlohmann::json &instr) {
 }
 
 void custom_gate::print_info() const {
-    println("[-] custom gate : ");
-    println("    |- name     : " << name);
+    PRINTLN("[-] custom gate : ");
+    PRINTLN("    |- name     : " << name);
     utils::print_vector(operands,"[openql]     |- qubits   :"," , ");
-    println("    |- duration : " << duration);
-    println("    |- matrix   : [" << m.m[0] << ", " << m.m[1] << ", " << m.m[2] << ", " << m.m[3] << "]");
+    PRINTLN("    |- duration : " << duration);
+    PRINTLN("    |- matrix   : [" << m.m[0] << ", " << m.m[1] << ", " << m.m[2] << ", " << m.m[3] << "]");
 }
 
 instruction_t custom_gate::qasm() const {
