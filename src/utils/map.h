@@ -23,7 +23,7 @@ namespace utils {
  *    is equivalent to what `map[key]` normally does. There is no `const`
  *    version of this method.
  *  - If you want to access an existing key, use `map.at(key)` in place of
- *    `map[key]`. This will throw a ql::exception with context information if
+ *    `map[key]`. This will throw a Exception with context information if
  *    the key does not exist yet. This is equivalent to what `map[at]` normally
  *    does. There is both a `const` and non-`const` version, the latter giving
  *    you a mutable reference to the value, the former being immutable.
@@ -89,7 +89,7 @@ public:
 
     /**
      * Returns mutable access to the value stored for the given key. If the key
-     * does not exist, ql::exception is thrown.
+     * does not exist, an Exception is thrown.
      */
     T &at(const Key &key) {
         auto it = this->find(key);
@@ -102,7 +102,7 @@ public:
 
     /**
      * Returns const access to the value stored for the given key. If the key
-     * does not exist, ql::exception is thrown.
+     * does not exist, an Exception is thrown.
      */
     const T &at(const Key &key) const {
         auto it = this->find(key);
@@ -147,15 +147,41 @@ public:
 
     /**
      * Returns a string representation of the value at the given key, or
-     * `"<EMPTY>"` if there is no value for the given key.
+     * `"<EMPTY>"` if there is no value for the given key. A stream << overload
+     * must exist for the value type.
      */
     std::string dbg(const Key &key) const {
         auto it = this->find(key);
         if (it != this->end()) {
-            return try_to_string(it->second);
+            return utils::to_string(it->second);
         } else {
             return "<EMPTY>";
         }
+    }
+
+    /**
+     * Returns a string representation of the entire contents of the map. Stream
+     * << overloads must exist for both the key and value type.
+     */
+    std::string to_string(
+        const std::string &prefix = "{",
+        const std::string &key_value_separator = ": ",
+        const std::string &element_separator = ", ",
+        const std::string &suffix = "}"
+    ) const {
+        std::ostringstream ss{};
+        ss << prefix;
+        bool first = true;
+        for (const auto &kv : *this) {
+            if (first) {
+                first = false;
+            } else {
+                ss << element_separator;
+            }
+            ss << kv.first << key_value_separator << kv.second;
+        }
+        ss << suffix;
+        return ss.str();
     }
 
     /**
@@ -168,3 +194,12 @@ public:
 
 } // namespace utils
 } // namespace ql
+
+/**
+ * Stream << overload for Map<>.
+ */
+template <class Key, class T, class Compare>
+std::ostream &operator<<(std::ostream &os, const ::ql::utils::Map<Key, T, Compare> &map) {
+    os << map.to_string();
+    return os;
+}
