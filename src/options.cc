@@ -157,8 +157,8 @@ public:
             app->parse(opts);
         } catch (const std::exception &e) {
             app->reset();
-            EOUT("Un-known option:"<< e.what());
-            throw ql::exception("Error parsing options. "+std::string(e.what())+" !",false);
+            QL_EOUT("Un-known option:" << e.what());
+            throw utils::Exception("Error parsing options. " + std::string(e.what()) + " !", false);
         }
         app->reset();
     }
@@ -168,14 +168,14 @@ public:
         if (opt_name2opt_val.find(opt_name) != opt_name2opt_val.end()) {
             opt_value = opt_name2opt_val[opt_name];
         } else {
-            EOUT("Un-known option:" << opt_name);
+            QL_EOUT("Un-known option:" << opt_name);
         }
         return opt_value;
     }
 
 };
 
-OPENQL_DECLSPEC Options ql_options("OpenQL Options");
+QL_GLOBAL Options ql_options("OpenQL Options");
 
 void print() {
     ql_options.help();
@@ -189,9 +189,9 @@ void set(const std::string &opt_name, const std::string &opt_value) {
     ql_options.set(opt_name, opt_value);
 
     if (opt_name == "log_level") {
-        ql::utils::logger::set_log_level(opt_value);
+        utils::logger::set_log_level(opt_value);
     } else if (opt_name == "output_dir") {
-        ql::utils::make_output_dir(opt_value);
+        utils::make_dirs(opt_value);
     }
 }
 

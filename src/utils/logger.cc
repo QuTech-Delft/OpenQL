@@ -1,28 +1,42 @@
 #include "utils/logger.h"
+#include "utils/exception.h"
 
 namespace ql {
 namespace utils {
 namespace logger {
 
-log_level_t LOG_LEVEL;
+/**
+ * The current log level (verbosity).
+ */
+LogLevel log_level;
 
-void set_log_level(const std::string &level) {
+/**
+ * Converts the string representation of a log level to a LogLevel enum variant.
+ * Throws ql::exception if the string could not be converted.
+ */
+LogLevel log_level_from_string(const std::string &level) {
     if (level == "LOG_NOTHING") {
-        ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_NOTHING;
+        return LogLevel::LOG_NOTHING;
     } else if (level == "LOG_CRITICAL") {
-        ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_CRITICAL;
+        return LogLevel::LOG_CRITICAL;
     } else if (level == "LOG_ERROR") {
-        ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_ERROR;
+        return LogLevel::LOG_ERROR;
     } else if (level == "LOG_WARNING") {
-        ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_WARNING;
+        return LogLevel::LOG_WARNING;
     } else if (level == "LOG_INFO") {
-        ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_INFO;
+        return LogLevel::LOG_INFO;
     } else if(level == "LOG_DEBUG") {
-        ql::utils::logger::LOG_LEVEL = ql::utils::logger::log_level_t::LOG_DEBUG;
+        return LogLevel::LOG_DEBUG;
     } else {
-        std::cerr << "[OPENQL] " << __FILE__ << ":" << __LINE__
-                  << " Error: Unknown log level" << std::endl;
+        throw Exception("unknown log level \"" + level + "\"");
     }
+}
+
+/**
+ * Sets the current log level using its string representation.
+ */
+void set_log_level(const std::string &level) {
+    log_level = log_level_from_string(level);
 }
 
 } // namespace logger

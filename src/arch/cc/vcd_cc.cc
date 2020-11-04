@@ -41,7 +41,7 @@ void vcd_cc::programStart(int qubitNumber, int cycleTime, int maxGroups, const s
     vcdVarSignal.assign(instrsUsed, std::vector<int>(maxGroups, {0}));
     for(size_t instrIdx=0; instrIdx<instrsUsed; instrIdx++) {
         const utils::json &instrument = settings.getInstrumentAtIdx(instrIdx);         // NB: always exists
-        std::string instrumentPath = SS2S("instruments["<<instrIdx<<"]");       // for JSON error reporting
+        std::string instrumentPath = QL_SS2S("instruments[" << instrIdx << "]");       // for JSON error reporting
         std::string instrumentName = utils::json_get<std::string>(instrument, "name", instrumentPath);
         const utils::json qubits = utils::json_get<const utils::json>(instrument, "qubits", instrumentPath);
         for(size_t group=0; group<qubits.size(); group++) {
@@ -56,7 +56,7 @@ void vcd_cc::programStart(int qubitNumber, int cycleTime, int maxGroups, const s
     vcdVarCodeword.resize(qubitNumber);
     for(size_t instrIdx=0; instrIdx<instrsUsed; instrIdx++) {
         const utils::json &instrument = settings.getInstrumentAtIdx(instrIdx);         // NB: always exists
-        std::string instrumentPath = SS2S("instruments["<<instrIdx<<"]");       // for JSON error reporting
+        std::string instrumentPath = QL_SS2S("instruments[" << instrIdx << "]");       // for JSON error reporting
         std::string instrumentName = utils::json_get<std::string>(instrument, "name", instrumentPath);
         vcdVarCodeword[instrIdx] = vcd.registerVar(instrumentName, Vcd::VT_STRING);
     }
@@ -71,7 +71,7 @@ void vcd_cc::programFinish(const std::string &progName)
 
     // write VCD to file
     std::string file_name(options::get("output_dir") + "/" + progName + ".vcd");
-    IOUT("Writing Value Change Dump to " << file_name);
+    QL_IOUT("Writing Value Change Dump to " << file_name);
     utils::write_file(file_name, vcd.getVcd());
 }
 
@@ -92,7 +92,7 @@ void vcd_cc::bundleFinishGroup(size_t startCycle, unsigned int durationInCycles,
     unsigned int startTime = kernelStartTime + startCycle*cycleTime;
     unsigned int durationInNs = durationInCycles*cycleTime;
     int var = vcdVarSignal[instrIdx][group];
-    std::string val = SS2S(groupDigOut) + "=" + signalValue;
+    std::string val = QL_SS2S(groupDigOut) + "=" + signalValue;
     vcd.change(var, startTime, val);                                // start of signal
     vcd.change(var, startTime+durationInNs, "");                    // end of signal
 }
@@ -104,7 +104,7 @@ void vcd_cc::bundleFinish(size_t startCycle, uint32_t digOut, size_t maxDuration
     unsigned int startTime = kernelStartTime + startCycle*cycleTime;
     unsigned int durationInNs = maxDurationInCycles*cycleTime;
     int var = vcdVarCodeword[instrIdx];
-    std::string val = SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut);
+    std::string val = QL_SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut);
     vcd.change(var, startTime, val);                                // start of signal
     vcd.change(var, startTime+durationInNs, "");                    // end of signal
 }

@@ -30,7 +30,7 @@ namespace ql {
  */
 quantum_program::quantum_program(const std::string &n) : name(n) {
     platformInitialized = false;
-    DOUT("Constructor for quantum_program:  " << n);
+    QL_DOUT("Constructor for quantum_program:  " << n);
 }
 
 quantum_program::quantum_program(
@@ -50,7 +50,7 @@ quantum_program::quantum_program(
     eqasm_compiler_name = platform.eqasm_compiler_name;
     backend_compiler    = NULL;
     if (eqasm_compiler_name.empty()) {
-        FATAL("eqasm compiler name must be specified in the hardware configuration file !");
+        QL_FATAL("eqasm compiler name must be specified in the hardware configuration file !");
     } else if (eqasm_compiler_name == "none") {
         needs_backend_compiler = false;
     } else if (eqasm_compiler_name == "qx") {
@@ -61,11 +61,11 @@ quantum_program::quantum_program(
     } else if (eqasm_compiler_name == "eqasm_backend_cc") {
         backend_compiler = new eqasm_backend_cc();
     } else {
-        FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
+        QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }
 
     if (qubit_count > platform.qubit_number) {
-        FATAL("number of qubits requested in program '" + std::to_string(qubit_count) + "' is greater than the qubits available in platform '" + std::to_string(platform.qubit_number) + "'" );
+        QL_FATAL("number of qubits requested in program '" + std::to_string(qubit_count) + "' is greater than the qubits available in platform '" + std::to_string(platform.qubit_number) + "'" );
     }
 
     // report/write_qasm initialization
@@ -84,18 +84,18 @@ void quantum_program::add(const ql::quantum_kernel &k) {
                 ((gtype == __classical_gate__) && (op >= creg_count)) ||
                 ((gtype != __classical_gate__) && (op >= qubit_count))
             ) {
-                 FATAL("Out of range operand(s) for operation: '" << gname <<
-                        "' (op=" << op <<
-                        ", qubit_count=" << qubit_count <<
-                        ", creg_count=" << creg_count <<
-                        ")");
+                 QL_FATAL("Out of range operand(s) for operation: '" << gname <<
+                                                                     "' (op=" << op <<
+                                                                     ", qubit_count=" << qubit_count <<
+                                                                     ", creg_count=" << creg_count <<
+                                                                     ")");
             }
         }
     }
 
     for (const auto &kernel : kernels) {
         if (kernel.name == k.name) {
-            FATAL("Cannot add kernel. Duplicate kernel name: " << k.name);
+            QL_FATAL("Cannot add kernel. Duplicate kernel name: " << k.name);
         }
     }
 
@@ -272,8 +272,8 @@ void quantum_program::add_for(const ql::quantum_program &p, size_t iterations) {
         }
     }
     if (nested_for) {
-        EOUT("Nested for not yet implemented !");
-        throw ql::exception("Error: Nested for not yet implemented !",false);
+        QL_EOUT("Nested for not yet implemented !");
+        throw utils::Exception("Error: Nested for not yet implemented !", false);
     }
 
     // optimize away if zero iterations
@@ -311,10 +311,10 @@ void quantum_program::set_platform(const quantum_platform &platform) {
 }
 
 int quantum_program::compile() {
-    IOUT("compiling " << name << " ...");
-    WOUT("compiling " << name << " ...");
+    QL_IOUT("compiling " << name << " ...");
+    QL_WOUT("compiling " << name << " ...");
     if (kernels.empty()) {
-        FATAL("compiling a program with no kernels !");
+        QL_FATAL("compiling a program with no kernels !");
     }
 
     // from here on front-end passes
@@ -341,23 +341,23 @@ int quantum_program::compile() {
     ql::write_qasm(this, platform, "scheduledqasmwriter");
 
     // backend passes
-    DOUT("eqasm_compiler_name: " << eqasm_compiler_name);
+    QL_DOUT("eqasm_compiler_name: " << eqasm_compiler_name);
     if (!needs_backend_compiler) {
-        WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
+        QL_WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
         return 0;
     } if (!backend_compiler) {
-        EOUT("No known eqasm compiler has been specified in the configuration file.");
+        QL_EOUT("No known eqasm compiler has been specified in the configuration file.");
         return 0;
     } else {
-        DOUT("About to call backend_compiler->compile for " << eqasm_compiler_name);
+        QL_DOUT("About to call backend_compiler->compile for " << eqasm_compiler_name);
         backend_compiler->compile(this, platform);
-        DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
+        QL_DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
     }
 
     // generate sweep_points file
     ql::write_sweep_points(this, platform, "write_sweep_points");
 
-    IOUT("compilation of program '" << name << "' done.");
+    QL_IOUT("compilation of program '" << name << "' done.");
 
     ql::options::reset_options();
 
@@ -365,10 +365,10 @@ int quantum_program::compile() {
 }
 
 int quantum_program::compile_modular() {
-    IOUT("compiling " << name << " ...");
-    WOUT("compiling " << name << " ...");
+    QL_IOUT("compiling " << name << " ...");
+    QL_WOUT("compiling " << name << " ...");
     if (kernels.empty()) {
-        FATAL("compiling a program with no kernels !");
+        QL_FATAL("compiling a program with no kernels !");
     }
 
     //constuct compiler
@@ -385,11 +385,11 @@ int quantum_program::compile_modular() {
     compiler->addPass("Writer", "scheduledqasmwriter");
 
     // backend passes
-    DOUT("Calling backend compiler passes for eqasm_compiler_name: " << eqasm_compiler_name);
+    QL_DOUT("Calling backend compiler passes for eqasm_compiler_name: " << eqasm_compiler_name);
     if (eqasm_compiler_name.empty()) {
-        FATAL("eqasm compiler name must be specified in the hardware configuration file !");
+        QL_FATAL("eqasm compiler name must be specified in the hardware configuration file !");
     } else if (eqasm_compiler_name == "none" || eqasm_compiler_name == "qx") {
-        WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
+        QL_WOUT("The eqasm compiler attribute indicated that no backend passes are needed.");
     } else if (eqasm_compiler_name == "cc_light_compiler") {
         // from here CCL backend starts
         compiler->addPass("CCLPrepCodeGeneration", "ccl_prep_code_generation");
@@ -408,18 +408,18 @@ int quantum_program::compile_modular() {
         ///@note-rn: Calling the backend like this is equivalend to calling passes individually as above.
         //compiler->addPass("BackendCompiler");
         //compiler->setPassOption("BackendCompiler", "eqasm_compiler_name", eqasm_compiler_name);
-        DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
+        QL_DOUT("Returned from call backend_compiler->compile for " << eqasm_compiler_name);
     } else if (eqasm_compiler_name == "eqasm_backend_cc") {
         compiler->addPass("BackendCompiler");
         compiler->setPassOption("BackendCompiler", "eqasm_compiler_name", "eqasm_backend_cc");
     } else {
-        FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
+        QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }
 
     //compile with program
     compiler->compile(this);
 
-    IOUT("compilation of program '" << name << "' done.");
+    QL_IOUT("compilation of program '" << name << "' done.");
 
     ql::options::reset_options();
 
@@ -429,7 +429,7 @@ int quantum_program::compile_modular() {
 }
 
 void quantum_program::print_interaction_matrix() const {
-    IOUT("printing interaction matrix...");
+    QL_IOUT("printing interaction matrix...");
 
     for (auto k : kernels) {
         InteractionMatrix imat( k.get_circuit(), qubit_count);
@@ -444,7 +444,7 @@ void quantum_program::write_interaction_matrix() const {
         std::string mstr = imat.getString();
 
         std::string fname = ql::options::get("output_dir") + "/" + k.get_name() + "InteractionMatrix.dat";
-        IOUT("writing interaction matrix to '" << fname << "' ...");
+        QL_IOUT("writing interaction matrix to '" << fname << "' ...");
         ql::utils::write_file(fname, mstr);
     }
 }

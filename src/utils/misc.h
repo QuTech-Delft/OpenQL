@@ -4,9 +4,6 @@
 #define ELEM_CNT(x) (sizeof(x)/sizeof(x[0]))
 
 namespace ql {
-
-const size_t MAX_CYCLE = std::numeric_limits<int>::max();
-
 namespace utils {
 
 // from https://stackoverflow.com/questions/9146395/reset-c-int-array-to-zero-the-fastest-way

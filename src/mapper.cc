@@ -15,10 +15,10 @@ namespace ql {
 // initialize mapper internal grid maps from configuration
 // this remains constant over multiple kernels on the same platform
 void Grid::Init(const ql::quantum_platform *p) {
-    DOUT("Grid::Init");
+    QL_DOUT("Grid::Init");
     platformp = p;
     nq = platformp->qubit_number;
-    DOUT("... number of real qbits=" << nq);
+    QL_DOUT("... number of real qbits=" << nq);
 
     std::string formstr;
     if (platformp->topology.count("form") <= 0) {
@@ -38,7 +38,7 @@ void Grid::Init(const ql::quantum_platform *p) {
         nx = platformp->topology["x_size"];
         ny = platformp->topology["y_size"];
     }
-    DOUT("... formstr=" << formstr << "; form=" << form << "; nx=" << nx << "; ny=" << ny);
+    QL_DOUT("... formstr=" << formstr << "; form=" << form << "; nx=" << nx << "; ny=" << ny);
 
     InitCores();
     InitXY();
@@ -52,7 +52,7 @@ void Grid::Init(const ql::quantum_platform *p) {
 // when multi-core assumes full and uniform core connectivity
 size_t Grid::CoreOf(size_t qi) const {
     if (ncores == 1) return 0;
-    ASSERT(conn == gc_full);
+    QL_ASSERT(conn == gc_full);
     size_t nqpc = nq/ncores;
     return qi/nqpc;
 }
@@ -92,7 +92,7 @@ size_t Grid::CoreDistance(size_t from_realqi, size_t to_realqi) const {
 size_t Grid::MinHops(size_t from_realqi, size_t to_realqi) const {
     size_t d = Distance(from_realqi, to_realqi);
     size_t cd = CoreDistance(from_realqi, to_realqi);
-    ASSERT(cd <= d);
+    QL_ASSERT(cd <= d);
     if (cd == d) {
         return d+1;
     } else {
@@ -115,7 +115,7 @@ void Grid::Normalize(size_t src, neighbors_t &nbl) const {
     if (form != gf_xy) {
         // there are no implicit/explicit x/y coordinates defined per qubit, so no sense of nearness
         std::string mappathselectopt = ql::options::get("mappathselect");
-        ASSERT(mappathselectopt != "borders");
+        QL_ASSERT(mappathselectopt != "borders");
         return;
     }
 
@@ -185,10 +185,10 @@ void Grid::ComputeDist() {
     for (size_t i = 0; i < nq; i++) {
         for (size_t j = 0; j < nq; j++) {
             if (form == gf_cross) {
-                ASSERT (dist[i][j] == (std::max(std::abs(x[i] - x[j]),
+                QL_ASSERT (dist[i][j] == (std::max(std::abs(x[i] - x[j]),
                                                       std::abs(y[i] - y[j]))));
             } else if (form == gf_plus) {
-                ASSERT (dist[i][j] ==
+                QL_ASSERT (dist[i][j] ==
                               (std::abs(x[i] - x[j]) + std::abs(y[i] - y[j])));
             }
 
@@ -198,7 +198,7 @@ void Grid::ComputeDist() {
 }
 
 void Grid::DPRINTGrid() const {
-    if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
+    if (ql::utils::logger::log_level >= ql::utils::logger::LogLevel::LOG_DEBUG) {
         PrintGrid();
     }
 }
@@ -243,21 +243,21 @@ void Grid::PrintGrid() const {
 void Grid::InitCores() {
     if (platformp->topology.count("number_of_cores") <= 0) {
         ncores = 1;
-        DOUT("Number of cores (topology.number_of_cores) not defined");
+        QL_DOUT("Number of cores (topology.number_of_cores) not defined");
     } else {
         ncores = platformp->topology["number_of_cores"];
     }
-    DOUT("Numer of cores= " << ncores);
+    QL_DOUT("Numer of cores= " << ncores);
 }
 
 // init x, and y maps
 void Grid::InitXY() {
     if (form != gf_irregular) {
         if (platformp->topology.count("qubits") == 0) {
-            FATAL("Regular configuration doesn't specify qubits and their coordinates");
+            QL_FATAL("Regular configuration doesn't specify qubits and their coordinates");
         } else {
             if (nq != platformp->topology["qubits"].size()) {
-                FATAL("Mismatch between platform qubit number and qubit coordinate list");
+                QL_FATAL("Mismatch between platform qubit number and qubit coordinate list");
             }
             for (auto &aqbit : platformp->topology["qubits"]) {
                 size_t qi = aqbit["id"];
@@ -266,19 +266,19 @@ void Grid::InitXY() {
 
                 // sanity checks
                 if (!(0<=qi && qi<nq)) {
-                    FATAL(" qbit in platform topology with id=" << qi << " is configured with id that is not in the range 0..nq-1 with nq=" << nq);
+                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with id that is not in the range 0..nq-1 with nq=" << nq);
                 }
                 if (x.count(qi) > 0) {
-                    FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of x coordinate");
+                    QL_FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of x coordinate");
                 }
                 if (y.count(qi) > 0) {
-                    FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of y coordinate");
+                    QL_FATAL(" qbit in platform topology with id=" << qi << ": duplicate definition of y coordinate");
                 }
                 if (!(0<=qx && qx<nx)) {
-                    FATAL(" qbit in platform topology with id=" << qi << " is configured with x that is not in the range 0..x_size-1 with x_size=" << nx);
+                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with x that is not in the range 0..x_size-1 with x_size=" << nx);
                 }
                 if (!(0<=qy && qy<ny)) {
-                    FATAL(" qbit in platform topology with id=" << qi << " is configured with y that is not in the range 0..y_size-1 with y_size=" << ny);
+                    QL_FATAL(" qbit in platform topology with id=" << qi << " is configured with y that is not in the range 0..y_size-1 with y_size=" << ny);
                 }
 
                 x[qi] = qx;
@@ -291,7 +291,7 @@ void Grid::InitXY() {
 // init nbs map
 void Grid::InitNbs() {
     if (platformp->topology.count("connectivity") <= 0) {
-        DOUT("Configuration doesn't specify topology.connectivity: assuming connectivity is specified by edges section");
+        QL_DOUT("Configuration doesn't specify topology.connectivity: assuming connectivity is specified by edges section");
         conn = gc_specified;
     } else {
         std::string connstr;
@@ -301,42 +301,42 @@ void Grid::InitNbs() {
         } else if (connstr == "full") {
             conn = gc_full;
         } else {
-            FATAL("connectivity " << connstr << " not supported");
+            QL_FATAL("connectivity " << connstr << " not supported");
         }
-        DOUT("topology.connectivity=" << connstr );
+        QL_DOUT("topology.connectivity=" << connstr );
     }
     if (conn == gc_specified) {
         if (platformp->topology.count("edges") == 0) {
-            FATAL(" There aren't edges configured in the platform's topology");
+            QL_FATAL(" There aren't edges configured in the platform's topology");
         }
         for (auto &anedge : platformp->topology["edges"]) {
-            DOUT("connectivity is specified by edges section, reading ...");
+            QL_DOUT("connectivity is specified by edges section, reading ...");
             size_t qs = anedge["src"];
             size_t qd = anedge["dst"];
 
             // sanity checks
             if (!(0<=qs && qs<nq)) {
-                FATAL(" edge in platform topology has src=" << qs << " that is not in the range 0..nq-1 with nq=" << nq);
+                QL_FATAL(" edge in platform topology has src=" << qs << " that is not in the range 0..nq-1 with nq=" << nq);
             }
             if (!(0<=qd && qd<nq)) {
-                FATAL(" edge in platform topology has dst=" << qd << " that is not in the range 0..nq-1 with nq=" << nq);
+                QL_FATAL(" edge in platform topology has dst=" << qd << " that is not in the range 0..nq-1 with nq=" << nq);
             }
             for (auto &n : nbs[qs]) {
                 if (n == qd) {
-                    FATAL(" redefinition of edge with src=" << qs << " and dst=" << qd);
+                    QL_FATAL(" redefinition of edge with src=" << qs << " and dst=" << qd);
                 }
             }
 
             nbs[qs].push_back(qd);
-            DOUT("connectivity has been stored in nbs map");
+            QL_DOUT("connectivity has been stored in nbs map");
         }
     }
     if (conn == gc_full) {
-        DOUT("connectivity is full");
+        QL_DOUT("connectivity is full");
         for (size_t qs = 0; qs < nq; qs++) {
             for (size_t qd = 0; qd < nq; qd++) {
                 if (qs != qd) {
-                    DOUT("connecting qubit[" << qs << "] to qubit[" << qd << "]");
+                    QL_DOUT("connecting qubit[" << qs << "] to qubit[" << qd << "]");
                     nbs[qs].push_back(qd);
                 }
             }
@@ -363,7 +363,7 @@ void Grid::SortNbs() {
 // when none, return UNDEFINED_QUBIT;
 // a second vector next to v2rMap (i.e. an r2vMap) would speed this up;
 size_t Virt2Real::GetVirt(size_t r) const {
-    ASSERT(r != UNDEFINED_QUBIT);
+    QL_ASSERT(r != UNDEFINED_QUBIT);
     for (size_t v = 0; v < nq; v++) {
         if (v2rMap[v] == r) {
             return v;
@@ -394,19 +394,19 @@ void Virt2Real::Init(size_t n) {
     auto mapinitone2oneopt = ql::options::get("mapinitone2one");
     auto mapassumezeroinitstateopt = ql::options::get("mapassumezeroinitstate");
 
-    DOUT("Virt2Real::Init: mapinitone2oneopt=" << mapinitone2oneopt);
-    DOUT("Virt2Real::Init: mapassumezeroinitstateopt=" << mapassumezeroinitstateopt);
+    QL_DOUT("Virt2Real::Init: mapinitone2oneopt=" << mapinitone2oneopt);
+    QL_DOUT("Virt2Real::Init: mapassumezeroinitstateopt=" << mapassumezeroinitstateopt);
 
     nq = n;
     if (mapinitone2oneopt == "yes") {
-        DOUT("Virt2Real::Init(n=" << nq << "), initializing 1-1 mapping");
+        QL_DOUT("Virt2Real::Init(n=" << nq << "), initializing 1-1 mapping");
     } else {
-        DOUT("Virt2Real::Init(n=" << nq << "), initializing on demand mapping");
+        QL_DOUT("Virt2Real::Init(n=" << nq << "), initializing on demand mapping");
     }
     if (mapassumezeroinitstateopt == "yes") {
-        DOUT("Virt2Real::Init(n=" << nq << "), assume all qubits in initialized state");
+        QL_DOUT("Virt2Real::Init(n=" << nq << "), assume all qubits in initialized state");
     } else {
-        DOUT("Virt2Real::Init(n=" << nq << "), assume all qubits in garbage state");
+        QL_DOUT("Virt2Real::Init(n=" << nq << "), assume all qubits in garbage state");
     }
     v2rMap.resize(nq);
     rs.resize(nq);
@@ -426,12 +426,12 @@ void Virt2Real::Init(size_t n) {
 
 // map virtual qubit index to real qubit index
 size_t &Virt2Real::operator[](size_t v) {
-    ASSERT(v < nq);   // implies v != UNDEFINED_QUBIT
+    QL_ASSERT(v < nq);   // implies v != UNDEFINED_QUBIT
     return v2rMap[v];
 }
 
 const size_t &Virt2Real::operator[](size_t v) const {
-    ASSERT(v < nq);   // implies v != UNDEFINED_QUBIT
+    QL_ASSERT(v < nq);   // implies v != UNDEFINED_QUBIT
     return v2rMap[v];
 }
 
@@ -452,12 +452,12 @@ size_t Virt2Real::AllocQubit(size_t v) {
             // real qubit r was not found in v2rMap
             // use it to map v
             v2rMap[v] = r;
-            ASSERT(rs[r] == rs_wasinited || rs[r] == rs_nostate);
-            DOUT("AllocQubit(v=" << v << ") in r=" << r);
+            QL_ASSERT(rs[r] == rs_wasinited || rs[r] == rs_nostate);
+            QL_DOUT("AllocQubit(v=" << v << ") in r=" << r);
             return r;
         }
     }
-    ASSERT(0);    // number of virt qubits <= number of real qubits
+    QL_ASSERT(0);    // number of virt qubits <= number of real qubits
     return UNDEFINED_QUBIT;
 }
 
@@ -466,24 +466,24 @@ size_t Virt2Real::AllocQubit(size_t v) {
 // so when v0 was in r0 and v1 was in r1, then v0 is now in r1 and v1 is in r0;
 // update v2r accordingly
 void Virt2Real::Swap(size_t r0, size_t r1) {
-    ASSERT(r0 != r1);
+    QL_ASSERT(r0 != r1);
     size_t v0 = GetVirt(r0);
     size_t v1 = GetVirt(r1);
     // DOUT("... swap between ("<< v0<<"<->"<<r0<<","<<v1<<"<->"<<r1<<") and ("<<v0<<"<->"<<r1<<","<<v1<<"<->"<<r0<<" )");
     // DPRINT("... before swap");
-    ASSERT(v0 != v1);         // also holds when vi == UNDEFINED_QUBIT
+    QL_ASSERT(v0 != v1);         // also holds when vi == UNDEFINED_QUBIT
 
     if (v0 == UNDEFINED_QUBIT) {
-        ASSERT(rs[r0] != rs_hasstate);
+        QL_ASSERT(rs[r0] != rs_hasstate);
     } else {
-        ASSERT(v0 < nq);
+        QL_ASSERT(v0 < nq);
         v2rMap[v0] = r1;
     }
 
     if (v1 == UNDEFINED_QUBIT) {
-        ASSERT(rs[r1] != rs_hasstate);
+        QL_ASSERT(rs[r1] != rs_hasstate);
     } else {
-        ASSERT(v1 < nq);
+        QL_ASSERT(v1 < nq);
         v2rMap[v1] = r0;
     }
 
@@ -494,7 +494,7 @@ void Virt2Real::Swap(size_t r0, size_t r1) {
 }
 
 void Virt2Real::DPRINTReal(size_t r) const {
-    if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
+    if (ql::utils::logger::log_level >= ql::utils::logger::LogLevel::LOG_DEBUG) {
         PrintReal(r);
     }
 }
@@ -512,7 +512,7 @@ void Virt2Real::PrintReal(size_t r) const {
             std::cout << ":st";
             break;
         default:
-        ASSERT(0);
+        QL_ASSERT(0);
     }
     size_t v = GetVirt(r);
     if (v == UNDEFINED_QUBIT) {
@@ -540,13 +540,13 @@ void Virt2Real::PrintVirt(size_t v) const {
                 std::cout << ":st)";
                 break;
             default:
-            ASSERT(0);
+            QL_ASSERT(0);
         }
     }
 }
 
 void Virt2Real::DPRINTReal(const std::string &s, size_t r0, size_t r1) const {
-    if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
+    if (ql::utils::logger::log_level >= ql::utils::logger::LogLevel::LOG_DEBUG) {
         PrintReal(s, r0, r1);
     }
 }
@@ -562,7 +562,7 @@ void Virt2Real::PrintReal(const std::string &s, size_t r0, size_t r1) const {
 }
 
 void Virt2Real::DPRINT(const std::string &s) const {
-    if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
+    if (ql::utils::logger::log_level >= ql::utils::logger::LogLevel::LOG_DEBUG) {
         Print(s);
     }
 }
@@ -607,22 +607,22 @@ const size_t &FreeCycle::operator[](size_t i) const {
 // needed for virgin construction
 // default constructor was deleted because it cannot construct resource_manager_t without parameters
 FreeCycle::FreeCycle() {
-    DOUT("Constructing FreeCycle");
+    QL_DOUT("Constructing FreeCycle");
 }
 
 void FreeCycle::Init(const ql::quantum_platform *p) {
-    DOUT("FreeCycle::Init()");
+    QL_DOUT("FreeCycle::Init()");
     ql::arch::resource_manager_t lrm(*p, ql::forward_scheduling);   // allocated here and copied below to rm because of platform parameter
-    DOUT("... created FreeCycle Init local resource_manager");
+    QL_DOUT("... created FreeCycle Init local resource_manager");
     platformp = p;
     nq = platformp->qubit_number;
     ct = platformp->cycle_time;
-    DOUT("... FreeCycle: nq=" << nq << ", ct=" << ct << "), initializing to all 0 cycles");
+    QL_DOUT("... FreeCycle: nq=" << nq << ", ct=" << ct << "), initializing to all 0 cycles");
     fcv.clear();
     fcv.resize(nq, 1);   // this 1 implies that cycle of first gate will be 1 and not 0; OpenQL convention!?!?
-    DOUT("... about to copy FreeCycle Init local resource_manager to FreeCycle member rm");
+    QL_DOUT("... about to copy FreeCycle Init local resource_manager to FreeCycle member rm");
     rm = lrm;
-    DOUT("... done copy FreeCycle Init local resource_manager to FreeCycle member rm");
+    QL_DOUT("... done copy FreeCycle Init local resource_manager to FreeCycle member rm");
 }
 
 // depth of the FreeCycle map
@@ -655,7 +655,7 @@ size_t FreeCycle::Max() const {
 }
 
 void FreeCycle::DPRINT(const std::string &s) const {
-    if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
+    if (ql::utils::logger::log_level >= ql::utils::logger::LogLevel::LOG_DEBUG) {
         Print(s);
     }
 }
@@ -681,7 +681,7 @@ void FreeCycle::Print(const std::string &s) const {
 
 // return whether gate with first operand qubit r0 can be scheduled earlier than with operand qubit r1
 bool FreeCycle::IsFirstOperandEarlier(size_t r0, size_t r1) const {
-    DOUT("... fcv[" << r0 << "]=" << fcv[r0]<< " fcv[" << r1 << "]=" << fcv[r1] << " IsFirstOperandEarlier=" << (fcv[r0] < fcv[r1]));
+    QL_DOUT("... fcv[" << r0 << "]=" << fcv[r0] << " fcv[" << r1 << "]=" << fcv[r1] << " IsFirstOperandEarlier=" << (fcv[r0] < fcv[r1]));
     return fcv[r0] < fcv[r1];
 }
 
@@ -700,7 +700,7 @@ bool FreeCycle::IsFirstSwapEarliest(size_t fr0, size_t fr1, size_t sr0, size_t s
     size_t  startCycleFirstSwap = std::max<size_t>(fcv[fr0]-1, fcv[fr1]);
     size_t  startCycleSecondSwap = std::max<size_t>(fcv[sr0]-1, fcv[sr1]);
 
-    DOUT("... fcv[" << fr0 << "]=" << fcv[fr0] << " fcv[" << fr1 << "]=" << fcv[fr1] << " start=" << startCycleFirstSwap << " fcv[" << sr0 << "]=" << fcv[sr0] << " fcv[" << sr1 << "]=" << fcv[sr1] << " start=" << startCycleSecondSwap << " IsFirstSwapEarliest=" << (startCycleFirstSwap < startCycleSecondSwap));
+    QL_DOUT("... fcv[" << fr0 << "]=" << fcv[fr0] << " fcv[" << fr1 << "]=" << fcv[fr1] << " start=" << startCycleFirstSwap << " fcv[" << sr0 << "]=" << fcv[sr0] << " fcv[" << sr1 << "]=" << fcv[sr1] << " start=" << startCycleSecondSwap << " IsFirstSwapEarliest=" << (startCycleFirstSwap < startCycleSecondSwap));
     return startCycleFirstSwap < startCycleSecondSwap;
 }
 
@@ -717,7 +717,7 @@ size_t FreeCycle::StartCycleNoRc(ql::gate *g) const {
     } else /* if (operandCount == 2) */ {
         startCycle = std::max<size_t>(fcv[q[0]], fcv[q[1]]);
     }
-    ASSERT (startCycle < MAX_CYCLE);
+    QL_ASSERT (startCycle < MAX_CYCLE);
 
     return startCycle;
 }
@@ -746,7 +746,7 @@ size_t FreeCycle::StartCycle(ql::gate *g) {
             // DOUT(" ... from [" << baseStartCycle << "] to [" << startCycle-1 << "] busy resource(s) for " << g->qasm());
         }
     }
-    ASSERT (startCycle < MAX_CYCLE);
+    QL_ASSERT (startCycle < MAX_CYCLE);
 
     return startCycle;
 }
@@ -784,12 +784,12 @@ void FreeCycle::Add(ql::gate *g, size_t startCycle) {
 // explicit Past constructor
 // needed for virgin construction
 Past::Past() {
-    DOUT("Constructing Past");
+    QL_DOUT("Constructing Past");
 }
 
 // past initializer
 void Past::Init(const ql::quantum_platform *p, ql::quantum_kernel *k, Grid *g) {
-    DOUT("Past::Init");
+    QL_DOUT("Past::Init");
     platformp = p;
     kernelp = k;
     gridp = g;
@@ -797,7 +797,7 @@ void Past::Init(const ql::quantum_platform *p, ql::quantum_kernel *k, Grid *g) {
     nq = platformp->qubit_number;
     ct = platformp->cycle_time;
 
-    ASSERT(kernelp->c.empty());   // kernelp->c will be used by new_gate to return newly created gates into
+    QL_ASSERT(kernelp->c.empty());   // kernelp->c will be used by new_gate to return newly created gates into
     v2r.Init(nq);               // v2r initializtion until v2r is imported from context
     fc.Init(platformp);         // fc starts off with all qubits free, is updated after schedule of each gate
     waitinglg.clear();          // no gates pending to be scheduled in; Add of gate to past entered here
@@ -819,7 +819,7 @@ void Past::ExportV2r(Virt2Real &v2r_destination) const {
 }
 
 void Past::DFcPrint() const {
-    if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
+    if (ql::utils::logger::log_level >= ql::utils::logger::LogLevel::LOG_DEBUG) {
         fc.Print("");
     }
 }
@@ -834,7 +834,7 @@ void Past::Print(const std::string &s) const {
     fc.Print("");
     // DOUT("... list of gates in past");
     for (auto &gp : lg) {
-        DOUT("[" << cycle.at(gp) << "] " << gp->qasm());
+        QL_DOUT("[" << cycle.at(gp) << "] " << gp->qasm());
     }
 }
 
@@ -933,8 +933,8 @@ int Past::InsertionCost(const ql::circuit &initcirc, const ql::circuit &circ) co
     }
     max = tryfc.Max();         // this reflects the depth afterwards
 
-    DOUT("... scheduling init+circ => depth " << initmax << ", scheduling circ => depth " << max << ", init insertion cost " << (initmax-max));
-    ASSERT(initmax >= max);
+    QL_DOUT("... scheduling init+circ => depth " << initmax << ", scheduling circ => depth " << max << ", init insertion cost " << (initmax - max));
+    QL_ASSERT(initmax >= max);
     // scheduling initcirc would be for free when initmax == max, so the cost is (initmax - max)
     return (initmax - max);
 }
@@ -964,13 +964,13 @@ bool Past::new_gate(
     double angle
 ) const {
     bool added;
-    ASSERT(circ.empty());
-    ASSERT(kernelp->c.empty());
+    QL_ASSERT(circ.empty());
+    QL_ASSERT(kernelp->c.empty());
     added = kernelp->gate_nonfatal(gname, qubits, cregs, duration, angle);   // creates gates in kernelp->c
     circ = kernelp->c;
     kernelp->c.clear();
     for (auto gp : circ) {
-        DOUT("new_gate added: " << gp->qasm());
+        QL_DOUT("new_gate added: " << gp->qasm());
     }
     return added;
 }
@@ -986,7 +986,7 @@ size_t Past::NumberOfMovesAdded() const {
 }
 
 void Past::new_gate_exception(const std::string &s) {
-    FATAL("gate is not supported by the target platform: '" << s << "'");
+    QL_FATAL("gate is not supported by the target platform: '" << s << "'");
 }
 
 // will a swap(fr0,fr1) start earlier than a swap(sr0,sr1)?
@@ -1000,13 +1000,13 @@ bool Past::IsFirstSwapEarliest(size_t fr0, size_t fr1, size_t sr0, size_t sr1) c
 // please note that the reversal of operands may have been done also when GenMove was not successful
 void Past::GenMove(ql::circuit &circ, size_t &r0, size_t &r1) {
     if (v2r.GetRs(r0) != rs_hasstate) {
-        ASSERT(v2r.GetRs(r0) == rs_nostate || v2r.GetRs(r0) == rs_wasinited);
+        QL_ASSERT(v2r.GetRs(r0) == rs_nostate || v2r.GetRs(r0) == rs_wasinited);
         // interchange r0 and r1, so that r1 (right-hand operand of move) will be the state-less one
         size_t  tmp = r1; r1 = r0; r0 = tmp;
         // DOUT("... reversed operands for move to become move(q" << r0 << ",q" << r1 << ") ...");
     }
-    ASSERT(v2r.GetRs(r0) == rs_hasstate);    // and r0 will be the one with state
-    ASSERT(v2r.GetRs(r1) != rs_hasstate);    // and r1 will be the one without state (rs_nostate || rs_wasinited)
+    QL_ASSERT(v2r.GetRs(r0) == rs_hasstate);    // and r0 will be the one with state
+    QL_ASSERT(v2r.GetRs(r1) != rs_hasstate);    // and r1 will be the one without state (rs_nostate || rs_wasinited)
 
     // first (optimistically) create the move circuit and add it to circ
     bool created;
@@ -1069,7 +1069,7 @@ void Past::GenMove(ql::circuit &circ, size_t &r0, size_t &r1) {
             // so we go for it!
             // circ contains move; it must get the initcirc before it ...
             // do this by appending circ's gates to initcirc, and then swapping circ and initcirc content
-            DOUT("... initialization is for free, do it ...");
+            QL_DOUT("... initialization is for free, do it ...");
             for (auto &gp : circ) {
                 initcirc.push_back(gp);
             }
@@ -1077,7 +1077,7 @@ void Past::GenMove(ql::circuit &circ, size_t &r0, size_t &r1) {
             v2r.SetRs(r1, rs_wasinited);
         } else {
             // undo damage done, will not do move but swap, i.e. nothing created thisfar
-            DOUT("... initialization extends circuit, don't do it ...");
+            QL_DOUT("... initialization extends circuit, don't do it ...");
             circ.clear();       // circ being cleared also indicates creation wasn't successful
         }
         // initcirc getting out-of-scope here so gets destroyed
@@ -1096,14 +1096,14 @@ void Past::GenMove(ql::circuit &circ, size_t &r0, size_t &r1) {
 void Past::AddSwap(size_t r0, size_t r1) {
     bool created = false;
 
-    DOUT("... extending with swap(q" << r0 << ",q" << r1 << ") ...");
+    QL_DOUT("... extending with swap(q" << r0 << ",q" << r1 << ") ...");
     v2r.DPRINTReal("... adding swap/move", r0, r1);
 
-    ASSERT(v2r.GetRs(r0) == rs_wasinited || v2r.GetRs(r0) == rs_nostate || v2r.GetRs(r0) == rs_hasstate);
-    ASSERT(v2r.GetRs(r1) == rs_wasinited || v2r.GetRs(r1) == rs_nostate || v2r.GetRs(r1) == rs_hasstate);
+    QL_ASSERT(v2r.GetRs(r0) == rs_wasinited || v2r.GetRs(r0) == rs_nostate || v2r.GetRs(r0) == rs_hasstate);
+    QL_ASSERT(v2r.GetRs(r1) == rs_wasinited || v2r.GetRs(r1) == rs_nostate || v2r.GetRs(r1) == rs_hasstate);
 
     if (v2r.GetRs(r0) != rs_hasstate && v2r.GetRs(r1) != rs_hasstate) {
-        DOUT("... no state in both operand of intended swap/move; don't add swap/move gates");
+        QL_DOUT("... no state in both operand of intended swap/move; don't add swap/move gates");
         v2r.Swap(r0,r1);
         return;
     }
@@ -1119,9 +1119,9 @@ void Past::AddSwap(size_t r0, size_t r1) {
             // also rs of its 2nd operand is 'rs_wasinited'
             // note that after swap/move, r0 will be in this state then
             nmovesadded++;                       // for reporting at the end
-            DOUT("... move(q" << r0 << ",q" << r1 << ") ...");
+            QL_DOUT("... move(q" << r0 << ",q" << r1 << ") ...");
         } else {
-            DOUT("... move(q" << r0 << ",q" << r1 << ") cancelled, go for swap");
+            QL_DOUT("... move(q" << r0 << ",q" << r1 << ") cancelled, go for swap");
         }
     }
     if (!created) {
@@ -1135,7 +1135,7 @@ void Past::AddSwap(size_t r0, size_t r1) {
             // when fcv[r0] < fcv[r1], r0 is free for use 1 cycle earlier than r1, so a reversal will help
             if (fc.IsFirstOperandEarlier(r0, r1)) {
                 size_t  tmp = r1; r1 = r0; r0 = tmp;
-                DOUT("... reversed swap to become swap(q" << r0 << ",q" << r1 << ") ...");
+                QL_DOUT("... reversed swap to become swap(q" << r0 << ",q" << r1 << ") ...");
             }
         }
         auto mapperopt = ql::options::get("mapper");
@@ -1151,7 +1151,7 @@ void Past::AddSwap(size_t r0, size_t r1) {
                     new_gate_exception("tswap or tswap_real");
                 }
             }
-            DOUT("... tswap(q" << r0 << ",q" << r1 << ") ...");
+            QL_DOUT("... tswap(q" << r0 << ",q" << r1 << ") ...");
         } else {
             if (mapperopt == "maxfidelity") {
                 created = new_gate(circ, "swap_prim", {r0,r1});    // gates implementing swap returned in circ
@@ -1164,7 +1164,7 @@ void Past::AddSwap(size_t r0, size_t r1) {
                     new_gate_exception("swap or swap_real");
                 }
             }
-            DOUT("... swap(q" << r0 << ",q" << r1 << ") ...");
+            QL_DOUT("... swap(q" << r0 << ",q" << r1 << ") ...");
         }
     }
     nswapsadded++;                       // for reporting at the end
@@ -1192,12 +1192,12 @@ size_t Past::MapQubit(size_t v) {
 }
 
 void Past::stripname(std::string &name) {
-    DOUT("stripname(name=" << name << ")");
+    QL_DOUT("stripname(name=" << name << ")");
     size_t p = name.find(" ");
     if (p != std::string::npos) {
         name = name.substr(0,p);
     }
-    DOUT("... after stripname name=" << name);
+    QL_DOUT("... after stripname name=" << name);
 }
 
 // MakeReal gp
@@ -1228,7 +1228,7 @@ void Past::stripname(std::string &name) {
 // 4. final schedule:
 //      the resulting gates are subject to final scheduling (the original resource-constrained scheduler)
 void Past::MakeReal(ql::gate *gp, ql::circuit &circ) {
-    DOUT("MakeReal: " << gp->qasm());
+    QL_DOUT("MakeReal: " << gp->qasm());
 
     std::string gname = gp->name;
     stripname(gname);
@@ -1247,7 +1247,7 @@ void Past::MakeReal(ql::gate *gp, ql::circuit &circ) {
     auto mapperopt = ql::options::get("mapper");
     std::string real_gname = gname;
     if (mapperopt == "maxfidelity") {
-        DOUT("MakeReal: with mapper==maxfidelity generate _prim");
+        QL_DOUT("MakeReal: with mapper==maxfidelity generate _prim");
         real_gname.append("_prim");
     } else {
         real_gname.append("_real");
@@ -1257,10 +1257,10 @@ void Past::MakeReal(ql::gate *gp, ql::circuit &circ) {
     if (!created) {
         created = new_gate(circ, gname, real_qubits, gp->creg_operands, gp->duration, gp->angle);
         if (!created) {
-            FATAL("MakeReal: failed creating gate " << real_gname << " or " << gname);
+            QL_FATAL("MakeReal: failed creating gate " << real_gname << " or " << gname);
         }
     }
-    DOUT("... MakeReal: new gate created for: " << real_gname << " or " << gname);
+    QL_DOUT("... MakeReal: new gate created for: " << real_gname << " or " << gname);
 }
 
 // as mapper after-burner
@@ -1275,10 +1275,10 @@ void Past::MakePrimitive(ql::gate *gp, ql::circuit &circ) const {
     if (!created) {
         created = new_gate(circ, gname, gp->operands, gp->creg_operands, gp->duration, gp->angle);
         if (!created) {
-            FATAL("MakePrimtive: failed creating gate " << prim_gname << " or " << gname);
+            QL_FATAL("MakePrimtive: failed creating gate " << prim_gname << " or " << gname);
         }
     }
-    DOUT("... MakePrimtive: new gate created for: " << prim_gname << " or " << gname);
+    QL_DOUT("... MakePrimtive: new gate created for: " << prim_gname << " or " << gname);
 }
 
 size_t Past::MaxFreeCycle() const {
@@ -1321,13 +1321,13 @@ void Past::Out(ql::circuit &oc) {
 // explicit Alter constructor
 // needed for virgin construction
 Alter::Alter() {
-    DOUT("Constructing Alter");
+    QL_DOUT("Constructing Alter");
 }
 
 // Alter initializer
 // This should only be called after a virgin construction and not after cloning a path.
 void Alter::Init(const ql::quantum_platform *p, ql::quantum_kernel *k, Grid *g) {
-    DOUT("Alter::Init(number of qubits=" << nq);
+    QL_DOUT("Alter::Init(number of qubits=" << nq);
     platformp = p;
     kernelp = k;
     gridp = g;
@@ -1367,7 +1367,7 @@ void Alter::partialPrint(const std::string &hd, const std::vector<size_t> &pp) {
 }
 
 void Alter::DPRINT(const std::string &s) const {
-    if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
+    if (ql::utils::logger::log_level >= ql::utils::logger::LogLevel::LOG_DEBUG) {
         Print(s);
     }
 }
@@ -1389,7 +1389,7 @@ void Alter::Print(const std::string &s) const {
 }
 
 void Alter::DPRINT(const std::string &s, const std::vector<Alter> &va) {
-    if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
+    if (ql::utils::logger::log_level >= ql::utils::logger::LogLevel::LOG_DEBUG) {
         Print(s, va);
     }
 }
@@ -1409,7 +1409,7 @@ void Alter::Print(const std::string &s, const std::vector<Alter> &va) {
 }
 
 void Alter::DPRINT(const std::string &s, const std::list<Alter> &la) {
-    if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
+    if (ql::utils::logger::log_level >= ql::utils::logger::LogLevel::LOG_DEBUG) {
         Print(s, la);
     }
 }
@@ -1462,7 +1462,7 @@ void Alter::AddSwaps(Past &past, const std::string &mapselectswapsopt) const {
             numberadded++;
         }
     } else {
-        ASSERT("earliest" == mapselectswapsopt);
+        QL_ASSERT("earliest" == mapselectswapsopt);
         if (fromSource.size() >= 2 && fromTarget.size() >= 2) {
             if (past.IsFirstSwapEarliest(fromSource[0], fromSource[1], fromTarget[0], fromTarget[1])) {
                 past.AddSwap(fromSource[0], fromSource[1]);
@@ -1500,7 +1500,7 @@ void Alter::Extend(const Past &currPast, const Past &basePast) {
 
     auto mapperopt = ql::options::get("mapper");
     if (mapperopt == "maxfidelity") {
-        FATAL("Mapper option maxfidelity has been disabled");
+        QL_FATAL("Mapper option maxfidelity has been disabled");
         // score = ql::quick_fidelity(past.lg);
     } else {
         score = past.MaxFreeCycle() - basePast.MaxFreeCycle();
@@ -1524,10 +1524,10 @@ void Alter::Split(const Grid &grid, std::list<Alter> &resla) const {
     // DOUT("Split ...");
 
     size_t length = total.size();
-    ASSERT (length >= 2);   // distance >= 1 so path at least: source -> target
+    QL_ASSERT (length >= 2);   // distance >= 1 so path at least: source -> target
     for (size_t rightopi = length - 1; rightopi >= 1; rightopi--) {
         size_t leftopi = rightopi - 1;
-        ASSERT (leftopi >= 0);
+        QL_ASSERT (leftopi >= 0);
         // DOUT("... leftopi=" << leftopi);
         // leftopi is the index in total that holds the qubit that becomes the left operand of the gate
         // rightopi is the index in total that holds the qubit that becomes the right operand of the gate
@@ -1579,7 +1579,7 @@ void Future::Init(const ql::quantum_platform *p) {
 // nq and nc are parameters because nc may not be provided by platform but by kernel
 // the latter should be updated when mapping multiple kernels
 void Future::SetCircuit(ql::quantum_kernel &kernel, Scheduler &sched, size_t nq, size_t nc) {
-    DOUT("Future::SetCircuit ...");
+    QL_DOUT("Future::SetCircuit ...");
     schedp = &sched;
     std::string maplookaheadopt = ql::options::get("maplookahead");
     if (maplookaheadopt == "no") {
@@ -1604,11 +1604,11 @@ void Future::SetCircuit(ql::quantum_kernel &kernel, Scheduler &sched, size_t nq,
             schedp->get_dot(map_dot);
 
             fname << ql::options::get("output_dir") << "/" << kernel.name << "_" << "mapper" << ".dot";
-            IOUT("writing " << "mapper" << " dependence graph dot file to '" << fname.str() << "' ...");
+            QL_IOUT("writing " << "mapper" << " dependence graph dot file to '" << fname.str() << "' ...");
             ql::utils::write_file(fname.str(), map_dot);
         }
     }
-    DOUT("Future::SetCircuit [DONE]");
+    QL_DOUT("Future::SetCircuit [DONE]");
 }
 
 // Get from avlist all gates that are non-quantum into nonqlg
@@ -1650,7 +1650,7 @@ bool Future::GetGates(std::list<ql::gate*> &qlg) const {
         if (input_gatepp != input_gatepv.end()) {
             ql::gate *gp = *input_gatepp;
             if (gp->operands.size() > 2) {
-                FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
+                QL_FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
             }
             qlg.push_back(gp);
         }
@@ -1658,7 +1658,7 @@ bool Future::GetGates(std::list<ql::gate*> &qlg) const {
         for (auto n : avlist) {
             ql::gate *gp = schedp->instruction[n];
             if (gp->operands.size() > 2) {
-                FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
+                QL_FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
             }
             qlg.push_back(gp);
         }
@@ -1792,20 +1792,20 @@ public:
         nvq = p->qubit_number;  // same range; when not, take set from config and create v2i earlier
         // DOUT("... number of real qubits (locations): " << nlocs);
         gridp = g;
-        DOUT("Init: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp);
+        QL_DOUT("Init: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp);
     }
 
     // find an initial placement of the virtual qubits for the given circuit
     // the resulting placement is put in the provided virt2real map
     // result indicates one of the result indicators (ipr_t, see above)
     void PlaceBody(ql::circuit &circ, Virt2Real &v2r, ipr_t &result, double &iptimetaken) {
-        DOUT("InitialPlace.PlaceBody ...");
+        QL_DOUT("InitialPlace.PlaceBody ...");
 
         // check validity of circuit
         for (auto &gp : circ) {
             auto &q = gp->operands;
             if (q.size() > 2) {
-                FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
+                QL_FATAL(" gate: " << gp->qasm() << " has more than 2 operand qubits; please decompose such gates first before mapping.");
             }
         }
 
@@ -1819,7 +1819,7 @@ public:
         // (the MIP model is shorter when the indices are contiguous)
         // finally, nfac is set to the number of these facilities;
         // only consider virtual qubit uses until the specified max number of two qubit gates has been seen
-        DOUT("... compute ipusecount by scanning circuit");
+        QL_DOUT("... compute ipusecount by scanning circuit");
         std::vector<size_t>  ipusecount;// ipusecount[v] = count of use of virtual qubit v in current circuit
         ipusecount.resize(nvq,0);       // initially all 0
         std::vector<size_t> v2i;        // v2i[virtual qubit index v] -> index of facility i
@@ -1843,14 +1843,14 @@ public:
                 nfac += 1;
             }
         }
-        DOUT("... number of facilities: " << nfac << " while number of used virtual qubits is: " << nvq);
+        QL_DOUT("... number of facilities: " << nfac << " while number of used virtual qubits is: " << nvq);
 
         // precompute refcount (used by the model as constants) by scanning circuit;
         // refcount[i][j] = count of two-qubit gates between facilities i and j in current circuit
         // at the same time, set anymap and currmap
         // anymap = there are no two-qubit gates so any map will do
         // currmap = in the current map, all two-qubit gates are NN so current map will do
-        DOUT("... compute refcount by scanning circuit");
+        QL_DOUT("... compute refcount by scanning circuit");
         std::vector<std::vector<size_t>>  refcount;
         refcount.resize(nfac); for (size_t i=0; i<nfac; i++) refcount[i].resize(nfac,0);
         bool anymap = true;    // true when all refcounts are 0
@@ -1876,18 +1876,18 @@ public:
             }
         }
         if (prefix != 0 && twoqubitcount >= prefix) {
-            DOUT("InitialPlace: only considered " << prefix << " of " << twoqubitcount << " two-qubit gates, so resulting mapping is not exact");
+            QL_DOUT("InitialPlace: only considered " << prefix << " of " << twoqubitcount << " two-qubit gates, so resulting mapping is not exact");
         }
         if (anymap) {
-            DOUT("InitialPlace: no two-qubit gates found, so no constraints, and any mapping is ok");
-            DOUT("InitialPlace.PlaceBody [ANY MAPPING IS OK]");
+            QL_DOUT("InitialPlace: no two-qubit gates found, so no constraints, and any mapping is ok");
+            QL_DOUT("InitialPlace.PlaceBody [ANY MAPPING IS OK]");
             result = ipr_any;
             iptimetaken = 0.0;
             return;
         }
         if (currmap) {
-            DOUT("InitialPlace: in current map, all two-qubit gates are nearest neighbor, so current map is ok");
-            DOUT("InitialPlace.PlaceBody [CURRENT MAPPING IS OK]");
+            QL_DOUT("InitialPlace: in current map, all two-qubit gates are nearest neighbor, so current map is ok");
+            QL_DOUT("InitialPlace.PlaceBody [CURRENT MAPPING IS OK]");
             result = ipr_current;
             iptimetaken = 0.0;
             return;
@@ -1899,7 +1899,7 @@ public:
 
         // precompute costmax by applying formula
         // costmax[i][k] = sum j: sum l: refcount[i][j] * distance(k,l) for facility i in location k
-        DOUT("... precompute costmax by combining refcount and distances");
+        QL_DOUT("... precompute costmax by combining refcount and distances");
         std::vector<std::vector<size_t>>  costmax;
         costmax.resize(nfac); for (size_t i=0; i<nfac; i++) costmax[i].resize(nlocs,0);
         for (size_t i = 0; i < nfac; i++) {
@@ -2054,46 +2054,46 @@ public:
         mip.obj(objective);
         // DOUT("MINIMIZE " << objs);
 
-        DOUT("... v2r before solving, nvq=" << nvq);
+        QL_DOUT("... v2r before solving, nvq=" << nvq);
         for (size_t v = 0; v < nvq; v++) {
-            DOUT("... about to print v2r[" << v << "]= ...");
-            DOUT("....." << v2r[v]);
+            QL_DOUT("... about to print v2r[" << v << "]= ...");
+            QL_DOUT("....." << v2r[v]);
         }
-        DOUT("..1 nvq=" << nvq);
+        QL_DOUT("..1 nvq=" << nvq);
 
         // solve the problem
-        WOUT("... computing initial placement using MIP, this may take a while ...");
-        DOUT("InitialPlace: solving the problem, this may take a while ...");
-        DOUT("..2 nvq=" << nvq);
+        QL_WOUT("... computing initial placement using MIP, this may take a while ...");
+        QL_DOUT("InitialPlace: solving the problem, this may take a while ...");
+        QL_DOUT("..2 nvq=" << nvq);
         Mip::SolveExitStatus s;
-        DOUT("Just before solve: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp);
-        DOUT("Just before solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
-        DOUT("..2b nvq=" << nvq);
+        QL_DOUT("Just before solve: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp);
+        QL_DOUT("Just before solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
+        QL_DOUT("..2b nvq=" << nvq);
         {
             s = mip.solve();
         }
-        DOUT("..3 nvq=" << nvq);
-        DOUT("Just after solve: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp);
-        DOUT("Just after solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
-        ASSERT(nvq == nlocs);         // consistency check, mainly to let it crash
+        QL_DOUT("..3 nvq=" << nvq);
+        QL_DOUT("Just after solve: platformp=" << platformp << " nlocs=" << nlocs << " nvq=" << nvq << " gridp=" << gridp);
+        QL_DOUT("Just after solve: objs=" << objs << " x.size()=" << x.size() << " w.size()=" << w.size() << " refcount.size()=" << refcount.size() << " v2i.size()=" << v2i.size() << " ipusecount.size()=" << ipusecount.size());
+        QL_ASSERT(nvq == nlocs);         // consistency check, mainly to let it crash
 
         // computing iptimetaken, stop interval timer
-        DOUT("..4 nvq=" << nvq);
+        QL_DOUT("..4 nvq=" << nvq);
         high_resolution_clock::time_point t2 = high_resolution_clock::now();
         duration<double> time_span = t2 - t1;
         iptimetaken = time_span.count();
-        DOUT("..5 nvq=" << nvq);
+        QL_DOUT("..5 nvq=" << nvq);
 
         // DOUT("... determine result of solving");
         Mip::ProblemType pt = mip.type();
-        DOUT("..6 nvq=" << nvq);
+        QL_DOUT("..6 nvq=" << nvq);
         if (s != Mip::SOLVED || pt != Mip::OPTIMAL) {
-            DOUT("... InitialPlace: no (optimal) solution found; solve returned:"<< s << " type returned:" << pt);
+            QL_DOUT("... InitialPlace: no (optimal) solution found; solve returned:" << s << " type returned:" << pt);
             result = ipr_failed;
-            DOUT("InitialPlace.PlaceBody [FAILED, DID NOT FIND MAPPING]");
+            QL_DOUT("InitialPlace.PlaceBody [FAILED, DID NOT FIND MAPPING]");
             return;
         }
-        DOUT("..7 nvq=" << nvq);
+        QL_DOUT("..7 nvq=" << nvq);
 
         // return new mapping as result in v2r
 
@@ -2102,22 +2102,22 @@ public:
         // and fill v2r with the found locations for the used virtual qubits;
         // the unused mapped virtual qubits are mapped to an arbitrary permutation of the remaining locations;
         // the latter must be updated to generate swaps when mapping multiple kernels
-        DOUT("..8 nvq=" << nvq);
-        DOUT("... interpret result and copy to Virt2Real, nvq=" << nvq);
+        QL_DOUT("..8 nvq=" << nvq);
+        QL_DOUT("... interpret result and copy to Virt2Real, nvq=" << nvq);
         for (size_t v = 0; v < nvq; v++) {
-            DOUT("... about to set v2r to undefined for v " << v);
+            QL_DOUT("... about to set v2r to undefined for v " << v);
             v2r[v] = UNDEFINED_QUBIT;      // i.e. undefined, i.e. v is not an index of a used virtual qubit
         }
         for (size_t i = 0; i < nfac; i++) {
             size_t v;   // found virtual qubit index v represented by facility i
             // use v2i backward to find virtual qubit v represented by facility i
-            DOUT("... about to inspect v2i to get solution and set it in v2r for facility " << i);
+            QL_DOUT("... about to inspect v2i to get solution and set it in v2r for facility " << i);
             for (v = 0; v < nvq; v++) {
                 if (v2i[v] == i) {
                     break;
                 }
             }
-            ASSERT(v < nvq);  // for each facility there must be a virtual qubit
+            QL_ASSERT(v < nvq);  // for each facility there must be a virtual qubit
             size_t k;   // location to which facility i being virtual qubit index v was allocated
             for (k = 0; k < nlocs; k++) {
                 if (mip.sol(x[i][k]) == 1) {
@@ -2126,13 +2126,13 @@ public:
                     break;
                 }
             }
-            ASSERT(k < nlocs);  // each facility i by definition represents a used qubit so must have got a location
-            DOUT("... end loop body over nfac");
+            QL_ASSERT(k < nlocs);  // each facility i by definition represents a used qubit so must have got a location
+            QL_DOUT("... end loop body over nfac");
         }
 
         auto mapinitone2oneopt = ql::options::get("mapinitone2one");
         if (mapinitone2oneopt == "yes") {
-            DOUT("... correct location of unused mapped virtual qubits to be an unused location");
+            QL_DOUT("... correct location of unused mapped virtual qubits to be an unused location");
             v2r.DPRINT("... result Virt2Real map of InitialPlace before mapping unused mapped virtual qubits ");
             // virtual qubits used by this kernel v have got their location k filled in in v2r[v] == k
             // unused mapped virtual qubits still have location UNDEFINED_QUBIT, fill with the remaining locs
@@ -2154,15 +2154,15 @@ public:
                         }
                         // k is a used location, so continue with next k to check whether it is hopefully unused
                     }
-                    ASSERT(k < nlocs);  // when a virtual qubit is not used, there must be a location that is not used
+                    QL_ASSERT(k < nlocs);  // when a virtual qubit is not used, there must be a location that is not used
                     v2r[v] = k;
                 }
-                DOUT("... end loop body over nvq when mapinitone2oneopt");
+                QL_DOUT("... end loop body over nvq when mapinitone2oneopt");
             }
         }
         v2r.DPRINT("... final result Virt2Real map of InitialPlace");
         result = ipr_newmap;
-        DOUT("InitialPlace.PlaceBody [SUCCESS, FOUND MAPPING]");
+        QL_DOUT("InitialPlace.PlaceBody [SUCCESS, FOUND MAPPING]");
     }
 
     // the above PlaceBody is a regular function using circ, and updating v2r and result before it returns;
@@ -2180,7 +2180,7 @@ public:
         double &iptimetaken,
         const std::string &initialplaceopt
     ) {
-        DOUT("InitialPlace.PlaceWrapper called");
+        QL_DOUT("InitialPlace.PlaceWrapper called");
         std::mutex  m;
         std::condition_variable cv;
 
@@ -2195,40 +2195,40 @@ public:
             case 'm': waitseconds *= 60; break;
             case 'h': waitseconds *= 3600; break;
             default:
-                FATAL("Unknown value of option 'initialplace'='" << initialplaceopt << "'.");
+                QL_FATAL("Unknown value of option 'initialplace'='" << initialplaceopt << "'.");
         }
         iptimetaken = waitseconds;    // pessimistic, in case of timeout, otherwise it is corrected
 
         // v2r and result are allocated on stack of main thread by some ancestor so be careful with threading
         std::thread t([&cv, this, &circ, &v2r, &result, &iptimetaken]()
             {
-                DOUT("InitialPlace.PlaceWrapper subthread about to call PlaceBody");
+                QL_DOUT("InitialPlace.PlaceWrapper subthread about to call PlaceBody");
                 PlaceBody(circ, v2r, result, iptimetaken);
-                DOUT("InitialPlace.PlaceBody returned in subthread; about to signal the main thread");
+                QL_DOUT("InitialPlace.PlaceBody returned in subthread; about to signal the main thread");
                 cv.notify_one();        // by this, the main thread awakes from cv.wait_for without timeout
-                DOUT("InitialPlace.PlaceWrapper subthread after signaling the main thread, and is about to die");
+                QL_DOUT("InitialPlace.PlaceWrapper subthread after signaling the main thread, and is about to die");
             }
         );
-        DOUT("InitialPlace.PlaceWrapper main code created thread; about to call detach on it");
+        QL_DOUT("InitialPlace.PlaceWrapper main code created thread; about to call detach on it");
         t.detach();
-        DOUT("InitialPlace.PlaceWrapper main code detached thread");
+        QL_DOUT("InitialPlace.PlaceWrapper main code detached thread");
         {
             std::chrono::seconds maxwaittime(waitseconds);
             std::unique_lock<std::mutex> l(m);
-            DOUT("InitialPlace.PlaceWrapper main code starts waiting with timeout of " << waitseconds << " seconds");
+            QL_DOUT("InitialPlace.PlaceWrapper main code starts waiting with timeout of " << waitseconds << " seconds");
             if (cv.wait_for(l, maxwaittime) == std::cv_status::timeout) {
-                DOUT("InitialPlace.PlaceWrapper main code awoke from waiting with timeout");
+                QL_DOUT("InitialPlace.PlaceWrapper main code awoke from waiting with timeout");
                 if (throwexception) {
-                    DOUT("InitialPlace: timed out and stops compilation [TIMED OUT, STOP COMPILATION]");
-                    FATAL("Initial placement timed out and stops compilation [TIMED OUT, STOP COMPILATION]");
+                    QL_DOUT("InitialPlace: timed out and stops compilation [TIMED OUT, STOP COMPILATION]");
+                    QL_FATAL("Initial placement timed out and stops compilation [TIMED OUT, STOP COMPILATION]");
                 }
-                DOUT("InitialPlace.PlaceWrapper about to return timedout==true");
+                QL_DOUT("InitialPlace.PlaceWrapper about to return timedout==true");
                 return true;
             }
-            DOUT("InitialPlace.PlaceWrapper main code awoke from waiting without timeout, from signal sent by InitialPlace.PlaceWrapper subthread just before its death");
+            QL_DOUT("InitialPlace.PlaceWrapper main code awoke from waiting without timeout, from signal sent by InitialPlace.PlaceWrapper subthread just before its death");
         }
 
-        DOUT("InitialPlace.PlaceWrapper about to return timedout==false");
+        QL_DOUT("InitialPlace.PlaceWrapper about to return timedout==false");
         return false;
     }
 
@@ -2246,25 +2246,25 @@ public:
     ) {
         Virt2Real   v2r_orig = v2r;
 
-        DOUT("InitialPlace.Place ...");
+        QL_DOUT("InitialPlace.Place ...");
         if (initialplaceopt == "yes") {
             // do initial placement without time limit
-            DOUT("InitialPlace.Place calling PlaceBody without time limit");
+            QL_DOUT("InitialPlace.Place calling PlaceBody without time limit");
             PlaceBody(circ, v2r, result, iptimetaken);
             // v2r reflects new mapping, if any found, otherwise unchanged
-            DOUT("InitialPlace.Place [done, no time limit], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
+            QL_DOUT("InitialPlace.Place [done, no time limit], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
         } else {
             bool timedout;
             timedout = PlaceWrapper(circ, v2r, result, iptimetaken, initialplaceopt);
 
             if (timedout) {
                 result = ipr_timedout;
-                DOUT("InitialPlace.Place [done, TIMED OUT, NO MAPPING FOUND], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
+                QL_DOUT("InitialPlace.Place [done, TIMED OUT, NO MAPPING FOUND], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
 
                 v2r = v2r_orig; // v2r may have got corrupted when timed out during v2r updating
             } else {
                 // v2r reflects new mapping, if any found, otherwise unchanged
-                DOUT("InitialPlace.Place [done, not timed out], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
+                QL_DOUT("InitialPlace.Place [done, not timed out], result=" << result << " iptimetaken=" << iptimetaken << " seconds");
             }
         }
     }
@@ -2279,7 +2279,7 @@ void Mapper::GenShortestPaths(ql::gate *gp, size_t src, size_t tgt, size_t budge
     std::list<Alter> genla;    // list that will get the result of a recursive Gen call
 
     // DOUT("GenShortestPaths: " << "src=" << src << " tgt=" << tgt << " budget=" << budget << " which=" << which);
-    ASSERT(resla.empty());
+    QL_ASSERT(resla.empty());
 
     if (src == tgt) {
         // found target
@@ -2299,7 +2299,7 @@ void Mapper::GenShortestPaths(ql::gate *gp, size_t src, size_t tgt, size_t budge
 
     // start looking around at neighbors for serious paths
     size_t d = grid.Distance(src, tgt);
-    ASSERT(d >= 1);
+    QL_ASSERT(d >= 1);
 
     // reduce neighbors nbs to those n continuing a path within budget
     // src=>tgt is distance d, budget>=d is allowed, attempt src->n=>tgt
@@ -2368,7 +2368,7 @@ void Mapper::GenShortestPaths(ql::gate *gp, size_t src, size_t tgt, std::list<Al
     } else if (mappathselectopt == "borders") {
         GenShortestPaths(gp, src, tgt, budget, directla, wp_leftright_shortest);
     } else {
-        FATAL("Unknown value of mapppathselect option " << mappathselectopt);
+        QL_FATAL("Unknown value of mapppathselect option " << mappathselectopt);
     }
 
     // DOUT("about to split the paths");
@@ -2382,15 +2382,15 @@ void Mapper::GenShortestPaths(ql::gate *gp, size_t src, size_t tgt, std::list<Al
 // and return the found variations by appending them to the given list of Alters, la
 void Mapper::GenAltersGate(ql::gate *gp, std::list<Alter> &la, Past &past) {
     auto&   q = gp->operands;
-    ASSERT (q.size() == 2);
+    QL_ASSERT (q.size() == 2);
     size_t  src = past.MapQubit(q[0]);  // interpret virtual operands in past's current map
     size_t  tgt = past.MapQubit(q[1]);
     size_t d = grid.MinHops(src, tgt);     // and find MinHops between real counterparts
-    DOUT("GenAltersGate: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at MinHops=" << d );
+    QL_DOUT("GenAltersGate: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ") at MinHops=" << d );
     past.DFcPrint();
 
     GenShortestPaths(gp, src, tgt, la);// find shortest paths from src to tgt, and split these
-    ASSERT(la.size() != 0);
+    QL_ASSERT(la.size() != 0);
     // Alter::DPRINT("... after GenShortestPaths", la);
 }
 
@@ -2439,7 +2439,7 @@ Alter Mapper::ChooseAlter(std::list<Alter> &la, Future &future) {
             lag.push_back(a.targetgp);
         }
         ql::gate *gp = future.MostCriticalIn(lag);
-        ASSERT(gp != NULL);
+        QL_ASSERT(gp != NULL);
         for (auto &a : la) {
             if (a.targetgp == gp) {
                 // DOUT(" ... took first alternative with most critical target gate");
@@ -2480,7 +2480,7 @@ Alter Mapper::ChooseAlter(std::list<Alter> &la, Future &future) {
 
 // Map the gate/operands of a gate that has been routed or doesn't require routing
 void Mapper::MapRoutedGate(ql::gate *gp, Past &past) {
-    DOUT("MapRoutedGate on virtual: " << gp->qasm() );
+    QL_DOUT("MapRoutedGate on virtual: " << gp->qasm() );
 
     // MakeReal of this gate maps its qubit operands and optionally updates its gate name
     // when the gate name was updated, a new gate with that name is created;
@@ -2490,7 +2490,7 @@ void Mapper::MapRoutedGate(ql::gate *gp, Past &past) {
     past.MakeReal(gp, circ);
     for (auto newgp : circ)
     {
-        DOUT(" ... new mapped real gate, about to be added to past: " << newgp->qasm() );
+        QL_DOUT(" ... new mapped real gate, about to be added to past: " << newgp->qasm() );
         past.AddAndSchedule(newgp);
     }
 }
@@ -2540,12 +2540,12 @@ bool Mapper::MapMappableGates(Future &future, Past &past, std::list<ql::gate*> &
     std::list<ql::gate*>   nonqlg; // list of non-quantum gates in avlist
     std::list<ql::gate*>   qlg;    // list of (remaining) gates in avlist
 
-    DOUT("MapMappableGates entry");
+    QL_DOUT("MapMappableGates entry");
     while (1) {
         if (future.GetNonQuantumGates(nonqlg)) {
             // avlist contains non-quantum gates
             // and GetNonQuantumGates indicates these (in nonqlg) must be done first
-            DOUT("MapMappableGates, there is a set of non-quantum gates");
+            QL_DOUT("MapMappableGates, there is a set of non-quantum gates");
             for (auto gp : nonqlg) {
                 // here add code to map qubit use of any non-quantum instruction????
                 // dummy gates are nonq gates internal to OpenQL such as SOURCE/SINK; don't output them
@@ -2554,13 +2554,13 @@ bool Mapper::MapMappableGates(Future &future, Past &past, std::list<ql::gate*> &
                     past.ByPass(gp);    // this flushes past.lg first to outlg
                 }
                 future.DoneGate(gp); // so on avlist= nonNN2q -> NN2q -> 1q -> nonq: the nonq is done first
-                DOUT("MapMappableGates, done with " << gp->qasm());
+                QL_DOUT("MapMappableGates, done with " << gp->qasm());
             }
-            DOUT("MapMappableGates, done with set of non-quantum gates, continuing ...");
+            QL_DOUT("MapMappableGates, done with set of non-quantum gates, continuing ...");
             continue;
         }
         if (!future.GetGates(qlg)) {
-            DOUT("MapMappableGates, no gates anymore, return");
+            QL_DOUT("MapMappableGates, no gates anymore, return");
             // avlist doesn't contain any gate
             lg.clear();
             return false;
@@ -2592,7 +2592,7 @@ bool Mapper::MapMappableGates(Future &future, Past &past, std::list<ql::gate*> &
                 size_t  tgt = past.MapQubit(q[1]);
                 size_t  d = grid.MinHops(src, tgt);    // and find minimum number of hops between real counterparts
                 if (d == 1) {
-                    DOUT("MapMappableGates, NN no routing: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ")");
+                    QL_DOUT("MapMappableGates, NN no routing: " << gp->qasm() << " in real (q" << src << ",q" << tgt << ")");
                     MapRoutedGate(gp, past);
                     future.DoneGate(gp);
                     foundone = true;    // a 2q quantum gate was found that was mappable
@@ -2606,18 +2606,18 @@ bool Mapper::MapMappableGates(Future &future, Past &past, std::list<ql::gate*> &
                 // (they might not be critical, the now available 1q gates may hide a more critical 2q gate),
                 // but deal with all available non-quantum, and 1q gates first,
                 // and only when non of those remain, map a next mappable 2q (now most critical) one
-                DOUT("MapMappableGates, found and mapped an easy quantum gate, continuing ...");
+                QL_DOUT("MapMappableGates, found and mapped an easy quantum gate, continuing ...");
                 continue;
             }
-            DOUT("MapMappableGates, only nonNN 2q gates remain: ...");
+            QL_DOUT("MapMappableGates, only nonNN 2q gates remain: ...");
         } else {
-            DOUT("MapMappableGates, only 2q gates remain (nonNN and NN): ...");
+            QL_DOUT("MapMappableGates, only 2q gates remain (nonNN and NN): ...");
         }
         // avlist (qlg) only contains 2q gates (when alsoNN2q: only non-NN ones; otherwise also perhaps NN ones)
         lg = qlg;
-        if (ql::utils::logger::LOG_LEVEL >= ql::utils::logger::log_level_t::LOG_DEBUG) {
+        if (ql::utils::logger::log_level >= ql::utils::logger::LogLevel::LOG_DEBUG) {
             for (auto gp : lg) {
-                DOUT("... 2q gate returned: " << gp->qasm());
+                QL_DOUT("... 2q gate returned: " << gp->qasm());
             }
         }
         return true;
@@ -2634,12 +2634,12 @@ bool Mapper::MapMappableGates(Future &future, Past &past, std::list<ql::gate*> &
 // result is returned in resa
 void Mapper::SelectAlter(std::list<Alter> &la, Alter &resa, Future &future, Past &past, Past &basePast, int level) {
     // la are all alternatives we enter with
-    ASSERT(!la.empty());  // so there is always a result Alter
+    QL_ASSERT(!la.empty());  // so there is always a result Alter
 
     std::list<Alter> gla;       // good alternative subset of la, suitable to go in recursion with
     std::list<Alter> bla;       // best alternative subset of gla, suitable to choose result from
 
-    DOUT("SelectAlter ENTRY level=" << level << " from " << la.size() << " alternatives");
+    QL_DOUT("SelectAlter ENTRY level=" << level << " from " << la.size() << " alternatives");
     auto mapperopt = ql::options::get("mapper");
     if (mapperopt == "base" || mapperopt == "baserc") {
         Alter::DPRINT("... SelectAlter base (equally good/best) alternatives:", la);
@@ -2648,7 +2648,7 @@ void Mapper::SelectAlter(std::list<Alter> &la, Alter &resa, Future &future, Past
         // DOUT("SelectAlter DONE level=" << level << " from " << la.size() << " alternatives");
         return;
     }
-    ASSERT(mapperopt == "minextend" || mapperopt == "minextendrc" || mapperopt == "maxfidelity");
+    QL_ASSERT(mapperopt == "minextend" || mapperopt == "minextendrc" || mapperopt == "maxfidelity");
 
     // Compute a.score of each alternative relative to basePast, and sort la on it, minimum first
     for (auto &a : la) {
@@ -2767,7 +2767,7 @@ void Mapper::SelectAlter(std::list<Alter> &la, Alter &resa, Future &future, Past
             // DOUT("... ... SelectAlter level=" << level << ", no gates to evaluate next; RECURSION BOTTOM");
             auto mapperopt = ql::options::get("mapper");
             if (mapperopt == "maxfidelity") {
-                FATAL("Mapper option maxfidelity has been disabled");
+                QL_FATAL("Mapper option maxfidelity has been disabled");
                 // a.score = ql::quick_fidelity(past_copy.lg);
             } else {
                 a.score = past_copy.MaxFreeCycle() - basePast.MaxFreeCycle();
@@ -2788,7 +2788,7 @@ void Mapper::SelectAlter(std::list<Alter> &la, Alter &resa, Future &future, Past
     resa = ChooseAlter(bla, future);
     resa.DPRINT("... the selected Alter is");
     // DOUT("... SelectAlter level=" << level << " selecting from " << bla.size() << " equally good alternatives above DONE");
-    DOUT("SelectAlter DONE level=" << level << " from " << la.size() << " alternatives");
+    QL_DOUT("SelectAlter DONE level=" << level << " from " << la.size() << " alternatives");
 }
 
 // Given the states of past and future
@@ -2840,7 +2840,7 @@ void Mapper::MapCircuit(ql::quantum_kernel &kernel, Virt2Real &v2r) {
 
     // mainPast.DPRINT("end mapping");
 
-    DOUT("... retrieving outCirc from mainPast.outlg; swapping outCirc with kernel.c, kernel.c contains output circuit");
+    QL_DOUT("... retrieving outCirc from mainPast.outlg; swapping outCirc with kernel.c, kernel.c contains output circuit");
     ql::circuit outCirc;
     mainPast.Out(outCirc);                          // copy (final part of) mainPast's output window into this outCirc
     kernel.c.swap(outCirc);                         // and then to kernel.c
@@ -2852,7 +2852,7 @@ void Mapper::MapCircuit(ql::quantum_kernel &kernel, Virt2Real &v2r) {
 
 // decompose all gates that have a definition with _prim appended to its name
 void Mapper::MakePrimitives(ql::quantum_kernel &kernel) {
-    DOUT("MakePrimitives circuit ...");
+    QL_DOUT("MakePrimitives circuit ...");
 
     ql::circuit     input_gatepv = kernel.c;    // copy to allow kernel.c use by Past.new_gate
     kernel.c.clear();                           // kernel.c ready for use by new_gate
@@ -2874,20 +2874,20 @@ void Mapper::MakePrimitives(ql::quantum_kernel &kernel) {
     kernel.c.swap(outCirc);
     kernel.cycles_valid = true;                 // decomposition was scheduled in above
 
-    DOUT("MakePrimitives circuit [DONE]");
+    QL_DOUT("MakePrimitives circuit [DONE]");
 }
 
 // map kernel's circuit, main mapper entry once per kernel
 void Mapper::Map(ql::quantum_kernel& kernel) {
-    COUT("Mapping kernel " << kernel.name << " [START]");
-    DOUT("... kernel original virtual number of qubits=" << kernel.qubit_count);
+    QL_COUT("Mapping kernel " << kernel.name << " [START]");
+    QL_DOUT("... kernel original virtual number of qubits=" << kernel.qubit_count);
     nc = kernel.creg_count;     // in absence of platform creg_count, take it from kernel, i.e. from OpenQL program
     kernelp = NULL;             // no new_gates until kernel.c has been copied
 
     Virt2Real   v2r;            // current mapping while mapping this kernel
 
     auto mapassumezeroinitstateopt = ql::options::get("mapassumezeroinitstate");
-    DOUT("Mapper::Map before v2r.Init: mapassumezeroinitstateopt=" << mapassumezeroinitstateopt);
+    QL_DOUT("Mapper::Map before v2r.Init: mapassumezeroinitstateopt=" << mapassumezeroinitstateopt);
 
     // unify all incoming v2rs into v2r to compute kernel input mapping;
     // but until inter-kernel mapping is implemented, take program initial mapping for it
@@ -2901,17 +2901,17 @@ void Mapper::Map(ql::quantum_kernel& kernel) {
     if (initialplaceopt != "no") {
 #ifdef INITIALPLACE
         std::string initialplace2qhorizonopt = ql::options::get("initialplace2qhorizon");
-        DOUT("InitialPlace: kernel=" << kernel.name << " initialplace=" << initialplaceopt << " initialplace2qhorizon=" << initialplace2qhorizonopt << " [START]");
+        QL_DOUT("InitialPlace: kernel=" << kernel.name << " initialplace=" << initialplaceopt << " initialplace2qhorizon=" << initialplace2qhorizonopt << " [START]");
         InitialPlace    ip;             // initial placer facility
         ipr_t           ipok;           // one of several ip result possibilities
         double          iptimetaken;      // time solving the initial placement took, in seconds
 
         ip.Init(&grid, platformp);
         ip.Place(kernel.c, v2r, ipok, iptimetaken, initialplaceopt); // compute mapping (in v2r) using ip model, may fail
-        DOUT("InitialPlace: kernel=" << kernel.name << " initialplace=" << initialplaceopt << " initialplace2qhorizon=" << initialplace2qhorizonopt << " result=" << ip.ipr2string(ipok) << " iptimetaken=" << iptimetaken << " seconds [DONE]");
+        QL_DOUT("InitialPlace: kernel=" << kernel.name << " initialplace=" << initialplaceopt << " initialplace2qhorizon=" << initialplace2qhorizonopt << " result=" << ip.ipr2string(ipok) << " iptimetaken=" << iptimetaken << " seconds [DONE]");
 #else // ifdef INITIALPLACE
-        DOUT("InitialPlace support disabled during OpenQL build [DONE]");
-        WOUT("InitialPlace support disabled during OpenQL build [DONE]");
+        QL_DOUT("InitialPlace support disabled during OpenQL build [DONE]");
+        QL_WOUT("InitialPlace support disabled during OpenQL build [DONE]");
 #endif // ifdef INITIALPLACE
     }
     v2r.DPRINT("After InitialPlace");
@@ -2920,7 +2920,7 @@ void Mapper::Map(ql::quantum_kernel& kernel) {
     v2r.Export(rs_ip);   // from v2r to caller for reporting
 
     mapassumezeroinitstateopt = ql::options::get("mapassumezeroinitstate");
-    DOUT("Mapper::Map before MapCircuit: mapassumezeroinitstateopt=" << mapassumezeroinitstateopt);
+    QL_DOUT("Mapper::Map before MapCircuit: mapassumezeroinitstateopt=" << mapassumezeroinitstateopt);
 
     MapCircuit(kernel, v2r);        // updates kernel.c with swaps, maps all gates, updates v2r map
     v2r.DPRINT("After heuristics");
@@ -2931,7 +2931,7 @@ void Mapper::Map(ql::quantum_kernel& kernel) {
     v2r.Export(v2r_out);     // from v2r to caller for reporting
     v2r.Export(rs_out);      // from v2r to caller for reporting
 
-    COUT("Mapping kernel " << kernel.name << " [DONE]");
+    QL_COUT("Mapping kernel " << kernel.name << " [DONE]");
 }
 
 // initialize mapper for whole program

@@ -1,3 +1,7 @@
+/** \file
+ * Provides the base exception class for OpenQL.
+ */
+
 #include "exception.h"
 
 #include <cstring>
@@ -5,7 +9,11 @@
 #include "backward.hpp"
 
 namespace ql {
+namespace utils {
 
+/**
+ * Builds the message for Exception.
+ */
 static std::string make_message(
     const std::string &msg,
     bool system = false
@@ -69,10 +77,17 @@ static std::string make_message(
     }
 }
 
-exception::exception(
+/**
+ * Creates a new exception object with the given message. If system is set,
+ * the standard library is queried for the string representation of the current
+ * value of errno, and this is appended to the message. Finally, a backtrace is
+ * performed and appended to the message after a newline.
+ */
+Exception::Exception(
     const std::string &msg,
     bool system
 ) noexcept : std::runtime_error(make_message(msg, system)) {
 }
 
+} // namespace utils
 } // namespace ql

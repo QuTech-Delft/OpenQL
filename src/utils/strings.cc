@@ -33,9 +33,5 @@ std::string replace_all(std::string str, const std::string &from, const std::str
     return str;
 }
 
-bool string_has(const std::string &str, const std::string &token) {
-    return str.find(token) != std::string::npos;
-}
-
 } // namespace utils
 } // namespace ql

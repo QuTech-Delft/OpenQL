@@ -84,7 +84,7 @@ bool Unitary::is_decompose_support_enabled() {
 }
 
 Kernel::Kernel(const std::string &name) : name(name) {
-    DOUT(" API::Kernel named: " << name);
+    QL_DOUT(" API::Kernel named: " << name);
     kernel = new ql::quantum_kernel(name);
 }
 
@@ -99,7 +99,7 @@ Kernel::Kernel(
     qubit_count(qubit_count),
     creg_count(creg_count)
 {
-    WOUT("Kernel(name,Platform,#qbit,#creg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
+    QL_WOUT("Kernel(name,Platform,#qbit,#creg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
     kernel = new ql::quantum_kernel(name, *(platform.platform), qubit_count, creg_count);
 }
 
@@ -265,7 +265,7 @@ Kernel::~Kernel() {
 }
 
 Program::Program(const std::string &name) : name(name) {
-    DOUT("SWIG Program(name) constructor for name: " << name);
+    QL_DOUT("SWIG Program(name) constructor for name: " << name);
     program = new ql::quantum_program(name);
 }
 
@@ -280,17 +280,17 @@ Program::Program(
     qubit_count(qubit_count),
     creg_count(creg_count)
 {
-    WOUT("Program(name,Platform,#qbit,#creg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
+    QL_WOUT("Program(name,Platform,#qbit,#creg) API will soon be deprecated according to issue #266 - OpenQL v0.9");
     program = new ql::quantum_program(name, *(platform.platform), qubit_count, creg_count);
 }
 
 void Program::set_sweep_points(const std::vector<float> &sweep_points) {
-    WOUT("This will soon be deprecated according to issue #76");
+    QL_WOUT("This will soon be deprecated according to issue #76");
     program->sweep_points = sweep_points;
 }
 
 std::vector<float> Program::get_sweep_points() const {
-    WOUT("This will soon be deprecated according to issue #76");
+    QL_WOUT("This will soon be deprecated according to issue #76");
     return program->sweep_points;
 }
 
@@ -395,17 +395,17 @@ Compiler::Compiler(const std::string &name) : name(name) {
 }
 
 void Compiler::compile(Program &program) {
-    DOUT(" Compiler " << name << " compiles program  " << program.name);
+    QL_DOUT(" Compiler " << name << " compiles program  " << program.name);
     compiler->compile(program.program);
 }
 
 void Compiler::add_pass_alias(const std::string &realPassName, const std::string &symbolicPassName) {
-    DOUT(" Add pass " << realPassName << " under alias name  " << symbolicPassName);
+    QL_DOUT(" Add pass " << realPassName << " under alias name  " << symbolicPassName);
     compiler->addPass(realPassName,symbolicPassName);
 }
 
 void Compiler::add_pass(const std::string &realPassName) {
-    DOUT(" Add pass " << realPassName << " with no alias");
+    QL_DOUT(" Add pass " << realPassName << " with no alias");
     compiler->addPass(realPassName);
 }
 
@@ -414,6 +414,6 @@ void Compiler::set_pass_option(
     const std::string &optionName,
     const std::string &optionValue
 ) {
-    DOUT(" Set option " << optionName << " = " << optionValue << " for pass " << passName);
+    QL_DOUT(" Set option " << optionName << " = " << optionValue << " for pass " << passName);
     compiler->setPassOption(passName,optionName, optionValue);
 }

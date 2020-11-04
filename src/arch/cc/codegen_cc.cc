@@ -54,7 +54,7 @@ void codegen_cc::init(const quantum_platform &platform)
     // optionally preload codewordTable
     std::string map_input_file = options::get("backend_cc_map_input_file");
     if(map_input_file != "") {
-        DOUT("loading map_input_file='" << map_input_file << "'");
+        QL_DOUT("loading map_input_file='" << map_input_file << "'");
         utils::json map = utils::load_json(map_input_file);
         codewordTable = map["codeword_table"];      // FIXME: use json_get
         mapPreloaded = true;
@@ -76,7 +76,7 @@ std::string codegen_cc::getMap()
 #if OPT_FEEDBACK
     map["inputLut_table"] = inputLutTable;
 #endif
-    return SS2S(std::setw(4) << map << std::endl);
+    return QL_SS2S(std::setw(4) << map << std::endl);
 }
 
 
@@ -183,10 +183,10 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, int group, int nrGroups
 
     // get number of control bits for group
     const utils::json &groupControlBits = ic.controlMode["control_bits"][controlModeGroup];    // NB: tests above guarantee existence
-    DOUT("instrumentName=" << ic.ii.instrumentName
-         << ", slot=" << ic.ii.slot
-         << ", control mode group=" << controlModeGroup
-         << ", group control bits: " << groupControlBits);
+    QL_DOUT("instrumentName=" << ic.ii.instrumentName
+                              << ", slot=" << ic.ii.slot
+                              << ", control mode group=" << controlModeGroup
+                              << ", group control bits: " << groupControlBits);
     size_t nrGroupControlBits = groupControlBits.size();
 
 
@@ -219,12 +219,12 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, int group, int nrGroups
             if(codeword & (1<<codeWordBit)) ret.groupDigOut |= 1<<(int)groupControlBits[idx];
         }
 
-        ret.comment = SS2S("  # slot=" << ic.ii.slot
-                << ", instrument='" << ic.ii.instrumentName << "'"
-                << ", group=" << group
-                << ": codeword=" << codeword
-                << std::string(codewordOverriden ? " (static override)" : "")
-                << ": groupDigOut=0x" << std::hex << std::setfill('0') << std::setw(8) << ret.groupDigOut
+        ret.comment = QL_SS2S("  # slot=" << ic.ii.slot
+                                          << ", instrument='" << ic.ii.instrumentName << "'"
+                                          << ", group=" << group
+                                          << ": codeword=" << codeword
+                                          << std::string(codewordOverriden ? " (static override)" : "")
+                                          << ": groupDigOut=0x" << std::hex << std::setfill('0') << std::setw(8) << ret.groupDigOut
                 );
     } else {    // nrGroupControlBits < 1
         JSON_FATAL("key 'control_bits' empty for group " <<
@@ -259,7 +259,7 @@ static tCalcGroupDigOut calcGroupDigOut(size_t instrIdx, int group, int nrGroups
 void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool isLastBundle)
 {
     if(isLastBundle) {
-        comment(SS2S(" # last bundle of kernel, will pad outputs to match durations"));
+        comment(QL_SS2S(" # last bundle of kernel, will pad outputs to match durations"));
     }
 
     // iterate over instruments
@@ -325,28 +325,28 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 
         // generate code for instrument
         if(isInstrUsed) {
-            comment(SS2S("  # slot=" << ic.ii.slot
-                    << ", instrument='" << ic.ii.instrumentName << "'"
-                    << ": lastEndCycle=" << lastEndCycle[instrIdx]
-                    << ", startCycle=" << startCycle
-                    << ", maxDurationInCycles=" << maxDurationInCycles
+            comment(QL_SS2S("  # slot=" << ic.ii.slot
+                                        << ", instrument='" << ic.ii.instrumentName << "'"
+                                        << ": lastEndCycle=" << lastEndCycle[instrIdx]
+                                        << ", startCycle=" << startCycle
+                                        << ", maxDurationInCycles=" << maxDurationInCycles
                     ));
 
             padToCycle(lastEndCycle[instrIdx], startCycle, ic.ii.slot, ic.ii.instrumentName);
 
             // emit code for slot
-            emit(SS2S("[" << ic.ii.slot << "]").c_str(),      // CCIO selector
+            emit(QL_SS2S("[" << ic.ii.slot << "]").c_str(),      // CCIO selector
                  "seq_out",
-                 SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec <<
-                      "," << maxDurationInCycles),
-                 SS2S("# cycle " << startCycle << "-" << startCycle+maxDurationInCycles << ": code word/mask on '" << ic.ii.instrumentName+"'").c_str());
+                 QL_SS2S("0x" << std::hex << std::setfill('0') << std::setw(8) << digOut << std::dec <<
+                              "," << maxDurationInCycles),
+                 QL_SS2S("# cycle " << startCycle << "-" << startCycle + maxDurationInCycles << ": code word/mask on '" << ic.ii.instrumentName + "'").c_str());
 
             // update lastEndCycle
             lastEndCycle[instrIdx] = startCycle + maxDurationInCycles;
 
 #if OPT_FEEDBACK
             if(digIn) { // FIXME
-                comment(SS2S("# digIn=" << digIn));
+                comment(QL_SS2S("# digIn=" << digIn));
                 // get qop
                 // get cop
                 // get/assign LUT
@@ -381,7 +381,7 @@ void codegen_cc::customGate(
 {
 #if 0   // FIXME: test for angle parameter
     if(angle != 0.0) {
-        DOUT("iname=" << iname << ", angle=" << angle);
+        QL_DOUT("iname=" << iname << ", angle=" << angle);
     }
 #endif
 
@@ -407,11 +407,11 @@ void codegen_cc::customGate(
                 value
             */
             // FIXME: define meaning: no classical target, or implied target (classical register matching qubit)
-            comment(SS2S(" # READOUT: " << iname << "(q" << qops[0] << ")"));
+            comment(QL_SS2S(" # READOUT: " << iname << "(q" << qops[0] << ")"));
         } else if(cops.size() == 1) {
-            comment(SS2S(" # READOUT: " << iname << "(c" << cops[0] << ",q" << qops[0] << ")"));
+            comment(QL_SS2S(" # READOUT: " << iname << "(c" << cops[0] << ",q" << qops[0] << ")"));
         } else {
-            FATAL("Readout instruction requires 0 or 1 classical operands, not " << cops.size());   // FIXME: provide context
+            QL_FATAL("Readout instruction requires 0 or 1 classical operands, not " << cops.size());   // FIXME: provide context
         }
     } else { // handle all other instruction types than "readout"
         // generate comment. NB: we don't have a particular limit for the number of operands
@@ -438,7 +438,7 @@ void codegen_cc::customGate(
         settings_cc::tSignalInfo si;
         settings_cc::tInstrumentInfo ii;
         {   // limit scope
-            std::string signalSPath = SS2S(sd.path<<"["<<s<<"]");           // for JSON error reporting
+            std::string signalSPath = QL_SS2S(sd.path << "[" << s << "]");           // for JSON error reporting
 
             // get the operand index & qubit to work on
             operandIdx = utils::json_get<unsigned int>(sd.signal[s], "operand_idx", signalSPath);
@@ -474,21 +474,21 @@ ___________________ Test_central_controller.test_qi_example ____________________
 #endif
 
             // expand macros
-            signalValueString = SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
-            utils::replace(signalValueString, std::string("\""), std::string(""));   // get rid of quotes
-            utils::replace(signalValueString, std::string("{gateName}"), iname);
-            utils::replace(signalValueString, std::string("{instrumentName}"), si.ic.ii.instrumentName);
-            utils::replace(signalValueString, std::string("{instrumentGroup}"), std::to_string(si.group));
+            signalValueString = QL_SS2S(instructionSignalValue);   // serialize instructionSignalValue into std::string
+            utils::replace_all(signalValueString, "\"", "");   // get rid of quotes
+            utils::replace_all(signalValueString, "{gateName}", iname);
+            utils::replace_all(signalValueString, "{instrumentName}", si.ic.ii.instrumentName);
+            utils::replace_all(signalValueString, "{instrumentGroup}", std::to_string(si.group));
             // FIXME: allow using all qubits involved (in same signalType?, or refer to signal: qubitOfSignal[n]), e.g. qubit[0], qubit[1], qubit[2]
-            utils::replace(signalValueString, std::string("{qubit}"), std::to_string(qubit));
+            utils::replace_all(signalValueString, "{qubit}", std::to_string(qubit));
 
             // FIXME: note that the actual contents of the signalValue only become important when we'll do automatic codeword assignment and
             // provide codewordTable to downstream software to assign waveforms to the codewords
 
-            comment(SS2S("  # slot=" << ii.slot
-                    << ", instrument='" << ii.instrumentName << "'"
-                    << ", group=" << si.group
-                    << "': signalValue='" << signalValueString << "'"
+            comment(QL_SS2S("  # slot=" << ii.slot
+                                        << ", instrument='" << ii.instrumentName << "'"
+                                        << ", group=" << si.group
+                                        << "': signalValue='" << signalValueString << "'"
                     ));
         } // scope
 
@@ -503,11 +503,11 @@ ___________________ Test_central_controller.test_qi_example ____________________
         } else if(bi->signalValue == signalValueString) {                   // signal unchanged
             // do nothing
         } else {
-            EOUT("Code so far:\n" << codeSection.str());                    // provide context to help finding reason. FIXME: not great
-            FATAL("Signal conflict on instrument='" << si.ic.ii.instrumentName <<
-                  "', group=" << si.group <<
-                  ", between '" << bi->signalValue <<
-                  "' and '" << signalValueString << "'");       // FIXME: add offending instruction
+            QL_EOUT("Code so far:\n" << codeSection.str());                    // provide context to help finding reason. FIXME: not great
+            QL_FATAL("Signal conflict on instrument='" << si.ic.ii.instrumentName <<
+                                                       "', group=" << si.group <<
+                                                       ", between '" << bi->signalValue <<
+                                                       "' and '" << signalValueString << "'");       // FIXME: add offending instruction
         }
 
         // store signal duration
@@ -524,10 +524,10 @@ ___________________ Test_central_controller.test_qi_example ____________________
         // FIXME: implement
 #endif
 
-        DOUT("customGate(): iname='" << iname <<
-             "', duration=" << durationInCycles <<
-             " [cycles], instrIdx=" << si.instrIdx <<
-             ", group=" << si.group);
+        QL_DOUT("customGate(): iname='" << iname <<
+                                        "', duration=" << durationInCycles <<
+                                        " [cycles], instrIdx=" << si.instrIdx <<
+                                        ", group=" << si.group);
 
         // NB: code is generated in bundleFinish()
     }   // for(signal)
@@ -536,7 +536,7 @@ ___________________ Test_central_controller.test_qi_example ____________________
 void codegen_cc::nopGate()
 {
     comment("# NOP gate");
-    FATAL("FIXME: NOP gate not implemented");
+    QL_FATAL("FIXME: NOP gate not implemented");
 }
 
 void codegen_cc::comment(const std::string &c)
@@ -550,41 +550,41 @@ void codegen_cc::comment(const std::string &c)
 
 void codegen_cc::ifStart(size_t op0, const std::string &opName, size_t op1)
 {
-    comment(SS2S("# IF_START(R" << op0 << " " << opName << " R" << op1 << ")"));
-    FATAL("FIXME: not implemented");
+    comment(QL_SS2S("# IF_START(R" << op0 << " " << opName << " R" << op1 << ")"));
+    QL_FATAL("FIXME: not implemented");
 }
 
 void codegen_cc::elseStart(size_t op0, const std::string &opName, size_t op1)
 {
-    comment(SS2S("# ELSE_START(R" << op0 << " " << opName << " R" << op1 << ")"));
-    FATAL("FIXME: not implemented");
+    comment(QL_SS2S("# ELSE_START(R" << op0 << " " << opName << " R" << op1 << ")"));
+    QL_FATAL("FIXME: not implemented");
 }
 
 void codegen_cc::forStart(const std::string &label, int iterations)
 {
-    comment(SS2S("# FOR_START(" << iterations << ")"));
+    comment(QL_SS2S("# FOR_START(" << iterations << ")"));
     // FIXME: reserve register
-    emit("", "move", SS2S(iterations << ",R62"), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
-    emit((label+":").c_str(), "", SS2S(""), "# ");        // just a label
+    emit("", "move", QL_SS2S(iterations << ",R62"), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
+    emit((label+":").c_str(), "", QL_SS2S(""), "# ");        // just a label
 }
 
 void codegen_cc::forEnd(const std::string &label)
 {
     comment("# FOR_END");
     // FIXME: free register
-    emit("", "loop", SS2S("R62,@" << label), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
+    emit("", "loop", QL_SS2S("R62,@" << label), "# R62 is the 'for loop counter'");        // FIXME: fixed reg, no nested loops
 }
 
 void codegen_cc::doWhileStart(const std::string &label)
 {
     comment("# DO_WHILE_START");
-    emit((label+":").c_str(), "", SS2S(""), "# ");                              // NB: just a label
+    emit((label+":").c_str(), "", QL_SS2S(""), "# ");                              // NB: just a label
 }
 
 void codegen_cc::doWhileEnd(const std::string &label, size_t op0, const std::string &opName, size_t op1)
 {
-    comment(SS2S("# DO_WHILE_END(R" << op0 << " " << opName << " R" << op1 << ")"));
-    emit("", "jmp", SS2S("@" << label), "# FIXME: we don't support conditions, just an endless loop'");        // FIXME: just endless loop
+    comment(QL_SS2S("# DO_WHILE_END(R" << op0 << " " << opName << " R" << op1 << ")"));
+    emit("", "jmp", QL_SS2S("@" << label), "# FIXME: we don't support conditions, just an endless loop'");        // FIXME: just endless loop
 }
 
 /************************************************************************\
@@ -657,19 +657,19 @@ void codegen_cc::padToCycle(size_t lastEndCycle, size_t startCycle, int slot, co
     // compute prePadding: time to bridge to align timing
     int prePadding = startCycle - lastEndCycle;
     if(prePadding < 0) {
-        EOUT("Inconsistency detected in bundle contents: printing code generated so far");
-        EOUT(codeSection.str());        // show what we made. FIXME: limit # lines
-        FATAL("Inconsistency detected in bundle contents: time travel not yet possible in this version: prePadding=" << prePadding <<
-              ", startCycle=" << startCycle <<
-              ", lastEndCycle=" << lastEndCycle <<
-              ", instrumentName='" << instrumentName << "'");
+        QL_EOUT("Inconsistency detected in bundle contents: printing code generated so far");
+        QL_EOUT(codeSection.str());        // show what we made. FIXME: limit # lines
+        QL_FATAL("Inconsistency detected in bundle contents: time travel not yet possible in this version: prePadding=" << prePadding <<
+                                                                                                                        ", startCycle=" << startCycle <<
+                                                                                                                        ", lastEndCycle=" << lastEndCycle <<
+                                                                                                                        ", instrumentName='" << instrumentName << "'");
     }
 
     if(prePadding > 0) {     // we need to align
-        emit(SS2S("[" << slot << "]").c_str(),      // CCIO selector
+        emit(QL_SS2S("[" << slot << "]").c_str(),      // CCIO selector
             "seq_out",
-            SS2S("0x00000000," << prePadding),
-            SS2S("# cycle " << lastEndCycle << "-" << startCycle << ": padding on '" << instrumentName+"'").c_str());
+             QL_SS2S("0x00000000," << prePadding),
+             QL_SS2S("# cycle " << lastEndCycle << "-" << startCycle << ": padding on '" << instrumentName + "'").c_str());
     }
 }
 
@@ -687,18 +687,18 @@ uint32_t codegen_cc::assignCodeword(const std::string &instrumentName, int instr
         json &myCodewordArray = codewordTable[instrumentName][group];
         for(codeword=0; codeword<myCodewordArray.size() && !cwFound; codeword++) {   // NB: JSON find() doesn't work for arrays
             if(myCodewordArray[codeword] == signalValue) {
-                DOUT("signal value found at cw=" << codeword);
+                QL_DOUT("signal value found at cw=" << codeword);
                 cwFound = true;
             }
         }
         if(!cwFound) {
-            std::string msg = SS2S("signal value '" << signalValue
+            std::string msg = QL_SS2S("signal value '" << signalValue
                     << "' not found in group " << group
                     << ", which contains " << myCodewordArray);
             if(mapPreloaded) {
-                FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements:" << msg)
+                QL_FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements:" << msg)
             } else {
-                DOUT(msg);
+                QL_DOUT(msg);
                 // NB: codeword already contains last used value + 1
                 // FIXME: check that number is available
                 myCodewordArray[codeword] = signalValue;                    // NB: structure created on demand
@@ -706,7 +706,7 @@ uint32_t codegen_cc::assignCodeword(const std::string &instrumentName, int instr
         }
     } else {    // new instrument or group
         if(mapPreloaded) {
-            FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements: instrument '"
+            QL_FATAL("mismatch between preloaded 'backend_cc_map_input_file' and program requirements: instrument '"
                   << instrumentName << "', group "
                   << group
                   << " not present in file");

@@ -21,15 +21,15 @@ void write_qsoverlay_program(
     // TODO remove the next line. Using this because qsoverlay has some bugs when time is explicited
     compiled = false;
 
-    IOUT("Writing scheduled QSoverlay program");
+    QL_IOUT("Writing scheduled QSoverlay program");
     std::ofstream fout;
     std::string qfname(options::get("output_dir") + "/" + "quantumsim_" + programp->unique_name + "_" + suffix + ".py");
-    DOUT("Writing scheduled QSoverlay program " << qfname);
-    IOUT("Writing scheduled QSoverlay program " << qfname);
+    QL_DOUT("Writing scheduled QSoverlay program " << qfname);
+    QL_IOUT("Writing scheduled QSoverlay program " << qfname);
     fout.open( qfname, std::ios::binary);
     if (fout.fail()) {
-        EOUT("opening file " << qfname << std::endl
-                             << "Make sure the output directory ("<< ql::options::get("output_dir") << ") exists");
+        QL_EOUT("opening file " << qfname << std::endl
+                                << "Make sure the output directory (" << ql::options::get("output_dir") << ") exists");
         return;
     }
 
@@ -107,19 +107,19 @@ void write_qsoverlay_program(
         std::string qs_name;
         try {
             qs_name = gate_map.at(gate->name);
-        } catch (exception &e) {
+        } catch (std::exception &e) {
             // WOUT("Next gate: " + gate->name + " .... WRONG");
-            EOUT("Qsoverlay: unknown gate detected!: " + gate->name);
-            throw ql::exception("Qsoverlay: unknown gate detected!:"  + gate->name, false);
+            QL_EOUT("Qsoverlay: unknown gate detected!: " + gate->name);
+            throw utils::Exception("Qsoverlay: unknown gate detected!:" + gate->name, false);
         }
 
         // IOUT(gate->name);
         if (gate->operands.size() == 1) {
-            IOUT("Gate operands: " + std::to_string(gate->operands[0]));
+            QL_IOUT("Gate operands: " + std::to_string(gate->operands[0]));
         } else if (gate->operands.size() == 2) {
-            IOUT("Gate operands: " + std::to_string(gate->operands[0]) + ", " + std::to_string(gate->operands[1]));
+            QL_IOUT("Gate operands: " + std::to_string(gate->operands[0]) + ", " + std::to_string(gate->operands[1]));
         } else {
-            IOUT("GATE OPERANDS: Problem encountered");
+            QL_IOUT("GATE OPERANDS: Problem encountered");
         }
 
 
@@ -156,7 +156,7 @@ void write_qsoverlay_program(
          << "	return b.circuit\n";
 
     fout.close();
-    IOUT("Writing scheduled QSoverlay program [Done]");
+    QL_IOUT("Writing scheduled QSoverlay program [Done]");
 }
 
 } // namespace ql

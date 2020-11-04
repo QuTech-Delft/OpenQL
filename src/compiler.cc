@@ -17,7 +17,7 @@ namespace ql {
  * @param   name Name of the compiler
  */
 quantum_compiler::quantum_compiler(const std::string &n) : name(n) {
-    DOUT("In quantum_compiler constructor before PassManager initialization ");
+    QL_DOUT("In quantum_compiler constructor before PassManager initialization ");
     constructPassManager();
 }
 
@@ -26,7 +26,7 @@ quantum_compiler::quantum_compiler(const std::string &n) : name(n) {
  * @param   quantum_program   Object reference to the program to be compiled
  */
 void quantum_compiler::compile(ql::quantum_program *program) {
-    DOUT("Compiler compiles program ");
+    QL_DOUT("Compiler compiles program ");
     passManager->compile(program);
 }
 
@@ -36,7 +36,7 @@ void quantum_compiler::compile(ql::quantum_program *program) {
  * @param   symbolicPassName String of the alias pass name
  */
 void quantum_compiler::addPass(const std::string &realPassName, const std::string &symbolicPassName) {
-    DOUT("Add real pass named: " << realPassName << " with alias " << symbolicPassName);
+    QL_DOUT("Add real pass named: " << realPassName << " with alias " << symbolicPassName);
     passManager->addPassNamed(realPassName, symbolicPassName);
 }
 
@@ -45,7 +45,7 @@ void quantum_compiler::addPass(const std::string &realPassName, const std::strin
  * @param   realPassName String of the actual pass name
  */
 void quantum_compiler::addPass(const std::string &realPassName) {
-    DOUT("Add real pass named: " << realPassName);
+    QL_DOUT("Add real pass named: " << realPassName);
     passManager->addPassNamed(realPassName, realPassName);
 }
 
@@ -60,7 +60,7 @@ void quantum_compiler::setPassOption(
     const std::string &optionName,
     const std::string &optionValue
 ) {
-    DOUT(" Set option " << optionName << " = " << optionValue << " for pass " << passName);
+    QL_DOUT(" Set option " << optionName << " = " << optionValue << " for pass " << passName);
 
     if (passName == "ALL") {
         passManager->setPassOptionAll(optionName, optionValue);
@@ -75,7 +75,7 @@ void quantum_compiler::setPassOption(
  * @brief   Constructs the sequence of compiler passes
  */
 void quantum_compiler::constructPassManager() {
-    DOUT("Construct the passManager");
+    QL_DOUT("Construct the passManager");
     passManager = new PassManager("empty");
 
     assert(passManager);

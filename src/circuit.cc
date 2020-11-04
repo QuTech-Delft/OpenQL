@@ -24,7 +24,7 @@ std::string qasm(const circuit& c) {
 }
 
 std::vector<circuit*> split_circuit(circuit &x) {
-    IOUT("circuit decomposition in basic blocks ... ");
+    QL_IOUT("circuit decomposition in basic blocks ... ");
     std::vector<circuit *> cs;
     cs.push_back(new circuit());
     for (auto gate : x) {
@@ -37,7 +37,7 @@ std::vector<circuit*> split_circuit(circuit &x) {
             cs.back()->push_back(gate);
         }
     }
-    IOUT("circuit decomposition done (" << cs.size() << ").");
+    QL_IOUT("circuit decomposition done (" << cs.size() << ").");
     /*
        for (int i=0; i<cs.size(); ++i)
        {

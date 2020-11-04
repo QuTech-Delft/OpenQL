@@ -29,7 +29,7 @@ void cqasm_reader::string2circuit(const std::string &cqasm_str) {
     if (!result) {
         add_cqasm(libqasm.getQasmRepresentation());
     } else {
-        FATAL("Error in parsing cqasm string '" << cqasm_str << "'");
+        QL_FATAL("Error in parsing cqasm string '" << cqasm_str << "'");
     }
 }
 
@@ -40,20 +40,20 @@ void cqasm_reader::file2circuit(const std::string &cqasm_file_path) {
     if (!result) {
         add_cqasm(libqasm.getQasmRepresentation());
     } else {
-        FATAL("Error in parsing cqasm file '" << cqasm_file_path << "'");
+        QL_FATAL("Error in parsing cqasm file '" << cqasm_file_path << "'");
     }
 }
 
 void cqasm_reader::add_cqasm(compiler::QasmRepresentation cqasm_repr) {
     if (number_of_qubits != 0) {
         if (cqasm_repr.numQubits() != number_of_qubits) {
-            FATAL("Adding cqasm circuits with different number of qubits to the same program");
+            QL_FATAL("Adding cqasm circuits with different number of qubits to the same program");
         }
     }
     number_of_qubits = cqasm_repr.numQubits();
 
     if (cqasm_repr.getErrorModelType() != "None") {
-        WOUT("Error model '" + cqasm_repr.getErrorModelType() + "' ignored");
+        QL_WOUT("Error model '" + cqasm_repr.getErrorModelType() + "' ignored");
     }
 
     for (auto subcircuit : cqasm_repr.getSubCircuits().getAllSubCircuits()) {
@@ -69,7 +69,7 @@ void cqasm_reader::add_cqasm(compiler::QasmRepresentation cqasm_repr) {
             bool is_parallel = ops_cluster->isParallel();
             if (is_parallel) {
                 //are these supported by OpenQL??
-                WOUT("Parallel gates not supported, adding the gates in sequence");
+                QL_WOUT("Parallel gates not supported, adding the gates in sequence");
             }
 
             for (auto ops : ops_cluster->getOperations()) {
@@ -191,7 +191,7 @@ void cqasm_reader::add_kernel_operation(
 
     if (operation.isBitControlled()) {
         //are these supported by OpenQL??
-        EOUT("cQasm binary controlled gates not supported");
+        QL_EOUT("cQasm binary controlled gates not supported");
     } else if (
         gate_type == "measure" || gate_type == "prep" ||
         gate_type == "measure_z" || gate_type == "measure_x" || gate_type == "measure_y" ||

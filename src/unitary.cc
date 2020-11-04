@@ -93,7 +93,7 @@ public:
         array(array),
         is_decomposed(false)
     {
-        DOUT("constructing unitary: " << name
+        QL_DOUT("constructing unitary: " << name
                   << ", containing: " << array.size() << " elements");
     }
 
@@ -116,7 +116,7 @@ public:
     }
 
     void decompose() {
-        DOUT("decomposing Unitary: " << name);
+        QL_DOUT("decomposing Unitary: " << name);
 
         getMatrix();
         int matrix_size = _matrix.rows();
@@ -129,7 +129,7 @@ public:
         // very little accuracy because of tests using printed-from-matlab code that does not have many digits after the comma
         if (!matmatadjoint.isApprox(identity, 0.001)) {
             //Throw an error
-            EOUT("Unitary " << name <<" is not a unitary matrix!");
+            QL_EOUT("Unitary " << name <<" is not a unitary matrix!");
 
             throw ql::exception("Error: Unitary '"+ name+"' is not a unitary matrix. Cannot be decomposed!" + to_string(matmatadjoint), false);
         }
@@ -138,7 +138,7 @@ public:
 
         decomp_function(_matrix, numberofbits); //needed because the matrix is read in columnmajor
 
-        DOUT("Done decomposing");
+        QL_DOUT("Done decomposing");
         is_decomposed = true;
     }
 
@@ -160,7 +160,7 @@ public:
     // std::chrono::duration<double> demultiplexing_time;
 
     void decomp_function(const Eigen::Ref<const complex_matrix>& matrix, int numberofbits) {
-        DOUT("decomp_function: \n" << to_string(matrix));
+        QL_DOUT("decomp_function: \n" << to_string(matrix));
         if(numberofbits == 1) {
             zyz_decomp(matrix);
         } else {
@@ -171,10 +171,10 @@ public:
             Eigen::VectorXcd D(n);
             // if q2 is zero, the whole thing is a demultiplexing problem instead of full CSD
             if (matrix.bottomLeftCorner(n,n).isZero(10e-14) && matrix.topRightCorner(n,n).isZero(10e-14)) {
-                DOUT("Optimization: q2 is zero, only demultiplexing will be performed.");
+                QL_DOUT("Optimization: q2 is zero, only demultiplexing will be performed.");
                 instructionlist.push_back(200.0);
                 if (matrix.topLeftCorner(n, n).isApprox(matrix.bottomRightCorner(n,n),10e-4)) {
-                    DOUT("Optimization: Unitaries are equal, skip one step in the recursion for unitaries of size: " << n << " They are both: " << matrix.topLeftCorner(n, n));
+                    QL_DOUT("Optimization: Unitaries are equal, skip one step in the recursion for unitaries of size: " << n << " They are both: " << matrix.topLeftCorner(n, n));
                     instructionlist.push_back(300.0);
                     decomp_function(matrix.topLeftCorner(n, n), numberofbits-1);
                 } else {
@@ -193,7 +193,7 @@ public:
                 && matrix.block(0,0,1,2*n-1) == matrix.block(1,1,1,2*n-1)
                 && matrix.block(2*n-2,0,1,2*n-1) == matrix.block(2*n-1,1,1,2*n-1)
             ) {
-                DOUT("Optimization: last qubit is not affected, skip one step in the recursion.");
+                QL_DOUT("Optimization: last qubit is not affected, skip one step in the recursion.");
                 // Code for last qubit not affected
                 instructionlist.push_back(100.0);
                 decomp_function(matrix(Eigen::seqN(0, n, 2), Eigen::seqN(0, n, 2)), numberofbits-1);
@@ -264,7 +264,7 @@ public:
         u2 = qr.householderQ();
         s.noalias() = u2.adjoint()*q2;
         if (k < p-1) {
-            DOUT("k is smaller than size of q1 = "<< p << ", adjustments will be made, k = " << k);
+            QL_DOUT("k is smaller than size of q1 = "<< p << ", adjustments will be made, k = " << k);
             k = k+1;
             Eigen::BDCSVD<complex_matrix> svd2(p-k, p-k);
             svd2.compute(s.block(k, k, p-k, p-k), Eigen::ComputeThinU | Eigen::ComputeThinV);
@@ -305,18 +305,18 @@ public:
 
         if (!U.topLeftCorner(p,p).isApprox(u1*c*v1.adjoint(), 10e-8) || !U.bottomLeftCorner(p,p).isApprox(u2*s*v1.adjoint(), 10e-8)) {
             if (U.topLeftCorner(p,p).isApprox(u1*c*v1.adjoint(), 10e-8)) {
-                DOUT("q1 is correct");
+                QL_DOUT("q1 is correct");
             } else {
-                DOUT("q1 is not correct! (is not usually an issue");
-                DOUT("q1: \n" << U.topLeftCorner(p,p));
-                DOUT("reconstructed q1: \n" << u1*c*v1.adjoint());
+                QL_DOUT("q1 is not correct! (is not usually an issue");
+                QL_DOUT("q1: \n" << U.topLeftCorner(p,p));
+                QL_DOUT("reconstructed q1: \n" << u1*c*v1.adjoint());
             }
             if (U.bottomLeftCorner(p,p).isApprox(u2*s*v1.adjoint(), 10e-8)) {
-                DOUT("q2 is correct");
+                QL_DOUT("q2 is correct");
             } else {
-                DOUT("q2 is not correct! (is not usually an issue)");
-                DOUT("q2: " << U.bottomLeftCorner(p,p));
-                DOUT("reconstructed q2: " << u2*s*v1.adjoint());
+                QL_DOUT("q2 is not correct! (is not usually an issue)");
+                QL_DOUT("q2: " << U.bottomLeftCorner(p,p));
+                QL_DOUT("reconstructed q2: " << u2*s*v1.adjoint());
             }
         }
         v1.adjointInPlace(); // Use this instead of = v1.adjoint (to avoid aliasing issues)
@@ -403,7 +403,7 @@ public:
         // complex_matrix V;
         // complex_matrix W;
         if (check == check.adjoint()) {
-            IOUT("Demultiplexing matrix is self-adjoint()");
+            QL_IOUT("Demultiplexing matrix is self-adjoint()");
             Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> eigslv(check);
             D.noalias() = ((complex_matrix) eigslv.eigenvalues()).cwiseSqrt();
             V.noalias() = eigslv.eigenvectors();
@@ -424,7 +424,7 @@ public:
 
         // demultiplexing_time += (std::chrono::steady_clock::now() - start);
         if (!(V*V.adjoint()).isApprox(Eigen::MatrixXd::Identity(V.rows(), V.rows()), 10e-3)) {
-            DOUT("Eigenvalue decomposition incorrect: V is not unitary, adjustments will be made");
+            QL_DOUT("Eigenvalue decomposition incorrect: V is not unitary, adjustments will be made");
             Eigen::BDCSVD<complex_matrix> svd3(V.block(0,0,V.rows(),2), Eigen::ComputeFullU);
             V.block(0,0,V.rows(),2) = svd3.matrixU();
             svd3.compute(V(Eigen::all,Eigen::seq(Eigen::last-1,Eigen::last)), Eigen::ComputeFullU);
@@ -433,7 +433,7 @@ public:
 
         complex_matrix Dtemp = D.asDiagonal();
         if (!U1.isApprox(V*Dtemp*W, 10e-2) || !U2.isApprox(V*Dtemp.adjoint()*W, 10e-2)) {
-            EOUT("Demultiplexing not correct!");
+            QL_EOUT("Demultiplexing not correct!");
             throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at matrix U1: \n"+to_string(U1)+ "and matrix U2: \n" +to_string(U2) + "\nwhile they are: \n" + to_string(V*D.asDiagonal()*W) + "\nand \n" + to_string(V*D.conjugate().asDiagonal()*W), false);
         }
 
@@ -485,7 +485,7 @@ public:
         Eigen::VectorXd tr = dec.solve(temp);
         // Check is very approximate to account for low-precision input matrices
         if (!temp.isApprox(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]*tr, 10e-2)) {
-            EOUT("Multicontrolled Y not correct!");
+            QL_EOUT("Multicontrolled Y not correct!");
             throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix ss: \n"  + to_string(ss), false);
         }
 
@@ -501,7 +501,7 @@ public:
         Eigen::VectorXd tr = dec.solve(temp);
         // Check is very approximate to account for low-precision input matrices
         if (!temp.isApprox(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]*tr, 10e-2)) {
-            EOUT("Multicontrolled Z not correct!");
+            QL_EOUT("Multicontrolled Z not correct!");
             throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix D: \n"+ to_string(D), false);
         }
 
@@ -512,7 +512,7 @@ public:
 
     ~UnitaryDecomposer() {
         // destroy unitary
-        DOUT("destructing unitary: " << name);
+        QL_DOUT("destructing unitary: " << name);
     }
 };
 

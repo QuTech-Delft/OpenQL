@@ -91,7 +91,7 @@ public:
         if (it != this->end()) {
             return it->second;
         } else {
-            throw exception("key " + debug_str(key) + " does not exist in map");
+            throw Exception("key " + try_to_string(key) + " does not exist in map");
         }
     }
 
@@ -104,7 +104,7 @@ public:
         if (it != this->end()) {
             return it->second;
         } else {
-            throw exception("key " + debug_str(key) + " does not exist in map");
+            throw Exception("key " + try_to_string(key) + " does not exist in map");
         }
     }
 
@@ -147,7 +147,7 @@ public:
     std::string dbg(const Key &key) const {
         auto it = this->find(key);
         if (it != this->end()) {
-            return debug_str(it->second);
+            return try_to_string(it->second);
         } else {
             return "<EMPTY>";
         }

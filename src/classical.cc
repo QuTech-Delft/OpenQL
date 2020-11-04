@@ -9,7 +9,7 @@ cval &coperand::as_cval() {
     try {
         return dynamic_cast<cval &>(*this);
     } catch (std::bad_cast &e) {
-        throw exception("coperand is not a cval");
+        throw utils::Exception("coperand is not a cval");
     }
 }
 
@@ -17,7 +17,7 @@ const cval &coperand::as_cval() const {
     try {
         return dynamic_cast<const cval &>(*this);
     } catch (std::bad_cast &e) {
-        throw exception("coperand is not a cval");
+        throw utils::Exception("coperand is not a cval");
     }
 }
 
@@ -25,7 +25,7 @@ creg &coperand::as_creg() {
     try {
         return dynamic_cast<creg &>(*this);
     } catch (std::bad_cast &e) {
-        throw exception("coperand is not a creg");
+        throw utils::Exception("coperand is not a creg");
     }
 }
 
@@ -33,7 +33,7 @@ const creg &coperand::as_creg() const {
     try {
         return dynamic_cast<const creg &>(*this);
     } catch (std::bad_cast &e) {
-        throw exception("coperand is not a creg");
+        throw utils::Exception("coperand is not a creg");
     }
 }
 
@@ -48,15 +48,15 @@ ql::operand_type_t cval::type() const {
 }
 
 void cval::print() const {
-    COUT("cval with value: " << value);
+    QL_COUT("cval with value: " << value);
 }
 
 creg::creg(size_t id) : id(id) {
-    DOUT("creg constructor, used id: " << id);
+    QL_DOUT("creg constructor, used id: " << id);
 }
 
 creg::creg(const creg &c) : id(c.id) {
-    DOUT("creg copy constructor, used id: " << id);
+    QL_DOUT("creg copy constructor, used id: " << id);
 }
 
 ql::operand_type_t creg::type() const {
@@ -64,7 +64,7 @@ ql::operand_type_t creg::type() const {
 }
 
 void creg::print() const {
-    COUT("creg with id: " << id);
+    QL_COUT("creg with id: " << id);
 }
 
 operation::operation(const creg &l, const std::string &op, const creg &r) {
@@ -110,8 +110,8 @@ operation::operation(const creg &l, const std::string &op, const creg &r) {
         inv_operation_name = "lt";
         operation_type = ql::operation_type_t::RELATIONAL;
     } else {
-        EOUT("Unknown binary operation '" << op);
-        throw ql::exception("Unknown binary operation '" + op + "' !", false);
+        QL_EOUT("Unknown binary operation '" << op);
+        throw utils::Exception("Unknown binary operation '" + op + "' !", false);
     }
 }
 
@@ -142,21 +142,21 @@ operation::operation(const std::string &op, const creg &r) {
         operation_type = ql::operation_type_t::BITWISE;
         operands.push_back(new ql::creg(r));
     } else {
-        EOUT("Unknown unary operation '" << op);
-        throw ql::exception("Unknown unary operation '" + op + "' !", false);
+        QL_EOUT("Unknown unary operation '" << op);
+        throw utils::Exception("Unknown unary operation '" + op + "' !", false);
     }
 }
 
 classical::classical(const creg &dest, const operation &oper) {
-    DOUT("Classical gate constructor with destination for "
+    QL_DOUT("Classical gate constructor with destination for "
              << oper.operation_name);
     name = oper.operation_name;
     duration = 20;
     creg_operands.push_back(dest.id);
     if (name == "ldi") {
         int_operand = oper.operands[0]->as_cval().value;
-        DOUT("... setting int_operand of " << oper.operation_name << " to "
-                                           << int_operand);
+        QL_DOUT("... setting int_operand of " << oper.operation_name << " to "
+                                              << int_operand);
     } else {
         for (auto &op : oper.operands) {
             creg_operands.push_back(op->as_creg().id);
@@ -165,15 +165,15 @@ classical::classical(const creg &dest, const operation &oper) {
 }
 
 classical::classical(const std::string &operation) {
-    DOUT("Classical gate constructor for " << operation);
+    QL_DOUT("Classical gate constructor for " << operation);
     auto operation_lower = utils::to_lower(operation);
     if ((operation_lower == "nop")) {
         name = operation_lower;
         duration = 20;
-        DOUT("Adding 0 operand operation: " << name);
+        QL_DOUT("Adding 0 operand operation: " << name);
     } else {
-        EOUT("Unknown classical operation '" << name << "' with '0' operands!");
-        throw ql::exception(
+        QL_EOUT("Unknown classical operation '" << name << "' with '0' operands!");
+        throw utils::Exception(
             "Unknown classical operation'" + name + "' with'0' operands!",
             false);
     }

@@ -13,12 +13,12 @@ resource_t::resource_t(
     name(n),
     direction(dir)
 {
-    DOUT("constructing resource: " << n << " for direction (0:fwd,1:bwd): " << dir);
+    QL_DOUT("constructing resource: " << n << " for direction (0:fwd,1:bwd): " << dir);
 }
 
 void resource_t::Print(const std::string &s) {
-    DOUT(s);
-    DOUT("resource name=" << name << "; count=" << count);
+    QL_DOUT(s);
+    QL_DOUT("resource name=" << name << "; count=" << count);
 }
 
 platform_resource_manager_t::platform_resource_manager_t(
@@ -29,7 +29,7 @@ platform_resource_manager_t::platform_resource_manager_t(
 }
 
 void platform_resource_manager_t::Print(const std::string &s) {
-    DOUT(s);
+    QL_DOUT(s);
 }
 
 // copy constructor doing a deep copy
@@ -119,8 +119,8 @@ resource_manager_t::resource_manager_t(
 //  } else if (eqasm_compiler_name == "cc_compiler") {
 //      platform_resource_manager_ptr = new cc_resource_manager_t(platform, dir);
     } else {
-        FATAL("the '" << eqasm_compiler_name
-                      << "' eqasm compiler backend is not supported !");
+        QL_FATAL("the '" << eqasm_compiler_name
+                         << "' eqasm compiler backend is not supported !");
     }
 }
 

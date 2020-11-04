@@ -30,7 +30,7 @@ namespace ql {
  * @param  Name of the scheduler pass
  */
 AbstractPass::AbstractPass(const std::string &name) {
-    DOUT("In AbstractPass::AbstractPass set name " << name << std::endl);
+    QL_DOUT("In AbstractPass::AbstractPass set name " << name << std::endl);
     setPassName(name);
     createPassOptions();
 }
@@ -57,7 +57,7 @@ void AbstractPass::setPassName(const std::string &name) {
  * @param   optionValue String value of the option
  */
 void AbstractPass::setPassOption(const std::string &optionName, const std::string &optionValue) {
-    DOUT("In AbstractPass::setPassOption");
+    QL_DOUT("In AbstractPass::setPassOption");
 
     passOptions->setOption(optionName, optionValue);
 }
@@ -168,11 +168,11 @@ ReaderPass::ReaderPass(const std::string &name) : AbstractPass(name) {
  * @param  Program object to be read
  */
 void ReaderPass::runOnProgram(ql::quantum_program *program) {
-    DOUT("run ReaderPass with name = " << getPassName() << " on program " << program->name);
+    QL_DOUT("run ReaderPass with name = " << getPassName() << " on program " << program->name);
 
     ql::cqasm_reader* reader = new ql::cqasm_reader(program->platform, *program);
 
-    DOUT("!!!!!!!!!!! start reader !!!!!!!!");
+    QL_DOUT("!!!!!!!!!!! start reader !!!!!!!!");
 
     // reset kernels if they are not empty, needed for the case when the reader pass
     // is used after a Writer pass within the sequence os passes and not at the start
@@ -205,7 +205,7 @@ WriterPass::WriterPass(const std::string &name) : AbstractPass(name) {
  * @param  Program object to be write
  */
 void WriterPass::runOnProgram(ql::quantum_program *program) {
-    DOUT("run WriterPass with name = " << getPassName() << " on program " << program->name);
+    QL_DOUT("run WriterPass with name = " << getPassName() << " on program " << program->name);
 
     // report/write_qasm initialization
     //ql::report_init(program, program->platform);
@@ -229,7 +229,7 @@ RotationOptimizerPass::RotationOptimizerPass(const std::string &name) : Abstract
  * @param  Program object to be read
  */
 void RotationOptimizerPass::runOnProgram(ql::quantum_program *program) {
-    DOUT("run RotationOptimizerPass with name = " << getPassName() << " on program " << program->name);
+    QL_DOUT("run RotationOptimizerPass with name = " << getPassName() << " on program " << program->name);
 
     rotation_optimize(program, program->platform, "rotation_optimize");
 }
@@ -246,7 +246,7 @@ DecomposeToffoliPass::DecomposeToffoliPass(const std::string &name) : AbstractPa
  * @param  Program object to be read
  */
 void DecomposeToffoliPass::runOnProgram(ql::quantum_program *program) {
-    DOUT("run DecomposeToffoliPass with name = " << getPassName() << " on program " << program->name);
+    QL_DOUT("run DecomposeToffoliPass with name = " << getPassName() << " on program " << program->name);
 
     // decompose_toffoli pass
     ql::decompose_toffoli(program, program->platform, "decompose_toffoli");
@@ -264,7 +264,7 @@ SchedulerPass::SchedulerPass(const std::string &name) : AbstractPass(name) {
  * @param  Program object to be read
  */
 void SchedulerPass::runOnProgram(ql::quantum_program *program) {
-    DOUT("run SchedulerPass with name = " << getPassName() << " on program " << program->name);
+    QL_DOUT("run SchedulerPass with name = " << getPassName() << " on program " << program->name);
 
     // prescheduler pass
     ql::schedule(program, program->platform, "prescheduler");
@@ -282,7 +282,7 @@ BackendCompilerPass::BackendCompilerPass(const std::string &name) : AbstractPass
  * @param  Program object to be read
  */
 void BackendCompilerPass::runOnProgram(ql::quantum_program *program) {
-    DOUT("run BackendCompilerPass with name = " << getPassName() << " on program " << program->name);
+    QL_DOUT("run BackendCompilerPass with name = " << getPassName() << " on program " << program->name);
 
     std::unique_ptr<ql::eqasm_compiler> backend_compiler;
 
@@ -294,7 +294,7 @@ void BackendCompilerPass::runOnProgram(ql::quantum_program *program) {
     } else if (eqasm_compiler_name == "eqasm_backend_cc") {
         backend_compiler = std::unique_ptr<ql::eqasm_compiler>(new eqasm_backend_cc());
     } else {
-        FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
+        QL_FATAL("the '" << eqasm_compiler_name << "' eqasm compiler backend is not suported !");
     }
 
     ///@todo-rn: Decide how to construct backend:
@@ -339,7 +339,7 @@ void CCLPrepCodeGeneration::runOnProgram(ql::quantum_program *program) {
     const utils::json &instruction_settings = program->platform.instruction_settings;
     for (const utils::json &i : instruction_settings) {
        if (i.count("cc_light_instr") <= 0) {
-            FATAL("cc_light_instr not found for " << i);
+            QL_FATAL("cc_light_instr not found for " << i);
        }
     }
 }
@@ -557,14 +557,14 @@ void PassOptions::help() const {
  * @param   opt_value String value of the option
  */
 void PassOptions::setOption(const std::string &opt_name, const std::string &opt_value) {
-    DOUT("In PassOptions: setting option " << opt_name << " to value " << opt_value << std::endl);
+    QL_DOUT("In PassOptions: setting option " << opt_name << " to value " << opt_value << std::endl);
     try {
        std::vector<std::string> opts = {opt_value, "--"+opt_name};
        app->parse(opts);
     } catch (const std::exception &e) {
        app->reset();
-       EOUT("Un-known option: "<< e.what());
-       throw ql::exception("Error parsing options. "+std::string(e.what())+" ! \n Allowed values are: \n"+app->help(opt_name),false);
+       QL_EOUT("Un-known option: " << e.what());
+       throw utils::Exception("Error parsing options. " + std::string(e.what()) + " ! \n Allowed values are: \n" + app->help(opt_name), false);
     }
     app->reset();
 }
@@ -579,7 +579,7 @@ std::string PassOptions::getOption(const std::string &opt_name) const {
     if (opt_name2opt_val.find(opt_name) != opt_name2opt_val.end()) {
         opt_value = opt_name2opt_val.at(opt_name);
     } else {
-        EOUT("Un-known option: "<< opt_name << "\n Allowed values are: \n");
+        QL_EOUT("Un-known option: " << opt_name << "\n Allowed values are: \n");
         std::cout << app->help(opt_name);
         exit(1);
     }

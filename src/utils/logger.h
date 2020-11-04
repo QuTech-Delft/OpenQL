@@ -6,59 +6,59 @@
 
 // helper macro: stringstream to string
 // based on https://stackoverflow.com/questions/21924156/how-to-initialize-a-stdstringstream
-#define SS2S(values) std::string(static_cast<std::ostringstream&&>(std::ostringstream() << values).str())
+#define QL_SS2S(values) ::std::string(static_cast<::std::ostringstream&&>(::std::ostringstream() << values).str())
 
-#define PRINTLN(x) \
+#define QL_PRINTLN(x) \
     do {                                                                                                    \
         std::cout << "[OPENQL] " << x << std::endl;                                                         \
     } while (false)
 
-#define EOUT(content) \
+#define QL_EOUT(content) \
     do {                                                                                                    \
-        if (::ql::utils::logger::LOG_LEVEL >= ::ql::utils::logger::log_level_t::LOG_ERROR) {                \
+        if (::ql::utils::logger::log_level >= ::ql::utils::logger::LogLevel::LOG_ERROR) {                   \
             ::std::cerr << "[OPENQL] " __FILE__ ":" << __LINE__ << " Error: " << content << ::std::endl;    \
         }                                                                                                   \
     } while (false)
 
-#define WOUT(content) \
+#define QL_WOUT(content) \
     do {                                                                                                    \
-        if (::ql::utils::logger::LOG_LEVEL >= ::ql::utils::logger::log_level_t::LOG_WARNING) {              \
+        if (::ql::utils::logger::log_level >= ::ql::utils::logger::LogLevel::LOG_WARNING) {                 \
             ::std::cerr << "[OPENQL] " __FILE__ ":" << __LINE__ << " Warning: " << content << ::std::endl;  \
         }                                                                                                   \
     } while (false)
 
-#define IOUT(content) \
+#define QL_IOUT(content) \
     do {                                                                                                    \
-        if (::ql::utils::logger::LOG_LEVEL >= ::ql::utils::logger::log_level_t::LOG_INFO) {                 \
+        if (::ql::utils::logger::log_level >= ::ql::utils::logger::LogLevel::LOG_INFO) {                    \
             ::std::cout << "[OPENQL] " __FILE__ ":" << __LINE__ << " Info: "<< content << ::std::endl;      \
         }                                                                                                   \
     } while (false)
 
-#define DOUT(content) \
+#define QL_DOUT(content) \
     do {                                                                                                    \
-        if (::ql::utils::logger::LOG_LEVEL >= ::ql::utils::logger::log_level_t::LOG_DEBUG) {                \
+        if (::ql::utils::logger::log_level >= ::ql::utils::logger::LogLevel::LOG_DEBUG) {                   \
             ::std::cout << "[OPENQL] " __FILE__ ":" << __LINE__ << " " << content << ::std::endl;           \
         }                                                                                                   \
     } while (false)
 
-#define COUT(content) \
+#define QL_COUT(content) \
     do {                                                                                                    \
         ::std::cout << "[OPENQL] " __FILE__ ":" << __LINE__ << " " << content << ::std::endl;               \
     } while (false)
 
-#define FATAL(content) \
+#define QL_FATAL(content) \
     do {                                                                                                    \
         ::std::ostringstream fatal_ss{};                                                                    \
         fatal_ss << content;                                                                                \
         ::std::string fatal_s = fatal_ss.str();                                                             \
-        EOUT(fatal_s);                                                                                      \
-        throw ql::exception("Error : " + fatal_s, false);                                                   \
+        QL_EOUT(fatal_s);                                                                                   \
+        throw ::ql::utils::Exception("Error : " + fatal_s);                                                 \
     } while (false)
 
-#define ASSERT(condition)                                                                                   \
+#define QL_ASSERT(condition)                                                                                \
     do {                                                                                                    \
         if (!(condition)) {                                                                                 \
-            FATAL("assert " #condition " failed in file " __FILE__ " at line " << __LINE__);                \
+            QL_FATAL("assert " #condition " failed in file " __FILE__ " at line " << __LINE__);             \
         }                                                                                                   \
     } while (false)
 
@@ -66,7 +66,7 @@ namespace ql {
 namespace utils {
 namespace logger {
 
-enum log_level_t {
+enum LogLevel {
     LOG_NOTHING,
     LOG_CRITICAL,
     LOG_ERROR,
@@ -75,8 +75,9 @@ enum log_level_t {
     LOG_DEBUG
 };
 
-OPENQL_DECLSPEC extern log_level_t LOG_LEVEL;
+QL_GLOBAL extern LogLevel log_level;
 
+LogLevel log_level_from_string(const std::string &level);
 void set_log_level(const std::string &level);
 
 } // namespace logger

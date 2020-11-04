@@ -580,7 +580,7 @@ custom_gate::custom_gate(const std::string &name) {
 custom_gate::custom_gate(const custom_gate &g) {
     // FIXME JvS: This copy constructor does NOT copy everything, and apparently
     // the scheduler relies on it not doing so!
-    DOUT("Custom gate copy constructor for " << g.name);
+    QL_DOUT("Custom gate copy constructor for " << g.name);
     name = g.name;
     // operands = g.operands; FIXME
     creg_operands = g.creg_operands;
@@ -622,17 +622,17 @@ size_t custom_gate::qubit_id(const std::string &qubit) {
  * load instruction from json map
  */
 void custom_gate::load(nlohmann::json &instr) {
-    DOUT("loading instruction '" << name << "'...");
+    QL_DOUT("loading instruction '" << name << "'...");
     std::string l_attr = "(none)";
     try {
         l_attr = "qubits";
-        DOUT("qubits: " << instr["qubits"]);
+        QL_DOUT("qubits: " << instr["qubits"]);
         size_t parameters = instr["qubits"].size();
         for (size_t i = 0; i < parameters; ++i) {
             std::string qid = instr["qubits"][i];
             if (!is_qubit_id(qid)) {
-                EOUT("invalid qubit id in attribute 'qubits' !");
-                throw ql::exception(
+                QL_EOUT("invalid qubit id in attribute 'qubits' !");
+                throw utils::Exception(
                     "[x] error : ql::custom_gate() : error while loading instruction '" +
                     name + "' : attribute 'qubits' : invalid qubit id !",
                     false);
@@ -641,35 +641,35 @@ void custom_gate::load(nlohmann::json &instr) {
         }
         l_attr = "duration";
         duration = instr["duration"];
-        DOUT("duration: " << instr["duration"]);
+        QL_DOUT("duration: " << instr["duration"]);
         l_attr = "matrix";
         // FIXME: make matrix optional, default to NaN
         auto mat = instr["matrix"];
-        DOUT("matrix: " << instr["matrix"]);
+        QL_DOUT("matrix: " << instr["matrix"]);
         m.m[0] = complex_t(mat[0][0], mat[0][1]);
         m.m[1] = complex_t(mat[1][0], mat[1][1]);
         m.m[2] = complex_t(mat[2][0], mat[2][1]);
         m.m[3] = complex_t(mat[3][0], mat[3][1]);
     } catch (utils::json::exception &e) {
-        EOUT("while loading instruction '" << name << "' (attr: " << l_attr
-                                           << ") : " << e.what());
-        throw ql::exception(
+        QL_EOUT("while loading instruction '" << name << "' (attr: " << l_attr
+                                              << ") : " << e.what());
+        throw utils::Exception(
             "[x] error : ql::custom_gate() : error while loading instruction '" +
             name + "' : attribute '" + l_attr + "' : \n\t" + e.what(), false);
     }
 
     if (instr.count("cc_light_instr") > 0) {
         arch_operation_name = instr["cc_light_instr"].get<std::string>();
-        DOUT("cc_light_instr: " << instr["cc_light_instr"]);
+        QL_DOUT("cc_light_instr: " << instr["cc_light_instr"]);
     }
 }
 
 void custom_gate::print_info() const {
-    PRINTLN("[-] custom gate : ");
-    PRINTLN("    |- name     : " << name);
-    PRINTLN("    |- qubits   : " << utils::to_string(operands));
-    PRINTLN("    |- duration : " << duration);
-    PRINTLN("    |- matrix   : [" << m.m[0] << ", " << m.m[1] << ", " << m.m[2] << ", " << m.m[3] << "]");
+    QL_PRINTLN("[-] custom gate : ");
+    QL_PRINTLN("    |- name     : " << name);
+    QL_PRINTLN("    |- qubits   : " << utils::to_string(operands));
+    QL_PRINTLN("    |- duration : " << duration);
+    QL_PRINTLN("    |- matrix   : [" << m.m[0] << ", " << m.m[1] << ", " << m.m[2] << ", " << m.m[3] << "]");
 }
 
 instruction_t custom_gate::qasm() const {

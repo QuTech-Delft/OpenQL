@@ -255,7 +255,7 @@ void write_qasm(
     if (pass_name == "initialqasmwriter" || pass_name == "outputIR") extension = ".qasm";
     else if (pass_name == "scheduledqasmwriter" || pass_name == "outputIRscheduled") extension = "_scheduled.qasm";
     else if (pass_name == "lastqasmwriter") extension = "_last.qasm";
-    else FATAL("write_qasm: pass_name " << pass_name << " unknown; don't know which extension to generate");
+    else QL_FATAL("write_qasm: pass_name " << pass_name << " unknown; don't know which extension to generate");
 
     write_qasm_extension(programp, platform, extension);
 }
@@ -314,8 +314,8 @@ std::ofstream report_open(
     fname = report_compose_report_name(programp->unique_name, in_or_out, pass_name, "report");
     ofs.open(fname.str(), std::ofstream::trunc);
     if (ofs.fail()) {
-        FATAL("[x] error opening file '" << fname.str() << "' !" << std::endl
-          << "    make sure the output directory exists for '" << fname.str() << "'" << std::endl);
+        QL_FATAL("[x] error opening file '" << fname.str() << "' !" << std::endl
+                                            << "    make sure the output directory exists for '" << fname.str() << "'" << std::endl);
     }
     // DOUT("report_open [done]");
     return ofs;
@@ -590,7 +590,7 @@ static int report_bump_unique_file_version(const quantum_program *programp) {
         // no file there, initialize old version number to 0
         ufs.open(ss_unique.str(), std::fstream::out);
         if (!ufs.is_open()) {
-            FATAL("Cannot create: " << ss_unique.str() << ". Probably output directory " << options::get("output_dir") << " does not exist");
+            QL_FATAL("Cannot create: " << ss_unique.str() << ". Probably output directory " << options::get("output_dir") << " does not exist");
         }
         ufs << 0 << std::endl;
         vers = 0;
@@ -629,7 +629,7 @@ void report_init(
         vers = report_bump_unique_file_version(programp);
         if (vers > 1) {
             programp->unique_name = ( programp->name + std::to_string(vers) );
-            DOUT("Unique program name after bump_unique_file_version: " << programp->unique_name << " based on version: " << vers);
+            QL_DOUT("Unique program name after bump_unique_file_version: " << programp->unique_name << " based on version: " << vers);
         }
     }
 }

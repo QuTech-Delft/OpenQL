@@ -172,6 +172,8 @@ const complex_t nop_c      [] /*__attribute__((aligned(64)))*/ =
 
 
 
+const size_t MAX_CYCLE = std::numeric_limits<int>::max();
+
 
 /**
  * gate interface

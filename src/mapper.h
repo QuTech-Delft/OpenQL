@@ -215,7 +215,8 @@ typedef enum realstate {
     rs_hasstate     // real qubit has a unique state which must be preserved
 } realstate_t;
 
-#define UNDEFINED_QUBIT    MAX_CYCLE
+const size_t UNDEFINED_QUBIT = std::numeric_limits<int>::max();
+
 
 class Virt2Real {
 private:

@@ -30,7 +30,7 @@ void latency_compensation_kernel(
     ql::quantum_kernel &kernel,
     const ql::quantum_platform &platform
 ) {
-    DOUT("Latency compensation ...");
+    QL_DOUT("Latency compensation ...");
 
     ql::circuit* circp = &kernel.c;
 
@@ -48,23 +48,23 @@ void latency_compensation_kernel(
                 compensated_one = true;
 
                 gp->cycle = gp->cycle + latency_cycles;
-                DOUT( "... compensated to @" << gp->cycle << " <- " << id << " with " << latency_cycles );
+                QL_DOUT("... compensated to @" << gp->cycle << " <- " << id << " with " << latency_cycles );
             }
         }
     }
 
     if (compensated_one) {
-        DOUT("... sorting on cycle value after latency compensation");
+        QL_DOUT("... sorting on cycle value after latency compensation");
         lc_sort_by_cycle(circp);
 
-        DOUT("... printing schedule after latency compensation");
+        QL_DOUT("... printing schedule after latency compensation");
         for (auto &gp : *circp) {
-            DOUT("...... @(" << gp->cycle << "): " << gp->qasm());
+            QL_DOUT("...... @(" << gp->cycle << "): " << gp->qasm());
         }
     } else {
-        DOUT("... no gate latency compensated");
+        QL_DOUT("... no gate latency compensated");
     }
-    DOUT("Latency compensation [DONE]");
+    QL_DOUT("Latency compensation [DONE]");
 }
 
 void latency_compensation(

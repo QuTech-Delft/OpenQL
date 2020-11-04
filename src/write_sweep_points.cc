@@ -17,7 +17,7 @@ void write_sweep_points(
     const quantum_platform& platform,
     const std::string &passname
 ) {
-    DOUT("write_sweep_points()");
+    QL_DOUT("write_sweep_points()");
     if (programp->sweep_points.size()) {
         std::stringstream ss_swpts;
         ss_swpts << "{ \"measurement_points\" : [";
@@ -35,12 +35,12 @@ void write_sweep_points(
         }
         std::string conf_file_name = ss_config.str();
 
-        IOUT("writing sweep points to '" << conf_file_name << "'...");
+        QL_IOUT("writing sweep points to '" << conf_file_name << "'...");
         ql::utils::write_file(conf_file_name, config);
     } else {
-        IOUT("sweep points file not generated as sweep point array is empty !");
+        QL_IOUT("sweep points file not generated as sweep point array is empty !");
     }
-    DOUT("write_sweep_points() [Done] ");
+    QL_DOUT("write_sweep_points() [Done] ");
 }
 
 } // namespace ql

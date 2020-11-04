@@ -176,7 +176,7 @@ test_cz_anycommute(std::string v, std::string schedopt, std::string sched_post17
 int main(int argc, char ** argv)
 {
     ql::utils::logger::set_log_level("LOG_DEBUG");
-    
+
 test_cnot_controlcommute("cnot_controlcommute", "ASAP", "no");
 test_cnot_controlcommute("cnot_controlcommute", "ASAP", "yes");
 test_cnot_controlcommute("cnot_controlcommute", "ALAP", "no");

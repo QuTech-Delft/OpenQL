@@ -28,7 +28,7 @@ C++):
  - class and type names are written in `TitleCase`.
  - variables, fields, and namespaces (compare to modules) are written in
    `snake_case`.
- - constants and preprocessor definitions are written in `UPPER_CASE`.
+ - constants and macros are written in `UPPER_CASE`.
 
 This is already the standard in most popular languages (aside from some
 deciding to use `mixedCase` in places). C++ is the only serious language
@@ -36,6 +36,14 @@ that remains that maintains sort of its own style, but it's also the one
 largest amount of conflicting styles. Therefore, it makes more sense to just
 stick to Python. The only annoying conflict is that the standard library
 types are lowercase.
+
+Since OpenQL is a library, it's important not to pollute the global namespace
+with stuff. Imagine, for instance, if OpenQL would define the type `Bit` to
+represent a classical bit in the global namespace, and someone using the library
+from C++ also includes a bit manipulation library that happens to also define
+`Bit`; this would be a naming conflict that's impossible to resolve for the
+user. Therefore, everything defined by OpenQL should be in the `ql` namespace,
+and all preprocessor macros (which can't be namespaced) should start with `QL_`.
 
 ## Indentation
 

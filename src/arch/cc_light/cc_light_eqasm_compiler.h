@@ -29,8 +29,8 @@ typedef std::vector<qubit_pair_t>  qubit_pair_set_t;
 const size_t MAX_S_REG = 32;
 const size_t MAX_T_REG = 64;
 
-OPENQL_DECLSPEC extern size_t CurrSRegCount;
-OPENQL_DECLSPEC extern size_t CurrTRegCount;
+QL_GLOBAL extern size_t CurrSRegCount;
+QL_GLOBAL extern size_t CurrTRegCount;
 
 class Mask {
 public:

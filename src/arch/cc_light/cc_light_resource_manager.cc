@@ -45,12 +45,12 @@ ccl_qubit_resource_t::ccl_qubit_resource_t(
 }
 
 ccl_qubit_resource_t *ccl_qubit_resource_t::clone() const & {
-    DOUT("Cloning/copying ccl_qubit_resource_t");
+    QL_DOUT("Cloning/copying ccl_qubit_resource_t");
     return new ccl_qubit_resource_t(*this);
 }
 
 ccl_qubit_resource_t *ccl_qubit_resource_t::clone() && {
-    DOUT("Cloning/moving ccl_qubit_resource_t");
+    QL_DOUT("Cloning/moving ccl_qubit_resource_t");
     return new ccl_qubit_resource_t(std::move(*this));
 }
 
@@ -64,20 +64,20 @@ bool ccl_qubit_resource_t::available(
 
     for (auto q : ins->operands) {
         if (forward_scheduling == direction) {
-            DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  qubit: " << q << " is busy till cycle : " << state[q]);
+            QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  qubit: " << q << " is busy till cycle : " << state[q]);
             if (op_start_cycle < state[q]) {
-                DOUT("    " << name << " resource busy ...");
+                QL_DOUT("    " << name << " resource busy ...");
                 return false;
             }
         } else {
-            DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  qubit: " << q << " is busy from cycle : " << state[q]);
+            QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  qubit: " << q << " is busy from cycle : " << state[q]);
             if (op_start_cycle + operation_duration > state[q]) {
-                DOUT("    " << name << " resource busy ...");
+                QL_DOUT("    " << name << " resource busy ...");
                 return false;
             }
         }
     }
-    DOUT("    " << name << " resource available ...");
+    QL_DOUT("    " << name << " resource available ...");
     return true;
 }
 
@@ -91,7 +91,7 @@ void ccl_qubit_resource_t::reserve(
 
     for (auto q : ins->operands) {
         state[q] = (forward_scheduling == direction ?  op_start_cycle + operation_duration : op_start_cycle );
-        DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " qubit: " << q << " reserved till/from cycle: " << state[q]);
+        QL_DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " qubit: " << q << " reserved till/from cycle: " << state[q]);
     }
 }
 
@@ -124,12 +124,12 @@ ccl_qwg_resource_t::ccl_qwg_resource_t(
 }
 
 ccl_qwg_resource_t *ccl_qwg_resource_t::clone() const & {
-    DOUT("Cloning/copying ccl_qwg_resource_t");
+    QL_DOUT("Cloning/copying ccl_qwg_resource_t");
     return new ccl_qwg_resource_t(*this);
 }
 
 ccl_qwg_resource_t *ccl_qwg_resource_t::clone() && {
-    DOUT("Cloning/moving ccl_qwg_resource_t");
+    QL_DOUT("Cloning/moving ccl_qwg_resource_t");
     return new ccl_qwg_resource_t(std::move(*this));
 }
 
@@ -145,13 +145,13 @@ bool ccl_qwg_resource_t::available(
     bool is_mw = (operation_type == "mw");
     if (is_mw) {
         for (auto q : ins->operands) {
-            DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  qwg: " << qubit2qwg[q] << " is busy from cycle: " << fromcycle[ qubit2qwg[q] ] << " to cycle: " << tocycle[qubit2qwg[q]] << " for operation: " << operations[ qubit2qwg[q] ]);
+            QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  qwg: " << qubit2qwg[q] << " is busy from cycle: " << fromcycle[ qubit2qwg[q] ] << " to cycle: " << tocycle[qubit2qwg[q]] << " for operation: " << operations[ qubit2qwg[q] ]);
             if (direction == forward_scheduling) {
                 if (
                     op_start_cycle < fromcycle[qubit2qwg[q]]
                     || (op_start_cycle < tocycle[qubit2qwg[q]] && operations[ qubit2qwg[q]] != operation_name)
                 ) {
-                    DOUT("    " << name << " resource busy ...");
+                    QL_DOUT("    " << name << " resource busy ...");
                     return false;
                 }
             } else {
@@ -159,12 +159,12 @@ bool ccl_qwg_resource_t::available(
                     op_start_cycle + operation_duration > tocycle[qubit2qwg[q]]
                     || ( op_start_cycle + operation_duration > fromcycle[qubit2qwg[q]] && operations[ qubit2qwg[q] ] != operation_name)
                 ) {
-                    DOUT("    " << name << " resource busy ...");
+                    QL_DOUT("    " << name << " resource busy ...");
                     return false;
                 }
             }
         }
-        DOUT("    " << name << " resource available ...");
+        QL_DOUT("    " << name << " resource available ...");
     }
     return true;
 }
@@ -198,7 +198,7 @@ void ccl_qwg_resource_t::reserve(
                     operations[qubit2qwg[q]] = operation_name;
                 }
             }
-            DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " qwg: " << qubit2qwg[q] << " reserved from cycle: " << fromcycle[ qubit2qwg[q] ] << " to cycle: " << tocycle[qubit2qwg[q]] << " for operation: " << operations[ qubit2qwg[q] ]);
+            QL_DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " qwg: " << qubit2qwg[q] << " reserved from cycle: " << fromcycle[ qubit2qwg[q] ] << " to cycle: " << tocycle[qubit2qwg[q]] << " for operation: " << operations[ qubit2qwg[q] ]);
         }
     }
 }
@@ -230,12 +230,12 @@ ccl_meas_resource_t::ccl_meas_resource_t(
 }
 
 ccl_meas_resource_t *ccl_meas_resource_t::clone() const & {
-    DOUT("Cloning/copying ccl_meas_resource_t");
+    QL_DOUT("Cloning/copying ccl_meas_resource_t");
     return new ccl_meas_resource_t(*this);
 }
 
 ccl_meas_resource_t *ccl_meas_resource_t::clone() && {
-    DOUT("Cloning/moving ccl_meas_resource_t");
+    QL_DOUT("Cloning/moving ccl_meas_resource_t");
     return new ccl_meas_resource_t(std::move(*this));
 }
 
@@ -250,13 +250,13 @@ bool ccl_meas_resource_t::available(
     bool is_measure = (operation_type == "readout");
     if (is_measure) {
         for (auto q : ins->operands) {
-            DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  meas: " << qubit2meas[q] << " is busy from cycle: " << fromcycle[ qubit2meas[q] ] << " to cycle: " << tocycle[qubit2meas[q]] );
+            QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  meas: " << qubit2meas[q] << " is busy from cycle: " << fromcycle[ qubit2meas[q] ] << " to cycle: " << tocycle[qubit2meas[q]] );
             if (direction == forward_scheduling) {
                 if (op_start_cycle != fromcycle[qubit2meas[q]]) {
                     // If current measurement on same measurement-unit does not start in the
                     // same cycle, then it should wait for current measurement to finish
                     if (op_start_cycle < tocycle[ qubit2meas[q]]) {
-                        DOUT("    " << name << " resource busy ...");
+                        QL_DOUT("    " << name << " resource busy ...");
                         return false;
                     }
                 }
@@ -265,13 +265,13 @@ bool ccl_meas_resource_t::available(
                     // If current measurement on same measurement-unit does not start in the
                     // same cycle, then it should wait until it would finish at start of or earlier than current measurement
                     if (op_start_cycle + operation_duration > fromcycle[qubit2meas[q]]) {
-                        DOUT("    " << name << " resource busy ...");
+                        QL_DOUT("    " << name << " resource busy ...");
                         return false;
                     }
                 }
             }
         }
-        DOUT("    " << name << " resource available ...");
+        QL_DOUT("    " << name << " resource available ...");
     }
     return true;
 }
@@ -289,7 +289,7 @@ void ccl_meas_resource_t::reserve(
         for (auto q : ins->operands) {
             fromcycle[qubit2meas[q]] = op_start_cycle;
             tocycle[qubit2meas[q]] = op_start_cycle + operation_duration;
-            DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " meas: " << qubit2meas[q] << " reserved from cycle: " << fromcycle[ qubit2meas[q] ] << " to cycle: " << tocycle[qubit2meas[q]]);
+            QL_DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " meas: " << qubit2meas[q] << " reserved from cycle: " << fromcycle[ qubit2meas[q] ] << " to cycle: " << tocycle[qubit2meas[q]]);
         }
     }
 }
@@ -316,8 +316,8 @@ ccl_edge_resource_t::ccl_edge_resource_t(
         qubits_pair_t aqpair(s,d);
         auto it = qubits2edge.find(aqpair);
         if (it != qubits2edge.end()) {
-            EOUT("re-defining edge " << s <<"->" << d << " !");
-            throw ql::exception("[x] Error : re-defining edge !",false);
+            QL_EOUT("re-defining edge " << s << "->" << d << " !");
+            throw utils::Exception("[x] Error : re-defining edge !", false);
         } else {
             qubits2edge[aqpair] = e;
         }
@@ -335,12 +335,12 @@ ccl_edge_resource_t::ccl_edge_resource_t(
 }
 
 ccl_edge_resource_t *ccl_edge_resource_t::clone() const & {
-    DOUT("Cloning/copying ccl_edge_resource_t");
+    QL_DOUT("Cloning/copying ccl_edge_resource_t");
     return new ccl_edge_resource_t(*this);
 }
 
 ccl_edge_resource_t *ccl_edge_resource_t::clone() && {
-    DOUT("Cloning/moving ccl_edge_resource_t");
+    QL_DOUT("Cloning/moving ccl_edge_resource_t");
     return new ccl_edge_resource_t(std::move(*this));
 }
 
@@ -358,7 +358,7 @@ bool ccl_edge_resource_t::available(
         auto nopers = ins->operands.size();
         if (nopers == 1) {
             // single qubit flux operation does not reserve an edge resource
-            DOUT(" available for single qubit flux operation: " << name);
+            QL_DOUT(" available for single qubit flux operation: " << name);
         } else if (nopers == 2) {
             auto q0 = ins->operands[0];
             auto q1 = ins->operands[1];
@@ -367,29 +367,29 @@ bool ccl_edge_resource_t::available(
             if (it != qubits2edge.end()) {
                 auto edge_no = qubits2edge[aqpair];
 
-                DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " is busy till/from cycle : " << state[edge_no] << " for operation: " << ins->name);
+                QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " is busy till/from cycle : " << state[edge_no] << " for operation: " << ins->name);
 
                 std::vector<size_t> edges2check(edge2edges[edge_no]);
                 edges2check.push_back(edge_no);
                 for (auto &e : edges2check) {
                     if (direction == forward_scheduling) {
                         if (op_start_cycle < state[e]) {
-                            DOUT("    " << name << " resource busy ...");
+                            QL_DOUT("    " << name << " resource busy ...");
                             return false;
                         }
                     } else {
                         if (op_start_cycle + operation_duration > state[e]) {
-                            DOUT("    " << name << " resource busy ...");
+                            QL_DOUT("    " << name << " resource busy ...");
                             return false;
                         }
                     }
                 }
-                DOUT("    " << name << " resource available ...");
+                QL_DOUT("    " << name << " resource available ...");
             } else {
-                FATAL("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
+                QL_FATAL("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
             }
         } else {
-            FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
+            QL_FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
         }
     }
     return true;
@@ -425,9 +425,9 @@ void ccl_edge_resource_t::reserve(
                     state[e] = op_start_cycle;
                 }
             }
-            DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] << " for operation: " << ins->name);
+            QL_DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " edge: " << edge_no << " reserved till cycle: " << state[ edge_no ] << " for operation: " << ins->name);
         } else {
-            FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
+            QL_FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
         }
     }
 }
@@ -460,8 +460,8 @@ ccl_detuned_qubits_resource_t::ccl_detuned_qubits_resource_t(
         qubits_pair_t aqpair(s,d);
         auto it = qubitpair2edge.find(aqpair);
         if (it != qubitpair2edge.end()) {
-            EOUT("re-defining edge " << s <<"->" << d << " !");
-            throw ql::exception("[x] Error : re-defining edge !",false);
+            QL_EOUT("re-defining edge " << s << "->" << d << " !");
+            throw utils::Exception("[x] Error : re-defining edge !", false);
         } else {
             qubitpair2edge[aqpair] = e;
         }
@@ -480,12 +480,12 @@ ccl_detuned_qubits_resource_t::ccl_detuned_qubits_resource_t(
 }
 
 ccl_detuned_qubits_resource_t *ccl_detuned_qubits_resource_t::clone() const & {
-    DOUT("Cloning/copying ccl_detuned_qubits_resource_t");
+    QL_DOUT("Cloning/copying ccl_detuned_qubits_resource_t");
     return new ccl_detuned_qubits_resource_t(*this);
 }
 
 ccl_detuned_qubits_resource_t *ccl_detuned_qubits_resource_t::clone() && {
-    DOUT("Cloning/moving ccl_detuned_qubits_resource_t");
+    QL_DOUT("Cloning/moving ccl_detuned_qubits_resource_t");
     return new ccl_detuned_qubits_resource_t(std::move(*this));
 }
 
@@ -505,7 +505,7 @@ bool ccl_detuned_qubits_resource_t::available(
         auto nopers = ins->operands.size();
         if (nopers == 1) {
             // single qubit flux operation does not reserve a detuned qubits resource
-            DOUT(" available for single qubit flux operation: " << name);
+            QL_DOUT(" available for single qubit flux operation: " << name);
         } else if (nopers == 2) {
             auto q0 = ins->operands[0];
             auto q1 = ins->operands[1];
@@ -515,13 +515,13 @@ bool ccl_detuned_qubits_resource_t::available(
                 auto edge_no = qubitpair2edge[aqpair];
 
                 for (auto &q : edge_detunes_qubits[edge_no]) {
-                    DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " detuning qubit: " << q << " for operation: " << ins->name << " busy from: " << fromcycle[q] << " till: " << tocycle[q] << " with operation_type: " << operation_type);
+                    QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " detuning qubit: " << q << " for operation: " << ins->name << " busy from: " << fromcycle[q] << " till: " << tocycle[q] << " with operation_type: " << operation_type);
                     if (direction == forward_scheduling) {
                         if (
                             op_start_cycle < fromcycle[q]
                             || ( op_start_cycle < tocycle[q] && operations[q] != operation_type)
                         ) {
-                            DOUT("    " << name << " resource busy for a two-qubit gate...");
+                            QL_DOUT("    " << name << " resource busy for a two-qubit gate...");
                             return false;
                         }
                     } else {
@@ -529,46 +529,46 @@ bool ccl_detuned_qubits_resource_t::available(
                             op_start_cycle + operation_duration > tocycle[q]
                             || ( op_start_cycle + operation_duration > fromcycle[q] && operations[q] != operation_type)
                         ) {
-                            DOUT("    " << name << " resource busy for a two-qubit gate...");
+                            QL_DOUT("    " << name << " resource busy for a two-qubit gate...");
                             return false;
                         }
                     }
                 }	// for over edges
             } else { // no edge found
-                EOUT("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
-                throw ql::exception("[x] Error : Use of illegal edge"+std::to_string(q0)+"->"+std::to_string(q1)+"in operation:"+ins->name+" !",false);
+                QL_EOUT("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
+                throw utils::Exception("[x] Error : Use of illegal edge" + std::to_string(q0) + "->" + std::to_string(q1) + "in operation:" + ins->name + " !", false);
             }
         } else { // nopers != 1 or 2
-            FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
+            QL_FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
         }
     }
 
     bool is_mw = operation_type == "mw";
     if (is_mw) {
         for (auto q : ins->operands) {
-            DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", qubit: " << q << " for operation: " << ins->name << " busy from: " << fromcycle[q] << " till: " << tocycle[q] << " with operation_type: " << operation_type);
+            QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", qubit: " << q << " for operation: " << ins->name << " busy from: " << fromcycle[q] << " till: " << tocycle[q] << " with operation_type: " << operation_type);
             if (direction == forward_scheduling) {
                 if (op_start_cycle < fromcycle[q]) {
-                    DOUT("    " << name << " busy for rotation: op_start cycle " << op_start_cycle << " < fromcycle[" << q << "] " << fromcycle[q] );
+                    QL_DOUT("    " << name << " busy for rotation: op_start cycle " << op_start_cycle << " < fromcycle[" << q << "] " << fromcycle[q] );
                     return false;
                 }
                 if (op_start_cycle < tocycle[q] && operations[q] != operation_type) {
-                    DOUT("    " << name << " busy for rotation with flux: op_start cycle " << op_start_cycle << " < tocycle[" << q << "] " << tocycle[q] );
+                    QL_DOUT("    " << name << " busy for rotation with flux: op_start cycle " << op_start_cycle << " < tocycle[" << q << "] " << tocycle[q] );
                     return false;
                 }
             } else {
                 if (op_start_cycle + operation_duration > tocycle[q]) {
-                    DOUT("    " << name << " busy for rotation: op_start cycle " << op_start_cycle << " + duration > tocycle[" << q << "] " << tocycle[q] );
+                    QL_DOUT("    " << name << " busy for rotation: op_start cycle " << op_start_cycle << " + duration > tocycle[" << q << "] " << tocycle[q] );
                     return false;
                 }
                 if (op_start_cycle + operation_duration > fromcycle[q] && operations[q] != operation_type) {
-                    DOUT("    " << name << " busy for rotation with flux: op_start cycle " << op_start_cycle << " + duration > fromcycle[" << q << "] " << fromcycle[q] );
+                    QL_DOUT("    " << name << " busy for rotation with flux: op_start cycle " << op_start_cycle << " + duration > fromcycle[" << q << "] " << fromcycle[q] );
                     return false;
                 }
             }
         }
     }
-    if (is_flux || is_mw) DOUT("    " << name << " resource available ...");
+    if (is_flux || is_mw) QL_DOUT("    " << name << " resource available ...");
     return true;
 }
 
@@ -598,28 +598,28 @@ void ccl_detuned_qubits_resource_t::reserve(
                 if (direction == forward_scheduling) {
                     if (operations[q] == operation_type) {
                         tocycle[q] = std::max( tocycle[q], op_start_cycle + operation_duration);
-                        DOUT("reserving " << name << ". for qubit: " << q << " reusing cycle: " << fromcycle[q] << " to extending tocycle: " << tocycle[q] << " for old operation: " << ins->name);
+                        QL_DOUT("reserving " << name << ". for qubit: " << q << " reusing cycle: " << fromcycle[q] << " to extending tocycle: " << tocycle[q] << " for old operation: " << ins->name);
                     } else {
                         fromcycle[q] = op_start_cycle;
                         tocycle[q] = op_start_cycle + operation_duration;
                         operations[q] = operation_type;
-                        DOUT("reserving " << name << ". for qubit: " << q << " from fromcycle: " << fromcycle[q] << " to new tocycle: " << tocycle[q] << " for new operation: " << ins->name);
+                        QL_DOUT("reserving " << name << ". for qubit: " << q << " from fromcycle: " << fromcycle[q] << " to new tocycle: " << tocycle[q] << " for new operation: " << ins->name);
                     }
                 } else {
                     if (operations[q] == operation_type) {
                         fromcycle[q] = std::min( fromcycle[q], op_start_cycle);
-                        DOUT("reserving " << name << ". for qubit: " << q << " from extended cycle: " << fromcycle[q] << " reusing tocycle: " << tocycle[q] << " for old operation: " << ins->name);
+                        QL_DOUT("reserving " << name << ". for qubit: " << q << " from extended cycle: " << fromcycle[q] << " reusing tocycle: " << tocycle[q] << " for old operation: " << ins->name);
                     } else {
                         fromcycle[q] = op_start_cycle;
                         tocycle[q] = op_start_cycle + operation_duration;
                         operations[q] = operation_type;
-                        DOUT("reserving " << name << ". for qubit: " << q << " from new cycle: " << fromcycle[q] << " to tocycle: " << tocycle[q] << " for new operation: " << ins->name);
+                        QL_DOUT("reserving " << name << ". for qubit: " << q << " from new cycle: " << fromcycle[q] << " to tocycle: " << tocycle[q] << " for new operation: " << ins->name);
                     }
                 }
-                DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " edge: " << edge_no << " detunes qubit: " << q << " reserved from cycle: " << fromcycle[q] << " till cycle: " << tocycle[q] << " for operation: " << ins->name);
+                QL_DOUT("reserved " << name << ". op_start_cycle: " << op_start_cycle << " edge: " << edge_no << " detunes qubit: " << q << " reserved from cycle: " << fromcycle[q] << " till cycle: " << tocycle[q] << " for operation: " << ins->name);
             }
         } else {
-            FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
+            QL_FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
         }
     }
     bool is_mw = operation_type == "mw";
@@ -628,25 +628,25 @@ void ccl_detuned_qubits_resource_t::reserve(
             if (direction == forward_scheduling) {
                 if (operations[q] == operation_type) {
                     tocycle[q] = std::max( tocycle[q], op_start_cycle + operation_duration);
-                    DOUT("reserving " << name << ". for qubit: " << q << " reusing cycle: " << fromcycle[q] << " to extending tocycle: " << tocycle[q] << " for old operation: " << ins->name);
+                    QL_DOUT("reserving " << name << ". for qubit: " << q << " reusing cycle: " << fromcycle[q] << " to extending tocycle: " << tocycle[q] << " for old operation: " << ins->name);
                 } else {
                     fromcycle[q] = op_start_cycle;
                     tocycle[q] = op_start_cycle + operation_duration;
                     operations[q] = operation_type;
-                    DOUT("reserving " << name << ". for qubit: " << q << " from fromcycle: " << fromcycle[q] << " to new tocycle: " << tocycle[q] << " for new operation: " << ins->name);
+                    QL_DOUT("reserving " << name << ". for qubit: " << q << " from fromcycle: " << fromcycle[q] << " to new tocycle: " << tocycle[q] << " for new operation: " << ins->name);
                 }
             } else {
                 if (operations[q] == operation_type) {
                     fromcycle[q] = std::min( fromcycle[q], op_start_cycle);
-                    DOUT("reserving " << name << ". for qubit: " << q << " from extended cycle: " << fromcycle[q] << " reusing tocycle: " << tocycle[q] << " for old operation: " << ins->name);
+                    QL_DOUT("reserving " << name << ". for qubit: " << q << " from extended cycle: " << fromcycle[q] << " reusing tocycle: " << tocycle[q] << " for old operation: " << ins->name);
                 } else {
                     fromcycle[q] = op_start_cycle;
                     tocycle[q] = op_start_cycle + operation_duration;
                     operations[q] = operation_type;
-                    DOUT("reserving " << name << ". for qubit: " << q << " from new cycle: " << fromcycle[q] << " to tocycle: " << tocycle[q] << " for new operation: " << ins->name);
+                    QL_DOUT("reserving " << name << ". for qubit: " << q << " from new cycle: " << fromcycle[q] << " to tocycle: " << tocycle[q] << " for new operation: " << ins->name);
                 }
             }
-            DOUT("... reserved " << name << ". op_start_cycle: " << op_start_cycle << " for qubit: " << q << " reserved from cycle: " << fromcycle[q] << " till cycle: " << tocycle[q] << " for operation: " << ins->name);
+            QL_DOUT("... reserved " << name << ". op_start_cycle: " << op_start_cycle << " for qubit: " << q << " reserved from cycle: " << fromcycle[q] << " till cycle: " << tocycle[q] << " for operation: " << ins->name);
         }
     }
 }
@@ -660,8 +660,8 @@ cc_light_resource_manager_t::cc_light_resource_manager_t(
 ) :
     platform_resource_manager_t(platform, dir)
 {
-    DOUT("Constructing (platform,dir) parameterized platform_resource_manager_t");
-    DOUT("New one for direction " << dir << " with no of resources : " << platform.resources.size() );
+    QL_DOUT("Constructing (platform,dir) parameterized platform_resource_manager_t");
+    QL_DOUT("New one for direction " << dir << " with no of resources : " << platform.resources.size() );
     for (auto it = platform.resources.cbegin(); it != platform.resources.cend(); ++it) {
         // COUT(it.key() << " : " << it.value() << "\n");
         std::string n = it.key();
@@ -683,19 +683,19 @@ cc_light_resource_manager_t::cc_light_resource_manager_t(
             resource_t * ares = new ccl_detuned_qubits_resource_t(platform, dir);
             resource_ptrs.push_back( ares );
         } else {
-            FATAL("Error : Un-modelled resource, i.e. resource not supported by implementation: '" << n << "'");
+            QL_FATAL("Error : Un-modelled resource, i.e. resource not supported by implementation: '" << n << "'");
         }
     }
     // DOUT("Done constructing inited platform_resource_manager_t");
 }
 
 cc_light_resource_manager_t *cc_light_resource_manager_t::clone() const & {
-    DOUT("Cloning/copying cc_light_resource_manager_t");
+    QL_DOUT("Cloning/copying cc_light_resource_manager_t");
     return new cc_light_resource_manager_t(*this);
 }
 
 cc_light_resource_manager_t *cc_light_resource_manager_t::clone() && {
-    DOUT("Cloning/moving cc_light_resource_manager_t");
+    QL_DOUT("Cloning/moving cc_light_resource_manager_t");
     return new cc_light_resource_manager_t(std::move(*this));
 }
 

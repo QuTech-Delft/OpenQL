@@ -23,7 +23,7 @@ PassManager::PassManager(const std::string &name) : name(name) {
      */
 void PassManager::compile(ql::quantum_program *program) const {
 
-    DOUT("In PassManager::compile ... ");
+    QL_DOUT("In PassManager::compile ... ");
     for (auto pass : passes) {
         ///@todo-rn: implement option to check if following options are actually needed for a pass
         ///@note-rn: currently(0.8.1.dev), all passes require platform as API parameter, and some passes depend on the nqubits internally. Therefore, these are passed through by setting the program with these fields here. However, this should change in the future since compiling for a simulator might not require a platform, and the number of qubits could be optional.
@@ -41,7 +41,7 @@ void PassManager::compile(ql::quantum_program *program) const {
         }
 
         if (!pass->getSkip()) {
-            DOUT(" Calling pass: " << pass->getPassName());
+            QL_DOUT(" Calling pass: " << pass->getPassName());
             pass->initPass(program);
             pass->runOnProgram(program);
             pass->finalizePass(program);
@@ -57,7 +57,7 @@ void PassManager::compile(ql::quantum_program *program) const {
  * @param   pass Object reference to the pass to be added
  */
 void PassManager::addPassNamed(const std::string &realPassName, const std::string &symbolicPassName) {
-    DOUT("In PassManager::addPassNamed ");
+    QL_DOUT("In PassManager::addPassNamed ");
 
     // search for pass after its name
     AbstractPass* pass = createPass(realPassName,symbolicPassName);
@@ -74,7 +74,7 @@ void PassManager::addPassNamed(const std::string &realPassName, const std::strin
  * @return   AbstracPass Object reference to the pass
  */
 AbstractPass *PassManager::createPass(const std::string &passName, const std::string &aliasName) {
-    DOUT("In PassManager::createPass");
+    QL_DOUT("In PassManager::createPass");
 
     /// @todo-rn: check that aliasname has not been used before!
     AbstractPass *pass = nullptr;
@@ -118,7 +118,7 @@ AbstractPass *PassManager::createPass(const std::string &passName, const std::st
     } else if (passName == "QisaCodeGeneration") {
         pass = new QisaCodeGenerationPass(aliasName);
     } else {
-        EOUT(" !!!Error: Pass " << aliasName << " not found!!!");
+        QL_EOUT(" !!!Error: Pass " << aliasName << " not found!!!");
         exit(1);
     }
 
@@ -131,16 +131,16 @@ AbstractPass *PassManager::createPass(const std::string &passName, const std::st
  * @return   AbstracPass Object reference to the pass
  */
 AbstractPass* PassManager::findPass(const std::string &passName) {
-    DOUT("In PassManager::findPass");
+    QL_DOUT("In PassManager::findPass");
 
     for (auto pass : passes) {
         if (pass->getPassName() == passName) {
-            DOUT(" Found pass " << passName);
+            QL_DOUT(" Found pass " << passName);
             return pass;
         }
     }
 
-    EOUT("!!!Error: Pass " << passName << " not found!");
+    QL_EOUT("!!!Error: Pass " << passName << " not found!");
     exit(1);
 }
 
@@ -150,10 +150,10 @@ AbstractPass* PassManager::findPass(const std::string &passName) {
  * @param   optionValue String value of the option
  */
 void PassManager::setPassOptionAll(const std::string &optionName, const std::string &optionValue) {
-    DOUT("In PassManager::setPassOptionAll");
+    QL_DOUT("In PassManager::setPassOptionAll");
 
     for (auto pass : passes) {
-        DOUT(" Pass: " << pass->getPassName() << " --> set option " << optionName << " to " << optionValue << std::endl);
+        QL_DOUT(" Pass: " << pass->getPassName() << " --> set option " << optionName << " to " << optionValue << std::endl);
         pass->setPassOption(optionName, optionValue);
     }
 }
@@ -163,7 +163,7 @@ void PassManager::setPassOptionAll(const std::string &optionName, const std::str
  * @param   pass Object reference to the pass to be added
  */
 void PassManager::addPass(AbstractPass *pass) {
-    DOUT("In PassManager::addPass");
+    QL_DOUT("In PassManager::addPass");
     passes.push_back(pass);
 }
 

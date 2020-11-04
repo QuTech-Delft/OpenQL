@@ -15,7 +15,7 @@ static void decompose_toffoli_kernel(
     ql::quantum_kernel &kernel,
     const ql::quantum_platform &platform
 ) {
-    DOUT("decompose_toffoli_kernel()");
+    QL_DOUT("decompose_toffoli_kernel()");
     for (auto cit = kernel.c.begin(); cit != kernel.c.end(); ++cit) {
         auto g = *cit;
         ql::gate_type_t gtype = g->type();
@@ -42,7 +42,7 @@ static void decompose_toffoli_kernel(
             kernel.cycles_valid = false;
         }
     }
-    DOUT("decompose_toffoli() [Done] ");
+    QL_DOUT("decompose_toffoli() [Done] ");
 }
 
 void decompose_toffoli(
@@ -52,14 +52,14 @@ void decompose_toffoli(
 ) {
     auto tdopt = ql::options::get("decompose_toffoli");
     if (tdopt == "AM" || tdopt == "NC") {
-        IOUT("Decomposing Toffoli ...");
+        QL_IOUT("Decomposing Toffoli ...");
         for (auto kernel : programp->kernels) {
             decompose_toffoli_kernel(kernel, platform);
         }
     } else if (tdopt == "no") {
-        IOUT("Not Decomposing Toffoli ...");
+        QL_IOUT("Not Decomposing Toffoli ...");
     } else {
-        FATAL("Unknown option '" << tdopt << "' set for decompose_toffoli");
+        QL_FATAL("Unknown option '" << tdopt << "' set for decompose_toffoli");
     }
 }
 

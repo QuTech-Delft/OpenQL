@@ -61,7 +61,7 @@ void cc_light_eqasm_instruction::compensate_latency() {
         start -= latency;
         latency_compensated = true;
     } else {
-        WOUT("latency of instruction '" << this << "' is already compensated !");
+        QL_WOUT("latency of instruction '" << this << "' is already compensated !");
     }
 }
 

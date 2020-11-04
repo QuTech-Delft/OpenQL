@@ -30,7 +30,7 @@ static void insert_buffer_delays_kernel(
     ql::quantum_kernel &kernel,
     const ql::quantum_platform &platform
 ) {
-    DOUT("Loading buffer settings ...");
+    QL_DOUT("Loading buffer settings ...");
     std::map<std::pair<std::string, std::string>, size_t> buffer_cycles_map;
 
     // populate buffer map
@@ -54,7 +54,7 @@ static void insert_buffer_delays_kernel(
         }
     }
 
-    DOUT("Buffer-buffer delay insertion ... ");
+    QL_DOUT("Buffer-buffer delay insertion ... ");
 
     ql::circuit *circp = &kernel.c;
     ql::ir::bundles_t bundles = ql::ir::bundler(*circp, platform.cycle_time);
@@ -82,12 +82,12 @@ static void insert_buffer_delays_kernel(
             for (auto &op_curr : operations_curr_bundle) {
                 auto temp_buf_cycles = buffer_cycles_map[std::pair<std::string, std::string>(
                     op_prev, op_curr)];
-                DOUT("... considering buffer_" << op_prev << "_" << op_curr
-                                               << ": " << temp_buf_cycles);
+                QL_DOUT("... considering buffer_" << op_prev << "_" << op_curr
+                                                  << ": " << temp_buf_cycles);
                 buffer_cycles = std::max(temp_buf_cycles, buffer_cycles);
             }
         }
-        DOUT("... inserting buffer : " << buffer_cycles);
+        QL_DOUT("... inserting buffer : " << buffer_cycles);
         buffer_cycles_accum += buffer_cycles;
         abundle.start_cycle = abundle.start_cycle + buffer_cycles_accum;
         operations_prev_bundle = operations_curr_bundle;
@@ -95,7 +95,7 @@ static void insert_buffer_delays_kernel(
 
     *circp = ql::ir::circuiter(bundles);
 
-    DOUT("Buffer-buffer delay insertion [DONE] ");
+    QL_DOUT("Buffer-buffer delay insertion [DONE] ");
 }
 
 void insert_buffer_delays(

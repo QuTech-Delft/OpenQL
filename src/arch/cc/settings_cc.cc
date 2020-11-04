@@ -33,14 +33,14 @@ void settings_cc::loadBackendSettings(const quantum_platform &platform)
     // FIXME: the following requires json>v3.1.0:  for(auto& id : jsonInstrumentDefinitions->items()) {
     for(size_t i=0; i<jsonInstrumentDefinitions->size(); i++) {
         std::string idName = jsonInstrumentDefinitions[i];        // NB: uses type conversion to get node value
-        DOUT("found instrument definition: '" << idName <<"'");
+        QL_DOUT("found instrument definition: '" << idName <<"'");
     }
 
     // read control modes
     for(size_t i=0; i<jsonControlModes->size(); i++)
     {
         const json &name = (*jsonControlModes)[i]["name"];
-        DOUT("found control mode '" << name <<"'");
+        QL_DOUT("found control mode '" << name <<"'");
     }
 
     // read instruments
@@ -53,7 +53,7 @@ void settings_cc::loadBackendSettings(const quantum_platform &platform)
         std::string instrumentName = instrument["name"];
         std::string signalType = instrument["signal_type"];
 
-        DOUT("found instrument: name='" << instrumentName << "', signal type='" << signalType << "'");
+        QL_DOUT("found instrument: name='" << instrumentName << "', signal type='" << signalType << "'");
     }
 #endif
 }
@@ -76,7 +76,7 @@ settings_cc::tSignalDef settings_cc::findSignalDefinition(const utils::json &ins
         ret.path = "signals/"+refSignal;
     } else {                                                                    // alternative syntax: "signal"
         ret.signal = utils::json_get<utils::json>(instruction["cc"], "signal", instructionPath+"/cc");
-        DOUT("signal for '" << instruction << "': " << ret.signal);
+        QL_DOUT("signal for '" << instruction << "': " << ret.signal);
         ret.path = instructionPath+"/cc/signal";
     }
     return ret;
@@ -88,7 +88,7 @@ settings_cc::tInstrumentInfo settings_cc::getInstrumentInfo(size_t instrIdx) con
 {
     tInstrumentInfo ret;
 
-    std::string instrumentPath = SS2S("instruments["<<instrIdx<<"]");           // for JSON error reporting
+    std::string instrumentPath = QL_SS2S("instruments[" << instrIdx << "]");           // for JSON error reporting
     if(instrIdx >= jsonInstruments->size()) {
         JSON_FATAL("node not defined: " + instrumentPath);                      // probably an internal backend error
     }
@@ -181,10 +181,10 @@ settings_cc::tSignalInfo settings_cc::findSignalInfoForQubit(const std::string &
                     if(qubits[group][idx] == qubit) {
                         qubitFound = true;                                      // also: stop searching
 
-                        DOUT("qubit " << qubit
-                             << " signal type '" << instructionSignalType
-                             << "' driven by instrument '" << ic.ii.instrumentName
-                             << "' group " << group
+                        QL_DOUT("qubit " << qubit
+                                         << " signal type '" << instructionSignalType
+                                         << "' driven by instrument '" << ic.ii.instrumentName
+                                         << "' group " << group
                              );
 
                         ret.ic = ic;
@@ -232,9 +232,9 @@ int settings_cc::findStaticCodewordOverride(const utils::json &instruction, size
  #else
         staticCodewordOverride = instruction["cc"]["static_codeword_override"];
  #endif
-        DOUT("Found static_codeword_override=" << staticCodewordOverride <<
-             " for instruction '" << iname <<
-             "', operand index " << operandIdx);
+        QL_DOUT("Found static_codeword_override=" << staticCodewordOverride <<
+                                                  " for instruction '" << iname <<
+                                                  "', operand index " << operandIdx);
     }
  #if 1 // FIXME: require override
     if(staticCodewordOverride < 0) {

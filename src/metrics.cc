@@ -15,7 +15,7 @@ void my_print(std::vector<T> const &input, const char *id_name) {
         output << i << " ";
     }
     // output << "\n";
-    IOUT(output.str());
+    QL_IOUT(output.str());
 }
 
 double Metrics::gaussian_pdf(double x, double mean, double sigma) {
@@ -48,8 +48,8 @@ Metrics::Metrics(
 
     if (output_mode != "worst" && output_mode != "gaussian" &&
         output_mode != "average") {
-        EOUT("Invalid metrics_output_method provided: " << output_mode);
-        throw ql::exception("invalid metrics_output_mode", false);
+        QL_EOUT("Invalid metrics_output_method provided: " << output_mode);
+        throw utils::Exception("invalid metrics_output_mode", false);
     }
 
     this->gatefid_1 = gatefid_1;
@@ -74,13 +74,13 @@ void Metrics::Init(size_t Nqubits, ql::quantum_platform *platform) {
 }
 
 double Metrics::create_output(const std::vector<double> &fids) {
-    IOUT("Creating output");
+    QL_IOUT("Creating output");
     std::vector<double> result_vector;
     result_vector = fids;
-    IOUT("Creating output2");
+    QL_IOUT("Creating output2");
 
     PRINTER(result_vector);
-    IOUT("Creating output2.5");
+    QL_IOUT("Creating output2.5");
     //We take out negative fidelities
     // size_t dimension = result_vector.size();
     // for (size_t element = dimension-1; element >=0 ; element--)
@@ -90,11 +90,11 @@ double Metrics::create_output(const std::vector<double> &fids) {
     // PRINTER(result_vector);
     // }
 
-    IOUT("Creating output3.5");
+    QL_IOUT("Creating output3.5");
     PRINTER(result_vector);
-    IOUT("Creating output4");
+    QL_IOUT("Creating output4");
     if (output_mode == "worst") {
-        IOUT("\nOutput mode: worst");
+        QL_IOUT("\nOutput mode: worst");
         return *std::min_element(fids.begin(), fids.end());
     } else if (output_mode == "average") { //DOES NOT WORK
         PRINTER(fids);
@@ -104,9 +104,9 @@ double Metrics::create_output(const std::vector<double> &fids) {
         {
             sum += x;
         }
-        DOUT("Sum fidelities :" + std::to_string(sum));
+        QL_DOUT("Sum fidelities :" + std::to_string(sum));
         double average = sum / fids.size();
-        DOUT("Average fidelity:" + std::to_string(average));
+        QL_DOUT("Average fidelity:" + std::to_string(average));
         return average;
     // } else if (output_mode == "gaussian") { //DOES NOT WORK
         // 	IOUT("\nOutput mode: gaussian");
@@ -124,7 +124,7 @@ double Metrics::create_output(const std::vector<double> &fids) {
         // 	return 2*sum; // *2 to normalize (we use half gaussian). divide by Nqubits?
         // }
     } else {
-        IOUT("\nOutput mode: error");
+        QL_IOUT("\nOutput mode: error");
         return 500;
     }
 
@@ -138,7 +138,7 @@ double Metrics::bounded_fidelity(const ql::circuit &circ, std::vector<double> &f
     //TODO - URGENT!! do not consider the fidelity of used but non initialized qubits (set to 2/-1?)
 
     if (fids.empty()) {
-        IOUT("EMPTY VECTOR - Initializing. Nqubits = " + std::to_string(Nqubits));
+        QL_IOUT("EMPTY VECTOR - Initializing. Nqubits = " + std::to_string(Nqubits));
         fids.resize(Nqubits, 1.0); //Initiallize a fidelity vector, if one is not provided
         //TODO: non initialized qubits should have undefined fidelity. It shouldn't be taken into account.
     }
@@ -147,12 +147,12 @@ double Metrics::bounded_fidelity(const ql::circuit &circ, std::vector<double> &f
 
     PRINTER(fids);
     PRINTER(last_op_endtime);
-    IOUT("\n\n");
+    QL_IOUT("\n\n");
 
-    IOUT("Entered loop");
+    QL_IOUT("Entered loop");
     for (auto &gate : circ) {
 
-        IOUT("Next gate\n");
+        QL_IOUT("Next gate\n");
 
         if (gate->name == "measure") {
             continue;
@@ -164,29 +164,29 @@ double Metrics::bounded_fidelity(const ql::circuit &circ, std::vector<double> &f
         }
 
         if (gate->duration > CYCLE_TIME*2 && gate->name != "prep_z" && gate->name != "measure") {
-            EOUT("Gate with duration larger than CYCLE_TIME*20 detected! Non primitive?: " << gate->name );
-            throw ql::exception("Check for non primitive gates at cycle "  + std::to_string(gate->cycle) + "!", false);
+            QL_EOUT("Gate with duration larger than CYCLE_TIME*20 detected! Non primitive?: " << gate->name );
+            throw utils::Exception("Check for non primitive gates at cycle " + std::to_string(gate->cycle) + "!", false);
         }
 
         unsigned char type_op = gate->operands.size(); // type of operation (1-qubit/2-qubit)
         if (type_op == 1) {
             size_t qubit = gate->operands[0];
             size_t last_time = last_op_endtime[qubit];
-            IOUT("Gate " + gate->name + "("+ std::to_string(gate->operands[0]) +") at cycle " + std::to_string(gate->cycle) + " with duration " + std::to_string(gate->duration));
+            QL_IOUT("Gate " + gate->name + "(" + std::to_string(gate->operands[0]) + ") at cycle " + std::to_string(gate->cycle) + " with duration " + std::to_string(gate->duration));
             size_t idled_time = gate->cycle - last_time; //get idlying time to introduce decoherence. This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 
             last_op_endtime[qubit] = gate->cycle  + gate->duration / CYCLE_TIME; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 
-            IOUT("Idled time:" + std::to_string(idled_time));
+            QL_IOUT("Idled time:" + std::to_string(idled_time));
 
 
             fids[qubit] *= std::exp(-((double)idled_time)/decoherence_time); // Update fidelity with idling-caused decoherence
 
             fids[qubit] *= gatefid_1; //Update fidelity after gate
-            IOUT("METRICS - one qubit gate - END");
+            QL_IOUT("METRICS - one qubit gate - END");
 
         } else if (type_op == 2) {
-            IOUT("METRICS - TWO qubit gate");
+            QL_IOUT("METRICS - TWO qubit gate");
             size_t qubit_c = gate->operands[0];
             size_t qubit_t = gate->operands[1];
 
@@ -197,14 +197,14 @@ double Metrics::bounded_fidelity(const ql::circuit &circ, std::vector<double> &f
             last_op_endtime[qubit_c] = gate->cycle  + gate->duration / CYCLE_TIME; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
             last_op_endtime[qubit_t] = gate->cycle  + gate->duration / CYCLE_TIME ; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 
-            IOUT("Gate " + gate->name + "("+ std::to_string(gate->operands[0]) + ", " + std::to_string(gate->operands[1]) +") at cycle " + std::to_string(gate->cycle) + " with duration " + std::to_string(gate->duration));
-            IOUT("Idled time q_c:" + std::to_string(idled_time_c));
-            IOUT("Idled time q_t:" + std::to_string(idled_time_t) + " gate cycle=" + std::to_string(gate->cycle) + ". last_time_t=" + std::to_string(last_time_t));
+            QL_IOUT("Gate " + gate->name + "(" + std::to_string(gate->operands[0]) + ", " + std::to_string(gate->operands[1]) + ") at cycle " + std::to_string(gate->cycle) + " with duration " + std::to_string(gate->duration));
+            QL_IOUT("Idled time q_c:" + std::to_string(idled_time_c));
+            QL_IOUT("Idled time q_t:" + std::to_string(idled_time_t) + " gate cycle=" + std::to_string(gate->cycle) + ". last_time_t=" + std::to_string(last_time_t));
 
             fids[qubit_c] *= std::exp(-(double) idled_time_c/decoherence_time); // Update fidelity with idling-caused decoherence
             fids[qubit_t] *= std::exp(-(double)idled_time_t/decoherence_time); // Update fidelity with idling-caused decoherence
 
-            IOUT("Fidelity after idlying: ");
+            QL_IOUT("Fidelity after idlying: ");
             PRINTER(fids);
 
             fids[qubit_c] *=  fids[qubit_t] * gatefid_2; //Update fidelity after gate
@@ -215,7 +215,7 @@ double Metrics::bounded_fidelity(const ql::circuit &circ, std::vector<double> &f
         PRINTER(fids);
         PRINTER(last_op_endtime);
 
-        IOUT("\n NEXT GATE");
+        QL_IOUT("\n NEXT GATE");
 
     }
     size_t end_cycle = circ.back()->cycle + circ.back()->duration/CYCLE_TIME;
@@ -226,8 +226,8 @@ double Metrics::bounded_fidelity(const ql::circuit &circ, std::vector<double> &f
 
     //Now we should still add decoherence effect in case the last gate was a two-qubit gate (the other qubits still decohere in the meantime!)
 
-    IOUT(" \n\n THE END \n\n ");
-    IOUT("Fidelity after idlying: ");
+    QL_IOUT(" \n\n THE END \n\n ");
+    QL_IOUT("Fidelity after idlying: ");
     PRINTER(fids);
     //Concatenating data into a single value, to serve as metric
     return create_output(fids);

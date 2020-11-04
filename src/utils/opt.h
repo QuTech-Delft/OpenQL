@@ -30,7 +30,7 @@ public:
     template<class... Args>
     void emplace(Args... args) {
         if (v) {
-            throw exception("Opt has already been initialized", false);
+            throw Exception("Opt has already been initialized", false);
         }
         v = std::unique_ptr<T>(new T(args...));
     }
@@ -124,7 +124,7 @@ public:
      */
     T &operator*() {
         if (!v) {
-            throw exception("attempt to dereference empty Opt");
+            throw Exception("attempt to dereference empty Opt");
         }
         return *v;
     }
@@ -134,7 +134,7 @@ public:
      */
     const T &operator*() const {
         if (!v) {
-            throw exception("attempt to dereference empty Opt");
+            throw Exception("attempt to dereference empty Opt");
         }
         return *v;
     }
@@ -144,7 +144,7 @@ public:
      */
     T *operator->() {
         if (!v) {
-            throw exception("attempt to dereference empty Opt");
+            throw Exception("attempt to dereference empty Opt");
         }
         return v.get();
     }
@@ -154,7 +154,7 @@ public:
      */
     const T *operator->() const {
         if (!v) {
-            throw exception("attempt to dereference empty Opt");
+            throw Exception("attempt to dereference empty Opt");
         }
         return v.get();
     }

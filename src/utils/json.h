@@ -8,7 +8,7 @@
 // check existence of JSON key within node, see PR #194
 #define JSON_EXISTS(node, key)  ((node).count(key) > 0)
 
-#define JSON_FATAL(s) FATAL("Error in JSON definition: " << s)   // NB: FATAL prepends "Error : "
+#define JSON_FATAL(s) QL_FATAL("Error in JSON definition: " << s)   // NB: FATAL prepends "Error : "
 
 #define JSON_ASSERT(node, key, nodePath)    \
     do {                                    \
