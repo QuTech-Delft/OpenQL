@@ -65,7 +65,6 @@ class Test_central_controller(unittest.TestCase):
         p.compile()
 
     # Quantum Error Correction cycle
-    @unittest.skip
     def test_qec(self):
         ql.set_option('output_dir', output_dir)
         ql.set_option('optimize', 'no')
@@ -109,26 +108,22 @@ class Test_central_controller(unittest.TestCase):
         k.gate("rym90", [xE])
         k.gate("rym90", [xW])
         k.gate("rym90", [xS])
-        k.wait(all_qubits, 0)
-#        k.wait({x, xN, xE, xW, xS}, 0)
+        k.barrier([])
 
         k.gate("cz", [x, xE])
         k.gate("cz", [x, xN])
         k.gate("cz", [x, xS])
         k.gate("cz", [x, xW])
-        k.wait(all_qubits, 0)
-#        k.wait({x, xN, xE, xW, xS}, 0)
+        k.barrier([])
 
         k.gate("ry90", [x])
         k.gate("ry90", [xN])
         k.gate("ry90", [xE])
         k.gate("ry90", [xW])
         k.gate("ry90", [xS])
-        k.wait(all_qubits, 0)
-#        k.wait({x, xN, xE, xW, xS}, 0)
+        k.barrier([])
 
         k.gate("measure", [x], rdX)
-#        k.wait(all_qubits, 0)
         k.wait([x], 0)
 
         # Z stabilizers
