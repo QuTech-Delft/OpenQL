@@ -170,7 +170,7 @@ add_library(ql
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passmanager.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/passes.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/report.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/exception.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/exception.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/eqasm_backend_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/codegen_cc.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/arch/cc/settings_cc.cc"

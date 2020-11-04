@@ -1,7 +1,7 @@
 #include "classical.h"
 
 #include "utils.h"
-#include "exception.h"
+#include "utils/exception.h"
 
 namespace ql {
 

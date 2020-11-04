@@ -1,6 +1,6 @@
 #include "options.h"
 
-#include "exception.h"
+#include "utils/exception.h"
 #include <CLI/CLI.hpp>
 
 namespace ql {

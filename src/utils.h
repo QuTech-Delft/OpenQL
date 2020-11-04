@@ -19,8 +19,8 @@
 #include <vector>
 
 #include "json.h"
-#include "exception.h"
-#include "opt.h"
+#include "utils/exception.h"
+#include "utils/opt.h"
 
 #define println(x) std::cout << "[OPENQL] "<< x << std::endl
 

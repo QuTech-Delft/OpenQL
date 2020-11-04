@@ -1,6 +1,6 @@
 #pragma once
 
-#include <map>
+#include <unordered_map>
 #include "utils/logging.h"
 #include "exception.h"
 
@@ -8,7 +8,8 @@ namespace ql {
 namespace utils {
 
 /**
- * Wrapper for `std::map` with additional error detection and handling.
+ * Wrapper for `std::unordered_map` with additional error detection and
+ * handling.
  *
  * operator[] is intentionally deleted altogether. Instead, you have to pick one
  * of a few different element accessors based on what you actually want to do:
@@ -33,44 +34,45 @@ namespace utils {
  *    gracefully return "<EMPTY>" if there is no value in the map for the given
  *    key. The map is not modified, making it `const`.
  *
- * This is an ordered map. That means that a strict ordering must be defined for
- * the key type; the key-value pairs are stored by this ordering in a form of
- * tree, allowing logarithmic complexity insertion and access. Iteration order
- * is deterministic. If you don't insert often or there is no logical ordering
- * for the keys, consider using UMap instead.
+ * Key-value pairs are stored by means of a hash of the key type. That means
+ * element lookup and insertion are (usually, depending on the quality of the
+ * hash) constant complexity and therefore might be faster than Map. However,
+ * iteration order is undefined and possibly even nondeterministic. If there is
+ * an intrinsic and simple ordering for the key type and you need to iterate in
+ * this order, use Map instead.
  */
-template <class Key, class T, class Compare = std::less<Key>>
-class Map : public std::map<Key, T, Compare> {
+template <class Key, class T, class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>>
+class UMap : public std::unordered_map<Key, T, Hash, KeyEqual> {
 public:
 
     /**
      * Typedef for ourselves, allowing us to avoid repeating the template args
      * everywhere.
      */
-    using Self = Map<Key, T, Compare>;
+    using Self = UMap<Key, T, Hash, KeyEqual>;
 
     /**
      * Typedef for the wrapped STL container.
      */
-    using Stl = std::map<Key, T, Compare>;
+    using Stl = std::unordered_map<Key, T, Hash, KeyEqual>;
 
     /**
      * Constructor arguments are forwarded to the STL container constructor, so
      * all constructors of the STL container can be used.
      */
     template <class... Args>
-    explicit Map(Args... args) : Stl(std::forward<Args>(args)...) {
+    explicit UMap(Args... args) : Stl(std::forward<Args>(args)...) {
     }
 
     /**
      * Default copy constructor.
      */
-    Map(const Self &map) = default;
+    UMap(const Self &map) = default;
 
     /**
      * Default move constructor.
      */
-    Map(Self &&map) noexcept = default;
+    UMap(Self &&map) noexcept = default;
 
     /**
      * Default copy assignment.

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include "exception.h"
+#include "utils/exception.h"
 
 namespace ql {
 
