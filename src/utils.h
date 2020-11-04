@@ -204,13 +204,6 @@ int sign_of(T val) {
 
 bool string_has(const std::string &str, const std::string &token);
 
-// Helper function to sort the vector of pairs.
-// Pairs are sorted by first element of pairs and then by second element
-bool sort_pair_helper(
-    const std::pair<size_t,size_t> &a,
-    const std::pair<size_t,size_t> &b
-);
-
 } // namespace utils
 
 json load_json(const std::string &file_name);

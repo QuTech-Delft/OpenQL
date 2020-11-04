@@ -108,7 +108,7 @@ size_t MaskManager::getRegNo(qubit_set_t &qs) {
 
 size_t MaskManager::getRegNo(qubit_pair_set_t &qps) {
     // sort qubit operands pair to avoid variation in order
-    sort(qps.begin(), qps.end(), utils::sort_pair_helper);
+    sort(qps.begin(), qps.end());
 
     auto it = QPS2Mask.find(qps);
     if (it == QPS2Mask.end()) {
@@ -134,7 +134,7 @@ std::string MaskManager::getRegName(qubit_set_t &qs) {
 
 std::string MaskManager::getRegName(qubit_pair_set_t &qps) {
     // sort qubit operands pair to avoid variation in order
-    sort(qps.begin(), qps.end(), utils::sort_pair_helper);
+    sort(qps.begin(), qps.end());
 
     auto it = QPS2Mask.find(qps);
     if (it == QPS2Mask.end()) {
