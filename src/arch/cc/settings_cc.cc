@@ -248,5 +248,3 @@ int settings_cc::findStaticCodewordOverride(const json &instruction, size_t oper
 
 
 } // namespace ql
-
-

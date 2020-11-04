@@ -174,11 +174,18 @@ class Test_central_controller(unittest.TestCase):
         p = ql.Program('test_qi_example', platform, 5, num_cregs)
         k = ql.Kernel('kernel_0', platform, 5, num_cregs)
 
-        k.gate("prepz", [0, 1, 2, 3, 4])
+        k.barrier([])
+        for q in [0, 1, 2, 3, 4]:
+            k.gate("prepz", [q])
+        k.barrier([])
+
         k.gate("ry180", [0, 2])     # FIXME: "y" does not work, but gate decomposition should handle?
         k.gate("cz", [0, 2])
         k.gate("y90", [2])
-        k.gate("measure", [0, 1, 2, 3, 4])
+        k.barrier([])
+        for q in [0, 1, 2, 3, 4]:
+            k.gate("measure", [q])
+        k.barrier([])
 
         p.add_kernel(k)
         p.compile()

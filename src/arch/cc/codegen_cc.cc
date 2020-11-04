@@ -417,6 +417,7 @@ void codegen_cc::customGate(
         because the terms "mw" and "flux" don't fully cover gate functionality. It
         would be nice if custom gates could mimic gate_type_t
     */
+    // FIXME: it seems that key "instruction/type" is no longer used by the 'core' of OpenQL, so we need a better criterion
     bool isReadout = "readout" == platform->find_instruction_type(iname);
 
     // generate comment (also performs some checks)
@@ -487,7 +488,7 @@ void codegen_cc::customGate(
             int cop = cops.size()>0 ? cops[0] : IMPLICIT_COP;
             bi->readoutCop = cop;   // FIXME: naming, we do use cop, but rename qop to qubit below
 
-#if 0   // FIXME: invalid, measure can be called with vector of qubits, see test_cc.cc. Ditto for "prepz", or is this erroneous syntax
+#if 1   // FIXME: invalid, measure can be called with vector of qubits, see test_cc.cc. Ditto for "prepz", or is this erroneous syntax
             // store qubit
             if(qops.size() == 1) {
                 bi->readoutQubit = qops[0];
@@ -714,6 +715,7 @@ codegen_cc::tCalcSignalValue codegen_cc::calcSignalValue(const settings_cc::tSig
 
     // get signalInfo via signal type (e.g. "mw", "flux", etc. NB: this is different from
     // the type provided by find_instruction_type, although some identical strings are used)
+    // FIXME: it seems that key "instruction/type" is no longer used by the 'core' of OpenQL
     std::string instructionSignalType = json_get<std::string>(sd.signal[s], "type", signalSPath);
     ret.si = settings.findSignalInfoForQubit(instructionSignalType, qubit);
 
