@@ -27,12 +27,12 @@ namespace utils {
  *    the key does not exist yet. This is equivalent to what `map[at]` normally
  *    does. There is both a `const` and non-`const` version, the latter giving
  *    you a mutable reference to the value, the former being immutable.
- *  - If you want to read a key if it exists but get access to a
- *    default-constructed value if it doesn't, for instance when your value type
- *    is another container and empty containers may or may not actually be in
- *    the map, use `map.get(key)` in place of `map[key]`. Unlike the usual
- *    `map[key]`, the default-constructed value is *not* inserted into the map
- *    for the given key, making it `const`.
+ *  - If you want to read a key if it exists but get some default value instead
+ *    if it doesn't, for instance when your value type is another container and
+ *    empty containers may or may not actually be in the map, use `map.get(key)`
+ *    or `map.get(key, default)` in place of `map[key]`. Unlike the usual
+ *    `map[key]`, the default-constructed value for `map.get(key)` is *not*
+ *    inserted into the map, making it `const`.
  *  - If you want to print the value of a key for debugging purposes, use
  *    `map.dbg(key)`. This will return a string representation of the value, or
  *    gracefully return "<EMPTY>" if there is no value in the map for the given
@@ -65,6 +65,12 @@ public:
      */
     template <class... Args>
     explicit Map(Args... args) : Stl(std::forward<Args>(args)...) {
+    }
+
+    /**
+     * Implicit conversion for initializer lists.
+     */
+    Map(std::initializer_list<T> init) : Stl(init) {
     }
 
     /**
@@ -142,6 +148,19 @@ public:
         } else {
             static const T DEFAULT{};
             return DEFAULT;
+        }
+    }
+
+    /**
+     * Returns a const reference to the value at the given key, or to the given
+     * default value if the key does not exist.
+     */
+    const T &get(const Key &key, const T &dflt) const {
+        auto it = this->find(key);
+        if (it != this->end()) {
+            return it->second;
+        } else {
+            return dflt;
         }
     }
 

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "utils/strings.h"
 #include "program.h"
 #include "platform.h"
 
@@ -14,9 +15,9 @@ namespace ql {
 
 // buffer_delay_insertion pass
 void insert_buffer_delays(
-    ql::quantum_program *programp,
-    const ql::quantum_platform &platform,
-    const std::string &passname
+    quantum_program *programp,
+    const quantum_platform &platform,
+    const utils::Str &passname
 );
 
 } // namespace ql

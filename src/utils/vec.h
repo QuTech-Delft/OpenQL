@@ -43,6 +43,12 @@ public:
     }
 
     /**
+     * Implicit conversion for initializer lists.
+     */
+    Vec(std::initializer_list<T> init) : Stl(init) {
+    }
+
+    /**
      * Default copy constructor.
      */
     Vec(const Self &map) = default;

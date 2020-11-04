@@ -15,6 +15,11 @@
 namespace ql {
 namespace utils {
 
+/**
+ * Shorthand for std::string.
+ */
+using Str = std::string;
+
 // Anonymous namespace to make the SFINAE and overload resolution of the
 // debug_str_internal() function "private". Use debug_str().
 namespace {
@@ -29,7 +34,7 @@ std::string try_to_string_internal(T val) {
 template <typename T, typename... X>
 std::string try_to_string_internal(T val, X... vals) {
     std::ostringstream ss{};
-    ss << "unknown value of type " << typeid(T).name() << ">";
+    ss << "<unknown value of type " << typeid(T).name() << ">";
     return ss.str();
 }
 
