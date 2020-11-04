@@ -23,12 +23,12 @@ public:
     size_t                  cycle_time;               // in [ns]
     std::string             configuration_file_name;  // configuration file name
     instruction_map_t       instruction_map;          // supported operations
-    utils::json             instruction_settings;     // instruction settings (to use by the eqasm backend)
-    utils::json             hardware_settings;        // additional hardware settings (to use by the eqasm backend)
+    utils::Json             instruction_settings;     // instruction settings (to use by the eqasm backend)
+    utils::Json             hardware_settings;        // additional hardware settings (to use by the eqasm backend)
 
-    utils::json             resources;
-    utils::json             topology;
-    utils::json             aliases;                  // workaround the generic instruction composition
+    utils::Json             resources;
+    utils::Json             topology;
+    utils::Json             aliases;                  // workaround the generic instruction composition
 
     // FIXME: constructed object is not usable
     quantum_platform();
@@ -48,7 +48,7 @@ public:
      */
 
     // find settings for custom gate, preventing JSON exceptions
-    const utils::json& find_instruction(const std::string &iname) const;
+    const utils::Json& find_instruction(const std::string &iname) const;
 
     // find instruction type for custom gate
     std::string find_instruction_type(const std::string &iname) const;

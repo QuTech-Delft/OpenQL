@@ -131,7 +131,7 @@ public:
             //Throw an error
             QL_EOUT("Unitary " << name <<" is not a unitary matrix!");
 
-            throw ql::exception("Error: Unitary '"+ name+"' is not a unitary matrix. Cannot be decomposed!" + to_string(matmatadjoint), false);
+            throw utils::Exception("Error: Unitary '"+ name+"' is not a unitary matrix. Cannot be decomposed!" + to_string(matmatadjoint), false);
         }
         // initialize the general M^k lookuptable
         genMk();
@@ -350,7 +350,7 @@ public:
         tmp.bottomRightCorner(p,p) = u2*c*v2;
         // Just to see if it kinda matches
         if (!tmp.isApprox(U, 10e-2)) {
-            throw ql::exception("CSD of unitary '"+ name+"' is wrong! Failed at matrix: \n"+to_string(tmp) + "\nwhich should be: \n" + to_string(U), false);
+            throw utils::Exception("CSD of unitary '"+ name+"' is wrong! Failed at matrix: \n"+to_string(tmp) + "\nwhich should be: \n" + to_string(U), false);
         }
         // CSD_time3 += (std::chrono::steady_clock::now() - start2);
 
@@ -434,7 +434,7 @@ public:
         complex_matrix Dtemp = D.asDiagonal();
         if (!U1.isApprox(V*Dtemp*W, 10e-2) || !U2.isApprox(V*Dtemp.adjoint()*W, 10e-2)) {
             QL_EOUT("Demultiplexing not correct!");
-            throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at matrix U1: \n"+to_string(U1)+ "and matrix U2: \n" +to_string(U2) + "\nwhile they are: \n" + to_string(V*D.asDiagonal()*W) + "\nand \n" + to_string(V*D.conjugate().asDiagonal()*W), false);
+            throw utils::Exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at matrix U1: \n"+to_string(U1)+ "and matrix U2: \n" +to_string(U2) + "\nwhile they are: \n" + to_string(V*D.asDiagonal()*W) + "\nand \n" + to_string(V*D.conjugate().asDiagonal()*W), false);
         }
 
     }
@@ -474,7 +474,7 @@ public:
             i = (i >> 1) ^ i;
             return i % 2;
         } else {
-            throw ql::exception("Bit parity number too big!", false);
+            throw utils::Exception("Bit parity number too big!", false);
         }
     }
 
@@ -486,7 +486,7 @@ public:
         // Check is very approximate to account for low-precision input matrices
         if (!temp.isApprox(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]*tr, 10e-2)) {
             QL_EOUT("Multicontrolled Y not correct!");
-            throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix ss: \n"  + to_string(ss), false);
+            throw utils::Exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix ss: \n"  + to_string(ss), false);
         }
 
         instructionlist.insert(instructionlist.end(), &tr[0], &tr[halfthesizeofthematrix]);
@@ -502,7 +502,7 @@ public:
         // Check is very approximate to account for low-precision input matrices
         if (!temp.isApprox(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]*tr, 10e-2)) {
             QL_EOUT("Multicontrolled Z not correct!");
-            throw ql::exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix D: \n"+ to_string(D), false);
+            throw utils::Exception("Demultiplexing of unitary '"+ name+"' not correct! Failed at demultiplexing of matrix D: \n"+ to_string(D), false);
         }
 
         instructionlist.insert(instructionlist.end(), &tr[0], &tr[halfthesizeofthematrix]);

@@ -650,7 +650,7 @@ void custom_gate::load(nlohmann::json &instr) {
         m.m[1] = complex_t(mat[1][0], mat[1][1]);
         m.m[2] = complex_t(mat[2][0], mat[2][1]);
         m.m[3] = complex_t(mat[3][0], mat[3][1]);
-    } catch (utils::json::exception &e) {
+    } catch (utils::Json::exception &e) {
         QL_EOUT("while loading instruction '" << name << "' (attr: " << l_attr
                                               << ") : " << e.what());
         throw utils::Exception(

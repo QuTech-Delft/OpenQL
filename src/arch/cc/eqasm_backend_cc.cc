@@ -365,7 +365,7 @@ void eqasm_backend_cc::loadHwSettings(const quantum_platform &platform)
             *hw_settings[i].var = val;
         }
     }
-    catch (json::exception &e)
+    catch (Json::exception &e)
     {
         throw exception(
             "[x] error : eqasm_compiler::compile() : error while reading hardware settings : parameter '"

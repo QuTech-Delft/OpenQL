@@ -811,8 +811,8 @@ void cc_light_eqasm_compiler::ccl_prep_code_generation(
     const quantum_platform &platform,
     const std::string &passname
 ) {
-    const utils::json &instruction_settings = platform.instruction_settings;
-    for (const utils::json &i : instruction_settings) {
+    const utils::Json &instruction_settings = platform.instruction_settings;
+    for (const utils::Json &i : instruction_settings) {
         if (i.count("cc_light_instr") <= 0) {
             QL_FATAL("cc_light_instr not found for " << i);
         }
@@ -1005,7 +1005,7 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
                 QL_DOUT("    wait instruction ");
                 decomp_ckt.push_back(ins);
             } else {
-                const utils::json &instruction_settings = platform.instruction_settings;
+                const utils::Json &instruction_settings = platform.instruction_settings;
                 std::string operation_type;
                 if (instruction_settings.find(iname) != instruction_settings.end()) {
                     operation_type = instruction_settings[iname]["type"].get<std::string>();
@@ -1183,21 +1183,21 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
 
     QL_DOUT("Adding qubits to Quantumsim program");
     fout << std::endl << "    # add qubits" << std::endl;
-    utils::json config;
+    utils::Json config;
     try {
         config = utils::load_json(platform.configuration_file_name);
-    } catch (utils::json::exception e) {
+    } catch (utils::Json::exception e) {
         throw utils::Exception("[x] error : quantumsim_compiler::load() :  failed to load the hardware config file : malformed json file ! : \n    " +
                         std::string(e.what()), false);
     }
 
     // load qubit attributes
-    utils::json qubit_attributes = config["qubit_attributes"];
+    utils::Json qubit_attributes = config["qubit_attributes"];
     if (qubit_attributes.is_null()) {
         QL_EOUT("qubit_attributes is not specified in the hardware config file !");
         throw utils::Exception("[x] error: quantumsim_compiler: qubit_attributes is not specified in the hardware config file !", false);
     }
-    utils::json relaxation_times = qubit_attributes["relaxation_times"];
+    utils::Json relaxation_times = qubit_attributes["relaxation_times"];
     if (relaxation_times.is_null()) {
         QL_EOUT("relaxation_times is not specified in the hardware config file !");
         throw utils::Exception("[x] error: quantumsim_compiler: relaxation_times is not specified in the hardware config file !", false);

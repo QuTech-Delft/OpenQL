@@ -59,9 +59,9 @@ size_t quantum_platform::get_qubit_number() const {
 }
 
 // find settings for custom gate, preventing JSON exceptions
-const utils::json &quantum_platform::find_instruction(const std::string &iname) const {
+const utils::Json &quantum_platform::find_instruction(const std::string &iname) const {
     // search the JSON defined instructions, to prevent JSON exception if key does not exist
-    if (!JSON_EXISTS(instruction_settings, iname)) {
+    if (!QL_JSON_EXISTS(instruction_settings, iname)) {
         QL_FATAL("JSON file: instruction not found: '" << iname << "'");
     }
     return instruction_settings[iname];
@@ -70,8 +70,8 @@ const utils::json &quantum_platform::find_instruction(const std::string &iname) 
 
 // find instruction type for custom gate
 std::string quantum_platform::find_instruction_type(const std::string &iname) const {
-    const utils::json &instruction = find_instruction(iname);
-    if (!JSON_EXISTS(instruction, "type")) {
+    const utils::Json &instruction = find_instruction(iname);
+    if (!QL_JSON_EXISTS(instruction, "type")) {
         QL_FATAL("JSON file: field 'type' not defined for instruction '" << iname << "'");
     }
     return instruction["type"];

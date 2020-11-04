@@ -26,11 +26,11 @@ public:
 
     void load(
         instruction_map_t &instruction_map,
-        utils::json &instruction_settings,
-        utils::json &hardware_settings,
-        utils::json &resources,
-        utils::json &topology,
-        utils::json &aliases
+        utils::Json &instruction_settings,
+        utils::Json &hardware_settings,
+        utils::Json &resources,
+        utils::Json &topology,
+        utils::Json &aliases
     );
 
 };

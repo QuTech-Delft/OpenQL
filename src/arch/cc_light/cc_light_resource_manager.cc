@@ -13,7 +13,7 @@ size_t ccl_get_operation_duration(ql::gate *ins, const ql::quantum_platform &pla
 // it reflects the different resources used to implement the various gates and that resource management must distinguish
 std::string ccl_get_operation_type(ql::gate *ins, const ql::quantum_platform &platform) {
     std::string operation_type("cc_light_type");
-    JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
+    QL_JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
     if (!platform.instruction_settings[ins->name]["type"].is_null()) {
         operation_type = platform.instruction_settings[ins->name]["type"].get<std::string>();
     }
@@ -23,7 +23,7 @@ std::string ccl_get_operation_type(ql::gate *ins, const ql::quantum_platform &pl
 // operation name is used to know which operations are the same when one qwg steers several qubits using the vsm
 std::string ccl_get_operation_name(ql::gate *ins, const ql::quantum_platform &platform) {
     std::string operation_name(ins->name);
-    JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
+    QL_JSON_ASSERT(platform.instruction_settings, ins->name, ins->name);
     if (!platform.instruction_settings[ins->name]["cc_light_instr"].is_null()) {
         operation_name = platform.instruction_settings[ins->name]["cc_light_instr"].get<std::string>();
     }

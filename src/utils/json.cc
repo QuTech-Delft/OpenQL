@@ -1,3 +1,8 @@
+/** \file
+ * Provides utilities for handling JSON files, and wraps nlohmann::json in
+ * OpenQL's code style.
+ */
+
 #include "utils/json.h"
 
 #include <fstream>
@@ -6,9 +11,12 @@
 namespace ql {
 namespace utils {
 
-json load_json(const std::string &file_name) {
-    std::ifstream fs(file_name);
-    json j;
+/**
+ * Loads a JSON file that may include // comments.
+ */
+Json load_json(const std::string &path) {
+    std::ifstream fs(path);
+    Json j;
     if (fs.is_open()) {
         std::stringstream stripped; // file contents with comments stripped
         std::string line;
@@ -23,7 +31,7 @@ json load_json(const std::string &file_name) {
 
         try {
             stripped >> j;  // pass stripped line to json. NB: the whole file must be passed in 1 go
-        } catch (json::parse_error &e) {
+        } catch (Json::parse_error &e) {
             // treat parse errors separately to give the user a clue about what's wrong
             QL_EOUT("error parsing JSON file : \n\t" << e.what());
             if (e.byte != 0) {
@@ -53,11 +61,11 @@ json load_json(const std::string &file_name) {
                 QL_FATAL("no information on error position");
             }
         }
-        catch (json::exception &e) {
+        catch (Json::exception &e) {
             QL_FATAL("malformed JSON file : \n\t" << e.what());
         }
     } else {
-        QL_FATAL("failed to open file '" << file_name << "'");
+        QL_FATAL("failed to open file '" << path << "'");
     }
     return j;
 }

@@ -40,10 +40,10 @@ void vcd_cc::programStart(int qubitNumber, int cycleTime, int maxGroups, const s
     vcd.scope(vcd.ST_MODULE, "sd.signal");
     vcdVarSignal.assign(instrsUsed, std::vector<int>(maxGroups, {0}));
     for(size_t instrIdx=0; instrIdx<instrsUsed; instrIdx++) {
-        const utils::json &instrument = settings.getInstrumentAtIdx(instrIdx);         // NB: always exists
+        const utils::Json &instrument = settings.getInstrumentAtIdx(instrIdx);         // NB: always exists
         std::string instrumentPath = QL_SS2S("instruments[" << instrIdx << "]");       // for JSON error reporting
         std::string instrumentName = utils::json_get<std::string>(instrument, "name", instrumentPath);
-        const utils::json qubits = utils::json_get<const utils::json>(instrument, "qubits", instrumentPath);
+        const utils::Json qubits = utils::json_get<const utils::Json>(instrument, "qubits", instrumentPath);
         for(size_t group=0; group<qubits.size(); group++) {
             std::string name = instrumentName+"-"+std::to_string(group);
             vcdVarSignal[instrIdx][group] = vcd.registerVar(name, Vcd::VT_STRING);
@@ -55,7 +55,7 @@ void vcd_cc::programStart(int qubitNumber, int cycleTime, int maxGroups, const s
     vcd.scope(vcd.ST_MODULE, "codewords");
     vcdVarCodeword.resize(qubitNumber);
     for(size_t instrIdx=0; instrIdx<instrsUsed; instrIdx++) {
-        const utils::json &instrument = settings.getInstrumentAtIdx(instrIdx);         // NB: always exists
+        const utils::Json &instrument = settings.getInstrumentAtIdx(instrIdx);         // NB: always exists
         std::string instrumentPath = QL_SS2S("instruments[" << instrIdx << "]");       // for JSON error reporting
         std::string instrumentName = utils::json_get<std::string>(instrument, "name", instrumentPath);
         vcdVarCodeword[instrIdx] = vcd.registerVar(instrumentName, Vcd::VT_STRING);
