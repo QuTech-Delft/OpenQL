@@ -317,6 +317,13 @@ target_include_directories(eigen INTERFACE
 target_link_libraries(ql PRIVATE eigen)
 
 
+# nlohmann::json --------------------------------------------------------------
+
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+add_subdirectory(deps/json)
+target_link_libraries(ql PUBLIC nlohmann_json::nlohmann_json)
+
+
 # libqasm ---------------------------------------------------------------------
 
 # Load libqasm. libqasm's CMakeLists expose the "cqasm" target to link against.

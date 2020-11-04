@@ -10,7 +10,7 @@
 #include <string>
 #include <tuple>
 
-#include "json.h"
+#include "utils/json.h"
 #include "hardware_configuration.h"
 
 namespace ql {

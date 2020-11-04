@@ -12,7 +12,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include "json.h"
+#include "utils/json.h"
 #include "resource_manager.h"
 
 namespace ql {

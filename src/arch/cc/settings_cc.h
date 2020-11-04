@@ -10,7 +10,7 @@
 
 #include "options_cc.h"
 #include "platform.h"
-#include "json.h"
+#include "utils/json.h"
 
 //using json = nlohmann::json;        // FIXME: should not be part of interface
 
