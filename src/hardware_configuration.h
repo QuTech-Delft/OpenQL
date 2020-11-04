@@ -13,7 +13,7 @@
 
 namespace ql {
 
-typedef std::map<std::string, ql::custom_gate *> instruction_map_t;
+typedef std::map<std::string, custom_gate *> instruction_map_t;
 
 /**
  * loading hardware configuration
@@ -26,12 +26,12 @@ public:
     hardware_configuration(const std::string &config_file_name);
 
     void load(
-        ql::instruction_map_t &instruction_map,
-        json &instruction_settings,
-        json &hardware_settings,
-        json &resources,
-        json &topology,
-        json &aliases
+        instruction_map_t &instruction_map,
+        utils::json &instruction_settings,
+        utils::json &hardware_settings,
+        utils::json &resources,
+        utils::json &topology,
+        utils::json &aliases
     );
 
 };

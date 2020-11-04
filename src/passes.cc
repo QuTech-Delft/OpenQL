@@ -336,8 +336,8 @@ CCLPrepCodeGeneration::CCLPrepCodeGeneration(const std::string &name) : Abstract
  * @param  Program object to be prepared
  */
 void CCLPrepCodeGeneration::runOnProgram(ql::quantum_program *program) {
-    const json& instruction_settings = program->platform.instruction_settings;
-    for (const json &i : instruction_settings) {
+    const utils::json &instruction_settings = program->platform.instruction_settings;
+    for (const utils::json &i : instruction_settings) {
        if (i.count("cc_light_instr") <= 0) {
             FATAL("cc_light_instr not found for " << i);
        }

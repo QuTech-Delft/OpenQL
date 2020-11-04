@@ -14,7 +14,7 @@ void settings_cc::loadBackendSettings(const quantum_platform &platform)
 {
     // remind some main JSON areas
     JSON_ASSERT(platform.hardware_settings, "eqasm_backend_cc", "hardware_settings");  // NB: json_get<const json &> unavailable
-    const json &jsonBackendSettings = platform.hardware_settings["eqasm_backend_cc"];
+    const utils::json &jsonBackendSettings = platform.hardware_settings["eqasm_backend_cc"];
 
     JSON_ASSERT(jsonBackendSettings, "instrument_definitions", "eqasm_backend_cc");
     jsonInstrumentDefinitions = &jsonBackendSettings["instrument_definitions"];
@@ -60,22 +60,22 @@ void settings_cc::loadBackendSettings(const quantum_platform &platform)
 
 
 // find JSON signal definition for instruction, either inline or via 'ref_signal'
-settings_cc::tSignalDef settings_cc::findSignalDefinition(const json &instruction, const std::string &iname) const
+settings_cc::tSignalDef settings_cc::findSignalDefinition(const utils::json &instruction, const std::string &iname) const
 {
     tSignalDef ret;
 
     std::string instructionPath = "instructions/"+iname;
     JSON_ASSERT(instruction, "cc", instructionPath);
-    if(JSON_EXISTS(instruction["cc"], "ref_signal")) {                          // optional syntax: "ref_signal"
+    if (JSON_EXISTS(instruction["cc"], "ref_signal")) {                          // optional syntax: "ref_signal"
         std::string refSignal = instruction["cc"]["ref_signal"];
         ret.signal = (*jsonSignals)[refSignal];                                 // poor man's JSON pointer
-        if(ret.signal.size() == 0) {
+        if (ret.signal.size() == 0) {
             JSON_FATAL("instruction '" << iname <<
                   "': ref_signal '" << refSignal << "' does not resolve");
         }
         ret.path = "signals/"+refSignal;
     } else {                                                                    // alternative syntax: "signal"
-        ret.signal = json_get<json>(instruction["cc"], "signal", instructionPath+"/cc");
+        ret.signal = utils::json_get<utils::json>(instruction["cc"], "signal", instructionPath+"/cc");
         DOUT("signal for '" << instruction << "': " << ret.signal);
         ret.path = instructionPath+"/cc/signal";
     }
@@ -94,11 +94,11 @@ settings_cc::tInstrumentInfo settings_cc::getInstrumentInfo(size_t instrIdx) con
     }
     ret.instrument = &(*jsonInstruments)[instrIdx];
 
-    ret.instrumentName = json_get<std::string>(*ret.instrument, "name", instrumentPath);
+    ret.instrumentName = utils::json_get<std::string>(*ret.instrument, "name", instrumentPath);
 
     JSON_ASSERT(*ret.instrument, "controller", ret.instrumentName);              // first check intermediate node
     // FIXME: check controller/"name" being "cc"?
-    ret.slot = json_get<int>((*ret.instrument)["controller"], "slot", ret.instrumentName+"/controller");
+    ret.slot = utils::json_get<int>((*ret.instrument)["controller"], "slot", ret.instrumentName+"/controller");
     // FIXME: also return controller/"io_module"?
 
 #if OPT_FEEDBACK
@@ -119,10 +119,10 @@ settings_cc::tInstrumentControl settings_cc::getInstrumentControl(size_t instrId
     ret.ii = getInstrumentInfo(instrIdx);
 
     // get control mode reference for for instrument
-    ret.refControlMode = json_get<std::string>(*ret.ii.instrument, "ref_control_mode", ret.ii.instrumentName);
+    ret.refControlMode = utils::json_get<std::string>(*ret.ii.instrument, "ref_control_mode", ret.ii.instrumentName);
 
     // get control mode definition for our instrument
-    ret.controlMode = json_get<const json>(*jsonControlModes, ret.refControlMode, "control_modes");
+    ret.controlMode = utils::json_get<const utils::json>(*jsonControlModes, ret.refControlMode, "control_modes");
 
     // how many groups of control bits does the control mode specify (NB: 0 on missing key)
     ret.controlModeGroupCnt = ret.controlMode["control_bits"].size();
@@ -161,10 +161,10 @@ settings_cc::tSignalInfo settings_cc::findSignalInfoForQubit(const std::string &
     // iterate over instruments
     for(size_t instrIdx=0; instrIdx<jsonInstruments->size() && !qubitFound; instrIdx++) {
         tInstrumentControl ic = getInstrumentControl(instrIdx);
-        std::string instrumentSignalType = json_get<std::string>(*ic.ii.instrument, "signal_type", ic.ii.instrumentName);
+        std::string instrumentSignalType = utils::json_get<std::string>(*ic.ii.instrument, "signal_type", ic.ii.instrumentName);
         if(instrumentSignalType == instructionSignalType) {
             signalTypeFound = true;
-            const json qubits = json_get<const json>(*ic.ii.instrument, "qubits", ic.ii.instrumentName);   // NB: json_get<const json&> unavailable
+            const utils::json qubits = utils::json_get<const utils::json>(*ic.ii.instrument, "qubits", ic.ii.instrumentName);   // NB: json_get<const json&> unavailable
 
             // verify group size: qubits vs. control mode
             int qubitGroupCnt = qubits.size();                                  // NB: JSON key qubits is a 'matrix' of [groups*qubits]
@@ -210,13 +210,13 @@ settings_cc::tSignalInfo settings_cc::findSignalInfoForQubit(const std::string &
 \************************************************************************/
 
 //#if OPT_SUPPORT_STATIC_CODEWORDS
-int settings_cc::findStaticCodewordOverride(const json &instruction, size_t operandIdx, const std::string &iname)
+int settings_cc::findStaticCodewordOverride(const utils::json &instruction, size_t operandIdx, const std::string &iname)
 {
     // look for optional codeword override
     int staticCodewordOverride = -1;    // -1 means unused
     if(JSON_EXISTS(instruction["cc"], "static_codeword_override")) {    // optional keyword
  #if OPT_STATIC_CODEWORDS_ARRAYS
-        const json &override = instruction["cc"]["static_codeword_override"];
+        const utils::json &override = instruction["cc"]["static_codeword_override"];
         if(override.is_array()) {
             if(override.size() > operandIdx) {
                 staticCodewordOverride = override[operandIdx];

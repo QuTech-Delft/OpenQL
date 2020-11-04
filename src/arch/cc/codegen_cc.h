@@ -89,7 +89,7 @@ private:    // vars
     // codegen state
     unsigned int lastEndCycle[MAX_INSTRS];                      // vector[instrIdx], maintain where we got per slot, kernel scope
     std::vector<std::vector<tBundleInfo>> bundleInfo;           // matrix[instrIdx][group], bundle scope
-    json codewordTable;                                         // codewords versus signals per instrument group
+    utils::json codewordTable;                                  // codewords versus signals per instrument group
 #if OPT_FEEDBACK
     json inputLutTable;                                         // input LUT usage per instrument group
 #endif

@@ -18,7 +18,7 @@ static std::string sanitize_instruction_name(std::string name) {
     return name;
 }
 
-static ql::custom_gate *load_instruction(const std::string &name, json &instr) {
+static ql::custom_gate *load_instruction(const std::string &name, utils::json &instr) {
     custom_gate * g = new custom_gate(name);
     // skip alias fo now
     if (instr.count("alias") > 0) {
@@ -45,16 +45,16 @@ hardware_configuration::hardware_configuration(
 
 void hardware_configuration::load(
     ql::instruction_map_t &instruction_map,
-    json &instruction_settings,
-    json &hardware_settings,
-    json &resources,
-    json &topology,
-    json &aliases
+    utils::json &instruction_settings,
+    utils::json &hardware_settings,
+    utils::json &resources,
+    utils::json &topology,
+    utils::json &aliases
 ) {
-    json config;
+    utils::json config;
     try {
-        config = load_json(config_file_name);
-    } catch (json::exception &e) {
+        config = utils::load_json(config_file_name);
+    } catch (utils::json::exception &e) {
         FATAL(
             "failed to load the hardware config file : malformed json file: \n\t"
                 << std::string(e.what()));
@@ -100,12 +100,12 @@ void hardware_configuration::load(
     }
 
     // load instructions
-    const json &instructions = config["instructions"];
+    const utils::json &instructions = config["instructions"];
     static const std::regex comma_space_pattern("\\s*,\\s*");
 
     for (auto it = instructions.begin(); it != instructions.end(); ++it) {
         std::string name = it.key();
-        json attr = *it; //.value();
+        utils::json attr = *it; //.value();
 
         name = sanitize_instruction_name(name);
         name = std::regex_replace(name, comma_space_pattern, ",");
@@ -133,7 +133,7 @@ void hardware_configuration::load(
     // - Specialized gate-decomposition:  "rx180 q0" : ["x q0"]
 
     if (config.count("gate_decomposition") > 0) {
-        const json &gate_decomposition = config["gate_decomposition"];
+        const utils::json &gate_decomposition = config["gate_decomposition"];
         for (auto it = gate_decomposition.begin();
              it != gate_decomposition.end(); ++it) {
             // standardize instruction name
@@ -159,7 +159,7 @@ void hardware_configuration::load(
             }
 
             // check that we're looking at array
-            json sub_instructions = *it;
+            utils::json sub_instructions = *it;
             if (!sub_instructions.is_array()) {
                 FATAL(
                     "ql::hardware_configuration::load() : 'gate_decomposition' section : gate '"

@@ -113,7 +113,7 @@ ccl_qwg_resource_t::ccl_qwg_resource_t(
         operations[i] = "";
     }
     auto & constraints = platform.resources[name]["connection_map"];
-    for (json::const_iterator it = constraints.begin(); it != constraints.end(); ++it) {
+    for (auto it = constraints.cbegin(); it != constraints.cend(); ++it) {
         // COUT(it.key() << " : " << it.value() );
         size_t qwgNo = stoi( it.key() );
         auto & connected_qubits = it.value();
@@ -219,7 +219,7 @@ ccl_meas_resource_t::ccl_meas_resource_t(
         tocycle[i] = (forward_scheduling == dir ? 0 : MAX_CYCLE);
     }
     auto &constraints = platform.resources[name]["connection_map"];
-    for (json::const_iterator it = constraints.begin(); it != constraints.end(); ++it) {
+    for (auto it = constraints.begin(); it != constraints.end(); ++it) {
         // COUT(it.key() << " : " << it.value());
         size_t measUnitNo = stoi( it.key() );
         auto & connected_qubits = it.value();
@@ -324,7 +324,7 @@ ccl_edge_resource_t::ccl_edge_resource_t(
     }
 
     auto &constraints = platform.resources[name]["connection_map"];
-    for (json::const_iterator it = constraints.begin(); it != constraints.end(); ++it) {
+    for (auto it = constraints.cbegin(); it != constraints.cend(); ++it) {
         // COUT(it.key() << " : " << it.value() << "\n");
         size_t edgeNo = stoi( it.key() );
         auto &connected_edges = it.value();
@@ -469,7 +469,7 @@ ccl_detuned_qubits_resource_t::ccl_detuned_qubits_resource_t(
 
     // initialize edge_detunes_qubits map from json description; this is a constant map
     auto &constraints = platform.resources[name]["connection_map"];
-    for (json::const_iterator it = constraints.begin(); it != constraints.end(); ++it) {
+    for (auto it = constraints.cbegin(); it != constraints.cend(); ++it) {
         // COUT(it.key() << " : " << it.value() << "\n");
         size_t edgeNo = stoi( it.key() );
         auto & detuned_qubits = it.value();
@@ -662,7 +662,7 @@ cc_light_resource_manager_t::cc_light_resource_manager_t(
 {
     DOUT("Constructing (platform,dir) parameterized platform_resource_manager_t");
     DOUT("New one for direction " << dir << " with no of resources : " << platform.resources.size() );
-    for (json::const_iterator it = platform.resources.begin(); it != platform.resources.end(); ++it) {
+    for (auto it = platform.resources.cbegin(); it != platform.resources.cend(); ++it) {
         // COUT(it.key() << " : " << it.value() << "\n");
         std::string n = it.key();
 

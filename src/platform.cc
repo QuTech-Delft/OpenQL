@@ -7,9 +7,7 @@
 
 #include "platform.h"
 
-#include "gate.h"
 #include "utils.h"
-#include "options.h"
 
 namespace ql {
 
@@ -63,7 +61,7 @@ size_t quantum_platform::get_qubit_number() const {
 }
 
 // find settings for custom gate, preventing JSON exceptions
-const json& quantum_platform::find_instruction(const std::string &iname) const {
+const utils::json &quantum_platform::find_instruction(const std::string &iname) const {
     // search the JSON defined instructions, to prevent JSON exception if key does not exist
     if (!JSON_EXISTS(instruction_settings, iname)) {
         FATAL("JSON file: instruction not found: '" << iname << "'");
@@ -74,7 +72,7 @@ const json& quantum_platform::find_instruction(const std::string &iname) const {
 
 // find instruction type for custom gate
 std::string quantum_platform::find_instruction_type(const std::string &iname) const {
-    const json &instruction = find_instruction(iname);
+    const utils::json &instruction = find_instruction(iname);
     if (!JSON_EXISTS(instruction, "type")) {
         FATAL("JSON file: field 'type' not defined for instruction '" << iname <<"'");
     }

@@ -26,7 +26,7 @@ private:
 	double decoherence_time = 4500.0/20; //Hardcoded for testing purposes
 	std::string fidelity_estimator;
 	std::string output_mode;
-	json qubit_attributes;
+    utils::json qubit_attributes;
 
 	static double gaussian_pdf(double x, double mean, double sigma);
 

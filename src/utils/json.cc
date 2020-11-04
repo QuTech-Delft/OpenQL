@@ -1,6 +1,7 @@
 #include "utils.h"
 
 namespace ql {
+namespace utils {
 
 json load_json(const std::string &file_name) {
     std::ifstream fs(file_name);
@@ -58,4 +59,5 @@ json load_json(const std::string &file_name) {
     return j;
 }
 
+} // namespace utils
 } // namespace ql
