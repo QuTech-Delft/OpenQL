@@ -255,6 +255,7 @@ void drawNotNode(cimg_library::CImg<unsigned char>& image, const Layout layout, 
 void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout, const Structure structure, const Node node, const Cell cell);
 
 int safe_int_cast(const size_t argument);
+// void assertPositive(const int argument, const std::string& message);
 
 } // ql
 

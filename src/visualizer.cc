@@ -8,7 +8,6 @@
 #include "visualizer.h"
 #include "visualizer_internal.h"
 #include "json.h"
-//#include "instruction_map.h"
 
 #include <iostream>
 #include <limits>
@@ -40,18 +39,20 @@ namespace ql
 
 // -- IN PROGRESS ---
 // check for negative/invalid values during layout validation
+// change char arrays to Color
 // GateProperties validation on construction (test with visualizer pass called at different points (during different passes) during compilation)
 // update code style
 // update documentation
 // merge with develop
 
 // --- FUTURE WORK ---
+// TODO: deprecate default gates?
 // TODO: split visualizer.cc into multiple files, one for Structure, one for CircuitData and one for free code and new Visualizer class
 // TODO: add generating random circuits for visualization testing
 // TODO: allow collapsing the three qubit lines into one with an option
 // TODO: implement cycle cutting for pulse visualization
 // TODO: what happens when a cycle range is cut, but one or more gates still running within that range finish earlier than the longest running gate 
-// 		comprising the entire range?
+//       comprising the entire range?
 // TODO: when measurement connections are not shown, allow overlap of measurement gates
 // TODO: when gate is skipped due to whatever reason, maybe show a dummy gate outline indicating where the gate is?
 // TODO: display wait/barrier gate (need wait gate fix first)
@@ -81,9 +82,9 @@ CircuitData::CircuitData(std::vector<GateProperties>& gates, const Layout layout
 	amountOfClassicalBits(calculateAmountOfBits(gates, &GateProperties::creg_operands)),
 	cycles(generateCycles(gates, cycleDuration))
 {
-	if (layout.cycles.compress)                     compressCycles();
-	if (layout.cycles.partitionCyclesWithOverlap)   partitionCyclesWithOverlap();
-	if (layout.cycles.cutting.cut)                  cutEmptyCycles(layout);
+	if (layout.cycles.areCompressed())      compressCycles();
+	if (layout.cycles.arePartitioned())     partitionCyclesWithOverlap();
+	if (layout.cycles.cutting.isEnabled())  cutEmptyCycles(layout);
 }
 
 int CircuitData::calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<int> GateProperties::* operandType) const
@@ -286,7 +287,7 @@ void CircuitData::cutEmptyCycles(const Layout layout)
 {
 	DOUT("Cutting empty cycles...");
 
-	if (layout.pulses.displayGatesAsPulses)
+	if (layout.pulses.areEnabled())
 	{
 		//TODO: an empty cycle as defined in pulse visualization is a cycle in which no lines for each qubit have a pulse going
 		//TODO: implement checking for the above and mark those cycles as cut
@@ -344,7 +345,7 @@ std::vector<EndPoints> CircuitData::findCuttableEmptyRanges(const Layout layout)
 	for (const auto& range : ranges)
 	{
 		const int length = range.end - range.start + 1;
-		if (length >= layout.cycles.cutting.emptyCycleThreshold)
+		if (length >= layout.cycles.cutting.getEmptyCycleThreshold())
 		{
 			rangesAboveThreshold.push_back(range);
 		}
@@ -411,9 +412,9 @@ void CircuitData::printProperties() const
 
 Structure::Structure(const Layout layout, const CircuitData circuitData) :
 	layout(layout),
-	cellDimensions({layout.grid.cellSize, calculateCellHeight(layout)}),
-	cycleLabelsY(layout.grid.borderSize),
-	bitLabelsX(layout.grid.borderSize)
+	cellDimensions({layout.grid.getCellSize(), calculateCellHeight(layout)}),
+	cycleLabelsY(layout.grid.getBorderSize()),
+	bitLabelsX(layout.grid.getBorderSize())
 {
 	generateCellPositions(circuitData);
 	generateBitLineSegments(circuitData);
@@ -426,13 +427,13 @@ int Structure::calculateCellHeight(const Layout layout) const
 {
 	DOUT("Calculating cell height...");
 
-	if (layout.pulses.displayGatesAsPulses)
+	if (layout.pulses.areEnabled())
 	{
-		return layout.pulses.pulseRowHeightMicrowave + layout.pulses.pulseRowHeightFlux + layout.pulses.pulseRowHeightReadout;
+		return layout.pulses.getPulseRowHeightMicrowave() + layout.pulses.getPulseRowHeightFlux() + layout.pulses.getPulseRowHeightReadout();
 	}
 	else
 	{
-		return layout.grid.cellSize;
+		return layout.grid.getCellSize();
 	}
 }
 
@@ -445,7 +446,7 @@ int Structure::calculateImageWidth(const CircuitData circuitData) const
 	const int right = amountOfCells > 0 ? getCellPosition(amountOfCells - 1, 0, QUANTUM).x1 : 0;
 	const int imageWidthFromCells = right - left;
 
-	return layout.bitLines.labels.columnWidth + imageWidthFromCells + layout.grid.borderSize * 2;
+	return layout.bitLines.labels.getColumnWidth() + imageWidthFromCells + layout.grid.getBorderSize() * 2;
 }
 
 int Structure::calculateImageHeight(const CircuitData circuitData) const
@@ -453,13 +454,13 @@ int Structure::calculateImageHeight(const CircuitData circuitData) const
 	DOUT("Calculating image height...");
 	
 	const int rowsFromQuantum = circuitData.amountOfQubits;
-	const int rowsFromClassical = layout.bitLines.classical.show
-		? (layout.bitLines.classical.group ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits)
+	const int rowsFromClassical = layout.bitLines.classical.isEnabled()
+		? (layout.bitLines.classical.isGrouped() ? (circuitData.amountOfClassicalBits > 0 ? 1 : 0) : circuitData.amountOfClassicalBits)
 		: 0;
 	const int heightFromOperands = (rowsFromQuantum + rowsFromClassical) *
-		(cellDimensions.height + (layout.bitLines.edges.show ? layout.bitLines.edges.thickness : 0));
+		(cellDimensions.height + (layout.bitLines.edges.areEnabled() ? layout.bitLines.edges.getThickness() : 0));
 
-	return layout.cycles.labels.rowHeight + heightFromOperands + layout.grid.borderSize * 2;
+	return layout.cycles.labels.getRowHeight() + heightFromOperands + layout.grid.getBorderSize() * 2;
 }
 
 void Structure::generateCellPositions(const CircuitData circuitData)
@@ -471,17 +472,17 @@ void Structure::generateCellPositions(const CircuitData circuitData)
 	for (int column = 0; column < circuitData.getAmountOfCycles(); column++)
 	{
 		const int amountOfChunks = safe_int_cast(circuitData.getCycle(column).gates.size());
-		const int cycleWidth = (circuitData.isCycleCut(column) ? layout.cycles.cutting.cutCycleWidth : (cellDimensions.width * amountOfChunks));
+		const int cycleWidth = (circuitData.isCycleCut(column) ? layout.cycles.cutting.getCutCycleWidth() : (cellDimensions.width * amountOfChunks));
 
-		const int x0 = layout.grid.borderSize + layout.bitLines.labels.columnWidth + widthFromCycles;
+		const int x0 = layout.grid.getBorderSize() + layout.bitLines.labels.getColumnWidth() + widthFromCycles;
 		const int x1 = x0 + cycleWidth;
 
 		// Quantum cell positions.
 		std::vector<Position4> qColumnCells;
 		for (int row = 0; row < circuitData.amountOfQubits; row++)
 		{
-			const int y0 = layout.grid.borderSize + layout.cycles.labels.rowHeight +
-				row * (cellDimensions.height + (layout.bitLines.edges.show ? layout.bitLines.edges.thickness : 0));
+			const int y0 = layout.grid.getBorderSize() + layout.cycles.labels.getRowHeight() +
+				row * (cellDimensions.height + (layout.bitLines.edges.areEnabled() ? layout.bitLines.edges.getThickness() : 0));
 			const int y1 = y0 + cellDimensions.height;
 			qColumnCells.push_back({x0, y0, x1, y1});
 		}
@@ -490,23 +491,23 @@ void Structure::generateCellPositions(const CircuitData circuitData)
 		std::vector<Position4> cColumnCells;
 		for (int row = 0; row < circuitData.amountOfClassicalBits; row++)
 		{
-			const int y0 = layout.grid.borderSize + layout.cycles.labels.rowHeight + 
-				((layout.bitLines.classical.group ? 0 : row) + circuitData.amountOfQubits) *
-				(cellDimensions.height + (layout.bitLines.edges.show ? layout.bitLines.edges.thickness : 0));
+			const int y0 = layout.grid.getBorderSize() + layout.cycles.labels.getRowHeight() + 
+				((layout.bitLines.classical.isGrouped() ? 0 : row) + circuitData.amountOfQubits) *
+				(cellDimensions.height + (layout.bitLines.edges.areEnabled() ? layout.bitLines.edges.getThickness() : 0));
 			const int y1 = y0 + cellDimensions.height;
 			cColumnCells.push_back({x0, y0, x1, y1});
 		}
 		cbitCellPositions.push_back(cColumnCells);
 
 		// Add the appropriate amount of width to the total width.
-		if (layout.cycles.cutting.cut)
+		if (layout.cycles.cutting.isEnabled())
 		{
 			if (circuitData.isCycleCut(column))
 			{
 				// if (column != 0 && !circuitData.isCycleCut(column - 1))
 				if (column != circuitData.getAmountOfCycles() - 1 && !circuitData.isCycleCut(column + 1))
 				{
-					widthFromCycles += (int) (cellDimensions.width * layout.cycles.cutting.cutCycleWidthModifier);
+					widthFromCycles += (int) (cellDimensions.width * layout.cycles.cutting.getCutCycleWidthModifier());
 				}
 			}
 			else
@@ -584,7 +585,7 @@ int Structure::getCircuitTopY() const
 
 int Structure::getCircuitBotY() const
 {
-	std::vector<Position4> firstColumnPositions = layout.pulses.displayGatesAsPulses ? qbitCellPositions[0] : cbitCellPositions[0];
+	std::vector<Position4> firstColumnPositions = layout.pulses.areEnabled() ? qbitCellPositions[0] : cbitCellPositions[0];
 	Position4 botPosition = firstColumnPositions[firstColumnPositions.size() - 1];
 	return botPosition.y1;
 }
@@ -599,7 +600,7 @@ Position4 Structure::getCellPosition(const int column, const int row, const BitT
 	switch (bitType)
 	{
 		case CLASSICAL:
-			if (layout.pulses.displayGatesAsPulses)
+			if (layout.pulses.areEnabled())
 				FATAL("Cannot get classical cell position when pulse visualization is enabled!");
 			if (column >= cbitCellPositions.size())
 				FATAL("cycle " << column << " is larger than max cycle " << cbitCellPositions.size() - 1 << " of structure!");
@@ -709,34 +710,34 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	image.fill(255);
 
 	// Draw the cycle labels if the option has been set.
-	if (layout.cycles.labels.show)
+	if (layout.cycles.labels.areEnabled())
 	{
         DOUT("Drawing cycle numbers...");
 		drawCycleLabels(image, layout, circuitData, structure);
 	}
 
 	// Draw the cycle edges if the option has been set.
-	if (layout.cycles.edges.show)
+	if (layout.cycles.edges.areEnabled())
 	{
         DOUT("Drawing cycle edges...");
 		drawCycleEdges(image, layout, circuitData, structure);
 	}
 
 	// Draw the bit line edges if enabled.
-	if (layout.bitLines.edges.show)
+	if (layout.bitLines.edges.areEnabled())
 	{
 		DOUT("Drawing bit line edges...");
 		drawBitLineEdges(image, layout, circuitData, structure);
 	}
 
 	// Draw the bit line labels if enabled.
-	if (layout.bitLines.labels.show)
+	if (layout.bitLines.labels.areEnabled())
 	{
 		DOUT("Drawing bit line labels...");
 		drawBitLineLabels(image, layout, circuitData, structure);
 	}
 
-	if (layout.pulses.displayGatesAsPulses)
+	if (layout.pulses.areEnabled())
 	{
 		PulseVisualization pulseVisualization = parseWaveformMapping(waveformMappingPath);
 		const std::vector<QubitLines> linesPerQubit = generateQubitLines(gates, pulseVisualization, circuitData);
@@ -749,18 +750,18 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 
 			drawLine(image, structure, cycleDuration, linesPerQubit[qubitIndex].microwave, qubitIndex,
 				yBase,
-				layout.pulses.pulseRowHeightMicrowave,
-				layout.pulses.pulseColorMicrowave);
+				layout.pulses.getPulseRowHeightMicrowave(),
+				layout.pulses.getPulseColorMicrowave());
 
 			drawLine(image, structure, cycleDuration, linesPerQubit[qubitIndex].flux, qubitIndex,
-				yBase + layout.pulses.pulseRowHeightMicrowave,
-				layout.pulses.pulseRowHeightFlux,
-				layout.pulses.pulseColorFlux);
+				yBase + layout.pulses.getPulseRowHeightMicrowave(),
+				layout.pulses.getPulseRowHeightFlux(),
+				layout.pulses.getPulseColorFlux());
 
 			drawLine(image, structure, cycleDuration, linesPerQubit[qubitIndex].readout, qubitIndex,
-				yBase + layout.pulses.pulseRowHeightMicrowave + layout.pulses.pulseRowHeightFlux,
-				layout.pulses.pulseRowHeightReadout,
-				layout.pulses.pulseColorReadout);
+				yBase + layout.pulses.getPulseRowHeightMicrowave() + layout.pulses.getPulseRowHeightFlux(),
+				layout.pulses.getPulseRowHeightReadout(),
+				layout.pulses.getPulseColorReadout());
 		}
 
 		// // Visualize the gates as pulses on a microwave, flux and readout line.
@@ -814,10 +815,10 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 		}
 			
 		// Draw the classical lines if enabled.
-		if (layout.bitLines.classical.show)
+		if (layout.bitLines.classical.isEnabled())
 		{
 			// Draw the grouped classical bit lines if the option is set.
-			if (circuitData.amountOfClassicalBits > 0 && layout.bitLines.classical.group)
+			if (circuitData.amountOfClassicalBits > 0 && layout.bitLines.classical.isGrouped())
 			{
 				DOUT("Drawing grouped classical bit lines...");
 				drawGroupedClassicalBitLine(image, layout, circuitData, structure);
@@ -875,126 +876,152 @@ Layout parseConfiguration(const std::string& configPath)
 	Layout layout;
 
 	// Fill the layout object with the values from the config file. Any missing values will assume the default values hardcoded in the layout object.
+
+    // -------------------------------------- //
+    // -               CYCLES               - //
+    // -------------------------------------- //
 	if (config.count("cycles") == 1)
 	{
         json cycles = config["cycles"];
 
+        // LABELS
         if (cycles.count("labels") == 1)
         {
             json labels = cycles["labels"];
 
-            if (labels.count("show") == 1)          layout.cycles.labels.show = labels["show"];
-            if (labels.count("inNanoSeconds") == 1) layout.cycles.labels.inNanoSeconds = labels["inNanoSeconds"];
-            if (labels.count("rowHeight") == 1)     layout.cycles.labels.rowHeight = labels["rowHeight"];
-            if (labels.count("fontHeight") == 1)    layout.cycles.labels.fontHeight = labels["fontHeight"];
-            if (labels.count("fontColor") == 1)     layout.cycles.labels.fontColor = labels["fontColor"];
+            if (labels.count("show") == 1)          layout.cycles.labels.setEnabled(labels["show"]);
+            if (labels.count("inNanoSeconds") == 1) layout.cycles.labels.setInNanoSeconds(labels["inNanoSeconds"]);
+            if (labels.count("rowHeight") == 1)     layout.cycles.labels.setRowHeight(labels["rowHeight"]);
+            if (labels.count("fontHeight") == 1)    layout.cycles.labels.setFontHeight(labels["fontHeight"]);
+            if (labels.count("fontColor") == 1)     layout.cycles.labels.setFontColor(labels["fontColor"]);
         }
 
+        // EDGES
         if (cycles.count("edges") == 1)
         {
             json edges = cycles["edges"];
 
-            if (edges.count("show") == 1)   layout.cycles.edges.show = edges["show"];
-            if (edges.count("color") == 1)  layout.cycles.edges.color = edges["color"];
-            if (edges.count("alpha") == 1)  layout.cycles.edges.alpha = edges["alpha"];
+            if (edges.count("show") == 1)   layout.cycles.edges.setEnabled(edges["show"]);
+            if (edges.count("color") == 1)  layout.cycles.edges.setColor(edges["color"]);
+            if (edges.count("alpha") == 1)  layout.cycles.edges.setAlpha(edges["alpha"]);
         }
 
+        // CUTTING
         if (cycles.count("cutting") == 1)
         {
             json cutting = cycles["cutting"];
 
-            if (cutting.count("cut") == 1)                      layout.cycles.cutting.cut = cutting["cut"];
-            if (cutting.count("emptyCycleThreshold") == 1)      layout.cycles.cutting.emptyCycleThreshold = cutting["emptyCycleThreshold"];
-            if (cutting.count("cutCycleWidth") == 1)            layout.cycles.cutting.cutCycleWidth = cutting["cutCycleWidth"];
-            if (cutting.count("cutCycleWidthModifier") == 1)    layout.cycles.cutting.cutCycleWidthModifier = cutting["cutCycleWidthModifier"];
+            if (cutting.count("cut") == 1)                      layout.cycles.cutting.setEnabled(cutting["cut"]);
+            if (cutting.count("emptyCycleThreshold") == 1)      layout.cycles.cutting.setEmptyCycleThreshold(cutting["emptyCycleThreshold"]);
+            if (cutting.count("cutCycleWidth") == 1)            layout.cycles.cutting.setCutCycleWidth(cutting["cutCycleWidth"]);
+            if (cutting.count("cutCycleWidthModifier") == 1)    layout.cycles.cutting.setCutCycleWidthModifier(cutting["cutCycleWidthModifier"]);
         }
         
-		if (cycles.count("compress") == 1)                      layout.cycles.compress = cycles["compress"];
-		if (cycles.count("partitionCyclesWithOverlap") == 1)    layout.cycles.partitionCyclesWithOverlap = cycles["partitionCyclesWithOverlap"];
+		if (cycles.count("compress") == 1)                      layout.cycles.setCompressed(cycles["compress"]);
+		if (cycles.count("partitionCyclesWithOverlap") == 1)    layout.cycles.setPartitioned(cycles["partitionCyclesWithOverlap"]);
 	}
 
+    // -------------------------------------- //
+    // -              BIT LINES             - //
+    // -------------------------------------- //
 	if (config.count("bitLines") == 1)
 	{
         json bitLines = config["bitLines"];
 
+        // LABELS
         if (bitLines.count("labels") == 1)
         {
             json labels = bitLines["labels"];
 
-            if (labels.count("show") == 1)          layout.bitLines.labels.show = labels["show"];
-            if (labels.count("columnWidth") == 1)   layout.bitLines.labels.columnWidth = labels["columnWidth"];
-            if (labels.count("fontHeight") == 1)    layout.bitLines.labels.fontHeight = labels["fontHeight"];
-            if (labels.count("qbitColor") == 1)     layout.bitLines.labels.qbitColor = labels["qbitColor"];
-            if (labels.count("cbitColor") == 1)     layout.bitLines.labels.cbitColor = labels["cbitColor"];
+            if (labels.count("show") == 1)          layout.bitLines.labels.setEnabled(labels["show"]);
+            if (labels.count("columnWidth") == 1)   layout.bitLines.labels.setColumnWidth(labels["columnWidth"]);
+            if (labels.count("fontHeight") == 1)    layout.bitLines.labels.setFontHeight(labels["fontHeight"]);
+            if (labels.count("qbitColor") == 1)     layout.bitLines.labels.setQbitColor(labels["qbitColor"]);
+            if (labels.count("cbitColor") == 1)     layout.bitLines.labels.setCbitColor(labels["cbitColor"]);
         }
 
+        // QUANTUM
         if (bitLines.count("quantum") == 1)
         {
             json quantum = bitLines["quantum"];
 
-            if (quantum.count("color") == 1) layout.bitLines.quantum.color = quantum["color"];
+            if (quantum.count("color") == 1) layout.bitLines.quantum.setColor(quantum["color"]);
         }
 
+        // CLASSICAL
         if (bitLines.count("classical") == 1)
         {
             json classical = bitLines["classical"];
 
-            if (classical.count("show") == 1)           layout.bitLines.classical.show = classical["show"];
-            if (classical.count("group") == 1)          layout.bitLines.classical.group = classical["group"];
-            if (classical.count("groupedLineGap") == 1) layout.bitLines.classical.groupedLineGap = classical["groupedLineGap"];
-            if (classical.count("color") == 1)          layout.bitLines.classical.color = classical["color"];
+            if (classical.count("show") == 1)           layout.bitLines.classical.setEnabled(classical["show"]);
+            if (classical.count("group") == 1)          layout.bitLines.classical.setGrouped(classical["group"]);
+            if (classical.count("groupedLineGap") == 1) layout.bitLines.classical.setGroupedLineGap(classical["groupedLineGap"]);
+            if (classical.count("color") == 1)          layout.bitLines.classical.setColor(classical["color"]);
         }
 
+        // EDGES
         if (bitLines.count("edges") == 1)
         {
             json edges = bitLines["edges"];
 
-            if (edges.count("show") == 1)       layout.bitLines.edges.show = edges["show"];
-            if (edges.count("thickness") == 1)  layout.bitLines.edges.thickness = edges["thickness"];
-            if (edges.count("color") == 1)      layout.bitLines.edges.color = edges["color"];
-            if (edges.count("alpha") == 1)      layout.bitLines.edges.alpha = edges["alpha"];
+            if (edges.count("show") == 1)       layout.bitLines.edges.setEnabled(edges["show"]);
+            if (edges.count("thickness") == 1)  layout.bitLines.edges.setThickness(edges["thickness"]);
+            if (edges.count("color") == 1)      layout.bitLines.edges.setColor(edges["color"]);
+            if (edges.count("alpha") == 1)      layout.bitLines.edges.setAlpha(edges["alpha"]);
         }
 	}
 
+    // -------------------------------------- //
+    // -                GRID                - //
+    // -------------------------------------- //
 	if (config.count("grid") == 1)
 	{
         json grid = config["grid"];
 
-        if (grid.count("cellSize") == 1)    layout.grid.cellSize = grid["cellSize"];
-        if (grid.count("borderSize") == 1)  layout.grid.borderSize = grid["borderSize"];
+        if (grid.count("cellSize") == 1)    layout.grid.setCellSize(grid["cellSize"]);
+        if (grid.count("borderSize") == 1)  layout.grid.setBorderSize(grid["borderSize"]);
 	}
 
+    // -------------------------------------- //
+    // -       GATE DURATION OUTLINES       - //
+    // -------------------------------------- //
 	if (config.count("gateDurationOutlines") == 1)
 	{
         json gateDurationOutlines = config["gateDurationOutlines"];
 
-        if (gateDurationOutlines.count("show") == 1)         layout.gateDurationOutlines.show = gateDurationOutlines["show"];
-        if (gateDurationOutlines.count("gap") == 1)          layout.gateDurationOutlines.gap = gateDurationOutlines["gap"];
-        if (gateDurationOutlines.count("fillAlpha") == 1)    layout.gateDurationOutlines.fillAlpha = gateDurationOutlines["fillAlpha"];
-        if (gateDurationOutlines.count("outlineAlpha") == 1) layout.gateDurationOutlines.outlineAlpha = gateDurationOutlines["outlineAlpha"];
-        if (gateDurationOutlines.count("outlineColor") == 1) layout.gateDurationOutlines.outlineColor = gateDurationOutlines["outlineColor"];
+        if (gateDurationOutlines.count("show") == 1)         layout.gateDurationOutlines.setEnabled(gateDurationOutlines["show"]);
+        if (gateDurationOutlines.count("gap") == 1)          layout.gateDurationOutlines.setGap(gateDurationOutlines["gap"]);
+        if (gateDurationOutlines.count("fillAlpha") == 1)    layout.gateDurationOutlines.setFillAlpha(gateDurationOutlines["fillAlpha"]);
+        if (gateDurationOutlines.count("outlineAlpha") == 1) layout.gateDurationOutlines.setOutlineAlpha(gateDurationOutlines["outlineAlpha"]);
+        if (gateDurationOutlines.count("outlineColor") == 1) layout.gateDurationOutlines.setOutlineColor(gateDurationOutlines["outlineColor"]);
     }
-	
+
+	// -------------------------------------- //
+    // -            MEASUREMENTS            - //
+    // -------------------------------------- //
 	if (config.count("measurements") == 1)
 	{
         json measurements = config["measurements"];
 
-        if (measurements.count("drawConnection") == 1)  layout.measurements.drawConnection = measurements["drawConnection"];
-        if (measurements.count("lineSpacing") == 1)     layout.measurements.lineSpacing = measurements["lineSpacing"];
-        if (measurements.count("arrowSize") == 1)       layout.measurements.arrowSize = measurements["arrowSize"];
+        if (measurements.count("drawConnection") == 1)  layout.measurements.enableDrawConnection(measurements["drawConnection"]);
+        if (measurements.count("lineSpacing") == 1)     layout.measurements.setLineSpacing(measurements["lineSpacing"]);
+        if (measurements.count("arrowSize") == 1)       layout.measurements.setArrowSize(measurements["arrowSize"]);
 	}
 
+    // -------------------------------------- //
+    // -               PULSES               - //
+    // -------------------------------------- //
 	if (config.count("pulses") == 1)
 	{
         json pulses = config["pulses"];
 
-        if (pulses.count("displayGatesAsPulses") == 1)      layout.pulses.displayGatesAsPulses = pulses["displayGatesAsPulses"];
-        if (pulses.count("pulseRowHeightMicrowave") == 1)   layout.pulses.pulseRowHeightMicrowave = pulses["pulseRowHeightMicrowave"];
-        if (pulses.count("pulseRowHeightFlux") == 1)        layout.pulses.pulseRowHeightFlux = pulses["pulseRowHeightFlux"];
-        if (pulses.count("pulseRowHeightReadout") == 1)     layout.pulses.pulseRowHeightReadout = pulses["pulseRowHeightReadout"];
-        if (pulses.count("pulseColorMicrowave") == 1)       layout.pulses.pulseColorMicrowave = pulses["pulseColorMicrowave"];
-        if (pulses.count("pulseColorFlux") == 1)            layout.pulses.pulseColorFlux = pulses["pulseColorFlux"];
-        if (pulses.count("pulseColorReadout") == 1)         layout.pulses.pulseColorReadout = pulses["pulseColorReadout"];
+        if (pulses.count("displayGatesAsPulses") == 1)      layout.pulses.setEnabled(pulses["displayGatesAsPulses"]);
+        if (pulses.count("pulseRowHeightMicrowave") == 1)   layout.pulses.setPulseRowHeightMicrowave(pulses["pulseRowHeightMicrowave"]);
+        if (pulses.count("pulseRowHeightFlux") == 1)        layout.pulses.setPulseRowHeightFlux(pulses["pulseRowHeightFlux"]);
+        if (pulses.count("pulseRowHeightReadout") == 1)     layout.pulses.setPulseRowHeightReadout(pulses["pulseRowHeightReadout"]);
+        if (pulses.count("pulseColorMicrowave") == 1)       layout.pulses.setPulseColorMicrowave(pulses["pulseColorMicrowave"]);
+        if (pulses.count("pulseColorFlux") == 1)            layout.pulses.setPulseColorFlux(pulses["pulseColorFlux"]);
+        if (pulses.count("pulseColorReadout") == 1)         layout.pulses.setPulseColorReadout(pulses["pulseColorReadout"]);
 	}
 
 	// Load the custom instruction visualization parameters.
@@ -1236,33 +1263,33 @@ void validateLayout(Layout& layout)
 {
 	//TODO: add more validation
 	
-	if (layout.cycles.cutting.emptyCycleThreshold < 1)
+	if (layout.cycles.cutting.getEmptyCycleThreshold() < 1)
 	{
-		WOUT("Adjusting 'emptyCycleThreshold' to minimum value of 1. Value in configuration file is set to " << layout.cycles.cutting.emptyCycleThreshold << ".");
-		layout.cycles.cutting.emptyCycleThreshold = 1;
+		WOUT("Adjusting 'emptyCycleThreshold' to minimum value of 1. Value in configuration file is set to " << layout.cycles.cutting.getEmptyCycleThreshold() << ".");
+		layout.cycles.cutting.setEmptyCycleThreshold(1);
 	}
 
-	if (layout.pulses.displayGatesAsPulses)
+	if (layout.pulses.areEnabled())
 	{
-		if (layout.bitLines.classical.show)
+		if (layout.bitLines.classical.isEnabled())
 		{
 			WOUT("Adjusting 'showClassicalLines' to false. Unable to show classical lines when 'displayGatesAsPulses' is true!");
-			layout.bitLines.classical.show = false;
+			layout.bitLines.classical.setEnabled(false);
 		}
-		if (layout.cycles.partitionCyclesWithOverlap)
+		if (layout.cycles.arePartitioned())
 		{
 			WOUT("Adjusting 'partitionCyclesWithOverlap' to false. It is unnecessary to partition cycles when 'displayGatesAsPulses' is true!");
-			layout.cycles.partitionCyclesWithOverlap = false;
+			layout.cycles.setPartitioned(false);
 		}
-		if (layout.cycles.compress)
+		if (layout.cycles.areCompressed())
 		{
 			WOUT("Adjusting 'compressCycles' to false. Cannot compress cycles when 'displayGatesAsPulses' is true!");
-			layout.cycles.compress = false;
+			layout.cycles.setCompressed(false);
 		}	
 	}
 
-	if (!layout.bitLines.labels.show)   layout.bitLines.labels.columnWidth = 0;
-	if (!layout.cycles.labels.show)     layout.cycles.labels.rowHeight = 0;
+	if (!layout.bitLines.labels.areEnabled())   layout.bitLines.labels.setColumnWidth(0);
+	if (!layout.cycles.labels.areEnabled())     layout.cycles.labels.setRowHeight(0);
 }
 
 std::vector<GateProperties> parseGates(const ql::quantum_program* program)
@@ -1558,7 +1585,7 @@ void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layo
 			{
 				continue;
 			}
-			cellWidth = layout.cycles.cutting.cutCycleWidth;
+			cellWidth = layout.cycles.cutting.getCutCycleWidth();
 			cycleLabel = "...";
 		}
 		else
@@ -1566,7 +1593,7 @@ void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layo
 			// cellWidth = structure.getCellDimensions().width;
 			const Position4 cellPosition = structure.getCellPosition(i, 0, QUANTUM);
 			cellWidth = cellPosition.x1 - cellPosition.x0;
-			if (layout.cycles.labels.inNanoSeconds)
+			if (layout.cycles.labels.areInNanoSeconds())
 			{
 				cycleLabel = std::to_string(i * circuitData.cycleDuration);
 			}
@@ -1576,14 +1603,14 @@ void drawCycleLabels(cimg_library::CImg<unsigned char>& image, const Layout layo
 			}
 		}
 
-		Dimensions textDimensions = calculateTextDimensions(cycleLabel, layout.cycles.labels.fontHeight, layout);
+		Dimensions textDimensions = calculateTextDimensions(cycleLabel, layout.cycles.labels.getFontHeight(), layout);
 
 		const int xGap = (cellWidth - textDimensions.width) / 2;
-		const int yGap = (layout.cycles.labels.rowHeight - textDimensions.height) / 2;
+		const int yGap = (layout.cycles.labels.getRowHeight() - textDimensions.height) / 2;
 		const int xCycle = structure.getCellPosition(i, 0, QUANTUM).x0 + xGap;
 		const int yCycle = structure.getCycleLabelsY() + yGap;
 
-		image.draw_text(xCycle, yCycle, cycleLabel.c_str(), layout.cycles.labels.fontColor.data(), 0, 1, layout.cycles.labels.fontHeight);
+		image.draw_text(xCycle, yCycle, cycleLabel.c_str(), layout.cycles.labels.getFontColor().data(), 0, 1, layout.cycles.labels.getFontHeight());
 	}
 }
 
@@ -1598,7 +1625,7 @@ void drawCycleEdges(cimg_library::CImg<unsigned char>& image, const Layout layou
 		const int y0 = structure.getCircuitTopY();
 		const int y1 = structure.getCircuitBotY();
 
-		image.draw_line(xCycle, y0, xCycle, y1, layout.cycles.edges.color.data(), layout.cycles.edges.alpha, 0xF0F0F0F0);
+		image.draw_line(xCycle, y0, xCycle, y1, layout.cycles.edges.getColor().data(), layout.cycles.edges.getAlpha(), 0xF0F0F0F0);
 	}
 }
 
@@ -1607,43 +1634,43 @@ void drawBitLineLabels(cimg_library::CImg<unsigned char>& image, const Layout la
 	for (int bitIndex = 0; bitIndex < circuitData.amountOfQubits; bitIndex++)
 	{
 		const std::string label = "q" + std::to_string(bitIndex);
-		const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.labels.fontHeight, layout);
+		const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.labels.getFontHeight(), layout);
 
 		const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
 		const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
 		const int xLabel = structure.getBitLabelsX() + xGap;
 		const int yLabel = structure.getCellPosition(0, bitIndex, QUANTUM).y0 + yGap;
 
-		image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.qbitColor.data(), 0, 1, layout.bitLines.labels.fontHeight);
+		image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.getQbitColor().data(), 0, 1, layout.bitLines.labels.getFontHeight());
 	}
 
-	if (layout.bitLines.classical.show)
+	if (layout.bitLines.classical.isEnabled())
 	{
-		if (layout.bitLines.classical.group)
+		if (layout.bitLines.classical.isGrouped())
 		{
 			const std::string label = "C";
-			const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.labels.fontHeight, layout);
+			const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.labels.getFontHeight(), layout);
 
 			const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
 			const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
 			const int xLabel = structure.getBitLabelsX() + xGap;
 			const int yLabel = structure.getCellPosition(0, 0, CLASSICAL).y0 + yGap;
 
-			image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.cbitColor.data(), 0, 1, layout.bitLines.labels.fontHeight);
+			image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.getCbitColor().data(), 0, 1, layout.bitLines.labels.getFontHeight());
 		}
 		else
 		{
 			for (int bitIndex = 0; bitIndex < circuitData.amountOfClassicalBits; bitIndex++)
 			{
 				const std::string label = "c" + std::to_string(bitIndex);
-				const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.labels.fontHeight, layout);
+				const Dimensions textDimensions = calculateTextDimensions(label, layout.bitLines.labels.getFontHeight(), layout);
 
 				const int xGap = (structure.getCellDimensions().width - textDimensions.width) / 2;
 				const int yGap = (structure.getCellDimensions().height - textDimensions.height) / 2;
 				const int xLabel = structure.getBitLabelsX() + xGap;
 				const int yLabel = structure.getCellPosition(0, bitIndex, CLASSICAL).y0 + yGap;
 
-				image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.cbitColor.data(), 0, 1, layout.bitLines.labels.fontHeight);
+				image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.getCbitColor().data(), 0, 1, layout.bitLines.labels.getFontHeight());
 			}
 		}
 	}
@@ -1651,29 +1678,29 @@ void drawBitLineLabels(cimg_library::CImg<unsigned char>& image, const Layout la
 
 void drawBitLineEdges(cimg_library::CImg<unsigned char>& image, const Layout layout, const CircuitData circuitData, const Structure structure)
 {
-	const int x0 = structure.getCellPosition(0, 0, QUANTUM).x0 - layout.grid.borderSize / 2;
-	const int x1 = structure.getCellPosition(circuitData.getAmountOfCycles() - 1, 0, QUANTUM).x1 + layout.grid.borderSize / 2;
-	const int yOffsetStart = -1 * layout.bitLines.edges.thickness;
+	const int x0 = structure.getCellPosition(0, 0, QUANTUM).x0 - layout.grid.getBorderSize() / 2;
+	const int x1 = structure.getCellPosition(circuitData.getAmountOfCycles() - 1, 0, QUANTUM).x1 + layout.grid.getBorderSize() / 2;
+	const int yOffsetStart = -1 * layout.bitLines.edges.getThickness();
 
 	for (int bitIndex = 0; bitIndex < circuitData.amountOfQubits; bitIndex++)
 	{
 		if (bitIndex == 0) continue;
 
 		const int y = structure.getCellPosition(0, bitIndex, QUANTUM).y0;
-		for (int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.edges.thickness; yOffset++)
+		for (int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.edges.getThickness(); yOffset++)
 		{
-			image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.color.data(), layout.bitLines.edges.alpha);
+			image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.getColor().data(), layout.bitLines.edges.getAlpha());
 		}
 	}
 
-	if (layout.bitLines.classical.show)
+	if (layout.bitLines.classical.isEnabled())
 	{
-		if (layout.bitLines.classical.group)
+		if (layout.bitLines.classical.isGrouped())
 		{
 			const int y = structure.getCellPosition(0, 0, CLASSICAL).y0;
-			for (int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.edges.thickness; yOffset++)
+			for (int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.edges.getThickness(); yOffset++)
 			{
-				image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.color.data(), layout.bitLines.edges.alpha);
+				image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.getColor().data(), layout.bitLines.edges.getAlpha());
 			}
 		}
 		else
@@ -1683,9 +1710,9 @@ void drawBitLineEdges(cimg_library::CImg<unsigned char>& image, const Layout lay
 				if (bitIndex == 0) continue;
 
 				const int y = structure.getCellPosition(0, bitIndex, CLASSICAL).y0;
-				for (int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.edges.thickness; yOffset++)
+				for (int yOffset = yOffsetStart; yOffset < yOffsetStart + layout.bitLines.edges.getThickness(); yOffset++)
 				{
-					image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.color.data(), layout.bitLines.edges.alpha);
+					image.draw_line(x0, y + yOffset, x1, y + yOffset, layout.bitLines.edges.getColor().data(), layout.bitLines.edges.getAlpha());
 				}
 			}
 		}
@@ -1699,12 +1726,12 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image, const Layout layout, 
 	switch (bitType)
 	{
 		case CLASSICAL:
-			bitLineColor = layout.bitLines.classical.color;
-			bitLabelColor = layout.bitLines.labels.cbitColor;
+			bitLineColor = layout.bitLines.classical.getColor();
+			bitLabelColor = layout.bitLines.labels.getCbitColor();
 			break;
 		case QUANTUM:
-			bitLineColor = layout.bitLines.quantum.color;
-			bitLabelColor = layout.bitLines.labels.qbitColor;
+			bitLineColor = layout.bitLines.quantum.getColor();
+			bitLabelColor = layout.bitLines.labels.getQbitColor();
 			break;
 	}
 
@@ -1739,27 +1766,27 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image, const
 			const int height = structure.getCellDimensions().height / 8;
 			const int width = segment.first.end - segment.first.start;
             
-            drawWiggle(image, segment.first.start, segment.first.end, y - layout.bitLines.classical.groupedLineGap, width, height, layout.bitLines.classical.color);           
-            drawWiggle(image, segment.first.start, segment.first.end, y + layout.bitLines.classical.groupedLineGap, width, height, layout.bitLines.classical.color);
+            drawWiggle(image, segment.first.start, segment.first.end, y - layout.bitLines.classical.getGroupedLineGap(), width, height, layout.bitLines.classical.getColor());           
+            drawWiggle(image, segment.first.start, segment.first.end, y + layout.bitLines.classical.getGroupedLineGap(), width, height, layout.bitLines.classical.getColor());
 		}
 		else
 		{
-			image.draw_line(segment.first.start, y - layout.bitLines.classical.groupedLineGap, 
-				segment.first.end, y - layout.bitLines.classical.groupedLineGap, layout.bitLines.classical.color.data());
-			image.draw_line(segment.first.start, y + layout.bitLines.classical.groupedLineGap, 
-				segment.first.end, y + layout.bitLines.classical.groupedLineGap, layout.bitLines.classical.color.data());	
+			image.draw_line(segment.first.start, y - layout.bitLines.classical.getGroupedLineGap(), 
+				segment.first.end, y - layout.bitLines.classical.getGroupedLineGap(), layout.bitLines.classical.getColor().data());
+			image.draw_line(segment.first.start, y + layout.bitLines.classical.getGroupedLineGap(), 
+				segment.first.end, y + layout.bitLines.classical.getGroupedLineGap(), layout.bitLines.classical.getColor().data());	
 		}
 	}
 
 	// Draw the dashed line plus classical bit amount number on the first segment.
 	std::pair<EndPoints, bool> firstSegment = structure.getBitLineSegments()[0];
 	//TODO: store the dashed line parameters in the layout object
-	image.draw_line(firstSegment.first.start + 8, y + layout.bitLines.classical.groupedLineGap + 2, firstSegment.first.start + 12, y - layout.bitLines.classical.groupedLineGap - 3, layout.bitLines.classical.color.data());
+	image.draw_line(firstSegment.first.start + 8, y + layout.bitLines.classical.getGroupedLineGap() + 2, firstSegment.first.start + 12, y - layout.bitLines.classical.getGroupedLineGap() - 3, layout.bitLines.classical.getColor().data());
 	const std::string label = std::to_string(circuitData.amountOfClassicalBits);
 	//TODO: fix these hardcoded parameters
 	const int xLabel = firstSegment.first.start + 8;
-	const int yLabel = y - layout.bitLines.classical.groupedLineGap - 3 - 13;
-	image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.cbitColor.data(), 0, 1, layout.bitLines.labels.fontHeight);
+	const int yLabel = y - layout.bitLines.classical.getGroupedLineGap() - 3 - 13;
+	image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.getCbitColor().data(), 0, 1, layout.bitLines.labels.getFontHeight());
 }
 
 void drawWiggle(cimg_library::CImg<unsigned char>& image, const int x0, const int x1, const int y, const int width, const int height, const std::array<unsigned char, 3> color)
@@ -1943,22 +1970,22 @@ void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, con
 		//TODO: probably have connection line type as part of a gate's visual definition
 		if (isMeasurement(gate))
 		{
-			if (layout.measurements.drawConnection && layout.bitLines.classical.show)
+			if (layout.measurements.isConnectionEnabled() && layout.bitLines.classical.isEnabled())
 			{
-				const int groupedClassicalLineOffset = layout.bitLines.classical.group ? layout.bitLines.classical.groupedLineGap : 0;
+				const int groupedClassicalLineOffset = layout.bitLines.classical.isGrouped() ? layout.bitLines.classical.getGroupedLineGap() : 0;
 
-				image.draw_line(connectionPosition.x0 - layout.measurements.lineSpacing, connectionPosition.y0,
-					connectionPosition.x1 - layout.measurements.lineSpacing, connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset,
+				image.draw_line(connectionPosition.x0 - layout.measurements.getLineSpacing(), connectionPosition.y0,
+					connectionPosition.x1 - layout.measurements.getLineSpacing(), connectionPosition.y1 - layout.measurements.getArrowSize() - groupedClassicalLineOffset,
 					gateVisual.connectionColor.data());
 
-				image.draw_line(connectionPosition.x0 + layout.measurements.lineSpacing, connectionPosition.y0,
-					connectionPosition.x1 + layout.measurements.lineSpacing, connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset,
+				image.draw_line(connectionPosition.x0 + layout.measurements.getLineSpacing(), connectionPosition.y0,
+					connectionPosition.x1 + layout.measurements.getLineSpacing(), connectionPosition.y1 - layout.measurements.getArrowSize() - groupedClassicalLineOffset,
 					gateVisual.connectionColor.data());
 
-				const int x0 = connectionPosition.x1 - layout.measurements.arrowSize / 2;
-				const int y0 = connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset;
-				const int x1 = connectionPosition.x1 + layout.measurements.arrowSize / 2;
-				const int y1 = connectionPosition.y1 - layout.measurements.arrowSize - groupedClassicalLineOffset;
+				const int x0 = connectionPosition.x1 - layout.measurements.getArrowSize() / 2;
+				const int y0 = connectionPosition.y1 - layout.measurements.getArrowSize() - groupedClassicalLineOffset;
+				const int x1 = connectionPosition.x1 + layout.measurements.getArrowSize() / 2;
+				const int y1 = connectionPosition.y1 - layout.measurements.getArrowSize() - groupedClassicalLineOffset;
 				const int x2 = connectionPosition.x1;
 				const int y2 = connectionPosition.y1 - groupedClassicalLineOffset;
 				image.draw_triangle(x0, y0, x1, y1, x2, y2, gateVisual.connectionColor.data(), 1);
@@ -1972,7 +1999,7 @@ void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, con
 	}
 
 	// Draw the gate duration outline if the option has been set.
-	if (!layout.cycles.compress && layout.gateDurationOutlines.show)
+	if (!layout.cycles.areCompressed() && layout.gateDurationOutlines.areEnabled())
 	{
 		DOUT("Drawing gate duration outline...");
 		const int gateDurationInCycles = gate.duration / circuitData.cycleDuration;
@@ -1986,15 +2013,15 @@ void drawGate(cimg_library::CImg<unsigned char>& image, const Layout layout, con
 				const int row = (i >= gate.operands.size()) ? gate.creg_operands[i - gate.operands.size()] : gate.operands[i];
 				DOUT("i: " << i << " size: " << gate.operands.size() << " value: " << gate.operands[i]);
 
-				const int x0 = structure.getCellPosition(columnStart, row, QUANTUM).x0 + chunkOffset + layout.gateDurationOutlines.gap;
-				const int y0 = structure.getCellPosition(columnStart, row, QUANTUM).y0 + layout.gateDurationOutlines.gap;
-				const int x1 = structure.getCellPosition(columnEnd, row, QUANTUM).x1 - layout.gateDurationOutlines.gap;
-				const int y1 = structure.getCellPosition(columnEnd, row, QUANTUM).y1 - layout.gateDurationOutlines.gap;
+				const int x0 = structure.getCellPosition(columnStart, row, QUANTUM).x0 + chunkOffset + layout.gateDurationOutlines.getGap();
+				const int y0 = structure.getCellPosition(columnStart, row, QUANTUM).y0 + layout.gateDurationOutlines.getGap();
+				const int x1 = structure.getCellPosition(columnEnd, row, QUANTUM).x1 - layout.gateDurationOutlines.getGap();
+				const int y1 = structure.getCellPosition(columnEnd, row, QUANTUM).y1 - layout.gateDurationOutlines.getGap();
 
 				// Draw the outline in the colors of the node.
 				const Node node = gateVisual.nodes.at(i);
-				image.draw_rectangle(x0, y0, x1, y1, node.backgroundColor.data(), layout.gateDurationOutlines.fillAlpha);
-				image.draw_rectangle(x0, y0, x1, y1, node.outlineColor.data(), layout.gateDurationOutlines.outlineAlpha, 0xF0F0F0F0);
+				image.draw_rectangle(x0, y0, x1, y1, node.backgroundColor.data(), layout.gateDurationOutlines.getFillAlpha());
+				image.draw_rectangle(x0, y0, x1, y1, node.outlineColor.data(), layout.gateDurationOutlines.getOutlineAlpha(), 0xF0F0F0F0);
 				
 				//image.draw_rectangle(x0, y0, x1, y1, layout.cycles.gateDurationOutlineColor.data(), layout.cycles.gateDurationAlpha);
 				//image.draw_rectangle(x0, y0, x1, y1, layout.cycles.gateDurationOutlineColor.data(), layout.cycles.gateDurationOutLineAlpha, 0xF0F0F0F0);
@@ -2128,6 +2155,11 @@ int safe_int_cast(const size_t argument)
     if (argument > std::numeric_limits<int>::max()) FATAL("Failed cast to int: size_t argument is too large!");
     return static_cast<int>(argument);
 }
+
+// void assertPositive(const int argument, const std::string& message)
+// {
+//     if(argument < 0) FATAL("Argument is negative: " << message);
+// }
 
 #endif //WITH_VISUALIZER
 
