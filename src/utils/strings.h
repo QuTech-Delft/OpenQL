@@ -2,6 +2,7 @@
 
 #include <string>
 #include <sstream>
+#include <typeinfo>
 
 // TODO: remove
 #include <vector>

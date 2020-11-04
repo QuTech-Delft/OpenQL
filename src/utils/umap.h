@@ -2,7 +2,7 @@
 
 #include <unordered_map>
 #include "utils/strings.h"
-#include "exception.h"
+#include "utils/exception.h"
 
 namespace ql {
 namespace utils {
