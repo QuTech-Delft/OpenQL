@@ -38,8 +38,7 @@ void assertPositive(const double argument, const std::string& parameter);
 // -                    CYCLES                   - //
 // ----------------------------------------------- //
 
-class CycleLabels
-{
+class CycleLabels {
     private:
         bool enabled = true;
         bool inNanoSeconds = false;
@@ -61,8 +60,7 @@ class CycleLabels
         void setFontColor(const Color argument) { fontColor = argument; }
 };
 
-class CycleEdges
-{
+class CycleEdges {
     private:
         bool enabled = true;
         std::array<unsigned char, 3> color = {{ 0, 0, 0 }};
@@ -78,8 +76,7 @@ class CycleEdges
         void setAlpha(const double argument) { assertPositive(argument, "cycles.edges.alpha"); alpha = argument; }
 };
 
-class CycleCutting
-{
+class CycleCutting {
     private:
         bool enabled = true;
         int emptyCycleThreshold = 2;
@@ -98,8 +95,7 @@ class CycleCutting
         void setCutCycleWidthModifier(const double argument) { assertPositive(argument, "cycles.cutting.cutCycleWidthModifier"); cutCycleWidthModifier = argument; }
 };
 
-class Cycles
-{
+class Cycles {
     private:
         bool compress = false;
         bool partitionCyclesWithOverlap = true;
@@ -120,8 +116,7 @@ class Cycles
 // -                  BIT LINES                  - //
 // ----------------------------------------------- //
 
-class BitLineLabels
-{
+class BitLineLabels {
     private:
         bool enabled = true;
         int columnWidth = 32;
@@ -144,8 +139,7 @@ class BitLineLabels
 
 };
 
-class QuantumLines
-{
+class QuantumLines {
     private:
         Color color = {{ 0, 0, 0 }};
 
@@ -155,8 +149,7 @@ class QuantumLines
         void setColor(const Color argument) { color = argument; }
 };
 
-class ClassicalLines
-{
+class ClassicalLines {
     private:
         bool enabled = true;
         bool group = true;
@@ -175,8 +168,7 @@ class ClassicalLines
         void setColor(const Color argument) { color = argument; }
 };
 
-class BitLineEdges
-{
+class BitLineEdges {
     private:
         bool enabled = true;
         int thickness = 3;
@@ -196,8 +188,7 @@ class BitLineEdges
 
 };
 
-class BitLines
-{
+class BitLines {
     public:
         BitLineLabels labels;
         QuantumLines quantum;
@@ -209,8 +200,7 @@ class BitLines
 // -               GENERAL PARAMETERS            - //
 // ----------------------------------------------- //
 
-struct Grid
-{
+struct Grid {
     private:
         int cellSize = 32;
         int borderSize = 32;
@@ -223,8 +213,7 @@ struct Grid
         void setBorderSize(const int argument) { assertPositive(argument, "grid.borderSize"); borderSize = argument; }
 };
 
-struct GateDurationOutlines
-{
+struct GateDurationOutlines {
     private:
         bool enabled = true;
         int gap = 2;
@@ -246,8 +235,7 @@ struct GateDurationOutlines
         void setOutlineColor(const Color argument) { outlineColor = argument; }
 };
 
-struct Measurements
-{
+struct Measurements {
     private:
         bool enableConnection = true;
         int lineSpacing = 2;
@@ -267,8 +255,7 @@ struct Measurements
 // -                    PULSES                   - //
 // ----------------------------------------------- //
 
-struct Pulses
-{
+struct Pulses {
     private:
         bool enabled = false;
         int pulseRowHeightMicrowave = 32;
@@ -300,8 +287,7 @@ struct Pulses
 // -                    LAYOUT                   - //
 // ----------------------------------------------- //
 
-struct Layout
-{
+struct Layout {
     Cycles cycles;
     BitLines bitLines;
     Grid grid;
@@ -311,8 +297,7 @@ struct Layout
 
     std::map<std::string, GateVisual> customGateVisuals;
 
-    const std::map<ql::gate_type_t, GateVisual> defaultGateVisuals
-    {
+    const std::map<ql::gate_type_t, GateVisual> defaultGateVisuals {
         // TODO: use the proper symbol for dagger gates
         // TODO: use the proper symbol for measurement gates
 

@@ -26,47 +26,40 @@ namespace ql
 
 enum BitType {CLASSICAL, QUANTUM};
 
-struct Position4
-{
+struct Position4 {
 	long x0 = 0;
 	long y0 = 0;
 	long x1 = 0;
 	long y1 = 0;
 };
 
-struct Position2
-{
+struct Position2 {
 	long x = 0;
 	long y = 0;
 };
 
-struct Cell
-{
+struct Cell {
 	const int col;
 	const int row;
 	const int chunkOffset;
 	const BitType bitType;
 };
 
-struct EndPoints
-{
+struct EndPoints {
 	const int start;
 	const int end;
 };
 
-struct Dimensions
-{
+struct Dimensions {
 	const int width;
 	const int height;
 };
 
-struct GateOperand
-{
+struct GateOperand {
 	BitType bitType = QUANTUM;
 	int index = 0;
 
-	friend bool operator<(const GateOperand& lhs, const GateOperand& rhs)
-	{
+	friend bool operator<(const GateOperand& lhs, const GateOperand& rhs) {
 		if (lhs.bitType == QUANTUM && rhs.bitType == CLASSICAL) return true;
 		if (lhs.bitType == CLASSICAL && rhs.bitType == QUANTUM) return false;
 		return lhs.index < rhs.index;
@@ -77,8 +70,7 @@ struct GateOperand
 	friend bool operator>=(const GateOperand& lhs, const GateOperand& rhs) {return !operator<(lhs, rhs);}
 };
 
-struct GateProperties
-{
+struct GateProperties {
 	std::string name;
     std::vector<int> operands;
     std::vector<int> creg_operands;
@@ -89,8 +81,7 @@ struct GateProperties
     std::string visual_type;
 };
 
-struct Cycle
-{
+struct Cycle {
 	int index = 0;
 	bool empty = false;
 	bool cut = false;
@@ -99,14 +90,12 @@ struct Cycle
 
 enum LineSegmentType {FLAT, PULSE, CUT};
 
-struct Pulse
-{
+struct Pulse {
 	const std::vector<double> waveform;
 	const int sampleRate;
 };
 
-struct LineSegment
-{
+struct LineSegment {
 	const LineSegmentType type;
 	const EndPoints range;
 	const Pulse pulse;
@@ -114,29 +103,25 @@ struct LineSegment
 
 // enum PulseType {MICROWAVE, FLUX, READOUT};
 
-struct Line
-{
+struct Line {
 	// LineType type = MICROWAVE;
 	std::vector<LineSegment> segments;
 	double maxAmplitude = 0;
 };
 
-struct QubitLines
-{
+struct QubitLines {
 	Line microwave;
 	Line flux;
 	Line readout;
 };
 
-struct GatePulses
-{
+struct GatePulses {
 	std::vector<double> microwave;
 	std::vector<double> flux;
 	std::vector<double> readout;
 };
 
-struct PulseVisualization
-{
+struct PulseVisualization {
 	int sampleRateMicrowave = 0;
 	int sampleRateFlux = 0;
 	int sampleRateReadout = 0;
@@ -144,8 +129,7 @@ struct PulseVisualization
 	std::map<int, std::map<int, GatePulses>> mapping;
 };
 
-class CircuitData
-{
+class CircuitData {
 	private:
 		std::vector<Cycle> cycles;
 		std::vector<EndPoints> cutCycleRangeIndices;
@@ -174,8 +158,7 @@ class CircuitData
 		void printProperties() const;
 };
 
-class Structure
-{
+class Structure {
 	private:
 		const Layout layout;
 
@@ -257,7 +240,6 @@ void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout
 
 void printGates(const std::vector<GateProperties> gates);
 int safe_int_cast(const size_t argument);
-// void assertPositive(const int argument, const std::string& message);
 
 } // ql
 
