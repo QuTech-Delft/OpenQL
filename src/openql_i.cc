@@ -208,7 +208,7 @@ void Kernel::wait(const std::vector<size_t> &qubits, size_t duration) {
 }
 
 void Kernel::barrier(const std::vector<size_t> &qubits) {
-    kernel->wait(qubits, 0);
+    kernel->wait(qubits, 0);	// FIXME: add barrier() to Kernel to allow use from C++
 }
 
 std::string Kernel::get_custom_instructions() const {

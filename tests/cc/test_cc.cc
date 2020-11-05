@@ -39,7 +39,7 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
     for (int j=6; j<17; j++) {
         k.gate("x", j);
     }
-    k.wait({6,7,8,9,10,11,12,13,14,15,16}, 0);      // help scheduler
+    k.wait({}, 0);      // help scheduler
 
     // 1/2/3 qubit flux
 #if 0 // misaligns cz and park_cz (using old scheduler)
@@ -61,12 +61,12 @@ void test_classical(std::string scheduler, std::string scheduler_uniform)
     k.gate("cz", 10, 15);
     k.gate("park_cz", 16);
 #endif
-    k.wait({6,7,8,9,10,11,12,13,14,15,16}, 0);      // help scheduler
+	k.wait({}, 0);      // help scheduler
 
     k.gate("cz_park", std::vector<size_t> {6, 7, 11});
     k.gate("cz_park", std::vector<size_t> {12, 13, 15});
     k.gate("cz_park1", std::vector<size_t> {10, 15, 16});   // FIXME:
-    k.wait({6,7,8,9,10,11,12,13,14,15,16}, 0);      // help scheduler
+	k.wait({}, 0);      // help scheduler
 
     // gate with angle parameter
     double angle = 1.23456; // just some number
@@ -192,24 +192,20 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     k.gate("rym90", xE);
     k.gate("rym90", xW);
     k.gate("rym90", xS);
-//    k.wait({x, xN, xE, xW, xS}, 0);
-    // FIXME: above line does not work with new scheduler.h
-    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}, 0);
+	k.wait({}, 0);      // help scheduler
 
     k.gate("cz", x, xE);
     k.gate("cz", x, xN);
     k.gate("cz", x, xS);
     k.gate("cz", x, xW);
-//    k.wait({x, xN, xE, xW, xS}, 0);
-    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}, 0);
+	k.wait({}, 0);      // help scheduler
 
     k.gate("ry90", x);
     k.gate("ry90", xN);
     k.gate("ry90", xE);
     k.gate("ry90", xW);
     k.gate("ry90", xS);
-//    k.wait({x, xN, xE, xW, xS}, 0);
-    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}, 0);
+	k.wait({}, 0);      // help scheduler
 
     // FIXME:
     // - qubits participating in CZ need phase correction, which may be part of gate, or separate
@@ -219,8 +215,7 @@ void test_qec_pipelined(std::string scheduler, std::string scheduler_uniform)
     //      + possible in parallel without doing 2 qubits gate?
 
     k.gate("measure", std::vector<size_t> {x}, std::vector<size_t> {0});
-//    k.wait({x}, 0);
-    k.wait({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}, 0);
+	k.wait({}, 0);      // help scheduler
 
     // Z stabilizers
     k.gate("rym90", z);
@@ -351,13 +346,21 @@ void test_qi_example( std::string scheduler, std::string scheduler_uniform)
     ql::quantum_program sp1(("sp1"), s5, num_qubits, num_cregs);
     ql::quantum_kernel k("aKernel", s5, num_qubits, num_cregs);
 
-    k.gate("prepz", {0, 1, 2, 3, 4});
+	for(size_t i=0; i<5; i++) {
+		k.gate("prepz", {i});
+	}
+	k.wait({}, 0);      // help scheduler
     k.gate("ry180", {0, 2});     // FIXME: "y" does not work, but gate decomposition should handle?
     k.gate("wait");
     k.gate("cz", {0, 2});
     k.gate("wait");
     k.gate("y90", 2);
-    k.gate("measure", {0, 1, 2, 3, 4});
+
+	k.wait({}, 0);      // help scheduler
+	for(size_t i=0; i<5; i++) {
+		k.gate("measure", {i});
+	}
+	k.wait({}, 0);      // help scheduler
 
     prog.add(k);
 
