@@ -15,57 +15,53 @@
 namespace ql
 {
 // --- DONE ---
-// visualization of custom gates
-// option to enable or disable classical bit lines
-// different types of cycle/duration(ns) labels
-// gate duration outlines in gate color
-// measurement without explicitly specified classical operand assumes default classical operand (same number as qubit number)
-// read cycle duration from hardware config file, instead of having hardcoded value
-// handle case where user does not or incorrectly specifies visualization nodes for custom gate
-// allow the user to set the layout parameters from a configuration file
-// implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
-// change IOUT to DOUT (IOUT is used to avoid debug information from other source files while developing the visualizer!)
-// visual_type attribute instead of full visual attribute in hw config file, links to seperate visualization config file where details of that visual type are detailed
-// 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
-// add bit line zigzag indicating a cut cycle range
-// add cutEmptyCycles and emptyCycleThreshold to the documentation
-// make a copy of the gate vector, so any changes inside the visualizer to the program do not reflect back to any future compiler passes
-// add option to display cycle edges
-// add option to draw horizontal lines between qubits
-// representing the gates as waveforms
-// allow for floats in the waveform sample vector
-// fix merge conflicts with develop branch (already done)
-// re-organize the attributes in the config file
-// change char arrays to Color
-// check for negative/invalid values during layout validation
+// [CIRCUIT] visualization of custom gates
+// [CIRCUIT] option to enable or disable classical bit lines
+// [CIRCUIT] different types of cycle/duration(ns) labels
+// [CIRCUIT] gate duration outlines in gate color
+// [CIRCUIT] measurement without explicitly specified classical operand assumes default classical operand (same number as qubit number)
+// [CIRCUIT] read cycle duration from hardware config file, instead of having hardcoded value
+// [CIRCUIT] handle case where user does not or incorrectly specifies visualization nodes for custom gate
+// [CIRCUIT] allow the user to set the layout parameters from a configuration file
+// [CIRCUIT] implement a generic grid structure object to contain the visual structure of the circuit, to ease positioning of components in all the drawing functions
+// [CIRCUIT] visual_type attribute instead of full visual attribute in hw config file, links to seperate visualization config file where details of that visual type are detailed
+// [CIRCUIT] 'cutting' circuits where nothing/not much is happening both in terms of idle cycles and idle qubits
+// [CIRCUIT] add bit line zigzag indicating a cut cycle range
+// [CIRCUIT] add cutEmptyCycles and emptyCycleThreshold to the documentation
+// [CIRCUIT] make a copy of the gate vector, so any changes inside the visualizer to the program do not reflect back to any future compiler passes
+// [CIRCUIT] add option to display cycle edges
+// [CIRCUIT] add option to draw horizontal lines between qubits
+// [CIRCUIT] representing the gates as waveforms
+// [CIRCUIT] allow for floats in the waveform sample vector
+// [CIRCUIT] re-organize the attributes in the config file
+// [CIRCUIT] change char arrays to Color
+// [CIRCUIT] check for negative/invalid values during layout validation
+// [CIRCUIT] GateProperties validation on construction (test with visualizer pass called at different points (during different passes) during compilation)
 
 // -- IN PROGRESS ---
-// GateProperties validation on construction (test with visualizer pass called at different points (during different passes) during compilation)
-// update code style
-// update documentation
-// merge with develop
+// [GENERAL] update code style
+// [GENERAL] update documentation
+// [GENERAL] merge with develop
 
 // --- FUTURE WORK ---
-// TODO: deprecate default gates?
-// TODO: split visualizer.cc into multiple files, one for Structure, one for CircuitData and one for free code and new Visualizer class
-// TODO: add generating random circuits for visualization testing
-// TODO: allow collapsing the three qubit lines into one with an option
-// TODO: implement cycle cutting for pulse visualization
-// TODO: what happens when a cycle range is cut, but one or more gates still running within that range finish earlier than the longest running gate 
+// [GENERAL] split visualizer.cc into multiple files, one for Structure, one for CircuitData and one for free code and new Visualizer class
+// [GENERAL] add generating random circuits for visualization testing
+// [CIRCUIT] allow collapsing the three qubit lines into one with an option
+// [CIRCUIT] implement cycle cutting for pulse visualization
+// [CIRCUIT] what happens when a cycle range is cut, but one or more gates still running within that range finish earlier than the longest running gate 
 //       comprising the entire range?
-// TODO: when measurement connections are not shown, allow overlap of measurement gates
-// TODO: when gate is skipped due to whatever reason, maybe show a dummy gate outline indicating where the gate is?
-// TODO: display wait/barrier gate (need wait gate fix first)
-// TODO: add classical bit number to measurement connection when classical lines are grouped
-// TODO: implement measurement symbol (to replace the M on measurement gates)
-// TODO: generate default gate visuals from the configuration file
-// TODO: add option to save the image and/or open the window
+// [CIRCUIT] when measurement connections are not shown, allow overlap of measurement gates
+// [CIRCUIT] when gate is skipped due to whatever reason, maybe show a dummy gate outline indicating where the gate is?
+// [CIRCUIT] display wait/barrier gate (need wait gate fix first)
+// [CIRCUIT] add classical bit number to measurement connection when classical lines are grouped
+// [CIRCUIT] implement measurement symbol (to replace the M on measurement gates)
+// [CIRCUIT] generate default gate visuals from the configuration file
+// [GENERAL] add option to save the image and/or open the window
 
 #ifndef WITH_VISUALIZER
 
-void visualize(const ql::quantum_program* program, const std::string& configPath, const std::string& waveformMappingPath)
-{
-	WOUT("The visualizer is disabled. If this was not intended, the X11 library might be missing and the visualizer has disabled itself.");
+void visualize(const ql::quantum_program* program, const std::string& configPath, const std::string& waveformMappingPath) {
+    WOUT("The visualizer is disabled. If this was not intended, the X11 library might be missing and the visualizer has disabled itself.");
 }
 
 #else
@@ -77,98 +73,97 @@ using json = nlohmann::json;
 // ======================================================= //
 
 CircuitData::CircuitData(std::vector<GateProperties>& gates, const Layout layout, const int cycleDuration) :
-	cycleDuration(cycleDuration),
-	amountOfQubits(calculateAmountOfBits(gates, &GateProperties::operands)),
-	amountOfClassicalBits(calculateAmountOfBits(gates, &GateProperties::creg_operands)),
-	cycles(generateCycles(gates, cycleDuration))
+    cycleDuration(cycleDuration),
+    amountOfQubits(calculateAmountOfBits(gates, &GateProperties::operands)),
+    amountOfClassicalBits(calculateAmountOfBits(gates, &GateProperties::creg_operands)),
+    cycles(generateCycles(gates, cycleDuration))
 {
-	if (layout.cycles.areCompressed())      compressCycles();
-	if (layout.cycles.arePartitioned())     partitionCyclesWithOverlap();
-	if (layout.cycles.cutting.isEnabled())  cutEmptyCycles(layout);
+    if (layout.cycles.areCompressed())      compressCycles();
+    if (layout.cycles.arePartitioned())     partitionCyclesWithOverlap();
+    if (layout.cycles.cutting.isEnabled())  cutEmptyCycles(layout);
 }
 
-int CircuitData::calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<int> GateProperties::* operandType) const
-{
-	DOUT("Calculating amount of bits...");
+int CircuitData::calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<int> GateProperties::* operandType) const {
+    DOUT("Calculating amount of bits...");
 
-	//TODO: handle circuits not starting at a c- or qbit with index 0
-	int minAmount = std::numeric_limits<int>::max();
-	int maxAmount = 0;
+    //TODO: handle circuits not starting at a c- or qbit with index 0
+    int minAmount = std::numeric_limits<int>::max();
+    int maxAmount = 0;
 
-	// Find the minimum and maximum index of the operands.
-	for (const GateProperties& gate : gates)
-	{
-		std::vector<int>::const_iterator begin = (gate.*operandType).begin();
-		const std::vector<int>::const_iterator end = (gate.*operandType).end();
-		
-		for (; begin != end; ++begin)
-		{
-			const int number = *begin;
-			if (number < minAmount)
-				minAmount = number;
-			if (number > maxAmount)
-				maxAmount = number;
-		}
-	}
+    // Find the minimum and maximum index of the operands.
+    for (const GateProperties& gate : gates)
+    {
+        std::vector<int>::const_iterator begin = (gate.*operandType).begin();
+        const std::vector<int>::const_iterator end = (gate.*operandType).end();
 
-	// If both minAmount and maxAmount are at their original values, the list of operands for all the gates was empty.
-	// This means there are no operands of the given type for these gates and we return 0.
-	if (minAmount == std::numeric_limits<int>::max() && maxAmount == 0)
-		return 0;
-	else
-		return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
+        for (; begin != end; ++begin) {
+            const int number = *begin;
+            if (number < minAmount) minAmount = number;
+            if (number > maxAmount) maxAmount = number;
+        }
+    }
+
+    // If both minAmount and maxAmount are at their original values, the list of 
+    // operands for all the gates was empty.This means there are no operands of 
+    // the given type for these gates and we return 0.
+    if (minAmount == std::numeric_limits<int>::max() && maxAmount == 0) {
+        return 0;
+    } else {
+        return 1 + maxAmount - minAmount; // +1 because: max - min = #qubits - 1
+    }
 }
 
-int CircuitData::calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const
-{
-	DOUT("Calculating amount of cycles...");
+int CircuitData::calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const {
+    DOUT("Calculating amount of cycles...");
 
-	// Find the highest cycle in the gate vector.
+    // Find the highest cycle in the gate vector.
     int amountOfCycles = 0;
-	for (const GateProperties& gate : gates)
-	{
-		const int gateCycle = gate.cycle;
-		if (gateCycle > amountOfCycles)
-			amountOfCycles = gateCycle;
-	}
+    for (const GateProperties& gate : gates) {
+        const int gateCycle = gate.cycle;
+        if (gateCycle < 0 || gateCycle > MAX_ALLOWED_VISUALIZER_CYCLE) {
+            FATAL("Found gate with cycle index: " << gateCycle << ". Only indices between 0 and " 
+               << MAX_ALLOWED_VISUALIZER_CYCLE << " are allowed!"
+               << "\nMake sure gates are scheduled before calling the visualizer pass!");
+        }
+        if (gateCycle > amountOfCycles)
+            amountOfCycles = gateCycle;
+    }
 
-	// The last gate requires a different approach, because it might have a duration of multiple cycles.
-	// None of those cycles will show up as cycle index on any other gate, so we need to calculate them seperately.
-	const int lastGateDuration = gates.at(gates.size() - 1).duration;
-	const int lastGateDurationInCycles = lastGateDuration / cycleDuration;
-	if (lastGateDurationInCycles > 1)
-	{
-		amountOfCycles += lastGateDurationInCycles - 1;
-	}
+    // The last gate requires a different approach, because it might have a
+    // duration of multiple cycles. None of those cycles will show up as cycle
+    // index on any other gate, so we need to calculate them seperately.
+    const int lastGateDuration = gates.at(gates.size() - 1).duration;
+    const int lastGateDurationInCycles = lastGateDuration / cycleDuration;
+    if (lastGateDurationInCycles > 1)
+        amountOfCycles += lastGateDurationInCycles - 1;
 
-    return amountOfCycles + 1; // because the cycles start at zero, we add one to get the true amount of cycles
+    // Cycles start at zero, so we add 1 to get the true amount of cycles.
+    return amountOfCycles + 1; 
 }
 
-std::vector<Cycle> CircuitData::generateCycles(std::vector<GateProperties>& gates, const int cycleDuration) const
-{
-	DOUT("Generating cycles...");
+std::vector<Cycle> CircuitData::generateCycles(std::vector<GateProperties>& gates, const int cycleDuration) const {
+    DOUT("Generating cycles...");
 
-	// Generate the cycles.
-	std::vector<Cycle> cycles;
-	const int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
-	for (int i = 0; i < amountOfCycles; i++)
-	{
-		// Generate the first chunk of the gate partition for this cycle.
-		// All gates in this cycle will be added to this chunk first, later on they will be divided based on connectivity (if enabled).
-		std::vector<std::vector<std::reference_wrapper<GateProperties>>> partition;
-		const std::vector<std::reference_wrapper<GateProperties>> firstChunk;
-		partition.push_back(firstChunk);
-		
-		cycles.push_back({i, true, false, partition});
-	}
-	// Mark non-empty cycles and add gates to their corresponding cycles.
-	for (GateProperties& gate : gates)
-	{
-		cycles[gate.cycle].empty = false;
-		cycles[gate.cycle].gates[0].push_back(gate);
-	}
+    // Generate the cycles.
+    std::vector<Cycle> cycles;
+    const int amountOfCycles = calculateAmountOfCycles(gates, cycleDuration);
+    for (int i = 0; i < amountOfCycles; i++) {
+        // Generate the first chunk of the gate partition for this cycle.
+        // All gates in this cycle will be added to this chunk first, later on
+        // they will be divided based on connectivity (if enabled).
+        std::vector<std::vector<std::reference_wrapper<GateProperties>>> partition;
+        const std::vector<std::reference_wrapper<GateProperties>> firstChunk;
+        partition.push_back(firstChunk);
 
-	return cycles;
+        cycles.push_back({i, true, false, partition});
+    }
+    // Mark non-empty cycles and add gates to their corresponding cycles.
+    for (GateProperties& gate : gates) {
+        cycles[gate.cycle].empty = false;
+        cycles[gate.cycle].gates[0].push_back(gate);
+    }
+
+    return cycles;
 }
 
 void CircuitData::compressCycles()
@@ -695,6 +690,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
 	const int cycleDuration = safe_int_cast(program->platform.cycle_time);
 	DOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
 	fixMeasurementOperands(gates); // fixes measurement gates without classical operands
+    // printGates(gates);
 	CircuitData circuitData(gates, layout, cycleDuration);
 	circuitData.printProperties();
     
@@ -1375,6 +1371,8 @@ std::pair<GateOperand, GateOperand> calculateEdgeOperands(const std::vector<Gate
 
 void fixMeasurementOperands(std::vector<GateProperties>& gates)
 {
+    DOUT("Fixing measurement gates with no classical operand...");
+
 	for (GateProperties& gate : gates)
 	{
 		// Check for a measurement gate without explicitly specified classical operand.
@@ -2148,6 +2146,44 @@ void drawCrossNode(cimg_library::CImg<unsigned char>& image, const Layout layout
 
 	image.draw_line(x0, y0, x1, y1, node.backgroundColor.data());
 	image.draw_line(x0, y1, x1, y0, node.backgroundColor.data());
+}
+
+void printGates(const std::vector<GateProperties> gates)
+{
+    for (const GateProperties& gate : gates)
+    {
+        IOUT(gate.name);
+
+        std::string operands = "[";
+        for (size_t i = 0; i < gate.operands.size(); i++)
+        {
+            operands += std::to_string(gate.operands[i]);
+            if (i != gate.operands.size() - 1) operands += ", ";
+        }
+        IOUT("\toperands: " << operands << "]");
+
+        std::string creg_operands = "[";
+        for (size_t i = 0; i < gate.creg_operands.size(); i++)
+        {
+            creg_operands += std::to_string(gate.creg_operands[i]);
+            if (i != gate.creg_operands.size() - 1) creg_operands += ", ";
+        }
+        IOUT("\tcreg_operands: " << creg_operands << "]");
+
+        IOUT("\tduration: " << gate.duration);
+        IOUT("\tcycle: " << gate.cycle);
+        IOUT("\ttype: " << gate.type);
+
+        std::string codewords = "[";
+        for (size_t i = 0; i < gate.codewords.size(); i++)
+        {
+            codewords += std::to_string(gate.codewords[i]);
+            if (i != gate.codewords.size() - 1) codewords += ", ";
+        }
+        IOUT("\tcodewords: " << codewords << "]");
+
+        IOUT("\tvisual_type: " << gate.visual_type);
+    }
 }
 
 int safe_int_cast(const size_t argument)

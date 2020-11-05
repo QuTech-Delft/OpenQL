@@ -28,6 +28,8 @@ const Color red = {{ 255, 105, 97 }};
 namespace ql
 {
 
+static const int MAX_ALLOWED_VISUALIZER_CYCLE = 2000;
+
 void visualize(const ql::quantum_program* program, const std::string& configPath, const std::string& waveformMappingPath);
 void assertPositive(const int argument, const std::string& parameter);
 void assertPositive(const double argument, const std::string& parameter);
