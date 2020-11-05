@@ -107,6 +107,8 @@ AbstractPass *PassManager::createPass(const std::string &passName, const std::st
         pass = new CliffordOptimizePass(aliasName);
     } else if (passName == "Map") {
         pass = new MapPass(aliasName);
+    } else if (passName == "CommuteVariation") {
+        pass = new CommuteVariationPass(aliasName);
     } else if (passName == "RCSchedule") {
         pass = new RCSchedulePass(aliasName);
     } else if (passName == "LatencyCompensation") {

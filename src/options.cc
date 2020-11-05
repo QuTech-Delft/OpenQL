@@ -28,6 +28,7 @@ private:
         opt_name2opt_val["scheduler"] = "ALAP";
         opt_name2opt_val["scheduler_uniform"] = "no";
         opt_name2opt_val["scheduler_commute"] = "no";
+        opt_name2opt_val["vary_commutations"] = "no";
         opt_name2opt_val["prescheduler"] = "yes";
         opt_name2opt_val["scheduler_post179"] = "yes";
         opt_name2opt_val["backend_cc_map_input_file"] = "";
@@ -67,6 +68,7 @@ private:
         app->add_set_ignore_case("--scheduler", opt_name2opt_val["scheduler"], {"ASAP", "ALAP"}, "scheduler type", true);
         app->add_set_ignore_case("--scheduler_uniform", opt_name2opt_val["scheduler_uniform"], {"yes", "no"}, "Do uniform scheduling or not", true);
         app->add_set_ignore_case("--scheduler_commute", opt_name2opt_val["scheduler_commute"], {"yes", "no"}, "Commute gates when possible, or not", true);
+        app->add_set_ignore_case("--vary_commutations", opt_name2opt_val["vary_commutations"], {"no", "yes"}, "Circuit-wide exploit commutation", true);
         app->add_set_ignore_case("--use_default_gates", opt_name2opt_val["use_default_gates"], {"yes", "no"}, "Use default gates or not", true);
         app->add_set_ignore_case("--optimize", opt_name2opt_val["optimize"], {"yes", "no"}, "optimize or not", true);
         app->add_set_ignore_case("--clifford_prescheduler", opt_name2opt_val["clifford_prescheduler"], {"yes", "no"}, "clifford optimize before prescheduler yes or not", true);
@@ -133,6 +135,7 @@ public:
                   << "clifford_postmapper: " << opt_name2opt_val["clifford_postmapper"] << std::endl
                   << "scheduler_post179: " << opt_name2opt_val["scheduler_post179"] << std::endl
                   << "scheduler_commute: " << opt_name2opt_val["scheduler_commute"] << std::endl
+                  << "vary_commutations: " << opt_name2opt_val["vary_commutations"] << std::endl
                   << "cz_mode: " << opt_name2opt_val["cz_mode"] << std::endl
                   << "write_qasm_files: " << opt_name2opt_val["write_qasm_files"] << std::endl
                   << "write_report_files: " << opt_name2opt_val["write_report_files"] << std::endl
