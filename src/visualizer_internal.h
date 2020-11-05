@@ -27,177 +27,177 @@ namespace ql
 enum BitType {CLASSICAL, QUANTUM};
 
 struct Position4 {
-	long x0 = 0;
-	long y0 = 0;
-	long x1 = 0;
-	long y1 = 0;
+    long x0 = 0;
+    long y0 = 0;
+    long x1 = 0;
+    long y1 = 0;
 };
 
 struct Position2 {
-	long x = 0;
-	long y = 0;
+    long x = 0;
+    long y = 0;
 };
 
 struct Cell {
-	const int col;
-	const int row;
-	const int chunkOffset;
-	const BitType bitType;
+    const int col;
+    const int row;
+    const int chunkOffset;
+    const BitType bitType;
 };
 
 struct EndPoints {
-	const int start;
-	const int end;
+    const int start;
+    const int end;
 };
 
 struct Dimensions {
-	const int width;
-	const int height;
+    const int width;
+    const int height;
 };
 
 struct GateOperand {
-	BitType bitType = QUANTUM;
-	int index = 0;
+    BitType bitType = QUANTUM;
+    int index = 0;
 
-	friend bool operator<(const GateOperand& lhs, const GateOperand& rhs) {
-		if (lhs.bitType == QUANTUM && rhs.bitType == CLASSICAL) return true;
-		if (lhs.bitType == CLASSICAL && rhs.bitType == QUANTUM) return false;
-		return lhs.index < rhs.index;
-	}
+    friend bool operator<(const GateOperand& lhs, const GateOperand& rhs) {
+        if (lhs.bitType == QUANTUM && rhs.bitType == CLASSICAL) return true;
+        if (lhs.bitType == CLASSICAL && rhs.bitType == QUANTUM) return false;
+        return lhs.index < rhs.index;
+    }
 
-	friend bool operator>(const GateOperand& lhs, const GateOperand& rhs) {return operator<(rhs, lhs);}
-	friend bool operator<=(const GateOperand& lhs, const GateOperand& rhs) {return !operator>(lhs, rhs);}
-	friend bool operator>=(const GateOperand& lhs, const GateOperand& rhs) {return !operator<(lhs, rhs);}
+    friend bool operator>(const GateOperand& lhs, const GateOperand& rhs) {return operator<(rhs, lhs);}
+    friend bool operator<=(const GateOperand& lhs, const GateOperand& rhs) {return !operator>(lhs, rhs);}
+    friend bool operator>=(const GateOperand& lhs, const GateOperand& rhs) {return !operator<(lhs, rhs);}
 };
 
 struct GateProperties {
-	std::string name;
+    std::string name;
     std::vector<int> operands;
     std::vector<int> creg_operands;
     int duration = 0;
     int cycle = 0;
     gate_type_t type = __custom_gate__;
-	std::vector<int> codewords;
+    std::vector<int> codewords;
     std::string visual_type;
 };
 
 struct Cycle {
-	int index = 0;
-	bool empty = false;
-	bool cut = false;
-	std::vector<std::vector<std::reference_wrapper<GateProperties>>> gates;
+    int index = 0;
+    bool empty = false;
+    bool cut = false;
+    std::vector<std::vector<std::reference_wrapper<GateProperties>>> gates;
 };
 
 enum LineSegmentType {FLAT, PULSE, CUT};
 
 struct Pulse {
-	const std::vector<double> waveform;
-	const int sampleRate;
+    const std::vector<double> waveform;
+    const int sampleRate;
 };
 
 struct LineSegment {
-	const LineSegmentType type;
-	const EndPoints range;
-	const Pulse pulse;
+    const LineSegmentType type;
+    const EndPoints range;
+    const Pulse pulse;
 };
 
 // enum PulseType {MICROWAVE, FLUX, READOUT};
 
 struct Line {
-	// LineType type = MICROWAVE;
-	std::vector<LineSegment> segments;
-	double maxAmplitude = 0;
+    // LineType type = MICROWAVE;
+    std::vector<LineSegment> segments;
+    double maxAmplitude = 0;
 };
 
 struct QubitLines {
-	Line microwave;
-	Line flux;
-	Line readout;
+    Line microwave;
+    Line flux;
+    Line readout;
 };
 
 struct GatePulses {
-	std::vector<double> microwave;
-	std::vector<double> flux;
-	std::vector<double> readout;
+    std::vector<double> microwave;
+    std::vector<double> flux;
+    std::vector<double> readout;
 };
 
 struct PulseVisualization {
-	int sampleRateMicrowave = 0;
-	int sampleRateFlux = 0;
-	int sampleRateReadout = 0;
+    int sampleRateMicrowave = 0;
+    int sampleRateFlux = 0;
+    int sampleRateReadout = 0;
 
-	std::map<int, std::map<int, GatePulses>> mapping;
+    std::map<int, std::map<int, GatePulses>> mapping;
 };
 
 class CircuitData {
-	private:
-		std::vector<Cycle> cycles;
-		std::vector<EndPoints> cutCycleRangeIndices;
+    private:
+        std::vector<Cycle> cycles;
+        std::vector<EndPoints> cutCycleRangeIndices;
 
-		int calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<int> GateProperties::* operandType) const;
-		int calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const;
-		std::vector<Cycle> generateCycles(std::vector<GateProperties>& gates, const int cycleDuration) const;
-		std::vector<EndPoints> findCuttableEmptyRanges(const Layout layout) const;
-		
-		void compressCycles();
-		void partitionCyclesWithOverlap();
-		void cutEmptyCycles(const Layout layout);
+        int calculateAmountOfBits(const std::vector<GateProperties> gates, const std::vector<int> GateProperties::* operandType) const;
+        int calculateAmountOfCycles(const std::vector<GateProperties> gates, const int cycleDuration) const;
+        std::vector<Cycle> generateCycles(std::vector<GateProperties>& gates, const int cycleDuration) const;
+        std::vector<EndPoints> findCuttableEmptyRanges(const Layout layout) const;
+        
+        void compressCycles();
+        void partitionCyclesWithOverlap();
+        void cutEmptyCycles(const Layout layout);
 
-	public:
-		const int amountOfQubits;
-		const int amountOfClassicalBits;
-		const int cycleDuration;
+    public:
+        const int amountOfQubits;
+        const int amountOfClassicalBits;
+        const int cycleDuration;
 
-		CircuitData(std::vector<GateProperties>& gates, const Layout layout, const int cycleDuration);
+        CircuitData(std::vector<GateProperties>& gates, const Layout layout, const int cycleDuration);
 
-		Cycle getCycle(const int index) const;
-		int getAmountOfCycles() const;
-		bool isCycleCut(const int cycleIndex) const;
-		bool isCycleFirstInCutRange(const int cycleIndex) const;
+        Cycle getCycle(const int index) const;
+        int getAmountOfCycles() const;
+        bool isCycleCut(const int cycleIndex) const;
+        bool isCycleFirstInCutRange(const int cycleIndex) const;
 
-		void printProperties() const;
+        void printProperties() const;
 };
 
 class Structure {
-	private:
-		const Layout layout;
+    private:
+        const Layout layout;
 
-		const Dimensions cellDimensions;
+        const Dimensions cellDimensions;
 
-		const int cycleLabelsY;
-		const int bitLabelsX;
+        const int cycleLabelsY;
+        const int bitLabelsX;
 
-		int imageWidth = 0;
-		int imageHeight = 0;
+        int imageWidth = 0;
+        int imageHeight = 0;
 
-		std::vector<std::vector<Position4>> qbitCellPositions;
-		std::vector<std::vector<Position4>> cbitCellPositions;
-		std::vector<std::pair<EndPoints, bool>> bitLineSegments;
+        std::vector<std::vector<Position4>> qbitCellPositions;
+        std::vector<std::vector<Position4>> cbitCellPositions;
+        std::vector<std::pair<EndPoints, bool>> bitLineSegments;
 
-		int calculateCellHeight(const Layout layout) const;
-		int calculateImageWidth(const CircuitData circuitData) const;
-		int calculateImageHeight(const CircuitData circuitData) const;
+        int calculateCellHeight(const Layout layout) const;
+        int calculateImageWidth(const CircuitData circuitData) const;
+        int calculateImageHeight(const CircuitData circuitData) const;
 
-		void generateBitLineSegments(const CircuitData circuitData);
-		void generateCellPositions(const CircuitData circuitData);
+        void generateBitLineSegments(const CircuitData circuitData);
+        void generateCellPositions(const CircuitData circuitData);
 
-	public:
-		Structure(const Layout layout, const CircuitData circuitData);
+    public:
+        Structure(const Layout layout, const CircuitData circuitData);
 
-		int getImageWidth() const;
-		int getImageHeight() const;
+        int getImageWidth() const;
+        int getImageHeight() const;
 
-		int getCycleLabelsY() const;
-		int getBitLabelsX() const;
+        int getCycleLabelsY() const;
+        int getBitLabelsX() const;
 
-		int getCircuitTopY() const;
-		int getCircuitBotY() const;
+        int getCircuitTopY() const;
+        int getCircuitBotY() const;
 
-		Dimensions getCellDimensions() const;
-		Position4 getCellPosition(const int column, const int row, const BitType bitType) const;
-		std::vector<std::pair<EndPoints, bool>> getBitLineSegments() const;
+        Dimensions getCellDimensions() const;
+        Position4 getCellPosition(const int column, const int row, const BitType bitType) const;
+        std::vector<std::pair<EndPoints, bool>> getBitLineSegments() const;
 
-		void printProperties() const;
+        void printProperties() const;
 };
 
 Layout parseConfiguration(const std::string& configPath);
