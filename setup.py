@@ -63,7 +63,7 @@ class clean(_clean):
 class build_ext(_build_ext):
     def run(self):
         from plumbum import local, FG, ProcessExecutionError
-		
+
         # If we were previously built in a different directory, nuke the cbuild
         # dir to prevent inane CMake errors. This happens when the user does
         # pip install . after building locally.
@@ -96,7 +96,7 @@ class build_ext(_build_ext):
             os.makedirs(cbuild_dir)
         with local.cwd(cbuild_dir):
             build_type = os.environ.get('OPENQL_BUILD_TYPE', 'Release')
-			
+
             cmd = (local['cmake'][root_dir]
                 ['-DOPENQL_BUILD_PYTHON=YES']
                 ['-DCMAKE_INSTALL_PREFIX=' + prefix_dir]
@@ -133,7 +133,7 @@ class build_ext(_build_ext):
 
             # Run cmake configuration.
             cmd & FG
-			
+
             # Do the build with the given number of parallel threads.
             build_cmd = local['cmake']['--build']['.']['--config'][build_type]
             cmd = build_cmd

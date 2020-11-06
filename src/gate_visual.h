@@ -5,34 +5,30 @@
  * @brief  contains the parameters used to control a gate's visualization
  */
 
-#ifndef QL_GATE_VISUAL_H
-#define QL_GATE_VISUAL_H
+#pragma once
 
-namespace ql
-{
+typedef std::array<unsigned char, 3> Color;
+
+namespace ql {
 
 enum NodeType {NONE, GATE, CONTROL, NOT, CROSS};
 
-struct Node
-{
-	NodeType type;
+struct Node {
+    NodeType type;
 
-	int radius;
+    int radius;
 
-	std::string displayName;
-	int fontHeight;
-	std::array<unsigned char, 3> fontColor;
+    std::string displayName;
+    int fontHeight;
+    Color fontColor;
 
-	std::array<unsigned char, 3> backgroundColor;
-	std::array<unsigned char, 3> outlineColor;
+    Color backgroundColor;
+    Color outlineColor;
 };
 
-struct GateVisual
-{
-	std::array<unsigned char, 3> connectionColor;
-	std::vector<Node> nodes;
+struct GateVisual {
+    Color connectionColor;
+    std::vector<Node> nodes;
 };
 
-} // ql
-
-#endif //QL_GATE_VISUAL_H
+} // namespace ql

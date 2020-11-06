@@ -12,8 +12,7 @@
 #include <iostream>
 #include <limits>
 
-namespace ql
-{
+namespace ql {
 // --- DONE ---
 // [CIRCUIT] visualization of custom gates
 // [CIRCUIT] option to enable or disable classical bit lines
@@ -61,7 +60,7 @@ namespace ql
 
 #ifndef WITH_VISUALIZER
 
-void visualize(const ql::quantum_program* program, const std::string& configPath, const std::string& waveformMappingPath) {
+void visualize(const ql::quantum_program* program, const std::string &configPath, const std::string &waveformMappingPath) {
     WOUT("The visualizer is disabled. If this was not intended, the X11 library might be missing and the visualizer has disabled itself.");
 }
 
@@ -73,7 +72,7 @@ using json = nlohmann::json;
 // =                     CircuitData                     = //
 // ======================================================= //
 
-CircuitData::CircuitData(std::vector<GateProperties>& gates, const Layout layout, const int cycleDuration) :
+CircuitData::CircuitData(std::vector<GateProperties> &gates, const Layout layout, const int cycleDuration) :
     cycleDuration(cycleDuration),
     amountOfQubits(calculateAmountOfBits(gates, &GateProperties::operands)),
     amountOfClassicalBits(calculateAmountOfBits(gates, &GateProperties::creg_operands)),
@@ -92,7 +91,7 @@ int CircuitData::calculateAmountOfBits(const std::vector<GateProperties> gates, 
     int maxAmount = 0;
 
     // Find the minimum and maximum index of the operands.
-    for (const GateProperties& gate : gates)
+    for (const GateProperties &gate : gates)
     {
         std::vector<int>::const_iterator begin = (gate.*operandType).begin();
         const std::vector<int>::const_iterator end = (gate.*operandType).end();
@@ -119,7 +118,7 @@ int CircuitData::calculateAmountOfCycles(const std::vector<GateProperties> gates
 
     // Find the highest cycle in the gate vector.
     int amountOfCycles = 0;
-    for (const GateProperties& gate : gates) {
+    for (const GateProperties &gate : gates) {
         const int gateCycle = gate.cycle;
         if (gateCycle < 0 || gateCycle > MAX_ALLOWED_VISUALIZER_CYCLE) {
             FATAL("Found gate with cycle index: " << gateCycle << ". Only indices between 0 and " 
@@ -142,7 +141,7 @@ int CircuitData::calculateAmountOfCycles(const std::vector<GateProperties> gates
     return amountOfCycles + 1; 
 }
 
-std::vector<Cycle> CircuitData::generateCycles(std::vector<GateProperties>& gates, const int cycleDuration) const {
+std::vector<Cycle> CircuitData::generateCycles(std::vector<GateProperties> &gates, const int cycleDuration) const {
     DOUT("Generating cycles...");
 
     // Generate the cycles.
@@ -159,7 +158,7 @@ std::vector<Cycle> CircuitData::generateCycles(std::vector<GateProperties>& gate
         cycles.push_back({i, true, false, partition});
     }
     // Mark non-empty cycles and add gates to their corresponding cycles.
-    for (GateProperties& gate : gates) {
+    for (GateProperties &gate : gates) {
         cycles[gate.cycle].empty = false;
         cycles[gate.cycle].gates[0].push_back(gate);
     }
@@ -179,11 +178,11 @@ void CircuitData::compressCycles() {
         // Add each non-empty cycle to the vector and update its relevant
         // attributes.
         if (cycles[i].empty == false) {
-            Cycle& cycle = cycles[i];
+            Cycle &cycle = cycles[i];
             cycle.index = safe_int_cast(i) - amountOfCompressions;
             // Update the gates in the cycle with the new cycle index.
             for (size_t j = 0; j < cycle.gates.size(); j++) {
-                for (GateProperties& gate : cycle.gates[j]) {
+                for (GateProperties &gate : cycle.gates[j]) {
                     gate.cycle -= amountOfCompressions;
                 }
             }
@@ -201,11 +200,11 @@ void CircuitData::partitionCyclesWithOverlap()
     DOUT("Partioning cycles with connections overlap...");
 
     // Find cycles with overlapping connections.
-    for (Cycle& cycle : cycles) {
+    for (Cycle &cycle : cycles) {
         if (cycle.gates[0].size() > 1) {
             // Find the multi-operand gates in this cycle.
             std::vector<std::reference_wrapper<GateProperties>> candidates;
-            for (GateProperties& gate : cycle.gates[0]) {
+            for (GateProperties &gate : cycle.gates[0]) {
                 if (gate.operands.size() + gate.creg_operands.size() > 1) {
                     candidates.push_back(gate);
                 }
@@ -215,15 +214,15 @@ void CircuitData::partitionCyclesWithOverlap()
             // check if any of those gates overlap.
             if (candidates.size() > 1) {
                 std::vector<std::vector<std::reference_wrapper<GateProperties>>> partition;
-                for (GateProperties& candidate : candidates) {
+                for (GateProperties &candidate : candidates) {
                     // Check if the gate can be placed in an existing chunk.
                     bool placed = false;
-                    for (std::vector<std::reference_wrapper<GateProperties>>& chunk : partition) {
+                    for (std::vector<std::reference_wrapper<GateProperties>> &chunk : partition) {
                         // Check if the gate overlaps with any other gate in the
                         // chunk.
                         bool gateOverlaps = false;
                         const std::pair<GateOperand, GateOperand> edgeOperands1 = calculateEdgeOperands(getGateOperands(candidate), amountOfQubits);
-                        for (const GateProperties& gateInChunk : chunk) {
+                        for (const GateProperties &gateInChunk : chunk) {
                             const std::pair<GateOperand, GateOperand> edgeOperands2 = calculateEdgeOperands(getGateOperands(gateInChunk), amountOfQubits);
                             if (edgeOperands1.first >= edgeOperands2.first && edgeOperands1.first <= edgeOperands2.second || 
                                 edgeOperands1.second >= edgeOperands2.first && edgeOperands1.second <= edgeOperands2.second)
@@ -254,7 +253,7 @@ void CircuitData::partitionCyclesWithOverlap()
                     DOUT("Divided cycle " << cycle.index << " into " << partition.size() << " chunks:");
                     for (size_t i = 0; i < partition.size(); i++) {
                         DOUT("Gates in chunk " << i << ":");
-                        for (const GateProperties& gate : partition[i]) {
+                        for (const GateProperties &gate : partition[i]) {
                             DOUT("\t" << gate.name);
                         }
                     }
@@ -281,7 +280,7 @@ void CircuitData::cutEmptyCycles(const Layout layout) {
     // Find cuttable ranges...
     cutCycleRangeIndices = findCuttableEmptyRanges(layout);
     // ... and cut them.
-    for (const EndPoints& range : cutCycleRangeIndices) {
+    for (const EndPoints &range : cutCycleRangeIndices) {
         for (int i = range.start; i <= range.end; i++) {
             cycles[i].cut = true;
         }
@@ -317,7 +316,7 @@ std::vector<EndPoints> CircuitData::findCuttableEmptyRanges(const Layout layout)
 
     // Check for empty cycle ranges above the threshold.
     std::vector<EndPoints> rangesAboveThreshold;
-    for (const auto& range : ranges) {
+    for (const auto &range : ranges) {
         const int length = range.end - range.start + 1;
         if (length >= layout.cycles.cutting.getEmptyCycleThreshold()) {
             rangesAboveThreshold.push_back(range);
@@ -343,7 +342,7 @@ bool CircuitData::isCycleCut(const int cycleIndex) const {
 }
 
 bool CircuitData::isCycleFirstInCutRange(const int cycleIndex) const {
-    for (const EndPoints& range : cutCycleRangeIndices) {
+    for (const EndPoints &range : cutCycleRangeIndices) {
         if (cycleIndex == range.start) {
             return true;
         }
@@ -365,7 +364,7 @@ void CircuitData::printProperties() const {
     }
 
     DOUT("cutCycleRangeIndices");
-    for (const auto& range : cutCycleRangeIndices)
+    for (const auto &range : cutCycleRangeIndices)
     {
         DOUT("\tstart: " << range.start << " end: " << range.end);
     }
@@ -596,7 +595,7 @@ void Structure::printProperties() const {
     }
 
     DOUT("bitLineSegments:");
-    for (const auto& segment : bitLineSegments) {
+    for (const auto &segment : bitLineSegments) {
         DOUT("\tcut: " << segment.second << " start: " << segment.first.start << " end: " << segment.first.end);
     }
 }
@@ -605,7 +604,7 @@ void Structure::printProperties() const {
 // =                      Visualize                      = //
 // ======================================================= //
 
-void visualize(const ql::quantum_program* program, const std::string& configPath, const std::string& waveformMappingPath) {
+void visualize(const ql::quantum_program* program, const std::string &configPath, const std::string &waveformMappingPath) {
     IOUT("Starting visualization...");
 
     // Parse and validate the layout and instruction configuration file.
@@ -770,7 +769,7 @@ void visualize(const ql::quantum_program* program, const std::string& configPath
     IOUT("Visualization complete...");
 }
 
-Layout parseConfiguration(const std::string& configPath) {
+Layout parseConfiguration(const std::string &configPath) {
     DOUT("Parsing visualizer configuration file.");
 
     json config;
@@ -921,7 +920,7 @@ Layout parseConfiguration(const std::string& configPath) {
 
     // Load the custom instruction visualization parameters.
     if (config.count("instructions") == 1) {
-        for (const auto& instruction : config["instructions"].items()) {
+        for (const auto &instruction : config["instructions"].items()) {
             try {
                 GateVisual gateVisual;
                 json content = instruction.value();
@@ -1004,7 +1003,7 @@ Layout parseConfiguration(const std::string& configPath) {
     return layout;
 }
 
-PulseVisualization parseWaveformMapping(const std::string& waveformMappingPath) {
+PulseVisualization parseWaveformMapping(const std::string &waveformMappingPath) {
     DOUT("Parsing waveform mapping configuration file...");
 
     // Read the waveform mapping json file.
@@ -1034,7 +1033,7 @@ PulseVisualization parseWaveformMapping(const std::string& waveformMappingPath) 
                 pulseVisualization.sampleRateReadout = waveformMapping["samplerates"]["readout"];
             else
                 FATAL("Missing 'samplerateReadout' attribute in waveform mapping file!");
-        } catch (std::exception& e) {
+        } catch (std::exception &e) {
             FATAL("Exception while parsing sample rates from waveform mapping file:\n\t" << e.what()
                  << "\n\tMake sure the sample rates are integers!" );
         }
@@ -1045,24 +1044,24 @@ PulseVisualization parseWaveformMapping(const std::string& waveformMappingPath) 
     // Parse the codeword mapping.
     if (waveformMapping.count("codewords") == 1) {
         // For each codeword...
-        for (const auto& codewordMapping : waveformMapping["codewords"].items()) {
+        for (const auto &codewordMapping : waveformMapping["codewords"].items()) {
             // ... get the index and the qubit pulse mappings it contains.
             int codewordIndex = 0;
             try {
                 codewordIndex = std::stoi(codewordMapping.key());
-            } catch (std::exception& e) {
+            } catch (std::exception &e) {
                 FATAL("Exception while parsing key to codeword mapping " << codewordMapping.key()
                      << " in waveform mapping file:\n\t" << e.what() << "\n\tKey should be an integer!");
             }
             std::map<int, GatePulses> qubitMapping;
 
             // For each qubit in the codeword...
-            for (const auto& qubitMap : codewordMapping.value().items()) {
+            for (const auto &qubitMap : codewordMapping.value().items()) {
                 // ... get the index and the pulse mapping.
                 int qubitIndex = 0;
                 try {
                     qubitIndex = std::stoi(qubitMap.key());
-                } catch (std::exception& e) {
+                } catch (std::exception &e) {
                     FATAL("Exception while parsing key to qubit mapping " << qubitMap.key() << " in waveform mapping file:\n\t"
                          << e.what() << "\n\tKey should be an integer!");
                 }
@@ -1076,7 +1075,7 @@ PulseVisualization parseWaveformMapping(const std::string& waveformMappingPath) 
                     if (gatePulsesMapping.contains("microwave")) microwave = gatePulsesMapping["microwave"].get<std::vector<double>>();
                     if (gatePulsesMapping.contains("flux")) flux = gatePulsesMapping["flux"].get<std::vector<double>>();
                     if (gatePulsesMapping.contains("readout")) readout = gatePulsesMapping["readout"].get<std::vector<double>>();
-                } catch (std::exception& e) {
+                } catch (std::exception &e) {
                     FATAL("Exception while parsing waveforms from waveform mapping file:\n\t" << e.what()
                          << "\n\tMake sure the waveforms are arrays of integers!" );
                 }
@@ -1132,7 +1131,7 @@ PulseVisualization parseWaveformMapping(const std::string& waveformMappingPath) 
     return pulseVisualization;
 }
 
-void validateLayout(Layout& layout) {
+void validateLayout(Layout &layout) {
     DOUT("Validating layout...");
 
     //TODO: add more validation
@@ -1215,7 +1214,7 @@ std::pair<GateOperand, GateOperand> calculateEdgeOperands(const std::vector<Gate
 
     GateOperand minOperand = operands[0];
     GateOperand maxOperand = operands[operands.size() - 1];
-    for (const GateOperand& operand : operands) {
+    for (const GateOperand &operand : operands) {
         const int row = (operand.bitType == QUANTUM) ? operand.index : operand.index + amountOfQubits;
         if (row < minOperand.index) minOperand = operand;
         if (row > maxOperand.index) maxOperand = operand;
@@ -1224,10 +1223,10 @@ std::pair<GateOperand, GateOperand> calculateEdgeOperands(const std::vector<Gate
     return {minOperand, maxOperand};
 }
 
-void fixMeasurementOperands(std::vector<GateProperties>& gates) {
+void fixMeasurementOperands(std::vector<GateProperties> &gates) {
     DOUT("Fixing measurement gates with no classical operand...");
 
-    for (GateProperties& gate : gates) {
+    for (GateProperties &gate : gates) {
         // Check for a measurement gate without explicitly specified classical
         // operand.
         if (isMeasurement(gate)) {
@@ -1255,8 +1254,8 @@ std::vector<QubitLines> generateQubitLines(const std::vector<GateProperties> gat
 
     // Find the gates per qubit.
     std::vector<std::vector<GateProperties>> gatesPerQubit(circuitData.amountOfQubits);
-    for (const GateProperties& gate : gates) {
-        for (const GateOperand& operand : getGateOperands(gate)) {
+    for (const GateProperties &gate : gates) {
+        for (const GateOperand &operand : getGateOperands(gate)) {
             if (operand.bitType == QUANTUM) {
                 gatesPerQubit[operand.index].push_back(gate);
             }
@@ -1271,7 +1270,7 @@ std::vector<QubitLines> generateQubitLines(const std::vector<GateProperties> gat
         Line fluxLine;
         Line readoutLine;
 
-        for (const GateProperties& gate : gatesPerQubit[qubitIndex]) {
+        for (const GateProperties &gate : gatesPerQubit[qubitIndex]) {
             const EndPoints gateCycles {gate.cycle, gate.cycle + (gate.duration / circuitData.cycleDuration) - 1};
             const int codeword = gate.codewords[0];
             try {
@@ -1285,7 +1284,7 @@ std::vector<QubitLines> generateQubitLines(const std::vector<GateProperties> gat
 
                 if (gatePulses.readout.size() > 0)
                     readoutLine.segments.push_back({PULSE, gateCycles, {gatePulses.readout, pulseVisualization.sampleRateReadout}});
-            } catch (std::exception& e) {
+            } catch (std::exception &e) {
                 WOUT("Missing codeword and/or qubit in waveform mapping file for gate: " << gate.name << "! Replacing pulse with flat line...\n\t" <<
                      "Indices are: codeword = " << codeword << " and qubit = " << qubitIndex << "\n\texception: " << e.what());
             }
@@ -1354,7 +1353,7 @@ std::vector<QubitLines> generateQubitLines(const std::vector<GateProperties> gat
 double calculateMaxAmplitude(const std::vector<LineSegment> lineSegments) {
     double maxAmplitude = 0;
 
-    for (const LineSegment& segment : lineSegments) {
+    for (const LineSegment &segment : lineSegments) {
         const std::vector<double> waveform = segment.pulse.waveform;
         double maxAmplitudeInSegment = 0;
         for (const double amplitude : waveform) {
@@ -1369,7 +1368,7 @@ double calculateMaxAmplitude(const std::vector<LineSegment> lineSegments) {
     return maxAmplitude;
 }
 
-void insertFlatLineSegments(std::vector<LineSegment>& existingLineSegments, const int amountOfCycles) {
+void insertFlatLineSegments(std::vector<LineSegment> &existingLineSegments, const int amountOfCycles) {
     const int minCycle = 0;
     const int maxCycle = amountOfCycles - 1;
     for (int i = minCycle; i <= maxCycle; i++) {
@@ -1381,7 +1380,7 @@ void insertFlatLineSegments(std::vector<LineSegment>& existingLineSegments, cons
             }
 
             bool foundEndOfEmptyRange = false;
-            for (const LineSegment& segment : existingLineSegments) {
+            for (const LineSegment &segment : existingLineSegments) {
                 if (j == segment.range.start) {
                     foundEndOfEmptyRange = true;
                     // If the start of the new search for an empty range is also
@@ -1400,7 +1399,7 @@ void insertFlatLineSegments(std::vector<LineSegment>& existingLineSegments, cons
     }
 }
 
-Dimensions calculateTextDimensions(const std::string& text, const int fontHeight, const Layout layout) {
+Dimensions calculateTextDimensions(const std::string &text, const int fontHeight, const Layout layout) {
     const char* chars = text.c_str();
     cimg_library::CImg<unsigned char> imageTextDimensions;
     const char color = 1;
@@ -1409,7 +1408,7 @@ Dimensions calculateTextDimensions(const std::string& text, const int fontHeight
     return Dimensions { imageTextDimensions.width(), imageTextDimensions.height() };
 }
 
-void drawCycleLabels(cimg_library::CImg<unsigned char>& image,
+void drawCycleLabels(cimg_library::CImg<unsigned char> &image,
                      const Layout layout,
                      const CircuitData circuitData,
                      const Structure structure) {
@@ -1445,7 +1444,7 @@ void drawCycleLabels(cimg_library::CImg<unsigned char>& image,
     }
 }
 
-void drawCycleEdges(cimg_library::CImg<unsigned char>& image,
+void drawCycleEdges(cimg_library::CImg<unsigned char> &image,
                     const Layout layout,
                     const CircuitData circuitData,
                     const Structure structure) {
@@ -1463,7 +1462,7 @@ void drawCycleEdges(cimg_library::CImg<unsigned char>& image,
     }
 }
 
-void drawBitLineLabels(cimg_library::CImg<unsigned char>& image,
+void drawBitLineLabels(cimg_library::CImg<unsigned char> &image,
                        const Layout layout,
                        const CircuitData circuitData,
                        const Structure structure)
@@ -1509,7 +1508,7 @@ void drawBitLineLabels(cimg_library::CImg<unsigned char>& image,
     }
 }
 
-void drawBitLineEdges(cimg_library::CImg<unsigned char>& image,
+void drawBitLineEdges(cimg_library::CImg<unsigned char> &image,
                       const Layout layout,
                       const CircuitData circuitData,
                       const Structure structure)
@@ -1567,7 +1566,7 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image,
             break;
     }
 
-    for (const std::pair<EndPoints, bool>& segment : structure.getBitLineSegments()) {
+    for (const std::pair<EndPoints, bool> &segment : structure.getBitLineSegments()) {
         const int y = structure.getCellPosition(0, row, bitType).y0 + structure.getCellDimensions().height / 2;
         // Check if the segment is a cut segment.
         if (segment.second == true) {
@@ -1581,7 +1580,7 @@ void drawBitLine(cimg_library::CImg<unsigned char> &image,
     }
 }
 
-void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image,
+void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char> &image,
                                  const Layout layout,
                                  const CircuitData circuitData,
                                  const Structure structure) {
@@ -1590,7 +1589,7 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image,
     const int y = structure.getCellPosition(0, 0, CLASSICAL).y0 + structure.getCellDimensions().height / 2;
 
     // Draw the segments of the double line.
-    for (const std::pair<EndPoints, bool>& segment : structure.getBitLineSegments()) {
+    for (const std::pair<EndPoints, bool> &segment : structure.getBitLineSegments()) {
         // Check if the segment is a cut segment.
         if (segment.second == true) {
             const int height = structure.getCellDimensions().height / 8;
@@ -1621,7 +1620,7 @@ void drawGroupedClassicalBitLine(cimg_library::CImg<unsigned char>& image,
     image.draw_text(xLabel, yLabel, label.c_str(), layout.bitLines.labels.getCbitColor().data(), 0, 1, layout.bitLines.labels.getFontHeight());
 }
 
-void drawWiggle(cimg_library::CImg<unsigned char>& image,
+void drawWiggle(cimg_library::CImg<unsigned char> &image,
                 const int x0,
                 const int x1,
                 const int y,
@@ -1633,7 +1632,7 @@ void drawWiggle(cimg_library::CImg<unsigned char>& image,
     image.draw_line(x0 + width / 3 * 2,	y + height,	x1,					y,			color.data());
 }
 
-void drawLine(cimg_library::CImg<unsigned char>& image,
+void drawLine(cimg_library::CImg<unsigned char> &image,
               const Structure structure,
               const int cycleDuration,
               const Line line,
@@ -1641,7 +1640,7 @@ void drawLine(cimg_library::CImg<unsigned char>& image,
               const int y,
               const int maxLineHeight,
               const std::array<unsigned char, 3> color) {
-    for (const LineSegment& segment : line.segments) {
+    for (const LineSegment &segment : line.segments) {
         const int x0 = structure.getCellPosition(segment.range.start, qubitIndex, QUANTUM).x0;
         const int x1 = structure.getCellPosition(segment.range.end, qubitIndex, QUANTUM).x1;
         const int yMiddle = y + maxLineHeight / 2;
@@ -1720,7 +1719,7 @@ void drawLine(cimg_library::CImg<unsigned char>& image,
     }
 }
 
-void drawCycle(cimg_library::CImg<unsigned char>& image,
+void drawCycle(cimg_library::CImg<unsigned char> &image,
                const Layout layout,
                const CircuitData circuitData,
                const Structure structure,
@@ -1732,14 +1731,14 @@ void drawCycle(cimg_library::CImg<unsigned char>& image,
         const int chunkOffset = safe_int_cast(chunkIndex) * structure.getCellDimensions().width;
 
         // Draw each of the gates in the current chunk.
-        for (const GateProperties& gate : cycle.gates[chunkIndex])
+        for (const GateProperties &gate : cycle.gates[chunkIndex])
         {
             drawGate(image, layout, circuitData, gate, structure, chunkOffset);
         }
     }
 }
 
-void drawGate(cimg_library::CImg<unsigned char>& image,
+void drawGate(cimg_library::CImg<unsigned char> &image,
               const Layout layout,
               const CircuitData circuitData,
               const GateProperties gate,
@@ -1765,7 +1764,7 @@ void drawGate(cimg_library::CImg<unsigned char>& image,
     // Fetch the operands used by this gate.
     DOUT(gate.name);
     std::vector<GateOperand> operands = getGateOperands(gate);
-    for (const GateOperand& operand : operands) {
+    for (const GateOperand &operand : operands) {
         DOUT("bitType: " << operand.bitType << " value: " << operand.index);
     }
 
@@ -1885,7 +1884,7 @@ void drawGate(cimg_library::CImg<unsigned char>& image,
                 case CROSS:		DOUT("node.type = CROSS"); drawCrossNode(image, layout, structure, node, cell); break;
                 default:        WOUT("Unknown gate display node type!"); break;
             }
-        } catch (const std::out_of_range& e) {
+        } catch (const std::out_of_range &e) {
             WOUT(std::string(e.what()));
             return;
         }
@@ -1894,7 +1893,7 @@ void drawGate(cimg_library::CImg<unsigned char>& image,
     }
 }
 
-void drawGateNode(cimg_library::CImg<unsigned char>& image,
+void drawGateNode(cimg_library::CImg<unsigned char> &image,
                   const Layout layout,
                   const Structure structure,
                   const Node node,
@@ -1920,7 +1919,7 @@ void drawGateNode(cimg_library::CImg<unsigned char>& image,
         node.displayName.c_str(), node.fontColor.data(), 0, 1, node.fontHeight);
 }
 
-void drawControlNode(cimg_library::CImg<unsigned char>& image,
+void drawControlNode(cimg_library::CImg<unsigned char> &image,
                      const Layout layout,
                      const Structure structure,
                      const Node node,
@@ -1934,7 +1933,7 @@ void drawControlNode(cimg_library::CImg<unsigned char>& image,
     image.draw_circle(position.x, position.y, node.radius, node.backgroundColor.data());
 }
 
-void drawNotNode(cimg_library::CImg<unsigned char>& image,
+void drawNotNode(cimg_library::CImg<unsigned char> &image,
                  const Layout layout,
                  const Structure structure,
                  const Node node,
@@ -1963,7 +1962,7 @@ void drawNotNode(cimg_library::CImg<unsigned char>& image,
     image.draw_line(xVer, yVer0, xVer, yVer1, node.backgroundColor.data());
 }
 
-void drawCrossNode(cimg_library::CImg<unsigned char>& image,
+void drawCrossNode(cimg_library::CImg<unsigned char> &image,
                    const Layout layout,
                    const Structure structure,
                    const Node node,
@@ -1985,7 +1984,7 @@ void drawCrossNode(cimg_library::CImg<unsigned char>& image,
 }
 
 void printGates(const std::vector<GateProperties> gates) {
-    for (const GateProperties& gate : gates) {
+    for (const GateProperties &gate : gates) {
         IOUT(gate.name);
 
         std::string operands = "[";
@@ -2022,14 +2021,14 @@ int safe_int_cast(const size_t argument) {
     return static_cast<int>(argument);
 }
 
-void assertPositive(const int argument, const std::string& parameter) {
+void assertPositive(const int argument, const std::string &parameter) {
     if (argument < 0) FATAL(parameter << " is negative. Only positive values are allowed!");
 }
 
-void assertPositive(const double argument, const std::string& parameter) {
+void assertPositive(const double argument, const std::string &parameter) {
     if (argument < 0) FATAL(parameter << " is negative. Only positive values are allowed!");
 }
 
 #endif //WITH_VISUALIZER
 
-} // ql
+} // namespace ql
