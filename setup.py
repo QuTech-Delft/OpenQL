@@ -116,6 +116,15 @@ class build_ext(_build_ext):
                 ['-DCMAKE_BUILD_TYPE=' + build_type]
             )
 
+            # If we're on Windows, we're probably building with MSVC. In that
+            # case, we have to tell CMake whether we want to build for x86 or
+            # x64.
+            if platform.system() == 'Windows':
+                if sys.maxsize > 2**32:
+                    cmd = cmd['-A']['x64']
+                else:
+                    cmd = cmd['-A']['win32']
+
             # Unitary decomposition can be disabled using an environment
             # variable.
             if 'OPENQL_DISABLE_UNITARY' in os.environ:
