@@ -338,7 +338,10 @@ VisualizerPass::VisualizerPass(const std::string &name) : AbstractPass(name) {
  */
 void VisualizerPass::runOnProgram(ql::quantum_program *program) {
     DOUT("run VisualizerPass with name = " << getPassName() << " on program " << program->name);
-    ql::visualize(program, getPassOptions()->getOption("visualizer_config_path"), getPassOptions()->getOption("visualizer_waveform_mapping_path"));
+    ql::visualize(program, {
+        getPassOptions()->getOption("visualizer_config_path"),
+        getPassOptions()->getOption("visualizer_waveform_mapping_path")
+    });
 }
 
 /**
