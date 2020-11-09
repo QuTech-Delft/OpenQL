@@ -189,6 +189,7 @@ public:
     virtual instruction_t qasm() const = 0;
     virtual gate_type_t   type() const = 0;
     virtual cmat_t        mat()  const = 0;  // to do : change cmat_t type to avoid stack smashing on 2 qubits gate operations
+    std::string visual_type = ""; // holds the visualization type of this gate that will be linked to a specific configuration in the visualizer
 };
 
 
@@ -468,6 +469,7 @@ class custom_gate : public gate {
 public:
     cmat_t              m;                // matrix representation
     std::string         arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
+    std::vector<size_t> codewords; // index 0 is right and index 1 is left, in case of multi-qubit gate
     explicit custom_gate(const std::string &name);
     custom_gate(const custom_gate &g);
     static bool is_qubit_id(const std::string &str);
