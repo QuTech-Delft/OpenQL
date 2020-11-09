@@ -134,6 +134,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set_target_properties(_openql PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
 endif()
 target_include_directories(_openql PRIVATE "${PYTHON_INCLUDE_DIRS}")
+add_backward(_openql)
 
 
 #=============================================================================#

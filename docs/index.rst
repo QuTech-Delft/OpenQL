@@ -27,6 +27,7 @@ While the instruction-level code is platform-specific, the quantum assembly code
    platform
    compiler
    compiler_passes
+   visualizer
 
 
 .. toctree::
