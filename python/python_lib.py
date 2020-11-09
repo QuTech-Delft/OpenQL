@@ -24,4 +24,4 @@ if not options:
 else:
     # if there are multiple, no idea how to choose which.
     options.sort()
-    print(os.path.join(libdir, options[0]))
+    print(os.path.join(libdir, options[0]).replace('\\','/'))
