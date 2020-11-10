@@ -15,18 +15,19 @@ ql.set_option('write_report_files', 'no')
 
 c = ql.Compiler("testCompiler")
 #c.add_pass("Writer");
-c.add_pass("RotationOptimizer");
-c.add_pass("DecomposeToffoli");
-c.add_pass("Scheduler");
-c.add_pass("BackendCompiler");
-c.add_pass("Visualizer");
+c.add_pass("RotationOptimizer")
+c.add_pass("DecomposeToffoli")
+c.add_pass("Scheduler")
+c.add_pass("BackendCompiler")
+c.add_pass("Visualizer")
 
-c.set_pass_option("BackendCompiler", "eqasm_compiler_name", "cc_light_compiler"); 
-c.set_pass_option("ALL", "skip", "no");
-c.set_pass_option("ALL", "write_qasm_files", "yes");
-c.set_pass_option("ALL", "write_report_files", "yes");
-c.set_pass_option("Visualizer", "visualizer_config_path", os.path.join(curdir, "visualizer_config_example.json"));
-c.set_pass_option("Visualizer", "visualizer_waveform_mapping_path", os.path.join(curdir, "waveform_mapping.json"));
+c.set_pass_option("BackendCompiler", "eqasm_compiler_name", "cc_light_compiler")
+c.set_pass_option("ALL", "skip", "no")
+c.set_pass_option("ALL", "write_qasm_files", "yes")
+c.set_pass_option("ALL", "write_report_files", "yes")
+c.set_pass_option("Visualizer", "visualizer_type", "CIRCUIT")
+c.set_pass_option("Visualizer", "visualizer_config_path", os.path.join(curdir, "visualizer_config_example.json"))
+c.set_pass_option("Visualizer", "visualizer_waveform_mapping_path", os.path.join(curdir, "waveform_mapping.json"))
 
 platformCustomGates = ql.Platform('starmon', os.path.join(curdir, 'hardware_config_cc_light_visualizer.json'))
 nqubits = 4

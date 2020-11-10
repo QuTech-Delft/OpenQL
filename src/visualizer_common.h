@@ -21,6 +21,21 @@
 
 namespace ql {
 
+// enum class VisualizationType {
+
+//     /**
+//      * Visualize the quantum program as a circuit composed of abstract gates, or
+//      * waveforms acting on qubits and classical registers
+//      */
+//     CIRCUIT,
+
+//     /**
+//      * Visualize the quantum program as a qubit interaction graph, with the
+//      * labels of edges between qubits indicating the number of interactions.
+//      */
+//     INTERACTION_GRAPH
+// };
+
 enum BitType {CLASSICAL, QUANTUM};
 
 struct Position4 {

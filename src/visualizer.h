@@ -33,7 +33,7 @@ struct VisualizerConfigurationPaths {
     const std::string &waveformMapping;
 };
 
-void visualize(const ql::quantum_program* program, const VisualizerConfigurationPaths configurationPaths);
+void visualize(const ql::quantum_program* program, const std::string &visualizationType, const VisualizerConfigurationPaths configurationPaths);
 
 void assertPositive(const int argument, const std::string &parameter);
 void assertPositive(const double argument, const std::string &parameter);

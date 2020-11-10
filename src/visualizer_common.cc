@@ -63,35 +63,45 @@ namespace ql {
 
 #ifndef WITH_VISUALIZER
 
-void visualize(const ql::quantum_program* program, const VisualizerConfigurationPaths configurationPaths) {
-    WOUT("The visualizer is disabled. If this was not intended, the X11 library might be missing and the visualizer has disabled itself.");
+void visualize(const ql::quantum_program* program, const std::string &visualizationType, const VisualizerConfigurationPaths configurationPaths) {
+    WOUT("The visualizer is disabled. If this was not intended, and OpenQL is running on Linux or Mac, the X11 library "
+        << "might be missing and the visualizer has disabled itself.");
 }
 
 #else
 
-void visualize(const ql::quantum_program* program, const VisualizerConfigurationPaths configurationPaths) {
+void visualize(const ql::quantum_program* program, const std::string &visualizationType, const VisualizerConfigurationPaths configurationPaths) {
     IOUT("Starting visualization...");
+    IOUT("Visualization type: " << visualizationType);
 
-    // Parse and validate the layout and instruction configuration file.
-    Layout layout = parseConfiguration(configurationPaths.config);
-    validateLayout(layout);
+    // Choose the proper visualization based on the visualization type.
+    if (visualizationType == "CIRCUIT") {
+        // Parse and validate the layout and instruction configuration file.
+        Layout layout = parseConfiguration(configurationPaths.config);
+        validateLayout(layout);
 
-    // Get the gate list from the program.
-    DOUT("Getting gate list...");
-    std::vector<GateProperties> gates = parseGates(program);
-    if (gates.size() == 0) {
-        FATAL("Quantum program contains no gates!");
+        // Get the gate list from the program.
+        DOUT("Getting gate list...");
+        std::vector<GateProperties> gates = parseGates(program);
+        if (gates.size() == 0) {
+            FATAL("Quantum program contains no gates!");
+        }
+
+        // Calculate circuit properties.
+        DOUT("Calculating circuit properties...");
+        const int cycleDuration = safe_int_cast(program->platform.cycle_time);
+        DOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
+        // Fix measurement gates without classical operands.
+        fixMeasurementOperands(gates);
+
+        visualizeCircuit(gates, layout, cycleDuration, configurationPaths.waveformMapping);
+    } else if (visualizationType == "INTERACTION_GRAPH") {
+        WOUT("Interaction graph visualization not yet implemented.");
+    } else if (visualizationType == "MAPPING_GRAPH") {
+        WOUT("Mapping graph visualization not yet implemented.");
+    } else {
+        FATAL("Unknown visualization type: " << visualizationType << "!");
     }
-
-    // Calculate circuit properties.
-    DOUT("Calculating circuit properties...");
-    const int cycleDuration = safe_int_cast(program->platform.cycle_time);
-    DOUT("Cycle duration is: " + std::to_string(cycleDuration) + " ns.");
-    // Fix measurement gates without classical operands.
-    fixMeasurementOperands(gates);
-
-    //TODO: allow user to choose visualization type (circuit, interaction graph, mapping graph)
-    visualizeCircuit(gates, layout, cycleDuration, configurationPaths.waveformMapping);
 
     IOUT("Visualization complete...");
 }
