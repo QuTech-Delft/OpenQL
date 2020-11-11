@@ -26,5 +26,21 @@ public:
     ) noexcept;
 };
 
+/**
+ * Exception class for containers.
+ */
+class ContainerException : public Exception {
+public:
+
+    /**
+     * Forward all constructors to the parent type.
+     */
+    template<typename... Args>
+    explicit ContainerException(Args&&... args) : Exception(std::forward<Args>(args)...) {
+    }
+
+};
+
+
 } // namespace utils
 } // namespace ql

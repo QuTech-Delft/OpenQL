@@ -1,9 +1,17 @@
-/**
- * @file   buffer_insertion.cc
- * @date   01/2017
- * @author Imran Ashraf
- * @author Hans van Someren
- * @brief  buffer insertion
+/** \file
+ * Buffer insertion pass implementation.
+ *
+ * The intended functionality and the use of insertion of buffer delays are not
+ * clear; see tests/test_cc_light.py for examples of use, though.
+ *
+ * Currently the functionality and code below strongly depend on bundles: only
+ * a previous bundle and the current bundle are checked for a pair of operations
+ * but the intended delay could be required between a bundler farther back
+ * because the duration is longer so the current implementation may not do what
+ * it intends. Below, the code is updated to modularity, but it is an exact copy
+ * of what it was, with creating bundles from the circuit and updating the
+ * circuit from the bundles around it. Once clarity is gained on intended
+ * functionality and use, it can be rewritten and corrected.
  */
 
 #include "utils/strings.h"
@@ -22,15 +30,6 @@ namespace ql {
 using namespace utils;
 
 /*
-    The intended functionality and the use of insertion of buffer delays are not clear;
-    see tests/test_cc_light.py for examples of use, though.
-    Currently the functionality and code below strongly depend on bundles:
-    only a previous bundle and the current bundle are checked for a pair of operations
-    but the intended delay could be required between a bundler farther back because the duration is longer
-    so the current implementation may not do what it intends.
-    Below, the code is updated to modularity, but it is an exact copy of what it was,
-    with creating bundles from the circuit and updating the circuit from the bundles around it.
-    Once clarity is gained on intended functionality and use, it can be rewritten and corrected.
 */
 static void insert_buffer_delays_kernel(
     quantum_kernel &kernel,

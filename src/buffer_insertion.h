@@ -1,8 +1,7 @@
-/**
- * @file   buffer_insertion.h
- * @date   11/2016
- * @author Nader Khammassi
- * @author Hans van Someren
+/** \file
+ * Buffer insertion pass.
+ *
+ * \see buffer_insertion.cc
  */
 
 #pragma once
