@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include "utils/str.h"
+#include "utils/vec.h"
 
 #include "gate.h"
 
@@ -27,7 +27,7 @@ class creg;
 
 class coperand {
 public:
-    virtual ql::operand_type_t type() const = 0;
+    virtual operand_type_t type() const = 0;
     virtual void print() const = 0;
     virtual ~coperand() = default;
     cval &as_cval();
@@ -41,7 +41,7 @@ public:
     int value;
     cval(int val);
     cval(const cval &cv);
-    ql::operand_type_t type() const override;
+    operand_type_t type() const override;
     void print() const override;
 };
 
@@ -50,18 +50,18 @@ public:
     size_t id;
     creg(size_t id);
     creg(const creg &c);
-    ql::operand_type_t type() const override;
+    operand_type_t type() const override;
     void print() const override;
 };
 
 class operation {
 public:
-    std::string operation_name;
-    std::string inv_operation_name;
+    utils::Str operation_name;
+    utils::Str inv_operation_name;
     operation_type_t operation_type;
-    std::vector<coperand*> operands;
+    utils::Vec<coperand*> operands;
 
-    operation(const creg &l, const std::string &op, const creg &r);
+    operation(const creg &l, const utils::Str &op, const creg &r);
 
     // used for assign
     operation(const creg &l);
@@ -72,7 +72,7 @@ public:
     // used for initializing with an imm
     operation(int val);
 
-    operation(const std::string &op, const creg &r);
+    operation(const utils::Str &op, const creg &r);
 };
 
 class classical : public gate {
@@ -81,7 +81,7 @@ public:
     cmat_t m;
 
     classical(const creg &dest, const operation &oper);
-    classical(const std::string &operation);
+    classical(const utils::Str &operation);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;

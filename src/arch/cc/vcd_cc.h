@@ -10,8 +10,7 @@
 
 #include "vcd.h"
 #include "settings_cc.h"
-
-#include <vector>
+#include "utils/vec.h"
 
 namespace ql {
 
@@ -26,7 +25,7 @@ public:     // funcs
     void kernelFinish(const std::string &kernelName, size_t durationInCycles);
     void bundleFinishGroup(size_t startCycle, unsigned int durationInCycles, uint32_t groupDigOut, const std::string &signalValue, int instrIdx, int group);
     void bundleFinish(size_t startCycle, uint32_t digOut, size_t maxDurationInCycles, int instrIdx);
-    void customGate(const std::string &iname, const std::vector<size_t> &qops, size_t startCycle, size_t durationInCycles);
+    void customGate(const std::string &iname, const utils::Vec<size_t> &qops, size_t startCycle, size_t durationInCycles);
 
 private:    // vars
     Vcd vcd;

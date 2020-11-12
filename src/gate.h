@@ -8,15 +8,15 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include "utils/str.h"
+#include "utils/vec.h"
 #include "utils/json.h"
 #include "utils/misc.h"
 #include "matrix.h"
 
 namespace ql {
 
-typedef std::string instruction_t;
+typedef utils::Str instruction_t;
 
 // gate types
 typedef enum __gate_type_t
@@ -180,9 +180,9 @@ const size_t MAX_CYCLE = std::numeric_limits<int>::max();
  */
 class gate {
 public:
-    std::string name;
-    std::vector<size_t> operands;
-    std::vector<size_t> creg_operands;
+    utils::Str name;
+    utils::Vec<size_t> operands;
+    utils::Vec<size_t> creg_operands;
     int int_operand = 0;
     size_t duration = 0;
     double angle = 0.0;                      // for arbitrary rotations
@@ -433,7 +433,7 @@ public:
     cmat_t m;
     size_t duration_in_cycles;
 
-    wait(std::vector<size_t> qubits, size_t d, size_t dc);
+    wait(utils::Vec<size_t> qubits, size_t d, size_t dc);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -469,11 +469,11 @@ public:
 class custom_gate : public gate {
 public:
     cmat_t              m;                // matrix representation
-    std::string         arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
-    explicit custom_gate(const std::string &name);
+    utils::Str         arch_operation_name;  // name of instruction in the architecture (e.g. cc_light_instr)
+    explicit custom_gate(const utils::Str &name);
     custom_gate(const custom_gate &g);
-    static bool is_qubit_id(const std::string &str);
-    static size_t qubit_id(const std::string &qubit);
+    static bool is_qubit_id(const utils::Str &str);
+    static size_t qubit_id(const utils::Str &qubit);
     void load(nlohmann::json &instr);
     void print_info() const;
     instruction_t qasm() const override;
@@ -484,9 +484,9 @@ public:
 class composite_gate : public custom_gate {
 public:
     cmat_t m;
-    std::vector<gate *> gs;
-    explicit composite_gate(const std::string &name);
-    composite_gate(const std::string &name, const std::vector<gate*> &seq);
+    utils::Vec<gate *> gs;
+    explicit composite_gate(const utils::Str &name);
+    composite_gate(const utils::Str &name, const utils::Vec<gate*> &seq);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;

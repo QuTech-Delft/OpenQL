@@ -1,9 +1,10 @@
 #include "classical.h"
 
 #include "utils/exception.h"
-#include "utils/str.h"
 
 namespace ql {
+
+using namespace utils;
 
 cval &coperand::as_cval() {
     try {
@@ -67,7 +68,7 @@ void creg::print() const {
     QL_COUT("creg with id: " << id);
 }
 
-operation::operation(const creg &l, const std::string &op, const creg &r) {
+operation::operation(const creg &l, const Str &op, const creg &r) {
     operands.push_back(new ql::creg(l));
     operands.push_back(new ql::creg(r));
     if (op == "+") {
@@ -136,7 +137,7 @@ operation::operation(int val) {
     operands.push_back(new ql::cval(val));
 }
 
-operation::operation(const std::string &op, const creg &r) {
+operation::operation(const Str &op, const creg &r) {
     if (op == "~") {
         operation_name = "not";
         operation_type = ql::operation_type_t::BITWISE;
@@ -164,7 +165,7 @@ classical::classical(const creg &dest, const operation &oper) {
     }
 }
 
-classical::classical(const std::string &operation) {
+classical::classical(const Str &operation) {
     QL_DOUT("Classical gate constructor for " << operation);
     auto operation_lower = utils::to_lower(operation);
     if ((operation_lower == "nop")) {
@@ -180,7 +181,7 @@ classical::classical(const std::string &operation) {
 }
 
 instruction_t classical::qasm() const {
-    std::string iopers;
+    Str iopers;
     int sz = creg_operands.size();
     for (int i = 0; i < sz; ++i) {
         if (i == sz - 1) {

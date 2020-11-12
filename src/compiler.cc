@@ -12,11 +12,13 @@
 
 namespace ql {
 
+using namespace utils;
+
 /**
  * @brief   Compiler constructor
  * @param   name Name of the compiler
  */
-quantum_compiler::quantum_compiler(const std::string &n) : name(n) {
+quantum_compiler::quantum_compiler(const Str &n) : name(n) {
     QL_DOUT("In quantum_compiler constructor before PassManager initialization ");
     constructPassManager();
 }
@@ -25,7 +27,7 @@ quantum_compiler::quantum_compiler(const std::string &n) : name(n) {
  * @brief   Compiles the program passed as parameter
  * @param   quantum_program   Object reference to the program to be compiled
  */
-void quantum_compiler::compile(ql::quantum_program *program) {
+void quantum_compiler::compile(quantum_program *program) {
     QL_DOUT("Compiler compiles program ");
     passManager->compile(program);
 }
@@ -35,7 +37,7 @@ void quantum_compiler::compile(ql::quantum_program *program) {
  * @param   realPassName String of the actual pass name
  * @param   symbolicPassName String of the alias pass name
  */
-void quantum_compiler::addPass(const std::string &realPassName, const std::string &symbolicPassName) {
+void quantum_compiler::addPass(const Str &realPassName, const Str &symbolicPassName) {
     QL_DOUT("Add real pass named: " << realPassName << " with alias " << symbolicPassName);
     passManager->addPassNamed(realPassName, symbolicPassName);
 }
@@ -44,7 +46,7 @@ void quantum_compiler::addPass(const std::string &realPassName, const std::strin
  * @brief   Adds a compiler pass with its actual name to the pass manager
  * @param   realPassName String of the actual pass name
  */
-void quantum_compiler::addPass(const std::string &realPassName) {
+void quantum_compiler::addPass(const Str &realPassName) {
     QL_DOUT("Add real pass named: " << realPassName);
     passManager->addPassNamed(realPassName, realPassName);
 }
@@ -56,9 +58,9 @@ void quantum_compiler::addPass(const std::string &realPassName) {
  * @param   optionValue String value of the option
  */
 void quantum_compiler::setPassOption(
-    const std::string &passName,
-    const std::string &optionName,
-    const std::string &optionValue
+    const Str &passName,
+    const Str &optionName,
+    const Str &optionValue
 ) {
     QL_DOUT(" Set option " << optionName << " = " << optionValue << " for pass " << passName);
 

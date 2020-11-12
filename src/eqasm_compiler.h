@@ -7,12 +7,14 @@
 
 #pragma once
 
+#include "utils/str.h"
+#include "utils/vec.h"
 #include "program.h"
 #include "platform.h"
 
 namespace ql {
 
-typedef std::vector<std::string> eqasm_t;
+typedef utils::Vec<utils::Str> eqasm_t;
 
 class quantum_platform;
 
@@ -33,12 +35,12 @@ public:
     /**
      * write eqasm code to file/stdout
      */
-    virtual void write_eqasm(const std::string &file_name="");
+    virtual void write_eqasm(const utils::Str &file_name="");
 
     /**
      * write traces
      */
-    virtual void write_traces(const std::string &file_name="");
+    virtual void write_traces(const utils::Str &file_name="");
 
 };
 

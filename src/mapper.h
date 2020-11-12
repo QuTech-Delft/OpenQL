@@ -11,12 +11,15 @@
 #include <chrono>
 #include <ctime>
 #include <ratio>
+#include "utils/map.h"
+#include "utils/vec.h"
+#include "utils/list.h"
+#include "utils/str.h"
 #include "platform.h"
 #include "kernel.h"
 #include "resource_manager.h"
 #include "gate.h"
 #include "scheduler.h"
-#include "utils/map.h"
 //#include "metrics.h"
 
 namespace ql {
@@ -87,7 +90,7 @@ typedef enum GridForms {
 
 class Grid {
 public:
-    const ql::quantum_platform* platformp;    // current platform: topology
+    const quantum_platform *platformp;    // current platform: topology
     size_t nq;                          // number of qubits in the platform
     size_t ncores;                      // number of cores in the platform
     // Grid configuration, all constant after initialization
@@ -96,16 +99,16 @@ public:
     int nx;                             // length of x dimension (x coordinates count 0..nx-1)
     int ny;                             // length of y dimension (y coordinates count 0..ny-1)
 
-    typedef std::list<size_t> neighbors_t;  // neighbors is a list of qubits
-    std::map<size_t,neighbors_t> nbs;   // nbs[i] is list of neighbor qubits of qubit i
-    std::map<size_t,int> x;             // x[i] is x coordinate of qubit i
-    std::map<size_t,int> y;             // y[i] is y coordinate of qubit i
-    std::vector<std::vector<size_t>>  dist; // dist[i][j] is computed distance between qubits i and j;
+    typedef utils::List<size_t> neighbors_t;  // neighbors is a list of qubits
+    utils::Map<size_t,neighbors_t> nbs;   // nbs[i] is list of neighbor qubits of qubit i
+    utils::Map<size_t,int> x;             // x[i] is x coordinate of qubit i
+    utils::Map<size_t,int> y;             // y[i] is y coordinate of qubit i
+    utils::Vec<utils::Vec<size_t>>  dist; // dist[i][j] is computed distance between qubits i and j;
 
     // Grid initializer
     // initialize mapper internal grid maps from configuration
     // this remains constant over multiple kernels on the same platform
-    void Init(const ql::quantum_platform *p);
+    void Init(const quantum_platform *p);
 
     // core index from qubit index
     // when multi-core assumes full and uniform core connectivity
@@ -222,8 +225,8 @@ class Virt2Real {
 private:
 
     size_t              nq;                 // size of the map; after initialization, will always be the same
-    std::vector<size_t> v2rMap;             // v2rMap[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
-    std::vector<realstate_t>rs;             // rs[real qubit index] -> {nostate|wasinited|hasstate}
+    utils::Vec<size_t> v2rMap;             // v2rMap[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
+    utils::Vec<realstate_t>rs;             // rs[real qubit index] -> {nostate|wasinited|hasstate}
 
 public:
 
@@ -264,12 +267,12 @@ public:
     void DPRINTReal(size_t r) const;
     void PrintReal(size_t r) const;
     void PrintVirt(size_t v) const;
-    void DPRINTReal(const std::string &s, size_t r0, size_t r1) const;
-    void PrintReal(const std::string &s, size_t r0, size_t r1) const;
-    void DPRINT(const std::string &s) const;
-    void Print(const std::string &s) const;
-    void Export(std::vector<size_t> &kv2rMap) const;
-    void Export(std::vector<int> &krs) const;
+    void DPRINTReal(const utils::Str &s, size_t r0, size_t r1) const;
+    void PrintReal(const utils::Str &s, size_t r0, size_t r1) const;
+    void DPRINT(const utils::Str &s) const;
+    void Print(const utils::Str &s) const;
+    void Export(utils::Vec<size_t> &kv2rMap) const;
+    void Export(utils::Vec<int> &krs) const;
 
 };
 
@@ -295,11 +298,11 @@ public:
 class FreeCycle {
 private:
 
-    const ql::quantum_platform   *platformp;// platform description
+    const quantum_platform   *platformp;// platform description
     size_t                  nq;      // size of the map; after initialization, will always be the same
     size_t                  ct;      // multiplication factor from cycles to nano-seconds (unit of duration)
-    std::vector<size_t>     fcv;     // fcv[real qubit index i]: qubit i is free from this cycle on
-    ql::arch::resource_manager_t rm;  // actual resources occupied by scheduled gates
+    utils::Vec<size_t>     fcv;     // fcv[real qubit index i]: qubit i is free from this cycle on
+    arch::resource_manager_t rm;  // actual resources occupied by scheduled gates
 
 
     // access free cycle value of qubit i
@@ -313,7 +316,7 @@ public:
     // default constructor was deleted because it cannot construct resource_manager_t without parameters
     FreeCycle();
 
-    void Init(const ql::quantum_platform *p);
+    void Init(const quantum_platform *p);
 
     // depth of the FreeCycle map
     // equals the max of all entries minus the min of all entries
@@ -326,8 +329,8 @@ public:
     // max of the FreeCycle map equals the max of all entries;
     size_t Max() const;
 
-    void DPRINT(const std::string &s) const;
-    void Print(const std::string &s) const;
+    void DPRINT(const utils::Str &s) const;
+    void Print(const utils::Str &s) const;
 
     // return whether gate with first operand qubit r0 can be scheduled earlier than with operand qubit r1
     bool IsFirstOperandEarlier(size_t r0, size_t r1) const;
@@ -339,7 +342,7 @@ public:
     // when we would schedule gate g, what would be its start cycle? return it
     // gate operands are real qubit indices
     // is purely functional, doesn't affect state
-    size_t StartCycleNoRc(ql::gate *g) const;
+    size_t StartCycleNoRc(gate *g) const;
 
     // when we would schedule gate g, what would be its start cycle? return it
     // gate operands are real qubit indices
@@ -347,19 +350,19 @@ public:
     // FIXME JvS: except it does. can't make it (or the gate) const, because
     //   resource managers are relying on random map[] operators in debug prints
     //   to create new default-initialized keys. Fun!
-    size_t StartCycle(ql::gate *g);
+    size_t StartCycle(gate *g);
 
     // schedule gate g in the FreeCycle map
     // gate operands are real qubit indices
     // the FreeCycle map is updated, not the resource map
     // this is done, because AddNoRc is used to represent just gate dependences, avoiding a build of a dep graph
-    void AddNoRc(ql::gate *g, size_t startCycle);
+    void AddNoRc(gate *g, size_t startCycle);
 
     // schedule gate g in the FreeCycle and resource maps
     // gate operands are real qubit indices
     // both the FreeCycle map and the resource map are updated
     // startcycle must be the result of an earlier StartCycle call (with rc!)
-    void Add(ql::gate *g, size_t startCycle);
+    void Add(gate *g, size_t startCycle);
 
 };
 
@@ -398,23 +401,23 @@ private:
 
     size_t                  nq;         // width of Past, Virt2Real, UseCount maps in number of real qubits
     size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
-    const ql::quantum_platform    *platformp; // platform describing resources for scheduling
-    ql::quantum_kernel      *kernelp;   // current kernel for creating gates
+    const quantum_platform    *platformp; // platform describing resources for scheduling
+    quantum_kernel      *kernelp;   // current kernel for creating gates
     Grid                    *gridp;     // pointer to grid to know which hops are inter-core
 
     Virt2Real               v2r;        // state: current Virt2Real map, imported/exported to kernel
     FreeCycle               fc;         // state: FreeCycle map (including resource_manager) of this Past
-    typedef ql::gate *      gate_p;
-    std::list<gate_p>       waitinglg;  // . . .  list of q gates in this Past, topological order, waiting to be scheduled in
+    typedef gate *      gate_p;
+    utils::List<gate_p>       waitinglg;  // . . .  list of q gates in this Past, topological order, waiting to be scheduled in
     //        waitinglg only contains gates from Add and final Schedule call
     //        when evaluating alternatives, it is empty when Past is cloned; so no state
 public:
-    std::list<gate_p>       lg;         // state: list of q gates in this Past, scheduled by their (start) cycle values
+    utils::List<gate_p>       lg;         // state: list of q gates in this Past, scheduled by their (start) cycle values
     //        so this is the result list of this Past, to compare with other Alters
 private:
-    std::list<gate_p>       outlg;      // . . .  list of gates flushed out of this Past, not yet put in outCirc
+    utils::List<gate_p>       outlg;      // . . .  list of gates flushed out of this Past, not yet put in outCirc
     //        when evaluating alternatives, outlg stays constant; so no state
-    std::map<gate_p,size_t> cycle;      // state: gate to cycle map, startCycle value of each past gatecycle[gp]
+    utils::Map<gate_p,size_t> cycle;      // state: gate to cycle map, startCycle value of each past gatecycle[gp]
     //        cycle[gp] can be different for each gp for each past
     //        gp->cycle is not used by MapGates
     //        although updated by set_cycle called from MakeAvailable/TakeAvailable
@@ -428,7 +431,7 @@ public:
     Past();
 
     // past initializer
-    void Init(const ql::quantum_platform *p, ql::quantum_kernel *k, Grid *g);
+    void Init(const quantum_platform *p, quantum_kernel *k, Grid *g);
 
     // import Past's v2r from v2r_value
     void ImportV2r(const Virt2Real &v2r_value);
@@ -438,7 +441,7 @@ public:
 
     void DFcPrint() const;
     void FcPrint() const;
-    void Print(const std::string &s) const;
+    void Print(const utils::Str &s) const;
 
     // all gates in past.waitinglg are scheduled here into past.lg
     // note that these gates all are mapped and so have real operand qubit indices
@@ -447,7 +450,7 @@ public:
     void Schedule();
 
     // compute costs in cycle extension of optionally scheduling initcirc before the inevitable circ
-    int InsertionCost(const ql::circuit &initcirc, const ql::circuit &circ) const;
+    int InsertionCost(const circuit &initcirc, const circuit &circ) const;
 
     // add the mapped gate to the current past
     // means adding it to the current past's waiting list, waiting for it to be scheduled later
@@ -464,10 +467,10 @@ public:
     // in class Future, kernel.c is copied into the dependence graph or copied to a local circuit; and
     // in Mapper::MapCircuit, a temporary local output circuit is used, which is written to kernel.c only at the very end
     bool new_gate(
-        ql::circuit &circ,
-        const std::string &gname,
-        const std::vector<size_t> &qubits,
-        const std::vector<size_t> &cregs = {},
+        circuit &circ,
+        const utils::Str &gname,
+        const utils::Vec<size_t> &qubits,
+        const utils::Vec<size_t> &cregs = {},
         size_t duration = 0,
         double angle = 0.0
     ) const;
@@ -478,7 +481,7 @@ public:
     // return number of moves added to this past
     size_t NumberOfMovesAdded() const;
 
-    static void new_gate_exception(const std::string &s);
+    static void new_gate_exception(const utils::Str &s);
 
     // will a swap(fr0,fr1) start earlier than a swap(sr0,sr1)?
     // is really a short-cut ignoring config file and perhaps several other details
@@ -487,7 +490,7 @@ public:
     // generate a move into circ with parameters r0 and r1 (which GenMove may reverse)
     // whether this was successfully done can be seen from whether circ was extended
     // please note that the reversal of operands may have been done also when GenMove was not successful
-    void GenMove(ql::circuit &circ, size_t &r0, size_t &r1);
+    void GenMove(circuit &circ, size_t &r0, size_t &r1);
 
     // generate a single swap/move with real operands and add it to the current past's waiting list;
     // note that the swap/move may be implemented by a series of gates (circuit circ below),
@@ -508,7 +511,7 @@ public:
     // if not yet mapped, allocate a new real qubit index and map to it
     size_t MapQubit(size_t v);
 
-    static void stripname(std::string &name);
+    static void stripname(utils::Str &name);
 
     // MakeReal gp
     // assume gp points to a virtual gate with virtual qubit indices as operands;
@@ -537,12 +540,12 @@ public:
     //      for each gate try recreating it with _prim appended to its name, otherwise keep it; this decomposes those with corresponding _prim entries
     // 4. final schedule:
     //      the resulting gates are subject to final scheduling (the original resource-constrained scheduler)
-    void MakeReal(ql::gate *gp, ql::circuit &circ);
+    void MakeReal(gate *gp, circuit &circ);
 
     // as mapper after-burner
     // make primitives of all gates that also have an entry with _prim appended to its name
     // and decomposing it according to the .json file gate decomposition
-    void MakePrimitive(ql::gate *gp, ql::circuit &circ) const;
+    void MakePrimitive(gate *gp, circuit &circ) const;
 
     size_t MaxFreeCycle() const;
 
@@ -554,10 +557,10 @@ public:
     void FlushAll();
 
     // gp as nonq gate immediately goes to outlg
-    void ByPass(ql::gate *gp);
+    void ByPass(gate *gp);
 
     // mainPast flushes outlg to parameter oc
-    void Out(ql::circuit &oc);
+    void Out(circuit &oc);
 
 };
 
@@ -596,16 +599,16 @@ public:
 // Having done that, the other Alters can be discarded and the selected one committed to the main Past.
 class Alter {
 public:
-    const ql::quantum_platform   *platformp;  // descriptions of resources for scheduling
-    ql::quantum_kernel     *kernelp;    // kernel pointer to allow calling kernel private methods
+    const quantum_platform   *platformp;  // descriptions of resources for scheduling
+    quantum_kernel     *kernelp;    // kernel pointer to allow calling kernel private methods
     Grid                   *gridp;      // grid pointer to know which hops are inter-core
     size_t                  nq;         // width of Past and Virt2Real map is number of real qubits
     size_t                  ct;         // cycle time, multiplier from cycles to nano-seconds
 
-    ql::gate               *targetgp;   // gate that this variation aims to make NN
-    std::vector<size_t>     total;      // full path, including source and target nodes
-    std::vector<size_t>     fromSource; // partial path after split, starting at source
-    std::vector<size_t>     fromTarget; // partial path after split, starting at target, backward
+    gate               *targetgp;   // gate that this variation aims to make NN
+    utils::Vec<size_t>     total;      // full path, including source and target nodes
+    utils::Vec<size_t>     fromSource; // partial path after split, starting at source
+    utils::Vec<size_t>     fromTarget; // partial path after split, starting at target, backward
 
     Past                    past;       // cloned main past, extended with swaps from this path
     double                  score;      // e.g. latency extension caused by the path
@@ -617,21 +620,21 @@ public:
 
     // Alter initializer
     // This should only be called after a virgin construction and not after cloning a path.
-    void Init(const ql::quantum_platform *p, ql::quantum_kernel *k, Grid *g);
+    void Init(const quantum_platform *p, quantum_kernel *k, Grid *g);
 
     // printing facilities of Paths
     // print path as hd followed by [0->1->2]
     // and then followed by "implying" swap(q0,q1) swap(q1,q2)
-    static void partialPrint(const std::string &hd, const std::vector<size_t> &pp);
+    static void partialPrint(const utils::Str &hd, const utils::Vec<size_t> &pp);
 
-    void DPRINT(const std::string &s) const;
-    void Print(const std::string &s) const;
+    void DPRINT(const utils::Str &s) const;
+    void Print(const utils::Str &s) const;
 
-    static void DPRINT(const std::string &s, const std::vector<Alter> &va);
-    static void Print(const std::string &s, const std::vector<Alter> &va);
+    static void DPRINT(const utils::Str &s, const utils::Vec<Alter> &va);
+    static void Print(const utils::Str &s, const utils::Vec<Alter> &va);
 
-    static void DPRINT(const std::string &s, const std::list<Alter> &la);
-    static void Print(const std::string &s, const std::list<Alter> &la);
+    static void DPRINT(const utils::Str &s, const utils::List<Alter> &la);
+    static void Print(const utils::Str &s, const utils::List<Alter> &la);
 
     // add a node to the path in front, extending its length with one
     void Add2Front(size_t q);
@@ -639,7 +642,7 @@ public:
     // add to a max of maxnumbertoadd swap gates for the current path to the given past
     // this past can be a path-local one or the main past
     // after having added them, schedule the result into that past
-    void AddSwaps(Past &past, const std::string &mapselectswapsopt) const;
+    void AddSwaps(Past &past, const utils::Str &mapselectswapsopt) const;
 
     // compute cycle extension of the current alternative in prevPast relative to the given base past
     //
@@ -667,7 +670,7 @@ public:
     // distance=5   means length=6  means 4 swaps + 1 CZ gate, e.g.
     // index in total:      0           1           2           length-3        length-2        length-1
     // qubit:               2   ->      5   ->      7   ->      3       ->      1       CZ      4
-    void Split(const Grid &grid, std::list<Alter> &resla) const;
+    void Split(const Grid &grid, utils::List<Alter> &resla) const;
 
 };
 
@@ -706,38 +709,38 @@ public:
 
 class Future {
 public:
-    const ql::quantum_platform            *platformp;
+    const quantum_platform            *platformp;
     Scheduler                       *schedp;        // a pointer, since dependence graph doesn't change
-    ql::circuit                     input_gatepv;   // input circuit when not using scheduler based avlist
+    circuit                     input_gatepv;   // input circuit when not using scheduler based avlist
 
-    utils::Map<ql::gate*,bool>        scheduled;      // state: has gate been scheduled, here: done from future?
-    std::list<lemon::ListDigraph::Node> avlist;         // state: which nodes/gates are available for mapping now?
-    ql::circuit::iterator           input_gatepp;   // state: alternative iterator in input_gatepv
+    utils::Map<gate*,bool>        scheduled;      // state: has gate been scheduled, here: done from future?
+    utils::List<lemon::ListDigraph::Node> avlist;         // state: which nodes/gates are available for mapping now?
+    circuit::iterator           input_gatepp;   // state: alternative iterator in input_gatepv
 
     // just program wide initialization
-    void Init(const ql::quantum_platform *p);
+    void Init(const quantum_platform *p);
 
     // Set/switch input to the provided circuit
     // nq and nc are parameters because nc may not be provided by platform but by kernel
     // the latter should be updated when mapping multiple kernels
-    void SetCircuit(ql::quantum_kernel &kernel, Scheduler &sched, size_t nq, size_t nc);
+    void SetCircuit(quantum_kernel &kernel, Scheduler &sched, size_t nq, size_t nc);
 
     // Get from avlist all gates that are non-quantum into nonqlg
     // Non-quantum gates include: classical, and dummy (SOURCE/SINK)
     // Return whether some non-quantum gate was found
-    bool GetNonQuantumGates(std::list<ql::gate*> &nonqlg) const;
+    bool GetNonQuantumGates(utils::List<gate*> &nonqlg) const;
 
     // Get all gates from avlist into qlg
     // Return whether some gate was found
-    bool GetGates(std::list<ql::gate*> &qlg) const;
+    bool GetGates(utils::List<gate*> &qlg) const;
 
     // Indicate that a gate currently in avlist has been mapped, can be taken out of the avlist
     // and its successors can be made available
-    void DoneGate(ql::gate *gp);
+    void DoneGate(gate *gp);
 
     // Return gp in lag that is most critical (provided lookahead is enabled)
     // This is used in tiebreak, when every other option has failed to make a distinction.
-    ql::gate *MostCriticalIn(std::list<ql::gate*> &lag) const;
+    gate *MostCriticalIn(utils::List<gate*> &lag) const;
 
 };
 
@@ -812,8 +815,8 @@ class Mapper {
 private:
                                     // Initialized by Mapper::Init
                                     // OpenQL wide configuration, all constant after initialization
-    const ql::quantum_platform *platformp;// current platform: topology and gate definitions
-    ql::quantum_kernel   *kernelp;  // (copy of) current kernel (class) with free private circuit and methods
+    const quantum_platform *platformp;// current platform: topology and gate definitions
+    quantum_kernel   *kernelp;  // (copy of) current kernel (class) with free private circuit and methods
                                     // primarily to create gates in Past; Past is part of Mapper and of each Alter
 
     size_t          nq;             // number of qubits in the platform, number of real qubits
@@ -829,12 +832,12 @@ public:
                                     // Passed back by Mapper::Map to caller for reporting
     size_t          nswapsadded;    // number of swaps added (including moves)
     size_t          nmovesadded;    // number of moves added
-    std::vector<size_t> v2r_in;     // v2r[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
-    std::vector<int>    rs_in;      // rs[real qubit index] -> {nostate|wasinited|hasstate}
-    std::vector<size_t> v2r_ip;     // v2r[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
-    std::vector<int>    rs_ip;      // rs[real qubit index] -> {nostate|wasinited|hasstate}
-    std::vector<size_t> v2r_out;    // v2r[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
-    std::vector<int>    rs_out;     // rs[real qubit index] -> {nostate|wasinited|hasstate}
+    utils::Vec<size_t> v2r_in;     // v2r[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
+    utils::Vec<int>    rs_in;      // rs[real qubit index] -> {nostate|wasinited|hasstate}
+    utils::Vec<size_t> v2r_ip;     // v2r[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
+    utils::Vec<int>    rs_ip;      // rs[real qubit index] -> {nostate|wasinited|hasstate}
+    utils::Vec<size_t> v2r_out;    // v2r[virtual qubit index] -> real qubit index | UNDEFINED_QUBIT
+    utils::Vec<int>    rs_out;     // rs[real qubit index] -> {nostate|wasinited|hasstate}
 
 
     // Mapper constructor is default synthesized
@@ -856,7 +859,7 @@ private:
     // Find shortest paths between src and tgt in the grid, bounded by a particular strategy (which);
     // budget is the maximum number of hops allowed in the path from src and is at least distance to tgt;
     // it can be higher when not all hops qualify for doing a two-qubit gate or to find more than just the shortest paths.
-    void GenShortestPaths(ql::gate *gp, size_t src, size_t tgt, size_t budget, std::list<Alter> &resla, whichpaths_t which);
+    void GenShortestPaths(gate *gp, size_t src, size_t tgt, size_t budget, utils::List<Alter> &resla, whichpaths_t which);
 
     // Generate shortest paths in the grid for making gate gp NN, from qubit src to qubit tgt, with an alternative for each one
     // - compute budget; usually it is distance but it can be higher such as for multi-core
@@ -868,16 +871,16 @@ private:
     //      one before and one after (reversed) the envisioned two-qubit gate;
     //      all result alternatives are such that a two-qubit gate can be placed at the split
     // End result is a list of alternatives (in resla) suitable for being evaluated for any routing metric.
-    void GenShortestPaths(ql::gate *gp, size_t src, size_t tgt, std::list<Alter> &resla);
+    void GenShortestPaths(gate *gp, size_t src, size_t tgt, utils::List<Alter> &resla);
 
     // Generate all possible variations of making gp NN, starting from given past (with its mappings),
     // and return the found variations by appending them to the given list of Alters, la
-    void GenAltersGate(ql::gate *gp, std::list<Alter> &la, Past &past);
+    void GenAltersGate(gate *gp, utils::List<Alter> &la, Past &past);
 
     // Generate all possible variations of making gates in lg NN, starting from given past (with its mappings),
     // and return the found variations by appending them to the given list of Alters, la
     // Depending on maplookahead only take first (most critical) gate or take all gates.
-    void GenAlters(std::list<ql::gate*> lg, std::list<Alter> &la, Past &past);
+    void GenAlters(utils::List<gate*> lg, utils::List<Alter> &la, Past &past);
 
     // start the random generator with a seed
     // that is unique to the microsecond
@@ -887,10 +890,10 @@ private:
     // generate a random int number in range 0..count-1 and use
     // that to index in list of alternatives and to return that one,
     // otherwise return a fixed one (front, back or first most critical one
-    Alter ChooseAlter(std::list<Alter> &la, Future &future);
+    Alter ChooseAlter(utils::List<Alter> &la, Future &future);
 
     // Map the gate/operands of a gate that has been routed or doesn't require routing
-    void MapRoutedGate(ql::gate *gp, Past &past);
+    void MapRoutedGate(gate *gp, Past &past);
 
     // commit Alter resa
     // generating swaps in past
@@ -916,7 +919,7 @@ private:
     //              == "noroutingfirst":   while (nonq or 1q) map gate; return most critical 2q (nonNN or NN)
     //              == "all":              while (nonq or 1q) map gate; return all 2q (nonNN or NN)
     //
-    bool MapMappableGates(Future &future, Past &past, std::list<ql::gate*> &lg, bool alsoNN2q);
+    bool MapMappableGates(Future &future, Past &past, utils::List<gate*> &lg, bool alsoNN2q);
 
     // select Alter determined by strategy defined by mapper options
     // - if base[rc], select from whole list of Alters, of which all 'remain'
@@ -926,7 +929,7 @@ private:
     //   - option mapselectmaxlevel: max level of recursion to use, where inf indicates no maximum
     // - maptiebreak option indicates which one to take when several (still) remain
     // result is returned in resa
-    void SelectAlter(std::list<Alter> &la, Alter &resa, Future &future, Past &past, Past &basePast, int level);
+    void SelectAlter(utils::List<Alter> &la, Alter &resa, Future &future, Past &past, Past &basePast, int level);
 
     // Given the states of past and future
     // map all mappable gates and find the non-mappable ones
@@ -936,22 +939,22 @@ private:
     void MapGates(Future &future, Past &past, Past &basePast);
 
     // Map the circuit's gates in the provided context (v2r maps), updating circuit and v2r maps
-    void MapCircuit(ql::quantum_kernel& kernel, Virt2Real& v2r);
+    void MapCircuit(quantum_kernel& kernel, Virt2Real& v2r);
 
 public:
 
     // decompose all gates that have a definition with _prim appended to its name
-    void MakePrimitives(ql::quantum_kernel& kernel);
+    void MakePrimitives(quantum_kernel& kernel);
 
     // map kernel's circuit, main mapper entry once per kernel
     // JvS: moved to mapper.cc ahead of restructuring everything else for persistent INITIALPLACE switch
-    void Map(ql::quantum_kernel& kernel);
+    void Map(quantum_kernel& kernel);
 
     // initialize mapper for whole program
     // lots could be split off for the whole program, once that is needed
     //
     // initialization for a particular kernel is separate (in Map entry)
-    void Init(const ql::quantum_platform *p);
+    void Init(const quantum_platform *p);
 
 };
 

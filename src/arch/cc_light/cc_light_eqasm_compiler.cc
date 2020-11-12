@@ -10,6 +10,8 @@
 namespace ql {
 namespace arch {
 
+using namespace utils;
+
 size_t CurrSRegCount;
 size_t CurrTRegCount;
 
@@ -22,7 +24,7 @@ Mask::Mask(const qubit_set_t &qs) : squbits(qs) {
     }
 }
 
-Mask::Mask(const std::string &rn, const qubit_set_t &qs) : regName(rn), squbits(qs) {
+Mask::Mask(const Str &rn, const qubit_set_t &qs) : regName(rn), squbits(qs) {
     if (CurrSRegCount < MAX_S_REG) {
         regNo = CurrSRegCount++;
     } else {
@@ -45,8 +47,8 @@ MaskManager::MaskManager() {
         qubit_set_t qs;
         qs.push_back(i);
         Mask m(qs);
-        QS2Mask[qs] = m;
-        SReg2Mask[m.regNo] = m;
+        QS2Mask.set(qs) = m;
+        SReg2Mask.set(m.regNo) = m;
     }
 
     // add some common single qubit masks
@@ -54,24 +56,24 @@ MaskManager::MaskManager() {
         qubit_set_t qs;
         for(auto i=0; i<7; i++) qs.push_back(i);
         Mask m(qs); // TODO add proper support for:  Mask m(qs, "all_qubits");
-        QS2Mask[qs] = m;
-        SReg2Mask[m.regNo] = m;
+        QS2Mask.set(qs) = m;
+        SReg2Mask.set(m.regNo) = m;
     }
 
     {
         qubit_set_t qs;
         qs.push_back(0); qs.push_back(1); qs.push_back(5); qs.push_back(6);
         Mask m(qs); // TODO add proper support for:  Mask m(qs, "data_qubits");
-        QS2Mask[qs] = m;
-        SReg2Mask[m.regNo] = m;
+        QS2Mask.set(qs) = m;
+        SReg2Mask.set(m.regNo) = m;
     }
 
     {
         qubit_set_t qs;
         qs.push_back(2); qs.push_back(3); qs.push_back(4);
         Mask m(qs); // TODO add proper support for:  Mask m(qs, "ancilla_qubits");
-        QS2Mask[qs] = m;
-        SReg2Mask[m.regNo] = m;
+        QS2Mask.set(qs) = m;
+        SReg2Mask.set(m.regNo) = m;
     }
 
     // qubit_pair_set_t pre_defined_edges = { {2,0}, {0,3}, {3,1}, {1,4}, {2,5}, {5,3}, {3,6}, {6,4},
@@ -100,10 +102,10 @@ size_t MaskManager::getRegNo(qubit_set_t &qs) {
     auto it = QS2Mask.find(qs);
     if (it == QS2Mask.end()) {
         Mask m(qs);
-        QS2Mask[qs] = m;
-        SReg2Mask[m.regNo] = m;
+        QS2Mask.set(qs) = m;
+        SReg2Mask.set(m.regNo) = m;
     }
-    return QS2Mask[qs].regNo;
+    return QS2Mask.at(qs).regNo;
 }
 
 size_t MaskManager::getRegNo(qubit_pair_set_t &qps) {
@@ -113,42 +115,42 @@ size_t MaskManager::getRegNo(qubit_pair_set_t &qps) {
     auto it = QPS2Mask.find(qps);
     if (it == QPS2Mask.end()) {
         Mask m(qps);
-        QPS2Mask[qps] = m;
-        TReg2Mask[m.regNo] = m;
+        QPS2Mask.set(qps) = m;
+        TReg2Mask.set(m.regNo) = m;
     }
-    return QPS2Mask[qps].regNo;
+    return QPS2Mask.at(qps).regNo;
 }
 
-std::string MaskManager::getRegName(qubit_set_t &qs) {
+Str MaskManager::getRegName(qubit_set_t &qs) {
     // sort qubit operands to avoid variation in order
     sort(qs.begin(), qs.end());
 
     auto it = QS2Mask.find(qs);
     if (it == QS2Mask.end()) {
         Mask m(qs);
-        QS2Mask[qs] = m;
-        SReg2Mask[m.regNo] = m;
+        QS2Mask.set(qs) = m;
+        SReg2Mask.set(m.regNo) = m;
     }
-    return QS2Mask[qs].regName;
+    return QS2Mask.at(qs).regName;
 }
 
-std::string MaskManager::getRegName(qubit_pair_set_t &qps) {
+Str MaskManager::getRegName(qubit_pair_set_t &qps) {
     // sort qubit operands pair to avoid variation in order
     sort(qps.begin(), qps.end());
 
     auto it = QPS2Mask.find(qps);
     if (it == QPS2Mask.end()) {
         Mask m(qps);
-        QPS2Mask[qps] = m;
-        TReg2Mask[m.regNo] = m;
+        QPS2Mask.set(qps) = m;
+        TReg2Mask.set(m.regNo) = m;
     }
-    return QPS2Mask[qps].regName;
+    return QPS2Mask.at(qps).regName;
 }
 
-std::string MaskManager::getMaskInstructions() {
-    std::stringstream ssmasks;
+Str MaskManager::getMaskInstructions() {
+    StrStrm ssmasks;
     for (size_t r = 0; r < CurrSRegCount; ++r) {
-        auto & m = SReg2Mask[r];
+        auto &m = SReg2Mask.at(r);
         ssmasks << "smis " << m.regName << ", {";
         for (auto it = m.squbits.begin(); it != m.squbits.end(); ++it) {
             ssmasks << *it;
@@ -160,7 +162,7 @@ std::string MaskManager::getMaskInstructions() {
     }
 
     for (size_t r = 0; r < CurrTRegCount; ++r) {
-        auto & m = TReg2Mask[r];
+        auto &m = TReg2Mask.at(r);
         ssmasks << "smit " << m.regName << ", {";
         for (auto it = m.dqubits.begin(); it != m.dqubits.end(); ++it) {
             ssmasks << "(" << it->first << ", " << it->second << ")";
@@ -175,8 +177,8 @@ std::string MaskManager::getMaskInstructions() {
 }
 
 classical_cc::classical_cc(
-    const std::string &operation,
-    const std::vector<size_t> &opers,
+    const Str &operation,
+    const Vec<size_t> &opers,
     int ivalue
 ) {
     QL_DOUT("Classical_cc constructor for operation " << operation);
@@ -224,7 +226,7 @@ classical_cc::classical_cc(
 }
 
 instruction_t classical_cc::qasm() const {
-    std::string iopers;
+    Str iopers;
     int sz = creg_operands.size();
     for (int i = 0; i < sz; ++i) {
         if (i == sz - 1) {
@@ -254,8 +256,8 @@ cmat_t classical_cc::mat() const {
     return m;
 }
 
-std::string classical_instruction2qisa(classical_cc *classical_ins) {
-    std::stringstream ssclassical;
+Str classical_instruction2qisa(classical_cc *classical_ins) {
+    StrStrm ssclassical;
     auto &iname = classical_ins->name;
     auto &iopers = classical_ins->creg_operands;
     int iopers_count = iopers.size();
@@ -301,11 +303,11 @@ std::string classical_instruction2qisa(classical_cc *classical_ins) {
 
 // FIXME HvS cc_light_instr is name of attribute in json file, in gate: arch_operation_name, here in instruction_map?
 // FIXME HvS attribute of gate or just in json? Generalization to arch_operation_name is unnecessary
-std::string get_cc_light_instruction_name(
-    const std::string &id,
+Str get_cc_light_instruction_name(
+    const Str &id,
     const quantum_platform &platform
 ) {
-    std::string cc_light_instr_name;
+    Str cc_light_instr_name;
     auto it = platform.instruction_map.find(id);
     if (it != platform.instruction_map.end()) {
         custom_gate* g = it->second;
@@ -320,7 +322,7 @@ std::string get_cc_light_instruction_name(
     return cc_light_instr_name;
 }
 
-std::string ir2qisa(
+Str ir2qisa(
     quantum_kernel &kernel,
     const quantum_platform &platform,
     MaskManager &gMaskManager
@@ -412,11 +414,11 @@ std::string ir2qisa(
     // for the operands of the SIMD, a mask will be used
     //
     // kernel prologue (start label) and epilogue are generated by the caller or ir2qisa
-    std::stringstream ssqisa;   // output qisa in here
+    StrStrm ssqisa;   // output qisa in here
     size_t curr_cycle = 0; // first instruction should be with pre-interval 1, 'bs 1' FIXME HvS start in cycle 0
     for (ir::bundle_t &abundle : bundles2) {
-        std::string iname;
-        std::stringstream sspre, ssinst;
+        Str iname;
+        StrStrm sspre, ssinst;
         auto bcycle = abundle.start_cycle;
         auto delta = bcycle - curr_cycle;
         bool classical_bundle=false;
@@ -439,7 +441,7 @@ std::string ir2qisa(
                 ssinst << classical_instruction2qisa( (classical_cc *)(*firstInsIt) );
             } else {
                 QL_DOUT("get cclight instr name for : " << iname);
-                std::string cc_light_instr_name = get_cc_light_instruction_name(iname, platform);
+                Str cc_light_instr_name = get_cc_light_instruction_name(iname, platform);
                 auto nOperands = ((*firstInsIt)->operands).size();
                 if (itype == __nop_gate__) {
                     ssinst << cc_light_instr_name;
@@ -457,7 +459,7 @@ std::string ir2qisa(
                         }
                     }
 
-                    std::string rname;
+                    Str rname;
                     if (nOperands == 1) {
                         rname = gMaskManager.getRegName(squbits);
                     } else if (nOperands == 2) {
@@ -509,8 +511,8 @@ std::string ir2qisa(
     return ssqisa.str();
 }
 
-std::string cc_light_eqasm_compiler::get_qisa_prologue(const quantum_kernel &k) {
-    std::stringstream ss;
+Str cc_light_eqasm_compiler::get_qisa_prologue(const quantum_kernel &k) {
+    StrStrm ss;
 
     if (k.type == kernel_type_t::IF_START) {
 #if 0
@@ -554,8 +556,8 @@ std::string cc_light_eqasm_compiler::get_qisa_prologue(const quantum_kernel &k) 
     return ss.str();
 }
 
-std::string cc_light_eqasm_compiler::get_qisa_epilogue(const quantum_kernel &k) {
-    std::stringstream ss;
+Str cc_light_eqasm_compiler::get_qisa_epilogue(const quantum_kernel &k) {
+    StrStrm ss;
 
     if (k.type == kernel_type_t::DO_WHILE_END) {
 #if 0
@@ -573,11 +575,11 @@ std::string cc_light_eqasm_compiler::get_qisa_epilogue(const quantum_kernel &k) 
     }
 
     if (k.type == kernel_type_t::FOR_END) {
-        std::string kname(k.name);
+        Str kname(k.name);
         std::replace( kname.begin(), kname.end(), '_', ' ');
         std::istringstream iss(kname);
-        std::vector<std::string> tokens{ std::istream_iterator<std::string>{iss},
-                                         std::istream_iterator<std::string>{} };
+        Vec<Str> tokens{ std::istream_iterator<Str>{iss},
+                                         std::istream_iterator<Str>{} };
 
         // for now r29, r30, r31 are used
         ss << "    add r31, r31, r30" << std::endl;
@@ -598,7 +600,7 @@ std::string cc_light_eqasm_compiler::get_qisa_epilogue(const quantum_kernel &k) 
 void cc_light_eqasm_compiler::ccl_decompose_pre_schedule(
     quantum_program *programp,
     const quantum_platform &platform,
-    const std::string &passname
+    const Str &passname
 ) {
     report_statistics(programp, platform, "in", passname, "# ");
     report_qasm(programp, platform, "in", passname);
@@ -614,7 +616,7 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule(
 void cc_light_eqasm_compiler::ccl_decompose_post_schedule(
     quantum_program *programp,
     const quantum_platform &platform,
-    const std::string &passname
+    const Str &passname
 ) {
     report_statistics(programp, platform, "in", passname, "# ");
     report_qasm(programp, platform, "in", passname);
@@ -643,9 +645,9 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
     if (options::get("cz_mode") == "auto") {
         QL_IOUT("decompose cz to cz+sqf...");
 
-        typedef std::pair<size_t,size_t> qubits_pair_t;
-        std::map< qubits_pair_t, size_t > qubitpair2edge;           // map: pair of qubits to edge (from grid configuration)
-        std::map<size_t, std::vector<size_t> > edge_detunes_qubits; // map: edge to vector of qubits that edge detunes (resource desc.)
+        typedef Pair<size_t,size_t> qubits_pair_t;
+        Map<qubits_pair_t, size_t> qubitpair2edge; // map: pair of qubits to edge (from grid configuration)
+        Map<size_t, Vec<size_t>> edge_detunes_qubits; // map: edge to vector of qubits that edge detunes (resource desc.)
 
         // initialize qubitpair2edge map from json description; this is a constant map
         for (auto &anedge : platform.topology["edges"]) {
@@ -658,17 +660,17 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
             if (it != qubitpair2edge.end()) {
                 QL_FATAL("re-defining edge " << s << "->" << d << " !");
             } else {
-                qubitpair2edge[aqpair] = e;
+                qubitpair2edge.set(aqpair) = e;
             }
         }
 
         // initialize edge_detunes_qubits map from json description; this is a constant map
         auto &constraints = platform.resources["detuned_qubits"]["connection_map"];
         for (auto it = constraints.begin(); it != constraints.end(); ++it) {
-            size_t edgeNo = stoi( it.key() );
-            auto & detuned_qubits = it.value();
+            size_t edgeNo = stoi(it.key());
+            auto &detuned_qubits = it.value();
             for (auto &q : detuned_qubits) {
-                edge_detunes_qubits[edgeNo].push_back(q);
+                edge_detunes_qubits.set(edgeNo).push_back(q);
             }
         }
 
@@ -687,14 +689,14 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
                     ins_src_it != sec_src_it->end();
                     ++ins_src_it
                 ) {
-                    std::string id = (*ins_src_it)->name;
-                    std::string operation_type{};
+                    Str id = (*ins_src_it)->name;
+                    Str operation_type{};
                     size_t nOperands = ((*ins_src_it)->operands).size();
                     if (nOperands == 2) {
                         auto it = platform.instruction_map.find(id);
                         if (it != platform.instruction_map.end()) {
                             if (platform.instruction_settings[id].count("type") > 0) {
-                                operation_type = platform.instruction_settings[id]["type"].get<std::string>();
+                                operation_type = platform.instruction_settings[id]["type"].get<Str>();
                             }
                         } else {
                             QL_FATAL("custom instruction not found for : " << id << " !");
@@ -708,11 +710,11 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
                             qubits_pair_t aqpair(q0, q1);
                             auto it = qubitpair2edge.find(aqpair);
                             if (it != qubitpair2edge.end()) {
-                                auto edge_no = qubitpair2edge[aqpair];
+                                auto edge_no = it->second;
                                 QL_DOUT("add the following sqf gates for edge: " << edge_no << ":");
-                                for (auto &q : edge_detunes_qubits[edge_no]) {
+                                for (auto &q : edge_detunes_qubits.get(edge_no)) {
                                     QL_DOUT("sqf q" << q);
-                                    custom_gate* g = new custom_gate("sqf q"+std::to_string(q));
+                                    custom_gate *g = new custom_gate("sqf q"+std::to_string(q));
                                     g->operands.push_back(q);
 
                                     ir::section_t asec;
@@ -732,8 +734,8 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
 void cc_light_eqasm_compiler::map(
     quantum_program *programp,
     const quantum_platform &platform,
-    const std::string &passname,
-    std::string *mapStatistics
+    const Str &passname,
+    Str *mapStatistics
 ) {
     auto mapopt = options::get("mapper");
     if (mapopt == "no") {
@@ -773,7 +775,7 @@ void cc_light_eqasm_compiler::map(
         timetaken = time_span.count();
 
         report_kernel_statistics(ofs, kernel, platform, "# ");
-        std::stringstream ss;
+        StrStrm ss;
         ss << "# ----- swaps added: " << mapper.nswapsadded << std::endl;
         ss << "# ----- of which moves added: " << mapper.nmovesadded << std::endl;
         ss << "# ----- virt2real map before mapper:" << utils::to_string(mapper.v2r_in) << std::endl;
@@ -792,7 +794,7 @@ void cc_light_eqasm_compiler::map(
         *mapStatistics += ss.str();
     }
     report_totals_statistics(ofs, programp->kernels, platform, "# ");
-    std::stringstream ss;
+    StrStrm ss;
     ss << "# Total no. of swaps: " << total_swaps << std::endl;
     ss << "# Total no. of moves of swaps: " << total_moves << std::endl;
     ss << "# Total time taken: " << total_timetaken << std::endl;
@@ -809,7 +811,7 @@ void cc_light_eqasm_compiler::map(
 void cc_light_eqasm_compiler::ccl_prep_code_generation(
     quantum_program *programp,
     const quantum_platform &platform,
-    const std::string &passname
+    const Str &passname
 ) {
     const utils::Json &instruction_settings = platform.instruction_settings;
     for (const utils::Json &i : instruction_settings) {
@@ -824,14 +826,14 @@ void cc_light_eqasm_compiler::ccl_prep_code_generation(
 void cc_light_eqasm_compiler::write_quantumsim_script(
     quantum_program *programp,
     const quantum_platform &platform,
-    const std::string &passname
+    const Str &passname
 ) {
     report_statistics(programp, platform, "in", passname, "# ");
     report_qasm(programp, platform, "in", passname);
 
     // for backward compatibility, use passname to distinguish between calls from different places
     bool compiled;
-    std::string suffix;
+    Str suffix;
     if (passname == "write_quantumsim_script_unmapped") {
         compiled = false;
         suffix = "";
@@ -857,7 +859,7 @@ void cc_light_eqasm_compiler::write_quantumsim_script(
  * program-level compilation of qasm to cc_light_eqasm
  */
 void cc_light_eqasm_compiler::compile(
-    const std::string &prog_name,
+    const Str &prog_name,
     circuit &ckt,
     const quantum_platform &platform
 ) {
@@ -898,7 +900,7 @@ void cc_light_eqasm_compiler::compile(quantum_program *programp, const quantum_p
     // because mapper shares ddg code with scheduler
     // this implies that those latter interfaces must be made public in scheduler.h before splitting
     // scheduler.h and mapper.h
-    std::string emptystring = "";
+    Str emptystring = "";
     map(programp, platform, "mapper", &emptystring);
 
     clifford_optimize(programp, platform, "clifford_postmapper");
@@ -930,7 +932,7 @@ void cc_light_eqasm_compiler::compile(quantum_program *programp, const quantum_p
     ofs = report_open(programp, "out", "cc_light_compiler");
     for (auto& k : programp->kernels) { report_kernel_statistics(ofs, k, platform, "# "); }
     report_totals_statistics(ofs, programp->kernels, platform, "# ");
-    std::stringstream ss;
+    StrStrm ss;
     ss << "# Total time taken: " << total_timetaken << std::endl;
     report_string(ofs, ss.str());
     report_close(ofs);
@@ -1006,9 +1008,9 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
                 decomp_ckt.push_back(ins);
             } else {
                 const utils::Json &instruction_settings = platform.instruction_settings;
-                std::string operation_type;
+                Str operation_type;
                 if (instruction_settings.find(iname) != instruction_settings.end()) {
-                    operation_type = instruction_settings[iname]["type"].get<std::string>();
+                    operation_type = instruction_settings[iname]["type"].get<Str>();
                 } else {
                     QL_EOUT("instruction settings not found for '" << iname << "' with '" << iqopers_count << "' operands!");
                     throw utils::Exception("instruction settings not found for '" + iname + "' with'" + std::to_string(iqopers_count) + "' operands!", false);
@@ -1050,11 +1052,11 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
 void cc_light_eqasm_compiler::qisa_code_generation(
     quantum_program *programp,
     const quantum_platform &platform,
-    const std::string &passname
+    const Str &passname
 ) {
     (void)passname;
     MaskManager mask_manager;
-    std::stringstream ssqisa, sskernels_qisa;
+    StrStrm ssqisa, sskernels_qisa;
     sskernels_qisa << "start:" << std::endl;
     for (auto &kernel : programp->kernels) {
         sskernels_qisa << std::endl << kernel.name << ":" << std::endl;
@@ -1073,8 +1075,8 @@ void cc_light_eqasm_compiler::qisa_code_generation(
 
     // write cc-light qisa file
     std::ofstream fout;
-    std::string unique_name = programp->unique_name;
-    std::string qisafname(options::get("output_dir") + "/" + unique_name + ".qisa");
+    Str unique_name = programp->unique_name;
+    Str qisafname(options::get("output_dir") + "/" + unique_name + ".qisa");
     QL_IOUT("Writing CC-Light QISA to " << qisafname);
     fout.open( qisafname, std::ios::binary);
     if (fout.fail()) {
@@ -1093,11 +1095,11 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
     quantum_program *programp,
     size_t num_qubits,
     const quantum_platform &platform,
-    const std::string &suffix
+    const Str &suffix
 ) {
     QL_IOUT("Writing scheduled Quantumsim program");
     std::ofstream fout;
-    std::string qfname( options::get("output_dir") + "/" + "quantumsim_" + programp->unique_name + "_" + suffix + ".py");
+    Str qfname( options::get("output_dir") + "/" + "quantumsim_" + programp->unique_name + "_" + suffix + ".py");
     QL_DOUT("Writing scheduled Quantumsim program to " << qfname);
     QL_IOUT("Writing scheduled Quantumsim program to " << qfname);
     fout.open( qfname, std::ios::binary);
@@ -1188,7 +1190,7 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
         config = utils::load_json(platform.configuration_file_name);
     } catch (utils::Json::exception e) {
         throw utils::Exception("[x] error : quantumsim_compiler::load() :  failed to load the hardware config file : malformed json file ! : \n    " +
-                        std::string(e.what()), false);
+                        Str(e.what()), false);
     }
 
     // load qubit attributes
@@ -1206,7 +1208,7 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
 
     // want to ignore unused qubits below
     QL_ASSERT(programp->kernels.size() <= 1);
-    std::vector<size_t> check_usecount;
+    Vec<size_t> check_usecount;
     check_usecount.resize(count, 0);
 
     for (auto &gp : programp->kernels.front().c) {
@@ -1244,7 +1246,7 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
     QL_DOUT("Adding Gates to Quantumsim program");
     {
         // global writes
-        std::stringstream ssqs;
+        StrStrm ssqs;
         ssqs << std::endl << "    sampler = uniform_noisy_sampler(readout_error=readout_error, seed=42)" << std::endl;
         ssqs << std::endl << "    # add gates" << std::endl;
         fout << ssqs.str();
@@ -1261,7 +1263,7 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
                 QL_DOUT("... adding gates, a new bundle");
                 auto bcycle = abundle.start_cycle;
 
-                std::stringstream ssqs;
+                StrStrm ssqs;
                 for(auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt) {
                     QL_DOUT("... adding gates, a new section in a bundle");
                     for (auto insIt = secIt->begin(); insIt != secIt->end(); ++insIt) {

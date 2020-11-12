@@ -7,8 +7,7 @@
 
 #pragma once
 
-#include <string>
-
+#include "utils/str.h"
 #include "program.h"
 #include "passmanager.h"
 
@@ -20,19 +19,19 @@ namespace ql {
 class quantum_compiler {
 public:
 
-    quantum_compiler(const std::string &name);
+    quantum_compiler(const utils::Str &name);
 
-    void compile(ql::quantum_program*);
-    void addPass(const std::string &realPassName, const std::string &symbolicPassName);
-    void addPass(const std::string &realPassName);
-    void setPassOption(const std::string &passName, const std::string &optionName, const std::string &optionValue);
+    void compile(quantum_program*);
+    void addPass(const utils::Str &realPassName, const utils::Str &symbolicPassName);
+    void addPass(const utils::Str &realPassName);
+    void setPassOption(const utils::Str &passName, const utils::Str &optionName, const utils::Str &optionValue);
 
 private:
 
     void constructPassManager();//TODO: potentially read the IR->Options!
 
-    std::string           name;
-    ql::PassManager       *passManager;
+    utils::Str name;
+    PassManager *passManager;
 };
 
 } // namespace ql

@@ -5,6 +5,8 @@
 
 namespace ql {
 
+using namespace utils;
+
 identity::identity(size_t q) : m(identity_c) {
     name = "i";
     duration = 40;
@@ -361,7 +363,7 @@ measure::measure(size_t q, size_t c) : m(identity_c) {
 }
 
 instruction_t measure::qasm() const {
-    std::stringstream ss;
+    StrStrm ss;
     ss << "measure ";
     ss << "q[" << operands[0] << "]";
     if (!creg_operands.empty()) {
@@ -500,7 +502,7 @@ cmat_t swap::mat() const {
 | Special gates
 \****************************************************************************/
 
-wait::wait(std::vector<size_t> qubits, size_t d, size_t dc) : m(nop_c) {
+wait::wait(Vec<size_t> qubits, size_t d, size_t dc) : m(nop_c) {
     name = "wait";
     duration = d;
     duration_in_cycles = dc;
@@ -572,7 +574,7 @@ cmat_t display::mat() const {
     return m;
 }
 
-custom_gate::custom_gate(const std::string &name) {
+custom_gate::custom_gate(const Str &name) {
     this->name = name;  // just remember name, e.g. "x", "x %0" or "x q0", expansion is done by add_custom_gate_if_available().
     // FIXME: no syntax check is performed
 }
@@ -597,7 +599,7 @@ custom_gate::custom_gate(const custom_gate &g) {
 /**
  * match qubit id
  */
-bool custom_gate::is_qubit_id(const std::string &str) {
+bool custom_gate::is_qubit_id(const Str &str) {
     if (str[0] != 'q') {
         return false;
     }
@@ -613,8 +615,8 @@ bool custom_gate::is_qubit_id(const std::string &str) {
 /**
  * return qubit id
  */
-size_t custom_gate::qubit_id(const std::string &qubit) {
-    std::string id = qubit.substr(1);
+size_t custom_gate::qubit_id(const Str &qubit) {
+    Str id = qubit.substr(1);
     return std::atoi(id.c_str());
 }
 
@@ -623,13 +625,13 @@ size_t custom_gate::qubit_id(const std::string &qubit) {
  */
 void custom_gate::load(nlohmann::json &instr) {
     QL_DOUT("loading instruction '" << name << "'...");
-    std::string l_attr = "(none)";
+    Str l_attr = "(none)";
     try {
         l_attr = "qubits";
         QL_DOUT("qubits: " << instr["qubits"]);
         size_t parameters = instr["qubits"].size();
         for (size_t i = 0; i < parameters; ++i) {
-            std::string qid = instr["qubits"][i];
+            Str qid = instr["qubits"][i];
             if (!is_qubit_id(qid)) {
                 QL_EOUT("invalid qubit id in attribute 'qubits' !");
                 throw utils::Exception(
@@ -659,7 +661,7 @@ void custom_gate::load(nlohmann::json &instr) {
     }
 
     if (instr.count("cc_light_instr") > 0) {
-        arch_operation_name = instr["cc_light_instr"].get<std::string>();
+        arch_operation_name = instr["cc_light_instr"].get<Str>();
         QL_DOUT("cc_light_instr: " << instr["cc_light_instr"]);
     }
 }
@@ -673,9 +675,9 @@ void custom_gate::print_info() const {
 }
 
 instruction_t custom_gate::qasm() const {
-    std::stringstream ss;
+    StrStrm ss;
     size_t p = name.find(' ');
-    std::string gate_name = name.substr(0, p);
+    Str gate_name = name.substr(0, p);
     if (operands.empty()) {
         ss << gate_name;
     } else if (operands.size() == 1) {
@@ -712,11 +714,11 @@ cmat_t custom_gate::mat() const {
     return m;
 }
 
-composite_gate::composite_gate(const std::string &name) : custom_gate(name) {
+composite_gate::composite_gate(const Str &name) : custom_gate(name) {
     duration = 0;
 }
 
-composite_gate::composite_gate(const std::string &name, const std::vector<gate*> &seq) : custom_gate(name) {
+composite_gate::composite_gate(const Str &name, const Vec<gate*> &seq) : custom_gate(name) {
     duration = 0;
     for (gate *g : seq) {
         gs.push_back(g);
@@ -726,7 +728,7 @@ composite_gate::composite_gate(const std::string &name, const std::vector<gate*>
 }
 
 instruction_t composite_gate::qasm() const {
-    std::stringstream instr;
+    StrStrm instr;
     for (gate * g : gs) {
         instr << g->qasm() << std::endl;
     }

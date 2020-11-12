@@ -8,8 +8,10 @@
 
 #pragma once
 
-#include <vector>
-#include <string>
+#include "utils/vec.h"
+#include "utils/str.h"
+#include "utils/map.h"
+#include "utils/pair.h"
 #include "program.h"
 #include "platform.h"
 #include "ir.h"
@@ -20,11 +22,11 @@ namespace ql {
 namespace arch {
 
 // eqasm code : set of cc_light_eqasm instructions
-typedef std::vector<cc_light_eqasm_instr_t> eqasm_t;
+typedef utils::Vec<cc_light_eqasm_instr_t> eqasm_t;
 
-typedef std::vector<size_t>        qubit_set_t;
-typedef std::pair<size_t,size_t>   qubit_pair_t;
-typedef std::vector<qubit_pair_t>  qubit_pair_set_t;
+typedef utils::Vec<size_t> qubit_set_t;
+typedef utils::Pair<size_t,size_t> qubit_pair_t;
+typedef utils::Vec<qubit_pair_t> qubit_pair_set_t;
 
 const size_t MAX_S_REG = 32;
 const size_t MAX_T_REG = 64;
@@ -35,51 +37,51 @@ QL_GLOBAL extern size_t CurrTRegCount;
 class Mask {
 public:
     size_t regNo = 0;
-    std::string regName;
+    utils::Str regName;
     qubit_set_t squbits;
     qubit_pair_set_t dqubits;
 
     Mask() = default;
     explicit Mask(const qubit_set_t &qs);
-    Mask(const std::string &rn, const qubit_set_t &qs);
+    Mask(const utils::Str &rn, const qubit_set_t &qs);
     explicit Mask(const qubit_pair_set_t &qps);
 };
 
 class MaskManager {
 private:
-    std::map<size_t,Mask> SReg2Mask;
-    std::map<qubit_set_t,Mask> QS2Mask;
+    utils::Map<size_t,Mask> SReg2Mask;
+    utils::Map<qubit_set_t,Mask> QS2Mask;
 
-    std::map<size_t,Mask> TReg2Mask;
-    std::map<qubit_pair_set_t,Mask> QPS2Mask;
+    utils::Map<size_t,Mask> TReg2Mask;
+    utils::Map<qubit_pair_set_t,Mask> QPS2Mask;
 
 public:
     MaskManager();
     ~MaskManager();
     size_t getRegNo(qubit_set_t &qs);
     size_t getRegNo(qubit_pair_set_t &qps);
-    std::string getRegName(qubit_set_t &qs);
-    std::string getRegName(qubit_pair_set_t &qps);
-    std::string getMaskInstructions();
+    utils::Str getRegName(qubit_set_t &qs);
+    utils::Str getRegName(qubit_pair_set_t &qps);
+    utils::Str getMaskInstructions();
 };
 
 class classical_cc : public gate {
 public:
     cmat_t m;
     // int imm_value;
-    classical_cc(const std::string &operation, const std::vector<size_t> &opers, int ivalue = 0);
+    classical_cc(const utils::Str &operation, const utils::Vec<size_t> &opers, int ivalue = 0);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
 };
 
-std::string classical_instruction2qisa(classical_cc *classical_in);
+utils::Str classical_instruction2qisa(classical_cc *classical_in);
 
 // FIXME HvS cc_light_instr is name of attribute in json file, in gate: arch_operation_name, here in instruction_map?
 // FIXME HvS attribute of gate or just in json? Generalization to arch_operation_name is unnecessary
-std::string get_cc_light_instruction_name(const std::string &id, const quantum_platform &platform);
+utils::Str get_cc_light_instruction_name(const utils::Str &id, const quantum_platform &platform);
 
-std::string ir2qisa(quantum_kernel &kernel, const quantum_platform &platform, MaskManager &gMaskManager);
+utils::Str ir2qisa(quantum_kernel &kernel, const quantum_platform &platform, MaskManager &gMaskManager);
 
 /**
  * cclight eqasm compiler
@@ -93,13 +95,13 @@ public:
 public:
 
     // FIXME: should be private
-    static std::string get_qisa_prologue(const quantum_kernel &k);
-    static std::string get_qisa_epilogue(const quantum_kernel &k);
+    static utils::Str get_qisa_prologue(const quantum_kernel &k);
+    static utils::Str get_qisa_epilogue(const quantum_kernel &k);
 
-    void ccl_decompose_pre_schedule(quantum_program *programp, const quantum_platform &platform, const std::string &passname);
-    void ccl_decompose_post_schedule(quantum_program *programp, const quantum_platform &platform, const std::string &passname);
+    void ccl_decompose_pre_schedule(quantum_program *programp, const quantum_platform &platform, const utils::Str &passname);
+    void ccl_decompose_post_schedule(quantum_program *programp, const quantum_platform &platform, const utils::Str &passname);
     static void ccl_decompose_post_schedule_bundles(ir::bundles_t &bundles_dst, const quantum_platform &platform);
-    static void map(quantum_program *programp, const quantum_platform &platform, const std::string &passname, std::string *mapStatistics);
+    static void map(quantum_program *programp, const quantum_platform &platform, const utils::Str &passname, utils::Str *mapStatistics);
 
     // cc_light_instr is needed by some cc_light backend passes and by cc_light resource_management:
     // - each bundle section will only have gates with the same cc_light_instr name; prepares for SIMD/SOMQ
@@ -115,13 +117,13 @@ public:
     // and check on equality of these instead
     // but what if there are two x90s, with different physical attributes (e.g. different amplitudes?)? Does this happen?
 
-    static void ccl_prep_code_generation(quantum_program* programp, const quantum_platform& platform, const std::string &passname);
-    void write_quantumsim_script(quantum_program* programp, const quantum_platform& platform, const std::string &passname);
+    static void ccl_prep_code_generation(quantum_program* programp, const quantum_platform& platform, const utils::Str &passname);
+    void write_quantumsim_script(quantum_program* programp, const quantum_platform& platform, const utils::Str &passname);
 
     /**
      * program-level compilation of qasm to cc_light_eqasm
      */
-    static void compile(const std::string &prog_name, circuit &ckt, const quantum_platform &platform);
+    static void compile(const utils::Str &prog_name, circuit &ckt, const quantum_platform &platform);
 
     // kernel level compilation
     void compile(quantum_program *programp, const quantum_platform &platform) override;
@@ -134,12 +136,12 @@ public:
 
     // qisa_code_generation pass
     // generates qisa from IR
-    static void qisa_code_generation(quantum_program *programp, const quantum_platform &platform, const std::string &passname);
+    static void qisa_code_generation(quantum_program *programp, const quantum_platform &platform, const utils::Str &passname);
 
 private:
     // write cc_light scheduled bundles for quantumsim
     // when cc_light independent, it should be extracted and put in src/quantumsim.h
-    static void write_quantumsim_program(quantum_program *programp, size_t num_qubits, const quantum_platform &platform, const std::string &suffix);
+    static void write_quantumsim_program(quantum_program *programp, size_t num_qubits, const quantum_platform &platform, const utils::Str &suffix);
 };
 
 } // namespace arch

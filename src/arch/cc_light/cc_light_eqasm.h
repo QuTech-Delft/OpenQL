@@ -8,8 +8,9 @@
 
 #pragma once
 
-#include <vector>
-#include <string>
+#include "utils/vec.h"
+#include "utils/pair.h"
+#include "utils/str.h"
 #include <sstream>
 #include <bitset>
 #include "classical.h"
@@ -17,13 +18,13 @@
 namespace ql {
 namespace arch {
 
-typedef bool                 bit_t;
-typedef std::string          cc_light_eqasm_instr_t;
-typedef std::vector<bit_t>   bitset_t;
+typedef bool bit_t;
+typedef utils::Str cc_light_eqasm_instr_t;
+typedef utils::Vec<bit_t> bitset_t;
 
 class cc_light_eqasm_instruction;
 
-typedef std::vector<cc_light_eqasm_instruction*> cc_light_eqasm_program_t;
+typedef utils::Vec<cc_light_eqasm_instruction*> cc_light_eqasm_program_t;
 
 // instruction type
 typedef enum {
@@ -95,10 +96,10 @@ typedef enum {
 // #define __operation_types_num__ (4)
 
 // hardware resources
-typedef std::vector<size_t>        qubit_set_t;
-typedef std::pair<size_t,size_t>   qubit_pair_t;
-typedef std::vector<qubit_pair_t>  qubit_pair_set_t;
-typedef std::string                mask_t;
+typedef utils::Vec<size_t> qubit_set_t;
+typedef utils::Pair<size_t,size_t> qubit_pair_t;
+typedef utils::Vec<qubit_pair_t> qubit_pair_set_t;
+typedef utils::Str mask_t;
 
 /**
  * qubit mask
@@ -140,11 +141,11 @@ public:
     operation_type_t            operation_type;
     cc_light_eqasm_instr_type_t instr_type;
 
-    std::string            qasm_label;
+    utils::Str            qasm_label;
 
     bool                   latency_compensated = false;
 
-    std::string            name;
+    utils::Str            name;
 
 public:
 
@@ -192,7 +193,7 @@ public:
 class cc_light_single_qubit_gate : public cc_light_eqasm_instruction {
 public:
     single_qubit_mask mask;
-    cc_light_single_qubit_gate(const std::string &name, single_qubit_mask &&mask);
+    cc_light_single_qubit_gate(const utils::Str &name, single_qubit_mask &&mask);
 
     /**
      * emit cc_light_eqasm code
@@ -206,7 +207,7 @@ public:
 class cc_light_two_qubit_gate : public cc_light_eqasm_instruction {
 public:
     two_qubit_mask mask;
-    cc_light_two_qubit_gate(const std::string &name, two_qubit_mask &&mask);
+    cc_light_two_qubit_gate(const utils::Str &name, two_qubit_mask &&mask);
 
     /**
      * emit cc_light_eqasm code

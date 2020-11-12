@@ -16,6 +16,7 @@
 
 #include <string>
 #include <cstddef>  // for size_t etc.
+#include "utils/vec.h"
 
 namespace ql {
 
@@ -54,8 +55,8 @@ public:
     // Quantum instructions
     void customGate(
             const std::string &iname,
-            const std::vector<size_t> &qops,
-            const std::vector<size_t> &cops,
+            const utils::Vec<size_t> &qops,
+            const utils::Vec<size_t> &cops,
             double angle, size_t startCycle, size_t durationInCycles);
     void nopGate();
 

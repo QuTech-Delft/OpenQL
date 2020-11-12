@@ -3,6 +3,8 @@
 namespace ql {
 namespace arch {
 
+using namespace utils;
+
 single_qubit_mask::single_qubit_mask(qubit_set_t &&qs) : qs(std::move(qs)) {
 }
 
@@ -36,7 +38,7 @@ two_qubit_mask::two_qubit_mask(qubit_pair_t p) {
 
 mask_t two_qubit_mask::get_mask(size_t reg) {
     size_t n = qs.size();
-    std::stringstream m;
+    StrStrm m;
     // to do : make sure reg is not reserved
     // to do : make sure there is no duplicate qubits
     m << "smit t" << reg << ", { ";
@@ -96,7 +98,7 @@ operation_type_t cc_light_eqasm_instruction::get_operation_type() const {
 }
 
 cc_light_single_qubit_gate::cc_light_single_qubit_gate(
-    const std::string &name,
+    const Str &name,
     single_qubit_mask &&mask
 ) : mask(std::move(mask)) {
     this->name = name;
@@ -113,7 +115,7 @@ cc_light_eqasm_instr_t cc_light_single_qubit_gate::code() {
 }
 
 cc_light_two_qubit_gate::cc_light_two_qubit_gate(
-    const std::string &name,
+    const Str &name,
     two_qubit_mask &&mask
 ) : mask(std::move(mask)) {
     this->name = name;
@@ -123,7 +125,7 @@ cc_light_two_qubit_gate::cc_light_two_qubit_gate(
  * emit cc_light_eqasm code
  */
 cc_light_eqasm_instr_t cc_light_two_qubit_gate::code() {
-    std::stringstream c;
+    StrStrm c;
     c << mask.get_mask(7) << "\n";
     c << "bs 1 " << name << " t7";
     return c.str();

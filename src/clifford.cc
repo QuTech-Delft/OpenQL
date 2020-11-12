@@ -14,13 +14,15 @@
 
 namespace ql {
 
+using namespace utils;
+
 class Clifford {
 public:
 
     void clifford_optimize_kernel(
-        ql::quantum_kernel &kernel,
-        const ql::quantum_platform &platform,
-        const std::string &passname
+        quantum_kernel &kernel,
+        const quantum_platform &platform,
+        const Str &passname
     ) {
         QL_DOUT("clifford_optimize_kernel()");
 
@@ -30,7 +32,7 @@ public:
 
         // copy circuit kernel.c to take input from;
         // output will fill kernel.c again
-        ql::circuit input_circuit = kernel.c;
+        circuit input_circuit = kernel.c;
         kernel.c.clear();
 
         cliffstate.resize(nq, 0);       // 0 is identity; for all qubits accumulated state is set to identity
@@ -48,7 +50,7 @@ public:
         reducing the number of cycles that the sequence takes, the circuit latency and the gate count.
 
         The clifford group is represented by:
-        - int string2cs(std::string gname): the clifford state of a gate with the given name; identity is 0
+        - int string2cs(Str gname): the clifford state of a gate with the given name; identity is 0
         - a state diagram clifftrans[24][24] that represents for two given clifford (sequences),
           to which clifford the combination is equivalent to;
           so clifford(sequence1; sequence2) == clifftrans[clifford(sequence1)][clifford(sequence2)].
@@ -67,7 +69,7 @@ public:
         for (auto gp : input_circuit) {
             QL_DOUT("... gate: " << gp->qasm());
 
-            if (gp->type() == ql::gate_type_t::__classical_gate__ || gp->operands.empty()) {
+            if (gp->type() == gate_type_t::__classical_gate__ || gp->operands.empty()) {
                 // classical gates
                 // and quantum gates like wait/display without operands
                 // interpret cliffstate and create corresponding gate sequence, for all qubits
@@ -84,7 +86,7 @@ public:
             } else {
                 // unary quantum gates like x/y/z/h/xm90/y90/s/wait/meas/prepz
                 size_t q = gp->operands[0];
-                std::string gname = gp->name;
+                Str gname = gp->name;
                 int cs = string2cs(gname);
                 if (cs != -1) {
                     // unary quantum clifford gates like x/y/z/h/xm90/y90/s/...
@@ -112,11 +114,11 @@ public:
     }
 
 private:
-    size_t  nq;
-    size_t  ct;
-    std::vector<int>    cliffstate;                    // current accumulated clifford state per qubit
-    std::vector<size_t> cliffcycles;                   // current accumulated clifford cycles per qubit
-    size_t  total_saved;                               // total number of cycles saved per kernel
+    size_t nq;
+    size_t ct;
+    Vec<int> cliffstate; // current accumulated clifford state per qubit
+    Vec<size_t> cliffcycles; // current accumulated clifford cycles per qubit
+    size_t total_saved; // total number of cycles saved per kernel
 
     // create gate sequences for all accumulated cliffords, output them and reset state
     void sync_all(quantum_kernel &k) {
@@ -173,7 +175,7 @@ private:
     };
 
     // find the clifford state from identity to given clifford gate by name
-    static int string2cs(const std::string &gname) {
+    static int string2cs(const Str &gname) {
         if (gname == "identity")         return 0;
         else if (gname == "i")           return 0;
         else if (gname == "pauli_x")     return 3;
@@ -232,7 +234,7 @@ private:
     }
 
     // return the gate sequence as string for debug output corresponding to given clifford state
-    static std::string cs2string(int cs) {
+    static Str cs2string(int cs) {
         switch(cs) {
             case 0 : return("[id;]");
             case 1 : return("[y90; x90;]");
@@ -269,10 +271,10 @@ private:
  */
 void clifford_optimize(
     quantum_program *programp,
-    const ql::quantum_platform &platform,
-    const std::string &passname
+    const quantum_platform &platform,
+    const Str &passname
 ) {
-    if (ql::options::get(passname) == "no") {
+    if (options::get(passname) == "no") {
         QL_DOUT("Clifford optimization on program " << programp->name << " at "
                                                     << passname << " not DONE");
         return;
@@ -280,16 +282,16 @@ void clifford_optimize(
     QL_DOUT("Clifford optimization on program " << programp->name << " at "
                                                 << passname << " ...");
 
-    ql::report_statistics(programp, platform, "in", passname, "# ");
-    ql::report_qasm(programp, platform, "in", passname);
+    report_statistics(programp, platform, "in", passname, "# ");
+    report_qasm(programp, platform, "in", passname);
 
     Clifford cliff;
     for (auto &kernel : programp->kernels) {
         cliff.clifford_optimize_kernel(kernel, platform, passname);
     }
 
-    ql::report_statistics(programp, platform, "out", passname, "# ");
-    ql::report_qasm(programp, platform, "out", passname);
+    report_statistics(programp, platform, "out", passname, "# ");
+    report_qasm(programp, platform, "out", passname);
 }
 
 }

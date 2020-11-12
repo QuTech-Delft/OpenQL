@@ -6,15 +6,16 @@
 
 #pragma once
 
+#include "utils/str.h"
 #include "program.h"
 #include "platform.h"
 
 namespace ql {
 
 void decompose_toffoli(
-    ql::quantum_program *programp,
-    const ql::quantum_platform &platform,
-    const std::string &passname
+    quantum_program *programp,
+    const quantum_platform &platform,
+    const utils::Str &passname
 );
 
 } // namespace ql

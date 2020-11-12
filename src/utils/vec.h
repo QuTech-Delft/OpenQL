@@ -210,6 +210,7 @@ public:
      */
     Vec &operator=(std::initializer_list<T> ilist) {
         get_data().get_mut().operator=(ilist);
+        return *this;
     }
 
     /**

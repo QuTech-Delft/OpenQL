@@ -375,8 +375,8 @@ void codegen_cc::bundleFinish(size_t startCycle, size_t durationInCycles, bool i
 // customGate: single/two/N qubit gate, including readout, see 'strategy' above
 void codegen_cc::customGate(
         const std::string &iname,
-        const std::vector<size_t> &qops,
-        const std::vector<size_t> &cops,
+        const utils::Vec<size_t> &qops,
+        const utils::Vec<size_t> &cops,
         double angle, size_t startCycle, size_t durationInCycles)
 {
 #if 0   // FIXME: test for angle parameter

@@ -62,7 +62,7 @@ template <typename T>
 Str to_string(T arg) {
     StrStrm ss;
     ss << arg;
-    return ss.str ();
+    return ss.str();
 }
 
 Str to_lower(Str str);

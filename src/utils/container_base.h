@@ -456,7 +456,7 @@ public:
         if (iter == EndpointAdapter::end(d)) {
             throw ContainerException("dereferencing past-the-end iterator");
         }
-        return *iter;
+        return &(*iter);
     }
 
     /**
