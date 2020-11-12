@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "utils/num.h"
 #include "utils/str.h"
 #include "utils/vec.h"
 #include "platform.h"
@@ -20,14 +21,14 @@ namespace arch {
 class resource_t {
 public:
     utils::Str name;
-    size_t count;
+    utils::UInt count;
     scheduling_direction_t direction;
 
     resource_t(const utils::Str &n, scheduling_direction_t dir);
     virtual ~resource_t() = default;
 
-    virtual bool available(size_t op_start_cycle, gate *ins, const quantum_platform &platform) = 0;
-    virtual void reserve(size_t op_start_cycle, gate *ins, const quantum_platform &platform) = 0;
+    virtual utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) = 0;
+    virtual void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) = 0;
 
     virtual resource_t *clone() const & = 0;
     virtual resource_t *clone() && = 0;
@@ -61,8 +62,8 @@ public:
     // follow pattern to use tmp copy to allow self-assignment and to be exception safe
     platform_resource_manager_t &operator=(const platform_resource_manager_t &rhs);
 
-    bool available(size_t op_start_cycle, gate *ins, const quantum_platform &platform);
-    void reserve(size_t op_start_cycle, gate *ins, const quantum_platform &platform);
+    utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform);
+    void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform);
 
     // destructor destroying deep resource_t's
     // runs before shallow destruction which is done by synthesized platform_resource_manager_t destructor
@@ -89,8 +90,8 @@ public:
     // follow pattern to use tmp copy to allow self-assignment and to be exception safe
     resource_manager_t &operator=(const resource_manager_t &rhs);
 
-    bool available(size_t op_start_cycle, gate *ins, const quantum_platform &platform);
-    void reserve(size_t op_start_cycle, gate *ins, const quantum_platform &platform);
+    utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform);
+    void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform);
 
     // destructor destroying deep platform_resource_managert_t
     // runs before shallow destruction which is done by synthesized resource_manager_t destructor

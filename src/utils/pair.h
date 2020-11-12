@@ -1,6 +1,5 @@
 /** \file
- * Provides a wrapper for std::vector that's safer to use and provides more
- * context when something goes wrong at runtime.
+ * Utilities for working with pairs.
  */
 
 #pragma once

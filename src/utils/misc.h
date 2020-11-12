@@ -16,10 +16,5 @@ inline void zero(T(&arr)[SIZE]) {
     memset(arr, 0, SIZE * sizeof(T));
 }
 
-template<typename T>
-int sign_of(T val) {
-    return (T(0) < val) - (val < T(0));
-}
-
 } // namespace utils
 } // namespace ql

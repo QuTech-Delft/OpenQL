@@ -12,19 +12,19 @@ using namespace utils;
 single_qubit_mask::single_qubit_mask(qubit_set_t &&qs) : qs(std::move(qs)) {
 }
 
-single_qubit_mask::single_qubit_mask(size_t qubit) {
+single_qubit_mask::single_qubit_mask(UInt qubit) {
     qs.push_back(qubit);
 }
 
-mask_t single_qubit_mask::get_mask(size_t reg) {
-    size_t n = qs.size();
-    std::stringstream m;
+mask_t single_qubit_mask::get_mask(UInt reg) {
+    UInt n = qs.size();
+    StrStrm m;
     // to do : make sure there is no duplicate qubits
     m << "smis s" << reg << ", { ";
     if (n == 1) {
         m << qs[0] << " }";
     } else {
-        size_t i = 0;
+        UInt i = 0;
         while (i++ < n) {
             m << qs[i] << ",";
         }
@@ -40,8 +40,8 @@ two_qubit_mask::two_qubit_mask(qubit_pair_t p) {
     qs.push_back(p);
 }
 
-mask_t two_qubit_mask::get_mask(size_t reg) {
-    size_t n = qs.size();
+mask_t two_qubit_mask::get_mask(UInt reg) {
+    UInt n = qs.size();
     StrStrm m;
     // to do : make sure reg is not reserved
     // to do : make sure there is no duplicate qubits
@@ -49,7 +49,7 @@ mask_t two_qubit_mask::get_mask(size_t reg) {
     if (n == 1) {
         m << "(" << qs[0].first << "," << qs[0].second <<  ") }";
     } else {
-        size_t i=0;
+        UInt i=0;
         while (i++ < n) {
             m << "(" << qs[i].first << "," << qs[i].second << "),";
         }
@@ -74,7 +74,7 @@ void cc_light_eqasm_instruction::compensate_latency() {
 /**
  * set start
  */
-void cc_light_eqasm_instruction::set_start(size_t t) {
+void cc_light_eqasm_instruction::set_start(UInt t) {
     start = t;
 }
 
@@ -112,7 +112,7 @@ cc_light_single_qubit_gate::cc_light_single_qubit_gate(
  * emit cc_light_eqasm code
  */
 cc_light_eqasm_instr_t cc_light_single_qubit_gate::code() {
-    std::stringstream c;
+    StrStrm c;
     c << mask.get_mask(7) << "\n";
     c << "bs 1 " << name << " s7";
     return c.str();

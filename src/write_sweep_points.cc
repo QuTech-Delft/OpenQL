@@ -21,7 +21,7 @@ void write_sweep_points(
     if (programp->sweep_points.size()) {
         StrStrm ss_swpts;
         ss_swpts << "{ \"measurement_points\" : [";
-        for (size_t i = 0; i < programp->sweep_points.size() - 1; i++) {
+        for (UInt i = 0; i < programp->sweep_points.size() - 1; i++) {
             ss_swpts << programp->sweep_points[i] << ", ";
         }
         ss_swpts << programp->sweep_points[programp->sweep_points.size() - 1] << "] }";

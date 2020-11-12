@@ -4,17 +4,17 @@
 
 #include "latency_compensation.h"
 
+#include "utils/num.h"
 #include "gate.h"
 #include "kernel.h"
 #include "circuit.h"
-#include "ir.h"
 #include "report.h"
 
 namespace ql {
 
 using namespace utils;
 
-static bool lc_cycle_lessthan(gate* gp1, gate* gp2) {
+static Bool lc_cycle_lessthan(gate* gp1, gate* gp2) {
     return gp1->cycle < gp2->cycle;
 }
 
@@ -32,17 +32,16 @@ void latency_compensation_kernel(
 
     circuit* circp = &kernel.c;
 
-    bool compensated_one = false;
+    Bool compensated_one = false;
     for (auto &gp : *circp) {
         auto &id = gp->name;
         // DOUT("Latency compensating instruction: " << id);
-        long latency_cycles = 0;
+        Int latency_cycles = 0;
 
         if (platform.instruction_settings.count(id) > 0) {
             if (platform.instruction_settings[id].count("latency") > 0) {
-                float latency_ns = platform.instruction_settings[id]["latency"];
-                latency_cycles = long(std::ceil( static_cast<float>(std::abs(latency_ns)) / platform.cycle_time)) *
-                                      sign_of(latency_ns);
+                Real latency_ns = platform.instruction_settings[id]["latency"];
+                latency_cycles = Int(round_away_from_zero(latency_ns / platform.cycle_time));
                 compensated_one = true;
 
                 gp->cycle = gp->cycle + latency_cycles;
@@ -73,7 +72,7 @@ void latency_compensation(
     report_statistics(programp, platform, "in", passname, "# ");
     report_qasm(programp, platform, "in", passname);
 
-    for (size_t k = 0; k < programp->kernels.size(); ++k) {
+    for (UInt k = 0; k < programp->kernels.size(); ++k) {
         latency_compensation_kernel(programp->kernels[k], platform);
     }
 

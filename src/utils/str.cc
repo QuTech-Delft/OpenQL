@@ -7,9 +7,46 @@
 
 #include <algorithm>
 #include <cctype>
+#include "utils/exception.h"
 
 namespace ql {
 namespace utils {
+
+UInt parse_uint(const Str &str) {
+    try {
+        return std::stoull(str);
+    } catch (std::invalid_argument &e) {
+        (void)e;
+        throw Exception("failed to parse \"" + str + "\" as an unsigned integer");
+    } catch (std::range_error &e) {
+        (void)e;
+        throw Exception("failed to parse \"" + str + "\" as an unsigned integer (out of range)");
+    }
+}
+
+Int parse_int(const Str &str) {
+    try {
+        return std::stoll(str);
+    } catch (std::invalid_argument &e) {
+        (void)e;
+        throw Exception("failed to parse \"" + str + "\" as an unsigned integer");
+    } catch (std::range_error &e) {
+        (void)e;
+        throw Exception("failed to parse \"" + str + "\" as an unsigned integer (out of range)");
+    }
+}
+
+Real parse_double(const Str &str) {
+    try {
+        return std::stod(str);
+    } catch (std::invalid_argument &e) {
+        (void)e;
+        throw Exception("failed to parse \"" + str + "\" as an unsigned integer");
+    } catch (std::range_error &e) {
+        (void)e;
+        throw Exception("failed to parse \"" + str + "\" as an unsigned integer (out of range)");
+    }
+}
 
 std::string to_lower(std::string str) {
     std::transform(

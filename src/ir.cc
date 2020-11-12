@@ -39,7 +39,7 @@ circuit circuiter(const bundles_t &bundles) {
  */
 Str qasm(const bundles_t &bundles) {
     StrStrm ssqasm;
-    size_t curr_cycle=1;        // FIXME HvS prefer to start at 0; also see depgraph creation
+    UInt curr_cycle=1;        // FIXME HvS prefer to start at 0; also see depgraph creation
     Str skipgate = "wait";
     if (options::get("issue_skip_319") == "yes") {
         skipgate = "skip";
@@ -75,7 +75,7 @@ Str qasm(const bundles_t &bundles) {
 
     if (!bundles.empty()) {
         auto &last_bundle = bundles.back();
-        int lsduration = last_bundle.duration_in_cycles;
+        UInt lsduration = last_bundle.duration_in_cycles;
         if (lsduration > 1) {
             ssqasm << "    " << skipgate << " " << lsduration - 1 << std::endl;
         }
@@ -96,11 +96,11 @@ Str qasm(const bundles_t &bundles) {
  *
  * FIXME HvS cycles_valid must be true before each call to this bundler
  */
-bundles_t bundler(const circuit &circ, size_t cycle_time) {
+bundles_t bundler(const circuit &circ, UInt cycle_time) {
     bundles_t bundles;          // result bundles
 
     bundle_t    currBundle;     // current bundle at currCycle that is being filled
-    size_t      currCycle = 0;  // cycle at which bundle is to be scheduled
+    UInt      currCycle = 0;  // cycle at which bundle is to be scheduled
 
     currBundle.start_cycle = currCycle; // starts off as empty bundle starting at currCycle
     currBundle.duration_in_cycles = 0;
@@ -115,7 +115,7 @@ bundles_t bundler(const circuit &circ, size_t cycle_time) {
             QL_DOUT("... ignoring: " << gp->qasm());
             continue;
         }
-        size_t newCycle = gp->cycle;        // taking cycle values from circuit, so excludes SOURCE and SINK!
+        UInt newCycle = gp->cycle;        // taking cycle values from circuit, so excludes SOURCE and SINK!
         if (newCycle < currCycle) {
             QL_FATAL("Error: circuit not ordered by cycle value");
         }
@@ -147,7 +147,7 @@ bundles_t bundler(const circuit &circ, size_t cycle_time) {
         asec.push_back(gp);
         currBundle.parallel_sections.push_back(asec);
         // DOUT("... gate: " << gp->qasm() << " in private parallel section");
-        currBundle.duration_in_cycles = std::max(currBundle.duration_in_cycles, (gp->duration+cycle_time-1)/cycle_time);
+        currBundle.duration_in_cycles = max(currBundle.duration_in_cycles, (gp->duration+cycle_time-1)/cycle_time);
     }
     if (!currBundle.parallel_sections.empty()) {
         // finish currBundle (which is last bundle) at currCycle

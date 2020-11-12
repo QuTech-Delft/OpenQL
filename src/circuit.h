@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "utils/num.h"
 #include "utils/str.h"
 #include "utils/vec.h"
 #include "gate.h"
@@ -24,6 +25,6 @@ utils::Vec<circuit*> split_circuit(circuit &x);
 /**
  * detect measurements and qubit preparations
  */
-bool contains_measurements(const circuit &x);
+utils::Bool contains_measurements(const circuit &x);
 
 } // namespace ql

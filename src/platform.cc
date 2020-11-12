@@ -53,7 +53,7 @@ void quantum_platform::print_info() const {
     }
 }
 
-size_t quantum_platform::get_qubit_number() const {
+UInt quantum_platform::get_qubit_number() const {
     return qubit_number;
 }
 
@@ -76,8 +76,8 @@ Str quantum_platform::find_instruction_type(const Str &iname) const {
     return instruction["type"];
 }
 
-size_t quantum_platform::time_to_cycles(float time_ns) const {
-    return std::ceil(time_ns / cycle_time);
+UInt quantum_platform::time_to_cycles(Real time_ns) const {
+    return ceil(time_ns / cycle_time);
 }
 
 } // namespace ql

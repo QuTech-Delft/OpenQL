@@ -14,8 +14,6 @@
 #include <src/misc/lapacke.h>
 #endif
 
-typedef unsigned int uint;
-
 #include <chrono>
 
 namespace ql {
@@ -30,7 +28,7 @@ unitary::unitary() :
 
 unitary::unitary(
     const Str &name,
-    const Vec<std::complex<double>> &array
+    const Vec<Complex> &array
 ) :
     name(name),
     array(array),
@@ -38,23 +36,23 @@ unitary::unitary(
 {
 }
 
-double unitary::size() const {
+Real unitary::size() const {
     // JvS: Note that the original unitary::size() used
     // Eigen::Matrix::size() if the array is empty. However, if the array
     // is empty, _matrix is never initialized beyond its default ctor,
     // which "allocates" a 0x0 matrix, and is thus size 0, exactly what
     // array.size() would return.
-    // Don't get me started about why this returns a double.
-    return (double) array.size();
+    // Don't get me started about why this returns a Real.
+    return (Real) array.size();
 }
 
 #ifdef WITHOUT_UNITARY_DECOMPOSITION
 
 void unitary::decompose() {
-    throw std::runtime_error("unitary decomposition was explicitly disabled in this build!");
+    throw Exception("unitary decomposition was explicitly disabled in this build!");
 }
 
-bool unitary::is_decompose_support_enabled() {
+Bool unitary::is_decompose_support_enabled() {
     return false;
 }
 
@@ -68,26 +66,26 @@ bool unitary::is_decompose_support_enabled() {
 // this code.
 class UnitaryDecomposer {
 private:
-    Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> _matrix;
+    Eigen::Matrix<Complex, Eigen::Dynamic, Eigen::Dynamic> _matrix;
 
 public:
     Str name;
-    Vec<std::complex<double>> array;
-    Vec<std::complex<double>> SU;
-    double delta;
-    double alpha;
-    double beta;
-    double gamma;
-    bool is_decomposed;
-    Vec<double> instructionlist;
+    Vec<Complex> array;
+    Vec<Complex> SU;
+    Real delta;
+    Real alpha;
+    Real beta;
+    Real gamma;
+    Bool is_decomposed;
+    Vec<Real> instructionlist;
 
-    typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> complex_matrix;
+    typedef Eigen::Matrix<Complex, Eigen::Dynamic, Eigen::Dynamic> complex_matrix;
 
     UnitaryDecomposer() : name(""), is_decomposed(false) {}
 
     UnitaryDecomposer(
         const Str &name,
-        const Vec<std::complex<double>> &array
+        const Vec<Complex> &array
     ) :
         name(name),
         array(array),
@@ -97,17 +95,17 @@ public:
                   << ", containing: " << array.size() << " elements");
     }
 
-    double size() const {
+    Real size() const {
         if (!array.empty()) {
-            return (double) array.size();
+            return (Real) array.size();
         } else {
-            return (double) _matrix.size();
+            return (Real) _matrix.size();
         }
     }
 
     complex_matrix getMatrix() {
         if (!array.empty()) {
-            int matrix_size = (int)std::pow(array.size(), 0.5);
+            Int matrix_size = (Int)sqrt(array.size());
 
             Eigen::Map<complex_matrix> matrix(array.data(), matrix_size, matrix_size);
             _matrix = matrix.transpose();
@@ -119,10 +117,10 @@ public:
         QL_DOUT("decomposing Unitary: " << name);
 
         getMatrix();
-        int matrix_size = _matrix.rows();
+        Int matrix_size = _matrix.rows();
 
         // compute the number of qubits: length of array is collumns*rows, so log2(sqrt(array.size))
-        int numberofbits = uint64_log2(matrix_size);
+        Int numberofbits = uint64_log2(matrix_size);
 
         Eigen::MatrixXcd identity = Eigen::MatrixXcd::Identity(matrix_size, matrix_size);
         Eigen::MatrixXcd matmatadjoint = (_matrix.adjoint()*_matrix);
@@ -152,19 +150,19 @@ public:
         return ss.str();
     }
 
-    // std::chrono::duration<double> CSD_time;
-    // std::chrono::duration<double> CSD_time2;
-    // std::chrono::duration<double> CSD_time3;
-    // std::chrono::duration<double> zyz_time;
-    // std::chrono::duration<double> multiplexing_time;
-    // std::chrono::duration<double> demultiplexing_time;
+    // std::chrono::duration<Real> CSD_time;
+    // std::chrono::duration<Real> CSD_time2;
+    // std::chrono::duration<Real> CSD_time3;
+    // std::chrono::duration<Real> zyz_time;
+    // std::chrono::duration<Real> multiplexing_time;
+    // std::chrono::duration<Real> demultiplexing_time;
 
-    void decomp_function(const Eigen::Ref<const complex_matrix>& matrix, int numberofbits) {
+    void decomp_function(const Eigen::Ref<const complex_matrix>& matrix, Int numberofbits) {
         QL_DOUT("decomp_function: \n" << to_string(matrix));
         if(numberofbits == 1) {
             zyz_decomp(matrix);
         } else {
-            int n = matrix.rows()/2;
+            Int n = matrix.rows()/2;
 
             complex_matrix V(n,n);
             complex_matrix W(n,n);
@@ -233,7 +231,7 @@ public:
         //Cosine sine decomposition
         // U = [q1, U01] = [u1    ][c  s][v1  ]
         //     [q2, U11] = [    u2][-s c][   v2]
-        int n = U.rows();
+        Int n = U.rows();
         // complex_matrix c(n,n); // c matrix is not needed for the higher level
         // complex_matrix q1 = U.topLeftCorner(n/2,m/2);
 
@@ -243,7 +241,7 @@ public:
 
         // thinCSD: q1 = u1*c*v1.adjoint()
         //          q2 = u2*s*v1.adjoint()
-        int p = n/2;
+        Int p = n/2;
         // complex_matrix z = Eigen::MatrixXd::Identity(p, p).colwise().reverse();
         complex_matrix c(svd.singularValues().reverse().asDiagonal());
         u1.noalias() = svd.matrixU().rowwise().reverse();
@@ -251,8 +249,8 @@ public:
 
         complex_matrix q2 = U.bottomLeftCorner(p,p)*v1;
 
-        int k = 0;
-        for (int j = 1; j < p; j++) {
+        Int k = 0;
+        for (Int j = 1; j < p; j++) {
             if (c(j,j).real() <= 0.70710678119) {
                 k = j;
             }
@@ -285,9 +283,9 @@ public:
 
 
 
-        Vec<int> c_ind;
-        Vec<int> s_ind;
-        for (int j = 0; j < p; j++) {
+        Vec<Int> c_ind;
+        Vec<Int> s_ind;
+        for (Int j = 0; j < p; j++) {
             if (c(j,j).real() < 0) {
                 c_ind.push_back(j);
             }
@@ -325,11 +323,11 @@ public:
         complex_matrix tmp_s = u1.adjoint()*U.topRightCorner(p,p);
         complex_matrix tmp_c = u2.adjoint()*U.bottomRightCorner(p,p);
 
-        // Vec<int> c_ind_row;
-        // Vec<int> s_ind_row;
-        for (int i = 0; i < p; i++) {
-            if (std::abs(s(i,i)) > std::abs(c(i,i))) {
-                // Vec<int> s_ind_row;
+        // Vec<Int> c_ind_row;
+        // Vec<Int> s_ind_row;
+        for (Int i = 0; i < p; i++) {
+            if (abs(s(i,i)) > abs(c(i,i))) {
+                // Vec<Int> s_ind_row;
                 v2.row(i).noalias() = tmp_s.row(i)/s(i,i);
             } else {
                 // c_ind_row.push_back(i);
@@ -361,14 +359,14 @@ public:
 
         ql::complex_t det = matrix.determinant();// matrix(0,0)*matrix(1,1)-matrix(1,0)*matrix(0,1);
 
-        double delta = atan2(det.imag(), det.real())/matrix.rows();
-        std::complex<double> A = exp(std::complex<double>(0,-1)*delta)*matrix(0,0);
-        std::complex<double> B = exp(std::complex<double>(0,-1)*delta)*matrix(0,1); //to comply with the other y-gate definition
+        Real delta = atan2(det.imag(), det.real())/matrix.rows();
+        Complex A = exp(Complex(0,-1)*delta)*matrix(0,0);
+        Complex B = exp(Complex(0,-1)*delta)*matrix(0,1); //to comply with the other y-gate definition
 
-        double sw = sqrt(pow((double) B.imag(),2) + pow((double) B.real(),2) + pow((double) A.imag(),2));
-        double wx = 0;
-        double wy = 0;
-        double wz = 0;
+        Real sw = sqrt(pow((Real) B.imag(),2) + pow((Real) B.real(),2) + pow((Real) A.imag(),2));
+        Real wx = 0;
+        Real wy = 0;
+        Real wz = 0;
 
         if (sw > 0) {
             wx = B.imag()/sw;
@@ -376,11 +374,11 @@ public:
             wz = A.imag()/sw;
         }
 
-        double t1 = atan2(A.imag(),A.real());
-        double t2 = atan2(B.imag(), B.real());
+        Real t1 = atan2(A.imag(),A.real());
+        Real t2 = atan2(B.imag(), B.real());
         alpha = t1+t2;
         gamma = t1-t2;
-        beta = 2*atan2(sw*sqrt(pow((double) wx,2)+pow((double) wy,2)),sqrt(pow((double) A.real(),2)+pow((wz*sw),2)));
+        beta = 2*atan2(sw*sqrt(pow((Real) wx,2)+pow((Real) wy,2)),sqrt(pow((Real) A.real(),2)+pow((wz*sw),2)));
         instructionlist.push_back(-gamma);
         instructionlist.push_back(-beta);
         instructionlist.push_back(-alpha);
@@ -393,7 +391,7 @@ public:
         Eigen::Ref<complex_matrix> V,
         Eigen::Ref<Eigen::VectorXcd> D,
         Eigen::Ref<complex_matrix> W,
-        int numberofcontrolbits
+        Int numberofcontrolbits
     ) {
         // [U1 0 ]  = [V 0][D 0 ][W 0]
         // [0  U2]    [0 V][0 D*][0 W]
@@ -443,13 +441,13 @@ public:
 
     // returns M^k = (-1)^(b_(i-1)*g_(i-1)), where * is bitwise inner product, g = binary gray code, b = binary code.
     void genMk() {
-        int numberqubits = uint64_log2(_matrix.rows());
-        for (int n = 1; n <= numberqubits; n++) {
-            int size=1<<n;
+        Int numberqubits = uint64_log2(_matrix.rows());
+        for (Int n = 1; n <= numberqubits; n++) {
+            Int size=1<<n;
             Eigen::MatrixXd Mk(size,size);
-            for (int i = 0; i < size; i++) {
-                for (int j = 0; j < size ;j++) {
-                    Mk(i,j) =std::pow(-1, bitParity(i&(j^(j>>1))));
+            for (Int i = 0; i < size; i++) {
+                for (Int j = 0; j < size ;j++) {
+                    Mk(i,j) = std::pow(-1, bitParity(i&(j^(j>>1))));
                 }
             }
             genMk_lookuptable.push_back(Mk);
@@ -459,13 +457,13 @@ public:
     }
 
     // source: https://stackoverflow.com/questions/994593/how-to-do-an-integer-log2-in-c user Todd Lehman
-    int uint64_log2(uint64_t n) {
+    Int uint64_log2(uint64_t n) {
 #define S(k) if (n >= (UINT64_C(1) << k)) { i += k; n >>= k; }
-        int i = -(n == 0); S(32); S(16); S(8); S(4); S(2); S(1); return i;
+        Int i = -(n == 0); S(32); S(16); S(8); S(4); S(2); S(1); return i;
 #undef S
     }
 
-    int bitParity(int i) {
+    Int bitParity(Int i) {
         if (i < 2 << 16) {
             i = (i >> 16) ^ i;
             i = (i >> 8) ^ i;
@@ -478,7 +476,7 @@ public:
         }
     }
 
-    void multicontrolledY(const Eigen::Ref<const Eigen::VectorXcd> &ss, int halfthesizeofthematrix) {
+    void multicontrolledY(const Eigen::Ref<const Eigen::VectorXcd> &ss, Int halfthesizeofthematrix) {
         // auto start = std::chrono::steady_clock::now();
         Eigen::VectorXd temp =  2*Eigen::asin(ss.array()).real();
         Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]);
@@ -493,10 +491,10 @@ public:
         // multiplexing_time += std::chrono::steady_clock::now() - start;
     }
 
-    void multicontrolledZ(const Eigen::Ref<const Eigen::VectorXcd> &D, int halfthesizeofthematrix) {
+    void multicontrolledZ(const Eigen::Ref<const Eigen::VectorXcd> &D, Int halfthesizeofthematrix) {
         // auto start = std::chrono::steady_clock::now();
 
-        Eigen::VectorXd temp =  (std::complex<double>(0,-2)*Eigen::log(D.array())).real();
+        Eigen::VectorXd temp =  (Complex(0,-2)*Eigen::log(D.array())).real();
         Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> dec(genMk_lookuptable[uint64_log2(halfthesizeofthematrix)-1]);
         Eigen::VectorXd tr = dec.solve(temp);
         // Check is very approximate to account for low-precision input matrices
@@ -527,7 +525,7 @@ void unitary::decompose() {
     instructionlist = decomposer.instructionlist;
 }
 
-bool unitary::is_decompose_support_enabled() {
+Bool unitary::is_decompose_support_enabled() {
     return true;
 }
 

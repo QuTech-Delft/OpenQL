@@ -8,17 +8,17 @@ namespace ql {
 
 using namespace utils;
 
-InteractionMatrix::InteractionMatrix(const circuit &ckt, size_t nqubits) {
+InteractionMatrix::InteractionMatrix(const circuit &ckt, UInt nqubits) {
     Size = nqubits;
-    Matrix.resize(Size, Vec<size_t>(Size, 0));
+    Matrix.resize(Size, Vec<UInt>(Size, 0));
     for (auto ins : ckt) {
         Str insName = ins->qasm();
         if (insName.find("cnot") != Str::npos) {
             // for now the interaction matrix only for cnot
             auto operands = ins->operands;
             if (operands.size() == 2) {
-                size_t operand0 = operands[0];
-                size_t operand1 = operands[1];
+                UInt operand0 = operands[0];
+                UInt operand1 = operands[1];
                 Matrix[operand0][operand1] += 1;
                 Matrix[operand1][operand0] += 1;
             }
@@ -38,14 +38,14 @@ Str InteractionMatrix::getString() const {
     // #define ALIGNMENT ("    ")
 
     ss << ALIGNMENT << " ";
-    for (size_t c = 0; c < Size; c++) {
-        ss << ALIGNMENT << "q" + std::to_string(c);
+    for (UInt c = 0; c < Size; c++) {
+        ss << ALIGNMENT << "q" + to_string(c);
     }
     ss << std::endl;
 
-    for (size_t p = 0; p < Size; p++) {
-        ss << ALIGNMENT << "q" + std::to_string(p);
-        for (size_t c = 0; c < Size; c++) {
+    for (UInt p = 0; p < Size; p++) {
+        ss << ALIGNMENT << "q" + to_string(p);
+        for (UInt c = 0; c < Size; c++) {
             ss << ALIGNMENT << Matrix[p][c];
         }
         ss << std::endl;

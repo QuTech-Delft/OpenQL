@@ -25,9 +25,8 @@ void my_print(Vec<T> const &input, const char *id_name) {
 }
 
 double Metrics::gaussian_pdf(double x, double mean, double sigma) {
-    const double my_pi = 3.14159265358979323846;
-    return (1.0 / (sigma * std::sqrt(2 * my_pi))) *
-           std::exp(-0.5 * (x - mean) / sigma * (x - mean) / sigma);
+    return (1.0 / (sigma * sqrt(2 * PI))) *
+           exp(-0.5 * (x - mean) / sigma * (x - mean) / sigma);
 }
 
 Metrics::Metrics(
@@ -110,9 +109,9 @@ double Metrics::create_output(const Vec<double> &fids) {
         {
             sum += x;
         }
-        QL_DOUT("Sum fidelities :" + std::to_string(sum));
+        QL_DOUT("Sum fidelities :" + to_string(sum));
         double average = sum / fids.size();
-        QL_DOUT("Average fidelity:" + std::to_string(average));
+        QL_DOUT("Average fidelity:" + to_string(average));
         return average;
     // } else if (output_mode == "gaussian") { //DOES NOT WORK
         // 	IOUT("\nOutput mode: gaussian");
@@ -144,7 +143,7 @@ double Metrics::bounded_fidelity(const circuit &circ, Vec<double> &fids) {
     //TODO - URGENT!! do not consider the fidelity of used but non initialized qubits (set to 2/-1?)
 
     if (fids.empty()) {
-        QL_IOUT("EMPTY VECTOR - Initializing. Nqubits = " + std::to_string(Nqubits));
+        QL_IOUT("EMPTY VECTOR - Initializing. Nqubits = " + to_string(Nqubits));
         fids.resize(Nqubits, 1.0); //Initiallize a fidelity vector, if one is not provided
         //TODO: non initialized qubits should have undefined fidelity. It shouldn't be taken into account.
     }
@@ -171,22 +170,22 @@ double Metrics::bounded_fidelity(const circuit &circ, Vec<double> &fids) {
 
         if (gate->duration > CYCLE_TIME*2 && gate->name != "prep_z" && gate->name != "measure") {
             QL_EOUT("Gate with duration larger than CYCLE_TIME*20 detected! Non primitive?: " << gate->name );
-            throw Exception("Check for non primitive gates at cycle " + std::to_string(gate->cycle) + "!", false);
+            throw Exception("Check for non primitive gates at cycle " + to_string(gate->cycle) + "!", false);
         }
 
         unsigned char type_op = gate->operands.size(); // type of operation (1-qubit/2-qubit)
         if (type_op == 1) {
             size_t qubit = gate->operands[0];
             size_t last_time = last_op_endtime[qubit];
-            QL_IOUT("Gate " + gate->name + "(" + std::to_string(gate->operands[0]) + ") at cycle " + std::to_string(gate->cycle) + " with duration " + std::to_string(gate->duration));
+            QL_IOUT("Gate " + gate->name + "(" + to_string(gate->operands[0]) + ") at cycle " + to_string(gate->cycle) + " with duration " + to_string(gate->duration));
             size_t idled_time = gate->cycle - last_time; //get idlying time to introduce decoherence. This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 
             last_op_endtime[qubit] = gate->cycle  + gate->duration / CYCLE_TIME; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 
-            QL_IOUT("Idled time:" + std::to_string(idled_time));
+            QL_IOUT("Idled time:" + to_string(idled_time));
 
 
-            fids[qubit] *= std::exp(-((double)idled_time)/decoherence_time); // Update fidelity with idling-caused decoherence
+            fids[qubit] *= exp(-((double)idled_time)/decoherence_time); // Update fidelity with idling-caused decoherence
 
             fids[qubit] *= gatefid_1; //Update fidelity after gate
             QL_IOUT("METRICS - one qubit gate - END");
@@ -203,12 +202,12 @@ double Metrics::bounded_fidelity(const circuit &circ, Vec<double> &fids) {
             last_op_endtime[qubit_c] = gate->cycle  + gate->duration / CYCLE_TIME; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
             last_op_endtime[qubit_t] = gate->cycle  + gate->duration / CYCLE_TIME ; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 
-            QL_IOUT("Gate " + gate->name + "(" + std::to_string(gate->operands[0]) + ", " + std::to_string(gate->operands[1]) + ") at cycle " + std::to_string(gate->cycle) + " with duration " + std::to_string(gate->duration));
-            QL_IOUT("Idled time q_c:" + std::to_string(idled_time_c));
-            QL_IOUT("Idled time q_t:" + std::to_string(idled_time_t) + " gate cycle=" + std::to_string(gate->cycle) + ". last_time_t=" + std::to_string(last_time_t));
+            QL_IOUT("Gate " + gate->name + "(" + to_string(gate->operands[0]) + ", " + to_string(gate->operands[1]) + ") at cycle " + to_string(gate->cycle) + " with duration " + to_string(gate->duration));
+            QL_IOUT("Idled time q_c:" + to_string(idled_time_c));
+            QL_IOUT("Idled time q_t:" + to_string(idled_time_t) + " gate cycle=" + to_string(gate->cycle) + ". last_time_t=" + to_string(last_time_t));
 
-            fids[qubit_c] *= std::exp(-(double) idled_time_c/decoherence_time); // Update fidelity with idling-caused decoherence
-            fids[qubit_t] *= std::exp(-(double)idled_time_t/decoherence_time); // Update fidelity with idling-caused decoherence
+            fids[qubit_c] *= exp(-(double) idled_time_c/decoherence_time); // Update fidelity with idling-caused decoherence
+            fids[qubit_t] *= exp(-(double)idled_time_t/decoherence_time); // Update fidelity with idling-caused decoherence
 
             QL_IOUT("Fidelity after idlying: ");
             PRINTER(fids);
@@ -227,7 +226,7 @@ double Metrics::bounded_fidelity(const circuit &circ, Vec<double> &fids) {
     size_t end_cycle = circ.back()->cycle + circ.back()->duration/CYCLE_TIME;
     for (size_t i = 0; i < Nqubits; i++) {
         size_t idled_time_final = end_cycle - last_op_endtime[i];
-        fids[i] *= std::exp(-(double) idled_time_final/decoherence_time);
+        fids[i] *= exp(-(double) idled_time_final/decoherence_time);
     }
 
     //Now we should still add decoherence effect in case the last gate was a two-qubit gate (the other qubits still decohere in the meantime!)
@@ -514,7 +513,7 @@ double quick_fidelity(const circuit &circuit) {
 
 // 		// if (fids.size() == 0)
 // 		// {
-// 		// 	IOUT("EMPTY VECTOR - Initializing. Nqubits = " + std::to_string(Nqubits));
+// 		// 	IOUT("EMPTY VECTOR - Initializing. Nqubits = " + to_string(Nqubits));
 // 		// 	fids.resize(Nqubits, 1.0); //Initiallize a fidelity vector, if one is not provided
 // 		// 	//TODO: non initialized qubits should have undefined fidelity. It shouldn't be taken into account.
 // 		// }
@@ -541,7 +540,7 @@ double quick_fidelity(const circuit &circuit) {
 // 			if (gate->duration > CYCLE_TIME*2 && gate->name!="prep_z" && gate->name!="measure" )
 // 			{
 // 				EOUT("Gate with duration larger than CYCLE_TIME*20 detected! Non primitive?: " << output_mode);
-//     			throw exception("Check for non primitive gates at cycle "  + std::to_string(gate->cycle) + "!", false);
+//     			throw exception("Check for non primitive gates at cycle "  + to_string(gate->cycle) + "!", false);
 // 			}
 
 
@@ -550,21 +549,21 @@ double quick_fidelity(const circuit &circuit) {
 // 			{
 // 				size_t qubit = gate->operands[0];
 // 				size_t last_time = last_op_endtime[qubit];
-// 				IOUT("Gate " + gate->name + "("+ std::to_string(gate->operands[0]) +") at cycle " + std::to_string(gate->cycle) + " with duration " + std::to_string(gate->duration));
+// 				IOUT("Gate " + gate->name + "("+ to_string(gate->operands[0]) +") at cycle " + to_string(gate->cycle) + " with duration " + to_string(gate->duration));
 // 				size_t idled_time = gate->cycle - last_time; //get idlying time to introduce decoherence. This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 
 // 				last_op_endtime[qubit] = gate->cycle  + gate->duration / CYCLE_TIME; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 
-// 				IOUT("Idled time:" + std::to_string(idled_time));
+// 				IOUT("Idled time:" + to_string(idled_time));
 
 
-// 				// fids[qubit] *= std::exp(-((double)idled_time)/decoherence_time); // Update fidelity with idling-caused decoherence
+// 				// fids[qubit] *= exp(-((double)idled_time)/decoherence_time); // Update fidelity with idling-caused decoherence
 // 				// fids[qubit] *= gatefid_1; //Update fidelity after gate
 
 // 				//TODO: OPTIMIZE THE DECOHERENCE PART?
 // 				for (auto i = 0; i < idled_time; i++)
 // 				{
-// 					qubit_partition[qubit]->introduce_single_qubit_error(qubit, std::exp(-(double)1.0/decoherence_time)); //Introduces wait gates
+// 					qubit_partition[qubit]->introduce_single_qubit_error(qubit, exp(-(double)1.0/decoherence_time)); //Introduces wait gates
 // 				}
 // 				qubit_partition[qubit]->single_qubit_gate(qubit, gatefid_1, gate->name); //Introduces gate fidelity
 
@@ -587,18 +586,18 @@ double quick_fidelity(const circuit &circuit) {
 // 				last_op_endtime[qubit_c] = gate->cycle  + gate->duration / CYCLE_TIME; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 // 				last_op_endtime[qubit_t] = gate->cycle  + gate->duration / CYCLE_TIME ; //This assumes "cycle" starts at zero, otherwise gate->cycle-> (gate->cycle - 1)
 
-// 				IOUT("Gate " + gate->name + "("+ std::to_string(gate->operands[0]) + ", " + std::to_string(gate->operands[1]) +") at cycle " + std::to_string(gate->cycle) + " with duration " + std::to_string(gate->duration));
-// 				IOUT("Idled time q_c:" + std::to_string(idled_time_c));
-// 				IOUT("Idled time q_t:" + std::to_string(idled_time_t));
-// 				IOUT("Decoherence time: " + std::to_string(decoherence_time));
+// 				IOUT("Gate " + gate->name + "("+ to_string(gate->operands[0]) + ", " + to_string(gate->operands[1]) +") at cycle " + to_string(gate->cycle) + " with duration " + to_string(gate->duration));
+// 				IOUT("Idled time q_c:" + to_string(idled_time_c));
+// 				IOUT("Idled time q_t:" + to_string(idled_time_t));
+// 				IOUT("Decoherence time: " + to_string(decoherence_time));
 
-// 				// fids[qubit_c] *= std::exp(-(double) idled_time_c/decoherence_time); // Update fidelity with idling-caused decoherence
-// 				// fids[qubit_t] *= std::exp(-(double)idled_time_t/decoherence_time); // Update fidelity with idling-caused decoherence
+// 				// fids[qubit_c] *= exp(-(double) idled_time_c/decoherence_time); // Update fidelity with idling-caused decoherence
+// 				// fids[qubit_t] *= exp(-(double)idled_time_t/decoherence_time); // Update fidelity with idling-caused decoherence
 
 // 				for (auto i = 0; i < idled_time_c; i++)
-// 					qubit_partition[qubit_c]->introduce_single_qubit_error(qubit_c, std::exp(-(double)1.0/decoherence_time)); //Introduces wait gates
+// 					qubit_partition[qubit_c]->introduce_single_qubit_error(qubit_c, exp(-(double)1.0/decoherence_time)); //Introduces wait gates
 // 				for (auto i = 0; i < idled_time_t; i++)
-// 					qubit_partition[qubit_t]->introduce_single_qubit_error(qubit_t, std::exp(-(double)1.0/decoherence_time)); //Introduces wait gates
+// 					qubit_partition[qubit_t]->introduce_single_qubit_error(qubit_t, exp(-(double)1.0/decoherence_time)); //Introduces wait gates
 
 // 				// IOUT("Error status after idlying: ");
 // 				// PRINTER(fids);
@@ -625,7 +624,7 @@ double quick_fidelity(const circuit &circuit) {
 // 		{
 // 			size_t idled_time_final = end_cycle - last_op_endtime[i];
 // 			for(auto wait=0; wait < idled_time_final; wait++)
-// 				qubit_partition[qubit]->introduce_single_qubit_error(qubit, std::exp(-(double)1.0/decoherence_time)); //Introduces wait gates
+// 				qubit_partition[qubit]->introduce_single_qubit_error(qubit, exp(-(double)1.0/decoherence_time)); //Introduces wait gates
 
 // 		}
 
@@ -644,11 +643,11 @@ double quick_fidelity(const circuit &circuit) {
 // 			DOUT("QUBIT_SET: ");
 // 			Str output;
 // 			for(auto qubit : q_set->qubits)
-// 				output += std::to_string(qubit) + ",";
+// 				output += to_string(qubit) + ",";
 // 			DOUT(output)
 // 			output="";
 // 			for(auto error : q_set->error_map)
-// 				output += error.first + std::to_string(error.second) + "\n";
+// 				output += error.first + to_string(error.second) + "\n";
 // 			DOUT(output)
 
 // 		}

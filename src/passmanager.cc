@@ -2,6 +2,7 @@
  * OpenQL pass manager implementation.
  */
 
+#include "utils/num.h"
 #include "passmanager.h"
 #include "write_sweep_points.h"
 
@@ -28,8 +29,7 @@ void PassManager::compile(quantum_program *program) const {
         ///@note-rn: currently(0.8.1.dev), all passes require platform as API parameter, and some passes depend on the nqubits internally. Therefore, these are passed through by setting the program with these fields here. However, this should change in the future since compiling for a simulator might not require a platform, and the number of qubits could be optional.
 
         if (!program->qubit_count) {
-            program->qubit_count = (size_t)(std::stoi(
-                pass->getPassOptions()->getOption("nqubits")));
+            program->qubit_count = parse_uint(pass->getPassOptions()->getOption("nqubits"));
         }
         assert(program->qubit_count);
 

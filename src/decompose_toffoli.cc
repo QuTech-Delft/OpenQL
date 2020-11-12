@@ -20,7 +20,7 @@ static void decompose_toffoli_kernel(
     for (auto cit = kernel.c.begin(); cit != kernel.c.end(); ++cit) {
         auto g = *cit;
         gate_type_t gtype = g->type();
-        Vec<size_t> goperands = g->operands;
+        Vec<UInt> goperands = g->operands;
 
         quantum_kernel toff_kernel("toff_kernel");
         toff_kernel.instruction_map = kernel.instruction_map;
@@ -28,9 +28,9 @@ static void decompose_toffoli_kernel(
         toff_kernel.cycle_time = kernel.cycle_time;
 
         if (gtype == __toffoli_gate__) {
-            size_t cq1 = goperands[0];
-            size_t cq2 = goperands[1];
-            size_t tq = goperands[2];
+            UInt cq1 = goperands[0];
+            UInt cq2 = goperands[1];
+            UInt tq = goperands[2];
             auto opt = options::get("decompose_toffoli");
             if (opt == "AM") {
                 toff_kernel.controlled_cnot_AM(tq, cq1, cq2);

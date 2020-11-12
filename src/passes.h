@@ -26,7 +26,7 @@ public:
     PassOptions *getPassOptions();
     const PassOptions *getPassOptions() const;
     void createPassOptions();
-    bool getSkip() const;
+    utils::Bool getSkip() const;
     void initPass(ql::quantum_program *program);
     void finalizePass(ql::quantum_program *program);
     void appendStatistics(const std::string &statistic);

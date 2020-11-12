@@ -4,9 +4,10 @@
 
 #pragma once
 
-#include "utils/vec.h"
-#include "utils/pair.h"
+#include "utils/num.h"
 #include "utils/str.h"
+#include "utils/pair.h"
+#include "utils/vec.h"
 #include <sstream>
 #include <bitset>
 #include "classical.h"
@@ -14,7 +15,7 @@
 namespace ql {
 namespace arch {
 
-typedef bool bit_t;
+typedef utils::Bool bit_t;
 typedef utils::Str cc_light_eqasm_instr_t;
 typedef utils::Vec<bit_t> bitset_t;
 
@@ -92,8 +93,8 @@ typedef enum {
 // #define __operation_types_num__ (4)
 
 // hardware resources
-typedef utils::Vec<size_t> qubit_set_t;
-typedef utils::Pair<size_t,size_t> qubit_pair_t;
+typedef utils::Vec<utils::UInt> qubit_set_t;
+typedef utils::Pair<utils::UInt,utils::UInt> qubit_pair_t;
 typedef utils::Vec<qubit_pair_t> qubit_pair_set_t;
 typedef utils::Str mask_t;
 
@@ -104,8 +105,8 @@ class single_qubit_mask {
 public:
     qubit_set_t qs;
     single_qubit_mask(qubit_set_t &&qs);
-    single_qubit_mask(size_t qubit);
-    mask_t get_mask(size_t reg);
+    single_qubit_mask(utils::UInt qubit);
+    mask_t get_mask(utils::UInt reg);
 };
 
 /**
@@ -116,7 +117,7 @@ public:
     qubit_pair_set_t qs;
     two_qubit_mask(qubit_pair_set_t &&qs);
     two_qubit_mask(qubit_pair_t p);
-    mask_t get_mask(size_t reg);
+    mask_t get_mask(utils::UInt reg);
 };
 
 /**
@@ -125,23 +126,23 @@ public:
 class cc_light_eqasm_instruction {
 public:
 
-    qubit_set_t            used_qubits;
+    qubit_set_t                 used_qubits;
 
-    size_t                 duration;
-    size_t                 latency = 0;
-    size_t                 start = 0;
-    size_t                 codeword = 0;
-    size_t                 opcode = 0;
-    size_t                 condition = 0;
+    utils::UInt                 duration;
+    utils::UInt                 latency = 0;
+    utils::UInt                 start = 0;
+    utils::UInt                 codeword = 0;
+    utils::UInt                 opcode = 0;
+    utils::UInt                 condition = 0;
 
     operation_type_t            operation_type;
     cc_light_eqasm_instr_type_t instr_type;
 
-    utils::Str            qasm_label;
+    utils::Str                  qasm_label;
 
-    bool                   latency_compensated = false;
+    utils::Bool                 latency_compensated = false;
 
-    utils::Str            name;
+    utils::Str                  name;
 
 public:
 
@@ -163,7 +164,7 @@ public:
     /**
      * set start
      */
-    virtual void set_start(size_t t);
+    virtual void set_start(utils::UInt t);
 
     /**
      * decompose meta-instructions

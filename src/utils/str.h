@@ -8,9 +8,7 @@
 #include <string>
 #include <sstream>
 #include <typeinfo>
-
-// TODO: remove
-#include <vector>
+#include "utils/num.h"
 
 namespace ql {
 namespace utils {
@@ -65,30 +63,12 @@ Str to_string(T arg) {
     return ss.str();
 }
 
+UInt parse_uint(const Str &str);
+Int parse_int(const Str &str);
+Real parse_double(const Str &str);
+
 Str to_lower(Str str);
 Str replace_all(Str str, const Str &from, const Str &to);
-
-// TODO: remove (should be method on Vec)
-template<class T>
-Str to_string(
-    const std::vector<T> &v,
-    const Str &vector_prefix = "",
-    const Str &elem_sep = ", "
-) {
-    std::ostringstream ss;
-    ss << vector_prefix << " [";
-    size_t sz = v.size();
-    if (sz > 0) {
-        size_t i;
-        for (i = 0; i < sz - 1; ++i) {
-            ss << v[i] << elem_sep;
-        }
-        ss << v[i];
-    }
-
-    ss << "]";
-    return ss.str();
-}
 
 } // namespace utils
 } // namespace ql

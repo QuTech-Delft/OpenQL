@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <complex>
+#include "utils/num.h"
 #include "utils/str.h"
 #include "utils/vec.h"
 #include "gate.h"
@@ -14,20 +14,20 @@ namespace ql {
 class unitary {
 public:
     utils::Str name;
-    utils::Vec<std::complex<double>> array;
-    utils::Vec<std::complex<double>> SU;
-    double delta; // JvS: is this even used?
-    double alpha;
-    double beta;
-    double gamma;
-    bool is_decomposed;
-    utils::Vec<double> instructionlist;
+    utils::Vec<utils::Complex> array;
+    utils::Vec<utils::Complex> SU;
+    utils::Real delta; // JvS: is this even used?
+    utils::Real alpha;
+    utils::Real beta;
+    utils::Real gamma;
+    utils::Bool is_decomposed;
+    utils::Vec<utils::Real> instructionlist;
 
     unitary();
-    unitary(const utils::Str &name, const utils::Vec<std::complex<double>> &array);
-    double size() const;
+    unitary(const utils::Str &name, const utils::Vec<utils::Complex> &array);
+    utils::Real size() const;
     void decompose();
-    static bool is_decompose_support_enabled();
+    static utils::Bool is_decompose_support_enabled();
 };
 
 } // namespace ql

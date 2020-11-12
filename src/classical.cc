@@ -42,7 +42,7 @@ const creg &coperand::as_creg() const {
     }
 }
 
-cval::cval(int val) : value(val) {
+cval::cval(Int val) : value(val) {
 }
 
 cval::cval(const cval &cv) : value(cv.value) {
@@ -56,7 +56,7 @@ void cval::print() const {
     QL_COUT("cval with value: " << value);
 }
 
-creg::creg(size_t id) : id(id) {
+creg::creg(UInt id) : id(id) {
     QL_DOUT("creg constructor, used id: " << id);
 }
 
@@ -135,7 +135,7 @@ operation::operation(const cval &v) {
 }
 
 // used for initializing with an imm
-operation::operation(int val) {
+operation::operation(Int val) {
     operation_name = "ldi";
     operation_type = ql::operation_type_t::ARITHMATIC;
     operands.push_back(new ql::cval(val));
@@ -186,17 +186,17 @@ classical::classical(const Str &operation) {
 
 instruction_t classical::qasm() const {
     Str iopers;
-    int sz = creg_operands.size();
-    for (int i = 0; i < sz; ++i) {
+    Int sz = creg_operands.size();
+    for (Int i = 0; i < sz; ++i) {
         if (i == sz - 1) {
-            iopers += " r" + std::to_string(creg_operands[i]);
+            iopers += " r" + to_string(creg_operands[i]);
         } else {
-            iopers += " r" + std::to_string(creg_operands[i]) + ",";
+            iopers += " r" + to_string(creg_operands[i]) + ",";
         }
     }
 
     if (name == "ldi") {
-        return "ldi" + iopers + ", " + std::to_string(int_operand);
+        return "ldi" + iopers + ", " + to_string(int_operand);
     } else {
         return name + iopers;
     }

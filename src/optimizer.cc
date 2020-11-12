@@ -51,9 +51,9 @@ protected:
 
     static cmat_t fuse(const cmat_t &m1, const cmat_t &m2) {
         cmat_t res;
-        const complex_t *x = m1.m;
-        const complex_t *y = m2.m;
-        complex_t *r = res.m;
+        const Complex *x = m1.m;
+        const Complex *y = m2.m;
+        Complex *r = res.m;
 
         // m1.dump();
         // m2.dump();
@@ -72,7 +72,7 @@ protected:
 
     static bool is_id(const cmat_t &mat) {
         // mat.dump();
-        const complex_t * m = mat.m;
+        const Complex *m = mat.m;
         if ((std::abs(std::abs(m[0].real())-1.0))>__epsilon__) return false;
         if ((std::abs(m[0].imag())  )>__epsilon__) return false;
         if ((std::abs(m[1].real())  )>__epsilon__) return false;

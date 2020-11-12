@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "utils/num.h"
 #include "utils/str.h"
 #include "utils/list.h"
 #include "utils/map.h"
@@ -43,21 +44,21 @@ public:
 
     // attributes
     lemon::ListDigraph::NodeMap<utils::Str> name;     // name[n] == qasm string
-    lemon::ListDigraph::ArcMap<int> weight;            // number of cycles of dependence
-    lemon::ListDigraph::ArcMap<int> cause;             // qubit/creg index of dependence
-    lemon::ListDigraph::ArcMap<int> depType;           // RAW, WAW, ...
+    lemon::ListDigraph::ArcMap<utils::Int> weight;    // number of cycles of dependence
+    lemon::ListDigraph::ArcMap<utils::Int> cause;     // qubit/creg index of dependence
+    lemon::ListDigraph::ArcMap<utils::Int> depType;   // RAW, WAW, ...
 
     // s and t nodes are the top and bottom of the dependence graph
     lemon::ListDigraph::Node s, t;                     // instruction[s]==SOURCE, instruction[t]==SINK
 
     // parameters of dependence graph construction
-    size_t cycle_time;   // to convert durations to cycles as weight of dependence
-    size_t qubit_count;  // number of qubits, to check/represent qubit as cause of dependence
-    size_t creg_count;   // number of cregs, to check/represent creg as cause of dependence
-    circuit *circp;      // current and result circuit, passed from Init to each scheduler
+    utils::UInt cycle_time;     // to convert durations to cycles as weight of dependence
+    utils::UInt qubit_count;    // number of qubits, to check/represent qubit as cause of dependence
+    utils::UInt creg_count;     // number of cregs, to check/represent creg as cause of dependence
+    circuit *circp;             // current and result circuit, passed from Init to each scheduler
 
     // scheduler support
-    utils::Map<lemon::ListDigraph::Node, size_t>  remaining;  // remaining[node] == cycles until end; critical path representation
+    utils::Map<lemon::ListDigraph::Node, utils::UInt>  remaining;  // remaining[node] == cycles until end; critical path representation
 
 public:
     Scheduler();
@@ -67,14 +68,14 @@ public:
 
     // factored out code from Init to add a dependence between two nodes
     // operand is in qubit_creg combined index space
-    void add_dep(int srcID, int tgtID, enum DepTypes deptype, int operand);
+    void add_dep(utils::Int srcID, utils::Int tgtID, enum DepTypes deptype, utils::Int operand);
 
     // fill the dependence graph ('graph') with nodes from the circuit and adding arcs for their dependences
     void init(
         circuit &ckt,
         const quantum_platform &platform,
-        size_t qcount,
-        size_t ccount
+        utils::UInt qcount,
+        utils::UInt ccount
     );
 
     void print() const;
@@ -186,7 +187,7 @@ public:
     void init_available(
         utils::List<lemon::ListDigraph::Node> &avlist,
         scheduling_direction_t dir,
-        size_t &curr_cycle
+        utils::UInt &curr_cycle
     );
 
     // collect the list of directly depending nodes
@@ -204,7 +205,7 @@ public:
     // deep-criticality takes into account the criticality of depending nodes (in the right direction!);
     // this function is used to order the avlist in an order from highest deep-criticality to lowest deep-criticality;
     // it is the core of the heuristics of the critical path list scheduler.
-    bool criticality_lessthan(
+    utils::Bool criticality_lessthan(
         lemon::ListDigraph::Node n1,
         lemon::ListDigraph::Node n2,
         scheduling_direction_t dir
@@ -243,7 +244,7 @@ public:
     void TakeAvailable(
         lemon::ListDigraph::Node n,
         utils::List<lemon::ListDigraph::Node> &avlist,
-        utils::Map<gate*,bool> &scheduled,
+        utils::Map<gate*,utils::Bool> &scheduled,
         scheduling_direction_t dir
     );
 
@@ -252,19 +253,19 @@ public:
     // and try again; this makes nodes/instructions to complete execution for one more cycle,
     // and makes resources finally available in case of resource constrained scheduling
     // so it contributes to proceeding and to finally have an empty avlist
-    static void AdvanceCurrCycle(scheduling_direction_t dir, size_t &curr_cycle);
+    static void AdvanceCurrCycle(scheduling_direction_t dir, utils::UInt &curr_cycle);
 
     // a gate must wait until all its operand are available, i.e. the gates having computed them have completed,
     // and must wait until all resources required for the gate's execution are available;
     // return true when immediately schedulable
     // when returning false, isres indicates whether resource occupation was the reason or operand completion (for debugging)
-    bool immediately_schedulable(
+    utils::Bool immediately_schedulable(
         lemon::ListDigraph::Node n,
         scheduling_direction_t dir,
-        const size_t curr_cycle,
+        const utils::UInt curr_cycle,
         const quantum_platform& platform,
         arch::resource_manager_t &rm,
-        bool &isres
+        utils::Bool &isres
     );
 
     // select a node from the avlist
@@ -272,10 +273,10 @@ public:
     lemon::ListDigraph::Node SelectAvailable(
         utils::List<lemon::ListDigraph::Node> &avlist,
         scheduling_direction_t dir,
-        const size_t curr_cycle,
+        const utils::UInt curr_cycle,
         const quantum_platform &platform,
         arch::resource_manager_t &rm,
-        bool &success
+        utils::Bool &success
     );
 
     // ASAP/ALAP scheduler with RC
@@ -309,7 +310,7 @@ public:
     void schedule_alap_uniform();
 
     // printing dot of the dependence graph
-    void get_dot(bool WithCritical, bool WithCycles, std::ostream &dotout);
+    void get_dot(utils::Bool WithCritical, utils::Bool WithCycles, std::ostream &dotout);
     void get_dot(utils::Str &dot);
 };
 
@@ -334,8 +335,8 @@ void rcschedule_kernel(
     quantum_kernel &kernel,
     const quantum_platform &platform,
     utils::Str &dot,
-    size_t nqubits,
-    size_t ncreg = 0
+    utils::UInt nqubits,
+    utils::UInt ncreg = 0
 );
 
 /*

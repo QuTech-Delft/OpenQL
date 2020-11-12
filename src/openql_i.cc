@@ -72,7 +72,7 @@ Unitary::Unitary(
 ) :
     name(name)
 {
-    unitary = new ql::unitary(name, matrix);
+    unitary = new ql::unitary(name, {matrix.begin(), matrix.end()});
 }
 
 Unitary::~Unitary() {
@@ -288,14 +288,14 @@ Program::Program(
     program = new ql::quantum_program(name, *(platform.platform), qubit_count, creg_count);
 }
 
-void Program::set_sweep_points(const std::vector<float> &sweep_points) {
+void Program::set_sweep_points(const std::vector<double> &sweep_points) {
     QL_WOUT("This will soon be deprecated according to issue #76");
     program->sweep_points = sweep_points;
 }
 
-std::vector<float> Program::get_sweep_points() const {
+std::vector<double> Program::get_sweep_points() const {
     QL_WOUT("This will soon be deprecated according to issue #76");
-    return std::vector<float>(program->sweep_points.begin(), program->sweep_points.end());
+    return std::vector<double>(program->sweep_points.begin(), program->sweep_points.end());
 }
 
 void Program::add_kernel(const Kernel &k) {

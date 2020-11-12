@@ -5,6 +5,7 @@
 #pragma once
 
 #include <fstream>
+#include "utils/num.h"
 #include "utils/str.h"
 #include "utils/pair.h"
 #include "utils/vec.h"
@@ -19,7 +20,7 @@ namespace arch {
 
 // in configuration file, duration is in nanoseconds, while here we prefer it to have it in cycles
 // it is needed to define the extend of the resource occupation in case of multi-cycle operations
-size_t ccl_get_operation_duration(gate *ins, const quantum_platform &platform);
+utils::UInt ccl_get_operation_duration(gate *ins, const quantum_platform &platform);
 
 // operation type is "mw" (for microwave), "flux", or "readout"
 // it reflects the different resources used to implement the various gates and that resource management must distinguish
@@ -37,15 +38,15 @@ class ccl_qubit_resource_t : public resource_t {
 public:
     // fwd: qubit q is busy till cycle=state[q], i.e. all cycles < state[q] it is busy, i.e. start_cycle must be >= state[q]
     // bwd: qubit q is busy from cycle=state[q], i.e. all cycles >= state[q] it is busy, i.e. start_cycle+duration must be <= state[q]
-    utils::Vec<size_t> state;
+    utils::Vec<utils::UInt> state;
 
     ccl_qubit_resource_t(const quantum_platform &platform, scheduling_direction_t dir);
 
     ccl_qubit_resource_t *clone() const & override;
     ccl_qubit_resource_t *clone() && override;
 
-    bool available(size_t op_start_cycle, gate *ins, const quantum_platform &platform) override;
-    void reserve(size_t op_start_cycle, gate *ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
+    void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
 };
 
 // Single-qubit rotation gates (instructions of 'mw' type) are controlled by qwgs.
@@ -53,8 +54,8 @@ public:
 // A qwg can control multiple qubits at the same time, but only when they perform the same gate and start at the same time.
 class ccl_qwg_resource_t : public resource_t {
 public:
-    utils::Vec<size_t> fromcycle;          // qwg is busy from cycle==fromcycle[qwg], inclusive
-    utils::Vec<size_t> tocycle;            // qwg is busy to cycle==tocycle[qwg], not inclusive
+    utils::Vec<utils::UInt> fromcycle;          // qwg is busy from cycle==fromcycle[qwg], inclusive
+    utils::Vec<utils::UInt> tocycle;            // qwg is busy to cycle==tocycle[qwg], not inclusive
 
     // there was a bug here: when qwg is busy from cycle i with operation x
     // then a new x is ok when starting at i or later
@@ -62,15 +63,15 @@ public:
     // the bug was that a new x was always ok (so also when starting earlier than cycle i)
 
     utils::Vec<std::string> operations;    // with operation_name==operations[qwg]
-    utils::Map<size_t,size_t> qubit2qwg;      // on qwg==qubit2qwg[q]
+    utils::Map<utils::UInt,utils::UInt> qubit2qwg;      // on qwg==qubit2qwg[q]
 
     ccl_qwg_resource_t(const quantum_platform & platform, scheduling_direction_t dir);
 
     ccl_qwg_resource_t *clone() const & override;
     ccl_qwg_resource_t *clone() && override;
 
-    bool available(size_t op_start_cycle, gate *ins, const quantum_platform &platform) override;
-    void reserve(size_t op_start_cycle, gate *ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
+    void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
 };
 
 // Single-qubit measurements (instructions of 'readout' type) are controlled by measurement units.
@@ -78,17 +79,17 @@ public:
 // A measurement unit can control multiple qubits at the same time, but only when they start at the same time.
 class ccl_meas_resource_t : public resource_t {
 public:
-    utils::Vec<size_t> fromcycle;  // last measurement start cycle
-    utils::Vec<size_t> tocycle;    // is busy till cycle
-    utils::Map<size_t,size_t> qubit2meas;
+    utils::Vec<utils::UInt> fromcycle;  // last measurement start cycle
+    utils::Vec<utils::UInt> tocycle;    // is busy till cycle
+    utils::Map<utils::UInt,utils::UInt> qubit2meas;
 
     ccl_meas_resource_t(const quantum_platform & platform, scheduling_direction_t dir);
 
     ccl_meas_resource_t *clone() const & override;
     ccl_meas_resource_t *clone() && override;
 
-    bool available(size_t op_start_cycle, gate *ins, const quantum_platform &platform) override;
-    void reserve(size_t op_start_cycle, gate *ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
+    void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
 };
 
 // Two-qubit flux gates only operate on neighboring qubits, i.e. qubits connected by an edge.
@@ -105,18 +106,18 @@ class ccl_edge_resource_t : public resource_t
 public:
     // fwd: edge is busy till cycle=state[edge], i.e. all cycles < state[edge] it is busy, i.e. start_cycle must be >= state[edge]
     // bwd: edge is busy from cycle=state[edge], i.e. all cycles >= state[edge] it is busy, i.e. start_cycle+duration must be <= state[edge]
-    utils::Vec<size_t> state;                          // machine state recording the cycles that given edge is free/busy
-    typedef utils::Pair<size_t, size_t> qubits_pair_t;
-    utils::Map<qubits_pair_t, size_t> qubits2edge;      // constant helper table to find edge between a pair of qubits
-    utils::Map<size_t, utils::Vec<size_t>> edge2edges;  // constant "edges" table from configuration file
+    utils::Vec<utils::UInt> state;                          // machine state recording the cycles that given edge is free/busy
+    typedef utils::Pair<utils::UInt, utils::UInt> qubits_pair_t;
+    utils::Map<qubits_pair_t, utils::UInt> qubits2edge;      // constant helper table to find edge between a pair of qubits
+    utils::Map<utils::UInt, utils::Vec<utils::UInt>> edge2edges;  // constant "edges" table from configuration file
 
     ccl_edge_resource_t(const quantum_platform &platform, scheduling_direction_t dir);
 
     ccl_edge_resource_t *clone() const & override;
     ccl_edge_resource_t *clone() && override;
 
-    bool available(size_t op_start_cycle, gate *ins, const quantum_platform &platform) override;
-    void reserve(size_t op_start_cycle, gate * ins, const quantum_platform & platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
+    void reserve(utils::UInt op_start_cycle, gate * ins, const quantum_platform & platform) override;
 };
 
 // A two-qubit flux gate lowers the frequency of its source qubit to get near the freq of its target qubit.
@@ -143,21 +144,21 @@ public:
 // The other members contain internal copies of the resource description and grid configuration of the json file.
 class ccl_detuned_qubits_resource_t : public resource_t {
 public:
-    utils::Vec<size_t> fromcycle;                              // qubit q is busy from cycle fromcycle[q]
-    utils::Vec<size_t> tocycle;                                // till cycle tocycle[q]
+    utils::Vec<utils::UInt> fromcycle;                              // qubit q is busy from cycle fromcycle[q]
+    utils::Vec<utils::UInt> tocycle;                                // till cycle tocycle[q]
     utils::Vec<std::string> operations;                        // with an operation of operation_type==operations[q]
 
-    typedef utils::Pair<size_t, size_t> qubits_pair_t;
-    utils::Map<qubits_pair_t, size_t> qubitpair2edge;           // map: pair of qubits to edge (from grid configuration)
-    utils::Map<size_t, utils::Vec<size_t>> edge_detunes_qubits; // map: edge to vector of qubits that edge detunes (resource desc.)
+    typedef utils::Pair<utils::UInt, utils::UInt> qubits_pair_t;
+    utils::Map<qubits_pair_t, utils::UInt> qubitpair2edge;           // map: pair of qubits to edge (from grid configuration)
+    utils::Map<utils::UInt, utils::Vec<utils::UInt>> edge_detunes_qubits; // map: edge to vector of qubits that edge detunes (resource desc.)
 
     ccl_detuned_qubits_resource_t(const quantum_platform &platform, scheduling_direction_t dir);
 
     ccl_detuned_qubits_resource_t *clone() const & override;
     ccl_detuned_qubits_resource_t *clone() && override;
 
-    bool available(size_t op_start_cycle, gate *ins, const quantum_platform &platform) override;
-    void reserve(size_t op_start_cycle, gate *ins, const quantum_platform &platform) override;
+    utils::Bool available(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
+    void reserve(utils::UInt op_start_cycle, gate *ins, const quantum_platform &platform) override;
 };
 
 // ============ platform specific resource_manager matching config file resources sections with resource classes above

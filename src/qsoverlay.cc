@@ -17,11 +17,11 @@ using namespace utils;
 //Only support for DiCarlo setup atm
 void write_qsoverlay_program(
     quantum_program *programp,
-    size_t num_qubits,
+    UInt num_qubits,
     const quantum_platform &platform,
     const Str &suffix,
-    size_t ns_per_cycle,
-    bool compiled
+    UInt ns_per_cycle,
+    Bool compiled
 ) {
 
     // TODO remove the next line. Using this because qsoverlay has some bugs when time is explicited
@@ -92,9 +92,9 @@ void write_qsoverlay_program(
     // Create qubit list
 
     Str qubit_list{};
-    for (size_t qubit = 0; qubit < num_qubits; qubit++) {
+    for (UInt qubit = 0; qubit < num_qubits; qubit++) {
         qubit_list += "'";
-        qubit_list += (qubit != num_qubits-1) ? (std::to_string(qubit) + "', ") : (std::to_string(qubit) + "'");
+        qubit_list += (qubit != num_qubits-1) ? (to_string(qubit) + "', ") : (to_string(qubit) + "'");
     }
 
     // Circuit creation
@@ -121,17 +121,17 @@ void write_qsoverlay_program(
 
         // IOUT(gate->name);
         if (gate->operands.size() == 1) {
-            QL_IOUT("Gate operands: " + std::to_string(gate->operands[0]));
+            QL_IOUT("Gate operands: " + to_string(gate->operands[0]));
         } else if (gate->operands.size() == 2) {
-            QL_IOUT("Gate operands: " + std::to_string(gate->operands[0]) + ", " + std::to_string(gate->operands[1]));
+            QL_IOUT("Gate operands: " + to_string(gate->operands[0]) + ", " + to_string(gate->operands[1]));
         } else {
             QL_IOUT("GATE OPERANDS: Problem encountered");
         }
 
 
         fout << "	b.add_gate('" << qs_name  << "', " << "['"
-             << std::to_string(gate->operands[0])
-             << (( gate->operands.size() == 1 ) ? "']" : ("', '" + std::to_string(gate->operands[1]) + "']"));
+             << to_string(gate->operands[0])
+             << (( gate->operands.size() == 1 ) ? "']" : ("', '" + to_string(gate->operands[1]) + "']"));
 
 
         // Add angles for the gates that require it
@@ -142,16 +142,16 @@ void write_qsoverlay_program(
         // Add gate timing, if circuit was compiled.
         if (qs_name == "prepz") {
             if (compiled) {
-                fout << ", time = " << std::to_string((gate->cycle - 1) * ns_per_cycle + gate->duration);
+                fout << ", time = " << to_string((gate->cycle - 1) * ns_per_cycle + gate->duration);
             }
         } else if (qs_name == "Measure") {
             fout << ", output_bit = " << "'" << gate->operands[0] << "_out'";
             if (compiled) {
-                fout << ", time = " << std::to_string((gate->cycle-1)*ns_per_cycle + gate->duration/4);
+                fout << ", time = " << to_string((gate->cycle-1)*ns_per_cycle + gate->duration/4);
             }
         } else {
             if (compiled) {
-                fout << ", time = " << std::to_string((gate->cycle-1)*ns_per_cycle + gate->duration/2);
+                fout << ", time = " << to_string((gate->cycle-1)*ns_per_cycle + gate->duration/2);
             }
         }
         fout << ")\n";

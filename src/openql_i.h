@@ -154,8 +154,8 @@ public:
         size_t qubit_count,
         size_t creg_count = 0
     );
-    void set_sweep_points(const std::vector<float> &sweep_points);
-    std::vector<float> get_sweep_points() const;
+    void set_sweep_points(const std::vector<double> &sweep_points);
+    std::vector<double> get_sweep_points() const;
     void add_kernel(const Kernel &k);
     void add_program(const Program &p);
     void add_if(const Kernel &k, const Operation &operation);

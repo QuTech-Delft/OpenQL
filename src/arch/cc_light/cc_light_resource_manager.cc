@@ -11,8 +11,8 @@ using namespace utils;
 
 // in configuration file, duration is in nanoseconds, while here we prefer it to have it in cycles
 // it is needed to define the extend of the resource occupation in case of multi-cycle operations
-size_t ccl_get_operation_duration(gate *ins, const quantum_platform &platform) {
-    return std::ceil( static_cast<float>(ins->duration) / platform.cycle_time);
+UInt ccl_get_operation_duration(gate *ins, const quantum_platform &platform) {
+    return ceil( static_cast<Real>(ins->duration) / platform.cycle_time);
 }
 
 // operation type is "mw" (for microwave), "flux", or "readout"
@@ -45,7 +45,7 @@ ccl_qubit_resource_t::ccl_qubit_resource_t(
     // DOUT("... creating " << name << " resource");
     count = platform.resources[name]["count"];
     state.resize(count);
-    for (size_t q = 0; q < count; q++) {
+    for (UInt q = 0; q < count; q++) {
         state[q] = (forward_scheduling == dir ? 0 : MAX_CYCLE);
     }
 }
@@ -60,12 +60,12 @@ ccl_qubit_resource_t *ccl_qubit_resource_t::clone() && {
     return new ccl_qubit_resource_t(std::move(*this));
 }
 
-bool ccl_qubit_resource_t::available(
-    size_t op_start_cycle,
+Bool ccl_qubit_resource_t::available(
+    UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
-    size_t operation_duration = ccl_get_operation_duration(ins, platform);
+    UInt operation_duration = ccl_get_operation_duration(ins, platform);
     Str operation_type = ccl_get_operation_type(ins, platform);
 
     for (auto q : ins->operands) {
@@ -88,12 +88,12 @@ bool ccl_qubit_resource_t::available(
 }
 
 void ccl_qubit_resource_t::reserve(
-    size_t op_start_cycle,
+    UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
     Str operation_type = ccl_get_operation_type(ins, platform);
-    size_t operation_duration = ccl_get_operation_duration(ins, platform);
+    UInt operation_duration = ccl_get_operation_duration(ins, platform);
 
     for (auto q : ins->operands) {
         state[q] = (forward_scheduling == direction ?  op_start_cycle + operation_duration : op_start_cycle );
@@ -113,7 +113,7 @@ ccl_qwg_resource_t::ccl_qwg_resource_t(
     tocycle.resize(count);
     operations.resize(count);
 
-    for (size_t i = 0; i < count; i++) {
+    for (UInt i = 0; i < count; i++) {
         fromcycle[i] = (forward_scheduling == dir ? 0 : MAX_CYCLE);
         tocycle[i] = (forward_scheduling == dir ? 0 : MAX_CYCLE);
         operations[i] = "";
@@ -121,7 +121,7 @@ ccl_qwg_resource_t::ccl_qwg_resource_t(
     auto & constraints = platform.resources[name]["connection_map"];
     for (auto it = constraints.cbegin(); it != constraints.cend(); ++it) {
         // COUT(it.key() << " : " << it.value() );
-        size_t qwgNo = stoi( it.key() );
+        UInt qwgNo = stoi( it.key() );
         auto & connected_qubits = it.value();
         for (auto &q : connected_qubits) {
             qubit2qwg.set(q) = qwgNo;
@@ -139,16 +139,16 @@ ccl_qwg_resource_t *ccl_qwg_resource_t::clone() && {
     return new ccl_qwg_resource_t(std::move(*this));
 }
 
-bool ccl_qwg_resource_t::available(
-    size_t op_start_cycle,
+Bool ccl_qwg_resource_t::available(
+    UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
     Str operation_type = ccl_get_operation_type(ins, platform);
     Str operation_name = ccl_get_operation_name(ins, platform);
-    size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+    UInt      operation_duration = ccl_get_operation_duration(ins, platform);
 
-    bool is_mw = (operation_type == "mw");
+    Bool is_mw = (operation_type == "mw");
     if (is_mw) {
         for (auto q : ins->operands) {
             QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  qwg: " << qubit2qwg.at(q) << " is busy from cycle: " << fromcycle[qubit2qwg.at(q)] << " to cycle: " << tocycle[qubit2qwg.at(q)] << " for operation: " << operations[qubit2qwg.at(q)]);
@@ -176,20 +176,20 @@ bool ccl_qwg_resource_t::available(
 }
 
 void ccl_qwg_resource_t::reserve(
-    size_t op_start_cycle,
+    UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
     Str operation_type = ccl_get_operation_type(ins, platform);
     Str operation_name = ccl_get_operation_name(ins, platform);
-    size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+    UInt      operation_duration = ccl_get_operation_duration(ins, platform);
 
-    bool is_mw = operation_type == "mw";
+    Bool is_mw = operation_type == "mw";
     if (is_mw) {
         for (auto q : ins->operands) {
             if (direction == forward_scheduling) {
                 if (operations[qubit2qwg.at(q)] == operation_name) {
-                    tocycle[qubit2qwg.at(q)] = std::max( tocycle[qubit2qwg.at(q)], op_start_cycle + operation_duration);
+                    tocycle[qubit2qwg.at(q)] = max(tocycle[qubit2qwg.at(q)], op_start_cycle + operation_duration);
                 } else {
                     fromcycle[qubit2qwg.at(q)] = op_start_cycle;
                     tocycle[qubit2qwg.at(q)] = op_start_cycle + operation_duration;
@@ -197,7 +197,7 @@ void ccl_qwg_resource_t::reserve(
                 }
             } else {
                 if (operations[qubit2qwg.at(q)] == operation_name) {
-                    fromcycle[qubit2qwg.at(q)] = std::min( fromcycle[qubit2qwg.at(q)], op_start_cycle);
+                    fromcycle[qubit2qwg.at(q)] = min(fromcycle[qubit2qwg.at(q)], op_start_cycle);
                 } else {
                     fromcycle[qubit2qwg.at(q)] = op_start_cycle;
                     tocycle[qubit2qwg.at(q)] = op_start_cycle + operation_duration;
@@ -220,14 +220,14 @@ ccl_meas_resource_t::ccl_meas_resource_t(
     fromcycle.resize(count);
     tocycle.resize(count);
 
-    for (size_t i=0; i<count; i++) {
+    for (UInt i=0; i<count; i++) {
         fromcycle[i] = (forward_scheduling == dir ? 0 : MAX_CYCLE);
         tocycle[i] = (forward_scheduling == dir ? 0 : MAX_CYCLE);
     }
     auto &constraints = platform.resources[name]["connection_map"];
     for (auto it = constraints.begin(); it != constraints.end(); ++it) {
         // COUT(it.key() << " : " << it.value());
-        size_t measUnitNo = stoi( it.key() );
+        UInt measUnitNo = stoi( it.key() );
         auto & connected_qubits = it.value();
         for (auto &q : connected_qubits) {
             qubit2meas.set(q) = measUnitNo;
@@ -245,15 +245,15 @@ ccl_meas_resource_t *ccl_meas_resource_t::clone() && {
     return new ccl_meas_resource_t(std::move(*this));
 }
 
-bool ccl_meas_resource_t::available(
-    size_t op_start_cycle,
+Bool ccl_meas_resource_t::available(
+    UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
     Str operation_type = ccl_get_operation_type(ins, platform);
-    size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+    UInt      operation_duration = ccl_get_operation_duration(ins, platform);
 
-    bool is_measure = (operation_type == "readout");
+    Bool is_measure = (operation_type == "readout");
     if (is_measure) {
         for (auto q : ins->operands) {
             QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << "  meas: " << qubit2meas.at(q) << " is busy from cycle: " << fromcycle[qubit2meas.at(q)] << " to cycle: " << tocycle[qubit2meas.at(q)] );
@@ -283,14 +283,14 @@ bool ccl_meas_resource_t::available(
 }
 
 void ccl_meas_resource_t::reserve(
-    size_t op_start_cycle,
+    UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
     Str operation_type = ccl_get_operation_type(ins, platform);
-    size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+    UInt      operation_duration = ccl_get_operation_duration(ins, platform);
 
-    bool is_measure = (operation_type == "readout");
+    Bool is_measure = (operation_type == "readout");
     if (is_measure) {
         for (auto q : ins->operands) {
             fromcycle[qubit2meas.at(q)] = op_start_cycle;
@@ -310,14 +310,14 @@ ccl_edge_resource_t::ccl_edge_resource_t(
     count = platform.resources[name]["count"];
     state.resize(count);
 
-    for (size_t i = 0; i < count; i++) {
+    for (UInt i = 0; i < count; i++) {
         state[i] = (forward_scheduling == dir ? 0 : MAX_CYCLE);
     }
 
     for (auto &anedge : platform.topology["edges"]) {
-        size_t s = anedge["src"];
-        size_t d = anedge["dst"];
-        size_t e = anedge["id"];
+        UInt s = anedge["src"];
+        UInt d = anedge["dst"];
+        UInt e = anedge["id"];
 
         qubits_pair_t aqpair(s,d);
         auto it = qubits2edge.find(aqpair);
@@ -332,7 +332,7 @@ ccl_edge_resource_t::ccl_edge_resource_t(
     auto &constraints = platform.resources[name]["connection_map"];
     for (auto it = constraints.cbegin(); it != constraints.cend(); ++it) {
         // COUT(it.key() << " : " << it.value() << "\n");
-        size_t edgeNo = stoi( it.key() );
+        UInt edgeNo = stoi( it.key() );
         auto &connected_edges = it.value();
         for (auto &e : connected_edges) {
             edge2edges.set(e).push_back(edgeNo);
@@ -350,16 +350,16 @@ ccl_edge_resource_t *ccl_edge_resource_t::clone() && {
     return new ccl_edge_resource_t(std::move(*this));
 }
 
-bool ccl_edge_resource_t::available(
-    size_t op_start_cycle,
+Bool ccl_edge_resource_t::available(
+    UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
     Str operation_type = ccl_get_operation_type(ins, platform);
-    size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+    UInt operation_duration = ccl_get_operation_duration(ins, platform);
 
     auto gname = ins->name;
-    bool is_flux = (operation_type == "flux");
+    Bool is_flux = (operation_type == "flux");
     if (is_flux) {
         auto nopers = ins->operands.size();
         if (nopers == 1) {
@@ -375,7 +375,7 @@ bool ccl_edge_resource_t::available(
 
                 QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", edge: " << edge_no << " is busy till/from cycle : " << state[edge_no] << " for operation: " << ins->name);
 
-                Vec<size_t> edges2check(edge2edges.get(edge_no));
+                Vec<UInt> edges2check(edge2edges.get(edge_no));
                 edges2check.push_back(edge_no);
                 for (auto &e : edges2check) {
                     if (direction == forward_scheduling) {
@@ -402,15 +402,15 @@ bool ccl_edge_resource_t::available(
 }
 
 void ccl_edge_resource_t::reserve(
-    size_t op_start_cycle,
+    UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
     Str operation_type = ccl_get_operation_type(ins, platform);
-    size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+    UInt operation_duration = ccl_get_operation_duration(ins, platform);
 
     auto gname = ins->name;
-    bool is_flux = (operation_type == "flux");
+    Bool is_flux = (operation_type == "flux");
     if (is_flux) {
         auto nopers = ins->operands.size();
         if (nopers == 1) {
@@ -451,7 +451,7 @@ ccl_detuned_qubits_resource_t::ccl_detuned_qubits_resource_t(
     operations.resize(count);
 
     // initialize resource state machine to be free for all qubits
-    for (size_t i = 0; i < count; i++) {
+    for (UInt i = 0; i < count; i++) {
         fromcycle[i] = (forward_scheduling == dir ? 0 : MAX_CYCLE);
         tocycle[i] = (forward_scheduling == dir ? 0 : MAX_CYCLE);
         operations[i] = "";
@@ -459,9 +459,9 @@ ccl_detuned_qubits_resource_t::ccl_detuned_qubits_resource_t(
 
     // initialize qubitpair2edge map from json description; this is a constant map
     for (auto &anedge : platform.topology["edges"]) {
-        size_t s = anedge["src"];
-        size_t d = anedge["dst"];
-        size_t e = anedge["id"];
+        UInt s = anedge["src"];
+        UInt d = anedge["dst"];
+        UInt e = anedge["id"];
 
         qubits_pair_t aqpair(s,d);
         auto it = qubitpair2edge.find(aqpair);
@@ -477,7 +477,7 @@ ccl_detuned_qubits_resource_t::ccl_detuned_qubits_resource_t(
     auto &constraints = platform.resources[name]["connection_map"];
     for (auto it = constraints.cbegin(); it != constraints.cend(); ++it) {
         // COUT(it.key() << " : " << it.value() << "\n");
-        size_t edgeNo = stoi( it.key() );
+        UInt edgeNo = stoi( it.key() );
         auto & detuned_qubits = it.value();
         for (auto & q : detuned_qubits) {
             edge_detunes_qubits.set(edgeNo).push_back(q);
@@ -497,16 +497,16 @@ ccl_detuned_qubits_resource_t *ccl_detuned_qubits_resource_t::clone() && {
 
 // When a two-qubit flux gate, check whether the qubits it would detune are not busy with a rotation.
 // When a one-qubit rotation, check whether the qubit is not detuned (busy with a flux gate).
-bool ccl_detuned_qubits_resource_t::available(
-    size_t op_start_cycle,
+Bool ccl_detuned_qubits_resource_t::available(
+    UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
     Str operation_type = ccl_get_operation_type(ins, platform);
-    size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+    UInt      operation_duration = ccl_get_operation_duration(ins, platform);
 
     auto gname = ins->name;
-    bool is_flux = operation_type == "flux";
+    Bool is_flux = operation_type == "flux";
     if (is_flux) {
         auto nopers = ins->operands.size();
         if (nopers == 1) {
@@ -542,14 +542,14 @@ bool ccl_detuned_qubits_resource_t::available(
                 }	// for over edges
             } else { // no edge found
                 QL_EOUT("Use of illegal edge: " << q0 << "->" << q1 << " in operation: " << ins->name << " !");
-                throw Exception("[x] Error : Use of illegal edge" + std::to_string(q0) + "->" + std::to_string(q1) + "in operation:" + ins->name + " !", false);
+                throw Exception("[x] Error : Use of illegal edge" + to_string(q0) + "->" + to_string(q1) + "in operation:" + ins->name + " !", false);
             }
         } else { // nopers != 1 or 2
             QL_FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
         }
     }
 
-    bool is_mw = operation_type == "mw";
+    Bool is_mw = operation_type == "mw";
     if (is_mw) {
         for (auto q : ins->operands) {
             QL_DOUT(" available " << name << "? op_start_cycle: " << op_start_cycle << ", qubit: " << q << " for operation: " << ins->name << " busy from: " << fromcycle[q] << " till: " << tocycle[q] << " with operation_type: " << operation_type);
@@ -581,15 +581,15 @@ bool ccl_detuned_qubits_resource_t::available(
 // A two-qubit flux gate must set the qubits it would detune to detuned, busy with a flux gate.
 // A one-qubit rotation gate must set its operand qubit to busy, busy with a rotation.
 void ccl_detuned_qubits_resource_t::reserve(
-    size_t op_start_cycle,
+    UInt op_start_cycle,
     gate *ins,
     const quantum_platform &platform
 ) {
     Str operation_type = ccl_get_operation_type(ins, platform);
-    size_t      operation_duration = ccl_get_operation_duration(ins, platform);
+    UInt      operation_duration = ccl_get_operation_duration(ins, platform);
 
     auto gname = ins->name;
-    bool is_flux = operation_type == "flux";
+    Bool is_flux = operation_type == "flux";
     if (is_flux) {
         auto nopers = ins->operands.size();
         if (nopers == 1) {
@@ -603,7 +603,7 @@ void ccl_detuned_qubits_resource_t::reserve(
             for (auto &q : edge_detunes_qubits.get(edge_no)) {
                 if (direction == forward_scheduling) {
                     if (operations[q] == operation_type) {
-                        tocycle[q] = std::max( tocycle[q], op_start_cycle + operation_duration);
+                        tocycle[q] = max(tocycle[q], op_start_cycle + operation_duration);
                         QL_DOUT("reserving " << name << ". for qubit: " << q << " reusing cycle: " << fromcycle[q] << " to extending tocycle: " << tocycle[q] << " for old operation: " << ins->name);
                     } else {
                         fromcycle[q] = op_start_cycle;
@@ -613,7 +613,7 @@ void ccl_detuned_qubits_resource_t::reserve(
                     }
                 } else {
                     if (operations[q] == operation_type) {
-                        fromcycle[q] = std::min( fromcycle[q], op_start_cycle);
+                        fromcycle[q] = min(fromcycle[q], op_start_cycle);
                         QL_DOUT("reserving " << name << ". for qubit: " << q << " from extended cycle: " << fromcycle[q] << " reusing tocycle: " << tocycle[q] << " for old operation: " << ins->name);
                     } else {
                         fromcycle[q] = op_start_cycle;
@@ -628,12 +628,12 @@ void ccl_detuned_qubits_resource_t::reserve(
             QL_FATAL("Incorrect number of operands used in operation: " << ins->name << " !");
         }
     }
-    bool is_mw = operation_type == "mw";
+    Bool is_mw = operation_type == "mw";
     if (is_mw) {
         for (auto q : ins->operands) {
             if (direction == forward_scheduling) {
                 if (operations[q] == operation_type) {
-                    tocycle[q] = std::max( tocycle[q], op_start_cycle + operation_duration);
+                    tocycle[q] = max(tocycle[q], op_start_cycle + operation_duration);
                     QL_DOUT("reserving " << name << ". for qubit: " << q << " reusing cycle: " << fromcycle[q] << " to extending tocycle: " << tocycle[q] << " for old operation: " << ins->name);
                 } else {
                     fromcycle[q] = op_start_cycle;
@@ -643,7 +643,7 @@ void ccl_detuned_qubits_resource_t::reserve(
                 }
             } else {
                 if (operations[q] == operation_type) {
-                    fromcycle[q] = std::min( fromcycle[q], op_start_cycle);
+                    fromcycle[q] = min(fromcycle[q], op_start_cycle);
                     QL_DOUT("reserving " << name << ". for qubit: " << q << " from extended cycle: " << fromcycle[q] << " reusing tocycle: " << tocycle[q] << " for old operation: " << ins->name);
                 } else {
                     fromcycle[q] = op_start_cycle;

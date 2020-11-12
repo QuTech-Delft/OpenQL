@@ -30,7 +30,7 @@ cqasm_reader::cqasm_reader(
 void cqasm_reader::string2circuit(const Str &cqasm_str) {
     libQasm libqasm{};
     libqasm.parse_string(cqasm_str.c_str());
-    int result = libqasm.getParseResult();
+    Int result = libqasm.getParseResult();
     if (!result) {
         add_cqasm(libqasm.getQasmRepresentation());
     } else {
@@ -41,7 +41,7 @@ void cqasm_reader::string2circuit(const Str &cqasm_str) {
 void cqasm_reader::file2circuit(const Str &cqasm_file_path) {
     libQasm libqasm{};
     libqasm.parse_file(cqasm_file_path.c_str());
-    int result = libqasm.getParseResult();
+    Int result = libqasm.getParseResult();
     if (!result) {
         add_cqasm(libqasm.getQasmRepresentation());
     } else {
@@ -66,12 +66,12 @@ void cqasm_reader::add_cqasm(compiler::QasmRepresentation cqasm_repr) {
 
         // make the kernel name unique
         sc_name.append("_" + std::to_string(sub_circuits_default_nr++));
-        int numIterations = subcircuit.numberIterations();
+        Int numIterations = subcircuit.numberIterations();
 
         //kernel_name must be unique
         quantum_kernel kernel(sc_name, platform, number_of_qubits);
         for (auto ops_cluster : subcircuit.getOperationsCluster()) {
-            bool is_parallel = ops_cluster->isParallel();
+            Bool is_parallel = ops_cluster->isParallel();
             if (is_parallel) {
                 //are these supported by OpenQL??
                 QL_WOUT("Parallel gates not supported, adding the gates in sequence");
@@ -96,8 +96,8 @@ void cqasm_reader::add_single_bit_kernel_operation(
     const Str &gate_type,
     const compiler::Operation &operation
 ) {
-    Vec<size_t> qubits = operation.getQubitsInvolved().getSelectedQubits().getIndices();
-    for (size_t qubit : qubits) {
+    Vec<UInt> qubits = operation.getQubitsInvolved().getSelectedQubits().getIndices();
+    for (UInt qubit : qubits) {
         kernel.gate(gate_type, {qubit});
     }
 }
@@ -107,9 +107,9 @@ void cqasm_reader::add_parameterized_single_bit_kernel_operation(
     const Str &gate_type,
     const compiler::Operation &operation
 ) {
-    double angle = operation.getRotationAngle();
-    Vec<size_t> qubits = operation.getQubitsInvolved().getSelectedQubits().getIndices();
-    for (size_t qubit : qubits) {
+    Real angle = operation.getRotationAngle();
+    Vec<UInt> qubits = operation.getQubitsInvolved().getSelectedQubits().getIndices();
+    for (UInt qubit : qubits) {
         kernel.gate(gate_type, {qubit}, {}, 0, angle);
     }
 }
@@ -119,10 +119,10 @@ void cqasm_reader::add_dual_bit_kernel_operation(
     const Str &gate_type,
     const compiler::Operation &operation
 ) {
-    size_t sgmq_indices = operation.getQubitsInvolved(1).getSelectedQubits().getIndices().size();
-    for (size_t index = 0; index < sgmq_indices; index++) {
-        size_t qubit1 = operation.getQubitsInvolved(1).getSelectedQubits().getIndices()[index];
-        size_t qubit2 = operation.getQubitsInvolved(2).getSelectedQubits().getIndices()[index];
+    UInt sgmq_indices = operation.getQubitsInvolved(1).getSelectedQubits().getIndices().size();
+    for (UInt index = 0; index < sgmq_indices; index++) {
+        UInt qubit1 = operation.getQubitsInvolved(1).getSelectedQubits().getIndices()[index];
+        UInt qubit2 = operation.getQubitsInvolved(2).getSelectedQubits().getIndices()[index];
         kernel.gate(gate_type, {qubit1, qubit2});
     }
 }
@@ -132,20 +132,20 @@ void cqasm_reader::add_parameterized_dual_bit_kernel_operation(
     const Str &gate_type,
     const compiler::Operation &operation
 ) {
-    double angle;
+    Real angle;
     Str kernel_type(gate_type);
     if (kernel_type == "crk") {
         //convert crk to cr
-        double k = operation.getRotationAngle();
+        Real k = operation.getRotationAngle();
         angle = 2 * M_PI/pow(2, k);
         kernel_type = "cr";
     } else {
         angle = operation.getRotationAngle();
     }
-    size_t sgmq_indices = operation.getQubitsInvolved(1).getSelectedQubits().getIndices().size();
-    for (size_t index = 0; index < sgmq_indices; index++) {
-        size_t qubit1 = operation.getQubitsInvolved(1).getSelectedQubits().getIndices()[index];
-        size_t qubit2 = operation.getQubitsInvolved(2).getSelectedQubits().getIndices()[index];
+    UInt sgmq_indices = operation.getQubitsInvolved(1).getSelectedQubits().getIndices().size();
+    for (UInt index = 0; index < sgmq_indices; index++) {
+        UInt qubit1 = operation.getQubitsInvolved(1).getSelectedQubits().getIndices()[index];
+        UInt qubit2 = operation.getQubitsInvolved(2).getSelectedQubits().getIndices()[index];
         kernel.gate(kernel_type, {qubit1, qubit2}, {}, 0, angle);
     }
 }
@@ -155,11 +155,11 @@ void cqasm_reader::add_triple_bit_kernel_operation(
     const Str &gate_type,
     const compiler::Operation &operation
 ) {
-    size_t sgmq_indices = operation.getQubitsInvolved(1).getSelectedQubits().getIndices().size();
-    for (size_t index = 0; index < sgmq_indices; index++) {
-        size_t qubit1 = operation.getQubitsInvolved(1).getSelectedQubits().getIndices()[index];
-        size_t qubit2 = operation.getQubitsInvolved(2).getSelectedQubits().getIndices()[index];
-        size_t qubit3 = operation.getQubitsInvolved(3).getSelectedQubits().getIndices()[index];
+    UInt sgmq_indices = operation.getQubitsInvolved(1).getSelectedQubits().getIndices().size();
+    for (UInt index = 0; index < sgmq_indices; index++) {
+        UInt qubit1 = operation.getQubitsInvolved(1).getSelectedQubits().getIndices()[index];
+        UInt qubit2 = operation.getQubitsInvolved(2).getSelectedQubits().getIndices()[index];
+        UInt qubit3 = operation.getQubitsInvolved(3).getSelectedQubits().getIndices()[index];
         kernel.gate(gate_type, {qubit1, qubit2, qubit3});
     }
 }
@@ -190,7 +190,7 @@ Str cqasm_reader::translate_gate_type(const Str &gate_type) {
 void cqasm_reader::add_kernel_operation(
     quantum_kernel &kernel,
     const compiler::Operation &operation,
-    int number_of_qubits
+    Int number_of_qubits
 ) {
     Str gate_type = operation.getType();
 
@@ -216,31 +216,31 @@ void cqasm_reader::add_kernel_operation(
     } else if (gate_type == "toffoli") {
         add_triple_bit_kernel_operation(kernel, translate_gate_type(gate_type), operation);
     } else if (gate_type == "measure_all") {
-        for (size_t qubit = 0; int(qubit) < number_of_qubits; qubit++) {
+        for (UInt qubit = 0; Int(qubit) < number_of_qubits; qubit++) {
             kernel.gate(translate_gate_type("measure_z"), qubit);
         }
     } else if (gate_type == "skip") {
         ///@note: skip instruction called, i.e., inserts empty cycles, possibly restarting filling cycles without waiting for all previous cycle instructions to be finished. That is, skip is different than wait that behaves as barrier+skip <X> cycles.
     } else if (gate_type == "wait") {
-        size_t wait_time = operation.getWaitTime();
+        UInt wait_time = operation.getWaitTime();
         kernel.gate(translate_gate_type("wait"), {}, {}, wait_time);
     } else if (gate_type == "display") {
         kernel.display();
     } else if (gate_type == "display_binary") {
-        Vec<size_t> classical_bits = operation.getDisplayBits().getSelectedBits().getIndices();
+        Vec<UInt> classical_bits = operation.getDisplayBits().getSelectedBits().getIndices();
         //not supported by OpenQL??
     } else if (gate_type == "measure_parity") {
         auto measureParityProperties = operation.getMeasureParityQubitsAndAxis();
-        Vec<size_t> bits1 = measureParityProperties.first.first.getSelectedQubits().getIndices();
+        Vec<UInt> bits1 = measureParityProperties.first.first.getSelectedQubits().getIndices();
         Str axis1 = measureParityProperties.second.first;
-        Vec<size_t> bits2 = measureParityProperties.first.second.getSelectedQubits().getIndices();
+        Vec<UInt> bits2 = measureParityProperties.first.second.getSelectedQubits().getIndices();
         Str axis2 = measureParityProperties.second.second;
         //not supported by OpenQL??
     }
 }
 
-bool cqasm_reader::test_translate_gate_type() {
-    bool result = true;
+Bool cqasm_reader::test_translate_gate_type() {
+    Bool result = true;
 
     assert(translate_gate_type("prep") == "prepz");
     assert(translate_gate_type("prep_z") == "prepz");

@@ -79,9 +79,9 @@ const PassOptions *AbstractPass::getPassOptions() const {
 
 /**
  * @brief   Queries the skip option of the pass
- * @return  bool representing wheather the pass should be skipped
+ * @return  Bool representing wheather the pass should be skipped
  */
-bool AbstractPass::getSkip() const {
+Bool AbstractPass::getSkip() const {
     return getPassOptions()->getOption("skip") == "yes";
 }
 

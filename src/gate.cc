@@ -5,20 +5,21 @@
 #include "gate.h"
 
 #include <cctype>
+#include "utils/num.h"
 #include "utils/str.h"
 
 namespace ql {
 
 using namespace utils;
 
-identity::identity(size_t q) : m(identity_c) {
+identity::identity(UInt q) : m(identity_c) {
     name = "i";
     duration = 40;
     operands.push_back(q);
 }
 
 instruction_t identity::qasm() const {
-    return instruction_t("i q[" + std::to_string(operands[0]) + "]");
+    return instruction_t("i q[" + to_string(operands[0]) + "]");
 }
 
 gate_type_t identity::type() const {
@@ -29,14 +30,14 @@ cmat_t identity::mat() const {
     return m;
 }
 
-hadamard::hadamard(size_t q) : m(hadamard_c) {
+hadamard::hadamard(UInt q) : m(hadamard_c) {
     name = "h";
     duration = 40;
     operands.push_back(q);
 }
 
 instruction_t hadamard::qasm() const {
-    return instruction_t("h q[" + std::to_string(operands[0]) + "]");
+    return instruction_t("h q[" + to_string(operands[0]) + "]");
 }
 
 gate_type_t hadamard::type() const {
@@ -47,14 +48,14 @@ cmat_t hadamard::mat() const {
     return m;
 }
 
-phase::phase(size_t q) : m(phase_c) {
+phase::phase(UInt q) : m(phase_c) {
     name = "s";
     duration = 40;
     operands.push_back(q);
 }
 
 instruction_t phase::qasm() const {
-    return instruction_t("s q[" + std::to_string(operands[0]) + "]");
+    return instruction_t("s q[" + to_string(operands[0]) + "]");
 }
 
 gate_type_t phase::type() const {
@@ -68,14 +69,14 @@ cmat_t phase::mat() const {
 /**
  * phase dag
  */
-phasedag::phasedag(size_t q) : m(phasedag_c) {
+phasedag::phasedag(UInt q) : m(phasedag_c) {
     name = "sdag";
     duration = 40;
     operands.push_back(q);
 }
 
 instruction_t phasedag::qasm() const {
-    return instruction_t("sdag q[" + std::to_string(operands[0]) + "]");
+    return instruction_t("sdag q[" + to_string(operands[0]) + "]");
 }
 
 gate_type_t phasedag::type() const {
@@ -86,19 +87,19 @@ cmat_t phasedag::mat() const {
     return m;
 }
 
-rx::rx(size_t q, double theta) {
+rx::rx(UInt q, double theta) {
     name = "rx";
     duration = 40;
     angle = theta;
     operands.push_back(q);
     m(0,0) = cos(angle/2);
-    m(0,1) = complex_t(0,-sin(angle/2));
-    m(1,0) = complex_t(0,-sin(angle/2));
+    m(0,1) = Complex(0, -sin(angle/2));
+    m(1,0) = Complex(0, -sin(angle/2));
     m(1,1) = cos(angle/2);
 }
 
 instruction_t rx::qasm() const {
-    return instruction_t("rx q[" + std::to_string(operands[0]) + "], " + std::to_string(angle) );
+    return instruction_t("rx q[" + to_string(operands[0]) + "], " + to_string(angle));
 }
 
 gate_type_t rx::type() const {
@@ -109,7 +110,7 @@ cmat_t rx::mat() const {
     return m;
 }
 
-ry::ry(size_t q, double theta) {
+ry::ry(UInt q, double theta) {
     name = "ry";
     duration = 40;
     angle = theta;
@@ -121,7 +122,7 @@ ry::ry(size_t q, double theta) {
 }
 
 instruction_t ry::qasm() const {
-    return instruction_t("ry q[" + std::to_string(operands[0]) + "], " + std::to_string(angle) );
+    return instruction_t("ry q[" + to_string(operands[0]) + "], " + to_string(angle));
 }
 
 gate_type_t ry::type() const {
@@ -132,19 +133,19 @@ cmat_t ry::mat() const {
     return m;
 }
 
-rz::rz(size_t q, double theta) {
+rz::rz(UInt q, double theta) {
     name = "rz";
     duration = 40;
     angle = theta;
     operands.push_back(q);
-    m(0,0) = complex_t(cos(-angle/2), sin(-angle/2));
+    m(0,0) = Complex(cos(-angle/2), sin(-angle/2));
     m(0,1) = 0;
     m(1,0) = 0;
-    m(1,1) =  complex_t(cos(angle/2), sin(angle/2));
+    m(1,1) = Complex(cos(angle/2), sin(angle/2));
 }
 
 instruction_t rz::qasm() const {
-    return instruction_t("rz q[" + std::to_string(operands[0]) + "], " + std::to_string(angle) );
+    return instruction_t("rz q[" + to_string(operands[0]) + "], " + to_string(angle));
 }
 
 gate_type_t rz::type() const {
@@ -155,14 +156,14 @@ cmat_t rz::mat() const {
     return m;
 }
 
-t::t(size_t q) : m(t_c) {
+t::t(UInt q) : m(t_c) {
     name = "t";
     duration = 40;
     operands.push_back(q);
 }
 
 instruction_t t::qasm() const {
-    return instruction_t("t q[" + std::to_string(operands[0]) + "]");
+    return instruction_t("t q[" + to_string(operands[0]) + "]");
 }
 
 gate_type_t t::type() const {
@@ -173,14 +174,14 @@ cmat_t t::mat() const {
     return m;
 }
 
-tdag::tdag(size_t q) : m(tdag_c) {
+tdag::tdag(UInt q) : m(tdag_c) {
     name = "tdag";
     duration = 40;
     operands.push_back(q);
 }
 
 instruction_t tdag::qasm() const {
-    return instruction_t("tdag q[" + std::to_string(operands[0]) + "]");
+    return instruction_t("tdag q[" + to_string(operands[0]) + "]");
 }
 
 gate_type_t tdag::type() const {
@@ -191,14 +192,14 @@ cmat_t tdag::mat() const {
     return m;
 }
 
-pauli_x::pauli_x(size_t q) : m(pauli_x_c) {
+pauli_x::pauli_x(UInt q) : m(pauli_x_c) {
     name = "x";
     duration = 40;
     operands.push_back(q);
 }
 
 instruction_t pauli_x::qasm() const {
-    return instruction_t("x q[" + std::to_string(operands[0]) + "]");
+    return instruction_t("x q[" + to_string(operands[0]) + "]");
 }
 
 gate_type_t pauli_x::type() const {
@@ -209,14 +210,14 @@ cmat_t pauli_x::mat() const {
     return m;
 }
 
-pauli_y::pauli_y(size_t q) : m(pauli_y_c) {
+pauli_y::pauli_y(UInt q) : m(pauli_y_c) {
     name = "y";
     duration = 40;
     operands.push_back(q);
 }
 
 instruction_t pauli_y::qasm() const {
-    return instruction_t("y q[" + std::to_string(operands[0]) + "]");
+    return instruction_t("y q[" + to_string(operands[0]) + "]");
 }
 
 gate_type_t pauli_y::type() const {
@@ -227,14 +228,14 @@ cmat_t pauli_y::mat() const {
     return m;
 }
 
-pauli_z::pauli_z(size_t q) : m(pauli_z_c) {
+pauli_z::pauli_z(UInt q) : m(pauli_z_c) {
     name = "z";
     duration = 40;
     operands.push_back(q);
 }
 
 instruction_t pauli_z::qasm() const {
-    return instruction_t("z q[" + std::to_string(operands[0]) + "]");
+    return instruction_t("z q[" + to_string(operands[0]) + "]");
 }
 
 gate_type_t pauli_z::type() const {
@@ -245,14 +246,14 @@ cmat_t pauli_z::mat() const {
     return m;
 }
 
-rx90::rx90(size_t q) : m(rx90_c) {
+rx90::rx90(UInt q) : m(rx90_c) {
     name = "x90";
     duration = 40;
     operands.push_back(q);
 }
 
 instruction_t rx90::qasm() const {
-    return instruction_t("x90 q[" + std::to_string(operands[0]) + "]");
+    return instruction_t("x90 q[" + to_string(operands[0]) + "]");
 }
 
 gate_type_t rx90::type() const {
@@ -263,14 +264,14 @@ cmat_t rx90::mat() const {
     return m;
 }
 
-mrx90::mrx90(size_t q) : m(mrx90_c) {
+mrx90::mrx90(UInt q) : m(mrx90_c) {
     name = "mx90";
     duration = 40;
     operands.push_back(q);
 }
 
 instruction_t mrx90::qasm() const {
-    return instruction_t("mx90 q[" + std::to_string(operands[0]) + "]");
+    return instruction_t("mx90 q[" + to_string(operands[0]) + "]");
 }
 
 gate_type_t mrx90::type() const {
@@ -281,14 +282,14 @@ cmat_t mrx90::mat() const {
     return m;
 }
 
-rx180::rx180(size_t q) : m(rx180_c) {
+rx180::rx180(UInt q) : m(rx180_c) {
     name = "x180";
     duration = 40;
     operands.push_back(q);
 }
 
 instruction_t rx180::qasm() const {
-    return instruction_t("x180 q[" + std::to_string(operands[0]) + "]");
+    return instruction_t("x180 q[" + to_string(operands[0]) + "]");
 }
 
 gate_type_t rx180::type() const {
@@ -299,14 +300,14 @@ cmat_t rx180::mat() const {
     return m;
 }
 
-ry90::ry90(size_t q) : m(ry90_c) {
+ry90::ry90(UInt q) : m(ry90_c) {
     name = "y90";
     duration = 40;
     operands.push_back(q);
 }
 
 instruction_t ry90::qasm() const {
-    return instruction_t("y90 q[" + std::to_string(operands[0]) + "]");
+    return instruction_t("y90 q[" + to_string(operands[0]) + "]");
 }
 
 gate_type_t ry90::type() const {
@@ -317,14 +318,14 @@ cmat_t ry90::mat() const {
     return m;
 }
 
-mry90::mry90(size_t q) : m(mry90_c) {
+mry90::mry90(UInt q) : m(mry90_c) {
     name = "my90";
     duration = 40;
     operands.push_back(q);
 }
 
 instruction_t mry90::qasm() const {
-    return instruction_t("my90 q[" + std::to_string(operands[0]) + "]");
+    return instruction_t("my90 q[" + to_string(operands[0]) + "]");
 }
 
 gate_type_t mry90::type() const {
@@ -335,14 +336,14 @@ cmat_t mry90::mat() const {
     return m;
 }
 
-ry180::ry180(size_t q) : m(ry180_c) {
+ry180::ry180(UInt q) : m(ry180_c) {
     name = "y180";
     duration = 40;
     operands.push_back(q);
 }
 
 instruction_t ry180::qasm() const {
-    return instruction_t("y180 q[" + std::to_string(operands[0]) + "]");
+    return instruction_t("y180 q[" + to_string(operands[0]) + "]");
 }
 
 gate_type_t ry180::type() const {
@@ -353,13 +354,13 @@ cmat_t ry180::mat() const {
     return m;
 }
 
-measure::measure(size_t q) : m(identity_c) {
+measure::measure(UInt q) : m(identity_c) {
     name = "measure";
     duration = 40;
     operands.push_back(q);
 }
 
-measure::measure(size_t q, size_t c) : m(identity_c) {
+measure::measure(UInt q, UInt c) : m(identity_c) {
     name = "measure";
     duration = 40;
     operands.push_back(q);
@@ -385,14 +386,14 @@ cmat_t measure::mat() const {
     return m;
 }
 
-prepz::prepz(size_t q) : m(identity_c) {
+prepz::prepz(UInt q) : m(identity_c) {
     name = "prep_z";
     duration = 40;
     operands.push_back(q);
 }
 
 instruction_t prepz::qasm() const {
-    return instruction_t("prep_z q[" + std::to_string(operands[0]) +"]");
+    return instruction_t("prep_z q[" + to_string(operands[0]) +"]");
 }
 
 gate_type_t prepz::type() const {
@@ -403,7 +404,7 @@ cmat_t prepz::mat() const {
     return m;
 }
 
-cnot::cnot(size_t q1, size_t q2) : m(cnot_c) {
+cnot::cnot(UInt q1, UInt q2) : m(cnot_c) {
     name = "cnot";
     duration = 80;
     operands.push_back(q1);
@@ -411,8 +412,8 @@ cnot::cnot(size_t q1, size_t q2) : m(cnot_c) {
 }
 
 instruction_t cnot::qasm() const {
-    return instruction_t("cnot q[" + std::to_string(operands[0]) + "]"
-                         + ",q[" + std::to_string(operands[1]) + "]");
+    return instruction_t("cnot q[" + to_string(operands[0]) + "]"
+                         + ",q[" + to_string(operands[1]) + "]");
 }
 
 gate_type_t cnot::type() const {
@@ -423,7 +424,7 @@ cmat_t cnot::mat() const {
     return m;
 }
 
-cphase::cphase(size_t q1, size_t q2) : m(cphase_c) {
+cphase::cphase(UInt q1, UInt q2) : m(cphase_c) {
     name = "cz";
     duration = 80;
     operands.push_back(q1);
@@ -431,8 +432,8 @@ cphase::cphase(size_t q1, size_t q2) : m(cphase_c) {
 }
 
 instruction_t cphase::qasm() const {
-    return instruction_t("cz q[" + std::to_string(operands[0]) + "]"
-                         + ",q[" + std::to_string(operands[1]) + "]");
+    return instruction_t("cz q[" + to_string(operands[0]) + "]"
+                         + ",q[" + to_string(operands[1]) + "]");
 }
 
 gate_type_t cphase::type() const {
@@ -443,7 +444,7 @@ cmat_t cphase::mat() const {
     return m;
 }
 
-toffoli::toffoli(size_t q1, size_t q2, size_t q3) : m(ctoffoli_c) {
+toffoli::toffoli(UInt q1, UInt q2, UInt q3) : m(toffoli_c) {
     name = "toffoli";
     duration = 160;
     operands.push_back(q1);
@@ -452,9 +453,9 @@ toffoli::toffoli(size_t q1, size_t q2, size_t q3) : m(ctoffoli_c) {
 }
 
 instruction_t toffoli::qasm() const {
-    return instruction_t("toffoli q[" + std::to_string(operands[0]) + "]"
-                         + ",q[" + std::to_string(operands[1]) + "]"
-                         + ",q[" + std::to_string(operands[2]) + "]");
+    return instruction_t("toffoli q[" + to_string(operands[0]) + "]"
+                         + ",q[" + to_string(operands[1]) + "]"
+                         + ",q[" + to_string(operands[2]) + "]");
 }
 
 gate_type_t toffoli::type() const {
@@ -482,7 +483,7 @@ cmat_t nop::mat() const {
     return m;
 }
 
-swap::swap(size_t q1, size_t q2) : m(swap_c) {
+swap::swap(UInt q1, UInt q2) : m(swap_c) {
     name = "swap";
     duration = 80;
     operands.push_back(q1);
@@ -490,8 +491,8 @@ swap::swap(size_t q1, size_t q2) : m(swap_c) {
 }
 
 instruction_t swap::qasm() const {
-    return instruction_t("swap q[" + std::to_string(operands[0]) + "]"
-                         + ",q[" + std::to_string(operands[1]) + "]");
+    return instruction_t("swap q[" + to_string(operands[0]) + "]"
+                         + ",q[" + to_string(operands[1]) + "]");
 }
 
 gate_type_t swap::type() const {
@@ -506,7 +507,7 @@ cmat_t swap::mat() const {
 | Special gates
 \****************************************************************************/
 
-wait::wait(Vec<size_t> qubits, size_t d, size_t dc) : m(nop_c) {
+wait::wait(Vec<UInt> qubits, UInt d, UInt dc) : m(nop_c) {
     name = "wait";
     duration = d;
     duration_in_cycles = dc;
@@ -516,7 +517,7 @@ wait::wait(Vec<size_t> qubits, size_t d, size_t dc) : m(nop_c) {
 }
 
 instruction_t wait::qasm() const {
-    return instruction_t("wait " + std::to_string(duration_in_cycles));
+    return instruction_t("wait " + to_string(duration_in_cycles));
 }
 
 gate_type_t wait::type() const {
@@ -603,12 +604,12 @@ custom_gate::custom_gate(const custom_gate &g) {
 /**
  * match qubit id
  */
-bool custom_gate::is_qubit_id(const Str &str) {
+Bool custom_gate::is_qubit_id(const Str &str) {
     if (str[0] != 'q') {
         return false;
     }
-    size_t l = str.length();
-    for (size_t i = 1; i < l; ++i) {
+    UInt l = str.length();
+    for (UInt i = 1; i < l; ++i) {
         if (!std::isdigit(str[i])) {
             return false;
         }
@@ -619,9 +620,9 @@ bool custom_gate::is_qubit_id(const Str &str) {
 /**
  * return qubit id
  */
-size_t custom_gate::qubit_id(const Str &qubit) {
+UInt custom_gate::qubit_id(const Str &qubit) {
     Str id = qubit.substr(1);
-    return std::atoi(id.c_str());
+    return parse_uint(id.c_str());
 }
 
 /**
@@ -633,8 +634,8 @@ void custom_gate::load(nlohmann::json &instr) {
     try {
         l_attr = "qubits";
         QL_DOUT("qubits: " << instr["qubits"]);
-        size_t parameters = instr["qubits"].size();
-        for (size_t i = 0; i < parameters; ++i) {
+        UInt parameters = instr["qubits"].size();
+        for (UInt i = 0; i < parameters; ++i) {
             Str qid = instr["qubits"][i];
             if (!is_qubit_id(qid)) {
                 QL_EOUT("invalid qubit id in attribute 'qubits' !");
@@ -652,10 +653,10 @@ void custom_gate::load(nlohmann::json &instr) {
         // FIXME: make matrix optional, default to NaN
         auto mat = instr["matrix"];
         QL_DOUT("matrix: " << instr["matrix"]);
-        m.m[0] = complex_t(mat[0][0], mat[0][1]);
-        m.m[1] = complex_t(mat[1][0], mat[1][1]);
-        m.m[2] = complex_t(mat[2][0], mat[2][1]);
-        m.m[3] = complex_t(mat[3][0], mat[3][1]);
+        m.m[0] = Complex(mat[0][0], mat[0][1]);
+        m.m[1] = Complex(mat[1][0], mat[1][1]);
+        m.m[2] = Complex(mat[2][0], mat[2][1]);
+        m.m[3] = Complex(mat[3][0], mat[3][1]);
     } catch (Json::exception &e) {
         QL_EOUT("while loading instruction '" << name << "' (attr: " << l_attr
                                               << ") : " << e.what());
@@ -680,7 +681,7 @@ void custom_gate::print_info() const {
 
 instruction_t custom_gate::qasm() const {
     StrStrm ss;
-    size_t p = name.find(' ');
+    UInt p = name.find(' ');
     Str gate_name = name.substr(0, p);
     if (operands.empty()) {
         ss << gate_name;
@@ -688,7 +689,7 @@ instruction_t custom_gate::qasm() const {
         ss << gate_name << " q[" << operands[0] << "]";
     } else {
         ss << gate_name << " q[" << operands[0] << "]";
-        for (size_t i = 1; i < operands.size(); i++) {
+        for (UInt i = 1; i < operands.size(); i++) {
             ss << ",q[" << operands[i] << "]";
         }
     }
@@ -702,7 +703,7 @@ instruction_t custom_gate::qasm() const {
         ss << ",r" << creg_operands[0];
     } else if (creg_operands.size() > 1) {
         ss << ",r" << creg_operands[0];
-        for (size_t i = 1; i < creg_operands.size(); i++) {
+        for (UInt i = 1; i < creg_operands.size(); i++) {
             ss << ",r" << creg_operands[i];
         }
     }

@@ -36,7 +36,7 @@ static void insert_buffer_delays_kernel(
     const quantum_platform &platform
 ) {
     QL_DOUT("Loading buffer settings ...");
-    Map<Pair<Str, Str>, size_t> buffer_cycles_map;
+    Map<Pair<Str, Str>, UInt> buffer_cycles_map;
 
     // populate buffer map
     // 'none' type is a dummy type and 0 buffer cycles will be inserted for
@@ -50,7 +50,7 @@ static void insert_buffer_delays_kernel(
         for (auto &buf2 : buffer_names) {
             auto bname = buf1 + "_" + buf2 + "_buffer";
             if (platform.hardware_settings.count(bname) > 0) {
-                buffer_cycles_map.set({buf1, buf2}) = size_t(std::ceil(
+                buffer_cycles_map.set({buf1, buf2}) = UInt(ceil(
                     static_cast<float>(platform.hardware_settings[bname]) /
                     platform.cycle_time));
             }
@@ -64,7 +64,7 @@ static void insert_buffer_delays_kernel(
     ir::bundles_t bundles = ir::bundler(*circp, platform.cycle_time);
 
     Vec<Str> operations_prev_bundle;
-    size_t buffer_cycles_accum = 0;
+    UInt buffer_cycles_accum = 0;
     for (ir::bundle_t &abundle : bundles) {
         Vec<Str> operations_curr_bundle;
         for (auto secIt = abundle.parallel_sections.begin(); secIt != abundle.parallel_sections.end(); ++secIt) {
@@ -80,13 +80,13 @@ static void insert_buffer_delays_kernel(
             }
         }
 
-        size_t buffer_cycles = 0;
+        UInt buffer_cycles = 0;
         for (auto &op_prev : operations_prev_bundle) {
             for (auto &op_curr : operations_curr_bundle) {
                 auto temp_buf_cycles = buffer_cycles_map.get({op_prev, op_curr}, 0);
                 QL_DOUT("... considering buffer_" << op_prev << "_" << op_curr
                                                   << ": " << temp_buf_cycles);
-                buffer_cycles = std::max(temp_buf_cycles, buffer_cycles);
+                buffer_cycles = max(temp_buf_cycles, buffer_cycles);
             }
         }
         QL_DOUT("... inserting buffer : " << buffer_cycles);

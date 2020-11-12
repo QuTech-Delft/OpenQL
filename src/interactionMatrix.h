@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "utils/num.h"
 #include "utils/str.h"
 #include "utils/vec.h"
 
@@ -14,10 +15,10 @@ namespace ql {
 class InteractionMatrix {
 private:
     utils::Vec<utils::Vec<size_t>> Matrix;
-    size_t Size;
+    utils::UInt Size;
 
 public:
-    InteractionMatrix(const circuit &ckt, size_t nqubits);
+    InteractionMatrix(const circuit &ckt, utils::UInt nqubits);
     utils::Str getString() const;
 };
 

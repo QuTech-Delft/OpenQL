@@ -16,13 +16,13 @@ namespace arch {
 
 using namespace utils;
 
-size_t CurrSRegCount;
-size_t CurrTRegCount;
+UInt CurrSRegCount;
+UInt CurrTRegCount;
 
 Mask::Mask(const qubit_set_t &qs) : squbits(qs) {
     if (CurrSRegCount < MAX_S_REG) {
         regNo = CurrSRegCount++;
-        regName = "s" + std::to_string(regNo);
+        regName = "s" + to_string(regNo);
     } else {
         QL_COUT(" !!!! Handle cases requiring more registers");
     }
@@ -39,7 +39,7 @@ Mask::Mask(const Str &rn, const qubit_set_t &qs) : regName(rn), squbits(qs) {
 Mask::Mask(const qubit_pair_set_t &qps) : dqubits(qps) {
     if (CurrTRegCount < MAX_T_REG) {
         regNo = CurrTRegCount++;
-        regName = "t" + std::to_string(regNo);
+        regName = "t" + to_string(regNo);
     } else {
         QL_COUT(" !!!! Handle cases requiring more registers");
     }
@@ -47,7 +47,7 @@ Mask::Mask(const qubit_pair_set_t &qps) : dqubits(qps) {
 
 MaskManager::MaskManager() {
     // add pre-defined smis
-    for (size_t i = 0; i < 7; ++i) {
+    for (UInt i = 0; i < 7; ++i) {
         qubit_set_t qs;
         qs.push_back(i);
         Mask m(qs);
@@ -99,7 +99,7 @@ MaskManager::~MaskManager() {
     CurrTRegCount=0;
 }
 
-size_t MaskManager::getRegNo(qubit_set_t &qs) {
+UInt MaskManager::getRegNo(qubit_set_t &qs) {
     // sort qubit operands to avoid variation in order
     sort(qs.begin(), qs.end());
 
@@ -112,7 +112,7 @@ size_t MaskManager::getRegNo(qubit_set_t &qs) {
     return QS2Mask.at(qs).regNo;
 }
 
-size_t MaskManager::getRegNo(qubit_pair_set_t &qps) {
+UInt MaskManager::getRegNo(qubit_pair_set_t &qps) {
     // sort qubit operands pair to avoid variation in order
     sort(qps.begin(), qps.end());
 
@@ -153,7 +153,7 @@ Str MaskManager::getRegName(qubit_pair_set_t &qps) {
 
 Str MaskManager::getMaskInstructions() {
     StrStrm ssmasks;
-    for (size_t r = 0; r < CurrSRegCount; ++r) {
+    for (UInt r = 0; r < CurrSRegCount; ++r) {
         auto &m = SReg2Mask.at(r);
         ssmasks << "smis " << m.regName << ", {";
         for (auto it = m.squbits.begin(); it != m.squbits.end(); ++it) {
@@ -165,7 +165,7 @@ Str MaskManager::getMaskInstructions() {
         ssmasks << "} " << std::endl;
     }
 
-    for (size_t r = 0; r < CurrTRegCount; ++r) {
+    for (UInt r = 0; r < CurrTRegCount; ++r) {
         auto &m = TReg2Mask.at(r);
         ssmasks << "smit " << m.regName << ", {";
         for (auto it = m.dqubits.begin(); it != m.dqubits.end(); ++it) {
@@ -182,8 +182,8 @@ Str MaskManager::getMaskInstructions() {
 
 classical_cc::classical_cc(
     const Str &operation,
-    const Vec<size_t> &opers,
-    int ivalue
+    const Vec<UInt> &opers,
+    Int ivalue
 ) {
     QL_DOUT("Classical_cc constructor for operation " << operation);
     QL_DOUT("... operands:");
@@ -194,7 +194,7 @@ classical_cc::classical_cc(
     name = to_lower(operation);
     duration = 20;
     creg_operands=opers;
-    int sz = creg_operands.size();
+    Int sz = creg_operands.size();
     if (
         (
             (name == "add") || (name == "sub")
@@ -224,28 +224,28 @@ classical_cc::classical_cc(
         QL_DOUT("Adding 0 operand operation: " << name);
     } else {
         QL_EOUT("Unknown cclight classical operation '" << name << "' with '" << sz << "' operands!");
-        throw Exception("Unknown cclight classical operation'" + name + "' with'" + std::to_string(sz) + "' operands!", false);
+        throw Exception("Unknown cclight classical operation'" + name + "' with'" + to_string(sz) + "' operands!", false);
     }
     QL_DOUT("adding classical_cc [DONE]");
 }
 
 instruction_t classical_cc::qasm() const {
     Str iopers;
-    int sz = creg_operands.size();
-    for (int i = 0; i < sz; ++i) {
+    Int sz = creg_operands.size();
+    for (Int i = 0; i < sz; ++i) {
         if (i == sz - 1) {
-            iopers += " r" + std::to_string(creg_operands[i]);
+            iopers += " r" + to_string(creg_operands[i]);
         } else {
-            iopers += " r" + std::to_string(creg_operands[i]) + ",";
+            iopers += " r" + to_string(creg_operands[i]) + ",";
         }
     }
 
     if (name == "ldi") {
-        iopers += ", " + std::to_string(int_operand);
+        iopers += ", " + to_string(int_operand);
         return "ldi" + iopers;
     } else if (name == "fmr") {
-        return name + " r" + std::to_string(creg_operands[0]) +
-               ", q" + std::to_string(operands[0]);
+        return name + " r" + to_string(creg_operands[0]) +
+               ", q" + to_string(operands[0]);
     } else {
         return name + iopers;
     }
@@ -264,7 +264,7 @@ Str classical_instruction2qisa(classical_cc *classical_ins) {
     StrStrm ssclassical;
     auto &iname = classical_ins->name;
     auto &iopers = classical_ins->creg_operands;
-    int iopers_count = iopers.size();
+    Int iopers_count = iopers.size();
 
     if (
         (iname == "add") || (iname == "sub") ||
@@ -273,7 +273,7 @@ Str classical_instruction2qisa(classical_cc *classical_ins) {
         (iname == "ldi") || (iname == "nop") || (iname == "cmp")
     ) {
         ssclassical << iname;
-        for (int i = 0; i < iopers_count; ++i) {
+        for (Int i = 0; i < iopers_count; ++i) {
             if (i == iopers_count - 1) {
                 ssclassical << " r" << iopers[i];
             } else {
@@ -281,7 +281,7 @@ Str classical_instruction2qisa(classical_cc *classical_ins) {
             }
         }
         if (iname == "ldi") {
-            ssclassical << ", " + std::to_string(classical_ins->int_operand);
+            ssclassical << ", " + to_string(classical_ins->int_operand);
         }
     } else if (iname == "fmr") {
         ssclassical << "fmr r" << iopers[0] << ", q" << classical_ins->operands[0];
@@ -299,7 +299,7 @@ Str classical_instruction2qisa(classical_cc *classical_ins) {
         ssclassical << "fbr " << "GE, r" << iopers[0];
     } else {
         QL_EOUT("Unknown CClight classical operation '" << iname << "' with '" << iopers_count << "' operands!");
-        throw Exception("Unknown classical operation'" + iname + "' with'" + std::to_string(iopers_count) + "' operands!", false);
+        throw Exception("Unknown classical operation'" + iname + "' with'" + to_string(iopers_count) + "' operands!", false);
     }
 
     return ssclassical.str();
@@ -403,7 +403,7 @@ Str ir2qisa(
     for (ir::bundle_t &abundle : bundles2) {
         // sorts instructions alphabetically
         abundle.parallel_sections.sort(
-            [](const ir::section_t &sec1, const ir::section_t &sec2) -> bool {
+            [](const ir::section_t &sec1, const ir::section_t &sec2) -> Bool {
                 auto i1 = sec1.begin();
                 auto iname1 = (*(i1))->name;
                 auto i2 = sec2.begin();
@@ -419,13 +419,13 @@ Str ir2qisa(
     //
     // kernel prologue (start label) and epilogue are generated by the caller or ir2qisa
     StrStrm ssqisa;   // output qisa in here
-    size_t curr_cycle = 0; // first instruction should be with pre-interval 1, 'bs 1' FIXME HvS start in cycle 0
+    UInt curr_cycle = 0; // first instruction should be with pre-interval 1, 'bs 1' FIXME HvS start in cycle 0
     for (ir::bundle_t &abundle : bundles2) {
         Str iname;
         StrStrm sspre, ssinst;
         auto bcycle = abundle.start_cycle;
         auto delta = bcycle - curr_cycle;
-        bool classical_bundle=false;
+        Bool classical_bundle=false;
         if (delta < 8) {
             sspre << "    " << delta << "    ";
         } else {
@@ -506,7 +506,7 @@ Str ir2qisa(
     }
 
     auto & lastBundle = bundles2.back();
-    int lbduration = lastBundle.duration_in_cycles;
+    Int lbduration = lastBundle.duration_in_cycles;
     if (lbduration > 1) {
         ssqisa << "    qwait " << lbduration << std::endl;
     }
@@ -649,15 +649,15 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
     if (options::get("cz_mode") == "auto") {
         QL_IOUT("decompose cz to cz+sqf...");
 
-        typedef Pair<size_t,size_t> qubits_pair_t;
-        Map<qubits_pair_t, size_t> qubitpair2edge; // map: pair of qubits to edge (from grid configuration)
-        Map<size_t, Vec<size_t>> edge_detunes_qubits; // map: edge to vector of qubits that edge detunes (resource desc.)
+        typedef Pair<UInt,UInt> qubits_pair_t;
+        Map<qubits_pair_t, UInt> qubitpair2edge; // map: pair of qubits to edge (from grid configuration)
+        Map<UInt, Vec<UInt>> edge_detunes_qubits; // map: edge to vector of qubits that edge detunes (resource desc.)
 
         // initialize qubitpair2edge map from json description; this is a constant map
         for (auto &anedge : platform.topology["edges"]) {
-            size_t s = anedge["src"];
-            size_t d = anedge["dst"];
-            size_t e = anedge["id"];
+            UInt s = anedge["src"];
+            UInt d = anedge["dst"];
+            UInt e = anedge["id"];
 
             qubits_pair_t aqpair(s,d);
             auto it = qubitpair2edge.find(aqpair);
@@ -671,7 +671,7 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
         // initialize edge_detunes_qubits map from json description; this is a constant map
         auto &constraints = platform.resources["detuned_qubits"]["connection_map"];
         for (auto it = constraints.begin(); it != constraints.end(); ++it) {
-            size_t edgeNo = stoi(it.key());
+            UInt edgeNo = stoi(it.key());
             auto &detuned_qubits = it.value();
             for (auto &q : detuned_qubits) {
                 edge_detunes_qubits.set(edgeNo).push_back(q);
@@ -695,7 +695,7 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
                 ) {
                     Str id = (*ins_src_it)->name;
                     Str operation_type{};
-                    size_t nOperands = ((*ins_src_it)->operands).size();
+                    UInt nOperands = ((*ins_src_it)->operands).size();
                     if (nOperands == 2) {
                         auto it = platform.instruction_map.find(id);
                         if (it != platform.instruction_map.end()) {
@@ -706,7 +706,7 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
                             QL_FATAL("custom instruction not found for : " << id << " !");
                         }
 
-                        bool is_flux_2_qubit = operation_type == "flux";
+                        Bool is_flux_2_qubit = operation_type == "flux";
                         if (is_flux_2_qubit) {
                             auto &q0 = (*ins_src_it)->operands[0];
                             auto &q1 = (*ins_src_it)->operands[1];
@@ -718,7 +718,7 @@ void cc_light_eqasm_compiler::ccl_decompose_post_schedule_bundles(
                                 QL_DOUT("add the following sqf gates for edge: " << edge_no << ":");
                                 for (auto &q : edge_detunes_qubits.get(edge_no)) {
                                     QL_DOUT("sqf q" << q);
-                                    custom_gate *g = new custom_gate("sqf q"+std::to_string(q));
+                                    custom_gate *g = new custom_gate("sqf q"+to_string(q));
                                     g->operands.push_back(q);
 
                                     ir::section_t asec;
@@ -756,14 +756,14 @@ void cc_light_eqasm_compiler::map(
     std::ofstream ofs;
     ofs = report_open(programp, "out", passname);
 
-    size_t total_swaps = 0;        // for reporting, data is mapper specific
-    size_t total_moves = 0;        // for reporting, data is mapper specific
-    double total_timetaken = 0.0;  // total over kernels of time taken by mapper
+    UInt total_swaps = 0;        // for reporting, data is mapper specific
+    UInt total_moves = 0;        // for reporting, data is mapper specific
+    Real total_timetaken = 0.0;  // total over kernels of time taken by mapper
     for (auto &kernel : programp->kernels) {
         QL_IOUT("Mapping kernel: " << kernel.name);
 
         // compute timetaken, start interval timer here
-        double timetaken = 0.0;
+        Real timetaken = 0.0;
         using namespace std::chrono;
         high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
@@ -775,7 +775,7 @@ void cc_light_eqasm_compiler::map(
 
         // computing timetaken, stop interval timer
         high_resolution_clock::time_point t2 = high_resolution_clock::now();
-        duration<double> time_span = t2 - t1;
+        duration<Real> time_span = t2 - t1;
         timetaken = time_span.count();
 
         report_kernel_statistics(ofs, kernel, platform, "# ");
@@ -836,7 +836,7 @@ void cc_light_eqasm_compiler::write_quantumsim_script(
     report_qasm(programp, platform, "in", passname);
 
     // for backward compatibility, use passname to distinguish between calls from different places
-    bool compiled;
+    Bool compiled;
     Str suffix;
     if (passname == "write_quantumsim_script_unmapped") {
         compiled = false;
@@ -882,7 +882,7 @@ void cc_light_eqasm_compiler::compile(quantum_program *programp, const quantum_p
     // can also be done by pass manager in parallel to skip option
     //
     // compute timetaken, start interval timer here
-    double    total_timetaken = 0.0;
+    Real    total_timetaken = 0.0;
     using namespace std::chrono;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
@@ -927,7 +927,7 @@ void cc_light_eqasm_compiler::compile(quantum_program *programp, const quantum_p
     // timing to be moved to pass manager
     // computing timetaken, stop interval timer
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
-    duration<double> time_span = t2 - t1;
+    duration<Real> time_span = t2 - t1;
     total_timetaken = time_span.count();
 
     // reporting to be moved to write_statistics pass
@@ -965,8 +965,8 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
         QL_DOUT("decomposing instruction " << iname << "...");
         auto & icopers = ins->creg_operands;
         auto & iqopers = ins->operands;
-        int icopers_count = icopers.size();
-        int iqopers_count = iqopers.size();
+        Int icopers_count = icopers.size();
+        Int iqopers_count = iqopers.size();
         QL_DOUT("decomposing instruction " << iname << " operands=" << to_string(iqopers) << " creg_operands=" << to_string(icopers));
         auto itype = ins->type();
         if (itype == __classical_gate__) {
@@ -1004,7 +1004,7 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
                 QL_DOUT("    classical instruction decomposed: " << decomp_ckt.back()->qasm());
             } else {
                 QL_EOUT("Unknown decomposition of classical operation '" << iname << "' with '" << icopers_count << "' operands!");
-                throw Exception("Unknown classical operation '" + iname + "' with'" + std::to_string(icopers_count) + "' operands!", false);
+                throw Exception("Unknown classical operation '" + iname + "' with'" + to_string(icopers_count) + "' operands!", false);
             }
         } else {
             if (iname == "wait") {
@@ -1017,9 +1017,9 @@ void cc_light_eqasm_compiler::ccl_decompose_pre_schedule_kernel(
                     operation_type = instruction_settings[iname]["type"].get<Str>();
                 } else {
                     QL_EOUT("instruction settings not found for '" << iname << "' with '" << iqopers_count << "' operands!");
-                    throw Exception("instruction settings not found for '" + iname + "' with'" + std::to_string(iqopers_count) + "' operands!", false);
+                    throw Exception("instruction settings not found for '" + iname + "' with'" + to_string(iqopers_count) + "' operands!", false);
                 }
-                bool is_measure = (operation_type == "readout");
+                Bool is_measure = (operation_type == "readout");
                 if (is_measure) {
                     // insert measure
                     QL_DOUT("    readout instruction ");
@@ -1097,7 +1097,7 @@ void cc_light_eqasm_compiler::qisa_code_generation(
 // when cc_light independent, it should be extracted and put in src/quantumsim.h
 void cc_light_eqasm_compiler::write_quantumsim_program(
     quantum_program *programp,
-    size_t num_qubits,
+    UInt num_qubits,
     const quantum_platform &platform,
     const Str &suffix
 ) {
@@ -1208,11 +1208,11 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
         QL_EOUT("relaxation_times is not specified in the hardware config file !");
         throw Exception("[x] error: quantumsim_compiler: relaxation_times is not specified in the hardware config file !", false);
     }
-    size_t count = platform.hardware_settings["qubit_number"];
+    UInt count = platform.hardware_settings["qubit_number"];
 
     // want to ignore unused qubits below
     QL_ASSERT(programp->kernels.size() <= 1);
-    Vec<size_t> check_usecount;
+    Vec<UInt> check_usecount;
     check_usecount.resize(count, 0);
 
     for (auto &gp : programp->kernels.front().c) {
@@ -1229,7 +1229,7 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
     }
 
     for (auto it = relaxation_times.begin(); it != relaxation_times.end(); ++it) {
-        size_t q = stoi(it.key());
+        UInt q = stoi(it.key());
         if (q >= count) {
             QL_EOUT("qubit_attribute.relaxation_time.qubit number is not in qubits available in the platform");
             throw Exception("[x] error: qubit_attribute.relaxation_time.qubit number is not in qubits available in the platform", false);
@@ -1274,7 +1274,7 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
                         auto & iname = (*insIt)->name;
                         auto & operands = (*insIt)->operands;
                         auto duration = (*insIt)->duration;     // duration in nano-seconds
-                        // size_t operation_duration = std::ceil( static_cast<float>(duration) / platform.cycle_time);
+                        // UInt operation_duration = ceil(static_cast<Real>(duration) / platform.cycle_time);
                         if (iname == "measure") {
                             QL_DOUT("... adding gates, a measure");
                             auto op = operands.back();
@@ -1306,7 +1306,7 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
                         ) {
                             QL_DOUT("... adding gates, another gate");
                             ssqs <<  "    c.add_gate("<< iname << "(" ;
-                            size_t noperands = operands.size();
+                            UInt noperands = operands.size();
                             if (noperands > 0) {
                                 for (auto opit = operands.begin(); opit != operands.end()-1; opit++) {
                                     ssqs << "\"q" << *opit <<"\", ";
@@ -1317,7 +1317,7 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
                         } else if (iname == "cz") {
                             QL_DOUT("... adding gates, another gate");
                             ssqs <<  "    c.add_gate("<< iname << "(" ;
-                            size_t noperands = operands.size();
+                            UInt noperands = operands.size();
                             if (noperands > 0) {
                                 for (auto opit = operands.begin(); opit != operands.end()-1; opit++) {
                                     ssqs << "\"q" << *opit <<"\", ";
@@ -1328,7 +1328,7 @@ void cc_light_eqasm_compiler::write_quantumsim_program(
                         } else {
                             QL_DOUT("... adding gates, another gate");
                             ssqs <<  "    c.add_gate("<< iname << "(" ;
-                            size_t noperands = operands.size();
+                            UInt noperands = operands.size();
                             if (noperands > 0) {
                                 for (auto opit = operands.begin(); opit != operands.end()-1; opit++) {
                                     ssqs << "\"q" << *opit <<"\", ";

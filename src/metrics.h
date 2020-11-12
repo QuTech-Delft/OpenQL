@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "utils/num.h"
 #include "utils/str.h"
 #include "utils/vec.h"
 #include "utils/list.h"
@@ -17,22 +18,22 @@ namespace ql {
 
 class Metrics {
 private:
-	size_t Nqubits;
-	double gatefid_1 = 0.999; //Hardcoded for testing purposes
-	double gatefid_2 = 0.99; //Hardcoded for testing purposes
-	double decoherence_time = 4500.0/20; //Hardcoded for testing purposes
+	utils::UInt Nqubits;
+	utils::Real gatefid_1 = 0.999; //Hardcoded for testing purposes
+	utils::Real gatefid_2 = 0.99; //Hardcoded for testing purposes
+	utils::Real decoherence_time = 4500.0 / 20; //Hardcoded for testing purposes
 	utils::Str fidelity_estimator;
 	utils::Str output_mode;
     utils::Json qubit_attributes;
 
-	static double gaussian_pdf(double x, double mean, double sigma);
+	static utils::Real gaussian_pdf(utils::Real x, utils::Real mean, utils::Real sigma);
 
 public:
 
-	//double (Metrics::*compute_score)(circuit &, utils::Vec<double> &  ); //TODO FIX THIS
+	//utils::Double (Metrics::*compute_score)(circuit &, utils::Vec<utils::Double> &  ); //TODO FIX THIS
 
 	//EVERYTHING SHOULD BE IN CYCLES (gate duration, decoherence time, etc)
-	// Metrics( /*double gatefid_1, double gatefid_2, double decoherence_time */)
+	// Metrics( /*utils::Double gatefid_1, utils::Double gatefid_2, utils::Double decoherence_time */)
 	// {
 		// fidelity_estimator = options::get("metrics_fidelity_estimator");
 		// output_mode = options::get("metrics_output_mode");
@@ -53,22 +54,22 @@ public:
 	// };
 
 	Metrics(
-	    size_t Nqubits,
-	    double gatefid_1 = 0.999,
-	    double gatefid_2 = 0.99,
-	    double decoherence_time = 3000/20,
+	    utils::UInt Nqubits,
+	    utils::Real gatefid_1 = 0.999,
+	    utils::Real gatefid_2 = 0.99,
+	    utils::Real decoherence_time = 3000 / 20,
 	    const utils::Str &estimator = "bounded_fidelity",
 	    const utils::Str &output_mode = "average"
     );
 
-	void Init(size_t Nqubits, quantum_platform *platform);
-	double create_output(const utils::Vec<double> &fids);
-	double bounded_fidelity(const circuit &circ, utils::Vec<double> &fids);
+	void Init(utils::UInt Nqubits, quantum_platform *platform);
+	utils::Real create_output(const utils::Vec<utils::Real> &fids);
+	utils::Real bounded_fidelity(const circuit &circ, utils::Vec<utils::Real> &fids);
 
 };
 
-double quick_fidelity(const utils::List<gate*> &gate_list);
-double quick_fidelity_circuit(const circuit &circuit);
-double quick_fidelity(const circuit &circuit);
+utils::Real quick_fidelity(const utils::List<gate*> &gate_list);
+utils::Real quick_fidelity_circuit(const circuit &circuit);
+utils::Real quick_fidelity(const circuit &circuit);
 
 } // namespace ql

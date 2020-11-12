@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include "utils/json.h"
+#include "utils/num.h"
 #include "utils/str.h"
+#include "utils/json.h"
 #include "hardware_configuration.h"
 
 namespace ql {
@@ -14,8 +15,8 @@ class quantum_platform {
 public:
     utils::Str              name;                     // platform name
     utils::Str              eqasm_compiler_name;      // eqasm backend
-    size_t                  qubit_number;             // number of qubits
-    size_t                  cycle_time;               // in [ns]
+    utils::UInt             qubit_number;             // number of qubits
+    utils::UInt             cycle_time;               // in [ns]
     utils::Str              configuration_file_name;  // configuration file name
     instruction_map_t       instruction_map;          // supported operations
     utils::Json             instruction_settings;     // instruction settings (to use by the eqasm backend)
@@ -29,7 +30,7 @@ public:
     quantum_platform();
     quantum_platform(const utils::Str &name, const utils::Str &configuration_file_name);
     void print_info() const;
-    size_t get_qubit_number() const;  // FIXME: qubit_number is public anyway
+    utils::UInt get_qubit_number() const;  // FIXME: qubit_number is public anyway
 
     /**
      * @brief   Find architecture instruction name for a custom gate
@@ -48,7 +49,7 @@ public:
     // find instruction type for custom gate
     utils::Str find_instruction_type(const utils::Str &iname) const;
 
-    size_t time_to_cycles(float time_ns) const;     // FIXME: prefer unsigned int, or double parameter
+    utils::UInt time_to_cycles(utils::Real time_ns) const;
 };
 
 } // namespace ql

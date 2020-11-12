@@ -4,10 +4,11 @@
 
 #pragma once
 
-#include "utils/vec.h"
+#include "utils/num.h"
 #include "utils/str.h"
-#include "utils/map.h"
 #include "utils/pair.h"
+#include "utils/vec.h"
+#include "utils/map.h"
 #include "program.h"
 #include "platform.h"
 #include "ir.h"
@@ -20,19 +21,19 @@ namespace arch {
 // eqasm code : set of cc_light_eqasm instructions
 typedef utils::Vec<cc_light_eqasm_instr_t> eqasm_t;
 
-typedef utils::Vec<size_t> qubit_set_t;
-typedef utils::Pair<size_t,size_t> qubit_pair_t;
+typedef utils::Vec<utils::UInt> qubit_set_t;
+typedef utils::Pair<utils::UInt, utils::UInt> qubit_pair_t;
 typedef utils::Vec<qubit_pair_t> qubit_pair_set_t;
 
-const size_t MAX_S_REG = 32;
-const size_t MAX_T_REG = 64;
+const utils::UInt MAX_S_REG = 32;
+const utils::UInt MAX_T_REG = 64;
 
-QL_GLOBAL extern size_t CurrSRegCount;
-QL_GLOBAL extern size_t CurrTRegCount;
+QL_GLOBAL extern utils::UInt CurrSRegCount;
+QL_GLOBAL extern utils::UInt CurrTRegCount;
 
 class Mask {
 public:
-    size_t regNo = 0;
+    utils::UInt regNo = 0;
     utils::Str regName;
     qubit_set_t squbits;
     qubit_pair_set_t dqubits;
@@ -45,17 +46,17 @@ public:
 
 class MaskManager {
 private:
-    utils::Map<size_t,Mask> SReg2Mask;
+    utils::Map<utils::UInt,Mask> SReg2Mask;
     utils::Map<qubit_set_t,Mask> QS2Mask;
 
-    utils::Map<size_t,Mask> TReg2Mask;
+    utils::Map<utils::UInt,Mask> TReg2Mask;
     utils::Map<qubit_pair_set_t,Mask> QPS2Mask;
 
 public:
     MaskManager();
     ~MaskManager();
-    size_t getRegNo(qubit_set_t &qs);
-    size_t getRegNo(qubit_pair_set_t &qps);
+    utils::UInt getRegNo(qubit_set_t &qs);
+    utils::UInt getRegNo(qubit_pair_set_t &qps);
     utils::Str getRegName(qubit_set_t &qs);
     utils::Str getRegName(qubit_pair_set_t &qps);
     utils::Str getMaskInstructions();
@@ -64,8 +65,8 @@ public:
 class classical_cc : public gate {
 public:
     cmat_t m;
-    // int imm_value;
-    classical_cc(const utils::Str &operation, const utils::Vec<size_t> &opers, int ivalue = 0);
+    // utils::Int imm_value;
+    classical_cc(const utils::Str &operation, const utils::Vec<utils::UInt> &opers, utils::Int ivalue = 0);
     instruction_t qasm() const override;
     gate_type_t type() const override;
     cmat_t mat() const override;
@@ -86,7 +87,7 @@ class cc_light_eqasm_compiler : public eqasm_compiler {
 public:
 
     cc_light_eqasm_program_t cc_light_eqasm_instructions;
-    size_t total_exec_time = 0;
+    utils::UInt total_exec_time = 0;
 
 public:
 
@@ -137,7 +138,7 @@ public:
 private:
     // write cc_light scheduled bundles for quantumsim
     // when cc_light independent, it should be extracted and put in src/quantumsim.h
-    static void write_quantumsim_program(quantum_program *programp, size_t num_qubits, const quantum_platform &platform, const utils::Str &suffix);
+    static void write_quantumsim_program(quantum_program *programp, utils::UInt num_qubits, const quantum_platform &platform, const utils::Str &suffix);
 };
 
 } // namespace arch

@@ -173,7 +173,7 @@ void hardware_configuration::load(
             }
 
             Vec<gate *> gs;
-            for (size_t i = 0; i < sub_instructions.size(); i++) {
+            for (UInt i = 0; i < sub_instructions.size(); i++) {
                 // standardize name of sub instruction
                 Str sub_ins = sub_instructions[i];
                 QL_DOUT("Adding sub instr: " << sub_ins);

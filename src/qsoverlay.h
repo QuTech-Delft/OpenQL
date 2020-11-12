@@ -11,11 +11,11 @@ namespace ql {
 //Only support for DiCarlo setup atm
 void write_qsoverlay_program(
     quantum_program *programp,
-    size_t num_qubits,
+    utils::UInt num_qubits,
     const quantum_platform &platform,
     const utils::Str &suffix,
-    size_t ns_per_cycle,
-    bool compiled
+    utils::UInt ns_per_cycle,
+    utils::Bool compiled
 );
 
 } // namespace ql

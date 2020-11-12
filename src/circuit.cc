@@ -45,7 +45,7 @@ Vec<circuit*> split_circuit(circuit &x) {
     }
     QL_IOUT("circuit decomposition done (" << cs.size() << ").");
     /*
-       for (int i=0; i<cs.size(); ++i)
+       for (Int i=0; i<cs.size(); ++i)
        {
        println(" |-- circuit " << i);
        print(*(cs[i]));
@@ -57,7 +57,7 @@ Vec<circuit*> split_circuit(circuit &x) {
 /**
  * detect measurements and qubit preparations
  */
-bool contains_measurements(const circuit &x) {
+Bool contains_measurements(const circuit &x) {
     for (auto gate : x) {
         if (gate->type() == __measure_gate__) {
             return true;
