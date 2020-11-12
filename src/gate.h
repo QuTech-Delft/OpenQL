@@ -169,7 +169,7 @@ const utils::Complex nop_c[] = {
 
 
 
-const utils::UInt MAX_CYCLE = std::numeric_limits<utils::Int>::max();
+const utils::UInt MAX_CYCLE = utils::MAX;
 
 
 /**
@@ -183,7 +183,7 @@ public:
     utils::Int int_operand = 0;
     utils::UInt duration = 0;
     utils::Real angle = 0.0;                      // for arbitrary rotations
-    utils::UInt  cycle = MAX_CYCLE;               // cycle after scheduling; MAX_CYCLE indicates undefined
+    utils::UInt cycle = MAX_CYCLE;                // cycle after scheduling; MAX_CYCLE indicates undefined
     virtual ~gate() = default;
     virtual instruction_t qasm() const = 0;
     virtual gate_type_t   type() const = 0;

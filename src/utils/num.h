@@ -12,6 +12,7 @@
 #include <cinttypes>
 #include <cmath>
 #include <complex>
+#include <limits>
 
 namespace ql {
 namespace utils {
@@ -44,6 +45,11 @@ public:
     Complex(Real re = 0.0, Real im = 0.0) noexcept : complex(re, im) {}
     Complex(const complex &other) noexcept : complex(other.real(), other.imag()) {}
 };
+
+/**
+ * Maximum value for an Int.
+ */
+const Int MAX = std::numeric_limits<Int>::max();
 
 /**
  * Constant for pi.
