@@ -373,7 +373,7 @@ void test_qi_example( std::string scheduler, std::string scheduler_uniform)
 
 int main(int argc, char ** argv)
 {
-    ql::utils::logger::set_log_level("LOG_DEBUG");      // LOG_DEBUG, LOG_INFO
+    ql::utils::logger::set_log_level("LOG_INFO");      // LOG_DEBUG, LOG_INFO
 
 #if 0
     test_classical("ALAP", "no");

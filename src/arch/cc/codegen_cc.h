@@ -90,15 +90,20 @@ private:    // vars
     bool verboseCode = true;                                    // option to output extra comments in generated code. FIXME: not yet configurable
     bool mapPreloaded = false;
 
-    std::stringstream codeSection;                              // the code generated
+	// codegen state, program scope
+	json codewordTable;                                         // codewords versus signals per instrument group
+	std::stringstream codeSection;                              // the code generated
 #if OPT_FEEDBACK
-    std::stringstream datapathSection;                          // the data path configuration generated
+	std::stringstream datapathSection;                          // the data path configuration generated
 #endif
 
-    // codegen state
-    unsigned int lastEndCycle[MAX_INSTRS];                      // vector[instrIdx], maintain where we got per slot, kernel scope
-    std::vector<std::vector<tBundleInfo>> bundleInfo;           // matrix[instrIdx][group], bundle scope
-    json codewordTable;                                         // codewords versus signals per instrument group
+	// codegen state, kernel scope FIXME: create class
+    unsigned int lastEndCycle[MAX_INSTRS];                      // vector[instrIdx], maintain where we got per slot
+
+	// codegen state, bundle scope
+    std::vector<std::vector<tBundleInfo>> bundleInfo;           // matrix[instrIdx][group]
+    bool bundleHasReadout;
+
 #if OPT_FEEDBACK
     json inputLutTable;                                         // input LUT usage per instrument group
 #endif
