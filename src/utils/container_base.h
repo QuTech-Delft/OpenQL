@@ -126,40 +126,10 @@ public:
     }
 };
 
-/**
- * Helper class used to return the begin() and end() corresponding to reverse
- * iterators.
- */
-class ReverseEndpointAdapter {
-public:
-    template <typename T>
-    static typename T::Stl::reverse_iterator begin(T &container) {
-        return container.get_mut_element_only().rbegin();
-    }
-    template <typename T>
-    static typename T::Stl::reverse_iterator end(T &container) {
-        return container.get_mut_element_only().rend();
-    }
-};
-
-/**
- * Helper class used to return the begin() and end() corresponding to reverse
- * const iterators.
- */
-class ConstReverseEndpointAdapter {
-public:
-    template <typename T>
-    static typename T::Stl::const_reverse_iterator begin(const T &container) {
-        return container.get_const().crbegin();
-    }
-    template <typename T>
-    static typename T::Stl::const_reverse_iterator end(const T &container) {
-        return container.get_const().crend();
-    }
-};
-
 template <typename T, typename Alloc = std::allocator<T>>
-class Vec;
+class CheckedVec;
+template <typename T, typename Alloc = std::allocator<T>>
+class CheckedList;
 
 /**
  * Wrapper for standard iterators to detect undefined behavior and throw an
@@ -186,7 +156,9 @@ private:
 
     // Containers must be able to use the private methods of this class.
     template <typename T, typename Alloc>
-    friend class Vec;
+    friend class CheckedVec;
+    template <typename T, typename Alloc>
+    friend class CheckedList;
 
     /**
      * The wrapped iterator.

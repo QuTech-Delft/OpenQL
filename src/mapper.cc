@@ -896,6 +896,7 @@ void Past::Schedule() {
         // reverse iterate because the insertion is near the end of the list
         // insert so that cycle values are in order afterwards and the new one is nearest to the end
         auto rigp = lg.rbegin();
+        Bool inserted = false;
         for (; rigp != lg.rend(); rigp++) {
             if (cycle.at(*rigp) <= startCycle) {
                 // rigp.base() because insert doesn't work with reverse iteration
@@ -903,11 +904,12 @@ void Past::Schedule() {
                 // which is lucky because insert only inserts before the given element
                 // the end effect is inserting after rigp
                 lg.insert(rigp.base(), gp);
+                inserted = true;
                 break;
             }
         }
         // when list was empty or no element was found, just put it in front
-        if (rigp == lg.rend()) {
+        if (!inserted) {
             lg.push_front(gp);
         }
 

@@ -16,17 +16,17 @@ namespace utils {
  * Wrapper for `std::vector` with additional error detection and handling.
  *
  * Unlike the STL variant, operator[] is range-checked; it basically functions
- * like at(). If ever you really want the unchecked version for performance
- * reasons (you really shouldn't, though) you can use unchecked_at().
+ * like at(). The iterators are also wrapped to detect accidental undefined
+ * behavior.
  */
-template <typename T, typename Alloc>
-class Vec {
+template <typename T, typename Allocator>
+class CheckedVec {
 public:
 
     /**
      * Shorthand for the STL component being wrapped.
      */
-    using Stl = std::vector<T, Alloc>;
+    using Stl = std::vector<T, Allocator>;
 
     /**
      * Shorthand for the data block type.
@@ -46,14 +46,22 @@ public:
     /**
      * Backward iterator with mutable access to the values.
      */
-    using ReverseIter = WrappedIterator<Data, typename Stl::reverse_iterator, ReverseEndpointAdapter>;
+    using ReverseIter = std::reverse_iterator<Iter>;
 
     /**
      * Backward iterator with const access to the values.
      */
-    using ConstReverseIter = WrappedIterator<const Data, typename Stl::const_reverse_iterator, ConstReverseEndpointAdapter>;
+    using ConstReverseIter = std::reverse_iterator<ConstIter>;
 
-    using value_type = typename Stl::value_type;
+    // Member types expected by the standard library.
+    using value_type = T;
+    using allocator_type = Allocator;
+    using size_type = typename Stl::size_type;
+    using difference_type = typename Stl::difference_type;
+    using reference = typename Stl::reference;
+    using const_reference = typename Stl::const_reference;
+    using pointer = typename Stl::pointer;
+    using const_pointer = typename Stl::const_pointer;
     using iterator = Iter;
     using const_iterator = ConstIter;
     using reverse_iterator = ReverseIter;
@@ -96,22 +104,23 @@ public:
      * Default constructor. Constructs an empty container with a
      * default-constructed allocator.
      */
-    Vec() : data_ptr(std::make_shared<Data>()) {}
+    CheckedVec() : data_ptr(std::make_shared<Data>()) {}
 
     /**
      * Constructs an empty container with the given allocator alloc.
      */
-    explicit Vec(const Alloc &alloc) : data_ptr(std::make_shared<Data>(alloc)) {}
+    explicit CheckedVec(const Allocator &alloc) : data_ptr(std::make_shared<Data>(alloc)) {}
 
     /**
      * Constructs the container with count copies of elements with value value.
      */
-    Vec(typename Stl::size_type count, const T &value, const Alloc &alloc = Alloc()) : data_ptr(std::make_shared<Data>(count, value, alloc)) {}
+    CheckedVec(size_type count, const T &value, const Allocator &alloc = Allocator()) : data_ptr(std::make_shared<Data>(count, value, alloc)) {}
 
     /**
-     * Constructs the container with count default-inserted instances of T. No copies are made.
+     * Constructs the container with count default-inserted instances of T. No
+     * copies are made.
      */
-    explicit Vec(typename Stl::size_type count) : data_ptr(std::make_shared<Data>(count)) {};
+    explicit CheckedVec(size_type count) : data_ptr(std::make_shared<Data>(count)) {};
 
     /**
      * Constructs the container with the contents of the range [first, last).
@@ -130,31 +139,31 @@ public:
             std::input_iterator_tag
         >::value>::type
     >
-    Vec(InputIt first, InputIt last, const Alloc &alloc = Alloc()) : data_ptr(std::make_shared<Data>(first, last, alloc)) {}
+    CheckedVec(InputIt first, InputIt last, const Allocator &alloc = Allocator()) : data_ptr(std::make_shared<Data>(first, last, alloc)) {}
 
     /**
      * Copy constructor. Constructs the container with the copy of the contents
      * of other.
      */
-    Vec(const Vec &other) : data_ptr(std::make_shared<Data>(other.get_data().get_const())) {}
+    CheckedVec(const CheckedVec &other) : data_ptr(std::make_shared<Data>(other.get_data().get_const())) {}
 
     /**
      * Copy constructor. Constructs the container with the copy of the contents
      * of other.
      */
-    Vec(const Stl &other) : data_ptr(std::make_shared<Data>(other)) {}
+    CheckedVec(const Stl &other) : data_ptr(std::make_shared<Data>(other)) {}
 
     /**
      * Constructs the container with the copy of the contents of other, using
      * alloc as the allocator.
      */
-    Vec(const Stl &other, const Alloc &alloc) : data_ptr(std::make_shared<Data>(other, alloc)) {}
+    CheckedVec(const Stl &other, const Allocator &alloc) : data_ptr(std::make_shared<Data>(other, alloc)) {}
 
     /**
      * Move constructor. The data block pointer is moved, so iterators remain
      * valid.
      */
-    Vec(Vec &&other) noexcept = default;
+    CheckedVec(CheckedVec &&other) noexcept = default;
 
     /**
      * Move constructor. Constructs the container with the contents of other
@@ -162,7 +171,7 @@ public:
      * the allocator belonging to other. After the move, other is guaranteed to
      * be empty().
      */
-    Vec(Stl &&other) : data_ptr(std::make_shared<Data>(std::forward<Stl>(other))) {}
+    CheckedVec(Stl &&other) : data_ptr(std::make_shared<Data>(std::forward<Stl>(other))) {}
 
     /**
      * Allocator-extended move constructor. Using alloc as the allocator for the
@@ -170,17 +179,17 @@ public:
      * alloc != other.get_allocator(), this results in an element-wise move.
      * (in that case, other is not guaranteed to be empty after the move)
      */
-    Vec(Stl &&other, const Alloc &alloc) : data_ptr(std::make_shared<Data>(std::forward<Stl>(other), alloc)) {}
+    CheckedVec(Stl &&other, const Allocator &alloc) : data_ptr(std::make_shared<Data>(std::forward<Stl>(other), alloc)) {}
 
     /**
      * Constructs the container with the contents of the initializer list init.
      */
-    Vec(std::initializer_list<T> init, const Alloc &alloc = Alloc()) : data_ptr(std::make_shared<Data>(init, alloc)) {};
+    CheckedVec(std::initializer_list<T> init, const Allocator &alloc = Allocator()) : data_ptr(std::make_shared<Data>(init, alloc)) {};
 
     /**
      * Copy assignment from an STL vector.
      */
-    Vec &operator=(const Stl &other) {
+    CheckedVec &operator=(const Stl &other) {
         get_data().get_mut().operator=(other);
         return *this;
     }
@@ -188,7 +197,7 @@ public:
     /**
      * Move assignment from an STL vector.
      */
-    Vec &operator=(Stl &&other) {
+    CheckedVec &operator=(Stl &&other) {
         get_data().get_mut().operator=(std::move(other));
         return *this;
     }
@@ -196,7 +205,7 @@ public:
     /**
      * Copy assignment.
      */
-    Vec &operator=(const Vec &rhs) {
+    CheckedVec &operator=(const CheckedVec &rhs) {
         get_data().get_mut().operator=(rhs.get_data().get_const());
         return *this;
     }
@@ -205,12 +214,12 @@ public:
      * Move assignment. The data block pointer is moved, so iterators remain
      * valid.
      */
-    Vec &operator=(Vec &&rhs) noexcept = default;
+    CheckedVec &operator=(CheckedVec &&rhs) noexcept = default;
 
     /**
      * Replaces the contents with those identified by initializer list ilist.
      */
-    Vec &operator=(std::initializer_list<T> ilist) {
+    CheckedVec &operator=(std::initializer_list<T> ilist) {
         get_data().get_mut().operator=(ilist);
         return *this;
     }
@@ -218,7 +227,7 @@ public:
     /**
      * Replaces the contents with count copies of value value.
      */
-    void assign(typename Stl::size_type count, const T &value) {
+    void assign(size_type count, const T &value) {
         get_data().get_mut().assign(count, value);
     }
 
@@ -260,7 +269,7 @@ public:
     /**
      * Returns the allocator associated with the container.
      */
-    typename Stl::allocator_type get_allocator() const {
+    allocator_type get_allocator() const {
         return get_data().get_const().get_allocator();
     }
 
@@ -269,7 +278,7 @@ public:
      * checking. If pos is not within the range of the container, an exception
      * of type ContainerException is thrown.
      */
-    typename Stl::reference at(typename Stl::size_type pos) {
+    reference at(size_type pos) {
         auto &v = get_data().get_mut_element_only();
         if (pos >= v.size()) {
             throw ContainerException(
@@ -285,7 +294,7 @@ public:
      * bounds checking. If pos is not within the range of the container, an
      * exception of type ContainerException is thrown.
      */
-    typename Stl::const_reference at(typename Stl::size_type pos) const {
+    const_reference at(size_type pos) const {
         auto &v = get_data().get_const();
         if (pos >= v.size()) {
             throw ContainerException(
@@ -301,7 +310,7 @@ public:
      * checking. If pos is not within the range of the container, an exception
      * of type ContainerException is thrown.
      */
-    typename Stl::reference operator[](typename Stl::size_type pos) {
+    reference operator[](size_type pos) {
         return this->at(pos);
     }
 
@@ -310,7 +319,7 @@ public:
      * bounds checking. If pos is not within the range of the container, an
      * exception of type ContainerException is thrown.
      */
-    typename Stl::const_reference operator[](typename Stl::size_type pos) const {
+    const_reference operator[](size_type pos) const {
         return this->at(pos);
     }
 
@@ -320,7 +329,7 @@ public:
      * things still run unacceptably slow, and you find out that at() is somehow
      * the culprit, you really should be using at().
      */
-    typename Stl::reference unchecked_at(typename Stl::size_type index) {
+    reference unchecked_at(size_type index) {
         return Stl::operator[](index);
     }
 
@@ -330,7 +339,7 @@ public:
      * things still run unacceptably slow, and you find out that at() is somehow
      * the culprit, you really should be using at().
      */
-    typename Stl::const_reference unchecked_at(typename Stl::size_type index) const {
+    const_reference unchecked_at(size_type index) const {
         return Stl::operator[](index);
     }
 
@@ -338,7 +347,7 @@ public:
      * Returns a const reference to the value at the given index, or to a dummy
      * default-constructed value if the index is out of range.
      */
-    typename Stl::const_reference get(typename Stl::size_type index) const {
+    const_reference get(size_type index) const {
         if (index >= this->size()) {
             static const T DEFAULT{};
             return DEFAULT;
@@ -386,7 +395,7 @@ public:
      * Returns a reference to the first element in the container. If the vector
      * is empty, an exception of type ContainerException is thrown.
      */
-    typename Stl::reference front() {
+    reference front() {
         auto &v = get_data().get_mut_element_only();
         if (v.empty()) {
             throw ContainerException("front() called on empty vector");
@@ -398,7 +407,7 @@ public:
      * Returns a reference to the first element in the container. If the vector
      * is empty, an exception of type ContainerException is thrown.
      */
-    typename Stl::const_reference front() const {
+    const_reference front() const {
         auto &v = get_data().get_const();
         if (v.empty()) {
             throw ContainerException("front() called on empty vector");
@@ -410,7 +419,7 @@ public:
      * Returns a reference to the last element in the container. If the vector
      * is empty, an exception of type ContainerException is thrown.
      */
-    typename Stl::reference back() {
+    reference back() {
         auto &v = get_data().get_mut_element_only();
         if (v.empty()) {
             throw ContainerException("back() called on empty vector");
@@ -422,7 +431,7 @@ public:
      * Returns a reference to the last element in the container. If the vector
      * is empty, an exception of type ContainerException is thrown.
      */
-    typename Stl::const_reference back() const {
+    const_reference back() const {
         auto &v = get_data().get_const();
         if (v.empty()) {
             throw ContainerException("back() called on empty vector");
@@ -507,7 +516,7 @@ public:
      * vector is empty, the returned iterator is equal to rend().
      */
     ReverseIter rbegin() {
-        return ReverseIter(get_data().get_mut_element_only().rbegin(), data_ptr);
+        return ReverseIter(end());
     }
 
     /**
@@ -516,7 +525,7 @@ public:
      * vector is empty, the returned iterator is equal to rend().
      */
     ConstReverseIter rbegin() const {
-        return ConstReverseIter(get_data().get_const().crbegin(), data_ptr);
+        return ConstReverseIter(end());
     }
 
     /**
@@ -525,7 +534,7 @@ public:
      * vector is empty, the returned iterator is equal to rend().
      */
     ConstReverseIter crbegin() const {
-        return ConstReverseIter(get_data().get_const().crbegin(), data_ptr);
+        return ConstReverseIter(end());
     }
 
     /**
@@ -535,7 +544,7 @@ public:
      * attempting to access it results in an exception.
      */
     ReverseIter rend() {
-        return ReverseIter(get_data().get_mut_element_only().rend(), data_ptr);
+        return ReverseIter(begin());
     }
 
     /**
@@ -545,7 +554,7 @@ public:
      * attempting to access it results in an exception.
      */
     ConstReverseIter rend() const {
-        return ConstReverseIter(get_data().get_const().crend(), data_ptr);
+        return ConstReverseIter(begin());
     }
 
     /**
@@ -555,7 +564,7 @@ public:
      * attempting to access it results in an exception.
      */
     ConstReverseIter crend() const {
-        return ConstReverseIter(get_data().get_const().crend(), data_ptr);
+        return ConstReverseIter(begin());
     }
 
     /**
@@ -569,7 +578,7 @@ public:
      * Returns the number of elements in the container, i.e.
      * std::distance(begin(), end()).
      */
-    typename Stl::size_type size() const {
+    size_type size() const {
         return get_data().get_const().size();
     }
 
@@ -578,7 +587,7 @@ public:
      * to system or library implementation limitations, i.e.
      * std::distance(begin(), end()) for the largest container.
      */
-    typename Stl::size_type max_size() const {
+    size_type max_size() const {
         return get_data().get_const().max_size();
     }
 
@@ -589,11 +598,9 @@ public:
      *
      * reserve() does not change the size of the vector.
      *
-     * If new_cap is greater than capacity(), all iterators, including the
-     * past-the-end iterator, and all references to the elements are
-     * invalidated. Otherwise, no iterators or references are invalidated.
+     * All iterators and references are invalidated.
      */
-    void reserve(typename Stl::size_type new_cap) {
+    void reserve(size_type new_cap) {
         get_data().get_mut().reserve(new_cap);
     }
 
@@ -601,7 +608,7 @@ public:
      * Returns the number of elements that the container has currently allocated
      * space for.
      */
-    typename Stl::size_type capacity() const {
+    size_type capacity() const {
         return get_data().get_const().capacity();
     }
 
@@ -611,9 +618,7 @@ public:
      * It is a non-binding request to reduce capacity() to size(). It depends
      * on the implementation whether the request is fulfilled.
      *
-     * If reallocation occurs, all iterators, including the past the end
-     * iterator, and all references to the elements are invalidated. If no
-     * reallocation takes place, no iterators or references are invalidated.
+     * All iterators and references are invalidated.
      */
     void shrink_to_fit() {
         get_data().get_mut().shrink_to_fit();
@@ -634,10 +639,7 @@ public:
      * Inserts value before pos.
      *
      * Causes reallocation if the new size() is greater than the old capacity().
-     * If the new size() is greater than capacity(), all iterators and
-     * references are invalidated. Otherwise, only the iterators and references
-     * before the insertion point remain valid. The past-the-end iterator is
-     * also invalidated.
+     * All iterators and references are invalidated.
      */
     Iter insert(const ConstIter &pos, const T &value) {
         pos.check(data_ptr);
@@ -648,10 +650,7 @@ public:
      * Inserts value before pos.
      *
      * Causes reallocation if the new size() is greater than the old capacity().
-     * If the new size() is greater than capacity(), all iterators and
-     * references are invalidated. Otherwise, only the iterators and references
-     * before the insertion point remain valid. The past-the-end iterator is
-     * also invalidated.
+     * All iterators and references are invalidated.
      */
     Iter insert(const ConstIter &pos, T &&value) {
         pos.check(data_ptr);
@@ -662,12 +661,9 @@ public:
      * Inserts count copies of the value before pos.
      *
      * Causes reallocation if the new size() is greater than the old capacity().
-     * If the new size() is greater than capacity(), all iterators and
-     * references are invalidated. Otherwise, only the iterators and references
-     * before the insertion point remain valid. The past-the-end iterator is
-     * also invalidated.
+     * All iterators and references are invalidated.
      */
-    Iter insert(const ConstIter &pos, typename Stl::size_type count, const T &value) {
+    Iter insert(const ConstIter &pos, size_type count, const T &value) {
         pos.check(data_ptr);
         return Iter(get_data().get_mut().insert(pos.iter, count, value), data_ptr);
     }
@@ -676,10 +672,7 @@ public:
      * Inserts elements from range [first, last) before pos.
      *
      * Causes reallocation if the new size() is greater than the old capacity().
-     * If the new size() is greater than capacity(), all iterators and
-     * references are invalidated. Otherwise, only the iterators and references
-     * before the insertion point remain valid. The past-the-end iterator is
-     * also invalidated.
+     * All iterators and references are invalidated.
      */
     template <
         typename InputIt,
@@ -698,10 +691,7 @@ public:
      * ContainerException is thrown if first and last belong to this vector.
      *
      * Causes reallocation if the new size() is greater than the old capacity().
-     * If the new size() is greater than capacity(), all iterators and
-     * references are invalidated. Otherwise, only the iterators and references
-     * before the insertion point remain valid. The past-the-end iterator is
-     * also invalidated.
+     * All iterators and references are invalidated.
      */
     Iter insert(const ConstIter &pos, const Iter &first, const Iter &last) {
         pos.check(data_ptr);
@@ -716,10 +706,7 @@ public:
      * ContainerException is thrown if first and last belong to this vector.
      *
      * Causes reallocation if the new size() is greater than the old capacity().
-     * If the new size() is greater than capacity(), all iterators and
-     * references are invalidated. Otherwise, only the iterators and references
-     * before the insertion point remain valid. The past-the-end iterator is
-     * also invalidated.
+     * All iterators and references are invalidated.
      */
     Iter insert(const ConstIter &pos, const ConstIter &first, const ConstIter &last) {
         pos.check(data_ptr);
@@ -734,10 +721,7 @@ public:
      * ContainerException is thrown if first and last belong to this vector.
      *
      * Causes reallocation if the new size() is greater than the old capacity().
-     * If the new size() is greater than capacity(), all iterators and
-     * references are invalidated. Otherwise, only the iterators and references
-     * before the insertion point remain valid. The past-the-end iterator is
-     * also invalidated.
+     * All iterators and references are invalidated.
      */
     Iter insert(const ConstIter &pos, const ReverseIter &first, const ReverseIter &last) {
         pos.check(data_ptr);
@@ -752,10 +736,7 @@ public:
      * ContainerException is thrown if first and last belong to this vector.
      *
      * Causes reallocation if the new size() is greater than the old capacity().
-     * If the new size() is greater than capacity(), all iterators and
-     * references are invalidated. Otherwise, only the iterators and references
-     * before the insertion point remain valid. The past-the-end iterator is
-     * also invalidated.
+     * All iterators and references are invalidated.
      */
     Iter insert(const ConstIter &pos, const ConstReverseIter &first, const ConstReverseIter &last) {
         pos.check(data_ptr);
@@ -769,10 +750,7 @@ public:
      * Inserts elements from initializer list ilist before pos.
      *
      * Causes reallocation if the new size() is greater than the old capacity().
-     * If the new size() is greater than capacity(), all iterators and
-     * references are invalidated. Otherwise, only the iterators and references
-     * before the insertion point remain valid. The past-the-end iterator is
-     * also invalidated.
+     * All iterators and references are invalidated.
      */
     Iter insert(const ConstIter &pos, std::initializer_list<T> ilist) {
         pos.check(data_ptr);
@@ -793,10 +771,7 @@ public:
      * std::forward<Args>(args).... args... may directly or indirectly refer to
      * a value in the container.
      *
-     * If the new size() is greater than capacity(), all iterators and
-     * references are invalidated. Otherwise, only the iterators and references
-     * before the insertion point remain valid. The past-the-end iterator is
-     * also invalidated.
+     * All iterators and references are invalidated.
      */
     template <class... Args>
     Iter emplace(const ConstIter &pos, Args&&... args) {
@@ -840,9 +815,7 @@ public:
      * Appends the given element value to the end of the container. The new
      * element is initialized as a copy of value.
      *
-     * If the new size() is greater than capacity() then all iterators and
-     * references (including the past-the-end iterator) are invalidated.
-     * Otherwise only the past-the-end iterator is invalidated.
+     * All iterators and references are invalidated.
      */
     void push_back(const T &value) {
         return get_data().get_mut().push_back(value);
@@ -852,9 +825,7 @@ public:
      * Appends the given element value to the end of the container. value is
      * moved into the new element.
      *
-     * If the new size() is greater than capacity() then all iterators and
-     * references (including the past-the-end iterator) are invalidated.
-     * Otherwise only the past-the-end iterator is invalidated.
+     * All iterators and references are invalidated.
      */
     void push_back(T &&value) {
         return get_data().get_mut().push_back(std::move(value));
@@ -867,9 +838,7 @@ public:
      * provided by the container. The arguments args... are forwarded to the
      * constructor as std::forward<Args>(args)....
      *
-     * If the new size() is greater than capacity() then all iterators and
-     * references (including the past-the-end iterator) are invalidated.
-     * Otherwise only the past-the-end iterator is invalidated.
+     * All iterators and references are invalidated.
      */
     template <class... Args>
     void emplace_back(Args&&... args) {
@@ -881,8 +850,7 @@ public:
      *
      * Calling pop_back on an empty container results in a ContainerException.
      *
-     * Iterators and references to the last element, as well as the end()
-     * iterator, are invalidated.
+     * All iterators and references are invalidated.
      */
     void pop_back() {
         auto &v = get_data().get_mut();
@@ -901,7 +869,7 @@ public:
      * If the current size is less than count, additional default-inserted
      * elements are appended.
      */
-    void resize(typename Stl::size_type count) {
+    void resize(size_type count) {
         get_data().get_mut().resize(count);
     }
 
@@ -914,14 +882,14 @@ public:
      * If the current size is less than count, additional copies of value are
      * appended.
      */
-    void resize(typename Stl::size_type count, const T &value) {
+    void resize(size_type count, const T &value) {
         get_data().get_mut().resize(count, value);
     }
 
     /**
      * Swaps the data block of two containers.
      */
-    void swap(Vec &other) {
+    void swap(CheckedVec &other) {
         std::swap(data_ptr, other.data_ptr);
     }
 
@@ -930,7 +898,7 @@ public:
      * same number of elements and each element in lhs compares equal with the
      * element in rhs at the same position.
      */
-    friend bool operator==(const Vec &lhs, const Vec &rhs) {
+    friend bool operator==(const CheckedVec &lhs, const CheckedVec &rhs) {
         return lhs.get_data().get_const() == rhs.get_data().get_const();
     }
 
@@ -939,7 +907,7 @@ public:
      * same number of elements and each element in lhs compares equal with the
      * element in rhs at the same position.
      */
-    friend bool operator!=(const Vec &lhs, const Vec &rhs) {
+    friend bool operator!=(const CheckedVec &lhs, const CheckedVec &rhs) {
         return lhs.get_data().get_const() != rhs.get_data().get_const();
     }
 
@@ -947,7 +915,7 @@ public:
      * Compares the contents of lhs and rhs lexicographically. The comparison is
      * performed by a function equivalent to std::lexicographical_compare.
      */
-    friend bool operator>(const Vec &lhs, const Vec &rhs) {
+    friend bool operator>(const CheckedVec &lhs, const CheckedVec &rhs) {
         return lhs.get_data().get_const() > rhs.get_data().get_const();
     }
 
@@ -955,7 +923,7 @@ public:
      * Compares the contents of lhs and rhs lexicographically. The comparison is
      * performed by a function equivalent to std::lexicographical_compare.
      */
-    friend bool operator>=(const Vec &lhs, const Vec &rhs) {
+    friend bool operator>=(const CheckedVec &lhs, const CheckedVec &rhs) {
         return lhs.get_data().get_const() >= rhs.get_data().get_const();
     }
 
@@ -963,7 +931,7 @@ public:
      * Compares the contents of lhs and rhs lexicographically. The comparison is
      * performed by a function equivalent to std::lexicographical_compare.
      */
-    friend bool operator<(const Vec &lhs, const Vec &rhs) {
+    friend bool operator<(const CheckedVec &lhs, const CheckedVec &rhs) {
         return lhs.get_data().get_const() < rhs.get_data().get_const();
     }
 
@@ -971,11 +939,17 @@ public:
      * Compares the contents of lhs and rhs lexicographically. The comparison is
      * performed by a function equivalent to std::lexicographical_compare.
      */
-    friend bool operator<=(const Vec &lhs, const Vec &rhs) {
+    friend bool operator<=(const CheckedVec &lhs, const CheckedVec &rhs) {
         return lhs.get_data().get_const() <= rhs.get_data().get_const();
     }
 
 };
+
+// TODO: add an unchecked vector type similar to the above, make conversion
+//  constructors in either direction, and make a CMake flag that selects which
+//  of them is the default for Vec.
+template <typename T, typename Allocator = std::allocator<T>>
+using Vec = CheckedVec<T, Allocator>;
 
 } // namespace utils
 } // namespace ql
